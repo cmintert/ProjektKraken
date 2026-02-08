@@ -1,0 +1,966 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
+        <title>Frequently Asked Questions (FAQ) - Project Kraken 0.11.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">Project Kraken 0.11.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <span class="sidebar-brand-text">Project Kraken 0.11.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="DATABASE.html">Database Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DEVELOPMENT.html">Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="modules.html">src</a><input aria-label="Toggle navigation of src" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="app.html">app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html">cli package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html">commands package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html">core package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui.widgets.html">gui.widgets package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.dialogs.html">gui.dialogs package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="services.html">services package</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/FAQ.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="frequently-asked-questions-faq">
+<h1>Frequently Asked Questions (FAQ)<a class="headerlink" href="#frequently-asked-questions-faq" title="Link to this heading">¶</a></h1>
+<p><strong>Version:</strong> 0.11.0 (Beta)<br />
+<strong>Last Updated:</strong> February 2026</p>
+<p>Common questions, troubleshooting, and tips for using ProjektKraken.</p>
+<hr class="docutils" />
+<section id="table-of-contents">
+<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Link to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="#general-questions"><span class="xref myst">General Questions</span></a></p></li>
+<li><p><a class="reference internal" href="#installation-and-setup"><span class="xref myst">Installation and Setup</span></a></p></li>
+<li><p><a class="reference internal" href="#features-and-usage"><span class="xref myst">Features and Usage</span></a></p></li>
+<li><p><a class="reference internal" href="#data-management"><span class="xref myst">Data Management</span></a></p></li>
+<li><p><a class="reference internal" href="#performance"><span class="xref myst">Performance</span></a></p></li>
+<li><p><a class="reference internal" href="#troubleshooting"><span class="xref myst">Troubleshooting</span></a></p></li>
+<li><p><a class="reference internal" href="#advanced-topics"><span class="xref myst">Advanced Topics</span></a></p></li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="general-questions">
+<h2>General Questions<a class="headerlink" href="#general-questions" title="Link to this heading">¶</a></h2>
+<section id="what-is-projektkraken">
+<h3>What is ProjektKraken?<a class="headerlink" href="#what-is-projektkraken" title="Link to this heading">¶</a></h3>
+<p>ProjektKraken is a <strong>timeline-first desktop worldbuilding application</strong> designed for writers, game masters, and worldbuilders. It helps you create and manage complex fictional worlds with precise chronological tracking and relationship mapping.</p>
+</section>
+<section id="why-timeline-first">
+<h3>Why “timeline-first”?<a class="headerlink" href="#why-timeline-first" title="Link to this heading">¶</a></h3>
+<p>Unlike traditional wiki tools that treat dates as text, ProjektKraken treats time as a mathematical coordinate. This allows for:</p>
+<ul class="simple">
+<li><p>Precise chronological ordering</p></li>
+<li><p>Causal relationship tracking</p></li>
+<li><p>Timeline visualization</p></li>
+<li><p>Temporal queries and analysis</p></li>
+</ul>
+</section>
+<section id="is-projektkraken-free">
+<h3>Is ProjektKraken free?<a class="headerlink" href="#is-projektkraken-free" title="Link to this heading">¶</a></h3>
+<p>Yes! ProjektKraken is <strong>open-source</strong> under the MIT License. You can use it freely for any purpose, including commercial projects.</p>
+</section>
+<section id="what-platforms-are-supported">
+<h3>What platforms are supported?<a class="headerlink" href="#what-platforms-are-supported" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Windows</strong>: 10 or later</p></li>
+<li><p><strong>macOS</strong>: 10.15 (Catalina) or later</p></li>
+<li><p><strong>Linux</strong>: Ubuntu 20.04+ or equivalent</p></li>
+</ul>
+</section>
+<section id="is-an-internet-connection-required">
+<h3>Is an internet connection required?<a class="headerlink" href="#is-an-internet-connection-required" title="Link to this heading">¶</a></h3>
+<p>No. ProjektKraken is <strong>completely offline</strong>. All data is stored locally on your computer. Internet is only needed for optional AI features (LLM generation) if using cloud providers.</p>
+</section>
+<section id="where-is-my-data-stored">
+<h3>Where is my data stored?<a class="headerlink" href="#where-is-my-data-stored" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Worlds</strong>: In <code class="docutils literal notranslate"><span class="pre">worlds/</span></code> folder next to the application</p></li>
+<li><p><strong>User Settings</strong>: System application data directory</p>
+<ul>
+<li><p>Windows: <code class="docutils literal notranslate"><span class="pre">%APPDATA%\ProjektKraken\</span></code></p></li>
+<li><p>macOS: <code class="docutils literal notranslate"><span class="pre">~/Library/Application</span> <span class="pre">Support/ProjektKraken/</span></code></p></li>
+<li><p>Linux: <code class="docutils literal notranslate"><span class="pre">~/.local/share/ProjektKraken/</span></code></p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="can-i-collaborate-with-others">
+<h3>Can I collaborate with others?<a class="headerlink" href="#can-i-collaborate-with-others" title="Link to this heading">¶</a></h3>
+<p>Currently, ProjektKraken is designed for single-user workflows. However, you can:</p>
+<ul class="simple">
+<li><p>Share world folders manually</p></li>
+<li><p>Use Git for version control</p></li>
+<li><p>Export to formats others can import</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="installation-and-setup">
+<h2>Installation and Setup<a class="headerlink" href="#installation-and-setup" title="Link to this heading">¶</a></h2>
+<section id="what-are-the-system-requirements">
+<h3>What are the system requirements?<a class="headerlink" href="#what-are-the-system-requirements" title="Link to this heading">¶</a></h3>
+<p><strong>Minimum:</strong></p>
+<ul class="simple">
+<li><p>4 GB RAM</p></li>
+<li><p>500 MB storage</p></li>
+<li><p>1280x720 display</p></li>
+</ul>
+<p><strong>Recommended:</strong></p>
+<ul class="simple">
+<li><p>8+ GB RAM</p></li>
+<li><p>SSD storage</p></li>
+<li><p>1920x1080+ display</p></li>
+</ul>
+</section>
+<section id="do-i-need-python-installed">
+<h3>Do I need Python installed?<a class="headerlink" href="#do-i-need-python-installed" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Windows Executable</strong>: No, Python is bundled</p></li>
+<li><p><strong>Source Installation</strong>: Yes, Python 3.13+ required</p></li>
+</ul>
+</section>
+<section id="the-windows-executable-won-t-run-what-do-i-do">
+<h3>The Windows executable won’t run. What do I do?<a class="headerlink" href="#the-windows-executable-won-t-run-what-do-i-do" title="Link to this heading">¶</a></h3>
+<p><strong>“Windows protected your PC” warning:</strong></p>
+<ol class="arabic simple">
+<li><p>Click “More info”</p></li>
+<li><p>Click “Run anyway”</p></li>
+</ol>
+<p>This is normal for unsigned executables.</p>
+<p><strong>Still won’t run:</strong></p>
+<ul class="simple">
+<li><p>Check Windows Event Viewer for error details</p></li>
+<li><p>Ensure Visual C++ Redistributable is installed</p></li>
+<li><p>Try running as administrator (right-click → Run as administrator)</p></li>
+</ul>
+</section>
+<section id="how-do-i-update-to-a-new-version">
+<h3>How do I update to a new version?<a class="headerlink" href="#how-do-i-update-to-a-new-version" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Backup your worlds folder</strong> (just in case)</p></li>
+<li><p>Download new version</p></li>
+<li><p>Replace old executable/files with new ones</p></li>
+<li><p>Your world data remains compatible</p></li>
+</ol>
+</section>
+<section id="can-i-install-on-a-usb-drive">
+<h3>Can I install on a USB drive?<a class="headerlink" href="#can-i-install-on-a-usb-drive" title="Link to this heading">¶</a></h3>
+<p>Yes! ProjektKraken is fully portable:</p>
+<ol class="arabic simple">
+<li><p>Extract to USB drive</p></li>
+<li><p>Run from USB</p></li>
+<li><p>All worlds store relative to executable</p></li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="features-and-usage">
+<h2>Features and Usage<a class="headerlink" href="#features-and-usage" title="Link to this heading">¶</a></h2>
+<section id="how-do-i-create-wiki-links">
+<h3>How do I create wiki links?<a class="headerlink" href="#how-do-i-create-wiki-links" title="Link to this heading">¶</a></h3>
+<p>Use double brackets: <code class="docutils literal notranslate"><span class="pre">[[Entity</span> <span class="pre">Name]]</span></code></p>
+<ul class="simple">
+<li><p>Start typing <code class="docutils literal notranslate"><span class="pre">[[</span></code> to see autocomplete suggestions</p></li>
+<li><p>Links are case-sensitive</p></li>
+<li><p>Click links to navigate</p></li>
+</ul>
+</section>
+<section id="can-i-use-custom-calendars">
+<h3>Can I use custom calendars?<a class="headerlink" href="#can-i-use-custom-calendars" title="Link to this heading">¶</a></h3>
+<p>Yes! <strong>Edit → Calendar Settings</strong> lets you configure:</p>
+<ul class="simple">
+<li><p>Month names and lengths</p></li>
+<li><p>Week structure (custom day names)</p></li>
+<li><p>Leap year rules</p></li>
+<li><p>Multiple year variants</p></li>
+</ul>
+</section>
+<section id="how-precise-can-dates-be">
+<h3>How precise can dates be?<a class="headerlink" href="#how-precise-can-dates-be" title="Link to this heading">¶</a></h3>
+<p>Extremely precise:</p>
+<ul class="simple">
+<li><p><strong>Cosmic scale</strong>: Millions of years</p></li>
+<li><p><strong>Human scale</strong>: Years, months, days</p></li>
+<li><p><strong>Sub-day</strong>: Hours, minutes, seconds</p></li>
+</ul>
+<p>Internally stored as floats (1.0 = 1 day).</p>
+</section>
+<section id="what-types-of-relations-are-supported">
+<h3>What types of relations are supported?<a class="headerlink" href="#what-types-of-relations-are-supported" title="Link to this heading">¶</a></h3>
+<p>Common types include:</p>
+<ul class="simple">
+<li><p><strong>caused</strong> - Causal relationships</p></li>
+<li><p><strong>involved</strong> - Participation</p></li>
+<li><p><strong>influenced</strong> - Indirect effects</p></li>
+<li><p><strong>located_at</strong> - Spatial relationships</p></li>
+<li><p><strong>member_of</strong> - Membership</p></li>
+<li><p><strong>owns</strong> - Ownership</p></li>
+</ul>
+<p>You can also define custom relation types.</p>
+</section>
+<section id="can-i-add-images-to-entities">
+<h3>Can I add images to entities?<a class="headerlink" href="#can-i-add-images-to-entities" title="Link to this heading">¶</a></h3>
+<p>Yes:</p>
+<ol class="arabic simple">
+<li><p>In Entity Editor, click <strong>Add Image</strong></p></li>
+<li><p>Select image file (PNG, JPG)</p></li>
+<li><p>Image stored in <code class="docutils literal notranslate"><span class="pre">assets/images/</span></code> folder</p></li>
+<li><p>Thumbnails auto-generated</p></li>
+</ol>
+</section>
+<section id="how-does-undo-redo-work">
+<h3>How does undo/redo work?<a class="headerlink" href="#how-does-undo-redo-work" title="Link to this heading">¶</a></h3>
+<p>Every user action is a reversible command:</p>
+<ul class="simple">
+<li><p><strong>Undo</strong>: Ctrl+Z</p></li>
+<li><p><strong>Redo</strong>: Ctrl+Shift+Z</p></li>
+<li><p>History persists across app restarts</p></li>
+<li><p>View command history in History Panel</p></li>
+</ul>
+</section>
+<section id="what-is-semantic-search">
+<h3>What is semantic search?<a class="headerlink" href="#what-is-semantic-search" title="Link to this heading">¶</a></h3>
+<p>Semantic search uses AI embeddings to find content by meaning, not just keywords:</p>
+<ul class="simple">
+<li><p>Query: “magical artifacts” finds items about magic, even without exact words</p></li>
+<li><p>Requires AI setup (LM Studio recommended for privacy)</p></li>
+<li><p>One-time indexing process</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="data-management">
+<h2>Data Management<a class="headerlink" href="#data-management" title="Link to this heading">¶</a></h2>
+<section id="how-are-worlds-stored">
+<h3>How are worlds stored?<a class="headerlink" href="#how-are-worlds-stored" title="Link to this heading">¶</a></h3>
+<p>Each world is a self-contained folder:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>worlds/
+└── My World/
+    ├── world.json           # Metadata
+    ├── My World.kraken      # SQLite database
+    └── assets/              # Images, files
+</pre></div>
+</div>
+</section>
+<section id="can-i-rename-a-world">
+<h3>Can I rename a world?<a class="headerlink" href="#can-i-rename-a-world" title="Link to this heading">¶</a></h3>
+<p>Yes:</p>
+<ol class="arabic simple">
+<li><p>Close the world in ProjektKraken</p></li>
+<li><p>Rename the world folder</p></li>
+<li><p>Open <code class="docutils literal notranslate"><span class="pre">world.json</span></code> and update <code class="docutils literal notranslate"><span class="pre">&quot;name&quot;</span></code> field</p></li>
+<li><p>Rename the <code class="docutils literal notranslate"><span class="pre">.kraken</span></code> file to match</p></li>
+<li><p>Reopen in ProjektKraken</p></li>
+</ol>
+</section>
+<section id="can-i-merge-two-worlds">
+<h3>Can I merge two worlds?<a class="headerlink" href="#can-i-merge-two-worlds" title="Link to this heading">¶</a></h3>
+<p>Not directly, but you can:</p>
+<ol class="arabic simple">
+<li><p>Export both worlds to JSON</p></li>
+<li><p>Manually merge JSON files (resolve ID conflicts)</p></li>
+<li><p>Import into new world</p></li>
+</ol>
+<p>Alternatively, use Import feature to add entities from one world to another.</p>
+</section>
+<section id="what-database-does-projektkraken-use">
+<h3>What database does ProjektKraken use?<a class="headerlink" href="#what-database-does-projektkraken-use" title="Link to this heading">¶</a></h3>
+<p>SQLite 3.35+ with:</p>
+<ul class="simple">
+<li><p>WAL mode for concurrency</p></li>
+<li><p>Hybrid schema (SQL + JSON attributes)</p></li>
+<li><p>Single-file portability</p></li>
+</ul>
+</section>
+<section id="are-automatic-backups-enabled">
+<h3>Are automatic backups enabled?<a class="headerlink" href="#are-automatic-backups-enabled" title="Link to this heading">¶</a></h3>
+<p>Yes, by default:</p>
+<ul class="simple">
+<li><p><strong>Frequency</strong>: Every 15 minutes</p></li>
+<li><p><strong>Location</strong>: User data directory</p></li>
+<li><p><strong>Retention</strong>: Configurable (default: 10 backups)</p></li>
+</ul>
+<p>Manage via <strong>Edit → Backup Settings</strong>.</p>
+</section>
+<section id="how-do-i-restore-from-backup">
+<h3>How do I restore from backup?<a class="headerlink" href="#how-do-i-restore-from-backup" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>File → Restore World</strong></p></li>
+<li><p>Select backup <code class="docutils literal notranslate"><span class="pre">.kraken</span></code> file</p></li>
+<li><p>Confirm restoration</p></li>
+<li><p>Current state is backed up automatically before restore</p></li>
+</ol>
+</section>
+<section id="can-i-export-my-world">
+<h3>Can I export my world?<a class="headerlink" href="#can-i-export-my-world" title="Link to this heading">¶</a></h3>
+<p>Yes, multiple formats:</p>
+<ul class="simple">
+<li><p><strong>JSON</strong>: Full data export</p></li>
+<li><p><strong>Obsidian</strong>: Markdown wiki</p></li>
+<li><p><strong>Longform</strong>: Narrative documents</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="performance">
+<h2>Performance<a class="headerlink" href="#performance" title="Link to this heading">¶</a></h2>
+<section id="the-app-feels-slow-with-many-entities-help">
+<h3>The app feels slow with many entities. Help?<a class="headerlink" href="#the-app-feels-slow-with-many-entities-help" title="Link to this heading">¶</a></h3>
+<p>Optimization tips:</p>
+<ol class="arabic simple">
+<li><p><strong>Use Filtering</strong></p>
+<ul class="simple">
+<li><p>Don’t display all 10,000 entities at once</p></li>
+<li><p>Filter by tags, type, or date range</p></li>
+</ul>
+</li>
+<li><p><strong>Limit Graph Depth</strong></p>
+<ul class="simple">
+<li><p>In Graph View, reduce connection depth to 2-3</p></li>
+</ul>
+</li>
+<li><p><strong>Optimize Database</strong></p>
+<ul class="simple">
+<li><p><strong>Tools → Database → Optimize</strong></p></li>
+</ul>
+</li>
+<li><p><strong>Close Unnecessary Panels</strong></p>
+<ul class="simple">
+<li><p>Reduce open editors</p></li>
+<li><p>Hide timeline when not needed</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="timeline-rendering-is-laggy-what-can-i-do">
+<h3>Timeline rendering is laggy. What can I do?<a class="headerlink" href="#timeline-rendering-is-laggy-what-can-i-do" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Reduce visible date range</strong>: Zoom in on specific period</p></li>
+<li><p><strong>Simplify group bands</strong>: Reduce number of bands</p></li>
+<li><p><strong>Limit events on screen</strong>: Use filtering</p></li>
+<li><p><strong>Lower display resolution</strong>: If on 4K+ monitor</p></li>
+</ul>
+</section>
+<section id="search-is-slow-how-to-speed-it-up">
+<h3>Search is slow. How to speed it up?<a class="headerlink" href="#search-is-slow-how-to-speed-it-up" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Initial indexing takes time</strong>: One-time process</p></li>
+<li><p><strong>Incremental updates</strong>: Fast after initial index</p></li>
+<li><p><strong>Use local embeddings</strong>: LM Studio faster than cloud APIs</p></li>
+</ul>
+</section>
+<section id="graph-view-won-t-load-why">
+<h3>Graph view won’t load. Why?<a class="headerlink" href="#graph-view-won-t-load-why" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Too many nodes</strong>: Filter to reduce count (&lt; 1000 nodes)</p></li>
+<li><p><strong>Large relation count</strong>: Simplify connections</p></li>
+<li><p><strong>Browser limitations</strong>: Graph view uses web rendering</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">¶</a></h2>
+<section id="database-is-locked-error">
+<h3>“Database is locked” error<a class="headerlink" href="#database-is-locked-error" title="Link to this heading">¶</a></h3>
+<p><strong>Causes:</strong></p>
+<ul class="simple">
+<li><p>Multiple ProjektKraken instances open</p></li>
+<li><p>Orphaned process from crash</p></li>
+</ul>
+<p><strong>Solutions:</strong></p>
+<ol class="arabic simple">
+<li><p>Close all ProjektKraken instances</p></li>
+<li><p>Check Task Manager (Windows) or Activity Monitor (macOS) for processes</p></li>
+<li><p>Delete temporary files: <code class="docutils literal notranslate"><span class="pre">.kraken-shm</span></code> and <code class="docutils literal notranslate"><span class="pre">.kraken-wal</span></code> in world folder</p></li>
+<li><p>Reopen application</p></li>
+</ol>
+</section>
+<section id="changes-aren-t-saving">
+<h3>Changes aren’t saving<a class="headerlink" href="#changes-aren-t-saving" title="Link to this heading">¶</a></h3>
+<p><strong>Check:</strong></p>
+<ul class="simple">
+<li><p>Auto-save is enabled (should be default)</p></li>
+<li><p>Disk has free space</p></li>
+<li><p>World folder has write permissions</p></li>
+</ul>
+<p><strong>Force manual save:</strong></p>
+<ul class="simple">
+<li><p>Close and reopen world (triggers save)</p></li>
+<li><p>Use <strong>File → Backup World</strong> to confirm save works</p></li>
+</ul>
+</section>
+<section id="wiki-links-aren-t-working">
+<h3>Wiki links aren’t working<a class="headerlink" href="#wiki-links-aren-t-working" title="Link to this heading">¶</a></h3>
+<p><strong>Common issues:</strong></p>
+<ul class="simple">
+<li><p><strong>Case mismatch</strong>: <code class="docutils literal notranslate"><span class="pre">[[Frodo]]</span></code> ≠ <code class="docutils literal notranslate"><span class="pre">[[frodo]]</span></code></p></li>
+<li><p><strong>Entity doesn’t exist</strong>: Create entity first</p></li>
+<li><p><strong>Typo in name</strong>: Use autocomplete (type <code class="docutils literal notranslate"><span class="pre">[[</span></code> to see options)</p></li>
+</ul>
+</section>
+<section id="images-aren-t-displaying">
+<h3>Images aren’t displaying<a class="headerlink" href="#images-aren-t-displaying" title="Link to this heading">¶</a></h3>
+<p><strong>Solutions:</strong></p>
+<ul class="simple">
+<li><p>Verify image file exists in <code class="docutils literal notranslate"><span class="pre">assets/images/</span></code> folder</p></li>
+<li><p>Check file format (PNG, JPG supported)</p></li>
+<li><p>Try re-adding image in editor</p></li>
+<li><p>Check file permissions</p></li>
+</ul>
+</section>
+<section id="timeline-playhead-disappeared">
+<h3>Timeline playhead disappeared<a class="headerlink" href="#timeline-playhead-disappeared" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>View → Timeline → Reset View</strong></p></li>
+<li><p>Check playhead date isn’t outside visible range</p></li>
+<li><p>Try zooming out to see full timeline</p></li>
+</ul>
+</section>
+<section id="undo-isn-t-working-for-a-specific-action">
+<h3>Undo isn’t working for a specific action<a class="headerlink" href="#undo-isn-t-working-for-a-specific-action" title="Link to this heading">¶</a></h3>
+<p>Some actions aren’t undoable:</p>
+<ul class="simple">
+<li><p>UI layout changes</p></li>
+<li><p>Search queries</p></li>
+<li><p>Opening/closing worlds</p></li>
+<li><p>View/zoom changes</p></li>
+</ul>
+<p>Most data changes (create/edit/delete) are undoable.</p>
+</section>
+<section id="graph-view-shows-wrong-connections">
+<h3>Graph view shows wrong connections<a class="headerlink" href="#graph-view-shows-wrong-connections" title="Link to this heading">¶</a></h3>
+<p><strong>Refresh graph:</strong></p>
+<ol class="arabic simple">
+<li><p>Close Graph View</p></li>
+<li><p><strong>Tools → Rebuild Graph Cache</strong></p></li>
+<li><p>Reopen Graph View</p></li>
+</ol>
+<p><strong>Check filters:</strong></p>
+<ul class="simple">
+<li><p>Ensure filters aren’t hiding expected connections</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="advanced-topics">
+<h2>Advanced Topics<a class="headerlink" href="#advanced-topics" title="Link to this heading">¶</a></h2>
+<section id="can-i-use-custom-fonts">
+<h3>Can I use custom fonts?<a class="headerlink" href="#can-i-use-custom-fonts" title="Link to this heading">¶</a></h3>
+<p>Not currently through UI, but you can:</p>
+<ol class="arabic simple">
+<li><p>Edit theme JSON files</p></li>
+<li><p>Specify font families in stylesheets</p></li>
+<li><p>Requires application restart</p></li>
+</ol>
+</section>
+<section id="can-i-write-custom-scripts-plugins">
+<h3>Can I write custom scripts/plugins?<a class="headerlink" href="#can-i-write-custom-scripts-plugins" title="Link to this heading">¶</a></h3>
+<p>ProjektKraken has CLI tools (<code class="docutils literal notranslate"><span class="pre">src/cli/</span></code>) for scripting:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>src.cli.event<span class="w"> </span>list<span class="w"> </span>--world<span class="w"> </span><span class="s2">&quot;My World&quot;</span>
+python<span class="w"> </span>-m<span class="w"> </span>src.cli.entity<span class="w"> </span>create<span class="w"> </span>--name<span class="w"> </span><span class="s2">&quot;New Character&quot;</span><span class="w"> </span>--type<span class="w"> </span>character
+</pre></div>
+</div>
+<p>Plugin system is planned for future releases.</p>
+</section>
+<section id="how-does-the-ai-integration-work">
+<h3>How does the AI integration work?<a class="headerlink" href="#how-does-the-ai-integration-work" title="Link to this heading">¶</a></h3>
+<p><strong>Architecture:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Embeddings</strong>: Text → vector representation</p></li>
+<li><p><strong>Vector Storage</strong>: Saved in database</p></li>
+<li><p><strong>Similarity Search</strong>: Find related content</p></li>
+<li><p><strong>RAG</strong>: Augment LLM with world context</p></li>
+</ol>
+<p><strong>Privacy:</strong></p>
+<ul class="simple">
+<li><p>Local embeddings (LM Studio): Data never leaves your computer</p></li>
+<li><p>Cloud providers: Data sent to API (check provider’s privacy policy)</p></li>
+</ul>
+</section>
+<section id="can-i-use-projektkraken-for-game-data">
+<h3>Can I use ProjektKraken for game data?<a class="headerlink" href="#can-i-use-projektkraken-for-game-data" title="Link to this heading">¶</a></h3>
+<p>Yes! Common uses:</p>
+<ul class="simple">
+<li><p><strong>RPG Campaigns</strong>: Track sessions, NPCs, quests</p></li>
+<li><p><strong>Game Development</strong>: World lore, character backstories</p></li>
+<li><p><strong>Interactive Fiction</strong>: Branching narratives, choices</p></li>
+</ul>
+</section>
+<section id="what-about-performance-with-100-000-entities">
+<h3>What about performance with 100,000+ entities?<a class="headerlink" href="#what-about-performance-with-100-000-entities" title="Link to this heading">¶</a></h3>
+<p>Should work, but:</p>
+<ul class="simple">
+<li><p>Use aggressive filtering</p></li>
+<li><p>Consider splitting into multiple worlds (e.g., by era)</p></li>
+<li><p>Optimize database regularly</p></li>
+<li><p>Expect slower initial loads</p></li>
+</ul>
+</section>
+<section id="can-i-self-host-an-ai-api">
+<h3>Can I self-host an AI API?<a class="headerlink" href="#can-i-self-host-an-ai-api" title="Link to this heading">¶</a></h3>
+<p>Yes! Use LM Studio:</p>
+<ol class="arabic simple">
+<li><p>Install LM Studio locally</p></li>
+<li><p>Load a model (e.g., llama-2, mistral)</p></li>
+<li><p>Start server in LM Studio</p></li>
+<li><p>Configure ProjektKraken AI settings to use <code class="docutils literal notranslate"><span class="pre">http://localhost:1234</span></code></p></li>
+</ol>
+</section>
+<section id="how-do-i-report-bugs-or-request-features">
+<h3>How do I report bugs or request features?<a class="headerlink" href="#how-do-i-report-bugs-or-request-features" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>GitHub Issues</strong>: <a class="reference external" href="https://github.com/cmintert/ProjektKraken/issues">github.com/cmintert/ProjektKraken/issues</a></p></li>
+<li><p>Provide:</p>
+<ul>
+<li><p>Steps to reproduce</p></li>
+<li><p>Expected vs actual behavior</p></li>
+<li><p>System info (OS, version)</p></li>
+<li><p>Error messages/logs if any</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="where-can-i-get-help">
+<h3>Where can I get help?<a class="headerlink" href="#where-can-i-get-help" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Documentation</strong>: <a class="reference internal" href="INDEX.html"><span class="std std-doc">docs/INDEX.md</span></a></p></li>
+<li><p><strong>GitHub Discussions</strong>: Ask questions, share tips</p></li>
+<li><p><strong>Discord</strong>: Community server (link in README)</p></li>
+</ul>
+</section>
+<section id="how-can-i-contribute">
+<h3>How can I contribute?<a class="headerlink" href="#how-can-i-contribute" title="Link to this heading">¶</a></h3>
+<p>See <a class="reference internal" href="CONTRIBUTING.html"><span class="std std-doc">CONTRIBUTING.md</span></a> for:</p>
+<ul class="simple">
+<li><p>Code contributions</p></li>
+<li><p>Documentation improvements</p></li>
+<li><p>Bug reports</p></li>
+<li><p>Feature suggestions</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="tips-and-tricks">
+<h2>Tips and Tricks<a class="headerlink" href="#tips-and-tricks" title="Link to this heading">¶</a></h2>
+<section id="speed-tips">
+<h3>Speed Tips<a class="headerlink" href="#speed-tips" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Keyboard shortcuts</strong>: Learn common shortcuts (Ctrl+Shift+E for events, etc.)</p></li>
+<li><p><strong>Quick create</strong>: Use Fast Inject for rapid entity creation</p></li>
+<li><p><strong>Tag everything</strong>: Makes filtering and finding easier later</p></li>
+<li><p><strong>Use templates</strong>: Create template entities with common attributes</p></li>
+</ul>
+</section>
+<section id="organization-tips">
+<h3>Organization Tips<a class="headerlink" href="#organization-tips" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Consistent naming</strong>: Use clear, consistent naming conventions</p></li>
+<li><p><strong>Tag hierarchies</strong>: Use dot notation for nested tags (e.g., <code class="docutils literal notranslate"><span class="pre">faction.royal</span></code>, <code class="docutils literal notranslate"><span class="pre">faction.criminal</span></code>)</p></li>
+<li><p><strong>Document conventions</strong>: Keep a “World Bible” entity with rules and conventions</p></li>
+<li><p><strong>Regular reviews</strong>: Periodically review and clean up relations</p></li>
+</ul>
+</section>
+<section id="workflow-tips">
+<h3>Workflow Tips<a class="headerlink" href="#workflow-tips" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Start with events</strong>: Create major events first, add entities later</p></li>
+<li><p><strong>Work chronologically</strong>: Build timeline in order</p></li>
+<li><p><strong>Use graph view</strong>: Discover missing connections</p></li>
+<li><p><strong>Export regularly</strong>: Backup and export periodically</p></li>
+</ul>
+</section>
+<section id="ai-tips">
+<h3>AI Tips<a class="headerlink" href="#ai-tips" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Good prompts</strong>: Be specific in AI queries</p></li>
+<li><p><strong>Context matters</strong>: Select relevant entity before generating</p></li>
+<li><p><strong>Review output</strong>: Always edit AI-generated content</p></li>
+<li><p><strong>Iterate</strong>: Regenerate with different prompts if needed</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="still-have-questions">
+<h2>Still Have Questions?<a class="headerlink" href="#still-have-questions" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Read the <a class="reference internal" href="USER_GUIDE.html"><span class="std std-doc">User Guide</span></a></strong> for detailed feature explanations</p></li>
+<li><p><strong>Check <a class="reference internal" href="WORKFLOWS.html"><span class="std std-doc">Workflows</span></a></strong> for step-by-step guides</p></li>
+<li><p><strong>Visit <a class="reference external" href="https://github.com/cmintert/ProjektKraken/issues">GitHub Issues</a></strong> for technical questions</p></li>
+</ul>
+<hr class="docutils" />
+<p><strong>Navigation:</strong><br />
+<a class="reference internal" href="WORKFLOWS.html"><span class="std std-doc">← Workflows</span></a> • <a class="reference internal" href="INDEX.html"><span class="std std-doc">Back to Index</span></a> • <a class="reference internal" href="ARCHITECTURE.html"><span class="std std-doc">Architecture →</span></a></p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Christian Mintert
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Frequently Asked Questions (FAQ)</a><ul>
+<li><a class="reference internal" href="#table-of-contents">Table of Contents</a></li>
+<li><a class="reference internal" href="#general-questions">General Questions</a><ul>
+<li><a class="reference internal" href="#what-is-projektkraken">What is ProjektKraken?</a></li>
+<li><a class="reference internal" href="#why-timeline-first">Why “timeline-first”?</a></li>
+<li><a class="reference internal" href="#is-projektkraken-free">Is ProjektKraken free?</a></li>
+<li><a class="reference internal" href="#what-platforms-are-supported">What platforms are supported?</a></li>
+<li><a class="reference internal" href="#is-an-internet-connection-required">Is an internet connection required?</a></li>
+<li><a class="reference internal" href="#where-is-my-data-stored">Where is my data stored?</a></li>
+<li><a class="reference internal" href="#can-i-collaborate-with-others">Can I collaborate with others?</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#installation-and-setup">Installation and Setup</a><ul>
+<li><a class="reference internal" href="#what-are-the-system-requirements">What are the system requirements?</a></li>
+<li><a class="reference internal" href="#do-i-need-python-installed">Do I need Python installed?</a></li>
+<li><a class="reference internal" href="#the-windows-executable-won-t-run-what-do-i-do">The Windows executable won’t run. What do I do?</a></li>
+<li><a class="reference internal" href="#how-do-i-update-to-a-new-version">How do I update to a new version?</a></li>
+<li><a class="reference internal" href="#can-i-install-on-a-usb-drive">Can I install on a USB drive?</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#features-and-usage">Features and Usage</a><ul>
+<li><a class="reference internal" href="#how-do-i-create-wiki-links">How do I create wiki links?</a></li>
+<li><a class="reference internal" href="#can-i-use-custom-calendars">Can I use custom calendars?</a></li>
+<li><a class="reference internal" href="#how-precise-can-dates-be">How precise can dates be?</a></li>
+<li><a class="reference internal" href="#what-types-of-relations-are-supported">What types of relations are supported?</a></li>
+<li><a class="reference internal" href="#can-i-add-images-to-entities">Can I add images to entities?</a></li>
+<li><a class="reference internal" href="#how-does-undo-redo-work">How does undo/redo work?</a></li>
+<li><a class="reference internal" href="#what-is-semantic-search">What is semantic search?</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#data-management">Data Management</a><ul>
+<li><a class="reference internal" href="#how-are-worlds-stored">How are worlds stored?</a></li>
+<li><a class="reference internal" href="#can-i-rename-a-world">Can I rename a world?</a></li>
+<li><a class="reference internal" href="#can-i-merge-two-worlds">Can I merge two worlds?</a></li>
+<li><a class="reference internal" href="#what-database-does-projektkraken-use">What database does ProjektKraken use?</a></li>
+<li><a class="reference internal" href="#are-automatic-backups-enabled">Are automatic backups enabled?</a></li>
+<li><a class="reference internal" href="#how-do-i-restore-from-backup">How do I restore from backup?</a></li>
+<li><a class="reference internal" href="#can-i-export-my-world">Can I export my world?</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#performance">Performance</a><ul>
+<li><a class="reference internal" href="#the-app-feels-slow-with-many-entities-help">The app feels slow with many entities. Help?</a></li>
+<li><a class="reference internal" href="#timeline-rendering-is-laggy-what-can-i-do">Timeline rendering is laggy. What can I do?</a></li>
+<li><a class="reference internal" href="#search-is-slow-how-to-speed-it-up">Search is slow. How to speed it up?</a></li>
+<li><a class="reference internal" href="#graph-view-won-t-load-why">Graph view won’t load. Why?</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
+<li><a class="reference internal" href="#database-is-locked-error">“Database is locked” error</a></li>
+<li><a class="reference internal" href="#changes-aren-t-saving">Changes aren’t saving</a></li>
+<li><a class="reference internal" href="#wiki-links-aren-t-working">Wiki links aren’t working</a></li>
+<li><a class="reference internal" href="#images-aren-t-displaying">Images aren’t displaying</a></li>
+<li><a class="reference internal" href="#timeline-playhead-disappeared">Timeline playhead disappeared</a></li>
+<li><a class="reference internal" href="#undo-isn-t-working-for-a-specific-action">Undo isn’t working for a specific action</a></li>
+<li><a class="reference internal" href="#graph-view-shows-wrong-connections">Graph view shows wrong connections</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#advanced-topics">Advanced Topics</a><ul>
+<li><a class="reference internal" href="#can-i-use-custom-fonts">Can I use custom fonts?</a></li>
+<li><a class="reference internal" href="#can-i-write-custom-scripts-plugins">Can I write custom scripts/plugins?</a></li>
+<li><a class="reference internal" href="#how-does-the-ai-integration-work">How does the AI integration work?</a></li>
+<li><a class="reference internal" href="#can-i-use-projektkraken-for-game-data">Can I use ProjektKraken for game data?</a></li>
+<li><a class="reference internal" href="#what-about-performance-with-100-000-entities">What about performance with 100,000+ entities?</a></li>
+<li><a class="reference internal" href="#can-i-self-host-an-ai-api">Can I self-host an AI API?</a></li>
+<li><a class="reference internal" href="#how-do-i-report-bugs-or-request-features">How do I report bugs or request features?</a></li>
+<li><a class="reference internal" href="#where-can-i-get-help">Where can I get help?</a></li>
+<li><a class="reference internal" href="#how-can-i-contribute">How can I contribute?</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tips-and-tricks">Tips and Tricks</a><ul>
+<li><a class="reference internal" href="#speed-tips">Speed Tips</a></li>
+<li><a class="reference internal" href="#organization-tips">Organization Tips</a></li>
+<li><a class="reference internal" href="#workflow-tips">Workflow Tips</a></li>
+<li><a class="reference internal" href="#ai-tips">AI Tips</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#still-have-questions">Still Have Questions?</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=1a9b1e2b"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

@@ -196,29 +196,11 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+  <p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="WIKI_LINKING.html">ID-Based Wiki Linking Implementation Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="MAP_USAGE_EXAMPLES.html">Map System Usage Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="LONGFORM.html">Longform Document Feature</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="Design.html">Project Kraken: Comprehensive Design Specification</a></li>
-<li class="toctree-l1"><a class="reference internal" href="DATABASE.html">Database Architecture and Best Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DATABASE.html">Database Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="DEVELOPMENT.html">Development Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security Best Practices</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Advanced Features</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
-<li class="toctree-l1"><a class="reference internal" href="LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAST_INJECT.html">Fast Inject Service</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html">Tag Normalization Migration Guide</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -239,7 +221,6 @@
 <p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
-<li class="toctree-l1"><a class="reference internal" href="LICENSE.html">GNU AFFERO GENERAL PUBLIC LICENSE</a></li>
 </ul>
 
 </div>
@@ -280,147 +261,149 @@
         <article role="main" id="furo-main-content">
           <section id="testing-guide">
 <h1>Testing Guide<a class="headerlink" href="#testing-guide" title="Link to this heading">¶</a></h1>
-<p>This document explains how to run tests for ProjektKraken, including setup requirements for different platforms.</p>
-<section id="quick-start">
-<h2>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading">¶</a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Install dependencies</span>
-pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-
-<span class="c1"># Run all tests</span>
-pytest
-
-<span class="c1"># Run with coverage</span>
-pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>term-missing
-</pre></div>
-</div>
+<p><strong>Version:</strong> 0.11.0 (Beta)<br />
+<strong>Last Updated:</strong> February 2026</p>
+<p>Comprehensive guide to testing in ProjektKraken.</p>
+<hr class="docutils" />
+<section id="table-of-contents">
+<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Link to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="#testing-overview"><span class="xref myst">Testing Overview</span></a></p></li>
+<li><p><a class="reference internal" href="#test-structure"><span class="xref myst">Test Structure</span></a></p></li>
+<li><p><a class="reference internal" href="#running-tests"><span class="xref myst">Running Tests</span></a></p></li>
+<li><p><a class="reference internal" href="#writing-tests"><span class="xref myst">Writing Tests</span></a></p></li>
+<li><p><a class="reference internal" href="#test-fixtures"><span class="xref myst">Test Fixtures</span></a></p></li>
+<li><p><a class="reference internal" href="#testing-patterns"><span class="xref myst">Testing Patterns</span></a></p></li>
+<li><p><a class="reference internal" href="#coverage"><span class="xref myst">Coverage</span></a></p></li>
+<li><p><a class="reference internal" href="#continuous-integration"><span class="xref myst">Continuous Integration</span></a></p></li>
+</ol>
 </section>
+<hr class="docutils" />
+<section id="testing-overview">
+<h2>Testing Overview<a class="headerlink" href="#testing-overview" title="Link to this heading">¶</a></h2>
+<section id="testing-framework">
+<h3>Testing Framework<a class="headerlink" href="#testing-framework" title="Link to this heading">¶</a></h3>
+<p>ProjektKraken uses <strong>pytest</strong> as the primary testing framework with additional plugins:</p>
+<ul class="simple">
+<li><p><strong>pytest</strong>: Core testing framework</p></li>
+<li><p><strong>pytest-qt</strong>: Qt/PySide6 testing support</p></li>
+<li><p><strong>pytest-cov</strong>: Code coverage measurement</p></li>
+<li><p><strong>pytest-mock</strong>: Mocking support</p></li>
+</ul>
+</section>
+<section id="test-philosophy">
+<h3>Test Philosophy<a class="headerlink" href="#test-philosophy" title="Link to this heading">¶</a></h3>
+<p><strong>Goals:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Confidence</strong>: Tests should give confidence that code works correctly</p></li>
+<li><p><strong>Speed</strong>: Tests should run quickly for fast feedback</p></li>
+<li><p><strong>Isolation</strong>: Tests should not depend on each other</p></li>
+<li><p><strong>Clarity</strong>: Tests should be easy to read and understand</p></li>
+</ol>
+<p><strong>Coverage Target</strong>: 95%+ overall, 100% for core business logic.</p>
+</section>
+</section>
+<hr class="docutils" />
 <section id="test-structure">
 <h2>Test Structure<a class="headerlink" href="#test-structure" title="Link to this heading">¶</a></h2>
+<section id="directory-organization">
+<h3>Directory Organization<a class="headerlink" href="#directory-organization" title="Link to this heading">¶</a></h3>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>tests/
-├── conftest.py              # Shared fixtures and configuration
+├── conftest.py              # Shared fixtures
 ├── unit/                    # Fast unit tests
-└── integration/             # Integration tests
-    ├── test_main_window_initialization.py
-    ├── test_main_window_wiring.py
-    └── ...
+│   ├── test_events.py
+│   ├── test_entities.py
+│   ├── test_commands.py
+│   └── test_repositories.py
+├── integration/             # Integration tests
+│   ├── test_db_service.py
+│   ├── test_commands.py
+│   ├── test_main_window_initialization.py
+│   └── test_undo_redo_hotkeys.py
+├── gui/                     # GUI widget tests
+│   ├── test_entity_editor.py
+│   ├── test_event_editor.py
+│   └── test_timeline.py
+├── cli/                     # CLI command tests
+│   ├── test_event_cli.py
+│   └── test_entity_cli.py
+└── security/                # Security tests
+    └── test_sql_injection.py
 </pre></div>
 </div>
 </section>
-<section id="dependencies">
-<h2>Dependencies<a class="headerlink" href="#dependencies" title="Link to this heading">¶</a></h2>
-<section id="python-dependencies">
-<h3>Python Dependencies<a class="headerlink" href="#python-dependencies" title="Link to this heading">¶</a></h3>
-<p>All Python dependencies are in <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code>:</p>
-<ul class="simple">
-<li><p><strong>Testing Framework</strong>: pytest, pytest-qt, pytest-cov</p></li>
-<li><p><strong>GUI Framework</strong>: PySide6 (Qt 6)</p></li>
-<li><p><strong>Web Server</strong>: fastapi, uvicorn (for longform editor live preview)</p></li>
-<li><p><strong>Graph Visualization</strong>: pyvis, networkx</p></li>
-<li><p><strong>Environment Config</strong>: python-dotenv</p></li>
-<li><p>And more…</p></li>
-</ul>
-</section>
-<section id="system-dependencies-linux-ci">
-<h3>System Dependencies (Linux/CI)<a class="headerlink" href="#system-dependencies-linux-ci" title="Link to this heading">¶</a></h3>
-<p>For headless testing (CI, Linux without display), you need Qt platform libraries:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Ubuntu/Debian</span>
-sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>libegl1<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>libxkbcommon-x11-0<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>libxcb-icccm4<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>libxcb-image0<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>libxcb-keysyms1<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>libxcb-randr0<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>libxcb-render-util0<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>libxcb-xinerama0<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>libxcb-xfixes0
-</pre></div>
-</div>
-<p>These libraries are required for Qt to run in offscreen mode without a display.</p>
-</section>
-</section>
-<section id="headless-testing">
-<h2>Headless Testing<a class="headerlink" href="#headless-testing" title="Link to this heading">¶</a></h2>
-<section id="automatic-configuration">
-<h3>Automatic Configuration<a class="headerlink" href="#automatic-configuration" title="Link to this heading">¶</a></h3>
-<p>The test suite automatically configures Qt to run in offscreen mode via <code class="docutils literal notranslate"><span class="pre">tests/conftest.py</span></code>:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;QT_QPA_PLATFORM&quot;</span><span class="p">,</span> <span class="s2">&quot;offscreen&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>This allows tests to run without a display server (X11, Wayland, etc.).</p>
-</section>
-<section id="manual-override">
-<h3>Manual Override<a class="headerlink" href="#manual-override" title="Link to this heading">¶</a></h3>
-<p>If you need to run tests with a different Qt platform:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Linux with display</span>
-<span class="nb">export</span><span class="w"> </span><span class="nv">QT_QPA_PLATFORM</span><span class="o">=</span>xcb
-pytest
-
-<span class="c1"># Force offscreen mode</span>
-<span class="nb">export</span><span class="w"> </span><span class="nv">QT_QPA_PLATFORM</span><span class="o">=</span>offscreen
-pytest
-
-<span class="c1"># Windows (no override needed)</span>
-pytest
-</pre></div>
+<section id="test-types">
+<h3>Test Types<a class="headerlink" href="#test-types" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Type</p></th>
+<th class="head"><p>Purpose</p></th>
+<th class="head"><p>Speed</p></th>
+<th class="head"><p>Dependencies</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Unit</strong></p></td>
+<td><p>Test individual functions/classes</p></td>
+<td><p>Fast (ms)</p></td>
+<td><p>None</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Integration</strong></p></td>
+<td><p>Test component interactions</p></td>
+<td><p>Medium (100ms)</p></td>
+<td><p>Database</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>GUI</strong></p></td>
+<td><p>Test widget behavior</p></td>
+<td><p>Medium (100ms)</p></td>
+<td><p>Qt, qtbot</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>CLI</strong></p></td>
+<td><p>Test command-line interface</p></td>
+<td><p>Fast (ms)</p></td>
+<td><p>Minimal</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Security</strong></p></td>
+<td><p>Test for vulnerabilities</p></td>
+<td><p>Fast (ms)</p></td>
+<td><p>None</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 </section>
 </section>
-<section id="platform-specific-notes">
-<h2>Platform-Specific Notes<a class="headerlink" href="#platform-specific-notes" title="Link to this heading">¶</a></h2>
-<section id="windows">
-<h3>Windows<a class="headerlink" href="#windows" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Qt automatically uses the Windows native platform</p></li>
-<li><p>No special configuration needed</p></li>
-<li><p>System dependencies are included with PySide6</p></li>
-</ul>
-</section>
-<section id="linux-with-display">
-<h3>Linux with Display<a class="headerlink" href="#linux-with-display" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Tests will use offscreen mode by default</p></li>
-<li><p>To use the X11 display, set <code class="docutils literal notranslate"><span class="pre">QT_QPA_PLATFORM=xcb</span></code></p></li>
-<li><p>Useful for debugging GUI issues visually</p></li>
-</ul>
-</section>
-<section id="macos">
-<h3>macOS<a class="headerlink" href="#macos" title="Link to this heading">¶</a></h3>
-<ul class="simple">
-<li><p>Qt automatically uses the macOS native platform</p></li>
-<li><p>No special configuration needed</p></li>
-</ul>
-</section>
-<section id="ci-cd-github-actions-etc">
-<h3>CI/CD (GitHub Actions, etc.)<a class="headerlink" href="#ci-cd-github-actions-etc" title="Link to this heading">¶</a></h3>
-<p>The test suite is designed to work in headless CI environments:</p>
-<ol class="arabic simple">
-<li><p>Install system dependencies (Linux only)</p></li>
-<li><p>Install Python dependencies from <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code></p></li>
-<li><p>Run tests with <code class="docutils literal notranslate"><span class="pre">pytest</span></code></p></li>
-</ol>
-<p>Example GitHub Actions workflow:</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Install system dependencies</span>
-<span class="w">  </span><span class="nt">if</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">runner.os == &#39;Linux&#39;</span>
-<span class="w">  </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
-<span class="w">    </span><span class="no">sudo apt-get update</span>
-<span class="w">    </span><span class="no">sudo apt-get install -y libegl1 libxkbcommon-x11-0 \</span>
-<span class="w">      </span><span class="no">libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \</span>
-<span class="w">      </span><span class="no">libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 \</span>
-<span class="w">      </span><span class="no">libxcb-xfixes0</span>
-
-<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Install Python dependencies</span>
-<span class="w">  </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pip install -r requirements.txt</span>
-
-<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Run tests</span>
-<span class="w">  </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pytest --cov=src --cov-report=term-missing</span>
+<hr class="docutils" />
+<section id="running-tests">
+<h2>Running Tests<a class="headerlink" href="#running-tests" title="Link to this heading">¶</a></h2>
+<section id="basic-test-execution">
+<h3>Basic Test Execution<a class="headerlink" href="#basic-test-execution" title="Link to this heading">¶</a></h3>
+<p><strong>Run all tests:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest
+</pre></div>
+</div>
+<p><strong>Run with output:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>-v
+</pre></div>
+</div>
+<p><strong>Run specific test file:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>tests/unit/test_events.py
+</pre></div>
+</div>
+<p><strong>Run specific test function:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>tests/unit/test_events.py::test_event_creation
+</pre></div>
+</div>
+<p><strong>Run specific test class:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>tests/unit/test_events.py::TestEventCreation
 </pre></div>
 </div>
 </section>
-</section>
+<hr class="docutils" />
 <section id="test-markers">
-<h2>Test Markers<a class="headerlink" href="#test-markers" title="Link to this heading">¶</a></h2>
-<p>Tests can be filtered using pytest markers:</p>
+<h3>Test Markers<a class="headerlink" href="#test-markers" title="Link to this heading">¶</a></h3>
+<p><strong>Run by marker:</strong></p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run only unit tests</span>
 pytest<span class="w"> </span>-m<span class="w"> </span>unit
 
@@ -431,273 +414,719 @@ pytest<span class="w"> </span>-m<span class="w"> </span>integration
 pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;not slow&quot;</span>
 </pre></div>
 </div>
-<p>Available markers (defined in <code class="docutils literal notranslate"><span class="pre">pytest.ini</span></code>):</p>
+<p><strong>Available markers</strong> (defined in <code class="docutils literal notranslate"><span class="pre">pytest.ini</span></code>):</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">unit</span></code> - Fast unit tests</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">integration</span></code> - Integration tests</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">slow</span></code> - Tests that take &gt;1 second</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">unit</span></code>: Fast unit tests</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">integration</span></code>: Integration tests with dependencies</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">slow</span></code>: Tests that take &gt;1 second</p></li>
 </ul>
 </section>
-<section id="known-issues">
-<h2>Known Issues<a class="headerlink" href="#known-issues" title="Link to this heading">¶</a></h2>
-<section id="segmentation-fault-on-exit">
-<h3>Segmentation Fault on Exit<a class="headerlink" href="#segmentation-fault-on-exit" title="Link to this heading">¶</a></h3>
-<p>You may see a segmentation fault after all tests pass:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>12 passed in 1.32s
-Release of profile requested but WebEnginePage still not deleted. Expect troubles !
-Segmentation fault (core dumped)
+<hr class="docutils" />
+<section id="coverage-reports">
+<h3>Coverage Reports<a class="headerlink" href="#coverage-reports" title="Link to this heading">¶</a></h3>
+<p><strong>Run with coverage:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>term-missing
 </pre></div>
 </div>
-<p>This is a known issue with Qt WebEngine cleanup in headless mode. The tests themselves pass successfully; the crash occurs during cleanup. This does not affect test results.</p>
-</section>
-</section>
-<section id="troubleshooting">
-<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">¶</a></h2>
-<section id="import-errors">
-<h3>Import Errors<a class="headerlink" href="#import-errors" title="Link to this heading">¶</a></h3>
-<p>If you see <code class="docutils literal notranslate"><span class="pre">ModuleNotFoundError</span></code> for any package:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Reinstall all dependencies</span>
-pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+<p><strong>Generate HTML coverage report:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>html
+<span class="c1"># Opens htmlcov/index.html</span>
 </pre></div>
 </div>
-</section>
-<section id="qt-platform-plugin-errors">
-<h3>Qt Platform Plugin Errors<a class="headerlink" href="#qt-platform-plugin-errors" title="Link to this heading">¶</a></h3>
-<p>If you see errors like “cannot open shared object file: No such file or directory”:</p>
-<ol class="arabic simple">
-<li><p><strong>Linux</strong>: Install the system dependencies listed above</p></li>
-<li><p><strong>Windows</strong>: Ensure PySide6 is properly installed</p></li>
-<li><p><strong>macOS</strong>: Ensure PySide6 is properly installed</p></li>
-</ol>
-</section>
-<section id="qapplication-instance-errors">
-<h3>QApplication Instance Errors<a class="headerlink" href="#qapplication-instance-errors" title="Link to this heading">¶</a></h3>
-<p>If you see errors about QApplication being instantiated multiple times:</p>
-<ul class="simple">
-<li><p>This is handled by the <code class="docutils literal notranslate"><span class="pre">qapp</span></code> fixture in <code class="docutils literal notranslate"><span class="pre">conftest.py</span></code></p></li>
-<li><p>Use the <code class="docutils literal notranslate"><span class="pre">qtbot</span></code> fixture from pytest-qt for GUI tests</p></li>
-<li><p>Don’t create QApplication instances directly in tests</p></li>
-</ul>
-</section>
-</section>
-<section id="writing-tests">
-<h2>Writing Tests<a class="headerlink" href="#writing-tests" title="Link to this heading">¶</a></h2>
-<section id="unit-tests">
-<h3>Unit Tests<a class="headerlink" href="#unit-tests" title="Link to this heading">¶</a></h3>
-<p>Unit tests should:</p>
-<ul class="simple">
-<li><p>Be fast (&lt; 100ms)</p></li>
-<li><p>Test a single function or class</p></li>
-<li><p>Use mocks for external dependencies</p></li>
-<li><p>Be marked with <code class="docutils literal notranslate"><span class="pre">&#64;pytest.mark.unit</span></code></p></li>
-</ul>
-<p>Example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">Event</span>
-
-<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">unit</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">test_event_creation</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that Event instances are created correctly.&quot;&quot;&quot;</span>
-    <span class="n">event</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Test&quot;</span><span class="p">,</span> <span class="n">lore_date</span><span class="o">=</span><span class="mf">100.0</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="n">event</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Test&quot;</span>
-    <span class="k">assert</span> <span class="n">event</span><span class="o">.</span><span class="n">lore_date</span> <span class="o">==</span> <span class="mf">100.0</span>
+<p><strong>Coverage for specific module:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>--cov<span class="o">=</span>src.commands<span class="w"> </span>tests/unit/test_commands.py
+</pre></div>
+</div>
+<p><strong>Show missing lines:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>term-missing
 </pre></div>
 </div>
 </section>
-<section id="integration-tests">
-<h3>Integration Tests<a class="headerlink" href="#integration-tests" title="Link to this heading">¶</a></h3>
-<p>Integration tests should:</p>
-<ul class="simple">
-<li><p>Test multiple components together</p></li>
-<li><p>Use real database (in-memory SQLite)</p></li>
-<li><p>Use the <code class="docutils literal notranslate"><span class="pre">db_service</span></code> fixture</p></li>
-<li><p>Be marked with <code class="docutils literal notranslate"><span class="pre">&#64;pytest.mark.integration</span></code></p></li>
-</ul>
-<p>Example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">src.services.db_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatabaseService</span>
-
-<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">integration</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">test_event_persistence</span><span class="p">(</span><span class="n">db_service</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that events are persisted to database.&quot;&quot;&quot;</span>
-    <span class="n">event_id</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">create_event</span><span class="p">(</span><span class="s2">&quot;Test&quot;</span><span class="p">,</span> <span class="mf">100.0</span><span class="p">)</span>
-    <span class="n">event</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">get_event</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="n">event</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Test&quot;</span>
-</pre></div>
-</div>
-</section>
-<section id="gui-tests">
-<h3>GUI Tests<a class="headerlink" href="#gui-tests" title="Link to this heading">¶</a></h3>
-<p>GUI tests should:</p>
-<ul class="simple">
-<li><p>Use the <code class="docutils literal notranslate"><span class="pre">qtbot</span></code> fixture from pytest-qt</p></li>
-<li><p>Test user interactions and UI state</p></li>
-<li><p>Use in-memory database</p></li>
-<li><p>Be marked with <code class="docutils literal notranslate"><span class="pre">&#64;pytest.mark.integration</span></code></p></li>
-</ul>
-<p>Example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">src.gui.widgets.entity_editor</span><span class="w"> </span><span class="kn">import</span> <span class="n">EntityEditor</span>
-
-<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">integration</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">test_entity_editor_save</span><span class="p">(</span><span class="n">qtbot</span><span class="p">,</span> <span class="n">db_service</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that entity editor saves changes.&quot;&quot;&quot;</span>
-    <span class="n">editor</span> <span class="o">=</span> <span class="n">EntityEditor</span><span class="p">(</span><span class="n">db_service</span><span class="p">)</span>
-    <span class="n">qtbot</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">editor</span><span class="p">)</span>
-    
-    <span class="c1"># Simulate user input</span>
-    <span class="n">editor</span><span class="o">.</span><span class="n">name_edit</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">&quot;Test Entity&quot;</span><span class="p">)</span>
-    <span class="n">editor</span><span class="o">.</span><span class="n">type_combo</span><span class="o">.</span><span class="n">setCurrentText</span><span class="p">(</span><span class="s2">&quot;character&quot;</span><span class="p">)</span>
-    
-    <span class="c1"># Trigger save</span>
-    <span class="n">qtbot</span><span class="o">.</span><span class="n">mouseClick</span><span class="p">(</span><span class="n">editor</span><span class="o">.</span><span class="n">save_button</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">LeftButton</span><span class="p">)</span>
-    
-    <span class="c1"># Verify database update</span>
-    <span class="k">assert</span> <span class="n">editor</span><span class="o">.</span><span class="n">entity_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-</pre></div>
-</div>
-</section>
-</section>
-<section id="coverage-requirements">
-<h2>Coverage Requirements<a class="headerlink" href="#coverage-requirements" title="Link to this heading">¶</a></h2>
-<p>The project aims for <strong>95%+ code coverage</strong> for core business logic:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Generate coverage report</span>
-pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>html
-
-<span class="c1"># Open coverage report</span>
-open<span class="w"> </span>htmlcov/index.html<span class="w">  </span><span class="c1"># macOS</span>
-xdg-open<span class="w"> </span>htmlcov/index.html<span class="w">  </span><span class="c1"># Linux</span>
-start<span class="w"> </span>htmlcov<span class="se">\i</span>ndex.html<span class="w">  </span><span class="c1"># Windows</span>
-</pre></div>
-</div>
-<p><strong>Coverage Priorities:</strong></p>
-<ol class="arabic simple">
-<li><p><strong>Core modules</strong> (<code class="docutils literal notranslate"><span class="pre">src/core/</span></code>) - 100% coverage required</p></li>
-<li><p><strong>Commands</strong> (<code class="docutils literal notranslate"><span class="pre">src/commands/</span></code>) - 100% coverage required</p></li>
-<li><p><strong>Services</strong> (<code class="docutils literal notranslate"><span class="pre">src/services/</span></code>) - 95%+ coverage</p></li>
-<li><p><strong>GUI</strong> (<code class="docutils literal notranslate"><span class="pre">src/gui/</span></code>) - 80%+ coverage (focus on logic, not UI boilerplate)</p></li>
-</ol>
-</section>
-<section id="continuous-integration">
-<h2>Continuous Integration<a class="headerlink" href="#continuous-integration" title="Link to this heading">¶</a></h2>
-<p>Tests run automatically on:</p>
-<ul class="simple">
-<li><p>Every push to main branch</p></li>
-<li><p>Every pull request</p></li>
-<li><p>Pre-commit hooks (optional subset)</p></li>
-</ul>
-<p>See <code class="docutils literal notranslate"><span class="pre">.github/workflows/</span></code> for CI configuration.</p>
-</section>
-<section id="test-fixtures">
-<h2>Test Fixtures<a class="headerlink" href="#test-fixtures" title="Link to this heading">¶</a></h2>
-<p>Common fixtures are defined in <code class="docutils literal notranslate"><span class="pre">tests/conftest.py</span></code>:</p>
+<hr class="docutils" />
+<section id="useful-options">
+<h3>Useful Options<a class="headerlink" href="#useful-options" title="Link to this heading">¶</a></h3>
 <div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
-<tr class="row-odd"><th class="head"><p>Fixture</p></th>
-<th class="head"><p>Purpose</p></th>
-<th class="head"><p>Scope</p></th>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Description</p></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">qapp</span></code></p></td>
-<td><p>QApplication instance</p></td>
-<td><p>Session</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-v</span></code></p></td>
+<td><p>Verbose output</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">db_service</span></code></p></td>
-<td><p>In-memory DatabaseService</p></td>
-<td><p>Function</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">-s</span></code></p></td>
+<td><p>Show print statements</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sample_event</span></code></p></td>
-<td><p>Sample Event instance</p></td>
-<td><p>Function</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-x</span></code></p></td>
+<td><p>Stop on first failure</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">sample_entity</span></code></p></td>
-<td><p>Sample Entity instance</p></td>
-<td><p>Function</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--lf</span></code></p></td>
+<td><p>Run last failed tests</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--ff</span></code></p></td>
+<td><p>Run failed tests first</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">-k</span> <span class="pre">EXPRESSION</span></code></p></td>
+<td><p>Run tests matching expression</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--pdb</span></code></p></td>
+<td><p>Drop into debugger on failure</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">-n</span> <span class="pre">NUM</span></code></p></td>
+<td><p>Run tests in parallel (requires pytest-xdist)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Examples:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run tests with &quot;entity&quot; in name</span>
+pytest<span class="w"> </span>-k<span class="w"> </span>entity
+
+<span class="c1"># Run tests, stop on first failure, show prints</span>
+pytest<span class="w"> </span>-x<span class="w"> </span>-s
+
+<span class="c1"># Run last failed tests with debugger</span>
+pytest<span class="w"> </span>--lf<span class="w"> </span>--pdb
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="writing-tests">
+<h2>Writing Tests<a class="headerlink" href="#writing-tests" title="Link to this heading">¶</a></h2>
+<section id="test-naming">
+<h3>Test Naming<a class="headerlink" href="#test-naming" title="Link to this heading">¶</a></h3>
+<p><strong>Convention</strong>: <code class="docutils literal notranslate"><span class="pre">test_&lt;method&gt;_&lt;scenario&gt;_&lt;expected_result&gt;</span></code></p>
+<p><strong>Examples:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_create_event_with_valid_data_returns_event</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test creating an event with valid input.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_create_event_with_invalid_date_raises_value_error</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that invalid date raises ValueError.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_update_entity_with_new_name_updates_database</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test entity name update persists to database.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="basic-test-structure">
+<h3>Basic Test Structure<a class="headerlink" href="#basic-test-structure" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">Event</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_event_creation</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that Event instances are created correctly.&quot;&quot;&quot;</span>
+    <span class="c1"># Arrange</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Test Event&quot;</span>
+    <span class="n">lore_date</span> <span class="o">=</span> <span class="mf">100.0</span>
+    
+    <span class="c1"># Act</span>
+    <span class="n">event</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">lore_date</span><span class="o">=</span><span class="n">lore_date</span><span class="p">)</span>
+    
+    <span class="c1"># Assert</span>
+    <span class="k">assert</span> <span class="n">event</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">name</span>
+    <span class="k">assert</span> <span class="n">event</span><span class="o">.</span><span class="n">lore_date</span> <span class="o">==</span> <span class="n">lore_date</span>
+    <span class="k">assert</span> <span class="n">event</span><span class="o">.</span><span class="n">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">assert</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;generic&quot;</span>
+</pre></div>
+</div>
+<p><strong>AAA Pattern</strong> (Arrange, Act, Assert):</p>
+<ol class="arabic simple">
+<li><p><strong>Arrange</strong>: Set up test data and preconditions</p></li>
+<li><p><strong>Act</strong>: Execute the code being tested</p></li>
+<li><p><strong>Assert</strong>: Verify the expected outcome</p></li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="testing-with-database">
+<h3>Testing with Database<a class="headerlink" href="#testing-with-database" title="Link to this heading">¶</a></h3>
+<p><strong>Use in-memory database:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.services.db_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatabaseService</span>
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">db_service</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Provide an in-memory database.&quot;&quot;&quot;</span>
+    <span class="n">service</span> <span class="o">=</span> <span class="n">DatabaseService</span><span class="p">(</span><span class="s2">&quot;:memory:&quot;</span><span class="p">)</span>
+    <span class="n">service</span><span class="o">.</span><span class="n">initialize_schema</span><span class="p">()</span>
+    <span class="k">yield</span> <span class="n">service</span>
+    <span class="n">service</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_event_repository_create</span><span class="p">(</span><span class="n">db_service</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test creating an event in the database.&quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.repositories.event_repository</span><span class="w"> </span><span class="kn">import</span> <span class="n">EventRepository</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">Event</span>
+    
+    <span class="n">repo</span> <span class="o">=</span> <span class="n">EventRepository</span><span class="p">(</span><span class="n">db_service</span><span class="p">)</span>
+    <span class="n">event</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Test&quot;</span><span class="p">,</span> <span class="n">lore_date</span><span class="o">=</span><span class="mf">100.0</span><span class="p">)</span>
+    
+    <span class="n">result</span> <span class="o">=</span> <span class="n">repo</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+    
+    <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">event</span><span class="o">.</span><span class="n">id</span>
+    <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Test&quot;</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="testing-commands">
+<h3>Testing Commands<a class="headerlink" href="#testing-commands" title="Link to this heading">¶</a></h3>
+<p><strong>Test execute and undo:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_create_event_command_execute</span><span class="p">(</span><span class="n">db_service</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test CreateEventCommand execution.&quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">src.commands.event_commands</span><span class="w"> </span><span class="kn">import</span> <span class="n">CreateEventCommand</span>
+    
+    <span class="n">cmd</span> <span class="o">=</span> <span class="n">CreateEventCommand</span><span class="p">(</span>
+        <span class="n">service</span><span class="o">=</span><span class="n">db_service</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Test Event&quot;</span><span class="p">,</span>
+        <span class="n">lore_date</span><span class="o">=</span><span class="mf">100.0</span>
+    <span class="p">)</span>
+    
+    <span class="n">cmd</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+    
+    <span class="c1"># Verify event was created</span>
+    <span class="n">repo</span> <span class="o">=</span> <span class="n">EventRepository</span><span class="p">(</span><span class="n">db_service</span><span class="p">)</span>
+    <span class="n">event</span> <span class="o">=</span> <span class="n">repo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cmd</span><span class="o">.</span><span class="n">event_id</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">event</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">assert</span> <span class="n">event</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Test Event&quot;</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_create_event_command_undo</span><span class="p">(</span><span class="n">db_service</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test CreateEventCommand undo.&quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">src.commands.event_commands</span><span class="w"> </span><span class="kn">import</span> <span class="n">CreateEventCommand</span>
+    
+    <span class="n">cmd</span> <span class="o">=</span> <span class="n">CreateEventCommand</span><span class="p">(</span>
+        <span class="n">service</span><span class="o">=</span><span class="n">db_service</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Test Event&quot;</span><span class="p">,</span>
+        <span class="n">lore_date</span><span class="o">=</span><span class="mf">100.0</span>
+    <span class="p">)</span>
+    
+    <span class="n">cmd</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+    <span class="n">cmd</span><span class="o">.</span><span class="n">undo</span><span class="p">()</span>
+    
+    <span class="c1"># Verify event was removed</span>
+    <span class="n">repo</span> <span class="o">=</span> <span class="n">EventRepository</span><span class="p">(</span><span class="n">db_service</span><span class="p">)</span>
+    <span class="n">event</span> <span class="o">=</span> <span class="n">repo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cmd</span><span class="o">.</span><span class="n">event_id</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">event</span> <span class="ow">is</span> <span class="kc">None</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="testing-qt-widgets">
+<h3>Testing Qt Widgets<a class="headerlink" href="#testing-qt-widgets" title="Link to this heading">¶</a></h3>
+<p><strong>Use qtbot fixture:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">Qt</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_entity_editor_displays_entity</span><span class="p">(</span><span class="n">qtbot</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test EntityEditor displays entity data.&quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">src.gui.widgets.entity_editor</span><span class="w"> </span><span class="kn">import</span> <span class="n">EntityEditor</span>
+    
+    <span class="c1"># Create widget</span>
+    <span class="n">editor</span> <span class="o">=</span> <span class="n">EntityEditor</span><span class="p">()</span>
+    <span class="n">qtbot</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">editor</span><span class="p">)</span>
+    
+    <span class="c1"># Set entity data</span>
+    <span class="n">entity_data</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;ent_123&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Test Entity&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;character&quot;</span>
+    <span class="p">}</span>
+    <span class="n">editor</span><span class="o">.</span><span class="n">set_entity</span><span class="p">(</span><span class="n">entity_data</span><span class="p">)</span>
+    
+    <span class="c1"># Verify display</span>
+    <span class="k">assert</span> <span class="n">editor</span><span class="o">.</span><span class="n">name_field</span><span class="o">.</span><span class="n">text</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;Test Entity&quot;</span>
+    <span class="k">assert</span> <span class="n">editor</span><span class="o">.</span><span class="n">type_combo</span><span class="o">.</span><span class="n">currentText</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;character&quot;</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_button_click_emits_signal</span><span class="p">(</span><span class="n">qtbot</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test button click emits expected signal.&quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">src.gui.widgets.my_widget</span><span class="w"> </span><span class="kn">import</span> <span class="n">MyWidget</span>
+    
+    <span class="n">widget</span> <span class="o">=</span> <span class="n">MyWidget</span><span class="p">()</span>
+    <span class="n">qtbot</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">widget</span><span class="p">)</span>
+    
+    <span class="c1"># Set up signal spy</span>
+    <span class="k">with</span> <span class="n">qtbot</span><span class="o">.</span><span class="n">waitSignal</span><span class="p">(</span><span class="n">widget</span><span class="o">.</span><span class="n">button_clicked</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
+        <span class="n">qtbot</span><span class="o">.</span><span class="n">mouseClick</span><span class="p">(</span><span class="n">widget</span><span class="o">.</span><span class="n">button</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">LeftButton</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="mocking">
+<h3>Mocking<a class="headerlink" href="#mocking" title="Link to this heading">¶</a></h3>
+<p><strong>Use pytest-mock:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_backup_service_calls_database</span><span class="p">(</span><span class="n">mocker</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test BackupService calls database methods.&quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.backup_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">BackupService</span>
+    
+    <span class="c1"># Mock database service</span>
+    <span class="n">mock_db</span> <span class="o">=</span> <span class="n">mocker</span><span class="o">.</span><span class="n">Mock</span><span class="p">()</span>
+    <span class="n">mock_db</span><span class="o">.</span><span class="n">get_connection</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="n">mocker</span><span class="o">.</span><span class="n">Mock</span><span class="p">()</span>
+    
+    <span class="n">service</span> <span class="o">=</span> <span class="n">BackupService</span><span class="p">(</span><span class="n">mock_db</span><span class="p">)</span>
+    <span class="n">service</span><span class="o">.</span><span class="n">create_backup</span><span class="p">(</span><span class="s2">&quot;test.db&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Verify database was called</span>
+    <span class="n">mock_db</span><span class="o">.</span><span class="n">get_connection</span><span class="o">.</span><span class="n">assert_called_once</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><strong>Mock file operations:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_save_file</span><span class="p">(</span><span class="n">mocker</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test file saving.&quot;&quot;&quot;</span>
+    <span class="n">mock_open</span> <span class="o">=</span> <span class="n">mocker</span><span class="o">.</span><span class="n">patch</span><span class="p">(</span><span class="s2">&quot;builtins.open&quot;</span><span class="p">,</span> <span class="n">mocker</span><span class="o">.</span><span class="n">mock_open</span><span class="p">())</span>
+    
+    <span class="n">save_data</span><span class="p">(</span><span class="s2">&quot;test.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">)</span>
+    
+    <span class="n">mock_open</span><span class="o">.</span><span class="n">assert_called_once_with</span><span class="p">(</span><span class="s2">&quot;test.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="test-fixtures">
+<h2>Test Fixtures<a class="headerlink" href="#test-fixtures" title="Link to this heading">¶</a></h2>
+<section id="common-fixtures">
+<h3>Common Fixtures<a class="headerlink" href="#common-fixtures" title="Link to this heading">¶</a></h3>
+<p>Defined in <code class="docutils literal notranslate"><span class="pre">tests/conftest.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.services.db_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatabaseService</span>
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">db_service</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Provide in-memory database service.&quot;&quot;&quot;</span>
+    <span class="n">service</span> <span class="o">=</span> <span class="n">DatabaseService</span><span class="p">(</span><span class="s2">&quot;:memory:&quot;</span><span class="p">)</span>
+    <span class="n">service</span><span class="o">.</span><span class="n">initialize_schema</span><span class="p">()</span>
+    <span class="k">yield</span> <span class="n">service</span>
+    <span class="n">service</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">sample_event</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Provide a sample event.&quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">Event</span>
+    <span class="k">return</span> <span class="n">Event</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;evt_test&quot;</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Test Event&quot;</span><span class="p">,</span>
+        <span class="n">lore_date</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;generic&quot;</span>
+    <span class="p">)</span>
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">sample_entity</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Provide a sample entity.&quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.entities</span><span class="w"> </span><span class="kn">import</span> <span class="n">Entity</span>
+    <span class="k">return</span> <span class="n">Entity</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;ent_test&quot;</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Test Entity&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;character&quot;</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="fixture-scopes">
+<h3>Fixture Scopes<a class="headerlink" href="#fixture-scopes" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>function</strong> (default): New fixture per test function</p></li>
+<li><p><strong>class</strong>: One fixture per test class</p></li>
+<li><p><strong>module</strong>: One fixture per module</p></li>
+<li><p><strong>session</strong>: One fixture per test session</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s2">&quot;module&quot;</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">expensive_resource</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Expensive resource shared across module.&quot;&quot;&quot;</span>
+    <span class="n">resource</span> <span class="o">=</span> <span class="n">create_expensive_resource</span><span class="p">()</span>
+    <span class="k">yield</span> <span class="n">resource</span>
+    <span class="n">resource</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="testing-patterns">
+<h2>Testing Patterns<a class="headerlink" href="#testing-patterns" title="Link to this heading">¶</a></h2>
+<section id="testing-exceptions">
+<h3>Testing Exceptions<a class="headerlink" href="#testing-exceptions" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_invalid_input_raises_value_error</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that invalid input raises ValueError.&quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">Event</span>
+    
+    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">match</span><span class="o">=</span><span class="s2">&quot;Invalid date&quot;</span><span class="p">):</span>
+        <span class="n">Event</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Test&quot;</span><span class="p">,</span> <span class="n">lore_date</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="parametrized-tests">
+<h3>Parametrized Tests<a class="headerlink" href="#parametrized-tests" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">parametrize</span><span class="p">(</span><span class="s2">&quot;input_date,expected&quot;</span><span class="p">,</span> <span class="p">[</span>
+    <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;Year 0, Day 0&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;Year 0, Day 1&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="mf">365.0</span><span class="p">,</span> <span class="s2">&quot;Year 1, Day 0&quot;</span><span class="p">),</span>
+<span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_date_formatting</span><span class="p">(</span><span class="n">input_date</span><span class="p">,</span> <span class="n">expected</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test date formatting with various inputs.&quot;&quot;&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">format_date</span><span class="p">(</span><span class="n">input_date</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">result</span> <span class="o">==</span> <span class="n">expected</span>
+</pre></div>
+</div>
+</section>
+<section id="testing-async-code">
+<h3>Testing Async Code<a class="headerlink" href="#testing-async-code" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">asyncio</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">test_async_function</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test async function.&quot;&quot;&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">async_operation</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">result</span> <span class="o">==</span> <span class="n">expected_value</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="coverage">
+<h2>Coverage<a class="headerlink" href="#coverage" title="Link to this heading">¶</a></h2>
+<section id="coverage-goals">
+<h3>Coverage Goals<a class="headerlink" href="#coverage-goals" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Component</p></th>
+<th class="head"><p>Target Coverage</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Core Logic</strong></p></td>
+<td><p>100%</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Commands</strong></p></td>
+<td><p>100%</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Repositories</strong></p></td>
+<td><p>95%+</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Services</strong></p></td>
+<td><p>95%+</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>GUI Widgets</strong></p></td>
+<td><p>80%+</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Overall</strong></p></td>
+<td><p>95%+</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 </section>
-<section id="performance-testing">
-<h2>Performance Testing<a class="headerlink" href="#performance-testing" title="Link to this heading">¶</a></h2>
-<p>For performance-critical operations, use benchmarks:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
-
-<span class="nd">@pytest</span><span class="o">.</span><span class="n">mark</span><span class="o">.</span><span class="n">slow</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">test_large_dataset_performance</span><span class="p">(</span><span class="n">db_service</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test performance with 10,000 entities.&quot;&quot;&quot;</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
-    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-    
-    <span class="c1"># Create 10,000 entities</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10000</span><span class="p">):</span>
-        <span class="n">db_service</span><span class="o">.</span><span class="n">create_entity</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Entity </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;character&quot;</span><span class="p">)</span>
-    
-    <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
-    <span class="k">assert</span> <span class="n">elapsed</span> <span class="o">&lt;</span> <span class="mf">5.0</span>  <span class="c1"># Should complete in under 5 seconds</span>
+<section id="measuring-coverage">
+<h3>Measuring Coverage<a class="headerlink" href="#measuring-coverage" title="Link to this heading">¶</a></h3>
+<p><strong>Basic coverage:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>--cov<span class="o">=</span>src
+</pre></div>
+</div>
+<p><strong>Detailed coverage with missing lines:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>term-missing
+</pre></div>
+</div>
+<p><strong>HTML coverage report:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>html
+open<span class="w"> </span>htmlcov/index.html
 </pre></div>
 </div>
 </section>
+<section id="coverage-configuration">
+<h3>Coverage Configuration<a class="headerlink" href="#coverage-configuration" title="Link to this heading">¶</a></h3>
+<p>In <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> or <code class="docutils literal notranslate"><span class="pre">.coveragerc</span></code>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[coverage:run]</span>
+<span class="na">source</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">src</span>
+<span class="na">omit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>
+<span class="w">    </span><span class="na">*/tests/*</span>
+<span class="w">    </span><span class="na">*/venv/*</span>
+<span class="w">    </span><span class="na">*/__pycache__/*</span>
+
+<span class="k">[coverage:report]</span>
+<span class="na">exclude_lines</span><span class="w"> </span><span class="o">=</span>
+<span class="w">    </span><span class="na">pragma</span><span class="o">:</span><span class="w"> </span><span class="s">no cover</span>
+<span class="w">    </span><span class="na">def __repr__</span>
+<span class="w">    </span><span class="na">raise AssertionError</span>
+<span class="w">    </span><span class="na">raise NotImplementedError</span>
+<span class="w">    </span><span class="na">if __name__</span><span class="w"> </span><span class="o">=</span><span class="s">= .__main__.:</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="continuous-integration">
+<h2>Continuous Integration<a class="headerlink" href="#continuous-integration" title="Link to this heading">¶</a></h2>
+<section id="github-actions">
+<h3>GitHub Actions<a class="headerlink" href="#github-actions" title="Link to this heading">¶</a></h3>
+<p>Example workflow (<code class="docutils literal notranslate"><span class="pre">.github/workflows/test.yml</span></code>):</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Tests</span>
+
+<span class="nt">on</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">push</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">pull_request</span><span class="p p-Indicator">]</span>
+
+<span class="nt">jobs</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">test</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">runs-on</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ubuntu-latest</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="nt">steps</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/checkout@v3</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Set up Python</span>
+<span class="w">      </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/setup-python@v4</span>
+<span class="w">      </span><span class="nt">with</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">python-version</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;3.13&#39;</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Install dependencies</span>
+<span class="w">      </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">        </span><span class="no">pip install -r requirements.txt</span>
+<span class="w">        </span><span class="no">pip install -r requirements-dev.txt</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Run tests with coverage</span>
+<span class="w">      </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">        </span><span class="no">pytest --cov=src --cov-report=xml</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Upload coverage</span>
+<span class="w">      </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">codecov/codecov-action@v3</span>
+</pre></div>
+</div>
+</section>
+<section id="pre-commit-hooks">
+<h3>Pre-commit Hooks<a class="headerlink" href="#pre-commit-hooks" title="Link to this heading">¶</a></h3>
+<p>Install pre-commit hooks to run tests before committing:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># .pre-commit-config.yaml</span>
+<span class="nt">repos</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">repo</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">local</span>
+<span class="w">    </span><span class="nt">hooks</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pytest-check</span>
+<span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pytest-check</span>
+<span class="w">        </span><span class="nt">entry</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pytest</span>
+<span class="w">        </span><span class="nt">language</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">system</span>
+<span class="w">        </span><span class="nt">pass_filenames</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">        </span><span class="nt">always_run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+<p>Install hooks:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>pre-commit
+pre-commit<span class="w"> </span>install
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
 <section id="best-practices">
 <h2>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading">¶</a></h2>
-<ol class="arabic simple">
-<li><p><strong>Isolate tests</strong> - Each test should be independent</p></li>
-<li><p><strong>Use fixtures</strong> - Avoid duplicating setup code</p></li>
-<li><p><strong>Clear names</strong> - Test names should describe what they test</p></li>
-<li><p><strong>One assertion per test</strong> - Keep tests focused (or use subtests)</p></li>
-<li><p><strong>Mock external services</strong> - Don’t hit real APIs in tests</p></li>
-<li><p><strong>Clean up resources</strong> - Close files, connections, etc.</p></li>
-</ol>
-</section>
-<section id="related-documentation">
-<h2>Related Documentation<a class="headerlink" href="#related-documentation" title="Link to this heading">¶</a></h2>
+<section id="do-s">
+<h3>Do’s<a class="headerlink" href="#do-s" title="Link to this heading">¶</a></h3>
+<p>✅ <strong>Write tests first (TDD)</strong></p>
 <ul class="simple">
-<li><p><strong><a class="reference internal" href="DEVELOPMENT.html"><span class="std std-doc">DEVELOPMENT.md</span></a></strong> - Development setup</p></li>
-<li><p><strong><a class="reference internal" href="DATABASE.html"><span class="std std-doc">DATABASE.md</span></a></strong> - Database architecture</p></li>
-<li><p><strong><a class="reference internal" href="QT_THREADING_SAFETY.html"><span class="std std-doc">QT_THREADING_SAFETY.md</span></a></strong> - Threading patterns</p></li>
-<li><p><strong><a class="reference internal" href="#../Design.md"><span class="xref myst">Design.md</span></a></strong> - Architecture specification</p></li>
+<li><p>Clarifies requirements</p></li>
+<li><p>Ensures testability</p></li>
+<li><p>Prevents over-engineering</p></li>
+</ul>
+<p>✅ <strong>Use descriptive test names</strong></p>
+<ul class="simple">
+<li><p>Name should describe what’s being tested</p></li>
+<li><p>Include expected behavior</p></li>
+</ul>
+<p>✅ <strong>One assertion concept per test</strong></p>
+<ul class="simple">
+<li><p>Test one thing at a time</p></li>
+<li><p>Multiple asserts OK if testing same concept</p></li>
+</ul>
+<p>✅ <strong>Use fixtures for setup</strong></p>
+<ul class="simple">
+<li><p>Reduces code duplication</p></li>
+<li><p>Improves test clarity</p></li>
+</ul>
+<p>✅ <strong>Mock external dependencies</strong></p>
+<ul class="simple">
+<li><p>File I/O, network, time</p></li>
+<li><p>Keeps tests fast and deterministic</p></li>
+</ul>
+<p>✅ <strong>Test edge cases</strong></p>
+<ul class="simple">
+<li><p>Empty inputs, null values</p></li>
+<li><p>Boundary conditions</p></li>
+<li><p>Error conditions</p></li>
+</ul>
+</section>
+<section id="don-ts">
+<h3>Don’ts<a class="headerlink" href="#don-ts" title="Link to this heading">¶</a></h3>
+<p>❌ <strong>Don’t test implementation details</strong></p>
+<ul class="simple">
+<li><p>Test behavior, not internals</p></li>
+<li><p>Tests should survive refactoring</p></li>
+</ul>
+<p>❌ <strong>Don’t use production database</strong></p>
+<ul class="simple">
+<li><p>Always use in-memory database for tests</p></li>
+<li><p>Never connect to production</p></li>
+</ul>
+<p>❌ <strong>Don’t write flaky tests</strong></p>
+<ul class="simple">
+<li><p>No random values without seeds</p></li>
+<li><p>No time dependencies without mocking</p></li>
+<li><p>No network dependencies</p></li>
+</ul>
+<p>❌ <strong>Don’t skip test cleanup</strong></p>
+<ul class="simple">
+<li><p>Always clean up resources</p></li>
+<li><p>Use fixtures with yield</p></li>
+</ul>
+<p>❌ <strong>Don’t test external libraries</strong></p>
+<ul class="simple">
+<li><p>Trust that PySide6, SQLite work correctly</p></li>
+<li><p>Test your code, not theirs</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">¶</a></h2>
+<section id="common-issues">
+<h3>Common Issues<a class="headerlink" href="#common-issues" title="Link to this heading">¶</a></h3>
+<p><strong>Tests fail with “database is locked”:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Solution: Use in-memory database</span>
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">db_service</span><span class="p">():</span>
+    <span class="n">service</span> <span class="o">=</span> <span class="n">DatabaseService</span><span class="p">(</span><span class="s2">&quot;:memory:&quot;</span><span class="p">)</span>
+    <span class="k">yield</span> <span class="n">service</span>
+    <span class="n">service</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><strong>Qt tests hang:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Solution: Use qtbot properly</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_widget</span><span class="p">(</span><span class="n">qtbot</span><span class="p">):</span>
+    <span class="n">widget</span> <span class="o">=</span> <span class="n">MyWidget</span><span class="p">()</span>
+    <span class="n">qtbot</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">widget</span><span class="p">)</span>  <span class="c1"># Important!</span>
+    <span class="c1"># Test widget</span>
+</pre></div>
+</div>
+<p><strong>Import errors:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Solution: Install package in development mode</span>
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</pre></div>
+</div>
+<p><strong>Coverage not tracking all files:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Solution: Specify source in pytest command</span>
+pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>term-missing
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="example-test-suite">
+<h2>Example Test Suite<a class="headerlink" href="#example-test-suite" title="Link to this heading">¶</a></h2>
+<section id="complete-example">
+<h3>Complete Example<a class="headerlink" href="#complete-example" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">tests/unit/test_event_repository.py</span>
+
+<span class="sd">Tests for EventRepository.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pytest</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.services.repositories.event_repository</span><span class="w"> </span><span class="kn">import</span> <span class="n">EventRepository</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">Event</span>
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">db_service</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Provide in-memory database.&quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.db_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatabaseService</span>
+    <span class="n">service</span> <span class="o">=</span> <span class="n">DatabaseService</span><span class="p">(</span><span class="s2">&quot;:memory:&quot;</span><span class="p">)</span>
+    <span class="n">service</span><span class="o">.</span><span class="n">initialize_schema</span><span class="p">()</span>
+    <span class="k">yield</span> <span class="n">service</span>
+    <span class="n">service</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">event_repo</span><span class="p">(</span><span class="n">db_service</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Provide EventRepository instance.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">EventRepository</span><span class="p">(</span><span class="n">db_service</span><span class="p">)</span>
+
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">sample_event</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Provide sample event.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">Event</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Test Event&quot;</span><span class="p">,</span>
+        <span class="n">lore_date</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;battle&quot;</span>
+    <span class="p">)</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TestEventRepository</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Tests for EventRepository.&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_create_event_returns_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_repo</span><span class="p">,</span> <span class="n">sample_event</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test creating an event returns the event.&quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">event_repo</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">sample_event</span><span class="p">)</span>
+        
+        <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">sample_event</span><span class="o">.</span><span class="n">id</span>
+        <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">sample_event</span><span class="o">.</span><span class="n">name</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_get_existing_event_returns_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_repo</span><span class="p">,</span> <span class="n">sample_event</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test getting an existing event.&quot;&quot;&quot;</span>
+        <span class="n">event_repo</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">sample_event</span><span class="p">)</span>
+        
+        <span class="n">result</span> <span class="o">=</span> <span class="n">event_repo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sample_event</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        
+        <span class="k">assert</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">sample_event</span><span class="o">.</span><span class="n">id</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_get_nonexistent_event_returns_none</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_repo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test getting a nonexistent event returns None.&quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">event_repo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nonexistent_id&quot;</span><span class="p">)</span>
+        
+        <span class="k">assert</span> <span class="n">result</span> <span class="ow">is</span> <span class="kc">None</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_update_event_persists_changes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_repo</span><span class="p">,</span> <span class="n">sample_event</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test updating an event persists changes.&quot;&quot;&quot;</span>
+        <span class="n">event_repo</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">sample_event</span><span class="p">)</span>
+        
+        <span class="n">sample_event</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Updated Name&quot;</span>
+        <span class="n">event_repo</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">sample_event</span><span class="p">)</span>
+        
+        <span class="n">result</span> <span class="o">=</span> <span class="n">event_repo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sample_event</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Updated Name&quot;</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_delete_event_removes_from_database</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_repo</span><span class="p">,</span> <span class="n">sample_event</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test deleting an event removes it.&quot;&quot;&quot;</span>
+        <span class="n">event_repo</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">sample_event</span><span class="p">)</span>
+        
+        <span class="n">success</span> <span class="o">=</span> <span class="n">event_repo</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">sample_event</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        
+        <span class="k">assert</span> <span class="n">success</span> <span class="ow">is</span> <span class="kc">True</span>
+        <span class="k">assert</span> <span class="n">event_repo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sample_event</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_list_all_returns_all_events</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_repo</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Test listing all events.&quot;&quot;&quot;</span>
+        <span class="n">event1</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Event 1&quot;</span><span class="p">,</span> <span class="n">lore_date</span><span class="o">=</span><span class="mf">100.0</span><span class="p">)</span>
+        <span class="n">event2</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Event 2&quot;</span><span class="p">,</span> <span class="n">lore_date</span><span class="o">=</span><span class="mf">200.0</span><span class="p">)</span>
+        
+        <span class="n">event_repo</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">event1</span><span class="p">)</span>
+        <span class="n">event_repo</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">event2</span><span class="p">)</span>
+        
+        <span class="n">results</span> <span class="o">=</span> <span class="n">event_repo</span><span class="o">.</span><span class="n">list_all</span><span class="p">()</span>
+        
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+        <span class="k">assert</span> <span class="nb">any</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">event1</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">results</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">any</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">event2</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">results</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong><a class="reference internal" href="DEVELOPMENT.html"><span class="std std-doc">Development Guide</span></a></strong> - Learn about development workflow</p></li>
+<li><p><strong><a class="reference internal" href="CONTRIBUTING.html"><span class="std std-doc">Contributing Guide</span></a></strong> - Contribute to the project</p></li>
+<li><p><strong><a class="reference internal" href="API_REFERENCE.html"><span class="std std-doc">API Reference</span></a></strong> - Understand the codebase</p></li>
 </ul>
 <hr class="docutils" />
-<p><strong>Test Count:</strong> 118+ test files<br />
-<strong>Coverage Target:</strong> 95%+ for core modules<br />
-<strong>Framework:</strong> pytest + pytest-qt<br />
-<strong>CI:</strong> Automated on push/PR</p>
-<section id="id1">
-<h3>GUI Tests<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
-<p>GUI tests should:</p>
-<ul class="simple">
-<li><p>Use the <code class="docutils literal notranslate"><span class="pre">qtbot</span></code> fixture from pytest-qt</p></li>
-<li><p>Use the <code class="docutils literal notranslate"><span class="pre">qapp</span></code> fixture for QApplication</p></li>
-<li><p>Patch menu creation to avoid segfaults (see existing tests)</p></li>
-</ul>
-<p>Example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">unittest.mock</span><span class="w"> </span><span class="kn">import</span> <span class="n">patch</span>
-
-<span class="k">def</span><span class="w"> </span><span class="nf">test_main_window_creation</span><span class="p">(</span><span class="n">qtbot</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that MainWindow can be created.&quot;&quot;&quot;</span>
-    <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s2">&quot;src.app.ui_manager.UIManager.create_file_menu&quot;</span><span class="p">):</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">src.app.main_window</span><span class="w"> </span><span class="kn">import</span> <span class="n">MainWindow</span>
-        <span class="n">window</span> <span class="o">=</span> <span class="n">MainWindow</span><span class="p">()</span>
-        <span class="n">qtbot</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">window</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">window</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-</pre></div>
-</div>
-</section>
-</section>
-<section id="id2">
-<h2>Coverage Requirements<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
-<ul class="simple">
-<li><p><strong>Minimum</strong>: 95% code coverage</p></li>
-<li><p><strong>Focus</strong>: Core business logic should be 100% covered</p></li>
-<li><p><strong>Exceptions</strong>: GUI glue code, entry points</p></li>
-</ul>
-<p>Run coverage report:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>html
-<span class="c1"># Open htmlcov/index.html in browser</span>
-</pre></div>
-</div>
+<p><strong>Navigation:</strong><br />
+<a class="reference internal" href="DATABASE.html"><span class="std std-doc">← Database</span></a> • <a class="reference internal" href="INDEX.html"><span class="std std-doc">Back to Index</span></a> • <a class="reference internal" href="API_REFERENCE.html"><span class="std std-doc">API Reference →</span></a></p>
 </section>
 </section>
 
@@ -739,52 +1168,69 @@ start<span class="w"> </span>htmlcov<span class="se">\i</span>ndex.html<span cla
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Testing Guide</a><ul>
-<li><a class="reference internal" href="#quick-start">Quick Start</a></li>
-<li><a class="reference internal" href="#test-structure">Test Structure</a></li>
-<li><a class="reference internal" href="#dependencies">Dependencies</a><ul>
-<li><a class="reference internal" href="#python-dependencies">Python Dependencies</a></li>
-<li><a class="reference internal" href="#system-dependencies-linux-ci">System Dependencies (Linux/CI)</a></li>
+<li><a class="reference internal" href="#table-of-contents">Table of Contents</a></li>
+<li><a class="reference internal" href="#testing-overview">Testing Overview</a><ul>
+<li><a class="reference internal" href="#testing-framework">Testing Framework</a></li>
+<li><a class="reference internal" href="#test-philosophy">Test Philosophy</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#headless-testing">Headless Testing</a><ul>
-<li><a class="reference internal" href="#automatic-configuration">Automatic Configuration</a></li>
-<li><a class="reference internal" href="#manual-override">Manual Override</a></li>
+<li><a class="reference internal" href="#test-structure">Test Structure</a><ul>
+<li><a class="reference internal" href="#directory-organization">Directory Organization</a></li>
+<li><a class="reference internal" href="#test-types">Test Types</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#platform-specific-notes">Platform-Specific Notes</a><ul>
-<li><a class="reference internal" href="#windows">Windows</a></li>
-<li><a class="reference internal" href="#linux-with-display">Linux with Display</a></li>
-<li><a class="reference internal" href="#macos">macOS</a></li>
-<li><a class="reference internal" href="#ci-cd-github-actions-etc">CI/CD (GitHub Actions, etc.)</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#running-tests">Running Tests</a><ul>
+<li><a class="reference internal" href="#basic-test-execution">Basic Test Execution</a></li>
 <li><a class="reference internal" href="#test-markers">Test Markers</a></li>
-<li><a class="reference internal" href="#known-issues">Known Issues</a><ul>
-<li><a class="reference internal" href="#segmentation-fault-on-exit">Segmentation Fault on Exit</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
-<li><a class="reference internal" href="#import-errors">Import Errors</a></li>
-<li><a class="reference internal" href="#qt-platform-plugin-errors">Qt Platform Plugin Errors</a></li>
-<li><a class="reference internal" href="#qapplication-instance-errors">QApplication Instance Errors</a></li>
+<li><a class="reference internal" href="#coverage-reports">Coverage Reports</a></li>
+<li><a class="reference internal" href="#useful-options">Useful Options</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#writing-tests">Writing Tests</a><ul>
-<li><a class="reference internal" href="#unit-tests">Unit Tests</a></li>
-<li><a class="reference internal" href="#integration-tests">Integration Tests</a></li>
-<li><a class="reference internal" href="#gui-tests">GUI Tests</a></li>
+<li><a class="reference internal" href="#test-naming">Test Naming</a></li>
+<li><a class="reference internal" href="#basic-test-structure">Basic Test Structure</a></li>
+<li><a class="reference internal" href="#testing-with-database">Testing with Database</a></li>
+<li><a class="reference internal" href="#testing-commands">Testing Commands</a></li>
+<li><a class="reference internal" href="#testing-qt-widgets">Testing Qt Widgets</a></li>
+<li><a class="reference internal" href="#mocking">Mocking</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#coverage-requirements">Coverage Requirements</a></li>
-<li><a class="reference internal" href="#continuous-integration">Continuous Integration</a></li>
-<li><a class="reference internal" href="#test-fixtures">Test Fixtures</a></li>
-<li><a class="reference internal" href="#performance-testing">Performance Testing</a></li>
-<li><a class="reference internal" href="#best-practices">Best Practices</a></li>
-<li><a class="reference internal" href="#related-documentation">Related Documentation</a><ul>
-<li><a class="reference internal" href="#id1">GUI Tests</a></li>
+<li><a class="reference internal" href="#test-fixtures">Test Fixtures</a><ul>
+<li><a class="reference internal" href="#common-fixtures">Common Fixtures</a></li>
+<li><a class="reference internal" href="#fixture-scopes">Fixture Scopes</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#id2">Coverage Requirements</a></li>
+<li><a class="reference internal" href="#testing-patterns">Testing Patterns</a><ul>
+<li><a class="reference internal" href="#testing-exceptions">Testing Exceptions</a></li>
+<li><a class="reference internal" href="#parametrized-tests">Parametrized Tests</a></li>
+<li><a class="reference internal" href="#testing-async-code">Testing Async Code</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#coverage">Coverage</a><ul>
+<li><a class="reference internal" href="#coverage-goals">Coverage Goals</a></li>
+<li><a class="reference internal" href="#measuring-coverage">Measuring Coverage</a></li>
+<li><a class="reference internal" href="#coverage-configuration">Coverage Configuration</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#continuous-integration">Continuous Integration</a><ul>
+<li><a class="reference internal" href="#github-actions">GitHub Actions</a></li>
+<li><a class="reference internal" href="#pre-commit-hooks">Pre-commit Hooks</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#best-practices">Best Practices</a><ul>
+<li><a class="reference internal" href="#do-s">Do’s</a></li>
+<li><a class="reference internal" href="#don-ts">Don’ts</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
+<li><a class="reference internal" href="#common-issues">Common Issues</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#example-test-suite">Example Test Suite</a><ul>
+<li><a class="reference internal" href="#complete-example">Complete Example</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#next-steps">Next Steps</a></li>
 </ul>
 </li>
 </ul>

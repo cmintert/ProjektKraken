@@ -1,0 +1,1603 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
+        <title>User Guide - Project Kraken 0.11.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">Project Kraken 0.11.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <span class="sidebar-brand-text">Project Kraken 0.11.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="DATABASE.html">Database Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DEVELOPMENT.html">Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="modules.html">src</a><input aria-label="Toggle navigation of src" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="app.html">app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html">cli package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html">commands package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html">core package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui.widgets.html">gui.widgets package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.dialogs.html">gui.dialogs package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="services.html">services package</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/USER_GUIDE.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="user-guide">
+<h1>User Guide<a class="headerlink" href="#user-guide" title="Link to this heading">¶</a></h1>
+<p><strong>Version:</strong> 0.11.0 (Beta)<br />
+<strong>Last Updated:</strong> February 2026</p>
+<p>Complete guide to using ProjektKraken for worldbuilding and timeline management.</p>
+<hr class="docutils" />
+<section id="table-of-contents">
+<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Link to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="#introduction"><span class="xref myst">Introduction</span></a></p></li>
+<li><p><a class="reference internal" href="#core-concepts"><span class="xref myst">Core Concepts</span></a></p></li>
+<li><p><a class="reference internal" href="#user-interface-overview"><span class="xref myst">User Interface Overview</span></a></p></li>
+<li><p><a class="reference internal" href="#working-with-worlds"><span class="xref myst">Working with Worlds</span></a></p></li>
+<li><p><a class="reference internal" href="#events-and-timeline"><span class="xref myst">Events and Timeline</span></a></p></li>
+<li><p><a class="reference internal" href="core.html#module-core.entities" title="core.entities"><span class="xref myst py py-mod">Entities</span></a></p></li>
+<li><p><a class="reference internal" href="#relations"><span class="xref myst">Relations</span></a></p></li>
+<li><p><a class="reference internal" href="#maps-and-geography"><span class="xref myst">Maps and Geography</span></a></p></li>
+<li><p><a class="reference internal" href="#calendar-system"><span class="xref myst">Calendar System</span></a></p></li>
+<li><p><a class="reference internal" href="#search-and-ai-features"><span class="xref myst">Search and AI Features</span></a></p></li>
+<li><p><a class="reference internal" href="#graph-visualization"><span class="xref myst">Graph Visualization</span></a></p></li>
+<li><p><a class="reference internal" href="#import-and-export"><span class="xref myst">Import and Export</span></a></p></li>
+<li><p><a class="reference internal" href="#undo-and-redo"><span class="xref myst">Undo and Redo</span></a></p></li>
+<li><p><a class="reference internal" href="#keyboard-shortcuts"><span class="xref myst">Keyboard Shortcuts</span></a></p></li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">¶</a></h2>
+<section id="what-is-projektkraken">
+<h3>What is ProjektKraken?<a class="headerlink" href="#what-is-projektkraken" title="Link to this heading">¶</a></h3>
+<p>ProjektKraken is a <strong>timeline-first desktop worldbuilding application</strong> designed for writers, game masters, and worldbuilders who need to manage complex lore with chronological precision. Unlike traditional wiki tools, ProjektKraken treats <strong>history as the primary axis</strong> of your world.</p>
+</section>
+<section id="key-philosophy">
+<h3>Key Philosophy<a class="headerlink" href="#key-philosophy" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Timeline-First</strong>: Events are first-class citizens with precise timestamps</p></li>
+<li><p><strong>Relationship-Driven</strong>: Everything connects through typed relationships</p></li>
+<li><p><strong>Local-First</strong>: Your data lives on your computer, not in the cloud</p></li>
+<li><p><strong>Portable</strong>: Entire worlds are self-contained folders you can backup or share</p></li>
+</ul>
+</section>
+<section id="who-is-this-for">
+<h3>Who is This For?<a class="headerlink" href="#who-is-this-for" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Fantasy Writers</strong>: Track character arcs, political changes, and world events</p></li>
+<li><p><strong>Game Masters</strong>: Manage campaign timelines, NPCs, and locations</p></li>
+<li><p><strong>Worldbuilders</strong>: Create detailed histories with causal relationships</p></li>
+<li><p><strong>Sci-Fi Authors</strong>: Handle cosmic timescales and complex chronologies</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="core-concepts">
+<h2>Core Concepts<a class="headerlink" href="#core-concepts" title="Link to this heading">¶</a></h2>
+<section id="the-data-model">
+<h3>The Data Model<a class="headerlink" href="#the-data-model" title="Link to this heading">¶</a></h3>
+<p>ProjektKraken organizes your world around four core concepts:</p>
+<section id="events">
+<h4>1. <strong>Events</strong><a class="headerlink" href="#events" title="Link to this heading">¶</a></h4>
+<p>Events are <strong>timestamped moments</strong> in your world’s history.</p>
+<ul class="simple">
+<li><p>Have a precise date (cosmic to second resolution)</p></li>
+<li><p>Can represent anything: battles, births, treaties, natural disasters</p></li>
+<li><p>Are the primary building blocks of your timeline</p></li>
+<li><p>Can be linked to entities and other events</p></li>
+</ul>
+<p><strong>Example Events:</strong></p>
+<ul class="simple">
+<li><p>“The Fall of Atlantis” (March 15, Year 1234)</p></li>
+<li><p>“King Arthur’s Birth” (Year 470, Day 1)</p></li>
+<li><p>“Treaty of Westphalia” (October 24, 1648)</p></li>
+</ul>
+</section>
+<section id="entities">
+<h4>2. <strong>Entities</strong><a class="headerlink" href="#entities" title="Link to this heading">¶</a></h4>
+<p>Entities are <strong>persistent things</strong> in your world.</p>
+<ul class="simple">
+<li><p>Characters, locations, factions, items, concepts</p></li>
+<li><p>Don’t require dates (though they participate in dated events)</p></li>
+<li><p>Have flexible attributes via JSON storage</p></li>
+<li><p>Can relate to any other entity or event</p></li>
+</ul>
+<p><strong>Example Entities:</strong></p>
+<ul class="simple">
+<li><p>“Gandalf” (character)</p></li>
+<li><p>“The Shire” (location)</p></li>
+<li><p>“The Fellowship” (faction)</p></li>
+<li><p>“The One Ring” (item)</p></li>
+</ul>
+</section>
+<section id="relations">
+<h4>3. <strong>Relations</strong><a class="headerlink" href="#relations" title="Link to this heading">¶</a></h4>
+<p>Relations are <strong>typed connections</strong> between items.</p>
+<ul class="simple">
+<li><p>Directed: A → B (e.g., “Arthur” → “killed” → “Mordred”)</p></li>
+<li><p>Can be bidirectional (automatically create reverse relation)</p></li>
+<li><p>Have types: “caused”, “influenced”, “depicted”, “involved”, etc.</p></li>
+<li><p>Can carry attributes (metadata on the relationship)</p></li>
+</ul>
+<p><strong>Example Relations:</strong></p>
+<ul class="simple">
+<li><p>Event “The Battle” → “involved” → Entity “King Arthur”</p></li>
+<li><p>Event “World War I” → “caused” → Event “World War II”</p></li>
+<li><p>Entity “Frodo” → “owns” → Entity “The One Ring”</p></li>
+</ul>
+</section>
+<section id="worlds">
+<h4>4. <strong>Worlds</strong><a class="headerlink" href="#worlds" title="Link to this heading">¶</a></h4>
+<p>A World is a <strong>self-contained project</strong>.</p>
+<ul class="simple">
+<li><p>Stored as a folder with a <code class="docutils literal notranslate"><span class="pre">.kraken</span></code> SQLite database</p></li>
+<li><p>Contains all events, entities, relations, and assets</p></li>
+<li><p>Completely portable (copy folder = copy world)</p></li>
+<li><p>Supports custom calendars and themes</p></li>
+</ul>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="user-interface-overview">
+<h2>User Interface Overview<a class="headerlink" href="#user-interface-overview" title="Link to this heading">¶</a></h2>
+<section id="main-window-layout">
+<h3>Main Window Layout<a class="headerlink" href="#main-window-layout" title="Link to this heading">¶</a></h3>
+<p>ProjektKraken uses a <strong>dockable panel system</strong> with flexible layouts:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>┌─────────────────────────────────────────────────────┐
+│ Menu Bar (File, Edit, View, Tools, Help)           │
+├──────────────┬──────────────────┬───────────────────┤
+│              │                  │                   │
+│  Project     │   Timeline       │   Entity/Event    │
+│  Explorer    │   Graphic        │   Editor          │
+│              │   View           │                   │
+│  (Tree of    │                  │   (Details and    │
+│   Events &amp;   │   [Timeline]     │    Properties)    │
+│   Entities)  │                  │                   │
+│              │                  │                   │
+├──────────────┼──────────────────┴───────────────────┤
+│              │                                      │
+│  Relations   │   History Panel                     │
+│  Panel       │   (Undo/Redo Stack)                 │
+│              │                                      │
+└──────────────┴──────────────────────────────────────┘
+</pre></div>
+</div>
+</section>
+<section id="core-panels">
+<h3>Core Panels<a class="headerlink" href="#core-panels" title="Link to this heading">¶</a></h3>
+<section id="project-explorer-left">
+<h4>Project Explorer (Left)<a class="headerlink" href="#project-explorer-left" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p><strong>Unified List</strong>: Shows all events and entities in one tree</p></li>
+<li><p><strong>Filtering</strong>: Filter by type, tags, or search query</p></li>
+<li><p><strong>Drag-Drop</strong>: Drag items to create relations</p></li>
+<li><p><strong>Context Menu</strong>: Right-click for quick actions</p></li>
+</ul>
+</section>
+<section id="timeline-center">
+<h4>Timeline (Center)<a class="headerlink" href="#timeline-center" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p><strong>Visual Timeline</strong>: Events displayed chronologically</p></li>
+<li><p><strong>Playhead</strong>: Current time indicator</p></li>
+<li><p><strong>Zoom Controls</strong>: Zoom in/out on timeline</p></li>
+<li><p><strong>Group Bands</strong>: Organize events by category</p></li>
+</ul>
+</section>
+<section id="editor-right">
+<h4>Editor (Right)<a class="headerlink" href="#editor-right" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p><strong>Event Editor</strong>: Edit event details, date, description</p></li>
+<li><p><strong>Entity Editor</strong>: Edit entity properties, attributes, tags</p></li>
+<li><p><strong>Tabbed Interface</strong>: Multiple editors can be open</p></li>
+</ul>
+</section>
+<section id="relations-panel-bottom-left">
+<h4>Relations Panel (Bottom Left)<a class="headerlink" href="#relations-panel-bottom-left" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p><strong>Relation List</strong>: All relations for selected item</p></li>
+<li><p><strong>Quick Actions</strong>: Add, edit, delete relations</p></li>
+<li><p><strong>Type Filtering</strong>: Filter by relation type</p></li>
+</ul>
+</section>
+<section id="history-panel-bottom-right">
+<h4>History Panel (Bottom Right)<a class="headerlink" href="#history-panel-bottom-right" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p><strong>Command History</strong>: Visual undo/redo stack</p></li>
+<li><p><strong>Session Tracking</strong>: Persists across app restarts</p></li>
+<li><p><strong>Quick Navigation</strong>: Click to jump to any point in history</p></li>
+</ul>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="working-with-worlds">
+<h2>Working with Worlds<a class="headerlink" href="#working-with-worlds" title="Link to this heading">¶</a></h2>
+<section id="creating-a-new-world">
+<h3>Creating a New World<a class="headerlink" href="#creating-a-new-world" title="Link to this heading">¶</a></h3>
+<ol class="arabic">
+<li><p><strong>Open Create World Dialog</strong></p>
+<ul class="simple">
+<li><p><strong>File → New World</strong> (Ctrl+N)</p></li>
+<li><p>Or click “+” in Project Explorer</p></li>
+</ul>
+</li>
+<li><p><strong>Enter World Details</strong></p>
+<ul class="simple">
+<li><p><strong>Name</strong>: Your world’s name (e.g., “Middle Earth”)</p></li>
+<li><p><strong>Description</strong>: Optional brief description</p></li>
+</ul>
+</li>
+<li><p><strong>World Structure</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>worlds/
+└── Middle Earth/
+    ├── world.json                  # Metadata
+    ├── Middle Earth.kraken         # Database
+    └── assets/
+        ├── images/                 # Full-size images
+        ├── thumbnails/             # Auto-generated thumbnails
+        └── .trash/                 # Deleted files (for undo)
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="opening-an-existing-world">
+<h3>Opening an Existing World<a class="headerlink" href="#opening-an-existing-world" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>File → Open World</strong> (Ctrl+O)</p></li>
+<li><p><strong>Select World Folder</strong></p></li>
+<li><p>World opens and loads all data</p></li>
+</ol>
+</section>
+<section id="world-settings">
+<h3>World Settings<a class="headerlink" href="#world-settings" title="Link to this heading">¶</a></h3>
+<p>Access via <strong>Edit → World Settings</strong>:</p>
+<ul class="simple">
+<li><p><strong>Name and Description</strong>: Edit world metadata</p></li>
+<li><p><strong>Calendar</strong>: Configure custom calendar system</p></li>
+<li><p><strong>Theme</strong>: Select UI theme</p></li>
+<li><p><strong>Backup Settings</strong>: Configure auto-backup frequency</p></li>
+</ul>
+</section>
+<section id="backup-and-restore">
+<h3>Backup and Restore<a class="headerlink" href="#backup-and-restore" title="Link to this heading">¶</a></h3>
+<section id="automatic-backups">
+<h4>Automatic Backups<a class="headerlink" href="#automatic-backups" title="Link to this heading">¶</a></h4>
+<p>ProjektKraken automatically backs up your world:</p>
+<ul class="simple">
+<li><p><strong>Frequency</strong>: Configurable (default: every 15 minutes)</p></li>
+<li><p><strong>Location</strong>: User data directory</p></li>
+<li><p><strong>Retention</strong>: Keeps last N backups (configurable)</p></li>
+</ul>
+</section>
+<section id="manual-backup">
+<h4>Manual Backup<a class="headerlink" href="#manual-backup" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p><strong>File → Backup World</strong></p></li>
+<li><p>Choose destination folder</p></li>
+<li><p>Backup creates timestamped <code class="docutils literal notranslate"><span class="pre">.kraken</span></code> file</p></li>
+</ol>
+</section>
+<section id="restore-from-backup">
+<h4>Restore from Backup<a class="headerlink" href="#restore-from-backup" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p><strong>File → Restore World</strong></p></li>
+<li><p>Select backup <code class="docutils literal notranslate"><span class="pre">.kraken</span></code> file</p></li>
+<li><p>Confirm restoration (creates backup of current state first)</p></li>
+</ol>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="events-and-timeline">
+<h2>Events and Timeline<a class="headerlink" href="#events-and-timeline" title="Link to this heading">¶</a></h2>
+<section id="creating-events">
+<h3>Creating Events<a class="headerlink" href="#creating-events" title="Link to this heading">¶</a></h3>
+<section id="quick-create">
+<h4>Quick Create<a class="headerlink" href="#quick-create" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p><strong>Events → New Event</strong> (Ctrl+Shift+E)</p></li>
+<li><p>Enter basic details:</p>
+<ul class="simple">
+<li><p><strong>Name</strong>: Event title</p></li>
+<li><p><strong>Date</strong>: Natural language or calendar date</p></li>
+<li><p><strong>Type</strong>: Event category (optional)</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="natural-language-dates">
+<h4>Natural Language Dates<a class="headerlink" href="#natural-language-dates" title="Link to this heading">¶</a></h4>
+<p>ProjektKraken understands natural date expressions:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;1st</span> <span class="pre">of</span> <span class="pre">Summer&quot;</span></code> → Converts to calendar date</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;2</span> <span class="pre">weeks</span> <span class="pre">later&quot;</span></code> → Relative to current playhead</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&quot;Year</span> <span class="pre">1234,</span> <span class="pre">Day</span> <span class="pre">45&quot;</span></code> → Direct date specification</p></li>
+</ul>
+</section>
+</section>
+<section id="editing-events">
+<h3>Editing Events<a class="headerlink" href="#editing-events" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Select Event</strong> in Project Explorer or Timeline</p></li>
+<li><p><strong>Event Editor Opens</strong> in right panel</p></li>
+<li><p><strong>Editable Fields:</strong></p>
+<ul class="simple">
+<li><p><strong>Name</strong>: Event title</p></li>
+<li><p><strong>Date</strong>: Lore date (float or calendar)</p></li>
+<li><p><strong>Type</strong>: Event category</p></li>
+<li><p><strong>Tags</strong>: Classification tags</p></li>
+<li><p><strong>Description</strong>: Rich text with wiki links</p></li>
+<li><p><strong>Attributes</strong>: Custom JSON fields</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="timeline-visualization">
+<h3>Timeline Visualization<a class="headerlink" href="#timeline-visualization" title="Link to this heading">¶</a></h3>
+<section id="timeline-controls">
+<h4>Timeline Controls<a class="headerlink" href="#timeline-controls" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p><strong>Zoom In/Out</strong>: Mouse wheel or zoom slider</p></li>
+<li><p><strong>Pan</strong>: Click and drag timeline</p></li>
+<li><p><strong>Return to Present</strong>: Jump to playhead position</p></li>
+</ul>
+</section>
+<section id="timeline-views">
+<h4>Timeline Views<a class="headerlink" href="#timeline-views" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p><strong>Graphic Timeline</strong> (Lane-based)</p>
+<ul class="simple">
+<li><p>Events as blocks on horizontal lanes</p></li>
+<li><p>Automatic lane packing prevents overlap</p></li>
+<li><p>Group bands for categorization</p></li>
+</ul>
+</li>
+<li><p><strong>Card Timeline</strong> (Text-based)</p>
+<ul class="simple">
+<li><p>Events as cards in vertical list</p></li>
+<li><p>Shows more detail per event</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="playhead">
+<h4>Playhead<a class="headerlink" href="#playhead" title="Link to this heading">¶</a></h4>
+<p>The <strong>playhead</strong> represents “current time” in your world:</p>
+<ul class="simple">
+<li><p><strong>Visual Indicator</strong>: Red line on timeline</p></li>
+<li><p><strong>Clock Mode</strong>: Edit precise time</p></li>
+<li><p><strong>Temporal Context</strong>: Events before/after playhead</p></li>
+</ul>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id1">
+<h2>Entities<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<section id="creating-entities">
+<h3>Creating Entities<a class="headerlink" href="#creating-entities" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Entities → New Entity</strong> (Ctrl+Shift+N)</p></li>
+<li><p>Enter details:</p>
+<ul class="simple">
+<li><p><strong>Name</strong>: Entity name</p></li>
+<li><p><strong>Type</strong>: Character, Location, Faction, Item, Concept</p></li>
+<li><p><strong>Tags</strong>: Classification tags</p></li>
+<li><p><strong>Description</strong>: Rich text description</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="entity-types">
+<h3>Entity Types<a class="headerlink" href="#entity-types" title="Link to this heading">¶</a></h3>
+<p>ProjektKraken supports multiple entity types:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Examples</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Character</strong></p></td>
+<td><p>People, sentient beings</p></td>
+<td><p>“Frodo”, “Gandalf”, “Aragorn”</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Location</strong></p></td>
+<td><p>Places, regions</p></td>
+<td><p>“The Shire”, “Mordor”, “Rivendell”</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Faction</strong></p></td>
+<td><p>Groups, organizations</p></td>
+<td><p>“The Fellowship”, “Gondor”, “Mordor Army”</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Item</strong></p></td>
+<td><p>Objects, artifacts</p></td>
+<td><p>“The One Ring”, “Anduril”, “Palantir”</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Concept</strong></p></td>
+<td><p>Abstract ideas</p></td>
+<td><p>“The Prophecy”, “Ring Lore”, “Elvish Magic”</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="editing-entities">
+<h3>Editing Entities<a class="headerlink" href="#editing-entities" title="Link to this heading">¶</a></h3>
+<section id="entity-editor-panel">
+<h4>Entity Editor Panel<a class="headerlink" href="#entity-editor-panel" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p><strong>Basic Info</strong>: Name, type, tags</p></li>
+<li><p><strong>Description</strong>: Wiki-style text editor with <code class="docutils literal notranslate"><span class="pre">[[links]]</span></code></p></li>
+<li><p><strong>Attributes</strong>: Custom fields (key-value pairs)</p></li>
+<li><p><strong>Relations</strong>: List of all connections</p></li>
+<li><p><strong>Events</strong>: Events this entity is involved in</p></li>
+</ul>
+</section>
+<section id="wiki-links">
+<h4>Wiki Links<a class="headerlink" href="#wiki-links" title="Link to this heading">¶</a></h4>
+<p>Link to other entities using double brackets:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Frodo</span> <span class="ow">is</span> <span class="n">a</span> <span class="p">[[</span><span class="n">Hobbit</span><span class="p">]]</span> <span class="kn">from</span><span class="w"> </span><span class="p">[[</span><span class="n">The</span> <span class="n">Shire</span><span class="p">]]</span><span class="o">.</span>
+<span class="n">He</span> <span class="n">carries</span> <span class="n">the</span> <span class="p">[[</span><span class="n">One</span> <span class="n">Ring</span><span class="p">]]</span><span class="o">.</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><strong>Auto-complete</strong>: Start typing <code class="docutils literal notranslate"><span class="pre">[[</span></code> to see suggestions</p></li>
+<li><p><strong>Click to Navigate</strong>: Click links to jump to linked entities</p></li>
+</ul>
+</section>
+</section>
+<section id="tags-and-filtering">
+<h3>Tags and Filtering<a class="headerlink" href="#tags-and-filtering" title="Link to this heading">¶</a></h3>
+<section id="adding-tags">
+<h4>Adding Tags<a class="headerlink" href="#adding-tags" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>In Entity Editor, click “Add Tag”</p></li>
+<li><p>Enter tag name (e.g., “protagonist”, “magic”, “ancient”)</p></li>
+</ul>
+</section>
+<section id="filtering-by-tags">
+<h4>Filtering by Tags<a class="headerlink" href="#filtering-by-tags" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>In Project Explorer, use tag filter</p></li>
+<li><p>Select one or more tags</p></li>
+<li><p>View updates to show only matching items</p></li>
+</ul>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id2">
+<h2>Relations<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<section id="understanding-relations">
+<h3>Understanding Relations<a class="headerlink" href="#understanding-relations" title="Link to this heading">¶</a></h3>
+<p>Relations connect items in your world:</p>
+<ul class="simple">
+<li><p><strong>Directed</strong>: A → B (source to target)</p></li>
+<li><p><strong>Typed</strong>: Specific relationship type</p></li>
+<li><p><strong>Attributed</strong>: Can have metadata</p></li>
+</ul>
+</section>
+<section id="relation-types">
+<h3>Relation Types<a class="headerlink" href="#relation-types" title="Link to this heading">¶</a></h3>
+<p>Common relation types:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Example</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>caused</strong></p></td>
+<td><p>Causal relationship</p></td>
+<td><p>Event A caused Event B</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>involved</strong></p></td>
+<td><p>Participation</p></td>
+<td><p>Event involved Entity</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>influenced</strong></p></td>
+<td><p>Indirect effect</p></td>
+<td><p>Entity influenced Event</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>depicted</strong></p></td>
+<td><p>Representation</p></td>
+<td><p>Map depicted Location</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>located_at</strong></p></td>
+<td><p>Spatial</p></td>
+<td><p>Entity located at Location</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>member_of</strong></p></td>
+<td><p>Membership</p></td>
+<td><p>Character member of Faction</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>owns</strong></p></td>
+<td><p>Ownership</p></td>
+<td><p>Character owns Item</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="creating-relations">
+<h3>Creating Relations<a class="headerlink" href="#creating-relations" title="Link to this heading">¶</a></h3>
+<section id="method-1-drag-and-drop">
+<h4>Method 1: Drag and Drop<a class="headerlink" href="#method-1-drag-and-drop" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p><strong>Drag</strong> an entity/event from Project Explorer</p></li>
+<li><p><strong>Drop</strong> onto another entity/event in editor</p></li>
+<li><p><strong>Select Relation Type</strong> from popup (hold Shift)</p></li>
+<li><p>Relation created with undo support</p></li>
+</ol>
+</section>
+<section id="method-2-relations-panel">
+<h4>Method 2: Relations Panel<a class="headerlink" href="#method-2-relations-panel" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p><strong>Select</strong> source item</p></li>
+<li><p><strong>Click “Add Relation”</strong> in Relations Panel</p></li>
+<li><p><strong>Choose</strong> target item and relation type</p></li>
+<li><p><strong>Confirm</strong></p></li>
+</ol>
+</section>
+<section id="method-3-context-menu">
+<h4>Method 3: Context Menu<a class="headerlink" href="#method-3-context-menu" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p><strong>Right-click</strong> item in Project Explorer</p></li>
+<li><p><strong>Select “Add Relation”</strong></p></li>
+<li><p><strong>Choose</strong> target and type</p></li>
+</ol>
+</section>
+</section>
+<section id="editing-relations">
+<h3>Editing Relations<a class="headerlink" href="#editing-relations" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Select Relation</strong> in Relations Panel</p></li>
+<li><p><strong>Edit Dialog Opens</strong></p>
+<ul class="simple">
+<li><p>Change target</p></li>
+<li><p>Change type</p></li>
+<li><p>Add/edit attributes</p></li>
+</ul>
+</li>
+<li><p><strong>Save Changes</strong></p></li>
+</ol>
+</section>
+<section id="bidirectional-relations">
+<h3>Bidirectional Relations<a class="headerlink" href="#bidirectional-relations" title="Link to this heading">¶</a></h3>
+<p>Create reverse relation automatically:</p>
+<ul class="simple">
+<li><p><strong>Enable “Bidirectional”</strong> when creating</p></li>
+<li><p>Example: A “owns” B also creates B “owned_by” A</p></li>
+<li><p>Both relations are independent (can delete separately)</p></li>
+</ul>
+</section>
+<section id="relation-attributes">
+<h3>Relation Attributes<a class="headerlink" href="#relation-attributes" title="Link to this heading">¶</a></h3>
+<p>Add metadata to relations:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;since&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Year 1234&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;strength&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;strong&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;public&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Use cases:</p>
+<ul class="simple">
+<li><p>Temporal information (when relation started/ended)</p></li>
+<li><p>Intensity or importance</p></li>
+<li><p>Conditional properties</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="maps-and-geography">
+<h2>Maps and Geography<a class="headerlink" href="#maps-and-geography" title="Link to this heading">¶</a></h2>
+<section id="adding-a-map">
+<h3>Adding a Map<a class="headerlink" href="#adding-a-map" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Maps → New Map</strong></p></li>
+<li><p><strong>Upload Image</strong> (PNG, JPG, or custom format)</p></li>
+<li><p><strong>Name Map</strong> and set properties</p></li>
+</ol>
+</section>
+<section id="map-features">
+<h3>Map Features<a class="headerlink" href="#map-features" title="Link to this heading">¶</a></h3>
+<section id="map-markers">
+<h4>Map Markers<a class="headerlink" href="#map-markers" title="Link to this heading">¶</a></h4>
+<p>Place markers on maps to represent locations:</p>
+<ol class="arabic simple">
+<li><p><strong>Add Marker</strong>: Right-click on map → “Add Marker”</p></li>
+<li><p><strong>Link to Entity</strong>: Associate marker with location entity</p></li>
+<li><p><strong>Customize</strong>:</p>
+<ul class="simple">
+<li><p>Icon (from icon picker)</p></li>
+<li><p>Color</p></li>
+<li><p>Label</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="map-calibration">
+<h4>Map Calibration<a class="headerlink" href="#map-calibration" title="Link to this heading">¶</a></h4>
+<p>Set real-world scale:</p>
+<ol class="arabic simple">
+<li><p><strong>Tools → Calibrate Map</strong></p></li>
+<li><p><strong>Click Two Points</strong> of known distance</p></li>
+<li><p><strong>Enter Distance</strong> (e.g., “100 miles”)</p></li>
+<li><p>Scale calculated automatically</p></li>
+</ol>
+</section>
+<section id="coordinate-system">
+<h4>Coordinate System<a class="headerlink" href="#coordinate-system" title="Link to this heading">¶</a></h4>
+<p>Maps support coordinates:</p>
+<ul class="simple">
+<li><p><strong>Pixel Coordinates</strong>: X, Y on image</p></li>
+<li><p><strong>World Coordinates</strong>: Lat/Long if calibrated</p></li>
+<li><p><strong>Grid Overlay</strong>: Optional grid display</p></li>
+</ul>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="calendar-system">
+<h2>Calendar System<a class="headerlink" href="#calendar-system" title="Link to this heading">¶</a></h2>
+<section id="understanding-lore-dates">
+<h3>Understanding Lore Dates<a class="headerlink" href="#understanding-lore-dates" title="Link to this heading">¶</a></h3>
+<p>ProjektKraken stores dates as <strong>floats</strong> (1.0 = 1 day):</p>
+<ul class="simple">
+<li><p><strong>Internal Storage</strong>: 12345.678 (day 12345, hour 16:16:48)</p></li>
+<li><p><strong>Display</strong>: Converted to calendar format</p></li>
+<li><p><strong>Precision</strong>: Cosmic scale to sub-second</p></li>
+</ul>
+</section>
+<section id="default-calendar">
+<h3>Default Calendar<a class="headerlink" href="#default-calendar" title="Link to this heading">¶</a></h3>
+<p>Built-in Gregorian-like calendar:</p>
+<ul class="simple">
+<li><p>12 months, 28-31 days each</p></li>
+<li><p>7-day weeks</p></li>
+<li><p>Leap years every 4 years</p></li>
+</ul>
+</section>
+<section id="custom-calendars">
+<h3>Custom Calendars<a class="headerlink" href="#custom-calendars" title="Link to this heading">¶</a></h3>
+<p>Create fantasy calendars:</p>
+<ol class="arabic simple">
+<li><p><strong>Edit → Calendar Settings</strong></p></li>
+<li><p><strong>Configure</strong>:</p>
+<ul class="simple">
+<li><p>Month names and lengths</p></li>
+<li><p>Week structure (day names, week length)</p></li>
+<li><p>Leap year rules</p></li>
+<li><p>Year variants (special years)</p></li>
+</ul>
+</li>
+</ol>
+<section id="example-fantasy-calendar">
+<h4>Example: Fantasy Calendar<a class="headerlink" href="#example-fantasy-calendar" title="Link to this heading">¶</a></h4>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Months</span><span class="p">:</span>
+  <span class="o">-</span> <span class="n">Coldmoon</span> <span class="p">(</span><span class="mi">30</span> <span class="n">days</span><span class="p">)</span>
+  <span class="o">-</span> <span class="n">Springrise</span> <span class="p">(</span><span class="mi">28</span> <span class="n">days</span><span class="p">)</span>
+  <span class="o">-</span> <span class="n">Highsun</span> <span class="p">(</span><span class="mi">35</span> <span class="n">days</span><span class="p">)</span>
+  <span class="o">-</span> <span class="n">Harvest</span> <span class="p">(</span><span class="mi">30</span> <span class="n">days</span><span class="p">)</span>
+
+<span class="n">Weeks</span><span class="p">:</span> <span class="mi">8</span> <span class="n">days</span>
+  <span class="o">-</span> <span class="n">Moonday</span><span class="p">,</span> <span class="n">Starday</span><span class="p">,</span> <span class="n">Fireday</span><span class="p">,</span> <span class="n">Waterday</span><span class="p">,</span> <span class="n">Earthday</span><span class="p">,</span> <span class="n">Windday</span><span class="p">,</span> <span class="n">Voidday</span><span class="p">,</span> <span class="n">Restday</span>
+
+<span class="n">Leap</span> <span class="n">Years</span><span class="p">:</span> <span class="n">Every</span> <span class="mi">5</span> <span class="n">years</span> <span class="p">(</span><span class="n">extra</span> <span class="n">day</span> <span class="ow">in</span> <span class="n">Highsun</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="date-entry">
+<h3>Date Entry<a class="headerlink" href="#date-entry" title="Link to this heading">¶</a></h3>
+<p>Enter dates in multiple formats:</p>
+<ul class="simple">
+<li><p><strong>Natural Language</strong>: “1st of Coldmoon, Year 1234”</p></li>
+<li><p><strong>Numeric</strong>: “1234.45” (day 45 of year 1234)</p></li>
+<li><p><strong>Relative</strong>: “2 weeks after current” (from playhead)</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="search-and-ai-features">
+<h2>Search and AI Features<a class="headerlink" href="#search-and-ai-features" title="Link to this heading">¶</a></h2>
+<section id="semantic-search">
+<h3>Semantic Search<a class="headerlink" href="#semantic-search" title="Link to this heading">¶</a></h3>
+<section id="enabling-search">
+<h4>Enabling Search<a class="headerlink" href="#enabling-search" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p><strong>Tools → AI Settings</strong></p></li>
+<li><p><strong>Choose Provider</strong>:</p>
+<ul class="simple">
+<li><p><strong>LM Studio</strong> (local, private)</p></li>
+<li><p><strong>OpenAI</strong> (cloud)</p></li>
+<li><p><strong>Google</strong> (cloud)</p></li>
+</ul>
+</li>
+<li><p><strong>Index World</strong>: Tools → Build Search Index</p></li>
+</ol>
+</section>
+<section id="using-semantic-search">
+<h4>Using Semantic Search<a class="headerlink" href="#using-semantic-search" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p><strong>Open AI Panel</strong> (Ctrl+K)</p></li>
+<li><p><strong>Enter Natural Language Query</strong>:</p>
+<ul class="simple">
+<li><p>“Who are the wizards in my world?”</p></li>
+<li><p>“Events related to the war”</p></li>
+<li><p>“Find all items with magical properties”</p></li>
+</ul>
+</li>
+<li><p><strong>View Results</strong> ranked by relevance</p></li>
+</ol>
+</section>
+</section>
+<section id="llm-generation">
+<h3>LLM Generation<a class="headerlink" href="#llm-generation" title="Link to this heading">¶</a></h3>
+<section id="generating-content">
+<h4>Generating Content<a class="headerlink" href="#generating-content" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p><strong>Select Context</strong> (entity or event)</p></li>
+<li><p><strong>AI → Generate</strong></p></li>
+<li><p><strong>Choose Prompt</strong>:</p>
+<ul class="simple">
+<li><p>“Expand backstory”</p></li>
+<li><p>“Generate relationships”</p></li>
+<li><p>“Write description”</p></li>
+</ul>
+</li>
+<li><p><strong>Review and Edit</strong> generated text</p></li>
+</ol>
+</section>
+<section id="custom-prompts">
+<h4>Custom Prompts<a class="headerlink" href="#custom-prompts" title="Link to this heading">¶</a></h4>
+<p>Create custom LLM prompts:</p>
+<ol class="arabic">
+<li><p><strong>AI → Manage Prompts</strong></p></li>
+<li><p><strong>New Prompt</strong></p></li>
+<li><p><strong>Template with Variables</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Write</span> <span class="n">a</span> <span class="n">detailed</span> <span class="n">description</span> <span class="n">of</span> <span class="p">{</span><span class="n">entity_name</span><span class="p">}</span><span class="o">.</span>
+<span class="n">Type</span><span class="p">:</span> <span class="p">{</span><span class="n">entity_type</span><span class="p">}</span>
+<span class="n">Context</span><span class="p">:</span> <span class="p">{</span><span class="n">related_events</span><span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+<section id="rag-integration">
+<h3>RAG Integration<a class="headerlink" href="#rag-integration" title="Link to this heading">¶</a></h3>
+<p>Retrieval-Augmented Generation uses your world data:</p>
+<ul class="simple">
+<li><p><strong>Indexes</strong> all entities and events</p></li>
+<li><p><strong>Retrieves</strong> relevant context for queries</p></li>
+<li><p><strong>Augments</strong> LLM with your specific lore</p></li>
+<li><p><strong>Generates</strong> consistent, world-accurate content</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="graph-visualization">
+<h2>Graph Visualization<a class="headerlink" href="#graph-visualization" title="Link to this heading">¶</a></h2>
+<section id="opening-graph-view">
+<h3>Opening Graph View<a class="headerlink" href="#opening-graph-view" title="Link to this heading">¶</a></h3>
+<p><strong>View → Graph View</strong> (Ctrl+G)</p>
+</section>
+<section id="graph-features">
+<h3>Graph Features<a class="headerlink" href="#graph-features" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Interactive Nodes</strong>: Drag to rearrange</p></li>
+<li><p><strong>Force-Directed Layout</strong>: Automatic spacing</p></li>
+<li><p><strong>Relation Edges</strong>: Connections between nodes</p></li>
+<li><p><strong>Color Coding</strong>: By type or tag</p></li>
+</ul>
+</section>
+<section id="filtering-graph">
+<h3>Filtering Graph<a class="headerlink" href="#filtering-graph" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Filter Panel</strong> (left side)</p></li>
+<li><p><strong>Filter Options</strong>:</p>
+<ul class="simple">
+<li><p><strong>By Type</strong>: Events, Entities, specific types</p></li>
+<li><p><strong>By Tags</strong>: Include/exclude tags</p></li>
+<li><p><strong>By Relation Type</strong>: Show specific relations</p></li>
+</ul>
+</li>
+<li><p><strong>Apply Filters</strong> - graph updates in real-time</p></li>
+</ol>
+</section>
+<section id="graph-export">
+<h3>Graph Export<a class="headerlink" href="#graph-export" title="Link to this heading">¶</a></h3>
+<p><strong>Graph → Export</strong>:</p>
+<ul class="simple">
+<li><p><strong>PNG Image</strong>: Static snapshot</p></li>
+<li><p><strong>JSON</strong>: Graph data for external tools</p></li>
+<li><p><strong>HTML</strong>: Interactive web version</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="import-and-export">
+<h2>Import and Export<a class="headerlink" href="#import-and-export" title="Link to this heading">¶</a></h2>
+<section id="importing-data">
+<h3>Importing Data<a class="headerlink" href="#importing-data" title="Link to this heading">¶</a></h3>
+<section id="json-import">
+<h4>JSON Import<a class="headerlink" href="#json-import" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p><strong>File → Import → JSON</strong></p></li>
+<li><p><strong>Select File</strong> with event/entity data</p></li>
+<li><p><strong>Two-Pass Import</strong>:</p>
+<ul class="simple">
+<li><p><strong>Pass 1</strong>: Deduplication (match by name)</p></li>
+<li><p><strong>Pass 2</strong>: Resolve references and cycles</p></li>
+</ul>
+</li>
+<li><p><strong>Review Import Log</strong></p></li>
+</ol>
+</section>
+<section id="supported-import-formats">
+<h4>Supported Import Formats<a class="headerlink" href="#supported-import-formats" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p><strong>ProjektKraken JSON</strong>: Native format</p></li>
+<li><p><strong>Custom JSON</strong>: Configurable mapping</p></li>
+</ul>
+</section>
+</section>
+<section id="exporting-data">
+<h3>Exporting Data<a class="headerlink" href="#exporting-data" title="Link to this heading">¶</a></h3>
+<section id="obsidian-export">
+<h4>Obsidian Export<a class="headerlink" href="#obsidian-export" title="Link to this heading">¶</a></h4>
+<p>Export to Obsidian-compatible markdown:</p>
+<ol class="arabic">
+<li><p><strong>File → Export → Obsidian</strong></p></li>
+<li><p><strong>Choose Folder</strong></p></li>
+<li><p><strong>Generated Structure</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>export/
+├── Events/
+│   ├── Event1.md
+│   └── Event2.md
+├── Entities/
+│   ├── Entity1.md
+│   └── Entity2.md
+└── _index.md
+</pre></div>
+</div>
+</li>
+</ol>
+<p><strong>Markdown Format</strong>:</p>
+<div class="highlight-markdown notranslate"><div class="highlight"><pre><span></span>---
+type: entity
+<span class="gu">tags: [character, protagonist]</span>
+<span class="gu">---</span>
+
+<span class="gh"># Frodo Baggins</span>
+
+A hobbit from [[The Shire]].
+
+<span class="gu">## Events</span>
+<span class="k">-</span><span class="w"> </span>[[The Quest]] (Year 3018)
+<span class="k">-</span><span class="w"> </span>[[Destruction of the Ring]] (Year 3019)
+</pre></div>
+</div>
+</section>
+<section id="json-export">
+<h4>JSON Export<a class="headerlink" href="#json-export" title="Link to this heading">¶</a></h4>
+<p>Full world export:</p>
+<ol class="arabic simple">
+<li><p><strong>File → Export → JSON</strong></p></li>
+<li><p><strong>Include Options</strong>:</p>
+<ul class="simple">
+<li><p>Events, Entities, Relations</p></li>
+<li><p>Calendar, Settings</p></li>
+<li><p>Assets (images)</p></li>
+</ul>
+</li>
+<li><p><strong>Save to File</strong></p></li>
+</ol>
+</section>
+<section id="longform-builder">
+<h4>Longform Builder<a class="headerlink" href="#longform-builder" title="Link to this heading">¶</a></h4>
+<p>Generate narrative documents:</p>
+<ol class="arabic simple">
+<li><p><strong>Tools → Longform Builder</strong></p></li>
+<li><p><strong>Select Events</strong> for timeline narrative</p></li>
+<li><p><strong>Generate</strong> formatted document</p></li>
+<li><p><strong>Export</strong> to Markdown, HTML, or PDF</p></li>
+</ol>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="undo-and-redo">
+<h2>Undo and Redo<a class="headerlink" href="#undo-and-redo" title="Link to this heading">¶</a></h2>
+<section id="how-undo-works">
+<h3>How Undo Works<a class="headerlink" href="#how-undo-works" title="Link to this heading">¶</a></h3>
+<p>ProjektKraken uses the <strong>Command Pattern</strong>:</p>
+<ul class="simple">
+<li><p>Every user action is a reversible command</p></li>
+<li><p>Commands are stored in history</p></li>
+<li><p>History persists across app restarts</p></li>
+</ul>
+</section>
+<section id="using-undo-redo">
+<h3>Using Undo/Redo<a class="headerlink" href="#using-undo-redo" title="Link to this heading">¶</a></h3>
+<p><strong>Keyboard Shortcuts</strong>:</p>
+<ul class="simple">
+<li><p><strong>Undo</strong>: Ctrl+Z (Cmd+Z on Mac)</p></li>
+<li><p><strong>Redo</strong>: Ctrl+Shift+Z (Cmd+Shift+Z on Mac)</p></li>
+</ul>
+<p><strong>Menu</strong>:</p>
+<ul class="simple">
+<li><p><strong>Edit → Undo</strong></p></li>
+<li><p><strong>Edit → Redo</strong></p></li>
+</ul>
+</section>
+<section id="history-panel">
+<h3>History Panel<a class="headerlink" href="#history-panel" title="Link to this heading">¶</a></h3>
+<p>View and navigate command history:</p>
+<ol class="arabic simple">
+<li><p><strong>View → History Panel</strong></p></li>
+<li><p><strong>Visual Stack</strong>:</p>
+<ul class="simple">
+<li><p><strong>▲ Done Commands</strong>: Can undo (top of stack)</p></li>
+<li><p><strong>▼ Undone Commands</strong>: Can redo (bottom of stack)</p></li>
+</ul>
+</li>
+<li><p><strong>Click Any Command</strong>: Jump to that state</p></li>
+</ol>
+</section>
+<section id="persistent-history">
+<h3>Persistent History<a class="headerlink" href="#persistent-history" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Saves to Database</strong>: History stored in <code class="docutils literal notranslate"><span class="pre">.kraken</span></code> file</p></li>
+<li><p><strong>Session Tracking</strong>: Remembers across restarts</p></li>
+<li><p><strong>Edit Sessions</strong>: Logical grouping of related changes</p></li>
+</ul>
+</section>
+<section id="what-can-be-undone">
+<h3>What Can Be Undone?<a class="headerlink" href="#what-can-be-undone" title="Link to this heading">¶</a></h3>
+<p>✅ <strong>All User Actions</strong>:</p>
+<ul class="simple">
+<li><p>Create, edit, delete events/entities</p></li>
+<li><p>Add, modify, remove relations</p></li>
+<li><p>Move markers on maps</p></li>
+<li><p>Change calendar settings</p></li>
+<li><p>Batch operations</p></li>
+</ul>
+<p>❌ <strong>Not Undoable</strong>:</p>
+<ul class="simple">
+<li><p>Opening/closing worlds</p></li>
+<li><p>UI layout changes</p></li>
+<li><p>Search queries</p></li>
+<li><p>Backup/restore operations</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="keyboard-shortcuts">
+<h2>Keyboard Shortcuts<a class="headerlink" href="#keyboard-shortcuts" title="Link to this heading">¶</a></h2>
+<section id="general">
+<h3>General<a class="headerlink" href="#general" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Shortcut</p></th>
+<th class="head"><p>Action</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Ctrl+N</strong></p></td>
+<td><p>New World</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Ctrl+O</strong></p></td>
+<td><p>Open World</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Ctrl+S</strong></p></td>
+<td><p>Save (auto-saves enabled)</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Ctrl+Z</strong></p></td>
+<td><p>Undo</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Ctrl+Shift+Z</strong></p></td>
+<td><p>Redo</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Ctrl+Q</strong></p></td>
+<td><p>Quit</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="navigation">
+<h3>Navigation<a class="headerlink" href="#navigation" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Shortcut</p></th>
+<th class="head"><p>Action</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Ctrl+K</strong></p></td>
+<td><p>Open AI Search Panel</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Ctrl+G</strong></p></td>
+<td><p>Open Graph View</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Ctrl+T</strong></p></td>
+<td><p>Jump to Timeline</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Ctrl+E</strong></p></td>
+<td><p>Focus Project Explorer</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="creation">
+<h3>Creation<a class="headerlink" href="#creation" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Shortcut</p></th>
+<th class="head"><p>Action</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Ctrl+Shift+E</strong></p></td>
+<td><p>New Event</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Ctrl+Shift+N</strong></p></td>
+<td><p>New Entity</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Ctrl+Shift+R</strong></p></td>
+<td><p>New Relation</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="editing">
+<h3>Editing<a class="headerlink" href="#editing" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Shortcut</p></th>
+<th class="head"><p>Action</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Ctrl+D</strong></p></td>
+<td><p>Duplicate Selected</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Delete</strong></p></td>
+<td><p>Delete Selected</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>F2</strong></p></td>
+<td><p>Rename Selected</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Ctrl+F</strong></p></td>
+<td><p>Find/Filter</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="timeline">
+<h3>Timeline<a class="headerlink" href="#timeline" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Shortcut</p></th>
+<th class="head"><p>Action</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Space</strong></p></td>
+<td><p>Play/Pause Playhead</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>+</strong></p></td>
+<td><p>Zoom In</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>-</strong></p></td>
+<td><p>Zoom Out</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Home</strong></p></td>
+<td><p>Jump to Start</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>End</strong></p></td>
+<td><p>Jump to End</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading">¶</a></h2>
+<section id="learn-more">
+<h3>Learn More<a class="headerlink" href="#learn-more" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong><a class="reference internal" href="WORKFLOWS.html"><span class="std std-doc">Workflows Guide</span></a></strong> - Step-by-step guides for common tasks</p></li>
+<li><p><strong><a class="reference internal" href="FAQ.html"><span class="std std-doc">FAQ</span></a></strong> - Common questions and troubleshooting</p></li>
+<li><p><strong><a class="reference internal" href="ARCHITECTURE.html"><span class="std std-doc">Architecture</span></a></strong> - Technical architecture (for developers)</p></li>
+</ul>
+</section>
+<section id="get-help">
+<h3>Get Help<a class="headerlink" href="#get-help" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>GitHub Issues</strong>: Report bugs or request features</p></li>
+<li><p><strong>Discussions</strong>: Ask questions and share tips</p></li>
+<li><p><strong>Documentation</strong>: Full docs at <a class="reference internal" href="INDEX.html"><span class="std std-doc">docs/INDEX.md</span></a></p></li>
+</ul>
+<hr class="docutils" />
+<p><strong>Navigation:</strong><br />
+<a class="reference internal" href="INSTALLATION.html"><span class="std std-doc">← Installation Guide</span></a> • <a class="reference internal" href="INDEX.html"><span class="std std-doc">Back to Index</span></a> • <a class="reference internal" href="WORKFLOWS.html"><span class="std std-doc">Workflows Guide →</span></a></p>
+</section>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Christian Mintert
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">User Guide</a><ul>
+<li><a class="reference internal" href="#table-of-contents">Table of Contents</a></li>
+<li><a class="reference internal" href="#introduction">Introduction</a><ul>
+<li><a class="reference internal" href="#what-is-projektkraken">What is ProjektKraken?</a></li>
+<li><a class="reference internal" href="#key-philosophy">Key Philosophy</a></li>
+<li><a class="reference internal" href="#who-is-this-for">Who is This For?</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#core-concepts">Core Concepts</a><ul>
+<li><a class="reference internal" href="#the-data-model">The Data Model</a><ul>
+<li><a class="reference internal" href="#events">1. <strong>Events</strong></a></li>
+<li><a class="reference internal" href="#entities">2. <strong>Entities</strong></a></li>
+<li><a class="reference internal" href="#relations">3. <strong>Relations</strong></a></li>
+<li><a class="reference internal" href="#worlds">4. <strong>Worlds</strong></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#user-interface-overview">User Interface Overview</a><ul>
+<li><a class="reference internal" href="#main-window-layout">Main Window Layout</a></li>
+<li><a class="reference internal" href="#core-panels">Core Panels</a><ul>
+<li><a class="reference internal" href="#project-explorer-left">Project Explorer (Left)</a></li>
+<li><a class="reference internal" href="#timeline-center">Timeline (Center)</a></li>
+<li><a class="reference internal" href="#editor-right">Editor (Right)</a></li>
+<li><a class="reference internal" href="#relations-panel-bottom-left">Relations Panel (Bottom Left)</a></li>
+<li><a class="reference internal" href="#history-panel-bottom-right">History Panel (Bottom Right)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#working-with-worlds">Working with Worlds</a><ul>
+<li><a class="reference internal" href="#creating-a-new-world">Creating a New World</a></li>
+<li><a class="reference internal" href="#opening-an-existing-world">Opening an Existing World</a></li>
+<li><a class="reference internal" href="#world-settings">World Settings</a></li>
+<li><a class="reference internal" href="#backup-and-restore">Backup and Restore</a><ul>
+<li><a class="reference internal" href="#automatic-backups">Automatic Backups</a></li>
+<li><a class="reference internal" href="#manual-backup">Manual Backup</a></li>
+<li><a class="reference internal" href="#restore-from-backup">Restore from Backup</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#events-and-timeline">Events and Timeline</a><ul>
+<li><a class="reference internal" href="#creating-events">Creating Events</a><ul>
+<li><a class="reference internal" href="#quick-create">Quick Create</a></li>
+<li><a class="reference internal" href="#natural-language-dates">Natural Language Dates</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#editing-events">Editing Events</a></li>
+<li><a class="reference internal" href="#timeline-visualization">Timeline Visualization</a><ul>
+<li><a class="reference internal" href="#timeline-controls">Timeline Controls</a></li>
+<li><a class="reference internal" href="#timeline-views">Timeline Views</a></li>
+<li><a class="reference internal" href="#playhead">Playhead</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id1">Entities</a><ul>
+<li><a class="reference internal" href="#creating-entities">Creating Entities</a></li>
+<li><a class="reference internal" href="#entity-types">Entity Types</a></li>
+<li><a class="reference internal" href="#editing-entities">Editing Entities</a><ul>
+<li><a class="reference internal" href="#entity-editor-panel">Entity Editor Panel</a></li>
+<li><a class="reference internal" href="#wiki-links">Wiki Links</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tags-and-filtering">Tags and Filtering</a><ul>
+<li><a class="reference internal" href="#adding-tags">Adding Tags</a></li>
+<li><a class="reference internal" href="#filtering-by-tags">Filtering by Tags</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id2">Relations</a><ul>
+<li><a class="reference internal" href="#understanding-relations">Understanding Relations</a></li>
+<li><a class="reference internal" href="#relation-types">Relation Types</a></li>
+<li><a class="reference internal" href="#creating-relations">Creating Relations</a><ul>
+<li><a class="reference internal" href="#method-1-drag-and-drop">Method 1: Drag and Drop</a></li>
+<li><a class="reference internal" href="#method-2-relations-panel">Method 2: Relations Panel</a></li>
+<li><a class="reference internal" href="#method-3-context-menu">Method 3: Context Menu</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#editing-relations">Editing Relations</a></li>
+<li><a class="reference internal" href="#bidirectional-relations">Bidirectional Relations</a></li>
+<li><a class="reference internal" href="#relation-attributes">Relation Attributes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#maps-and-geography">Maps and Geography</a><ul>
+<li><a class="reference internal" href="#adding-a-map">Adding a Map</a></li>
+<li><a class="reference internal" href="#map-features">Map Features</a><ul>
+<li><a class="reference internal" href="#map-markers">Map Markers</a></li>
+<li><a class="reference internal" href="#map-calibration">Map Calibration</a></li>
+<li><a class="reference internal" href="#coordinate-system">Coordinate System</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#calendar-system">Calendar System</a><ul>
+<li><a class="reference internal" href="#understanding-lore-dates">Understanding Lore Dates</a></li>
+<li><a class="reference internal" href="#default-calendar">Default Calendar</a></li>
+<li><a class="reference internal" href="#custom-calendars">Custom Calendars</a><ul>
+<li><a class="reference internal" href="#example-fantasy-calendar">Example: Fantasy Calendar</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#date-entry">Date Entry</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#search-and-ai-features">Search and AI Features</a><ul>
+<li><a class="reference internal" href="#semantic-search">Semantic Search</a><ul>
+<li><a class="reference internal" href="#enabling-search">Enabling Search</a></li>
+<li><a class="reference internal" href="#using-semantic-search">Using Semantic Search</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#llm-generation">LLM Generation</a><ul>
+<li><a class="reference internal" href="#generating-content">Generating Content</a></li>
+<li><a class="reference internal" href="#custom-prompts">Custom Prompts</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#rag-integration">RAG Integration</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#graph-visualization">Graph Visualization</a><ul>
+<li><a class="reference internal" href="#opening-graph-view">Opening Graph View</a></li>
+<li><a class="reference internal" href="#graph-features">Graph Features</a></li>
+<li><a class="reference internal" href="#filtering-graph">Filtering Graph</a></li>
+<li><a class="reference internal" href="#graph-export">Graph Export</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#import-and-export">Import and Export</a><ul>
+<li><a class="reference internal" href="#importing-data">Importing Data</a><ul>
+<li><a class="reference internal" href="#json-import">JSON Import</a></li>
+<li><a class="reference internal" href="#supported-import-formats">Supported Import Formats</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#exporting-data">Exporting Data</a><ul>
+<li><a class="reference internal" href="#obsidian-export">Obsidian Export</a></li>
+<li><a class="reference internal" href="#json-export">JSON Export</a></li>
+<li><a class="reference internal" href="#longform-builder">Longform Builder</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#undo-and-redo">Undo and Redo</a><ul>
+<li><a class="reference internal" href="#how-undo-works">How Undo Works</a></li>
+<li><a class="reference internal" href="#using-undo-redo">Using Undo/Redo</a></li>
+<li><a class="reference internal" href="#history-panel">History Panel</a></li>
+<li><a class="reference internal" href="#persistent-history">Persistent History</a></li>
+<li><a class="reference internal" href="#what-can-be-undone">What Can Be Undone?</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#keyboard-shortcuts">Keyboard Shortcuts</a><ul>
+<li><a class="reference internal" href="#general">General</a></li>
+<li><a class="reference internal" href="#navigation">Navigation</a></li>
+<li><a class="reference internal" href="#creation">Creation</a></li>
+<li><a class="reference internal" href="#editing">Editing</a></li>
+<li><a class="reference internal" href="#timeline">Timeline</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#next-steps">Next Steps</a><ul>
+<li><a class="reference internal" href="#learn-more">Learn More</a></li>
+<li><a class="reference internal" href="#get-help">Get Help</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=1a9b1e2b"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

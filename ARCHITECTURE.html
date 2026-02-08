@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
-        <title>ProjektKraken Architecture &amp; Thread Safety Guide - Project Kraken 0.11.0 documentation</title>
+        <title>Architecture Documentation - Project Kraken 0.11.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -196,29 +196,11 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+  <p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="WIKI_LINKING.html">ID-Based Wiki Linking Implementation Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="MAP_USAGE_EXAMPLES.html">Map System Usage Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="LONGFORM.html">Longform Document Feature</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="Design.html">Project Kraken: Comprehensive Design Specification</a></li>
-<li class="toctree-l1"><a class="reference internal" href="DATABASE.html">Database Architecture and Best Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DATABASE.html">Database Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="DEVELOPMENT.html">Development Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security Best Practices</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Advanced Features</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
-<li class="toctree-l1"><a class="reference internal" href="LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAST_INJECT.html">Fast Inject Service</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html">Tag Normalization Migration Guide</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -239,7 +221,6 @@
 <p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
-<li class="toctree-l1"><a class="reference internal" href="LICENSE.html">GNU AFFERO GENERAL PUBLIC LICENSE</a></li>
 </ul>
 
 </div>
@@ -278,567 +259,821 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="projektkraken-architecture-thread-safety-guide">
-<h1>ProjektKraken Architecture &amp; Thread Safety Guide<a class="headerlink" href="#projektkraken-architecture-thread-safety-guide" title="Link to this heading">¶</a></h1>
+          <section id="architecture-documentation">
+<h1>Architecture Documentation<a class="headerlink" href="#architecture-documentation" title="Link to this heading">¶</a></h1>
+<p><strong>Version:</strong> 0.11.0 (Beta)<br />
+<strong>Last Updated:</strong> February 2026</p>
+<p>Technical architecture and design patterns in ProjektKraken.</p>
+<hr class="docutils" />
 <section id="table-of-contents">
 <h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Link to this heading">¶</a></h2>
 <ol class="arabic simple">
 <li><p><a class="reference internal" href="#architecture-overview"><span class="xref myst">Architecture Overview</span></a></p></li>
-<li><p><a class="reference internal" href="#thread-safety-model"><span class="xref myst">Thread Safety Model</span></a></p></li>
-<li><p><a class="reference internal" href="#signalslot-patterns"><span class="xref myst">Signal/Slot Patterns</span></a></p></li>
-<li><p><a class="reference internal" href="#layer-responsibilities"><span class="xref myst">Layer Responsibilities</span></a></p></li>
-<li><p><a class="reference internal" href="#best-practices"><span class="xref myst">Best Practices</span></a></p></li>
+<li><p><a class="reference internal" href="#layer-architecture"><span class="xref myst">Layer Architecture</span></a></p></li>
+<li><p><a class="reference internal" href="#design-patterns"><span class="xref myst">Design Patterns</span></a></p></li>
+<li><p><a class="reference internal" href="#threading-model"><span class="xref myst">Threading Model</span></a></p></li>
+<li><p><a class="reference internal" href="#database-architecture"><span class="xref myst">Database Architecture</span></a></p></li>
+<li><p><a class="reference internal" href="#data-flow"><span class="xref myst">Data Flow</span></a></p></li>
+<li><p><a class="reference internal" href="#key-services"><span class="xref myst">Key Services</span></a></p></li>
+<li><p><a class="reference internal" href="#command-system"><span class="xref myst">Command System</span></a></p></li>
+<li><p><a class="reference internal" href="#communication-patterns"><span class="xref myst">Communication Patterns</span></a></p></li>
+<li><p><a class="reference internal" href="#extension-points"><span class="xref myst">Extension Points</span></a></p></li>
 </ol>
 </section>
 <hr class="docutils" />
 <section id="architecture-overview">
 <h2>Architecture Overview<a class="headerlink" href="#architecture-overview" title="Link to this heading">¶</a></h2>
-<p>ProjektKraken uses a <strong>layered Service-Oriented Architecture (SOA)</strong> with strict separation of concerns:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>┌─────────────────────────────────────────────────┐
-│              Application Layer                   │
-│         (app/main_window.py + managers)         │
-│  - UI orchestration                             │
-│  - Signal/slot wiring                           │
-│  - Dock layout management                       │
-└───────────────┬─────────────────────────────────┘
-                │ signals/commands
-┌───────────────▼─────────────────────────────────┐
-│           Commands Layer                         │
-│         (commands/*.py)                         │
-│  - Command pattern for undo/redo               │
-│  - Input validation                            │
-│  - Transactional operations                    │
-└───────────────┬─────────────────────────────────┘
-                │ execute()
-┌───────────────▼─────────────────────────────────┐
-│           Services Layer                         │
-│         (services/*.py)                         │
-│  - DatabaseService + Repositories              │
-│  - Background worker (DatabaseWorker)          │
-│  - Business logic services                     │
-└───────────────┬─────────────────────────────────┘
-                │ CRUD operations
-┌───────────────▼─────────────────────────────────┐
-│            Core Layer                           │
-│         (core/*.py)                             │
-│  - Domain models (Event, Entity, etc.)         │
-│  - Utilities (calendar, theme)                 │
-│  - No external dependencies                    │
-└─────────────────────────────────────────────────┘
-</pre></div>
-</div>
-<section id="design-principles">
-<h3>Design Principles<a class="headerlink" href="#design-principles" title="Link to this heading">¶</a></h3>
+<section id="philosophy">
+<h3>Philosophy<a class="headerlink" href="#philosophy" title="Link to this heading">¶</a></h3>
+<p>ProjektKraken follows <strong>Service-Oriented Architecture (SOA)</strong> with strict separation of concerns to prevent the “God Class” anti-pattern.</p>
+<p><strong>Core Principles:</strong></p>
 <ol class="arabic simple">
-<li><p><strong>Separation of Concerns:</strong> Each layer has a single, well-defined responsibility</p></li>
-<li><p><strong>Dependency Flow:</strong> Top → Down (app depends on services, services depend on core)</p></li>
-<li><p><strong>Communication:</strong> Signals for loose coupling between components</p></li>
-<li><p><strong>Thread Safety:</strong> Worker thread for all database operations</p></li>
-<li><p><strong>Command Pattern:</strong> All user actions encapsulated as commands</p></li>
+<li><p><strong>“Dumb UI” Principle</strong>: Views contain zero business logic, only display and emit signals</p></li>
+<li><p><strong>Command Pattern</strong>: All user actions are reversible, encapsulated commands</p></li>
+<li><p><strong>Loose Coupling</strong>: Signal/slot communication between components</p></li>
+<li><p><strong>Testability</strong>: Each layer independently testable</p></li>
+<li><p><strong>Thread Safety</strong>: Strict isolation between UI and database threads</p></li>
 </ol>
 </section>
-</section>
-<hr class="docutils" />
-<section id="thread-safety-model">
-<h2>Thread Safety Model<a class="headerlink" href="#thread-safety-model" title="Link to this heading">¶</a></h2>
-<section id="threading-architecture">
-<h3>Threading Architecture<a class="headerlink" href="#threading-architecture" title="Link to this heading">¶</a></h3>
-<p>ProjektKraken uses <strong>two threads</strong> with strict isolation:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>┌───────────────────────────────────────────┐
-│          MAIN THREAD (GUI)                │
-│                                           │
-│  ┌─────────────────────────────────────┐ │
-│  │ MainWindow                          │ │
-│  │  - UI components                    │ │
-│  │  - Event handling                   │ │
-│  └──────────┬──────────────────────────┘ │
-│             │                             │
-│  ┌──────────▼──────────────────────────┐ │
-│  │ DataHandler                         │ │
-│  │  - Data caching                     │ │
-│  │  - Signal routing                   │ │
-│  └──────────┬──────────────────────────┘ │
-│             │ QueuedConnection            │
-└─────────────┼───────────────────────────┘
-              │
-┌─────────────▼───────────────────────────┐
-│       WORKER THREAD (Database)          │
-│                                         │
-│  ┌──────────────────────────────────┐  │
-│  │ DatabaseWorker                   │  │
-│  │  - Database operations           │  │
-│  │  - Command execution             │  │
-│  │  - Heavy processing              │  │
-│  └──────────┬───────────────────────┘  │
-│             │                           │
-│  ┌──────────▼───────────────────────┐  │
-│  │ DatabaseService                  │  │
-│  │  - SQLite connection (WAL mode)  │  │
-│  │  - Repository pattern            │  │
-│  └──────────────────────────────────┘  │
-└─────────────────────────────────────────┘
-</pre></div>
-</div>
-</section>
-<section id="thread-affinity-rules">
-<h3>Thread Affinity Rules<a class="headerlink" href="#thread-affinity-rules" title="Link to this heading">¶</a></h3>
-<p><strong>MAIN THREAD:</strong></p>
-<ul class="simple">
-<li><p>✅ All QWidget subclasses</p></li>
-<li><p>✅ MainWindow and coordinators</p></li>
-<li><p>✅ DataHandler (caches UI data)</p></li>
-<li><p>✅ UI event handlers</p></li>
-<li><p>❌ NO direct database calls</p></li>
-</ul>
-<p><strong>WORKER THREAD:</strong></p>
-<ul class="simple">
-<li><p>✅ DatabaseWorker (moved via moveToThread)</p></li>
-<li><p>✅ DatabaseService (thread affinity via worker)</p></li>
-<li><p>✅ All database operations</p></li>
-<li><p>✅ Command execution</p></li>
-<li><p>❌ NO UI operations</p></li>
-</ul>
-</section>
-<section id="thread-safety-guarantees">
-<h3>Thread Safety Guarantees<a class="headerlink" href="#thread-safety-guarantees" title="Link to this heading">¶</a></h3>
-<ol class="arabic">
-<li><p><strong>Signal/Slot with QueuedConnection</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># All cross-thread connections use QueuedConnection explicitly</span>
-<span class="n">worker</span><span class="o">.</span><span class="n">events_loaded</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
-    <span class="n">data_handler</span><span class="o">.</span><span class="n">on_events_loaded</span><span class="p">,</span>
-    <span class="n">Qt</span><span class="o">.</span><span class="n">ConnectionType</span><span class="o">.</span><span class="n">QueuedConnection</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-<ul class="simple">
-<li><p>Ensures slots run in receiver’s thread</p></li>
-<li><p>Thread-safe event queue mechanism</p></li>
-<li><p>No manual locking needed</p></li>
-</ul>
-</li>
-<li><p><strong>SQLite WAL Mode</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># DatabaseService.connect()</span>
-<span class="n">connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;PRAGMA journal_mode=WAL;&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-<ul class="simple">
-<li><p>Allows concurrent reads while writing</p></li>
-<li><p>Writer-reader isolation</p></li>
-<li><p>Crash-safe transactions</p></li>
-</ul>
-</li>
-<li><p><strong>No Shared Mutable State</strong></p>
-<ul class="simple">
-<li><p>Worker and Main threads share no variables</p></li>
-<li><p>All data passed via immutable signals (or deep copies)</p></li>
-<li><p>Cache updates happen atomically in slots</p></li>
-</ul>
-</li>
-<li><p><strong>Runtime Verification</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># DataHandler.__init__()</span>
-<span class="k">if</span> <span class="n">QThread</span><span class="o">.</span><span class="n">currentThread</span><span class="p">()</span> <span class="o">!=</span> <span class="n">QApplication</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">thread</span><span class="p">():</span>
-    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;DataHandler must be in main thread&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</li>
-</ol>
-</section>
-<section id="common-pitfalls-to-avoid">
-<h3>Common Pitfalls to Avoid<a class="headerlink" href="#common-pitfalls-to-avoid" title="Link to this heading">¶</a></h3>
-<p>❌ <strong>DON’T:</strong> Call UI methods from worker thread</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># WRONG - will crash or cause undefined behavior</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">load_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="n">events</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_events</span><span class="p">()</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">main_window</span><span class="o">.</span><span class="n">update_list</span><span class="p">(</span><span class="n">events</span><span class="p">)</span>  <span class="c1"># BAD!</span>
-</pre></div>
-</div>
-<p>✅ <strong>DO:</strong> Emit signal instead</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># CORRECT - use signal/slot</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">load_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="n">events</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_events</span><span class="p">()</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">events_loaded</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">events</span><span class="p">)</span>  <span class="c1"># Good!</span>
-</pre></div>
-</div>
-<p>❌ <strong>DON’T:</strong> Access database from main thread</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># WRONG - blocks UI</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">on_button_clicked</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="n">events</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">get_events</span><span class="p">()</span>  <span class="c1"># BAD!</span>
-</pre></div>
-</div>
-<p>✅ <strong>DO:</strong> Request via signal to worker</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># CORRECT - asynchronous</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">on_button_clicked</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">load_events_requested</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>  <span class="c1"># Good!</span>
+<section id="high-level-architecture">
+<h3>High-Level Architecture<a class="headerlink" href="#high-level-architecture" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>┌─────────────────────────────────────────────────────────┐
+│                    Application Layer                    │
+│  (MainWindow, Coordinators, Entry Point)               │
+└────────────────────────┬────────────────────────────────┘
+                         │
+┌────────────────────────┴────────────────────────────────┐
+│                     GUI Layer                           │
+│  (Widgets, Dialogs, Editors) - Pure Presentation       │
+└────────────────────────┬────────────────────────────────┘
+                         │ Signals
+┌────────────────────────┴────────────────────────────────┐
+│                   Commands Layer                        │
+│  (BaseCommand, Specific Commands) - Undo/Redo Logic    │
+└────────────────────────┬────────────────────────────────┘
+                         │
+┌────────────────────────┴────────────────────────────────┐
+│                   Services Layer                        │
+│  (DB, Repositories, Workers) - Business Logic          │
+└────────────────────────┬────────────────────────────────┘
+                         │
+┌────────────────────────┴────────────────────────────────┐
+│                     Core Layer                          │
+│  (Data Models, Utilities) - Domain Objects             │
+└─────────────────────────────────────────────────────────┘
 </pre></div>
 </div>
 </section>
 </section>
 <hr class="docutils" />
-<section id="signal-slot-patterns">
-<h2>Signal/Slot Patterns<a class="headerlink" href="#signal-slot-patterns" title="Link to this heading">¶</a></h2>
-<section id="pattern-1-data-loading">
-<h3>Pattern 1: Data Loading<a class="headerlink" href="#pattern-1-data-loading" title="Link to this heading">¶</a></h3>
-<p><strong>Flow:</strong> User Action → Worker Signal → Load Data → Worker Signal → Update UI</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># MainWindow</span>
-<span class="nd">@Slot</span><span class="p">()</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">on_refresh_clicked</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">load_events</span><span class="p">()</span>  <span class="c1"># Trigger worker slot</span>
-
-<span class="c1"># DatabaseWorker</span>
-<span class="nd">@Slot</span><span class="p">()</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">load_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="n">events</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">get_events</span><span class="p">()</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">events_loaded</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">events</span><span class="p">)</span>  <span class="c1"># Signal with data</span>
-
-<span class="c1"># DataHandler (runs in main thread)</span>
-<span class="nd">@Slot</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">on_events_loaded</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">events</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Event</span><span class="p">]):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_cached_events</span> <span class="o">=</span> <span class="n">events</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">events_ready</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">events</span><span class="p">)</span>  <span class="c1"># Forward to UI</span>
-
-<span class="c1"># MainWindow</span>
-<span class="nd">@Slot</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">_on_events_ready</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">events</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Event</span><span class="p">]):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">event_list</span><span class="o">.</span><span class="n">populate</span><span class="p">(</span><span class="n">events</span><span class="p">)</span>  <span class="c1"># Update UI</span>
-</pre></div>
-</div>
-<p><strong>Benefits:</strong></p>
-<ul class="simple">
-<li><p>Non-blocking UI</p></li>
-<li><p>Clear data flow</p></li>
-<li><p>Easy to test each component</p></li>
-</ul>
-</section>
-<section id="pattern-2-command-execution">
-<h3>Pattern 2: Command Execution<a class="headerlink" href="#pattern-2-command-execution" title="Link to this heading">¶</a></h3>
-<p><strong>Flow:</strong> User Action → Command → Worker Executes → Result Signal → UI Update</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># MainWindow</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">create_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">date</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
-    <span class="n">cmd</span> <span class="o">=</span> <span class="n">CreateEventCommand</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">date</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">command_requested</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
-
-<span class="c1"># DatabaseWorker</span>
-<span class="nd">@Slot</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">run_command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">:</span> <span class="n">BaseCommand</span><span class="p">):</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="n">command</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">command_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>  <span class="c1"># CommandResult</span>
-
-<span class="c1"># DataHandler</span>
-<span class="nd">@Slot</span><span class="p">(</span><span class="n">CommandResult</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">on_command_finished</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">CommandResult</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">reload_events</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>  <span class="c1"># Trigger refresh</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">command_failed</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
-</pre></div>
-</div>
-<p><strong>Benefits:</strong></p>
-<ul class="simple">
-<li><p>Undo/redo support (commands are objects)</p></li>
-<li><p>Validation before execution</p></li>
-<li><p>Consistent error handling</p></li>
-</ul>
-</section>
-<section id="pattern-3-editor-coordination">
-<h3>Pattern 3: Editor Coordination<a class="headerlink" href="#pattern-3-editor-coordination" title="Link to this heading">¶</a></h3>
-<p><strong>Flow:</strong> Select Item → Load Details → Update Editor → User Edits → Save Command</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Timeline widget emits selection</span>
-<span class="bp">self</span><span class="o">.</span><span class="n">event_selected</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span>
-
-<span class="c1"># MainWindow listens and requests details</span>
-<span class="nd">@Slot</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">on_event_selected</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">load_event_details</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span>
-
-<span class="c1"># Worker loads event + relations</span>
-<span class="nd">@Slot</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">load_event_details</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-    <span class="n">event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">get_event</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span>
-    <span class="n">relations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">get_event_relations</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">event_details_loaded</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">relations</span><span class="p">)</span>
-
-<span class="c1"># MainWindow updates editor</span>
-<span class="nd">@Slot</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">on_event_details_loaded</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">,</span> <span class="n">relations</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">event_editor</span><span class="o">.</span><span class="n">load_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">relations</span><span class="p">)</span>
-</pre></div>
-</div>
-</section>
-</section>
-<hr class="docutils" />
-<section id="layer-responsibilities">
-<h2>Layer Responsibilities<a class="headerlink" href="#layer-responsibilities" title="Link to this heading">¶</a></h2>
-<section id="app-layer-src-app">
-<h3>1. App Layer (<code class="docutils literal notranslate"><span class="pre">src/app/</span></code>)<a class="headerlink" href="#app-layer-src-app" title="Link to this heading">¶</a></h3>
-<p><strong>Purpose:</strong> UI orchestration and coordination</p>
+<section id="layer-architecture">
+<h2>Layer Architecture<a class="headerlink" href="#layer-architecture" title="Link to this heading">¶</a></h2>
+<section id="application-layer-src-app">
+<h3>1. Application Layer (<code class="docutils literal notranslate"><span class="pre">src/app/</span></code>)<a class="headerlink" href="#application-layer-src-app" title="Link to this heading">¶</a></h3>
+<p><strong>Purpose</strong>: Application entry point and component orchestration.</p>
 <p><strong>Key Components:</strong></p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">MainWindow</span></code>: Central hub, dock management, menu actions</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">DataHandler</span></code>: Loose coupling via signals, caches UI data</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">WorkerManager</span></code>: Worker thread lifecycle</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ConnectionManager</span></code>: Signal/slot wiring with validation</p></li>
-<li><p><strong>Coordinators:</strong> Feature-specific orchestration (timeline grouping, backup, navigation)</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">main.py</span></code></strong>: Entry point, initializes Qt application</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">main_window.py</span></code></strong>: Central UI coordinator, manages panels and menus</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">command_coordinator.py</span></code></strong>: Manages undo/redo stacks, coordinates command execution</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">worker_manager.py</span></code></strong>: Manages DatabaseWorker lifecycle</p></li>
+<li><p><strong>Coordinators</strong>:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">BackupCoordinator</span></code>: Automated backup scheduling</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">NavigationCoordinator</span></code>: Panel navigation and routing</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TimeCoordinator</span></code>: Timeline playhead management</p></li>
 </ul>
-<p><strong>Rules:</strong></p>
+</li>
+</ul>
+<p><strong>Responsibilities:</strong></p>
 <ul class="simple">
-<li><p>✅ Emit signals, don’t call methods directly</p></li>
-<li><p>✅ Handle UI events</p></li>
-<li><p>✅ Manage dock widget layout</p></li>
-<li><p>❌ NO business logic</p></li>
-<li><p>❌ NO database operations</p></li>
+<li><p>Initialize application</p></li>
+<li><p>Wire up signals between components</p></li>
+<li><p>Coordinate high-level workflows</p></li>
+<li><p>Manage application state</p></li>
 </ul>
 </section>
+<hr class="docutils" />
 <section id="commands-layer-src-commands">
 <h3>2. Commands Layer (<code class="docutils literal notranslate"><span class="pre">src/commands/</span></code>)<a class="headerlink" href="#commands-layer-src-commands" title="Link to this heading">¶</a></h3>
-<p><strong>Purpose:</strong> Encapsulate user actions as objects</p>
-<p><strong>Pattern:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">CreateEventCommand</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">lore_date</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lore_date</span> <span class="o">=</span> <span class="n">lore_date</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_created_id</span> <span class="o">=</span> <span class="kc">None</span>
+<p><strong>Purpose</strong>: Encapsulate all user actions as reversible commands.</p>
+<p><strong>Base Command:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">BaseCommand</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base for all commands.&quot;&quot;&quot;</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CommandResult</span><span class="p">:</span>
-        <span class="n">event</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">lore_date</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lore_date</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_created_id</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">create_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">CommandResult</span><span class="p">(</span><span class="n">success</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_created_id</span><span class="p">})</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">service</span> <span class="o">=</span> <span class="n">service</span>
     
-    <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="n">db_service</span><span class="o">.</span><span class="n">delete_event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_created_id</span><span class="p">)</span>
-        <span class="k">return</span> <span class="kc">True</span>
-</pre></div>
-</div>
-<p><strong>Rules:</strong></p>
-<ul class="simple">
-<li><p>✅ Validate input in <code class="docutils literal notranslate"><span class="pre">__init__</span></code></p></li>
-<li><p>✅ Store state for undo</p></li>
-<li><p>✅ Return <code class="docutils literal notranslate"><span class="pre">CommandResult</span></code> with success/error info</p></li>
-<li><p>❌ NO UI operations</p></li>
-<li><p>❌ NO signals (let caller handle results)</p></li>
-</ul>
-</section>
-<section id="services-layer-src-services">
-<h3>3. Services Layer (<code class="docutils literal notranslate"><span class="pre">src/services/</span></code>)<a class="headerlink" href="#services-layer-src-services" title="Link to this heading">¶</a></h3>
-<p><strong>Purpose:</strong> Business logic and data access</p>
-<p><strong>Key Components:</strong></p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">DatabaseService</span></code>: SQLite connection, schema management</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">DatabaseWorker</span></code>: Background thread worker (QObject)</p></li>
-<li><p><strong>Repositories:</strong> Modular CRUD (EventRepository, EntityRepository, etc.)</p></li>
-<li><p><strong>Business Services:</strong> ImportService, SearchService, SummaryService</p></li>
-</ul>
-<p><strong>Rules:</strong></p>
-<ul class="simple">
-<li><p>✅ CRUD operations</p></li>
-<li><p>✅ Data transformations</p></li>
-<li><p>✅ External integrations (LLM APIs)</p></li>
-<li><p>❌ NO UI components</p></li>
-<li><p>❌ NO direct user interaction</p></li>
-</ul>
-</section>
-<section id="core-layer-src-core">
-<h3>4. Core Layer (<code class="docutils literal notranslate"><span class="pre">src/core/</span></code>)<a class="headerlink" href="#core-layer-src-core" title="Link to this heading">¶</a></h3>
-<p><strong>Purpose:</strong> Domain models and utilities</p>
-<p><strong>Components:</strong></p>
-<ul class="simple">
-<li><p><strong>Data Models:</strong> Event, Entity, Relation, Map, etc. (dataclasses)</p></li>
-<li><p><strong>Utilities:</strong> Calendar, ThemeManager, DateParser</p></li>
-<li><p><strong>Protocols:</strong> Structural typing for interfaces</p></li>
-</ul>
-<p><strong>Rules:</strong></p>
-<ul class="simple">
-<li><p>✅ Pure Python logic</p></li>
-<li><p>✅ Immutable data structures (dataclasses)</p></li>
-<li><p>✅ Self-contained (no dependencies on other layers)</p></li>
-<li><p>❌ NO Qt imports</p></li>
-<li><p>❌ NO database access</p></li>
-</ul>
-</section>
-<section id="gui-layer-src-gui">
-<h3>5. GUI Layer (<code class="docutils literal notranslate"><span class="pre">src/gui/</span></code>)<a class="headerlink" href="#gui-layer-src-gui" title="Link to this heading">¶</a></h3>
-<p><strong>Purpose:</strong> Reusable UI components</p>
-<p><strong>Components:</strong></p>
-<ul class="simple">
-<li><p><strong>Widgets:</strong> Timeline, EventEditor, EntityEditor, UnifiedList</p></li>
-<li><p><strong>Dialogs:</strong> Settings, Import Preview, Calendar Config</p></li>
-<li><p><strong>Mixins:</strong> AutosaveMixin, LayoutGuard (reusable behaviors)</p></li>
-</ul>
-<p><strong>Rules:</strong></p>
-<ul class="simple">
-<li><p>✅ “Dumb UI” - display data, emit signals</p></li>
-<li><p>✅ Widget-specific logic only</p></li>
-<li><p>❌ NO business logic</p></li>
-<li><p>❌ NO database access</p></li>
-</ul>
-</section>
-</section>
-<hr class="docutils" />
-<section id="best-practices">
-<h2>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading">¶</a></h2>
-<section id="adding-a-new-feature">
-<h3>1. Adding a New Feature<a class="headerlink" href="#adding-a-new-feature" title="Link to this heading">¶</a></h3>
-<p><strong>Checklist:</strong></p>
-<ol class="arabic simple">
-<li><p>✅ Create command class in <code class="docutils literal notranslate"><span class="pre">src/commands/</span></code></p></li>
-<li><p>✅ Add worker slot in <code class="docutils literal notranslate"><span class="pre">DatabaseWorker</span></code></p></li>
-<li><p>✅ Add result signal to <code class="docutils literal notranslate"><span class="pre">DatabaseWorker</span></code></p></li>
-<li><p>✅ Connect signal in <code class="docutils literal notranslate"><span class="pre">WorkerManager</span></code> with <code class="docutils literal notranslate"><span class="pre">QueuedConnection</span></code></p></li>
-<li><p>✅ Handle result in <code class="docutils literal notranslate"><span class="pre">DataHandler</span></code> or <code class="docutils literal notranslate"><span class="pre">MainWindow</span></code></p></li>
-<li><p>✅ Update UI in main thread slots</p></li>
-</ol>
-<p><strong>Example: Add “Duplicate Event” Feature</strong></p>
-<ol class="arabic">
-<li><p>Create command:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># src/commands/event_commands.py</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">DuplicateEventCommand</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">):</span>
-        <span class="n">original</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">get_event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">event_id</span><span class="p">)</span>
-        <span class="n">duplicate</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">original</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (Copy)&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
-        <span class="n">new_id</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">create_event</span><span class="p">(</span><span class="n">duplicate</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">CommandResult</span><span class="p">(</span><span class="n">success</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">new_id</span><span class="p">})</span>
-</pre></div>
-</div>
-</li>
-<li><p>Add worker method:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># src/services/worker.py</span>
-<span class="nd">@Slot</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">duplicate_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-    <span class="n">cmd</span> <span class="o">=</span> <span class="n">DuplicateEventCommand</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">command_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-</pre></div>
-</div>
-</li>
-<li><p>Connect in WorkerManager:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">duplicate_event_requested</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">duplicate_event</span><span class="p">,</span>
-    <span class="n">Qt</span><span class="o">.</span><span class="n">ConnectionType</span><span class="o">.</span><span class="n">QueuedConnection</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-</li>
-<li><p>Handle in MainWindow:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">on_duplicate_event_clicked</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="n">selected_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">timeline</span><span class="o">.</span><span class="n">get_selected_event_id</span><span class="p">()</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">duplicate_event_requested</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">selected_id</span><span class="p">)</span>
-</pre></div>
-</div>
-</li>
-</ol>
-</section>
-<section id="debugging-cross-thread-issues">
-<h3>2. Debugging Cross-Thread Issues<a class="headerlink" href="#debugging-cross-thread-issues" title="Link to this heading">¶</a></h3>
-<p><strong>Symptoms:</strong></p>
-<ul class="simple">
-<li><p>UI freezes</p></li>
-<li><p>Crashes with “QObject: Cannot create children for a parent in a different thread”</p></li>
-<li><p>Data not updating</p></li>
-</ul>
-<p><strong>Debugging Steps:</strong></p>
-<ol class="arabic">
-<li><p>✅ Verify connection type: Check all cross-thread signals use <code class="docutils literal notranslate"><span class="pre">QueuedConnection</span></code></p></li>
-<li><p>✅ Check thread affinity:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Thread: </span><span class="si">{</span><span class="n">QThread</span><span class="o">.</span><span class="n">currentThread</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Main: </span><span class="si">{</span><span class="n">QApplication</span><span class="o">.</span><span class="n">instance</span><span class="p">()</span><span class="o">.</span><span class="n">thread</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</li>
-<li><p>✅ Add assertions:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">assert</span> <span class="n">QThread</span><span class="o">.</span><span class="n">currentThread</span><span class="p">()</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">thread</span><span class="p">()</span>
-</pre></div>
-</div>
-</li>
-<li><p>✅ Enable Qt logging:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;QT_LOGGING_RULES&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;qt.qpa.*=true&quot;</span>
-</pre></div>
-</div>
-</li>
-</ol>
-</section>
-<section id="testing-patterns">
-<h3>3. Testing Patterns<a class="headerlink" href="#testing-patterns" title="Link to this heading">¶</a></h3>
-<p><strong>Unit Tests:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_command_execution</span><span class="p">():</span>
-    <span class="n">db</span> <span class="o">=</span> <span class="n">DatabaseService</span><span class="p">(</span><span class="s2">&quot;:memory:&quot;</span><span class="p">)</span>
-    <span class="n">db</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute the command.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
     
-    <span class="n">cmd</span> <span class="o">=</span> <span class="n">CreateEventCommand</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Test&quot;</span><span class="p">,</span> <span class="n">lore_date</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Undo the command.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
     
-    <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span>
-    <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize for persistence.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deserialize from persistence.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
 </pre></div>
 </div>
-<p><strong>Integration Tests with Signals:</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_worker_signal_emission</span><span class="p">(</span><span class="n">qtbot</span><span class="p">):</span>
-    <span class="n">worker</span> <span class="o">=</span> <span class="n">DatabaseWorker</span><span class="p">(</span><span class="s2">&quot;:memory:&quot;</span><span class="p">)</span>
-    <span class="n">worker</span><span class="o">.</span><span class="n">initialize_db</span><span class="p">()</span>
-    
-    <span class="k">with</span> <span class="n">qtbot</span><span class="o">.</span><span class="n">waitSignal</span><span class="p">(</span><span class="n">worker</span><span class="o">.</span><span class="n">events_loaded</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
-        <span class="n">worker</span><span class="o">.</span><span class="n">load_events</span><span class="p">()</span>
-</pre></div>
-</div>
-</section>
-<section id="performance-guidelines">
-<h3>4. Performance Guidelines<a class="headerlink" href="#performance-guidelines" title="Link to this heading">¶</a></h3>
-<p><strong>Database:</strong></p>
-<ul class="simple">
-<li><p>✅ Use transactions for batch operations</p></li>
-<li><p>✅ Add indexes for frequently queried columns</p></li>
-<li><p>✅ Use <code class="docutils literal notranslate"><span class="pre">LIMIT</span></code> for large result sets</p></li>
-<li><p>❌ Avoid N+1 queries (load relations in batch)</p></li>
-</ul>
-<p><strong>UI:</strong></p>
-<ul class="simple">
-<li><p>✅ Lazy load large datasets</p></li>
-<li><p>✅ Use virtual lists for 1000+ items</p></li>
-<li><p>✅ Debounce frequent signals (e.g., text input)</p></li>
-<li><p>❌ Don’t load all data upfront</p></li>
-</ul>
-<p><strong>Memory:</strong></p>
-<ul class="simple">
-<li><p>✅ Clear caches when switching worlds</p></li>
-<li><p>✅ Use weak references for parent-child relationships</p></li>
-<li><p>✅ Delete large objects explicitly</p></li>
-<li><p>❌ Don’t keep entire database in memory</p></li>
-</ul>
-</section>
-</section>
-<hr class="docutils" />
-<section id="appendix-common-error-messages">
-<h2>Appendix: Common Error Messages<a class="headerlink" href="#appendix-common-error-messages" title="Link to this heading">¶</a></h2>
+<p><strong>Command Types:</strong></p>
 <div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>
-<tr class="row-odd"><th class="head"><p>Error</p></th>
-<th class="head"><p>Cause</p></th>
-<th class="head"><p>Solution</p></th>
+<tr class="row-odd"><th class="head"><p>Module</p></th>
+<th class="head"><p>Commands</p></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>“Cannot create children for parent in different thread”</p></td>
-<td><p>UI created in worker thread</p></td>
-<td><p>Move object creation to main thread</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">event_commands.py</span></code></p></td>
+<td><p>CreateEvent, UpdateEvent, DeleteEvent</p></td>
 </tr>
-<tr class="row-odd"><td><p>“Database is locked”</p></td>
-<td><p>Multiple writers without WAL</p></td>
-<td><p>Enable WAL mode in DatabaseService</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">entity_commands.py</span></code></p></td>
+<td><p>CreateEntity, UpdateEntity, DeleteEntity</p></td>
 </tr>
-<tr class="row-even"><td><p>“Signal already connected”</p></td>
-<td><p>Duplicate connection in ConnectionManager</p></td>
-<td><p>Check connection logic, use <code class="docutils literal notranslate"><span class="pre">disconnect()</span></code> first</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">relation_commands.py</span></code></p></td>
+<td><p>AddRelation, UpdateRelation, RemoveRelation</p></td>
 </tr>
-<tr class="row-odd"><td><p>“QThread already running”</p></td>
-<td><p>Starting thread twice</p></td>
-<td><p>Check <code class="docutils literal notranslate"><span class="pre">worker_thread.isRunning()</span></code> before start</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">wiki_commands.py</span></code></p></td>
+<td><p>CreateWikiLink, ResolveLink</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">map_commands.py</span></code></p></td>
+<td><p>AddMarker, UpdateMarker, RemoveMarker</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">calendar_commands.py</span></code></p></td>
+<td><p>UpdateCalendar, ConvertDate</p></td>
 </tr>
 </tbody>
 </table>
 </div>
+<p><strong>Benefits:</strong></p>
+<ul class="simple">
+<li><p>Full undo/redo support</p></li>
+<li><p>Serializable for persistent history</p></li>
+<li><p>Testable in isolation</p></li>
+<li><p>Reusable between GUI and CLI</p></li>
+</ul>
+</section>
 <hr class="docutils" />
-<p><strong>Document Version:</strong> 1.0
-<strong>Last Updated:</strong> 2026-01-25</p>
+<section id="services-layer-src-services">
+<h3>3. Services Layer (<code class="docutils literal notranslate"><span class="pre">src/services/</span></code>)<a class="headerlink" href="#services-layer-src-services" title="Link to this heading">¶</a></h3>
+<p><strong>Purpose</strong>: Business logic, data access, and background processing.</p>
+<p><strong>Key Services:</strong></p>
+<section id="databaseservice-db-service-py">
+<h4>DatabaseService (<code class="docutils literal notranslate"><span class="pre">db_service.py</span></code>)<a class="headerlink" href="#databaseservice-db-service-py" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>Raw SQL interface with parameterized queries</p></li>
+<li><p>Schema initialization and migrations</p></li>
+<li><p>Connection management</p></li>
+<li><p>Transaction support</p></li>
+</ul>
+</section>
+<section id="repositories-repositories">
+<h4>Repositories (<code class="docutils literal notranslate"><span class="pre">repositories/</span></code>)<a class="headerlink" href="#repositories-repositories" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p><strong>EventRepository</strong>: Event CRUD operations</p></li>
+<li><p><strong>EntityRepository</strong>: Entity CRUD operations</p></li>
+<li><p><strong>RelationRepository</strong>: Relation management</p></li>
+<li><p><strong>MapRepository</strong>: Map and marker operations</p></li>
+<li><p><strong>CalendarRepository</strong>: Calendar configuration</p></li>
+</ul>
+</section>
+<section id="historyservice-history-service-py">
+<h4>HistoryService (<code class="docutils literal notranslate"><span class="pre">history_service.py</span></code>)<a class="headerlink" href="#historyservice-history-service-py" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>Persists command history to <code class="docutils literal notranslate"><span class="pre">command_history</span></code> table</p></li>
+<li><p>Session tracking across app restarts</p></li>
+<li><p>Command serialization/deserialization</p></li>
+</ul>
+</section>
+<section id="backupservice-backup-service-py">
+<h4>BackupService (<code class="docutils literal notranslate"><span class="pre">backup_service.py</span></code>)<a class="headerlink" href="#backupservice-backup-service-py" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>Automated backup scheduling</p></li>
+<li><p>Manual backup creation</p></li>
+<li><p>Retention policy management</p></li>
+<li><p>Integrity verification</p></li>
+</ul>
+</section>
+<section id="ragservice-rag-service-py">
+<h4>RAGService (<code class="docutils literal notranslate"><span class="pre">rag_service.py</span></code>)<a class="headerlink" href="#ragservice-rag-service-py" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p>Retrieval-Augmented Generation</p></li>
+<li><p>Hybrid search (lexical + semantic)</p></li>
+<li><p>Embedding management</p></li>
+<li><p>Context retrieval for LLMs</p></li>
+</ul>
+</section>
+<section id="workers-workers">
+<h4>Workers (<code class="docutils literal notranslate"><span class="pre">workers/</span></code>)<a class="headerlink" href="#workers-workers" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p><strong>DatabaseWorker</strong>: Executes commands in background thread</p></li>
+<li><p><strong>TextParser</strong>: Wiki link parsing and resolution</p></li>
+</ul>
+<p><strong>Design Pattern: Repository Pattern</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">EventRepository</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Handles Event database operations.&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db</span> <span class="o">=</span> <span class="n">db_service</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Event</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create event in database.&quot;&quot;&quot;</span>
+        <span class="c1"># SQL INSERT</span>
+        <span class="k">return</span> <span class="n">event</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Event</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve event by ID.&quot;&quot;&quot;</span>
+        <span class="c1"># SQL SELECT</span>
+        <span class="k">return</span> <span class="n">event</span> <span class="ow">or</span> <span class="kc">None</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Event</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update existing event.&quot;&quot;&quot;</span>
+        <span class="c1"># SQL UPDATE</span>
+        <span class="k">return</span> <span class="n">event</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete event.&quot;&quot;&quot;</span>
+        <span class="c1"># SQL DELETE</span>
+        <span class="k">return</span> <span class="n">success</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="core-layer-src-core">
+<h3>4. Core Layer (<code class="docutils literal notranslate"><span class="pre">src/core/</span></code>)<a class="headerlink" href="#core-layer-src-core" title="Link to this heading">¶</a></h3>
+<p><strong>Purpose</strong>: Domain models, business logic, and utilities.</p>
+<p><strong>Data Models:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Event</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Event domain model.&quot;&quot;&quot;</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">lore_date</span><span class="p">:</span> <span class="nb">float</span>  <span class="c1"># 1.0 = 1 day</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">description</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">tags</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">attributes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>  <span class="c1"># JSON storage</span>
+    <span class="n">created_at</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">modified_at</span><span class="p">:</span> <span class="nb">float</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize to dictionary.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+    
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Event&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deserialize from dictionary.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+</pre></div>
+</div>
+<p><strong>Key Classes:</strong></p>
+<ul class="simple">
+<li><p><strong>Event</strong>: Timestamped lore entry</p></li>
+<li><p><strong>Entity</strong>: Persistent world element</p></li>
+<li><p><strong>Relation</strong>: Typed connection between items</p></li>
+<li><p><strong>Calendar</strong>: Custom calendar configuration</p></li>
+<li><p><strong>Map</strong>: Geographic map with markers</p></li>
+<li><p><strong>World</strong>: Project/world container</p></li>
+</ul>
+<p><strong>Utilities:</strong></p>
+<ul class="simple">
+<li><p><strong>ThemeManager</strong>: UI theme management</p></li>
+<li><p><strong>CalendarConverter</strong>: Date conversion (float ↔ calendar)</p></li>
+<li><p><strong>LinkResolver</strong>: Wiki link resolution</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="gui-layer-src-gui">
+<h3>5. GUI Layer (<code class="docutils literal notranslate"><span class="pre">src/gui/</span></code>)<a class="headerlink" href="#gui-layer-src-gui" title="Link to this heading">¶</a></h3>
+<p><strong>Purpose</strong>: Presentation and user interaction.</p>
+<p><strong>Structure:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>src/gui/
+├── widgets/
+│   ├── timeline/         # Timeline visualization
+│   │   ├── timeline_widget.py
+│   │   ├── ruler_widget.py
+│   │   └── lane_packer.py
+│   ├── map/              # Map and markers
+│   │   ├── map_graphics_view.py
+│   │   └── map_marker.py
+│   ├── entity_editor.py  # Entity editing
+│   ├── event_editor.py   # Event editing
+│   ├── unified_list.py   # Project explorer
+│   └── history_panel.py  # Undo/redo visualization
+├── dialogs/              # Modal dialogs
+│   ├── create_world_dialog.py
+│   └── import_dialog.py
+├── workers/              # Background Qt workers
+│   └── database_worker.py
+└── utils/
+    └── style_helper.py   # Theme utilities
+</pre></div>
+</div>
+<p><strong>Widget Pattern:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">EntityEditor</span><span class="p">(</span><span class="n">QWidget</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Entity editing widget.&quot;&quot;&quot;</span>
+    
+    <span class="c1"># Signals (output)</span>
+    <span class="n">entity_updated</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">relation_requested</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_ui</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_connect_signals</span><span class="p">()</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Display entity (input from controller).&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_entity</span> <span class="o">=</span> <span class="n">entity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_ui</span><span class="p">()</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_on_save_clicked</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;User clicked save button.&quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collect_form_data</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entity_updated</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>  <span class="c1"># Emit signal</span>
+</pre></div>
+</div>
+<p><strong>Key Principles:</strong></p>
+<ul class="simple">
+<li><p>Widgets <strong>display</strong> data, don’t modify it</p></li>
+<li><p>All mutations via <strong>signals</strong></p></li>
+<li><p>Controllers listen to signals and invoke commands</p></li>
+<li><p>No direct database access from GUI</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="design-patterns">
+<h2>Design Patterns<a class="headerlink" href="#design-patterns" title="Link to this heading">¶</a></h2>
+<section id="command-pattern">
+<h3>Command Pattern<a class="headerlink" href="#command-pattern" title="Link to this heading">¶</a></h3>
+<p><strong>Problem</strong>: How to implement undo/redo for all user actions?</p>
+<p><strong>Solution</strong>: Encapsulate each action as a command object.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">UpdateEntityCommand</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update an entity&#39;s properties.&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">,</span> <span class="n">new_data</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">service</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entity_id</span> <span class="o">=</span> <span class="n">entity_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span> <span class="o">=</span> <span class="n">new_data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">old_data</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Stored during execute</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply update.&quot;&quot;&quot;</span>
+        <span class="n">repo</span> <span class="o">=</span> <span class="n">EntityRepository</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">service</span><span class="p">)</span>
+        <span class="n">entity</span> <span class="o">=</span> <span class="n">repo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">old_data</span> <span class="o">=</span> <span class="n">entity</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>  <span class="c1"># Save for undo</span>
+        <span class="n">entity</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_data</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+        <span class="n">repo</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">entity</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Revert update.&quot;&quot;&quot;</span>
+        <span class="n">repo</span> <span class="o">=</span> <span class="n">EntityRepository</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">service</span><span class="p">)</span>
+        <span class="n">entity</span> <span class="o">=</span> <span class="n">Entity</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">old_data</span><span class="p">)</span>
+        <span class="n">repo</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">entity</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Benefits:</strong></p>
+<ul class="simple">
+<li><p>Undo/redo “for free”</p></li>
+<li><p>Command history is audit log</p></li>
+<li><p>Commands serializable for persistence</p></li>
+<li><p>Testable in isolation</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="repository-pattern">
+<h3>Repository Pattern<a class="headerlink" href="#repository-pattern" title="Link to this heading">¶</a></h3>
+<p><strong>Problem</strong>: Keep database logic out of business logic.</p>
+<p><strong>Solution</strong>: Repositories provide data access abstraction.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Bad: Business logic mixed with SQL</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">update_event</span><span class="p">(</span><span class="n">event_id</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="n">conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;db.sqlite&#39;</span><span class="p">)</span>
+    <span class="n">cursor</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;UPDATE events SET name=? WHERE id=?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">event_id</span><span class="p">))</span>
+    <span class="n">conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+    <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="c1"># Good: Repository abstracts database</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">EventRepository</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Event</span><span class="p">:</span>
+        <span class="c1"># SQL implementation hidden</span>
+        <span class="k">pass</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">update_event</span><span class="p">(</span><span class="n">event_id</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="n">repo</span> <span class="o">=</span> <span class="n">EventRepository</span><span class="p">(</span><span class="n">db_service</span><span class="p">)</span>
+    <span class="n">event</span> <span class="o">=</span> <span class="n">repo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span>
+    <span class="n">event</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+    <span class="n">repo</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="signal-slot-pattern-qt">
+<h3>Signal/Slot Pattern (Qt)<a class="headerlink" href="#signal-slot-pattern-qt" title="Link to this heading">¶</a></h3>
+<p><strong>Problem</strong>: Loose coupling between components.</p>
+<p><strong>Solution</strong>: Qt signals and slots for event-driven communication.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Widget emits signal</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">EntityEditor</span><span class="p">(</span><span class="n">QWidget</span><span class="p">):</span>
+    <span class="n">entity_updated</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_on_save</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entity_updated</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_data</span><span class="p">())</span>
+
+<span class="c1"># Controller connects and responds</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MainWindow</span><span class="p">(</span><span class="n">QMainWindow</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entity_editor</span><span class="o">.</span><span class="n">entity_updated</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_on_entity_updated</span>
+        <span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_on_entity_updated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="n">UpdateEntityCommand</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">service</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command_coordinator</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Benefits:</strong></p>
+<ul class="simple">
+<li><p>Widgets don’t know about controllers</p></li>
+<li><p>Easy to swap implementations</p></li>
+<li><p>Testable with mock slots</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="coordinator-pattern">
+<h3>Coordinator Pattern<a class="headerlink" href="#coordinator-pattern" title="Link to this heading">¶</a></h3>
+<p><strong>Problem</strong>: MainWindow becomes too complex.</p>
+<p><strong>Solution</strong>: Extract coordination logic to specialized coordinators.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">BackupCoordinator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Manages automated backups.&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backup_service</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backup_service</span> <span class="o">=</span> <span class="n">backup_service</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span> <span class="o">=</span> <span class="n">QTimer</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">timeout</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_perform_backup</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval_minutes</span><span class="o">=</span><span class="mi">15</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Start automated backups.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="n">interval_minutes</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_perform_backup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform backup.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backup_service</span><span class="o">.</span><span class="n">create_backup</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="threading-model">
+<h2>Threading Model<a class="headerlink" href="#threading-model" title="Link to this heading">¶</a></h2>
+<section id="two-thread-architecture">
+<h3>Two-Thread Architecture<a class="headerlink" href="#two-thread-architecture" title="Link to this heading">¶</a></h3>
+<p><strong>Design</strong>: Strict separation between UI and database operations.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>┌────────────────────────────────┐
+│       Main Thread (GUI)        │
+│  - Qt event loop               │
+│  - Widget rendering            │
+│  - User interactions           │
+│  - Signal emissions            │
+└────────────┬───────────────────┘
+             │ QueuedConnection
+             │ (thread-safe signals)
+             ↓
+┌────────────────────────────────┐
+│     Worker Thread (Database)   │
+│  - DatabaseService             │
+│  - Command execution           │
+│  - Long-running operations     │
+│  - File I/O                    │
+└────────────────────────────────┘
+</pre></div>
+</div>
+</section>
+<section id="databaseworker">
+<h3>DatabaseWorker<a class="headerlink" href="#databaseworker" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">DatabaseWorker</span><span class="p">(</span><span class="n">QThread</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Background thread for database operations.&quot;&quot;&quot;</span>
+    
+    <span class="c1"># Signals (output to main thread)</span>
+    <span class="n">command_finished</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>
+    <span class="n">progress_updated</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_path</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">command_queue</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">()</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Thread main loop.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span> <span class="o">=</span> <span class="n">DatabaseService</span><span class="p">(</span><span class="n">db_path</span><span class="p">)</span>
+        
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">running</span><span class="p">:</span>
+            <span class="n">cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">command_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">cmd</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">command_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">cmd</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">command_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">cmd</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="thread-safety-rules">
+<h3>Thread Safety Rules<a class="headerlink" href="#thread-safety-rules" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>DatabaseService owned by worker thread</strong></p>
+<ul class="simple">
+<li><p>Never access from main thread</p></li>
+</ul>
+</li>
+<li><p><strong>Data marshaled via signals</strong></p>
+<ul class="simple">
+<li><p>Signals use <code class="docutils literal notranslate"><span class="pre">Qt.QueuedConnection</span></code> for cross-thread safety</p></li>
+<li><p>Pass immutable data or copies</p></li>
+</ul>
+</li>
+<li><p><strong>No shared mutable state</strong></p>
+<ul class="simple">
+<li><p>Each thread has its own data structures</p></li>
+</ul>
+</li>
+<li><p><strong>GUI updates only on main thread</strong></p>
+<ul class="simple">
+<li><p>Worker emits signal → main thread slot updates UI</p></li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="database-architecture">
+<h2>Database Architecture<a class="headerlink" href="#database-architecture" title="Link to this heading">¶</a></h2>
+<section id="sqlite-configuration">
+<h3>SQLite Configuration<a class="headerlink" href="#sqlite-configuration" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># WAL mode for concurrency</span>
+<span class="n">PRAGMA</span> <span class="n">journal_mode</span> <span class="o">=</span> <span class="n">WAL</span><span class="p">;</span>
+
+<span class="c1"># Foreign key enforcement</span>
+<span class="n">PRAGMA</span> <span class="n">foreign_keys</span> <span class="o">=</span> <span class="n">ON</span><span class="p">;</span>
+
+<span class="c1"># Optimize performance</span>
+<span class="n">PRAGMA</span> <span class="n">synchronous</span> <span class="o">=</span> <span class="n">NORMAL</span><span class="p">;</span>
+<span class="n">PRAGMA</span> <span class="n">temp_store</span> <span class="o">=</span> <span class="n">MEMORY</span><span class="p">;</span>
+<span class="n">PRAGMA</span> <span class="n">mmap_size</span> <span class="o">=</span> <span class="mi">268435456</span><span class="p">;</span>  <span class="c1"># 256MB</span>
+</pre></div>
+</div>
+</section>
+<section id="hybrid-schema">
+<h3>Hybrid Schema<a class="headerlink" href="#hybrid-schema" title="Link to this heading">¶</a></h3>
+<p><strong>Strict Columns</strong> (searchable, sortable):</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">events</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">lore_date</span><span class="w"> </span><span class="nb">REAL</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="k">type</span><span class="w"> </span><span class="nb">TEXT</span><span class="p">,</span>
+<span class="w">    </span><span class="n">created_at</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">modified_at</span><span class="w"> </span><span class="nb">REAL</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+<p><strong>JSON Attributes</strong> (flexible):</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">event_attributes</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">event_id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">attributes</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span><span class="w">  </span><span class="c1">-- JSON</span>
+<span class="w">    </span><span class="k">FOREIGN</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span><span class="w"> </span><span class="k">REFERENCES</span><span class="w"> </span><span class="n">events</span><span class="p">(</span><span class="n">id</span><span class="p">)</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</section>
+<section id="schema-structure">
+<h3>Schema Structure<a class="headerlink" href="#schema-structure" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   events    │────→│  relations  │←────│  entities   │
+└─────────────┘     └─────────────┘     └─────────────┘
+       │                   │                     │
+       ↓                   ↓                     ↓
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   event_    │     │  relation_  │     │   entity_   │
+│ attributes  │     │ attributes  │     │ attributes  │
+└─────────────┘     └─────────────┘     └─────────────┘
+</pre></div>
+</div>
+<p><strong>Additional Tables:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">maps</span></code>, <code class="docutils literal notranslate"><span class="pre">map_markers</span></code>: Geographic data</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">calendars</span></code>: Custom calendar configurations</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">command_history</span></code>: Undo/redo persistence</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">edit_sessions</span></code>: Session tracking</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">backups</span></code>: Backup metadata</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="data-flow">
+<h2>Data Flow<a class="headerlink" href="#data-flow" title="Link to this heading">¶</a></h2>
+<section id="user-action-flow">
+<h3>User Action Flow<a class="headerlink" href="#user-action-flow" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>1. User clicks &quot;Create Event&quot;
+         ↓
+2. CreateEventDialog shows, user fills form
+         ↓
+3. Dialog emits event_created(data) signal
+         ↓
+4. MainWindow._on_event_created(data) slot
+         ↓
+5. Create CreateEventCommand(service, data)
+         ↓
+6. CommandCoordinator.execute(cmd)
+         ↓
+7. Add to undo stack, submit to DatabaseWorker
+         ↓
+8. Worker thread: cmd.execute()
+         ↓
+9. EventRepository.create(event)
+         ↓
+10. SQL INSERT into database
+         ↓
+11. HistoryService.record(cmd)
+         ↓
+12. Worker emits command_finished signal
+         ↓
+13. MainWindow updates UI
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="key-services">
+<h2>Key Services<a class="headerlink" href="#key-services" title="Link to this heading">¶</a></h2>
+<section id="databaseservice">
+<h3>DatabaseService<a class="headerlink" href="#databaseservice" title="Link to this heading">¶</a></h3>
+<p><strong>Purpose</strong>: Low-level database access.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">DatabaseService</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;SQLite database interface.&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connection</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">db_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_configure</span><span class="p">()</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sql</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">())</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute SQL query.&quot;&quot;&quot;</span>
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+        <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">transaction</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ContextManager</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Transaction context manager.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">connection</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="historyservice">
+<h3>HistoryService<a class="headerlink" href="#historyservice" title="Link to this heading">¶</a></h3>
+<p><strong>Purpose</strong>: Persistent undo/redo.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">HistoryService</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Manages command history persistence.&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">record</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="n">BaseCommand</span><span class="p">,</span> <span class="n">session_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save command to database.&quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="s2">&quot;INSERT INTO command_history VALUES (?, ?, ?)&quot;</span><span class="p">,</span>
+            <span class="p">(</span><span class="n">cmd</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">session_id</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">restore_session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">BaseCommand</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load commands from previous session.&quot;&quot;&quot;</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="s2">&quot;SELECT data FROM command_history WHERE session_id = ?&quot;</span><span class="p">,</span>
+            <span class="p">(</span><span class="n">session_id</span><span class="p">,)</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_deserialize</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="command-system">
+<h2>Command System<a class="headerlink" href="#command-system" title="Link to this heading">¶</a></h2>
+<section id="commandcoordinator">
+<h3>CommandCoordinator<a class="headerlink" href="#commandcoordinator" title="Link to this heading">¶</a></h3>
+<p><strong>Purpose</strong>: Manage undo/redo stacks.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">CommandCoordinator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Coordinates command execution and history.&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">worker</span><span class="p">:</span> <span class="n">DatabaseWorker</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker</span> <span class="o">=</span> <span class="n">worker</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">undo_stack</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">redo_stack</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="n">BaseCommand</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute command and add to undo stack.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">undo_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">redo_stack</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>  <span class="c1"># Can&#39;t redo after new action</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Undo last command.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">undo_stack</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">undo_stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">undo</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">redo_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">redo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Redo last undone command.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">redo_stack</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">redo_stack</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">undo_stack</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="communication-patterns">
+<h2>Communication Patterns<a class="headerlink" href="#communication-patterns" title="Link to this heading">¶</a></h2>
+<section id="signal-types">
+<h3>Signal Types<a class="headerlink" href="#signal-types" title="Link to this heading">¶</a></h3>
+<p><strong>1. Widget → Controller</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Widget</span>
+<span class="n">entity_updated</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+
+<span class="c1"># Controller</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">entity_editor</span><span class="o">.</span><span class="n">entity_updated</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_on_update</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>2. Worker → Main Thread</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Worker</span>
+<span class="n">command_finished</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>
+
+<span class="c1"># Main Thread</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">command_finished</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_on_cmd_done</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>3. Service → Application</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Service</span>
+<span class="n">backup_created</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+
+<span class="c1"># Application</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">backup_service</span><span class="o">.</span><span class="n">backup_created</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_show_notification</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="extension-points">
+<h2>Extension Points<a class="headerlink" href="#extension-points" title="Link to this heading">¶</a></h2>
+<section id="adding-new-commands">
+<h3>Adding New Commands<a class="headerlink" href="#adding-new-commands" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p>Create subclass of <code class="docutils literal notranslate"><span class="pre">BaseCommand</span></code></p></li>
+<li><p>Implement <code class="docutils literal notranslate"><span class="pre">execute()</span></code> and <code class="docutils literal notranslate"><span class="pre">undo()</span></code></p></li>
+<li><p>Implement <code class="docutils literal notranslate"><span class="pre">to_dict()</span></code> and <code class="docutils literal notranslate"><span class="pre">from_dict()</span></code></p></li>
+<li><p>Register in <code class="docutils literal notranslate"><span class="pre">WorkerManager.on_db_initialized()</span></code></p></li>
+</ol>
+</section>
+<section id="adding-new-repositories">
+<h3>Adding New Repositories<a class="headerlink" href="#adding-new-repositories" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p>Create repository class in <code class="docutils literal notranslate"><span class="pre">services/repositories/</span></code></p></li>
+<li><p>Inject <code class="docutils literal notranslate"><span class="pre">DatabaseService</span></code> via constructor</p></li>
+<li><p>Implement CRUD methods</p></li>
+<li><p>Use in commands</p></li>
+</ol>
+</section>
+<section id="adding-new-widgets">
+<h3>Adding New Widgets<a class="headerlink" href="#adding-new-widgets" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p>Create widget in <code class="docutils literal notranslate"><span class="pre">gui/widgets/</span></code></p></li>
+<li><p>Define signals for outputs</p></li>
+<li><p>Implement data display methods</p></li>
+<li><p>Wire up in <code class="docutils literal notranslate"><span class="pre">MainWindow</span></code></p></li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong><a class="reference internal" href="DEVELOPMENT.html"><span class="std std-doc">Development Guide</span></a></strong> - Setup and coding standards</p></li>
+<li><p><strong><a class="reference internal" href="DATABASE.html"><span class="std std-doc">Database Schema</span></a></strong> - Detailed schema documentation</p></li>
+<li><p><strong><a class="reference internal" href="API_REFERENCE.html"><span class="std std-doc">API Reference</span></a></strong> - Key classes and methods</p></li>
+</ul>
+<hr class="docutils" />
+<p><strong>Navigation:</strong><br />
+<a class="reference internal" href="FAQ.html"><span class="std std-doc">← FAQ</span></a> • <a class="reference internal" href="INDEX.html"><span class="std std-doc">Back to Index</span></a> • <a class="reference internal" href="DEVELOPMENT.html"><span class="std std-doc">Development →</span></a></p>
 </section>
 </section>
 
@@ -879,41 +1114,72 @@
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">ProjektKraken Architecture &amp; Thread Safety Guide</a><ul>
+<li><a class="reference internal" href="#">Architecture Documentation</a><ul>
 <li><a class="reference internal" href="#table-of-contents">Table of Contents</a></li>
 <li><a class="reference internal" href="#architecture-overview">Architecture Overview</a><ul>
-<li><a class="reference internal" href="#design-principles">Design Principles</a></li>
+<li><a class="reference internal" href="#philosophy">Philosophy</a></li>
+<li><a class="reference internal" href="#high-level-architecture">High-Level Architecture</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#thread-safety-model">Thread Safety Model</a><ul>
-<li><a class="reference internal" href="#threading-architecture">Threading Architecture</a></li>
-<li><a class="reference internal" href="#thread-affinity-rules">Thread Affinity Rules</a></li>
-<li><a class="reference internal" href="#thread-safety-guarantees">Thread Safety Guarantees</a></li>
-<li><a class="reference internal" href="#common-pitfalls-to-avoid">Common Pitfalls to Avoid</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#signal-slot-patterns">Signal/Slot Patterns</a><ul>
-<li><a class="reference internal" href="#pattern-1-data-loading">Pattern 1: Data Loading</a></li>
-<li><a class="reference internal" href="#pattern-2-command-execution">Pattern 2: Command Execution</a></li>
-<li><a class="reference internal" href="#pattern-3-editor-coordination">Pattern 3: Editor Coordination</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#layer-responsibilities">Layer Responsibilities</a><ul>
-<li><a class="reference internal" href="#app-layer-src-app">1. App Layer (<code class="docutils literal notranslate"><span class="pre">src/app/</span></code>)</a></li>
+<li><a class="reference internal" href="#layer-architecture">Layer Architecture</a><ul>
+<li><a class="reference internal" href="#application-layer-src-app">1. Application Layer (<code class="docutils literal notranslate"><span class="pre">src/app/</span></code>)</a></li>
 <li><a class="reference internal" href="#commands-layer-src-commands">2. Commands Layer (<code class="docutils literal notranslate"><span class="pre">src/commands/</span></code>)</a></li>
-<li><a class="reference internal" href="#services-layer-src-services">3. Services Layer (<code class="docutils literal notranslate"><span class="pre">src/services/</span></code>)</a></li>
+<li><a class="reference internal" href="#services-layer-src-services">3. Services Layer (<code class="docutils literal notranslate"><span class="pre">src/services/</span></code>)</a><ul>
+<li><a class="reference internal" href="#databaseservice-db-service-py">DatabaseService (<code class="docutils literal notranslate"><span class="pre">db_service.py</span></code>)</a></li>
+<li><a class="reference internal" href="#repositories-repositories">Repositories (<code class="docutils literal notranslate"><span class="pre">repositories/</span></code>)</a></li>
+<li><a class="reference internal" href="#historyservice-history-service-py">HistoryService (<code class="docutils literal notranslate"><span class="pre">history_service.py</span></code>)</a></li>
+<li><a class="reference internal" href="#backupservice-backup-service-py">BackupService (<code class="docutils literal notranslate"><span class="pre">backup_service.py</span></code>)</a></li>
+<li><a class="reference internal" href="#ragservice-rag-service-py">RAGService (<code class="docutils literal notranslate"><span class="pre">rag_service.py</span></code>)</a></li>
+<li><a class="reference internal" href="#workers-workers">Workers (<code class="docutils literal notranslate"><span class="pre">workers/</span></code>)</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#core-layer-src-core">4. Core Layer (<code class="docutils literal notranslate"><span class="pre">src/core/</span></code>)</a></li>
 <li><a class="reference internal" href="#gui-layer-src-gui">5. GUI Layer (<code class="docutils literal notranslate"><span class="pre">src/gui/</span></code>)</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#best-practices">Best Practices</a><ul>
-<li><a class="reference internal" href="#adding-a-new-feature">1. Adding a New Feature</a></li>
-<li><a class="reference internal" href="#debugging-cross-thread-issues">2. Debugging Cross-Thread Issues</a></li>
-<li><a class="reference internal" href="#testing-patterns">3. Testing Patterns</a></li>
-<li><a class="reference internal" href="#performance-guidelines">4. Performance Guidelines</a></li>
+<li><a class="reference internal" href="#design-patterns">Design Patterns</a><ul>
+<li><a class="reference internal" href="#command-pattern">Command Pattern</a></li>
+<li><a class="reference internal" href="#repository-pattern">Repository Pattern</a></li>
+<li><a class="reference internal" href="#signal-slot-pattern-qt">Signal/Slot Pattern (Qt)</a></li>
+<li><a class="reference internal" href="#coordinator-pattern">Coordinator Pattern</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#appendix-common-error-messages">Appendix: Common Error Messages</a></li>
+<li><a class="reference internal" href="#threading-model">Threading Model</a><ul>
+<li><a class="reference internal" href="#two-thread-architecture">Two-Thread Architecture</a></li>
+<li><a class="reference internal" href="#databaseworker">DatabaseWorker</a></li>
+<li><a class="reference internal" href="#thread-safety-rules">Thread Safety Rules</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#database-architecture">Database Architecture</a><ul>
+<li><a class="reference internal" href="#sqlite-configuration">SQLite Configuration</a></li>
+<li><a class="reference internal" href="#hybrid-schema">Hybrid Schema</a></li>
+<li><a class="reference internal" href="#schema-structure">Schema Structure</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#data-flow">Data Flow</a><ul>
+<li><a class="reference internal" href="#user-action-flow">User Action Flow</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#key-services">Key Services</a><ul>
+<li><a class="reference internal" href="#databaseservice">DatabaseService</a></li>
+<li><a class="reference internal" href="#historyservice">HistoryService</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#command-system">Command System</a><ul>
+<li><a class="reference internal" href="#commandcoordinator">CommandCoordinator</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#communication-patterns">Communication Patterns</a><ul>
+<li><a class="reference internal" href="#signal-types">Signal Types</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#extension-points">Extension Points</a><ul>
+<li><a class="reference internal" href="#adding-new-commands">Adding New Commands</a></li>
+<li><a class="reference internal" href="#adding-new-repositories">Adding New Repositories</a></li>
+<li><a class="reference internal" href="#adding-new-widgets">Adding New Widgets</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#next-steps">Next Steps</a></li>
 </ul>
 </li>
 </ul>

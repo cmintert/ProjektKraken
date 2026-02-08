@@ -1,0 +1,1028 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
+        <title>Contributing Guide - Project Kraken 0.11.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">Project Kraken 0.11.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <span class="sidebar-brand-text">Project Kraken 0.11.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="DATABASE.html">Database Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DEVELOPMENT.html">Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="modules.html">src</a><input aria-label="Toggle navigation of src" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="app.html">app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html">cli package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html">commands package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html">core package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui.widgets.html">gui.widgets package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.dialogs.html">gui.dialogs package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="services.html">services package</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/CONTRIBUTING.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="contributing-guide">
+<h1>Contributing Guide<a class="headerlink" href="#contributing-guide" title="Link to this heading">¶</a></h1>
+<p><strong>Version:</strong> 0.11.0 (Beta)<br />
+<strong>Last Updated:</strong> February 2026</p>
+<p>Guide for contributing to ProjektKraken.</p>
+<hr class="docutils" />
+<section id="table-of-contents">
+<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Link to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="#getting-started"><span class="xref myst">Getting Started</span></a></p></li>
+<li><p><a class="reference internal" href="#code-of-conduct"><span class="xref myst">Code of Conduct</span></a></p></li>
+<li><p><a class="reference internal" href="#how-to-contribute"><span class="xref myst">How to Contribute</span></a></p></li>
+<li><p><a class="reference internal" href="#development-process"><span class="xref myst">Development Process</span></a></p></li>
+<li><p><a class="reference internal" href="#pull-request-process"><span class="xref myst">Pull Request Process</span></a></p></li>
+<li><p><a class="reference internal" href="#coding-standards"><span class="xref myst">Coding Standards</span></a></p></li>
+<li><p><a class="reference internal" href="#testing-requirements"><span class="xref myst">Testing Requirements</span></a></p></li>
+<li><p><a class="reference internal" href="#documentation"><span class="xref myst">Documentation</span></a></p></li>
+<li><p><a class="reference internal" href="#community"><span class="xref myst">Community</span></a></p></li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="getting-started">
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading">¶</a></h2>
+<section id="prerequisites">
+<h3>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">¶</a></h3>
+<p>Before contributing, ensure you have:</p>
+<ul class="simple">
+<li><p><strong>Python 3.13+</strong> installed</p></li>
+<li><p><strong>Git</strong> for version control</p></li>
+<li><p><strong>GitHub account</strong> for pull requests</p></li>
+<li><p>Read the <a class="reference internal" href="DEVELOPMENT.html"><span class="std std-doc">Development Guide</span></a></p></li>
+<li><p>Familiarity with PySide6/Qt (for GUI contributions)</p></li>
+</ul>
+</section>
+<section id="setting-up-development-environment">
+<h3>Setting Up Development Environment<a class="headerlink" href="#setting-up-development-environment" title="Link to this heading">¶</a></h3>
+<ol class="arabic">
+<li><p><strong>Fork the Repository</strong></p>
+<p>Click “Fork” on <a class="reference external" href="https://github.com/cmintert/ProjektKraken">GitHub</a></p>
+</li>
+<li><p><strong>Clone Your Fork</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/YOUR_USERNAME/ProjektKraken.git
+<span class="nb">cd</span><span class="w"> </span>ProjektKraken
+</pre></div>
+</div>
+</li>
+<li><p><strong>Add Upstream Remote</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>remote<span class="w"> </span>add<span class="w"> </span>upstream<span class="w"> </span>https://github.com/cmintert/ProjektKraken.git
+</pre></div>
+</div>
+</li>
+<li><p><strong>Install Dependencies</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+<span class="nb">source</span><span class="w"> </span>.venv/bin/activate<span class="w">  </span><span class="c1"># On Windows: .venv\Scripts\activate</span>
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements-dev.txt
+</pre></div>
+</div>
+</li>
+<li><p><strong>Verify Setup</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest
+python<span class="w"> </span>-m<span class="w"> </span>src.app.main
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="code-of-conduct">
+<h2>Code of Conduct<a class="headerlink" href="#code-of-conduct" title="Link to this heading">¶</a></h2>
+<section id="our-pledge">
+<h3>Our Pledge<a class="headerlink" href="#our-pledge" title="Link to this heading">¶</a></h3>
+<p>We are committed to providing a welcoming and inclusive environment for all contributors, regardless of:</p>
+<ul class="simple">
+<li><p>Experience level</p></li>
+<li><p>Gender identity</p></li>
+<li><p>Sexual orientation</p></li>
+<li><p>Disability</p></li>
+<li><p>Personal appearance</p></li>
+<li><p>Body size</p></li>
+<li><p>Race</p></li>
+<li><p>Ethnicity</p></li>
+<li><p>Age</p></li>
+<li><p>Religion</p></li>
+</ul>
+</section>
+<section id="expected-behavior">
+<h3>Expected Behavior<a class="headerlink" href="#expected-behavior" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Be respectful</strong> and considerate</p></li>
+<li><p><strong>Be constructive</strong> in feedback</p></li>
+<li><p><strong>Be collaborative</strong> and help others</p></li>
+<li><p><strong>Focus on what’s best</strong> for the project</p></li>
+<li><p><strong>Show empathy</strong> towards other contributors</p></li>
+</ul>
+</section>
+<section id="unacceptable-behavior">
+<h3>Unacceptable Behavior<a class="headerlink" href="#unacceptable-behavior" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Harassment or discrimination</p></li>
+<li><p>Trolling or insulting comments</p></li>
+<li><p>Personal or political attacks</p></li>
+<li><p>Public or private harassment</p></li>
+<li><p>Publishing others’ private information</p></li>
+</ul>
+</section>
+<section id="enforcement">
+<h3>Enforcement<a class="headerlink" href="#enforcement" title="Link to this heading">¶</a></h3>
+<p>Violations may result in:</p>
+<ol class="arabic simple">
+<li><p>Warning from maintainers</p></li>
+<li><p>Temporary ban from project</p></li>
+<li><p>Permanent ban from project</p></li>
+</ol>
+<p>Report violations to: [project maintainer email]</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="how-to-contribute">
+<h2>How to Contribute<a class="headerlink" href="#how-to-contribute" title="Link to this heading">¶</a></h2>
+<section id="ways-to-contribute">
+<h3>Ways to Contribute<a class="headerlink" href="#ways-to-contribute" title="Link to this heading">¶</a></h3>
+<p>You can contribute in many ways:</p>
+<section id="report-bugs">
+<h4>1. Report Bugs<a class="headerlink" href="#report-bugs" title="Link to this heading">¶</a></h4>
+<p>Found a bug? Please report it!</p>
+<p><strong>Before Reporting:</strong></p>
+<ul class="simple">
+<li><p>Check <a class="reference external" href="https://github.com/cmintert/ProjektKraken/issues">existing issues</a></p></li>
+<li><p>Verify it’s reproducible</p></li>
+<li><p>Test on latest version</p></li>
+</ul>
+<p><strong>What to Include:</strong></p>
+<ul class="simple">
+<li><p>Clear, descriptive title</p></li>
+<li><p>Steps to reproduce</p></li>
+<li><p>Expected vs actual behavior</p></li>
+<li><p>System information (OS, Python version)</p></li>
+<li><p>Screenshots (for UI bugs)</p></li>
+<li><p>Error messages/stack traces</p></li>
+</ul>
+<p><strong>Template:</strong></p>
+<div class="highlight-markdown notranslate"><div class="highlight"><pre><span></span><span class="gs">**Describe the bug**</span>
+A clear description of what the bug is.
+
+<span class="gs">**To Reproduce**</span>
+Steps to reproduce:
+<span class="k">1.</span> Go to &#39;...&#39;
+<span class="k">2.</span> Click on &#39;....&#39;
+<span class="k">3.</span> See error
+
+<span class="gs">**Expected behavior**</span>
+What you expected to happen.
+
+<span class="gs">**Screenshots**</span>
+If applicable, add screenshots.
+
+<span class="gs">**Environment:**</span>
+<span class="k">-</span><span class="w"> </span>OS: [e.g. Windows 10]
+<span class="k">-</span><span class="w"> </span>Python version: [e.g. 3.13.1]
+<span class="k">-</span><span class="w"> </span>ProjektKraken version: [e.g. 0.11.0]
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="suggest-features">
+<h4>2. Suggest Features<a class="headerlink" href="#suggest-features" title="Link to this heading">¶</a></h4>
+<p>Have an idea? We’d love to hear it!</p>
+<p><strong>Before Suggesting:</strong></p>
+<ul class="simple">
+<li><p>Check <a class="reference external" href="https://github.com/cmintert/ProjektKraken/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement">existing feature requests</a></p></li>
+<li><p>Consider if it fits project scope</p></li>
+<li><p>Think about implementation</p></li>
+</ul>
+<p><strong>What to Include:</strong></p>
+<ul class="simple">
+<li><p>Clear description of the feature</p></li>
+<li><p>Use cases and benefits</p></li>
+<li><p>Possible implementation approach</p></li>
+<li><p>Alternative solutions considered</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="improve-documentation">
+<h4>3. Improve Documentation<a class="headerlink" href="#improve-documentation" title="Link to this heading">¶</a></h4>
+<p>Documentation is always welcome!</p>
+<p><strong>Areas to Help:</strong></p>
+<ul class="simple">
+<li><p>Fix typos and grammar</p></li>
+<li><p>Clarify confusing sections</p></li>
+<li><p>Add examples and tutorials</p></li>
+<li><p>Translate to other languages</p></li>
+<li><p>Update outdated information</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="write-code">
+<h4>4. Write Code<a class="headerlink" href="#write-code" title="Link to this heading">¶</a></h4>
+<p>Ready to code? Great!</p>
+<p><strong>Good First Issues:</strong></p>
+<p>Look for issues labeled:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">good-first-issue</span></code> - Great for beginners</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">help-wanted</span></code> - Community contributions welcome</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">documentation</span></code> - Documentation improvements</p></li>
+</ul>
+<p><strong>Before Starting:</strong></p>
+<ul class="simple">
+<li><p>Comment on the issue to claim it</p></li>
+<li><p>Discuss approach with maintainers</p></li>
+<li><p>Create a feature branch</p></li>
+</ul>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="development-process">
+<h2>Development Process<a class="headerlink" href="#development-process" title="Link to this heading">¶</a></h2>
+<section id="workflow">
+<h3>Workflow<a class="headerlink" href="#workflow" title="Link to this heading">¶</a></h3>
+<ol class="arabic">
+<li><p><strong>Create Feature Branch</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>feature/my-feature
+<span class="c1"># or</span>
+git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>fix/bug-description
+</pre></div>
+</div>
+<p><strong>Branch Naming:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">feature/</span></code> - New features</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fix/</span></code> - Bug fixes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docs/</span></code> - Documentation changes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">refactor/</span></code> - Code refactoring</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test/</span></code> - Test additions/changes</p></li>
+</ul>
+</li>
+<li><p><strong>Make Changes</strong></p>
+<ul class="simple">
+<li><p>Write code following <a class="reference internal" href="#coding-standards"><span class="xref myst">coding standards</span></a></p></li>
+<li><p>Write/update tests</p></li>
+<li><p>Update documentation</p></li>
+</ul>
+</li>
+<li><p><strong>Test Locally</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run linter</span>
+ruff<span class="w"> </span>check<span class="w"> </span>src/
+
+<span class="c1"># Run tests</span>
+pytest
+
+<span class="c1"># Check coverage</span>
+pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>term-missing
+</pre></div>
+</div>
+</li>
+<li><p><strong>Commit Changes</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>add<span class="w"> </span>.
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat: Add new feature&quot;</span>
+</pre></div>
+</div>
+<p><strong>Commit Message Format:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="nb">type</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">short</span> <span class="n">description</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">optional</span> <span class="n">detailed</span> <span class="n">description</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">optional</span> <span class="n">footer</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p><strong>Types:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">feat</span></code> - New feature</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fix</span></code> - Bug fix</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docs</span></code> - Documentation only</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">style</span></code> - Code style (formatting, no logic change)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">refactor</span></code> - Code refactoring</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test</span></code> - Adding/updating tests</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">chore</span></code> - Maintenance tasks</p></li>
+</ul>
+<p><strong>Examples:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">feat</span><span class="p">:</span> <span class="n">Add</span> <span class="n">semantic</span> <span class="n">search</span> <span class="n">support</span>
+
+<span class="n">Implement</span> <span class="n">semantic</span> <span class="n">search</span> <span class="n">using</span> <span class="n">LM</span> <span class="n">Studio</span> <span class="n">embeddings</span><span class="o">.</span>
+<span class="n">Includes</span> <span class="n">vector</span> <span class="n">storage</span> <span class="ow">and</span> <span class="n">similarity</span> <span class="n">search</span><span class="o">.</span>
+
+<span class="n">Closes</span> <span class="c1">#123</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">fix</span><span class="p">:</span> <span class="n">Resolve</span> <span class="n">database</span> <span class="n">lock</span> <span class="n">on</span> <span class="n">world</span> <span class="n">close</span>
+
+<span class="n">Ensure</span> <span class="nb">all</span> <span class="n">connections</span> <span class="n">are</span> <span class="n">properly</span> <span class="n">closed</span> <span class="n">before</span>
+<span class="n">shutdown</span> <span class="n">to</span> <span class="n">prevent</span> <span class="n">lock</span> <span class="n">errors</span><span class="o">.</span>
+
+<span class="n">Fixes</span> <span class="c1">#456</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Keep Branch Updated</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>fetch<span class="w"> </span>upstream
+git<span class="w"> </span>rebase<span class="w"> </span>upstream/main
+</pre></div>
+</div>
+</li>
+<li><p><strong>Push to Your Fork</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>feature/my-feature
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="pull-request-process">
+<h2>Pull Request Process<a class="headerlink" href="#pull-request-process" title="Link to this heading">¶</a></h2>
+<section id="before-submitting">
+<h3>Before Submitting<a class="headerlink" href="#before-submitting" title="Link to this heading">¶</a></h3>
+<p><strong>Checklist:</strong></p>
+<ul class="simple">
+<li><p>[ ] Code follows style guidelines</p></li>
+<li><p>[ ] Self-review completed</p></li>
+<li><p>[ ] Comments added for complex code</p></li>
+<li><p>[ ] Documentation updated</p></li>
+<li><p>[ ] Tests added/updated</p></li>
+<li><p>[ ] All tests pass locally</p></li>
+<li><p>[ ] No linter errors</p></li>
+<li><p>[ ] Branch is up to date with main</p></li>
+</ul>
+</section>
+<section id="creating-pull-request">
+<h3>Creating Pull Request<a class="headerlink" href="#creating-pull-request" title="Link to this heading">¶</a></h3>
+<ol class="arabic">
+<li><p><strong>Go to GitHub</strong></p>
+<p>Navigate to your fork on GitHub</p>
+</li>
+<li><p><strong>Click “New Pull Request”</strong></p>
+<p>Select your feature branch</p>
+</li>
+<li><p><strong>Fill Out Template</strong></p>
+<div class="highlight-markdown notranslate"><div class="highlight"><pre><span></span><span class="gu">## Description</span>
+Brief description of changes.
+
+<span class="gu">## Type of Change</span>
+<span class="k">- [ ]</span> Bug fix
+<span class="k">- [ ]</span> New feature
+<span class="k">- [ ]</span> Documentation update
+<span class="k">- [ ]</span> Refactoring
+
+<span class="gu">## Changes Made</span>
+<span class="k">-</span><span class="w"> </span>List key changes
+<span class="k">-</span><span class="w"> </span>One change per line
+
+<span class="gu">## Testing</span>
+Describe how you tested the changes.
+
+<span class="gu">## Screenshots</span>
+If UI changes, add screenshots.
+
+<span class="gu">## Checklist</span>
+<span class="k">- [ ]</span> Tests pass
+<span class="k">- [ ]</span> Documentation updated
+<span class="k">- [ ]</span> No linter errors
+
+<span class="gu">## Related Issues</span>
+Closes <span class="ni">#123</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Submit Pull Request</strong></p>
+<p>Click “Create pull request”</p>
+</li>
+</ol>
+</section>
+<section id="review-process">
+<h3>Review Process<a class="headerlink" href="#review-process" title="Link to this heading">¶</a></h3>
+<p><strong>What Happens Next:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Automated Checks</strong></p>
+<ul class="simple">
+<li><p>CI runs tests</p></li>
+<li><p>Linter checks code style</p></li>
+<li><p>Coverage measured</p></li>
+</ul>
+</li>
+<li><p><strong>Code Review</strong></p>
+<ul class="simple">
+<li><p>Maintainer reviews code</p></li>
+<li><p>May request changes</p></li>
+<li><p>Discuss feedback constructively</p></li>
+</ul>
+</li>
+<li><p><strong>Address Feedback</strong></p>
+<ul class="simple">
+<li><p>Make requested changes</p></li>
+<li><p>Push updates to same branch</p></li>
+<li><p>Respond to comments</p></li>
+</ul>
+</li>
+<li><p><strong>Approval and Merge</strong></p>
+<ul class="simple">
+<li><p>Once approved, maintainer merges</p></li>
+<li><p>Branch can be deleted</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="review-timeline">
+<h3>Review Timeline<a class="headerlink" href="#review-timeline" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Initial Response</strong>: Within 48 hours</p></li>
+<li><p><strong>Full Review</strong>: Within 1 week</p></li>
+<li><p><strong>Merge</strong>: After approval and passing checks</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="coding-standards">
+<h2>Coding Standards<a class="headerlink" href="#coding-standards" title="Link to this heading">¶</a></h2>
+<section id="python-style">
+<h3>Python Style<a class="headerlink" href="#python-style" title="Link to this heading">¶</a></h3>
+<p>Follow <a class="reference external" href="https://pep8.org/">PEP 8</a> with modifications:</p>
+<ul class="simple">
+<li><p><strong>Line Length</strong>: 88 characters (Black default)</p></li>
+<li><p><strong>Indentation</strong>: 4 spaces</p></li>
+<li><p><strong>Quotes</strong>: Double quotes</p></li>
+<li><p><strong>Imports</strong>: Ordered (stdlib → third-party → local)</p></li>
+</ul>
+</section>
+<section id="type-hints">
+<h3>Type Hints<a class="headerlink" href="#type-hints" title="Link to this heading">¶</a></h3>
+<p><strong>Required</strong> for all public functions:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">create_event</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">lore_date</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Event</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create event with given parameters.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+</section>
+<section id="docstrings">
+<h3>Docstrings<a class="headerlink" href="#docstrings" title="Link to this heading">¶</a></h3>
+<p><strong>Google Style</strong> required:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">update_entity</span><span class="p">(</span><span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Entity</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Update entity with new properties.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        entity_id: Unique identifier of entity.</span>
+<span class="sd">        **kwargs: Properties to update.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Entity: Updated entity object.</span>
+<span class="sd">    </span>
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If entity_id is invalid.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+</section>
+<section id="code-quality-tools">
+<h3>Code Quality Tools<a class="headerlink" href="#code-quality-tools" title="Link to this heading">¶</a></h3>
+<p><strong>Run before committing:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Format code</span>
+ruff<span class="w"> </span>format<span class="w"> </span>src/
+
+<span class="c1"># Check style</span>
+ruff<span class="w"> </span>check<span class="w"> </span>src/
+
+<span class="c1"># Type checking</span>
+mypy<span class="w"> </span>src/
+
+<span class="c1"># Run tests</span>
+pytest
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="testing-requirements">
+<h2>Testing Requirements<a class="headerlink" href="#testing-requirements" title="Link to this heading">¶</a></h2>
+<section id="test-coverage">
+<h3>Test Coverage<a class="headerlink" href="#test-coverage" title="Link to this heading">¶</a></h3>
+<p><strong>Minimum Requirements:</strong></p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Component</p></th>
+<th class="head"><p>Coverage</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Core Logic</p></td>
+<td><p>100%</p></td>
+</tr>
+<tr class="row-odd"><td><p>Commands</p></td>
+<td><p>100%</p></td>
+</tr>
+<tr class="row-even"><td><p>Repositories</p></td>
+<td><p>95%</p></td>
+</tr>
+<tr class="row-odd"><td><p>Services</p></td>
+<td><p>95%</p></td>
+</tr>
+<tr class="row-even"><td><p>Overall</p></td>
+<td><p>95%</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="writing-tests">
+<h3>Writing Tests<a class="headerlink" href="#writing-tests" title="Link to this heading">¶</a></h3>
+<p><strong>Every contribution must include tests:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_my_feature</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test my new feature.&quot;&quot;&quot;</span>
+    <span class="c1"># Arrange</span>
+    <span class="n">setup_data</span><span class="p">()</span>
+    
+    <span class="c1"># Act</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">my_feature</span><span class="p">()</span>
+    
+    <span class="c1"># Assert</span>
+    <span class="k">assert</span> <span class="n">result</span> <span class="o">==</span> <span class="n">expected</span>
+</pre></div>
+</div>
+<p><strong>Test Naming:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">test_</span><span class="o">&lt;</span><span class="n">method</span><span class="o">&gt;</span><span class="n">_</span><span class="o">&lt;</span><span class="n">scenario</span><span class="o">&gt;</span><span class="n">_</span><span class="o">&lt;</span><span class="n">expected_result</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p><strong>Examples:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_create_event_with_valid_data_returns_event</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test event creation with valid input.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_create_event_with_invalid_date_raises_error</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test event creation with invalid date.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+</section>
+<section id="running-tests">
+<h3>Running Tests<a class="headerlink" href="#running-tests" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># All tests</span>
+pytest
+
+<span class="c1"># Specific file</span>
+pytest<span class="w"> </span>tests/unit/test_events.py
+
+<span class="c1"># With coverage</span>
+pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>term-missing
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Link to this heading">¶</a></h2>
+<section id="when-to-update-documentation">
+<h3>When to Update Documentation<a class="headerlink" href="#when-to-update-documentation" title="Link to this heading">¶</a></h3>
+<p>Update documentation when:</p>
+<ul class="simple">
+<li><p>Adding new features</p></li>
+<li><p>Changing existing behavior</p></li>
+<li><p>Fixing bugs that affect usage</p></li>
+<li><p>Adding new APIs</p></li>
+</ul>
+</section>
+<section id="documentation-types">
+<h3>Documentation Types<a class="headerlink" href="#documentation-types" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Code Documentation</strong></p>
+<ul class="simple">
+<li><p>Docstrings for classes/functions</p></li>
+<li><p>Inline comments for complex logic</p></li>
+</ul>
+</li>
+<li><p><strong>User Documentation</strong></p>
+<ul class="simple">
+<li><p>User Guide updates</p></li>
+<li><p>Workflow examples</p></li>
+<li><p>FAQ entries</p></li>
+</ul>
+</li>
+<li><p><strong>Technical Documentation</strong></p>
+<ul class="simple">
+<li><p>Architecture changes</p></li>
+<li><p>API Reference updates</p></li>
+<li><p>Development guide changes</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="documentation-style">
+<h3>Documentation Style<a class="headerlink" href="#documentation-style" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Clear and concise</strong></p></li>
+<li><p><strong>Use examples</strong></p></li>
+<li><p><strong>Update related docs</strong></p></li>
+<li><p><strong>Check for broken links</strong></p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="community">
+<h2>Community<a class="headerlink" href="#community" title="Link to this heading">¶</a></h2>
+<section id="getting-help">
+<h3>Getting Help<a class="headerlink" href="#getting-help" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Documentation</strong>: Start with <a class="reference internal" href="INDEX.html"><span class="std std-doc">docs/INDEX.md</span></a></p></li>
+<li><p><strong>GitHub Discussions</strong>: Ask questions</p></li>
+<li><p><strong>GitHub Issues</strong>: Report bugs</p></li>
+<li><p><strong>Discord</strong>: Join community server (link in README)</p></li>
+</ul>
+</section>
+<section id="staying-updated">
+<h3>Staying Updated<a class="headerlink" href="#staying-updated" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Watch Repository</strong>: Get notified of updates</p></li>
+<li><p><strong>Read Changelog</strong>: See what’s new</p></li>
+<li><p><strong>Follow Releases</strong>: Keep up with versions</p></li>
+</ul>
+</section>
+<section id="recognition">
+<h3>Recognition<a class="headerlink" href="#recognition" title="Link to this heading">¶</a></h3>
+<p>Contributors are recognized in:</p>
+<ul class="simple">
+<li><p><strong>Contributors list</strong> in README</p></li>
+<li><p><strong>Release notes</strong> for significant contributions</p></li>
+<li><p><strong>Hall of Fame</strong> for major contributors</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="license">
+<h2>License<a class="headerlink" href="#license" title="Link to this heading">¶</a></h2>
+<p>By contributing, you agree that your contributions will be licensed under the same license as the project (GPL-3.0).</p>
+</section>
+<hr class="docutils" />
+<section id="questions">
+<h2>Questions?<a class="headerlink" href="#questions" title="Link to this heading">¶</a></h2>
+<p>Still have questions? Reach out:</p>
+<ul class="simple">
+<li><p><strong>GitHub Discussions</strong>: [Link to discussions]</p></li>
+<li><p><strong>Email</strong>: [Maintainer email]</p></li>
+<li><p><strong>Discord</strong>: [Server invite]</p></li>
+</ul>
+<p>Thank you for contributing to ProjektKraken! 🎉</p>
+<hr class="docutils" />
+<p><strong>Navigation:</strong><br />
+<a class="reference internal" href="API_REFERENCE.html"><span class="std std-doc">← API Reference</span></a> • <a class="reference internal" href="INDEX.html"><span class="std std-doc">Back to Index</span></a> • <a class="reference internal" href="DEVELOPMENT.html"><span class="std std-doc">Development Guide</span></a></p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Christian Mintert
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Contributing Guide</a><ul>
+<li><a class="reference internal" href="#table-of-contents">Table of Contents</a></li>
+<li><a class="reference internal" href="#getting-started">Getting Started</a><ul>
+<li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li><a class="reference internal" href="#setting-up-development-environment">Setting Up Development Environment</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#code-of-conduct">Code of Conduct</a><ul>
+<li><a class="reference internal" href="#our-pledge">Our Pledge</a></li>
+<li><a class="reference internal" href="#expected-behavior">Expected Behavior</a></li>
+<li><a class="reference internal" href="#unacceptable-behavior">Unacceptable Behavior</a></li>
+<li><a class="reference internal" href="#enforcement">Enforcement</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#how-to-contribute">How to Contribute</a><ul>
+<li><a class="reference internal" href="#ways-to-contribute">Ways to Contribute</a><ul>
+<li><a class="reference internal" href="#report-bugs">1. Report Bugs</a></li>
+<li><a class="reference internal" href="#suggest-features">2. Suggest Features</a></li>
+<li><a class="reference internal" href="#improve-documentation">3. Improve Documentation</a></li>
+<li><a class="reference internal" href="#write-code">4. Write Code</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#development-process">Development Process</a><ul>
+<li><a class="reference internal" href="#workflow">Workflow</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pull-request-process">Pull Request Process</a><ul>
+<li><a class="reference internal" href="#before-submitting">Before Submitting</a></li>
+<li><a class="reference internal" href="#creating-pull-request">Creating Pull Request</a></li>
+<li><a class="reference internal" href="#review-process">Review Process</a></li>
+<li><a class="reference internal" href="#review-timeline">Review Timeline</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#coding-standards">Coding Standards</a><ul>
+<li><a class="reference internal" href="#python-style">Python Style</a></li>
+<li><a class="reference internal" href="#type-hints">Type Hints</a></li>
+<li><a class="reference internal" href="#docstrings">Docstrings</a></li>
+<li><a class="reference internal" href="#code-quality-tools">Code Quality Tools</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#testing-requirements">Testing Requirements</a><ul>
+<li><a class="reference internal" href="#test-coverage">Test Coverage</a></li>
+<li><a class="reference internal" href="#writing-tests">Writing Tests</a></li>
+<li><a class="reference internal" href="#running-tests">Running Tests</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#documentation">Documentation</a><ul>
+<li><a class="reference internal" href="#when-to-update-documentation">When to Update Documentation</a></li>
+<li><a class="reference internal" href="#documentation-types">Documentation Types</a></li>
+<li><a class="reference internal" href="#documentation-style">Documentation Style</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#community">Community</a><ul>
+<li><a class="reference internal" href="#getting-help">Getting Help</a></li>
+<li><a class="reference internal" href="#staying-updated">Staying Updated</a></li>
+<li><a class="reference internal" href="#recognition">Recognition</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#license">License</a></li>
+<li><a class="reference internal" href="#questions">Questions?</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=1a9b1e2b"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

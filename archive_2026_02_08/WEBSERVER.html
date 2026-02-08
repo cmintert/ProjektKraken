@@ -1,0 +1,807 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
+        <title>Webserver API - Project Kraken 0.11.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">Project Kraken 0.11.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  <span class="sidebar-brand-text">Project Kraken 0.11.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../DATABASE.html">Database Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../DEVELOPMENT.html">Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../modules.html">src</a><input aria-label="Toggle navigation of src" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../app.html">app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cli.html">cli package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../commands.html">commands package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../core.html">core package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../gui.widgets.html">gui.widgets package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gui.dialogs.html">gui.dialogs package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../services.html">services package</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../CHANGELOG.html">Changelog</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../_sources/archive_2026_02_08/WEBSERVER.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="webserver-api">
+<h1>Webserver API<a class="headerlink" href="#webserver-api" title="Link to this heading">¶</a></h1>
+<p>ProjektKraken includes an embedded FastAPI webserver that provides HTTP access to your world data. The server runs in a separate thread within the main application and can be accessed from web browsers or API clients.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Framework:</strong> FastAPI (async Python web framework)</p></li>
+<li><p><strong>Integration:</strong> Runs in QThread via <code class="docutils literal notranslate"><span class="pre">WebServiceManager</span></code></p></li>
+<li><p><strong>Default Port:</strong> 8000</p></li>
+<li><p><strong>API Version:</strong> V1 (read-only)</p></li>
+<li><p><strong>Thread Safety:</strong> Dedicated database connection per thread</p></li>
+</ul>
+</section>
+<section id="architecture">
+<h2>Architecture<a class="headerlink" href="#architecture" title="Link to this heading">¶</a></h2>
+<section id="components">
+<h3>Components<a class="headerlink" href="#components" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Component</p></th>
+<th class="head"><p>Location</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>FastAPI Server</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">src/webserver/server.py</span></code></p></td>
+<td><p>REST API endpoints</p></td>
+</tr>
+<tr class="row-odd"><td><p>Configuration</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">src/webserver/config.py</span></code></p></td>
+<td><p>Server settings</p></td>
+</tr>
+<tr class="row-even"><td><p>Service Manager</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">src/services/web_service_manager.py</span></code></p></td>
+<td><p>Qt thread wrapper</p></td>
+</tr>
+<tr class="row-odd"><td><p>Static Assets</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">src/webserver/static/</span></code></p></td>
+<td><p>Web assets (CSS, JS, images)</p></td>
+</tr>
+<tr class="row-even"><td><p>Templates</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">src/webserver/templates/</span></code></p></td>
+<td><p>HTML templates</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="threading-model">
+<h3>Threading Model<a class="headerlink" href="#threading-model" title="Link to this heading">¶</a></h3>
+<p>The webserver runs in a dedicated QThread to avoid blocking the GUI:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In MainWindow</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">web_service</span> <span class="o">=</span> <span class="n">WebServiceManager</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_path</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">web_thread</span> <span class="o">=</span> <span class="n">QThread</span><span class="p">()</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">web_service</span><span class="o">.</span><span class="n">moveToThread</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">web_thread</span><span class="p">)</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">web_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">web_service</span><span class="o">.</span><span class="n">start_server</span><span class="p">()</span>
+</pre></div>
+</div>
+<p><strong>Key Points:</strong></p>
+<ul class="simple">
+<li><p>✅ Separate thread prevents UI blocking</p></li>
+<li><p>✅ Dedicated database connection (thread-safe)</p></li>
+<li><p>✅ Graceful shutdown on application exit</p></li>
+<li><p>✅ Proper signal/slot communication with main thread</p></li>
+</ul>
+</section>
+</section>
+<section id="current-api-endpoints-v1">
+<h2>Current API Endpoints (V1)<a class="headerlink" href="#current-api-endpoints-v1" title="Link to this heading">¶</a></h2>
+<section id="health-check">
+<h3>Health Check<a class="headerlink" href="#health-check" title="Link to this heading">¶</a></h3>
+<p><strong>GET</strong> <code class="docutils literal notranslate"><span class="pre">/health</span></code></p>
+<p>Check if the server is running.</p>
+<p><strong>Response:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;status&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ok&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="longform-document">
+<h3>Longform Document<a class="headerlink" href="#longform-document" title="Link to this heading">¶</a></h3>
+<p><strong>GET</strong> <code class="docutils literal notranslate"><span class="pre">/longform</span></code></p>
+<p>Retrieve the entire longform document as HTML.</p>
+<p><strong>Response:</strong></p>
+<ul class="simple">
+<li><p><strong>Content-Type:</strong> <code class="docutils literal notranslate"><span class="pre">text/html</span></code></p></li>
+<li><p><strong>Body:</strong> Rendered HTML document with hierarchical structure</p></li>
+</ul>
+<p><strong>Features:</strong></p>
+<ul class="simple">
+<li><p>Server-side rendering of markdown</p></li>
+<li><p>Hierarchical document structure preserved</p></li>
+<li><p>Parent-child relationships maintained</p></li>
+<li><p>Title overrides applied</p></li>
+</ul>
+<p><strong>Example:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>http://localhost:8000/longform
+</pre></div>
+</div>
+</section>
+<section id="future-endpoints-planned">
+<h3>Future Endpoints (Planned)<a class="headerlink" href="#future-endpoints-planned" title="Link to this heading">¶</a></h3>
+<p>V2 API will include full CRUD operations:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/v2/entities</span></code> - List entities</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/v2/entities/{id}</span></code> - Get entity details</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v2/entities</span></code> - Create entity</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PUT</span> <span class="pre">/api/v2/entities/{id}</span></code> - Update entity</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DELETE</span> <span class="pre">/api/v2/entities/{id}</span></code> - Delete entity</p></li>
+<li><p>Similar endpoints for events, relations, maps, etc.</p></li>
+</ul>
+</section>
+</section>
+<section id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading">¶</a></h2>
+<section id="server-settings">
+<h3>Server Settings<a class="headerlink" href="#server-settings" title="Link to this heading">¶</a></h3>
+<p>Configuration is managed in <code class="docutils literal notranslate"><span class="pre">src/webserver/config.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">ServerConfig</span><span class="p">:</span>
+    <span class="n">host</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;127.0.0.1&quot;</span>  <span class="c1"># Localhost only by default</span>
+    <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8000</span>
+    <span class="n">reload</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>      <span class="c1"># Hot reload (development only)</span>
+</pre></div>
+</div>
+</section>
+<section id="environment-variables">
+<h3>Environment Variables<a class="headerlink" href="#environment-variables" title="Link to this heading">¶</a></h3>
+<p>Set these to customize the server:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">WEBSERVER_HOST</span></code> - Server bind address (default: <code class="docutils literal notranslate"><span class="pre">127.0.0.1</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">WEBSERVER_PORT</span></code> - Server port (default: <code class="docutils literal notranslate"><span class="pre">8000</span></code>)</p></li>
+</ul>
+<p><strong>Security Note:</strong> Default binding to <code class="docutils literal notranslate"><span class="pre">127.0.0.1</span></code> ensures the server is only accessible from localhost. For network access, explicitly set <code class="docutils literal notranslate"><span class="pre">WEBSERVER_HOST=0.0.0.0</span></code> (not recommended for production without authentication).</p>
+</section>
+</section>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading">¶</a></h2>
+<section id="starting-the-server">
+<h3>Starting the Server<a class="headerlink" href="#starting-the-server" title="Link to this heading">¶</a></h3>
+<p>The server starts automatically when you open a world in the GUI:</p>
+<ol class="arabic simple">
+<li><p>Launch ProjektKraken</p></li>
+<li><p>Open a world database (.kraken file)</p></li>
+<li><p>Server starts on <code class="docutils literal notranslate"><span class="pre">http://localhost:8000</span></code></p></li>
+</ol>
+</section>
+<section id="accessing-the-api">
+<h3>Accessing the API<a class="headerlink" href="#accessing-the-api" title="Link to this heading">¶</a></h3>
+<p><strong>Web Browser:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="p">:</span><span class="mi">8000</span><span class="o">/</span><span class="n">longform</span>
+</pre></div>
+</div>
+<p><strong>cURL:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Health check</span>
+curl<span class="w"> </span>http://localhost:8000/health
+
+<span class="c1"># Get longform document</span>
+curl<span class="w"> </span>http://localhost:8000/longform<span class="w"> </span>&gt;<span class="w"> </span>world.html
+</pre></div>
+</div>
+<p><strong>Python:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+
+<span class="c1"># Health check</span>
+<span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;http://localhost:8000/health&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>  <span class="c1"># {&quot;status&quot;: &quot;ok&quot;}</span>
+
+<span class="c1"># Get longform document</span>
+<span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;http://localhost:8000/longform&quot;</span><span class="p">)</span>
+<span class="n">html</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="use-cases">
+<h2>Use Cases<a class="headerlink" href="#use-cases" title="Link to this heading">¶</a></h2>
+<section id="live-preview">
+<h3>1. Live Preview<a class="headerlink" href="#live-preview" title="Link to this heading">¶</a></h3>
+<p>View your longform document in a web browser while editing:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Open in browser</span>
+xdg-open<span class="w"> </span>http://localhost:8000/longform<span class="w">  </span><span class="c1"># Linux</span>
+open<span class="w"> </span>http://localhost:8000/longform<span class="w">      </span><span class="c1"># macOS</span>
+start<span class="w"> </span>http://localhost:8000/longform<span class="w">     </span><span class="c1"># Windows</span>
+</pre></div>
+</div>
+</section>
+<section id="export-to-html">
+<h3>2. Export to HTML<a class="headerlink" href="#export-to-html" title="Link to this heading">¶</a></h3>
+<p>Save the rendered longform document:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>http://localhost:8000/longform<span class="w"> </span>&gt;<span class="w"> </span>world.html
+</pre></div>
+</div>
+</section>
+<section id="integration-with-external-tools">
+<h3>3. Integration with External Tools<a class="headerlink" href="#integration-with-external-tools" title="Link to this heading">¶</a></h3>
+<p>Access world data from scripts or other applications:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_world_html</span><span class="p">():</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;http://localhost:8000/longform&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span>
+
+<span class="c1"># Use in documentation pipeline</span>
+<span class="n">html</span> <span class="o">=</span> <span class="n">get_world_html</span><span class="p">()</span>
+<span class="c1"># Process or publish...</span>
+</pre></div>
+</div>
+</section>
+<section id="web-based-viewer">
+<h3>4. Web-Based Viewer<a class="headerlink" href="#web-based-viewer" title="Link to this heading">¶</a></h3>
+<p>Embed the longform document in a custom web application:</p>
+<div class="highlight-html notranslate"><div class="highlight"><pre><span></span><span class="cp">&lt;!DOCTYPE html&gt;</span>
+<span class="p">&lt;</span><span class="nt">html</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">head</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">title</span><span class="p">&gt;</span>My World<span class="p">&lt;/</span><span class="nt">title</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">head</span><span class="p">&gt;</span>
+<span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
+    <span class="p">&lt;</span><span class="nt">iframe</span> <span class="na">src</span><span class="o">=</span><span class="s">&quot;http://localhost:8000/longform&quot;</span> 
+            <span class="na">width</span><span class="o">=</span><span class="s">&quot;100%&quot;</span> <span class="na">height</span><span class="o">=</span><span class="s">&quot;100%&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">iframe</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+<span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="security-considerations">
+<h2>Security Considerations<a class="headerlink" href="#security-considerations" title="Link to this heading">¶</a></h2>
+<section id="current-v1-security">
+<h3>Current (V1) Security<a class="headerlink" href="#current-v1-security" title="Link to this heading">¶</a></h3>
+<p>⚠️ <strong>Read-Only API:</strong> V1 provides read-only access (no mutations)</p>
+<p>✅ <strong>Localhost Binding:</strong> Default binding to <code class="docutils literal notranslate"><span class="pre">127.0.0.1</span></code> prevents network access</p>
+<p>✅ <strong>Thread Isolation:</strong> Dedicated database connection prevents race conditions</p>
+<p>❌ <strong>No Authentication:</strong> V1 has no authentication (localhost only)</p>
+</section>
+<section id="future-v2-security">
+<h3>Future (V2) Security<a class="headerlink" href="#future-v2-security" title="Link to this heading">¶</a></h3>
+<p>When CRUD operations are added in V2, the following security measures will be implemented:</p>
+<ul class="simple">
+<li><p>[ ] <strong>Authentication:</strong> API key or JWT-based authentication</p></li>
+<li><p>[ ] <strong>Authorization:</strong> Role-based access control (RBAC)</p></li>
+<li><p>[ ] <strong>Rate Limiting:</strong> Prevent abuse</p></li>
+<li><p>[ ] <strong>CORS:</strong> Configurable cross-origin resource sharing</p></li>
+<li><p>[ ] <strong>HTTPS:</strong> Optional TLS/SSL support</p></li>
+<li><p>[ ] <strong>Input Validation:</strong> Strict validation of all inputs</p></li>
+<li><p>[ ] <strong>Audit Logging:</strong> Track all API operations</p></li>
+</ul>
+</section>
+<section id="best-practices">
+<h3>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Don’t expose to network</strong> without authentication (keep default <code class="docutils literal notranslate"><span class="pre">127.0.0.1</span></code>)</p></li>
+<li><p><strong>Use reverse proxy</strong> if exposing to network (nginx, Apache)</p></li>
+<li><p><strong>Add firewall rules</strong> to restrict access</p></li>
+<li><p><strong>Monitor logs</strong> for suspicious activity</p></li>
+<li><p><strong>Keep updated</strong> with security patches</p></li>
+</ol>
+</section>
+</section>
+<section id="performance">
+<h2>Performance<a class="headerlink" href="#performance" title="Link to this heading">¶</a></h2>
+<section id="current-performance">
+<h3>Current Performance<a class="headerlink" href="#current-performance" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Latency:</strong> &lt;50ms for health check</p></li>
+<li><p><strong>Latency:</strong> &lt;200ms for longform document (typical)</p></li>
+<li><p><strong>Throughput:</strong> Supports ~100 requests/second (typical workload)</p></li>
+</ul>
+</section>
+<section id="optimization-tips">
+<h3>Optimization Tips<a class="headerlink" href="#optimization-tips" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Async Operations:</strong> Server uses async FastAPI for high concurrency</p></li>
+<li><p><strong>Database Connection:</strong> Dedicated connection per thread (no contention)</p></li>
+<li><p><strong>Caching:</strong> Consider adding caching for frequently accessed data (future)</p></li>
+<li><p><strong>Load Balancing:</strong> Not needed for single-user desktop application</p></li>
+</ol>
+</section>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">¶</a></h2>
+<section id="server-won-t-start">
+<h3>Server Won’t Start<a class="headerlink" href="#server-won-t-start" title="Link to this heading">¶</a></h3>
+<p><strong>Symptom:</strong> Error message “Address already in use”</p>
+<p><strong>Solution:</strong> Port 8000 is already taken. Change port in configuration or close other application.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check what&#39;s using port 8000</span>
+lsof<span class="w"> </span>-i<span class="w"> </span>:8000<span class="w">          </span><span class="c1"># Linux/macOS</span>
+netstat<span class="w"> </span>-ano<span class="w"> </span><span class="p">|</span><span class="w"> </span>find<span class="w"> </span><span class="s2">&quot;8000&quot;</span><span class="w">  </span><span class="c1"># Windows</span>
+
+<span class="c1"># Kill the process or change port</span>
+</pre></div>
+</div>
+</section>
+<section id="can-t-access-from-browser">
+<h3>Can’t Access from Browser<a class="headerlink" href="#can-t-access-from-browser" title="Link to this heading">¶</a></h3>
+<p><strong>Symptom:</strong> Connection refused when accessing <code class="docutils literal notranslate"><span class="pre">http://localhost:8000</span></code></p>
+<p><strong>Possible Causes:</strong></p>
+<ol class="arabic simple">
+<li><p>Server not started (world not open in GUI)</p></li>
+<li><p>Firewall blocking port</p></li>
+<li><p>Using wrong address (should be <code class="docutils literal notranslate"><span class="pre">localhost</span></code> or <code class="docutils literal notranslate"><span class="pre">127.0.0.1</span></code>)</p></li>
+</ol>
+<p><strong>Solution:</strong></p>
+<ol class="arabic simple">
+<li><p>Ensure ProjektKraken is running with a world open</p></li>
+<li><p>Check firewall settings</p></li>
+<li><p>Verify URL is correct</p></li>
+</ol>
+</section>
+<section id="slow-response-times">
+<h3>Slow Response Times<a class="headerlink" href="#slow-response-times" title="Link to this heading">¶</a></h3>
+<p><strong>Symptom:</strong> API requests take &gt;1 second</p>
+<p><strong>Possible Causes:</strong></p>
+<ol class="arabic simple">
+<li><p>Large longform document (&gt;10,000 entries)</p></li>
+<li><p>Database locked by GUI operation</p></li>
+<li><p>System resource constraints</p></li>
+</ol>
+<p><strong>Solution:</strong></p>
+<ol class="arabic simple">
+<li><p>Optimize document size</p></li>
+<li><p>Wait for GUI operations to complete</p></li>
+<li><p>Check system resources (CPU, RAM)</p></li>
+</ol>
+</section>
+</section>
+<section id="development">
+<h2>Development<a class="headerlink" href="#development" title="Link to this heading">¶</a></h2>
+<section id="running-in-development-mode">
+<h3>Running in Development Mode<a class="headerlink" href="#running-in-development-mode" title="Link to this heading">¶</a></h3>
+<p>For development, enable hot reload:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In src/webserver/config.py</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ServerConfig</span><span class="p">:</span>
+    <span class="n">reload</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># Enable hot reload</span>
+</pre></div>
+</div>
+<p><strong>Warning:</strong> Hot reload increases resource usage. Use only during development.</p>
+</section>
+<section id="adding-new-endpoints">
+<h3>Adding New Endpoints<a class="headerlink" href="#adding-new-endpoints" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Define endpoint in <code class="docutils literal notranslate"><span class="pre">server.py</span></code>:</strong></p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/api/v2/entities&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">list_entities</span><span class="p">():</span>
+    <span class="c1"># Implementation</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p><strong>Add database access:</strong></p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">src.services.db_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatabaseService</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/api/v2/entities&quot;</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">list_entities</span><span class="p">():</span>
+    <span class="n">db</span> <span class="o">=</span> <span class="n">DatabaseService</span><span class="p">(</span><span class="n">db_path</span><span class="p">)</span>
+    <span class="n">entities</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_all_entities</span><span class="p">()</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="n">entities</span><span class="p">}</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p><strong>Update documentation</strong> (this file)</p></li>
+<li><p><strong>Add tests</strong> in <code class="docutils literal notranslate"><span class="pre">tests/integration/test_webserver.py</span></code></p></li>
+</ol>
+</section>
+<section id="testing">
+<h3>Testing<a class="headerlink" href="#testing" title="Link to this heading">¶</a></h3>
+<p>Test endpoints using pytest:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>tests/integration/test_webserver.py
+</pre></div>
+</div>
+<p>Or manually with curl:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Start ProjektKraken with a world</span>
+<span class="c1"># Then test endpoints</span>
+curl<span class="w"> </span>http://localhost:8000/health
+curl<span class="w"> </span>http://localhost:8000/longform
+</pre></div>
+</div>
+</section>
+</section>
+<section id="api-versioning">
+<h2>API Versioning<a class="headerlink" href="#api-versioning" title="Link to this heading">¶</a></h2>
+<section id="current-v1-beta">
+<h3>Current: V1 (Beta)<a class="headerlink" href="#current-v1-beta" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Read-only access</p></li>
+<li><p>Basic endpoints (health, longform)</p></li>
+<li><p>No authentication</p></li>
+<li><p>Localhost only (default)</p></li>
+</ul>
+</section>
+<section id="planned-v2-future">
+<h3>Planned: V2 (Future)<a class="headerlink" href="#planned-v2-future" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Full CRUD operations</p></li>
+<li><p>Authentication and authorization</p></li>
+<li><p>Rate limiting</p></li>
+<li><p>Comprehensive entity/event/relation endpoints</p></li>
+<li><p>WebSocket support for live updates</p></li>
+<li><p>GraphQL API (optional)</p></li>
+</ul>
+</section>
+</section>
+<section id="related-documentation">
+<h2>Related Documentation<a class="headerlink" href="#related-documentation" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong><a class="reference internal" href="#../Design.md"><span class="xref myst">Design.md</span></a></strong> - Architecture specification</p></li>
+<li><p><strong><a class="reference internal" href="DATABASE.html"><span class="std std-doc">DATABASE.md</span></a></strong> - Database architecture</p></li>
+<li><p><strong><a class="reference internal" href="QT_THREADING_SAFETY.html"><span class="std std-doc">QT_THREADING_SAFETY.md</span></a></strong> - Threading patterns</p></li>
+<li><p><strong><a class="reference internal" href="SECURITY.html"><span class="std std-doc">SECURITY.md</span></a></strong> - Security best practices</p></li>
+<li><p><strong><a class="reference internal" href="LONGFORM.html"><span class="std std-doc">LONGFORM.md</span></a></strong> - Longform document feature</p></li>
+</ul>
+</section>
+<section id="support">
+<h2>Support<a class="headerlink" href="#support" title="Link to this heading">¶</a></h2>
+<p>For issues or questions:</p>
+<ul class="simple">
+<li><p>Check server logs in application console</p></li>
+<li><p>Review threading documentation for integration patterns</p></li>
+<li><p>Test with curl before using in application</p></li>
+<li><p>Report bugs via GitHub issues</p></li>
+</ul>
+<hr class="docutils" />
+<p><strong>Status:</strong> V1 (Beta) - Read-only API<br />
+<strong>Next Version:</strong> V2 with full CRUD operations (planned)</p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Christian Mintert
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Webserver API</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#architecture">Architecture</a><ul>
+<li><a class="reference internal" href="#components">Components</a></li>
+<li><a class="reference internal" href="#threading-model">Threading Model</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#current-api-endpoints-v1">Current API Endpoints (V1)</a><ul>
+<li><a class="reference internal" href="#health-check">Health Check</a></li>
+<li><a class="reference internal" href="#longform-document">Longform Document</a></li>
+<li><a class="reference internal" href="#future-endpoints-planned">Future Endpoints (Planned)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#configuration">Configuration</a><ul>
+<li><a class="reference internal" href="#server-settings">Server Settings</a></li>
+<li><a class="reference internal" href="#environment-variables">Environment Variables</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#usage">Usage</a><ul>
+<li><a class="reference internal" href="#starting-the-server">Starting the Server</a></li>
+<li><a class="reference internal" href="#accessing-the-api">Accessing the API</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#use-cases">Use Cases</a><ul>
+<li><a class="reference internal" href="#live-preview">1. Live Preview</a></li>
+<li><a class="reference internal" href="#export-to-html">2. Export to HTML</a></li>
+<li><a class="reference internal" href="#integration-with-external-tools">3. Integration with External Tools</a></li>
+<li><a class="reference internal" href="#web-based-viewer">4. Web-Based Viewer</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#security-considerations">Security Considerations</a><ul>
+<li><a class="reference internal" href="#current-v1-security">Current (V1) Security</a></li>
+<li><a class="reference internal" href="#future-v2-security">Future (V2) Security</a></li>
+<li><a class="reference internal" href="#best-practices">Best Practices</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#performance">Performance</a><ul>
+<li><a class="reference internal" href="#current-performance">Current Performance</a></li>
+<li><a class="reference internal" href="#optimization-tips">Optimization Tips</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
+<li><a class="reference internal" href="#server-won-t-start">Server Won’t Start</a></li>
+<li><a class="reference internal" href="#can-t-access-from-browser">Can’t Access from Browser</a></li>
+<li><a class="reference internal" href="#slow-response-times">Slow Response Times</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#development">Development</a><ul>
+<li><a class="reference internal" href="#running-in-development-mode">Running in Development Mode</a></li>
+<li><a class="reference internal" href="#adding-new-endpoints">Adding New Endpoints</a></li>
+<li><a class="reference internal" href="#testing">Testing</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#api-versioning">API Versioning</a><ul>
+<li><a class="reference internal" href="#current-v1-beta">Current: V1 (Beta)</a></li>
+<li><a class="reference internal" href="#planned-v2-future">Planned: V2 (Future)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#related-documentation">Related Documentation</a></li>
+<li><a class="reference internal" href="#support">Support</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=1a9b1e2b"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

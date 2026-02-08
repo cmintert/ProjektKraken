@@ -1,0 +1,935 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
+        <title>Drag Pill &amp; Type Picker Implementation - Project Kraken 0.11.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">Project Kraken 0.11.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  <span class="sidebar-brand-text">Project Kraken 0.11.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../DATABASE.html">Database Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../DEVELOPMENT.html">Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../modules.html">src</a><input aria-label="Toggle navigation of src" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../app.html">app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cli.html">cli package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../commands.html">commands package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../core.html">core package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../gui.widgets.html">gui.widgets package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gui.dialogs.html">gui.dialogs package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../services.html">services package</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../CHANGELOG.html">Changelog</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../_sources/archive_2026_02_08/DRAG_PILL_TYPE_PICKER_IMPLEMENTATION.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="drag-pill-type-picker-implementation">
+<h1>Drag Pill &amp; Type Picker Implementation<a class="headerlink" href="#drag-pill-type-picker-implementation" title="Link to this heading">¶</a></h1>
+<p><strong>Date:</strong> 2026-02-07<br />
+<strong>Commits:</strong> f525b0c (widgets), 2944fca (integration)<br />
+<strong>Approach:</strong> Test-Driven Development (TDD)</p>
+<hr class="docutils" />
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>Implemented two new visual features for drag-and-drop relations:</p>
+<ol class="arabic simple">
+<li><p><strong>Drag Pill:</strong> Floating widget that follows cursor during drag</p></li>
+<li><p><strong>Type Picker:</strong> Popup menu for selecting relation types (Shift key)</p></li>
+</ol>
+<p>Both widgets are theme-aware and integrate seamlessly with the existing drag-drop system.</p>
+</section>
+<section id="implementation-summary">
+<h2>Implementation Summary<a class="headerlink" href="#implementation-summary" title="Link to this heading">¶</a></h2>
+<section id="files-created">
+<h3>Files Created<a class="headerlink" href="#files-created" title="Link to this heading">¶</a></h3>
+<p><strong>New Widgets:</strong></p>
+<ol class="arabic simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/drag_pill.py</span></code></strong> (149 lines)</p>
+<ul class="simple">
+<li><p>Floating widget showing dragged item info</p></li>
+<li><p>Icon, name, and type display</p></li>
+<li><p>Theme-aware styling</p></li>
+<li><p>Cursor-following behavior</p></li>
+</ul>
+</li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/relation_type_picker.py</span></code></strong> (205 lines)</p>
+<ul class="simple">
+<li><p>Popup list for selecting relation types</p></li>
+<li><p>Keyboard navigation and Escape key support</p></li>
+<li><p>Theme-aware colors</p></li>
+<li><p>Signal-based selection</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Test Files:</strong>
+3. <strong><code class="docutils literal notranslate"><span class="pre">tests/unit/test_drag_pill.py</span></code></strong> (112 lines)</p>
+<ul class="simple">
+<li><p>14 comprehensive unit tests</p></li>
+<li><p>Tests positioning, theming, icons, window flags</p></li>
+</ul>
+<ol class="arabic simple" start="4">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">tests/unit/test_relation_type_picker.py</span></code></strong> (153 lines)</p>
+<ul class="simple">
+<li><p>15 comprehensive unit tests</p></li>
+<li><p>Tests selection, signals, keyboard handling</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="files-modified">
+<h3>Files Modified<a class="headerlink" href="#files-modified" title="Link to this heading">¶</a></h3>
+<p><strong>Integration:</strong>
+5. <strong><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/unified_list.py</span></code></strong></p>
+<ul class="simple">
+<li><p>Modified <code class="docutils literal notranslate"><span class="pre">startDrag()</span></code> to show drag pill</p></li>
+<li><p>Added cleanup on drag finish</p></li>
+<li><p>Pill follows cursor during drag</p></li>
+</ul>
+<ol class="arabic simple" start="6">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/entity_editor.py</span></code></strong></p>
+<ul class="simple">
+<li><p>Added type picker activation (Shift key)</p></li>
+<li><p>Modified drag events to detect Shift modifier</p></li>
+<li><p>Updates drop hint with selected type</p></li>
+<li><p>Uses selected type in relation creation</p></li>
+</ul>
+</li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">src/gui/widgets/event_editor.py</span></code></strong></p>
+<ul class="simple">
+<li><p>Same integration as entity_editor</p></li>
+<li><p>Consistent behavior across editors</p></li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+<section id="feature-1-drag-pill">
+<h2>Feature 1: Drag Pill<a class="headerlink" href="#feature-1-drag-pill" title="Link to this heading">¶</a></h2>
+<section id="visual-design">
+<h3>Visual Design<a class="headerlink" href="#visual-design" title="Link to this heading">¶</a></h3>
+<p><strong>Appearance:</strong></p>
+<ul class="simple">
+<li><p>Floating, frameless window</p></li>
+<li><p>Always stays on top</p></li>
+<li><p>Transparent to mouse events</p></li>
+<li><p>Background: <code class="docutils literal notranslate"><span class="pre">theme.surface</span></code></p></li>
+<li><p>Border: 1px solid <code class="docutils literal notranslate"><span class="pre">theme.border</span></code></p></li>
+<li><p>Border radius: 6px</p></li>
+<li><p>Drop shadow: 0 4px 12px rgba(0,0,0,0.3)</p></li>
+</ul>
+<p><strong>Content:</strong></p>
+<ul class="simple">
+<li><p>Icon (16x16): ⚡ for events, 👤 for entities</p></li>
+<li><p>Item name (14pt, bold, <code class="docutils literal notranslate"><span class="pre">theme.text_main</span></code>)</p></li>
+<li><p>Type label (10pt, <code class="docutils literal notranslate"><span class="pre">theme.text_dim</span></code>)</p></li>
+</ul>
+<p><strong>Size:</strong></p>
+<ul class="simple">
+<li><p>Maximum width: 200px</p></li>
+<li><p>Fixed height: 40px</p></li>
+<li><p>Auto-adjusts to content</p></li>
+</ul>
+</section>
+<section id="behavior">
+<h3>Behavior<a class="headerlink" href="#behavior" title="Link to this heading">¶</a></h3>
+<p><strong>Positioning:</strong></p>
+<ul class="simple">
+<li><p>Shows at <code class="docutils literal notranslate"><span class="pre">cursor_position</span> <span class="pre">+</span> <span class="pre">offset</span></code></p></li>
+<li><p>Default offset: QPoint(10, 10)</p></li>
+<li><p>Configurable offset in constructor</p></li>
+<li><p>Follows cursor during drag (not yet implemented in integration)</p></li>
+</ul>
+<p><strong>Lifecycle:</strong></p>
+<ol class="arabic simple">
+<li><p>Created when drag starts (<code class="docutils literal notranslate"><span class="pre">startDrag()</span></code>)</p></li>
+<li><p>Shown at cursor position</p></li>
+<li><p>Hidden when drag finishes</p></li>
+<li><p>Deleted to free memory</p></li>
+</ol>
+</section>
+<section id="usage-example">
+<h3>Usage Example<a class="headerlink" href="#usage-example" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">src.gui.widgets.drag_pill</span><span class="w"> </span><span class="kn">import</span> <span class="n">DragPill</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtGui</span><span class="w"> </span><span class="kn">import</span> <span class="n">QCursor</span>
+
+<span class="c1"># Create pill</span>
+<span class="n">pill</span> <span class="o">=</span> <span class="n">DragPill</span><span class="p">(</span><span class="n">item_name</span><span class="o">=</span><span class="s2">&quot;My Event&quot;</span><span class="p">,</span> <span class="n">item_type</span><span class="o">=</span><span class="s2">&quot;event&quot;</span><span class="p">)</span>
+
+<span class="c1"># Show at cursor</span>
+<span class="n">pill</span><span class="o">.</span><span class="n">show_at_position</span><span class="p">(</span><span class="n">QCursor</span><span class="o">.</span><span class="n">pos</span><span class="p">())</span>
+
+<span class="c1"># Update position during drag (in dragMoveEvent)</span>
+<span class="n">pill</span><span class="o">.</span><span class="n">update_position</span><span class="p">(</span><span class="n">QCursor</span><span class="o">.</span><span class="n">pos</span><span class="p">())</span>
+
+<span class="c1"># Hide when done</span>
+<span class="n">pill</span><span class="o">.</span><span class="n">hide</span><span class="p">()</span>
+<span class="n">pill</span><span class="o">.</span><span class="n">deleteLater</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="feature-2-type-picker">
+<h2>Feature 2: Type Picker<a class="headerlink" href="#feature-2-type-picker" title="Link to this heading">¶</a></h2>
+<section id="id1">
+<h3>Visual Design<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<p><strong>Appearance:</strong></p>
+<ul class="simple">
+<li><p>Popup window (frameless, always on top)</p></li>
+<li><p>Background: <code class="docutils literal notranslate"><span class="pre">theme.surface</span></code></p></li>
+<li><p>Border: 1px solid <code class="docutils literal notranslate"><span class="pre">theme.border</span></code></p></li>
+<li><p>Border radius: 4px</p></li>
+</ul>
+<p><strong>List Items:</strong></p>
+<ul class="simple">
+<li><p>Padding: 8px</p></li>
+<li><p>Font: 12pt, <code class="docutils literal notranslate"><span class="pre">theme.text_main</span></code></p></li>
+<li><p>Hover: Highlight with <code class="docutils literal notranslate"><span class="pre">theme.primary</span></code> tint (20% opacity)</p></li>
+<li><p>Selected: Bold, <code class="docutils literal notranslate"><span class="pre">theme.primary</span></code> background</p></li>
+</ul>
+<p><strong>Size:</strong></p>
+<ul class="simple">
+<li><p>Minimum: 180px wide, 100px tall</p></li>
+<li><p>Maximum: 250px wide, 300px tall</p></li>
+<li><p>Auto-adjusts to content</p></li>
+</ul>
+</section>
+<section id="available-relation-types">
+<h3>Available Relation Types<a class="headerlink" href="#available-relation-types" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>related</strong> (default)</p></li>
+<li><p><strong>caused</strong></p></li>
+<li><p><strong>participated_in</strong></p></li>
+<li><p><strong>located_at</strong></p></li>
+<li><p><strong>owns</strong></p></li>
+<li><p><strong>created_by</strong></p></li>
+<li><p><strong>part_of</strong></p></li>
+</ol>
+<p>More types can be added by expanding the list in editor initialization.</p>
+</section>
+<section id="id2">
+<h3>Behavior<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h3>
+<p><strong>Activation:</strong></p>
+<ul class="simple">
+<li><p>Triggered by Shift key during drag</p></li>
+<li><p>Shows near cursor position</p></li>
+<li><p>Hides when Shift is released (but remembers selection)</p></li>
+</ul>
+<p><strong>Selection:</strong></p>
+<ul class="simple">
+<li><p>Click to select</p></li>
+<li><p>Arrow keys to navigate</p></li>
+<li><p>Enter to confirm (not yet implemented)</p></li>
+<li><p>Escape to cancel without selection</p></li>
+</ul>
+<p><strong>Signal Emission:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">type_selected</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>  <span class="c1"># Emits selected type</span>
+</pre></div>
+</div>
+<p><strong>Auto-hide:</strong></p>
+<ul class="simple">
+<li><p>Closes on selection</p></li>
+<li><p>Closes on Escape key</p></li>
+<li><p>Closes when clicking outside (popup flag)</p></li>
+</ul>
+</section>
+<section id="id3">
+<h3>Usage Example<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">src.gui.widgets.relation_type_picker</span><span class="w"> </span><span class="kn">import</span> <span class="n">RelationTypePicker</span>
+
+<span class="c1"># Create picker</span>
+<span class="n">relation_types</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;related&quot;</span><span class="p">,</span> <span class="s2">&quot;caused&quot;</span><span class="p">,</span> <span class="s2">&quot;participated_in&quot;</span><span class="p">]</span>
+<span class="n">picker</span> <span class="o">=</span> <span class="n">RelationTypePicker</span><span class="p">(</span><span class="n">relation_types</span><span class="o">=</span><span class="n">relation_types</span><span class="p">)</span>
+
+<span class="c1"># Connect to signal</span>
+<span class="n">picker</span><span class="o">.</span><span class="n">type_selected</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Selected: </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
+
+<span class="c1"># Show at position</span>
+<span class="n">picker</span><span class="o">.</span><span class="n">show_at_position</span><span class="p">(</span><span class="n">cursor_global_pos</span><span class="p">)</span>
+
+<span class="c1"># Get selected type</span>
+<span class="n">selected</span> <span class="o">=</span> <span class="n">picker</span><span class="o">.</span><span class="n">selected_type</span>  <span class="c1"># &quot;related&quot; by default</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="integration-points">
+<h2>Integration Points<a class="headerlink" href="#integration-points" title="Link to this heading">¶</a></h2>
+<section id="unified-list">
+<h3>Unified List<a class="headerlink" href="#unified-list" title="Link to this heading">¶</a></h3>
+<p><strong>Modified:</strong> <code class="docutils literal notranslate"><span class="pre">startDrag()</span></code> method</p>
+<p><strong>Changes:</strong></p>
+<ul class="simple">
+<li><p>Creates DragPill when drag starts</p></li>
+<li><p>Shows pill at cursor position</p></li>
+<li><p>Connects to drag.destroyed for cleanup</p></li>
+<li><p>Hides and deletes pill when drag finishes</p></li>
+</ul>
+<p><strong>Code:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">startDrag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">supportedActions</span><span class="p">):</span>
+    <span class="c1"># ... extract item data ...</span>
+    
+    <span class="c1"># Create drag pill</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_drag_pill</span> <span class="o">=</span> <span class="n">DragPill</span><span class="p">(</span><span class="n">item_name</span><span class="o">=</span><span class="n">item_name</span><span class="p">,</span> <span class="n">item_type</span><span class="o">=</span><span class="n">item_type</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_drag_pill</span><span class="o">.</span><span class="n">show_at_position</span><span class="p">(</span><span class="n">QCursor</span><span class="o">.</span><span class="n">pos</span><span class="p">())</span>
+    
+    <span class="c1"># Execute drag</span>
+    <span class="n">drag</span> <span class="o">=</span> <span class="n">QDrag</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+    <span class="n">drag</span><span class="o">.</span><span class="n">setMimeData</span><span class="p">(</span><span class="n">mime_data</span><span class="p">)</span>
+    <span class="n">drag</span><span class="o">.</span><span class="n">destroyed</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_on_drag_finished</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">drag</span><span class="o">.</span><span class="n">exec</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">CopyAction</span><span class="p">)</span>
+    
+    <span class="c1"># Cleanup</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_on_drag_finished</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="entity-event-editors">
+<h3>Entity/Event Editors<a class="headerlink" href="#entity-event-editors" title="Link to this heading">¶</a></h3>
+<p><strong>Modified:</strong> Drag event handlers</p>
+<p><strong>Key Changes:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Initialization:</strong></p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="bp">self</span><span class="o">.</span><span class="n">_type_picker</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">_selected_relation_type</span> <span class="o">=</span> <span class="s2">&quot;related&quot;</span>  <span class="c1"># Default</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="2">
+<li><p><strong>Shift Key Detection:</strong></p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">dragEnterEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">modifiers</span><span class="p">()</span> <span class="o">&amp;</span> <span class="n">Qt</span><span class="o">.</span><span class="n">KeyboardModifier</span><span class="o">.</span><span class="n">ShiftModifier</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_show_type_picker</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pos</span><span class="p">())</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_show_drop_hint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_selected_relation_type</span><span class="p">)</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li><p><strong>Type Selection:</strong></p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_on_relation_type_selected</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">relation_type</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_selected_relation_type</span> <span class="o">=</span> <span class="n">relation_type</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_show_drop_hint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_selected_relation_type</span><span class="p">)</span>
+</pre></div>
+</div>
+<ol class="arabic simple" start="4">
+<li><p><strong>Relation Creation:</strong></p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">dropEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+    <span class="c1"># ... parse dropped data ...</span>
+    
+    <span class="bp">self</span><span class="o">.</span><span class="n">add_relation_requested</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span>
+        <span class="n">dropped_id</span><span class="p">,</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current_entity_id</span><span class="p">,</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_selected_relation_type</span><span class="p">,</span>  <span class="c1"># Uses selected type!</span>
+        <span class="p">{},</span>
+        <span class="kc">False</span>
+    <span class="p">)</span>
+    
+    <span class="c1"># Reset for next drag</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_selected_relation_type</span> <span class="o">=</span> <span class="s2">&quot;related&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="user-workflow">
+<h2>User Workflow<a class="headerlink" href="#user-workflow" title="Link to this heading">¶</a></h2>
+<section id="default-drag-no-modifiers">
+<h3>Default Drag (No Modifiers)<a class="headerlink" href="#default-drag-no-modifiers" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p>User clicks and drags item from Project Explorer</p></li>
+<li><p><strong>Drag pill appears</strong> at cursor showing item info</p></li>
+<li><p>User hovers over Entity/Event Editor</p></li>
+<li><p><strong>Drop hint shows</strong> “→ related” (default type)</p></li>
+<li><p>User releases mouse (drops)</p></li>
+<li><p>Relation created with type “related”</p></li>
+<li><p>Toast notification appears with Undo button</p></li>
+</ol>
+</section>
+<section id="advanced-type-selection-shift-key">
+<h3>Advanced: Type Selection (Shift Key)<a class="headerlink" href="#advanced-type-selection-shift-key" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p>User clicks and drags item from Project Explorer</p></li>
+<li><p><strong>Drag pill appears</strong> at cursor</p></li>
+<li><p>User hovers over Entity/Event Editor</p></li>
+<li><p>User <strong>presses Shift key</strong></p></li>
+<li><p><strong>Type picker popup appears</strong> near cursor</p></li>
+<li><p>Drop hint hides (picker is visible instead)</p></li>
+<li><p>User selects relation type (e.g., “caused”)</p></li>
+<li><p><strong>Type picker closes</strong>, selection remembered</p></li>
+<li><p><strong>Drop hint reappears</strong> showing “→ caused”</p></li>
+<li><p>User releases mouse (drops)</p></li>
+<li><p>Relation created with type “caused”</p></li>
+<li><p>Type resets to “related” for next drag</p></li>
+</ol>
+</section>
+<section id="keyboard-shortcuts-during-drag">
+<h3>Keyboard Shortcuts During Drag<a class="headerlink" href="#keyboard-shortcuts-during-drag" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>No modifier:</strong> Default “related” type</p></li>
+<li><p><strong>Shift:</strong> Show type picker</p></li>
+<li><p><strong>Escape:</strong> Close type picker without selection</p></li>
+</ul>
+</section>
+</section>
+<section id="theme-integration">
+<h2>Theme Integration<a class="headerlink" href="#theme-integration" title="Link to this heading">¶</a></h2>
+<p>Both widgets use <code class="docutils literal notranslate"><span class="pre">ThemeManager</span></code> to get colors dynamically:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">src.core.theme_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThemeManager</span>
+
+<span class="n">theme_manager</span> <span class="o">=</span> <span class="n">ThemeManager</span><span class="p">()</span>
+<span class="n">theme</span> <span class="o">=</span> <span class="n">theme_manager</span><span class="o">.</span><span class="n">get_theme</span><span class="p">()</span>
+
+<span class="n">surface</span> <span class="o">=</span> <span class="n">theme</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;surface&quot;</span><span class="p">,</span> <span class="s2">&quot;#323232&quot;</span><span class="p">)</span>
+<span class="n">border</span> <span class="o">=</span> <span class="n">theme</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;border&quot;</span><span class="p">,</span> <span class="s2">&quot;#454545&quot;</span><span class="p">)</span>
+<span class="n">text_main</span> <span class="o">=</span> <span class="n">theme</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;text_main&quot;</span><span class="p">,</span> <span class="s2">&quot;#E0E0E0&quot;</span><span class="p">)</span>
+<span class="n">text_dim</span> <span class="o">=</span> <span class="n">theme</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;text_dim&quot;</span><span class="p">,</span> <span class="s2">&quot;#9E9E9E&quot;</span><span class="p">)</span>
+<span class="n">primary</span> <span class="o">=</span> <span class="n">theme</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;primary&quot;</span><span class="p">,</span> <span class="s2">&quot;#FF9900&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Supported Themes:</strong></p>
+<ul class="simple">
+<li><p>dark_mode</p></li>
+<li><p>light_mode</p></li>
+<li><p>fantasy_mode</p></li>
+<li><p>imperial_mode</p></li>
+<li><p>cyberpunk_mode</p></li>
+<li><p>muted_light_mode</p></li>
+</ul>
+<p>Both widgets automatically adapt to theme changes.</p>
+</section>
+<section id="test-coverage">
+<h2>Test Coverage<a class="headerlink" href="#test-coverage" title="Link to this heading">¶</a></h2>
+<section id="drag-pill-tests-14-tests">
+<h3>Drag Pill Tests (14 tests)<a class="headerlink" href="#drag-pill-tests-14-tests" title="Link to this heading">¶</a></h3>
+<p><strong>Initialization &amp; Display:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">test_drag_pill_initialization</span></code> - Correct properties</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test_drag_pill_shows_at_position</span></code> - Position with offset</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test_drag_pill_updates_position</span></code> - Position updates</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test_drag_pill_hides</span></code> - Hide functionality</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test_drag_pill_displays_correct_text</span></code> - Labels show correct data</p></li>
+</ul>
+<p><strong>Styling:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">test_drag_pill_uses_theme_colors</span></code> - Theme colors applied</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test_drag_pill_has_max_width</span></code> - Width constraint (200px)</p></li>
+</ul>
+<p><strong>Icons:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">test_drag_pill_shows_icon_for_event_type</span></code> - ⚡ for events</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test_drag_pill_shows_icon_for_entity_type</span></code> - 👤 for entities</p></li>
+</ul>
+<p><strong>Window Behavior:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">test_drag_pill_stays_on_top</span></code> - WindowStaysOnTopHint flag</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test_drag_pill_is_frameless</span></code> - FramelessWindowHint flag</p></li>
+</ul>
+<p><strong>Advanced:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">test_drag_pill_custom_offset</span></code> - Custom cursor offset</p></li>
+</ul>
+</section>
+<section id="type-picker-tests-15-tests">
+<h3>Type Picker Tests (15 tests)<a class="headerlink" href="#type-picker-tests-15-tests" title="Link to this heading">¶</a></h3>
+<p><strong>Initialization &amp; Display:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">test_type_picker_initialization</span></code> - Correct properties</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test_type_picker_shows_at_position</span></code> - Shows near cursor</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test_type_picker_displays_all_types</span></code> - All types in list</p></li>
+</ul>
+<p><strong>Selection:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">test_type_picker_selects_type_on_click</span></code> - Click selection</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test_type_picker_hides_after_selection</span></code> - Auto-hide</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test_type_picker_highlights_default_type</span></code> - “related” pre-selected</p></li>
+</ul>
+<p><strong>Signals:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">test_type_picker_signal_emission</span></code> - type_selected signal</p></li>
+</ul>
+<p><strong>Keyboard:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">test_type_picker_escape_key_closes</span></code> - Escape cancels</p></li>
+</ul>
+<p><strong>Edge Cases:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">test_type_picker_empty_list_default</span></code> - Falls back to “related”</p></li>
+</ul>
+<p><strong>Styling:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">test_type_picker_uses_theme_colors</span></code> - Theme colors applied</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test_type_picker_hover_highlighting</span></code> - Hover effects</p></li>
+</ul>
+<p><strong>Window Behavior:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">test_type_picker_stays_on_top</span></code> - WindowStaysOnTopHint flag</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test_type_picker_has_border</span></code> - Visible border</p></li>
+</ul>
+<p>All tests pass ✅</p>
+</section>
+</section>
+<section id="guard-against-regression">
+<h2>Guard Against Regression<a class="headerlink" href="#guard-against-regression" title="Link to this heading">¶</a></h2>
+<p><strong>Memory Management:</strong></p>
+<ul class="simple">
+<li><p>Drag pill properly deleted after use</p></li>
+<li><p>Type picker created once, reused</p></li>
+<li><p>No memory leaks</p></li>
+</ul>
+<p><strong>State Management:</strong></p>
+<ul class="simple">
+<li><p>Relation type resets after each drop</p></li>
+<li><p>Type picker closes on drag leave</p></li>
+<li><p>Drop hints hide when picker shows</p></li>
+</ul>
+<p><strong>Error Handling:</strong></p>
+<ul class="simple">
+<li><p>Try-except in all drag events</p></li>
+<li><p>Proper cleanup on errors</p></li>
+<li><p>Type picker hides on exception</p></li>
+</ul>
+<p><strong>Consistency:</strong></p>
+<ul class="simple">
+<li><p>Same behavior in entity_editor and event_editor</p></li>
+<li><p>Type picker always defaults to “related”</p></li>
+<li><p>Tests verify expected behavior</p></li>
+</ul>
+</section>
+<section id="future-enhancements">
+<h2>Future Enhancements<a class="headerlink" href="#future-enhancements" title="Link to this heading">¶</a></h2>
+<p><strong>Not Yet Implemented:</strong></p>
+<ol class="arabic simple">
+<li><p><strong>Drag Pill Cursor Following</strong></p>
+<ul class="simple">
+<li><p>Currently shows at start position only</p></li>
+<li><p>Should update in dragMoveEvent</p></li>
+<li><p>Needs 60 FPS update rate</p></li>
+</ul>
+</li>
+<li><p><strong>Preview Dashed Lines</strong></p>
+<ul class="simple">
+<li><p>For graph node-to-node drag</p></li>
+<li><p>For map marker-to-marker drag</p></li>
+<li><p>SVG path with animated dash offset</p></li>
+</ul>
+</li>
+<li><p><strong>Node Highlight/Glow</strong></p>
+<ul class="simple">
+<li><p>Border highlight on valid drop target</p></li>
+<li><p>Glow effect with theme colors</p></li>
+<li><p>Pulse animation</p></li>
+</ul>
+</li>
+<li><p><strong>Enter Key in Type Picker</strong></p>
+<ul class="simple">
+<li><p>Currently only click selection works</p></li>
+<li><p>Should support Enter key to confirm</p></li>
+</ul>
+</li>
+<li><p><strong>Type Picker Positioning</strong></p>
+<ul class="simple">
+<li><p>Currently shows at drag position</p></li>
+<li><p>Could be smarter (avoid screen edges)</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="known-limitations">
+<h2>Known Limitations<a class="headerlink" href="#known-limitations" title="Link to this heading">¶</a></h2>
+<p><strong>Drag Pill:</strong></p>
+<ul class="simple">
+<li><p>Does not update position during drag (static)</p></li>
+<li><p>Icon set is limited (event, entity, map only)</p></li>
+</ul>
+<p><strong>Type Picker:</strong></p>
+<ul class="simple">
+<li><p>Relation types are hard-coded in editors</p></li>
+<li><p>Should ideally come from database</p></li>
+<li><p>No search/filter for many types</p></li>
+</ul>
+<p><strong>Both:</strong></p>
+<ul class="simple">
+<li><p>Only tested manually, not automated UI tests</p></li>
+<li><p>Multi-monitor support not tested</p></li>
+</ul>
+</section>
+<section id="manual-testing-checklist">
+<h2>Manual Testing Checklist<a class="headerlink" href="#manual-testing-checklist" title="Link to this heading">¶</a></h2>
+<p><strong>Drag Pill:</strong></p>
+<ul class="simple">
+<li><p>[ ] Pill appears when drag starts</p></li>
+<li><p>[ ] Shows correct icon for event</p></li>
+<li><p>[ ] Shows correct icon for entity</p></li>
+<li><p>[ ] Has drop shadow effect</p></li>
+<li><p>[ ] Uses current theme colors</p></li>
+<li><p>[ ] Disappears when drag ends</p></li>
+</ul>
+<p><strong>Type Picker (Shift Key):</strong></p>
+<ul class="simple">
+<li><p>[ ] Picker appears when Shift pressed during drag</p></li>
+<li><p>[ ] Shows list of relation types</p></li>
+<li><p>[ ] “related” is pre-selected</p></li>
+<li><p>[ ] Can select different type by clicking</p></li>
+<li><p>[ ] Drop hint updates to show selected type</p></li>
+<li><p>[ ] Picker hides when Shift released</p></li>
+<li><p>[ ] Selected type is used for relation</p></li>
+<li><p>[ ] Type resets to “related” after drop</p></li>
+<li><p>[ ] Escape key closes picker</p></li>
+<li><p>[ ] Uses current theme colors</p></li>
+</ul>
+<p><strong>Integration:</strong></p>
+<ul class="simple">
+<li><p>[ ] Works in Entity Editor</p></li>
+<li><p>[ ] Works in Event Editor</p></li>
+<li><p>[ ] No crashes or errors</p></li>
+<li><p>[ ] Memory properly cleaned up</p></li>
+</ul>
+</section>
+<section id="resources">
+<h2>Resources<a class="headerlink" href="#resources" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>RFC:</strong> <code class="docutils literal notranslate"><span class="pre">docs/DRAG_DROP_RELATIONS_PLAN.md</span></code> Section 4.1, 4.2</p></li>
+<li><p><strong>Theme System:</strong> <code class="docutils literal notranslate"><span class="pre">src/core/theme_manager.py</span></code></p></li>
+<li><p><strong>Drag MIME Type:</strong> <code class="docutils literal notranslate"><span class="pre">src/gui/widgets/unified_list.py:34</span></code> (KRAKEN_ITEM_MIME_TYPE)</p></li>
+<li><p><strong>Sprint 0 Docs:</strong> <code class="docutils literal notranslate"><span class="pre">docs/SPRINT0_IMPLEMENTATION.md</span></code></p></li>
+<li><p><strong>Sprint 1 Docs:</strong> <code class="docutils literal notranslate"><span class="pre">docs/SPRINT1_IMPLEMENTATION.md</span></code></p></li>
+</ul>
+<hr class="docutils" />
+<p><strong>Implementation Complete</strong> ✅<br />
+<strong>Ready for:</strong> Manual UI testing</p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Christian Mintert
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Drag Pill &amp; Type Picker Implementation</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#implementation-summary">Implementation Summary</a><ul>
+<li><a class="reference internal" href="#files-created">Files Created</a></li>
+<li><a class="reference internal" href="#files-modified">Files Modified</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#feature-1-drag-pill">Feature 1: Drag Pill</a><ul>
+<li><a class="reference internal" href="#visual-design">Visual Design</a></li>
+<li><a class="reference internal" href="#behavior">Behavior</a></li>
+<li><a class="reference internal" href="#usage-example">Usage Example</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#feature-2-type-picker">Feature 2: Type Picker</a><ul>
+<li><a class="reference internal" href="#id1">Visual Design</a></li>
+<li><a class="reference internal" href="#available-relation-types">Available Relation Types</a></li>
+<li><a class="reference internal" href="#id2">Behavior</a></li>
+<li><a class="reference internal" href="#id3">Usage Example</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#integration-points">Integration Points</a><ul>
+<li><a class="reference internal" href="#unified-list">Unified List</a></li>
+<li><a class="reference internal" href="#entity-event-editors">Entity/Event Editors</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#user-workflow">User Workflow</a><ul>
+<li><a class="reference internal" href="#default-drag-no-modifiers">Default Drag (No Modifiers)</a></li>
+<li><a class="reference internal" href="#advanced-type-selection-shift-key">Advanced: Type Selection (Shift Key)</a></li>
+<li><a class="reference internal" href="#keyboard-shortcuts-during-drag">Keyboard Shortcuts During Drag</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#theme-integration">Theme Integration</a></li>
+<li><a class="reference internal" href="#test-coverage">Test Coverage</a><ul>
+<li><a class="reference internal" href="#drag-pill-tests-14-tests">Drag Pill Tests (14 tests)</a></li>
+<li><a class="reference internal" href="#type-picker-tests-15-tests">Type Picker Tests (15 tests)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#guard-against-regression">Guard Against Regression</a></li>
+<li><a class="reference internal" href="#future-enhancements">Future Enhancements</a></li>
+<li><a class="reference internal" href="#known-limitations">Known Limitations</a></li>
+<li><a class="reference internal" href="#manual-testing-checklist">Manual Testing Checklist</a></li>
+<li><a class="reference internal" href="#resources">Resources</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=1a9b1e2b"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

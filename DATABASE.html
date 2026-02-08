@@ -3,10 +3,10 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Development Guide" href="DEVELOPMENT.html"><link rel="prev" title="Project Kraken: Comprehensive Design Specification" href="Design.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Development Guide" href="DEVELOPMENT.html"><link rel="prev" title="Welcome to Project Kraken’s documentation!" href="index.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
-        <title>Database Architecture and Best Practices - Project Kraken 0.11.0 documentation</title>
+        <title>Database Documentation - Project Kraken 0.11.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -196,29 +196,11 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="WIKI_LINKING.html">ID-Based Wiki Linking Implementation Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="MAP_USAGE_EXAMPLES.html">Map System Usage Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="LONGFORM.html">Longform Document Feature</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+  <p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="Design.html">Project Kraken: Comprehensive Design Specification</a></li>
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Database Architecture and Best Practices</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Database Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="DEVELOPMENT.html">Development Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security Best Practices</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Advanced Features</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
-<li class="toctree-l1"><a class="reference internal" href="LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAST_INJECT.html">Fast Inject Service</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html">Tag Normalization Migration Guide</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -239,7 +221,6 @@
 <p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
-<li class="toctree-l1"><a class="reference internal" href="LICENSE.html">GNU AFFERO GENERAL PUBLIC LICENSE</a></li>
 </ul>
 
 </div>
@@ -278,424 +259,772 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="database-architecture-and-best-practices">
-<h1>Database Architecture and Best Practices<a class="headerlink" href="#database-architecture-and-best-practices" title="Link to this heading">¶</a></h1>
-<section id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
-<p>ProjektKraken uses SQLite as its database engine with a hybrid schema approach that combines strict SQL columns for searchable/sortable fields with flexible JSON attributes for custom data.</p>
-</section>
-<section id="architecture">
-<h2>Architecture<a class="headerlink" href="#architecture" title="Link to this heading">¶</a></h2>
-<section id="database-service-src-services-db-service-py">
-<h3>Database Service (<code class="docutils literal notranslate"><span class="pre">src/services/db_service.py</span></code>)<a class="headerlink" href="#database-service-src-services-db-service-py" title="Link to this heading">¶</a></h3>
-<p>The <code class="docutils literal notranslate"><span class="pre">DatabaseService</span></code> class is the single point of interaction with the SQLite database. It implements:</p>
-<ul class="simple">
-<li><p><strong>Connection Management</strong>: Persistent connection with lazy initialization</p></li>
-<li><p><strong>Transaction Safety</strong>: Context manager for ACID compliance</p></li>
-<li><p><strong>Hybrid Schema</strong>: SQL columns + JSON attributes</p></li>
-<li><p><strong>Parameterized Queries</strong>: SQL injection prevention</p></li>
-<li><p><strong>Automatic Rollback</strong>: Error handling with transaction rollback</p></li>
-</ul>
-</section>
-<section id="schema-design">
-<h3>Schema Design<a class="headerlink" href="#schema-design" title="Link to this heading">¶</a></h3>
-<blockquote>
-<div><p>[!NOTE]
-For a complete visual representation of the database schema with all tables, columns, and relationships, see the <a class="reference internal" href="SCHEMA_REFERENCE.html"><span class="std std-doc">Schema Reference</span></a> (auto-generated from code).</p>
-</div></blockquote>
-<section id="core-tables">
-<h4>Core Tables<a class="headerlink" href="#core-tables" title="Link to this heading">¶</a></h4>
+          <section id="database-documentation">
+<h1>Database Documentation<a class="headerlink" href="#database-documentation" title="Link to this heading">¶</a></h1>
+<p><strong>Version:</strong> 0.11.0 (Beta)<br />
+<strong>Last Updated:</strong> February 2026</p>
+<p>Complete database schema and data model documentation for ProjektKraken.</p>
+<hr class="docutils" />
+<section id="table-of-contents">
+<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Link to this heading">¶</a></h2>
 <ol class="arabic simple">
-<li><p><strong>events</strong> - Timeline events (points or spans in time)</p>
-<ul class="simple">
-<li><p>Strict columns: <code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">type</span></code>, <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">lore_date</span></code>, <code class="docutils literal notranslate"><span class="pre">lore_duration</span></code>, <code class="docutils literal notranslate"><span class="pre">description</span></code></p></li>
-<li><p>Flexible: <code class="docutils literal notranslate"><span class="pre">attributes</span></code> (JSON)</p></li>
-<li><p>Metadata: <code class="docutils literal notranslate"><span class="pre">created_at</span></code>, <code class="docutils literal notranslate"><span class="pre">modified_at</span></code></p></li>
-</ul>
-</li>
-<li><p><strong>entities</strong> - Timeless objects (characters, locations, artifacts)</p>
-<ul class="simple">
-<li><p>Strict columns: <code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">type</span></code>, <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">description</span></code></p></li>
-<li><p>Flexible: <code class="docutils literal notranslate"><span class="pre">attributes</span></code> (JSON)</p></li>
-<li><p>Metadata: <code class="docutils literal notranslate"><span class="pre">created_at</span></code>, <code class="docutils literal notranslate"><span class="pre">modified_at</span></code></p></li>
-</ul>
-</li>
-<li><p><strong>relations</strong> - Directed relationships between objects</p>
-<ul class="simple">
-<li><p>Columns: <code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">source_id</span></code>, <code class="docutils literal notranslate"><span class="pre">target_id</span></code>, <code class="docutils literal notranslate"><span class="pre">rel_type</span></code></p></li>
-<li><p>Flexible: <code class="docutils literal notranslate"><span class="pre">attributes</span></code> (JSON)</p></li>
-<li><p>Metadata: <code class="docutils literal notranslate"><span class="pre">created_at</span></code></p></li>
-</ul>
-</li>
-<li><p><strong>system_meta</strong> - Application metadata</p>
-<ul class="simple">
-<li><p>Key-value store for settings</p></li>
-</ul>
-</li>
+<li><p><a class="reference internal" href="#overview"><span class="xref myst">Overview</span></a></p></li>
+<li><p><a class="reference internal" href="#database-configuration"><span class="xref myst">Database Configuration</span></a></p></li>
+<li><p><a class="reference internal" href="#core-tables"><span class="xref myst">Core Tables</span></a></p></li>
+<li><p><a class="reference internal" href="#supporting-tables"><span class="xref myst">Supporting Tables</span></a></p></li>
+<li><p><a class="reference internal" href="#json-attributes"><span class="xref myst">JSON Attributes</span></a></p></li>
+<li><p><a class="reference internal" href="#relationships-and-foreign-keys"><span class="xref myst">Relationships and Foreign Keys</span></a></p></li>
+<li><p><a class="reference internal" href="#indexes"><span class="xref myst">Indexes</span></a></p></li>
+<li><p><a class="reference internal" href="#migrations"><span class="xref myst">Migrations</span></a></p></li>
 </ol>
 </section>
+<hr class="docutils" />
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<section id="database-technology">
+<h3>Database Technology<a class="headerlink" href="#database-technology" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Engine</strong>: SQLite 3.35+</p></li>
+<li><p><strong>File Format</strong>: Single <code class="docutils literal notranslate"><span class="pre">.kraken</span></code> file per world</p></li>
+<li><p><strong>Journal Mode</strong>: WAL (Write-Ahead Logging)</p></li>
+<li><p><strong>Foreign Keys</strong>: Enabled</p></li>
+</ul>
+</section>
+<section id="design-philosophy">
+<h3>Design Philosophy<a class="headerlink" href="#design-philosophy" title="Link to this heading">¶</a></h3>
+<p><strong>Hybrid Schema Approach:</strong></p>
+<ul class="simple">
+<li><p><strong>Strict SQL Columns</strong>: Searchable, sortable, indexed fields</p></li>
+<li><p><strong>JSON Attributes</strong>: Flexible, world-specific custom properties</p></li>
+</ul>
+<p>This combines the reliability of structured data with the flexibility of document storage.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="database-configuration">
+<h2>Database Configuration<a class="headerlink" href="#database-configuration" title="Link to this heading">¶</a></h2>
+<section id="initialization">
+<h3>Initialization<a class="headerlink" href="#initialization" title="Link to this heading">¶</a></h3>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="c1">-- Enable WAL mode for concurrency</span>
+<span class="n">PRAGMA</span><span class="w"> </span><span class="n">journal_mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">WAL</span><span class="p">;</span>
+
+<span class="c1">-- Enforce foreign key constraints</span>
+<span class="n">PRAGMA</span><span class="w"> </span><span class="n">foreign_keys</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">ON</span><span class="p">;</span>
+
+<span class="c1">-- Performance optimizations</span>
+<span class="n">PRAGMA</span><span class="w"> </span><span class="n">synchronous</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NORMAL</span><span class="p">;</span>
+<span class="n">PRAGMA</span><span class="w"> </span><span class="n">temp_store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MEMORY</span><span class="p">;</span>
+<span class="n">PRAGMA</span><span class="w"> </span><span class="n">mmap_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">268435456</span><span class="p">;</span><span class="w">  </span><span class="c1">-- 256MB memory-mapped I/O</span>
+</pre></div>
+</div>
+</section>
+<section id="wal-mode-benefits">
+<h3>WAL Mode Benefits<a class="headerlink" href="#wal-mode-benefits" title="Link to this heading">¶</a></h3>
+<p><strong>Write-Ahead Logging</strong> enables:</p>
+<ol class="arabic simple">
+<li><p><strong>Concurrent Reads</strong>: Multiple readers don’t block each other</p></li>
+<li><p><strong>Non-Blocking Reads</strong>: Readers don’t block writers</p></li>
+<li><p><strong>Better Performance</strong>: Reduced disk I/O for commits</p></li>
+<li><p><strong>Atomic Commits</strong>: Multiple changes in single transaction</p></li>
+</ol>
+<p><strong>Usage Pattern:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Worker thread has write access</span>
+<span class="c1"># Main thread has read-only connections</span>
+<span class="c1"># WAL ensures isolation between threads</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="core-tables">
+<h2>Core Tables<a class="headerlink" href="#core-tables" title="Link to this heading">¶</a></h2>
+<section id="events-table">
+<h3>Events Table<a class="headerlink" href="#events-table" title="Link to this heading">¶</a></h3>
+<p>Stores timeline events.</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">events</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="k">type</span><span class="w"> </span><span class="nb">TEXT</span><span class="p">,</span>
+<span class="w">    </span><span class="n">lore_date</span><span class="w"> </span><span class="nb">REAL</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">lore_duration</span><span class="w"> </span><span class="nb">REAL</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="mi">0</span><span class="p">.</span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="n">description</span><span class="w"> </span><span class="nb">TEXT</span><span class="p">,</span>
+<span class="w">    </span><span class="n">attributes</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="s1">&#39;{}&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="n">created_at</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">modified_at</span><span class="w"> </span><span class="nb">REAL</span>
+<span class="p">);</span>
+
+<span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">idx_events_date</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">events</span><span class="p">(</span><span class="n">lore_date</span><span class="p">);</span>
+</pre></div>
+</div>
+<p><strong>Columns:</strong></p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Column</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">id</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>UUID primary key</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">name</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>Event title (required)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">type</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>Event category (e.g., “battle”, “political”)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">lore_date</span></code></p></td>
+<td><p>REAL</p></td>
+<td><p>Timeline date (float: 1.0 = 1 day)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">lore_duration</span></code></p></td>
+<td><p>REAL</p></td>
+<td><p>Event duration in days</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">description</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>Rich text description with wiki links</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">attributes</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>JSON for custom properties</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">created_at</span></code></p></td>
+<td><p>REAL</p></td>
+<td><p>Unix timestamp of creation</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">modified_at</span></code></p></td>
+<td><p>REAL</p></td>
+<td><p>Unix timestamp of last modification</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Example Data:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;evt_123&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The Fall of Atlantis&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;disaster&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;lore_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">450123.5</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The [[City of Atlantis]] sank beneath the waves.&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;catastrophic&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;casualties&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10000</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;custom_field&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;custom_value&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="entities-table">
+<h3>Entities Table<a class="headerlink" href="#entities-table" title="Link to this heading">¶</a></h3>
+<p>Stores persistent world elements.</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">entities</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="k">type</span><span class="w"> </span><span class="nb">TEXT</span><span class="p">,</span>
+<span class="w">    </span><span class="n">description</span><span class="w"> </span><span class="nb">TEXT</span><span class="p">,</span>
+<span class="w">    </span><span class="n">attributes</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="s1">&#39;{}&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="n">created_at</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">modified_at</span><span class="w"> </span><span class="nb">REAL</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+<p><strong>Columns:</strong></p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Column</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">id</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>UUID primary key</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">name</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>Entity name (required)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">type</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>Entity type (character, location, faction, item, concept)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">description</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>Rich text description with wiki links</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">attributes</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>JSON for custom properties</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">created_at</span></code></p></td>
+<td><p>REAL</p></td>
+<td><p>Creation timestamp</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">modified_at</span></code></p></td>
+<td><p>REAL</p></td>
+<td><p>Last modification timestamp</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Entity Types:</strong></p>
+<ul class="simple">
+<li><p><strong>character</strong>: People, sentient beings</p></li>
+<li><p><strong>location</strong>: Places, regions</p></li>
+<li><p><strong>faction</strong>: Groups, organizations</p></li>
+<li><p><strong>item</strong>: Objects, artifacts</p></li>
+<li><p><strong>concept</strong>: Abstract ideas</p></li>
+</ul>
+<p><strong>Example Data:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ent_456&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Gandalf the Grey&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;character&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;A powerful [[Wizard]] from [[Middle Earth]].&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;race&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Maia&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;alignment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Good&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;skills&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;Magic&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Wisdom&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Swordsmanship&quot;</span><span class="p">]</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="relations-table">
+<h3>Relations Table<a class="headerlink" href="#relations-table" title="Link to this heading">¶</a></h3>
+<p>Stores directed relationships between entities and events.</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">relations</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">source_id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">target_id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">rel_type</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">attributes</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="s1">&#39;{}&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="n">created_at</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span>
+<span class="w">    </span><span class="k">FOREIGN</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">source_id</span><span class="p">)</span><span class="w"> </span><span class="k">REFERENCES</span><span class="w"> </span><span class="n">entities</span><span class="p">(</span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">DELETE</span><span class="w"> </span><span class="k">CASCADE</span><span class="p">,</span>
+<span class="w">    </span><span class="k">FOREIGN</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">target_id</span><span class="p">)</span><span class="w"> </span><span class="k">REFERENCES</span><span class="w"> </span><span class="n">entities</span><span class="p">(</span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">DELETE</span><span class="w"> </span><span class="k">CASCADE</span>
+<span class="p">);</span>
+
+<span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">idx_relations_source</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">relations</span><span class="p">(</span><span class="n">source_id</span><span class="p">);</span>
+<span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">idx_relations_target</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">relations</span><span class="p">(</span><span class="n">target_id</span><span class="p">);</span>
+</pre></div>
+</div>
+<p><strong>Columns:</strong></p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Column</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">id</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>UUID primary key</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">source_id</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>Source entity/event ID</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">target_id</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>Target entity/event ID</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">rel_type</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>Relationship type</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">attributes</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>JSON metadata for relation</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">created_at</span></code></p></td>
+<td><p>REAL</p></td>
+<td><p>Creation timestamp</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Common Relation Types:</strong></p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+<th class="head"><p>Example</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">caused</span></code></p></td>
+<td><p>Causal relationship</p></td>
+<td><p>Event A caused Event B</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">involved</span></code></p></td>
+<td><p>Participation</p></td>
+<td><p>Event involved Entity</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">influenced</span></code></p></td>
+<td><p>Indirect effect</p></td>
+<td><p>A influenced B</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">located_at</span></code></p></td>
+<td><p>Spatial</p></td>
+<td><p>Entity at Location</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">member_of</span></code></p></td>
+<td><p>Membership</p></td>
+<td><p>Character in Faction</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">owns</span></code></p></td>
+<td><p>Ownership</p></td>
+<td><p>Character owns Item</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">parent_of</span></code></p></td>
+<td><p>Family</p></td>
+<td><p>Parent of Child</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Example Data:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;rel_789&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;source_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;evt_fall_of_empire&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;target_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;evt_civil_war&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;rel_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;caused&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;certainty&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;confirmed&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;time_lag&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">30.0</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="supporting-tables">
+<h2>Supporting Tables<a class="headerlink" href="#supporting-tables" title="Link to this heading">¶</a></h2>
+<section id="maps-table">
+<h3>Maps Table<a class="headerlink" href="#maps-table" title="Link to this heading">¶</a></h3>
+<p>Geographic maps with images.</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">maps</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">image_path</span><span class="w"> </span><span class="nb">TEXT</span><span class="p">,</span>
+<span class="w">    </span><span class="n">scale_pixels_per_km</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">attributes</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="s1">&#39;{}&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="n">created_at</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">modified_at</span><span class="w"> </span><span class="nb">REAL</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+<p><strong>Purpose</strong>: Store map metadata and calibration.</p>
+</section>
+<hr class="docutils" />
+<section id="markers-table">
+<h3>Markers Table<a class="headerlink" href="#markers-table" title="Link to this heading">¶</a></h3>
+<p>Points on maps.</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">markers</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">map_id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">entity_id</span><span class="w"> </span><span class="nb">TEXT</span><span class="p">,</span>
+<span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="nb">TEXT</span><span class="p">,</span>
+<span class="w">    </span><span class="n">x</span><span class="w"> </span><span class="nb">REAL</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">y</span><span class="w"> </span><span class="nb">REAL</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">icon</span><span class="w"> </span><span class="nb">TEXT</span><span class="p">,</span>
+<span class="w">    </span><span class="n">color</span><span class="w"> </span><span class="nb">TEXT</span><span class="p">,</span>
+<span class="w">    </span><span class="n">attributes</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="s1">&#39;{}&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">FOREIGN</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">map_id</span><span class="p">)</span><span class="w"> </span><span class="k">REFERENCES</span><span class="w"> </span><span class="n">maps</span><span class="p">(</span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">DELETE</span><span class="w"> </span><span class="k">CASCADE</span><span class="p">,</span>
+<span class="w">    </span><span class="k">FOREIGN</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">entity_id</span><span class="p">)</span><span class="w"> </span><span class="k">REFERENCES</span><span class="w"> </span><span class="n">entities</span><span class="p">(</span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">DELETE</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="k">NULL</span>
+<span class="p">);</span>
+
+<span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">idx_markers_map</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">markers</span><span class="p">(</span><span class="n">map_id</span><span class="p">);</span>
+</pre></div>
+</div>
+<p><strong>Purpose</strong>: Link entities to geographic locations on maps.</p>
+</section>
+<hr class="docutils" />
+<section id="moving-features-table">
+<h3>Moving Features Table<a class="headerlink" href="#moving-features-table" title="Link to this heading">¶</a></h3>
+<p>Temporal trajectories on maps.</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">moving_features</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">marker_id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="nb">TEXT</span><span class="p">,</span>
+<span class="w">    </span><span class="n">keyframes</span><span class="w"> </span><span class="nb">TEXT</span><span class="p">,</span><span class="w">  </span><span class="c1">-- JSON: [[time, x, y], ...]</span>
+<span class="w">    </span><span class="n">attributes</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="s1">&#39;{}&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">FOREIGN</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">marker_id</span><span class="p">)</span><span class="w"> </span><span class="k">REFERENCES</span><span class="w"> </span><span class="n">markers</span><span class="p">(</span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">DELETE</span><span class="w"> </span><span class="k">CASCADE</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+<p><strong>Purpose</strong>: Track how markers move over time (4D mapping).</p>
+<p><strong>Keyframe Format:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;keyframes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">[</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">100.0</span><span class="p">,</span><span class="w"> </span><span class="mf">200.0</span><span class="p">],</span><span class="w">     </span><span class="c1">// At time 0, position (100, 200)</span>
+<span class="w">    </span><span class="p">[</span><span class="mf">1000.0</span><span class="p">,</span><span class="w"> </span><span class="mf">150.0</span><span class="p">,</span><span class="w"> </span><span class="mf">250.0</span><span class="p">],</span><span class="w">  </span><span class="c1">// At time 1000, position (150, 250)</span>
+<span class="w">    </span><span class="p">[</span><span class="mf">2000.0</span><span class="p">,</span><span class="w"> </span><span class="mf">200.0</span><span class="p">,</span><span class="w"> </span><span class="mf">300.0</span><span class="p">]</span><span class="w">   </span><span class="c1">// At time 2000, position (200, 300)</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="tags-tables">
+<h3>Tags Tables<a class="headerlink" href="#tags-tables" title="Link to this heading">¶</a></h3>
+<p>Normalized tag system.</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">tags</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="w"> </span><span class="k">UNIQUE</span><span class="p">,</span>
+<span class="w">    </span><span class="n">color</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="s1">&#39;#888888&#39;</span><span class="p">,</span>
+<span class="w">    </span><span class="n">created_at</span><span class="w"> </span><span class="nb">REAL</span>
+<span class="p">);</span>
+
+<span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">event_tags</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">event_id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">tag_id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">event_id</span><span class="p">,</span><span class="w"> </span><span class="n">tag_id</span><span class="p">),</span>
+<span class="w">    </span><span class="k">FOREIGN</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span><span class="w"> </span><span class="k">REFERENCES</span><span class="w"> </span><span class="n">events</span><span class="p">(</span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">DELETE</span><span class="w"> </span><span class="k">CASCADE</span><span class="p">,</span>
+<span class="w">    </span><span class="k">FOREIGN</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">tag_id</span><span class="p">)</span><span class="w"> </span><span class="k">REFERENCES</span><span class="w"> </span><span class="n">tags</span><span class="p">(</span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">DELETE</span><span class="w"> </span><span class="k">CASCADE</span>
+<span class="p">);</span>
+
+<span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">entity_tags</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">entity_id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">tag_id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">entity_id</span><span class="p">,</span><span class="w"> </span><span class="n">tag_id</span><span class="p">),</span>
+<span class="w">    </span><span class="k">FOREIGN</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">entity_id</span><span class="p">)</span><span class="w"> </span><span class="k">REFERENCES</span><span class="w"> </span><span class="n">entities</span><span class="p">(</span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">DELETE</span><span class="w"> </span><span class="k">CASCADE</span><span class="p">,</span>
+<span class="w">    </span><span class="k">FOREIGN</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">tag_id</span><span class="p">)</span><span class="w"> </span><span class="k">REFERENCES</span><span class="w"> </span><span class="n">tags</span><span class="p">(</span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">DELETE</span><span class="w"> </span><span class="k">CASCADE</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+<p><strong>Purpose</strong>: Many-to-many tagging with consistent tag definitions.</p>
+</section>
+<hr class="docutils" />
+<section id="calendar-config-table">
+<h3>Calendar Config Table<a class="headerlink" href="#calendar-config-table" title="Link to this heading">¶</a></h3>
+<p>Custom calendar configurations.</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">calendar_config</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">INTEGER</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">config_json</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+<p><strong>Purpose</strong>: Store custom fantasy calendar definitions.</p>
+<p><strong>Config Structure:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;months&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Coldmoon&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;days&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">30</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Springrise&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;days&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">28</span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;week_days&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;Moonday&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Starday&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Fireday&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;leap_years&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;interval&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;extra_day_month&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="image-attachments-table">
+<h3>Image Attachments Table<a class="headerlink" href="#image-attachments-table" title="Link to this heading">¶</a></h3>
+<p>Image links to entities/events.</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">image_attachments</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">owner_type</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">owner_id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">file_path</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">thumbnail_path</span><span class="w"> </span><span class="nb">TEXT</span><span class="p">,</span>
+<span class="w">    </span><span class="n">created_at</span><span class="w"> </span><span class="nb">REAL</span>
+<span class="p">);</span>
+
+<span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">idx_attachments_owner</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">image_attachments</span><span class="p">(</span><span class="n">owner_type</span><span class="p">,</span><span class="w"> </span><span class="n">owner_id</span><span class="p">);</span>
+</pre></div>
+</div>
+<p><strong>Purpose</strong>: Link images to any entity or event.</p>
+</section>
+<hr class="docutils" />
+<section id="embeddings-table">
+<h3>Embeddings Table<a class="headerlink" href="#embeddings-table" title="Link to this heading">¶</a></h3>
+<p>Semantic search vectors.</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">embeddings</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">object_id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">embedding_model</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">vector_dim</span><span class="w"> </span><span class="nb">INTEGER</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">vector_data</span><span class="w"> </span><span class="nb">BLOB</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">text_hash</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">created_at</span><span class="w"> </span><span class="nb">REAL</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">object_id</span><span class="p">,</span><span class="w"> </span><span class="n">embedding_model</span><span class="p">)</span>
+<span class="p">);</span>
+
+<span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">idx_embeddings_object</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">embeddings</span><span class="p">(</span><span class="n">object_id</span><span class="p">);</span>
+<span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">idx_embeddings_model</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">embeddings</span><span class="p">(</span><span class="n">embedding_model</span><span class="p">);</span>
+<span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">idx_embeddings_created_at</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">embeddings</span><span class="p">(</span><span class="n">created_at</span><span class="p">);</span>
+</pre></div>
+</div>
+<p><strong>Purpose</strong>: Store AI embedding vectors for semantic search.</p>
+</section>
+<hr class="docutils" />
+<section id="command-history-tables">
+<h3>Command History Tables<a class="headerlink" href="#command-history-tables" title="Link to this heading">¶</a></h3>
+<p>Persistent undo/redo.</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">command_history</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">world_id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">session_id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">command_type</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">command_data</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">is_aggregate</span><span class="w"> </span><span class="nb">INTEGER</span><span class="w"> </span><span class="k">DEFAULT</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="n">created_at</span><span class="w"> </span><span class="nb">REAL</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span>
+<span class="p">);</span>
+
+<span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">idx_ch_world_time</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">command_history</span><span class="p">(</span><span class="n">world_id</span><span class="p">,</span><span class="w"> </span><span class="n">created_at</span><span class="p">);</span>
+<span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">idx_ch_session</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">command_history</span><span class="p">(</span><span class="n">session_id</span><span class="p">);</span>
+<span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">idx_ch_aggregate</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">command_history</span><span class="p">(</span><span class="n">is_aggregate</span><span class="p">);</span>
+
+<span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">edit_sessions</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">world_id</span><span class="w"> </span><span class="nb">TEXT</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">started_at</span><span class="w"> </span><span class="nb">REAL</span><span class="w"> </span><span class="k">NOT</span><span class="w"> </span><span class="k">NULL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ended_at</span><span class="w"> </span><span class="nb">REAL</span><span class="p">,</span>
+<span class="w">    </span><span class="n">app_version</span><span class="w"> </span><span class="nb">TEXT</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+<p><strong>Purpose</strong>: Persist command history across app restarts.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="json-attributes">
+<h2>JSON Attributes<a class="headerlink" href="#json-attributes" title="Link to this heading">¶</a></h2>
+<p>All core tables use <code class="docutils literal notranslate"><span class="pre">attributes</span> <span class="pre">TEXT</span> <span class="pre">DEFAULT</span> <span class="pre">'{}'</span></code> for flexible custom properties.</p>
+<section id="why-json-attributes">
+<h3>Why JSON Attributes?<a class="headerlink" href="#why-json-attributes" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Flexibility</strong>: World-specific properties without schema migrations</p></li>
+<li><p><strong>Extension</strong>: Users can add custom fields</p></li>
+<li><p><strong>Backward Compatibility</strong>: Old code ignores unknown fields</p></li>
+</ol>
+</section>
+<section id="common-attribute-patterns">
+<h3>Common Attribute Patterns<a class="headerlink" href="#common-attribute-patterns" title="Link to this heading">¶</a></h3>
+<p><strong>Events:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;high&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;participants&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;ent_1&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;ent_2&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;weather&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;stormy&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;custom_notes&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Additional context&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Entities:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;age&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">32</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;appearance&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Dark hair, green eyes&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;skills&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;Magic&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Swordsmanship&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;inventory&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;item_1&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;item_2&quot;</span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Relations:</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;since&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Year 1234&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;until&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Year 1240&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;strength&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;strong&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;public&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="accessing-attributes">
+<h3>Accessing Attributes<a class="headerlink" href="#accessing-attributes" title="Link to this heading">¶</a></h3>
+<p><strong>In Python:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">event</span> <span class="o">=</span> <span class="n">Event</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+<span class="n">severity</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;severity&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">)</span>
+
+<span class="n">entity</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;age&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">33</span>
+<span class="n">repo</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">entity</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>In SQL (JSON functions):</strong></p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="c1">-- Filter by attribute</span>
+<span class="k">SELECT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">events</span><span class="w"> </span>
+<span class="k">WHERE</span><span class="w"> </span><span class="n">json_extract</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;$.severity&#39;</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;high&#39;</span><span class="p">;</span>
+
+<span class="c1">-- Update attribute</span>
+<span class="k">UPDATE</span><span class="w"> </span><span class="n">events</span>
+<span class="k">SET</span><span class="w"> </span><span class="n">attributes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">json_set</span><span class="p">(</span><span class="n">attributes</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;$.severity&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;critical&#39;</span><span class="p">)</span>
+<span class="k">WHERE</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;evt_123&#39;</span><span class="p">;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="relationships-and-foreign-keys">
+<h2>Relationships and Foreign Keys<a class="headerlink" href="#relationships-and-foreign-keys" title="Link to this heading">¶</a></h2>
+<section id="foreign-key-cascade-rules">
+<h3>Foreign Key Cascade Rules<a class="headerlink" href="#foreign-key-cascade-rules" title="Link to this heading">¶</a></h3>
+<p><strong>ON DELETE CASCADE:</strong></p>
+<ul class="simple">
+<li><p>Deleting a map deletes all its markers</p></li>
+<li><p>Deleting an entity deletes all its tags</p></li>
+<li><p>Deleting an event deletes all its tags</p></li>
+<li><p>Deleting a marker deletes its moving features</p></li>
+</ul>
+<p><strong>ON DELETE SET NULL:</strong></p>
+<ul class="simple">
+<li><p>Deleting an entity sets <code class="docutils literal notranslate"><span class="pre">entity_id</span></code> to NULL in markers (orphaned markers remain)</p></li>
+</ul>
+</section>
+<section id="relationship-diagram">
+<h3>Relationship Diagram<a class="headerlink" href="#relationship-diagram" title="Link to this heading">¶</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>entities ←──────┐
+    ↑           │
+    │           │
+    │      relations (many-to-many)
+    │           │
+    ↓           │
+events ─────────┘
+
+entities ←── entity_tags ──→ tags
+events ←──── event_tags ───→ tags
+
+maps ←─── markers ←─── moving_features
+           ↓
+        entities (optional link)
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
 <section id="indexes">
-<h4>Indexes<a class="headerlink" href="#indexes" title="Link to this heading">¶</a></h4>
-<p>Performance indexes are automatically created:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">idx_events_date</span></code> - Chronological event queries</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">idx_relations_source</span></code> - Outgoing relation lookups</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">idx_relations_target</span></code> - Incoming relation lookups</p></li>
-</ul>
-</section>
-</section>
-<section id="connection-management">
-<h3>Connection Management<a class="headerlink" href="#connection-management" title="Link to this heading">¶</a></h3>
-<section id="connection-lifecycle">
-<h4>Connection Lifecycle<a class="headerlink" href="#connection-lifecycle" title="Link to this heading">¶</a></h4>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Automatic connection on first use</span>
-<span class="n">service</span> <span class="o">=</span> <span class="n">DatabaseService</span><span class="p">(</span><span class="s2">&quot;path/to/world.kraken&quot;</span><span class="p">)</span>
-<span class="n">service</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>  <span class="c1"># Explicit connection</span>
-
-<span class="c1"># Lazy connection on first query</span>
-<span class="n">event</span> <span class="o">=</span> <span class="n">service</span><span class="o">.</span><span class="n">get_event</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span>  <span class="c1"># Auto-connects if needed</span>
-
-<span class="c1"># Cleanup</span>
-<span class="n">service</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-</pre></div>
-</div>
-</section>
-<section id="thread-safety">
-<h4>Thread Safety<a class="headerlink" href="#thread-safety" title="Link to this heading">¶</a></h4>
-<p><strong>Important</strong>: SQLite connections are NOT thread-safe. The codebase uses a Worker thread pattern:</p>
-<ul class="simple">
-<li><p>Main thread: UI operations only</p></li>
-<li><p>Worker thread: All database operations via <code class="docutils literal notranslate"><span class="pre">DatabaseWorker</span></code></p></li>
-<li><p>Communication: Qt signals/slots with queued connections</p></li>
-</ul>
-<p><strong>Never</strong> access the database service directly from the UI thread in production code.</p>
-</section>
-</section>
-<section id="transaction-management">
-<h3>Transaction Management<a class="headerlink" href="#transaction-management" title="Link to this heading">¶</a></h3>
-<p>All write operations use the transaction context manager:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">db_service</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-    <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
-    <span class="c1"># Automatic commit on success</span>
-    <span class="c1"># Automatic rollback on exception</span>
-</pre></div>
-</div>
-<section id="transaction-guarantees">
-<h4>Transaction Guarantees<a class="headerlink" href="#transaction-guarantees" title="Link to this heading">¶</a></h4>
-<ul class="simple">
-<li><p><strong>Atomicity</strong>: All operations succeed or all fail</p></li>
-<li><p><strong>Consistency</strong>: Database constraints are enforced</p></li>
-<li><p><strong>Isolation</strong>: Default SQLite isolation level</p></li>
-<li><p><strong>Durability</strong>: Changes persisted to disk</p></li>
-</ul>
-</section>
-<section id="error-handling">
-<h4>Error Handling<a class="headerlink" href="#error-handling" title="Link to this heading">¶</a></h4>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
-    <span class="k">with</span> <span class="n">db_service</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-        <span class="c1"># ... database operations ...</span>
-<span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="c1"># Transaction automatically rolled back</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Database error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="c1"># Handle error appropriately</span>
-</pre></div>
-</div>
-</section>
-</section>
-<section id="performance-optimization">
-<h3>Performance Optimization<a class="headerlink" href="#performance-optimization" title="Link to this heading">¶</a></h3>
-<section id="bulk-operations">
-<h4>Bulk Operations<a class="headerlink" href="#bulk-operations" title="Link to this heading">¶</a></h4>
-<p>For inserting multiple records, use bulk methods:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Inefficient: Multiple transactions</span>
-<span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">events</span><span class="p">:</span>
-    <span class="n">db_service</span><span class="o">.</span><span class="n">insert_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-
-<span class="c1"># Efficient: Single transaction with executemany</span>
-<span class="n">db_service</span><span class="o">.</span><span class="n">insert_events_bulk</span><span class="p">(</span><span class="n">events</span><span class="p">)</span>
-</pre></div>
+<h2>Indexes<a class="headerlink" href="#indexes" title="Link to this heading">¶</a></h2>
+<section id="purpose-of-each-index">
+<h3>Purpose of Each Index<a class="headerlink" href="#purpose-of-each-index" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Index</p></th>
+<th class="head"><p>Table</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">idx_events_date</span></code></p></td>
+<td><p>events</p></td>
+<td><p>Fast temporal queries</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">idx_relations_source</span></code></p></td>
+<td><p>relations</p></td>
+<td><p>Fast source → targets lookup</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">idx_relations_target</span></code></p></td>
+<td><p>relations</p></td>
+<td><p>Fast target → sources lookup</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">idx_markers_map</span></code></p></td>
+<td><p>markers</p></td>
+<td><p>List markers for a map</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">idx_attachments_owner</span></code></p></td>
+<td><p>image_attachments</p></td>
+<td><p>Find images for entity/event</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">idx_embeddings_*</span></code></p></td>
+<td><p>embeddings</p></td>
+<td><p>Fast vector search</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">idx_ch_*</span></code></p></td>
+<td><p>command_history</p></td>
+<td><p>Session and time-based queries</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 </section>
 <section id="query-optimization">
-<h4>Query Optimization<a class="headerlink" href="#query-optimization" title="Link to this heading">¶</a></h4>
-<ol class="arabic simple">
-<li><p><strong>Use Indexes</strong>: Queries on <code class="docutils literal notranslate"><span class="pre">lore_date</span></code>, <code class="docutils literal notranslate"><span class="pre">source_id</span></code>, <code class="docutils literal notranslate"><span class="pre">target_id</span></code> are indexed</p></li>
-<li><p><strong>Limit Results</strong>: Use SQL <code class="docutils literal notranslate"><span class="pre">LIMIT</span></code> for pagination when needed</p></li>
-<li><p><strong>Avoid N+1 Queries</strong>: Fetch related data in single query when possible</p></li>
-</ol>
-</section>
-<section id="database-locking">
-<h4>Database Locking<a class="headerlink" href="#database-locking" title="Link to this heading">¶</a></h4>
-<p>SQLite uses file-level locking:</p>
-<ul class="simple">
-<li><p><strong>Readers</strong>: Multiple concurrent readers allowed</p></li>
-<li><p><strong>Writers</strong>: Exclusive lock required</p></li>
-<li><p><strong>Busy Timeout</strong>: Not explicitly set (uses SQLite defaults)</p></li>
-</ul>
-<p>For high-concurrency scenarios, consider:</p>
-<ul class="simple">
-<li><p>Using WAL (Write-Ahead Logging) mode</p></li>
-<li><p>Implementing retry logic for locked database</p></li>
-<li><p>Keeping transactions short</p></li>
-</ul>
-</section>
-</section>
-</section>
-<section id="security-best-practices">
-<h2>Security Best Practices<a class="headerlink" href="#security-best-practices" title="Link to this heading">¶</a></h2>
-<section id="sql-injection-prevention">
-<h3>SQL Injection Prevention<a class="headerlink" href="#sql-injection-prevention" title="Link to this heading">¶</a></h3>
-<p><strong>All queries use parameterized statements:</strong></p>
-<p>✅ <strong>Correct</strong> - Parameterized query:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM events WHERE id = ?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">event_id</span><span class="p">,))</span>
+<h3>Query Optimization<a class="headerlink" href="#query-optimization" title="Link to this heading">¶</a></h3>
+<p><strong>Good Query (uses index):</strong></p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">events</span><span class="w"> </span><span class="k">WHERE</span><span class="w"> </span><span class="n">lore_date</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1000</span><span class="p">.</span><span class="mi">0</span><span class="w"> </span><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">lore_date</span><span class="p">;</span>
+<span class="c1">-- Uses idx_events_date</span>
 </pre></div>
 </div>
-<p>❌ <strong>Wrong</strong> - String interpolation (SQL injection risk):</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SELECT * FROM events WHERE id = &#39;</span><span class="si">{</span><span class="n">event_id</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
-<span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM events WHERE id = </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">event_id</span><span class="p">))</span>
+<p><strong>Bad Query (full table scan):</strong></p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">SELECT</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">events</span><span class="w"> </span><span class="k">WHERE</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">LIKE</span><span class="w"> </span><span class="s1">&#39;%battle%&#39;</span><span class="p">;</span>
+<span class="c1">-- No index on name, full scan required</span>
 </pre></div>
 </div>
 </section>
-<section id="data-validation">
-<h3>Data Validation<a class="headerlink" href="#data-validation" title="Link to this heading">¶</a></h3>
+</section>
+<hr class="docutils" />
+<section id="migrations">
+<h2>Migrations<a class="headerlink" href="#migrations" title="Link to this heading">¶</a></h2>
+<section id="schema-versioning">
+<h3>Schema Versioning<a class="headerlink" href="#schema-versioning" title="Link to this heading">¶</a></h3>
+<p>Currently, ProjektKraken uses <strong>schema initialization</strong> rather than migrations:</p>
 <ol class="arabic simple">
-<li><p><strong>Input Validation</strong>: Validate data before database operations</p></li>
-<li><p><strong>Type Safety</strong>: Use type hints and dataclasses</p></li>
-<li><p><strong>Constraint Enforcement</strong>: Database constraints (PRIMARY KEY, NOT NULL, etc.)</p></li>
+<li><p>On first run, full schema created</p></li>
+<li><p>If schema exists, it’s used as-is</p></li>
+<li><p>No automated migrations between versions</p></li>
 </ol>
 </section>
-<section id="sensitive-data">
-<h3>Sensitive Data<a class="headerlink" href="#sensitive-data" title="Link to this heading">¶</a></h3>
-<ol class="arabic simple">
-<li><p><strong>No Passwords in Database</strong>: Not applicable for this app</p></li>
-<li><p><strong>No API Keys in Code</strong>: Use environment variables</p></li>
-<li><p><strong>File Permissions</strong>: Database files should have appropriate OS permissions</p></li>
-</ol>
-</section>
-<section id="backup-and-recovery">
-<h3>Backup and Recovery<a class="headerlink" href="#backup-and-recovery" title="Link to this heading">¶</a></h3>
-<ol class="arabic simple">
-<li><p><strong>File-based Backup</strong>: Copy <code class="docutils literal notranslate"><span class="pre">.kraken</span></code> file when app is closed</p></li>
-<li><p><strong>Export</strong>: Implement JSON export for data portability</p></li>
-<li><p><strong>Version Control</strong>: Never commit <code class="docutils literal notranslate"><span class="pre">.kraken</span></code> files to git (see <code class="docutils literal notranslate"><span class="pre">.gitignore</span></code>)</p></li>
-</ol>
-</section>
-</section>
-<section id="testing-best-practices">
-<h2>Testing Best Practices<a class="headerlink" href="#testing-best-practices" title="Link to this heading">¶</a></h2>
-<section id="in-memory-testing">
-<h3>In-Memory Testing<a class="headerlink" href="#in-memory-testing" title="Link to this heading">¶</a></h3>
-<p>Always use <code class="docutils literal notranslate"><span class="pre">:memory:</span></code> for tests:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">db_service</span><span class="p">():</span>
-    <span class="n">service</span> <span class="o">=</span> <span class="n">DatabaseService</span><span class="p">(</span><span class="s2">&quot;:memory:&quot;</span><span class="p">)</span>
-    <span class="n">service</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-    <span class="k">yield</span> <span class="n">service</span>
-    <span class="n">service</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<section id="future-migration-strategy">
+<h3>Future Migration Strategy<a class="headerlink" href="#future-migration-strategy" title="Link to this heading">¶</a></h3>
+<p>For schema changes in future versions:</p>
+<ol class="arabic">
+<li><p><strong>Add Schema Version Table</strong></p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CREATE</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="n">schema_version</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">version</span><span class="w"> </span><span class="nb">INTEGER</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">applied_at</span><span class="w"> </span><span class="nb">REAL</span>
+<span class="p">);</span>
 </pre></div>
 </div>
+</li>
+<li><p><strong>Migration Scripts</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">migrate_v1_to_v2</span><span class="p">(</span><span class="n">db</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">):</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;ALTER TABLE events ADD COLUMN new_field TEXT&quot;</span><span class="p">)</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;INSERT INTO schema_version VALUES (2, ?)&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),))</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Apply Migrations on Startup</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">current_version</span> <span class="o">=</span> <span class="n">get_schema_version</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">current_version</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+    <span class="n">migrate_v1_to_v2</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ol>
 </section>
-<section id="test-coverage">
-<h3>Test Coverage<a class="headerlink" href="#test-coverage" title="Link to this heading">¶</a></h3>
-<p>Ensure tests cover:</p>
+<section id="backward-compatibility">
+<h3>Backward Compatibility<a class="headerlink" href="#backward-compatibility" title="Link to this heading">¶</a></h3>
+<p><strong>Best Practices:</strong></p>
 <ul class="simple">
-<li><p>✅ CRUD operations (Create, Read, Update, Delete)</p></li>
-<li><p>✅ Transaction rollback on errors</p></li>
-<li><p>✅ Edge cases (empty data, nonexistent IDs)</p></li>
-<li><p>✅ Bulk operations</p></li>
-<li><p>✅ Concurrent access (if applicable)</p></li>
-<li><p>✅ Data integrity (foreign keys, constraints)</p></li>
+<li><p><strong>Additive Changes</strong>: Add new tables/columns, don’t remove</p></li>
+<li><p><strong>Optional Fields</strong>: New columns should be nullable or have defaults</p></li>
+<li><p><strong>Preserve Data</strong>: Never destructive migrations without user consent</p></li>
 </ul>
 </section>
-<section id="example-test">
-<h3>Example Test<a class="headerlink" href="#example-test" title="Link to this heading">¶</a></h3>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_transaction_rollback</span><span class="p">(</span><span class="n">db_service</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that failed transactions rollback changes.&quot;&quot;&quot;</span>
-    <span class="n">event</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Test&quot;</span><span class="p">,</span> <span class="n">lore_date</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
-    <span class="n">db_service</span><span class="o">.</span><span class="n">insert_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-    
-    <span class="k">try</span><span class="p">:</span>
-        <span class="k">with</span> <span class="n">db_service</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;INSERT INTO events ...&quot;</span><span class="p">)</span>  <span class="c1"># Valid</span>
-            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;INVALID SQL&quot;</span><span class="p">)</span>  <span class="c1"># Causes rollback</span>
-    <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span><span class="p">:</span>
-        <span class="k">pass</span>
-    
-    <span class="c1"># First insert should still exist</span>
-    <span class="k">assert</span> <span class="n">db_service</span><span class="o">.</span><span class="n">get_event</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-</pre></div>
-</div>
 </section>
-</section>
-<section id="common-patterns">
-<h2>Common Patterns<a class="headerlink" href="#common-patterns" title="Link to this heading">¶</a></h2>
-<section id="crud-operations">
-<h3>CRUD Operations<a class="headerlink" href="#crud-operations" title="Link to this heading">¶</a></h3>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create</span>
-<span class="n">event</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Battle&quot;</span><span class="p">,</span> <span class="n">lore_date</span><span class="o">=</span><span class="mf">1066.0</span><span class="p">)</span>
-<span class="n">db_service</span><span class="o">.</span><span class="n">insert_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-
-<span class="c1"># Read</span>
-<span class="n">event</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">get_event</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span>
-<span class="n">events</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">get_all_events</span><span class="p">()</span>
-
-<span class="c1"># Update (via upsert)</span>
-<span class="n">event</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Updated Name&quot;</span>
-<span class="n">db_service</span><span class="o">.</span><span class="n">insert_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-
-<span class="c1"># Delete</span>
-<span class="n">db_service</span><span class="o">.</span><span class="n">delete_event</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span>
-</pre></div>
-</div>
-</section>
-<section id="relations">
-<h3>Relations<a class="headerlink" href="#relations" title="Link to this heading">¶</a></h3>
-<p>Relations store flexible metadata in their <code class="docutils literal notranslate"><span class="pre">attributes</span></code> JSON field. Common attributes include:</p>
+<hr class="docutils" />
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">weight</span></code>: Numeric strength (float, for graph analysis, e.g., 0.0-1.0)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">start_date</span></code>: When relationship began (float, lore_date format)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">end_date</span></code>: When relationship ended (float, lore_date format)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">confidence</span></code>: Certainty level (float, 0.0-1.0)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">source</span></code>: Citation or reference (str)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">notes</span></code>: Additional context (str)</p></li>
+<li><p><strong><a class="reference internal" href="API_REFERENCE.html"><span class="std std-doc">API Reference</span></a></strong> - Learn about data access APIs</p></li>
+<li><p><strong><a class="reference internal" href="DEVELOPMENT.html"><span class="std std-doc">Development Guide</span></a></strong> - Contribute to the project</p></li>
+<li><p><strong><a class="reference internal" href="TESTING.html"><span class="std std-doc">Testing Guide</span></a></strong> - Test database code</p></li>
 </ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create relation with attributes</span>
-<span class="n">rel_id</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">insert_relation</span><span class="p">(</span>
-    <span class="n">source_id</span><span class="o">=</span><span class="n">event1</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
-    <span class="n">target_id</span><span class="o">=</span><span class="n">event2</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
-    <span class="n">rel_type</span><span class="o">=</span><span class="s2">&quot;caused&quot;</span><span class="p">,</span>
-    <span class="n">attributes</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="mf">0.9</span><span class="p">,</span>
-        <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
-        <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;Chapter 3, page 42&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;notes&quot;</span><span class="p">:</span> <span class="s2">&quot;Direct causal relationship confirmed&quot;</span>
-    <span class="p">}</span>
-<span class="p">)</span>
-
-<span class="c1"># Create relation without attributes (defaults to empty dict)</span>
-<span class="n">rel_id</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">insert_relation</span><span class="p">(</span>
-    <span class="n">source_id</span><span class="o">=</span><span class="n">character</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
-    <span class="n">target_id</span><span class="o">=</span><span class="n">location</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
-    <span class="n">rel_type</span><span class="o">=</span><span class="s2">&quot;located_in&quot;</span>
-<span class="p">)</span>
-
-<span class="c1"># Query relations</span>
-<span class="n">outgoing</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">get_relations</span><span class="p">(</span><span class="n">source_id</span><span class="p">)</span>
-<span class="n">incoming</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">get_incoming_relations</span><span class="p">(</span><span class="n">target_id</span><span class="p">)</span>
-
-<span class="c1"># Access attributes from returned relations</span>
-<span class="k">for</span> <span class="n">rel</span> <span class="ow">in</span> <span class="n">outgoing</span><span class="p">:</span>
-    <span class="n">weight</span> <span class="o">=</span> <span class="n">rel</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;weight&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
-    <span class="n">confidence</span> <span class="o">=</span> <span class="n">rel</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;confidence&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Relation </span><span class="si">{</span><span class="n">rel</span><span class="p">[</span><span class="s1">&#39;rel_type&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> (weight=</span><span class="si">{</span><span class="n">weight</span><span class="si">}</span><span class="s2">, confidence=</span><span class="si">{</span><span class="n">confidence</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
-
-<span class="c1"># Update relation with new attributes</span>
-<span class="n">db_service</span><span class="o">.</span><span class="n">update_relation</span><span class="p">(</span>
-    <span class="n">rel_id</span><span class="o">=</span><span class="n">rel_id</span><span class="p">,</span>
-    <span class="n">target_id</span><span class="o">=</span><span class="n">new_target</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
-    <span class="n">rel_type</span><span class="o">=</span><span class="s2">&quot;prevented&quot;</span><span class="p">,</span>
-    <span class="n">attributes</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
-        <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">,</span>
-        <span class="s2">&quot;notes&quot;</span><span class="p">:</span> <span class="s2">&quot;Updated based on new evidence&quot;</span>
-    <span class="p">}</span>
-<span class="p">)</span>
-
-<span class="c1"># Delete relation</span>
-<span class="n">db_service</span><span class="o">.</span><span class="n">delete_relation</span><span class="p">(</span><span class="n">rel_id</span><span class="p">)</span>
-
-<span class="c1"># Example: Temporal relations</span>
-<span class="n">db_service</span><span class="o">.</span><span class="n">insert_relation</span><span class="p">(</span>
-    <span class="n">source_id</span><span class="o">=</span><span class="n">character</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
-    <span class="n">target_id</span><span class="o">=</span><span class="n">faction</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
-    <span class="n">rel_type</span><span class="o">=</span><span class="s2">&quot;member_of&quot;</span><span class="p">,</span>
-    <span class="n">attributes</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">&quot;start_date&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>  <span class="c1"># Joined on day 100</span>
-        <span class="s2">&quot;end_date&quot;</span><span class="p">:</span> <span class="mf">500.0</span><span class="p">,</span>    <span class="c1"># Left on day 500</span>
-        <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;Commander&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="mf">1.0</span>
-    <span class="p">}</span>
-<span class="p">)</span>
-
-<span class="c1"># Example: Weighted network relations (for graph analysis)</span>
-<span class="n">db_service</span><span class="o">.</span><span class="n">insert_relation</span><span class="p">(</span>
-    <span class="n">source_id</span><span class="o">=</span><span class="n">kingdom_a</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
-    <span class="n">target_id</span><span class="o">=</span><span class="n">kingdom_b</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
-    <span class="n">rel_type</span><span class="o">=</span><span class="s2">&quot;allied_with&quot;</span><span class="p">,</span>
-    <span class="n">attributes</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">&quot;weight&quot;</span><span class="p">:</span> <span class="mf">0.75</span><span class="p">,</span>  <span class="c1"># Strength of alliance</span>
-        <span class="s2">&quot;start_date&quot;</span><span class="p">:</span> <span class="mf">1000.0</span><span class="p">,</span>
-        <span class="s2">&quot;treaty&quot;</span><span class="p">:</span> <span class="s2">&quot;Treaty of Westfall&quot;</span>
-    <span class="p">}</span>
-<span class="p">)</span>
-</pre></div>
-</div>
-</section>
-</section>
-<section id="migration-strategy">
-<h2>Migration Strategy<a class="headerlink" href="#migration-strategy" title="Link to this heading">¶</a></h2>
-<p>For schema changes:</p>
-<ol class="arabic simple">
-<li><p><strong>Version System Metadata</strong>: Track schema version in <code class="docutils literal notranslate"><span class="pre">system_meta</span></code> table</p></li>
-<li><p><strong>Migration Scripts</strong>: Create upgrade functions</p></li>
-<li><p><strong>Backup First</strong>: Always backup before migration</p></li>
-<li><p><strong>Test Migration</strong>: Test on copy of production data</p></li>
-</ol>
-<p>Example:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">migrate_v1_to_v2</span><span class="p">(</span><span class="n">db_service</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Migrate database from v1 to v2.&quot;&quot;&quot;</span>
-    <span class="k">with</span> <span class="n">db_service</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-        <span class="c1"># Add new column</span>
-        <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;ALTER TABLE events ADD COLUMN new_field TEXT&quot;</span><span class="p">)</span>
-        <span class="c1"># Update version</span>
-        <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-            <span class="s2">&quot;INSERT OR REPLACE INTO system_meta VALUES (?, ?)&quot;</span><span class="p">,</span>
-            <span class="p">(</span><span class="s2">&quot;schema_version&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">)</span>
-        <span class="p">)</span>
-</pre></div>
-</div>
-</section>
-<section id="troubleshooting">
-<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">¶</a></h2>
-<section id="database-locked">
-<h3>Database Locked<a class="headerlink" href="#database-locked" title="Link to this heading">¶</a></h3>
-<p><strong>Symptom</strong>: <code class="docutils literal notranslate"><span class="pre">sqlite3.OperationalError:</span> <span class="pre">database</span> <span class="pre">is</span> <span class="pre">locked</span></code></p>
-<p><strong>Solutions</strong>:</p>
-<ol class="arabic simple">
-<li><p>Ensure transactions are short</p></li>
-<li><p>Close connections properly</p></li>
-<li><p>Use WAL mode for better concurrency</p></li>
-<li><p>Implement retry logic with exponential backoff</p></li>
-</ol>
-</section>
-<section id="disk-full">
-<h3>Disk Full<a class="headerlink" href="#disk-full" title="Link to this heading">¶</a></h3>
-<p><strong>Symptom</strong>: <code class="docutils literal notranslate"><span class="pre">sqlite3.OperationalError:</span> <span class="pre">disk</span> <span class="pre">I/O</span> <span class="pre">error</span></code></p>
-<p><strong>Solutions</strong>:</p>
-<ol class="arabic simple">
-<li><p>Check available disk space</p></li>
-<li><p>Implement size monitoring</p></li>
-<li><p>Regular cleanup of old data</p></li>
-</ol>
-</section>
-<section id="corrupted-database">
-<h3>Corrupted Database<a class="headerlink" href="#corrupted-database" title="Link to this heading">¶</a></h3>
-<p><strong>Symptom</strong>: <code class="docutils literal notranslate"><span class="pre">sqlite3.DatabaseError:</span> <span class="pre">database</span> <span class="pre">disk</span> <span class="pre">image</span> <span class="pre">is</span> <span class="pre">malformed</span></code></p>
-<p><strong>Solutions</strong>:</p>
-<ol class="arabic simple">
-<li><p>Restore from backup</p></li>
-<li><p>Use SQLite’s <code class="docutils literal notranslate"><span class="pre">PRAGMA</span> <span class="pre">integrity_check</span></code></p></li>
-<li><p>Export data if partially readable</p></li>
-</ol>
-</section>
-</section>
-<section id="references">
-<h2>References<a class="headerlink" href="#references" title="Link to this heading">¶</a></h2>
-<ul class="simple">
-<li><p><a class="reference external" href="https://www.sqlite.org/docs.html">SQLite Documentation</a></p></li>
-<li><p><a class="reference external" href="https://www.sqlite.org/bestpractice.html">SQLite Best Practices</a></p></li>
-<li><p><a class="reference external" href="https://docs.python.org/3/library/sqlite3.html">Python sqlite3 Module</a></p></li>
-</ul>
+<hr class="docutils" />
+<p><strong>Navigation:</strong><br />
+<a class="reference internal" href="DEVELOPMENT.html"><span class="std std-doc">← Development</span></a> • <a class="reference internal" href="INDEX.html"><span class="std std-doc">Back to Index</span></a> • <a class="reference internal" href="API_REFERENCE.html"><span class="std std-doc">API Reference →</span></a></p>
 </section>
 </section>
 
@@ -713,14 +1042,14 @@ For a complete visual representation of the database schema with all tables, col
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="Design.html">
+          <a class="prev-page" href="index.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Project Kraken: Comprehensive Design Specification</div>
+                <div class="title">Home</div>
                 
               </div>
             </a>
@@ -754,59 +1083,58 @@ For a complete visual representation of the database schema with all tables, col
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Database Architecture and Best Practices</a><ul>
-<li><a class="reference internal" href="#overview">Overview</a></li>
-<li><a class="reference internal" href="#architecture">Architecture</a><ul>
-<li><a class="reference internal" href="#database-service-src-services-db-service-py">Database Service (<code class="docutils literal notranslate"><span class="pre">src/services/db_service.py</span></code>)</a></li>
-<li><a class="reference internal" href="#schema-design">Schema Design</a><ul>
-<li><a class="reference internal" href="#core-tables">Core Tables</a></li>
-<li><a class="reference internal" href="#indexes">Indexes</a></li>
+<li><a class="reference internal" href="#">Database Documentation</a><ul>
+<li><a class="reference internal" href="#table-of-contents">Table of Contents</a></li>
+<li><a class="reference internal" href="#overview">Overview</a><ul>
+<li><a class="reference internal" href="#database-technology">Database Technology</a></li>
+<li><a class="reference internal" href="#design-philosophy">Design Philosophy</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#connection-management">Connection Management</a><ul>
-<li><a class="reference internal" href="#connection-lifecycle">Connection Lifecycle</a></li>
-<li><a class="reference internal" href="#thread-safety">Thread Safety</a></li>
+<li><a class="reference internal" href="#database-configuration">Database Configuration</a><ul>
+<li><a class="reference internal" href="#initialization">Initialization</a></li>
+<li><a class="reference internal" href="#wal-mode-benefits">WAL Mode Benefits</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#transaction-management">Transaction Management</a><ul>
-<li><a class="reference internal" href="#transaction-guarantees">Transaction Guarantees</a></li>
-<li><a class="reference internal" href="#error-handling">Error Handling</a></li>
+<li><a class="reference internal" href="#core-tables">Core Tables</a><ul>
+<li><a class="reference internal" href="#events-table">Events Table</a></li>
+<li><a class="reference internal" href="#entities-table">Entities Table</a></li>
+<li><a class="reference internal" href="#relations-table">Relations Table</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#performance-optimization">Performance Optimization</a><ul>
-<li><a class="reference internal" href="#bulk-operations">Bulk Operations</a></li>
+<li><a class="reference internal" href="#supporting-tables">Supporting Tables</a><ul>
+<li><a class="reference internal" href="#maps-table">Maps Table</a></li>
+<li><a class="reference internal" href="#markers-table">Markers Table</a></li>
+<li><a class="reference internal" href="#moving-features-table">Moving Features Table</a></li>
+<li><a class="reference internal" href="#tags-tables">Tags Tables</a></li>
+<li><a class="reference internal" href="#calendar-config-table">Calendar Config Table</a></li>
+<li><a class="reference internal" href="#image-attachments-table">Image Attachments Table</a></li>
+<li><a class="reference internal" href="#embeddings-table">Embeddings Table</a></li>
+<li><a class="reference internal" href="#command-history-tables">Command History Tables</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#json-attributes">JSON Attributes</a><ul>
+<li><a class="reference internal" href="#why-json-attributes">Why JSON Attributes?</a></li>
+<li><a class="reference internal" href="#common-attribute-patterns">Common Attribute Patterns</a></li>
+<li><a class="reference internal" href="#accessing-attributes">Accessing Attributes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#relationships-and-foreign-keys">Relationships and Foreign Keys</a><ul>
+<li><a class="reference internal" href="#foreign-key-cascade-rules">Foreign Key Cascade Rules</a></li>
+<li><a class="reference internal" href="#relationship-diagram">Relationship Diagram</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#indexes">Indexes</a><ul>
+<li><a class="reference internal" href="#purpose-of-each-index">Purpose of Each Index</a></li>
 <li><a class="reference internal" href="#query-optimization">Query Optimization</a></li>
-<li><a class="reference internal" href="#database-locking">Database Locking</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#migrations">Migrations</a><ul>
+<li><a class="reference internal" href="#schema-versioning">Schema Versioning</a></li>
+<li><a class="reference internal" href="#future-migration-strategy">Future Migration Strategy</a></li>
+<li><a class="reference internal" href="#backward-compatibility">Backward Compatibility</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#security-best-practices">Security Best Practices</a><ul>
-<li><a class="reference internal" href="#sql-injection-prevention">SQL Injection Prevention</a></li>
-<li><a class="reference internal" href="#data-validation">Data Validation</a></li>
-<li><a class="reference internal" href="#sensitive-data">Sensitive Data</a></li>
-<li><a class="reference internal" href="#backup-and-recovery">Backup and Recovery</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#testing-best-practices">Testing Best Practices</a><ul>
-<li><a class="reference internal" href="#in-memory-testing">In-Memory Testing</a></li>
-<li><a class="reference internal" href="#test-coverage">Test Coverage</a></li>
-<li><a class="reference internal" href="#example-test">Example Test</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#common-patterns">Common Patterns</a><ul>
-<li><a class="reference internal" href="#crud-operations">CRUD Operations</a></li>
-<li><a class="reference internal" href="#relations">Relations</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#migration-strategy">Migration Strategy</a></li>
-<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
-<li><a class="reference internal" href="#database-locked">Database Locked</a></li>
-<li><a class="reference internal" href="#disk-full">Disk Full</a></li>
-<li><a class="reference internal" href="#corrupted-database">Corrupted Database</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#references">References</a></li>
+<li><a class="reference internal" href="#next-steps">Next Steps</a></li>
 </ul>
 </li>
 </ul>

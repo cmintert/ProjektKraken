@@ -1,0 +1,1243 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
+        <title>Workflows Guide - Project Kraken 0.11.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">Project Kraken 0.11.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  <span class="sidebar-brand-text">Project Kraken 0.11.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="DATABASE.html">Database Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DEVELOPMENT.html">Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="modules.html">src</a><input aria-label="Toggle navigation of src" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="app.html">app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html">cli package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="commands.html">commands package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="core.html">core package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="gui.widgets.html">gui.widgets package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gui.dialogs.html">gui.dialogs package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="services.html">services package</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/WORKFLOWS.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="workflows-guide">
+<h1>Workflows Guide<a class="headerlink" href="#workflows-guide" title="Link to this heading">¶</a></h1>
+<p><strong>Version:</strong> 0.11.0 (Beta)<br />
+<strong>Last Updated:</strong> February 2026</p>
+<p>Step-by-step guides for common tasks and advanced workflows in ProjektKraken.</p>
+<hr class="docutils" />
+<section id="table-of-contents">
+<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Link to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="#basic-workflows"><span class="xref myst">Basic Workflows</span></a></p></li>
+<li><p><a class="reference internal" href="#timeline-management"><span class="xref myst">Timeline Management</span></a></p></li>
+<li><p><a class="reference internal" href="#building-a-world"><span class="xref myst">Building a World</span></a></p></li>
+<li><p><a class="reference internal" href="#advanced-relation-management"><span class="xref myst">Advanced Relation Management</span></a></p></li>
+<li><p><a class="reference internal" href="#map-workflows"><span class="xref myst">Map Workflows</span></a></p></li>
+<li><p><a class="reference internal" href="#search-and-discovery"><span class="xref myst">Search and Discovery</span></a></p></li>
+<li><p><a class="reference internal" href="#export-and-sharing"><span class="xref myst">Export and Sharing</span></a></p></li>
+<li><p><a class="reference internal" href="#optimization-tips"><span class="xref myst">Optimization Tips</span></a></p></li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="basic-workflows">
+<h2>Basic Workflows<a class="headerlink" href="#basic-workflows" title="Link to this heading">¶</a></h2>
+<section id="creating-your-first-event">
+<h3>Creating Your First Event<a class="headerlink" href="#creating-your-first-event" title="Link to this heading">¶</a></h3>
+<p><strong>Goal</strong>: Add a major historical event to your timeline.</p>
+<ol class="arabic">
+<li><p><strong>Create the Event</strong></p>
+<ul class="simple">
+<li><p>Press <strong>Ctrl+Shift+E</strong> or <strong>Events → New Event</strong></p></li>
+<li><p>Enter name: “The Fall of the Old Empire”</p></li>
+<li><p>Enter date: “Year 1234, Day 100”</p></li>
+<li><p>Select type: “Battle” or “Political Event”</p></li>
+<li><p>Click <strong>Create</strong></p></li>
+</ul>
+</li>
+<li><p><strong>Add Details</strong></p>
+<ul>
+<li><p>In Event Editor, write description:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">The</span> <span class="p">[[</span><span class="n">Old</span> <span class="n">Empire</span><span class="p">]]</span> <span class="n">fell</span> <span class="n">after</span> <span class="n">a</span> <span class="n">devastating</span> <span class="n">siege</span><span class="o">.</span>
+<span class="p">[[</span><span class="n">King</span> <span class="n">Magnus</span><span class="p">]]</span> <span class="n">was</span> <span class="n">killed</span> <span class="ow">in</span> <span class="n">battle</span><span class="o">.</span>
+<span class="n">This</span> <span class="n">event</span> <span class="n">led</span> <span class="n">to</span> <span class="p">[[</span><span class="n">The</span> <span class="n">Great</span> <span class="n">Schism</span><span class="p">]]</span><span class="o">.</span>
+</pre></div>
+</div>
+</li>
+<li><p>Add tags: “major”, “turning-point”, “war”</p></li>
+</ul>
+</li>
+<li><p><strong>Link to Entities</strong></p>
+<ul class="simple">
+<li><p>Drag “Old Empire” entity from Project Explorer</p></li>
+<li><p>Drop on Event Editor</p></li>
+<li><p>Hold <strong>Shift</strong> to show relation type picker</p></li>
+<li><p>Select “involved” relation</p></li>
+</ul>
+</li>
+<li><p><strong>Position on Timeline</strong></p>
+<ul class="simple">
+<li><p>Event appears on timeline at Year 1234, Day 100</p></li>
+<li><p>Drag vertically to adjust lane if needed</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="creating-a-character-with-backstory">
+<h3>Creating a Character with Backstory<a class="headerlink" href="#creating-a-character-with-backstory" title="Link to this heading">¶</a></h3>
+<p><strong>Goal</strong>: Create a detailed character with history.</p>
+<ol class="arabic">
+<li><p><strong>Create Entity</strong></p>
+<ul class="simple">
+<li><p><strong>Entities → New Entity</strong> (Ctrl+Shift+N)</p></li>
+<li><p>Name: “Aria Shadowblade”</p></li>
+<li><p>Type: Character</p></li>
+<li><p>Tags: “protagonist”, “rogue”, “human”</p></li>
+</ul>
+</li>
+<li><p><strong>Write Backstory</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Aria</span> <span class="ow">is</span> <span class="n">a</span> <span class="n">master</span> <span class="n">thief</span> <span class="kn">from</span><span class="w"> </span><span class="p">[[</span><span class="n">The</span> <span class="n">Merchant</span> <span class="n">Quarter</span><span class="p">]]</span><span class="o">.</span>
+<span class="n">She</span> <span class="n">was</span> <span class="n">trained</span> <span class="n">by</span> <span class="n">the</span> <span class="p">[[</span><span class="n">Shadow</span> <span class="n">Guild</span><span class="p">]]</span> <span class="ow">and</span> <span class="ow">is</span> <span class="n">known</span>
+<span class="k">for</span> <span class="n">stealing</span> <span class="n">the</span> <span class="p">[[</span><span class="n">Crown</span> <span class="n">of</span> <span class="n">Stars</span><span class="p">]]</span><span class="o">.</span>
+
+<span class="n">Her</span> <span class="n">parents</span> <span class="n">died</span> <span class="ow">in</span> <span class="p">[[</span><span class="n">The</span> <span class="n">Great</span> <span class="n">Fire</span><span class="p">]],</span> <span class="n">which</span> <span class="n">shaped</span>
+<span class="n">her</span> <span class="n">distrust</span> <span class="n">of</span> <span class="n">authority</span><span class="o">.</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Create Related Events</strong></p>
+<ul class="simple">
+<li><p>Create event: “Theft of the Crown” (Year 1240)</p></li>
+<li><p>Create event: “The Great Fire” (Year 1220)</p></li>
+<li><p>Link both to Aria with “involved” relations</p></li>
+</ul>
+</li>
+<li><p><strong>Add Character Details</strong></p>
+<ul>
+<li><p>In Attributes section, add custom fields:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;age&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;32&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;appearance&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Dark hair, green eyes, scar on left cheek&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;alignment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Chaotic Good&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="linking-events-with-causality">
+<h3>Linking Events with Causality<a class="headerlink" href="#linking-events-with-causality" title="Link to this heading">¶</a></h3>
+<p><strong>Goal</strong>: Show how one event caused another.</p>
+<ol class="arabic simple">
+<li><p><strong>Create First Event</strong></p>
+<ul class="simple">
+<li><p>Name: “The Assassination of Duke Harren”</p></li>
+<li><p>Date: Year 1235, Day 50</p></li>
+</ul>
+</li>
+<li><p><strong>Create Second Event</strong></p>
+<ul class="simple">
+<li><p>Name: “The Civil War Begins”</p></li>
+<li><p>Date: Year 1235, Day 75</p></li>
+</ul>
+</li>
+<li><p><strong>Create Causal Relation</strong></p>
+<ul class="simple">
+<li><p>Method 1 (Drag-Drop):</p>
+<ul>
+<li><p>Drag “Assassination” event</p></li>
+<li><p>Drop on “Civil War” event editor</p></li>
+<li><p>Hold <strong>Shift</strong> for type picker</p></li>
+<li><p>Select <strong>“caused”</strong> relation</p></li>
+</ul>
+</li>
+<li><p>Method 2 (Relations Panel):</p>
+<ul>
+<li><p>Select “Assassination” event</p></li>
+<li><p>In Relations Panel, click <strong>Add Relation</strong></p></li>
+<li><p>Target: “Civil War”</p></li>
+<li><p>Type: “caused”</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>Verify in Graph</strong></p>
+<ul class="simple">
+<li><p>Open Graph View (<strong>Ctrl+G</strong>)</p></li>
+<li><p>See arrow: “Assassination” → “Civil War”</p></li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="timeline-management">
+<h2>Timeline Management<a class="headerlink" href="#timeline-management" title="Link to this heading">¶</a></h2>
+<section id="organizing-events-by-category">
+<h3>Organizing Events by Category<a class="headerlink" href="#organizing-events-by-category" title="Link to this heading">¶</a></h3>
+<p><strong>Goal</strong>: Use group bands to organize timeline visually.</p>
+<ol class="arabic simple">
+<li><p><strong>Assign Event Types</strong></p>
+<ul class="simple">
+<li><p>Edit each event</p></li>
+<li><p>Set Type field:</p>
+<ul>
+<li><p>“Political” for governance events</p></li>
+<li><p>“War” for conflicts</p></li>
+<li><p>“Cultural” for arts/religion</p></li>
+<li><p>“Natural” for disasters</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>Enable Group Bands</strong></p>
+<ul class="simple">
+<li><p>Timeline → Settings</p></li>
+<li><p>Enable “Group by Type”</p></li>
+<li><p>Each type gets its own horizontal band</p></li>
+</ul>
+</li>
+<li><p><strong>Customize Band Colors</strong></p>
+<ul class="simple">
+<li><p>Timeline → Band Settings</p></li>
+<li><p>Assign colors to each type:</p>
+<ul>
+<li><p>Political: Blue</p></li>
+<li><p>War: Red</p></li>
+<li><p>Cultural: Purple</p></li>
+<li><p>Natural: Green</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="creating-a-timeline-narrative">
+<h3>Creating a Timeline Narrative<a class="headerlink" href="#creating-a-timeline-narrative" title="Link to this heading">¶</a></h3>
+<p><strong>Goal</strong>: Generate a chronological narrative document.</p>
+<ol class="arabic simple">
+<li><p><strong>Filter Events</strong></p>
+<ul class="simple">
+<li><p>In Project Explorer, filter:</p>
+<ul>
+<li><p>Type: Events</p></li>
+<li><p>Tags: “major” (to include only major events)</p></li>
+<li><p>Date range: Year 1200-1300</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>Open Longform Builder</strong></p>
+<ul class="simple">
+<li><p><strong>Tools → Longform Builder</strong></p></li>
+</ul>
+</li>
+<li><p><strong>Configure Narrative</strong></p>
+<ul class="simple">
+<li><p><strong>Template</strong>: “Chronological Summary”</p></li>
+<li><p><strong>Include</strong>: Descriptions, Relations</p></li>
+<li><p><strong>Format</strong>: Markdown</p></li>
+</ul>
+</li>
+<li><p><strong>Generate and Export</strong></p>
+<ul class="simple">
+<li><p>Click <strong>Generate</strong></p></li>
+<li><p>Review generated narrative</p></li>
+<li><p><strong>Export</strong> to file or clipboard</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Example Output:</strong></p>
+<div class="highlight-markdown notranslate"><div class="highlight"><pre><span></span><span class="gh"># Timeline of the Kingdom Era (1200-1300)</span>
+
+<span class="gu">## Year 1234 - The Fall of the Old Empire</span>
+The Old Empire fell after a devastating siege...
+
+<span class="gu">## Year 1235 - The Assassination of Duke Harren</span>
+Duke Harren was killed by unknown assassins...
+
+<span class="gu">## Year 1235 - The Civil War Begins</span>
+Following the assassination, the kingdom erupted into civil war...
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="working-with-relative-dates">
+<h3>Working with Relative Dates<a class="headerlink" href="#working-with-relative-dates" title="Link to this heading">¶</a></h3>
+<p><strong>Goal</strong>: Position events relative to each other.</p>
+<ol class="arabic simple">
+<li><p><strong>Set Playhead</strong></p>
+<ul class="simple">
+<li><p>Click on timeline at your reference point</p></li>
+<li><p>Or enter date manually in playhead control</p></li>
+</ul>
+</li>
+<li><p><strong>Create Event with Relative Date</strong></p>
+<ul class="simple">
+<li><p>New Event</p></li>
+<li><p>Date field: “2 weeks later”</p></li>
+<li><p>System calculates: Playhead date + 14 days</p></li>
+</ul>
+</li>
+<li><p><strong>Chain Multiple Events</strong></p>
+<ul class="simple">
+<li><p>Event A: “Year 1234, Day 1”</p></li>
+<li><p>Set playhead to Event A</p></li>
+<li><p>Event B: “3 days later” → Day 4</p></li>
+<li><p>Set playhead to Event B</p></li>
+<li><p>Event C: “1 week later” → Day 11</p></li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="building-a-world">
+<h2>Building a World<a class="headerlink" href="#building-a-world" title="Link to this heading">¶</a></h2>
+<section id="establishing-core-locations">
+<h3>Establishing Core Locations<a class="headerlink" href="#establishing-core-locations" title="Link to this heading">¶</a></h3>
+<p><strong>Goal</strong>: Create a geography foundation for your world.</p>
+<ol class="arabic">
+<li><p><strong>Create Main Locations</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="s2">&quot;The Capital&quot;</span> <span class="p">(</span><span class="nb">type</span><span class="p">:</span> <span class="n">Location</span><span class="p">,</span> <span class="n">tags</span><span class="p">:</span> <span class="n">city</span><span class="p">,</span> <span class="n">major</span><span class="p">)</span>
+<span class="o">-</span> <span class="s2">&quot;The Northern Wastes&quot;</span> <span class="p">(</span><span class="nb">type</span><span class="p">:</span> <span class="n">Location</span><span class="p">,</span> <span class="n">tags</span><span class="p">:</span> <span class="n">region</span><span class="p">,</span> <span class="n">hostile</span><span class="p">)</span>
+<span class="o">-</span> <span class="s2">&quot;The Sacred Grove&quot;</span> <span class="p">(</span><span class="nb">type</span><span class="p">:</span> <span class="n">Location</span><span class="p">,</span> <span class="n">tags</span><span class="p">:</span> <span class="n">landmark</span><span class="p">,</span> <span class="n">religious</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Establish Spatial Relations</strong></p>
+<ul class="simple">
+<li><p>“Capital” → “located_in” → “The Kingdom”</p></li>
+<li><p>“Sacred Grove” → “located_in” → “The Kingdom”</p></li>
+<li><p>“Northern Wastes” → “borders” → “The Kingdom”</p></li>
+</ul>
+</li>
+<li><p><strong>Add to Map</strong></p>
+<ul class="simple">
+<li><p>Create map: “World Map”</p></li>
+<li><p>Add markers for each location</p></li>
+<li><p>Calibrate map scale</p></li>
+</ul>
+</li>
+<li><p><strong>Link to Events</strong></p>
+<ul class="simple">
+<li><p>Create founding events:</p>
+<ul>
+<li><p>“Founding of the Capital” (Year 1000)</p></li>
+<li><p>“Discovery of the Sacred Grove” (Year 850)</p></li>
+</ul>
+</li>
+<li><p>Link locations to events with “depicted” or “involved”</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="creating-a-faction-web">
+<h3>Creating a Faction Web<a class="headerlink" href="#creating-a-faction-web" title="Link to this heading">¶</a></h3>
+<p><strong>Goal</strong>: Model political organizations and relationships.</p>
+<ol class="arabic">
+<li><p><strong>Create Factions</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span> <span class="s2">&quot;The Royal Court&quot;</span> <span class="p">(</span><span class="nb">type</span><span class="p">:</span> <span class="n">Faction</span><span class="p">,</span> <span class="n">tags</span><span class="p">:</span> <span class="n">government</span><span class="p">)</span>
+<span class="o">-</span> <span class="s2">&quot;The Merchant Guild&quot;</span> <span class="p">(</span><span class="nb">type</span><span class="p">:</span> <span class="n">Faction</span><span class="p">,</span> <span class="n">tags</span><span class="p">:</span> <span class="n">commerce</span><span class="p">)</span>
+<span class="o">-</span> <span class="s2">&quot;The Shadow Guild&quot;</span> <span class="p">(</span><span class="nb">type</span><span class="p">:</span> <span class="n">Faction</span><span class="p">,</span> <span class="n">tags</span><span class="p">:</span> <span class="n">criminal</span><span class="p">,</span> <span class="n">secret</span><span class="p">)</span>
+<span class="o">-</span> <span class="s2">&quot;The Temple of Light&quot;</span> <span class="p">(</span><span class="nb">type</span><span class="p">:</span> <span class="n">Faction</span><span class="p">,</span> <span class="n">tags</span><span class="p">:</span> <span class="n">religious</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Establish Faction Relations</strong></p>
+<ul class="simple">
+<li><p>Royal Court → “allied_with” → Temple of Light</p></li>
+<li><p>Merchant Guild → “finances” → Royal Court</p></li>
+<li><p>Shadow Guild → “opposes” → Royal Court</p></li>
+<li><p>Shadow Guild → “infiltrated” → Merchant Guild</p></li>
+</ul>
+</li>
+<li><p><strong>Add Members</strong></p>
+<ul class="simple">
+<li><p>Characters → “member_of” → Faction</p></li>
+<li><p>Example: “Lord Harren” → “member_of” → “Royal Court”</p></li>
+</ul>
+</li>
+<li><p><strong>Track Faction Events</strong></p>
+<ul class="simple">
+<li><p>Create events for each faction action</p></li>
+<li><p>Link with “initiated_by” or “affected” relations</p></li>
+</ul>
+</li>
+<li><p><strong>Visualize in Graph</strong></p>
+<ul class="simple">
+<li><p>Open Graph View</p></li>
+<li><p>Filter by type: Faction</p></li>
+<li><p>See faction network and relationships</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="building-a-character-network">
+<h3>Building a Character Network<a class="headerlink" href="#building-a-character-network" title="Link to this heading">¶</a></h3>
+<p><strong>Goal</strong>: Create interconnected character relationships.</p>
+<ol class="arabic simple">
+<li><p><strong>Create Core Characters</strong></p>
+<ul class="simple">
+<li><p>Protagonist, Antagonist, Supporting cast</p></li>
+<li><p>Tag appropriately: “protagonist”, “antagonist”, “ally”</p></li>
+</ul>
+</li>
+<li><p><strong>Establish Relationships</strong></p>
+<ul class="simple">
+<li><p>Family: “parent_of”, “sibling_of”, “child_of”</p></li>
+<li><p>Social: “friend_of”, “mentor_to”, “rival_of”</p></li>
+<li><p>Professional: “employed_by”, “commands”, “serves”</p></li>
+</ul>
+</li>
+<li><p><strong>Add Bidirectional Relations</strong></p>
+<ul class="simple">
+<li><p>Enable “Bidirectional” when creating</p></li>
+<li><p>Example: A “friend_of” B also creates B “friend_of” A</p></li>
+</ul>
+</li>
+<li><p><strong>Create Relationship Events</strong></p>
+<ul class="simple">
+<li><p>“Meeting of Characters” (when they first met)</p></li>
+<li><p>“Alliance Formed” (when they became allies)</p></li>
+<li><p>“Betrayal” (when relationship changed)</p></li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="advanced-relation-management">
+<h2>Advanced Relation Management<a class="headerlink" href="#advanced-relation-management" title="Link to this heading">¶</a></h2>
+<section id="using-relation-attributes">
+<h3>Using Relation Attributes<a class="headerlink" href="#using-relation-attributes" title="Link to this heading">¶</a></h3>
+<p><strong>Goal</strong>: Add temporal and conditional metadata to relations.</p>
+<ol class="arabic">
+<li><p><strong>Create Base Relation</strong></p>
+<ul class="simple">
+<li><p>Character A → “allied_with” → Character B</p></li>
+</ul>
+</li>
+<li><p><strong>Add Attributes</strong></p>
+<ul>
+<li><p>Right-click relation → Edit</p></li>
+<li><p>Add attributes:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;since&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Year 1234&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;until&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Year 1240&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;strength&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;strong&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;public&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;reason&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Mutual enemy&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+<li><p><strong>Use in Queries</strong></p>
+<ul class="simple">
+<li><p>Filter relations by attribute</p></li>
+<li><p>Search: Relations where <code class="docutils literal notranslate"><span class="pre">public</span> <span class="pre">=</span> <span class="pre">true</span></code></p></li>
+</ul>
+</li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="modeling-temporal-relations">
+<h3>Modeling Temporal Relations<a class="headerlink" href="#modeling-temporal-relations" title="Link to this heading">¶</a></h3>
+<p><strong>Goal</strong>: Track how relationships change over time.</p>
+<ol class="arabic simple">
+<li><p><strong>Create Multiple Relations for Same Pair</strong></p>
+<ul class="simple">
+<li><p>Period 1: A → “allied_with” → B (attributes: {“since”: “1234”, “until”: “1240”})</p></li>
+<li><p>Period 2: A → “rival_of” → B (attributes: {“since”: “1240”, “until”: “1250”})</p></li>
+<li><p>Period 3: A → “neutral_to” → B (attributes: {“since”: “1250”})</p></li>
+</ul>
+</li>
+<li><p><strong>Create Transition Events</strong></p>
+<ul class="simple">
+<li><p>“The Betrayal” (Year 1240) - marks alliance ending</p></li>
+<li><p>“The Reconciliation” (Year 1250) - marks rivalry ending</p></li>
+</ul>
+</li>
+<li><p><strong>Link Events to Relations</strong></p>
+<ul class="simple">
+<li><p>Store event IDs in relation attributes</p></li>
+<li><p>Or create “caused_by” meta-relations</p></li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="map-workflows">
+<h2>Map Workflows<a class="headerlink" href="#map-workflows" title="Link to this heading">¶</a></h2>
+<section id="creating-a-regional-map">
+<h3>Creating a Regional Map<a class="headerlink" href="#creating-a-regional-map" title="Link to this heading">¶</a></h3>
+<p><strong>Goal</strong>: Set up a detailed map with locations.</p>
+<ol class="arabic simple">
+<li><p><strong>Prepare Map Image</strong></p>
+<ul class="simple">
+<li><p>Create or find map image (PNG/JPG)</p></li>
+<li><p>Recommended resolution: 2048x2048 or higher</p></li>
+<li><p>Save to accessible location</p></li>
+</ul>
+</li>
+<li><p><strong>Import Map</strong></p>
+<ul class="simple">
+<li><p><strong>Maps → New Map</strong></p></li>
+<li><p>Upload image</p></li>
+<li><p>Name: “Kingdom of Eldoria”</p></li>
+</ul>
+</li>
+<li><p><strong>Calibrate Scale</strong></p>
+<ul class="simple">
+<li><p><strong>Tools → Calibrate Map</strong></p></li>
+<li><p>Click two points of known distance</p></li>
+<li><p>Enter distance: “500 miles”</p></li>
+<li><p>Scale calculated automatically</p></li>
+</ul>
+</li>
+<li><p><strong>Add Location Markers</strong></p>
+<ul class="simple">
+<li><p>For each location entity:</p>
+<ul>
+<li><p>Right-click map → Add Marker</p></li>
+<li><p>Link to entity</p></li>
+<li><p>Customize icon and color</p></li>
+<li><p>Position precisely</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>Add Scale Bar</strong></p>
+<ul class="simple">
+<li><p><strong>View → Show Scale Bar</strong></p></li>
+<li><p>Position in corner</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="creating-multi-map-hierarchies">
+<h3>Creating Multi-Map Hierarchies<a class="headerlink" href="#creating-multi-map-hierarchies" title="Link to this heading">¶</a></h3>
+<p><strong>Goal</strong>: Link maps at different zoom levels.</p>
+<ol class="arabic simple">
+<li><p><strong>Create World Map</strong></p>
+<ul class="simple">
+<li><p>Upload full world map</p></li>
+<li><p>Add major regions as markers</p></li>
+</ul>
+</li>
+<li><p><strong>Create Regional Maps</strong></p>
+<ul class="simple">
+<li><p>Upload detailed map for each region</p></li>
+<li><p>Name: “Region - Northern Kingdom”</p></li>
+</ul>
+</li>
+<li><p><strong>Link Maps</strong></p>
+<ul class="simple">
+<li><p>On world map marker for “Northern Kingdom”</p></li>
+<li><p>Add attribute: <code class="docutils literal notranslate"><span class="pre">{&quot;detail_map&quot;:</span> <span class="pre">&quot;Region</span> <span class="pre">-</span> <span class="pre">Northern</span> <span class="pre">Kingdom&quot;}</span></code></p></li>
+</ul>
+</li>
+<li><p><strong>Navigation</strong></p>
+<ul class="simple">
+<li><p>Click world map marker</p></li>
+<li><p>Use custom link to jump to regional map</p></li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="search-and-discovery">
+<h2>Search and Discovery<a class="headerlink" href="#search-and-discovery" title="Link to this heading">¶</a></h2>
+<section id="finding-related-content">
+<h3>Finding Related Content<a class="headerlink" href="#finding-related-content" title="Link to this heading">¶</a></h3>
+<p><strong>Goal</strong>: Discover connections you forgot about.</p>
+<ol class="arabic simple">
+<li><p><strong>Select Entity/Event</strong></p>
+<ul class="simple">
+<li><p>Click item in Project Explorer</p></li>
+</ul>
+</li>
+<li><p><strong>View Relations Panel</strong></p>
+<ul class="simple">
+<li><p>See all direct connections</p></li>
+</ul>
+</li>
+<li><p><strong>Explore Second-Degree Connections</strong></p>
+<ul class="simple">
+<li><p>Click a related item</p></li>
+<li><p>See its relations</p></li>
+<li><p>Discover indirect connections</p></li>
+</ul>
+</li>
+<li><p><strong>Use Graph View</strong></p>
+<ul class="simple">
+<li><p><strong>Ctrl+G</strong> to open graph</p></li>
+<li><p>Set filter depth: 2 or 3</p></li>
+<li><p>See network of connections</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="semantic-search-workflows">
+<h3>Semantic Search Workflows<a class="headerlink" href="#semantic-search-workflows" title="Link to this heading">¶</a></h3>
+<p><strong>Goal</strong>: Find content using natural language.</p>
+<ol class="arabic simple">
+<li><p><strong>Build Search Index</strong></p>
+<ul class="simple">
+<li><p><strong>Tools → AI Settings</strong></p></li>
+<li><p>Configure LM Studio or other provider</p></li>
+<li><p><strong>Tools → Build Search Index</strong></p></li>
+<li><p>Wait for indexing (one-time process)</p></li>
+</ul>
+</li>
+<li><p><strong>Search by Concept</strong></p>
+<ul class="simple">
+<li><p><strong>Ctrl+K</strong> for AI Panel</p></li>
+<li><p>Query: “What magical artifacts exist?”</p></li>
+<li><p>System finds entities with magic-related content</p></li>
+</ul>
+</li>
+<li><p><strong>Search by Theme</strong></p>
+<ul class="simple">
+<li><p>Query: “Events related to betrayal”</p></li>
+<li><p>System uses embeddings to find thematic matches</p></li>
+<li><p>Not just keyword matching</p></li>
+</ul>
+</li>
+<li><p><strong>Refine Results</strong></p>
+<ul class="simple">
+<li><p>Review top matches</p></li>
+<li><p>Click to jump to item</p></li>
+<li><p>Add more connections based on discoveries</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="using-llm-generation">
+<h3>Using LLM Generation<a class="headerlink" href="#using-llm-generation" title="Link to this heading">¶</a></h3>
+<p><strong>Goal</strong>: Generate content with AI assistance.</p>
+<ol class="arabic simple">
+<li><p><strong>Select Context</strong></p>
+<ul class="simple">
+<li><p>Select entity or event for context</p></li>
+</ul>
+</li>
+<li><p><strong>Open AI Panel</strong></p>
+<ul class="simple">
+<li><p><strong>AI → Generate Content</strong></p></li>
+</ul>
+</li>
+<li><p><strong>Choose Prompt</strong></p>
+<ul class="simple">
+<li><p>“Expand backstory” - for characters</p></li>
+<li><p>“Generate description” - for locations</p></li>
+<li><p>“Suggest relationships” - for entities</p></li>
+</ul>
+</li>
+<li><p><strong>Review and Edit</strong></p>
+<ul class="simple">
+<li><p>AI generates text based on your world</p></li>
+<li><p>Uses RAG to stay consistent with lore</p></li>
+<li><p>Edit as needed</p></li>
+<li><p>Save to entity description</p></li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="export-and-sharing">
+<h2>Export and Sharing<a class="headerlink" href="#export-and-sharing" title="Link to this heading">¶</a></h2>
+<section id="exporting-to-obsidian">
+<h3>Exporting to Obsidian<a class="headerlink" href="#exporting-to-obsidian" title="Link to this heading">¶</a></h3>
+<p><strong>Goal</strong>: Create an Obsidian vault from your world.</p>
+<ol class="arabic">
+<li><p><strong>Prepare Export</strong></p>
+<ul class="simple">
+<li><p>Ensure all entities/events have good descriptions</p></li>
+<li><p>Check wiki links are working</p></li>
+</ul>
+</li>
+<li><p><strong>Export</strong></p>
+<ul class="simple">
+<li><p><strong>File → Export → Obsidian</strong></p></li>
+<li><p>Choose destination folder</p></li>
+</ul>
+</li>
+<li><p><strong>Generated Structure</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>Obsidian_Export/
+├── Events/
+│   ├── The Fall of the Empire.md
+│   └── The Great War.md
+├── Entities/
+│   ├── Aria Shadowblade.md
+│   ├── The Capital.md
+│   └── The Royal Court.md
+└── _index.md
+</pre></div>
+</div>
+</li>
+<li><p><strong>Open in Obsidian</strong></p>
+<ul class="simple">
+<li><p>Open folder as Obsidian vault</p></li>
+<li><p>All wiki links work</p></li>
+<li><p>Graph view shows connections</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="creating-shareable-summaries">
+<h3>Creating Shareable Summaries<a class="headerlink" href="#creating-shareable-summaries" title="Link to this heading">¶</a></h3>
+<p><strong>Goal</strong>: Export a formatted document for sharing.</p>
+<ol class="arabic simple">
+<li><p><strong>Filter Content</strong></p>
+<ul class="simple">
+<li><p>Select events/entities to include</p></li>
+<li><p>Use tags to filter</p></li>
+</ul>
+</li>
+<li><p><strong>Generate Longform</strong></p>
+<ul class="simple">
+<li><p><strong>Tools → Longform Builder</strong></p></li>
+<li><p>Template: “Story Bible” or “World Summary”</p></li>
+</ul>
+</li>
+<li><p><strong>Export Format</strong></p>
+<ul class="simple">
+<li><p><strong>Markdown</strong>: For GitHub/Obsidian</p></li>
+<li><p><strong>HTML</strong>: For websites</p></li>
+<li><p><strong>PDF</strong>: For printing (requires external tool)</p></li>
+</ul>
+</li>
+<li><p><strong>Share</strong></p>
+<ul class="simple">
+<li><p>Copy to blog</p></li>
+<li><p>Share on Reddit/Discord</p></li>
+<li><p>Email to collaborators</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="backup-and-version-control">
+<h3>Backup and Version Control<a class="headerlink" href="#backup-and-version-control" title="Link to this heading">¶</a></h3>
+<p><strong>Goal</strong>: Safely version your world.</p>
+<ol class="arabic">
+<li><p><strong>Automatic Backups</strong></p>
+<ul class="simple">
+<li><p>Enabled by default</p></li>
+<li><p>Frequency: Every 15 minutes</p></li>
+<li><p>Location: User data directory</p></li>
+</ul>
+</li>
+<li><p><strong>Manual Backup</strong></p>
+<ul class="simple">
+<li><p><strong>File → Backup World</strong></p></li>
+<li><p>Choose location</p></li>
+<li><p>Timestamped <code class="docutils literal notranslate"><span class="pre">.kraken</span></code> file created</p></li>
+</ul>
+</li>
+<li><p><strong>Version Control with Git</strong></p>
+<ul class="simple">
+<li><p>Navigate to world folder</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>worlds/MyWorld
+git<span class="w"> </span>init
+git<span class="w"> </span>add<span class="w"> </span>.
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Initial commit&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Restore from Backup</strong></p>
+<ul class="simple">
+<li><p><strong>File → Restore World</strong></p></li>
+<li><p>Select backup file</p></li>
+<li><p>Confirm (current state backed up first)</p></li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="optimization-tips">
+<h2>Optimization Tips<a class="headerlink" href="#optimization-tips" title="Link to this heading">¶</a></h2>
+<section id="managing-large-worlds">
+<h3>Managing Large Worlds<a class="headerlink" href="#managing-large-worlds" title="Link to this heading">¶</a></h3>
+<p><strong>Goal</strong>: Keep performance smooth with 10,000+ entities.</p>
+<ol class="arabic simple">
+<li><p><strong>Use Filtering</strong></p>
+<ul class="simple">
+<li><p>Don’t load everything at once</p></li>
+<li><p>Filter by tags, types, date ranges</p></li>
+</ul>
+</li>
+<li><p><strong>Limit Graph Depth</strong></p>
+<ul class="simple">
+<li><p>In Graph View, limit connection depth</p></li>
+<li><p>Depth 2-3 is usually sufficient</p></li>
+</ul>
+</li>
+<li><p><strong>Archive Old Content</strong></p>
+<ul class="simple">
+<li><p>Tag historical content as “archived”</p></li>
+<li><p>Filter out by default</p></li>
+<li><p>Include when needed</p></li>
+</ul>
+</li>
+<li><p><strong>Optimize Database</strong></p>
+<ul class="simple">
+<li><p><strong>Tools → Database → Optimize</strong></p></li>
+<li><p>Runs VACUUM and ANALYZE</p></li>
+<li><p>Improves query performance</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="efficient-relation-management">
+<h3>Efficient Relation Management<a class="headerlink" href="#efficient-relation-management" title="Link to this heading">¶</a></h3>
+<p><strong>Goal</strong>: Keep relations organized and useful.</p>
+<ol class="arabic simple">
+<li><p><strong>Use Consistent Types</strong></p>
+<ul class="simple">
+<li><p>Standardize relation types</p></li>
+<li><p>Document types in world notes</p></li>
+<li><p>Examples: “caused”, “influenced”, “involved”</p></li>
+</ul>
+</li>
+<li><p><strong>Bidirectional Strategy</strong></p>
+<ul class="simple">
+<li><p>Use bidirectional for symmetric relations</p>
+<ul>
+<li><p>“allied_with”, “rival_of”, “friend_of”</p></li>
+</ul>
+</li>
+<li><p>Use unidirectional for asymmetric</p>
+<ul>
+<li><p>“caused”, “parent_of”, “created”</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>Prune Redundant Relations</strong></p>
+<ul class="simple">
+<li><p>Review periodically</p></li>
+<li><p>Remove unnecessary connections</p></li>
+<li><p>Keep graph clean and meaningful</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="keyboard-first-workflows">
+<h3>Keyboard-First Workflows<a class="headerlink" href="#keyboard-first-workflows" title="Link to this heading">¶</a></h3>
+<p><strong>Goal</strong>: Speed up common tasks with keyboard shortcuts.</p>
+<p><strong>Quick Event Creation:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">1.</span> <span class="n">Ctrl</span><span class="o">+</span><span class="n">Shift</span><span class="o">+</span><span class="n">E</span> <span class="p">(</span><span class="n">new</span> <span class="n">event</span><span class="p">)</span>
+<span class="mf">2.</span> <span class="n">Type</span> <span class="n">name</span><span class="p">,</span> <span class="n">Tab</span>
+<span class="mf">3.</span> <span class="n">Type</span> <span class="n">date</span><span class="p">,</span> <span class="n">Enter</span>
+<span class="mf">4.</span> <span class="n">Event</span> <span class="n">created</span><span class="p">,</span> <span class="n">editor</span> <span class="nb">open</span>
+</pre></div>
+</div>
+<p><strong>Fast Navigation:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">1.</span> <span class="n">Ctrl</span><span class="o">+</span><span class="n">E</span> <span class="p">(</span><span class="n">focus</span> <span class="n">Project</span> <span class="n">Explorer</span><span class="p">)</span>
+<span class="mf">2.</span> <span class="n">Type</span> <span class="n">to</span> <span class="n">search</span>
+<span class="mf">3.</span> <span class="n">Enter</span> <span class="n">to</span> <span class="nb">open</span>
+<span class="mf">4.</span> <span class="n">Tab</span> <span class="n">to</span> <span class="n">switch</span> <span class="n">panels</span>
+</pre></div>
+</div>
+<p><strong>Bulk Tagging:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>1. Select multiple items (Ctrl+Click)
+2. Right-click → Add Tag
+3. Type tag name
+4. Applied to all selected
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading">¶</a></h2>
+<section id="continue-learning">
+<h3>Continue Learning<a class="headerlink" href="#continue-learning" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong><a class="reference internal" href="USER_GUIDE.html"><span class="std std-doc">User Guide</span></a></strong> - Reference for all features</p></li>
+<li><p><strong><a class="reference internal" href="FAQ.html"><span class="std std-doc">FAQ</span></a></strong> - Common questions and troubleshooting</p></li>
+<li><p><strong><a class="reference internal" href="ARCHITECTURE.html"><span class="std std-doc">Architecture</span></a></strong> - Technical details (for developers)</p></li>
+</ul>
+</section>
+<section id="get-help">
+<h3>Get Help<a class="headerlink" href="#get-help" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>GitHub Issues</strong>: Report bugs or request features</p></li>
+<li><p><strong>Discussions</strong>: Share workflows and tips</p></li>
+<li><p><strong>Documentation</strong>: Full docs at <a class="reference internal" href="INDEX.html"><span class="std std-doc">docs/INDEX.md</span></a></p></li>
+</ul>
+<hr class="docutils" />
+<p><strong>Navigation:</strong><br />
+<a class="reference internal" href="USER_GUIDE.html"><span class="std std-doc">← User Guide</span></a> • <a class="reference internal" href="INDEX.html"><span class="std std-doc">Back to Index</span></a> • <a class="reference internal" href="FAQ.html"><span class="std std-doc">FAQ →</span></a></p>
+</section>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Christian Mintert
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Workflows Guide</a><ul>
+<li><a class="reference internal" href="#table-of-contents">Table of Contents</a></li>
+<li><a class="reference internal" href="#basic-workflows">Basic Workflows</a><ul>
+<li><a class="reference internal" href="#creating-your-first-event">Creating Your First Event</a></li>
+<li><a class="reference internal" href="#creating-a-character-with-backstory">Creating a Character with Backstory</a></li>
+<li><a class="reference internal" href="#linking-events-with-causality">Linking Events with Causality</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#timeline-management">Timeline Management</a><ul>
+<li><a class="reference internal" href="#organizing-events-by-category">Organizing Events by Category</a></li>
+<li><a class="reference internal" href="#creating-a-timeline-narrative">Creating a Timeline Narrative</a></li>
+<li><a class="reference internal" href="#working-with-relative-dates">Working with Relative Dates</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#building-a-world">Building a World</a><ul>
+<li><a class="reference internal" href="#establishing-core-locations">Establishing Core Locations</a></li>
+<li><a class="reference internal" href="#creating-a-faction-web">Creating a Faction Web</a></li>
+<li><a class="reference internal" href="#building-a-character-network">Building a Character Network</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#advanced-relation-management">Advanced Relation Management</a><ul>
+<li><a class="reference internal" href="#using-relation-attributes">Using Relation Attributes</a></li>
+<li><a class="reference internal" href="#modeling-temporal-relations">Modeling Temporal Relations</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#map-workflows">Map Workflows</a><ul>
+<li><a class="reference internal" href="#creating-a-regional-map">Creating a Regional Map</a></li>
+<li><a class="reference internal" href="#creating-multi-map-hierarchies">Creating Multi-Map Hierarchies</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#search-and-discovery">Search and Discovery</a><ul>
+<li><a class="reference internal" href="#finding-related-content">Finding Related Content</a></li>
+<li><a class="reference internal" href="#semantic-search-workflows">Semantic Search Workflows</a></li>
+<li><a class="reference internal" href="#using-llm-generation">Using LLM Generation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#export-and-sharing">Export and Sharing</a><ul>
+<li><a class="reference internal" href="#exporting-to-obsidian">Exporting to Obsidian</a></li>
+<li><a class="reference internal" href="#creating-shareable-summaries">Creating Shareable Summaries</a></li>
+<li><a class="reference internal" href="#backup-and-version-control">Backup and Version Control</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#optimization-tips">Optimization Tips</a><ul>
+<li><a class="reference internal" href="#managing-large-worlds">Managing Large Worlds</a></li>
+<li><a class="reference internal" href="#efficient-relation-management">Efficient Relation Management</a></li>
+<li><a class="reference internal" href="#keyboard-first-workflows">Keyboard-First Workflows</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#next-steps">Next Steps</a><ul>
+<li><a class="reference internal" href="#continue-learning">Continue Learning</a></li>
+<li><a class="reference internal" href="#get-help">Get Help</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=1a9b1e2b"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

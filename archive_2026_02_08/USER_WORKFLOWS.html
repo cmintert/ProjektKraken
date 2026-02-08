@@ -1,0 +1,1736 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html">
+
+    <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
+        <title>User Workflows Guide - Project Kraken 0.11.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #7C3AED;
+  --color-brand-content: #7C3AED;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #A78BFA;
+  --color-brand-content: #A78BFA;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">Project Kraken 0.11.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  
+  <span class="sidebar-brand-text">Project Kraken 0.11.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../DATABASE.html">Database Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../DEVELOPMENT.html">Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../modules.html">src</a><input aria-label="Toggle navigation of src" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../app.html">app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../cli.html">cli package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../commands.html">commands package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../core.html">core package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../gui.widgets.html">gui.widgets package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gui.dialogs.html">gui.dialogs package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../services.html">services package</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../CHANGELOG.html">Changelog</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../_sources/archive_2026_02_08/USER_WORKFLOWS.md.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="user-workflows-guide">
+<h1>User Workflows Guide<a class="headerlink" href="#user-workflows-guide" title="Link to this heading">¶</a></h1>
+<p>This guide demonstrates common workflows in ProjektKraken for worldbuilding tasks. Each workflow includes step-by-step instructions with practical examples.</p>
+<section id="table-of-contents">
+<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Link to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="#getting-started"><span class="xref myst">Getting Started</span></a></p></li>
+<li><p><a class="reference internal" href="#building-your-first-world"><span class="xref myst">Building Your First World</span></a></p></li>
+<li><p><a class="reference internal" href="#timeline-first-worldbuilding"><span class="xref myst">Timeline-First Worldbuilding</span></a></p></li>
+<li><p><a class="reference internal" href="#character--faction-workflows"><span class="xref myst">Character &amp; Faction Workflows</span></a></p></li>
+<li><p><a class="reference internal" href="#location--map-workflows"><span class="xref myst">Location &amp; Map Workflows</span></a></p></li>
+<li><p><a class="reference internal" href="#event--timeline-workflows"><span class="xref myst">Event &amp; Timeline Workflows</span></a></p></li>
+<li><p><a class="reference internal" href="#wiki-linking--documentation"><span class="xref myst">Wiki Linking &amp; Documentation</span></a></p></li>
+<li><p><a class="reference internal" href="#semantic-search--ai-assistance"><span class="xref myst">Semantic Search &amp; AI Assistance</span></a></p></li>
+<li><p><a class="reference internal" href="#export--publishing"><span class="xref myst">Export &amp; Publishing</span></a></p></li>
+<li><p><a class="reference internal" href="#backup--recovery"><span class="xref myst">Backup &amp; Recovery</span></a></p></li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="getting-started">
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading">¶</a></h2>
+<section id="first-launch">
+<h3>First Launch<a class="headerlink" href="#first-launch" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Create your first world and understand the interface.</p>
+<ol class="arabic simple">
+<li><p><strong>Launch ProjektKraken</strong></p>
+<ul class="simple">
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">ProjektKraken.exe</span></code> (Windows) or <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">launcher.py</span></code> (from source)</p></li>
+<li><p>The application creates a <code class="docutils literal notranslate"><span class="pre">worlds/</span></code> directory automatically</p></li>
+</ul>
+</li>
+<li><p><strong>Create a New World</strong></p>
+<ul class="simple">
+<li><p>Click <strong>File → New World</strong> (or <code class="docutils literal notranslate"><span class="pre">Ctrl+N</span></code>)</p></li>
+<li><p>Enter world name: e.g., “My Fantasy Campaign”</p></li>
+<li><p>Choose template: “Blank World” or “Fantasy Starter”</p></li>
+<li><p>Click <strong>Create</strong></p></li>
+</ul>
+</li>
+<li><p><strong>Understand the Interface</strong></p>
+<ul class="simple">
+<li><p><strong>Left Panel:</strong> Timeline view (events listed chronologically)</p></li>
+<li><p><strong>Center Panel:</strong> Editor (edit entities, events, documents)</p></li>
+<li><p><strong>Right Panel:</strong> Relations graph or entity list</p></li>
+<li><p><strong>Bottom Panel:</strong> Timeline ruler (visual timeline)</p></li>
+</ul>
+</li>
+<li><p><strong>Explore the Workspace</strong></p>
+<ul class="simple">
+<li><p>Drag panel dividers to resize</p></li>
+<li><p>Click panel tabs to switch views</p></li>
+<li><p>Use <strong>View</strong> menu to show/hide panels</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Result:</strong> You now have an empty world ready for content.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="building-your-first-world">
+<h2>Building Your First World<a class="headerlink" href="#building-your-first-world" title="Link to this heading">¶</a></h2>
+<section id="workflow-fantasy-campaign-setup">
+<h3>Workflow: Fantasy Campaign Setup<a class="headerlink" href="#workflow-fantasy-campaign-setup" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Create a basic fantasy world with locations, characters, and an opening event.</p>
+<section id="step-1-set-up-your-calendar">
+<h4>Step 1: Set Up Your Calendar<a class="headerlink" href="#step-1-set-up-your-calendar" title="Link to this heading">¶</a></h4>
+<p>A custom calendar makes dates more immersive.</p>
+<ol class="arabic">
+<li><p><strong>Open Calendar Settings</strong></p>
+<ul class="simple">
+<li><p>Click <strong>Tools → Calendar Settings</strong></p></li>
+</ul>
+</li>
+<li><p><strong>Create Custom Calendar</strong></p>
+<ul>
+<li><p>Click <strong>New Calendar</strong></p></li>
+<li><p>Name: “Eldorian Calendar”</p></li>
+<li><p>Months: Enter month names and days</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Spring</span> <span class="p">(</span><span class="mi">30</span> <span class="n">days</span><span class="p">),</span> <span class="n">Summer</span> <span class="p">(</span><span class="mi">30</span> <span class="n">days</span><span class="p">),</span> <span class="n">Autumn</span> <span class="p">(</span><span class="mi">30</span> <span class="n">days</span><span class="p">),</span> <span class="n">Winter</span> <span class="p">(</span><span class="mi">30</span> <span class="n">days</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p>Week: Enter day names</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Moonday</span><span class="p">,</span> <span class="n">Tideday</span><span class="p">,</span> <span class="n">Earthday</span><span class="p">,</span> <span class="n">Fireday</span><span class="p">,</span> <span class="n">Skyway</span><span class="p">,</span> <span class="n">Starday</span><span class="p">,</span> <span class="n">Sunday</span>
+</pre></div>
+</div>
+</li>
+<li><p>Click <strong>Save</strong></p></li>
+</ul>
+</li>
+<li><p><strong>Set as Active</strong></p>
+<ul class="simple">
+<li><p>Select “Eldorian Calendar”</p></li>
+<li><p>Click <strong>Set Active</strong></p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Result:</strong> Date inputs now use your custom calendar (e.g., “1st of Spring, Year 1”).</p>
+</section>
+<section id="step-2-create-core-locations">
+<h4>Step 2: Create Core Locations<a class="headerlink" href="#step-2-create-core-locations" title="Link to this heading">¶</a></h4>
+<p>Build your world’s geography first.</p>
+<ol class="arabic">
+<li><p><strong>Create a Location Entity</strong></p>
+<ul>
+<li><p>Click <strong>Create → Entity</strong> (or press <code class="docutils literal notranslate"><span class="pre">Ctrl+E</span></code>)</p></li>
+<li><p>Name: “The Kingdom of Eldoria”</p></li>
+<li><p>Type: Select “location”</p></li>
+<li><p>Description:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">A</span> <span class="n">prosperous</span> <span class="n">kingdom</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">western</span> <span class="n">valleys</span><span class="p">,</span> 
+<span class="n">known</span> <span class="k">for</span> <span class="n">its</span> <span class="n">skilled</span> <span class="n">craftsmen</span> <span class="ow">and</span> <span class="n">fertile</span> <span class="n">lands</span><span class="o">.</span>
+</pre></div>
+</div>
+</li>
+<li><p>Tags: Add “kingdom”, “major_location”</p></li>
+<li><p>Click <strong>Save</strong> (or <code class="docutils literal notranslate"><span class="pre">Ctrl+S</span></code>)</p></li>
+</ul>
+</li>
+<li><p><strong>Create Sub-Locations</strong></p>
+<ul class="simple">
+<li><p>Repeat for:</p>
+<ul>
+<li><p>“Capital City: Silverkeep” (type: location, tags: city, capital)</p></li>
+<li><p>“The Darkwood Forest” (type: location, tags: wilderness, danger)</p></li>
+<li><p>“Temple of the Dawn” (type: location, tags: temple, sacred)</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>Create Relations Between Locations</strong></p>
+<ul class="simple">
+<li><p>Select “Silverkeep” in the editor</p></li>
+<li><p>In the <strong>Relations</strong> section, click <strong>Add Relation</strong></p></li>
+<li><p>Target: “The Kingdom of Eldoria”</p></li>
+<li><p>Type: “located_in”</p></li>
+<li><p>Click <strong>Add</strong></p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Result:</strong> Your world now has a geography foundation.</p>
+</section>
+<section id="step-3-create-characters">
+<h4>Step 3: Create Characters<a class="headerlink" href="#step-3-create-characters" title="Link to this heading">¶</a></h4>
+<p>Populate your world with people.</p>
+<ol class="arabic">
+<li><p><strong>Create Main Character</strong></p>
+<ul>
+<li><p>Click <strong>Create → Entity</strong> (or <code class="docutils literal notranslate"><span class="pre">Ctrl+E</span></code>)</p></li>
+<li><p>Name: “Queen Lyanna Silverbrook”</p></li>
+<li><p>Type: “character”</p></li>
+<li><p>Description:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">The</span> <span class="n">wise</span> <span class="ow">and</span> <span class="n">just</span> <span class="n">ruler</span> <span class="n">of</span> <span class="n">Eldoria</span><span class="o">.</span> <span class="n">In</span> <span class="n">her</span> <span class="mi">20</span><span class="n">th</span> <span class="n">year</span> <span class="n">of</span> <span class="n">reign</span><span class="p">,</span>
+<span class="n">she</span> <span class="ow">is</span> <span class="n">known</span> <span class="k">for</span> <span class="n">her</span> <span class="n">diplomatic</span> <span class="n">skills</span> <span class="ow">and</span> <span class="n">devotion</span> <span class="n">to</span> <span class="n">her</span> <span class="n">people</span><span class="o">.</span>
+</pre></div>
+</div>
+</li>
+<li><p>Attributes (custom fields):</p>
+<ul class="simple">
+<li><p>Age: 45</p></li>
+<li><p>Role: Monarch</p></li>
+<li><p>Alignment: Lawful Good</p></li>
+</ul>
+</li>
+<li><p>Tags: “royalty”, “npc”, “major_character”</p></li>
+<li><p>Click <strong>Save</strong></p></li>
+</ul>
+</li>
+<li><p><strong>Add Character Portrait</strong></p>
+<ul class="simple">
+<li><p>In the editor, click <strong>Gallery</strong> tab</p></li>
+<li><p>Click <strong>Add Image</strong></p></li>
+<li><p>Select portrait image from your files</p></li>
+<li><p>Optionally add caption: “Queen Lyanna’s official portrait”</p></li>
+</ul>
+</li>
+<li><p><strong>Link Character to Location</strong></p>
+<ul class="simple">
+<li><p>In <strong>Relations</strong> section, click <strong>Add Relation</strong></p></li>
+<li><p>Target: “The Kingdom of Eldoria”</p></li>
+<li><p>Type: “rules”</p></li>
+<li><p>Click <strong>Add</strong></p></li>
+</ul>
+</li>
+<li><p><strong>Create Supporting Characters</strong></p>
+<ul class="simple">
+<li><p>Repeat for:</p>
+<ul>
+<li><p>“Sir Marcus Brightblade” (Knight Commander)</p></li>
+<li><p>“Eldrin the Wise” (Court Mage)</p></li>
+<li><p>“Thalia Shadowstep” (Master of Spies)</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<p><strong>Result:</strong> Your world has key characters with relationships.</p>
+</section>
+<section id="step-4-create-founding-event">
+<h4>Step 4: Create Founding Event<a class="headerlink" href="#step-4-create-founding-event" title="Link to this heading">¶</a></h4>
+<p>Establish your world’s history.</p>
+<ol class="arabic">
+<li><p><strong>Create Historical Event</strong></p>
+<ul>
+<li><p>Click <strong>Create → Event</strong> (or <code class="docutils literal notranslate"><span class="pre">Ctrl+Shift+E</span></code>)</p></li>
+<li><p>Name: “The Founding of Eldoria”</p></li>
+<li><p>Date: “1st of Spring, Year 1” (or use float: <code class="docutils literal notranslate"><span class="pre">1.0</span></code>)</p></li>
+<li><p>Type: “historical”</p></li>
+<li><p>Description:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">King</span> <span class="n">Aldric</span> <span class="n">Silverbrook</span> <span class="n">united</span> <span class="n">the</span> <span class="n">warring</span> <span class="n">clans</span> <span class="n">of</span> <span class="n">the</span> <span class="n">western</span>
+<span class="n">valleys</span> <span class="ow">and</span> <span class="n">established</span> <span class="n">the</span> <span class="n">Kingdom</span> <span class="n">of</span> <span class="n">Eldoria</span><span class="p">,</span> <span class="n">bringing</span> <span class="n">an</span> <span class="n">era</span>
+<span class="n">of</span> <span class="n">peace</span> <span class="ow">and</span> <span class="n">prosperity</span><span class="o">.</span>
+</pre></div>
+</div>
+</li>
+<li><p>Tags: “founding”, “historical”, “kingdom”</p></li>
+<li><p>Click <strong>Save</strong></p></li>
+</ul>
+</li>
+<li><p><strong>Link Event to Entities</strong></p>
+<ul class="simple">
+<li><p>In <strong>Relations</strong> section:</p>
+<ul>
+<li><p>Add relation to “The Kingdom of Eldoria” (type: “founded”)</p></li>
+<li><p>Add relation to dynasty entity if created (type: “established”)</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>Create Recent Event</strong></p>
+<ul class="simple">
+<li><p>Name: “The Harvest Festival”</p></li>
+<li><p>Date: “15th of Autumn, Year 245” (current time in your story)</p></li>
+<li><p>Type: “celebration”</p></li>
+<li><p>Description: Annual harvest celebration at Silverkeep</p></li>
+<li><p>Link to: Queen Lyanna (type: “attended”), Silverkeep (type: “held_at”)</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Result:</strong> Your world has temporal context - past and present.</p>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="timeline-first-worldbuilding">
+<h2>Timeline-First Worldbuilding<a class="headerlink" href="#timeline-first-worldbuilding" title="Link to this heading">¶</a></h2>
+<section id="workflow-building-a-historical-timeline">
+<h3>Workflow: Building a Historical Timeline<a class="headerlink" href="#workflow-building-a-historical-timeline" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Create a rich history spanning centuries.</p>
+<section id="quick-timeline-creation">
+<h4>Quick Timeline Creation<a class="headerlink" href="#quick-timeline-creation" title="Link to this heading">¶</a></h4>
+<ol class="arabic">
+<li><p><strong>Start with Major Eras</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Year</span> <span class="mi">1</span>     <span class="o">-</span> <span class="s2">&quot;The Founding of Eldoria&quot;</span> <span class="p">(</span><span class="n">historical</span><span class="p">)</span>
+<span class="n">Year</span> <span class="mi">50</span>    <span class="o">-</span> <span class="s2">&quot;The Mage Wars Begin&quot;</span> <span class="p">(</span><span class="n">conflict</span><span class="p">)</span>
+<span class="n">Year</span> <span class="mi">75</span>    <span class="o">-</span> <span class="s2">&quot;Peace Treaty of Dawn&quot;</span> <span class="p">(</span><span class="n">political</span><span class="p">)</span>
+<span class="n">Year</span> <span class="mi">100</span>   <span class="o">-</span> <span class="s2">&quot;The Great Drought&quot;</span> <span class="p">(</span><span class="n">disaster</span><span class="p">)</span>
+<span class="n">Year</span> <span class="mi">150</span>   <span class="o">-</span> <span class="s2">&quot;Discovery of Iron Deposits&quot;</span> <span class="p">(</span><span class="n">discovery</span><span class="p">)</span>
+<span class="n">Year</span> <span class="mi">200</span>   <span class="o">-</span> <span class="s2">&quot;Current Age&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Use Batch Event Creation</strong></p>
+<ul class="simple">
+<li><p>Create events in chronological order</p></li>
+<li><p>Use relative dates: “2 years later”, “50 days after”</p></li>
+<li><p>Group related events with shared tags</p></li>
+</ul>
+</li>
+<li><p><strong>Add Duration for Long Events</strong></p>
+<ul class="simple">
+<li><p>The Mage Wars: Start date + 25 year duration</p></li>
+<li><p>The Great Drought: 10 year duration</p></li>
+<li><p>Shows as a bar on timeline</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="timeline-navigation">
+<h4>Timeline Navigation<a class="headerlink" href="#timeline-navigation" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p><strong>Jump to Time Period</strong></p>
+<ul class="simple">
+<li><p>Use the timeline ruler at bottom</p></li>
+<li><p>Click on a year to jump there</p></li>
+<li><p>Drag the playhead to scrub through time</p></li>
+</ul>
+</li>
+<li><p><strong>Filter Timeline View</strong></p>
+<ul class="simple">
+<li><p>Click <strong>Filter</strong> button in timeline panel</p></li>
+<li><p>Filter by:</p>
+<ul>
+<li><p>Event type (historical, combat, political)</p></li>
+<li><p>Tags (war, peace, discovery)</p></li>
+<li><p>Date range (Year 1-100)</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>Group Events</strong></p>
+<ul class="simple">
+<li><p>Right-click timeline → <strong>Group By</strong></p></li>
+<li><p>Options: Type, Tags, No Grouping</p></li>
+<li><p>Organizes events into collapsible sections</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Result:</strong> A navigable historical timeline for your world.</p>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="character-faction-workflows">
+<h2>Character &amp; Faction Workflows<a class="headerlink" href="#character-faction-workflows" title="Link to this heading">¶</a></h2>
+<section id="workflow-character-biography-with-timeline">
+<h3>Workflow: Character Biography with Timeline<a class="headerlink" href="#workflow-character-biography-with-timeline" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Track a character’s life events and relationships over time.</p>
+<section id="create-character-with-life-events">
+<h4>Create Character with Life Events<a class="headerlink" href="#create-character-with-life-events" title="Link to this heading">¶</a></h4>
+<ol class="arabic">
+<li><p><strong>Create Character Entity</strong></p>
+<ul class="simple">
+<li><p>Name: “Aric Stormborn”</p></li>
+<li><p>Type: “character”</p></li>
+<li><p>Description: Brief background</p></li>
+<li><p>Tags: “player_character”, “warrior”</p></li>
+</ul>
+</li>
+<li><p><strong>Create Birth Event</strong></p>
+<ul class="simple">
+<li><p>Name: “Birth of Aric Stormborn”</p></li>
+<li><p>Date: “10th of Winter, Year 215”</p></li>
+<li><p>Type: “life_event”</p></li>
+<li><p>Description: “Born to peasant farmers during a fierce storm”</p></li>
+<li><p>Link to character (type: “birth_of”)</p></li>
+</ul>
+</li>
+<li><p><strong>Create Life Milestones</strong></p>
+<ul class="simple">
+<li><p>“Aric’s Training Begins” (Year 230, age 15)</p></li>
+<li><p>“Aric Earns Knighthood” (Year 235, age 20)</p></li>
+<li><p>“The Battle of Crimson Pass” (Year 240, age 25)</p></li>
+</ul>
+</li>
+<li><p><strong>Use Wiki Links in Descriptions</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Born</span> <span class="ow">in</span> <span class="p">[[</span><span class="n">The</span> <span class="n">Village</span> <span class="n">of</span> <span class="n">Millbrook</span><span class="p">]]</span> <span class="n">to</span> <span class="p">[[</span><span class="n">Harold</span> <span class="n">Stormborn</span><span class="p">]]</span> 
+<span class="ow">and</span> <span class="p">[[</span><span class="n">Mira</span> <span class="n">Stormborn</span><span class="p">]]</span><span class="o">.</span> <span class="n">Later</span> <span class="n">trained</span> <span class="n">under</span> <span class="p">[[</span><span class="n">Sir</span> <span class="n">Marcus</span> <span class="n">Brightblade</span><span class="p">]]</span>
+<span class="n">at</span> <span class="p">[[</span><span class="n">The</span> <span class="n">Knight</span><span class="s1">&#39;s Academy]].</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>Typing <code class="docutils literal notranslate"><span class="pre">[[</span></code> triggers autocomplete</p></li>
+<li><p>Links create automatic “mentions” relations</p></li>
+</ul>
+</li>
+<li><p><strong>Track Relationships</strong></p>
+<ul class="simple">
+<li><p>Add relations:</p>
+<ul>
+<li><p>To “Sir Marcus Brightblade” (type: “trained_by”)</p></li>
+<li><p>To “Queen Lyanna” (type: “serves”)</p></li>
+<li><p>To “The Village of Millbrook” (type: “born_in”)</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<p><strong>Result:</strong> Character has a documented life story on the timeline.</p>
+</section>
+</section>
+<section id="workflow-faction-with-members-and-goals">
+<h3>Workflow: Faction with Members and Goals<a class="headerlink" href="#workflow-faction-with-members-and-goals" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Create an organization with hierarchy and agenda.</p>
+<ol class="arabic simple">
+<li><p><strong>Create Faction Entity</strong></p>
+<ul class="simple">
+<li><p>Name: “The Order of the Silver Dawn”</p></li>
+<li><p>Type: “faction”</p></li>
+<li><p>Description: “Elite knights dedicated to protecting Eldoria”</p></li>
+<li><p>Attributes:</p>
+<ul>
+<li><p>Motto: “Light through Darkness”</p></li>
+<li><p>Founded: Year 50</p></li>
+<li><p>Members: ~200</p></li>
+</ul>
+</li>
+<li><p>Tags: “military”, “knights”, “active”</p></li>
+</ul>
+</li>
+<li><p><strong>Create Member Entities</strong></p>
+<ul class="simple">
+<li><p>Link existing characters to faction</p></li>
+<li><p>Relation type: “member_of”</p></li>
+<li><p>Add attribute to relation: “rank” = “Knight Commander”</p></li>
+</ul>
+</li>
+<li><p><strong>Create Faction Events</strong></p>
+<ul class="simple">
+<li><p>“Founding of the Order” (Year 50)</p></li>
+<li><p>“The Great Crusade” (Year 100-105)</p></li>
+<li><p>“Current Recruitment Drive” (Year 245)</p></li>
+</ul>
+</li>
+<li><p><strong>Document Faction Goals</strong></p>
+<ul class="simple">
+<li><p>Use <strong>Longform Editor</strong>:</p>
+<ul>
+<li><p>Create document entry titled “The Order of the Silver Dawn”</p></li>
+<li><p>Add sections:</p>
+<ul>
+<li><p>History</p></li>
+<li><p>Structure &amp; Hierarchy</p></li>
+<li><p>Current Objectives</p></li>
+<li><p>Key Members</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<p><strong>Result:</strong> Faction with documented history, members, and narrative.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="location-map-workflows">
+<h2>Location &amp; Map Workflows<a class="headerlink" href="#location-map-workflows" title="Link to this heading">¶</a></h2>
+<section id="workflow-create-locations-with-maps">
+<h3>Workflow: Create Locations with Maps<a class="headerlink" href="#workflow-create-locations-with-maps" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Build visual geography for your world.</p>
+<section id="upload-world-map">
+<h4>Upload World Map<a class="headerlink" href="#upload-world-map" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p><strong>Create Map</strong></p>
+<ul class="simple">
+<li><p>Click <strong>Maps</strong> tab (or <strong>View → Maps</strong>)</p></li>
+<li><p>Click <strong>New Map</strong></p></li>
+<li><p>Name: “Eldoria - Political Map”</p></li>
+<li><p>Click <strong>Choose Image</strong> → select your map file</p></li>
+<li><p>Click <strong>Create</strong></p></li>
+</ul>
+</li>
+<li><p><strong>Calibrate Map Coordinates</strong></p>
+<ul class="simple">
+<li><p>Map uses normalized coordinates (0.0 to 1.0)</p></li>
+<li><p>Top-left: (0, 0)</p></li>
+<li><p>Bottom-right: (1, 1)</p></li>
+<li><p>Click anywhere to test coordinates</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="add-location-markers">
+<h4>Add Location Markers<a class="headerlink" href="#add-location-markers" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p><strong>Place Capital City</strong></p>
+<ul class="simple">
+<li><p>With map open, click <strong>Add Marker</strong></p></li>
+<li><p>Link to entity: “Silverkeep”</p></li>
+<li><p>Click on map where city is located</p></li>
+<li><p>Marker appears with entity name</p></li>
+</ul>
+</li>
+<li><p><strong>Place Other Locations</strong></p>
+<ul class="simple">
+<li><p>Repeat for:</p>
+<ul>
+<li><p>“Darkwood Forest”</p></li>
+<li><p>“Temple of the Dawn”</p></li>
+<li><p>“The Iron Mountains”</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>Customize Marker Icons</strong></p>
+<ul class="simple">
+<li><p>Right-click marker → <strong>Properties</strong></p></li>
+<li><p>Choose icon: city, forest, mountain, temple</p></li>
+<li><p>Set color: Can use faction colors</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="temporal-maps-movement-over-time">
+<h4>Temporal Maps (Movement Over Time)<a class="headerlink" href="#temporal-maps-movement-over-time" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p><strong>Create Journey Event</strong></p>
+<ul class="simple">
+<li><p>Name: “Aric’s Quest for the Crystal”</p></li>
+<li><p>Date: “1st of Spring, Year 245”</p></li>
+<li><p>Duration: 60 days</p></li>
+</ul>
+</li>
+<li><p><strong>Add Trajectory to Map</strong></p>
+<ul class="simple">
+<li><p>In map view, enable <strong>Temporal Mode</strong></p></li>
+<li><p>Select entity: “Aric Stormborn”</p></li>
+<li><p>Click <strong>Add Keyframe</strong>:</p>
+<ul>
+<li><p>Time: Day 0 (Spring 1st) → Position: Silverkeep</p></li>
+<li><p>Time: Day 30 (Spring 30th) → Position: Darkwood Forest</p></li>
+<li><p>Time: Day 60 (Autumn 1st) → Position: Temple of the Dawn</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>Scrub Timeline on Map</strong></p>
+<ul class="simple">
+<li><p>Use time slider at bottom of map</p></li>
+<li><p>Watch marker move along trajectory</p></li>
+<li><p>Shows Aric’s position at any point in journey</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Result:</strong> Visual geography with temporal movement tracking.</p>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="event-timeline-workflows">
+<h2>Event &amp; Timeline Workflows<a class="headerlink" href="#event-timeline-workflows" title="Link to this heading">¶</a></h2>
+<section id="workflow-plan-and-execute-a-campaign">
+<h3>Workflow: Plan and Execute a Campaign<a class="headerlink" href="#workflow-plan-and-execute-a-campaign" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Create a session-by-session campaign structure.</p>
+<section id="campaign-planning">
+<h4>Campaign Planning<a class="headerlink" href="#campaign-planning" title="Link to this heading">¶</a></h4>
+<ol class="arabic">
+<li><p><strong>Create Campaign Arc Event</strong></p>
+<ul class="simple">
+<li><p>Name: “Act I: The Rising Shadow”</p></li>
+<li><p>Date: “1st of Spring, Year 245”</p></li>
+<li><p>Duration: 90 days (3 months of sessions)</p></li>
+<li><p>Type: “campaign_arc”</p></li>
+<li><p>Description: Overview of act</p></li>
+</ul>
+</li>
+<li><p><strong>Create Session Events</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Session</span> <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;The Call to Adventure&quot;</span> <span class="p">(</span><span class="n">Spring</span> <span class="mi">1</span><span class="n">st</span><span class="p">)</span>
+<span class="n">Session</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;Into the Darkwood&quot;</span> <span class="p">(</span><span class="n">Spring</span> <span class="mi">8</span><span class="n">th</span><span class="p">)</span>
+<span class="n">Session</span> <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;The Temple&#39;s Secret&quot;</span> <span class="p">(</span><span class="n">Spring</span> <span class="mi">15</span><span class="n">th</span><span class="p">)</span>
+<span class="n">Session</span> <span class="mi">4</span><span class="p">:</span> <span class="s2">&quot;Betrayal at Midnight&quot;</span> <span class="p">(</span><span class="n">Spring</span> <span class="mi">22</span><span class="n">nd</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Link Sessions to Arc</strong></p>
+<ul class="simple">
+<li><p>Each session event:</p>
+<ul>
+<li><p>Add relation to “Act I” (type: “part_of”)</p></li>
+<li><p>Link to participating characters (type: “participated”)</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>Track Session Notes</strong></p>
+<ul>
+<li><p>In each session event description, use template:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">## What Happened</span>
+<span class="o">-</span> <span class="n">Party</span> <span class="n">arrived</span> <span class="n">at</span> <span class="p">[[</span><span class="n">Darkwood</span> <span class="n">Forest</span><span class="p">]]</span>
+<span class="o">-</span> <span class="n">Encountered</span> <span class="p">[[</span><span class="n">Ancient</span> <span class="n">Guardian</span><span class="p">]]</span>
+<span class="o">-</span> <span class="n">Found</span> <span class="n">clue</span> <span class="n">about</span> <span class="p">[[</span><span class="n">The</span> <span class="n">Shadow</span> <span class="n">Cult</span><span class="p">]]</span>
+
+<span class="c1">## NPCs Met</span>
+<span class="o">-</span> <span class="p">[[</span><span class="n">Eldrin</span> <span class="n">the</span> <span class="n">Hermit</span><span class="p">]]</span> <span class="o">-</span> <span class="n">gave</span> <span class="n">party</span> <span class="n">quest</span>
+
+<span class="c1">## Loot</span>
+<span class="o">-</span> <span class="n">Ring</span> <span class="n">of</span> <span class="n">Protection</span> <span class="o">+</span><span class="mi">1</span>
+<span class="o">-</span> <span class="mi">500</span> <span class="n">gold</span> <span class="n">pieces</span>
+
+<span class="c1">## Next Session Hook</span>
+<span class="o">-</span> <span class="n">Must</span> <span class="n">reach</span> <span class="p">[[</span><span class="n">Temple</span> <span class="n">of</span> <span class="n">the</span> <span class="n">Dawn</span><span class="p">]]</span> <span class="n">before</span> <span class="n">full</span> <span class="n">moon</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+<li><p><strong>Use Fast Inject for NPCs</strong></p>
+<ul class="simple">
+<li><p>Create template: “Random NPC”</p></li>
+<li><p>Variables: Name, Role, Location</p></li>
+<li><p>Quick-generate NPCs during sessions</p></li>
+<li><p>Click <strong>Tools → Fast Inject</strong> → select template</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Result:</strong> Organized campaign with session history.</p>
+</section>
+</section>
+<section id="workflow-battle-event-with-participants">
+<h3>Workflow: Battle Event with Participants<a class="headerlink" href="#workflow-battle-event-with-participants" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Document a major battle with all involved parties.</p>
+<ol class="arabic">
+<li><p><strong>Create Battle Event</strong></p>
+<ul class="simple">
+<li><p>Name: “The Siege of Silverkeep”</p></li>
+<li><p>Date: “15th of Summer, Year 245”</p></li>
+<li><p>Duration: 3 days</p></li>
+<li><p>Type: “combat”</p></li>
+<li><p>Tags: “siege”, “major_battle”, “act_one”</p></li>
+</ul>
+</li>
+<li><p><strong>Link All Participants</strong></p>
+<ul class="simple">
+<li><p>Add relations:</p>
+<ul>
+<li><p>Queen Lyanna (type: “defended”)</p></li>
+<li><p>Aric Stormborn (type: “fought_in”)</p></li>
+<li><p>The Shadow Cult (type: “attacked”)</p></li>
+<li><p>Order of the Silver Dawn (type: “defended”)</p></li>
+<li><p>20+ individual character entities</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>Document Battle Stages</strong></p>
+<ul>
+<li><p>Use <strong>Longform Editor</strong> or event description:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">## Day 1: The Arrival</span>
+<span class="n">The</span> <span class="p">[[</span><span class="n">Shadow</span> <span class="n">Cult</span><span class="p">]]</span> <span class="n">army</span> <span class="n">arrived</span> <span class="n">at</span> <span class="n">dawn</span><span class="o">...</span>
+
+<span class="c1">## Day 2: The Breach</span>
+<span class="n">The</span> <span class="n">walls</span> <span class="n">were</span> <span class="n">breached</span> <span class="n">at</span> <span class="n">the</span> <span class="n">eastern</span> <span class="n">gate</span><span class="o">...</span>
+
+<span class="c1">## Day 3: The Final Stand</span>
+<span class="p">[[</span><span class="n">Aric</span> <span class="n">Stormborn</span><span class="p">]]</span> <span class="n">led</span> <span class="n">the</span> <span class="n">counter</span><span class="o">-</span><span class="n">charge</span><span class="o">...</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+<li><p><strong>Create Aftermath Events</strong></p>
+<ul class="simple">
+<li><p>“Casualties of the Siege” (linked to individual deaths)</p></li>
+<li><p>“Victory Celebration” (linked to survivors)</p></li>
+<li><p>“Reconstruction Begins” (linked to damaged locations)</p></li>
+</ul>
+</li>
+<li><p><strong>Visualize in Graph View</strong></p>
+<ul class="simple">
+<li><p>Click <strong>Graph</strong> tab</p></li>
+<li><p>Filter to show battle event + all linked entities</p></li>
+<li><p>See web of relationships</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Result:</strong> Comprehensive battle documentation with all connections.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="wiki-linking-documentation">
+<h2>Wiki Linking &amp; Documentation<a class="headerlink" href="#wiki-linking-documentation" title="Link to this heading">¶</a></h2>
+<section id="workflow-build-an-interconnected-world">
+<h3>Workflow: Build an Interconnected World<a class="headerlink" href="#workflow-build-an-interconnected-world" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Create a wiki-style knowledge base with cross-references.</p>
+<section id="use-wiki-links-everywhere">
+<h4>Use Wiki Links Everywhere<a class="headerlink" href="#use-wiki-links-everywhere" title="Link to this heading">¶</a></h4>
+<ol class="arabic">
+<li><p><strong>Enable Auto-Completion</strong></p>
+<ul class="simple">
+<li><p>Already enabled by default</p></li>
+<li><p>Type <code class="docutils literal notranslate"><span class="pre">[[</span></code> in any description field</p></li>
+<li><p>Autocomplete shows matching entities/events</p></li>
+</ul>
+</li>
+<li><p><strong>Write Natural Descriptions</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[[</span><span class="n">Queen</span> <span class="n">Lyanna</span> <span class="n">Silverbrook</span><span class="p">]]</span> <span class="n">rules</span> <span class="kn">from</span><span class="w"> </span><span class="p">[[</span><span class="n">Silverkeep</span><span class="p">]],</span> <span class="n">the</span> <span class="n">capital</span>
+<span class="n">of</span> <span class="p">[[</span><span class="n">The</span> <span class="n">Kingdom</span> <span class="n">of</span> <span class="n">Eldoria</span><span class="p">]]</span><span class="o">.</span> <span class="n">Her</span> <span class="n">reign</span> <span class="n">began</span> <span class="n">after</span> <span class="n">the</span> <span class="n">death</span> <span class="n">of</span>
+<span class="n">her</span> <span class="n">father</span><span class="p">,</span> <span class="p">[[</span><span class="n">King</span> <span class="n">Aldric</span> <span class="n">III</span><span class="p">]],</span> <span class="n">during</span> <span class="p">[[</span><span class="n">The</span> <span class="n">Great</span> <span class="n">Plague</span><span class="p">]]</span><span class="o">.</span>
+
+<span class="n">She</span> <span class="ow">is</span> <span class="n">advised</span> <span class="n">by</span> <span class="p">[[</span><span class="n">Eldrin</span> <span class="n">the</span> <span class="n">Wise</span><span class="p">]]</span> <span class="ow">and</span> <span class="n">protected</span> <span class="n">by</span> <span class="n">the</span>
+<span class="p">[[</span><span class="n">Order</span> <span class="n">of</span> <span class="n">the</span> <span class="n">Silver</span> <span class="n">Dawn</span><span class="p">]],</span> <span class="n">led</span> <span class="n">by</span> <span class="p">[[</span><span class="n">Sir</span> <span class="n">Marcus</span> <span class="n">Brightblade</span><span class="p">]]</span><span class="o">.</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Navigate via Links</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Ctrl+Click</span></code> any wiki link to jump to that entity</p></li>
+<li><p>Creates “mentions” relation automatically</p></li>
+<li><p>Use <strong>Back</strong> button to return</p></li>
+</ul>
+</li>
+<li><p><strong>Find Broken Links</strong></p>
+<ul class="simple">
+<li><p>Click <strong>Tools → Validate Wiki Links</strong></p></li>
+<li><p>Shows links pointing to non-existent entities</p></li>
+<li><p>Options: Create entity, update link, remove link</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="create-a-longform-codex">
+<h4>Create a Longform Codex<a class="headerlink" href="#create-a-longform-codex" title="Link to this heading">¶</a></h4>
+<ol class="arabic">
+<li><p><strong>Open Longform Editor</strong></p>
+<ul class="simple">
+<li><p>Click <strong>Longform</strong> tab (or <strong>View → Longform Document</strong>)</p></li>
+</ul>
+</li>
+<li><p><strong>Build Hierarchical Structure</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>World Codex
+├── Geography
+│   ├── [[The Kingdom of Eldoria]]
+│   ├── [[Silverkeep]]
+│   └── [[Darkwood Forest]]
+├── History
+│   ├── [[The Founding of Eldoria]]
+│   ├── [[The Mage Wars]]
+│   └── [[Peace Treaty of Dawn]]
+├── Factions
+│   ├── [[Order of the Silver Dawn]]
+│   └── [[The Shadow Cult]]
+└── Characters
+    ├── Major Characters
+    │   ├── [[Queen Lyanna Silverbrook]]
+    │   └── [[Aric Stormborn]]
+    └── Supporting Cast
+</pre></div>
+</div>
+</li>
+<li><p><strong>Add Document Entries</strong></p>
+<ul class="simple">
+<li><p>Click <strong>Add Entry</strong> → select entity/event</p></li>
+<li><p>Drag to reorder or nest under parents</p></li>
+<li><p>Each entry shows entity’s full description</p></li>
+</ul>
+</li>
+<li><p><strong>Add Narrative Sections</strong></p>
+<ul>
+<li><p>Click <strong>Add Section</strong> (creates text-only node)</p></li>
+<li><p>Write connecting narrative:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">## The Age of Heroes</span>
+
+<span class="n">Following</span> <span class="n">the</span> <span class="n">Mage</span> <span class="n">Wars</span><span class="p">,</span> <span class="n">a</span> <span class="n">new</span> <span class="n">generation</span> <span class="n">of</span> <span class="n">heroes</span> <span class="n">arose</span>
+<span class="n">to</span> <span class="n">shape</span> <span class="n">the</span> <span class="n">future</span> <span class="n">of</span> <span class="n">Eldoria</span><span class="o">...</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+<li><p><strong>Export to Markdown</strong></p>
+<ul class="simple">
+<li><p>Click <strong>File → Export Longform</strong></p></li>
+<li><p>Generates single markdown file with full hierarchy</p></li>
+<li><p>Includes all linked entity descriptions</p></li>
+<li><p>Perfect for sharing with players</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Result:</strong> Comprehensive codex with all world knowledge.</p>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="semantic-search-ai-assistance">
+<h2>Semantic Search &amp; AI Assistance<a class="headerlink" href="#semantic-search-ai-assistance" title="Link to this heading">¶</a></h2>
+<section id="workflow-find-and-generate-content">
+<h3>Workflow: Find and Generate Content<a class="headerlink" href="#workflow-find-and-generate-content" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Use AI to search and generate world content.</p>
+<section id="set-up-semantic-search">
+<h4>Set Up Semantic Search<a class="headerlink" href="#set-up-semantic-search" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p><strong>Configure LLM Provider</strong></p>
+<ul class="simple">
+<li><p>Click <strong>Tools → AI Settings</strong></p></li>
+<li><p>Choose provider:</p>
+<ul>
+<li><p><strong>LM Studio</strong> (local, recommended): Set URL to <code class="docutils literal notranslate"><span class="pre">http://localhost:8080</span></code></p></li>
+<li><p><strong>OpenAI</strong>: Enter API key</p></li>
+<li><p><strong>Anthropic</strong>: Enter API key</p></li>
+</ul>
+</li>
+<li><p>Select embedding model (for search)</p></li>
+<li><p>Select generation model (for content creation)</p></li>
+<li><p>Click <strong>Save</strong></p></li>
+</ul>
+</li>
+<li><p><strong>Build Search Index</strong></p>
+<ul class="simple">
+<li><p>Click <strong>Tools → Rebuild Search Index</strong></p></li>
+<li><p>Or use CLI: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">src.cli.index</span> <span class="pre">rebuild</span> <span class="pre">-d</span> <span class="pre">world.kraken</span></code></p></li>
+<li><p>Wait for indexing to complete (shows progress)</p></li>
+<li><p>Index stored in user data directory</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="search-your-world">
+<h4>Search Your World<a class="headerlink" href="#search-your-world" title="Link to this heading">¶</a></h4>
+<ol class="arabic">
+<li><p><strong>Open AI Search Panel</strong></p>
+<ul class="simple">
+<li><p>Click <strong>View → AI Search Panel</strong> (or press <code class="docutils literal notranslate"><span class="pre">Ctrl+F</span></code>)</p></li>
+<li><p>Panel appears in sidebar</p></li>
+</ul>
+</li>
+<li><p><strong>Natural Language Search</strong></p>
+<ul class="simple">
+<li><p>Type: “characters who are knights”</p></li>
+<li><p>Results show: Sir Marcus, Aric Stormborn, etc.</p></li>
+<li><p>Click result to open in editor</p></li>
+</ul>
+</li>
+<li><p><strong>Advanced Queries</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;locations in the western region&quot;</span>
+<span class="s2">&quot;events involving the Shadow Cult&quot;</span>
+<span class="s2">&quot;all battles in Year 245&quot;</span>
+<span class="s2">&quot;characters trained by Marcus&quot;</span>
+<span class="s2">&quot;magical artifacts&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Filter Search Results</strong></p>
+<ul class="simple">
+<li><p>Use dropdowns:</p>
+<ul>
+<li><p>Type: Entity, Event, or Both</p></li>
+<li><p>Limit: 5, 10, 20 results</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<p><strong>Result:</strong> Fast retrieval of world information.</p>
+</section>
+<section id="generate-content-with-ai">
+<h4>Generate Content with AI<a class="headerlink" href="#generate-content-with-ai" title="Link to this heading">¶</a></h4>
+<ol class="arabic">
+<li><p><strong>Generate Entity Description</strong></p>
+<ul class="simple">
+<li><p>Select an entity with minimal description</p></li>
+<li><p>Click <strong>AI</strong> button in editor</p></li>
+<li><p>Choose: “Expand Description”</p></li>
+<li><p>Review generated text</p></li>
+<li><p>Click <strong>Accept</strong> to keep, <strong>Reject</strong> to discard</p></li>
+</ul>
+</li>
+<li><p><strong>Generate Character Background</strong></p>
+<ul class="simple">
+<li><p>Select character entity</p></li>
+<li><p>Click <strong>AI</strong> → <strong>Generate Background</strong></p></li>
+<li><p>Prompt: “Create a detailed background for [Character Name], including childhood, training, and motivations”</p></li>
+<li><p>AI uses existing world context (RAG)</p></li>
+<li><p>Edit and refine generated content</p></li>
+</ul>
+</li>
+<li><p><strong>Generate Event Details</strong></p>
+<ul class="simple">
+<li><p>Select event with basic info</p></li>
+<li><p>Click <strong>AI</strong> → <strong>Generate Details</strong></p></li>
+<li><p>AI expands event description using related entities</p></li>
+<li><p>Maintains consistency with existing lore</p></li>
+</ul>
+</li>
+<li><p><strong>Custom Prompts</strong></p>
+<ul>
+<li><p>Click <strong>Tools → Custom Prompts</strong></p></li>
+<li><p>Create reusable prompts:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;Generate a detailed physical description for this character&quot;</span>
+<span class="s2">&quot;Create a legend about this location&quot;</span>
+<span class="s2">&quot;Write a dramatic account of this battle from a soldier&#39;s perspective&quot;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+</ol>
+<p><strong>Result:</strong> AI-assisted content creation with world awareness.</p>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="export-publishing">
+<h2>Export &amp; Publishing<a class="headerlink" href="#export-publishing" title="Link to this heading">¶</a></h2>
+<section id="workflow-share-your-world">
+<h3>Workflow: Share Your World<a class="headerlink" href="#workflow-share-your-world" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Export world data for various uses.</p>
+<section id="export-to-markdown">
+<h4>Export to Markdown<a class="headerlink" href="#export-to-markdown" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p><strong>Export Longform Document</strong></p>
+<ul class="simple">
+<li><p>Click <strong>File → Export Longform</strong></p></li>
+<li><p>Choose output file: <code class="docutils literal notranslate"><span class="pre">world_codex.md</span></code></p></li>
+<li><p>Options:</p>
+<ul>
+<li><p>Include descriptions: Yes</p></li>
+<li><p>Include attributes: Optional</p></li>
+<li><p>Include relations: Optional</p></li>
+</ul>
+</li>
+<li><p>Click <strong>Export</strong></p></li>
+</ul>
+</li>
+<li><p><strong>Export Individual Entities</strong></p>
+<ul class="simple">
+<li><p>Right-click entity → <strong>Export to Markdown</strong></p></li>
+<li><p>Creates single markdown file with all details</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Result:</strong> Markdown files for sharing or publishing.</p>
+</section>
+<section id="export-to-obsidian">
+<h4>Export to Obsidian<a class="headerlink" href="#export-to-obsidian" title="Link to this heading">¶</a></h4>
+<ol class="arabic">
+<li><p><strong>Export World to Obsidian Vault</strong></p>
+<ul class="simple">
+<li><p>Click <strong>File → Export to Obsidian</strong></p></li>
+<li><p>Or use CLI: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">src.cli.obsidian</span> <span class="pre">export</span> <span class="pre">-d</span> <span class="pre">world.kraken</span> <span class="pre">--vault-path</span> <span class="pre">./vault</span></code></p></li>
+</ul>
+</li>
+<li><p><strong>Vault Structure</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>vault/
+├── Entities/
+│   ├── Queen Lyanna Silverbrook.md
+│   ├── Aric Stormborn.md
+│   └── ...
+├── Events/
+│   ├── The Founding of Eldoria.md
+│   ├── The Siege of Silverkeep.md
+│   └── ...
+└── Maps/
+    └── images/
+</pre></div>
+</div>
+</li>
+<li><p><strong>Open in Obsidian</strong></p>
+<ul class="simple">
+<li><p>Open vault in Obsidian</p></li>
+<li><p>Wiki links work natively</p></li>
+<li><p>View graph view</p></li>
+<li><p>Edit and reimport if needed</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Result:</strong> Obsidian vault for portable note-taking.</p>
+</section>
+<section id="export-to-json">
+<h4>Export to JSON<a class="headerlink" href="#export-to-json" title="Link to this heading">¶</a></h4>
+<ol class="arabic">
+<li><p><strong>Export All Data</strong></p>
+<ul class="simple">
+<li><p>Click <strong>File → Export to JSON</strong></p></li>
+<li><p>Or use CLI: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">src.cli.importer</span> <span class="pre">export</span> <span class="pre">-d</span> <span class="pre">world.kraken</span> <span class="pre">--output</span> <span class="pre">export.json</span></code></p></li>
+</ul>
+</li>
+<li><p><strong>JSON Structure</strong></p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;entities&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;events&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;relations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Use Cases</strong></p>
+<ul class="simple">
+<li><p>Backup before major changes</p></li>
+<li><p>Share with other tools</p></li>
+<li><p>Custom processing with scripts</p></li>
+<li><p>Import into other ProjektKraken worlds</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Result:</strong> Portable data format for flexibility.</p>
+</section>
+<section id="web-api-access">
+<h4>Web API Access<a class="headerlink" href="#web-api-access" title="Link to this heading">¶</a></h4>
+<ol class="arabic">
+<li><p><strong>Start World</strong></p>
+<ul class="simple">
+<li><p>Open world in ProjektKraken</p></li>
+<li><p>Embedded webserver starts automatically on <code class="docutils literal notranslate"><span class="pre">http://localhost:8000</span></code></p></li>
+</ul>
+</li>
+<li><p><strong>Access Longform Document</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># In browser</span>
+http://localhost:8000/longform
+
+<span class="c1"># Or curl</span>
+curl<span class="w"> </span>http://localhost:8000/longform<span class="w"> </span>&gt;<span class="w"> </span>world.html
+</pre></div>
+</div>
+</li>
+<li><p><strong>Health Check</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>http://localhost:8000/health
+<span class="c1"># Returns: {&quot;status&quot;: &quot;ok&quot;}</span>
+</pre></div>
+</div>
+</li>
+</ol>
+<p><strong>Result:</strong> Live web access to world data.</p>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="backup-recovery">
+<h2>Backup &amp; Recovery<a class="headerlink" href="#backup-recovery" title="Link to this heading">¶</a></h2>
+<section id="workflow-protect-your-world">
+<h3>Workflow: Protect Your World<a class="headerlink" href="#workflow-protect-your-world" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Ensure your world data is never lost.</p>
+<section id="automatic-backups">
+<h4>Automatic Backups<a class="headerlink" href="#automatic-backups" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p><strong>Configure Auto-Save</strong></p>
+<ul class="simple">
+<li><p>Enabled by default</p></li>
+<li><p>Saves every 5 minutes</p></li>
+<li><p>No user action required</p></li>
+</ul>
+</li>
+<li><p><strong>Check Backup Settings</strong></p>
+<ul class="simple">
+<li><p>Click <strong>Tools → Backup Settings</strong></p></li>
+<li><p>Options:</p>
+<ul>
+<li><p>Auto-save interval: 5 minutes</p></li>
+<li><p>Daily backups: Enabled (keeps last 7)</p></li>
+<li><p>Weekly backups: Enabled (keeps last 4)</p></li>
+<li><p>Monthly backups: Enabled (keeps last 12)</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>View Backup Location</strong></p>
+<ul class="simple">
+<li><p>Backups stored in user data directory:</p>
+<ul>
+<li><p>Windows: <code class="docutils literal notranslate"><span class="pre">%APPDATA%\ProjektKraken\backups\</span></code></p></li>
+<li><p>macOS: <code class="docutils literal notranslate"><span class="pre">~/Library/Application</span> <span class="pre">Support/ProjektKraken/backups/</span></code></p></li>
+<li><p>Linux: <code class="docutils literal notranslate"><span class="pre">~/.local/share/ProjektKraken/backups/</span></code></p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<p><strong>Result:</strong> Automatic protection against data loss.</p>
+</section>
+<section id="manual-backup">
+<h4>Manual Backup<a class="headerlink" href="#manual-backup" title="Link to this heading">¶</a></h4>
+<ol class="arabic simple">
+<li><p><strong>Create Manual Backup</strong></p>
+<ul class="simple">
+<li><p>Click <strong>File → Create Backup</strong> (or <code class="docutils literal notranslate"><span class="pre">Ctrl+B</span></code>)</p></li>
+<li><p>Or use CLI: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">src.cli.backup</span> <span class="pre">create</span> <span class="pre">-d</span> <span class="pre">world.kraken</span></code></p></li>
+<li><p>Backup saved with timestamp</p></li>
+<li><p>Labeled as “Manual” backup</p></li>
+</ul>
+</li>
+<li><p><strong>Save Backup Externally</strong></p>
+<ul class="simple">
+<li><p>Copy world folder: <code class="docutils literal notranslate"><span class="pre">worlds/My</span> <span class="pre">Fantasy</span> <span class="pre">World/</span></code></p></li>
+<li><p>Includes:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">world.kraken</span></code> (database)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">world.json</span></code> (manifest)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">assets/</span></code> (all images)</p></li>
+</ul>
+</li>
+<li><p>Store on external drive, cloud storage, etc.</p></li>
+</ul>
+</li>
+</ol>
+<p><strong>Result:</strong> Additional backup for peace of mind.</p>
+</section>
+<section id="restore-from-backup">
+<h4>Restore from Backup<a class="headerlink" href="#restore-from-backup" title="Link to this heading">¶</a></h4>
+<ol class="arabic">
+<li><p><strong>List Available Backups</strong></p>
+<ul class="simple">
+<li><p>Click <strong>File → Restore from Backup</strong></p></li>
+<li><p>Shows all backups with timestamps</p></li>
+<li><p>Types: Auto-save, Daily, Weekly, Monthly, Manual</p></li>
+</ul>
+</li>
+<li><p><strong>Preview Backup</strong></p>
+<ul class="simple">
+<li><p>Select backup from list</p></li>
+<li><p>Shows:</p>
+<ul>
+<li><p>Date created</p></li>
+<li><p>Size</p></li>
+<li><p>Number of entities/events</p></li>
+</ul>
+</li>
+<li><p>Click <strong>Preview</strong> to see contents</p></li>
+</ul>
+</li>
+<li><p><strong>Restore Backup</strong></p>
+<ul class="simple">
+<li><p>Select backup</p></li>
+<li><p>Click <strong>Restore</strong></p></li>
+<li><p>Confirm: “This will replace current world data”</p></li>
+<li><p>Click <strong>Yes</strong></p></li>
+<li><p>World restored to backup state</p></li>
+</ul>
+</li>
+<li><p><strong>CLI Restore</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># List backups</span>
+python<span class="w"> </span>-m<span class="w"> </span>src.cli.backup<span class="w"> </span>list<span class="w"> </span>-d<span class="w"> </span>world.kraken
+
+<span class="c1"># Restore specific backup</span>
+python<span class="w"> </span>-m<span class="w"> </span>src.cli.backup<span class="w"> </span>restore<span class="w"> </span>-d<span class="w"> </span>world.kraken<span class="w"> </span>--backup-id<span class="w"> </span>&lt;id&gt;
+</pre></div>
+</div>
+</li>
+</ol>
+<p><strong>Result:</strong> World recovered to previous state.</p>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="advanced-workflows">
+<h2>Advanced Workflows<a class="headerlink" href="#advanced-workflows" title="Link to this heading">¶</a></h2>
+<section id="workflow-campaign-session-tracking">
+<h3>Workflow: Campaign Session Tracking<a class="headerlink" href="#workflow-campaign-session-tracking" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Track every session with full detail.</p>
+<ol class="arabic simple">
+<li><p><strong>Session Template</strong></p>
+<ul class="simple">
+<li><p>Create fast inject template: “Session Note”</p></li>
+<li><p>Variables:</p>
+<ul>
+<li><p>Session Number: <code class="docutils literal notranslate"><span class="pre">{{session_num}}</span></code></p></li>
+<li><p>Date: <code class="docutils literal notranslate"><span class="pre">{{date}}</span></code></p></li>
+<li><p>Title: <code class="docutils literal notranslate"><span class="pre">{{title}}</span></code></p></li>
+</ul>
+</li>
+<li><p>Attributes:</p>
+<ul>
+<li><p>Present Players: <code class="docutils literal notranslate"><span class="pre">{{players}}</span></code></p></li>
+<li><p>XP Gained: <code class="docutils literal notranslate"><span class="pre">{{xp}}</span></code></p></li>
+<li><p>Loot: <code class="docutils literal notranslate"><span class="pre">{{loot}}</span></code></p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><strong>Pre-Session Setup</strong></p>
+<ul class="simple">
+<li><p>Create session event</p></li>
+<li><p>Link to expected participants</p></li>
+<li><p>Add “planned” tag</p></li>
+</ul>
+</li>
+<li><p><strong>During Session</strong></p>
+<ul class="simple">
+<li><p>Take notes in event description</p></li>
+<li><p>Create entities as needed (NPCs, locations)</p></li>
+<li><p>Use wiki links liberally</p></li>
+<li><p>Update character attributes (HP, XP, inventory)</p></li>
+</ul>
+</li>
+<li><p><strong>Post-Session</strong></p>
+<ul class="simple">
+<li><p>Update session event with outcomes</p></li>
+<li><p>Create follow-up events (rumors, consequences)</p></li>
+<li><p>Tag completed quests</p></li>
+<li><p>Export session notes to share with players</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="workflow-multiple-timelines-parallel-stories">
+<h3>Workflow: Multiple Timelines / Parallel Stories<a class="headerlink" href="#workflow-multiple-timelines-parallel-stories" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Track multiple story threads happening simultaneously.</p>
+<ol class="arabic">
+<li><p><strong>Use Event Tags</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Main</span> <span class="n">Campaign</span><span class="p">:</span> <span class="s2">&quot;campaign_main&quot;</span>
+<span class="n">Side</span> <span class="n">Quest</span> <span class="n">A</span><span class="p">:</span> <span class="s2">&quot;sidequest_rescue&quot;</span>
+<span class="n">Side</span> <span class="n">Quest</span> <span class="n">B</span><span class="p">:</span> <span class="s2">&quot;sidequest_artifact&quot;</span>
+<span class="n">Faction</span> <span class="n">Story</span><span class="p">:</span> <span class="s2">&quot;faction_order_dawn&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Filter Timeline Views</strong></p>
+<ul class="simple">
+<li><p>Create multiple timeline tabs</p></li>
+<li><p>Each filtered to different tag</p></li>
+<li><p>Switch between story threads easily</p></li>
+</ul>
+</li>
+<li><p><strong>Show Temporal Overlap</strong></p>
+<ul class="simple">
+<li><p>Both quests happening during “Summer, Year 245”</p></li>
+<li><p>Timeline shows events side-by-side</p></li>
+<li><p>Understand what’s happening when</p></li>
+</ul>
+</li>
+<li><p><strong>Link Convergence Points</strong></p>
+<ul class="simple">
+<li><p>Create event: “All Threads Converge”</p></li>
+<li><p>Link to all active storylines</p></li>
+<li><p>Shows relationships in graph view</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="workflow-world-consistency-checking">
+<h3>Workflow: World Consistency Checking<a class="headerlink" href="#workflow-world-consistency-checking" title="Link to this heading">¶</a></h3>
+<p><strong>Goal:</strong> Ensure no contradictions in your lore.</p>
+<ol class="arabic simple">
+<li><p><strong>Use Semantic Search</strong></p>
+<ul class="simple">
+<li><p>Query: “events mentioning dragons”</p></li>
+<li><p>Review all dragon references</p></li>
+<li><p>Ensure consistent portrayal</p></li>
+</ul>
+</li>
+<li><p><strong>Check Character Ages</strong></p>
+<ul class="simple">
+<li><p>Birth event + current date = age</p></li>
+<li><p>Search for all age mentions</p></li>
+<li><p>Verify consistency</p></li>
+</ul>
+</li>
+<li><p><strong>Map Location Consistency</strong></p>
+<ul class="simple">
+<li><p>View all events at a location</p></li>
+<li><p>Ensure geography makes sense</p></li>
+<li><p>Check travel times between locations</p></li>
+</ul>
+</li>
+<li><p><strong>Export and Review</strong></p>
+<ul class="simple">
+<li><p>Export full world to markdown</p></li>
+<li><p>Read through entire codex</p></li>
+<li><p>Note inconsistencies</p></li>
+<li><p>Update as needed</p></li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="tips-best-practices">
+<h2>Tips &amp; Best Practices<a class="headerlink" href="#tips-best-practices" title="Link to this heading">¶</a></h2>
+<section id="naming-conventions">
+<h3>Naming Conventions<a class="headerlink" href="#naming-conventions" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Entities:</strong> Use proper nouns: “Queen Lyanna”, “The Darkwood”</p></li>
+<li><p><strong>Events:</strong> Use descriptive titles: “The Siege of Silverkeep”, not just “Siege”</p></li>
+<li><p><strong>Tags:</strong> Use lowercase, underscores: “player_character”, “major_battle”</p></li>
+</ul>
+</section>
+<section id="organization">
+<h3>Organization<a class="headerlink" href="#organization" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Tag Everything:</strong> Makes filtering and searching easier</p></li>
+<li><p><strong>Use Types:</strong> Leverage entity/event types for organization</p></li>
+<li><p><strong>Consistent Dates:</strong> Stick to one date format (calendar or float)</p></li>
+</ul>
+</section>
+<section id="performance">
+<h3>Performance<a class="headerlink" href="#performance" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Index Regularly:</strong> Rebuild search index after major additions</p></li>
+<li><p><strong>Limit Images:</strong> Use reasonable image sizes (&lt; 5MB each)</p></li>
+<li><p><strong>Archive Old Content:</strong> Tag completed arcs as “archived”</p></li>
+</ul>
+</section>
+<section id="collaboration">
+<h3>Collaboration<a class="headerlink" href="#collaboration" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Export Often:</strong> Share exports with co-GMs or players</p></li>
+<li><p><strong>Use JSON Export:</strong> For backing up before others make changes</p></li>
+<li><p><strong>Document Conventions:</strong> Share tag/naming conventions with team</p></li>
+</ul>
+</section>
+<section id="backup-strategy">
+<h3>Backup Strategy<a class="headerlink" href="#backup-strategy" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Auto-save:</strong> Enabled (recovers from crashes)</p></li>
+<li><p><strong>Manual before major changes:</strong> Before importing, restructuring</p></li>
+<li><p><strong>External backups:</strong> Weekly copy to external drive</p></li>
+<li><p><strong>Version control:</strong> Consider git for world folder (advanced)</p></li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="getting-help">
+<h2>Getting Help<a class="headerlink" href="#getting-help" title="Link to this heading">¶</a></h2>
+<section id="documentation">
+<h3>Documentation<a class="headerlink" href="#documentation" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong><a class="reference internal" href="INDEX.html"><span class="std std-doc">INDEX.md</span></a></strong> - Complete documentation index</p></li>
+<li><p><strong><a class="reference internal" href="CLI.html"><span class="std std-doc">CLI.md</span></a></strong> - Command-line tools reference</p></li>
+<li><p><strong><a class="reference internal" href="WIKI_LINKING.html"><span class="std std-doc">WIKI_LINKING.md</span></a></strong> - Wiki syntax guide</p></li>
+<li><p><strong><a class="reference internal" href="MAP_USAGE_EXAMPLES.html"><span class="std std-doc">MAP_USAGE_EXAMPLES.md</span></a></strong> - Map system details</p></li>
+<li><p><strong><a class="reference internal" href="SEMANTIC_SEARCH.html"><span class="std std-doc">SEMANTIC_SEARCH.md</span></a></strong> - AI search setup</p></li>
+<li><p><strong><a class="reference internal" href="LLM_INTEGRATION.html"><span class="std std-doc">LLM_INTEGRATION.md</span></a></strong> - LLM provider configuration</p></li>
+</ul>
+</section>
+<section id="support">
+<h3>Support<a class="headerlink" href="#support" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>GitHub Issues:</strong> Report bugs or request features</p></li>
+<li><p><strong>Discussions:</strong> Ask questions, share workflows</p></li>
+<li><p><strong>Documentation:</strong> Check docs/ folder for technical details</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading">¶</a></h2>
+<p>ProjektKraken provides flexible workflows for worldbuilding:</p>
+<p>✅ <strong>Timeline-First:</strong> Events are the foundation
+✅ <strong>Wiki-Style:</strong> Everything interconnected with links
+✅ <strong>Visual:</strong> Maps and graphs show relationships
+✅ <strong>AI-Powered:</strong> Search and generate content
+✅ <strong>Portable:</strong> Export to multiple formats
+✅ <strong>Safe:</strong> Automatic backups protect your work</p>
+<p>Start simple with a few entities and events, then expand as your world grows. The system grows with your needs.</p>
+<p>Happy worldbuilding! 🌍✨</p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Christian Mintert
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">User Workflows Guide</a><ul>
+<li><a class="reference internal" href="#table-of-contents">Table of Contents</a></li>
+<li><a class="reference internal" href="#getting-started">Getting Started</a><ul>
+<li><a class="reference internal" href="#first-launch">First Launch</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#building-your-first-world">Building Your First World</a><ul>
+<li><a class="reference internal" href="#workflow-fantasy-campaign-setup">Workflow: Fantasy Campaign Setup</a><ul>
+<li><a class="reference internal" href="#step-1-set-up-your-calendar">Step 1: Set Up Your Calendar</a></li>
+<li><a class="reference internal" href="#step-2-create-core-locations">Step 2: Create Core Locations</a></li>
+<li><a class="reference internal" href="#step-3-create-characters">Step 3: Create Characters</a></li>
+<li><a class="reference internal" href="#step-4-create-founding-event">Step 4: Create Founding Event</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#timeline-first-worldbuilding">Timeline-First Worldbuilding</a><ul>
+<li><a class="reference internal" href="#workflow-building-a-historical-timeline">Workflow: Building a Historical Timeline</a><ul>
+<li><a class="reference internal" href="#quick-timeline-creation">Quick Timeline Creation</a></li>
+<li><a class="reference internal" href="#timeline-navigation">Timeline Navigation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#character-faction-workflows">Character &amp; Faction Workflows</a><ul>
+<li><a class="reference internal" href="#workflow-character-biography-with-timeline">Workflow: Character Biography with Timeline</a><ul>
+<li><a class="reference internal" href="#create-character-with-life-events">Create Character with Life Events</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#workflow-faction-with-members-and-goals">Workflow: Faction with Members and Goals</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#location-map-workflows">Location &amp; Map Workflows</a><ul>
+<li><a class="reference internal" href="#workflow-create-locations-with-maps">Workflow: Create Locations with Maps</a><ul>
+<li><a class="reference internal" href="#upload-world-map">Upload World Map</a></li>
+<li><a class="reference internal" href="#add-location-markers">Add Location Markers</a></li>
+<li><a class="reference internal" href="#temporal-maps-movement-over-time">Temporal Maps (Movement Over Time)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#event-timeline-workflows">Event &amp; Timeline Workflows</a><ul>
+<li><a class="reference internal" href="#workflow-plan-and-execute-a-campaign">Workflow: Plan and Execute a Campaign</a><ul>
+<li><a class="reference internal" href="#campaign-planning">Campaign Planning</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#workflow-battle-event-with-participants">Workflow: Battle Event with Participants</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#wiki-linking-documentation">Wiki Linking &amp; Documentation</a><ul>
+<li><a class="reference internal" href="#workflow-build-an-interconnected-world">Workflow: Build an Interconnected World</a><ul>
+<li><a class="reference internal" href="#use-wiki-links-everywhere">Use Wiki Links Everywhere</a></li>
+<li><a class="reference internal" href="#create-a-longform-codex">Create a Longform Codex</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#semantic-search-ai-assistance">Semantic Search &amp; AI Assistance</a><ul>
+<li><a class="reference internal" href="#workflow-find-and-generate-content">Workflow: Find and Generate Content</a><ul>
+<li><a class="reference internal" href="#set-up-semantic-search">Set Up Semantic Search</a></li>
+<li><a class="reference internal" href="#search-your-world">Search Your World</a></li>
+<li><a class="reference internal" href="#generate-content-with-ai">Generate Content with AI</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#export-publishing">Export &amp; Publishing</a><ul>
+<li><a class="reference internal" href="#workflow-share-your-world">Workflow: Share Your World</a><ul>
+<li><a class="reference internal" href="#export-to-markdown">Export to Markdown</a></li>
+<li><a class="reference internal" href="#export-to-obsidian">Export to Obsidian</a></li>
+<li><a class="reference internal" href="#export-to-json">Export to JSON</a></li>
+<li><a class="reference internal" href="#web-api-access">Web API Access</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#backup-recovery">Backup &amp; Recovery</a><ul>
+<li><a class="reference internal" href="#workflow-protect-your-world">Workflow: Protect Your World</a><ul>
+<li><a class="reference internal" href="#automatic-backups">Automatic Backups</a></li>
+<li><a class="reference internal" href="#manual-backup">Manual Backup</a></li>
+<li><a class="reference internal" href="#restore-from-backup">Restore from Backup</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#advanced-workflows">Advanced Workflows</a><ul>
+<li><a class="reference internal" href="#workflow-campaign-session-tracking">Workflow: Campaign Session Tracking</a></li>
+<li><a class="reference internal" href="#workflow-multiple-timelines-parallel-stories">Workflow: Multiple Timelines / Parallel Stories</a></li>
+<li><a class="reference internal" href="#workflow-world-consistency-checking">Workflow: World Consistency Checking</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tips-best-practices">Tips &amp; Best Practices</a><ul>
+<li><a class="reference internal" href="#naming-conventions">Naming Conventions</a></li>
+<li><a class="reference internal" href="#organization">Organization</a></li>
+<li><a class="reference internal" href="#performance">Performance</a></li>
+<li><a class="reference internal" href="#collaboration">Collaboration</a></li>
+<li><a class="reference internal" href="#backup-strategy">Backup Strategy</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#getting-help">Getting Help</a><ul>
+<li><a class="reference internal" href="#documentation">Documentation</a></li>
+<li><a class="reference internal" href="#support">Support</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=1a9b1e2b"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>

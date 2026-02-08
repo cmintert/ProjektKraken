@@ -3,7 +3,7 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Database Schema Reference" href="SCHEMA_REFERENCE.html"><link rel="prev" title="Database Architecture and Best Practices" href="DATABASE.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="Database Schema Reference" href="SCHEMA_REFERENCE.html"><link rel="prev" title="Database Documentation" href="DATABASE.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
         <title>Development Guide - Project Kraken 0.11.0 documentation</title>
@@ -196,29 +196,11 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="WIKI_LINKING.html">ID-Based Wiki Linking Implementation Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="MAP_USAGE_EXAMPLES.html">Map System Usage Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="LONGFORM.html">Longform Document Feature</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+  <p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="Design.html">Project Kraken: Comprehensive Design Specification</a></li>
-<li class="toctree-l1"><a class="reference internal" href="DATABASE.html">Database Architecture and Best Practices</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DATABASE.html">Database Documentation</a></li>
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Development Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
-<li class="toctree-l1"><a class="reference internal" href="SECURITY.html">Security Best Practices</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Advanced Features</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="SEMANTIC_SEARCH.html">Semantic Search in ProjektKraken</a></li>
-<li class="toctree-l1"><a class="reference internal" href="LLM_INTEGRATION.html">Multi-Provider LLM Integration Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="FAST_INJECT.html">Fast Inject Service</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Migration Guides</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="TAG_MIGRATION_GUIDE.html">Tag Normalization Migration Guide</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
@@ -239,7 +221,6 @@
 <p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
-<li class="toctree-l1"><a class="reference internal" href="LICENSE.html">GNU AFFERO GENERAL PUBLIC LICENSE</a></li>
 </ul>
 
 </div>
@@ -280,425 +261,842 @@
         <article role="main" id="furo-main-content">
           <section id="development-guide">
 <h1>Development Guide<a class="headerlink" href="#development-guide" title="Link to this heading">¶</a></h1>
-<p>This guide covers setting up a development environment for ProjektKraken and understanding the development workflow.</p>
-<section id="environment-setup">
-<h2>Environment Setup<a class="headerlink" href="#environment-setup" title="Link to this heading">¶</a></h2>
+<p><strong>Version:</strong> 0.11.0 (Beta)<br />
+<strong>Last Updated:</strong> February 2026</p>
+<p>Guide for developers contributing to or extending ProjektKraken.</p>
+<hr class="docutils" />
+<section id="table-of-contents">
+<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Link to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="#development-setup"><span class="xref myst">Development Setup</span></a></p></li>
+<li><p><a class="reference internal" href="#project-structure"><span class="xref myst">Project Structure</span></a></p></li>
+<li><p><a class="reference internal" href="#coding-standards"><span class="xref myst">Coding Standards</span></a></p></li>
+<li><p><a class="reference internal" href="#development-workflow"><span class="xref myst">Development Workflow</span></a></p></li>
+<li><p><a class="reference internal" href="#building-and-testing"><span class="xref myst">Building and Testing</span></a></p></li>
+<li><p><a class="reference internal" href="#debugging"><span class="xref myst">Debugging</span></a></p></li>
+<li><p><a class="reference internal" href="#common-tasks"><span class="xref myst">Common Tasks</span></a></p></li>
+<li><p><a class="reference internal" href="#best-practices"><span class="xref myst">Best Practices</span></a></p></li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="development-setup">
+<h2>Development Setup<a class="headerlink" href="#development-setup" title="Link to this heading">¶</a></h2>
 <section id="prerequisites">
 <h3>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">¶</a></h3>
 <ul class="simple">
-<li><p><strong>Python 3.11+</strong> (required)</p></li>
-<li><p><strong>Git</strong> (for version control)</p></li>
-<li><p><strong>Virtual environment</strong> (recommended)</p></li>
+<li><p><strong>Python 3.13+</strong> (minimum required)</p></li>
+<li><p><strong>Git</strong> for version control</p></li>
+<li><p><strong>pip</strong> package manager</p></li>
+<li><p><strong>virtualenv</strong> or <strong>venv</strong> (recommended)</p></li>
 </ul>
 </section>
-<section id="platform-specific-setup">
-<h3>Platform-Specific Setup<a class="headerlink" href="#platform-specific-setup" title="Link to this heading">¶</a></h3>
-<section id="windows">
-<h4>Windows<a class="headerlink" href="#windows" title="Link to this heading">¶</a></h4>
-<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="c"># Create virtual environment</span>
-<span class="n">python</span> <span class="n">-m</span> <span class="n">venv</span> <span class="p">.</span><span class="n">venv</span>
-
-<span class="c"># Activate virtual environment</span>
-<span class="p">.\.</span><span class="n">venv</span><span class="p">\</span><span class="n">Scripts</span><span class="p">\</span><span class="n">activate</span>
-
-<span class="c"># Install dependencies</span>
-<span class="n">pip</span> <span class="n">install</span> <span class="n">-r</span> <span class="n">requirements</span><span class="p">.</span><span class="n">txt</span>
-
-<span class="c"># Install pre-commit hooks</span>
-<span class="n">pre-commit</span> <span class="n">install</span>
-</pre></div>
-</div>
-</section>
-<section id="linux-macos">
-<h4>Linux / macOS<a class="headerlink" href="#linux-macos" title="Link to this heading">¶</a></h4>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create virtual environment</span>
-python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
-
-<span class="c1"># Activate virtual environment</span>
-<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
-
-<span class="c1"># Install dependencies</span>
-pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-
-<span class="c1"># Install pre-commit hooks</span>
-pre-commit<span class="w"> </span>install
-</pre></div>
-</div>
-</section>
-</section>
-</section>
-<section id="dependencies">
-<h2>Dependencies<a class="headerlink" href="#dependencies" title="Link to this heading">¶</a></h2>
-<p>All project dependencies are managed in <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code>:</p>
-<p><strong>Core Dependencies:</strong></p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">PySide6</span></code> - Qt 6 GUI framework</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">fastapi</span></code> - Web framework for embedded server</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">uvicorn</span></code> - ASGI server for FastAPI</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">pytest</span></code> - Testing framework</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">pytest-qt</span></code> - Qt testing support</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">pytest-cov</span></code> - Code coverage</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ruff</span></code> - Linter and formatter</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">pyvis</span></code> - Graph visualization</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">networkx</span></code> - Graph algorithms</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">python-dotenv</span></code> - Environment configuration</p></li>
-</ul>
-<p><strong>Optional Dependencies:</strong></p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">openai</span></code> - OpenAI API client</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">anthropic</span></code> - Anthropic API client</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">google-cloud-aiplatform</span></code> - Google Vertex AI client</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">sentence-transformers</span></code> - Local embeddings</p></li>
-</ul>
-</section>
-<section id="id1">
-<h2>Environment Setup<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
-<p>This project uses a local virtual environment (<code class="docutils literal notranslate"><span class="pre">.venv</span></code>) on Windows.</p>
-</section>
-<section id="pre-commit-hooks">
-<h2>Pre-commit Hooks<a class="headerlink" href="#pre-commit-hooks" title="Link to this heading">¶</a></h2>
-<p>We use <code class="docutils literal notranslate"><span class="pre">pre-commit</span></code> to ensure code quality with <code class="docutils literal notranslate"><span class="pre">ruff</span></code> and <code class="docutils literal notranslate"><span class="pre">pytest</span></code>.</p>
-<section id="configuration-rules">
-<h3>Configuration Rules<a class="headerlink" href="#configuration-rules" title="Link to this heading">¶</a></h3>
-<p>When modifying <code class="docutils literal notranslate"><span class="pre">.pre-commit-config.yaml</span></code>, always define hooks using <code class="docutils literal notranslate"><span class="pre">entry:</span> <span class="pre">python</span> <span class="pre">-m</span> <span class="pre">&lt;module&gt;</span></code>.</p>
-<p><strong>Correct:</strong></p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ruff-check</span>
-<span class="w">  </span><span class="nt">entry</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">python -m ruff check --fix</span>
-</pre></div>
-</div>
-<p><strong>Incorrect:</strong></p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ruff-check</span>
-<span class="w">  </span><span class="nt">entry</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ruff check --fix</span>
-</pre></div>
-</div>
-<p><strong>Reason:</strong>
-On Windows, executing the module via <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span></code> ensures that the command runs within the correct Python environment (the active <code class="docutils literal notranslate"><span class="pre">.venv</span></code>), resolving imports and paths correctly. Direct executable calls may fail or pick up the wrong environment.</p>
-</section>
-<section id="running-hooks">
-<h3>Running Hooks<a class="headerlink" href="#running-hooks" title="Link to this heading">¶</a></h3>
-<p>The hooks run automatically on <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">commit</span></code>. To run them manually:</p>
+<section id="initial-setup">
+<h3>Initial Setup<a class="headerlink" href="#initial-setup" title="Link to this heading">¶</a></h3>
 <ol class="arabic">
-<li><p>Activate the virtual environment:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Linux/macOS</span>
-<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
-
-<span class="c1"># Windows PowerShell</span>
-.<span class="se">\.</span>venv<span class="se">\S</span>cripts<span class="se">\a</span>ctivate.ps1
+<li><p><strong>Clone Repository</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/cmintert/ProjektKraken.git
+<span class="nb">cd</span><span class="w"> </span>ProjektKraken
 </pre></div>
 </div>
 </li>
-<li><p>Run the hooks:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files
+<li><p><strong>Create Virtual Environment</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
 </pre></div>
 </div>
+</li>
+<li><p><strong>Activate Virtual Environment</strong></p>
+<p><strong>Windows:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>.venv<span class="se">\S</span>cripts<span class="se">\a</span>ctivate
+</pre></div>
+</div>
+<p><strong>macOS/Linux:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+</pre></div>
+</div>
+</li>
+<li><p><strong>Install Dependencies</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</pre></div>
+</div>
+</li>
+<li><p><strong>Install Development Tools</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements-dev.txt
+</pre></div>
+</div>
+<p>This installs:</p>
+<ul class="simple">
+<li><p><strong>pytest</strong>: Testing framework</p></li>
+<li><p><strong>pytest-qt</strong>: Qt testing support</p></li>
+<li><p><strong>pytest-cov</strong>: Code coverage</p></li>
+<li><p><strong>ruff</strong>: Fast Python linter and formatter</p></li>
+<li><p><strong>mypy</strong>: Static type checking</p></li>
+<li><p><strong>black</strong>: Code formatter (backup)</p></li>
+</ul>
+</li>
+<li><p><strong>Verify Installation</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>src.app.main
+</pre></div>
+</div>
+<p>Application should launch successfully.</p>
 </li>
 </ol>
 </section>
 </section>
+<hr class="docutils" />
+<section id="project-structure">
+<h2>Project Structure<a class="headerlink" href="#project-structure" title="Link to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>ProjektKraken/
+├── src/                      # Source code
+│   ├── app/                  # Application layer
+│   │   ├── main.py          # Entry point
+│   │   ├── main_window.py   # Main UI coordinator
+│   │   ├── command_coordinator.py
+│   │   └── worker_manager.py
+│   ├── commands/             # Command pattern implementation
+│   │   ├── base_command.py  # Abstract base class
+│   │   ├── event_commands.py
+│   │   ├── entity_commands.py
+│   │   └── relation_commands.py
+│   ├── core/                 # Domain models and utilities
+│   │   ├── events.py        # Event dataclass
+│   │   ├── entities.py      # Entity dataclass
+│   │   ├── relations.py     # Relation dataclass
+│   │   ├── calendar.py      # Calendar model
+│   │   └── theme_manager.py # UI theming
+│   ├── services/             # Business logic layer
+│   │   ├── db_service.py    # Database interface
+│   │   ├── repositories/    # Data access
+│   │   │   ├── event_repository.py
+│   │   │   ├── entity_repository.py
+│   │   │   └── relation_repository.py
+│   │   ├── history_service.py
+│   │   ├── backup_service.py
+│   │   └── rag_service.py
+│   ├── gui/                  # GUI layer
+│   │   ├── widgets/         # Custom widgets
+│   │   │   ├── timeline/
+│   │   │   ├── map/
+│   │   │   ├── entity_editor.py
+│   │   │   ├── event_editor.py
+│   │   │   └── unified_list.py
+│   │   ├── dialogs/         # Modal dialogs
+│   │   └── utils/           # GUI utilities
+│   ├── cli/                  # Command-line interface
+│   │   ├── event.py
+│   │   ├── entity.py
+│   │   └── import.py
+│   └── resources/            # Static resources
+│       ├── icons/
+│       └── images/
+├── tests/                    # Test suite
+│   ├── unit/                # Unit tests
+│   │   ├── test_events.py
+│   │   ├── test_entities.py
+│   │   └── test_commands.py
+│   └── integration/         # Integration tests
+│       ├── test_db_service.py
+│       └── test_workflows.py
+├── docs/                     # Documentation
+├── default_assets/           # Default assets
+├── themes.json               # UI themes
+├── requirements.txt          # Runtime dependencies
+├── requirements-dev.txt      # Development dependencies
+├── pyproject.toml           # Project configuration
+├── pytest.ini               # Pytest configuration
+├── .flake8                  # Flake8 configuration
+├── launcher.py              # Development launcher
+└── README.md                # Project README
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="coding-standards">
+<h2>Coding Standards<a class="headerlink" href="#coding-standards" title="Link to this heading">¶</a></h2>
+<section id="python-style">
+<h3>Python Style<a class="headerlink" href="#python-style" title="Link to this heading">¶</a></h3>
+<p>ProjektKraken follows <strong>PEP 8</strong> with some modifications:</p>
+<ul class="simple">
+<li><p><strong>Line Length</strong>: 88 characters (Black default)</p></li>
+<li><p><strong>Indentation</strong>: 4 spaces</p></li>
+<li><p><strong>Quotes</strong>: Double quotes for strings</p></li>
+<li><p><strong>Imports</strong>: Organized by stdlib → third-party → local</p></li>
+</ul>
+</section>
+<section id="type-hints">
+<h3>Type Hints<a class="headerlink" href="#type-hints" title="Link to this heading">¶</a></h3>
+<p><strong>Required</strong> for all function signatures:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">create_event</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">lore_date</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Event</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a new event.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+<span class="c1"># Bad - no type hints</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_event</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">lore_date</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+</section>
+<section id="docstrings">
+<h3>Docstrings<a class="headerlink" href="#docstrings" title="Link to this heading">¶</a></h3>
+<p><strong>Google Style</strong> docstrings required for all public classes and methods:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">update_entity</span><span class="p">(</span><span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Entity</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Update an existing entity with new properties.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        entity_id: The unique identifier of the entity.</span>
+<span class="sd">        **kwargs: Key-value pairs of properties to update.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Entity: The updated entity object.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If entity_id is invalid.</span>
+<span class="sd">        DatabaseError: If update fails.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p><strong>Required Sections:</strong></p>
+<ul class="simple">
+<li><p>Brief description (one line)</p></li>
+<li><p><strong>Args</strong>: All parameters with types and descriptions</p></li>
+<li><p><strong>Returns</strong>: Return type and description</p></li>
+<li><p><strong>Raises</strong>: Exceptions that may be raised</p></li>
+</ul>
+</section>
+<section id="naming-conventions">
+<h3>Naming Conventions<a class="headerlink" href="#naming-conventions" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Type</p></th>
+<th class="head"><p>Convention</p></th>
+<th class="head"><p>Example</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>Classes</strong></p></td>
+<td><p>PascalCase</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">EventRepository</span></code>, <code class="docutils literal notranslate"><span class="pre">CommandCoordinator</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Functions</strong></p></td>
+<td><p>snake_case</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">create_event</span></code>, <code class="docutils literal notranslate"><span class="pre">get_entities</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Variables</strong></p></td>
+<td><p>snake_case</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">event_id</span></code>, <code class="docutils literal notranslate"><span class="pre">lore_date</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Constants</strong></p></td>
+<td><p>UPPER_SNAKE_CASE</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">DEFAULT_CALENDAR</span></code>, <code class="docutils literal notranslate"><span class="pre">MAX_EVENTS</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><strong>Private</strong></p></td>
+<td><p>_leading_underscore</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">_internal_method</span></code>, <code class="docutils literal notranslate"><span class="pre">_cache</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Protected</strong></p></td>
+<td><p>_leading_underscore</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">_widget</span></code>, <code class="docutils literal notranslate"><span class="pre">_service</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="code-organization">
+<h3>Code Organization<a class="headerlink" href="#code-organization" title="Link to this heading">¶</a></h3>
+<p><strong>Imports Order:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 1. Standard library</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="c1"># 2. Third-party</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">QObject</span><span class="p">,</span> <span class="n">Signal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QWidget</span>
+
+<span class="c1"># 3. Local application</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">Event</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.services.db_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatabaseService</span>
+</pre></div>
+</div>
+<p><strong>No wildcard imports:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Bad</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+
+<span class="c1"># Good</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QWidget</span><span class="p">,</span> <span class="n">QPushButton</span><span class="p">,</span> <span class="n">QVBoxLayout</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
 <section id="development-workflow">
 <h2>Development Workflow<a class="headerlink" href="#development-workflow" title="Link to this heading">¶</a></h2>
-<section id="running-the-application">
-<h3>Running the Application<a class="headerlink" href="#running-the-application" title="Link to this heading">¶</a></h3>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Activate virtual environment</span>
-<span class="nb">source</span><span class="w"> </span>.venv/bin/activate<span class="w">  </span><span class="c1"># Linux/macOS</span>
-.<span class="se">\.</span>venv<span class="se">\S</span>cripts<span class="se">\a</span>ctivate<span class="w">   </span><span class="c1"># Windows</span>
+<section id="creating-a-feature-branch">
+<h3>1. Creating a Feature Branch<a class="headerlink" href="#creating-a-feature-branch" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>feature/my-new-feature
+</pre></div>
+</div>
+</section>
+<section id="making-changes">
+<h3>2. Making Changes<a class="headerlink" href="#making-changes" title="Link to this heading">¶</a></h3>
+<p>Follow the coding standards and write tests for new code.</p>
+</section>
+<section id="running-linters">
+<h3>3. Running Linters<a class="headerlink" href="#running-linters" title="Link to this heading">¶</a></h3>
+<p><strong>Ruff (recommended):</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check code</span>
+ruff<span class="w"> </span>check<span class="w"> </span>src/
 
-<span class="c1"># Run the GUI application</span>
-python<span class="w"> </span>launcher.py
+<span class="c1"># Auto-fix issues</span>
+ruff<span class="w"> </span>check<span class="w"> </span>src/<span class="w"> </span>--fix
 
-<span class="c1"># Or run directly</span>
-python<span class="w"> </span>-m<span class="w"> </span>src.app.main
+<span class="c1"># Format code</span>
+ruff<span class="w"> </span>format<span class="w"> </span>src/
+</pre></div>
+</div>
+<p><strong>Flake8 (fallback):</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>flake8<span class="w"> </span>src/<span class="w"> </span>tests/
+</pre></div>
+</div>
+<p><strong>MyPy (type checking):</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mypy<span class="w"> </span>src/
 </pre></div>
 </div>
 </section>
 <section id="running-tests">
-<h3>Running Tests<a class="headerlink" href="#running-tests" title="Link to this heading">¶</a></h3>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run all tests</span>
+<h3>4. Running Tests<a class="headerlink" href="#running-tests" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># All tests</span>
 pytest
 
-<span class="c1"># Run with coverage</span>
+<span class="c1"># With coverage</span>
 pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>term-missing
 
-<span class="c1"># Run specific test file</span>
+<span class="c1"># Specific test file</span>
 pytest<span class="w"> </span>tests/unit/test_events.py
 
-<span class="c1"># Run integration tests only</span>
-pytest<span class="w"> </span>tests/integration/
-
-<span class="c1"># Run with verbose output</span>
-pytest<span class="w"> </span>-v
-</pre></div>
-</div>
-<p>See <strong><a class="reference internal" href="TESTING.html"><span class="std std-doc">TESTING.md</span></a></strong> for detailed testing guide.</p>
-</section>
-<section id="code-quality-checks">
-<h3>Code Quality Checks<a class="headerlink" href="#code-quality-checks" title="Link to this heading">¶</a></h3>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Format code with ruff</span>
-ruff<span class="w"> </span>format<span class="w"> </span>src/<span class="w"> </span>tests/
-
-<span class="c1"># Lint code with ruff</span>
-ruff<span class="w"> </span>check<span class="w"> </span>src/<span class="w"> </span>tests/
-
-<span class="c1"># Fix auto-fixable issues</span>
-ruff<span class="w"> </span>check<span class="w"> </span>--fix<span class="w"> </span>src/<span class="w"> </span>tests/
-
-<span class="c1"># Type checking (if mypy configured)</span>
-mypy<span class="w"> </span>src/
+<span class="c1"># Specific test function</span>
+pytest<span class="w"> </span>tests/unit/test_events.py::test_event_creation
 </pre></div>
 </div>
 </section>
-<section id="building-documentation">
-<h3>Building Documentation<a class="headerlink" href="#building-documentation" title="Link to this heading">¶</a></h3>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Generate Sphinx documentation</span>
-<span class="nb">cd</span><span class="w"> </span>docs
-sphinx-build<span class="w"> </span>-b<span class="w"> </span>html<span class="w"> </span>.<span class="w"> </span>_build
+<section id="committing-changes">
+<h3>5. Committing Changes<a class="headerlink" href="#committing-changes" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>add<span class="w"> </span>.
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat: Add new feature description&quot;</span>
+</pre></div>
+</div>
+<p><strong>Commit Message Format:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">feat:</span></code> New feature</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fix:</span></code> Bug fix</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">docs:</span></code> Documentation changes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">refactor:</span></code> Code refactoring</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">test:</span></code> Adding or updating tests</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">chore:</span></code> Maintenance tasks</p></li>
+</ul>
+</section>
+<section id="pushing-and-pull-request">
+<h3>6. Pushing and Pull Request<a class="headerlink" href="#pushing-and-pull-request" title="Link to this heading">¶</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>feature/my-new-feature
+</pre></div>
+</div>
+<p>Then create a Pull Request on GitHub.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="building-and-testing">
+<h2>Building and Testing<a class="headerlink" href="#building-and-testing" title="Link to this heading">¶</a></h2>
+<section id="running-the-application">
+<h3>Running the Application<a class="headerlink" href="#running-the-application" title="Link to this heading">¶</a></h3>
+<p><strong>Development Mode:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>src.app.main
+</pre></div>
+</div>
+<p>Or use the launcher:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>launcher.py
+</pre></div>
+</div>
+<p><strong>With Debugging:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>pdb<span class="w"> </span>-m<span class="w"> </span>src.app.main
+</pre></div>
+</div>
+</section>
+<section id="id1">
+<h3>Running Tests<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<p><strong>All Tests:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest
+</pre></div>
+</div>
+<p><strong>Unit Tests Only:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>tests/unit/
+</pre></div>
+</div>
+<p><strong>Integration Tests Only:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>tests/integration/
+</pre></div>
+</div>
+<p><strong>With Coverage Report:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>html
+<span class="c1"># Opens htmlcov/index.html</span>
+</pre></div>
+</div>
+<p><strong>With Markers:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run only fast tests</span>
+pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;not slow&quot;</span>
 
-<span class="c1"># Open in browser</span>
-open<span class="w"> </span>_build/index.html<span class="w">  </span><span class="c1"># macOS</span>
-xdg-open<span class="w"> </span>_build/index.html<span class="w">  </span><span class="c1"># Linux</span>
-start<span class="w"> </span>_build/index.html<span class="w">  </span><span class="c1"># Windows</span>
+<span class="c1"># Run only unit tests</span>
+pytest<span class="w"> </span>-m<span class="w"> </span>unit
+</pre></div>
+</div>
+</section>
+<section id="building-executable">
+<h3>Building Executable<a class="headerlink" href="#building-executable" title="Link to this heading">¶</a></h3>
+<p><strong>Using PyInstaller:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pyinstaller<span class="w"> </span>ProjektKraken.spec
+</pre></div>
+</div>
+<p>Output in <code class="docutils literal notranslate"><span class="pre">dist/ProjektKraken/</span></code>.</p>
+<p><strong>Testing Build:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>dist/ProjektKraken
+./ProjektKraken<span class="w">  </span><span class="c1"># or ProjektKraken.exe on Windows</span>
 </pre></div>
 </div>
 </section>
 </section>
-<section id="project-structure">
-<h2>Project Structure<a class="headerlink" href="#project-structure" title="Link to this heading">¶</a></h2>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>ProjektKraken/
-├── src/
-│   ├── app/           # Application entry point and MainWindow
-│   ├── core/          # Business logic and data models
-│   ├── services/      # Data access and background workers
-│   ├── commands/      # Command pattern implementations
-│   ├── gui/           # PySide6 widgets and UI components
-│   ├── cli/           # Command-line tools
-│   ├── webserver/     # Embedded FastAPI server
-│   └── resources/     # UI resources (icons, themes, etc.)
-├── tests/
-│   ├── unit/          # Fast unit tests
-│   └── integration/   # Integration tests
-├── docs/              # Documentation
-├── scripts/           # Utility scripts
-└── themes.json        # UI theme definitions
+<hr class="docutils" />
+<section id="debugging">
+<h2>Debugging<a class="headerlink" href="#debugging" title="Link to this heading">¶</a></h2>
+<section id="debug-mode">
+<h3>Debug Mode<a class="headerlink" href="#debug-mode" title="Link to this heading">¶</a></h3>
+<p>Enable debug logging:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
 </pre></div>
 </div>
-<section id="layer-architecture">
-<h3>Layer Architecture<a class="headerlink" href="#layer-architecture" title="Link to this heading">¶</a></h3>
-<p>ProjektKraken follows a strict <strong>Service-Oriented Architecture (SOA)</strong>:</p>
-<ol class="arabic simple">
-<li><p><strong>Core Layer</strong> (<code class="docutils literal notranslate"><span class="pre">src/core/</span></code>) - Data models and business logic</p>
-<ul class="simple">
-<li><p>No dependencies on GUI or services</p></li>
-<li><p>Pure Python dataclasses and utilities</p></li>
-</ul>
-</li>
-<li><p><strong>Services Layer</strong> (<code class="docutils literal notranslate"><span class="pre">src/services/</span></code>) - Data access and operations</p>
-<ul class="simple">
-<li><p>Database operations</p></li>
-<li><p>Background workers</p></li>
-<li><p>External API integrations</p></li>
-</ul>
-</li>
-<li><p><strong>Commands Layer</strong> (<code class="docutils literal notranslate"><span class="pre">src/commands/</span></code>) - Command pattern for undo/redo</p>
-<ul class="simple">
-<li><p>All user actions as command objects</p></li>
-<li><p>Shared between GUI and CLI</p></li>
-</ul>
-</li>
-<li><p><strong>GUI Layer</strong> (<code class="docutils literal notranslate"><span class="pre">src/gui/</span></code>) - User interface</p>
-<ul class="simple">
-<li><p>“Dumb UI” - no business logic</p></li>
-<li><p>Signals/slots for communication</p></li>
-</ul>
-</li>
-<li><p><strong>App Layer</strong> (<code class="docutils literal notranslate"><span class="pre">src/app/</span></code>) - Application orchestration</p>
-<ul class="simple">
-<li><p>MainWindow coordinates components</p></li>
-<li><p>Signal/slot wiring</p></li>
-</ul>
-</li>
-<li><p><strong>CLI Layer</strong> (<code class="docutils literal notranslate"><span class="pre">src/cli/</span></code>) - Headless tools</p>
-<ul class="simple">
-<li><p>Reuses commands from Commands layer</p></li>
-<li><p>100% feature parity with GUI</p></li>
-</ul>
-</li>
-</ol>
-<p>See <strong><a class="reference internal" href="#../Design.md"><span class="xref myst">Design.md</span></a></strong> for complete architecture specification.</p>
+<p>Or via environment variable:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">KRAKEN_DEBUG</span><span class="o">=</span><span class="m">1</span>
+python<span class="w"> </span>-m<span class="w"> </span>src.app.main
+</pre></div>
+</div>
 </section>
-</section>
-<section id="development-best-practices">
-<h2>Development Best Practices<a class="headerlink" href="#development-best-practices" title="Link to this heading">¶</a></h2>
-<section id="code-style">
-<h3>Code Style<a class="headerlink" href="#code-style" title="Link to this heading">¶</a></h3>
+<section id="pdb-debugger">
+<h3>PDB Debugger<a class="headerlink" href="#pdb-debugger" title="Link to this heading">¶</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pdb</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">my_function</span><span class="p">():</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">calculate_something</span><span class="p">()</span>
+    <span class="n">pdb</span><span class="o">.</span><span class="n">set_trace</span><span class="p">()</span>  <span class="c1"># Breakpoint here</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>PDB Commands:</strong></p>
 <ul class="simple">
-<li><p><strong>Line Length:</strong> 88 characters (Black/Ruff default)</p></li>
-<li><p><strong>Imports:</strong> Group by stdlib, third-party, local (no wildcards)</p></li>
-<li><p><strong>Type Hints:</strong> Required for all functions</p></li>
-<li><p><strong>Docstrings:</strong> Google Style, required for all public APIs</p></li>
-<li><p><strong>No print():</strong> Use <code class="docutils literal notranslate"><span class="pre">logging</span></code> module instead</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">n</span></code> - Next line</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">s</span></code> - Step into function</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">c</span></code> - Continue execution</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">p</span> <span class="pre">variable</span></code> - Print variable</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">l</span></code> - List code around current line</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">q</span></code> - Quit debugger</p></li>
 </ul>
 </section>
-<section id="adding-new-features">
-<h3>Adding New Features<a class="headerlink" href="#adding-new-features" title="Link to this heading">¶</a></h3>
-<ol class="arabic simple">
-<li><p><strong>Define data model</strong> in <code class="docutils literal notranslate"><span class="pre">src/core/</span></code></p></li>
-<li><p><strong>Add service method</strong> in <code class="docutils literal notranslate"><span class="pre">src/services/</span></code></p></li>
-<li><p><strong>Create command class</strong> in <code class="docutils literal notranslate"><span class="pre">src/commands/</span></code></p></li>
-<li><p><strong>Add GUI widget</strong> in <code class="docutils literal notranslate"><span class="pre">src/gui/</span></code> (if applicable)</p></li>
-<li><p><strong>Add CLI tool</strong> in <code class="docutils literal notranslate"><span class="pre">src/cli/</span></code> (for feature parity)</p></li>
-<li><p><strong>Write tests</strong> in <code class="docutils literal notranslate"><span class="pre">tests/</span></code></p></li>
-<li><p><strong>Update documentation</strong> in <code class="docutils literal notranslate"><span class="pre">docs/</span></code></p></li>
-</ol>
+<section id="qt-debugging">
+<h3>Qt Debugging<a class="headerlink" href="#qt-debugging" title="Link to this heading">¶</a></h3>
+<p><strong>Print signal connections:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">QMetaObject</span>
+
+<span class="n">obj</span> <span class="o">=</span> <span class="n">my_widget</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">metaObject</span><span class="p">()</span><span class="o">.</span><span class="n">methodCount</span><span class="p">()):</span>
+    <span class="n">method</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">metaObject</span><span class="p">()</span><span class="o">.</span><span class="n">method</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">method</span><span class="o">.</span><span class="n">methodType</span><span class="p">()</span> <span class="o">==</span> <span class="n">QMetaObject</span><span class="o">.</span><span class="n">Signal</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Signal: </span><span class="si">{</span><span class="n">method</span><span class="o">.</span><span class="n">name</span><span class="p">()</span><span class="o">.</span><span class="n">data</span><span class="p">()</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Check if slot is connected:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">my_signal</span><span class="o">.</span><span class="n">receivers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">my_signal</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Signal is connected&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
 </section>
+<section id="database-debugging">
+<h3>Database Debugging<a class="headerlink" href="#database-debugging" title="Link to this heading">¶</a></h3>
+<p><strong>Enable SQL logging:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In DatabaseService</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">set_trace_callback</span><span class="p">(</span><span class="nb">print</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Inspect database directly:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sqlite3<span class="w"> </span>worlds/MyWorld/MyWorld.kraken
+sqlite&gt;<span class="w"> </span>.tables
+sqlite&gt;<span class="w"> </span>.schema<span class="w"> </span>events
+sqlite&gt;<span class="w"> </span>SELECT<span class="w"> </span>*<span class="w"> </span>FROM<span class="w"> </span>events<span class="w"> </span>LIMIT<span class="w"> </span><span class="m">10</span><span class="p">;</span>
+</pre></div>
+</div>
+</section>
+<section id="performance-profiling">
+<h3>Performance Profiling<a class="headerlink" href="#performance-profiling" title="Link to this heading">¶</a></h3>
+<p><strong>Profile code execution:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>cProfile<span class="w"> </span>-o<span class="w"> </span>profile.stats<span class="w"> </span>-m<span class="w"> </span>src.app.main
+</pre></div>
+</div>
+<p><strong>Analyze results:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pstats</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">pstats</span><span class="o">.</span><span class="n">Stats</span><span class="p">(</span><span class="s1">&#39;profile.stats&#39;</span><span class="p">)</span>
+<span class="n">p</span><span class="o">.</span><span class="n">sort_stats</span><span class="p">(</span><span class="s1">&#39;cumulative&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">print_stats</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
 <section id="common-tasks">
-<h3>Common Tasks<a class="headerlink" href="#common-tasks" title="Link to this heading">¶</a></h3>
-<section id="adding-a-new-entity-type">
-<h4>Adding a New Entity Type<a class="headerlink" href="#adding-a-new-entity-type" title="Link to this heading">¶</a></h4>
-<ol class="arabic simple">
-<li><p>Update <code class="docutils literal notranslate"><span class="pre">src/core/entities.py</span></code> if needed</p></li>
-<li><p>Add service methods in <code class="docutils literal notranslate"><span class="pre">src/services/db_service.py</span></code></p></li>
-<li><p>Create command in <code class="docutils literal notranslate"><span class="pre">src/commands/</span></code></p></li>
-<li><p>Add GUI editor in <code class="docutils literal notranslate"><span class="pre">src/gui/</span></code></p></li>
-<li><p>Add CLI tool in <code class="docutils literal notranslate"><span class="pre">src/cli/entity.py</span></code></p></li>
-<li><p>Write tests</p></li>
+<h2>Common Tasks<a class="headerlink" href="#common-tasks" title="Link to this heading">¶</a></h2>
+<section id="adding-a-new-command">
+<h3>Adding a New Command<a class="headerlink" href="#adding-a-new-command" title="Link to this heading">¶</a></h3>
+<ol class="arabic">
+<li><p><strong>Create Command Class</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># src/commands/my_command.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.commands.base_command</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseCommand</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.services.db_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatabaseService</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyCommand</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Brief description.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">,</span> <span class="n">param</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">service</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">param</span> <span class="o">=</span> <span class="n">param</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">old_state</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute the command.&quot;&quot;&quot;</span>
+        <span class="c1"># Store old state for undo</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">old_state</span> <span class="o">=</span> <span class="n">get_current_state</span><span class="p">()</span>
+        <span class="c1"># Perform action</span>
+        <span class="n">perform_action</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">param</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Undo the command.&quot;&quot;&quot;</span>
+        <span class="n">restore_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">old_state</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize for persistence.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;MyCommand&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;param&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">param</span><span class="p">,</span>
+            <span class="s2">&quot;old_state&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">old_state</span>
+        <span class="p">}</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deserialize from persistence.&quot;&quot;&quot;</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">service</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;param&quot;</span><span class="p">])</span>
+        <span class="n">cmd</span><span class="o">.</span><span class="n">old_state</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;old_state&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">cmd</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Register Command</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In src/app/worker_manager.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">on_db_initialized</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">command_registry</span><span class="p">[</span><span class="s2">&quot;MyCommand&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">MyCommand</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Write Tests</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># tests/unit/test_my_command.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_my_command_execute</span><span class="p">(</span><span class="n">db_service</span><span class="p">):</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="n">MyCommand</span><span class="p">(</span><span class="n">db_service</span><span class="p">,</span> <span class="s2">&quot;test_param&quot;</span><span class="p">)</span>
+    <span class="n">cmd</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+    <span class="c1"># Assert expected changes</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_my_command_undo</span><span class="p">(</span><span class="n">db_service</span><span class="p">):</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="n">MyCommand</span><span class="p">(</span><span class="n">db_service</span><span class="p">,</span> <span class="s2">&quot;test_param&quot;</span><span class="p">)</span>
+    <span class="n">cmd</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+    <span class="n">cmd</span><span class="o">.</span><span class="n">undo</span><span class="p">()</span>
+    <span class="c1"># Assert state restored</span>
+</pre></div>
+</div>
+</li>
 </ol>
 </section>
-<section id="adding-a-new-cli-command">
-<h4>Adding a New CLI Command<a class="headerlink" href="#adding-a-new-cli-command" title="Link to this heading">¶</a></h4>
-<ol class="arabic simple">
-<li><p>Create module in <code class="docutils literal notranslate"><span class="pre">src/cli/&lt;name&gt;.py</span></code></p></li>
-<li><p>Reuse command classes from <code class="docutils literal notranslate"><span class="pre">src/commands/</span></code></p></li>
-<li><p>Add argparse configuration</p></li>
-<li><p>Update <code class="docutils literal notranslate"><span class="pre">src/cli/README.md</span></code></p></li>
-<li><p>Write integration test</p></li>
+<section id="adding-a-new-repository">
+<h3>Adding a New Repository<a class="headerlink" href="#adding-a-new-repository" title="Link to this heading">¶</a></h3>
+<ol class="arabic">
+<li><p><strong>Create Repository</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># src/services/repositories/my_repository.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.services.db_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatabaseService</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.my_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">MyModel</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyRepository</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Repository for MyModel data access.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db</span> <span class="o">=</span> <span class="n">db_service</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">MyModel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MyModel</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create new record.&quot;&quot;&quot;</span>
+        <span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;INSERT INTO my_table VALUES (?, ?)&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">model</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MyModel</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve by ID.&quot;&quot;&quot;</span>
+        <span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;SELECT * FROM my_table WHERE id = ?&quot;</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="p">(</span><span class="n">model_id</span><span class="p">,))</span>
+        <span class="k">if</span> <span class="n">rows</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">MyModel</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">MyModel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MyModel</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update existing record.&quot;&quot;&quot;</span>
+        <span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;UPDATE my_table SET name = ? WHERE id = ?&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">model</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete record.&quot;&quot;&quot;</span>
+        <span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;DELETE FROM my_table WHERE id = ?&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="p">(</span><span class="n">model_id</span><span class="p">,))</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">list_all</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">MyModel</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;List all records.&quot;&quot;&quot;</span>
+        <span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;SELECT * FROM my_table&quot;</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">MyModel</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Write Tests</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># tests/unit/test_my_repository.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_create</span><span class="p">(</span><span class="n">db_service</span><span class="p">):</span>
+    <span class="n">repo</span> <span class="o">=</span> <span class="n">MyRepository</span><span class="p">(</span><span class="n">db_service</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">MyModel</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s2">&quot;123&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Test&quot;</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">repo</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="s2">&quot;123&quot;</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_get</span><span class="p">(</span><span class="n">db_service</span><span class="p">):</span>
+    <span class="n">repo</span> <span class="o">=</span> <span class="n">MyRepository</span><span class="p">(</span><span class="n">db_service</span><span class="p">)</span>
+    <span class="c1"># Create first</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">MyModel</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s2">&quot;123&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Test&quot;</span><span class="p">)</span>
+    <span class="n">repo</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="c1"># Then get</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">repo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;123&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Test&quot;</span>
+</pre></div>
+</div>
+</li>
 </ol>
 </section>
-<section id="adding-a-new-service">
-<h4>Adding a New Service<a class="headerlink" href="#adding-a-new-service" title="Link to this heading">¶</a></h4>
-<ol class="arabic simple">
-<li><p>Create service class in <code class="docutils literal notranslate"><span class="pre">src/services/&lt;name&gt;_service.py</span></code></p></li>
-<li><p>Add to <code class="docutils literal notranslate"><span class="pre">MainWindow</span></code> initialization if needed</p></li>
-<li><p>Use Qt threading patterns for background operations</p></li>
-<li><p>Document in appropriate docs file</p></li>
-<li><p>Write unit tests</p></li>
+<section id="adding-a-new-widget">
+<h3>Adding a New Widget<a class="headerlink" href="#adding-a-new-widget" title="Link to this heading">¶</a></h3>
+<ol class="arabic">
+<li><p><strong>Create Widget</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># src/gui/widgets/my_widget.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">Signal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QWidget</span><span class="p">,</span> <span class="n">QVBoxLayout</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyWidget</span><span class="p">(</span><span class="n">QWidget</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Custom widget description.&quot;&quot;&quot;</span>
+
+    <span class="c1"># Signals (output)</span>
+    <span class="n">data_changed</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">action_requested</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_ui</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_connect_signals</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_setup_ui</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set up user interface.&quot;&quot;&quot;</span>
+        <span class="n">layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c1"># Add widgets</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_connect_signals</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Connect internal signals.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set widget data (input).&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_display</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update_display</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update UI with current data.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Integrate in MainWindow</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In src/app/main_window.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_create_my_widget</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">my_widget</span> <span class="o">=</span> <span class="n">MyWidget</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">my_widget</span><span class="o">.</span><span class="n">data_changed</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_on_data_changed</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_on_data_changed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+    <span class="c1"># Handle data change</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+</li>
 </ol>
 </section>
 </section>
-</section>
-<section id="environment-variables">
-<h2>Environment Variables<a class="headerlink" href="#environment-variables" title="Link to this heading">¶</a></h2>
-<p>ProjektKraken supports configuration via environment variables:</p>
-<p><strong>LLM Configuration:</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Embedding provider</span>
-<span class="nv">EMBED_PROVIDER</span><span class="o">=</span>lmstudio<span class="w">  </span><span class="c1"># or sentence-transformers</span>
-
-<span class="c1"># LM Studio</span>
-<span class="nv">LMSTUDIO_EMBED_URL</span><span class="o">=</span>http://localhost:8080/v1/embeddings
-<span class="nv">LMSTUDIO_MODEL</span><span class="o">=</span>nomic-ai/nomic-embed-text-v1.5-GGUF
-<span class="nv">LMSTUDIO_API_KEY</span><span class="o">=</span>optional-key
-
-<span class="c1"># OpenAI</span>
-<span class="nv">OPENAI_API_KEY</span><span class="o">=</span>sk-...
-<span class="nv">OPENAI_MODEL</span><span class="o">=</span>gpt-4
-
-<span class="c1"># Anthropic</span>
-<span class="nv">ANTHROPIC_API_KEY</span><span class="o">=</span>sk-ant-...
-<span class="nv">ANTHROPIC_MODEL</span><span class="o">=</span>claude-3-opus-20240229
-
-<span class="c1"># Google Vertex AI</span>
-<span class="nv">GOOGLE_PROJECT_ID</span><span class="o">=</span>my-project
-<span class="nv">GOOGLE_LOCATION</span><span class="o">=</span>us-central1
-<span class="nv">GOOGLE_MODEL</span><span class="o">=</span>gemini-pro
-</pre></div>
-</div>
-<p><strong>Webserver Configuration:</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">WEBSERVER_HOST</span><span class="o">=</span><span class="m">127</span>.0.0.1
-<span class="nv">WEBSERVER_PORT</span><span class="o">=</span><span class="m">8000</span>
-</pre></div>
-</div>
-<p>Create a <code class="docutils literal notranslate"><span class="pre">.env</span></code> file in the project root for local configuration (not committed to git).</p>
-</section>
-<section id="troubleshooting">
-<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">¶</a></h2>
-<section id="virtual-environment-issues">
-<h3>Virtual Environment Issues<a class="headerlink" href="#virtual-environment-issues" title="Link to this heading">¶</a></h3>
-<p><strong>Problem:</strong> Command not found after activating venv</p>
-<p><strong>Solution:</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Recreate virtual environment</span>
-rm<span class="w"> </span>-rf<span class="w"> </span>.venv
-python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
-<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
-pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-</pre></div>
-</div>
-</section>
-<section id="import-errors">
-<h3>Import Errors<a class="headerlink" href="#import-errors" title="Link to this heading">¶</a></h3>
-<p><strong>Problem:</strong> <code class="docutils literal notranslate"><span class="pre">ModuleNotFoundError</span></code> when running tests or app</p>
-<p><strong>Solution:</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Ensure you&#39;re in project root</span>
-<span class="nb">cd</span><span class="w"> </span>/path/to/ProjektKraken
-
-<span class="c1"># Ensure virtual environment is activated</span>
-<span class="nb">source</span><span class="w"> </span>.venv/bin/activate
-
-<span class="c1"># Reinstall dependencies</span>
-pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-</pre></div>
-</div>
-</section>
-<section id="qt-platform-plugin-errors">
-<h3>Qt Platform Plugin Errors<a class="headerlink" href="#qt-platform-plugin-errors" title="Link to this heading">¶</a></h3>
-<p><strong>Problem:</strong> <code class="docutils literal notranslate"><span class="pre">qt.qpa.plugin:</span> <span class="pre">Could</span> <span class="pre">not</span> <span class="pre">load</span> <span class="pre">the</span> <span class="pre">Qt</span> <span class="pre">platform</span> <span class="pre">plugin</span></code></p>
-<p><strong>Solution (Linux):</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Install required system libraries</span>
-sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>libegl1<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>libxkbcommon-x11-0<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>libxcb-icccm4<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>libxcb-image0<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>libxcb-keysyms1
-
-<span class="c1"># For headless testing</span>
-<span class="nb">export</span><span class="w"> </span><span class="nv">QT_QPA_PLATFORM</span><span class="o">=</span>offscreen
-</pre></div>
-</div>
-</section>
-<section id="pre-commit-hook-failures">
-<h3>Pre-commit Hook Failures<a class="headerlink" href="#pre-commit-hook-failures" title="Link to this heading">¶</a></h3>
-<p><strong>Problem:</strong> Ruff or pytest fails during commit</p>
-<p><strong>Solution:</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Fix formatting</span>
-ruff<span class="w"> </span>format<span class="w"> </span>src/<span class="w"> </span>tests/
-
-<span class="c1"># Fix linting issues</span>
-ruff<span class="w"> </span>check<span class="w"> </span>--fix<span class="w"> </span>src/<span class="w"> </span>tests/
-
-<span class="c1"># Run tests to identify failures</span>
-pytest
-</pre></div>
-</div>
-</section>
-</section>
-<section id="related-documentation">
-<h2>Related Documentation<a class="headerlink" href="#related-documentation" title="Link to this heading">¶</a></h2>
+<hr class="docutils" />
+<section id="best-practices">
+<h2>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading">¶</a></h2>
+<section id="general-guidelines">
+<h3>General Guidelines<a class="headerlink" href="#general-guidelines" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Write Tests First (TDD)</strong></p>
 <ul class="simple">
-<li><p><strong><a class="reference internal" href="TESTING.html"><span class="std std-doc">TESTING.md</span></a></strong> - Testing guide</p></li>
-<li><p><strong><a class="reference internal" href="#../Design.md"><span class="xref myst">Design.md</span></a></strong> - Architecture specification</p></li>
-<li><p><strong><a class="reference internal" href="DATABASE.html"><span class="std std-doc">DATABASE.md</span></a></strong> - Database architecture</p></li>
-<li><p><strong><a class="reference internal" href="QT_THREADING_SAFETY.html"><span class="std std-doc">QT_THREADING_SAFETY.md</span></a></strong> - Threading patterns</p></li>
-<li><p><strong><a class="reference internal" href="CLI.html"><span class="std std-doc">CLI.md</span></a></strong> - CLI tools overview</p></li>
-<li><p><strong><a class="reference internal" href="SECURITY.html"><span class="std std-doc">SECURITY.md</span></a></strong> - Security best practices</p></li>
+<li><p>Write failing test</p></li>
+<li><p>Implement minimum code to pass</p></li>
+<li><p>Refactor</p></li>
 </ul>
-</section>
-<section id="getting-help">
-<h2>Getting Help<a class="headerlink" href="#getting-help" title="Link to this heading">¶</a></h2>
+</li>
+<li><p><strong>Keep Functions Small</strong></p>
 <ul class="simple">
-<li><p><strong>Documentation:</strong> Check <code class="docutils literal notranslate"><span class="pre">docs/INDEX.md</span></code> for complete documentation index</p></li>
-<li><p><strong>Code Examples:</strong> Browse existing code for patterns</p></li>
-<li><p><strong>Tests:</strong> Check test files for usage examples</p></li>
-<li><p><strong>Architecture:</strong> Review <code class="docutils literal notranslate"><span class="pre">Design.md</span></code> for system design</p></li>
+<li><p>Single Responsibility Principle</p></li>
+<li><p>Max 50 lines per function (guideline)</p></li>
 </ul>
+</li>
+<li><p><strong>Avoid God Classes</strong></p>
+<ul class="simple">
+<li><p>Break large classes into smaller, focused ones</p></li>
+<li><p>Use composition over inheritance</p></li>
+</ul>
+</li>
+<li><p><strong>Document Public APIs</strong></p>
+<ul class="simple">
+<li><p>All public methods need docstrings</p></li>
+<li><p>Private methods optional but encouraged</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="command-pattern-guidelines">
+<h3>Command Pattern Guidelines<a class="headerlink" href="#command-pattern-guidelines" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Store Minimal State</strong></p>
+<ul class="simple">
+<li><p>Only store what’s needed for undo</p></li>
+<li><p>Don’t duplicate large data structures</p></li>
+</ul>
+</li>
+<li><p><strong>Make Commands Atomic</strong></p>
+<ul class="simple">
+<li><p>One command = one action</p></li>
+<li><p>Use composite commands for multi-step operations</p></li>
+</ul>
+</li>
+<li><p><strong>Test Undo/Redo</strong></p>
+<ul class="simple">
+<li><p>Every command must have undo test</p></li>
+<li><p>Test multiple undo/redo cycles</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="database-guidelines">
+<h3>Database Guidelines<a class="headerlink" href="#database-guidelines" title="Link to this heading">¶</a></h3>
+<ol class="arabic">
+<li><p><strong>Use Repositories</strong></p>
+<ul class="simple">
+<li><p>Never write SQL directly in commands</p></li>
+<li><p>Always go through repository layer</p></li>
+</ul>
+</li>
+<li><p><strong>Parameterized Queries</strong></p>
+<ul class="simple">
+<li><p>Always use parameter binding</p></li>
+<li><p>Never string concatenation for SQL</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Bad</span>
+<span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;SELECT * FROM events WHERE id = &#39;</span><span class="si">{</span><span class="n">event_id</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+
+<span class="c1"># Good</span>
+<span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;SELECT * FROM events WHERE id = ?&quot;</span>
+<span class="n">params</span> <span class="o">=</span> <span class="p">(</span><span class="n">event_id</span><span class="p">,)</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Transaction Management</strong></p>
+<ul class="simple">
+<li><p>Use context managers for transactions</p></li>
+<li><p>Keep transactions short</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="qt-pyside6-guidelines">
+<h3>Qt/PySide6 Guidelines<a class="headerlink" href="#qt-pyside6-guidelines" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Signals and Slots</strong></p>
+<ul class="simple">
+<li><p>Prefer signals over direct method calls</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">QueuedConnection</span></code> for cross-thread</p></li>
+</ul>
+</li>
+<li><p><strong>Thread Safety</strong></p>
+<ul class="simple">
+<li><p>Never access UI from worker threads</p></li>
+<li><p>Use signals to communicate with UI</p></li>
+</ul>
+</li>
+<li><p><strong>Memory Management</strong></p>
+<ul class="simple">
+<li><p>Set parent for widgets (prevents leaks)</p></li>
+<li><p>Disconnect signals when done</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="testing-guidelines">
+<h3>Testing Guidelines<a class="headerlink" href="#testing-guidelines" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p><strong>Test Coverage</strong></p>
+<ul class="simple">
+<li><p>Aim for 95%+ coverage</p></li>
+<li><p>Core business logic must be 100%</p></li>
+</ul>
+</li>
+<li><p><strong>Test Naming</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">test_&lt;method&gt;_&lt;scenario&gt;_&lt;expected_result&gt;</span></code></p></li>
+<li><p>Example: <code class="docutils literal notranslate"><span class="pre">test_create_event_with_invalid_date_raises_error</span></code></p></li>
+</ul>
+</li>
+<li><p><strong>Use Fixtures</strong></p>
+<ul class="simple">
+<li><p>Define reusable fixtures in <code class="docutils literal notranslate"><span class="pre">conftest.py</span></code></p></li>
+<li><p>Don’t repeat setup code</p></li>
+</ul>
+</li>
+<li><p><strong>Mock External Dependencies</strong></p>
+<ul class="simple">
+<li><p>Mock file I/O, network, time</p></li>
+<li><p>Keep tests fast and deterministic</p></li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+<hr class="docutils" />
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong><a class="reference internal" href="TESTING.html"><span class="std std-doc">Testing Guide</span></a></strong> - Comprehensive testing documentation</p></li>
+<li><p><strong><a class="reference internal" href="API_REFERENCE.html"><span class="std std-doc">API Reference</span></a></strong> - Detailed API documentation</p></li>
+<li><p><strong><a class="reference internal" href="CONTRIBUTING.html"><span class="std std-doc">Contributing</span></a></strong> - How to contribute to the project</p></li>
+</ul>
+<hr class="docutils" />
+<p><strong>Navigation:</strong><br />
+<a class="reference internal" href="ARCHITECTURE.html"><span class="std std-doc">← Architecture</span></a> • <a class="reference internal" href="INDEX.html"><span class="std std-doc">Back to Index</span></a> • <a class="reference internal" href="DATABASE.html"><span class="std std-doc">Database →</span></a></p>
 </section>
 </section>
 
@@ -723,7 +1121,7 @@ pytest
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">Database Architecture and Best Practices</div>
+                <div class="title">Database Documentation</div>
                 
               </div>
             </a>
@@ -758,54 +1156,59 @@ pytest
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">Development Guide</a><ul>
-<li><a class="reference internal" href="#environment-setup">Environment Setup</a><ul>
+<li><a class="reference internal" href="#table-of-contents">Table of Contents</a></li>
+<li><a class="reference internal" href="#development-setup">Development Setup</a><ul>
 <li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
-<li><a class="reference internal" href="#platform-specific-setup">Platform-Specific Setup</a><ul>
-<li><a class="reference internal" href="#windows">Windows</a></li>
-<li><a class="reference internal" href="#linux-macos">Linux / macOS</a></li>
+<li><a class="reference internal" href="#initial-setup">Initial Setup</a></li>
 </ul>
 </li>
-</ul>
-</li>
-<li><a class="reference internal" href="#dependencies">Dependencies</a></li>
-<li><a class="reference internal" href="#id1">Environment Setup</a></li>
-<li><a class="reference internal" href="#pre-commit-hooks">Pre-commit Hooks</a><ul>
-<li><a class="reference internal" href="#configuration-rules">Configuration Rules</a></li>
-<li><a class="reference internal" href="#running-hooks">Running Hooks</a></li>
+<li><a class="reference internal" href="#project-structure">Project Structure</a></li>
+<li><a class="reference internal" href="#coding-standards">Coding Standards</a><ul>
+<li><a class="reference internal" href="#python-style">Python Style</a></li>
+<li><a class="reference internal" href="#type-hints">Type Hints</a></li>
+<li><a class="reference internal" href="#docstrings">Docstrings</a></li>
+<li><a class="reference internal" href="#naming-conventions">Naming Conventions</a></li>
+<li><a class="reference internal" href="#code-organization">Code Organization</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#development-workflow">Development Workflow</a><ul>
+<li><a class="reference internal" href="#creating-a-feature-branch">1. Creating a Feature Branch</a></li>
+<li><a class="reference internal" href="#making-changes">2. Making Changes</a></li>
+<li><a class="reference internal" href="#running-linters">3. Running Linters</a></li>
+<li><a class="reference internal" href="#running-tests">4. Running Tests</a></li>
+<li><a class="reference internal" href="#committing-changes">5. Committing Changes</a></li>
+<li><a class="reference internal" href="#pushing-and-pull-request">6. Pushing and Pull Request</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#building-and-testing">Building and Testing</a><ul>
 <li><a class="reference internal" href="#running-the-application">Running the Application</a></li>
-<li><a class="reference internal" href="#running-tests">Running Tests</a></li>
-<li><a class="reference internal" href="#code-quality-checks">Code Quality Checks</a></li>
-<li><a class="reference internal" href="#building-documentation">Building Documentation</a></li>
+<li><a class="reference internal" href="#id1">Running Tests</a></li>
+<li><a class="reference internal" href="#building-executable">Building Executable</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#project-structure">Project Structure</a><ul>
-<li><a class="reference internal" href="#layer-architecture">Layer Architecture</a></li>
+<li><a class="reference internal" href="#debugging">Debugging</a><ul>
+<li><a class="reference internal" href="#debug-mode">Debug Mode</a></li>
+<li><a class="reference internal" href="#pdb-debugger">PDB Debugger</a></li>
+<li><a class="reference internal" href="#qt-debugging">Qt Debugging</a></li>
+<li><a class="reference internal" href="#database-debugging">Database Debugging</a></li>
+<li><a class="reference internal" href="#performance-profiling">Performance Profiling</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#development-best-practices">Development Best Practices</a><ul>
-<li><a class="reference internal" href="#code-style">Code Style</a></li>
-<li><a class="reference internal" href="#adding-new-features">Adding New Features</a></li>
 <li><a class="reference internal" href="#common-tasks">Common Tasks</a><ul>
-<li><a class="reference internal" href="#adding-a-new-entity-type">Adding a New Entity Type</a></li>
-<li><a class="reference internal" href="#adding-a-new-cli-command">Adding a New CLI Command</a></li>
-<li><a class="reference internal" href="#adding-a-new-service">Adding a New Service</a></li>
+<li><a class="reference internal" href="#adding-a-new-command">Adding a New Command</a></li>
+<li><a class="reference internal" href="#adding-a-new-repository">Adding a New Repository</a></li>
+<li><a class="reference internal" href="#adding-a-new-widget">Adding a New Widget</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#best-practices">Best Practices</a><ul>
+<li><a class="reference internal" href="#general-guidelines">General Guidelines</a></li>
+<li><a class="reference internal" href="#command-pattern-guidelines">Command Pattern Guidelines</a></li>
+<li><a class="reference internal" href="#database-guidelines">Database Guidelines</a></li>
+<li><a class="reference internal" href="#qt-pyside6-guidelines">Qt/PySide6 Guidelines</a></li>
+<li><a class="reference internal" href="#testing-guidelines">Testing Guidelines</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#environment-variables">Environment Variables</a></li>
-<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
-<li><a class="reference internal" href="#virtual-environment-issues">Virtual Environment Issues</a></li>
-<li><a class="reference internal" href="#import-errors">Import Errors</a></li>
-<li><a class="reference internal" href="#qt-platform-plugin-errors">Qt Platform Plugin Errors</a></li>
-<li><a class="reference internal" href="#pre-commit-hook-failures">Pre-commit Hook Failures</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#related-documentation">Related Documentation</a></li>
-<li><a class="reference internal" href="#getting-help">Getting Help</a></li>
+<li><a class="reference internal" href="#next-steps">Next Steps</a></li>
 </ul>
 </li>
 </ul>
