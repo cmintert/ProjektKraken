@@ -23,6 +23,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.app.constants import (
+    EDITOR_DETAILS_MIN_HEIGHT,
+    EDITOR_FORM_VERTICAL_SPACING,
+    EDITOR_ICON_BUTTON_SIZE,
+    EDITOR_LIST_SPACING,
+    EDITOR_RELATION_LIST_MIN_HEIGHT,
+    EDITOR_SECTION_SPACING,
+)
 from src.core.events import Event
 from src.core.summary_data import SummaryData
 from src.gui.mixins.autosave_mixin import AutoSaveManager
@@ -40,14 +48,6 @@ from src.gui.widgets.standard_buttons import (
 from src.gui.widgets.summary_widget import SummaryWidget
 from src.gui.widgets.tag_editor import TagEditorWidget
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
-from src.app.constants import (
-    EDITOR_DETAILS_MIN_HEIGHT,
-    EDITOR_FORM_VERTICAL_SPACING,
-    EDITOR_ICON_BUTTON_SIZE,
-    EDITOR_LIST_SPACING,
-    EDITOR_RELATION_LIST_MIN_HEIGHT,
-    EDITOR_SECTION_SPACING,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -219,7 +219,6 @@ class EventEditorWidget(QWidget):
         self.form_layout.addRow("Duration:", self.duration_widget)
         self.form_layout.addRow("End Date:", self.end_date_edit)
 
-        self.form_layout.addRow("End Date:", self.end_date_edit)
         self.form_layout.addRow("Description:", self.desc_edit)
 
         # Add Summary Widget (Collapsible)
@@ -513,6 +512,7 @@ class EventEditorWidget(QWidget):
             event: QDropEvent with MIME data.
         """
         import json
+
         from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
 
         if not event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE):
