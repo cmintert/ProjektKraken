@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-08
 ### Internal
-- chore: Update changelog to reflect new UI hotkeys, a bug fix, major documentation overhaul, and cleanup.
+- Merge pull request #75 from cmintert/copilot/improve-docstring-and-type-hints
 
 
 *This changelog was automatically generated.*
