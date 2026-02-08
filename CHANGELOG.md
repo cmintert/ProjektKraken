@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-02-03
-**Commit:** `0.10.3`
+**Last Updated:** 2026-02-08
+**Commit:** `0.11.0`
 ---
 
 # Changelog
@@ -10,6 +10,33 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [0.11.0]
+
+### Added
+- *(2026-02-07)* **UI**: Implemented "Drag-and-Drop Relations" from Project Explorer to Editors with visual "Drag Pill" cursor and "Relation Type Picker".
+- *(2026-02-07)* **UI**: Added generic "Toast Notification" system using themed Auto-Closing Message Box for non-intrusive feedback.
+- *(2026-02-07)* **Map**: Implemented "Drag Overlay" on Map Widget for improved visual feedback during drop operations.
+- *(2026-02-05)* **Core**: Implemented comprehensive Global Undo/Redo System with persistence across restarts and specialized "History Panel" dock.
+- *(2026-02-05)* **UI**: Added Global Keyboard Shortcuts handler via application event filter for consistent hotkey behavior.
+- *(2026-02-03)* **UI**: Implemented "Virtualized List Model" (`QAbstractListModel`) for Unified List, significantly improving performance with large datasets.
+- *(2026-02-03)* **UI**: Implemented Async Gallery Loading and Smart Attribute Editing for better responsiveness.
+
+### Fixed
+- *(2026-02-07)* **UI**: multiple drag-and-drop regression fixes covering selection state preservation and delayed inspection logic.
+- *(2026-02-05)* **UI**: Fixed Project Explorer multi-select checkboxes not persisting correct state during filtering.
+- *(2026-02-04)* **Timeline**: Prevented playhead from accidentally moving selected events during scrub operations.
+- *(2026-02-03)* **Testing**: Resolved over 1000+ test failures by introducing compatibility layers and ensuring proper Qt library installation.
+
+### Refactor
+- *(2026-02-07)* **Refactor**: Refactored UI "Magic Numbers" into constants and fixed duplicate relation creation logic.
+- *(2026-02-05)* **Architecture**: Major refactor of Command System to support serialization, timestamps, and composite commands.
+- *(2026-02-03)* **Architecture**: Completed comprehensive "UX Audit" refactor including Model/View separation and async timeline layout.
+
+### Documentation
+- *(2026-02-07)* **Docs**: Added comprehensive documentation for Sprint 0 (Drag & Drop) and Sprint 1 (Toast Notifications).
+- *(2026-02-05)* **Docs**: Added extensive documentation and research for Undo/Redo system and Code Review reports.
+
 
 ## [0.10.3]
 

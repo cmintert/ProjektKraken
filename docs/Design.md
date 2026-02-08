@@ -7,7 +7,7 @@
 
 # Project Kraken: Comprehensive Design Specification
 
-Version: 0.10.3  
+Version: 0.11.0  
 Status: Beta  
 Target Audience: Software Developers, UX Designers
 
