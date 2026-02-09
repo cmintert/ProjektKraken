@@ -1598,6 +1598,24 @@ class MapGraphicsView(QGraphicsView):
     # Feature Style Editing
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _safe_color_css(color_str: str) -> str:
+        """Validates a color string for safe use in QSS stylesheets.
+
+        Returns the validated hex color or a safe fallback.
+
+        Args:
+            color_str: A candidate color string (e.g. '#FF0000').
+
+        Returns:
+            A validated hex color safe for use in CSS.
+
+        """
+        c = QColor(color_str)
+        if c.isValid():
+            return c.name()
+        return "#808080"  # safe grey fallback
+
     def _show_feature_style_dialog(self, item: "_FeatureItemBase") -> None:
         """Opens an inline dialog to edit a feature's visual style.
 
@@ -1623,19 +1641,23 @@ class MapGraphicsView(QGraphicsView):
         layout = QFormLayout(dialog)
 
         # Stroke color
-        stroke_btn = QPushButton(item._style.get("stroke_color", DEFAULT_STROKE_COLOR))
-        stroke_btn.setStyleSheet(
-            f"background-color: {stroke_btn.text()}; color: white; padding: 4px 12px;"
+        stroke_init = self._safe_color_css(
+            item._style.get("stroke_color", DEFAULT_STROKE_COLOR)
         )
-        _stroke_color = [stroke_btn.text()]
+        stroke_btn = QPushButton(stroke_init)
+        stroke_btn.setStyleSheet(
+            f"background-color: {stroke_init}; color: white; padding: 4px 12px;"
+        )
+        _stroke_color = [stroke_init]
 
         def _pick_stroke() -> None:
             c = QColorDialog.getColor(QColor(_stroke_color[0]), dialog, "Stroke Color")
             if c.isValid():
-                _stroke_color[0] = c.name()
-                stroke_btn.setText(c.name())
+                safe = c.name()
+                _stroke_color[0] = safe
+                stroke_btn.setText(safe)
                 stroke_btn.setStyleSheet(
-                    f"background-color: {c.name()}; color: white; padding: 4px 12px;"
+                    f"background-color: {safe}; color: white; padding: 4px 12px;"
                 )
 
         stroke_btn.clicked.connect(_pick_stroke)
@@ -1652,12 +1674,14 @@ class MapGraphicsView(QGraphicsView):
         fill_btn: Optional[QPushButton] = None
         _fill_color: list = [None]
         if isinstance(item, RegionItem):
-            fill_val = item._style.get("fill_color", DEFAULT_REGION_FILL_COLOR)
-            fill_btn = QPushButton(fill_val)
-            fill_btn.setStyleSheet(
-                f"background-color: {fill_val}; color: white; padding: 4px 12px;"
+            fill_init = self._safe_color_css(
+                item._style.get("fill_color", DEFAULT_REGION_FILL_COLOR)
             )
-            _fill_color = [fill_val]
+            fill_btn = QPushButton(fill_init)
+            fill_btn.setStyleSheet(
+                f"background-color: {fill_init}; color: white; padding: 4px 12px;"
+            )
+            _fill_color = [fill_init]
 
             def _pick_fill() -> None:
                 c = QColorDialog.getColor(
@@ -1667,10 +1691,11 @@ class MapGraphicsView(QGraphicsView):
                     QColorDialog.ColorDialogOption.ShowAlphaChannel,
                 )
                 if c.isValid():
+                    safe = c.name()
                     _fill_color[0] = c.name(QColor.NameFormat.HexArgb)
                     fill_btn.setText(_fill_color[0])
                     fill_btn.setStyleSheet(
-                        f"background-color: {c.name()}; color: white; "
+                        f"background-color: {safe}; color: white; "
                         f"padding: 4px 12px;"
                     )
 
@@ -1759,7 +1784,10 @@ class MapGraphicsView(QGraphicsView):
         ny = max(0.0, min(1.0, ny))
 
         if index < len(item._geometry):
-            item._geometry[index] = {"x": round(nx, 6), "y": round(ny, 6)}
+            # Update in-place to avoid allocations during interactive drag
+            pt = item._geometry[index]
+            pt["x"] = round(nx, 6)
+            pt["y"] = round(ny, 6)
             # Rebuild visual
             if isinstance(item, PathItem):
                 item._build_path()
