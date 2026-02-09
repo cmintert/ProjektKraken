@@ -60,9 +60,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.marker import FEATURE_TYPE_PATH, FEATURE_TYPE_POINT, FEATURE_TYPE_REGION
 from src.core.theme_manager import ThemeManager
 from src.core.trajectory import KEYFRAME_TIME_EPSILON
 from src.gui.widgets.map.coordinate_system import MapCoordinateSystem
+from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.icon_picker_dialog import IconPickerDialog
 from src.gui.widgets.map.marker_item import MarkerItem
 from src.gui.widgets.map.scale_bar_painter import ScaleBarPainter
@@ -498,6 +500,9 @@ class MapGraphicsView(QGraphicsView):
     keyframe_delete_requested = Signal(str, float)  # marker_id, t
     keyframe_edit_requested = Signal(str, float, float, float)  # marker_id, t, x, y
     calibration_completed = Signal(float)  # emitted with pixel distance
+    # Drawing mode signals
+    drawing_finished = Signal(str, list)  # feature_type, geometry (normalized coords)
+    drawing_cancelled = Signal()  # Emitted when drawing is cancelled
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the MapGraphicsView.
@@ -562,6 +567,7 @@ class MapGraphicsView(QGraphicsView):
         # Map and markers
         self.pixmap_item: Optional[QGraphicsPixmapItem] = None
         self.markers: Dict[str, MarkerItem] = {}
+        self.feature_items: Dict[str, QGraphicsObject] = {}  # path/region items
 
         # Theme
         self.tm = ThemeManager()
@@ -582,6 +588,12 @@ class MapGraphicsView(QGraphicsView):
 
         # Temporal state (for future trajectory animation)
         self._current_time: float = 0.0
+
+        # Drawing Mode state
+        self._drawing_mode: Optional[str] = None  # None, "path", or "region"
+        self._drawing_vertices: list[QPointF] = []  # scene coordinates
+        self._drawing_preview_item: Optional[QGraphicsPathItem] = None
+        self._drawing_dots: list[QGraphicsItem] = []  # vertex dots
 
         # Trajectory Visualization
         self.trajectory_path_item: Optional[QGraphicsPathItem] = None
@@ -684,7 +696,17 @@ class MapGraphicsView(QGraphicsView):
             self.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        """Handle mouse press to implement Smart Drag and Calibration."""
+        """Handle mouse press to implement Smart Drag, Calibration, and Drawing."""
+        # Handle Drawing Mode
+        if self._drawing_mode and self.pixmap_item:
+            if event.button() == Qt.MouseButton.LeftButton:
+                pos = event.position().toPoint()
+                scene_pos = self.mapToScene(pos)
+                item_pos = self.pixmap_item.mapFromScene(scene_pos)
+                if self.pixmap_item.contains(item_pos):
+                    self._add_drawing_vertex(scene_pos)
+                return  # Consume event
+
         # Handle Calibration Mode
         if self.calibration_mode and self.pixmap_item:
             pos = event.position().toPoint()
@@ -734,8 +756,14 @@ class MapGraphicsView(QGraphicsView):
             self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        """Handle mouse move to track coordinates."""
+        """Handle mouse move to track coordinates and drawing preview."""
         super().mouseMoveEvent(event)
+
+        if self._drawing_mode:
+            self.setCursor(Qt.CursorShape.CrossCursor)
+            if self._drawing_vertices:
+                scene_pos = self.mapToScene(event.position().toPoint())
+                self._update_drawing_preview(scene_pos)
 
         if self.calibration_mode:
             self.setCursor(Qt.CrossCursor)  # Enforce cursor
@@ -765,30 +793,80 @@ class MapGraphicsView(QGraphicsView):
         color: Optional[str] = None,
         description: Optional[str] = None,
         lore_date: Optional[float] = None,
+        feature_type: str = "point",
+        geometry: Optional[list] = None,
+        style: Optional[dict] = None,
     ) -> None:
-        """Adds a marker to the map at normalized coordinates.
+        """Adds a marker or feature to the map at normalized coordinates.
+
+        Uses a factory pattern: point features become MarkerItem, path
+        features become PathItem, and region features become RegionItem.
 
         Args:
             marker_id: Unique identifier for the marker.
             object_type: Type of object ('entity' or 'event').
             label: Marker label text.
-            x: Normalized X coordinate [0.0, 1.0].
-            y: Normalized Y coordinate [0.0, 1.0].
+            x: Normalized X coordinate [0.0, 1.0] (anchor).
+            y: Normalized Y coordinate [0.0, 1.0] (anchor).
             icon: Optional icon filename (e.g., 'castle.svg').
+            color: Optional color hex string.
             description: Optional description for tooltip.
             lore_date: Optional lore timestamp for temporal filtering.
+            feature_type: 'point', 'path', or 'region'.
+            geometry: Optional list of coordinate dicts for paths/regions.
+            style: Optional visual override dict.
 
         """
         if not self.pixmap_item:
             logger.warning("Cannot add marker: no map loaded")
             return
 
-        # Remove existing marker if present
+        # Remove existing marker/feature if present
         if marker_id in self.markers:
             self.scene.removeItem(self.markers[marker_id])
             del self.markers[marker_id]
+        if marker_id in self.feature_items:
+            self.scene.removeItem(self.feature_items[marker_id])
+            del self.feature_items[marker_id]
 
-        # Create new marker with optional icon and color
+        # Factory: route by feature_type
+        if feature_type == FEATURE_TYPE_PATH and geometry:
+            item = PathItem(
+                marker_id=marker_id,
+                object_type=object_type,
+                label=label,
+                pixmap_item=self.pixmap_item,
+                geometry=geometry,
+                anchor_x=x,
+                anchor_y=y,
+                style=style,
+                description=description,
+                lore_date=lore_date,
+            )
+            self.scene.addItem(item)
+            self.feature_items[marker_id] = item
+            item.clicked.connect(self.marker_clicked.emit)
+            return
+
+        if feature_type == FEATURE_TYPE_REGION and geometry:
+            item = RegionItem(
+                marker_id=marker_id,
+                object_type=object_type,
+                label=label,
+                pixmap_item=self.pixmap_item,
+                geometry=geometry,
+                anchor_x=x,
+                anchor_y=y,
+                style=style,
+                description=description,
+                lore_date=lore_date,
+            )
+            self.scene.addItem(item)
+            self.feature_items[marker_id] = item
+            item.clicked.connect(self.marker_clicked.emit)
+            return
+
+        # Default: point marker (backward compatible)
         marker = MarkerItem(
             marker_id,
             object_type,
@@ -832,7 +910,7 @@ class MapGraphicsView(QGraphicsView):
         # logger.debug(f"Updated marker {marker_id} to normalized ({x:.3f}, {y:.3f})")
 
     def remove_marker(self, marker_id: str) -> None:
-        """Remove a marker from the map.
+        """Remove a marker or feature from the map.
 
         Args:
             marker_id: Unique identifier for the marker to remove.
@@ -841,37 +919,33 @@ class MapGraphicsView(QGraphicsView):
             self.scene.removeItem(self.markers[marker_id])
             del self.markers[marker_id]
             logger.debug(f"Removed marker {marker_id}")
+        if marker_id in self.feature_items:
+            self.scene.removeItem(self.feature_items[marker_id])
+            del self.feature_items[marker_id]
+            logger.debug(f"Removed feature {marker_id}")
 
     def clear_markers(self) -> None:
-        """Remove all markers from the map."""
+        """Remove all markers and features from the map."""
         for marker in list(self.markers.values()):
             self.scene.removeItem(marker)
+        self.markers.clear()
+        for item in list(self.feature_items.values()):
+            self.scene.removeItem(item)
+        self.feature_items.clear()
         self.markers.clear()
 
     def update_markers_temporal_state(
         self, playhead_time: float, current_time: float
     ) -> None:
-        """Updates the temporal visual state of all markers based on time."""
-        for marker in self.markers.values():
-            if marker.lore_date is None:
-                # Timeless entities are always present/vivid
-                marker.set_temporal_state(is_future=False, is_past=False)
+        """Updates the temporal visual state of all markers and features."""
+        all_items = list(self.markers.values()) + list(self.feature_items.values())
+        for item in all_items:
+            if item.lore_date is None:
+                item.set_temporal_state(is_future=False, is_past=False)
                 continue
-
-            # Determine State
-            # "Future": It hasn't happened yet in the playback.
-            # Usually, playhead is the view into history.
-            # If playhead < event_date, it's future relative to view.
-            is_future = marker.lore_date > playhead_time
-
-            # We use the Playhead as the primary visibility filter for
-            # "replaying history". Markers in the future of the playhead
-            # are considered "Not yet happened".
-
-            # Is Past: It has already happened.
-            is_past = marker.lore_date <= playhead_time
-
-            marker.set_temporal_state(is_future=is_future, is_past=is_past)
+            is_future = item.lore_date > playhead_time
+            is_past = item.lore_date <= playhead_time
+            item.set_temporal_state(is_future=is_future, is_past=is_past)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         """Handle mouse wheel for zooming."""
@@ -976,7 +1050,7 @@ class MapGraphicsView(QGraphicsView):
             event.ignore()
 
     def contextMenuEvent(self, event: QContextMenuEvent) -> None:
-        """Handle context menu events for adding/removing markers.
+        """Handle context menu events for adding/removing markers and features.
 
         Args:
             event: The context menu event.
@@ -984,19 +1058,20 @@ class MapGraphicsView(QGraphicsView):
         if not self.pixmap_item:
             return
 
-        # Check if we clicked on a marker
-        pos = event.pos()  # QContextMenuEvent uses pos() vs position() mostly
-        # but let's check if it's deprecated too.
-        # Qt6 recommends pos() for ContextMenuEvent usually.
+        # Suppress context menu during drawing mode
+        if self._drawing_mode:
+            return
+
+        # Check if we clicked on a marker or feature
+        pos = event.pos()
         item = self.itemAt(pos)
         if isinstance(item, MarkerItem):
             self._show_marker_context_menu(item, event.globalPos())
+        elif isinstance(item, (PathItem, RegionItem)):
+            self._show_feature_context_menu(item, event.globalPos())
         else:
             # Clicked on map (or empty space)
-            # Convert screen pos to scene pos
             scene_pos = self.mapToScene(pos)
-
-            # Check if within map bounds (convert to item-local coordinates)
             item_pos = self.pixmap_item.mapFromScene(scene_pos)
             if self.pixmap_item.contains(item_pos):
                 self._show_map_background_context_menu(scene_pos, event.globalPos())
@@ -1209,17 +1284,232 @@ class MapGraphicsView(QGraphicsView):
     def _show_map_background_context_menu(
         self, scene_pos: QPointF, global_pos: QPoint
     ) -> None:
-        """Shows context menu for adding a marker at a specific location."""
-        # Unpack tuple to avoid closure issues with lambda
+        """Shows context menu for adding features at a specific location."""
         norm_x, norm_y = self.coord_system.to_normalized(scene_pos)
         menu = QMenu(self)
+
         add_action = QAction(self)
         add_action.setText("Add Marker Here")
         add_action.triggered.connect(
             lambda: self.add_marker_requested.emit(norm_x, norm_y)
         )
         menu.addAction(add_action)
+
+        menu.addSeparator()
+
+        draw_path_action = QAction(self)
+        draw_path_action.setText("Draw Path Here...")
+        draw_path_action.triggered.connect(lambda: self.start_drawing("path"))
+        menu.addAction(draw_path_action)
+
+        draw_region_action = QAction(self)
+        draw_region_action.setText("Draw Region Here...")
+        draw_region_action.triggered.connect(lambda: self.start_drawing("region"))
+        menu.addAction(draw_region_action)
+
         menu.exec(global_pos)
+
+    def _show_feature_context_menu(
+        self, item: QGraphicsObject, global_pos: QPoint
+    ) -> None:
+        """Shows context menu for a path or region feature.
+
+        Args:
+            item: The PathItem or RegionItem.
+            global_pos: Global screen position for the menu.
+
+        """
+        menu = QMenu(self)
+
+        feature_label = "Path" if isinstance(item, PathItem) else "Region"
+
+        # Delete action
+        delete_action = QAction(self)
+        delete_action.setText(f"Delete {feature_label}")
+        delete_action.triggered.connect(
+            lambda: self.delete_marker_requested.emit(item.marker_id)
+        )
+        menu.addAction(delete_action)
+        menu.exec(global_pos)
+
+    # ------------------------------------------------------------------
+    # Drawing Mode
+    # ------------------------------------------------------------------
+
+    def start_drawing(self, feature_type: str) -> None:
+        """Enters drawing mode for paths or regions.
+
+        Click to add vertices; double-click to finish; Escape to cancel.
+
+        Args:
+            feature_type: 'path' or 'region'.
+
+        """
+        self._drawing_mode = feature_type
+        self._drawing_vertices.clear()
+        self._clear_drawing_preview()
+        self.setDragMode(QGraphicsView.DragMode.NoDrag)
+        self.setCursor(Qt.CursorShape.CrossCursor)
+        logger.info(f"Drawing mode started: {feature_type}")
+
+    def cancel_drawing(self) -> None:
+        """Exits drawing mode without saving."""
+        self._drawing_mode = None
+        self._drawing_vertices.clear()
+        self._clear_drawing_preview()
+        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+        self.setCursor(Qt.CursorShape.ArrowCursor)
+        self.drawing_cancelled.emit()
+        logger.info("Drawing cancelled")
+
+    def finish_drawing(self) -> None:
+        """Completes the current drawing and emits the geometry.
+
+        Converts scene-coordinate vertices to normalised coordinates
+        and emits ``drawing_finished(feature_type, geometry)``.
+        """
+        if not self._drawing_mode or not self.pixmap_item:
+            self.cancel_drawing()
+            return
+
+        min_points = 2 if self._drawing_mode == "path" else 3
+        if len(self._drawing_vertices) < min_points:
+            logger.warning(
+                f"Need at least {min_points} points for {self._drawing_mode}"
+            )
+            self.cancel_drawing()
+            return
+
+        # Convert scene coords to normalised
+        geometry = []
+        for sp in self._drawing_vertices:
+            nx, ny = self.coord_system.to_normalized(sp)
+            nx, ny = self.coord_system.clamp_normalized(nx, ny)
+            geometry.append({"x": round(nx, 6), "y": round(ny, 6)})
+
+        feature_type = self._drawing_mode
+        logger.info(
+            f"Drawing finished: {feature_type} with {len(geometry)} vertices"
+        )
+
+        # Clean up drawing state
+        self._drawing_mode = None
+        self._drawing_vertices.clear()
+        self._clear_drawing_preview()
+        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+        self.setCursor(Qt.CursorShape.ArrowCursor)
+
+        self.drawing_finished.emit(feature_type, geometry)
+
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
+        """Handle double-click to finish drawing.
+
+        Args:
+            event: The mouse double-click event.
+
+        """
+        if self._drawing_mode:
+            self.finish_drawing()
+            return
+        super().mouseDoubleClickEvent(event)
+
+    def keyPressEvent(self, event: "QKeyEvent") -> None:
+        """Handle key presses for drawing mode (Escape to cancel).
+
+        Args:
+            event: The key press event.
+
+        """
+        if self._drawing_mode and event.key() == Qt.Key.Key_Escape:
+            self.cancel_drawing()
+            return
+        super().keyPressEvent(event)
+
+    def _add_drawing_vertex(self, scene_pos: QPointF) -> None:
+        """Adds a vertex to the current drawing.
+
+        Args:
+            scene_pos: The vertex position in scene coordinates.
+
+        """
+        self._drawing_vertices.append(scene_pos)
+
+        # Add visible dot
+        from PySide6.QtWidgets import QGraphicsEllipseItem
+
+        dot = QGraphicsEllipseItem(-3, -3, 6, 6)
+        dot.setPos(scene_pos)
+        dot.setBrush(QBrush(QColor("#e74c3c")))
+        dot.setPen(QPen(QColor("#FFFFFF"), 1))
+        dot.setZValue(LAYER_UI_OVERLAY)
+        self.scene.addItem(dot)
+        self._drawing_dots.append(dot)
+
+        self._update_drawing_preview(scene_pos)
+
+    def _update_drawing_preview(self, mouse_pos: QPointF) -> None:
+        """Updates the rubber-band preview path during drawing.
+
+        Args:
+            mouse_pos: Current mouse position in scene coordinates.
+
+        """
+        if not self._drawing_vertices:
+            return
+
+        # Remove old preview
+        if self._drawing_preview_item:
+            self.scene.removeItem(self._drawing_preview_item)
+            self._drawing_preview_item = None
+
+        path = QPainterPath()
+        path.moveTo(self._drawing_vertices[0])
+        for pt in self._drawing_vertices[1:]:
+            path.lineTo(pt)
+        # Rubber band to mouse
+        path.lineTo(mouse_pos)
+        # Close for region preview
+        if self._drawing_mode == "region" and len(self._drawing_vertices) >= 2:
+            path.lineTo(self._drawing_vertices[0])
+
+        self._drawing_preview_item = QGraphicsPathItem(path)
+        pen = QPen(QColor("#e74c3c"), 2)
+        pen.setCosmetic(True)
+        pen.setStyle(Qt.PenStyle.DashLine)
+        self._drawing_preview_item.setPen(pen)
+        if self._drawing_mode == "region":
+            self._drawing_preview_item.setBrush(QBrush(QColor(231, 76, 60, 40)))
+        self._drawing_preview_item.setZValue(LAYER_UI_OVERLAY)
+        self.scene.addItem(self._drawing_preview_item)
+
+    def _clear_drawing_preview(self) -> None:
+        """Removes all drawing preview items from the scene."""
+        if self._drawing_preview_item:
+            self.scene.removeItem(self._drawing_preview_item)
+            self._drawing_preview_item = None
+        for dot in self._drawing_dots:
+            self.scene.removeItem(dot)
+        self._drawing_dots.clear()
+
+    @property
+    def is_drawing(self) -> bool:
+        """True when the view is in drawing mode.
+
+        Returns:
+            bool: Whether drawing mode is active.
+
+        """
+        return self._drawing_mode is not None
+
+    @property
+    def drawing_mode(self) -> Optional[str]:
+        """Returns the current drawing mode type.
+
+        Returns:
+            Optional[str]: 'path', 'region', or None.
+
+        """
+        return self._drawing_mode
 
     def show_trajectory(self, marker_id: str, keyframes: list) -> None:
         """Visualizes the trajectory path and keyframes.

@@ -157,6 +157,7 @@ class MapWidget(QWidget):
     change_marker_icon_requested = Signal(str, str)  # marker_id, new_icon
     change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
     marker_drop_requested = Signal(str, str, str, float, float)  # id, type, name, x, y
+    create_feature_requested = Signal(str, list)  # feature_type, geometry
     add_keyframe_requested = Signal(
         str, str, float, float, float
     )  # map_id, marker_id, t, x, y
@@ -222,6 +223,23 @@ class MapWidget(QWidget):
         self.btn_add_keyframe.setToolTip("Save current marker position at current time")
         self.btn_add_keyframe.clicked.connect(self._on_add_keyframe)
         self.toolbar.addWidget(self.btn_add_keyframe)
+
+        # Drawing tool buttons
+        self.btn_draw_path = QPushButton("Draw Path")
+        self.btn_draw_path.setToolTip(
+            "Draw a polyline path on the map (click vertices, double-click to finish)"
+        )
+        self.btn_draw_path.setCheckable(True)
+        self.btn_draw_path.clicked.connect(self._on_draw_path_clicked)
+        self.toolbar.addWidget(self.btn_draw_path)
+
+        self.btn_draw_region = QPushButton("Draw Region")
+        self.btn_draw_region.setToolTip(
+            "Draw a polygon region on the map (click vertices, double-click to finish)"
+        )
+        self.btn_draw_region.setCheckable(True)
+        self.btn_draw_region.clicked.connect(self._on_draw_region_clicked)
+        self.toolbar.addWidget(self.btn_draw_region)
 
         # Mode Indicator (right side)
         spacer = QWidget()
@@ -291,6 +309,8 @@ class MapWidget(QWidget):
         )
         self.view.marker_drop_requested.connect(self.marker_drop_requested.emit)
         self.view.mouse_coordinates_changed.connect(self._on_mouse_coordinates_changed)
+        self.view.drawing_finished.connect(self._on_drawing_finished)
+        self.view.drawing_cancelled.connect(self._on_drawing_cancelled)
         self.view.scene.selectionChanged.connect(self._on_selection_changed)
 
         self._maps_data = []  # List of maps for selector
@@ -405,6 +425,52 @@ class MapWidget(QWidget):
 
         logger.info(f"Adding keyframe for {marker_id} at t={t}: ({x:.3f}, {y:.3f})")
         self._emit_keyframe_upsert(marker_id, t, x, y, is_add=True)
+
+    # ------------------------------------------------------------------
+    # Drawing Mode
+    # ------------------------------------------------------------------
+
+    @Slot()
+    def _on_draw_path_clicked(self) -> None:
+        """Toggles path drawing mode."""
+        if self.view.is_drawing:
+            self.view.cancel_drawing()
+            return
+        self.btn_draw_region.setChecked(False)
+        self.view.start_drawing("path")
+        self._update_mode_indicator()
+
+    @Slot()
+    def _on_draw_region_clicked(self) -> None:
+        """Toggles region drawing mode."""
+        if self.view.is_drawing:
+            self.view.cancel_drawing()
+            return
+        self.btn_draw_path.setChecked(False)
+        self.view.start_drawing("region")
+        self._update_mode_indicator()
+
+    @Slot(str, list)
+    def _on_drawing_finished(self, feature_type: str, geometry: list) -> None:
+        """Handles drawing completion — emits create_feature_requested.
+
+        Args:
+            feature_type: 'path' or 'region'.
+            geometry: List of normalised coordinate dicts.
+
+        """
+        self.btn_draw_path.setChecked(False)
+        self.btn_draw_region.setChecked(False)
+        self._update_mode_indicator()
+        self.create_feature_requested.emit(feature_type, geometry)
+        logger.info(f"Feature drawing complete: {feature_type}, {len(geometry)} vertices")
+
+    @Slot()
+    def _on_drawing_cancelled(self) -> None:
+        """Handles drawing cancellation — resets UI state."""
+        self.btn_draw_path.setChecked(False)
+        self.btn_draw_region.setChecked(False)
+        self._update_mode_indicator()
 
     def _iter_trajectory_positions(self) -> Iterator[Tuple[str, float, float]]:
         """Yield (marker_id, x, y) for markers with trajectories at current time."""
@@ -649,8 +715,11 @@ class MapWidget(QWidget):
         color: Optional[str] = None,
         description: Optional[str] = None,
         lore_date: Optional[float] = None,
+        feature_type: str = "point",
+        geometry: Optional[list] = None,
+        style: Optional[dict] = None,
     ) -> None:
-        """Adds a marker to the map.
+        """Adds a marker or feature to the map.
 
         Args:
             marker_id: Unique identifier for the marker.
@@ -661,10 +730,15 @@ class MapWidget(QWidget):
             icon: Optional icon filename.
             color: Optional color hex string.
             description: Optional description for tooltip.
+            lore_date: Optional lore timestamp for temporal filtering.
+            feature_type: 'point', 'path', or 'region'.
+            geometry: Optional list of coordinate dicts for paths/regions.
+            style: Optional visual override dict.
 
         """
         self.view.add_marker(
-            marker_id, object_type, label, x, y, icon, color, description, lore_date
+            marker_id, object_type, label, x, y, icon, color, description,
+            lore_date, feature_type, geometry, style,
         )
 
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
@@ -938,6 +1012,33 @@ class MapWidget(QWidget):
 
             # Normal cursor
             self.view.setCursor(Qt.CursorShape.ArrowCursor)
+
+        elif self.view.is_drawing:
+            # Drawing Mode
+            mode_name = self.view.drawing_mode or "shape"
+            self.mode_indicator.setText(f"🔵 DRAWING: {mode_name.title()}")
+            self.mode_indicator.setStyleSheet(
+                """
+                QLabel {
+                    background: #3498db;
+                    color: white;
+                    padding: 5px 12px;
+                    border-radius: 4px;
+                    font-weight: bold;
+                    font-size: 11px;
+                }
+            """
+            )
+
+            # Overlay Banner
+            banner_text = (
+                f"✏️ <b>DRAWING {mode_name.upper()}</b><br/>"
+                "Click to add vertices<br/>"
+                "<small>[Double-click to Finish] [Esc to Cancel]</small>"
+            )
+            self.overlay_banner.setText(banner_text)
+            self.overlay_banner.show()
+            self._update_overlay_position()
 
         else:
             # Normal Mode

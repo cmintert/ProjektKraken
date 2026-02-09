@@ -267,6 +267,9 @@ class DataHandler(QObject):
                     "icon": marker.attributes.get("icon"),
                     "color": marker.attributes.get("color"),
                     "lore_date": lore_date,
+                    "feature_type": getattr(marker, "feature_type", "point"),
+                    "geometry": getattr(marker, "geometry", None),
+                    "style": getattr(marker, "style", None),
                 }
             )
 

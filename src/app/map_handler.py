@@ -283,6 +283,85 @@ class MapHandler(QObject):
         self.window.command_requested.emit(cmd)
         logger.info(f"Creating marker for {item_type} '{item_name}' via drag-drop")
 
+    @Slot(str, list)
+    def on_feature_drawn(self, feature_type: str, geometry: list) -> None:
+        """Handle feature creation from drawing mode.
+
+        Prompts the user to select an Entity or Event to link, then creates
+        the feature with the drawn geometry.
+
+        Args:
+            feature_type: 'path' or 'region'.
+            geometry: List of normalised coordinate dicts.
+
+        """
+        map_id = self.window.map_widget.get_selected_map_id()
+        if not map_id:
+            QMessageBox.warning(
+                self.window, "No Map", "Please create or select a map first."
+            )
+            return
+
+        # Build list of items to choose from
+        items = []
+        for e in self.window._cached_entities:
+            items.append(f"{e.name} (Entity)")
+        for e in self.window._cached_events:
+            items.append(f"{e.name} (Event)")
+        items.sort()
+
+        item_text, ok = QInputDialog.getItem(
+            self.window,
+            f"Link {feature_type.title()}",
+            f"Select object for this {feature_type}:",
+            items,
+            0,
+            False,
+        )
+        if not ok or not item_text:
+            return
+
+        # Parse result
+        if item_text.endswith(" (Entity)"):
+            name = item_text[:-9]
+            obj_type = "entity"
+            obj = next(
+                (e for e in self.window._cached_entities if e.name == name), None
+            )
+        elif item_text.endswith(" (Event)"):
+            name = item_text[:-8]
+            obj_type = "event"
+            obj = next(
+                (e for e in self.window._cached_events if e.name == name), None
+            )
+        else:
+            return
+
+        if not obj:
+            return
+
+        # Compute centroid for anchor
+        n = len(geometry)
+        cx = sum(pt["x"] for pt in geometry) / n
+        cy = sum(pt["y"] for pt in geometry) / n
+
+        cmd = CreateMarkerCommand(
+            {
+                "map_id": map_id,
+                "object_id": obj.id,
+                "object_type": obj_type,
+                "x": cx,
+                "y": cy,
+                "label": obj.name,
+                "feature_type": feature_type,
+                "geometry": geometry,
+            }
+        )
+        self.window.command_requested.emit(cmd)
+        logger.info(
+            f"Creating {feature_type} '{obj.name}' with {len(geometry)} vertices"
+        )
+
     def delete_marker(self, marker_id: str) -> None:
         """Deletes a marker.
 
@@ -426,6 +505,9 @@ class MapHandler(QObject):
                 color=marker_data["color"],
                 description=marker_data.get("description", ""),
                 lore_date=marker_data.get("lore_date"),
+                feature_type=marker_data.get("feature_type", "point"),
+                geometry=marker_data.get("geometry"),
+                style=marker_data.get("style"),
             )
 
             # Store mapping for later updates (object_id -> marker.id)

@@ -1696,6 +1696,17 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """
         self.map_handler.on_marker_dropped(item_id, item_type, item_name, x, y)
 
+    @Slot(str, list)
+    def _on_feature_drawn(self, feature_type: str, geometry: list) -> None:
+        """Handle feature creation from drawing mode.
+
+        Args:
+            feature_type: 'path' or 'region'.
+            geometry: List of normalised coordinate dicts.
+
+        """
+        self.map_handler.on_feature_drawn(feature_type, geometry)
+
     def delete_marker(self, marker_id: str) -> None:
         """Deletes a marker.
 

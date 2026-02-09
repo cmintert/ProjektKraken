@@ -783,6 +783,14 @@ class ConnectionManager:
         ):
             failed_count += 1
 
+        if not self._connect_signal_safe(
+            map_widget,
+            "create_feature_requested",
+            self.window._on_feature_drawn,
+            "MapWidget",
+        ):
+            failed_count += 1
+
         # Wire Timeline playhead to Map for temporal synchronization
         if not self._connect_signal_safe(
             timeline,
