@@ -590,6 +590,16 @@ class MapGraphicsView(QGraphicsView):
         self._calendar_converter: Optional[object] = None  # CalendarConverter instance
         self.trigger_first_use_animation: bool = False
         self._animations: list[QPropertyAnimation] = []  # Keep references
+        self._opacity: float = 1.0  # Default opacity (1.0 = fully visible)
+
+    def set_opacity(self, opacity: float) -> None:
+        """Sets the view opacity for Focus Mode.
+
+        Args:
+            opacity: Opacity value between 0.0 and 1.0.
+        """
+        self._opacity = opacity
+        self.viewport().update()
 
     def minimumSizeHint(self) -> QSize:
         """Override minimum size hint to allow resizing below map image size.
@@ -1103,6 +1113,20 @@ class MapGraphicsView(QGraphicsView):
 
                     # Restore painter state
                     painter.restore()
+
+        # Apply Focus Mode Dimming (if active)
+        if self._opacity < 1.0:
+            painter.save()
+            painter.resetTransform()  # Switch to screen coordinates
+
+            # Draw a black rectangle over everything
+            dim_color = QColor(0, 0, 0)
+            dim_color.setAlphaF(1.0 - self._opacity)
+            painter.setBrush(dim_color)
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.drawRect(self.viewport().rect())
+
+            painter.restore()
 
     def start_calibration(self) -> None:
         """Enters calibration mode."""

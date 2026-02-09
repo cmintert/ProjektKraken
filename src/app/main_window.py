@@ -1164,19 +1164,22 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
                 # Apply opacity effect to all other docks
                 if active:
-                    # Special handling for GraphWidget (QWebEngineView)
+                    # Special handling for GraphWidget, MapWidget, TimelineWidget
+                    # These widgets handle opacity internally to avoid artifacts
                     widget = dock.widget()
-                    if isinstance(widget, GraphWidget):
+                    if isinstance(widget, (GraphWidget, MapWidget, TimelineWidget)):
                         widget.set_opacity(opacity)
+                        dock.setGraphicsEffect(None)
                     else:
                         effect = QGraphicsOpacityEffect(dock)
                         effect.setOpacity(opacity)
                         dock.setGraphicsEffect(effect)
                 else:
-                    # Reset GraphWidget opacity
+                    # Reset opacity for custom widgets
                     widget = dock.widget()
-                    if isinstance(widget, GraphWidget):
+                    if isinstance(widget, (GraphWidget, MapWidget, TimelineWidget)):
                         widget.set_opacity(1.0)
+                    dock.setGraphicsEffect(None)
 
                     dock.setGraphicsEffect(None)
 

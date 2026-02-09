@@ -130,6 +130,7 @@ class TimelineView(QGraphicsView):
         self.scale_factor = 20.0
         self._initial_fit_pending = False
         self._has_done_initial_fit = False  # Only fit_all on first load
+        self._opacity = 1.0  # Default opacity (1.0 = fully visible)
 
         # Track current zoom level
         self._current_zoom = 1.0
@@ -194,6 +195,15 @@ class TimelineView(QGraphicsView):
 
         # Set corner widget for themed scrollbar corner
         self._update_corner_widget(ThemeManager().get_theme())
+
+    def set_opacity(self, opacity: float) -> None:
+        """Sets the view opacity for Focus Mode.
+
+        Args:
+            opacity: Opacity value between 0.0 and 1.0.
+        """
+        self._opacity = opacity
+        self.viewport().update()
 
     def minimumSizeHint(self) -> QSize:
         """Override minimum size hint to allow vertical shrinking.
@@ -407,7 +417,17 @@ class TimelineView(QGraphicsView):
         # 8. Draw Playhead Handle (on top of everything else)
         self._draw_playhead_handle(painter, rect)
 
-        # 9. Clean up
+        # 9. Apply Focus Mode Dimming (if active)
+        if self._opacity < 1.0:
+            # We are already in screen coordinates (resetTransform called start of method)
+            # Draw a black rectangle over everything
+            dim_color = QColor(0, 0, 0)
+            dim_color.setAlphaF(1.0 - self._opacity)
+            painter.setBrush(dim_color)
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.drawRect(self.viewport().rect())
+
+        # 10. Clean up
         painter.restore()
 
         elapsed = (time.perf_counter() - start_time) * 1000

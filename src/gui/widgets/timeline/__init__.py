@@ -111,6 +111,14 @@ class TimelineWidget(QWidget):
         self.view.event_date_changed.connect(self.event_date_changed.emit)
         main_layout.addWidget(self.view)
 
+    def set_opacity(self, opacity: float) -> None:
+        """Sets the opacity of the timeline view.
+
+        Args:
+            opacity: Opacity value between 0.0 and 1.0.
+        """
+        self.view.set_opacity(opacity)
+
     def set_data_provider(self, provider: Any) -> None:
         """Sets the data provider for timeline grouping features.
 

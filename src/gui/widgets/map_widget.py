@@ -64,7 +64,7 @@ class NoLayoutLabel(QWidget):
 
     def __init__(self, text: str = "", parent: QWidget | None = None) -> None:
         """Initialize the scale indicator label.
-        
+
         Args:
             text: Initial text to display.
             parent: Optional parent widget.
@@ -76,7 +76,7 @@ class NoLayoutLabel(QWidget):
 
     def setText(self, text: str) -> None:
         """Set the label text without triggering layout recalculation.
-        
+
         Args:
             text: New text to display.
         """
@@ -87,7 +87,7 @@ class NoLayoutLabel(QWidget):
 
     def text(self) -> str:
         """Get the current label text.
-        
+
         Returns:
             The current text string.
         """
@@ -95,7 +95,7 @@ class NoLayoutLabel(QWidget):
 
     def sizeHint(self) -> QSize:
         """Get the preferred size hint.
-        
+
         Returns:
             Fixed size of 50x20 pixels.
         """
@@ -104,7 +104,7 @@ class NoLayoutLabel(QWidget):
 
     def minimumSizeHint(self) -> QSize:
         """Get the minimum size hint.
-        
+
         Returns:
             Minimum size of 50x20 pixels.
         """
@@ -112,7 +112,7 @@ class NoLayoutLabel(QWidget):
 
     def paintEvent(self, event: QPaintEvent) -> None:
         """Paint the scale indicator text.
-        
+
         Args:
             event: The paint event.
         """
@@ -179,6 +179,14 @@ class MapWidget(QWidget):
 
         # Create view
         self.view = MapGraphicsView(self)
+
+    def set_opacity(self, opacity: float) -> None:
+        """Sets the opacity of the map view.
+
+        Args:
+            opacity: Opacity value between 0.0 and 1.0.
+        """
+        self.view.set_opacity(opacity)
 
         self._pinned_marker_id: Optional[str] = None
         self._pinned_original_t: Optional[float] = None
@@ -1059,7 +1067,7 @@ class OnboardingDialog(QDialog):
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the onboarding dialog.
-        
+
         Args:
             parent: Optional parent widget.
         """
