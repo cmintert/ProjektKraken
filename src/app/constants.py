@@ -103,3 +103,6 @@ UNIFIED_LIST_DELETE_CONFIRM_TIMEOUT_MS = 1000
 NAVIGATION_SELECTION_DELAY_MS = (
     250  # Delay to allow drag operations to cancel selection
 )
+
+# Focus Mode Configuration
+FOCUS_MODE_OPACITY = 0.3  # Opacity for inactive docks in Focus Mode (0.0-1.0)

@@ -51,6 +51,7 @@ from src.app.connection_manager import ConnectionManager
 from src.app.constants import (
     DEFAULT_WINDOW_HEIGHT,
     DEFAULT_WINDOW_WIDTH,
+    FOCUS_MODE_OPACITY,
     SETTINGS_ACTIVE_DB_KEY,
     SETTINGS_AUTO_RELATION_KEY,
     SETTINGS_FILTER_CONFIG_KEY,
@@ -1139,7 +1140,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self._focus_mode_active = active
 
         # Get all docks except the ones containing the active editor
-        opacity = 0.3 if active else 1.0
+        opacity = FOCUS_MODE_OPACITY if active else 1.0
 
         # Determine which editor is active to exclude it from dimming
         active_editor_dock_name = None

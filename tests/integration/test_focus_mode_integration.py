@@ -4,6 +4,7 @@ from unittest.mock import Mock, patch
 
 from PySide6.QtCore import Qt
 
+from src.app.constants import FOCUS_MODE_OPACITY
 from src.app.main_window import MainWindow
 from src.gui.utils.shortcut_manager import ShortcutManager
 
@@ -101,7 +102,7 @@ def test_focus_mode_changes_dock_opacity(qtbot):
                     # Others should have effect
                     effect = dock.graphicsEffect()
                     assert effect is not None
-                    assert effect.opacity() == 0.3
+                    assert effect.opacity() == FOCUS_MODE_OPACITY
 
         # Deactivate focus mode
         window.entity_editor.desc_edit._focus_mode_active = False
