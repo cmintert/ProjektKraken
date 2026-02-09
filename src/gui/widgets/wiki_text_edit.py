@@ -43,6 +43,7 @@ class WikiTextEditView(QTextEdit):
 
     link_clicked = Signal(str)  # Emits the target name (e.g. "Gandalf")
     link_added = Signal(str, str)  # Emits (target_id_or_name, display_name) on creation
+    focus_mode_changed = Signal(bool)  # Emits when focus mode is toggled
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the WikiTextEdit.
@@ -83,31 +84,51 @@ class WikiTextEditView(QTextEdit):
         # View Mode: 'rich' (HTML) or 'source' (Markdown)
         self._view_mode = "rich"
 
+        # Focus Mode state
+        self._focus_mode_active = False
+
+        # Shared Style for Control Buttons: Dynamic Transparency (Dim by default, bright on hover)
+        ctrl_style = """
+            QToolButton {
+                background-color: rgba(50, 50, 50, 40); /* Low opacity default */
+                color: rgba(224, 224, 224, 120);
+                border: 1px solid rgba(85, 85, 85, 80);
+                border-radius: 4px;
+                font-size: 10px;
+                font-weight: bold;
+            }
+            QToolButton:hover {
+                background-color: rgba(80, 80, 80, 240); /* High opacity hover */
+                color: #E0E0E0;
+                border-color: #777;
+            }
+            QToolButton:checked {
+                background-color: rgba(255, 153, 0, 200); /* Active State */
+                border-color: #FF9900;
+                color: #1a1a1a;
+            }
+        """
+
         # Toggle Button (floating overlay)
         self.btn_toggle_view = QToolButton(self)
         self.btn_toggle_view.setText("MD")
         self.btn_toggle_view.setToolTip("Toggle Source View")
         self.btn_toggle_view.setCursor(Qt.CursorShape.ArrowCursor)
         self.btn_toggle_view.setFixedSize(30, 24)
-        # Style: subtle, semi-transparent
-        self.btn_toggle_view.setStyleSheet(
-            """
-            QToolButton {
-                background-color: rgba(50, 50, 50, 150);
-                color: #E0E0E0;
-                border: 1px solid #555;
-                border-radius: 4px;
-                font-size: 10px;
-                font-weight: bold;
-            }
-            QToolButton:hover {
-                background-color: rgba(80, 80, 80, 200);
-                border-color: #777;
-            }
-            """
-        )
+        self.btn_toggle_view.setStyleSheet(ctrl_style)
         self.btn_toggle_view.clicked.connect(self.toggle_view_mode)
         self.btn_toggle_view.show()
+
+        # Focus Button (floating overlay)
+        self.btn_focus = QToolButton(self)
+        self.btn_focus.setText("FC")
+        self.btn_focus.setToolTip("Toggle Focus Mode")
+        self.btn_focus.setCheckable(True)
+        self.btn_focus.setFixedSize(30, 24)
+        self.btn_focus.setCursor(Qt.CursorShape.ArrowCursor)
+        self.btn_focus.setStyleSheet(ctrl_style)
+        self.btn_focus.clicked.connect(self.toggle_focus_mode)
+        self.btn_focus.show()
 
         # Setup Shortcuts using QActions
         self._setup_actions()
@@ -158,21 +179,32 @@ class WikiTextEditView(QTextEdit):
         self.addAction(self.action_body)
 
     def resizeEvent(self, event: QResizeEvent) -> None:
-        """Handle resize to reposition the floating button."""
+        """Handle resize to reposition the floating buttons in a vertical stack.
+        
+        Args:
+            event: The resize event.
+        """
         super().resizeEvent(event)
-        # Top-Right corner with padding
-        padding = 5
-        btn_width = self.btn_toggle_view.width()
-        # btn_height = self.btn_toggle_view.height()
-
-        # Adjust for scrollbar if visible?
-        # Typically scrollbar is part of the widget or overlaid.
-        # QTextEdit scrollbar is inside the frame usually.
-        # We'll just place it top-right relative to widget width.
-
-        x = self.width() - btn_width - padding - 15  # extra padding for scrollbar
-        y = padding
-        self.btn_toggle_view.move(x, y)
+        
+        # Layout Constants
+        padding_top = 5
+        padding_right = 5
+        spacing = 4
+        scrollbar_width = 15  # Buffer for vertical scrollbar
+        
+        # Button Dimensions
+        btn_w = self.btn_toggle_view.width()
+        btn_h = self.btn_toggle_view.height()
+        
+        # X Position: Right aligned - padding - scrollbar buffer
+        x_pos = self.width() - btn_w - padding_right - scrollbar_width
+        
+        # Y Positions: Stacked
+        y_md = padding_top
+        y_focus = y_md + btn_h + spacing
+        
+        self.btn_toggle_view.move(x_pos, y_md)
+        self.btn_focus.move(x_pos, y_focus)
 
     @Slot()
     def toggle_view_mode(self) -> None:
@@ -252,6 +284,12 @@ class WikiTextEditView(QTextEdit):
             # Update Button
             self.btn_toggle_view.setText("MD")
             self.btn_toggle_view.setToolTip("Switch to Source View")
+
+    @Slot()
+    def toggle_focus_mode(self) -> None:
+        """Toggles internal focus state and emits signal."""
+        self._focus_mode_active = self.btn_focus.isChecked()
+        self.focus_mode_changed.emit(self._focus_mode_active)
 
     def set_link_resolver(self, link_resolver: Any) -> None:
         """Sets the link resolver for checking broken links.
@@ -1194,6 +1232,7 @@ class WikiTextEdit(QFrame):
 
     link_clicked = Signal(str)
     link_added = Signal(str, str)
+    focus_mode_changed = Signal(bool)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the wiki text edit wrapper widget.
@@ -1216,6 +1255,7 @@ class WikiTextEdit(QFrame):
         # Forward signals
         self.editor.link_clicked.connect(self.link_clicked.emit)
         self.editor.link_added.connect(self.link_added.emit)
+        self.editor.focus_mode_changed.connect(self.focus_mode_changed.emit)
 
         # Expose textChanged signal directly from editor
         self.textChanged = self.editor.textChanged
