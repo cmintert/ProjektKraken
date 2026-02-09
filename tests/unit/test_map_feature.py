@@ -216,7 +216,7 @@ class TestSetGeometry:
         assert f.geometry is None
 
     def test_set_geometry_triangle_centroid(self) -> None:
-        """Centroid of an equilateral-like triangle."""
+        """Centroid of a triangle at (0,0), (1,0), (0.5,1)."""
         f = MapFeature(
             map_id="m",
             object_id="o",
