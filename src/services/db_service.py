@@ -15,7 +15,7 @@ from src.core.calendar import CalendarConfig
 from src.core.entities import Entity
 from src.core.events import Event
 from src.core.map import Map
-from src.core.marker import Marker
+from src.core.marker import MapFeature, Marker
 
 # Import repositories for modular CRUD operations
 from src.services.repositories import (
@@ -238,7 +238,7 @@ class DatabaseService:
             modified_at REAL
         );
 
-        -- Marker Table
+        -- Marker / MapFeature Table
         CREATE TABLE IF NOT EXISTS markers (
             id TEXT PRIMARY KEY,
             map_id TEXT NOT NULL,
@@ -250,6 +250,9 @@ class DatabaseService:
             attributes JSON DEFAULT '{}',
             created_at REAL,
             modified_at REAL,
+            feature_type TEXT DEFAULT 'point',
+            geometry TEXT,
+            style TEXT,
             UNIQUE(map_id, object_id, object_type),
             FOREIGN KEY(map_id) REFERENCES maps(id) ON DELETE CASCADE
         );
@@ -455,6 +458,67 @@ class DatabaseService:
 
             # Migrate trajectory data from old format to MF-JSON
             self._migrate_trajectories_to_mfjson()
+
+            # --- MapFeature migration: add feature_type, geometry, style ---
+            cursor = self._connection.execute("PRAGMA table_info(markers)")
+            marker_cols = [row["name"] for row in cursor.fetchall()]
+
+            if "feature_type" not in marker_cols:
+                logger.info(
+                    "Applying migration: Add feature_type column to markers table"
+                )
+                try:
+                    self._connection.execute(
+                        "ALTER TABLE markers ADD COLUMN feature_type TEXT DEFAULT 'point'"
+                    )
+                    self._connection.commit()
+                    logger.info(
+                        "Migration successful: Added feature_type column to markers table"
+                    )
+                except sqlite3.Error as e:
+                    self._connection.rollback()
+                    logger.error(
+                        f"Failed to add feature_type column to markers: {e}"
+                    )
+                    raise
+
+            if "geometry" not in marker_cols:
+                logger.info(
+                    "Applying migration: Add geometry column to markers table"
+                )
+                try:
+                    self._connection.execute(
+                        "ALTER TABLE markers ADD COLUMN geometry TEXT"
+                    )
+                    self._connection.commit()
+                    logger.info(
+                        "Migration successful: Added geometry column to markers table"
+                    )
+                except sqlite3.Error as e:
+                    self._connection.rollback()
+                    logger.error(
+                        f"Failed to add geometry column to markers: {e}"
+                    )
+                    raise
+
+            if "style" not in marker_cols:
+                logger.info(
+                    "Applying migration: Add style column to markers table"
+                )
+                try:
+                    self._connection.execute(
+                        "ALTER TABLE markers ADD COLUMN style TEXT"
+                    )
+                    self._connection.commit()
+                    logger.info(
+                        "Migration successful: Added style column to markers table"
+                    )
+                except sqlite3.Error as e:
+                    self._connection.rollback()
+                    logger.error(
+                        f"Failed to add style column to markers: {e}"
+                    )
+                    raise
 
         except sqlite3.Error as e:
             logger.critical(f"Migration check failed: {e}")
@@ -1055,13 +1119,13 @@ class DatabaseService:
     # --------------------------------------------------------------------------
 
     def insert_marker(self, marker: Marker) -> str:
-        """Inserts a new marker or updates an existing one (Upsert).
+        """Inserts a new marker/feature or updates an existing one (Upsert).
 
         Upserts on UNIQUE(map_id, object_id, object_type). On conflict,
         the existing row's id is retained.
 
         Args:
-            marker (Marker): The marker domain object to persist.
+            marker (Marker): The marker/feature domain object to persist.
 
         Returns:
             str: The ID of the inserted/updated marker (may differ from marker.id
@@ -1074,14 +1138,18 @@ class DatabaseService:
         # Note: Repository insert_marker doesn't return ID, so we need special handling
         sql = """
             INSERT INTO markers (id, map_id, object_id, object_type, x, y,
-                               label, attributes, created_at, modified_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                               label, attributes, created_at, modified_at,
+                               feature_type, geometry, style)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(map_id, object_id, object_type) DO UPDATE SET
                 x=excluded.x,
                 y=excluded.y,
                 label=excluded.label,
                 attributes=excluded.attributes,
-                modified_at=excluded.modified_at
+                modified_at=excluded.modified_at,
+                feature_type=excluded.feature_type,
+                geometry=excluded.geometry,
+                style=excluded.style
             RETURNING id;
         """
         with self.transaction() as conn:
@@ -1098,6 +1166,9 @@ class DatabaseService:
                     json.dumps(marker.attributes),
                     marker.created_at,
                     marker.modified_at,
+                    marker.feature_type,
+                    json.dumps(marker.geometry) if marker.geometry else None,
+                    json.dumps(marker.style) if marker.style else None,
                 ),
             )
             result = cursor.fetchone()
