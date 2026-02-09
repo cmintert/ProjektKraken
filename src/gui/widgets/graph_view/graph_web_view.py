@@ -91,6 +91,16 @@ class GraphWebView(QWidget):
         self._web_view.setStyleSheet(f"background-color: {color};")
         self._web_view.page().setBackgroundColor(QColor(color))
 
+    def set_opacity(self, opacity: float) -> None:
+        """Sets the opacity of the web content via JavaScript.
+
+        Args:
+            opacity: Opacity value between 0.0 and 1.0.
+
+        """
+        js = f"document.body.style.opacity = '{opacity}';"
+        self._web_view.page().runJavaScript(js)
+
     def clear(self) -> None:
         """Clears the web view content."""
         self._web_view.setHtml("")

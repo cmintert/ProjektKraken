@@ -435,9 +435,18 @@ class GraphWidget(QWidget):
         self._all_nodes = []
         self._all_edges = []
 
+    def set_opacity(self, opacity: float) -> None:
+        """Sets the opacity of the graph view.
+
+        Args:
+            opacity: Opacity value between 0.0 and 1.0.
+
+        """
+        self._web_view.set_opacity(opacity)
+
     def showEvent(self, event: QEvent) -> None:
         """Handle widget show event by refreshing the graph view.
-        
+
         Args:
             event: The show event.
         """
@@ -461,7 +470,7 @@ class GraphWidget(QWidget):
 
     def hideEvent(self, event: QEvent) -> None:
         """Handle widget hide event.
-        
+
         Args:
             event: The hide event.
         """
@@ -469,7 +478,7 @@ class GraphWidget(QWidget):
 
     def resizeEvent(self, event: QEvent) -> None:
         """Handle widget resize event.
-        
+
         Args:
             event: The resize event.
         """

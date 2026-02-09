@@ -30,7 +30,7 @@ from PySide6.QtCore import (
     Signal,
     Slot,
 )
-from PySide6.QtGui import QCloseEvent
+from PySide6.QtGui import QCloseEvent, QPalette
 from PySide6.QtWidgets import (
     QDialog,
     QDockWidget,
@@ -42,6 +42,7 @@ from PySide6.QtWidgets import (
     QProgressDialog,
     QStatusBar,
     QWidget,
+    QGraphicsOpacityEffect,
 )
 
 from src.app.ai_search_manager import AISearchManager
@@ -98,7 +99,7 @@ from src.gui.mixins.layout_guard import LayoutGuardMixin
 from src.gui.widgets.ai_search_panel import AISearchPanelWidget
 from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.event_editor import EventEditorWidget
-from src.gui.widgets.graph_view import GraphWidget
+from src.gui.widgets.graph_view.graph_widget import GraphWidget
 from src.gui.widgets.longform import LongformEditorWidget
 from src.gui.widgets.map_widget import MapWidget
 from src.gui.widgets.timeline import TimelineWidget
@@ -273,7 +274,13 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.resize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
 
         # Current world reference (will be set by worker_manager)
+        self.setWindowTitle(f"{WINDOW_TITLE} - {active_world_name}")
+        self.resize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
+
+        # Current world reference (will be set by worker_manager)
         self.current_world = None
+        # Default db_path to empty string for safe initialization/mocking
+        self.db_path = ""
 
         # Connect Theme Manager Signal
         try:
@@ -989,9 +996,14 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             self.calendar_converter = converter
 
             # Refresh status bar labels now that we have a converter
-            if hasattr(self, "timeline"):
-                self.update_world_time_label(self.timeline.get_current_time())
-                self.update_playhead_time_label(self.timeline.get_playhead_time())
+            # Refresh status bar labels now that we have a converter
+            if hasattr(self, "time_coordinator"):
+                self.time_coordinator.update_world_time_label(
+                    self.timeline.get_current_time()
+                )
+                self.time_coordinator.update_playhead_time_label(
+                    self.timeline.get_playhead_time()
+                )
 
         except Exception as e:
             logger.warning(f"Failed to initialize calendar converter: {e}")
@@ -1086,16 +1098,16 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     def _init_focus_mode(self) -> None:
         """Initialize focus mode connections and keyboard shortcut.
-        
+
         Connects the focus_mode_changed signals from both entity and event
         editor description widgets to the focus mode handler.
         Sets up Ctrl+Shift+F keyboard shortcut to toggle focus mode.
         """
         from src.gui.utils.shortcut_manager import ShortcutManager
-        
+
         # Initialize focus mode state
         self._focus_mode_active = False
-        
+
         # Connect focus mode signals from both editors
         self.entity_editor.desc_edit.focus_mode_changed.connect(
             self._on_focus_mode_changed
@@ -1103,10 +1115,10 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.event_editor.desc_edit.focus_mode_changed.connect(
             self._on_focus_mode_changed
         )
-        
+
         # Set up keyboard shortcut (Ctrl+Shift+F)
         from PySide6.QtGui import QAction
-        
+
         self.action_focus_mode = QAction("Toggle Focus Mode", self)
         self.action_focus_mode.setShortcut(ShortcutManager.FOCUS_MODE.key_sequence)
         self.action_focus_mode.setShortcutContext(
@@ -1114,39 +1126,72 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         )
         self.action_focus_mode.triggered.connect(self._toggle_focus_mode_from_shortcut)
         self.addAction(self.action_focus_mode)
-    
+
     @Slot(bool)
     def _on_focus_mode_changed(self, active: bool) -> None:
         """Handle focus mode toggle from editors.
-        
+
         Dims or restores dock widgets when focus mode is toggled.
-        
+
         Args:
             active: True if focus mode is being activated, False otherwise.
         """
         self._focus_mode_active = active
-        
+
         # Get all docks except the ones containing the active editor
         opacity = 0.3 if active else 1.0
-        
+
+        # Determine which editor is active to exclude it from dimming
+        active_editor_dock_name = None
+        if (
+            self.entity_editor.isVisible()
+            and self.entity_editor.desc_edit._focus_mode_active
+        ):
+            active_editor_dock_name = "entity"
+        elif (
+            self.event_editor.isVisible()
+            and self.event_editor.desc_edit._focus_mode_active
+        ):
+            active_editor_dock_name = "event"
+
         for dock_name, dock in self.ui_manager.docks.items():
             if dock is not None:
-                # Apply opacity to all docks
-                dock.setWindowOpacity(opacity)
-    
+                # Skip the active editor's dock
+                if active and dock_name == active_editor_dock_name:
+                    dock.setGraphicsEffect(None)
+                    continue
+
+                # Apply opacity effect to all other docks
+                if active:
+                    # Special handling for GraphWidget (QWebEngineView)
+                    widget = dock.widget()
+                    if isinstance(widget, GraphWidget):
+                        widget.set_opacity(opacity)
+                    else:
+                        effect = QGraphicsOpacityEffect(dock)
+                        effect.setOpacity(opacity)
+                        dock.setGraphicsEffect(effect)
+                else:
+                    # Reset GraphWidget opacity
+                    widget = dock.widget()
+                    if isinstance(widget, GraphWidget):
+                        widget.set_opacity(1.0)
+
+                    dock.setGraphicsEffect(None)
+
     @Slot()
     def _toggle_focus_mode_from_shortcut(self) -> None:
         """Toggle focus mode via keyboard shortcut.
-        
+
         Toggles the FC button in whichever editor is currently visible/active.
         Prioritizes entity editor if both are visible.
         """
         # Determine which editor is currently active/visible
         entity_dock = self.ui_manager.docks.get("entity")
         event_dock = self.ui_manager.docks.get("event")
-        
+
         target_editor = None
-        
+
         # Check entity editor first
         if entity_dock and entity_dock.isVisible():
             target_editor = self.entity_editor.desc_edit
@@ -1156,7 +1201,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # If neither visible, default to entity editor
         else:
             target_editor = self.entity_editor.desc_edit
-        
+
         # Toggle the button state (which will emit the signal)
         if target_editor:
             target_editor.btn_focus.setChecked(not target_editor.btn_focus.isChecked())
