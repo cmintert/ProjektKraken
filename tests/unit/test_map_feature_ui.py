@@ -597,3 +597,146 @@ class TestFeaturePipeline:
         assert data["feature_type"] == "path"
         assert len(data["geometry"]) == 2
         assert data["style"]["stroke_color"] == "#FF0000"
+
+
+# --------------------------------------------------------------------------
+# Vertex Editing Mode tests
+# --------------------------------------------------------------------------
+
+
+class TestVertexEditing:
+    """Tests for the vertex editing mode in MapGraphicsView."""
+
+    @pytest.fixture()
+    def view(self, qtbot):
+        """Create a MapGraphicsView with a path feature loaded."""
+        from src.gui.widgets.map.map_graphics_view import MapGraphicsView
+
+        view = MapGraphicsView()
+        pm = QPixmap(200, 200)
+        pm.fill(Qt.GlobalColor.blue)
+        view.pixmap_item = QGraphicsPixmapItem(pm)
+        view.pixmap_item.setZValue(0)
+        view.scene.addItem(view.pixmap_item)
+        view.coord_system.set_scene_rect(view.pixmap_item.boundingRect())
+        qtbot.addWidget(view)
+
+        # Add a path feature
+        geom = [{"x": 0.1, "y": 0.2}, {"x": 0.5, "y": 0.5}, {"x": 0.9, "y": 0.8}]
+        view.add_marker(
+            "p1", "entity", "River", 0.5, 0.5,
+            feature_type="path", geometry=geom,
+        )
+        return view
+
+    def test_start_vertex_editing(self, view) -> None:
+        """_start_vertex_editing creates handles for each vertex."""
+        item = view.feature_items["p1"]
+        view._start_vertex_editing(item)
+        assert view.is_editing_vertices is True
+        assert view._editing_feature_id == "p1"
+        assert len(view._vertex_handles) == 3
+
+    def test_finish_vertex_editing_emits_signal(self, view, qtbot) -> None:
+        """_finish_vertex_editing emits feature_geometry_changed."""
+        item = view.feature_items["p1"]
+        view._start_vertex_editing(item)
+        with qtbot.waitSignal(view.feature_geometry_changed, timeout=1000) as sig:
+            view._finish_vertex_editing()
+        marker_id, geometry = sig.args
+        assert marker_id == "p1"
+        assert len(geometry) == 3
+
+    def test_finish_vertex_editing_cleans_up(self, view) -> None:
+        """_finish_vertex_editing removes all handles."""
+        item = view.feature_items["p1"]
+        view._start_vertex_editing(item)
+        view._finish_vertex_editing()
+        assert view.is_editing_vertices is False
+        assert len(view._vertex_handles) == 0
+
+    def test_vertex_moved_updates_geometry(self, view) -> None:
+        """_on_vertex_moved updates the feature's geometry list."""
+        item = view.feature_items["p1"]
+        view._start_vertex_editing(item)
+
+        # Move vertex 0 to (0.3, 0.4) in scene coords  → (60, 80) on 200x200
+        view._on_vertex_moved(0, QPointF(60, 80))
+        assert item._geometry[0]["x"] == pytest.approx(0.3, abs=0.01)
+        assert item._geometry[0]["y"] == pytest.approx(0.4, abs=0.01)
+
+    def test_vertex_moved_clamps_to_bounds(self, view) -> None:
+        """_on_vertex_moved clamps coords to [0, 1] range."""
+        item = view.feature_items["p1"]
+        view._start_vertex_editing(item)
+
+        # Move vertex to way outside bounds
+        view._on_vertex_moved(0, QPointF(-50, 500))
+        assert item._geometry[0]["x"] == 0.0
+        assert item._geometry[0]["y"] == 1.0
+
+    def test_double_start_cleans_previous(self, view) -> None:
+        """Starting a new vertex edit cleans up the previous one."""
+        item = view.feature_items["p1"]
+        view._start_vertex_editing(item)
+        assert len(view._vertex_handles) == 3
+
+        # Start again — should clean up and restart
+        view._start_vertex_editing(item)
+        assert len(view._vertex_handles) == 3
+
+
+# --------------------------------------------------------------------------
+# Feature style accessor tests
+# --------------------------------------------------------------------------
+
+
+class TestFeatureItemStyle:
+    """Tests for style changes on feature items."""
+
+    @pytest.fixture()
+    def view(self, qtbot):
+        """Create a MapGraphicsView with a region feature."""
+        from src.gui.widgets.map.map_graphics_view import MapGraphicsView
+
+        view = MapGraphicsView()
+        pm = QPixmap(200, 200)
+        pm.fill(Qt.GlobalColor.blue)
+        view.pixmap_item = QGraphicsPixmapItem(pm)
+        view.pixmap_item.setZValue(0)
+        view.scene.addItem(view.pixmap_item)
+        view.coord_system.set_scene_rect(view.pixmap_item.boundingRect())
+        qtbot.addWidget(view)
+
+        geom = [
+            {"x": 0.2, "y": 0.2},
+            {"x": 0.8, "y": 0.2},
+            {"x": 0.8, "y": 0.8},
+            {"x": 0.2, "y": 0.8},
+        ]
+        view.add_marker(
+            "r1", "entity", "Kingdom", 0.5, 0.5,
+            feature_type="region", geometry=geom,
+            style={"stroke_color": "#000000", "fill_color": "#FF000040"},
+        )
+        return view
+
+    def test_style_applied_on_creation(self, view) -> None:
+        """Feature items receive style dict from add_marker."""
+        item = view.feature_items["r1"]
+        assert item._style["stroke_color"] == "#000000"
+        assert item._style["fill_color"] == "#FF000040"
+
+    def test_style_update_changes_visual(self, view) -> None:
+        """Updating _style and calling update() changes the item."""
+        item = view.feature_items["r1"]
+        item._style["stroke_color"] = "#00FF00"
+        item.update()
+        assert item._stroke_color().name() == "#00ff00"
+
+    def test_feature_style_changed_signal(self, view, qtbot) -> None:
+        """feature_style_changed signal emits from view."""
+        with qtbot.waitSignal(view.feature_style_changed, timeout=1000) as sig:
+            view.feature_style_changed.emit("r1", {"stroke_color": "#00FF00"})
+        assert sig.args[0] == "r1"
+        assert sig.args[1]["stroke_color"] == "#00FF00"

@@ -508,3 +508,318 @@ class TestMapFeatureDatabase:
         types = {m.feature_type for m in markers}
         assert FEATURE_TYPE_POINT in types
         assert FEATURE_TYPE_PATH in types
+
+
+# --------------------------------------------------------------------------
+# GIS spatial computations
+# --------------------------------------------------------------------------
+
+
+class TestComputeLength:
+    """Verify compute_length() for paths."""
+
+    def test_horizontal_line_unit_length(self) -> None:
+        """Horizontal path from (0,0) to (1,0) has length 1.0."""
+        f = MapFeature(
+            map_id="m",
+            object_id="o",
+            object_type="entity",
+            x=0.5,
+            y=0.0,
+            feature_type=FEATURE_TYPE_PATH,
+            geometry=[{"x": 0.0, "y": 0.0}, {"x": 1.0, "y": 0.0}],
+        )
+        assert f.compute_length() == pytest.approx(1.0)
+
+    def test_length_with_map_scale(self) -> None:
+        """Path length scales with map_width / map_height."""
+        f = MapFeature(
+            map_id="m",
+            object_id="o",
+            object_type="entity",
+            x=0.5,
+            y=0.0,
+            feature_type=FEATURE_TYPE_PATH,
+            geometry=[{"x": 0.0, "y": 0.0}, {"x": 1.0, "y": 0.0}],
+        )
+        assert f.compute_length(map_width=1000) == pytest.approx(1000.0)
+
+    def test_multi_segment_path(self) -> None:
+        """Length of a multi-segment path is sum of segments."""
+        f = MapFeature(
+            map_id="m",
+            object_id="o",
+            object_type="entity",
+            x=0.5,
+            y=0.5,
+            feature_type=FEATURE_TYPE_PATH,
+            geometry=[
+                {"x": 0.0, "y": 0.0},
+                {"x": 1.0, "y": 0.0},
+                {"x": 1.0, "y": 1.0},
+            ],
+        )
+        # 1.0 + 1.0 = 2.0
+        assert f.compute_length() == pytest.approx(2.0)
+
+    def test_point_returns_zero_length(self) -> None:
+        """Points have no length."""
+        f = MapFeature(
+            map_id="m",
+            object_id="o",
+            object_type="entity",
+            x=0.5,
+            y=0.5,
+        )
+        assert f.compute_length() == 0.0
+
+    def test_region_returns_zero_length(self) -> None:
+        """Regions use compute_perimeter, not compute_length."""
+        f = MapFeature(
+            map_id="m",
+            object_id="o",
+            object_type="entity",
+            x=0.5,
+            y=0.5,
+            feature_type=FEATURE_TYPE_REGION,
+            geometry=[
+                {"x": 0.0, "y": 0.0},
+                {"x": 1.0, "y": 0.0},
+                {"x": 0.5, "y": 1.0},
+            ],
+        )
+        assert f.compute_length() == 0.0
+
+
+class TestComputeArea:
+    """Verify compute_area() using the Shoelace formula."""
+
+    def test_unit_square_area(self) -> None:
+        """A unit square has area 1.0."""
+        f = MapFeature(
+            map_id="m",
+            object_id="o",
+            object_type="entity",
+            x=0.5,
+            y=0.5,
+            feature_type=FEATURE_TYPE_REGION,
+            geometry=[
+                {"x": 0.0, "y": 0.0},
+                {"x": 1.0, "y": 0.0},
+                {"x": 1.0, "y": 1.0},
+                {"x": 0.0, "y": 1.0},
+            ],
+        )
+        assert f.compute_area() == pytest.approx(1.0)
+
+    def test_area_with_map_scale(self) -> None:
+        """Area scales with map_width * map_height."""
+        f = MapFeature(
+            map_id="m",
+            object_id="o",
+            object_type="entity",
+            x=0.5,
+            y=0.5,
+            feature_type=FEATURE_TYPE_REGION,
+            geometry=[
+                {"x": 0.0, "y": 0.0},
+                {"x": 1.0, "y": 0.0},
+                {"x": 1.0, "y": 1.0},
+                {"x": 0.0, "y": 1.0},
+            ],
+        )
+        assert f.compute_area(1000, 1000) == pytest.approx(1_000_000.0)
+
+    def test_triangle_area(self) -> None:
+        """Triangle (0,0), (1,0), (0,1) has area 0.5."""
+        f = MapFeature(
+            map_id="m",
+            object_id="o",
+            object_type="entity",
+            x=0.33,
+            y=0.33,
+            feature_type=FEATURE_TYPE_REGION,
+            geometry=[
+                {"x": 0.0, "y": 0.0},
+                {"x": 1.0, "y": 0.0},
+                {"x": 0.0, "y": 1.0},
+            ],
+        )
+        assert f.compute_area() == pytest.approx(0.5)
+
+    def test_path_returns_zero_area(self) -> None:
+        """Paths have no area."""
+        f = MapFeature(
+            map_id="m",
+            object_id="o",
+            object_type="entity",
+            x=0.5,
+            y=0.5,
+            feature_type=FEATURE_TYPE_PATH,
+            geometry=[{"x": 0.0, "y": 0.0}, {"x": 1.0, "y": 1.0}],
+        )
+        assert f.compute_area() == 0.0
+
+
+class TestComputePerimeter:
+    """Verify compute_perimeter() for regions."""
+
+    def test_unit_square_perimeter(self) -> None:
+        """A unit square has perimeter 4.0."""
+        f = MapFeature(
+            map_id="m",
+            object_id="o",
+            object_type="entity",
+            x=0.5,
+            y=0.5,
+            feature_type=FEATURE_TYPE_REGION,
+            geometry=[
+                {"x": 0.0, "y": 0.0},
+                {"x": 1.0, "y": 0.0},
+                {"x": 1.0, "y": 1.0},
+                {"x": 0.0, "y": 1.0},
+            ],
+        )
+        assert f.compute_perimeter() == pytest.approx(4.0)
+
+    def test_perimeter_with_map_scale(self) -> None:
+        """Perimeter scales with map dimensions."""
+        f = MapFeature(
+            map_id="m",
+            object_id="o",
+            object_type="entity",
+            x=0.5,
+            y=0.5,
+            feature_type=FEATURE_TYPE_REGION,
+            geometry=[
+                {"x": 0.0, "y": 0.0},
+                {"x": 1.0, "y": 0.0},
+                {"x": 1.0, "y": 1.0},
+                {"x": 0.0, "y": 1.0},
+            ],
+        )
+        assert f.compute_perimeter(1000, 1000) == pytest.approx(4000.0)
+
+    def test_path_returns_zero_perimeter(self) -> None:
+        """Paths have no perimeter."""
+        f = MapFeature(
+            map_id="m",
+            object_id="o",
+            object_type="entity",
+            x=0.5,
+            y=0.5,
+            feature_type=FEATURE_TYPE_PATH,
+            geometry=[{"x": 0.0, "y": 0.0}, {"x": 1.0, "y": 0.0}],
+        )
+        assert f.compute_perimeter() == 0.0
+
+
+class TestSegmentCount:
+    """Verify compute_segment_count()."""
+
+    def test_path_segments(self) -> None:
+        """A 3-vertex path has 2 segments."""
+        f = MapFeature(
+            map_id="m",
+            object_id="o",
+            object_type="entity",
+            x=0.5,
+            y=0.5,
+            feature_type=FEATURE_TYPE_PATH,
+            geometry=[
+                {"x": 0.0, "y": 0.0},
+                {"x": 0.5, "y": 0.5},
+                {"x": 1.0, "y": 1.0},
+            ],
+        )
+        assert f.compute_segment_count() == 2
+
+    def test_region_segments(self) -> None:
+        """A 4-vertex region has 4 segments (closed polygon)."""
+        f = MapFeature(
+            map_id="m",
+            object_id="o",
+            object_type="entity",
+            x=0.5,
+            y=0.5,
+            feature_type=FEATURE_TYPE_REGION,
+            geometry=[
+                {"x": 0.0, "y": 0.0},
+                {"x": 1.0, "y": 0.0},
+                {"x": 1.0, "y": 1.0},
+                {"x": 0.0, "y": 1.0},
+            ],
+        )
+        assert f.compute_segment_count() == 4
+
+    def test_single_point_zero_segments(self) -> None:
+        """A single point has 0 segments."""
+        f = MapFeature(
+            map_id="m",
+            object_id="o",
+            object_type="entity",
+            x=0.5,
+            y=0.5,
+        )
+        assert f.compute_segment_count() == 0
+
+
+class TestSpatialProperties:
+    """Verify the spatial_properties dict accessor."""
+
+    def test_path_spatial_properties(self) -> None:
+        """Path spatial_properties includes length."""
+        f = MapFeature(
+            map_id="m",
+            object_id="o",
+            object_type="entity",
+            x=0.5,
+            y=0.0,
+            feature_type=FEATURE_TYPE_PATH,
+            geometry=[{"x": 0.0, "y": 0.0}, {"x": 1.0, "y": 0.0}],
+        )
+        sp = f.spatial_properties
+        assert sp["feature_type"] == "path"
+        assert sp["length"] == pytest.approx(1.0)
+        assert sp["vertex_count"] == 2
+        assert sp["segment_count"] == 1
+        assert "area" not in sp
+        assert "perimeter" not in sp
+
+    def test_region_spatial_properties(self) -> None:
+        """Region spatial_properties includes area and perimeter."""
+        f = MapFeature(
+            map_id="m",
+            object_id="o",
+            object_type="entity",
+            x=0.5,
+            y=0.5,
+            feature_type=FEATURE_TYPE_REGION,
+            geometry=[
+                {"x": 0.0, "y": 0.0},
+                {"x": 1.0, "y": 0.0},
+                {"x": 1.0, "y": 1.0},
+                {"x": 0.0, "y": 1.0},
+            ],
+        )
+        sp = f.spatial_properties
+        assert sp["area"] == pytest.approx(1.0)
+        assert sp["perimeter"] == pytest.approx(4.0)
+        assert "length" not in sp
+
+    def test_spatial_properties_merge_attributes(self) -> None:
+        """spatial_properties merges user attributes (road quality, etc.)."""
+        f = MapFeature(
+            map_id="m",
+            object_id="o",
+            object_type="entity",
+            x=0.5,
+            y=0.0,
+            feature_type=FEATURE_TYPE_PATH,
+            geometry=[{"x": 0.0, "y": 0.0}, {"x": 1.0, "y": 0.0}],
+            attributes={"road_quality": "paved", "river_depth": 3.5},
+        )
+        sp = f.spatial_properties
+        assert sp["road_quality"] == "paved"
+        assert sp["river_depth"] == 3.5
+        assert sp["length"] == pytest.approx(1.0)

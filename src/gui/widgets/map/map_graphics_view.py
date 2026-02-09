@@ -23,6 +23,7 @@ from PySide6.QtGui import (
     QBrush,
     QColor,
     QContextMenuEvent,
+    QCursor,
     QDragEnterEvent,
     QDragMoveEvent,
     QDropEvent,
