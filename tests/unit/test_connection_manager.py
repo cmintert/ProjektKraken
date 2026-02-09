@@ -118,6 +118,8 @@ def mock_main_window(qapp):
     window._on_marker_color_changed = Mock()
     window._on_marker_dropped = Mock()
     window._on_feature_drawn = Mock()
+    window._on_feature_style_changed = Mock()
+    window._on_feature_geometry_changed = Mock()
 
     # AI Search methods
     window.perform_semantic_search = Mock()

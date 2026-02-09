@@ -362,6 +362,56 @@ class MapHandler(QObject):
             f"Creating {feature_type} '{obj.name}' with {len(geometry)} vertices"
         )
 
+    @Slot(str, dict)
+    def on_feature_style_changed(self, marker_id: str, new_style: dict) -> None:
+        """Persists a feature style change via UpdateMarkerCommand.
+
+        Args:
+            marker_id: The object_id of the feature.
+            new_style: Updated style dict.
+
+        """
+        actual_marker_id = self._marker_object_to_id.get(marker_id)
+        if not actual_marker_id:
+            logger.warning(f"No marker mapping for style update: {marker_id}")
+            return
+
+        cmd = UpdateMarkerCommand(actual_marker_id, {"style": new_style})
+        self.window.command_requested.emit(cmd)
+        logger.info(f"Style updated for {marker_id}")
+
+    @Slot(str, list)
+    def on_feature_geometry_changed(
+        self, marker_id: str, geometry: list
+    ) -> None:
+        """Persists a feature geometry change via UpdateMarkerCommand.
+
+        Recalculates the anchor to the centroid of the new geometry.
+
+        Args:
+            marker_id: The object_id of the feature.
+            geometry: Updated list of normalized coordinate dicts.
+
+        """
+        actual_marker_id = self._marker_object_to_id.get(marker_id)
+        if not actual_marker_id:
+            logger.warning(f"No marker mapping for geometry update: {marker_id}")
+            return
+
+        # Recalculate anchor (centroid)
+        n = len(geometry)
+        if n > 0:
+            cx = sum(pt["x"] for pt in geometry) / n
+            cy = sum(pt["y"] for pt in geometry) / n
+        else:
+            cx, cy = 0.5, 0.5
+
+        cmd = UpdateMarkerCommand(
+            actual_marker_id, {"geometry": geometry, "x": cx, "y": cy}
+        )
+        self.window.command_requested.emit(cmd)
+        logger.info(f"Geometry updated for {marker_id} ({n} vertices)")
+
     def delete_marker(self, marker_id: str) -> None:
         """Deletes a marker.
 

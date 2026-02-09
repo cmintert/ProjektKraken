@@ -791,6 +791,22 @@ class ConnectionManager:
         ):
             failed_count += 1
 
+        if not self._connect_signal_safe(
+            map_widget,
+            "feature_style_changed",
+            self.window._on_feature_style_changed,
+            "MapWidget",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            map_widget,
+            "feature_geometry_changed",
+            self.window._on_feature_geometry_changed,
+            "MapWidget",
+        ):
+            failed_count += 1
+
         # Wire Timeline playhead to Map for temporal synchronization
         if not self._connect_signal_safe(
             timeline,

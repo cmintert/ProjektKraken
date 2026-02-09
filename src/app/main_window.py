@@ -1707,6 +1707,28 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """
         self.map_handler.on_feature_drawn(feature_type, geometry)
 
+    @Slot(str, dict)
+    def _on_feature_style_changed(self, marker_id: str, new_style: dict) -> None:
+        """Handle feature style change from map widget.
+
+        Args:
+            marker_id: The marker/feature ID.
+            new_style: Updated style dict.
+
+        """
+        self.map_handler.on_feature_style_changed(marker_id, new_style)
+
+    @Slot(str, list)
+    def _on_feature_geometry_changed(self, marker_id: str, geometry: list) -> None:
+        """Handle feature geometry change from vertex editing.
+
+        Args:
+            marker_id: The marker/feature ID.
+            geometry: Updated list of normalized coordinate dicts.
+
+        """
+        self.map_handler.on_feature_geometry_changed(marker_id, geometry)
+
     def delete_marker(self, marker_id: str) -> None:
         """Deletes a marker.
 

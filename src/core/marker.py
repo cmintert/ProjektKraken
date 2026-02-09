@@ -142,6 +142,151 @@ class MapFeature:
         return (min(xs), min(ys), max(xs), max(ys))
 
     # ------------------------------------------------------------------
+    # GIS spatial computations (normalized coordinate space)
+    # ------------------------------------------------------------------
+
+    def compute_length(self, map_width: float = 1.0, map_height: float = 1.0) -> float:
+        """Computes the total length of a path feature.
+
+        For regions this returns 0.0; use ``compute_perimeter()`` instead.
+        The result is in the same units as *map_width* / *map_height*
+        (default: normalized 0-1 units; pass meters for real-world distance).
+
+        Args:
+            map_width: Real-world width of the map (e.g. meters).
+            map_height: Real-world height of the map (e.g. meters).
+
+        Returns:
+            Total path length in the caller's units.
+
+        """
+        if self.feature_type != FEATURE_TYPE_PATH:
+            return 0.0
+        return self._segment_length_sum(self.points, map_width, map_height)
+
+    def compute_perimeter(
+        self, map_width: float = 1.0, map_height: float = 1.0
+    ) -> float:
+        """Computes the perimeter of a region feature.
+
+        The polygon is implicitly closed (last vertex → first vertex).
+
+        Args:
+            map_width: Real-world width of the map (e.g. meters).
+            map_height: Real-world height of the map (e.g. meters).
+
+        Returns:
+            Perimeter length in the caller's units.
+
+        """
+        if self.feature_type != FEATURE_TYPE_REGION:
+            return 0.0
+        pts = self.points
+        if len(pts) < 3:
+            return 0.0
+        # Close the polygon by appending the first point
+        closed = list(pts) + [pts[0]]
+        return self._segment_length_sum(closed, map_width, map_height)
+
+    def compute_area(self, map_width: float = 1.0, map_height: float = 1.0) -> float:
+        """Computes the area of a region feature using the Shoelace formula.
+
+        The result is in square units of the caller's coordinate system
+        (default: normalized; pass meters for real-world area in m²).
+
+        Args:
+            map_width: Real-world width of the map.
+            map_height: Real-world height of the map.
+
+        Returns:
+            Absolute area in the caller's square units.
+
+        """
+        if self.feature_type != FEATURE_TYPE_REGION:
+            return 0.0
+        pts = self.points
+        if len(pts) < 3:
+            return 0.0
+        # Shoelace formula
+        n = len(pts)
+        total = 0.0
+        for i in range(n):
+            x0 = pts[i][0] * map_width
+            y0 = pts[i][1] * map_height
+            x1 = pts[(i + 1) % n][0] * map_width
+            y1 = pts[(i + 1) % n][1] * map_height
+            total += x0 * y1 - x1 * y0
+        return abs(total) / 2.0
+
+    def compute_segment_count(self) -> int:
+        """Returns the number of line segments in the geometry.
+
+        Returns:
+            Number of segments (vertices - 1 for paths, vertices for regions).
+
+        """
+        pts = self.points
+        if len(pts) < 2:
+            return 0
+        if self.feature_type == FEATURE_TYPE_REGION:
+            return len(pts)  # closed polygon
+        return len(pts) - 1  # open polyline
+
+    @property
+    def spatial_properties(self) -> Dict[str, Any]:
+        """Returns a dict of computed spatial properties merged with user attributes.
+
+        This is the primary interface for downstream code that needs
+        lightweight GIS metadata (e.g. UI info panels, export).
+
+        Returns:
+            Dict with keys like ``length``, ``area``, ``perimeter``,
+            ``segment_count``, ``bounding_box``, plus any user-defined
+            attributes from ``self.attributes``.
+
+        """
+        props: Dict[str, Any] = {
+            "feature_type": self.feature_type,
+            "vertex_count": len(self.points),
+            "segment_count": self.compute_segment_count(),
+            "bounding_box": self.get_bounding_box(),
+        }
+        if self.is_path:
+            props["length"] = self.compute_length()
+        if self.is_region:
+            props["area"] = self.compute_area()
+            props["perimeter"] = self.compute_perimeter()
+        # Merge user-defined spatial attributes (road_quality, river_depth, etc.)
+        props.update(self.attributes)
+        return props
+
+    @staticmethod
+    def _segment_length_sum(
+        pts: List[Tuple[float, float]],
+        map_width: float,
+        map_height: float,
+    ) -> float:
+        """Sums Euclidean distances between consecutive point pairs.
+
+        Args:
+            pts: Ordered list of (x, y) tuples (normalized).
+            map_width: Scale factor for X.
+            map_height: Scale factor for Y.
+
+        Returns:
+            Total distance.
+
+        """
+        import math
+
+        total = 0.0
+        for i in range(len(pts) - 1):
+            dx = (pts[i + 1][0] - pts[i][0]) * map_width
+            dy = (pts[i + 1][1] - pts[i][1]) * map_height
+            total += math.sqrt(dx * dx + dy * dy)
+        return total
+
+    # ------------------------------------------------------------------
     # Serialization
     # ------------------------------------------------------------------
 

@@ -18,7 +18,6 @@ from PySide6.QtGui import (
     QColor,
     QCursor,
     QFont,
-    QMouseEvent,
     QPainter,
     QPainterPath,
     QPen,
@@ -30,6 +29,7 @@ from PySide6.QtWidgets import (
     QGraphicsPathItem,
     QGraphicsPixmapItem,
     QGraphicsPolygonItem,
+    QGraphicsSceneMouseEvent,
     QGraphicsSimpleTextItem,
     QStyleOptionGraphicsItem,
     QWidget,
@@ -182,26 +182,26 @@ class _FeatureItemBase(QGraphicsObject):
     # Mouse interaction (click detection)
     # ------------------------------------------------------------------
 
-    def mousePressEvent(self, event: QMouseEvent) -> None:
+    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """Records press position for click-vs-drag detection.
 
         Args:
-            event: The mouse press event.
+            event: The graphics scene mouse press event.
 
         """
         if event.button() == Qt.MouseButton.LeftButton:
-            self._drag_start_pos = self.mapToScene(event.position())
+            self._drag_start_pos = event.scenePos()
         super().mousePressEvent(event)
 
-    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+    def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """Emits ``clicked`` if the mouse barely moved.
 
         Args:
-            event: The mouse release event.
+            event: The graphics scene mouse release event.
 
         """
         if event.button() == Qt.MouseButton.LeftButton and self._drag_start_pos:
-            end = self.mapToScene(event.position())
+            end = event.scenePos()
             dist = (end - self._drag_start_pos).manhattanLength()
             if dist < 5:
                 self.clicked.emit(self.marker_id, self.object_type)

@@ -158,6 +158,8 @@ class MapWidget(QWidget):
     change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
     marker_drop_requested = Signal(str, str, str, float, float)  # id, type, name, x, y
     create_feature_requested = Signal(str, list)  # feature_type, geometry
+    feature_style_changed = Signal(str, dict)  # marker_id, new style
+    feature_geometry_changed = Signal(str, list)  # marker_id, new geometry
     add_keyframe_requested = Signal(
         str, str, float, float, float
     )  # map_id, marker_id, t, x, y
@@ -311,6 +313,8 @@ class MapWidget(QWidget):
         self.view.mouse_coordinates_changed.connect(self._on_mouse_coordinates_changed)
         self.view.drawing_finished.connect(self._on_drawing_finished)
         self.view.drawing_cancelled.connect(self._on_drawing_cancelled)
+        self.view.feature_style_changed.connect(self.feature_style_changed.emit)
+        self.view.feature_geometry_changed.connect(self.feature_geometry_changed.emit)
         self.view.scene.selectionChanged.connect(self._on_selection_changed)
 
         self._maps_data = []  # List of maps for selector

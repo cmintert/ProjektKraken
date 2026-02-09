@@ -478,6 +478,54 @@ class KeyframeItem(QGraphicsObject):
         return super().itemChange(change, value)
 
 
+class _VertexHandle(QGraphicsEllipseItem):
+    """Draggable handle displayed on a feature vertex during editing.
+
+    Each handle is a small circle that the user can drag to reshape
+    a path or region. On release, the callback fires with the new position.
+
+    Args:
+        index: The vertex index this handle represents.
+        on_moved: Callback ``(index, QPointF)`` invoked when dragging finishes.
+
+    """
+
+    _RADIUS = 5  # screen pixels (cosmetic)
+
+    def __init__(
+        self,
+        index: int,
+        on_moved: "Callable[[int, QPointF], None]",
+    ) -> None:
+        r = self._RADIUS
+        super().__init__(-r, -r, r * 2, r * 2)
+        self.index = index
+        self._on_moved = on_moved
+        self.setBrush(QBrush(QColor("#e74c3c")))
+        self.setPen(QPen(QColor("#FFFFFF"), 1))
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
+        self.setCursor(QCursor(Qt.CursorShape.SizeAllCursor))
+        self.setZValue(LAYER_UI_OVERLAY + 1)
+
+    def itemChange(
+        self, change: QGraphicsItem.GraphicsItemChange, value: Any
+    ) -> Any:
+        """Notifies parent when the handle position changes.
+
+        Args:
+            change: The type of change.
+            value: The new value.
+
+        Returns:
+            The processed value.
+
+        """
+        if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
+            self._on_moved(self.index, self.pos())
+        return super().itemChange(change, value)
+
+
 class MapGraphicsView(QGraphicsView):
     """Graphics view for displaying a map image with draggable markers.
 
@@ -506,6 +554,9 @@ class MapGraphicsView(QGraphicsView):
     # Drawing mode signals
     drawing_finished = Signal(str, list)  # feature_type, geometry (normalized coords)
     drawing_cancelled = Signal()  # Emitted when drawing is cancelled
+    # Feature editing signals
+    feature_style_changed = Signal(str, dict)  # marker_id, new_style dict
+    feature_geometry_changed = Signal(str, list)  # marker_id, new geometry list
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the MapGraphicsView.
@@ -597,6 +648,10 @@ class MapGraphicsView(QGraphicsView):
         self._drawing_vertices: list[QPointF] = []  # scene coordinates
         self._drawing_preview_item: Optional[QGraphicsPathItem] = None
         self._drawing_dots: list[QGraphicsItem] = []  # vertex dots
+
+        # Vertex Editing state
+        self._editing_feature_id: Optional[str] = None
+        self._vertex_handles: list[QGraphicsEllipseItem] = []
 
         # Trajectory Visualization
         self.trajectory_path_item: Optional[QGraphicsPathItem] = None
@@ -1325,6 +1380,24 @@ class MapGraphicsView(QGraphicsView):
 
         feature_label = "Path" if isinstance(item, PathItem) else "Region"
 
+        # Edit Style action
+        edit_style_action = QAction(self)
+        edit_style_action.setText(f"Edit {feature_label} Style...")
+        edit_style_action.triggered.connect(
+            lambda: self._show_feature_style_dialog(item)
+        )
+        menu.addAction(edit_style_action)
+
+        # Edit Vertices action
+        edit_vertices_action = QAction(self)
+        edit_vertices_action.setText("Edit Vertices...")
+        edit_vertices_action.triggered.connect(
+            lambda: self._start_vertex_editing(item)
+        )
+        menu.addAction(edit_vertices_action)
+
+        menu.addSeparator()
+
         # Delete action
         delete_action = QAction(self)
         delete_action.setText(f"Delete {feature_label}")
@@ -1419,15 +1492,19 @@ class MapGraphicsView(QGraphicsView):
         super().mouseDoubleClickEvent(event)
 
     def keyPressEvent(self, event: "QKeyEvent") -> None:
-        """Handle key presses for drawing mode (Escape to cancel).
+        """Handle key presses for drawing/editing modes (Escape to cancel/finish).
 
         Args:
             event: The key press event.
 
         """
-        if self._drawing_mode and event.key() == Qt.Key.Key_Escape:
-            self.cancel_drawing()
-            return
+        if event.key() == Qt.Key.Key_Escape:
+            if self._drawing_mode:
+                self.cancel_drawing()
+                return
+            if self._editing_feature_id:
+                self._finish_vertex_editing()
+                return
         super().keyPressEvent(event)
 
     def _add_drawing_vertex(self, scene_pos: QPointF) -> None:
@@ -1515,6 +1592,215 @@ class MapGraphicsView(QGraphicsView):
 
         """
         return self._drawing_mode
+
+    # ------------------------------------------------------------------
+    # Feature Style Editing
+    # ------------------------------------------------------------------
+
+    def _show_feature_style_dialog(self, item: "_FeatureItemBase") -> None:
+        """Opens an inline dialog to edit a feature's visual style.
+
+        Args:
+            item: The PathItem or RegionItem to edit.
+
+        """
+        from PySide6.QtWidgets import (
+            QDialog,
+            QDialogButtonBox,
+            QDoubleSpinBox,
+            QFormLayout,
+        )
+        from src.gui.widgets.map.feature_items import (
+            DEFAULT_REGION_FILL_COLOR,
+            DEFAULT_STROKE_COLOR,
+            DEFAULT_STROKE_WIDTH,
+        )
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle(f"Edit {item.label} Style")
+        dialog.setMinimumWidth(300)
+        layout = QFormLayout(dialog)
+
+        # Stroke color
+        stroke_btn = QPushButton(item._style.get("stroke_color", DEFAULT_STROKE_COLOR))
+        stroke_btn.setStyleSheet(
+            f"background-color: {stroke_btn.text()}; color: white; padding: 4px 12px;"
+        )
+        _stroke_color = [stroke_btn.text()]
+
+        def _pick_stroke() -> None:
+            c = QColorDialog.getColor(QColor(_stroke_color[0]), dialog, "Stroke Color")
+            if c.isValid():
+                _stroke_color[0] = c.name()
+                stroke_btn.setText(c.name())
+                stroke_btn.setStyleSheet(
+                    f"background-color: {c.name()}; color: white; padding: 4px 12px;"
+                )
+
+        stroke_btn.clicked.connect(_pick_stroke)
+        layout.addRow("Stroke Color:", stroke_btn)
+
+        # Stroke width
+        width_spin = QDoubleSpinBox()
+        width_spin.setRange(0.5, 20.0)
+        width_spin.setSingleStep(0.5)
+        width_spin.setValue(item._style.get("stroke_width", DEFAULT_STROKE_WIDTH))
+        layout.addRow("Stroke Width:", width_spin)
+
+        # Fill color (regions only)
+        fill_btn: Optional[QPushButton] = None
+        _fill_color: list = [None]
+        if isinstance(item, RegionItem):
+            fill_val = item._style.get("fill_color", DEFAULT_REGION_FILL_COLOR)
+            fill_btn = QPushButton(fill_val)
+            fill_btn.setStyleSheet(
+                f"background-color: {fill_val}; color: white; padding: 4px 12px;"
+            )
+            _fill_color = [fill_val]
+
+            def _pick_fill() -> None:
+                c = QColorDialog.getColor(
+                    QColor(_fill_color[0]),
+                    dialog,
+                    "Fill Color",
+                    QColorDialog.ColorDialogOption.ShowAlphaChannel,
+                )
+                if c.isValid():
+                    _fill_color[0] = c.name(QColor.NameFormat.HexArgb)
+                    fill_btn.setText(_fill_color[0])
+                    fill_btn.setStyleSheet(
+                        f"background-color: {c.name()}; color: white; "
+                        f"padding: 4px 12px;"
+                    )
+
+            fill_btn.clicked.connect(_pick_fill)
+            layout.addRow("Fill Color:", fill_btn)
+
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok
+            | QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addRow(buttons)
+
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            new_style = dict(item._style)
+            new_style["stroke_color"] = _stroke_color[0]
+            new_style["stroke_width"] = width_spin.value()
+            if isinstance(item, RegionItem) and _fill_color[0]:
+                new_style["fill_color"] = _fill_color[0]
+
+            item._style = new_style
+            item.update()  # Repaint
+            self.feature_style_changed.emit(item.marker_id, new_style)
+            logger.info(f"Style updated for {item.marker_id}: {new_style}")
+
+    # ------------------------------------------------------------------
+    # Vertex Editing
+    # ------------------------------------------------------------------
+
+    def _start_vertex_editing(self, item: "_FeatureItemBase") -> None:
+        """Enters vertex editing mode for a feature.
+
+        Shows draggable handles on each vertex. Handles can be moved to
+        reshape the feature. Press Escape or right-click to finish.
+
+        Args:
+            item: The PathItem or RegionItem to edit.
+
+        """
+        self._finish_vertex_editing()  # Clean up any previous session
+        self._editing_feature_id = item.marker_id
+
+        geometry = item._geometry
+        if not geometry or not self.pixmap_item:
+            return
+
+        rect = self.pixmap_item.sceneBoundingRect()
+        for i, pt in enumerate(geometry):
+            sx = rect.left() + pt["x"] * rect.width()
+            sy = rect.top() + pt["y"] * rect.height()
+            handle = _VertexHandle(i, self._on_vertex_moved)
+            handle.setPos(sx, sy)
+            handle.setZValue(LAYER_UI_OVERLAY + 1)
+            self.scene.addItem(handle)
+            self._vertex_handles.append(handle)
+
+        self.setDragMode(QGraphicsView.DragMode.NoDrag)
+        logger.info(
+            f"Vertex editing started for {item.marker_id} "
+            f"({len(geometry)} vertices)"
+        )
+
+    def _on_vertex_moved(self, index: int, new_scene_pos: QPointF) -> None:
+        """Callback when a vertex handle is dragged to a new position.
+
+        Updates the underlying feature's geometry in real time.
+
+        Args:
+            index: The vertex index that was moved.
+            new_scene_pos: The new scene position.
+
+        """
+        if not self._editing_feature_id or not self.pixmap_item:
+            return
+
+        item = self.feature_items.get(self._editing_feature_id)
+        if not item:
+            return
+
+        # Convert scene pos → normalized
+        rect = self.pixmap_item.sceneBoundingRect()
+        nx = (new_scene_pos.x() - rect.left()) / rect.width()
+        ny = (new_scene_pos.y() - rect.top()) / rect.height()
+        nx = max(0.0, min(1.0, nx))
+        ny = max(0.0, min(1.0, ny))
+
+        if index < len(item._geometry):
+            item._geometry[index] = {"x": round(nx, 6), "y": round(ny, 6)}
+            # Rebuild visual
+            if isinstance(item, PathItem):
+                item._build_path()
+                item._position_label()
+            elif isinstance(item, RegionItem):
+                item._build_polygon()
+                item._position_label()
+            item.prepareGeometryChange()
+            item.update()
+
+    def _finish_vertex_editing(self) -> None:
+        """Commits vertex edits and removes handles.
+
+        Emits ``feature_geometry_changed`` with the updated normalized
+        coordinates so the command layer can persist the change.
+        """
+        if self._editing_feature_id:
+            item = self.feature_items.get(self._editing_feature_id)
+            if item and item._geometry:
+                self.feature_geometry_changed.emit(
+                    self._editing_feature_id, list(item._geometry)
+                )
+                logger.info(
+                    f"Vertex editing finished for {self._editing_feature_id}"
+                )
+
+        self._editing_feature_id = None
+        for handle in self._vertex_handles:
+            self.scene.removeItem(handle)
+        self._vertex_handles.clear()
+        if not self._drawing_mode:
+            self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+
+    @property
+    def is_editing_vertices(self) -> bool:
+        """True when vertex editing mode is active.
+
+        Returns:
+            bool: Whether a feature's vertices are being edited.
+
+        """
+        return self._editing_feature_id is not None
 
     def show_trajectory(self, marker_id: str, keyframes: list) -> None:
         """Visualizes the trajectory path and keyframes.
