@@ -65,6 +65,11 @@ class ShortcutManager:
     )
     OUTLINE_DEMOTE = KeyboardShortcut("Demote Item", "Ctrl+]", "Demote item in outline")
 
+    # View Modes
+    FOCUS_MODE = KeyboardShortcut(
+        "Focus Mode", "Ctrl+Shift+F", "Toggle focus mode (dim surrounding UI)"
+    )
+
     # General
     DESELECT = KeyboardShortcut("Deselect/Cancel", "Esc", "Deselect items or cancel")
 

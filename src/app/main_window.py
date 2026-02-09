@@ -513,6 +513,9 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             self.worker_manager.generate_summary
         )
 
+        # Initialize Focus Mode
+        self._init_focus_mode()
+
         # Connect to worker's command_finished to show toast for
         # drag-drop relations (Sprint 1)
         self.worker.command_finished.connect(
@@ -1080,6 +1083,84 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             apply_windows_title_bar_style(self, dark_mode=dark_mode)
         except Exception as e:
             logger.warning(f"Failed to update title bar style on theme change: {e}")
+
+    def _init_focus_mode(self) -> None:
+        """Initialize focus mode connections and keyboard shortcut.
+        
+        Connects the focus_mode_changed signals from both entity and event
+        editor description widgets to the focus mode handler.
+        Sets up Ctrl+Shift+F keyboard shortcut to toggle focus mode.
+        """
+        from src.gui.utils.shortcut_manager import ShortcutManager
+        
+        # Initialize focus mode state
+        self._focus_mode_active = False
+        
+        # Connect focus mode signals from both editors
+        self.entity_editor.desc_edit.focus_mode_changed.connect(
+            self._on_focus_mode_changed
+        )
+        self.event_editor.desc_edit.focus_mode_changed.connect(
+            self._on_focus_mode_changed
+        )
+        
+        # Set up keyboard shortcut (Ctrl+Shift+F)
+        from PySide6.QtGui import QAction
+        
+        self.action_focus_mode = QAction("Toggle Focus Mode", self)
+        self.action_focus_mode.setShortcut(ShortcutManager.FOCUS_MODE.key_sequence)
+        self.action_focus_mode.setShortcutContext(
+            Qt.ShortcutContext.ApplicationShortcut
+        )
+        self.action_focus_mode.triggered.connect(self._toggle_focus_mode_from_shortcut)
+        self.addAction(self.action_focus_mode)
+    
+    @Slot(bool)
+    def _on_focus_mode_changed(self, active: bool) -> None:
+        """Handle focus mode toggle from editors.
+        
+        Dims or restores dock widgets when focus mode is toggled.
+        
+        Args:
+            active: True if focus mode is being activated, False otherwise.
+        """
+        self._focus_mode_active = active
+        
+        # Get all docks except the ones containing the active editor
+        opacity = 0.3 if active else 1.0
+        
+        for dock_name, dock in self.ui_manager.docks.items():
+            if dock is not None:
+                # Apply opacity to all docks
+                dock.setWindowOpacity(opacity)
+    
+    @Slot()
+    def _toggle_focus_mode_from_shortcut(self) -> None:
+        """Toggle focus mode via keyboard shortcut.
+        
+        Toggles the FC button in whichever editor is currently visible/active.
+        Prioritizes entity editor if both are visible.
+        """
+        # Determine which editor is currently active/visible
+        entity_dock = self.ui_manager.docks.get("entity")
+        event_dock = self.ui_manager.docks.get("event")
+        
+        target_editor = None
+        
+        # Check entity editor first
+        if entity_dock and entity_dock.isVisible():
+            target_editor = self.entity_editor.desc_edit
+        # Fall back to event editor
+        elif event_dock and event_dock.isVisible():
+            target_editor = self.event_editor.desc_edit
+        # If neither visible, default to entity editor
+        else:
+            target_editor = self.entity_editor.desc_edit
+        
+        # Toggle the button state (which will emit the signal)
+        if target_editor:
+            target_editor.btn_focus.setChecked(not target_editor.btn_focus.isChecked())
+            target_editor.toggle_focus_mode()
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Handles application close event.
