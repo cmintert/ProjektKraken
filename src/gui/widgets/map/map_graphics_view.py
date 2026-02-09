@@ -96,6 +96,9 @@ KEYFRAME_LABEL_OFFSET_Y = 10
 KEYFRAME_LABEL_MIN_SIZE_PT = 8
 KEYFRAME_LABEL_MAX_SIZE_PT = 10
 
+# Drawing mode constants
+NORMALIZED_COORD_PRECISION = 6  # decimal places for normalized coordinates
+
 
 class KeyframeGizmo(QGraphicsItemGroup):
     """Hover gizmo for keyframe actions: Clock Mode and Delete.
@@ -932,7 +935,6 @@ class MapGraphicsView(QGraphicsView):
         for item in list(self.feature_items.values()):
             self.scene.removeItem(item)
         self.feature_items.clear()
-        self.markers.clear()
 
     def update_markers_temporal_state(
         self, playhead_time: float, current_time: float
@@ -1365,7 +1367,7 @@ class MapGraphicsView(QGraphicsView):
     def finish_drawing(self) -> None:
         """Completes the current drawing and emits the geometry.
 
-        Converts scene-coordinate vertices to normalised coordinates
+        Converts scene-coordinate vertices to normalized coordinates
         and emits ``drawing_finished(feature_type, geometry)``.
         """
         if not self._drawing_mode or not self.pixmap_item:
@@ -1380,12 +1382,15 @@ class MapGraphicsView(QGraphicsView):
             self.cancel_drawing()
             return
 
-        # Convert scene coords to normalised
+        # Convert scene coords to normalized
         geometry = []
         for sp in self._drawing_vertices:
             nx, ny = self.coord_system.to_normalized(sp)
             nx, ny = self.coord_system.clamp_normalized(nx, ny)
-            geometry.append({"x": round(nx, 6), "y": round(ny, 6)})
+            geometry.append({
+                "x": round(nx, NORMALIZED_COORD_PRECISION),
+                "y": round(ny, NORMALIZED_COORD_PRECISION),
+            })
 
         feature_type = self._drawing_mode
         logger.info(

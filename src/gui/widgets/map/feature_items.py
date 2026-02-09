@@ -49,6 +49,10 @@ DEFAULT_REGION_FILL_COLOR = "#3498DB30"
 SELECTION_PEN_COLOR = "#FFFFFF"
 SELECTION_PEN_WIDTH = 2.0
 
+# Hit testing
+HIT_AREA_MARGIN = 6   # extra pixels around the stroke for easier clicking
+MIN_HIT_AREA_WIDTH = 10  # minimum pixel width for a clickable hit area
+
 # Label styling
 LABEL_FONT_FAMILY = "Segoe UI"
 LABEL_FONT_SIZE = 9
@@ -86,7 +90,7 @@ class _FeatureItemBase(QGraphicsObject):
             object_type: 'entity' or 'event'.
             label: Display label.
             pixmap_item: Reference to map pixmap (for coordinate conversion).
-            geometry: List of normalised coordinate dicts ``[{x, y}, ...]``.
+            geometry: List of normalized coordinate dicts ``[{x, y}, ...]``.
             style: Optional visual-override dict.
             description: Optional tooltip text.
             lore_date: Optional temporal date for future/past fading.
@@ -209,7 +213,7 @@ class PathItem(_FeatureItemBase):
     """Renders a polyline (path / line) on the map.
 
     The item is positioned at (0, 0) in scene coordinates; all vertices
-    are stored as absolute scene positions computed from normalised
+    are stored as absolute scene positions computed from normalized
     geometry + the pixmap_item bounds.
 
     """
@@ -270,7 +274,7 @@ class PathItem(_FeatureItemBase):
         self._position_label()
 
     def _build_path(self) -> None:
-        """Converts normalised geometry → scene-coordinates QPainterPath."""
+        """Converts normalized geometry → scene-coordinates QPainterPath."""
         if not self.pixmap_item or not self._geometry:
             return
         rect = self.pixmap_item.sceneBoundingRect()
@@ -322,7 +326,7 @@ class PathItem(_FeatureItemBase):
         from PySide6.QtGui import QPainterPathStroker
 
         stroker = QPainterPathStroker()
-        stroker.setWidth(max(self._stroke_width() + 6, 10))  # min 10px hit area
+        stroker.setWidth(max(self._stroke_width() + HIT_AREA_MARGIN, MIN_HIT_AREA_WIDTH))
         return stroker.createStroke(self._path)
 
     def paint(
@@ -416,7 +420,7 @@ class RegionItem(_FeatureItemBase):
         self._position_label()
 
     def _build_polygon(self) -> None:
-        """Converts normalised geometry → scene-coordinates QPolygonF."""
+        """Converts normalized geometry → scene-coordinates QPolygonF."""
         if not self.pixmap_item or not self._geometry:
             return
         rect = self.pixmap_item.sceneBoundingRect()

@@ -456,7 +456,7 @@ class MapWidget(QWidget):
 
         Args:
             feature_type: 'path' or 'region'.
-            geometry: List of normalised coordinate dicts.
+            geometry: List of normalized coordinate dicts.
 
         """
         self.btn_draw_path.setChecked(False)

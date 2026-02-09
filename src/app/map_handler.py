@@ -292,7 +292,7 @@ class MapHandler(QObject):
 
         Args:
             feature_type: 'path' or 'region'.
-            geometry: List of normalised coordinate dicts.
+            geometry: List of normalized coordinate dicts.
 
         """
         map_id = self.window.map_widget.get_selected_map_id()

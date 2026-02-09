@@ -10,7 +10,7 @@ import pytest
 
 # Skip all Qt tests if display is not available
 pytestmark = pytest.mark.skipif(
-    not os.environ.get("DISPLAY") and not os.environ.get("QT_QPA_PLATFORM"),
+    not os.environ.get("DISPLAY") and os.environ.get("QT_QPA_PLATFORM") != "offscreen",
     reason="No display available for Qt tests",
 )
 
