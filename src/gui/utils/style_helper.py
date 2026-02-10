@@ -170,11 +170,14 @@ class StyleHelper:
 
         theme = ThemeManager().get_theme()
         return (
-            f"QToolButton {{ background-color: {theme['surface']}; "
+            f"QToolButton, QPushButton {{ background-color: {theme['surface']}; "
             f"color: {theme['text_main']}; border: 1px solid {theme['border']}; "
             f"border-radius: 4px; padding: 4px; }}"
-            f"QToolButton:hover {{ background-color: {theme['border']}; }}"
-            f"QToolButton:pressed {{ background-color: {theme['app_bg']}; }}"
+            f"QToolButton:hover, QPushButton:hover {{ background-color: {theme['border']}; }}"
+            f"QToolButton:pressed, QPushButton:pressed {{ background-color: {theme['app_bg']}; }}"
+            f"QToolButton:checked, QPushButton:checked {{ "
+            f"background-color: {theme['border']}; "
+            f"border: 1px solid {theme['primary']}; }}"
         )
 
     @staticmethod
