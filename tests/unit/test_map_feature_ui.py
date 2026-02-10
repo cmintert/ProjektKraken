@@ -740,3 +740,227 @@ class TestFeatureItemStyle:
             view.feature_style_changed.emit("r1", {"stroke_color": "#00FF00"})
         assert sig.args[0] == "r1"
         assert sig.args[1]["stroke_color"] == "#00FF00"
+
+
+# --------------------------------------------------------------------------
+# Midpoint handles and vertex deletion tests
+# --------------------------------------------------------------------------
+
+
+class TestVertexManagement:
+    """Tests for midpoint insertion, vertex deletion, and snapping."""
+
+    @pytest.fixture()
+    def view(self, qtbot):
+        """Create a MapGraphicsView with a path feature for vertex tests."""
+        from src.gui.widgets.map.map_graphics_view import MapGraphicsView
+
+        view = MapGraphicsView()
+        pm = QPixmap(200, 200)
+        pm.fill(Qt.GlobalColor.blue)
+        view.pixmap_item = QGraphicsPixmapItem(pm)
+        view.pixmap_item.setZValue(0)
+        view.scene.addItem(view.pixmap_item)
+        view.coord_system.set_scene_rect(view.pixmap_item.boundingRect())
+        qtbot.addWidget(view)
+
+        geom = [
+            {"x": 0.1, "y": 0.2},
+            {"x": 0.5, "y": 0.5},
+            {"x": 0.9, "y": 0.8},
+        ]
+        view.add_marker(
+            "p1", "entity", "River", 0.5, 0.5,
+            feature_type="path", geometry=geom,
+        )
+        return view
+
+    @pytest.fixture()
+    def region_view(self, qtbot):
+        """Create a MapGraphicsView with a region feature for vertex tests."""
+        from src.gui.widgets.map.map_graphics_view import MapGraphicsView
+
+        view = MapGraphicsView()
+        pm = QPixmap(200, 200)
+        pm.fill(Qt.GlobalColor.blue)
+        view.pixmap_item = QGraphicsPixmapItem(pm)
+        view.pixmap_item.setZValue(0)
+        view.scene.addItem(view.pixmap_item)
+        view.coord_system.set_scene_rect(view.pixmap_item.boundingRect())
+        qtbot.addWidget(view)
+
+        geom = [
+            {"x": 0.2, "y": 0.2},
+            {"x": 0.8, "y": 0.2},
+            {"x": 0.8, "y": 0.8},
+            {"x": 0.2, "y": 0.8},
+        ]
+        view.add_marker(
+            "r1", "entity", "Kingdom", 0.5, 0.5,
+            feature_type="region", geometry=geom,
+        )
+        return view
+
+    def test_midpoint_handles_created(self, view) -> None:
+        """Midpoint handles are created between each pair of vertices."""
+        item = view.feature_items["p1"]
+        view._start_vertex_editing(item)
+        # 3 vertices → 2 segments → 2 midpoint handles for a path
+        assert len(view._midpoint_handles) == 2
+
+    def test_midpoint_handles_region(self, region_view) -> None:
+        """Region creates midpoint handles for all segments including closing."""
+        item = region_view.feature_items["r1"]
+        region_view._start_vertex_editing(item)
+        # 4 vertices → 4 segments (closed) → 4 midpoint handles
+        assert len(region_view._midpoint_handles) == 4
+
+    def test_vertex_insert_via_midpoint(self, view) -> None:
+        """Inserting via midpoint adds a new vertex."""
+        item = view.feature_items["p1"]
+        view._start_vertex_editing(item)
+        assert len(item._geometry) == 3
+
+        # Insert vertex at midpoint of segment 0 (between vertex 0 and 1)
+        mid_pos = QPointF(60, 70)  # Somewhere in the middle
+        view._on_midpoint_insert(0, mid_pos)
+        assert len(item._geometry) == 4
+        # Handles should be rebuilt
+        assert len(view._vertex_handles) == 4
+
+    def test_vertex_delete_removes_vertex(self, view) -> None:
+        """Right-click delete removes a vertex from geometry."""
+        item = view.feature_items["p1"]
+        view._start_vertex_editing(item)
+        assert len(item._geometry) == 3
+
+        # Delete vertex 1 (middle vertex)
+        view._on_vertex_deleted(1)
+        assert len(item._geometry) == 2
+        assert len(view._vertex_handles) == 2
+
+    def test_vertex_delete_enforces_minimum_path(self, view) -> None:
+        """Cannot delete a vertex below minimum count (2 for path)."""
+        item = view.feature_items["p1"]
+        view._start_vertex_editing(item)
+
+        # Delete to bring down to 2 vertices
+        view._on_vertex_deleted(1)
+        assert len(item._geometry) == 2
+        # Trying to delete another should not work (min 2 for path)
+        view._on_vertex_deleted(0)
+        assert len(item._geometry) == 2
+
+    def test_vertex_delete_enforces_minimum_region(self, region_view) -> None:
+        """Cannot delete a vertex below minimum count (3 for region)."""
+        item = region_view.feature_items["r1"]
+        region_view._start_vertex_editing(item)
+
+        # Delete one to bring down to 3
+        region_view._on_vertex_deleted(0)
+        assert len(item._geometry) == 3
+        # Trying to delete another should not work (min 3 for region)
+        region_view._on_vertex_deleted(0)
+        assert len(item._geometry) == 3
+
+    def test_editing_applies_dash_style(self, view) -> None:
+        """Vertex editing applies dashed stroke to the edited feature."""
+        item = view.feature_items["p1"]
+        original_style = dict(item._style)
+        view._start_vertex_editing(item)
+        # Should have dash pattern applied
+        assert item._style.get("dash_pattern") is not None
+        assert len(item._style["dash_pattern"]) > 0
+
+    def test_editing_restores_style_on_finish(self, view) -> None:
+        """Finishing vertex editing restores the original style."""
+        item = view.feature_items["p1"]
+        original_dash = item._style.get("dash_pattern")
+        view._start_vertex_editing(item)
+        view._finish_vertex_editing()
+        # Style should be restored
+        assert item._style.get("dash_pattern") == original_dash
+
+    def test_finish_cleans_midpoint_handles(self, view) -> None:
+        """Finishing vertex editing removes midpoint handles."""
+        item = view.feature_items["p1"]
+        view._start_vertex_editing(item)
+        assert len(view._midpoint_handles) > 0
+        view._finish_vertex_editing()
+        assert len(view._midpoint_handles) == 0
+
+
+# --------------------------------------------------------------------------
+# Hover tooltip tests
+# --------------------------------------------------------------------------
+
+
+class TestFeatureHoverTooltip:
+    """Tests for the debounced hover tooltip on feature items."""
+
+    def test_path_spatial_properties(self, pixmap_item, sample_path_geometry) -> None:
+        """PathItem computes spatial properties for tooltip."""
+        item = PathItem(
+            marker_id="p1",
+            object_type="entity",
+            label="River",
+            pixmap_item=pixmap_item,
+            geometry=sample_path_geometry,
+            anchor_x=0.5,
+            anchor_y=0.5,
+        )
+        props = item._compute_spatial_properties()
+        assert props["feature_type"] == "path"
+        assert props["vertex_count"] == 3
+        assert props["segment_count"] == 2
+        assert props["length"] > 0
+
+    def test_region_spatial_properties(self, pixmap_item, sample_region_geometry) -> None:
+        """RegionItem computes spatial properties for tooltip."""
+        item = RegionItem(
+            marker_id="r1",
+            object_type="entity",
+            label="Kingdom",
+            pixmap_item=pixmap_item,
+            geometry=sample_region_geometry,
+            anchor_x=0.5,
+            anchor_y=0.5,
+        )
+        props = item._compute_spatial_properties()
+        assert props["feature_type"] == "region"
+        assert props["vertex_count"] == 4
+        assert props["segment_count"] == 4
+        assert props["area"] > 0
+        assert props["perimeter"] > 0
+
+    def test_hover_timer_exists(self, pixmap_item, sample_path_geometry) -> None:
+        """Feature items have a debounce timer for hover tooltip."""
+        item = PathItem(
+            marker_id="p1",
+            object_type="entity",
+            label="River",
+            pixmap_item=pixmap_item,
+            geometry=sample_path_geometry,
+            anchor_x=0.5,
+            anchor_y=0.5,
+        )
+        assert hasattr(item, "_hover_timer")
+        assert item._hover_timer.interval() == 100
+
+    def test_tooltip_includes_description(self, pixmap_item, sample_path_geometry) -> None:
+        """Tooltip includes description when provided."""
+        item = PathItem(
+            marker_id="p1",
+            object_type="entity",
+            label="River",
+            pixmap_item=pixmap_item,
+            geometry=sample_path_geometry,
+            anchor_x=0.5,
+            anchor_y=0.5,
+            description="A major waterway",
+        )
+        item._apply_hover_tooltip()
+        tooltip = item.toolTip()
+        assert "River" in tooltip
+        assert "A major waterway" in tooltip
+        assert "Vertices: 3" in tooltip

@@ -5,6 +5,7 @@ Provides the MapGraphicsView class for rendering and interacting with the map.
 
 import json
 import logging
+import math
 from typing import Any, Callable, Dict, Optional
 
 from PySide6.QtCore import (
@@ -484,10 +485,12 @@ class _VertexHandle(QGraphicsEllipseItem):
 
     Each handle is a small circle that the user can drag to reshape
     a path or region. On release, the callback fires with the new position.
+    Right-clicking the handle removes the vertex.
 
     Args:
         index: The vertex index this handle represents.
         on_moved: Callback ``(index, QPointF)`` invoked when dragging finishes.
+        on_delete: Optional callback ``(index,)`` invoked on right-click delete.
 
     """
 
@@ -497,15 +500,18 @@ class _VertexHandle(QGraphicsEllipseItem):
         self,
         index: int,
         on_moved: "Callable[[int, QPointF], None]",
+        on_delete: "Optional[Callable[[int], None]]" = None,
     ) -> None:
         r = self._RADIUS
         super().__init__(-r, -r, r * 2, r * 2)
         self.index = index
         self._on_moved = on_moved
+        self._on_delete = on_delete
         self.setBrush(QBrush(QColor("#e74c3c")))
         self.setPen(QPen(QColor("#FFFFFF"), 1))
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
+        self.setAcceptHoverEvents(True)
         self.setCursor(QCursor(Qt.CursorShape.SizeAllCursor))
         self.setZValue(LAYER_UI_OVERLAY + 1)
 
@@ -525,6 +531,89 @@ class _VertexHandle(QGraphicsEllipseItem):
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
             self._on_moved(self.index, self.pos())
         return super().itemChange(change, value)
+
+    def mousePressEvent(self, event: "QGraphicsSceneMouseEvent") -> None:
+        """Handles right-click to delete the vertex.
+
+        Args:
+            event: The mouse press event.
+
+        """
+        if event.button() == Qt.MouseButton.RightButton and self._on_delete:
+            self._on_delete(self.index)
+            event.accept()
+            return
+        super().mousePressEvent(event)
+
+
+class _MidpointHandle(QGraphicsEllipseItem):
+    """Ghost handle on the midpoint of a segment for inserting new vertices.
+
+    Displayed as a semi-transparent circle between two consecutive vertex
+    handles. When dragged, it converts into a real vertex by invoking the
+    ``on_insert`` callback with the segment index and the new position.
+
+    Args:
+        segment_index: Index of the segment (vertex *before* the midpoint).
+        on_insert: Callback ``(segment_index, QPointF)`` invoked on drag.
+
+    """
+
+    _RADIUS = 4  # slightly smaller than vertex handles
+    _GHOST_OPACITY = 0.4
+
+    def __init__(
+        self,
+        segment_index: int,
+        on_insert: "Callable[[int, QPointF], None]",
+    ) -> None:
+        r = self._RADIUS
+        super().__init__(-r, -r, r * 2, r * 2)
+        self.segment_index = segment_index
+        self._on_insert = on_insert
+        self._activated = False
+        self.setBrush(QBrush(QColor("#2ecc71")))
+        self.setPen(QPen(QColor("#FFFFFF"), 1))
+        self.setOpacity(self._GHOST_OPACITY)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
+        self.setAcceptHoverEvents(True)
+        self.setCursor(QCursor(Qt.CursorShape.CrossCursor))
+        self.setZValue(LAYER_UI_OVERLAY)
+
+    def hoverEnterEvent(self, event: "QGraphicsSceneHoverEvent") -> None:
+        """Highlights the ghost handle on hover.
+
+        Args:
+            event: The hover enter event.
+
+        """
+        self.setOpacity(0.9)
+        super().hoverEnterEvent(event)
+
+    def hoverLeaveEvent(self, event: "QGraphicsSceneHoverEvent") -> None:
+        """Resets ghost handle opacity on hover leave.
+
+        Args:
+            event: The hover leave event.
+
+        """
+        if not self._activated:
+            self.setOpacity(self._GHOST_OPACITY)
+        super().hoverLeaveEvent(event)
+
+    def mouseMoveEvent(self, event: "QGraphicsSceneMouseEvent") -> None:
+        """On first drag, insert the vertex.
+
+        Args:
+            event: The mouse move event.
+
+        """
+        if not self._activated:
+            self._activated = True
+            self.setOpacity(1.0)
+            self._on_insert(self.segment_index, self.pos())
+        super().mouseMoveEvent(event)
 
 
 class MapGraphicsView(QGraphicsView):
@@ -558,6 +647,10 @@ class MapGraphicsView(QGraphicsView):
     # Feature editing signals
     feature_style_changed = Signal(str, dict)  # marker_id, new_style dict
     feature_geometry_changed = Signal(str, list)  # marker_id, new geometry list
+
+    # Visual style for the feature being edited
+    _EDIT_DASH_PATTERN = [6, 3]  # dashed line during editing
+    _EDIT_STROKE_COLOR = "#e67e22"  # orange highlight while editing
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the MapGraphicsView.
@@ -653,6 +746,8 @@ class MapGraphicsView(QGraphicsView):
         # Vertex Editing state
         self._editing_feature_id: Optional[str] = None
         self._vertex_handles: list[QGraphicsEllipseItem] = []
+        self._midpoint_handles: list[QGraphicsEllipseItem] = []
+        self._editing_original_style: Optional[Dict[str, Any]] = None
 
         # Trajectory Visualization
         self.trajectory_path_item: Optional[QGraphicsPathItem] = None
@@ -815,7 +910,11 @@ class MapGraphicsView(QGraphicsView):
             self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        """Handle mouse move to track coordinates and drawing preview."""
+        """Handle mouse move to track coordinates, drawing preview, and cursor.
+
+        Updates cursor to crosshair during drawing mode and pointer when
+        hovering over editable feature items in vertex editing mode.
+        """
         super().mouseMoveEvent(event)
 
         if self._drawing_mode:
@@ -823,6 +922,20 @@ class MapGraphicsView(QGraphicsView):
             if self._drawing_vertices:
                 scene_pos = self.mapToScene(event.position().toPoint())
                 self._update_drawing_preview(scene_pos)
+        elif self._editing_feature_id:
+            # Show pointer cursor over the edited feature, crosshair elsewhere
+            pos = event.position().toPoint()
+            item_under = self.itemAt(pos)
+            if isinstance(item_under, (_VertexHandle, _MidpointHandle)):
+                pass  # Handle sets its own cursor
+            elif (
+                item_under
+                and hasattr(item_under, "marker_id")
+                and item_under.marker_id == self._editing_feature_id
+            ):
+                self.setCursor(Qt.CursorShape.CrossCursor)
+            else:
+                self.setCursor(Qt.CursorShape.ArrowCursor)
 
         if self.calibration_mode:
             self.setCursor(Qt.CrossCursor)  # Enforce cursor
@@ -1729,8 +1842,9 @@ class MapGraphicsView(QGraphicsView):
     def _start_vertex_editing(self, item: "_FeatureItemBase") -> None:
         """Enters vertex editing mode for a feature.
 
-        Shows draggable handles on each vertex. Handles can be moved to
-        reshape the feature. Press Escape or right-click to finish.
+        Shows draggable handles on each vertex and ghost midpoint handles
+        on each segment. Handles can be moved to reshape the feature.
+        Right-click a vertex handle to delete it. Press Escape to finish.
 
         Args:
             item: The PathItem or RegionItem to edit.
@@ -1743,26 +1857,68 @@ class MapGraphicsView(QGraphicsView):
         if not geometry or not self.pixmap_item:
             return
 
+        # Save original style and apply editing visual feedback
+        self._editing_original_style = dict(item._style)
+        item._style["dash_pattern"] = self._EDIT_DASH_PATTERN
+        item._style["stroke_color"] = self._EDIT_STROKE_COLOR
+        item.update()
+
         rect = self.pixmap_item.sceneBoundingRect()
         for i, pt in enumerate(geometry):
             sx = rect.left() + pt["x"] * rect.width()
             sy = rect.top() + pt["y"] * rect.height()
-            handle = _VertexHandle(i, self._on_vertex_moved)
+            handle = _VertexHandle(i, self._on_vertex_moved, self._on_vertex_deleted)
             handle.setPos(sx, sy)
             handle.setZValue(LAYER_UI_OVERLAY + 1)
             self.scene.addItem(handle)
             self._vertex_handles.append(handle)
 
+        self._rebuild_midpoint_handles()
         self.setDragMode(QGraphicsView.DragMode.NoDrag)
         logger.info(
             f"Vertex editing started for {item.marker_id} "
             f"({len(geometry)} vertices)"
         )
 
+    def _rebuild_midpoint_handles(self) -> None:
+        """Rebuilds ghost midpoint handles between each pair of vertices.
+
+        Called after vertex insert/delete to keep midpoints in sync.
+        """
+        # Remove old midpoint handles
+        for mh in self._midpoint_handles:
+            self.scene.removeItem(mh)
+        self._midpoint_handles.clear()
+
+        item = self.feature_items.get(self._editing_feature_id or "")
+        if not item or not item._geometry or not self.pixmap_item:
+            return
+
+        rect = self.pixmap_item.sceneBoundingRect()
+        geometry = item._geometry
+        n = len(geometry)
+        is_region = isinstance(item, RegionItem)
+        seg_count = n if is_region else n - 1
+
+        for i in range(seg_count):
+            j = (i + 1) % n
+            pt_a = geometry[i]
+            pt_b = geometry[j]
+            mx = (pt_a["x"] + pt_b["x"]) / 2.0
+            my = (pt_a["y"] + pt_b["y"]) / 2.0
+            sx = rect.left() + mx * rect.width()
+            sy = rect.top() + my * rect.height()
+
+            mh = _MidpointHandle(i, self._on_midpoint_insert)
+            mh.setPos(sx, sy)
+            self.scene.addItem(mh)
+            self._midpoint_handles.append(mh)
+
     def _on_vertex_moved(self, index: int, new_scene_pos: QPointF) -> None:
         """Callback when a vertex handle is dragged to a new position.
 
-        Updates the underlying feature's geometry in real time.
+        Applies optional snapping (10px radius) to nearby existing vertices,
+        then updates the underlying feature geometry in real time.
 
         Args:
             index: The vertex index that was moved.
@@ -1776,10 +1932,13 @@ class MapGraphicsView(QGraphicsView):
         if not item:
             return
 
+        # --- Snapping (10px screen radius) ---
+        snap_pos = self._snap_to_nearby_vertex(index, new_scene_pos)
+
         # Convert scene pos → normalized
         rect = self.pixmap_item.sceneBoundingRect()
-        nx = (new_scene_pos.x() - rect.left()) / rect.width()
-        ny = (new_scene_pos.y() - rect.top()) / rect.height()
+        nx = (snap_pos.x() - rect.left()) / rect.width()
+        ny = (snap_pos.y() - rect.top()) / rect.height()
         nx = max(0.0, min(1.0, nx))
         ny = max(0.0, min(1.0, ny))
 
@@ -1798,26 +1957,178 @@ class MapGraphicsView(QGraphicsView):
             item.prepareGeometryChange()
             item.update()
 
+    def _snap_to_nearby_vertex(
+        self, moving_index: int, scene_pos: QPointF
+    ) -> QPointF:
+        """Snaps a position to the nearest existing vertex within 10 screen pixels.
+
+        Args:
+            moving_index: Index of the vertex being moved (excluded from snap targets).
+            scene_pos: Current scene position of the handle.
+
+        Returns:
+            Snapped scene position, or the original if no nearby vertex found.
+
+        """
+        snap_radius_px = 10.0
+        # Convert snap radius from screen pixels to scene units
+        view_scale = self.transform().m11() if self.transform().m11() > 0 else 1.0
+        snap_radius_scene = snap_radius_px / view_scale
+
+        best_dist = snap_radius_scene
+        best_pos = scene_pos
+
+        for handle in self._vertex_handles:
+            if handle.index == moving_index:
+                continue
+            dx = handle.pos().x() - scene_pos.x()
+            dy = handle.pos().y() - scene_pos.y()
+            dist = math.sqrt(dx * dx + dy * dy)
+            if dist < best_dist:
+                best_dist = dist
+                best_pos = handle.pos()
+
+        return best_pos
+
+    def _on_vertex_deleted(self, index: int) -> None:
+        """Removes a vertex from the feature being edited.
+
+        Called when the user right-clicks a vertex handle. Enforces
+        minimum vertex counts (2 for paths, 3 for regions).
+
+        Args:
+            index: The index of the vertex to remove.
+
+        """
+        item = self.feature_items.get(self._editing_feature_id or "")
+        if not item or not item._geometry:
+            return
+
+        min_verts = 3 if isinstance(item, RegionItem) else 2
+        if len(item._geometry) <= min_verts:
+            logger.warning(
+                f"Cannot delete vertex: minimum {min_verts} vertices required"
+            )
+            return
+
+        # Remove the vertex from geometry
+        del item._geometry[index]
+
+        # Rebuild visual
+        if isinstance(item, PathItem):
+            item._build_path()
+            item._position_label()
+        elif isinstance(item, RegionItem):
+            item._build_polygon()
+            item._position_label()
+        item.prepareGeometryChange()
+        item.update()
+
+        # Rebuild all handles (indices have shifted)
+        self._rebuild_vertex_handles(item)
+        self._rebuild_midpoint_handles()
+        logger.info(f"Deleted vertex {index}, {len(item._geometry)} remaining")
+
+    def _on_midpoint_insert(self, segment_index: int, scene_pos: QPointF) -> None:
+        """Inserts a new vertex at the midpoint of a segment.
+
+        Called when the user drags a midpoint ghost handle. The ghost
+        handle is converted into a real vertex.
+
+        Args:
+            segment_index: Index of the segment (vertex before the midpoint).
+            scene_pos: Scene position of the new vertex.
+
+        """
+        item = self.feature_items.get(self._editing_feature_id or "")
+        if not item or not item._geometry or not self.pixmap_item:
+            return
+
+        # Convert scene pos → normalized
+        rect = self.pixmap_item.sceneBoundingRect()
+        nx = (scene_pos.x() - rect.left()) / rect.width()
+        ny = (scene_pos.y() - rect.top()) / rect.height()
+        nx = max(0.0, min(1.0, nx))
+        ny = max(0.0, min(1.0, ny))
+
+        new_pt = {"x": round(nx, 6), "y": round(ny, 6)}
+        item._geometry.insert(segment_index + 1, new_pt)
+
+        # Rebuild visual
+        if isinstance(item, PathItem):
+            item._build_path()
+            item._position_label()
+        elif isinstance(item, RegionItem):
+            item._build_polygon()
+            item._position_label()
+        item.prepareGeometryChange()
+        item.update()
+
+        # Rebuild all handles (indices have shifted)
+        self._rebuild_vertex_handles(item)
+        self._rebuild_midpoint_handles()
+        logger.info(
+            f"Inserted vertex after index {segment_index}, "
+            f"{len(item._geometry)} total"
+        )
+
+    def _rebuild_vertex_handles(self, item: "_FeatureItemBase") -> None:
+        """Removes and recreates all vertex handles for the current feature.
+
+        Called after vertex insertion or deletion to keep handle indices
+        synchronised with the geometry array.
+
+        Args:
+            item: The feature item whose handles need rebuilding.
+
+        """
+        for handle in self._vertex_handles:
+            self.scene.removeItem(handle)
+        self._vertex_handles.clear()
+
+        if not item._geometry or not self.pixmap_item:
+            return
+
+        rect = self.pixmap_item.sceneBoundingRect()
+        for i, pt in enumerate(item._geometry):
+            sx = rect.left() + pt["x"] * rect.width()
+            sy = rect.top() + pt["y"] * rect.height()
+            handle = _VertexHandle(i, self._on_vertex_moved, self._on_vertex_deleted)
+            handle.setPos(sx, sy)
+            handle.setZValue(LAYER_UI_OVERLAY + 1)
+            self.scene.addItem(handle)
+            self._vertex_handles.append(handle)
+
     def _finish_vertex_editing(self) -> None:
         """Commits vertex edits and removes handles.
 
-        Emits ``feature_geometry_changed`` with the updated normalized
+        Restores the original feature style and emits
+        ``feature_geometry_changed`` with the updated normalized
         coordinates so the command layer can persist the change.
         """
         if self._editing_feature_id:
             item = self.feature_items.get(self._editing_feature_id)
-            if item and item._geometry:
-                self.feature_geometry_changed.emit(
-                    self._editing_feature_id, list(item._geometry)
-                )
-                logger.info(
-                    f"Vertex editing finished for {self._editing_feature_id}"
-                )
+            if item:
+                # Restore original style
+                if self._editing_original_style is not None:
+                    item._style = self._editing_original_style
+                    self._editing_original_style = None
+                    item.update()
+                if item._geometry:
+                    self.feature_geometry_changed.emit(
+                        self._editing_feature_id, list(item._geometry)
+                    )
+                    logger.info(
+                        f"Vertex editing finished for {self._editing_feature_id}"
+                    )
 
         self._editing_feature_id = None
         for handle in self._vertex_handles:
             self.scene.removeItem(handle)
         self._vertex_handles.clear()
+        for mh in self._midpoint_handles:
+            self.scene.removeItem(mh)
+        self._midpoint_handles.clear()
         if not self._drawing_mode:
             self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
 

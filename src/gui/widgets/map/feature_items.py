@@ -10,9 +10,10 @@ the anchor coordinate.
 """
 
 import logging
+import math
 from typing import Any, Dict, List, Optional, Tuple
 
-from PySide6.QtCore import QPointF, QRectF, Qt, Signal
+from PySide6.QtCore import QPointF, QRectF, QTimer, Qt, Signal
 from PySide6.QtGui import (
     QBrush,
     QColor,
@@ -29,6 +30,7 @@ from PySide6.QtWidgets import (
     QGraphicsPathItem,
     QGraphicsPixmapItem,
     QGraphicsPolygonItem,
+    QGraphicsSceneHoverEvent,
     QGraphicsSceneMouseEvent,
     QGraphicsSimpleTextItem,
     QStyleOptionGraphicsItem,
@@ -104,6 +106,7 @@ class _FeatureItemBase(QGraphicsObject):
         self._geometry = geometry
         self._style = style or {}
         self.lore_date = lore_date
+        self._description = description or ""
 
         # Temporal state
         self.is_future = False
@@ -111,6 +114,12 @@ class _FeatureItemBase(QGraphicsObject):
 
         # Click detection
         self._drag_start_pos: Optional[QPointF] = None
+
+        # Hover tooltip debounce (100ms delay)
+        self._hover_timer = QTimer()
+        self._hover_timer.setSingleShot(True)
+        self._hover_timer.setInterval(100)
+        self._hover_timer.timeout.connect(self._apply_hover_tooltip)
 
         # Flags
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
@@ -207,6 +216,72 @@ class _FeatureItemBase(QGraphicsObject):
                 self.clicked.emit(self.marker_id, self.object_type)
         self._drag_start_pos = None
         super().mouseReleaseEvent(event)
+
+    # ------------------------------------------------------------------
+    # Hover tooltip (debounced)
+    # ------------------------------------------------------------------
+
+    def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
+        """Starts the debounce timer for the hover tooltip.
+
+        Args:
+            event: The hover enter event.
+
+        """
+        self._hover_timer.start()
+        super().hoverEnterEvent(event)
+
+    def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
+        """Cancels the debounce timer and resets tooltip.
+
+        Args:
+            event: The hover leave event.
+
+        """
+        self._hover_timer.stop()
+        self.setToolTip(self._description or self.label)
+        super().hoverLeaveEvent(event)
+
+    def _apply_hover_tooltip(self) -> None:
+        """Builds a rich tooltip from spatial properties and description.
+
+        Extracts feature type, vertex count, and computed measurements
+        from the geometry to display in the tooltip.
+        """
+        lines: List[str] = [f"<b>{self.label}</b>"]
+        if self._description:
+            lines.append(self._description)
+
+        # Spatial properties
+        props = self._compute_spatial_properties()
+        if props.get("feature_type"):
+            lines.append(f"Type: {props['feature_type']}")
+        if props.get("vertex_count"):
+            lines.append(f"Vertices: {props['vertex_count']}")
+        if "length" in props:
+            lines.append(f"Length: {props['length']:.2f}")
+        if "area" in props:
+            lines.append(f"Area: {props['area']:.4f}")
+        if "perimeter" in props:
+            lines.append(f"Perimeter: {props['perimeter']:.2f}")
+
+        self.setToolTip("<br>".join(lines))
+
+    def _compute_spatial_properties(self) -> Dict[str, Any]:
+        """Computes lightweight spatial properties for the tooltip.
+
+        Returns:
+            Dict with feature_type, vertex_count, and optional
+            length/area/perimeter.
+
+        """
+        props: Dict[str, Any] = {}
+        if not self._geometry:
+            return props
+
+        pts = [(p["x"], p["y"]) for p in self._geometry]
+        props["vertex_count"] = len(pts)
+        return props
 
 
 class PathItem(_FeatureItemBase):
@@ -358,6 +433,27 @@ class PathItem(_FeatureItemBase):
         painter.setPen(self._make_pen())
         painter.drawPath(self._path)
 
+    def _compute_spatial_properties(self) -> Dict[str, Any]:
+        """Computes spatial properties for a path feature.
+
+        Returns:
+            Dict with feature_type, vertex_count, segment_count, and length.
+
+        """
+        props: Dict[str, Any] = {"feature_type": "path"}
+        if not self._geometry:
+            return props
+        pts = [(p["x"], p["y"]) for p in self._geometry]
+        props["vertex_count"] = len(pts)
+        props["segment_count"] = max(0, len(pts) - 1)
+        total = 0.0
+        for i in range(len(pts) - 1):
+            dx = pts[i + 1][0] - pts[i][0]
+            dy = pts[i + 1][1] - pts[i][1]
+            total += math.sqrt(dx * dx + dy * dy)
+        props["length"] = total
+        return props
+
 
 class RegionItem(_FeatureItemBase):
     """Renders a closed polygon (region / territory) on the map.
@@ -500,3 +596,40 @@ class RegionItem(_FeatureItemBase):
         painter.setBrush(QBrush(self._fill_color(DEFAULT_REGION_FILL_COLOR)))
         painter.setPen(self._make_pen(DEFAULT_REGION_STROKE_COLOR))
         painter.drawPolygon(self._polygon)
+
+    def _compute_spatial_properties(self) -> Dict[str, Any]:
+        """Computes spatial properties for a region feature.
+
+        Uses the Shoelace formula for area and sums Euclidean distances
+        for perimeter.
+
+        Returns:
+            Dict with feature_type, vertex_count, segment_count,
+            area, and perimeter.
+
+        """
+        props: Dict[str, Any] = {"feature_type": "region"}
+        if not self._geometry:
+            return props
+        pts = [(p["x"], p["y"]) for p in self._geometry]
+        n = len(pts)
+        props["vertex_count"] = n
+        props["segment_count"] = n  # closed polygon
+
+        # Shoelace area
+        area = 0.0
+        for i in range(n):
+            j = (i + 1) % n
+            area += pts[i][0] * pts[j][1]
+            area -= pts[j][0] * pts[i][1]
+        props["area"] = abs(area) / 2.0
+
+        # Perimeter
+        perimeter = 0.0
+        for i in range(n):
+            j = (i + 1) % n
+            dx = pts[j][0] - pts[i][0]
+            dy = pts[j][1] - pts[i][1]
+            perimeter += math.sqrt(dx * dx + dy * dy)
+        props["perimeter"] = perimeter
+        return props

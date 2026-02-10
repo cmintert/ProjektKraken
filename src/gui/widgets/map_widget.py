@@ -284,6 +284,27 @@ class MapWidget(QWidget):
         )
         self.overlay_banner.hide()
 
+        # Finish Sketch button (shown during drawing/vertex editing)
+        self.btn_finish_sketch = QPushButton("✔ Finish Sketch", self.view)
+        self.btn_finish_sketch.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #2ecc71;
+                color: white;
+                padding: 8px 20px;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 12px;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #27ae60;
+            }
+        """
+        )
+        self.btn_finish_sketch.clicked.connect(self._on_finish_sketch)
+        self.btn_finish_sketch.hide()
+
         # Coordinate Label
         self.coord_label = NoLayoutLabel("Ready")
 
@@ -315,6 +336,7 @@ class MapWidget(QWidget):
         self.view.drawing_cancelled.connect(self._on_drawing_cancelled)
         self.view.feature_style_changed.connect(self.feature_style_changed.emit)
         self.view.feature_geometry_changed.connect(self.feature_geometry_changed.emit)
+        self.view.feature_geometry_changed.connect(self._on_geometry_changed)
         self.view.scene.selectionChanged.connect(self._on_selection_changed)
 
         self._maps_data = []  # List of maps for selector
@@ -476,6 +498,29 @@ class MapWidget(QWidget):
         self.btn_draw_region.setChecked(False)
         self._update_mode_indicator()
 
+    @Slot()
+    def _on_finish_sketch(self) -> None:
+        """Handles the Finish Sketch button click.
+
+        Completes the current drawing or vertex editing session.
+        """
+        if self.view.is_drawing:
+            self.view.finish_drawing()
+        elif self.view.is_editing_vertices:
+            self.view._finish_vertex_editing()
+        self._update_mode_indicator()
+
+    @Slot(str, list)
+    def _on_geometry_changed(self, marker_id: str, geometry: list) -> None:
+        """Refreshes mode indicator when vertex editing completes.
+
+        Args:
+            marker_id: The feature whose geometry changed.
+            geometry: The updated geometry list.
+
+        """
+        self._update_mode_indicator()
+
     def _iter_trajectory_positions(self) -> Iterator[Tuple[str, float, float]]:
         """Yield (marker_id, x, y) for markers with trajectories at current time."""
         for marker_id, keyframes in self._active_trajectories.items():
@@ -593,7 +638,18 @@ class MapWidget(QWidget):
 
     @Slot(int)
     def _on_map_selected(self, index: int) -> None:
-        """Handle map selection change."""
+        """Handle map selection change.
+
+        Automatically exits any active drawing or vertex editing mode
+        when the user switches to a different map layer.
+        """
+        # Exit active editing modes before switching maps
+        if self.view.is_drawing:
+            self.view.cancel_drawing()
+        if self.view.is_editing_vertices:
+            self.view._finish_vertex_editing()
+        self._update_mode_indicator()
+
         if index >= 0:
             map_id = self.map_selector.itemData(index)
             self.map_selected.emit(map_id)
@@ -955,7 +1011,7 @@ class MapWidget(QWidget):
         self._clear_clock_mode_visuals()
 
     def _update_mode_indicator(self) -> None:
-        """Updates the toolbar status and map overlay based on current state."""
+        """Updates the toolbar status, map overlay, and Finish Sketch button."""
         if self._pinned_marker_id:
             # Clock Mode (Priority)
             marker_id = self._pinned_marker_id
@@ -983,6 +1039,7 @@ class MapWidget(QWidget):
             self.overlay_banner.setText(banner_text)
             self.overlay_banner.show()
             self._update_overlay_position()
+            self.btn_finish_sketch.hide()
 
             # Cursor Change
             self.view.setCursor(Qt.CursorShape.WaitCursor)
@@ -1013,6 +1070,7 @@ class MapWidget(QWidget):
             self.overlay_banner.setText(banner_text)
             self.overlay_banner.show()
             self._update_overlay_position()
+            self.btn_finish_sketch.hide()
 
             # Normal cursor
             self.view.setCursor(Qt.CursorShape.ArrowCursor)
@@ -1044,6 +1102,40 @@ class MapWidget(QWidget):
             self.overlay_banner.show()
             self._update_overlay_position()
 
+            # Show Finish Sketch button
+            self.btn_finish_sketch.show()
+            self._update_finish_sketch_position()
+
+        elif self.view.is_editing_vertices:
+            # Vertex Editing Mode
+            self.mode_indicator.setText("🟣 EDITING VERTICES")
+            self.mode_indicator.setStyleSheet(
+                """
+                QLabel {
+                    background: #e67e22;
+                    color: white;
+                    padding: 5px 12px;
+                    border-radius: 4px;
+                    font-weight: bold;
+                    font-size: 11px;
+                }
+            """
+            )
+
+            # Overlay Banner
+            banner_text = (
+                "🔧 <b>VERTEX EDITING</b><br/>"
+                "Drag vertices to reshape · Drag midpoints to add<br/>"
+                "<small>[Right-click vertex to Delete] [Esc to Finish]</small>"
+            )
+            self.overlay_banner.setText(banner_text)
+            self.overlay_banner.show()
+            self._update_overlay_position()
+
+            # Show Finish Sketch button
+            self.btn_finish_sketch.show()
+            self._update_finish_sketch_position()
+
         else:
             # Normal Mode
             # Toolbar Widget
@@ -1063,6 +1155,7 @@ class MapWidget(QWidget):
 
             # Overlay Banner
             self.overlay_banner.hide()
+            self.btn_finish_sketch.hide()
 
             # Normal cursor
             self.view.setCursor(Qt.CursorShape.ArrowCursor)
@@ -1150,10 +1243,22 @@ class MapWidget(QWidget):
             self.overlay_banner.move(x, 0)
             self.overlay_banner.setFixedWidth(banner_width)
 
+    def _update_finish_sketch_position(self) -> None:
+        """Positions the Finish Sketch button at the bottom-center of the view."""
+        if hasattr(self, "btn_finish_sketch") and self.btn_finish_sketch.isVisible():
+            view_width = self.view.width()
+            view_height = self.view.height()
+            btn_width = self.btn_finish_sketch.sizeHint().width()
+            btn_height = self.btn_finish_sketch.sizeHint().height()
+            x = (view_width - btn_width) // 2
+            y = view_height - btn_height - 20
+            self.btn_finish_sketch.move(x, y)
+
     def resizeEvent(self, event: QResizeEvent) -> None:
-        """Handle resize to keep overlay centered."""
+        """Handle resize to keep overlay and Finish Sketch button centered."""
         super().resizeEvent(event)
         self._update_overlay_position()
+        self._update_finish_sketch_position()
         logger.debug(
             f"MapWidget Resized: {event.size().width()}x{event.size().height()} (Old: {event.oldSize().width()}x{event.oldSize().height()})"
         )

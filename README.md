@@ -273,6 +273,70 @@ src/
 - **SQLite** for data persistence
 - **pytest** for testing
 
+## GIS Editing — User Guide
+
+### Drawing Features
+
+| Action | Shortcut |
+|--------|----------|
+| **Start Path Drawing** | Click "Draw Path" toolbar button |
+| **Start Region Drawing** | Click "Draw Region" toolbar button |
+| **Add Vertex** | Left-click on the map |
+| **Finish Drawing** | Double-click, or click "✔ Finish Sketch" |
+| **Cancel Drawing** | Press `Escape` |
+
+### Editing Vertices
+
+| Action | Shortcut |
+|--------|----------|
+| **Enter Vertex Editing** | Right-click feature → "Edit Vertices..." |
+| **Move Vertex** | Drag a red vertex handle |
+| **Add Vertex** | Drag a green midpoint ghost handle |
+| **Delete Vertex** | Right-click an existing vertex handle |
+| **Finish Editing** | Press `Escape`, or click "✔ Finish Sketch" |
+
+> **Note:** Minimum vertex counts are enforced — paths require at least 2 vertices
+> and regions require at least 3. Vertex snapping (10 px radius) is active when
+> dragging near an existing vertex.
+
+### Visual Feedback
+
+- **Crosshair cursor** during drawing and vertex creation.
+- **Dashed orange stroke** on the feature being edited.
+- **Green ghost handles** at segment midpoints for adding vertices.
+- **Toolbar mode indicator** shows the current editing state.
+- **Overlay banner** provides context-sensitive instructions.
+
+### Spatial Properties Schema
+
+The `spatialProperties` object returned by `MapFeature.spatial_properties` has the
+following structure:
+
+```json
+{
+  "feature_type": "point | path | region | multipoint",
+  "vertex_count": 4,
+  "segment_count": 3,
+  "bounding_box": [0.1, 0.1, 0.9, 0.9],
+  "length": 1.234,
+  "area": 0.36,
+  "perimeter": 2.4
+}
+```
+
+| Field | Type | Feature Types | Description |
+|-------|------|--------------|-------------|
+| `feature_type` | `string` | All | The geometry type discriminator. |
+| `vertex_count` | `int` | All | Number of coordinate vertices. |
+| `segment_count` | `int` | All | Number of line segments (edges). |
+| `bounding_box` | `tuple` | All | `(min_x, min_y, max_x, max_y)` in normalized coords. |
+| `length` | `float` | Path only | Total length of all segments (normalized units). |
+| `area` | `float` | Region only | Polygon area via Shoelace formula. |
+| `perimeter` | `float` | Region only | Sum of all closed polygon edges. |
+
+User-defined attributes from `MapFeature.attributes` (e.g. `road_quality`,
+`river_depth`) are merged into the spatial properties dict for downstream use.
+
 ## Version
 
 **v0.11.0 (Beta)**
