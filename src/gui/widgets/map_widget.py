@@ -193,6 +193,7 @@ class MapWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         # Toolbar
         self.toolbar = QToolBar(self)
+        self.toolbar.setStyleSheet("QToolBar { spacing: 4px; padding: 4px; }")
         layout.addWidget(self.toolbar)
 
         # Map Selector

@@ -151,6 +151,7 @@ MAP_MIDPOINT_HOVER_OPACITY = 0.9
 # Vertex editing style applied to the feature being edited
 MAP_EDIT_DASH_PATTERN = [6, 3]  # dashed line during editing
 MAP_EDIT_STROKE_COLOR = "#e67e22"  # orange highlight
+MAP_EDIT_STROKE_WIDTH = 5.0  # thicker line during vertex editing
 
 # Snap radius for vertex snapping during editing (screen pixels)
 MAP_SNAP_RADIUS_PX = 10.0

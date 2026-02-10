@@ -1226,3 +1226,113 @@ class TestMidpointPositionUpdate:
 
         # Both midpoints should have moved (they share vertex 1)
         assert mp0_after != mp0_before or mp1_after != mp1_before
+
+
+# --------------------------------------------------------------------------
+# ESC overlay bug fix tests
+# --------------------------------------------------------------------------
+
+
+class TestVertexEditingEscFix:
+    """Tests that ESC properly clears editing state before emitting signals."""
+
+    @pytest.fixture()
+    def view(self, qtbot):
+        """Create a MapGraphicsView with a path feature loaded."""
+        from src.gui.widgets.map.map_graphics_view import MapGraphicsView
+
+        view = MapGraphicsView()
+        pm = QPixmap(200, 200)
+        pm.fill(Qt.GlobalColor.blue)
+        view.pixmap_item = QGraphicsPixmapItem(pm)
+        view.pixmap_item.setZValue(0)
+        view.scene.addItem(view.pixmap_item)
+        view.coord_system.set_scene_rect(view.pixmap_item.boundingRect())
+        qtbot.addWidget(view)
+
+        geom = [{"x": 0.1, "y": 0.2}, {"x": 0.5, "y": 0.5}, {"x": 0.9, "y": 0.8}]
+        view.add_marker(
+            "p1", "entity", "River", 0.5, 0.5,
+            feature_type="path", geometry=geom,
+        )
+        return view
+
+    def test_editing_state_cleared_before_signal(self, view, qtbot) -> None:
+        """is_editing_vertices is False when feature_geometry_changed fires."""
+        item = view.feature_items["p1"]
+        view._start_vertex_editing(item)
+        assert view.is_editing_vertices is True
+
+        editing_during_signal = []
+
+        def capture_state(marker_id: str, geometry: list) -> None:
+            editing_during_signal.append(view.is_editing_vertices)
+
+        view.feature_geometry_changed.connect(capture_state)
+        view._finish_vertex_editing()
+
+        assert len(editing_during_signal) == 1
+        assert editing_during_signal[0] is False
+
+    def test_handles_cleared_before_signal(self, view, qtbot) -> None:
+        """Vertex handles are removed before feature_geometry_changed fires."""
+        item = view.feature_items["p1"]
+        view._start_vertex_editing(item)
+        assert len(view._vertex_handles) == 3
+
+        handles_during_signal = []
+
+        def capture_handles(marker_id: str, geometry: list) -> None:
+            handles_during_signal.append(len(view._vertex_handles))
+
+        view.feature_geometry_changed.connect(capture_handles)
+        view._finish_vertex_editing()
+
+        assert len(handles_during_signal) == 1
+        assert handles_during_signal[0] == 0
+
+
+# --------------------------------------------------------------------------
+# Edit stroke width tests
+# --------------------------------------------------------------------------
+
+
+class TestEditStrokeWidth:
+    """Tests that vertex editing applies the correct stroke width."""
+
+    @pytest.fixture()
+    def view(self, qtbot):
+        """Create a MapGraphicsView with a path feature loaded."""
+        from src.gui.widgets.map.map_graphics_view import MapGraphicsView
+
+        view = MapGraphicsView()
+        pm = QPixmap(200, 200)
+        pm.fill(Qt.GlobalColor.blue)
+        view.pixmap_item = QGraphicsPixmapItem(pm)
+        view.pixmap_item.setZValue(0)
+        view.scene.addItem(view.pixmap_item)
+        view.coord_system.set_scene_rect(view.pixmap_item.boundingRect())
+        qtbot.addWidget(view)
+
+        geom = [{"x": 0.1, "y": 0.2}, {"x": 0.5, "y": 0.5}, {"x": 0.9, "y": 0.8}]
+        view.add_marker(
+            "p1", "entity", "River", 0.5, 0.5,
+            feature_type="path", geometry=geom,
+        )
+        return view
+
+    def test_editing_sets_stroke_width(self, view) -> None:
+        """_start_vertex_editing sets stroke_width to 5.0."""
+        from src.app.constants import MAP_EDIT_STROKE_WIDTH
+
+        item = view.feature_items["p1"]
+        view._start_vertex_editing(item)
+        assert item._style["stroke_width"] == MAP_EDIT_STROKE_WIDTH
+
+    def test_editing_restores_stroke_width(self, view) -> None:
+        """_finish_vertex_editing restores the original stroke_width."""
+        item = view.feature_items["p1"]
+        original_width = item._style.get("stroke_width")
+        view._start_vertex_editing(item)
+        view._finish_vertex_editing()
+        assert item._style.get("stroke_width") == original_width

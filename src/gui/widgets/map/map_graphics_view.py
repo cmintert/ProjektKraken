@@ -66,6 +66,7 @@ from src.app.constants import (
     MAP_DEFAULT_WIDTH_METERS,
     MAP_EDIT_DASH_PATTERN,
     MAP_EDIT_STROKE_COLOR,
+    MAP_EDIT_STROKE_WIDTH,
     MAP_MIDPOINT_GHOST_OPACITY,
     MAP_MIDPOINT_HANDLE_BORDER_COLOR,
     MAP_MIDPOINT_HANDLE_COLOR,
@@ -672,6 +673,7 @@ class MapGraphicsView(QGraphicsView):
     # Visual style for the feature being edited
     _EDIT_DASH_PATTERN = MAP_EDIT_DASH_PATTERN
     _EDIT_STROKE_COLOR = MAP_EDIT_STROKE_COLOR
+    _EDIT_STROKE_WIDTH = MAP_EDIT_STROKE_WIDTH
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the MapGraphicsView.
@@ -1881,6 +1883,7 @@ class MapGraphicsView(QGraphicsView):
         self._editing_original_style = dict(item._style)
         item._style["dash_pattern"] = self._EDIT_DASH_PATTERN
         item._style["stroke_color"] = self._EDIT_STROKE_COLOR
+        item._style["stroke_width"] = self._EDIT_STROKE_WIDTH
         item.update()
 
         rect = self.pixmap_item.sceneBoundingRect()
@@ -2160,6 +2163,9 @@ class MapGraphicsView(QGraphicsView):
         ``feature_geometry_changed`` with the updated normalized
         coordinates so the command layer can persist the change.
         """
+        finished_id: Optional[str] = None
+        finished_geometry: Optional[list] = None
+
         if self._editing_feature_id:
             item = self.feature_items.get(self._editing_feature_id)
             if item:
@@ -2169,13 +2175,12 @@ class MapGraphicsView(QGraphicsView):
                     self._editing_original_style = None
                     item.update()
                 if item._geometry:
-                    self.feature_geometry_changed.emit(
-                        self._editing_feature_id, list(item._geometry)
-                    )
-                    logger.info(
-                        f"Vertex editing finished for {self._editing_feature_id}"
-                    )
+                    finished_id = self._editing_feature_id
+                    finished_geometry = list(item._geometry)
 
+        # Clear editing state BEFORE emitting signal so that
+        # is_editing_vertices returns False when _update_mode_indicator
+        # is called from the connected slot.
         self._editing_feature_id = None
         for handle in self._vertex_handles:
             self.scene.removeItem(handle)
@@ -2185,6 +2190,11 @@ class MapGraphicsView(QGraphicsView):
         self._midpoint_handles.clear()
         if not self._drawing_mode:
             self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+
+        # Emit after state is fully cleared
+        if finished_id and finished_geometry:
+            self.feature_geometry_changed.emit(finished_id, finished_geometry)
+            logger.info(f"Vertex editing finished for {finished_id}")
 
     @property
     def is_editing_vertices(self) -> bool:
