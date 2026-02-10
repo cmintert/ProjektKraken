@@ -945,7 +945,8 @@ class TestFeatureHoverTooltip:
             anchor_y=0.5,
         )
         assert hasattr(item, "_hover_timer")
-        assert item._hover_timer.interval() == 100
+        from src.app.constants import MAP_FEATURE_HOVER_DEBOUNCE_MS
+        assert item._hover_timer.interval() == MAP_FEATURE_HOVER_DEBOUNCE_MS
 
     def test_tooltip_includes_description(self, pixmap_item, sample_path_geometry) -> None:
         """Tooltip includes description when provided."""
@@ -964,3 +965,264 @@ class TestFeatureHoverTooltip:
         assert "River" in tooltip
         assert "A major waterway" in tooltip
         assert "Vertices: 3" in tooltip
+
+
+# --------------------------------------------------------------------------
+# Metric units and constants tests
+# --------------------------------------------------------------------------
+
+
+class TestMetricUnits:
+    """Tests for metric unit display in spatial properties."""
+
+    def test_path_length_in_meters(self, pixmap_item) -> None:
+        """PathItem computes length in real-world meters when given map scale."""
+        geom = [{"x": 0.0, "y": 0.0}, {"x": 1.0, "y": 0.0}]
+        item = PathItem(
+            marker_id="p1",
+            object_type="entity",
+            label="Road",
+            pixmap_item=pixmap_item,
+            geometry=geom,
+            anchor_x=0.5,
+            anchor_y=0.0,
+            map_width_meters=10_000.0,  # 10 km
+        )
+        props = item._compute_spatial_properties()
+        # Full width at 10km should be 10000 m
+        assert props["length"] == pytest.approx(10_000.0, rel=0.01)
+
+    def test_region_area_in_sq_meters(self, pixmap_item) -> None:
+        """RegionItem computes area in square meters."""
+        # Unit square in normalized coords with 1000m map width
+        geom = [
+            {"x": 0.0, "y": 0.0},
+            {"x": 1.0, "y": 0.0},
+            {"x": 1.0, "y": 1.0},
+            {"x": 0.0, "y": 1.0},
+        ]
+        item = RegionItem(
+            marker_id="r1",
+            object_type="entity",
+            label="Area",
+            pixmap_item=pixmap_item,
+            geometry=geom,
+            anchor_x=0.5,
+            anchor_y=0.5,
+            map_width_meters=1000.0,
+        )
+        props = item._compute_spatial_properties()
+        # 100x100 pixmap → square map → 1000×1000 = 1_000_000 m²
+        assert props["area"] == pytest.approx(1_000_000.0, rel=0.01)
+
+    def test_region_perimeter_in_meters(self, pixmap_item) -> None:
+        """RegionItem computes perimeter in meters."""
+        geom = [
+            {"x": 0.0, "y": 0.0},
+            {"x": 1.0, "y": 0.0},
+            {"x": 1.0, "y": 1.0},
+            {"x": 0.0, "y": 1.0},
+        ]
+        item = RegionItem(
+            marker_id="r1",
+            object_type="entity",
+            label="Area",
+            pixmap_item=pixmap_item,
+            geometry=geom,
+            anchor_x=0.5,
+            anchor_y=0.5,
+            map_width_meters=1000.0,
+        )
+        props = item._compute_spatial_properties()
+        # 4 sides × 1000m = 4000m
+        assert props["perimeter"] == pytest.approx(4000.0, rel=0.01)
+
+    def test_format_metric_length_meters(self) -> None:
+        """Short distances are formatted in meters."""
+        from src.gui.widgets.map.feature_items import _FeatureItemBase
+
+        assert _FeatureItemBase._format_metric_length(500.0) == "500.0 m"
+        assert _FeatureItemBase._format_metric_length(0.5) == "0.5 m"
+
+    def test_format_metric_length_km(self) -> None:
+        """Long distances are formatted in kilometers."""
+        from src.gui.widgets.map.feature_items import _FeatureItemBase
+
+        assert _FeatureItemBase._format_metric_length(1500.0) == "1.50 km"
+        assert _FeatureItemBase._format_metric_length(10_000.0) == "10.00 km"
+
+    def test_format_metric_area_sq_meters(self) -> None:
+        """Small areas are formatted in square meters."""
+        from src.gui.widgets.map.feature_items import _FeatureItemBase
+
+        assert _FeatureItemBase._format_metric_area(500.0) == "500.0 m²"
+
+    def test_format_metric_area_sq_km(self) -> None:
+        """Large areas are formatted in square kilometers."""
+        from src.gui.widgets.map.feature_items import _FeatureItemBase
+
+        result = _FeatureItemBase._format_metric_area(2_500_000.0)
+        assert result == "2.50 km²"
+
+    def test_tooltip_shows_metric_units(self, pixmap_item) -> None:
+        """Hover tooltip includes metric units."""
+        geom = [{"x": 0.0, "y": 0.0}, {"x": 1.0, "y": 0.0}]
+        item = PathItem(
+            marker_id="p1",
+            object_type="entity",
+            label="Road",
+            pixmap_item=pixmap_item,
+            geometry=geom,
+            anchor_x=0.5,
+            anchor_y=0.0,
+            map_width_meters=5000.0,
+        )
+        item._apply_hover_tooltip()
+        tooltip = item.toolTip()
+        assert "km" in tooltip or "m" in tooltip
+
+    def test_default_map_width_meters(self, pixmap_item, sample_path_geometry) -> None:
+        """Feature items default to 1_000_000 m when no scale specified."""
+        item = PathItem(
+            marker_id="p1",
+            object_type="entity",
+            label="Road",
+            pixmap_item=pixmap_item,
+            geometry=sample_path_geometry,
+            anchor_x=0.5,
+            anchor_y=0.5,
+        )
+        assert item._map_width_meters == 1_000_000.0
+
+
+class TestConstantsImport:
+    """Tests that map constants are properly defined and importable."""
+
+    def test_feature_constants_exist(self) -> None:
+        """Key map feature constants are importable from constants.py."""
+        from src.app.constants import (
+            MAP_DEFAULT_WIDTH_METERS,
+            MAP_FEATURE_CLICK_THRESHOLD_PX,
+            MAP_FEATURE_DEFAULT_STROKE_COLOR,
+            MAP_FEATURE_DEFAULT_STROKE_WIDTH,
+            MAP_FEATURE_HIT_AREA_MARGIN,
+            MAP_FEATURE_HOVER_DEBOUNCE_MS,
+            MAP_FEATURE_SELECTION_PEN_COLOR,
+            MAP_FEATURE_Z_VALUE,
+            MAP_MIDPOINT_GHOST_OPACITY,
+            MAP_MIDPOINT_HANDLE_COLOR,
+            MAP_MIDPOINT_HANDLE_RADIUS,
+            MAP_SNAP_RADIUS_PX,
+            MAP_VERTEX_HANDLE_COLOR,
+            MAP_VERTEX_HANDLE_RADIUS,
+            MAP_ZOOM_IN_FACTOR,
+        )
+        assert MAP_DEFAULT_WIDTH_METERS == 1_000_000.0
+        assert MAP_VERTEX_HANDLE_RADIUS == 5
+        assert MAP_MIDPOINT_HANDLE_RADIUS == 4
+        assert MAP_SNAP_RADIUS_PX == 10.0
+        assert MAP_ZOOM_IN_FACTOR == 1.25
+
+    def test_backward_compatible_aliases(self) -> None:
+        """Old constant names still work from feature_items module."""
+        from src.gui.widgets.map.feature_items import (
+            DEFAULT_STROKE_COLOR,
+            DEFAULT_STROKE_WIDTH,
+            HIT_AREA_MARGIN,
+            LABEL_FONT_SIZE,
+            SELECTION_PEN_WIDTH,
+        )
+        assert DEFAULT_STROKE_COLOR == "#3498DB"
+        assert DEFAULT_STROKE_WIDTH == 2.0
+        assert HIT_AREA_MARGIN == 6
+        assert LABEL_FONT_SIZE == 9
+        assert SELECTION_PEN_WIDTH == 2.0
+
+
+class TestVertexHandleScaling:
+    """Tests for dynamic vertex handle scaling with zoom."""
+
+    @pytest.fixture()
+    def view(self, qtbot):
+        """Create a MapGraphicsView with a path feature."""
+        from src.gui.widgets.map.map_graphics_view import MapGraphicsView
+
+        view = MapGraphicsView()
+        pm = QPixmap(200, 200)
+        pm.fill(Qt.GlobalColor.blue)
+        view.pixmap_item = QGraphicsPixmapItem(pm)
+        view.pixmap_item.setZValue(0)
+        view.scene.addItem(view.pixmap_item)
+        view.coord_system.set_scene_rect(view.pixmap_item.boundingRect())
+        qtbot.addWidget(view)
+
+        geom = [{"x": 0.1, "y": 0.2}, {"x": 0.5, "y": 0.5}, {"x": 0.9, "y": 0.8}]
+        view.add_marker(
+            "p1", "entity", "River", 0.5, 0.5,
+            feature_type="path", geometry=geom,
+        )
+        return view
+
+    def test_vertex_handles_ignore_transform(self, view) -> None:
+        """Vertex handles have ItemIgnoresTransformations flag set."""
+        from PySide6.QtWidgets import QGraphicsItem
+
+        item = view.feature_items["p1"]
+        view._start_vertex_editing(item)
+        for handle in view._vertex_handles:
+            flags = handle.flags()
+            assert flags & QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations
+
+    def test_midpoint_handles_ignore_transform(self, view) -> None:
+        """Midpoint handles have ItemIgnoresTransformations flag set."""
+        from PySide6.QtWidgets import QGraphicsItem
+
+        item = view.feature_items["p1"]
+        view._start_vertex_editing(item)
+        for mh in view._midpoint_handles:
+            flags = mh.flags()
+            assert flags & QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations
+
+
+class TestMidpointPositionUpdate:
+    """Tests that midpoint handles update during vertex drag."""
+
+    @pytest.fixture()
+    def view(self, qtbot):
+        """Create a MapGraphicsView with a path feature for midpoint tests."""
+        from src.gui.widgets.map.map_graphics_view import MapGraphicsView
+
+        view = MapGraphicsView()
+        pm = QPixmap(200, 200)
+        pm.fill(Qt.GlobalColor.blue)
+        view.pixmap_item = QGraphicsPixmapItem(pm)
+        view.pixmap_item.setZValue(0)
+        view.scene.addItem(view.pixmap_item)
+        view.coord_system.set_scene_rect(view.pixmap_item.boundingRect())
+        qtbot.addWidget(view)
+
+        geom = [{"x": 0.0, "y": 0.0}, {"x": 1.0, "y": 0.0}, {"x": 1.0, "y": 1.0}]
+        view.add_marker(
+            "p1", "entity", "Path", 0.5, 0.5,
+            feature_type="path", geometry=geom,
+        )
+        return view
+
+    def test_midpoints_move_with_vertex(self, view) -> None:
+        """Moving a vertex also updates adjacent midpoint positions."""
+        item = view.feature_items["p1"]
+        view._start_vertex_editing(item)
+        assert len(view._midpoint_handles) == 2
+
+        # Record initial midpoint positions
+        mp0_before = view._midpoint_handles[0].pos()
+        mp1_before = view._midpoint_handles[1].pos()
+
+        # Move vertex 1 to a new position (center of map)
+        view._on_vertex_moved(1, QPointF(100, 100))
+
+        mp0_after = view._midpoint_handles[0].pos()
+        mp1_after = view._midpoint_handles[1].pos()
+
+        # Both midpoints should have moved (they share vertex 1)
+        assert mp0_after != mp0_before or mp1_after != mp1_before
