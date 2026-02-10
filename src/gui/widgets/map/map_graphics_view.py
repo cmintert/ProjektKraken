@@ -26,9 +26,11 @@ from PySide6.QtGui import (
     QContextMenuEvent,
     QCursor,
     QDragEnterEvent,
+    QDragLeaveEvent,
     QDragMoveEvent,
     QDropEvent,
     QFont,
+    QKeyEvent,
     QMouseEvent,
     QPainter,
     QPainterPath,
@@ -50,6 +52,7 @@ from PySide6.QtWidgets import (
     QGraphicsRectItem,
     QGraphicsScene,
     QGraphicsSceneHoverEvent,
+    QGraphicsSceneMouseEvent,
     QGraphicsSimpleTextItem,
     QGraphicsView,
     QHBoxLayout,
@@ -78,7 +81,7 @@ from src.app.constants import (
     MAP_VERTEX_HANDLE_RADIUS,
     MAP_ZOOM_IN_FACTOR,
 )
-from src.core.marker import FEATURE_TYPE_PATH, FEATURE_TYPE_POINT, FEATURE_TYPE_REGION
+from src.core.marker import FEATURE_TYPE_PATH, FEATURE_TYPE_REGION
 from src.core.theme_manager import ThemeManager
 from src.core.trajectory import KEYFRAME_TIME_EPSILON
 from src.gui.widgets.map.coordinate_system import MapCoordinateSystem
@@ -201,14 +204,14 @@ class KeyframeGizmo(QGraphicsItemGroup):
         if not self.keyframe_item.isUnderMouse():
             self.keyframe_item._cleanup_gizmo()
 
-    def mousePressEvent(self, event: QMouseEvent) -> None:
+    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """Handle icon clicks - clock for Clock Mode, X for delete.
 
         Args:
             event: The mouse press event.
         """
         # Determine which icon was clicked based on local position
-        click_x = event.position().x()
+        click_x = event.pos().x()
 
         if click_x < GIZMO_SIZE + 1:
             # Clock icon clicked - enter Clock Mode
@@ -528,16 +531,12 @@ class _VertexHandle(QGraphicsEllipseItem):
         self.setPen(QPen(QColor(MAP_VERTEX_HANDLE_BORDER_COLOR), 1))
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
-        self.setFlag(
-            QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True
-        )
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True)
         self.setAcceptHoverEvents(True)
         self.setCursor(QCursor(Qt.CursorShape.SizeAllCursor))
         self.setZValue(LAYER_UI_OVERLAY + 1)
 
-    def itemChange(
-        self, change: QGraphicsItem.GraphicsItemChange, value: Any
-    ) -> Any:
+    def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
         """Notifies parent when the handle position changes.
 
         Args:
@@ -597,9 +596,7 @@ class _MidpointHandle(QGraphicsEllipseItem):
         self.setOpacity(MAP_MIDPOINT_GHOST_OPACITY)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
-        self.setFlag(
-            QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True
-        )
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True)
         self.setAcceptHoverEvents(True)
         self.setCursor(QCursor(Qt.CursorShape.CrossCursor))
         self.setZValue(LAYER_UI_OVERLAY)
@@ -1527,9 +1524,7 @@ class MapGraphicsView(QGraphicsView):
         # Edit Vertices action
         edit_vertices_action = QAction(self)
         edit_vertices_action.setText("Edit Vertices...")
-        edit_vertices_action.triggered.connect(
-            lambda: self._start_vertex_editing(item)
-        )
+        edit_vertices_action.triggered.connect(lambda: self._start_vertex_editing(item))
         menu.addAction(edit_vertices_action)
 
         menu.addSeparator()
@@ -1596,15 +1591,15 @@ class MapGraphicsView(QGraphicsView):
         for sp in self._drawing_vertices:
             nx, ny = self.coord_system.to_normalized(sp)
             nx, ny = self.coord_system.clamp_normalized(nx, ny)
-            geometry.append({
-                "x": round(nx, NORMALIZED_COORD_PRECISION),
-                "y": round(ny, NORMALIZED_COORD_PRECISION),
-            })
+            geometry.append(
+                {
+                    "x": round(nx, NORMALIZED_COORD_PRECISION),
+                    "y": round(ny, NORMALIZED_COORD_PRECISION),
+                }
+            )
 
         feature_type = self._drawing_mode
-        logger.info(
-            f"Drawing finished: {feature_type} with {len(geometry)} vertices"
-        )
+        logger.info(f"Drawing finished: {feature_type} with {len(geometry)} vertices")
 
         # Clean up drawing state
         self._drawing_mode = None
@@ -1751,7 +1746,7 @@ class MapGraphicsView(QGraphicsView):
             return c.name()
         return "#808080"  # safe grey fallback
 
-    def _show_feature_style_dialog(self, item: "_FeatureItemBase") -> None:
+    def _show_feature_style_dialog(self, item: PathItem | RegionItem) -> None:
         """Opens an inline dialog to edit a feature's visual style.
 
         Args:
@@ -1838,8 +1833,7 @@ class MapGraphicsView(QGraphicsView):
             layout.addRow("Fill Color:", fill_btn)
 
         buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok
-            | QDialogButtonBox.StandardButton.Cancel
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
@@ -1861,7 +1855,7 @@ class MapGraphicsView(QGraphicsView):
     # Vertex Editing
     # ------------------------------------------------------------------
 
-    def _start_vertex_editing(self, item: "_FeatureItemBase") -> None:
+    def _start_vertex_editing(self, item: PathItem | RegionItem) -> None:
         """Enters vertex editing mode for a feature.
 
         Shows draggable handles on each vertex and ghost midpoint handles
@@ -2015,9 +2009,7 @@ class MapGraphicsView(QGraphicsView):
             # Reposition midpoint handles to keep segment markers in sync
             self._update_midpoint_positions()
 
-    def _snap_to_nearby_vertex(
-        self, moving_index: int, scene_pos: QPointF
-    ) -> QPointF:
+    def _snap_to_nearby_vertex(self, moving_index: int, scene_pos: QPointF) -> QPointF:
         """Snaps a position to the nearest existing vertex within snap radius.
 
         Args:
@@ -2129,7 +2121,7 @@ class MapGraphicsView(QGraphicsView):
             f"{len(item._geometry)} total"
         )
 
-    def _rebuild_vertex_handles(self, item: "_FeatureItemBase") -> None:
+    def _rebuild_vertex_handles(self, item: PathItem | RegionItem) -> None:
         """Removes and recreates all vertex handles for the current feature.
 
         Called after vertex insertion or deletion to keep handle indices
