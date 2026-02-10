@@ -169,7 +169,8 @@ class TestPointToSegmentDistance:
         b = QPointF(5, 5)
         p = QPointF(8, 9)
         dist, closest = point_to_segment_distance(p, a, b)
-        assert dist == pytest.approx(5.0, abs=1e-6)
+        # Distance = sqrt((8-5)² + (9-5)²) = sqrt(9+16) = 5.0
+        assert dist == pytest.approx(math.sqrt(3 * 3 + 4 * 4), abs=1e-6)
         assert closest.x() == pytest.approx(5.0, abs=1e-6)
         assert closest.y() == pytest.approx(5.0, abs=1e-6)
 

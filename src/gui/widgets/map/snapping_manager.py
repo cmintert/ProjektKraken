@@ -318,6 +318,9 @@ class SnappingManager:
 
         # Check all segments. For closed polygons (RegionItem),
         # also check the closing segment.
+        # NOTE: Import here to avoid circular dependency —
+        # feature_items.py imports from constants.py which is
+        # shared with this module.
         from src.gui.widgets.map.feature_items import RegionItem
 
         seg_count = n if isinstance(item, RegionItem) else n - 1
