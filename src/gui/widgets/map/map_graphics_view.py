@@ -62,6 +62,21 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.app.constants import (
+    MAP_DEFAULT_WIDTH_METERS,
+    MAP_EDIT_DASH_PATTERN,
+    MAP_EDIT_STROKE_COLOR,
+    MAP_MIDPOINT_GHOST_OPACITY,
+    MAP_MIDPOINT_HANDLE_BORDER_COLOR,
+    MAP_MIDPOINT_HANDLE_COLOR,
+    MAP_MIDPOINT_HANDLE_RADIUS,
+    MAP_MIDPOINT_HOVER_OPACITY,
+    MAP_SNAP_RADIUS_PX,
+    MAP_VERTEX_HANDLE_BORDER_COLOR,
+    MAP_VERTEX_HANDLE_COLOR,
+    MAP_VERTEX_HANDLE_RADIUS,
+    MAP_ZOOM_IN_FACTOR,
+)
 from src.core.marker import FEATURE_TYPE_PATH, FEATURE_TYPE_POINT, FEATURE_TYPE_REGION
 from src.core.theme_manager import ThemeManager
 from src.core.trajectory import KEYFRAME_TIME_EPSILON
@@ -487,6 +502,9 @@ class _VertexHandle(QGraphicsEllipseItem):
     a path or region. On release, the callback fires with the new position.
     Right-clicking the handle removes the vertex.
 
+    The handle scales inversely with the view zoom so it maintains a
+    constant screen-pixel size, enabling precise work at high zoom.
+
     Args:
         index: The vertex index this handle represents.
         on_moved: Callback ``(index, QPointF)`` invoked when dragging finishes.
@@ -494,23 +512,24 @@ class _VertexHandle(QGraphicsEllipseItem):
 
     """
 
-    _RADIUS = 5  # screen pixels (cosmetic)
-
     def __init__(
         self,
         index: int,
         on_moved: "Callable[[int, QPointF], None]",
         on_delete: "Optional[Callable[[int], None]]" = None,
     ) -> None:
-        r = self._RADIUS
+        r = MAP_VERTEX_HANDLE_RADIUS
         super().__init__(-r, -r, r * 2, r * 2)
         self.index = index
         self._on_moved = on_moved
         self._on_delete = on_delete
-        self.setBrush(QBrush(QColor("#e74c3c")))
-        self.setPen(QPen(QColor("#FFFFFF"), 1))
+        self.setBrush(QBrush(QColor(MAP_VERTEX_HANDLE_COLOR)))
+        self.setPen(QPen(QColor(MAP_VERTEX_HANDLE_BORDER_COLOR), 1))
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
+        self.setFlag(
+            QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True
+        )
         self.setAcceptHoverEvents(True)
         self.setCursor(QCursor(Qt.CursorShape.SizeAllCursor))
         self.setZValue(LAYER_UI_OVERLAY + 1)
@@ -553,30 +572,33 @@ class _MidpointHandle(QGraphicsEllipseItem):
     handles. When dragged, it converts into a real vertex by invoking the
     ``on_insert`` callback with the segment index and the new position.
 
+    The handle scales inversely with the view zoom so it maintains a
+    constant screen-pixel size.
+
     Args:
         segment_index: Index of the segment (vertex *before* the midpoint).
         on_insert: Callback ``(segment_index, QPointF)`` invoked on drag.
 
     """
 
-    _RADIUS = 4  # slightly smaller than vertex handles
-    _GHOST_OPACITY = 0.4
-
     def __init__(
         self,
         segment_index: int,
         on_insert: "Callable[[int, QPointF], None]",
     ) -> None:
-        r = self._RADIUS
+        r = MAP_MIDPOINT_HANDLE_RADIUS
         super().__init__(-r, -r, r * 2, r * 2)
         self.segment_index = segment_index
         self._on_insert = on_insert
         self._activated = False
-        self.setBrush(QBrush(QColor("#2ecc71")))
-        self.setPen(QPen(QColor("#FFFFFF"), 1))
-        self.setOpacity(self._GHOST_OPACITY)
+        self.setBrush(QBrush(QColor(MAP_MIDPOINT_HANDLE_COLOR)))
+        self.setPen(QPen(QColor(MAP_MIDPOINT_HANDLE_BORDER_COLOR), 1))
+        self.setOpacity(MAP_MIDPOINT_GHOST_OPACITY)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
+        self.setFlag(
+            QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True
+        )
         self.setAcceptHoverEvents(True)
         self.setCursor(QCursor(Qt.CursorShape.CrossCursor))
         self.setZValue(LAYER_UI_OVERLAY)
@@ -588,7 +610,7 @@ class _MidpointHandle(QGraphicsEllipseItem):
             event: The hover enter event.
 
         """
-        self.setOpacity(0.9)
+        self.setOpacity(MAP_MIDPOINT_HOVER_OPACITY)
         super().hoverEnterEvent(event)
 
     def hoverLeaveEvent(self, event: "QGraphicsSceneHoverEvent") -> None:
@@ -599,7 +621,7 @@ class _MidpointHandle(QGraphicsEllipseItem):
 
         """
         if not self._activated:
-            self.setOpacity(self._GHOST_OPACITY)
+            self.setOpacity(MAP_MIDPOINT_GHOST_OPACITY)
         super().hoverLeaveEvent(event)
 
     def mouseMoveEvent(self, event: "QGraphicsSceneMouseEvent") -> None:
@@ -649,8 +671,8 @@ class MapGraphicsView(QGraphicsView):
     feature_geometry_changed = Signal(str, list)  # marker_id, new geometry list
 
     # Visual style for the feature being edited
-    _EDIT_DASH_PATTERN = [6, 3]  # dashed line during editing
-    _EDIT_STROKE_COLOR = "#e67e22"  # orange highlight while editing
+    _EDIT_DASH_PATTERN = MAP_EDIT_DASH_PATTERN
+    _EDIT_STROKE_COLOR = MAP_EDIT_STROKE_COLOR
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the MapGraphicsView.
@@ -779,7 +801,7 @@ class MapGraphicsView(QGraphicsView):
         # Scale Bar
         self.scale_bar_painter = ScaleBarPainter()
         self.scale_bar_painter = ScaleBarPainter()
-        self.map_width_meters = 1_000_000.0  # Default 1000km
+        self.map_width_meters = MAP_DEFAULT_WIDTH_METERS  # Default 1000km
 
         # Calibration State
         self.calibration_mode = False
@@ -1014,6 +1036,7 @@ class MapGraphicsView(QGraphicsView):
                 style=style,
                 description=description,
                 lore_date=lore_date,
+                map_width_meters=self.map_width_meters,
             )
             self.scene.addItem(item)
             self.feature_items[marker_id] = item
@@ -1032,6 +1055,7 @@ class MapGraphicsView(QGraphicsView):
                 style=style,
                 description=description,
                 lore_date=lore_date,
+                map_width_meters=self.map_width_meters,
             )
             self.scene.addItem(item)
             self.feature_items[marker_id] = item
@@ -1120,12 +1144,10 @@ class MapGraphicsView(QGraphicsView):
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         """Handle mouse wheel for zooming."""
-        # Sensitivity
-        zoom_in_factor = 1.25
-        zoom_out_factor = 1 / zoom_in_factor
+        zoom_out_factor = 1 / MAP_ZOOM_IN_FACTOR
 
         # Check zoom direction
-        factor = zoom_in_factor if event.angleDelta().y() > 0 else zoom_out_factor
+        factor = MAP_ZOOM_IN_FACTOR if event.angleDelta().y() > 0 else zoom_out_factor
 
         self.scale(factor, factor)
         self._update_label_scales()
@@ -1914,11 +1936,43 @@ class MapGraphicsView(QGraphicsView):
             self.scene.addItem(mh)
             self._midpoint_handles.append(mh)
 
+    def _update_midpoint_positions(self) -> None:
+        """Repositions existing midpoint handles without recreating them.
+
+        Called during interactive vertex drag to keep green segment
+        markers in sync with the moving geometry.  This is cheaper
+        than a full ``_rebuild_midpoint_handles`` because it avoids
+        scene add/remove overhead.
+        """
+        item = self.feature_items.get(self._editing_feature_id or "")
+        if not item or not item._geometry or not self.pixmap_item:
+            return
+
+        rect = self.pixmap_item.sceneBoundingRect()
+        geometry = item._geometry
+        n = len(geometry)
+        is_region = isinstance(item, RegionItem)
+        seg_count = n if is_region else n - 1
+
+        for idx, mh in enumerate(self._midpoint_handles):
+            if idx >= seg_count:
+                break
+            j = (idx + 1) % n
+            pt_a = geometry[idx]
+            pt_b = geometry[j]
+            mx = (pt_a["x"] + pt_b["x"]) / 2.0
+            my = (pt_a["y"] + pt_b["y"]) / 2.0
+            sx = rect.left() + mx * rect.width()
+            sy = rect.top() + my * rect.height()
+            mh.setPos(sx, sy)
+
     def _on_vertex_moved(self, index: int, new_scene_pos: QPointF) -> None:
         """Callback when a vertex handle is dragged to a new position.
 
-        Applies optional snapping (10px radius) to nearby existing vertices,
-        then updates the underlying feature geometry in real time.
+        Applies optional snapping to nearby existing vertices,
+        then updates the underlying feature geometry in real time
+        and repositions midpoint handles so green segment markers
+        stay in sync.
 
         Args:
             index: The vertex index that was moved.
@@ -1932,7 +1986,7 @@ class MapGraphicsView(QGraphicsView):
         if not item:
             return
 
-        # --- Snapping (10px screen radius) ---
+        # --- Snapping ---
         snap_pos = self._snap_to_nearby_vertex(index, new_scene_pos)
 
         # Convert scene pos → normalized
@@ -1957,10 +2011,13 @@ class MapGraphicsView(QGraphicsView):
             item.prepareGeometryChange()
             item.update()
 
+            # Reposition midpoint handles to keep segment markers in sync
+            self._update_midpoint_positions()
+
     def _snap_to_nearby_vertex(
         self, moving_index: int, scene_pos: QPointF
     ) -> QPointF:
-        """Snaps a position to the nearest existing vertex within 10 screen pixels.
+        """Snaps a position to the nearest existing vertex within snap radius.
 
         Args:
             moving_index: Index of the vertex being moved (excluded from snap targets).
@@ -1970,10 +2027,9 @@ class MapGraphicsView(QGraphicsView):
             Snapped scene position, or the original if no nearby vertex found.
 
         """
-        snap_radius_px = 10.0
         # Convert snap radius from screen pixels to scene units
         view_scale = self.transform().m11() if self.transform().m11() > 0 else 1.0
-        snap_radius_scene = snap_radius_px / view_scale
+        snap_radius_scene = MAP_SNAP_RADIUS_PX / view_scale
 
         best_dist = snap_radius_scene
         best_pos = scene_pos
