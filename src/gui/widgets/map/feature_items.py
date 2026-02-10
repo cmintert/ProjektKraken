@@ -327,11 +327,10 @@ class _FeatureItemBase(QGraphicsObject):
         if "area" in props:
             lines.append(f"Area: {self._format_metric_area(props['area'])}")
         if "perimeter" in props:
-            lines.append(
-                f"Perimeter: {self._format_metric_length(props['perimeter'])}"
-            )
+            lines.append(f"Perimeter: {self._format_metric_length(props['perimeter'])}")
 
-        self.setToolTip("<br>".join(lines))
+        tooltip_content = "<br>".join(lines)
+        self.setToolTip(f"<div style='width: 150px;'>{tooltip_content}</div>")
 
     def _compute_spatial_properties(self) -> Dict[str, Any]:
         """Computes lightweight spatial properties for the tooltip.
@@ -470,7 +469,9 @@ class PathItem(_FeatureItemBase):
         from PySide6.QtGui import QPainterPathStroker
 
         stroker = QPainterPathStroker()
-        stroker.setWidth(max(self._stroke_width() + HIT_AREA_MARGIN, MIN_HIT_AREA_WIDTH))
+        stroker.setWidth(
+            max(self._stroke_width() + HIT_AREA_MARGIN, MIN_HIT_AREA_WIDTH)
+        )
         return stroker.createStroke(self._path)
 
     def paint(
@@ -610,7 +611,9 @@ class RegionItem(_FeatureItemBase):
         ax = rect.left() + self._anchor_x * rect.width()
         ay = rect.top() + self._anchor_y * rect.height()
         label_rect = self._label_item.boundingRect()
-        self._label_item.setPos(ax - label_rect.width() / 2, ay - label_rect.height() / 2)
+        self._label_item.setPos(
+            ax - label_rect.width() / 2, ay - label_rect.height() / 2
+        )
 
     # ------------------------------------------------------------------
     # QGraphicsItem interface

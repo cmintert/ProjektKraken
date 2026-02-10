@@ -424,7 +424,11 @@ class KeyframeItem(QGraphicsObject):
         """Show a one-time hint tooltip for first-time users."""
         settings = QSettings()
         if not settings.value("map/onboarding_hover_hint_shown", False, type=bool):
-            self.setToolTip("💡 Tip: Hover keyframes to edit position or time")
+            self.setToolTip(
+                "<div style='width: 150px;'>"
+                "💡 Tip: Hover keyframes to edit position or time"
+                "</div>"
+            )
             # We can't easily dismiss it with "Don't show again" inside a native
             # tooltip, but we can mark it as shown if it stays for a while.
             # Using QToolTip.showText or similar might be better for floating UI.

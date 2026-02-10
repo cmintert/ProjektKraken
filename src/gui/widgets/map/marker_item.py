@@ -116,7 +116,8 @@ class MarkerItem(QGraphicsObject):
         self._load_icon(icon)
 
         # Tooltip - use description if available, otherwise fall back to label
-        self.setToolTip(description or label)
+        tooltip_text = description or label
+        self.setToolTip(f"<div style='width: 150px;'>{tooltip_text}</div>")
 
         # Make draggable and selectable
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
