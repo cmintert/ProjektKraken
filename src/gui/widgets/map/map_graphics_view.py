@@ -75,6 +75,11 @@ from src.app.constants import (
     MAP_MIDPOINT_HANDLE_COLOR,
     MAP_MIDPOINT_HANDLE_RADIUS,
     MAP_MIDPOINT_HOVER_OPACITY,
+    MAP_SNAP_INDICATOR_BORDER_COLOR,
+    MAP_SNAP_INDICATOR_BORDER_WIDTH,
+    MAP_SNAP_INDICATOR_EDGE_COLOR,
+    MAP_SNAP_INDICATOR_RADIUS,
+    MAP_SNAP_INDICATOR_VERTEX_COLOR,
     MAP_SNAP_RADIUS_PX,
     MAP_VERTEX_HANDLE_BORDER_COLOR,
     MAP_VERTEX_HANDLE_COLOR,
@@ -89,6 +94,7 @@ from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.icon_picker_dialog import IconPickerDialog
 from src.gui.widgets.map.marker_item import MarkerItem
 from src.gui.widgets.map.scale_bar_painter import ScaleBarPainter
+from src.gui.widgets.map.snapping_manager import SnapType, SnappingManager
 
 logger = logging.getLogger(__name__)
 
@@ -773,6 +779,10 @@ class MapGraphicsView(QGraphicsView):
         self._midpoint_handles: list[QGraphicsEllipseItem] = []
         self._editing_original_style: Optional[Dict[str, Any]] = None
 
+        # Snapping
+        self._snapping_manager = SnappingManager(self.scene)
+        self._snap_indicator: Optional[QGraphicsEllipseItem] = None
+
         # Trajectory Visualization
         self.trajectory_path_item: Optional[QGraphicsPathItem] = None
         self.keyframe_items: list[KeyframeItem] = []
@@ -881,7 +891,14 @@ class MapGraphicsView(QGraphicsView):
                 scene_pos = self.mapToScene(pos)
                 item_pos = self.pixmap_item.mapFromScene(scene_pos)
                 if self.pixmap_item.contains(item_pos):
-                    self._add_drawing_vertex(scene_pos)
+                    # Apply snapping to placed vertex
+                    snap_result = self._snapping_manager.snap_point(
+                        scene_pos, self.transform()
+                    )
+                    self._add_drawing_vertex(
+                        snap_result.pos if snap_result.snapped else scene_pos
+                    )
+                    self._hide_snap_indicator()
                 return  # Consume event
 
         # Handle Calibration Mode
@@ -937,14 +954,24 @@ class MapGraphicsView(QGraphicsView):
 
         Updates cursor to crosshair during drawing mode and pointer when
         hovering over editable feature items in vertex editing mode.
+        Shows snap indicator when snapping is enabled.
         """
         super().mouseMoveEvent(event)
 
         if self._drawing_mode:
             self.setCursor(Qt.CursorShape.CrossCursor)
+            scene_pos = self.mapToScene(event.position().toPoint())
+            # Snap indicator during drawing
+            snap_result = self._snapping_manager.snap_point(
+                scene_pos, self.transform()
+            )
+            if snap_result.snapped:
+                self._show_snap_indicator(snap_result.pos, snap_result.snap_type)
+            else:
+                self._hide_snap_indicator()
             if self._drawing_vertices:
-                scene_pos = self.mapToScene(event.position().toPoint())
-                self._update_drawing_preview(scene_pos)
+                preview_pos = snap_result.pos if snap_result.snapped else scene_pos
+                self._update_drawing_preview(preview_pos)
         elif self._editing_feature_id:
             # Show pointer cursor over the edited feature, crosshair elsewhere
             pos = event.position().toPoint()
@@ -1567,6 +1594,7 @@ class MapGraphicsView(QGraphicsView):
         self._drawing_mode = None
         self._drawing_vertices.clear()
         self._clear_drawing_preview()
+        self._hide_snap_indicator()
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         self.setCursor(Qt.CursorShape.ArrowCursor)
         self.drawing_cancelled.emit()
@@ -1609,6 +1637,7 @@ class MapGraphicsView(QGraphicsView):
         self._drawing_mode = None
         self._drawing_vertices.clear()
         self._clear_drawing_preview()
+        self._hide_snap_indicator()
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         self.setCursor(Qt.CursorShape.ArrowCursor)
 
@@ -1729,8 +1758,71 @@ class MapGraphicsView(QGraphicsView):
         return self._drawing_mode
 
     # ------------------------------------------------------------------
-    # Feature Style Editing
+    # Snapping
     # ------------------------------------------------------------------
+
+    @property
+    def snapping_enabled(self) -> bool:
+        """Whether snapping is currently enabled.
+
+        Returns:
+            bool: True if snapping is active.
+
+        """
+        return self._snapping_manager.enabled
+
+    @snapping_enabled.setter
+    def snapping_enabled(self, value: bool) -> None:
+        """Enable or disable snapping.
+
+        Args:
+            value: True to enable snapping.
+
+        """
+        self._snapping_manager.enabled = value
+        if not value:
+            self._hide_snap_indicator()
+
+    def _show_snap_indicator(self, pos: QPointF, snap_type: "SnapType") -> None:
+        """Shows a visual snap indicator at the given position.
+
+        Displays a circle at the snap target: yellow for vertex snaps,
+        blue for edge snaps.  The indicator uses
+        ``ItemIgnoresTransformations`` to maintain a constant screen
+        size regardless of zoom level.
+
+        Args:
+            pos: Scene position for the indicator.
+            snap_type: The type of snap (VERTEX or EDGE).
+
+        """
+        self._hide_snap_indicator()
+        r = MAP_SNAP_INDICATOR_RADIUS
+        self._snap_indicator = QGraphicsEllipseItem(-r, -r, r * 2, r * 2)
+        color = (
+            MAP_SNAP_INDICATOR_VERTEX_COLOR
+            if snap_type == SnapType.VERTEX
+            else MAP_SNAP_INDICATOR_EDGE_COLOR
+        )
+        self._snap_indicator.setBrush(QBrush(QColor(color)))
+        self._snap_indicator.setPen(
+            QPen(
+                QColor(MAP_SNAP_INDICATOR_BORDER_COLOR),
+                MAP_SNAP_INDICATOR_BORDER_WIDTH,
+            )
+        )
+        self._snap_indicator.setFlag(
+            QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True
+        )
+        self._snap_indicator.setZValue(LAYER_UI_OVERLAY + 2)
+        self._snap_indicator.setPos(pos)
+        self.scene.addItem(self._snap_indicator)
+
+    def _hide_snap_indicator(self) -> None:
+        """Removes the snap indicator from the scene."""
+        if self._snap_indicator is not None:
+            self.scene.removeItem(self._snap_indicator)
+            self._snap_indicator = None
 
     @staticmethod
     def _safe_color_css(color_str: str) -> str:
@@ -1968,10 +2060,9 @@ class MapGraphicsView(QGraphicsView):
     def _on_vertex_moved(self, index: int, new_scene_pos: QPointF) -> None:
         """Callback when a vertex handle is dragged to a new position.
 
-        Applies optional snapping to nearby existing vertices,
-        then updates the underlying feature geometry in real time
-        and repositions midpoint handles so green segment markers
-        stay in sync.
+        Uses the SnappingManager to snap to nearby features (other
+        paths/regions), falling back to same-feature vertex snapping.
+        Shows a visual snap indicator when a snap target is found.
 
         Args:
             index: The vertex index that was moved.
@@ -1985,8 +2076,28 @@ class MapGraphicsView(QGraphicsView):
         if not item:
             return
 
-        # --- Snapping ---
-        snap_pos = self._snap_to_nearby_vertex(index, new_scene_pos)
+        # --- Cross-feature snapping via SnappingManager ---
+        # Exclude the item being edited so we snap to *other* features
+        exclude = {item}
+        # Also exclude handles themselves
+        for h in self._vertex_handles:
+            exclude.add(h)
+        for mh in self._midpoint_handles:
+            exclude.add(mh)
+        if self._snap_indicator:
+            exclude.add(self._snap_indicator)
+
+        snap_result = self._snapping_manager.snap_point(
+            new_scene_pos, self.transform(), exclude
+        )
+
+        if snap_result.snapped:
+            snap_pos = snap_result.pos
+            self._show_snap_indicator(snap_pos, snap_result.snap_type)
+        else:
+            # Fallback: same-feature vertex snapping
+            snap_pos = self._snap_to_nearby_vertex(index, new_scene_pos)
+            self._hide_snap_indicator()
 
         # Convert scene pos → normalized
         rect = self.pixmap_item.sceneBoundingRect()
@@ -2184,6 +2295,7 @@ class MapGraphicsView(QGraphicsView):
         for mh in self._midpoint_handles:
             self.scene.removeItem(mh)
         self._midpoint_handles.clear()
+        self._hide_snap_indicator()
         if not self._drawing_mode:
             self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
 

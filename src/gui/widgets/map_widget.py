@@ -251,6 +251,17 @@ class MapWidget(QWidget):
         self.btn_draw_region.clicked.connect(self._on_draw_region_clicked)
         self.toolbar.addWidget(self.btn_draw_region)
 
+        # Snap toggle
+        self.btn_snap = QPushButton("Snap")
+        self.btn_snap.setToolTip(
+            "Toggle snapping to nearby feature vertices and edges"
+        )
+        self.btn_snap.setCheckable(True)
+        self.btn_snap.setChecked(True)  # enabled by default
+        self.btn_snap.setStyleSheet(tool_style)
+        self.btn_snap.clicked.connect(self._on_snap_toggled)
+        self.toolbar.addWidget(self.btn_snap)
+
         # Mode Indicator (right side)
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
@@ -479,6 +490,11 @@ class MapWidget(QWidget):
         self.btn_draw_path.setChecked(False)
         self.btn_draw_region.setChecked(False)
         self._update_mode_indicator()
+
+    @Slot()
+    def _on_snap_toggled(self) -> None:
+        """Toggles snapping on the map view."""
+        self.view.snapping_enabled = self.btn_snap.isChecked()
 
     @Slot()
     def _on_finish_sketch(self) -> None:

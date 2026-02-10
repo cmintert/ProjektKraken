@@ -156,6 +156,17 @@ MAP_EDIT_STROKE_WIDTH = 5.0  # thicker line during vertex editing
 # Snap radius for vertex snapping during editing (screen pixels)
 MAP_SNAP_RADIUS_PX = 10.0
 
+# ---------------------------------------------------------------------------
+# Snapping Manager Constants
+# ---------------------------------------------------------------------------
+
+# Snap indicator visual feedback
+MAP_SNAP_INDICATOR_VERTEX_COLOR = "#f1c40f"  # yellow for vertex snap
+MAP_SNAP_INDICATOR_EDGE_COLOR = "#3498db"  # blue for edge snap
+MAP_SNAP_INDICATOR_RADIUS = 6  # screen pixels (cosmetic)
+MAP_SNAP_INDICATOR_BORDER_COLOR = "#FFFFFF"
+MAP_SNAP_INDICATOR_BORDER_WIDTH = 1.5
+
 # Default map scale
 MAP_DEFAULT_WIDTH_METERS = 1_000_000.0  # 1000 km
 
