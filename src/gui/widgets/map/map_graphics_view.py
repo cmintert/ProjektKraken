@@ -5,6 +5,7 @@ Provides the MapGraphicsView class for rendering and interacting with the map.
 
 import json
 import logging
+import math
 from typing import Any, Callable, Dict, Optional
 
 from PySide6.QtCore import (
@@ -646,6 +647,10 @@ class MapGraphicsView(QGraphicsView):
     # Feature editing signals
     feature_style_changed = Signal(str, dict)  # marker_id, new_style dict
     feature_geometry_changed = Signal(str, list)  # marker_id, new geometry list
+
+    # Visual style for the feature being edited
+    _EDIT_DASH_PATTERN = [6, 3]  # dashed line during editing
+    _EDIT_STROKE_COLOR = "#e67e22"  # orange highlight while editing
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the MapGraphicsView.
@@ -1834,10 +1839,6 @@ class MapGraphicsView(QGraphicsView):
     # Vertex Editing
     # ------------------------------------------------------------------
 
-    # Visual style for the feature being edited
-    _EDIT_DASH_PATTERN = [6, 3]  # dashed line during editing
-    _EDIT_STROKE_COLOR = "#e67e22"  # orange highlight while editing
-
     def _start_vertex_editing(self, item: "_FeatureItemBase") -> None:
         """Enters vertex editing mode for a feature.
 
@@ -1969,8 +1970,6 @@ class MapGraphicsView(QGraphicsView):
             Snapped scene position, or the original if no nearby vertex found.
 
         """
-        import math
-
         snap_radius_px = 10.0
         # Convert snap radius from screen pixels to scene units
         view_scale = self.transform().m11() if self.transform().m11() > 0 else 1.0

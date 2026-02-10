@@ -10,6 +10,7 @@ the anchor coordinate.
 """
 
 import logging
+import math
 from typing import Any, Dict, List, Optional, Tuple
 
 from PySide6.QtCore import QPointF, QRectF, QTimer, Qt, Signal
@@ -274,8 +275,6 @@ class _FeatureItemBase(QGraphicsObject):
             length/area/perimeter.
 
         """
-        import math
-
         props: Dict[str, Any] = {}
         if not self._geometry:
             return props
@@ -441,8 +440,6 @@ class PathItem(_FeatureItemBase):
             Dict with feature_type, vertex_count, segment_count, and length.
 
         """
-        import math
-
         props: Dict[str, Any] = {"feature_type": "path"}
         if not self._geometry:
             return props
@@ -611,8 +608,6 @@ class RegionItem(_FeatureItemBase):
             area, and perimeter.
 
         """
-        import math
-
         props: Dict[str, Any] = {"feature_type": "region"}
         if not self._geometry:
             return props
