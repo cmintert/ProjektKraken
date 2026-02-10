@@ -34,6 +34,8 @@ All notable changes to this project will be documented in this file.
   - Covered Road Network Strategy, Network Analysis (NetworkX vs QGIS), and Snapping implementation.
 - *(2026-02-10)* **Docs**: Added detailed `SNAPPING_MANAGER.md` documentation explaining the spatial indexing and math.
 
+
+
 ### Added
 - *(2026-02-08)* **UI**: Updated `ShortcutManager` and "Keyboard Shortcuts" dialog with new hotkeys (Navigate Link, Choose Relation Type, Deselect) and improved categorization.
 
