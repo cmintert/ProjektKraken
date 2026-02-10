@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-02-08
-**Commit:** `6a493ec`
+**Last Updated:** 2026-02-10
+**Commit:** `6b2ea0b`
 ---
 
 # Changelog
@@ -10,6 +10,25 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Added
+- *(2026-02-10)* **Map**: Implemented `SnappingManager` for robust map editing.
+  - Supports "Vertex Snapping" (nearest point) and "Edge Snapping" (nearest segment) using efficient BSP spatial indexing.
+  - Added visual indicators for snap targets (yellow circle for vertices, blue cross for edges).
+  - Added toolbar toggle button for snapping.
+- *(2026-02-10)* **Map**: Implemented In-Place Entity/Event Creation from Map Selection Dialog.
+  - Added `<New Entity...>` and `<New Event...>` options to `UnifiedList` dialogs.
+  - Allows creating and linking new items entirely within the map workflow without leaving the context.
+
+### Fixed
+- *(2026-02-10)* **UI**: Fixed visual state of toolbar toggle buttons (Snap, Draw Path).
+  - Updated `StyleHelper` to correctly target `QPushButton` in toolbar styles.
+  - Added specific `:checked` pseudo-state styling to clearly indicate active tools.
+
+### Documentation
+- *(2026-02-10)* **Docs**: Added comprehensive research and design notes for mapping enhancements (`docs/design_notes/mapping_enhancements/`).
+  - Covered Road Network Strategy, Network Analysis (NetworkX vs QGIS), and Snapping implementation.
+- *(2026-02-10)* **Docs**: Added detailed `SNAPPING_MANAGER.md` documentation explaining the spatial indexing and math.
 
 ### Added
 - *(2026-02-08)* **UI**: Updated `ShortcutManager` and "Keyboard Shortcuts" dialog with new hotkeys (Navigate Link, Choose Relation Type, Deselect) and improved categorization.
