@@ -660,7 +660,6 @@ class MapGraphicsView(QGraphicsView):
     keyframe_moved = Signal(str, float, float, float)  # marker_id, t, new_x, new_y
     keyframe_clock_mode_requested = Signal(str, float)  # marker_id, t
     keyframe_delete_requested = Signal(str, float)  # marker_id, t
-    keyframe_delete_requested = Signal(str, float)  # marker_id, t
     keyframe_edit_requested = Signal(str, float, float, float)  # marker_id, t, x, y
     calibration_completed = Signal(float)  # emitted with pixel distance
     # Drawing mode signals
@@ -799,7 +798,6 @@ class MapGraphicsView(QGraphicsView):
         self.scene.setBackgroundBrush(QBrush(QColor(theme["app_bg"])))
 
         # Scale Bar
-        self.scale_bar_painter = ScaleBarPainter()
         self.scale_bar_painter = ScaleBarPainter()
         self.map_width_meters = MAP_DEFAULT_WIDTH_METERS  # Default 1000km
 

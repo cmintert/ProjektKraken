@@ -156,7 +156,7 @@ MAP_EDIT_STROKE_COLOR = "#e67e22"  # orange highlight
 MAP_SNAP_RADIUS_PX = 10.0
 
 # Default map scale
-MAP_DEFAULT_WIDTH_METERS = 1_000_000.0  # 1 000 km
+MAP_DEFAULT_WIDTH_METERS = 1_000_000.0  # 1000 km
 
 # Zoom factor for mouse wheel
 MAP_ZOOM_IN_FACTOR = 1.25
