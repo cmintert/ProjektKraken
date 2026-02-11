@@ -888,6 +888,7 @@ class ConnectionManager:
         ):
             failed_count += 1
 
+        # 16 original + 3 layer signals (tree_changed, opacity, rename)
         total_connections = 19
         logger.debug(
             f"MapWidget connections: {total_connections - failed_count}"

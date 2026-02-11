@@ -875,6 +875,28 @@ class DeleteKeyframeCommand(BaseCommand):
 # --------------------------------------------------------------------------
 
 
+def _find_layer_node(
+    root: MapLayerNode, node_id: str
+) -> Optional[MapLayerNode]:
+    """Walk the tree to find a node by ID.
+
+    Args:
+        root: Root of the layer tree.
+        node_id: Target node ID.
+
+    Returns:
+        Optional[MapLayerNode]: The matching node or ``None``.
+
+    """
+    if root.id == node_id:
+        return root
+    for child in root.children:
+        found = _find_layer_node(child, node_id)
+        if found:
+            return found
+    return None
+
+
 class SetLayerVisibilityCommand(BaseCommand):
     """Command to toggle a layer node's visibility (undoable).
 
@@ -920,7 +942,7 @@ class SetLayerVisibilityCommand(BaseCommand):
                     command_name="SetLayerVisibilityCommand",
                 )
 
-            node = self._find_node(map_obj.layers, self.node_id)
+            node = _find_layer_node(map_obj.layers, self.node_id)
             if not node:
                 return CommandResult(
                     success=False,
@@ -961,7 +983,7 @@ class SetLayerVisibilityCommand(BaseCommand):
         if self._is_executed and self._previous_visible is not None:
             map_obj = db_service.map_repo.get_map(self.map_id)
             if map_obj and map_obj.layers:
-                node = self._find_node(map_obj.layers, self.node_id)
+                node = _find_layer_node(map_obj.layers, self.node_id)
                 if node:
                     node.visible = self._previous_visible
                     attrs = dict(map_obj.attributes) if map_obj.attributes else {}
@@ -982,28 +1004,6 @@ class SetLayerVisibilityCommand(BaseCommand):
     def from_dict(cls, data: dict) -> "SetLayerVisibilityCommand":
         """Deserialize command from dictionary."""
         return cls(data["map_id"], data["node_id"], data["visible"])
-
-    @staticmethod
-    def _find_node(
-        root: MapLayerNode, node_id: str
-    ) -> Optional[MapLayerNode]:
-        """Walk the tree to find a node by ID.
-
-        Args:
-            root: Root of the layer tree.
-            node_id: Target node ID.
-
-        Returns:
-            Optional[MapLayerNode]: The matching node or ``None``.
-
-        """
-        if root.id == node_id:
-            return root
-        for child in root.children:
-            found = SetLayerVisibilityCommand._find_node(child, node_id)
-            if found:
-                return found
-        return None
 
 
 class MoveLayerCommand(BaseCommand):
@@ -1055,7 +1055,7 @@ class MoveLayerCommand(BaseCommand):
                     command_name="MoveLayerCommand",
                 )
 
-            node = SetLayerVisibilityCommand._find_node(
+            node = _find_layer_node(
                 map_obj.layers, self.node_id
             )
             if not node:
@@ -1081,7 +1081,7 @@ class MoveLayerCommand(BaseCommand):
             old_parent.children.remove(node)
 
             # Find new parent and insert
-            new_parent = SetLayerVisibilityCommand._find_node(
+            new_parent = _find_layer_node(
                 map_obj.layers, self.new_parent_id
             )
             if not new_parent:
@@ -1130,7 +1130,7 @@ class MoveLayerCommand(BaseCommand):
         ):
             map_obj = db_service.map_repo.get_map(self.map_id)
             if map_obj and map_obj.layers:
-                node = SetLayerVisibilityCommand._find_node(
+                node = _find_layer_node(
                     map_obj.layers, self.node_id
                 )
                 if node:
@@ -1139,7 +1139,7 @@ class MoveLayerCommand(BaseCommand):
                     if cur_parent:
                         cur_parent.children.remove(node)
                     # Insert back at old position
-                    old_parent = SetLayerVisibilityCommand._find_node(
+                    old_parent = _find_layer_node(
                         map_obj.layers, self._old_parent_id
                     )
                     if old_parent:
@@ -1328,7 +1328,7 @@ class SetLayerOpacityCommand(BaseCommand):
                     command_name="SetLayerOpacityCommand",
                 )
 
-            node = SetLayerVisibilityCommand._find_node(
+            node = _find_layer_node(
                 map_obj.layers, self.node_id
             )
             if not node:
@@ -1371,7 +1371,7 @@ class SetLayerOpacityCommand(BaseCommand):
         if self._is_executed and self._previous_opacity is not None:
             map_obj = db_service.map_repo.get_map(self.map_id)
             if map_obj and map_obj.layers:
-                node = SetLayerVisibilityCommand._find_node(
+                node = _find_layer_node(
                     map_obj.layers, self.node_id
                 )
                 if node:
@@ -1443,7 +1443,7 @@ class RenameLayerCommand(BaseCommand):
                     command_name="RenameLayerCommand",
                 )
 
-            node = SetLayerVisibilityCommand._find_node(
+            node = _find_layer_node(
                 map_obj.layers, self.node_id
             )
             if not node:
@@ -1486,7 +1486,7 @@ class RenameLayerCommand(BaseCommand):
         if self._is_executed and self._previous_name is not None:
             map_obj = db_service.map_repo.get_map(self.map_id)
             if map_obj and map_obj.layers:
-                node = SetLayerVisibilityCommand._find_node(
+                node = _find_layer_node(
                     map_obj.layers, self.node_id
                 )
                 if node:

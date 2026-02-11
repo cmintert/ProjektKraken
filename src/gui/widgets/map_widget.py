@@ -186,7 +186,6 @@ class MapWidget(QWidget):
     show_onboarding_requested = Signal()  # To trigger animation or hints
     # Layer operations (routed through the command stack)
     layer_tree_changed = Signal()  # auto-persist hook
-    layer_visibility_changed = Signal(str, bool)  # node_id, visible
     layer_opacity_change_requested = Signal(str, float)  # node_id, opacity
     layer_rename_requested = Signal(str, str)  # node_id, new_name
 

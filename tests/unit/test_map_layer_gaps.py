@@ -245,16 +245,20 @@ class TestSetLayerVisibilityCommand:
     """Test the SetLayerVisibilityCommand."""
 
     def test_find_node_static(self) -> None:
-        """_find_node utility locates nested nodes."""
+        """_find_layer_node utility locates nested nodes."""
+        from src.commands.map_commands import _find_layer_node
+
         child = MapLayerNode(name="Child", id="child-1")
         root = MapLayerNode(name="Root", id="root", children=[child])
-        found = SetLayerVisibilityCommand._find_node(root, "child-1")
+        found = _find_layer_node(root, "child-1")
         assert found is child
 
     def test_find_node_not_found(self) -> None:
-        """_find_node returns None for missing IDs."""
+        """_find_layer_node returns None for missing IDs."""
+        from src.commands.map_commands import _find_layer_node
+
         root = MapLayerNode(name="Root", id="root")
-        assert SetLayerVisibilityCommand._find_node(root, "nope") is None
+        assert _find_layer_node(root, "nope") is None
 
     def test_serialization_round_trip(self) -> None:
         """to_dict / from_dict round-trip."""

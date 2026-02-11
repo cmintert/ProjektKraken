@@ -362,7 +362,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
                 lambda _: self.map_widget.layer_panel.refresh_styles()
             )
         except Exception as e:
-            logger.warning(f"Failed to connect theme→layer panel: {e}")
+            logger.warning(f"Failed to connect theme->layer panel: {e}")
 
         self.ai_search_panel = AISearchPanelWidget()
         self.graph_widget = GraphWidget()
