@@ -32,6 +32,9 @@ from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.map.map_layer_model import MapLayerModel
 from src.gui.widgets.map.map_layer_panel import MapLayerPanel
 
+# Tolerance for floating-point opacity comparisons (slider integer → float)
+_OPACITY_TOLERANCE = 0.01
+
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -706,7 +709,7 @@ class TestMapLayerPanelOpacity:
 
         assert len(received) == 1
         assert received[0][0] == "m1"
-        assert abs(received[0][1] - 0.75) < 0.01
+        assert abs(received[0][1] - 0.75) < _OPACITY_TOLERANCE
 
     def test_opacity_slider_no_feedback_loop(
         self, qtbot, simple_model: MapLayerModel

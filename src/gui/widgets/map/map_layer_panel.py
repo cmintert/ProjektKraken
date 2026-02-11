@@ -9,7 +9,7 @@ and reordering via drag-and-drop.  Integrates with the application's
 import logging
 from typing import TYPE_CHECKING, Optional
 
-from PySide6.QtCore import QModelIndex, Qt, Signal, Slot
+from PySide6.QtCore import QModelIndex, QPoint, Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QHBoxLayout,
@@ -89,27 +89,21 @@ class MapLayerPanel(QWidget):
         header_layout.setSpacing(4)
 
         self._title_label = QLabel("Layers")
-        self._title_label.setStyleSheet(StyleHelper.get_panel_header_style())
         header_layout.addWidget(self._title_label)
         header_layout.addStretch()
 
-        tool_style = StyleHelper.get_tool_button_style()
-
         self.btn_new_group = QPushButton("+ Group")
         self.btn_new_group.setToolTip("Create a new layer group")
-        self.btn_new_group.setStyleSheet(tool_style)
         self.btn_new_group.clicked.connect(self._on_new_group)
         header_layout.addWidget(self.btn_new_group)
 
         self.btn_new_layer = QPushButton("+ Layer")
         self.btn_new_layer.setToolTip("Create a new layer")
-        self.btn_new_layer.setStyleSheet(tool_style)
         self.btn_new_layer.clicked.connect(self._on_new_layer)
         header_layout.addWidget(self.btn_new_layer)
 
         self.btn_delete = QPushButton("Delete")
         self.btn_delete.setToolTip("Delete the selected layer")
-        self.btn_delete.setStyleSheet(StyleHelper.get_destructive_button_style())
         self.btn_delete.setEnabled(False)
         self.btn_delete.clicked.connect(self._on_delete)
         header_layout.addWidget(self.btn_delete)
@@ -136,23 +130,18 @@ class MapLayerPanel(QWidget):
         self._tree.clicked.connect(self._on_item_clicked)
         self._tree.doubleClicked.connect(self._on_item_double_clicked)
 
-        self._apply_tree_style()
         main_layout.addWidget(self._tree, 1)  # stretch=1 to fill space
 
         # ── Opacity Bar ───────────────────────────────────────────────
         opacity_layout = QHBoxLayout()
         opacity_layout.setSpacing(4)
 
-        opacity_label = QLabel("Opacity:")
-        opacity_label.setStyleSheet(
-            f"color: {self._theme_token('text_dim')}; font-size: 9pt;"
-        )
-        opacity_layout.addWidget(opacity_label)
+        self._opacity_label = QLabel("Opacity:")
+        opacity_layout.addWidget(self._opacity_label)
 
         self._opacity_slider = QSlider(Qt.Orientation.Horizontal)
         self._opacity_slider.setRange(0, 100)
         self._opacity_slider.setValue(100)
-        self._opacity_slider.setStyleSheet(StyleHelper.get_slider_style())
         self._opacity_slider.setToolTip("Layer opacity (0–100 %)")
         self._opacity_slider.valueChanged.connect(self._on_opacity_changed)
         opacity_layout.addWidget(self._opacity_slider, 1)
@@ -162,9 +151,6 @@ class MapLayerPanel(QWidget):
         self._opacity_value_label.setAlignment(
             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
         )
-        self._opacity_value_label.setStyleSheet(
-            f"color: {self._theme_token('text_main')}; font-size: 9pt;"
-        )
         opacity_layout.addWidget(self._opacity_value_label)
 
         main_layout.addLayout(opacity_layout)
@@ -173,6 +159,9 @@ class MapLayerPanel(QWidget):
         self._model: Optional["MapLayerModel"] = None
         self._selected_node_id: Optional[str] = None
         self._slider_updating = False  # guard against feedback loops
+
+        # Apply all theme-aware styles
+        self.refresh_styles()
 
     # ------------------------------------------------------------------
     # Public API
@@ -223,6 +212,13 @@ class MapLayerPanel(QWidget):
         self.btn_delete.setStyleSheet(StyleHelper.get_destructive_button_style())
         self._title_label.setStyleSheet(StyleHelper.get_panel_header_style())
         self._opacity_slider.setStyleSheet(StyleHelper.get_slider_style())
+        dim_style = (
+            f"color: {self._theme_token('text_dim')}; font-size: 9pt;"
+        )
+        self._opacity_label.setStyleSheet(dim_style)
+        self._opacity_value_label.setStyleSheet(
+            f"color: {self._theme_token('text_main')}; font-size: 9pt;"
+        )
         self._apply_tree_style()
 
     # ------------------------------------------------------------------
@@ -320,7 +316,7 @@ class MapLayerPanel(QWidget):
     # ------------------------------------------------------------------
 
     @Slot()
-    def _show_context_menu(self, pos) -> None:
+    def _show_context_menu(self, pos: QPoint) -> None:
         """Show a right-click context menu for the layer tree.
 
         Args:
