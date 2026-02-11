@@ -281,6 +281,10 @@ class TestZSorting:
 
         model.move_layer(group_b_index, root_index, 0)
 
+        # Verify tree structure was modified correctly
+        assert model.root.children[0].id == "group-b"
+        assert model.root.children[1].id == "group-a"
+
         z = model.compute_z_order()
         # Now: group-b comes first
         assert z["group-b"] < z["regions-1"]

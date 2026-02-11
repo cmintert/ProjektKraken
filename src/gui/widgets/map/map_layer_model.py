@@ -742,21 +742,27 @@ class MapLayerModel(QAbstractItemModel):
         self,
         node: MapLayerNode,
         result: Dict[str, float],
-    ) -> None:
+        counter: Optional[float] = None,
+    ) -> float:
         """Depth-first Z assignment.
 
         Args:
             node: Current node.
             result: Accumulator dict.
+            counter: Current Z counter value. ``None`` means start fresh.
+
+        Returns:
+            float: Updated counter after processing this subtree.
 
         """
-        if node is self._root:
-            self._z_counter = MAP_LAYER_Z_BASE
-        else:
-            result[node.id] = self._z_counter
-            self._z_counter += MAP_LAYER_Z_SPACING
+        if counter is None:
+            counter = MAP_LAYER_Z_BASE
+        if node is not self._root:
+            result[node.id] = counter
+            counter += MAP_LAYER_Z_SPACING
         for child in node.children:
-            self._assign_z(child, result)
+            counter = self._assign_z(child, result, counter)
+        return counter
 
     def _snapshot_state(
         self,
