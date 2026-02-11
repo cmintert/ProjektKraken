@@ -10,11 +10,12 @@ database service instance.
 """
 
 import dataclasses
+import json
 import logging
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from src.commands.base_command import BaseCommand, CommandResult
-from src.core.map import Map
+from src.core.map import Map, MapLayerNode
 from src.core.marker import MapFeature, Marker
 from src.services.db_service import DatabaseService
 
@@ -867,3 +868,416 @@ class DeleteKeyframeCommand(BaseCommand):
     def from_dict(cls, data: dict) -> "DeleteKeyframeCommand":
         """Deserialize command from dictionary."""
         return cls(data["map_id"], data["marker_id"], data["t"])
+
+
+# --------------------------------------------------------------------------
+# Layer Commands (undo/redo for layer operations)
+# --------------------------------------------------------------------------
+
+
+class SetLayerVisibilityCommand(BaseCommand):
+    """Command to toggle a layer node's visibility (undoable).
+
+    Persists the layer tree to the map's attributes after the change.
+    """
+
+    def __init__(
+        self,
+        map_id: str,
+        node_id: str,
+        visible: bool,
+    ) -> None:
+        """Initialise the command.
+
+        Args:
+            map_id: The map whose layer tree is being modified.
+            node_id: ID of the layer node to toggle.
+            visible: New visibility state.
+
+        """
+        super().__init__()
+        self.map_id = map_id
+        self.node_id = node_id
+        self.visible = visible
+        self._previous_visible: Optional[bool] = None
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Execute the visibility change and persist.
+
+        Args:
+            db_service: The database service.
+
+        Returns:
+            CommandResult: Result of the operation.
+
+        """
+        try:
+            map_obj = db_service.map_repo.get_map(self.map_id)
+            if not map_obj or not map_obj.layers:
+                return CommandResult(
+                    success=False,
+                    message="Map or layers not found.",
+                    command_name="SetLayerVisibilityCommand",
+                )
+
+            node = self._find_node(map_obj.layers, self.node_id)
+            if not node:
+                return CommandResult(
+                    success=False,
+                    message=f"Layer node {self.node_id} not found.",
+                    command_name="SetLayerVisibilityCommand",
+                )
+
+            self._previous_visible = node.visible
+            node.visible = self.visible
+
+            # Persist
+            attrs = dict(map_obj.attributes) if map_obj.attributes else {}
+            attrs["layers"] = map_obj.layers.to_dict()
+            map_obj.attributes = attrs
+            db_service.map_repo.insert_map(map_obj)
+
+            self._is_executed = True
+            return CommandResult(
+                success=True,
+                message=f"Layer visibility set to {self.visible}.",
+                command_name="SetLayerVisibilityCommand",
+            )
+        except Exception as e:
+            logger.error(f"SetLayerVisibilityCommand failed: {e}")
+            return CommandResult(
+                success=False,
+                message=str(e),
+                command_name="SetLayerVisibilityCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Revert the visibility change.
+
+        Args:
+            db_service: The database service.
+
+        """
+        if self._is_executed and self._previous_visible is not None:
+            map_obj = db_service.map_repo.get_map(self.map_id)
+            if map_obj and map_obj.layers:
+                node = self._find_node(map_obj.layers, self.node_id)
+                if node:
+                    node.visible = self._previous_visible
+                    attrs = dict(map_obj.attributes) if map_obj.attributes else {}
+                    attrs["layers"] = map_obj.layers.to_dict()
+                    map_obj.attributes = attrs
+                    db_service.map_repo.insert_map(map_obj)
+            self._is_executed = False
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary."""
+        return {
+            "map_id": self.map_id,
+            "node_id": self.node_id,
+            "visible": self.visible,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "SetLayerVisibilityCommand":
+        """Deserialize command from dictionary."""
+        return cls(data["map_id"], data["node_id"], data["visible"])
+
+    @staticmethod
+    def _find_node(
+        root: MapLayerNode, node_id: str
+    ) -> Optional[MapLayerNode]:
+        """Walk the tree to find a node by ID.
+
+        Args:
+            root: Root of the layer tree.
+            node_id: Target node ID.
+
+        Returns:
+            Optional[MapLayerNode]: The matching node or ``None``.
+
+        """
+        if root.id == node_id:
+            return root
+        for child in root.children:
+            found = SetLayerVisibilityCommand._find_node(child, node_id)
+            if found:
+                return found
+        return None
+
+
+class MoveLayerCommand(BaseCommand):
+    """Command to move a layer to a new position (undoable).
+
+    Persists the layer tree to the map's attributes after the change.
+    """
+
+    def __init__(
+        self,
+        map_id: str,
+        node_id: str,
+        new_parent_id: str,
+        new_row: int,
+    ) -> None:
+        """Initialise the command.
+
+        Args:
+            map_id: The map whose layer tree is being modified.
+            node_id: ID of the layer node to move.
+            new_parent_id: ID of the new parent group.
+            new_row: Target row under the new parent.
+
+        """
+        super().__init__()
+        self.map_id = map_id
+        self.node_id = node_id
+        self.new_parent_id = new_parent_id
+        self.new_row = new_row
+        self._old_parent_id: Optional[str] = None
+        self._old_row: Optional[int] = None
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Execute the move and persist.
+
+        Args:
+            db_service: The database service.
+
+        Returns:
+            CommandResult: Result of the operation.
+
+        """
+        try:
+            map_obj = db_service.map_repo.get_map(self.map_id)
+            if not map_obj or not map_obj.layers:
+                return CommandResult(
+                    success=False,
+                    message="Map or layers not found.",
+                    command_name="MoveLayerCommand",
+                )
+
+            node = SetLayerVisibilityCommand._find_node(
+                map_obj.layers, self.node_id
+            )
+            if not node:
+                return CommandResult(
+                    success=False,
+                    message=f"Layer node {self.node_id} not found.",
+                    command_name="MoveLayerCommand",
+                )
+
+            # Find current parent
+            old_parent = self._find_parent(map_obj.layers, node)
+            if not old_parent:
+                return CommandResult(
+                    success=False,
+                    message="Cannot find current parent.",
+                    command_name="MoveLayerCommand",
+                )
+
+            self._old_parent_id = old_parent.id
+            self._old_row = old_parent.children.index(node)
+
+            # Remove from old parent
+            old_parent.children.remove(node)
+
+            # Find new parent and insert
+            new_parent = SetLayerVisibilityCommand._find_node(
+                map_obj.layers, self.new_parent_id
+            )
+            if not new_parent:
+                # Rollback
+                old_parent.children.insert(self._old_row, node)
+                return CommandResult(
+                    success=False,
+                    message=f"New parent {self.new_parent_id} not found.",
+                    command_name="MoveLayerCommand",
+                )
+
+            insert_row = min(self.new_row, len(new_parent.children))
+            new_parent.children.insert(insert_row, node)
+
+            # Persist
+            attrs = dict(map_obj.attributes) if map_obj.attributes else {}
+            attrs["layers"] = map_obj.layers.to_dict()
+            map_obj.attributes = attrs
+            db_service.map_repo.insert_map(map_obj)
+
+            self._is_executed = True
+            return CommandResult(
+                success=True,
+                message="Layer moved.",
+                command_name="MoveLayerCommand",
+            )
+        except Exception as e:
+            logger.error(f"MoveLayerCommand failed: {e}")
+            return CommandResult(
+                success=False,
+                message=str(e),
+                command_name="MoveLayerCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Revert the move.
+
+        Args:
+            db_service: The database service.
+
+        """
+        if (
+            self._is_executed
+            and self._old_parent_id is not None
+            and self._old_row is not None
+        ):
+            map_obj = db_service.map_repo.get_map(self.map_id)
+            if map_obj and map_obj.layers:
+                node = SetLayerVisibilityCommand._find_node(
+                    map_obj.layers, self.node_id
+                )
+                if node:
+                    # Remove from current position
+                    cur_parent = self._find_parent(map_obj.layers, node)
+                    if cur_parent:
+                        cur_parent.children.remove(node)
+                    # Insert back at old position
+                    old_parent = SetLayerVisibilityCommand._find_node(
+                        map_obj.layers, self._old_parent_id
+                    )
+                    if old_parent:
+                        row = min(self._old_row, len(old_parent.children))
+                        old_parent.children.insert(row, node)
+
+                    attrs = dict(map_obj.attributes) if map_obj.attributes else {}
+                    attrs["layers"] = map_obj.layers.to_dict()
+                    map_obj.attributes = attrs
+                    db_service.map_repo.insert_map(map_obj)
+            self._is_executed = False
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary."""
+        return {
+            "map_id": self.map_id,
+            "node_id": self.node_id,
+            "new_parent_id": self.new_parent_id,
+            "new_row": self.new_row,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "MoveLayerCommand":
+        """Deserialize command from dictionary."""
+        return cls(
+            data["map_id"], data["node_id"],
+            data["new_parent_id"], data["new_row"],
+        )
+
+    @staticmethod
+    def _find_parent(
+        root: MapLayerNode, node: MapLayerNode
+    ) -> Optional[MapLayerNode]:
+        """Walk the tree to find the parent of a node.
+
+        Args:
+            root: Root of the layer tree.
+            node: Target child node.
+
+        Returns:
+            Optional[MapLayerNode]: The parent or ``None``.
+
+        """
+        for child in root.children:
+            if child is node or child.id == node.id:
+                return root
+            found = MoveLayerCommand._find_parent(child, node)
+            if found:
+                return found
+        return None
+
+
+class SaveLayerTreeCommand(BaseCommand):
+    """Command to persist the entire layer tree to the map's attributes.
+
+    Used when the in-memory tree has been modified (e.g. by auto-registering
+    new markers) and needs to be flushed to the database.
+    """
+
+    def __init__(self, map_id: str, layer_tree_dict: Dict[str, Any]) -> None:
+        """Initialise the command.
+
+        Args:
+            map_id: The map to update.
+            layer_tree_dict: Serialised layer tree (from ``MapLayerNode.to_dict()``).
+
+        """
+        super().__init__()
+        self.map_id = map_id
+        self.layer_tree_dict = layer_tree_dict
+        self._previous_tree_dict: Optional[Dict[str, Any]] = None
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Persist the layer tree.
+
+        Args:
+            db_service: The database service.
+
+        Returns:
+            CommandResult: Result of the operation.
+
+        """
+        try:
+            map_obj = db_service.map_repo.get_map(self.map_id)
+            if not map_obj:
+                return CommandResult(
+                    success=False,
+                    message="Map not found.",
+                    command_name="SaveLayerTreeCommand",
+                )
+
+            attrs = dict(map_obj.attributes) if map_obj.attributes else {}
+            self._previous_tree_dict = attrs.get("layers")
+            attrs["layers"] = self.layer_tree_dict
+            map_obj.attributes = attrs
+            db_service.map_repo.insert_map(map_obj)
+
+            self._is_executed = True
+            return CommandResult(
+                success=True,
+                message="Layer tree saved.",
+                command_name="SaveLayerTreeCommand",
+            )
+        except Exception as e:
+            logger.error(f"SaveLayerTreeCommand failed: {e}")
+            return CommandResult(
+                success=False,
+                message=str(e),
+                command_name="SaveLayerTreeCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Revert to the previous layer tree.
+
+        Args:
+            db_service: The database service.
+
+        """
+        if self._is_executed:
+            map_obj = db_service.map_repo.get_map(self.map_id)
+            if map_obj:
+                attrs = dict(map_obj.attributes) if map_obj.attributes else {}
+                if self._previous_tree_dict is not None:
+                    attrs["layers"] = self._previous_tree_dict
+                else:
+                    attrs.pop("layers", None)
+                map_obj.attributes = attrs
+                db_service.map_repo.insert_map(map_obj)
+            self._is_executed = False
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary."""
+        return {
+            "map_id": self.map_id,
+            "layer_tree_dict": self.layer_tree_dict,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "SaveLayerTreeCommand":
+        """Deserialize command from dictionary."""
+        return cls(data["map_id"], data["layer_tree_dict"])

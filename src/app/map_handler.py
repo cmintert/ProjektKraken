@@ -580,6 +580,9 @@ class MapHandler(QObject):
     def on_markers_ready(self, map_id: str, processed_markers: list) -> None:
         """Handle markers ready signal from DataHandler.
 
+        Restores the persisted layer tree (if any) and auto-registers
+        new markers into the hierarchy.
+
         Args:
             map_id: The map ID these markers belong to.
             processed_markers: List of dicts with marker data.
@@ -593,8 +596,16 @@ class MapHandler(QObject):
         self.window.map_widget.clear_markers()
         self._marker_object_to_id.clear()  # Reset mapping
 
+        # Restore persisted layer tree from the selected map object
+        maps = self.window.map_widget._maps_data
+        selected_map = next((m for m in maps if m.id == map_id), None)
+        if selected_map and selected_map.layers is not None:
+            self.window.map_widget._build_layer_model(selected_map.layers)
+        else:
+            self.window.map_widget._build_layer_model()
+
         for marker_data in processed_markers:
-            # Add marker to map
+            # Add marker to map (also auto-registers a layer node)
             self.window.map_widget.add_marker(
                 marker_id=marker_data["object_id"],
                 object_type=marker_data["object_type"],

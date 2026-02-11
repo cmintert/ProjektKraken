@@ -59,6 +59,11 @@ class MapLayerModel(QAbstractItemModel):
     COL_NAME = 0
     COLUMN_COUNT = 1
 
+    # Custom roles for layer-specific data
+    LayerTypeRole = Qt.ItemDataRole.UserRole + 1
+    OpacityRole = Qt.ItemDataRole.UserRole + 2
+    NodeIdRole = Qt.ItemDataRole.UserRole + 3
+
     def __init__(
         self,
         root: Optional[MapLayerNode] = None,
@@ -76,6 +81,9 @@ class MapLayerModel(QAbstractItemModel):
         self._root: MapLayerNode = root or MapLayerNode(
             name="Root", layer_type=MAP_LAYER_TYPE_GROUP
         )
+        self._zoom_cache: Dict[str, bool] = {}
+        self._last_zoom: Optional[float] = None
+        self._last_time: Optional[float] = None
 
     # ------------------------------------------------------------------
     # Public helpers
@@ -230,6 +238,12 @@ class MapLayerModel(QAbstractItemModel):
                 Qt.CheckState.Checked if node.visible
                 else Qt.CheckState.Unchecked
             )
+        if role == self.LayerTypeRole:
+            return node.layer_type
+        if role == self.OpacityRole:
+            return node.opacity
+        if role == self.NodeIdRole:
+            return node.id
         return None
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
@@ -425,6 +439,7 @@ class MapLayerModel(QAbstractItemModel):
                     self._emit_subtree_visibility(sibling)
 
         node.visible = visible
+        self.invalidate_cache()
         idx = self.index_from_node(node)
         self.dataChanged.emit(idx, idx, [Qt.ItemDataRole.CheckStateRole])
         self._emit_subtree_visibility(node)
@@ -438,6 +453,7 @@ class MapLayerModel(QAbstractItemModel):
 
         """
         node.opacity = max(0.0, min(1.0, opacity))
+        self.invalidate_cache()
         self._emit_subtree_opacity(node)
 
     def add_layer(
@@ -462,6 +478,7 @@ class MapLayerModel(QAbstractItemModel):
         self.beginInsertRows(parent_index, insert_row, insert_row)
         parent_node.children.insert(insert_row, node)
         self.endInsertRows()
+        self.invalidate_cache()
         self.layer_order_changed.emit()
         return self.index(insert_row, 0, parent_index)
 
@@ -486,6 +503,7 @@ class MapLayerModel(QAbstractItemModel):
         self.beginRemoveRows(parent_index, row, row)
         parent.children.pop(row)
         self.endRemoveRows()
+        self.invalidate_cache()
         self.layer_order_changed.emit()
         return True
 
@@ -525,6 +543,7 @@ class MapLayerModel(QAbstractItemModel):
         new_parent.children.insert(insert_row, node)
         self.endInsertRows()
 
+        self.invalidate_cache()
         self.layer_order_changed.emit()
         return True
 
@@ -610,6 +629,75 @@ class MapLayerModel(QAbstractItemModel):
         if parent is not None and parent is not self._root:
             return self.visible_at_zoom(parent, zoom_level)
         return True
+
+    def visible_at_time(
+        self, node: MapLayerNode, current_time: float
+    ) -> bool:
+        """Check whether *node* should be visible at the given lore time.
+
+        A node is time-visible if:
+        - It has no ``start_date`` and no ``end_date`` (always visible), or
+        - ``start_date <= current_time`` and ``current_time <= end_date``.
+
+        Ancestor visibility is also checked.
+
+        Args:
+            node: The layer node.
+            current_time: Current playhead time in lore-date units.
+
+        Returns:
+            bool: ``True`` if the node should be rendered at this time.
+
+        """
+        if not node.visible:
+            return False
+        if node.start_date is not None and current_time < node.start_date:
+            return False
+        if node.end_date is not None and current_time > node.end_date:
+            return False
+        parent = self._find_parent(node)
+        if parent is not None and parent is not self._root:
+            return self.visible_at_time(parent, current_time)
+        return True
+
+    def compute_visibility(
+        self,
+        zoom_level: float,
+        current_time: Optional[float] = None,
+    ) -> Dict[str, bool]:
+        """Compute effective visibility for all leaf nodes.
+
+        Uses caching: if *zoom_level* and *current_time* haven't changed
+        since the last call, the cached result is returned immediately.
+
+        Args:
+            zoom_level: Current view zoom level.
+            current_time: Current playhead time (``None`` = ignore temporal).
+
+        Returns:
+            Dict[str, bool]: Mapping of node id → effective visibility.
+
+        """
+        if (
+            zoom_level == self._last_zoom
+            and current_time == self._last_time
+            and self._zoom_cache
+        ):
+            return self._zoom_cache
+
+        self._last_zoom = zoom_level
+        self._last_time = current_time
+        self._zoom_cache = {}
+        self._compute_vis_recursive(
+            self._root, zoom_level, current_time, self._zoom_cache
+        )
+        return self._zoom_cache
+
+    def invalidate_cache(self) -> None:
+        """Force the visibility cache to be recomputed on next query."""
+        self._zoom_cache = {}
+        self._last_zoom = None
+        self._last_time = None
 
     # ------------------------------------------------------------------
     # Private helpers
@@ -803,3 +891,27 @@ class MapLayerModel(QAbstractItemModel):
             )
         for child in node.children:
             self._restore_state(child, preset)
+
+    def _compute_vis_recursive(
+        self,
+        node: MapLayerNode,
+        zoom_level: float,
+        current_time: Optional[float],
+        result: Dict[str, bool],
+    ) -> None:
+        """Walk the tree and collect visibility for each node.
+
+        Args:
+            node: Current node.
+            zoom_level: Current view zoom level.
+            current_time: Current playhead time (or ``None``).
+            result: Accumulator dict.
+
+        """
+        if node is not self._root:
+            vis = self.visible_at_zoom(node, zoom_level)
+            if vis and current_time is not None:
+                vis = self.visible_at_time(node, current_time)
+            result[node.id] = vis
+        for child in node.children:
+            self._compute_vis_recursive(child, zoom_level, current_time, result)

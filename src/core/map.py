@@ -37,6 +37,8 @@ class MapLayerNode:
         max_zoom: Maximum zoom level at which this layer is visible.
         mutually_exclusive: If ``True``, only one child of this group
             may be visible at a time (radio-button behaviour).
+        start_date: Optional lore date when this layer becomes visible.
+        end_date: Optional lore date when this layer stops being visible.
 
     """
 
@@ -50,6 +52,8 @@ class MapLayerNode:
     min_zoom: float = MAP_LAYER_DEFAULT_MIN_ZOOM
     max_zoom: float = MAP_LAYER_DEFAULT_MAX_ZOOM
     mutually_exclusive: bool = False
+    start_date: Optional[float] = None
+    end_date: Optional[float] = None
 
     # --- helpers -----------------------------------------------------------
 
@@ -98,6 +102,8 @@ class MapLayerNode:
             "min_zoom": self.min_zoom,
             "max_zoom": self.max_zoom if self.max_zoom != float("inf") else None,
             "mutually_exclusive": self.mutually_exclusive,
+            "start_date": self.start_date,
+            "end_date": self.end_date,
         }
 
     @classmethod
@@ -130,6 +136,8 @@ class MapLayerNode:
             min_zoom=float(data.get("min_zoom", MAP_LAYER_DEFAULT_MIN_ZOOM)),
             max_zoom=max_zoom,
             mutually_exclusive=data.get("mutually_exclusive", False),
+            start_date=data.get("start_date"),
+            end_date=data.get("end_date"),
         )
 
 

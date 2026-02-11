@@ -19,11 +19,17 @@ class MapRepository(BaseRepository):
 
     Provides specialized methods for creating, reading, updating, and deleting maps and
     markers from the database.
+
+    The hierarchical layer tree is persisted inside the map's ``attributes``
+    JSON column under the ``"layers"`` key.
     """
 
     # Map operations
     def insert_map(self, map_obj: Map) -> None:
         """Insert a new map or update an existing one (Upsert).
+
+        The layer tree (if present) is serialised into the ``attributes``
+        JSON column under ``"layers"`` so it survives round-trips.
 
         Args:
             map_obj: The map domain object to persist.
@@ -32,6 +38,13 @@ class MapRepository(BaseRepository):
             sqlite3.Error: If the database operation fails.
 
         """
+        # Ensure layers are embedded in attributes for persistence
+        attrs = dict(map_obj.attributes) if map_obj.attributes else {}
+        if map_obj.layers is not None:
+            attrs["layers"] = map_obj.layers.to_dict()
+        elif "layers" not in attrs:
+            pass  # no layers, nothing to store
+
         sql = """
             INSERT INTO maps (id, name, image_path, description,
                               attributes, created_at, modified_at)
@@ -51,7 +64,7 @@ class MapRepository(BaseRepository):
                     map_obj.name,
                     map_obj.image_path,
                     map_obj.description,
-                    self._serialize_json(map_obj.attributes),
+                    self._serialize_json(attrs),
                     map_obj.created_at,
                     map_obj.modified_at,
                 ),
@@ -59,6 +72,9 @@ class MapRepository(BaseRepository):
 
     def get_map(self, map_id: str) -> Optional[Map]:
         """Retrieve a single map by its UUID.
+
+        Automatically reconstructs the ``layers`` tree from the
+        ``attributes`` JSON if present.
 
         Args:
             map_id: The unique identifier of the map.
@@ -79,14 +95,21 @@ class MapRepository(BaseRepository):
             data = dict(row)
             if data.get("attributes"):
                 data["attributes"] = self._deserialize_json(data["attributes"])
-            return Map.from_dict(data)
+            map_obj = Map.from_dict(data)
+            # Reconstruct layers from attributes if present
+            layers_data = (map_obj.attributes or {}).get("layers")
+            if layers_data and map_obj.layers is None:
+                from src.core.map import MapLayerNode
+
+                map_obj.layers = MapLayerNode.from_dict(layers_data)
+            return map_obj
         return None
 
     def get_all_maps(self) -> List[Map]:
         """Retrieve all maps from the database.
 
         Returns:
-            List of all Map objects in the database.
+            List of all Map objects in the database, with layers reconstructed.
 
         """
         sql = "SELECT * FROM maps ORDER BY name ASC"
@@ -100,7 +123,13 @@ class MapRepository(BaseRepository):
             data = dict(row)
             if data.get("attributes"):
                 data["attributes"] = self._deserialize_json(data["attributes"])
-            maps.append(Map.from_dict(data))
+            map_obj = Map.from_dict(data)
+            layers_data = (map_obj.attributes or {}).get("layers")
+            if layers_data and map_obj.layers is None:
+                from src.core.map import MapLayerNode
+
+                map_obj.layers = MapLayerNode.from_dict(layers_data)
+            maps.append(map_obj)
         return maps
 
     def delete_map(self, map_id: str) -> None:

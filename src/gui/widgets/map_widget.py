@@ -14,7 +14,7 @@ import logging
 import os
 from typing import Iterator, List, Optional, Tuple
 
-from PySide6.QtCore import QSettings, QSize, Qt, Signal, Slot
+from PySide6.QtCore import QModelIndex, QSettings, QSize, Qt, Signal, Slot
 from PySide6.QtGui import QKeyEvent, QPaintEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QComboBox,
@@ -23,10 +23,19 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QSizePolicy,
+    QSplitter,
     QToolBar,
     QVBoxLayout,
     QWidget,
 )
+
+from src.app.constants import (
+    MAP_LAYER_TYPE_GROUP,
+    MAP_LAYER_TYPE_MARKER,
+    MAP_LAYER_TYPE_PATH,
+    MAP_LAYER_TYPE_REGION,
+)
+from src.core.map import MapLayerNode
 
 from src.core.paths import get_resource_path
 from src.core.theme_manager import ThemeManager
@@ -34,6 +43,8 @@ from src.core.trajectory import KEYFRAME_TIME_EPSILON, interpolate_position
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.map.calibration_distance_dialog import CalibrationDistanceDialog
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
+from src.gui.widgets.map.map_layer_model import MapLayerModel
+from src.gui.widgets.map.map_layer_panel import MapLayerPanel
 from src.gui.widgets.map.map_scale_dialog import MapScaleDialog
 from src.gui.widgets.map.marker_item import MarkerItem
 
@@ -271,8 +282,23 @@ class MapWidget(QWidget):
         self._apply_mode_indicator_style("normal")
         self.toolbar.addWidget(self.mode_indicator)
 
-        # Add View (after toolbar)
-        layout.addWidget(self.view)
+        # Add View (after toolbar) — wrapped in a splitter with the layer panel
+        self._splitter = QSplitter(Qt.Orientation.Horizontal, self)
+
+        self._splitter.addWidget(self.view)
+
+        # Layer Panel (right side)
+        self.layer_panel = MapLayerPanel(self)
+        self._splitter.addWidget(self.layer_panel)
+
+        # Default proportions: 80% map, 20% layer panel
+        self._splitter.setStretchFactor(0, 4)
+        self._splitter.setStretchFactor(1, 1)
+
+        layout.addWidget(self._splitter)
+
+        # Layer model (created per-map; None until markers load)
+        self._layer_model: Optional[MapLayerModel] = None
 
         # Overlay Banner (Child of view, positioned at top)
         self.overlay_banner = QLabel(self.view)
@@ -331,6 +357,9 @@ class MapWidget(QWidget):
         self.view.feature_geometry_changed.connect(self.feature_geometry_changed.emit)
         self.view.feature_geometry_changed.connect(self._on_geometry_changed)
         self.view.scene.selectionChanged.connect(self._on_selection_changed)
+        # Bi-directional selection: marker click → highlight in layer panel
+        self.view.marker_clicked.connect(self._on_marker_clicked_select_layer)
+        self.layer_panel.layer_selected.connect(self._on_layer_panel_selected)
 
         self._maps_data = []  # List of maps for selector
         self._playhead_time: float = 0.0  # Current playhead time from Timeline
@@ -762,6 +791,165 @@ class MapWidget(QWidget):
         """
         return self.view.load_map(image_path)
 
+    # ------------------------------------------------------------------
+    # Layer management
+    # ------------------------------------------------------------------
+
+    def _build_layer_model(
+        self, root: Optional[MapLayerNode] = None
+    ) -> MapLayerModel:
+        """Create (or replace) the layer model and wire it to the view.
+
+        Args:
+            root: An existing layer tree root.  If ``None`` a default
+                root with a "Default" group is created.
+
+        Returns:
+            MapLayerModel: The newly created model.
+
+        """
+        if root is None:
+            root = MapLayerNode(
+                name="Root",
+                layer_type=MAP_LAYER_TYPE_GROUP,
+                children=[
+                    MapLayerNode(name="Default", layer_type=MAP_LAYER_TYPE_GROUP),
+                ],
+            )
+        model = MapLayerModel(root=root)
+        self._layer_model = model
+        self.view.set_layer_model(model)
+        self.layer_panel.set_model(model)
+        return model
+
+    def _ensure_layer_model(self) -> MapLayerModel:
+        """Return the current layer model, creating one if needed.
+
+        Returns:
+            MapLayerModel: The active layer model.
+
+        """
+        if self._layer_model is None:
+            return self._build_layer_model()
+        return self._layer_model
+
+    def _default_group(self) -> MapLayerNode:
+        """Return the "Default" group in the layer tree, creating it if needed.
+
+        Returns:
+            MapLayerNode: The default group node.
+
+        """
+        model = self._ensure_layer_model()
+        # Try to find an existing "Default" group
+        for child in model.root.children:
+            if child.layer_type == MAP_LAYER_TYPE_GROUP and child.name == "Default":
+                return child
+        # Create one
+        node = MapLayerNode(name="Default", layer_type=MAP_LAYER_TYPE_GROUP)
+        root_idx = model.index_from_node(model.root)
+        model.add_layer(root_idx, node)
+        return node
+
+    def _feature_type_to_layer_type(self, feature_type: str) -> str:
+        """Map a feature_type string to a layer_type constant.
+
+        Args:
+            feature_type: 'point', 'path', or 'region'.
+
+        Returns:
+            str: The corresponding MAP_LAYER_TYPE_* constant.
+
+        """
+        if feature_type == "path":
+            return MAP_LAYER_TYPE_PATH
+        if feature_type == "region":
+            return MAP_LAYER_TYPE_REGION
+        return MAP_LAYER_TYPE_MARKER
+
+    def _register_layer_node(
+        self,
+        marker_id: str,
+        label: str,
+        feature_type: str = "point",
+    ) -> None:
+        """Register a new feature as a layer node under the Default group.
+
+        If a node with this ID already exists in the tree, it is skipped.
+
+        Args:
+            marker_id: Unique identifier (same as graphics item key).
+            label: Display name for the layer.
+            feature_type: 'point', 'path', or 'region'.
+
+        """
+        model = self._ensure_layer_model()
+        if model.find_node_by_id(marker_id) is not None:
+            return  # Already tracked
+
+        layer_type = self._feature_type_to_layer_type(feature_type)
+        node = MapLayerNode(name=label, layer_type=layer_type, id=marker_id)
+        default_group = self._default_group()
+        parent_idx = model.index_from_node(default_group)
+        model.add_layer(parent_idx, node)
+
+    def _unregister_layer_node(self, marker_id: str) -> None:
+        """Remove a layer node when the corresponding feature is deleted.
+
+        Prevents "zombie nodes" (MEDIUM-7).
+
+        Args:
+            marker_id: ID of the node to remove.
+
+        """
+        if self._layer_model is None:
+            return
+        node = self._layer_model.find_node_by_id(marker_id)
+        if node is None:
+            return
+        idx = self._layer_model.index_from_node(node)
+        self._layer_model.remove_layer(idx)
+
+    @Slot(str, str)
+    def _on_marker_clicked_select_layer(
+        self, marker_id: str, object_type: str
+    ) -> None:
+        """Bi-directional selection: marker click → highlight in layer panel.
+
+        Args:
+            marker_id: The clicked marker's ID.
+            object_type: 'entity' or 'event' (unused here).
+
+        """
+        self.layer_panel.select_node(marker_id)
+
+    @Slot(str)
+    def _on_layer_panel_selected(self, node_id: str) -> None:
+        """Bi-directional selection: layer panel click → select on map.
+
+        Args:
+            node_id: The clicked layer node's ID.
+
+        """
+        # Select the graphics item on the map
+        item = self.view._find_graphics_item(node_id)
+        if item is not None:
+            self.view.scene.clearSelection()
+            item.setSelected(True)
+
+    def get_layer_model(self) -> Optional[MapLayerModel]:
+        """Return the current layer model (if any).
+
+        Returns:
+            Optional[MapLayerModel]: The active layer model.
+
+        """
+        return self._layer_model
+
+    # ------------------------------------------------------------------
+    # Marker CRUD (with layer integration)
+    # ------------------------------------------------------------------
+
     def add_marker(
         self,
         marker_id: str,
@@ -778,6 +966,8 @@ class MapWidget(QWidget):
         style: Optional[dict] = None,
     ) -> None:
         """Adds a marker or feature to the map.
+
+        Also auto-registers a corresponding layer node (HIGH-6).
 
         Args:
             marker_id: Unique identifier for the marker.
@@ -798,6 +988,8 @@ class MapWidget(QWidget):
             marker_id, object_type, label, x, y, icon, color, description,
             lore_date, feature_type, geometry, style,
         )
+        # Auto-register in layer hierarchy
+        self._register_layer_node(marker_id, label, feature_type)
 
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
         """Updates a marker's position.
@@ -811,17 +1003,20 @@ class MapWidget(QWidget):
         self.view.update_marker_position(marker_id, x, y)
 
     def remove_marker(self, marker_id: str) -> None:
-        """Removes a marker from the map.
+        """Removes a marker from the map and its layer node (MEDIUM-7).
 
         Args:
             marker_id: ID of the marker to remove.
 
         """
+        self._unregister_layer_node(marker_id)
         self.view.remove_marker(marker_id)
 
     def clear_markers(self) -> None:
-        """Removes all markers from the map."""
+        """Removes all markers from the map and resets the layer model."""
         self.view.clear_markers()
+        # Reset layer model — will be recreated when new markers load
+        self._layer_model = None
 
     @Slot()
     def _configure_map_width(self) -> None:
