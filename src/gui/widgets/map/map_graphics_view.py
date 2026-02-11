@@ -70,6 +70,10 @@ from src.app.constants import (
     MAP_EDIT_DASH_PATTERN,
     MAP_EDIT_STROKE_COLOR,
     MAP_EDIT_STROKE_WIDTH,
+    MAP_LAYER_Z_MAP_BG,
+    MAP_LAYER_Z_MARKERS,
+    MAP_LAYER_Z_TRAJECTORIES,
+    MAP_LAYER_Z_UI_OVERLAY,
     MAP_MIDPOINT_GHOST_OPACITY,
     MAP_MIDPOINT_HANDLE_BORDER_COLOR,
     MAP_MIDPOINT_HANDLE_COLOR,
@@ -98,11 +102,11 @@ from src.gui.widgets.map.snapping_manager import SnapType, SnappingManager
 
 logger = logging.getLogger(__name__)
 
-# Layer Z-Values
-LAYER_MAP_BG = 0
-LAYER_TRAJECTORIES = 5
-LAYER_MARKERS = 10
-LAYER_UI_OVERLAY = 100
+# Layer Z-Values (backward-compatible aliases for constants)
+LAYER_MAP_BG = MAP_LAYER_Z_MAP_BG
+LAYER_TRAJECTORIES = MAP_LAYER_Z_TRAJECTORIES
+LAYER_MARKERS = MAP_LAYER_Z_MARKERS
+LAYER_UI_OVERLAY = MAP_LAYER_Z_UI_OVERLAY
 
 # Colors
 KEYFRAME_COLOR_DEFAULT = "#f1c40f"  # Yellow

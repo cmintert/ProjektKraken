@@ -172,3 +172,36 @@ MAP_DEFAULT_WIDTH_METERS = 1_000_000.0  # 1000 km
 
 # Zoom factor for mouse wheel
 MAP_ZOOM_IN_FACTOR = 1.25
+
+# ---------------------------------------------------------------------------
+# Map Layer Z-Value Constants
+# ---------------------------------------------------------------------------
+
+# Static Z-values for layer ordering in the graphics scene
+MAP_LAYER_Z_MAP_BG = 0
+MAP_LAYER_Z_TRAJECTORIES = 5
+MAP_LAYER_Z_FEATURES = 8  # paths / regions
+MAP_LAYER_Z_MARKERS = 10
+MAP_LAYER_Z_UI_OVERLAY = 100
+
+# ---------------------------------------------------------------------------
+# Hierarchical Layer System Constants
+# ---------------------------------------------------------------------------
+
+# Default layer opacity (fully opaque)
+MAP_LAYER_DEFAULT_OPACITY = 1.0
+
+# Default zoom thresholds for scale-dependent visibility
+MAP_LAYER_DEFAULT_MIN_ZOOM = 0.0  # visible at all zoom-out levels
+MAP_LAYER_DEFAULT_MAX_ZOOM = float("inf")  # visible at all zoom-in levels
+
+# Layer node type discriminators
+MAP_LAYER_TYPE_GROUP = "group"
+MAP_LAYER_TYPE_MARKER = "marker"
+MAP_LAYER_TYPE_PATH = "path"
+MAP_LAYER_TYPE_REGION = "region"
+
+# Z-index spacing between dynamically ordered layers
+MAP_LAYER_Z_SPACING = 1.0
+# Base Z-value for dynamic layer ordering (above map bg, below UI overlay)
+MAP_LAYER_Z_BASE = 1.0
