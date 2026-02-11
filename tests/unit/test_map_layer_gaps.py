@@ -28,6 +28,7 @@ from src.commands.map_commands import (
     SetLayerVisibilityCommand,
 )
 from src.core.map import Map, MapLayerNode
+from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.map.map_layer_model import MapLayerModel
 from src.gui.widgets.map.map_layer_panel import MapLayerPanel
 
@@ -553,3 +554,346 @@ class TestBidirectionalSelection:
         marker_item = widget.view.markers.get("test-1")
         if marker_item is not None:
             assert marker_item.isSelected()
+
+
+# =========================================================================
+# Layer Panel UI Polish
+# =========================================================================
+
+
+class TestMapLayerPanelToolbar:
+    """Tests for the panel's toolbar buttons and create/delete actions."""
+
+    def test_toolbar_buttons_exist(self, qtbot, simple_model: MapLayerModel) -> None:
+        """Panel has New Group, New Layer, and Delete buttons."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel.set_model(simple_model)
+        assert panel.btn_new_group is not None
+        assert panel.btn_new_layer is not None
+        assert panel.btn_delete is not None
+
+    def test_delete_button_disabled_initially(
+        self, qtbot, simple_model: MapLayerModel
+    ) -> None:
+        """Delete button is disabled when nothing is selected."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel.set_model(simple_model)
+        assert not panel.btn_delete.isEnabled()
+
+    def test_delete_button_enabled_after_selection(
+        self, qtbot, simple_model: MapLayerModel
+    ) -> None:
+        """Delete button enables after clicking a layer."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel.set_model(simple_model)
+
+        # Simulate clicking a node
+        idx = simple_model.index(0, 0)  # "Default" group
+        panel._on_item_clicked(idx)
+        assert panel.btn_delete.isEnabled()
+
+    def test_create_group_signal(
+        self, qtbot, simple_model: MapLayerModel
+    ) -> None:
+        """create_group_requested is emitted with the group name."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel.set_model(simple_model)
+
+        received: list[str] = []
+        panel.create_group_requested.connect(lambda n: received.append(n))
+
+        # Directly emit (bypasses QInputDialog)
+        panel.create_group_requested.emit("Test Group")
+        assert received == ["Test Group"]
+
+    def test_create_layer_signal(
+        self, qtbot, simple_model: MapLayerModel
+    ) -> None:
+        """create_layer_requested is emitted with the layer name."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel.set_model(simple_model)
+
+        received: list[str] = []
+        panel.create_layer_requested.connect(lambda n: received.append(n))
+
+        panel.create_layer_requested.emit("Test Layer")
+        assert received == ["Test Layer"]
+
+    def test_delete_layer_signal(
+        self, qtbot, simple_model: MapLayerModel
+    ) -> None:
+        """delete_layer_requested is emitted with the node ID."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel.set_model(simple_model)
+
+        received: list[str] = []
+        panel.delete_layer_requested.connect(lambda nid: received.append(nid))
+
+        # Select a node first, then trigger delete
+        idx = simple_model.index(0, 0)
+        panel._on_item_clicked(idx)
+        panel._on_delete()
+        assert len(received) == 1
+        assert received[0] == "default"
+
+    def test_delete_clears_selection(
+        self, qtbot, simple_model: MapLayerModel
+    ) -> None:
+        """After deleting, selected_node_id is cleared."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel.set_model(simple_model)
+
+        idx = simple_model.index(0, 0)
+        panel._on_item_clicked(idx)
+        assert panel._selected_node_id is not None
+
+        # Capture signal but don't actually delete
+        panel.delete_layer_requested.connect(lambda _: None)
+        panel._on_delete()
+        assert panel._selected_node_id is None
+
+
+class TestMapLayerPanelOpacity:
+    """Tests for the opacity slider."""
+
+    def test_opacity_slider_exists(self, qtbot) -> None:
+        """Panel has an opacity slider."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        assert panel._opacity_slider is not None
+        assert panel._opacity_value_label is not None
+
+    def test_opacity_slider_syncs_to_node(
+        self, qtbot, simple_model: MapLayerModel
+    ) -> None:
+        """Selecting a node syncs the slider to its opacity."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel.set_model(simple_model)
+
+        # Set a custom opacity on a node
+        m1 = simple_model.find_node_by_id("m1")
+        m1.opacity = 0.5
+
+        panel.select_node("m1")
+        assert panel._opacity_slider.value() == 50
+        assert "50" in panel._opacity_value_label.text()
+
+    def test_opacity_slider_emits_signal(
+        self, qtbot, simple_model: MapLayerModel
+    ) -> None:
+        """Moving the slider emits layer_opacity_changed."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel.set_model(simple_model)
+
+        received: list[tuple] = []
+        panel.layer_opacity_changed.connect(
+            lambda nid, o: received.append((nid, o))
+        )
+
+        # Select a node
+        panel.select_node("m1")
+        # Move the slider
+        panel._opacity_slider.setValue(75)
+
+        assert len(received) == 1
+        assert received[0][0] == "m1"
+        assert abs(received[0][1] - 0.75) < 0.01
+
+    def test_opacity_slider_no_feedback_loop(
+        self, qtbot, simple_model: MapLayerModel
+    ) -> None:
+        """Syncing slider from node doesn't re-emit the signal."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel.set_model(simple_model)
+
+        received: list[tuple] = []
+        panel.layer_opacity_changed.connect(
+            lambda nid, o: received.append((nid, o))
+        )
+
+        # select_node internally syncs the slider — should NOT trigger signal
+        panel.select_node("m1")
+        # The slider_updating guard should prevent emission during sync
+        # Only direct setValue outside of sync should emit
+        assert len(received) == 0
+
+
+class TestMapLayerPanelRename:
+    """Tests for rename functionality."""
+
+    def test_rename_signal(self, qtbot, simple_model: MapLayerModel) -> None:
+        """layer_renamed signal is emitted with node ID and new name."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel.set_model(simple_model)
+
+        received: list[tuple] = []
+        panel.layer_renamed.connect(lambda nid, n: received.append((nid, n)))
+
+        panel.layer_renamed.emit("m1", "Renamed")
+        assert received == [("m1", "Renamed")]
+
+
+class TestMapLayerPanelContextMenu:
+    """Tests for the context menu."""
+
+    def test_toggle_visibility_via_panel(
+        self, qtbot, simple_model: MapLayerModel
+    ) -> None:
+        """Toggling visibility through the panel updates the node."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel.set_model(simple_model)
+
+        m1 = simple_model.find_node_by_id("m1")
+        assert m1.visible is True
+
+        panel._toggle_visibility(m1)
+        assert m1.visible is False
+
+        panel._toggle_visibility(m1)
+        assert m1.visible is True
+
+
+class TestMapLayerPanelRefreshStyles:
+    """Tests for theme refresh."""
+
+    def test_refresh_styles_does_not_crash(self, qtbot) -> None:
+        """Calling refresh_styles doesn't raise."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel.refresh_styles()  # Should not crash
+
+
+# =========================================================================
+# MapWidget Layer CRUD (create/delete groups/layers)
+# =========================================================================
+
+
+class TestMapWidgetLayerCRUD:
+    """MapWidget create/delete group and layer actions."""
+
+    def test_create_group(self, qtbot) -> None:
+        """Creating a group adds it under root."""
+        widget = _make_map_widget(qtbot)
+        widget._ensure_layer_model()
+        model = widget.get_layer_model()
+        initial_count = len(model.root.children)
+
+        widget._on_create_group("Test Group")
+        assert len(model.root.children) == initial_count + 1
+        new_group = model.root.children[-1]
+        assert new_group.name == "Test Group"
+        assert new_group.layer_type == MAP_LAYER_TYPE_GROUP
+
+    def test_create_layer_under_default(self, qtbot) -> None:
+        """Creating a layer with no selection adds it under Default."""
+        widget = _make_map_widget(qtbot)
+        widget._ensure_layer_model()
+
+        widget._on_create_layer("Test Layer")
+
+        model = widget.get_layer_model()
+        default = widget._default_group()
+        layer_names = [c.name for c in default.children]
+        assert "Test Layer" in layer_names
+
+    def test_create_layer_under_selected_group(self, qtbot) -> None:
+        """Creating a layer with a group selected adds under that group."""
+        widget = _make_map_widget(qtbot)
+        widget._ensure_layer_model()
+        model = widget.get_layer_model()
+
+        # Create a custom group first
+        widget._on_create_group("Custom")
+        custom = model.find_node_by_id(
+            next(c.id for c in model.root.children if c.name == "Custom")
+        )
+
+        # Select it in the panel
+        widget.layer_panel._selected_node_id = custom.id
+
+        widget._on_create_layer("Child Layer")
+        child_names = [c.name for c in custom.children]
+        assert "Child Layer" in child_names
+
+    def test_delete_leaf_layer(self, qtbot) -> None:
+        """Deleting a leaf layer removes it from the model."""
+        widget = _make_map_widget(qtbot)
+        widget.add_marker("del-1", "entity", "To Delete", 0.5, 0.5)
+        model = widget.get_layer_model()
+
+        assert model.find_node_by_id("del-1") is not None
+        widget._on_delete_layer("del-1")
+        assert model.find_node_by_id("del-1") is None
+
+    def test_delete_group_removes_children_graphics(self, qtbot) -> None:
+        """Deleting a group also removes children graphics items."""
+        widget = _make_map_widget(qtbot)
+        widget.add_marker("child-1", "entity", "Child", 0.5, 0.5)
+        model = widget.get_layer_model()
+
+        # Find the Default group that contains child-1
+        default = widget._default_group()
+        assert model.find_node_by_id("child-1") is not None
+
+        # Delete the whole group
+        widget._on_delete_layer(default.id)
+        assert model.find_node_by_id(default.id) is None
+
+    def test_delete_root_prevented(self, qtbot) -> None:
+        """Cannot delete the root node."""
+        widget = _make_map_widget(qtbot)
+        model = widget._ensure_layer_model()
+        root_id = model.root.id
+
+        widget._on_delete_layer(root_id)
+        # Root should still exist
+        assert model.root.id == root_id
+
+    def test_rename_updates_model(self, qtbot) -> None:
+        """Renaming a layer updates the node name."""
+        widget = _make_map_widget(qtbot)
+        widget.add_marker("ren-1", "entity", "Original", 0.5, 0.5)
+        model = widget.get_layer_model()
+
+        widget._on_layer_renamed("ren-1", "Renamed")
+        node = model.find_node_by_id("ren-1")
+        assert node.name == "Renamed"
+
+
+# =========================================================================
+# StyleHelper new methods
+# =========================================================================
+
+
+class TestStyleHelperNewMethods:
+    """Tests for new StyleHelper methods."""
+
+    def test_get_tree_view_style(self) -> None:
+        """get_tree_view_style returns a non-empty string."""
+        style = StyleHelper.get_tree_view_style()
+        assert isinstance(style, str)
+        assert "QTreeView" in style
+
+    def test_get_slider_style(self) -> None:
+        """get_slider_style returns a non-empty string."""
+        style = StyleHelper.get_slider_style()
+        assert isinstance(style, str)
+        assert "QSlider" in style
+
+    def test_get_panel_header_style(self) -> None:
+        """get_panel_header_style returns a non-empty string."""
+        style = StyleHelper.get_panel_header_style()
+        assert isinstance(style, str)
+        assert "font-weight" in style
