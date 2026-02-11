@@ -962,9 +962,7 @@ class MapGraphicsView(QGraphicsView):
             self.setCursor(Qt.CursorShape.CrossCursor)
             scene_pos = self.mapToScene(event.position().toPoint())
             # Snap indicator during drawing
-            snap_result = self._snapping_manager.snap_point(
-                scene_pos, self.transform()
-            )
+            snap_result = self._snapping_manager.snap_point(scene_pos, self.transform())
             if snap_result.snapped:
                 self._show_snap_indicator(snap_result.pos, snap_result.snap_type)
             else:
@@ -2099,6 +2097,22 @@ class MapGraphicsView(QGraphicsView):
             snap_pos = self._snap_to_nearby_vertex(index, new_scene_pos)
             self._hide_snap_indicator()
 
+        # Synchronize the vertex handle to the snap position so the
+        # red handle dot sits exactly on top of the snap indicator.
+        if index < len(self._vertex_handles):
+            handle = self._vertex_handles[index]
+            # Temporarily disable geometry-change signals to avoid
+            # re-entering this callback while repositioning the handle.
+            handle.setFlag(
+                QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges,
+                False,
+            )
+            handle.setPos(snap_pos)
+            handle.setFlag(
+                QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges,
+                True,
+            )
+
         # Convert scene pos → normalized
         rect = self.pixmap_item.sceneBoundingRect()
         nx = (snap_pos.x() - rect.left()) / rect.width()
@@ -2109,8 +2123,8 @@ class MapGraphicsView(QGraphicsView):
         if index < len(item._geometry):
             # Update in-place to avoid allocations during interactive drag
             pt = item._geometry[index]
-            pt["x"] = round(nx, 6)
-            pt["y"] = round(ny, 6)
+            pt["x"] = round(nx, 10)
+            pt["y"] = round(ny, 10)
             # Rebuild visual
             if isinstance(item, PathItem):
                 item._build_path()
