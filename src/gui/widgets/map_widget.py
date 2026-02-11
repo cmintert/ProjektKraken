@@ -29,7 +29,9 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.paths import get_resource_path
+from src.core.theme_manager import ThemeManager
 from src.core.trajectory import KEYFRAME_TIME_EPSILON, interpolate_position
+from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.map.calibration_distance_dialog import CalibrationDistanceDialog
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 from src.gui.widgets.map.map_scale_dialog import MapScaleDialog
@@ -157,6 +159,9 @@ class MapWidget(QWidget):
     change_marker_icon_requested = Signal(str, str)  # marker_id, new_icon
     change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
     marker_drop_requested = Signal(str, str, str, float, float)  # id, type, name, x, y
+    create_feature_requested = Signal(str, list)  # feature_type, geometry
+    feature_style_changed = Signal(str, dict)  # marker_id, new style
+    feature_geometry_changed = Signal(str, list)  # marker_id, new geometry
     add_keyframe_requested = Signal(
         str, str, float, float, float
     )  # map_id, marker_id, t, x, y
@@ -188,7 +193,7 @@ class MapWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         # Toolbar
         self.toolbar = QToolBar(self)
-        self.toolbar.setStyleSheet("QToolBar { spacing: 10px; padding: 5px; }")
+        self.toolbar.setStyleSheet("QToolBar { spacing: 4px; padding: 4px; }")
         layout.addWidget(self.toolbar)
 
         # Map Selector
@@ -197,31 +202,65 @@ class MapWidget(QWidget):
         self.map_selector.currentIndexChanged.connect(self._on_map_selected)
         self.toolbar.addWidget(self.map_selector)
 
-        # Buttons
+        # Buttons (themed via StyleHelper)
+        tool_style = StyleHelper.get_tool_button_style()
+
         self.btn_new_map = QPushButton("New Map")
+        self.btn_new_map.setStyleSheet(tool_style)
         self.btn_new_map.clicked.connect(self.create_map_requested.emit)
         self.toolbar.addWidget(self.btn_new_map)
 
         self.btn_delete_map = QPushButton("Delete Map")
+        self.btn_delete_map.setStyleSheet(StyleHelper.get_destructive_button_style())
         self.btn_delete_map.clicked.connect(self.delete_map_requested.emit)
         self.toolbar.addWidget(self.btn_delete_map)
 
-        # Spacer or Separator could go here, but Longform doesn't use standard
-        # separator widget with buttons often using a simple label or just spacing
-
         self.btn_fit_view = QPushButton("Fit to View")
+        self.btn_fit_view.setStyleSheet(tool_style)
         self.btn_fit_view.clicked.connect(self.view.fit_to_view)
         self.toolbar.addWidget(self.btn_fit_view)
 
         self.btn_settings = QPushButton("Settings")
         self.btn_settings.setToolTip("Configure Map Properties (Scale)")
+        self.btn_settings.setStyleSheet(tool_style)
         self.btn_settings.clicked.connect(self._configure_map_width)
         self.toolbar.addWidget(self.btn_settings)
 
         self.btn_add_keyframe = QPushButton("Add Keyframe")
         self.btn_add_keyframe.setToolTip("Save current marker position at current time")
+        self.btn_add_keyframe.setStyleSheet(tool_style)
         self.btn_add_keyframe.clicked.connect(self._on_add_keyframe)
         self.toolbar.addWidget(self.btn_add_keyframe)
+
+        # Drawing tool buttons
+        self.btn_draw_path = QPushButton("Draw Path")
+        self.btn_draw_path.setToolTip(
+            "Draw a polyline path on the map (click vertices, double-click to finish)"
+        )
+        self.btn_draw_path.setCheckable(True)
+        self.btn_draw_path.setStyleSheet(tool_style)
+        self.btn_draw_path.clicked.connect(self._on_draw_path_clicked)
+        self.toolbar.addWidget(self.btn_draw_path)
+
+        self.btn_draw_region = QPushButton("Draw Region")
+        self.btn_draw_region.setToolTip(
+            "Draw a polygon region on the map (click vertices, double-click to finish)"
+        )
+        self.btn_draw_region.setCheckable(True)
+        self.btn_draw_region.setStyleSheet(tool_style)
+        self.btn_draw_region.clicked.connect(self._on_draw_region_clicked)
+        self.toolbar.addWidget(self.btn_draw_region)
+
+        # Snap toggle
+        self.btn_snap = QPushButton("Snap")
+        self.btn_snap.setToolTip(
+            "Toggle snapping to nearby feature vertices and edges"
+        )
+        self.btn_snap.setCheckable(True)
+        self.btn_snap.setChecked(True)  # enabled by default
+        self.btn_snap.setStyleSheet(tool_style)
+        self.btn_snap.clicked.connect(self._on_snap_toggled)
+        self.toolbar.addWidget(self.btn_snap)
 
         # Mode Indicator (right side)
         spacer = QWidget()
@@ -229,18 +268,7 @@ class MapWidget(QWidget):
         self.toolbar.addWidget(spacer)
 
         self.mode_indicator = QLabel("Normal Mode")
-        self.mode_indicator.setStyleSheet(
-            """
-            QLabel {
-                background: #2ecc71;
-                color: white;
-                padding: 5px 12px;
-                border-radius: 4px;
-                font-weight: bold;
-                font-size: 11px;
-            }
-        """
-        )
+        self._apply_mode_indicator_style("normal")
         self.toolbar.addWidget(self.mode_indicator)
 
         # Add View (after toolbar)
@@ -263,6 +291,12 @@ class MapWidget(QWidget):
         """
         )
         self.overlay_banner.hide()
+
+        # Finish Sketch button (shown during drawing/vertex editing)
+        self.btn_finish_sketch = QPushButton("✔ Finish Sketch", self.view)
+        self.btn_finish_sketch.setStyleSheet(StyleHelper.get_primary_button_style())
+        self.btn_finish_sketch.clicked.connect(self._on_finish_sketch)
+        self.btn_finish_sketch.hide()
 
         # Coordinate Label
         self.coord_label = NoLayoutLabel("Ready")
@@ -291,6 +325,11 @@ class MapWidget(QWidget):
         )
         self.view.marker_drop_requested.connect(self.marker_drop_requested.emit)
         self.view.mouse_coordinates_changed.connect(self._on_mouse_coordinates_changed)
+        self.view.drawing_finished.connect(self._on_drawing_finished)
+        self.view.drawing_cancelled.connect(self._on_drawing_cancelled)
+        self.view.feature_style_changed.connect(self.feature_style_changed.emit)
+        self.view.feature_geometry_changed.connect(self.feature_geometry_changed.emit)
+        self.view.feature_geometry_changed.connect(self._on_geometry_changed)
         self.view.scene.selectionChanged.connect(self._on_selection_changed)
 
         self._maps_data = []  # List of maps for selector
@@ -405,6 +444,80 @@ class MapWidget(QWidget):
 
         logger.info(f"Adding keyframe for {marker_id} at t={t}: ({x:.3f}, {y:.3f})")
         self._emit_keyframe_upsert(marker_id, t, x, y, is_add=True)
+
+    # ------------------------------------------------------------------
+    # Drawing Mode
+    # ------------------------------------------------------------------
+
+    @Slot()
+    def _on_draw_path_clicked(self) -> None:
+        """Toggles path drawing mode."""
+        if self.view.is_drawing:
+            self.view.cancel_drawing()
+            return
+        self.btn_draw_region.setChecked(False)
+        self.view.start_drawing("path")
+        self._update_mode_indicator()
+
+    @Slot()
+    def _on_draw_region_clicked(self) -> None:
+        """Toggles region drawing mode."""
+        if self.view.is_drawing:
+            self.view.cancel_drawing()
+            return
+        self.btn_draw_path.setChecked(False)
+        self.view.start_drawing("region")
+        self._update_mode_indicator()
+
+    @Slot(str, list)
+    def _on_drawing_finished(self, feature_type: str, geometry: list) -> None:
+        """Handles drawing completion — emits create_feature_requested.
+
+        Args:
+            feature_type: 'path' or 'region'.
+            geometry: List of normalized coordinate dicts.
+
+        """
+        self.btn_draw_path.setChecked(False)
+        self.btn_draw_region.setChecked(False)
+        self._update_mode_indicator()
+        self.create_feature_requested.emit(feature_type, geometry)
+        logger.info(f"Feature drawing complete: {feature_type}, {len(geometry)} vertices")
+
+    @Slot()
+    def _on_drawing_cancelled(self) -> None:
+        """Handles drawing cancellation — resets UI state."""
+        self.btn_draw_path.setChecked(False)
+        self.btn_draw_region.setChecked(False)
+        self._update_mode_indicator()
+
+    @Slot()
+    def _on_snap_toggled(self) -> None:
+        """Toggles snapping on the map view."""
+        self.view.snapping_enabled = self.btn_snap.isChecked()
+
+    @Slot()
+    def _on_finish_sketch(self) -> None:
+        """Handles the Finish Sketch button click.
+
+        Completes the current drawing or vertex editing session.
+        """
+        if self.view.is_drawing:
+            self.view.finish_drawing()
+        elif self.view.is_editing_vertices:
+            self.view._finish_vertex_editing()
+        self._update_mode_indicator()
+
+    @Slot(str, list)
+    def _on_geometry_changed(self, marker_id: str, geometry: list) -> None:
+        """Refreshes mode indicator when vertex editing completes.
+
+        Args:
+            marker_id: The feature whose geometry changed.
+            geometry: The updated geometry list.
+
+        """
+        self._update_mode_indicator()
 
     def _iter_trajectory_positions(self) -> Iterator[Tuple[str, float, float]]:
         """Yield (marker_id, x, y) for markers with trajectories at current time."""
@@ -523,7 +636,18 @@ class MapWidget(QWidget):
 
     @Slot(int)
     def _on_map_selected(self, index: int) -> None:
-        """Handle map selection change."""
+        """Handle map selection change.
+
+        Automatically exits any active drawing or vertex editing mode
+        when the user switches to a different map layer.
+        """
+        # Exit active editing modes before switching maps
+        if self.view.is_drawing:
+            self.view.cancel_drawing()
+        if self.view.is_editing_vertices:
+            self.view._finish_vertex_editing()
+        self._update_mode_indicator()
+
         if index >= 0:
             map_id = self.map_selector.itemData(index)
             self.map_selected.emit(map_id)
@@ -649,8 +773,11 @@ class MapWidget(QWidget):
         color: Optional[str] = None,
         description: Optional[str] = None,
         lore_date: Optional[float] = None,
+        feature_type: str = "point",
+        geometry: Optional[list] = None,
+        style: Optional[dict] = None,
     ) -> None:
-        """Adds a marker to the map.
+        """Adds a marker or feature to the map.
 
         Args:
             marker_id: Unique identifier for the marker.
@@ -661,10 +788,15 @@ class MapWidget(QWidget):
             icon: Optional icon filename.
             color: Optional color hex string.
             description: Optional description for tooltip.
+            lore_date: Optional lore timestamp for temporal filtering.
+            feature_type: 'point', 'path', or 'region'.
+            geometry: Optional list of coordinate dicts for paths/regions.
+            style: Optional visual override dict.
 
         """
         self.view.add_marker(
-            marker_id, object_type, label, x, y, icon, color, description, lore_date
+            marker_id, object_type, label, x, y, icon, color, description,
+            lore_date, feature_type, geometry, style,
         )
 
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
@@ -876,25 +1008,42 @@ class MapWidget(QWidget):
         logger.info("Clock Mode cancelled")
         self._clear_clock_mode_visuals()
 
+    def _apply_mode_indicator_style(self, mode: str) -> None:
+        """Applies themed style to the mode indicator label.
+
+        Args:
+            mode: One of 'normal', 'clock', 'draft', 'drawing', 'vertex'.
+
+        """
+        theme = ThemeManager().get_theme()
+        color_map = {
+            "clock": theme.get("error", "#e74c3c"),
+            "draft": theme.get("primary", "#f39c12"),
+            "drawing": theme.get("accent_secondary", "#3498db"),
+            "vertex": theme.get("primary", "#e67e22"),
+            "normal": "#2ecc71",
+        }
+        bg = color_map.get(mode, "#2ecc71")
+        self.mode_indicator.setStyleSheet(
+            f"""
+            QLabel {{
+                background: {bg};
+                color: white;
+                padding: 5px 12px;
+                border-radius: 4px;
+                font-weight: bold;
+                font-size: 11px;
+            }}
+            """
+        )
+
     def _update_mode_indicator(self) -> None:
-        """Updates the toolbar status and map overlay based on current state."""
+        """Updates the toolbar status, map overlay, and Finish Sketch button."""
         if self._pinned_marker_id:
             # Clock Mode (Priority)
             marker_id = self._pinned_marker_id
-            # Toolbar Widget
             self.mode_indicator.setText(f'🔴 CLOCK MODE: Editing "{marker_id}"')
-            self.mode_indicator.setStyleSheet(
-                """
-                QLabel {
-                    background: #e74c3c;
-                    color: white;
-                    padding: 5px 12px;
-                    border-radius: 4px;
-                    font-weight: bold;
-                    font-size: 11px;
-                }
-            """
-            )
+            self._apply_mode_indicator_style("clock")
 
             # Overlay Banner
             banner_text = (
@@ -905,26 +1054,15 @@ class MapWidget(QWidget):
             self.overlay_banner.setText(banner_text)
             self.overlay_banner.show()
             self._update_overlay_position()
+            self.btn_finish_sketch.hide()
 
             # Cursor Change
             self.view.setCursor(Qt.CursorShape.WaitCursor)
 
         elif self._transient_marker_ids:
             # Draft Mode
-            # Toolbar Widget
             self.mode_indicator.setText("🟠 DRAFT MODE: Unsaved keys")
-            self.mode_indicator.setStyleSheet(
-                """
-                QLabel {
-                    background: #f39c12;
-                    color: white;
-                    padding: 5px 12px;
-                    border-radius: 4px;
-                    font-weight: bold;
-                    font-size: 11px;
-                }
-            """
-            )
+            self._apply_mode_indicator_style("draft")
 
             # Overlay Banner
             banner_text = (
@@ -935,29 +1073,58 @@ class MapWidget(QWidget):
             self.overlay_banner.setText(banner_text)
             self.overlay_banner.show()
             self._update_overlay_position()
+            self.btn_finish_sketch.hide()
 
             # Normal cursor
             self.view.setCursor(Qt.CursorShape.ArrowCursor)
 
+        elif self.view.is_drawing:
+            # Drawing Mode
+            mode_name = self.view.drawing_mode or "shape"
+            self.mode_indicator.setText(f"🔵 DRAWING: {mode_name.title()}")
+            self._apply_mode_indicator_style("drawing")
+
+            # Overlay Banner
+            banner_text = (
+                f"✏️ <b>DRAWING {mode_name.upper()}</b><br/>"
+                "Click to add vertices<br/>"
+                "<small>[Double-click to Finish] [Esc to Cancel]</small>"
+            )
+            self.overlay_banner.setText(banner_text)
+            self.overlay_banner.show()
+            self._update_overlay_position()
+
+            # Show Finish Sketch button
+            self.btn_finish_sketch.show()
+            self._update_finish_sketch_position()
+
+        elif self.view.is_editing_vertices:
+            # Vertex Editing Mode
+            self.mode_indicator.setText("🟣 EDITING VERTICES")
+            self._apply_mode_indicator_style("vertex")
+
+            # Overlay Banner
+            banner_text = (
+                "🔧 <b>VERTEX EDITING</b><br/>"
+                "Drag vertices to reshape · Drag midpoints to add<br/>"
+                "<small>[Right-click vertex to Delete] [Esc to Finish]</small>"
+            )
+            self.overlay_banner.setText(banner_text)
+            self.overlay_banner.show()
+            self._update_overlay_position()
+
+            # Show Finish Sketch button
+            self.btn_finish_sketch.show()
+            self._update_finish_sketch_position()
+
         else:
             # Normal Mode
-            # Toolbar Widget
             self.mode_indicator.setText("Normal Mode")
-            self.mode_indicator.setStyleSheet(
-                """
-                QLabel {
-                    background: #2ecc71;
-                    color: white;
-                    padding: 5px 12px;
-                    border-radius: 4px;
-                    font-weight: bold;
-                    font-size: 11px;
-                }
-            """
-            )
+            self._apply_mode_indicator_style("normal")
 
             # Overlay Banner
             self.overlay_banner.hide()
+            self.btn_finish_sketch.hide()
 
             # Normal cursor
             self.view.setCursor(Qt.CursorShape.ArrowCursor)
@@ -1045,10 +1212,22 @@ class MapWidget(QWidget):
             self.overlay_banner.move(x, 0)
             self.overlay_banner.setFixedWidth(banner_width)
 
+    def _update_finish_sketch_position(self) -> None:
+        """Positions the Finish Sketch button at the bottom-center of the view."""
+        if hasattr(self, "btn_finish_sketch") and self.btn_finish_sketch.isVisible():
+            view_width = self.view.width()
+            view_height = self.view.height()
+            btn_width = self.btn_finish_sketch.sizeHint().width()
+            btn_height = self.btn_finish_sketch.sizeHint().height()
+            x = (view_width - btn_width) // 2
+            y = view_height - btn_height - 20
+            self.btn_finish_sketch.move(x, y)
+
     def resizeEvent(self, event: QResizeEvent) -> None:
-        """Handle resize to keep overlay centered."""
+        """Handle resize to keep overlay and Finish Sketch button centered."""
         super().resizeEvent(event)
         self._update_overlay_position()
+        self._update_finish_sketch_position()
         logger.debug(
             f"MapWidget Resized: {event.size().width()}x{event.size().height()} (Old: {event.oldSize().width()}x{event.oldSize().height()})"
         )

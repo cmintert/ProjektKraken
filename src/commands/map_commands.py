@@ -1,4 +1,4 @@
-"""Commands for manipulating Map and Marker objects.
+"""Commands for manipulating Map and MapFeature (Marker) objects.
 
 API Usage Note:
 ===============
@@ -15,7 +15,7 @@ from typing import List, Optional
 
 from src.commands.base_command import BaseCommand, CommandResult
 from src.core.map import Map
-from src.core.marker import Marker
+from src.core.marker import MapFeature, Marker
 from src.services.db_service import DatabaseService
 
 logger = logging.getLogger(__name__)

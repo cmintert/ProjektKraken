@@ -103,3 +103,72 @@ UNIFIED_LIST_DELETE_CONFIRM_TIMEOUT_MS = 1000
 NAVIGATION_SELECTION_DELAY_MS = (
     250  # Delay to allow drag operations to cancel selection
 )
+
+# ---------------------------------------------------------------------------
+# Map Feature Constants
+# ---------------------------------------------------------------------------
+
+# Default visual style for map features (paths / regions)
+MAP_FEATURE_DEFAULT_STROKE_COLOR = "#3498DB"
+MAP_FEATURE_DEFAULT_STROKE_WIDTH = 2.0
+MAP_FEATURE_DEFAULT_FILL_COLOR = "#3498DB40"  # 25% alpha
+MAP_FEATURE_DEFAULT_DASH_PATTERN: list[float] = []  # solid line
+MAP_FEATURE_REGION_STROKE_COLOR = "#2C3E50"
+MAP_FEATURE_REGION_FILL_COLOR = "#3498DB30"
+
+# Selection highlight
+MAP_FEATURE_SELECTION_PEN_COLOR = "#FFFFFF"
+MAP_FEATURE_SELECTION_PEN_WIDTH = 2.0
+
+# Hit testing (click / hover detection margins)
+MAP_FEATURE_HIT_AREA_MARGIN = 6  # extra pixels around stroke
+MAP_FEATURE_MIN_HIT_AREA_WIDTH = 10  # minimum clickable pixel width
+
+# Label styling
+MAP_FEATURE_LABEL_FONT_FAMILY = "Segoe UI"
+MAP_FEATURE_LABEL_FONT_SIZE = 9
+MAP_FEATURE_LABEL_COLOR = "#333333"
+
+# Feature item z-layer (between map background and point markers)
+MAP_FEATURE_Z_VALUE = 8
+
+# Hover tooltip debounce delay
+MAP_FEATURE_HOVER_DEBOUNCE_MS = 100
+
+# Click-vs-drag threshold (manhattan length in pixels)
+MAP_FEATURE_CLICK_THRESHOLD_PX = 5
+
+# Vertex editing handles
+MAP_VERTEX_HANDLE_RADIUS = 5  # screen pixels (cosmetic)
+MAP_VERTEX_HANDLE_COLOR = "#e74c3c"  # red
+MAP_VERTEX_HANDLE_BORDER_COLOR = "#FFFFFF"
+MAP_MIDPOINT_HANDLE_RADIUS = 4  # slightly smaller
+MAP_MIDPOINT_HANDLE_COLOR = "#2ecc71"  # green
+MAP_MIDPOINT_HANDLE_BORDER_COLOR = "#FFFFFF"
+MAP_MIDPOINT_GHOST_OPACITY = 0.4
+MAP_MIDPOINT_HOVER_OPACITY = 0.9
+
+# Vertex editing style applied to the feature being edited
+MAP_EDIT_DASH_PATTERN = [6, 3]  # dashed line during editing
+MAP_EDIT_STROKE_COLOR = "#e67e22"  # orange highlight
+MAP_EDIT_STROKE_WIDTH = 5.0  # thicker line during vertex editing
+
+# Snap radius for vertex snapping during editing (screen pixels)
+MAP_SNAP_RADIUS_PX = 10.0
+
+# ---------------------------------------------------------------------------
+# Snapping Manager Constants
+# ---------------------------------------------------------------------------
+
+# Snap indicator visual feedback
+MAP_SNAP_INDICATOR_VERTEX_COLOR = "#f1c40f"  # yellow for vertex snap
+MAP_SNAP_INDICATOR_EDGE_COLOR = "#3498db"  # blue for edge snap
+MAP_SNAP_INDICATOR_RADIUS = 6  # screen pixels (cosmetic)
+MAP_SNAP_INDICATOR_BORDER_COLOR = "#FFFFFF"
+MAP_SNAP_INDICATOR_BORDER_WIDTH = 1.5
+
+# Default map scale
+MAP_DEFAULT_WIDTH_METERS = 1_000_000.0  # 1000 km
+
+# Zoom factor for mouse wheel
+MAP_ZOOM_IN_FACTOR = 1.25

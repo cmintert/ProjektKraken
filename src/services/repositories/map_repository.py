@@ -1,13 +1,14 @@
 """Map Repository Module.
 
-Handles CRUD operations for Map and Marker entities in the database.
+Handles CRUD operations for Map and MapFeature (Marker) entities in the database.
 """
 
+import json
 import logging
 from typing import List, Optional
 
 from src.core.map import Map
-from src.core.marker import Marker
+from src.core.marker import MapFeature, Marker
 from src.services.repositories.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
@@ -117,10 +118,10 @@ class MapRepository(BaseRepository):
 
     # Marker operations
     def insert_marker(self, marker: Marker) -> None:
-        """Insert a new marker or update an existing one (Upsert).
+        """Insert a new marker/feature or update an existing one (Upsert).
 
         Args:
-            marker: The marker domain object to persist.
+            marker: The marker/feature domain object to persist.
 
         Raises:
             sqlite3.Error: If the database operation fails.
@@ -128,14 +129,18 @@ class MapRepository(BaseRepository):
         """
         sql = """
             INSERT INTO markers (id, map_id, object_id, object_type, x, y,
-                                label, attributes, created_at, modified_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                label, attributes, created_at, modified_at,
+                                feature_type, geometry, style)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 x=excluded.x,
                 y=excluded.y,
                 label=excluded.label,
                 attributes=excluded.attributes,
-                modified_at=excluded.modified_at;
+                modified_at=excluded.modified_at,
+                feature_type=excluded.feature_type,
+                geometry=excluded.geometry,
+                style=excluded.style;
         """
         with self.transaction() as conn:
             conn.execute(
@@ -151,6 +156,9 @@ class MapRepository(BaseRepository):
                     self._serialize_json(marker.attributes),
                     marker.created_at,
                     marker.modified_at,
+                    marker.feature_type,
+                    json.dumps(marker.geometry) if marker.geometry else None,
+                    json.dumps(marker.style) if marker.style else None,
                 ),
             )
 
