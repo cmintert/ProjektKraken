@@ -184,6 +184,11 @@ class MapWidget(QWidget):
     jump_to_time_requested = Signal(float)  # target_time
     map_scale_changed = Signal(float)  # For persisting map scale
     show_onboarding_requested = Signal()  # To trigger animation or hints
+    # Layer operations (routed through the command stack)
+    layer_tree_changed = Signal()  # auto-persist hook
+    layer_visibility_changed = Signal(str, bool)  # node_id, visible
+    layer_opacity_change_requested = Signal(str, float)  # node_id, opacity
+    layer_rename_requested = Signal(str, str)  # node_id, new_name
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the MapWidget.
@@ -366,6 +371,9 @@ class MapWidget(QWidget):
         self.layer_panel.create_layer_requested.connect(self._on_create_layer)
         self.layer_panel.delete_layer_requested.connect(self._on_delete_layer)
         self.layer_panel.layer_renamed.connect(self._on_layer_renamed)
+        self.layer_panel.layer_opacity_changed.connect(
+            self._on_layer_opacity_changed
+        )
 
         self._maps_data = []  # List of maps for selector
         self._playhead_time: float = 0.0  # Current playhead time from Timeline
@@ -829,6 +837,8 @@ class MapWidget(QWidget):
         self._layer_model = model
         self.view.set_layer_model(model)
         self.layer_panel.set_model(model)
+        # Forward model mutations → widget signal for command-stack persistence
+        model.layer_tree_changed.connect(self.layer_tree_changed.emit)
         return model
 
     def _ensure_layer_model(self) -> MapLayerModel:
@@ -1047,7 +1057,8 @@ class MapWidget(QWidget):
     def _on_layer_renamed(self, node_id: str, new_name: str) -> None:
         """Handle a layer rename from the panel.
 
-        Updates the node name in the model and refreshes the view.
+        Updates the node name in the model, refreshes the view, and emits
+        a signal so the command stack can persist the change.
 
         Args:
             node_id: ID of the renamed node.
@@ -1065,6 +1076,22 @@ class MapWidget(QWidget):
         self._layer_model.dataChanged.emit(
             idx, idx, [Qt.ItemDataRole.DisplayRole]
         )
+        self._layer_model.layer_tree_changed.emit()
+        self.layer_rename_requested.emit(node_id, new_name)
+
+    @Slot(str, float)
+    def _on_layer_opacity_changed(self, node_id: str, opacity: float) -> None:
+        """Handle opacity change from the panel's slider.
+
+        The model is already updated by the panel; this emits a signal
+        so the command stack can persist the change.
+
+        Args:
+            node_id: ID of the node whose opacity changed.
+            opacity: New opacity (0.0–1.0).
+
+        """
+        self.layer_opacity_change_requested.emit(node_id, opacity)
 
     def get_layer_model(self) -> Optional[MapLayerModel]:
         """Return the current layer model (if any).

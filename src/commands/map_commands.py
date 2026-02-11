@@ -1281,3 +1281,233 @@ class SaveLayerTreeCommand(BaseCommand):
     def from_dict(cls, data: dict) -> "SaveLayerTreeCommand":
         """Deserialize command from dictionary."""
         return cls(data["map_id"], data["layer_tree_dict"])
+
+
+class SetLayerOpacityCommand(BaseCommand):
+    """Command to change a layer node's opacity (undoable).
+
+    Persists the layer tree to the map's attributes after the change.
+    """
+
+    def __init__(
+        self,
+        map_id: str,
+        node_id: str,
+        opacity: float,
+    ) -> None:
+        """Initialise the command.
+
+        Args:
+            map_id: The map whose layer tree is being modified.
+            node_id: ID of the layer node to change.
+            opacity: New opacity (0.0–1.0).
+
+        """
+        super().__init__()
+        self.map_id = map_id
+        self.node_id = node_id
+        self.opacity = opacity
+        self._previous_opacity: Optional[float] = None
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Execute the opacity change and persist.
+
+        Args:
+            db_service: The database service.
+
+        Returns:
+            CommandResult: Result of the operation.
+
+        """
+        try:
+            map_obj = db_service.map_repo.get_map(self.map_id)
+            if not map_obj or not map_obj.layers:
+                return CommandResult(
+                    success=False,
+                    message="Map or layers not found.",
+                    command_name="SetLayerOpacityCommand",
+                )
+
+            node = SetLayerVisibilityCommand._find_node(
+                map_obj.layers, self.node_id
+            )
+            if not node:
+                return CommandResult(
+                    success=False,
+                    message=f"Layer node {self.node_id} not found.",
+                    command_name="SetLayerOpacityCommand",
+                )
+
+            self._previous_opacity = node.opacity
+            node.opacity = max(0.0, min(1.0, self.opacity))
+
+            # Persist
+            attrs = dict(map_obj.attributes) if map_obj.attributes else {}
+            attrs["layers"] = map_obj.layers.to_dict()
+            map_obj.attributes = attrs
+            db_service.map_repo.insert_map(map_obj)
+
+            self._is_executed = True
+            return CommandResult(
+                success=True,
+                message=f"Layer opacity set to {self.opacity:.0%}.",
+                command_name="SetLayerOpacityCommand",
+            )
+        except Exception as e:
+            logger.error(f"SetLayerOpacityCommand failed: {e}")
+            return CommandResult(
+                success=False,
+                message=str(e),
+                command_name="SetLayerOpacityCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Revert the opacity change.
+
+        Args:
+            db_service: The database service.
+
+        """
+        if self._is_executed and self._previous_opacity is not None:
+            map_obj = db_service.map_repo.get_map(self.map_id)
+            if map_obj and map_obj.layers:
+                node = SetLayerVisibilityCommand._find_node(
+                    map_obj.layers, self.node_id
+                )
+                if node:
+                    node.opacity = self._previous_opacity
+                    attrs = (
+                        dict(map_obj.attributes) if map_obj.attributes else {}
+                    )
+                    attrs["layers"] = map_obj.layers.to_dict()
+                    map_obj.attributes = attrs
+                    db_service.map_repo.insert_map(map_obj)
+            self._is_executed = False
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary."""
+        return {
+            "map_id": self.map_id,
+            "node_id": self.node_id,
+            "opacity": self.opacity,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "SetLayerOpacityCommand":
+        """Deserialize command from dictionary."""
+        return cls(data["map_id"], data["node_id"], data["opacity"])
+
+
+class RenameLayerCommand(BaseCommand):
+    """Command to rename a layer node (undoable).
+
+    Persists the layer tree to the map's attributes after the change.
+    """
+
+    def __init__(
+        self,
+        map_id: str,
+        node_id: str,
+        new_name: str,
+    ) -> None:
+        """Initialise the command.
+
+        Args:
+            map_id: The map whose layer tree is being modified.
+            node_id: ID of the layer node to rename.
+            new_name: New display name.
+
+        """
+        super().__init__()
+        self.map_id = map_id
+        self.node_id = node_id
+        self.new_name = new_name
+        self._previous_name: Optional[str] = None
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Execute the rename and persist.
+
+        Args:
+            db_service: The database service.
+
+        Returns:
+            CommandResult: Result of the operation.
+
+        """
+        try:
+            map_obj = db_service.map_repo.get_map(self.map_id)
+            if not map_obj or not map_obj.layers:
+                return CommandResult(
+                    success=False,
+                    message="Map or layers not found.",
+                    command_name="RenameLayerCommand",
+                )
+
+            node = SetLayerVisibilityCommand._find_node(
+                map_obj.layers, self.node_id
+            )
+            if not node:
+                return CommandResult(
+                    success=False,
+                    message=f"Layer node {self.node_id} not found.",
+                    command_name="RenameLayerCommand",
+                )
+
+            self._previous_name = node.name
+            node.name = self.new_name
+
+            # Persist
+            attrs = dict(map_obj.attributes) if map_obj.attributes else {}
+            attrs["layers"] = map_obj.layers.to_dict()
+            map_obj.attributes = attrs
+            db_service.map_repo.insert_map(map_obj)
+
+            self._is_executed = True
+            return CommandResult(
+                success=True,
+                message=f"Layer renamed to '{self.new_name}'.",
+                command_name="RenameLayerCommand",
+            )
+        except Exception as e:
+            logger.error(f"RenameLayerCommand failed: {e}")
+            return CommandResult(
+                success=False,
+                message=str(e),
+                command_name="RenameLayerCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Revert the rename.
+
+        Args:
+            db_service: The database service.
+
+        """
+        if self._is_executed and self._previous_name is not None:
+            map_obj = db_service.map_repo.get_map(self.map_id)
+            if map_obj and map_obj.layers:
+                node = SetLayerVisibilityCommand._find_node(
+                    map_obj.layers, self.node_id
+                )
+                if node:
+                    node.name = self._previous_name
+                    attrs = (
+                        dict(map_obj.attributes) if map_obj.attributes else {}
+                    )
+                    attrs["layers"] = map_obj.layers.to_dict()
+                    map_obj.attributes = attrs
+                    db_service.map_repo.insert_map(map_obj)
+            self._is_executed = False
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary."""
+        return {
+            "map_id": self.map_id,
+            "node_id": self.node_id,
+            "new_name": self.new_name,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "RenameLayerCommand":
+        """Deserialize command from dictionary."""
+        return cls(data["map_id"], data["node_id"], data["new_name"])

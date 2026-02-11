@@ -863,8 +863,35 @@ class ConnectionManager:
         ):
             failed_count += 1
 
+        # Layer operations → MapHandler (command stack)
+        if not self._connect_signal_safe(
+            map_widget,
+            "layer_tree_changed",
+            self.window.map_handler.on_layer_tree_changed,
+            "MapWidget",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            map_widget,
+            "layer_opacity_change_requested",
+            self.window.map_handler.on_layer_opacity_changed,
+            "MapWidget",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            map_widget,
+            "layer_rename_requested",
+            self.window.map_handler.on_layer_renamed,
+            "MapWidget",
+        ):
+            failed_count += 1
+
+        total_connections = 19
         logger.debug(
-            f"MapWidget connections: {16 - failed_count}/16 succeeded, "
+            f"MapWidget connections: {total_connections - failed_count}"
+            f"/{total_connections} succeeded, "
             f"{failed_count} failed"
         )
         return failed_count

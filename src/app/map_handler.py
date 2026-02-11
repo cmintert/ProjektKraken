@@ -20,6 +20,9 @@ from src.commands.map_commands import (
     CreateMarkerCommand,
     DeleteMapCommand,
     DeleteMarkerCommand,
+    RenameLayerCommand,
+    SaveLayerTreeCommand,
+    SetLayerOpacityCommand,
     UpdateMapCommand,
     UpdateMarkerColorCommand,
     UpdateMarkerCommand,
@@ -649,4 +652,52 @@ class MapHandler(QObject):
         cmd = UpdateMapCommand(
             current_map_id, {"attributes": {"width_meters": width_meters}}
         )
+        self.window.command_requested.emit(cmd)
+
+    # ------------------------------------------------------------------
+    # Layer operations (routed through the command stack)
+    # ------------------------------------------------------------------
+
+    @Slot()
+    def on_layer_tree_changed(self) -> None:
+        """Persist the current layer tree to the database.
+
+        Called whenever the in-memory layer model is mutated.
+        """
+        map_id = self.window.map_widget.get_selected_map_id()
+        model = self.window.map_widget.get_layer_model()
+        if not map_id or not model:
+            return
+        tree_dict = model.root.to_dict()
+        cmd = SaveLayerTreeCommand(map_id, tree_dict)
+        self.window.command_requested.emit(cmd)
+
+    @Slot(str, float)
+    def on_layer_opacity_changed(self, node_id: str, opacity: float) -> None:
+        """Handle layer opacity change via the command stack.
+
+        Args:
+            node_id: ID of the layer node.
+            opacity: New opacity (0.0–1.0).
+
+        """
+        map_id = self.window.map_widget.get_selected_map_id()
+        if not map_id:
+            return
+        cmd = SetLayerOpacityCommand(map_id, node_id, opacity)
+        self.window.command_requested.emit(cmd)
+
+    @Slot(str, str)
+    def on_layer_renamed(self, node_id: str, new_name: str) -> None:
+        """Handle layer rename via the command stack.
+
+        Args:
+            node_id: ID of the layer node.
+            new_name: New display name.
+
+        """
+        map_id = self.window.map_widget.get_selected_map_id()
+        if not map_id:
+            return
+        cmd = RenameLayerCommand(map_id, node_id, new_name)
         self.window.command_requested.emit(cmd)

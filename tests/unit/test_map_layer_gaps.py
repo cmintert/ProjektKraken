@@ -900,3 +900,133 @@ class TestStyleHelperNewMethods:
         style = StyleHelper.get_panel_header_style()
         assert isinstance(style, str)
         assert "font-weight" in style
+
+
+# =========================================================================
+# layer_tree_changed signal
+# =========================================================================
+
+
+class TestLayerTreeChangedSignal:
+    """Verify the model emits layer_tree_changed on every mutation."""
+
+    def test_emitted_on_set_visible(
+        self, qtbot, simple_model: MapLayerModel
+    ) -> None:
+        """Toggling visibility emits layer_tree_changed."""
+        m1 = simple_model.find_node_by_id("m1")
+        with qtbot.waitSignal(simple_model.layer_tree_changed, timeout=500):
+            simple_model.set_node_visible(m1, False)
+
+    def test_emitted_on_set_opacity(
+        self, qtbot, simple_model: MapLayerModel
+    ) -> None:
+        """Changing opacity emits layer_tree_changed."""
+        m1 = simple_model.find_node_by_id("m1")
+        with qtbot.waitSignal(simple_model.layer_tree_changed, timeout=500):
+            simple_model.set_node_opacity(m1, 0.5)
+
+    def test_emitted_on_add_layer(
+        self, qtbot, simple_model: MapLayerModel
+    ) -> None:
+        """Adding a layer emits layer_tree_changed."""
+        new_node = MapLayerNode(name="New", layer_type=MAP_LAYER_TYPE_MARKER)
+        root_idx = simple_model.index_from_node(simple_model.root)
+        with qtbot.waitSignal(simple_model.layer_tree_changed, timeout=500):
+            simple_model.add_layer(root_idx, new_node)
+
+    def test_emitted_on_remove_layer(
+        self, qtbot, simple_model: MapLayerModel
+    ) -> None:
+        """Removing a layer emits layer_tree_changed."""
+        m1 = simple_model.find_node_by_id("m1")
+        idx = simple_model.index_from_node(m1)
+        with qtbot.waitSignal(simple_model.layer_tree_changed, timeout=500):
+            simple_model.remove_layer(idx)
+
+
+# =========================================================================
+# New layer commands
+# =========================================================================
+
+
+class TestSetLayerOpacityCommand:
+    """Test the SetLayerOpacityCommand."""
+
+    def test_serialization_round_trip(self) -> None:
+        """to_dict / from_dict round-trip."""
+        from src.commands.map_commands import SetLayerOpacityCommand
+
+        cmd = SetLayerOpacityCommand("map-1", "node-1", 0.75)
+        data = cmd.to_dict()
+        restored = SetLayerOpacityCommand.from_dict(data)
+        assert restored.map_id == "map-1"
+        assert restored.node_id == "node-1"
+        assert abs(restored.opacity - 0.75) < _OPACITY_TOLERANCE
+
+
+class TestRenameLayerCommand:
+    """Test the RenameLayerCommand."""
+
+    def test_serialization_round_trip(self) -> None:
+        """to_dict / from_dict round-trip."""
+        from src.commands.map_commands import RenameLayerCommand
+
+        cmd = RenameLayerCommand("map-1", "node-1", "New Name")
+        data = cmd.to_dict()
+        restored = RenameLayerCommand.from_dict(data)
+        assert restored.map_id == "map-1"
+        assert restored.node_id == "node-1"
+        assert restored.new_name == "New Name"
+
+
+# =========================================================================
+# MapWidget signal emission for command stack
+# =========================================================================
+
+
+class TestMapWidgetLayerSignals:
+    """Verify MapWidget emits the layer signals for the command stack."""
+
+    def test_layer_tree_changed_forwarded(self, qtbot) -> None:
+        """Model mutation causes MapWidget.layer_tree_changed to emit."""
+        widget = _make_map_widget(qtbot)
+        widget.add_marker("sig-1", "entity", "Signal Test", 0.5, 0.5)
+        model = widget.get_layer_model()
+
+        with qtbot.waitSignal(widget.layer_tree_changed, timeout=500):
+            m = model.find_node_by_id("sig-1")
+            model.set_node_visible(m, False)
+
+    def test_opacity_signal_emitted(self, qtbot) -> None:
+        """Panel slider emits layer_opacity_change_requested."""
+        widget = _make_map_widget(qtbot)
+        widget.add_marker("op-1", "entity", "Opacity Test", 0.5, 0.5)
+
+        received: list[tuple] = []
+        widget.layer_opacity_change_requested.connect(
+            lambda nid, o: received.append((nid, o))
+        )
+
+        # Select the node in the panel
+        widget.layer_panel.select_node("op-1")
+        # Move the slider
+        widget.layer_panel._opacity_slider.setValue(50)
+
+        assert len(received) == 1
+        assert received[0][0] == "op-1"
+        assert abs(received[0][1] - 0.5) < _OPACITY_TOLERANCE
+
+    def test_rename_signal_emitted(self, qtbot) -> None:
+        """Renaming a layer emits layer_rename_requested."""
+        widget = _make_map_widget(qtbot)
+        widget.add_marker("ren-sig-1", "entity", "Rename Sig", 0.5, 0.5)
+
+        received: list[tuple] = []
+        widget.layer_rename_requested.connect(
+            lambda nid, n: received.append((nid, n))
+        )
+
+        widget._on_layer_renamed("ren-sig-1", "Updated Name")
+        assert len(received) == 1
+        assert received[0] == ("ren-sig-1", "Updated Name")

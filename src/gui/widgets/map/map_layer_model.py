@@ -59,12 +59,16 @@ class MapLayerModel(QAbstractItemModel):
         layer_opacity_changed: Emitted when a node's effective opacity
             changes.  Payload is ``(node_id: str, opacity: float)``.
         layer_order_changed: Emitted after rows are moved/reordered.
+        layer_tree_changed: Emitted whenever the tree is mutated (add,
+            remove, reorder, visibility, opacity, rename).  Used as a
+            single hook for auto-persistence.
 
     """
 
     layer_visibility_changed = Signal(str, bool)
     layer_opacity_changed = Signal(str, float)
     layer_order_changed = Signal()
+    layer_tree_changed = Signal()
 
     # Columns
     COL_NAME = 0
@@ -416,6 +420,7 @@ class MapLayerModel(QAbstractItemModel):
             self.endInsertRows()
 
         self.layer_order_changed.emit()
+        self.layer_tree_changed.emit()
         return True
 
     # ------------------------------------------------------------------
@@ -455,6 +460,7 @@ class MapLayerModel(QAbstractItemModel):
         idx = self.index_from_node(node)
         self.dataChanged.emit(idx, idx, [Qt.ItemDataRole.CheckStateRole])
         self._emit_subtree_visibility(node)
+        self.layer_tree_changed.emit()
 
     def set_node_opacity(self, node: MapLayerNode, opacity: float) -> None:
         """Set a node's local opacity and propagate changes.
@@ -467,6 +473,7 @@ class MapLayerModel(QAbstractItemModel):
         node.opacity = max(0.0, min(1.0, opacity))
         self.invalidate_cache()
         self._emit_subtree_opacity(node)
+        self.layer_tree_changed.emit()
 
     def add_layer(
         self,
@@ -492,6 +499,7 @@ class MapLayerModel(QAbstractItemModel):
         self.endInsertRows()
         self.invalidate_cache()
         self.layer_order_changed.emit()
+        self.layer_tree_changed.emit()
         return self.index(insert_row, 0, parent_index)
 
     def remove_layer(self, index: QModelIndex) -> bool:
@@ -517,6 +525,7 @@ class MapLayerModel(QAbstractItemModel):
         self.endRemoveRows()
         self.invalidate_cache()
         self.layer_order_changed.emit()
+        self.layer_tree_changed.emit()
         return True
 
     def move_layer(
@@ -557,6 +566,7 @@ class MapLayerModel(QAbstractItemModel):
 
         self.invalidate_cache()
         self.layer_order_changed.emit()
+        self.layer_tree_changed.emit()
         return True
 
     # ------------------------------------------------------------------

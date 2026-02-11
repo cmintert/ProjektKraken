@@ -354,6 +354,16 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.entity_editor = EntityEditorWidget(self)
         self.timeline = TimelineWidget()
         self.map_widget = MapWidget()
+        # Propagate theme changes to the layer panel
+        try:
+            from src.core.theme_manager import ThemeManager
+
+            ThemeManager().theme_changed.connect(
+                lambda _: self.map_widget.layer_panel.refresh_styles()
+            )
+        except Exception as e:
+            logger.warning(f"Failed to connect theme→layer panel: {e}")
+
         self.ai_search_panel = AISearchPanelWidget()
         self.graph_widget = GraphWidget()
         self.longform_editor = LongformEditorWidget(db_path=self.db_path)
