@@ -270,7 +270,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.entities</span><span class="w"> </span><span class="kn">import</span> <span class="n">Entity</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">Event</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.map</span><span class="w"> </span><span class="kn">import</span> <span class="n">Map</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.marker</span><span class="w"> </span><span class="kn">import</span> <span class="n">Marker</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.core.marker</span><span class="w"> </span><span class="kn">import</span> <span class="n">MapFeature</span><span class="p">,</span> <span class="n">Marker</span>
 
 <span class="c1"># Import repositories for modular CRUD operations</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.repositories</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -519,7 +519,7 @@
 <span class="s2">            modified_at REAL</span>
 <span class="s2">        );</span>
 
-<span class="s2">        -- Marker Table</span>
+<span class="s2">        -- Marker / MapFeature Table</span>
 <span class="s2">        CREATE TABLE IF NOT EXISTS markers (</span>
 <span class="s2">            id TEXT PRIMARY KEY,</span>
 <span class="s2">            map_id TEXT NOT NULL,</span>
@@ -531,6 +531,9 @@
 <span class="s2">            attributes JSON DEFAULT &#39;</span><span class="si">{}</span><span class="s2">&#39;,</span>
 <span class="s2">            created_at REAL,</span>
 <span class="s2">            modified_at REAL,</span>
+<span class="s2">            feature_type TEXT DEFAULT &#39;point&#39;,</span>
+<span class="s2">            geometry TEXT,</span>
+<span class="s2">            style TEXT,</span>
 <span class="s2">            UNIQUE(map_id, object_id, object_type),</span>
 <span class="s2">            FOREIGN KEY(map_id) REFERENCES maps(id) ON DELETE CASCADE</span>
 <span class="s2">        );</span>
@@ -736,6 +739,67 @@
 
             <span class="c1"># Migrate trajectory data from old format to MF-JSON</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_migrate_trajectories_to_mfjson</span><span class="p">()</span>
+
+            <span class="c1"># --- MapFeature migration: add feature_type, geometry, style ---</span>
+            <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;PRAGMA table_info(markers)&quot;</span><span class="p">)</span>
+            <span class="n">marker_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()]</span>
+
+            <span class="k">if</span> <span class="s2">&quot;feature_type&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">marker_cols</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="s2">&quot;Applying migration: Add feature_type column to markers table&quot;</span>
+                <span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                        <span class="s2">&quot;ALTER TABLE markers ADD COLUMN feature_type TEXT DEFAULT &#39;point&#39;&quot;</span>
+                    <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="s2">&quot;Migration successful: Added feature_type column to markers table&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Failed to add feature_type column to markers: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">raise</span>
+
+            <span class="k">if</span> <span class="s2">&quot;geometry&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">marker_cols</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="s2">&quot;Applying migration: Add geometry column to markers table&quot;</span>
+                <span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                        <span class="s2">&quot;ALTER TABLE markers ADD COLUMN geometry TEXT&quot;</span>
+                    <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="s2">&quot;Migration successful: Added geometry column to markers table&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Failed to add geometry column to markers: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">raise</span>
+
+            <span class="k">if</span> <span class="s2">&quot;style&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">marker_cols</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="s2">&quot;Applying migration: Add style column to markers table&quot;</span>
+                <span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                        <span class="s2">&quot;ALTER TABLE markers ADD COLUMN style TEXT&quot;</span>
+                    <span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="s2">&quot;Migration successful: Added style column to markers table&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Failed to add style column to markers: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">raise</span>
 
         <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Migration check failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -1431,13 +1495,13 @@
 <div class="viewcode-block" id="DatabaseService.insert_marker">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.insert_marker">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">insert_marker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker</span><span class="p">:</span> <span class="n">Marker</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Inserts a new marker or updates an existing one (Upsert).</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Inserts a new marker/feature or updates an existing one (Upsert).</span>
 
 <span class="sd">        Upserts on UNIQUE(map_id, object_id, object_type). On conflict,</span>
 <span class="sd">        the existing row&#39;s id is retained.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            marker (Marker): The marker domain object to persist.</span>
+<span class="sd">            marker (Marker): The marker/feature domain object to persist.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            str: The ID of the inserted/updated marker (may differ from marker.id</span>
@@ -1450,14 +1514,18 @@
         <span class="c1"># Note: Repository insert_marker doesn&#39;t return ID, so we need special handling</span>
         <span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">            INSERT INTO markers (id, map_id, object_id, object_type, x, y,</span>
-<span class="s2">                               label, attributes, created_at, modified_at)</span>
-<span class="s2">            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)</span>
+<span class="s2">                               label, attributes, created_at, modified_at,</span>
+<span class="s2">                               feature_type, geometry, style)</span>
+<span class="s2">            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)</span>
 <span class="s2">            ON CONFLICT(map_id, object_id, object_type) DO UPDATE SET</span>
 <span class="s2">                x=excluded.x,</span>
 <span class="s2">                y=excluded.y,</span>
 <span class="s2">                label=excluded.label,</span>
 <span class="s2">                attributes=excluded.attributes,</span>
-<span class="s2">                modified_at=excluded.modified_at</span>
+<span class="s2">                modified_at=excluded.modified_at,</span>
+<span class="s2">                feature_type=excluded.feature_type,</span>
+<span class="s2">                geometry=excluded.geometry,</span>
+<span class="s2">                style=excluded.style</span>
 <span class="s2">            RETURNING id;</span>
 <span class="s2">        &quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
@@ -1474,6 +1542,9 @@
                     <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">marker</span><span class="o">.</span><span class="n">attributes</span><span class="p">),</span>
                     <span class="n">marker</span><span class="o">.</span><span class="n">created_at</span><span class="p">,</span>
                     <span class="n">marker</span><span class="o">.</span><span class="n">modified_at</span><span class="p">,</span>
+                    <span class="n">marker</span><span class="o">.</span><span class="n">feature_type</span><span class="p">,</span>
+                    <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">marker</span><span class="o">.</span><span class="n">geometry</span><span class="p">)</span> <span class="k">if</span> <span class="n">marker</span><span class="o">.</span><span class="n">geometry</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                    <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">marker</span><span class="o">.</span><span class="n">style</span><span class="p">)</span> <span class="k">if</span> <span class="n">marker</span><span class="o">.</span><span class="n">style</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
                 <span class="p">),</span>
             <span class="p">)</span>
             <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>

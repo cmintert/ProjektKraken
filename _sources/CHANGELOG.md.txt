@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-02-08
-### Documentation
-- docs: Add a project screenshot to the README.
+## [Development] - 2026-02-11
+### Internal
+- Merge pull request #78 from cmintert/copilot/refactor-marker-to-mapfeature
 
 
 *This changelog was automatically generated.*

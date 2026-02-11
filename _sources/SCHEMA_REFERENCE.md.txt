@@ -74,6 +74,9 @@ erDiagram
         JSON attributes
         REAL created_at
         REAL modified_at
+        TEXT feature_type
+        TEXT geometry
+        TEXT style
     }
 
     moving_features {
@@ -248,6 +251,9 @@ erDiagram
 | `attributes` | JSON | DEFAULT '{}' |
 | `created_at` | REAL |  |
 | `modified_at` | REAL |  |
+| `feature_type` | TEXT | DEFAULT 'point' |
+| `geometry` | TEXT |  |
+| `style` | TEXT |  |
 
 **Indexes:** `idx_markers_map`
 

@@ -332,6 +332,9 @@
         JSON attributes
         REAL created_at
         REAL modified_at
+        TEXT feature_type
+        TEXT geometry
+        TEXT style
     }
 
     moving_features {
@@ -711,6 +714,18 @@
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">modified_at</span></code></p></td>
 <td><p>REAL</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">feature_type</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p>DEFAULT ‘point’</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">geometry</span></code></p></td>
+<td><p>TEXT</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">style</span></code></p></td>
+<td><p>TEXT</p></td>
 <td><p></p></td>
 </tr>
 </tbody>

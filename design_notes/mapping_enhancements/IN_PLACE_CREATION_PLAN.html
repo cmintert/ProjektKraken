@@ -1,15 +1,15 @@
 <!doctype html>
-<html class="no-js" lang="en" data-content_root="./">
+<html class="no-js" lang="en" data-content_root="../../">
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="prev" title="services package" href="services.html">
+<link rel="index" title="Index" href="../../genindex.html"><link rel="search" title="Search" href="../../search.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
-        <title>Changelog - Project Kraken 0.11.0 documentation</title>
-      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
+        <title>Implementation Plan: In-Place Entity/Event Creation from Map - Project Kraken 0.11.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=580074bf" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=8dab3a3b" />
     
     
 
@@ -167,7 +167,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">Project Kraken 0.11.0 documentation</div></a>
+      <a href="../../index.html"><div class="brand">Project Kraken 0.11.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -186,11 +186,11 @@
   <aside class="sidebar-drawer">
     <div class="sidebar-container">
       
-      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../index.html">
   
   <span class="sidebar-brand-text">Project Kraken 0.11.0 documentation</span>
   
-</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+</a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
   <input type="hidden" name="check_keywords" value="yes">
   <input type="hidden" name="area" value="default">
@@ -198,29 +198,29 @@
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="DATABASE.html">Database Documentation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="DEVELOPMENT.html">Development Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../DATABASE.html">Database Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../DEVELOPMENT.html">Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../SCHEMA_REFERENCE.html">Database Schema Reference</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul>
-<li class="toctree-l1 has-children"><a class="reference internal" href="modules.html">src</a><input aria-label="Toggle navigation of src" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="app.html">app package</a></li>
-<li class="toctree-l2"><a class="reference internal" href="cli.html">cli package</a></li>
-<li class="toctree-l2"><a class="reference internal" href="commands.html">commands package</a></li>
-<li class="toctree-l2"><a class="reference internal" href="core.html">core package</a></li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="gui.widgets.html">gui.widgets package</a></li>
-<li class="toctree-l3"><a class="reference internal" href="gui.dialogs.html">gui.dialogs package</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../modules.html">src</a><input aria-label="Toggle navigation of src" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../app.html">app package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../cli.html">cli package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../commands.html">commands package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../core.html">core package</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../gui.html">gui package</a><input aria-label="Toggle navigation of gui package" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../gui.widgets.html">gui.widgets package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../gui.dialogs.html">gui.dialogs package</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="services.html">services package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../services.html">services package</a></li>
 </ul>
 </li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
-<ul class="current">
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Changelog</a></li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../CHANGELOG.html">Changelog</a></li>
 </ul>
 
 </div>
@@ -241,7 +241,7 @@
         </a>
         <div class="content-icon-container">
           <div class="view-this-page">
-  <a class="muted-link" href="_sources/CHANGELOG.md.txt" title="View this page">
+  <a class="muted-link" href="../../_sources/design_notes/mapping_enhancements/IN_PLACE_CREATION_PLAN.md.txt" title="View this page">
     <svg><use href="#svg-eye"></use></svg>
     <span class="visually-hidden">View this page</span>
   </a>
@@ -259,17 +259,66 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="changelog">
-<h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">¶</a></h1>
-<p>All notable changes to this project will be documented in this file.</p>
-<section id="development-2026-02-11">
-<h2>[Development] - 2026-02-11<a class="headerlink" href="#development-2026-02-11" title="Link to this heading">¶</a></h2>
-<section id="internal">
-<h3>Internal<a class="headerlink" href="#internal" title="Link to this heading">¶</a></h3>
+          <section id="implementation-plan-in-place-entity-event-creation-from-map">
+<h1>Implementation Plan: In-Place Entity/Event Creation from Map<a class="headerlink" href="#implementation-plan-in-place-entity-event-creation-from-map" title="Link to this heading">¶</a></h1>
+<p>The goal is to allow users to create a new Entity or Event directly when adding a marker, path, or region to the map, instead of being limited to existing items.</p>
+<section id="user-review-required">
+<h2>User Review Required<a class="headerlink" href="#user-review-required" title="Link to this heading">¶</a></h2>
+<blockquote>
+<div><p>[!IMPORTANT]
+The default type for new entities created from the map will be “Location”, as this is most common for map markers. Events will have a default lore_date of 0.0 unless configured otherwise by the user.</p>
+</div></blockquote>
+</section>
+<section id="proposed-changes">
+<h2>Proposed Changes<a class="headerlink" href="#proposed-changes" title="Link to this heading">¶</a></h2>
+<section id="gui-layer">
+<h3>GUI Layer<a class="headerlink" href="#gui-layer" title="Link to this heading">¶</a></h3>
+<section id="modify-map-handler-py-file-c-users-chris-antigravity-projects-projektkraken-projektkraken-src-app-map-handler-py">
+<h4>[MODIFY] [map_handler.py](file:///c:/Users/chris/Antigravity_Projects/ProjektKraken/ProjektKraken/src/app/map_handler.py)<a class="headerlink" href="#modify-map-handler-py-file-c-users-chris-antigravity-projects-projektkraken-projektkraken-src-app-map-handler-py" title="Link to this heading">¶</a></h4>
 <ul class="simple">
-<li><p>Merge pull request #78 from cmintert/copilot/refactor-marker-to-mapfeature</p></li>
+<li><p>Update <code class="docutils literal notranslate"><span class="pre">create_marker</span></code> and <code class="docutils literal notranslate"><span class="pre">on_feature_drawn</span></code> to:</p>
+<ul>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">&quot;&lt;New</span> <span class="pre">Entity...&gt;&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;&lt;New</span> <span class="pre">Event...&gt;&quot;</span></code> to the selection list.</p></li>
+<li><p>Handle these selections by prompting for a name via <code class="docutils literal notranslate"><span class="pre">QInputDialog.getText</span></code>.</p></li>
+<li><p>If a new item is created:</p>
+<ul>
+<li><p>Generate a UUID locally.</p></li>
+<li><p>Emit <code class="docutils literal notranslate"><span class="pre">CreateEntityCommand</span></code> or <code class="docutils literal notranslate"><span class="pre">CreateEventCommand</span></code> using that UUID.</p></li>
+<li><p>Emit <code class="docutils literal notranslate"><span class="pre">CreateMarkerCommand</span></code> linked to that UUID.</p></li>
 </ul>
-<p><em>This changelog was automatically generated.</em></p>
+</li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+</section>
+<hr class="docutils" />
+<section id="verification-plan">
+<h2>Verification Plan<a class="headerlink" href="#verification-plan" title="Link to this heading">¶</a></h2>
+<section id="automated-tests">
+<h3>Automated Tests<a class="headerlink" href="#automated-tests" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>I will add a unit test in <code class="docutils literal notranslate"><span class="pre">tests/unit/app/test_map_handler.py</span></code> (if it exists) or create a new test to verify that selecting “New Entity” emits the correct sequence of commands.</p></li>
+<li><p>Run existing tests: <code class="docutils literal notranslate"><span class="pre">pytest</span> <span class="pre">tests/unit/app/test_map_handler.py</span></code></p></li>
+</ul>
+</section>
+<section id="manual-verification">
+<h3>Manual Verification<a class="headerlink" href="#manual-verification" title="Link to this heading">¶</a></h3>
+<ol class="arabic simple">
+<li><p>Open the application and navigate to the Map tab.</p></li>
+<li><p>Right-click on the map or draw a feature (Path/Region).</p></li>
+<li><p>Select <code class="docutils literal notranslate"><span class="pre">&quot;&lt;New</span> <span class="pre">Entity...&quot;</span></code> from the list.</p></li>
+<li><p>Enter a name (e.g., “Mount Doom”).</p></li>
+<li><p>Verify that:</p>
+<ul class="simple">
+<li><p>A new marker appears on the map.</p></li>
+<li><p>A new entity “Mount Doom” appears in the Entity list.</p></li>
+<li><p>The marker is correctly linked to the new entity (clicking it opens “Mount Doom” in the editor).</p></li>
+</ul>
+</li>
+<li><p>Repeat for <code class="docutils literal notranslate"><span class="pre">&quot;&lt;New</span> <span class="pre">Event...&quot;</span></code>.</p></li>
+</ol>
 </section>
 </section>
 </section>
@@ -280,17 +329,7 @@
         
         <div class="related-pages">
           
-          <a class="prev-page" href="services.html">
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-              <div class="page-info">
-                <div class="context">
-                  <span>Previous</span>
-                </div>
-                
-                <div class="title">services package</div>
-                
-              </div>
-            </a>
+          
         </div>
         <div class="bottom-of-page">
           <div class="left-details">
@@ -321,9 +360,18 @@
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Changelog</a><ul>
-<li><a class="reference internal" href="#development-2026-02-11">[Development] - 2026-02-11</a><ul>
-<li><a class="reference internal" href="#internal">Internal</a></li>
+<li><a class="reference internal" href="#">Implementation Plan: In-Place Entity/Event Creation from Map</a><ul>
+<li><a class="reference internal" href="#user-review-required">User Review Required</a></li>
+<li><a class="reference internal" href="#proposed-changes">Proposed Changes</a><ul>
+<li><a class="reference internal" href="#gui-layer">GUI Layer</a><ul>
+<li><a class="reference internal" href="#modify-map-handler-py-file-c-users-chris-antigravity-projects-projektkraken-projektkraken-src-app-map-handler-py">[MODIFY] [map_handler.py](file:///c:/Users/chris/Antigravity_Projects/ProjektKraken/ProjektKraken/src/app/map_handler.py)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#verification-plan">Verification Plan</a><ul>
+<li><a class="reference internal" href="#automated-tests">Automated Tests</a></li>
+<li><a class="reference internal" href="#manual-verification">Manual Verification</a></li>
 </ul>
 </li>
 </ul>
@@ -337,9 +385,9 @@
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=1a9b1e2b"></script>
-    <script src="_static/doctools.js?v=9bcbadda"></script>
-    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script src="_static/scripts/furo.js?v=46bd48cc"></script>
+</div><script src="../../_static/documentation_options.js?v=1a9b1e2b"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>
     </body>
 </html>
