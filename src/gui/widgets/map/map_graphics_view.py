@@ -6,7 +6,7 @@ Provides the MapGraphicsView class for rendering and interacting with the map.
 import json
 import logging
 import math
-from typing import Any, Callable, Dict, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 
 from PySide6.QtCore import (
     Property,
@@ -99,6 +99,9 @@ from src.gui.widgets.map.icon_picker_dialog import IconPickerDialog
 from src.gui.widgets.map.marker_item import MarkerItem
 from src.gui.widgets.map.scale_bar_painter import ScaleBarPainter
 from src.gui.widgets.map.snapping_manager import SnapType, SnappingManager
+
+if TYPE_CHECKING:
+    from src.gui.widgets.map.map_layer_model import MapLayerModel
 
 logger = logging.getLogger(__name__)
 
@@ -795,6 +798,9 @@ class MapGraphicsView(QGraphicsView):
         self.trigger_first_use_animation: bool = False
         self._animations: list[QPropertyAnimation] = []  # Keep references
 
+        # Hierarchical Layer Model (optional integration)
+        self._layer_model: Optional["MapLayerModel"] = None
+
     def minimumSizeHint(self) -> QSize:
         """Override minimum size hint to allow resizing below map image size.
 
@@ -1181,6 +1187,147 @@ class MapGraphicsView(QGraphicsView):
 
         self.scale(factor, factor)
         self._update_label_scales()
+        self._apply_scale_dependent_visibility()
+
+    # ------------------------------------------------------------------
+    # Hierarchical Layer System integration
+    # ------------------------------------------------------------------
+
+    @property
+    def layer_model(self) -> Optional["MapLayerModel"]:
+        """Return the currently attached layer model (if any).
+
+        Returns:
+            Optional[MapLayerModel]: The layer model, or ``None``.
+
+        """
+        return self._layer_model
+
+    def set_layer_model(self, model: "MapLayerModel") -> None:
+        """Attach a :class:`MapLayerModel` and connect its signals.
+
+        Args:
+            model: The layer model to attach.
+
+        """
+        # Disconnect old model if any
+        if self._layer_model is not None:
+            try:
+                self._layer_model.layer_visibility_changed.disconnect(
+                    self._on_layer_visibility_changed
+                )
+                self._layer_model.layer_opacity_changed.disconnect(
+                    self._on_layer_opacity_changed
+                )
+                self._layer_model.layer_order_changed.disconnect(
+                    self._on_layer_order_changed
+                )
+            except RuntimeError:
+                pass  # already disconnected
+
+        self._layer_model = model
+
+        model.layer_visibility_changed.connect(self._on_layer_visibility_changed)
+        model.layer_opacity_changed.connect(self._on_layer_opacity_changed)
+        model.layer_order_changed.connect(self._on_layer_order_changed)
+
+    def _on_layer_visibility_changed(
+        self, node_id: str, visible: bool
+    ) -> None:
+        """Respond to a layer visibility change from the model.
+
+        Args:
+            node_id: ID of the layer node.
+            visible: Whether the layer should be visible.
+
+        """
+        item = self._find_graphics_item(node_id)
+        if item is not None:
+            item.setVisible(visible)
+
+    def _on_layer_opacity_changed(
+        self, node_id: str, opacity: float
+    ) -> None:
+        """Respond to a layer opacity change from the model.
+
+        Args:
+            node_id: ID of the layer node.
+            opacity: Effective opacity (already multiplied by ancestors).
+
+        """
+        item = self._find_graphics_item(node_id)
+        if item is not None:
+            item.setOpacity(opacity)
+
+    def _on_layer_order_changed(self) -> None:
+        """Respond to a layer order change by recomputing Z-values."""
+        if self._layer_model is None:
+            return
+        z_map = self._layer_model.compute_z_order()
+        for node_id, z_val in z_map.items():
+            item = self._find_graphics_item(node_id)
+            if item is not None:
+                item.setZValue(z_val)
+
+    def _find_graphics_item(
+        self, node_id: str
+    ) -> Optional[QGraphicsItem]:
+        """Look up a graphics item by layer node ID.
+
+        Searches both ``self.markers`` and ``self.feature_items``.
+
+        Args:
+            node_id: ID of the layer node (same as marker/feature ID).
+
+        Returns:
+            Optional[QGraphicsItem]: The matching item, or ``None``.
+
+        """
+        if node_id in self.markers:
+            return self.markers[node_id]
+        if node_id in self.feature_items:
+            return self.feature_items[node_id]
+        return None
+
+    def _get_current_zoom_level(self) -> float:
+        """Compute the current zoom level from the view transform.
+
+        Returns:
+            float: Horizontal scale factor of the view transform.
+
+        """
+        return self.transform().m11()
+
+    def _apply_scale_dependent_visibility(self) -> None:
+        """Show/hide items based on the current zoom and layer model.
+
+        Called after every zoom change.  If no layer model is attached
+        this is a no-op.
+        """
+        if self._layer_model is None:
+            return
+        zoom = self._get_current_zoom_level()
+        root = self._layer_model.root
+        self._apply_zoom_recursive(root, zoom)
+
+    def _apply_zoom_recursive(
+        self, node: Any, zoom: float
+    ) -> None:
+        """Walk the layer tree and toggle visibility per zoom range.
+
+        Args:
+            node: A :class:`MapLayerNode`.
+            zoom: Current zoom level.
+
+        """
+        if self._layer_model is None:
+            return
+        vis = self._layer_model.visible_at_zoom(node, zoom)
+        item = self._find_graphics_item(node.id)
+        if item is not None:
+            item.setVisible(vis)
+        for child in node.children:
+            self._apply_zoom_recursive(child, zoom)
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """Accept drag events with our custom MIME type."""
