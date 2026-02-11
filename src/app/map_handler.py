@@ -13,6 +13,8 @@ from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt, Slot
 from PySide6.QtWidgets import QFileDialog, QInputDialog, QMessageBox
 
 from src.app.constants import IMAGE_FILE_FILTER
+from src.commands.entity_commands import CreateEntityCommand
+from src.commands.event_commands import CreateEventCommand
 from src.commands.map_commands import (
     CreateMapCommand,
     CreateMarkerCommand,
@@ -190,9 +192,115 @@ class MapHandler(QObject):
             cmd = DeleteMapCommand(map_id)
             self.window.command_requested.emit(cmd)
 
+    # ------------------------------------------------------------------
+    # Sentinel values for "create new" options in the selection dialog
+    # ------------------------------------------------------------------
+    _NEW_ENTITY_SENTINEL = "<New Entity...>"
+    _NEW_EVENT_SENTINEL = "<New Event...>"
+
+    def _select_or_create_object(
+        self, dialog_title: str, dialog_label: str
+    ) -> tuple[str, str, str] | None:
+        """Shows a selection dialog with existing items + new-item options.
+
+        Returns:
+            Tuple of (object_id, object_type, name) on success, or None
+            if the user cancels.
+
+        """
+        # Build list of items to choose from
+        items: list[str] = [
+            self._NEW_ENTITY_SENTINEL,
+            self._NEW_EVENT_SENTINEL,
+        ]
+        for e in self.window._cached_entities:
+            items.append(f"{e.name} (Entity)")
+        for e in self.window._cached_events:
+            items.append(f"{e.name} (Event)")
+
+        # Sort existing items, but keep sentinels at top
+        sentinels = items[:2]
+        existing = sorted(items[2:])
+        items = sentinels + existing
+
+        item_text, ok = QInputDialog.getItem(
+            self.window, dialog_title, dialog_label, items, 0, False
+        )
+        if not ok or not item_text:
+            return None
+
+        # --- Handle "create new" sentinels ---
+        if item_text == self._NEW_ENTITY_SENTINEL:
+            return self._create_new_entity_inline()
+        if item_text == self._NEW_EVENT_SENTINEL:
+            return self._create_new_event_inline()
+
+        # --- Handle existing item selection ---
+        if item_text.endswith(" (Entity)"):
+            name = item_text[:-9]
+            obj = next(
+                (e for e in self.window._cached_entities if e.name == name), None
+            )
+            if obj:
+                return obj.id, "entity", obj.name
+        elif item_text.endswith(" (Event)"):
+            name = item_text[:-8]
+            obj = next(
+                (e for e in self.window._cached_events if e.name == name), None
+            )
+            if obj:
+                return obj.id, "event", obj.name
+
+        return None
+
+    def _create_new_entity_inline(self) -> tuple[str, str, str] | None:
+        """Prompts for a name and emits a CreateEntityCommand.
+
+        Returns:
+            Tuple of (new_id, 'entity', name) or None if cancelled.
+
+        """
+        name, ok = QInputDialog.getText(
+            self.window, "New Entity", "Entity Name:"
+        )
+        if not ok or not name.strip():
+            return None
+
+        name = name.strip()
+        new_id = str(uuid.uuid4())
+        cmd = CreateEntityCommand(
+            {"id": new_id, "name": name, "type": "Location"}
+        )
+        self.window.command_requested.emit(cmd)
+        logger.info(f"Created new entity '{name}' ({new_id}) from map")
+        return new_id, "entity", name
+
+    def _create_new_event_inline(self) -> tuple[str, str, str] | None:
+        """Prompts for a name and emits a CreateEventCommand.
+
+        Returns:
+            Tuple of (new_id, 'event', name) or None if cancelled.
+
+        """
+        name, ok = QInputDialog.getText(
+            self.window, "New Event", "Event Name:"
+        )
+        if not ok or not name.strip():
+            return None
+
+        name = name.strip()
+        new_id = str(uuid.uuid4())
+        cmd = CreateEventCommand(
+            {"id": new_id, "name": name, "lore_date": 0.0}
+        )
+        self.window.command_requested.emit(cmd)
+        logger.info(f"Created new event '{name}' ({new_id}) from map")
+        return new_id, "event", name
+
     def create_marker(self, x: float, y: float) -> None:
-        """Creates a new marker at the given normalized coordinates. Prompts user to
-        select an Entity or Event.
+        """Creates a new marker at the given normalized coordinates.
+
+        Prompts the user to select an existing Entity/Event or create a new one.
 
         Args:
             x: Normalized X coordinate [0.0, 1.0].
@@ -206,48 +314,19 @@ class MapHandler(QObject):
             )
             return
 
-        # Build list of items to choose from
-        items = []
-        # Format: "Name (Type)" -> (id, type)
-        for e in self.window._cached_entities:
-            items.append(f"{e.name} (Entity)")
-        for e in self.window._cached_events:
-            items.append(f"{e.name} (Event)")
-
-        items.sort()
-
-        item_text, ok = QInputDialog.getItem(
-            self.window, "Add Marker", "Select Object:", items, 0, False
-        )
-        if not ok or not item_text:
+        result = self._select_or_create_object("Add Marker", "Select Object:")
+        if not result:
             return
 
-        # Parse result
-        if item_text.endswith(" (Entity)"):
-            name = item_text[:-9]
-            obj_type = "entity"
-            # Find ID
-            obj = next(
-                (e for e in self.window._cached_entities if e.name == name), None
-            )
-        elif item_text.endswith(" (Event)"):
-            name = item_text[:-8]
-            obj_type = "event"
-            obj = next((e for e in self.window._cached_events if e.name == name), None)
-        else:
-            return
-
-        if not obj:
-            return
-
+        obj_id, obj_type, name = result
         cmd = CreateMarkerCommand(
             {
                 "map_id": map_id,
-                "object_id": obj.id,
+                "object_id": obj_id,
                 "object_type": obj_type,
                 "x": x,
                 "y": y,
-                "label": obj.name,
+                "label": name,
             }
         )
         self.window.command_requested.emit(cmd)
@@ -287,8 +366,8 @@ class MapHandler(QObject):
     def on_feature_drawn(self, feature_type: str, geometry: list) -> None:
         """Handle feature creation from drawing mode.
 
-        Prompts the user to select an Entity or Event to link, then creates
-        the feature with the drawn geometry.
+        Prompts the user to select an existing Entity/Event or create a new
+        one, then creates the feature with the drawn geometry.
 
         Args:
             feature_type: 'path' or 'region'.
@@ -302,43 +381,14 @@ class MapHandler(QObject):
             )
             return
 
-        # Build list of items to choose from
-        items = []
-        for e in self.window._cached_entities:
-            items.append(f"{e.name} (Entity)")
-        for e in self.window._cached_events:
-            items.append(f"{e.name} (Event)")
-        items.sort()
-
-        item_text, ok = QInputDialog.getItem(
-            self.window,
+        result = self._select_or_create_object(
             f"Link {feature_type.title()}",
             f"Select object for this {feature_type}:",
-            items,
-            0,
-            False,
         )
-        if not ok or not item_text:
+        if not result:
             return
 
-        # Parse result
-        if item_text.endswith(" (Entity)"):
-            name = item_text[:-9]
-            obj_type = "entity"
-            obj = next(
-                (e for e in self.window._cached_entities if e.name == name), None
-            )
-        elif item_text.endswith(" (Event)"):
-            name = item_text[:-8]
-            obj_type = "event"
-            obj = next(
-                (e for e in self.window._cached_events if e.name == name), None
-            )
-        else:
-            return
-
-        if not obj:
-            return
+        obj_id, obj_type, name = result
 
         # Compute centroid for anchor
         n = len(geometry)
@@ -348,18 +398,18 @@ class MapHandler(QObject):
         cmd = CreateMarkerCommand(
             {
                 "map_id": map_id,
-                "object_id": obj.id,
+                "object_id": obj_id,
                 "object_type": obj_type,
                 "x": cx,
                 "y": cy,
-                "label": obj.name,
+                "label": name,
                 "feature_type": feature_type,
                 "geometry": geometry,
             }
         )
         self.window.command_requested.emit(cmd)
         logger.info(
-            f"Creating {feature_type} '{obj.name}' with {len(geometry)} vertices"
+            f"Creating {feature_type} '{name}' with {len(geometry)} vertices"
         )
 
     @Slot(str, dict)

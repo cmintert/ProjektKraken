@@ -188,7 +188,7 @@ def test_marker_item_tooltip():
     mock_pixmap_item = MagicMock()
     marker = MarkerItem("m1", "entity", "Test Label", mock_pixmap_item)
 
-    assert marker.toolTip() == "Test Label"
+    assert marker.toolTip() == "<div style='width: 150px;'>Test Label</div>"
 
 
 def test_marker_drag_tracking():

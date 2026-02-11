@@ -37,28 +37,45 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.app.constants import (
+    MAP_FEATURE_CLICK_THRESHOLD_PX,
+    MAP_FEATURE_DEFAULT_DASH_PATTERN,
+    MAP_FEATURE_DEFAULT_FILL_COLOR,
+    MAP_FEATURE_DEFAULT_STROKE_COLOR,
+    MAP_FEATURE_DEFAULT_STROKE_WIDTH,
+    MAP_FEATURE_HIT_AREA_MARGIN,
+    MAP_FEATURE_HOVER_DEBOUNCE_MS,
+    MAP_FEATURE_LABEL_COLOR,
+    MAP_FEATURE_LABEL_FONT_FAMILY,
+    MAP_FEATURE_LABEL_FONT_SIZE,
+    MAP_FEATURE_MIN_HIT_AREA_WIDTH,
+    MAP_FEATURE_REGION_FILL_COLOR,
+    MAP_FEATURE_REGION_STROKE_COLOR,
+    MAP_FEATURE_SELECTION_PEN_COLOR,
+    MAP_FEATURE_SELECTION_PEN_WIDTH,
+    MAP_FEATURE_Z_VALUE,
+    TEMPORAL_FUTURE_OPACITY,
+)
+
 logger = logging.getLogger(__name__)
 
-# Default visual style constants
-DEFAULT_STROKE_COLOR = "#3498DB"
-DEFAULT_STROKE_WIDTH = 2.0
-DEFAULT_FILL_COLOR = "#3498DB40"  # 25% alpha
-DEFAULT_DASH_PATTERN: List[float] = []  # solid line
-DEFAULT_REGION_STROKE_COLOR = "#2C3E50"
-DEFAULT_REGION_FILL_COLOR = "#3498DB30"
+# Backward-compatible aliases so existing imports keep working
+DEFAULT_STROKE_COLOR = MAP_FEATURE_DEFAULT_STROKE_COLOR
+DEFAULT_STROKE_WIDTH = MAP_FEATURE_DEFAULT_STROKE_WIDTH
+DEFAULT_FILL_COLOR = MAP_FEATURE_DEFAULT_FILL_COLOR
+DEFAULT_DASH_PATTERN: List[float] = MAP_FEATURE_DEFAULT_DASH_PATTERN
+DEFAULT_REGION_STROKE_COLOR = MAP_FEATURE_REGION_STROKE_COLOR
+DEFAULT_REGION_FILL_COLOR = MAP_FEATURE_REGION_FILL_COLOR
 
-# Selection highlight
-SELECTION_PEN_COLOR = "#FFFFFF"
-SELECTION_PEN_WIDTH = 2.0
+SELECTION_PEN_COLOR = MAP_FEATURE_SELECTION_PEN_COLOR
+SELECTION_PEN_WIDTH = MAP_FEATURE_SELECTION_PEN_WIDTH
 
-# Hit testing
-HIT_AREA_MARGIN = 6   # extra pixels around the stroke for easier clicking
-MIN_HIT_AREA_WIDTH = 10  # minimum pixel width for a clickable hit area
+HIT_AREA_MARGIN = MAP_FEATURE_HIT_AREA_MARGIN
+MIN_HIT_AREA_WIDTH = MAP_FEATURE_MIN_HIT_AREA_WIDTH
 
-# Label styling
-LABEL_FONT_FAMILY = "Segoe UI"
-LABEL_FONT_SIZE = 9
-LABEL_COLOR = "#333333"
+LABEL_FONT_FAMILY = MAP_FEATURE_LABEL_FONT_FAMILY
+LABEL_FONT_SIZE = MAP_FEATURE_LABEL_FONT_SIZE
+LABEL_COLOR = MAP_FEATURE_LABEL_COLOR
 
 
 class _FeatureItemBase(QGraphicsObject):
@@ -84,6 +101,7 @@ class _FeatureItemBase(QGraphicsObject):
         style: Optional[Dict[str, Any]] = None,
         description: Optional[str] = None,
         lore_date: Optional[float] = None,
+        map_width_meters: float = 1_000_000.0,
     ) -> None:
         """Initialise the feature item base.
 
@@ -96,6 +114,7 @@ class _FeatureItemBase(QGraphicsObject):
             style: Optional visual-override dict.
             description: Optional tooltip text.
             lore_date: Optional temporal date for future/past fading.
+            map_width_meters: Real-world map width in meters for metric display.
 
         """
         super().__init__()
@@ -107,6 +126,7 @@ class _FeatureItemBase(QGraphicsObject):
         self._style = style or {}
         self.lore_date = lore_date
         self._description = description or ""
+        self._map_width_meters = map_width_meters
 
         # Temporal state
         self.is_future = False
@@ -115,17 +135,17 @@ class _FeatureItemBase(QGraphicsObject):
         # Click detection
         self._drag_start_pos: Optional[QPointF] = None
 
-        # Hover tooltip debounce (100ms delay)
+        # Hover tooltip debounce
         self._hover_timer = QTimer()
         self._hover_timer.setSingleShot(True)
-        self._hover_timer.setInterval(100)
+        self._hover_timer.setInterval(MAP_FEATURE_HOVER_DEBOUNCE_MS)
         self._hover_timer.timeout.connect(self._apply_hover_tooltip)
 
         # Flags
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
         self.setAcceptHoverEvents(True)
         self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.setZValue(8)  # Below point markers (10), above map bg (0)
+        self.setZValue(MAP_FEATURE_Z_VALUE)
         self.setToolTip(description or label)
 
     # ------------------------------------------------------------------
@@ -184,7 +204,7 @@ class _FeatureItemBase(QGraphicsObject):
             return
         self.is_future = is_future
         self.is_past = is_past
-        self.setOpacity(0.7 if is_future else 1.0)
+        self.setOpacity(TEMPORAL_FUTURE_OPACITY if is_future else 1.0)
         self.update()
 
     # ------------------------------------------------------------------
@@ -212,7 +232,7 @@ class _FeatureItemBase(QGraphicsObject):
         if event.button() == Qt.MouseButton.LeftButton and self._drag_start_pos:
             end = event.scenePos()
             dist = (end - self._drag_start_pos).manhattanLength()
-            if dist < 5:
+            if dist < MAP_FEATURE_CLICK_THRESHOLD_PX:
                 self.clicked.emit(self.marker_id, self.object_type)
         self._drag_start_pos = None
         super().mouseReleaseEvent(event)
@@ -242,11 +262,55 @@ class _FeatureItemBase(QGraphicsObject):
         self.setToolTip(self._description or self.label)
         super().hoverLeaveEvent(event)
 
+    def _map_height_meters(self) -> float:
+        """Computes real-world map height from width and pixmap aspect ratio.
+
+        Returns:
+            Map height in meters (assumes square map when no pixmap).
+
+        """
+        if self.pixmap_item:
+            rect = self.pixmap_item.boundingRect()
+            if rect.width() > 0 and rect.height() > 0:
+                aspect = rect.width() / rect.height()
+                return self._map_width_meters / aspect
+        return self._map_width_meters  # fallback: square
+
+    @staticmethod
+    def _format_metric_length(meters: float) -> str:
+        """Formats a length value with appropriate metric unit.
+
+        Args:
+            meters: Distance in meters.
+
+        Returns:
+            Human-readable string with unit (m or km).
+
+        """
+        if meters >= 1000.0:
+            return f"{meters / 1000.0:.2f} km"
+        return f"{meters:.1f} m"
+
+    @staticmethod
+    def _format_metric_area(sq_meters: float) -> str:
+        """Formats an area value with appropriate metric unit.
+
+        Args:
+            sq_meters: Area in square meters.
+
+        Returns:
+            Human-readable string with unit (m² or km²).
+
+        """
+        if sq_meters >= 1_000_000.0:
+            return f"{sq_meters / 1_000_000.0:.2f} km²"
+        return f"{sq_meters:.1f} m²"
+
     def _apply_hover_tooltip(self) -> None:
         """Builds a rich tooltip from spatial properties and description.
 
         Extracts feature type, vertex count, and computed measurements
-        from the geometry to display in the tooltip.
+        from the geometry to display in the tooltip with metric units.
         """
         lines: List[str] = [f"<b>{self.label}</b>"]
         if self._description:
@@ -255,17 +319,18 @@ class _FeatureItemBase(QGraphicsObject):
         # Spatial properties
         props = self._compute_spatial_properties()
         if props.get("feature_type"):
-            lines.append(f"Type: {props['feature_type']}")
+            lines.append(f"Type: {props['feature_type'].title()}")
         if props.get("vertex_count"):
             lines.append(f"Vertices: {props['vertex_count']}")
         if "length" in props:
-            lines.append(f"Length: {props['length']:.2f}")
+            lines.append(f"Length: {self._format_metric_length(props['length'])}")
         if "area" in props:
-            lines.append(f"Area: {props['area']:.4f}")
+            lines.append(f"Area: {self._format_metric_area(props['area'])}")
         if "perimeter" in props:
-            lines.append(f"Perimeter: {props['perimeter']:.2f}")
+            lines.append(f"Perimeter: {self._format_metric_length(props['perimeter'])}")
 
-        self.setToolTip("<br>".join(lines))
+        tooltip_content = "<br>".join(lines)
+        self.setToolTip(f"<div style='width: 150px;'>{tooltip_content}</div>")
 
     def _compute_spatial_properties(self) -> Dict[str, Any]:
         """Computes lightweight spatial properties for the tooltip.
@@ -305,6 +370,7 @@ class PathItem(_FeatureItemBase):
         style: Optional[Dict[str, Any]] = None,
         description: Optional[str] = None,
         lore_date: Optional[float] = None,
+        map_width_meters: float = 1_000_000.0,
     ) -> None:
         """Initialise the PathItem.
 
@@ -319,6 +385,7 @@ class PathItem(_FeatureItemBase):
             style: Visual overrides dict.
             description: Tooltip text.
             lore_date: Temporal date.
+            map_width_meters: Real-world map width in meters.
 
         """
         super().__init__(
@@ -330,6 +397,7 @@ class PathItem(_FeatureItemBase):
             style,
             description,
             lore_date,
+            map_width_meters,
         )
         self._anchor_x = anchor_x
         self._anchor_y = anchor_y
@@ -401,7 +469,9 @@ class PathItem(_FeatureItemBase):
         from PySide6.QtGui import QPainterPathStroker
 
         stroker = QPainterPathStroker()
-        stroker.setWidth(max(self._stroke_width() + HIT_AREA_MARGIN, MIN_HIT_AREA_WIDTH))
+        stroker.setWidth(
+            max(self._stroke_width() + HIT_AREA_MARGIN, MIN_HIT_AREA_WIDTH)
+        )
         return stroker.createStroke(self._path)
 
     def paint(
@@ -434,10 +504,11 @@ class PathItem(_FeatureItemBase):
         painter.drawPath(self._path)
 
     def _compute_spatial_properties(self) -> Dict[str, Any]:
-        """Computes spatial properties for a path feature.
+        """Computes spatial properties for a path feature in metric units.
 
         Returns:
-            Dict with feature_type, vertex_count, segment_count, and length.
+            Dict with feature_type, vertex_count, segment_count,
+            and length (in meters).
 
         """
         props: Dict[str, Any] = {"feature_type": "path"}
@@ -446,10 +517,12 @@ class PathItem(_FeatureItemBase):
         pts = [(p["x"], p["y"]) for p in self._geometry]
         props["vertex_count"] = len(pts)
         props["segment_count"] = max(0, len(pts) - 1)
+        w = self._map_width_meters
+        h = self._map_height_meters()
         total = 0.0
         for i in range(len(pts) - 1):
-            dx = pts[i + 1][0] - pts[i][0]
-            dy = pts[i + 1][1] - pts[i][1]
+            dx = (pts[i + 1][0] - pts[i][0]) * w
+            dy = (pts[i + 1][1] - pts[i][1]) * h
             total += math.sqrt(dx * dx + dy * dy)
         props["length"] = total
         return props
@@ -473,6 +546,7 @@ class RegionItem(_FeatureItemBase):
         style: Optional[Dict[str, Any]] = None,
         description: Optional[str] = None,
         lore_date: Optional[float] = None,
+        map_width_meters: float = 1_000_000.0,
     ) -> None:
         """Initialise the RegionItem.
 
@@ -487,6 +561,7 @@ class RegionItem(_FeatureItemBase):
             style: Visual overrides dict.
             description: Tooltip text.
             lore_date: Temporal date.
+            map_width_meters: Real-world map width in meters.
 
         """
         super().__init__(
@@ -498,6 +573,7 @@ class RegionItem(_FeatureItemBase):
             style,
             description,
             lore_date,
+            map_width_meters,
         )
         self._anchor_x = anchor_x
         self._anchor_y = anchor_y
@@ -535,7 +611,9 @@ class RegionItem(_FeatureItemBase):
         ax = rect.left() + self._anchor_x * rect.width()
         ay = rect.top() + self._anchor_y * rect.height()
         label_rect = self._label_item.boundingRect()
-        self._label_item.setPos(ax - label_rect.width() / 2, ay - label_rect.height() / 2)
+        self._label_item.setPos(
+            ax - label_rect.width() / 2, ay - label_rect.height() / 2
+        )
 
     # ------------------------------------------------------------------
     # QGraphicsItem interface
@@ -598,14 +676,14 @@ class RegionItem(_FeatureItemBase):
         painter.drawPolygon(self._polygon)
 
     def _compute_spatial_properties(self) -> Dict[str, Any]:
-        """Computes spatial properties for a region feature.
+        """Computes spatial properties for a region feature in metric units.
 
         Uses the Shoelace formula for area and sums Euclidean distances
-        for perimeter.
+        for perimeter, scaled to real-world meters.
 
         Returns:
             Dict with feature_type, vertex_count, segment_count,
-            area, and perimeter.
+            area (m²), and perimeter (m).
 
         """
         props: Dict[str, Any] = {"feature_type": "region"}
@@ -616,20 +694,25 @@ class RegionItem(_FeatureItemBase):
         props["vertex_count"] = n
         props["segment_count"] = n  # closed polygon
 
-        # Shoelace area
+        w = self._map_width_meters
+        h = self._map_height_meters()
+
+        # Shoelace area (scaled to real-world square meters)
         area = 0.0
         for i in range(n):
             j = (i + 1) % n
-            area += pts[i][0] * pts[j][1]
-            area -= pts[j][0] * pts[i][1]
+            x0, y0 = pts[i][0] * w, pts[i][1] * h
+            x1, y1 = pts[j][0] * w, pts[j][1] * h
+            area += x0 * y1
+            area -= x1 * y0
         props["area"] = abs(area) / 2.0
 
-        # Perimeter
+        # Perimeter (scaled to real-world meters)
         perimeter = 0.0
         for i in range(n):
             j = (i + 1) % n
-            dx = pts[j][0] - pts[i][0]
-            dy = pts[j][1] - pts[i][1]
+            dx = (pts[j][0] - pts[i][0]) * w
+            dy = (pts[j][1] - pts[i][1]) * h
             perimeter += math.sqrt(dx * dx + dy * dy)
         props["perimeter"] = perimeter
         return props
