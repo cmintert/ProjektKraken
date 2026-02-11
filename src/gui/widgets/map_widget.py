@@ -30,6 +30,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.app.constants import (
+    MAP_LAYER_DEFAULT_GROUP_NAME,
     MAP_LAYER_TYPE_GROUP,
     MAP_LAYER_TYPE_MARKER,
     MAP_LAYER_TYPE_PATH,
@@ -813,7 +814,10 @@ class MapWidget(QWidget):
                 name="Root",
                 layer_type=MAP_LAYER_TYPE_GROUP,
                 children=[
-                    MapLayerNode(name="Default", layer_type=MAP_LAYER_TYPE_GROUP),
+                    MapLayerNode(
+                        name=MAP_LAYER_DEFAULT_GROUP_NAME,
+                        layer_type=MAP_LAYER_TYPE_GROUP,
+                    ),
                 ],
             )
         model = MapLayerModel(root=root)
@@ -843,10 +847,15 @@ class MapWidget(QWidget):
         model = self._ensure_layer_model()
         # Try to find an existing "Default" group
         for child in model.root.children:
-            if child.layer_type == MAP_LAYER_TYPE_GROUP and child.name == "Default":
+            if (
+                child.layer_type == MAP_LAYER_TYPE_GROUP
+                and child.name == MAP_LAYER_DEFAULT_GROUP_NAME
+            ):
                 return child
         # Create one
-        node = MapLayerNode(name="Default", layer_type=MAP_LAYER_TYPE_GROUP)
+        node = MapLayerNode(
+            name=MAP_LAYER_DEFAULT_GROUP_NAME, layer_type=MAP_LAYER_TYPE_GROUP,
+        )
         root_idx = model.index_from_node(model.root)
         model.add_layer(root_idx, node)
         return node

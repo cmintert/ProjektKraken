@@ -11,8 +11,6 @@ Covers:
 - Bi-directional selection
 """
 
-import json
-
 import pytest
 from PySide6.QtCore import QModelIndex, QRectF, Qt
 from PySide6.QtGui import QImage, QPixmap

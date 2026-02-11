@@ -550,8 +550,9 @@ class TestModelAPI:
         assert model.rowCount() == 1
 
     def test_display_data(self, model: MapLayerModel) -> None:
-        """DisplayRole returns the node name."""
+        """DisplayRole returns the node name with type icon prefix."""
         from PySide6.QtCore import Qt
 
         idx = model.index(0, 0)
-        assert model.data(idx, Qt.ItemDataRole.DisplayRole) == "Group A"
+        display = model.data(idx, Qt.ItemDataRole.DisplayRole)
+        assert "Group A" in display

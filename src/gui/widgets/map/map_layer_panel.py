@@ -9,34 +9,17 @@ import logging
 from typing import TYPE_CHECKING, Optional
 
 from PySide6.QtCore import QModelIndex, Qt, Signal
-from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QAbstractItemView,
-    QHeaderView,
     QTreeView,
     QVBoxLayout,
     QWidget,
-)
-
-from src.app.constants import (
-    MAP_LAYER_TYPE_GROUP,
-    MAP_LAYER_TYPE_MARKER,
-    MAP_LAYER_TYPE_PATH,
-    MAP_LAYER_TYPE_REGION,
 )
 
 if TYPE_CHECKING:
     from src.gui.widgets.map.map_layer_model import MapLayerModel
 
 logger = logging.getLogger(__name__)
-
-# Phosphor-style unicode icons for layer types (LOW-11)
-_LAYER_ICONS = {
-    MAP_LAYER_TYPE_GROUP: "\U0001F4C2",  # 📂
-    MAP_LAYER_TYPE_MARKER: "\U0001F4CD",  # 📍
-    MAP_LAYER_TYPE_PATH: "\U00002935",   # ⤵
-    MAP_LAYER_TYPE_REGION: "\U00002B1C",  # ⬜
-}
 
 
 class MapLayerPanel(QWidget):

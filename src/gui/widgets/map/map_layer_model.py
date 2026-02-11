@@ -28,6 +28,9 @@ from src.app.constants import (
     MAP_LAYER_DEFAULT_MIN_ZOOM,
     MAP_LAYER_DEFAULT_OPACITY,
     MAP_LAYER_TYPE_GROUP,
+    MAP_LAYER_TYPE_MARKER,
+    MAP_LAYER_TYPE_PATH,
+    MAP_LAYER_TYPE_REGION,
     MAP_LAYER_Z_BASE,
     MAP_LAYER_Z_SPACING,
 )
@@ -37,6 +40,14 @@ logger = logging.getLogger(__name__)
 
 # Internal MIME type for drag-and-drop reordering
 _LAYER_MIME_TYPE = "application/x-kraken-layer-node-id"
+
+# Unicode icon prefixes for layer type display (LOW-11)
+_LAYER_TYPE_ICONS = {
+    MAP_LAYER_TYPE_GROUP: "\U0001F4C2",   # 📂
+    MAP_LAYER_TYPE_MARKER: "\U0001F4CD",  # 📍
+    MAP_LAYER_TYPE_PATH: "\U00002935",    # ⤵
+    MAP_LAYER_TYPE_REGION: "\U00002B1C",  # ⬜
+}
 
 
 class MapLayerModel(QAbstractItemModel):
@@ -232,7 +243,8 @@ class MapLayerModel(QAbstractItemModel):
             return None
         node = self.node_from_index(index)
         if role == Qt.ItemDataRole.DisplayRole:
-            return node.name
+            icon = _LAYER_TYPE_ICONS.get(node.layer_type, "")
+            return f"{icon} {node.name}" if icon else node.name
         if role == Qt.ItemDataRole.CheckStateRole:
             return (
                 Qt.CheckState.Checked if node.visible

@@ -42,8 +42,6 @@ class MapRepository(BaseRepository):
         attrs = dict(map_obj.attributes) if map_obj.attributes else {}
         if map_obj.layers is not None:
             attrs["layers"] = map_obj.layers.to_dict()
-        elif "layers" not in attrs:
-            pass  # no layers, nothing to store
 
         sql = """
             INSERT INTO maps (id, name, image_path, description,

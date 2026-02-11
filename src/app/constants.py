@@ -201,6 +201,9 @@ MAP_LAYER_TYPE_MARKER = "marker"
 MAP_LAYER_TYPE_PATH = "path"
 MAP_LAYER_TYPE_REGION = "region"
 
+# Default group name for auto-registered features
+MAP_LAYER_DEFAULT_GROUP_NAME = "Default"
+
 # Z-index spacing between dynamically ordered layers
 MAP_LAYER_Z_SPACING = 1.0
 # Base Z-value for dynamic layer ordering (above map bg, below UI overlay)
