@@ -186,7 +186,9 @@ class MapWidget(QWidget):
     show_onboarding_requested = Signal()  # To trigger animation or hints
     # Layer operations (routed through the command stack)
     layer_tree_changed = Signal()  # auto-persist hook
-    layer_opacity_change_requested = Signal(str, float)  # node_id, opacity
+    layer_opacity_change_requested = Signal(
+        str, float, float
+    )  # node_id, opacity, old_opacity
     layer_rename_requested = Signal(str, str)  # node_id, new_name
     layer_delete_feature_requested = Signal(str)  # object_id of deleted leaf
 
@@ -1097,8 +1099,10 @@ class MapWidget(QWidget):
         self._layer_model.dataChanged.emit(idx, idx, [Qt.ItemDataRole.DisplayRole])
         self.layer_rename_requested.emit(node_id, new_name)
 
-    @Slot(str, float)
-    def _on_layer_opacity_changed(self, node_id: str, opacity: float) -> None:
+    @Slot(str, float, float)
+    def _on_layer_opacity_changed(
+        self, node_id: str, opacity: float, old_opacity: float
+    ) -> None:
         """Handle opacity change from the panel's slider.
 
         The model is already updated by the panel; this emits a signal
@@ -1107,9 +1111,10 @@ class MapWidget(QWidget):
         Args:
             node_id: ID of the node whose opacity changed.
             opacity: New opacity (0.0–1.0).
+            old_opacity: Previous opacity (for undo).
 
         """
-        self.layer_opacity_change_requested.emit(node_id, opacity)
+        self.layer_opacity_change_requested.emit(node_id, opacity, old_opacity)
 
     def get_layer_model(self) -> Optional[MapLayerModel]:
         """Return the current layer model (if any).

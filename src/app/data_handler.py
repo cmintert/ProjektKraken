@@ -318,7 +318,9 @@ class DataHandler(QObject):
                 self._pending_select_type = "entity"
                 self._pending_select_id = result.data["id"]
 
-            if "Map" in command_name or "Layer" in command_name:
+            if (
+                "Map" in command_name or "Layer" in command_name
+            ) and command_name != "SetLayerOpacityCommand":
                 logger.debug("[DataHandler] Emitting reload_maps")
                 self.reload_maps.emit()
 

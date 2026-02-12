@@ -68,7 +68,7 @@ class MapLayerPanel(QWidget):
     create_group_requested = Signal(str)
     create_layer_requested = Signal(str)
     delete_layer_requested = Signal(str)
-    layer_opacity_changed = Signal(str, float)
+    layer_opacity_changed = Signal(str, float, float)  # id, new, old
     layer_renamed = Signal(str, str)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -134,7 +134,9 @@ class MapLayerPanel(QWidget):
         self._opacity_slider.setRange(0, 100)
         self._opacity_slider.setValue(100)
         self._opacity_slider.setToolTip("Layer opacity (0–100 %)")
-        self._opacity_slider.valueChanged.connect(self._on_opacity_changed)
+        self._opacity_slider.sliderPressed.connect(self._on_slider_pressed)
+        self._opacity_slider.valueChanged.connect(self._on_opacity_preview)
+        self._opacity_slider.sliderReleased.connect(self._on_opacity_committed)
         opacity_layout.addWidget(self._opacity_slider, 1)
 
         self._opacity_value_label = QLabel("100 %")
@@ -150,6 +152,7 @@ class MapLayerPanel(QWidget):
         self._model: Optional["MapLayerModel"] = None
         self._selected_node_id: Optional[str] = None
         self._slider_updating = False  # guard against feedback loops
+        self._start_opacity: Optional[float] = None  # Opacity at drag start
 
         # Apply all theme-aware styles
         self.refresh_styles()
@@ -351,8 +354,11 @@ class MapLayerPanel(QWidget):
     # ------------------------------------------------------------------
 
     @Slot(int)
-    def _on_opacity_changed(self, value: int) -> None:
-        """Handle slider value change.
+    def _on_opacity_preview(self, value: int) -> None:
+        """Handle slider drag (live preview).
+
+        Updates the model (visuals) but does NOT emit the change signal,
+        avoiding a flood of undo commands.
 
         Args:
             value: Slider value 0–100.
@@ -365,8 +371,38 @@ class MapLayerPanel(QWidget):
         if self._selected_node_id and self._model is not None:
             node = self._model.find_node_by_id(self._selected_node_id)
             if node is not None:
-                self._model.set_node_opacity(node, pct)
-                self.layer_opacity_changed.emit(self._selected_node_id, pct)
+                # Update visual state only (no command, no auto-save)
+                self._model.set_node_opacity(node, pct, preview=True)
+
+    @Slot()
+    def _on_slider_pressed(self) -> None:
+        """Handle slider press to capture initial opacity."""
+        if self._model is None or not self._selected_node_id:
+            return
+        node = self._model.find_node_by_id(self._selected_node_id)
+        if node:
+            self._start_opacity = node.opacity
+
+    @Slot()
+    def _on_opacity_committed(self) -> None:
+        """Handle slider release (commit).
+
+        Emits the change signal to create a single undoable command.
+        """
+        if self._slider_updating or self._model is None or not self._selected_node_id:
+            return
+
+        node = self._model.find_node_by_id(self._selected_node_id)
+        if node:
+            # Emit signal to create undo command, passing both new and old opacity
+            # If _start_opacity is None (e.g. key press instead of drag), try to use current (less ideal)
+            old_opacity = (
+                self._start_opacity if self._start_opacity is not None else node.opacity
+            )
+            self.layer_opacity_changed.emit(
+                self._selected_node_id, node.opacity, old_opacity
+            )
+            self._start_opacity = None
 
     def _sync_opacity_slider(self, node: "MapLayerNode") -> None:
         """Update the slider to reflect the selected node's opacity.

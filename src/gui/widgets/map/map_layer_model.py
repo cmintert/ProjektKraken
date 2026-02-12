@@ -43,10 +43,10 @@ _LAYER_MIME_TYPE = "application/x-kraken-layer-node-id"
 
 # Unicode icon prefixes for layer type display (LOW-11)
 _LAYER_TYPE_ICONS = {
-    MAP_LAYER_TYPE_GROUP: "\U0001F4C2",   # 📂
-    MAP_LAYER_TYPE_MARKER: "\U0001F4CD",  # 📍
-    MAP_LAYER_TYPE_PATH: "\U00002935",    # ⤵
-    MAP_LAYER_TYPE_REGION: "\U00002B1C",  # ⬜
+    MAP_LAYER_TYPE_GROUP: "\U0001f4c2",  # 📂
+    MAP_LAYER_TYPE_MARKER: "\U0001f4cd",  # 📍
+    MAP_LAYER_TYPE_PATH: "\U00002935",  # ⤵
+    MAP_LAYER_TYPE_REGION: "\U00002b1c",  # ⬜
 }
 
 
@@ -230,9 +230,7 @@ class MapLayerModel(QAbstractItemModel):
         """
         return self.COLUMN_COUNT
 
-    def data(
-        self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole
-    ) -> Any:
+    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         """Return data for the requested role.
 
         Args:
@@ -250,10 +248,7 @@ class MapLayerModel(QAbstractItemModel):
             icon = _LAYER_TYPE_ICONS.get(node.layer_type, "")
             return f"{icon} {node.name}" if icon else node.name
         if role == Qt.ItemDataRole.CheckStateRole:
-            return (
-                Qt.CheckState.Checked if node.visible
-                else Qt.CheckState.Unchecked
-            )
+            return Qt.CheckState.Checked if node.visible else Qt.CheckState.Unchecked
         if role == self.LayerTypeRole:
             return node.layer_type
         if role == self.OpacityRole:
@@ -427,9 +422,7 @@ class MapLayerModel(QAbstractItemModel):
     # Layer manipulation API
     # ------------------------------------------------------------------
 
-    def set_node_visible(
-        self, node: MapLayerNode, visible: bool
-    ) -> None:
+    def set_node_visible(self, node: MapLayerNode, visible: bool) -> None:
         """Set a node's visibility, honouring mutually-exclusive groups.
 
         When the parent is mutually exclusive and *visible* is ``True``,
@@ -462,18 +455,23 @@ class MapLayerModel(QAbstractItemModel):
         self._emit_subtree_visibility(node)
         self.layer_tree_changed.emit()
 
-    def set_node_opacity(self, node: MapLayerNode, opacity: float) -> None:
+    def set_node_opacity(
+        self, node: MapLayerNode, opacity: float, preview: bool = False
+    ) -> None:
         """Set a node's local opacity and propagate changes.
 
         Args:
             node: Target node.
             opacity: New opacity value (0.0–1.0).
+            preview: If True, skips emitting ``layer_tree_changed`` (auto-save).
+                Use this for live slider updates to avoid flooding the DB.
 
         """
         node.opacity = max(0.0, min(1.0, opacity))
         self.invalidate_cache()
         self._emit_subtree_opacity(node)
-        self.layer_tree_changed.emit()
+        if not preview:
+            self.layer_tree_changed.emit()
 
     def add_layer(
         self,
@@ -609,9 +607,9 @@ class MapLayerModel(QAbstractItemModel):
         self._restore_state(self._root, preset)
         # Refresh everything
         top_left = self.index(0, 0)
-        bottom_right = self.index(
-            self.rowCount() - 1, 0
-        ) if self.rowCount() > 0 else top_left
+        bottom_right = (
+            self.index(self.rowCount() - 1, 0) if self.rowCount() > 0 else top_left
+        )
         self.dataChanged.emit(
             top_left,
             bottom_right,
@@ -624,9 +622,7 @@ class MapLayerModel(QAbstractItemModel):
     # Scale-dependent visibility query
     # ------------------------------------------------------------------
 
-    def visible_at_zoom(
-        self, node: MapLayerNode, zoom_level: float
-    ) -> bool:
+    def visible_at_zoom(self, node: MapLayerNode, zoom_level: float) -> bool:
         """Check whether *node* should be visible at the given zoom level.
 
         This combines the node's own ``visible`` flag with its
@@ -652,9 +648,7 @@ class MapLayerModel(QAbstractItemModel):
             return self.visible_at_zoom(parent, zoom_level)
         return True
 
-    def visible_at_time(
-        self, node: MapLayerNode, current_time: float
-    ) -> bool:
+    def visible_at_time(self, node: MapLayerNode, current_time: float) -> bool:
         """Check whether *node* should be visible at the given lore time.
 
         A node is time-visible if:
@@ -748,9 +742,7 @@ class MapLayerModel(QAbstractItemModel):
                 return found
         return None
 
-    def _find_by_id(
-        self, node: MapLayerNode, node_id: str
-    ) -> Optional[MapLayerNode]:
+    def _find_by_id(self, node: MapLayerNode, node_id: str) -> Optional[MapLayerNode]:
         """Recursively search for a node by id.
 
         Args:
@@ -769,9 +761,7 @@ class MapLayerModel(QAbstractItemModel):
                 return found
         return None
 
-    def _is_descendant(
-        self, ancestor: MapLayerNode, candidate: MapLayerNode
-    ) -> bool:
+    def _is_descendant(self, ancestor: MapLayerNode, candidate: MapLayerNode) -> bool:
         """Return ``True`` if *candidate* is *ancestor* or a descendant of it.
 
         Args:
@@ -908,9 +898,7 @@ class MapLayerModel(QAbstractItemModel):
         if node.id in preset:
             state = preset[node.id]
             node.visible = state.get("visible", True)
-            node.opacity = float(
-                state.get("opacity", MAP_LAYER_DEFAULT_OPACITY)
-            )
+            node.opacity = float(state.get("opacity", MAP_LAYER_DEFAULT_OPACITY))
         for child in node.children:
             self._restore_state(child, preset)
 

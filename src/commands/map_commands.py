@@ -1289,6 +1289,7 @@ class SetLayerOpacityCommand(BaseCommand):
         map_id: str,
         node_id: str,
         opacity: float,
+        previous_opacity: Optional[float] = None,
     ) -> None:
         """Initialise the command.
 
@@ -1296,13 +1297,14 @@ class SetLayerOpacityCommand(BaseCommand):
             map_id: The map whose layer tree is being modified.
             node_id: ID of the layer node to change.
             opacity: New opacity (0.0–1.0).
+            previous_opacity: The opacity before this change (for undo).
 
         """
         super().__init__()
         self.map_id = map_id
         self.node_id = node_id
         self.opacity = opacity
-        self._previous_opacity: Optional[float] = None
+        self._previous_opacity = previous_opacity
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Execute the opacity change and persist.
@@ -1331,7 +1333,9 @@ class SetLayerOpacityCommand(BaseCommand):
                     command_name="SetLayerOpacityCommand",
                 )
 
-            self._previous_opacity = node.opacity
+            if self._previous_opacity is None:
+                self._previous_opacity = node.opacity
+
             node.opacity = max(0.0, min(1.0, self.opacity))
 
             # Persist
@@ -1379,12 +1383,18 @@ class SetLayerOpacityCommand(BaseCommand):
             "map_id": self.map_id,
             "node_id": self.node_id,
             "opacity": self.opacity,
+            "previous_opacity": self._previous_opacity,
         }
 
     @classmethod
     def from_dict(cls, data: dict) -> "SetLayerOpacityCommand":
         """Deserialize command from dictionary."""
-        return cls(data["map_id"], data["node_id"], data["opacity"])
+        return cls(
+            data["map_id"],
+            data["node_id"],
+            data["opacity"],
+            data.get("previous_opacity"),
+        )
 
 
 class RenameLayerCommand(BaseCommand):

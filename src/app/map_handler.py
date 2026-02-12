@@ -681,19 +681,22 @@ class MapHandler(QObject):
         cmd = SaveLayerTreeCommand(map_id, tree_dict)
         self.window.command_requested.emit(cmd)
 
-    @Slot(str, float)
-    def on_layer_opacity_changed(self, node_id: str, opacity: float) -> None:
+    @Slot(str, float, float)
+    def on_layer_opacity_changed(
+        self, node_id: str, opacity: float, old_opacity: float
+    ) -> None:
         """Handle layer opacity change via the command stack.
 
         Args:
             node_id: ID of the layer node.
             opacity: New opacity (0.0–1.0).
+            old_opacity: Previous opacity (for undo).
 
         """
         map_id = self.window.map_widget.get_selected_map_id()
         if not map_id:
             return
-        cmd = SetLayerOpacityCommand(map_id, node_id, opacity)
+        cmd = SetLayerOpacityCommand(map_id, node_id, opacity, old_opacity)
         self.window.command_requested.emit(cmd)
 
     @Slot(str, str)
