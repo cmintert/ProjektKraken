@@ -713,22 +713,34 @@ class TestMapLayerPanelOpacity:
     def test_opacity_slider_emits_signal(
         self, qtbot, simple_model: MapLayerModel
     ) -> None:
-        """Moving the slider emits layer_opacity_changed."""
+        """Moving the slider emits layer_opacity_changed on release."""
         panel = MapLayerPanel()
         qtbot.addWidget(panel)
         panel.set_model(simple_model)
 
         received: list[tuple] = []
-        panel.layer_opacity_changed.connect(lambda nid, o: received.append((nid, o)))
+        # Signal changed to (id, new, old)
+        panel.layer_opacity_changed.connect(
+            lambda nid, n, o: received.append((nid, n, o))
+        )
 
-        # Select a node
+        # Select a node (which has default opacity 1.0)
         panel.select_node("m1")
-        # Move the slider
+
+        # 1. Simulate press
+        panel._on_slider_pressed()
+
+        # 2. Simulate move (preview)
         panel._opacity_slider.setValue(75)
+        assert len(received) == 0  # No signal during preview
+
+        # 3. Simulate release (commit)
+        panel._opacity_slider.sliderReleased.emit()
 
         assert len(received) == 1
         assert received[0][0] == "m1"
         assert abs(received[0][1] - 0.75) < _OPACITY_TOLERANCE
+        assert abs(received[0][2] - 1.0) < _OPACITY_TOLERANCE
 
     def test_opacity_slider_no_feedback_loop(
         self, qtbot, simple_model: MapLayerModel
@@ -1008,23 +1020,34 @@ class TestMapWidgetLayerSignals:
             model.set_node_visible(m, False)
 
     def test_opacity_signal_emitted(self, qtbot) -> None:
-        """Panel slider emits layer_opacity_change_requested."""
+        """Panel slider emits layer_opacity_change_requested on release."""
         widget = _make_map_widget(qtbot)
         widget.add_marker("op-1", "entity", "Opacity Test", 0.5, 0.5)
 
         received: list[tuple] = []
+        # Signal changed to (id, new, old)
         widget.layer_opacity_change_requested.connect(
-            lambda nid, o: received.append((nid, o))
+            lambda nid, n, o: received.append((nid, n, o))
         )
 
         # Select the node in the panel
-        widget.layer_panel.select_node("op-1")
-        # Move the slider
-        widget.layer_panel._opacity_slider.setValue(50)
+        panel = widget.layer_panel
+        panel.select_node("op-1")
+
+        # 1. Press
+        panel._on_slider_pressed()
+
+        # 2. Move
+        panel._opacity_slider.setValue(50)
+        assert len(received) == 0
+
+        # 3. Release
+        panel._opacity_slider.sliderReleased.emit()
 
         assert len(received) == 1
         assert received[0][0] == "op-1"
         assert abs(received[0][1] - 0.5) < _OPACITY_TOLERANCE
+        assert abs(received[0][2] - 1.0) < _OPACITY_TOLERANCE
 
     def test_rename_signal_emitted(self, qtbot) -> None:
         """Renaming a layer emits layer_rename_requested."""
