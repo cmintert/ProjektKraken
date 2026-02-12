@@ -996,9 +996,13 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             self.calendar_converter = converter
 
             # Refresh status bar labels now that we have a converter
-            if hasattr(self, "timeline"):
-                self.update_world_time_label(self.timeline.get_current_time())
-                self.update_playhead_time_label(self.timeline.get_playhead_time())
+            if hasattr(self, "timeline") and hasattr(self, "time_coordinator"):
+                self.time_coordinator.update_world_time_label(
+                    self.timeline.get_current_time()
+                )
+                self.time_coordinator.update_playhead_time_label(
+                    self.timeline.get_playhead_time()
+                )
 
         except Exception as e:
             logger.warning(f"Failed to initialize calendar converter: {e}")

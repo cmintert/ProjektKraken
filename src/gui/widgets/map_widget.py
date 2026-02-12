@@ -14,7 +14,7 @@ import logging
 import os
 from typing import Iterator, List, Optional, Tuple
 
-from PySide6.QtCore import QModelIndex, QSettings, QSize, Qt, Signal, Slot
+from PySide6.QtCore import QSettings, QSize, Qt, Signal, Slot
 from PySide6.QtGui import QKeyEvent, QPaintEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QComboBox,
@@ -78,7 +78,7 @@ class NoLayoutLabel(QWidget):
 
     def __init__(self, text: str = "", parent: QWidget | None = None) -> None:
         """Initialize the scale indicator label.
-        
+
         Args:
             text: Initial text to display.
             parent: Optional parent widget.
@@ -90,7 +90,7 @@ class NoLayoutLabel(QWidget):
 
     def setText(self, text: str) -> None:
         """Set the label text without triggering layout recalculation.
-        
+
         Args:
             text: New text to display.
         """
@@ -101,7 +101,7 @@ class NoLayoutLabel(QWidget):
 
     def text(self) -> str:
         """Get the current label text.
-        
+
         Returns:
             The current text string.
         """
@@ -109,7 +109,7 @@ class NoLayoutLabel(QWidget):
 
     def sizeHint(self) -> QSize:
         """Get the preferred size hint.
-        
+
         Returns:
             Fixed size of 50x20 pixels.
         """
@@ -118,7 +118,7 @@ class NoLayoutLabel(QWidget):
 
     def minimumSizeHint(self) -> QSize:
         """Get the minimum size hint.
-        
+
         Returns:
             Minimum size of 50x20 pixels.
         """
@@ -126,7 +126,7 @@ class NoLayoutLabel(QWidget):
 
     def paintEvent(self, event: QPaintEvent) -> None:
         """Paint the scale indicator text.
-        
+
         Args:
             event: The paint event.
         """
@@ -269,9 +269,7 @@ class MapWidget(QWidget):
 
         # Snap toggle
         self.btn_snap = QPushButton("Snap")
-        self.btn_snap.setToolTip(
-            "Toggle snapping to nearby feature vertices and edges"
-        )
+        self.btn_snap.setToolTip("Toggle snapping to nearby feature vertices and edges")
         self.btn_snap.setCheckable(True)
         self.btn_snap.setChecked(True)  # enabled by default
         self.btn_snap.setStyleSheet(tool_style)
@@ -370,9 +368,7 @@ class MapWidget(QWidget):
         self.layer_panel.create_layer_requested.connect(self._on_create_layer)
         self.layer_panel.delete_layer_requested.connect(self._on_delete_layer)
         self.layer_panel.layer_renamed.connect(self._on_layer_renamed)
-        self.layer_panel.layer_opacity_changed.connect(
-            self._on_layer_opacity_changed
-        )
+        self.layer_panel.layer_opacity_changed.connect(self._on_layer_opacity_changed)
 
         self._maps_data = []  # List of maps for selector
         self._playhead_time: float = 0.0  # Current playhead time from Timeline
@@ -524,7 +520,9 @@ class MapWidget(QWidget):
         self.btn_draw_region.setChecked(False)
         self._update_mode_indicator()
         self.create_feature_requested.emit(feature_type, geometry)
-        logger.info(f"Feature drawing complete: {feature_type}, {len(geometry)} vertices")
+        logger.info(
+            f"Feature drawing complete: {feature_type}, {len(geometry)} vertices"
+        )
 
     @Slot()
     def _on_drawing_cancelled(self) -> None:
@@ -808,9 +806,7 @@ class MapWidget(QWidget):
     # Layer management
     # ------------------------------------------------------------------
 
-    def _build_layer_model(
-        self, root: Optional[MapLayerNode] = None
-    ) -> MapLayerModel:
+    def _build_layer_model(self, root: Optional[MapLayerNode] = None) -> MapLayerModel:
         """Create (or replace) the layer model and wire it to the view.
 
         Args:
@@ -868,7 +864,8 @@ class MapWidget(QWidget):
                 return child
         # Create one
         node = MapLayerNode(
-            name=MAP_LAYER_DEFAULT_GROUP_NAME, layer_type=MAP_LAYER_TYPE_GROUP,
+            name=MAP_LAYER_DEFAULT_GROUP_NAME,
+            layer_type=MAP_LAYER_TYPE_GROUP,
         )
         root_idx = model.index_from_node(model.root)
         model.add_layer(root_idx, node)
@@ -934,9 +931,7 @@ class MapWidget(QWidget):
         self._layer_model.remove_layer(idx)
 
     @Slot(str, str)
-    def _on_marker_clicked_select_layer(
-        self, marker_id: str, object_type: str
-    ) -> None:
+    def _on_marker_clicked_select_layer(self, marker_id: str, object_type: str) -> None:
         """Bi-directional selection: marker click → highlight in layer panel.
 
         Args:
@@ -1072,10 +1067,7 @@ class MapWidget(QWidget):
 
         node.name = new_name
         idx = self._layer_model.index_from_node(node)
-        self._layer_model.dataChanged.emit(
-            idx, idx, [Qt.ItemDataRole.DisplayRole]
-        )
-        self._layer_model.layer_tree_changed.emit()
+        self._layer_model.dataChanged.emit(idx, idx, [Qt.ItemDataRole.DisplayRole])
         self.layer_rename_requested.emit(node_id, new_name)
 
     @Slot(str, float)
@@ -1140,8 +1132,18 @@ class MapWidget(QWidget):
 
         """
         self.view.add_marker(
-            marker_id, object_type, label, x, y, icon, color, description,
-            lore_date, feature_type, geometry, style,
+            marker_id,
+            object_type,
+            label,
+            x,
+            y,
+            icon,
+            color,
+            description,
+            lore_date,
+            feature_type,
+            geometry,
+            style,
         )
         # Auto-register in layer hierarchy
         self._register_layer_node(marker_id, label, feature_type)
@@ -1588,7 +1590,7 @@ class OnboardingDialog(QDialog):
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the onboarding dialog.
-        
+
         Args:
             parent: Optional parent widget.
         """
