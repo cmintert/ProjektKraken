@@ -84,7 +84,10 @@ class MapHandler(QObject):
                 project_dir = Path(self.window.db_path).parent
                 image_path = str(project_dir / image_path)
 
-            self.window.map_widget.load_map(image_path)
+            # Only load the map image if it's different from the current one
+            # This preserves the view transform (zoom/pan) during map list refreshes
+            if self.window.map_widget.view.current_image_path != image_path:
+                self.window.map_widget.load_map(image_path)
 
             # Restore scale
             width_meters = selected_map.attributes.get("width_meters")
@@ -557,7 +560,14 @@ class MapHandler(QObject):
             maps: List of Map objects.
 
         """
+        # Preserve the currently selected map ID to avoid triggering a reload
+        current_map_id = self.window.map_widget.get_selected_map_id()
+
         self.window.map_widget.set_maps(maps)
+
+        # Restore the previous selection if it still exists
+        if current_map_id and any(m.id == current_map_id for m in maps):
+            self.window.map_widget.select_map(current_map_id)
 
         # Auto-select first map if none selected
         if maps:
@@ -706,9 +716,7 @@ class MapHandler(QObject):
         tree_dict = model.root.to_dict() if model else None
         # Resolve actual marker DB id from the object_id mapping
         actual_marker_id = self._marker_object_to_id.get(node_id)
-        cmd = RenameLayerCommand(
-            map_id, node_id, new_name, tree_dict, actual_marker_id
-        )
+        cmd = RenameLayerCommand(map_id, node_id, new_name, tree_dict, actual_marker_id)
         self.window.command_requested.emit(cmd)
 
     @Slot(str)
@@ -725,9 +733,7 @@ class MapHandler(QObject):
         """
         actual_marker_id = self._marker_object_to_id.get(object_id)
         if not actual_marker_id:
-            logger.warning(
-                "on_layer_feature_deleted: no mapping for %s", object_id
-            )
+            logger.warning("on_layer_feature_deleted: no mapping for %s", object_id)
             return
         del self._marker_object_to_id[object_id]
         cmd = DeleteMarkerCommand(actual_marker_id)

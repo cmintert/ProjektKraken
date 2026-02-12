@@ -801,6 +801,9 @@ class MapGraphicsView(QGraphicsView):
         # Hierarchical Layer Model (optional integration)
         self._layer_model: Optional["MapLayerModel"] = None
 
+        # Track currently loaded map image to avoid redundant reloads
+        self.current_image_path: Optional[str] = None
+
     def minimumSizeHint(self) -> QSize:
         """Override minimum size hint to allow resizing below map image size.
 
@@ -860,6 +863,9 @@ class MapGraphicsView(QGraphicsView):
             # Fit view to map
             self.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
             self.scene.setSceneRect(self.pixmap_item.boundingRect())
+
+            # Store the current image path to detect redundant reloads
+            self.current_image_path = image_path
 
             logger.info(f"Loaded map: {image_path}")
             return True
@@ -1231,9 +1237,7 @@ class MapGraphicsView(QGraphicsView):
         model.layer_opacity_changed.connect(self._on_layer_opacity_changed)
         model.layer_order_changed.connect(self._on_layer_order_changed)
 
-    def _on_layer_visibility_changed(
-        self, node_id: str, visible: bool
-    ) -> None:
+    def _on_layer_visibility_changed(self, node_id: str, visible: bool) -> None:
         """Respond to a layer visibility change from the model.
 
         Args:
@@ -1245,9 +1249,7 @@ class MapGraphicsView(QGraphicsView):
         if item is not None:
             item.setVisible(visible)
 
-    def _on_layer_opacity_changed(
-        self, node_id: str, opacity: float
-    ) -> None:
+    def _on_layer_opacity_changed(self, node_id: str, opacity: float) -> None:
         """Respond to a layer opacity change from the model.
 
         Args:
@@ -1269,9 +1271,7 @@ class MapGraphicsView(QGraphicsView):
             if item is not None:
                 item.setZValue(z_val)
 
-    def _find_graphics_item(
-        self, node_id: str
-    ) -> Optional[QGraphicsItem]:
+    def _find_graphics_item(self, node_id: str) -> Optional[QGraphicsItem]:
         """Look up a graphics item by layer node ID.
 
         Searches both ``self.markers`` and ``self.feature_items``.
@@ -1310,9 +1310,7 @@ class MapGraphicsView(QGraphicsView):
         root = self._layer_model.root
         self._apply_zoom_recursive(root, zoom)
 
-    def _apply_zoom_recursive(
-        self, node: Any, zoom: float
-    ) -> None:
+    def _apply_zoom_recursive(self, node: Any, zoom: float) -> None:
         """Walk the layer tree and toggle visibility per zoom range.
 
         Args:
