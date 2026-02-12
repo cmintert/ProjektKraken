@@ -570,7 +570,8 @@ class MapHandler(QObject):
         """Handle markers ready signal from DataHandler.
 
         Restores the persisted layer tree (if any) and auto-registers
-        new markers into the hierarchy.
+        new markers into the hierarchy.  The view transform (pan/zoom)
+        is preserved across the clear-and-rebuild cycle.
 
         Args:
             map_id: The map ID these markers belong to.
@@ -581,6 +582,13 @@ class MapHandler(QObject):
         current_map_id = self.window.map_widget.map_selector.currentData()
         if current_map_id != map_id:
             return
+
+        # Preserve the current view transform so the user's pan/zoom
+        # position is maintained after the clear-and-rebuild cycle.
+        view = self.window.map_widget.view
+        saved_transform = view.transform()
+        h_scroll = view.horizontalScrollBar().value()
+        v_scroll = view.verticalScrollBar().value()
 
         self.window.map_widget.clear_markers()
         self._marker_object_to_id.clear()  # Reset mapping
@@ -612,6 +620,11 @@ class MapHandler(QObject):
 
             # Store mapping for later updates (object_id -> marker.id)
             self._marker_object_to_id[marker_data["object_id"]] = marker_data["id"]
+
+        # Restore the view transform after rebuilding
+        view.setTransform(saved_transform)
+        view.horizontalScrollBar().setValue(h_scroll)
+        view.verticalScrollBar().setValue(v_scroll)
 
     @Slot(list)
     def on_trajectories_ready(self, trajectories: list) -> None:

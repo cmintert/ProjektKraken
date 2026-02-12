@@ -1138,3 +1138,44 @@ class TestRenameLayerCommandMarkerIdFix:
 
         restored = RenameLayerCommand.from_dict(data)
         assert restored._marker_id is None
+
+
+class TestViewTransformPreservation:
+    """Verify view position/zoom is maintained across operations."""
+
+    def test_delete_preserves_view_transform(self, qtbot) -> None:
+        """Deleting a layer node does not reset the view transform."""
+        widget = _make_map_widget(qtbot)
+        widget.add_marker("vt-1", "entity", "Keep Zoom", 0.5, 0.5)
+
+        # Apply a custom zoom/pan
+        from PySide6.QtGui import QTransform
+
+        custom = QTransform()
+        custom.scale(2.5, 2.5)
+        widget.view.setTransform(custom)
+        widget.view.horizontalScrollBar().setValue(42)
+
+        # Delete the marker via the layer panel handler
+        widget._on_delete_layer("vt-1")
+
+        # The view transform must be unchanged (the immediate local delete
+        # does not touch the transform at all)
+        assert abs(widget.view.transform().m11() - 2.5) < 0.01
+        assert abs(widget.view.transform().m22() - 2.5) < 0.01
+
+    def test_rename_preserves_view_transform(self, qtbot) -> None:
+        """Renaming a layer node does not reset the view transform."""
+        widget = _make_map_widget(qtbot)
+        widget.add_marker("vt-2", "entity", "Old Name", 0.3, 0.3)
+
+        from PySide6.QtGui import QTransform
+
+        custom = QTransform()
+        custom.scale(3.0, 3.0)
+        widget.view.setTransform(custom)
+
+        widget._on_layer_renamed("vt-2", "New Name")
+
+        assert abs(widget.view.transform().m11() - 3.0) < 0.01
+        assert abs(widget.view.transform().m22() - 3.0) < 0.01
