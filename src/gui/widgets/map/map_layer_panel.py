@@ -88,7 +88,7 @@ class MapLayerPanel(QWidget):
         header_layout = QHBoxLayout()
         header_layout.setSpacing(4)
 
-        self._title_label = QLabel("Layers")
+        self._title_label = QLabel("Map Hierarchy")
         header_layout.addWidget(self._title_label)
         header_layout.addStretch()
 
@@ -96,11 +96,6 @@ class MapLayerPanel(QWidget):
         self.btn_new_group.setToolTip("Create a new layer group")
         self.btn_new_group.clicked.connect(self._on_new_group)
         header_layout.addWidget(self.btn_new_group)
-
-        self.btn_new_layer = QPushButton("+ Layer")
-        self.btn_new_layer.setToolTip("Create a new layer")
-        self.btn_new_layer.clicked.connect(self._on_new_layer)
-        header_layout.addWidget(self.btn_new_layer)
 
         self.btn_delete = QPushButton("Delete")
         self.btn_delete.setToolTip("Delete the selected layer")
@@ -117,14 +112,10 @@ class MapLayerPanel(QWidget):
         self._tree.setAcceptDrops(True)
         self._tree.setDropIndicatorShown(True)
         self._tree.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
-        self._tree.setSelectionMode(
-            QAbstractItemView.SelectionMode.SingleSelection
-        )
+        self._tree.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self._tree.setAnimated(True)
         self._tree.setExpandsOnDoubleClick(False)  # double-click = rename
-        self._tree.setEditTriggers(
-            QAbstractItemView.EditTrigger.NoEditTriggers
-        )
+        self._tree.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self._tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self._tree.customContextMenuRequested.connect(self._show_context_menu)
         self._tree.clicked.connect(self._on_item_clicked)
@@ -208,13 +199,11 @@ class MapLayerPanel(QWidget):
         """Re-apply all theme-aware styles (call on theme change)."""
         tool_style = StyleHelper.get_tool_button_style()
         self.btn_new_group.setStyleSheet(tool_style)
-        self.btn_new_layer.setStyleSheet(tool_style)
+
         self.btn_delete.setStyleSheet(StyleHelper.get_destructive_button_style())
         self._title_label.setStyleSheet(StyleHelper.get_panel_header_style())
         self._opacity_slider.setStyleSheet(StyleHelper.get_slider_style())
-        dim_style = (
-            f"color: {self._theme_token('text_dim')}; font-size: 9pt;"
-        )
+        dim_style = f"color: {self._theme_token('text_dim')}; font-size: 9pt;"
         self._opacity_label.setStyleSheet(dim_style)
         self._opacity_value_label.setStyleSheet(
             f"color: {self._theme_token('text_main')}; font-size: 9pt;"
@@ -256,15 +245,6 @@ class MapLayerPanel(QWidget):
         )
         if ok and name.strip():
             self.create_group_requested.emit(name.strip())
-
-    @Slot()
-    def _on_new_layer(self) -> None:
-        """Prompt the user for a name and emit create_layer_requested."""
-        name, ok = QInputDialog.getText(
-            self, "New Layer", "Layer name:", text="New Layer"
-        )
-        if ok and name.strip():
-            self.create_layer_requested.emit(name.strip())
 
     @Slot()
     def _on_delete(self) -> None:
@@ -338,15 +318,11 @@ class MapLayerPanel(QWidget):
             # Toggle visibility
             vis_text = "Hide" if node.visible else "Show"
             action_toggle = menu.addAction(f"{vis_text} Layer")
-            action_toggle.triggered.connect(
-                lambda: self._toggle_visibility(node)
-            )
+            action_toggle.triggered.connect(lambda: self._toggle_visibility(node))
 
             # Rename
             action_rename = menu.addAction("Rename…")
-            action_rename.triggered.connect(
-                lambda: self._on_item_double_clicked(index)
-            )
+            action_rename.triggered.connect(lambda: self._on_item_double_clicked(index))
 
             menu.addSeparator()
 
@@ -357,8 +333,6 @@ class MapLayerPanel(QWidget):
             # Click on empty area — offer to create
             action_group = menu.addAction("New Group…")
             action_group.triggered.connect(self._on_new_group)
-            action_layer = menu.addAction("New Layer…")
-            action_layer.triggered.connect(self._on_new_layer)
 
         menu.exec(self._tree.viewport().mapToGlobal(pos))
 

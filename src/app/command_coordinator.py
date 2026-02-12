@@ -181,7 +181,7 @@ class CommandCoordinator(QObject):
             # Add command to undo stack if it was successful
             # The command object should be in result.data
             command = result.data.get("command")
-            if command is not None:
+            if command is not None and getattr(command, "has_history", True):
                 self.undo_stack.append(command)
                 self.redo_stack.clear()  # Clear redo stack on new action
 

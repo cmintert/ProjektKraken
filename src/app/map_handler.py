@@ -248,9 +248,7 @@ class MapHandler(QObject):
                 return obj.id, "entity", obj.name
         elif item_text.endswith(" (Event)"):
             name = item_text[:-8]
-            obj = next(
-                (e for e in self.window._cached_events if e.name == name), None
-            )
+            obj = next((e for e in self.window._cached_events if e.name == name), None)
             if obj:
                 return obj.id, "event", obj.name
 
@@ -263,17 +261,13 @@ class MapHandler(QObject):
             Tuple of (new_id, 'entity', name) or None if cancelled.
 
         """
-        name, ok = QInputDialog.getText(
-            self.window, "New Entity", "Entity Name:"
-        )
+        name, ok = QInputDialog.getText(self.window, "New Entity", "Entity Name:")
         if not ok or not name.strip():
             return None
 
         name = name.strip()
         new_id = str(uuid.uuid4())
-        cmd = CreateEntityCommand(
-            {"id": new_id, "name": name, "type": "Location"}
-        )
+        cmd = CreateEntityCommand({"id": new_id, "name": name, "type": "Location"})
         self.window.command_requested.emit(cmd)
         logger.info(f"Created new entity '{name}' ({new_id}) from map")
         return new_id, "entity", name
@@ -285,17 +279,13 @@ class MapHandler(QObject):
             Tuple of (new_id, 'event', name) or None if cancelled.
 
         """
-        name, ok = QInputDialog.getText(
-            self.window, "New Event", "Event Name:"
-        )
+        name, ok = QInputDialog.getText(self.window, "New Event", "Event Name:")
         if not ok or not name.strip():
             return None
 
         name = name.strip()
         new_id = str(uuid.uuid4())
-        cmd = CreateEventCommand(
-            {"id": new_id, "name": name, "lore_date": 0.0}
-        )
+        cmd = CreateEventCommand({"id": new_id, "name": name, "lore_date": 0.0})
         self.window.command_requested.emit(cmd)
         logger.info(f"Created new event '{name}' ({new_id}) from map")
         return new_id, "event", name
@@ -411,9 +401,7 @@ class MapHandler(QObject):
             }
         )
         self.window.command_requested.emit(cmd)
-        logger.info(
-            f"Creating {feature_type} '{name}' with {len(geometry)} vertices"
-        )
+        logger.info(f"Creating {feature_type} '{name}' with {len(geometry)} vertices")
 
     @Slot(str, dict)
     def on_feature_style_changed(self, marker_id: str, new_style: dict) -> None:
@@ -434,9 +422,7 @@ class MapHandler(QObject):
         logger.info(f"Style updated for {marker_id}")
 
     @Slot(str, list)
-    def on_feature_geometry_changed(
-        self, marker_id: str, geometry: list
-    ) -> None:
+    def on_feature_geometry_changed(self, marker_id: str, geometry: list) -> None:
         """Persists a feature geometry change via UpdateMarkerCommand.
 
         Recalculates the anchor to the centroid of the new geometry.
@@ -691,6 +677,9 @@ class MapHandler(QObject):
     def on_layer_renamed(self, node_id: str, new_name: str) -> None:
         """Handle layer rename via the command stack.
 
+        Passes the current in-memory tree snapshot to avoid stale-DB
+        reads when the rename command executes on the worker thread.
+
         Args:
             node_id: ID of the layer node.
             new_name: New display name.
@@ -699,5 +688,8 @@ class MapHandler(QObject):
         map_id = self.window.map_widget.get_selected_map_id()
         if not map_id:
             return
-        cmd = RenameLayerCommand(map_id, node_id, new_name)
+        # Serialize the current in-memory tree (already renamed by the UI)
+        model = self.window.map_widget.get_layer_model()
+        tree_dict = model.root.to_dict() if model else None
+        cmd = RenameLayerCommand(map_id, node_id, new_name, tree_dict)
         self.window.command_requested.emit(cmd)

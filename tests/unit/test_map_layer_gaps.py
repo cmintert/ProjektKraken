@@ -84,11 +84,15 @@ def simple_model() -> MapLayerModel:
     m1 = MapLayerNode(name="Marker 1", layer_type=MAP_LAYER_TYPE_MARKER, id="m1")
     m2 = MapLayerNode(name="Marker 2", layer_type=MAP_LAYER_TYPE_MARKER, id="m2")
     group = MapLayerNode(
-        name="Default", layer_type=MAP_LAYER_TYPE_GROUP, id="default",
+        name="Default",
+        layer_type=MAP_LAYER_TYPE_GROUP,
+        id="default",
         children=[m1, m2],
     )
     root = MapLayerNode(
-        name="Root", layer_type=MAP_LAYER_TYPE_GROUP, id="root",
+        name="Root",
+        layer_type=MAP_LAYER_TYPE_GROUP,
+        id="root",
         children=[group],
     )
     return MapLayerModel(root=root)
@@ -137,8 +141,10 @@ class TestTemporalVisibility:
     def test_serialise_temporal_fields(self) -> None:
         """start_date and end_date survive serialisation round-trip."""
         node = MapLayerNode(
-            name="Era", id="era-1",
-            start_date=100.0, end_date=200.0,
+            name="Era",
+            id="era-1",
+            start_date=100.0,
+            end_date=200.0,
         )
         data = node.to_dict()
         assert data["start_date"] == 100.0
@@ -223,7 +229,9 @@ class TestCustomRoles:
     def test_layer_type_role(self, simple_model: MapLayerModel) -> None:
         """LayerTypeRole returns the layer_type string."""
         idx = simple_model.index(0, 0)  # "Default" group
-        assert simple_model.data(idx, MapLayerModel.LayerTypeRole) == MAP_LAYER_TYPE_GROUP
+        assert (
+            simple_model.data(idx, MapLayerModel.LayerTypeRole) == MAP_LAYER_TYPE_GROUP
+        )
 
     def test_opacity_role(self, simple_model: MapLayerModel) -> None:
         """OpacityRole returns the node's opacity."""
@@ -314,9 +322,12 @@ class TestLayerPersistence:
 
     def test_map_with_layers_to_dict_has_layers(self) -> None:
         """Map.to_dict includes layers when present."""
-        layers = MapLayerNode(name="Root", children=[
-            MapLayerNode(name="M1", layer_type=MAP_LAYER_TYPE_MARKER, id="m1"),
-        ])
+        layers = MapLayerNode(
+            name="Root",
+            children=[
+                MapLayerNode(name="M1", layer_type=MAP_LAYER_TYPE_MARKER, id="m1"),
+            ],
+        )
         m = Map(name="Test", image_path="/fake.png", layers=layers)
         d = m.to_dict()
         assert "layers" in d
@@ -440,8 +451,13 @@ class TestMapWidgetLayerIntegration:
         widget = _make_map_widget(qtbot)
         geometry = [{"x": 0.0, "y": 0.0}, {"x": 1.0, "y": 1.0}]
         widget.add_marker(
-            "path-1", "entity", "River", 0.5, 0.5,
-            feature_type="path", geometry=geometry,
+            "path-1",
+            "entity",
+            "River",
+            0.5,
+            0.5,
+            feature_type="path",
+            geometry=geometry,
         )
 
         model = widget.get_layer_model()
@@ -453,11 +469,18 @@ class TestMapWidgetLayerIntegration:
         """Adding a region feature creates a region layer node."""
         widget = _make_map_widget(qtbot)
         geometry = [
-            {"x": 0.0, "y": 0.0}, {"x": 1.0, "y": 0.0}, {"x": 0.5, "y": 1.0},
+            {"x": 0.0, "y": 0.0},
+            {"x": 1.0, "y": 0.0},
+            {"x": 0.5, "y": 1.0},
         ]
         widget.add_marker(
-            "region-1", "entity", "Nation", 0.5, 0.5,
-            feature_type="region", geometry=geometry,
+            "region-1",
+            "entity",
+            "Nation",
+            0.5,
+            0.5,
+            feature_type="region",
+            geometry=geometry,
         )
 
         model = widget.get_layer_model()
@@ -509,10 +532,13 @@ class TestMapWidgetLayerIntegration:
         """_build_layer_model accepts a persisted root node."""
         widget = _make_map_widget(qtbot)
         persisted = MapLayerNode(
-            name="Root", layer_type=MAP_LAYER_TYPE_GROUP, id="persisted-root",
+            name="Root",
+            layer_type=MAP_LAYER_TYPE_GROUP,
+            id="persisted-root",
             children=[
                 MapLayerNode(
-                    name="Custom Group", layer_type=MAP_LAYER_TYPE_GROUP,
+                    name="Custom Group",
+                    layer_type=MAP_LAYER_TYPE_GROUP,
                     id="custom-group",
                 ),
             ],
@@ -572,12 +598,11 @@ class TestMapLayerPanelToolbar:
     """Tests for the panel's toolbar buttons and create/delete actions."""
 
     def test_toolbar_buttons_exist(self, qtbot, simple_model: MapLayerModel) -> None:
-        """Panel has New Group, New Layer, and Delete buttons."""
+        """Panel has New Group and Delete buttons."""
         panel = MapLayerPanel()
         qtbot.addWidget(panel)
         panel.set_model(simple_model)
         assert panel.btn_new_group is not None
-        assert panel.btn_new_layer is not None
         assert panel.btn_delete is not None
 
     def test_delete_button_disabled_initially(
@@ -602,9 +627,7 @@ class TestMapLayerPanelToolbar:
         panel._on_item_clicked(idx)
         assert panel.btn_delete.isEnabled()
 
-    def test_create_group_signal(
-        self, qtbot, simple_model: MapLayerModel
-    ) -> None:
+    def test_create_group_signal(self, qtbot, simple_model: MapLayerModel) -> None:
         """create_group_requested is emitted with the group name."""
         panel = MapLayerPanel()
         qtbot.addWidget(panel)
@@ -617,9 +640,7 @@ class TestMapLayerPanelToolbar:
         panel.create_group_requested.emit("Test Group")
         assert received == ["Test Group"]
 
-    def test_create_layer_signal(
-        self, qtbot, simple_model: MapLayerModel
-    ) -> None:
+    def test_create_layer_signal(self, qtbot, simple_model: MapLayerModel) -> None:
         """create_layer_requested is emitted with the layer name."""
         panel = MapLayerPanel()
         qtbot.addWidget(panel)
@@ -631,9 +652,7 @@ class TestMapLayerPanelToolbar:
         panel.create_layer_requested.emit("Test Layer")
         assert received == ["Test Layer"]
 
-    def test_delete_layer_signal(
-        self, qtbot, simple_model: MapLayerModel
-    ) -> None:
+    def test_delete_layer_signal(self, qtbot, simple_model: MapLayerModel) -> None:
         """delete_layer_requested is emitted with the node ID."""
         panel = MapLayerPanel()
         qtbot.addWidget(panel)
@@ -649,9 +668,7 @@ class TestMapLayerPanelToolbar:
         assert len(received) == 1
         assert received[0] == "default"
 
-    def test_delete_clears_selection(
-        self, qtbot, simple_model: MapLayerModel
-    ) -> None:
+    def test_delete_clears_selection(self, qtbot, simple_model: MapLayerModel) -> None:
         """After deleting, selected_node_id is cleared."""
         panel = MapLayerPanel()
         qtbot.addWidget(panel)
@@ -702,9 +719,7 @@ class TestMapLayerPanelOpacity:
         panel.set_model(simple_model)
 
         received: list[tuple] = []
-        panel.layer_opacity_changed.connect(
-            lambda nid, o: received.append((nid, o))
-        )
+        panel.layer_opacity_changed.connect(lambda nid, o: received.append((nid, o)))
 
         # Select a node
         panel.select_node("m1")
@@ -724,9 +739,7 @@ class TestMapLayerPanelOpacity:
         panel.set_model(simple_model)
 
         received: list[tuple] = []
-        panel.layer_opacity_changed.connect(
-            lambda nid, o: received.append((nid, o))
-        )
+        panel.layer_opacity_changed.connect(lambda nid, o: received.append((nid, o)))
 
         # select_node internally syncs the slider — should NOT trigger signal
         panel.select_node("m1")
@@ -914,34 +927,26 @@ class TestStyleHelperNewMethods:
 class TestLayerTreeChangedSignal:
     """Verify the model emits layer_tree_changed on every mutation."""
 
-    def test_emitted_on_set_visible(
-        self, qtbot, simple_model: MapLayerModel
-    ) -> None:
+    def test_emitted_on_set_visible(self, qtbot, simple_model: MapLayerModel) -> None:
         """Toggling visibility emits layer_tree_changed."""
         m1 = simple_model.find_node_by_id("m1")
         with qtbot.waitSignal(simple_model.layer_tree_changed, timeout=500):
             simple_model.set_node_visible(m1, False)
 
-    def test_emitted_on_set_opacity(
-        self, qtbot, simple_model: MapLayerModel
-    ) -> None:
+    def test_emitted_on_set_opacity(self, qtbot, simple_model: MapLayerModel) -> None:
         """Changing opacity emits layer_tree_changed."""
         m1 = simple_model.find_node_by_id("m1")
         with qtbot.waitSignal(simple_model.layer_tree_changed, timeout=500):
             simple_model.set_node_opacity(m1, 0.5)
 
-    def test_emitted_on_add_layer(
-        self, qtbot, simple_model: MapLayerModel
-    ) -> None:
+    def test_emitted_on_add_layer(self, qtbot, simple_model: MapLayerModel) -> None:
         """Adding a layer emits layer_tree_changed."""
         new_node = MapLayerNode(name="New", layer_type=MAP_LAYER_TYPE_MARKER)
         root_idx = simple_model.index_from_node(simple_model.root)
         with qtbot.waitSignal(simple_model.layer_tree_changed, timeout=500):
             simple_model.add_layer(root_idx, new_node)
 
-    def test_emitted_on_remove_layer(
-        self, qtbot, simple_model: MapLayerModel
-    ) -> None:
+    def test_emitted_on_remove_layer(self, qtbot, simple_model: MapLayerModel) -> None:
         """Removing a layer emits layer_tree_changed."""
         m1 = simple_model.find_node_by_id("m1")
         idx = simple_model.index_from_node(m1)
@@ -1027,9 +1032,7 @@ class TestMapWidgetLayerSignals:
         widget.add_marker("ren-sig-1", "entity", "Rename Sig", 0.5, 0.5)
 
         received: list[tuple] = []
-        widget.layer_rename_requested.connect(
-            lambda nid, n: received.append((nid, n))
-        )
+        widget.layer_rename_requested.connect(lambda nid, n: received.append((nid, n)))
 
         widget._on_layer_renamed("ren-sig-1", "Updated Name")
         assert len(received) == 1

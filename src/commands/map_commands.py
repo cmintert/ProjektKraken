@@ -875,9 +875,7 @@ class DeleteKeyframeCommand(BaseCommand):
 # --------------------------------------------------------------------------
 
 
-def _find_layer_node(
-    root: MapLayerNode, node_id: str
-) -> Optional[MapLayerNode]:
+def _find_layer_node(root: MapLayerNode, node_id: str) -> Optional[MapLayerNode]:
     """Walk the tree to find a node by ID.
 
     Args:
@@ -1055,9 +1053,7 @@ class MoveLayerCommand(BaseCommand):
                     command_name="MoveLayerCommand",
                 )
 
-            node = _find_layer_node(
-                map_obj.layers, self.node_id
-            )
+            node = _find_layer_node(map_obj.layers, self.node_id)
             if not node:
                 return CommandResult(
                     success=False,
@@ -1081,9 +1077,7 @@ class MoveLayerCommand(BaseCommand):
             old_parent.children.remove(node)
 
             # Find new parent and insert
-            new_parent = _find_layer_node(
-                map_obj.layers, self.new_parent_id
-            )
+            new_parent = _find_layer_node(map_obj.layers, self.new_parent_id)
             if not new_parent:
                 # Rollback
                 old_parent.children.insert(self._old_row, node)
@@ -1130,18 +1124,14 @@ class MoveLayerCommand(BaseCommand):
         ):
             map_obj = db_service.map_repo.get_map(self.map_id)
             if map_obj and map_obj.layers:
-                node = _find_layer_node(
-                    map_obj.layers, self.node_id
-                )
+                node = _find_layer_node(map_obj.layers, self.node_id)
                 if node:
                     # Remove from current position
                     cur_parent = self._find_parent(map_obj.layers, node)
                     if cur_parent:
                         cur_parent.children.remove(node)
                     # Insert back at old position
-                    old_parent = _find_layer_node(
-                        map_obj.layers, self._old_parent_id
-                    )
+                    old_parent = _find_layer_node(map_obj.layers, self._old_parent_id)
                     if old_parent:
                         row = min(self._old_row, len(old_parent.children))
                         old_parent.children.insert(row, node)
@@ -1165,14 +1155,14 @@ class MoveLayerCommand(BaseCommand):
     def from_dict(cls, data: dict) -> "MoveLayerCommand":
         """Deserialize command from dictionary."""
         return cls(
-            data["map_id"], data["node_id"],
-            data["new_parent_id"], data["new_row"],
+            data["map_id"],
+            data["node_id"],
+            data["new_parent_id"],
+            data["new_row"],
         )
 
     @staticmethod
-    def _find_parent(
-        root: MapLayerNode, node: MapLayerNode
-    ) -> Optional[MapLayerNode]:
+    def _find_parent(root: MapLayerNode, node: MapLayerNode) -> Optional[MapLayerNode]:
         """Walk the tree to find the parent of a node.
 
         Args:
@@ -1211,6 +1201,11 @@ class SaveLayerTreeCommand(BaseCommand):
         self.map_id = map_id
         self.layer_tree_dict = layer_tree_dict
         self._previous_tree_dict: Optional[Dict[str, Any]] = None
+
+    @property
+    def has_history(self) -> bool:
+        """Background sync — never tracked in the undo stack."""
+        return False
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Persist the layer tree.
@@ -1328,9 +1323,7 @@ class SetLayerOpacityCommand(BaseCommand):
                     command_name="SetLayerOpacityCommand",
                 )
 
-            node = _find_layer_node(
-                map_obj.layers, self.node_id
-            )
+            node = _find_layer_node(map_obj.layers, self.node_id)
             if not node:
                 return CommandResult(
                     success=False,
@@ -1371,14 +1364,10 @@ class SetLayerOpacityCommand(BaseCommand):
         if self._is_executed and self._previous_opacity is not None:
             map_obj = db_service.map_repo.get_map(self.map_id)
             if map_obj and map_obj.layers:
-                node = _find_layer_node(
-                    map_obj.layers, self.node_id
-                )
+                node = _find_layer_node(map_obj.layers, self.node_id)
                 if node:
                     node.opacity = self._previous_opacity
-                    attrs = (
-                        dict(map_obj.attributes) if map_obj.attributes else {}
-                    )
+                    attrs = dict(map_obj.attributes) if map_obj.attributes else {}
                     attrs["layers"] = map_obj.layers.to_dict()
                     map_obj.attributes = attrs
                     db_service.map_repo.insert_map(map_obj)
@@ -1409,6 +1398,7 @@ class RenameLayerCommand(BaseCommand):
         map_id: str,
         node_id: str,
         new_name: str,
+        layer_tree_dict: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Initialise the command.
 
@@ -1416,16 +1406,25 @@ class RenameLayerCommand(BaseCommand):
             map_id: The map whose layer tree is being modified.
             node_id: ID of the layer node to rename.
             new_name: New display name.
+            layer_tree_dict: Optional pre-serialised tree snapshot
+                (already containing the renamed node).  When provided
+                the command writes this directly instead of re-reading
+                from the database, avoiding stale-data races.
 
         """
         super().__init__()
         self.map_id = map_id
         self.node_id = node_id
         self.new_name = new_name
+        self._layer_tree_dict = layer_tree_dict
         self._previous_name: Optional[str] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Execute the rename and persist.
+
+        If a ``layer_tree_dict`` snapshot was provided at construction,
+        the tree is written directly.  Otherwise the map is re-read
+        from the database and the node is found and renamed in-place.
 
         Args:
             db_service: The database service.
@@ -1436,31 +1435,51 @@ class RenameLayerCommand(BaseCommand):
         """
         try:
             map_obj = db_service.map_repo.get_map(self.map_id)
-            if not map_obj or not map_obj.layers:
+            if not map_obj:
                 return CommandResult(
                     success=False,
-                    message="Map or layers not found.",
+                    message="Map not found.",
                     command_name="RenameLayerCommand",
                 )
 
-            node = _find_layer_node(
-                map_obj.layers, self.node_id
-            )
-            if not node:
-                return CommandResult(
-                    success=False,
-                    message=f"Layer node {self.node_id} not found.",
-                    command_name="RenameLayerCommand",
-                )
-
-            self._previous_name = node.name
-            node.name = self.new_name
-
-            # Persist
             attrs = dict(map_obj.attributes) if map_obj.attributes else {}
-            attrs["layers"] = map_obj.layers.to_dict()
-            map_obj.attributes = attrs
-            db_service.map_repo.insert_map(map_obj)
+
+            if self._layer_tree_dict is not None:
+                # ── Snapshot path (fast, avoids stale reads) ──────
+                # Record previous name from DB tree for undo
+                if map_obj.layers:
+                    node = _find_layer_node(map_obj.layers, self.node_id)
+                    if node:
+                        self._previous_name = node.name
+
+                attrs["layers"] = self._layer_tree_dict
+                map_obj.attributes = attrs
+                # Clear layers so insert_map won't re-serialize the
+                # stale in-memory tree over our snapshot.
+                map_obj.layers = None
+                db_service.map_repo.insert_map(map_obj)
+            else:
+                # ── Fallback path (read from DB, find & rename) ──
+                if not map_obj.layers:
+                    return CommandResult(
+                        success=False,
+                        message="Map layers not found.",
+                        command_name="RenameLayerCommand",
+                    )
+
+                node = _find_layer_node(map_obj.layers, self.node_id)
+                if not node:
+                    return CommandResult(
+                        success=False,
+                        message=f"Layer node {self.node_id} not found.",
+                        command_name="RenameLayerCommand",
+                    )
+
+                self._previous_name = node.name
+                node.name = self.new_name
+                attrs["layers"] = map_obj.layers.to_dict()
+                map_obj.attributes = attrs
+                db_service.map_repo.insert_map(map_obj)
 
             self._is_executed = True
             return CommandResult(
@@ -1486,14 +1505,10 @@ class RenameLayerCommand(BaseCommand):
         if self._is_executed and self._previous_name is not None:
             map_obj = db_service.map_repo.get_map(self.map_id)
             if map_obj and map_obj.layers:
-                node = _find_layer_node(
-                    map_obj.layers, self.node_id
-                )
+                node = _find_layer_node(map_obj.layers, self.node_id)
                 if node:
                     node.name = self._previous_name
-                    attrs = (
-                        dict(map_obj.attributes) if map_obj.attributes else {}
-                    )
+                    attrs = dict(map_obj.attributes) if map_obj.attributes else {}
                     attrs["layers"] = map_obj.layers.to_dict()
                     map_obj.attributes = attrs
                     db_service.map_repo.insert_map(map_obj)
