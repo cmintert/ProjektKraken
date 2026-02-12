@@ -600,6 +600,20 @@ class MapHandler(QObject):
         h_scroll = view.horizontalScrollBar().value()
         v_scroll = view.verticalScrollBar().value()
 
+        # Preserve selection state across clear-and-rebuild
+        selected_marker_id: str | None = None
+        selected_items = view.scene.selectedItems()
+        if selected_items:
+            from src.gui.widgets.map.marker_item import MarkerItem
+
+            first = selected_items[0]
+            if isinstance(first, MarkerItem):
+                selected_marker_id = first.marker_id
+
+        selected_layer_id: str | None = (
+            self.window.map_widget.layer_panel._selected_node_id
+        )
+
         self.window.map_widget.clear_markers()
         self._marker_object_to_id.clear()  # Reset mapping
 
@@ -635,6 +649,15 @@ class MapHandler(QObject):
         view.setTransform(saved_transform)
         view.horizontalScrollBar().setValue(h_scroll)
         view.verticalScrollBar().setValue(v_scroll)
+
+        # Restore selection state
+        if selected_marker_id:
+            item = view._find_graphics_item(selected_marker_id)
+            if item is not None:
+                item.setSelected(True)
+
+        if selected_layer_id:
+            self.window.map_widget.layer_panel.select_node(selected_layer_id)
 
     @Slot(list)
     def on_trajectories_ready(self, trajectories: list) -> None:
