@@ -93,12 +93,12 @@ class MapLayerPanel(QWidget):
         header_layout.addStretch()
 
         self.btn_new_group = QPushButton("+ Group")
-        self.btn_new_group.setToolTip("Create a new layer group")
+        self.btn_new_group.setToolTip("Create a new layer (container)")
         self.btn_new_group.clicked.connect(self._on_new_group)
         header_layout.addWidget(self.btn_new_group)
 
         self.btn_delete = QPushButton("Delete")
-        self.btn_delete.setToolTip("Delete the selected layer")
+        self.btn_delete.setToolTip("Delete the selected layer or feature")
         self.btn_delete.setEnabled(False)
         self.btn_delete.clicked.connect(self._on_delete)
         header_layout.addWidget(self.btn_delete)

@@ -1404,7 +1404,8 @@ class RenameLayerCommand(BaseCommand):
 
         Args:
             map_id: The map whose layer tree is being modified.
-            node_id: ID of the layer node to rename.
+            node_id: ID of the layer node to rename.  This is also
+                the ``MapFeature.id`` for the linked marker.
             new_name: New display name.
             layer_tree_dict: Optional pre-serialised tree snapshot
                 (already containing the renamed node).  When provided
@@ -1418,13 +1419,99 @@ class RenameLayerCommand(BaseCommand):
         self.new_name = new_name
         self._layer_tree_dict = layer_tree_dict
         self._previous_name: Optional[str] = None
+        # Undo state for the linked feature label
+        self._prev_feature_label: Optional[str] = None
+        # Undo state for the linked lore item name
+        self._prev_lore_name: Optional[str] = None
+        self._lore_object_id: Optional[str] = None
+        self._lore_object_type: Optional[str] = None
+
+    # ------------------------------------------------------------------
+    # Private helpers — sync feature label & lore item name
+    # ------------------------------------------------------------------
+
+    def _sync_feature_label(self, db_service: DatabaseService) -> None:
+        """Rename the MapFeature label linked to this node.
+
+        The ``node_id`` doubles as ``MapFeature.id``.
+
+        Args:
+            db_service: Database service instance.
+
+        """
+        marker = db_service.map_repo.get_marker(self.node_id)
+        if not marker:
+            return
+        self._prev_feature_label = marker.label
+        self._lore_object_id = marker.object_id
+        self._lore_object_type = marker.object_type
+        marker.label = self.new_name
+        import time as _time
+
+        marker.modified_at = _time.time()
+        db_service.map_repo.insert_marker(marker)
+
+    def _sync_lore_item(self, db_service: DatabaseService) -> None:
+        """Rename the underlying Entity or Event.
+
+        Args:
+            db_service: Database service instance.
+
+        """
+        if not self._lore_object_id or not self._lore_object_type:
+            return
+
+        if self._lore_object_type == "entity":
+            entity = db_service.get_entity(self._lore_object_id)
+            if entity:
+                self._prev_lore_name = entity.name
+                entity.name = self.new_name
+                db_service.insert_entity(entity)
+        elif self._lore_object_type == "event":
+            event = db_service.get_event(self._lore_object_id)
+            if event:
+                self._prev_lore_name = event.name
+                event.name = self.new_name
+                db_service.insert_event(event)
+
+    def _undo_feature_label(self, db_service: DatabaseService) -> None:
+        """Revert the MapFeature label."""
+        if self._prev_feature_label is None:
+            return
+        marker = db_service.map_repo.get_marker(self.node_id)
+        if marker:
+            marker.label = self._prev_feature_label
+            db_service.map_repo.insert_marker(marker)
+
+    def _undo_lore_item(self, db_service: DatabaseService) -> None:
+        """Revert the Entity/Event name."""
+        if self._prev_lore_name is None:
+            return
+        if not self._lore_object_id or not self._lore_object_type:
+            return
+        if self._lore_object_type == "entity":
+            entity = db_service.get_entity(self._lore_object_id)
+            if entity:
+                entity.name = self._prev_lore_name
+                db_service.insert_entity(entity)
+        elif self._lore_object_type == "event":
+            event = db_service.get_event(self._lore_object_id)
+            if event:
+                event.name = self._prev_lore_name
+                db_service.insert_event(event)
+
+    # ------------------------------------------------------------------
+    # Command interface
+    # ------------------------------------------------------------------
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Execute the rename and persist.
 
-        If a ``layer_tree_dict`` snapshot was provided at construction,
-        the tree is written directly.  Otherwise the map is re-read
-        from the database and the node is found and renamed in-place.
+        Performs a **triple-sync rename**:
+
+        1. Rename the ``MapLayerNode`` in the hierarchy tree.
+        2. Rename the ``MapFeature.label`` in the markers table.
+        3. Rename the linked ``Entity.name`` or ``Event.name``.
 
         Args:
             db_service: The database service.
@@ -1471,7 +1558,7 @@ class RenameLayerCommand(BaseCommand):
                 if not node:
                     return CommandResult(
                         success=False,
-                        message=f"Layer node {self.node_id} not found.",
+                        message=(f"Layer node {self.node_id} " "not found."),
                         command_name="RenameLayerCommand",
                     )
 
@@ -1481,10 +1568,14 @@ class RenameLayerCommand(BaseCommand):
                 map_obj.attributes = attrs
                 db_service.map_repo.insert_map(map_obj)
 
+            # ── Sync feature label + lore item name ──────────
+            self._sync_feature_label(db_service)
+            self._sync_lore_item(db_service)
+
             self._is_executed = True
             return CommandResult(
                 success=True,
-                message=f"Layer renamed to '{self.new_name}'.",
+                message=f"Renamed to '{self.new_name}'.",
                 command_name="RenameLayerCommand",
             )
         except Exception as e:
@@ -1496,7 +1587,7 @@ class RenameLayerCommand(BaseCommand):
             )
 
     def undo(self, db_service: DatabaseService) -> None:
-        """Revert the rename.
+        """Revert the rename across all three stores.
 
         Args:
             db_service: The database service.
@@ -1512,6 +1603,11 @@ class RenameLayerCommand(BaseCommand):
                     attrs["layers"] = map_obj.layers.to_dict()
                     map_obj.attributes = attrs
                     db_service.map_repo.insert_map(map_obj)
+
+            # Revert feature label and lore item name
+            self._undo_feature_label(db_service)
+            self._undo_lore_item(db_service)
+
             self._is_executed = False
 
     def to_dict(self) -> dict:

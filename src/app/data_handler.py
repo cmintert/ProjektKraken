@@ -318,9 +318,17 @@ class DataHandler(QObject):
                 self._pending_select_type = "entity"
                 self._pending_select_id = result.data["id"]
 
-            if "Map" in command_name:
+            if "Map" in command_name or "Layer" in command_name:
                 logger.debug("[DataHandler] Emitting reload_maps")
                 self.reload_maps.emit()
+
+            if command_name == "RenameLayerCommand":
+                logger.debug(
+                    "[DataHandler] Emitting lore reloads for RenameLayerCommand"
+                )
+                self.reload_entities.emit()
+                self.reload_events.emit()
+                self.reload_markers_for_current_map.emit()
 
             if "Marker" in command_name and "Update" not in command_name:
                 logger.debug("[DataHandler] Emitting reload_markers_for_current_map")
