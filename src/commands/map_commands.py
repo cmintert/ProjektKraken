@@ -1399,18 +1399,22 @@ class RenameLayerCommand(BaseCommand):
         node_id: str,
         new_name: str,
         layer_tree_dict: Optional[Dict[str, Any]] = None,
+        marker_id: Optional[str] = None,
     ) -> None:
         """Initialise the command.
 
         Args:
             map_id: The map whose layer tree is being modified.
-            node_id: ID of the layer node to rename.  This is also
-                the ``MapFeature.id`` for the linked marker.
+            node_id: ID of the layer node to rename.  In the UI this
+                equals the entity/event ``object_id``.
             new_name: New display name.
             layer_tree_dict: Optional pre-serialised tree snapshot
                 (already containing the renamed node).  When provided
                 the command writes this directly instead of re-reading
                 from the database, avoiding stale-data races.
+            marker_id: The actual ``MapFeature.id`` (DB primary key)
+                for the linked marker.  When *None* the command falls
+                back to querying by ``node_id`` (legacy behaviour).
 
         """
         super().__init__()
@@ -1418,6 +1422,7 @@ class RenameLayerCommand(BaseCommand):
         self.node_id = node_id
         self.new_name = new_name
         self._layer_tree_dict = layer_tree_dict
+        self._marker_id = marker_id
         self._previous_name: Optional[str] = None
         # Undo state for the linked feature label
         self._prev_feature_label: Optional[str] = None
@@ -1433,13 +1438,15 @@ class RenameLayerCommand(BaseCommand):
     def _sync_feature_label(self, db_service: DatabaseService) -> None:
         """Rename the MapFeature label linked to this node.
 
-        The ``node_id`` doubles as ``MapFeature.id``.
+        Uses ``_marker_id`` (the actual DB primary key) when available,
+        falling back to ``node_id`` for backwards compatibility.
 
         Args:
             db_service: Database service instance.
 
         """
-        marker = db_service.map_repo.get_marker(self.node_id)
+        lookup_id = self._marker_id or self.node_id
+        marker = db_service.map_repo.get_marker(lookup_id)
         if not marker:
             return
         self._prev_feature_label = marker.label
@@ -1478,7 +1485,8 @@ class RenameLayerCommand(BaseCommand):
         """Revert the MapFeature label."""
         if self._prev_feature_label is None:
             return
-        marker = db_service.map_repo.get_marker(self.node_id)
+        lookup_id = self._marker_id or self.node_id
+        marker = db_service.map_repo.get_marker(lookup_id)
         if marker:
             marker.label = self._prev_feature_label
             db_service.map_repo.insert_marker(marker)
@@ -1616,9 +1624,15 @@ class RenameLayerCommand(BaseCommand):
             "map_id": self.map_id,
             "node_id": self.node_id,
             "new_name": self.new_name,
+            "marker_id": self._marker_id,
         }
 
     @classmethod
     def from_dict(cls, data: dict) -> "RenameLayerCommand":
         """Deserialize command from dictionary."""
-        return cls(data["map_id"], data["node_id"], data["new_name"])
+        return cls(
+            data["map_id"],
+            data["node_id"],
+            data["new_name"],
+            marker_id=data.get("marker_id"),
+        )

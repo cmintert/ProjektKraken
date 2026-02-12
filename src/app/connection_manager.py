@@ -888,8 +888,16 @@ class ConnectionManager:
         ):
             failed_count += 1
 
-        # 16 original + 3 layer signals (tree_changed, opacity, rename)
-        total_connections = 19
+        if not self._connect_signal_safe(
+            map_widget,
+            "layer_delete_feature_requested",
+            self.window.map_handler.on_layer_feature_deleted,
+            "MapWidget",
+        ):
+            failed_count += 1
+
+        # 16 original + 4 layer signals
+        total_connections = 20
         logger.debug(
             f"MapWidget connections: {total_connections - failed_count}"
             f"/{total_connections} succeeded, "

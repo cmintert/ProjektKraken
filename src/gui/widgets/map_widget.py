@@ -188,6 +188,7 @@ class MapWidget(QWidget):
     layer_tree_changed = Signal()  # auto-persist hook
     layer_opacity_change_requested = Signal(str, float)  # node_id, opacity
     layer_rename_requested = Signal(str, str)  # node_id, new_name
+    layer_delete_feature_requested = Signal(str)  # object_id of deleted leaf
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the MapWidget.
@@ -1005,7 +1006,9 @@ class MapWidget(QWidget):
     def _on_delete_layer(self, node_id: str) -> None:
         """Handle request to delete a layer.
 
-        Also removes the corresponding graphics item if it exists.
+        Removes graphics items, the layer node from the tree, and emits
+        ``layer_delete_feature_requested`` for each leaf feature so
+        the database marker is also deleted.
 
         Args:
             node_id: ID of the layer node to delete.
@@ -1022,6 +1025,9 @@ class MapWidget(QWidget):
             logger.warning("Cannot delete the root node")
             return
 
+        # Collect all leaf feature IDs before mutating the tree
+        leaf_ids = self._collect_leaf_ids(node)
+
         # Remove the graphics item if it's a leaf feature
         if node.layer_type != MAP_LAYER_TYPE_GROUP:
             self.view.remove_marker(node_id)
@@ -1033,6 +1039,27 @@ class MapWidget(QWidget):
         idx = self._layer_model.index_from_node(node)
         self._layer_model.remove_layer(idx)
         logger.info(f"Deleted layer: {node.name} ({node_id})")
+
+        # Request DB deletion for every leaf feature
+        for leaf_id in leaf_ids:
+            self.layer_delete_feature_requested.emit(leaf_id)
+
+    def _collect_leaf_ids(self, node: MapLayerNode) -> List[str]:
+        """Recursively collect IDs of all leaf (non-group) nodes.
+
+        Args:
+            node: The root node to search.
+
+        Returns:
+            List of leaf node IDs.
+
+        """
+        ids: List[str] = []
+        if node.layer_type != MAP_LAYER_TYPE_GROUP:
+            ids.append(node.id)
+        for child in node.children:
+            ids.extend(self._collect_leaf_ids(child))
+        return ids
 
     def _remove_children_graphics(self, group_node: MapLayerNode) -> None:
         """Recursively remove graphics items for all children of a group.

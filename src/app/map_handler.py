@@ -681,7 +681,7 @@ class MapHandler(QObject):
         reads when the rename command executes on the worker thread.
 
         Args:
-            node_id: ID of the layer node.
+            node_id: ID of the layer node (same as object_id).
             new_name: New display name.
 
         """
@@ -691,5 +691,31 @@ class MapHandler(QObject):
         # Serialize the current in-memory tree (already renamed by the UI)
         model = self.window.map_widget.get_layer_model()
         tree_dict = model.root.to_dict() if model else None
-        cmd = RenameLayerCommand(map_id, node_id, new_name, tree_dict)
+        # Resolve actual marker DB id from the object_id mapping
+        actual_marker_id = self._marker_object_to_id.get(node_id)
+        cmd = RenameLayerCommand(
+            map_id, node_id, new_name, tree_dict, actual_marker_id
+        )
+        self.window.command_requested.emit(cmd)
+
+    @Slot(str)
+    def on_layer_feature_deleted(self, object_id: str) -> None:
+        """Delete a marker from the database after layer panel removal.
+
+        The graphics item and layer node have already been cleaned up by
+        ``MapWidget._on_delete_layer``.  This handler only fires the
+        ``DeleteMarkerCommand`` to persist the deletion.
+
+        Args:
+            object_id: The entity/event UUID used as the UI marker key.
+
+        """
+        actual_marker_id = self._marker_object_to_id.get(object_id)
+        if not actual_marker_id:
+            logger.warning(
+                "on_layer_feature_deleted: no mapping for %s", object_id
+            )
+            return
+        del self._marker_object_to_id[object_id]
+        cmd = DeleteMarkerCommand(actual_marker_id)
         self.window.command_requested.emit(cmd)

@@ -1037,3 +1037,104 @@ class TestMapWidgetLayerSignals:
         widget._on_layer_renamed("ren-sig-1", "Updated Name")
         assert len(received) == 1
         assert received[0] == ("ren-sig-1", "Updated Name")
+
+
+# =========================================================================
+# Bug fixes: layer panel delete → DB, rename → entity/event
+# =========================================================================
+
+
+class TestDeleteLayerEmitsDBSignal:
+    """Verify _on_delete_layer emits layer_delete_feature_requested for DB cleanup."""
+
+    def test_delete_leaf_emits_feature_delete(self, qtbot) -> None:
+        """Deleting a leaf node emits layer_delete_feature_requested."""
+        widget = _make_map_widget(qtbot)
+        widget.add_marker("del-db-1", "entity", "To Delete", 0.5, 0.5)
+
+        received: list[str] = []
+        widget.layer_delete_feature_requested.connect(received.append)
+
+        widget._on_delete_layer("del-db-1")
+        assert received == ["del-db-1"]
+
+    def test_delete_group_emits_for_all_children(self, qtbot) -> None:
+        """Deleting a group emits layer_delete_feature_requested for each child."""
+        widget = _make_map_widget(qtbot)
+        widget.add_marker("g-child-1", "entity", "Child 1", 0.2, 0.2)
+        widget.add_marker("g-child-2", "entity", "Child 2", 0.7, 0.7)
+
+        received: list[str] = []
+        widget.layer_delete_feature_requested.connect(received.append)
+
+        default = widget._default_group()
+        widget._on_delete_layer(default.id)
+        assert set(received) == {"g-child-1", "g-child-2"}
+
+    def test_delete_group_type_not_emitted(self, qtbot) -> None:
+        """Deleting an empty group does NOT emit layer_delete_feature_requested."""
+        widget = _make_map_widget(qtbot)
+        model = widget._ensure_layer_model()
+
+        # Create a new empty group
+        group = MapLayerNode(
+            name="Empty Group", layer_type=MAP_LAYER_TYPE_GROUP, id="empty-grp"
+        )
+        parent_idx = model.index_from_node(model.root)
+        model.add_layer(parent_idx, group)
+
+        received: list[str] = []
+        widget.layer_delete_feature_requested.connect(received.append)
+
+        widget._on_delete_layer("empty-grp")
+        assert received == []
+
+    def test_collect_leaf_ids_nested_groups(self, qtbot) -> None:
+        """_collect_leaf_ids recurses through nested groups."""
+        widget = _make_map_widget(qtbot)
+        # Build a nested tree: root → group → sub-group → leaf
+        leaf = MapLayerNode(
+            name="Deep Leaf", layer_type=MAP_LAYER_TYPE_MARKER, id="deep-leaf"
+        )
+        sub = MapLayerNode(
+            name="Sub",
+            layer_type=MAP_LAYER_TYPE_GROUP,
+            id="sub",
+            children=[leaf],
+        )
+        top = MapLayerNode(
+            name="Top",
+            layer_type=MAP_LAYER_TYPE_GROUP,
+            id="top",
+            children=[sub],
+        )
+        ids = widget._collect_leaf_ids(top)
+        assert ids == ["deep-leaf"]
+
+
+class TestRenameLayerCommandMarkerIdFix:
+    """Verify RenameLayerCommand uses the correct marker_id for DB lookup."""
+
+    def test_serialization_with_marker_id(self) -> None:
+        """to_dict / from_dict preserves marker_id."""
+        from src.commands.map_commands import RenameLayerCommand
+
+        cmd = RenameLayerCommand(
+            "map-1", "node-1", "New Name", marker_id="actual-db-id"
+        )
+        data = cmd.to_dict()
+        assert data["marker_id"] == "actual-db-id"
+
+        restored = RenameLayerCommand.from_dict(data)
+        assert restored._marker_id == "actual-db-id"
+
+    def test_serialization_without_marker_id(self) -> None:
+        """to_dict / from_dict works when marker_id is None."""
+        from src.commands.map_commands import RenameLayerCommand
+
+        cmd = RenameLayerCommand("map-1", "node-1", "New Name")
+        data = cmd.to_dict()
+        assert data["marker_id"] is None
+
+        restored = RenameLayerCommand.from_dict(data)
+        assert restored._marker_id is None
