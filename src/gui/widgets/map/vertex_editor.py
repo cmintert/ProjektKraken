@@ -40,6 +40,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Normalized coordinate precision (decimal places)
+NORMALIZED_COORD_PRECISION = 6
+
 
 class _VertexHandle(QGraphicsEllipseItem):
     """A draggable handle for a single vertex during editing.
@@ -382,8 +385,8 @@ class VertexEditor:
 
         if index < len(item._geometry):
             pt = item._geometry[index]
-            pt["x"] = round(nx, 10)
-            pt["y"] = round(ny, 10)
+            pt["x"] = round(nx, NORMALIZED_COORD_PRECISION)
+            pt["y"] = round(ny, NORMALIZED_COORD_PRECISION)
             if isinstance(item, PathItem):
                 item._build_path()
                 item._position_label()
@@ -482,7 +485,10 @@ class VertexEditor:
         nx = max(0.0, min(1.0, nx))
         ny = max(0.0, min(1.0, ny))
 
-        new_pt = {"x": round(nx, 6), "y": round(ny, 6)}
+        new_pt = {
+            "x": round(nx, NORMALIZED_COORD_PRECISION),
+            "y": round(ny, NORMALIZED_COORD_PRECISION),
+        }
         item._geometry.insert(segment_index + 1, new_pt)
 
         if isinstance(item, PathItem):

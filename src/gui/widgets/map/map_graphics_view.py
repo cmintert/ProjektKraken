@@ -77,7 +77,7 @@ from src.core.theme_manager import ThemeManager
 from src.gui.widgets.map.coordinate_system import MapCoordinateSystem
 from src.gui.widgets.map.drawing_tool import DrawingTool
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
-from src.gui.widgets.map.interaction_handler import InteractionHandler, _safe_color_css
+from src.gui.widgets.map.interaction_handler import InteractionHandler
 from src.gui.widgets.map.marker_item import MarkerItem
 from src.gui.widgets.map.marker_manager import MarkerManager
 from src.gui.widgets.map.scale_bar_painter import ScaleBarPainter
@@ -1336,22 +1336,6 @@ class MapGraphicsView(QGraphicsView):
             The matching QGraphicsItem, or None.
         """
         return self._marker_manager.find_item(node_id)
-
-    # ------------------------------------------------------------------
-    # Utility
-    # ------------------------------------------------------------------
-
-    @staticmethod
-    def _safe_color_css(color_str: str) -> str:
-        """Validates a color string for safe use in QSS stylesheets.
-
-        Args:
-            color_str: A candidate color string.
-
-        Returns:
-            A validated hex color safe for use in CSS.
-        """
-        return _safe_color_css(color_str)
 
     # ------------------------------------------------------------------
     # Hierarchical Layer System integration
