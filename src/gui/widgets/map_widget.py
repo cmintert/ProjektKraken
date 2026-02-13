@@ -548,7 +548,7 @@ class MapWidget(QWidget):
         if self.view.is_drawing:
             self.view.finish_drawing()
         elif self.view.is_editing_vertices:
-            self.view._finish_vertex_editing()
+            self.view.finish_editing()
         self._update_mode_indicator()
 
     @Slot(str, list)
@@ -688,7 +688,7 @@ class MapWidget(QWidget):
         if self.view.is_drawing:
             self.view.cancel_drawing()
         if self.view.is_editing_vertices:
-            self.view._finish_vertex_editing()
+            self.view.finish_editing()
         self._update_mode_indicator()
 
         if index >= 0:
@@ -704,6 +704,11 @@ class MapWidget(QWidget):
         """
         index = self.map_selector.currentIndex()
         return self.map_selector.itemData(index) if index >= 0 else None
+
+    @property
+    def maps_data(self) -> list:
+        """The currently loaded list of :class:`Map` objects."""
+        return self._maps_data
 
     @Slot(str, float, float)
     def _on_marker_moved(self, marker_id: str, x: float, y: float) -> None:
@@ -953,7 +958,7 @@ class MapWidget(QWidget):
 
         """
         # Select the graphics item on the map
-        item = self.view._find_graphics_item(node_id)
+        item = self.view.find_item_by_id(node_id)
         if item is not None:
             self.view.scene.clearSelection()
             item.setSelected(True)
@@ -991,7 +996,7 @@ class MapWidget(QWidget):
         # Find a suitable parent — the selected node if it's a group,
         # else the Default group
         parent_node = None
-        selected_id = self.layer_panel._selected_node_id
+        selected_id = self.layer_panel.selected_node_id
         if selected_id:
             selected_node = model.find_node_by_id(selected_id)
             if selected_node and selected_node.layer_type == MAP_LAYER_TYPE_GROUP:

@@ -68,8 +68,8 @@ def test_on_map_selected_loads_scale(map_handler):
     mock_map_default.image_path = "/tmp/test2.png"
     mock_map_default.attributes = {}
 
-    # MapHandler accesses map_widget._maps_data list
-    map_handler.window.map_widget._maps_data = [mock_map, mock_map_default]
+    # MapHandler accesses map_widget.maps_data property
+    map_handler.window.map_widget.maps_data = [mock_map, mock_map_default]
 
     # Mock the view
     map_handler.window.map_widget.view = MagicMock()

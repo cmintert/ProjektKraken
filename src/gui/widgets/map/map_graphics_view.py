@@ -2477,6 +2477,29 @@ class MapGraphicsView(QGraphicsView):
         """
         return self._editing_feature_id is not None
 
+    def finish_editing(self) -> None:
+        """Public API: completes any active vertex editing session.
+
+        Commits the current vertex edits, removes handles, and restores
+        the original feature style.  Safe to call when no editing is active.
+        """
+        if self.is_editing_vertices:
+            self._finish_vertex_editing()
+
+    def find_item_by_id(self, object_id: str) -> Optional[QGraphicsItem]:
+        """Public API: look up a graphics item by its object ID.
+
+        Searches both marker items and feature items (paths/regions).
+
+        Args:
+            object_id: The object ID to search for.
+
+        Returns:
+            The matching :class:`QGraphicsItem`, or ``None``.
+
+        """
+        return self._find_graphics_item(object_id)
+
     def show_trajectory(self, marker_id: str, keyframes: list) -> None:
         """Visualizes the trajectory path and keyframes.
 

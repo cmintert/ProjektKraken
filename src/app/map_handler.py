@@ -74,7 +74,7 @@ class MapHandler(QObject):
 
         """
         # Find map object
-        maps = self.window.map_widget._maps_data
+        maps = self.window.map_widget.maps_data
         selected_map = next((m for m in maps if m.id == map_id), None)
         if selected_map and selected_map.image_path:
             # Resolve relative path against project directory
@@ -611,14 +611,14 @@ class MapHandler(QObject):
                 selected_marker_id = first.marker_id
 
         selected_layer_id: str | None = (
-            self.window.map_widget.layer_panel._selected_node_id
+            self.window.map_widget.layer_panel.selected_node_id
         )
 
         self.window.map_widget.clear_markers()
         self._marker_object_to_id.clear()  # Reset mapping
 
         # Restore persisted layer tree from the selected map object
-        maps = self.window.map_widget._maps_data
+        maps = self.window.map_widget.maps_data
         selected_map = next((m for m in maps if m.id == map_id), None)
         if selected_map and selected_map.layers is not None:
             self.window.map_widget._build_layer_model(selected_map.layers)
@@ -652,7 +652,7 @@ class MapHandler(QObject):
 
         # Restore selection state
         if selected_marker_id:
-            item = view._find_graphics_item(selected_marker_id)
+            item = view.find_item_by_id(selected_marker_id)
             if item is not None:
                 item.setSelected(True)
 

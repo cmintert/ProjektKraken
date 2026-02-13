@@ -162,6 +162,11 @@ class MapLayerPanel(QWidget):
     # ------------------------------------------------------------------
 
     @property
+    def selected_node_id(self) -> Optional[str]:
+        """The ID of the currently selected layer node, or ``None``."""
+        return self._selected_node_id
+
+    @property
     def tree_view(self) -> QTreeView:
         """Access the underlying QTreeView."""
         return self._tree
