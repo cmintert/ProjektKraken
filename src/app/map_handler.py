@@ -1,20 +1,21 @@
-"""MapHandler - Handles map and marker operations for MainWindow.
+"""MapHandler - Handles map and marker operations.
 
-This module contains all map and marker-related functionality extracted from
-MainWindow to reduce its size and improve maintainability.
+This module contains all map and marker-related business logic,
+decoupled from the UI layer.  It receives specific dependencies
+via constructor injection rather than a reference to MainWindow.
+
+Dialog creation is the responsibility of the widget layer
+(``MapWidget``).  This handler only operates on pre-resolved data
+received through signals.
 """
 
 import shutil
 import uuid
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Optional
 
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt, Slot
-from PySide6.QtWidgets import QFileDialog, QInputDialog, QMessageBox
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt, Signal, Slot
 
-from src.app.constants import IMAGE_FILE_FILTER
-from src.commands.entity_commands import CreateEntityCommand
-from src.commands.event_commands import CreateEventCommand
 from src.commands.map_commands import (
     CreateMapCommand,
     CreateMarkerCommand,
@@ -31,37 +32,56 @@ from src.commands.map_commands import (
 from src.core.logging_config import get_logger
 
 if TYPE_CHECKING:
-    from src.app.main_window import MainWindow
+    from src.gui.widgets.map_widget import MapWidget
 
 logger = get_logger(__name__)
 
 
 class MapHandler(QObject):
-    """Manages map and marker operations for the MainWindow.
+    """Manages map and marker operations.
 
-    This class encapsulates all functionality related to:
+    This class encapsulates all business logic related to:
     - Loading and displaying maps
     - Creating, deleting, and modifying maps
     - Creating, deleting, and modifying markers
     - Handling marker interactions (clicks, drag-drop, updates)
+
+    Dependencies are injected via the constructor — this handler
+    never accesses ``MainWindow`` directly.
     """
 
-    def __init__(self, main_window: "MainWindow") -> None:
+    # Emitted when a command should be executed on the worker thread.
+    command_requested = Signal(object)
+
+    def __init__(
+        self,
+        map_widget: "MapWidget",
+        worker: object,
+        db_path_accessor: Callable[[], str],
+        navigation_set_selection: Callable[[str, str], None],
+    ) -> None:
         """Initialize the MapHandler.
 
         Args:
-            main_window: Reference to the MainWindow instance.
+            map_widget: The MapWidget instance (UI layer).
+            worker: The DatabaseWorker for async DB operations.
+            db_path_accessor: Callable that returns the current DB path.
+            navigation_set_selection: Callable(object_type, object_id) for
+                unified selection handling.
 
         """
         super().__init__()
-        self.window = main_window
+        self._map_widget = map_widget
+        self._worker = worker
+        self._db_path_accessor = db_path_accessor
+        self._navigation_set_selection = navigation_set_selection
         # Mapping from object_id to actual marker.id for position updates
         self._marker_object_to_id: dict[str, str] = {}
 
     def load_maps(self) -> None:
         """Requests loading of all maps from the worker thread."""
         QMetaObject.invokeMethod(
-            self.window.worker, "load_maps", Qt.ConnectionType.QueuedConnection
+            self._worker, "load_maps", Qt.ConnectionType.QueuedConnection
         )
 
     @Slot(str)
@@ -74,32 +94,31 @@ class MapHandler(QObject):
 
         """
         # Find map object
-        maps = self.window.map_widget.maps_data
+        maps = self._map_widget.maps_data
         selected_map = next((m for m in maps if m.id == map_id), None)
         if selected_map and selected_map.image_path:
             # Resolve relative path against project directory
             image_path = selected_map.image_path
             if not Path(image_path).is_absolute():
-                # Use main thread's db_path for path calculations
-                project_dir = Path(self.window.db_path).parent
+                project_dir = Path(self._db_path_accessor()).parent
                 image_path = str(project_dir / image_path)
 
             # Only load the map image if it's different from the current one
             # This preserves the view transform (zoom/pan) during map list refreshes
-            if self.window.map_widget.view.current_image_path != image_path:
-                self.window.map_widget.load_map(image_path)
+            if self._map_widget.view.current_image_path != image_path:
+                self._map_widget.load_map(image_path)
 
             # Restore scale
             width_meters = selected_map.attributes.get("width_meters")
             if width_meters:
-                self.window.map_widget.view.set_map_width_meters(float(width_meters))
+                self._map_widget.view.set_map_width_meters(float(width_meters))
             else:
                 # Reset to default if no specific scale set (1000 km)
-                self.window.map_widget.view.set_map_width_meters(1_000_000.0)
+                self._map_widget.view.set_map_width_meters(1_000_000.0)
 
             # Request markers
             QMetaObject.invokeMethod(
-                self.window.worker,
+                self._worker,
                 "load_markers",
                 Qt.ConnectionType.QueuedConnection,
                 Q_ARG(str, map_id),
@@ -107,7 +126,7 @@ class MapHandler(QObject):
 
             # Request trajectories
             QMetaObject.invokeMethod(
-                self.window.worker,
+                self._worker,
                 "load_trajectories",
                 Qt.ConnectionType.QueuedConnection,
                 Q_ARG(str, map_id),
@@ -123,7 +142,7 @@ class MapHandler(QObject):
         """
         logger.info(f"Reloading markers for map: {map_id}")
         QMetaObject.invokeMethod(
-            self.window.worker,
+            self._worker,
             "load_markers",
             Qt.ConnectionType.QueuedConnection,
             Q_ARG(str, map_id),
@@ -136,31 +155,27 @@ class MapHandler(QObject):
         Used when a marker command completes but we don't have the map_id in the command
         result.
         """
-        map_id = self.window.map_widget.get_selected_map_id()
+        map_id = self._map_widget.get_selected_map_id()
         if map_id:
             logger.info(f"Reloading markers for current map: {map_id}")
             self.reload_markers(map_id)
         else:
             logger.debug("No map selected, skipping marker reload")
 
-    def create_map(self) -> None:
-        """Creates a new map via dialogs."""
-        # 1. Select Image
-        file_path, _ = QFileDialog.getOpenFileName(
-            self.window, "Select Map Image", "", IMAGE_FILE_FILTER
-        )
-        if not file_path:
-            return
+    def create_map(self, file_path: str, name: str) -> None:
+        """Creates a new map from a pre-selected image and name.
 
-        # 2. Enter Name
-        name, ok = QInputDialog.getText(self.window, "New Map", "Map Name:")
-        if not ok or not name.strip():
-            return
+        The dialog interaction (file selection, name input) is handled
+        by the widget layer before this method is called.
 
-        # 3. Copy image to project assets folder
+        Args:
+            file_path: Absolute path to the source image file.
+            name: Display name for the map.
+
+        """
+        # Copy image to project assets folder
         source_path = Path(file_path)
-        # Use main thread's db_path for path calculations
-        project_dir = Path(self.window.db_path).parent
+        project_dir = Path(self._db_path_accessor()).parent
         assets_dir = project_dir / "assets" / "maps"
         assets_dir.mkdir(parents=True, exist_ok=True)
 
@@ -173,148 +188,49 @@ class MapHandler(QObject):
             shutil.copy2(source_path, dest_path)
             logger.info(f"Copied map image to: {dest_path}")
         except Exception as e:
-            QMessageBox.warning(self.window, "Error", f"Failed to copy image: {e}")
+            logger.error(f"Failed to copy image: {e}")
             return
 
         # Store relative path
         relative_path = str(dest_path.relative_to(project_dir))
 
         cmd = CreateMapCommand({"name": name.strip(), "image_path": relative_path})
-        self.window.command_requested.emit(cmd)
+        self.command_requested.emit(cmd)
 
-    def delete_map(self) -> None:
-        """Deletes the currently selected map."""
-        map_id = self.window.map_widget.map_selector.currentData()
-        if not map_id:
-            return
+    def delete_map(self, map_id: str) -> None:
+        """Deletes a map after confirmation has already been obtained.
 
-        confirm = QMessageBox.question(
-            self.window,
-            "Delete Map",
-            "Are you sure you want to delete this map and all its markers?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
-        if confirm == QMessageBox.StandardButton.Yes:
-            cmd = DeleteMapCommand(map_id)
-            self.window.command_requested.emit(cmd)
-
-    # ------------------------------------------------------------------
-    # Sentinel values for "create new" options in the selection dialog
-    # ------------------------------------------------------------------
-    _NEW_ENTITY_SENTINEL = "<New Entity...>"
-    _NEW_EVENT_SENTINEL = "<New Event...>"
-
-    def _select_or_create_object(
-        self, dialog_title: str, dialog_label: str
-    ) -> tuple[str, str, str] | None:
-        """Shows a selection dialog with existing items + new-item options.
-
-        Returns:
-            Tuple of (object_id, object_type, name) on success, or None
-            if the user cancels.
-
-        """
-        # Build list of items to choose from
-        items: list[str] = [
-            self._NEW_ENTITY_SENTINEL,
-            self._NEW_EVENT_SENTINEL,
-        ]
-        for e in self.window._cached_entities:
-            items.append(f"{e.name} (Entity)")
-        for e in self.window._cached_events:
-            items.append(f"{e.name} (Event)")
-
-        # Sort existing items, but keep sentinels at top
-        sentinels = items[:2]
-        existing = sorted(items[2:])
-        items = sentinels + existing
-
-        item_text, ok = QInputDialog.getItem(
-            self.window, dialog_title, dialog_label, items, 0, False
-        )
-        if not ok or not item_text:
-            return None
-
-        # --- Handle "create new" sentinels ---
-        if item_text == self._NEW_ENTITY_SENTINEL:
-            return self._create_new_entity_inline()
-        if item_text == self._NEW_EVENT_SENTINEL:
-            return self._create_new_event_inline()
-
-        # --- Handle existing item selection ---
-        if item_text.endswith(" (Entity)"):
-            name = item_text[:-9]
-            obj = next(
-                (e for e in self.window._cached_entities if e.name == name), None
-            )
-            if obj:
-                return obj.id, "entity", obj.name
-        elif item_text.endswith(" (Event)"):
-            name = item_text[:-8]
-            obj = next((e for e in self.window._cached_events if e.name == name), None)
-            if obj:
-                return obj.id, "event", obj.name
-
-        return None
-
-    def _create_new_entity_inline(self) -> tuple[str, str, str] | None:
-        """Prompts for a name and emits a CreateEntityCommand.
-
-        Returns:
-            Tuple of (new_id, 'entity', name) or None if cancelled.
-
-        """
-        name, ok = QInputDialog.getText(self.window, "New Entity", "Entity Name:")
-        if not ok or not name.strip():
-            return None
-
-        name = name.strip()
-        new_id = str(uuid.uuid4())
-        cmd = CreateEntityCommand({"id": new_id, "name": name, "type": "Location"})
-        self.window.command_requested.emit(cmd)
-        logger.info(f"Created new entity '{name}' ({new_id}) from map")
-        return new_id, "entity", name
-
-    def _create_new_event_inline(self) -> tuple[str, str, str] | None:
-        """Prompts for a name and emits a CreateEventCommand.
-
-        Returns:
-            Tuple of (new_id, 'event', name) or None if cancelled.
-
-        """
-        name, ok = QInputDialog.getText(self.window, "New Event", "Event Name:")
-        if not ok or not name.strip():
-            return None
-
-        name = name.strip()
-        new_id = str(uuid.uuid4())
-        cmd = CreateEventCommand({"id": new_id, "name": name, "lore_date": 0.0})
-        self.window.command_requested.emit(cmd)
-        logger.info(f"Created new event '{name}' ({new_id}) from map")
-        return new_id, "event", name
-
-    def create_marker(self, x: float, y: float) -> None:
-        """Creates a new marker at the given normalized coordinates.
-
-        Prompts the user to select an existing Entity/Event or create a new one.
+        The confirmation dialog is handled by the widget layer.
 
         Args:
-            x: Normalized X coordinate [0.0, 1.0].
-            y: Normalized Y coordinate [0.0, 1.0].
+            map_id: ID of the map to delete.
 
         """
-        map_id = self.window.map_widget.map_selector.currentData()
-        if not map_id:
-            QMessageBox.warning(
-                self.window, "No Map", "Please create or select a map first."
-            )
-            return
+        cmd = DeleteMapCommand(map_id)
+        self.command_requested.emit(cmd)
 
-        result = self._select_or_create_object("Add Marker", "Select Object:")
-        if not result:
-            return
+    def create_marker(
+        self,
+        map_id: str,
+        obj_id: str,
+        obj_type: str,
+        name: str,
+        x: float,
+        y: float,
+    ) -> None:
+        """Creates a new marker at the given normalised coordinates.
 
-        obj_id, obj_type, name = result
+        The object selection dialog is handled by the widget layer.
+
+        Args:
+            map_id: ID of the target map.
+            obj_id: UUID of the linked entity or event.
+            obj_type: ``'entity'`` or ``'event'``.
+            name: Display label for the marker.
+            x: Normalised X coordinate [0.0, 1.0].
+            y: Normalised Y coordinate [0.0, 1.0].
+
+        """
         cmd = CreateMarkerCommand(
             {
                 "map_id": map_id,
@@ -325,7 +241,7 @@ class MapHandler(QObject):
                 "label": name,
             }
         )
-        self.window.command_requested.emit(cmd)
+        self.command_requested.emit(cmd)
 
     def on_marker_dropped(
         self, item_id: str, item_type: str, item_name: str, x: float, y: float
@@ -340,9 +256,9 @@ class MapHandler(QObject):
             y: Normalized Y coordinate [0.0, 1.0].
 
         """
-        map_id = self.window.map_widget.get_selected_map_id()
+        map_id = self._map_widget.get_selected_map_id()
         if not map_id:
-            QMessageBox.warning(self.window, "No Map", "Please select a map first.")
+            logger.warning("on_marker_dropped: no map selected")
             return
 
         cmd = CreateMarkerCommand(
@@ -355,37 +271,32 @@ class MapHandler(QObject):
                 "label": item_name,
             }
         )
-        self.window.command_requested.emit(cmd)
+        self.command_requested.emit(cmd)
         logger.info(f"Creating marker for {item_type} '{item_name}' via drag-drop")
 
     @Slot(str, list)
-    def on_feature_drawn(self, feature_type: str, geometry: list) -> None:
+    def on_feature_drawn(
+        self,
+        map_id: str,
+        obj_id: str,
+        obj_type: str,
+        name: str,
+        feature_type: str,
+        geometry: list,
+    ) -> None:
         """Handle feature creation from drawing mode.
 
-        Prompts the user to select an existing Entity/Event or create a new
-        one, then creates the feature with the drawn geometry.
+        The object selection dialog is handled by the widget layer.
 
         Args:
+            map_id: ID of the target map.
+            obj_id: UUID of the linked entity or event.
+            obj_type: ``'entity'`` or ``'event'``.
+            name: Display label for the feature.
             feature_type: 'path' or 'region'.
             geometry: List of normalized coordinate dicts.
 
         """
-        map_id = self.window.map_widget.get_selected_map_id()
-        if not map_id:
-            QMessageBox.warning(
-                self.window, "No Map", "Please create or select a map first."
-            )
-            return
-
-        result = self._select_or_create_object(
-            f"Link {feature_type.title()}",
-            f"Select object for this {feature_type}:",
-        )
-        if not result:
-            return
-
-        obj_id, obj_type, name = result
-
         # Compute centroid for anchor
         n = len(geometry)
         cx = sum(pt["x"] for pt in geometry) / n
@@ -403,7 +314,7 @@ class MapHandler(QObject):
                 "geometry": geometry,
             }
         )
-        self.window.command_requested.emit(cmd)
+        self.command_requested.emit(cmd)
         logger.info(f"Creating {feature_type} '{name}' with {len(geometry)} vertices")
 
     @Slot(str, dict)
@@ -421,7 +332,7 @@ class MapHandler(QObject):
             return
 
         cmd = UpdateMarkerCommand(actual_marker_id, {"style": new_style})
-        self.window.command_requested.emit(cmd)
+        self.command_requested.emit(cmd)
         logger.info(f"Style updated for {marker_id}")
 
     @Slot(str, list)
@@ -451,11 +362,13 @@ class MapHandler(QObject):
         cmd = UpdateMarkerCommand(
             actual_marker_id, {"geometry": geometry, "x": cx, "y": cy}
         )
-        self.window.command_requested.emit(cmd)
+        self.command_requested.emit(cmd)
         logger.info(f"Geometry updated for {marker_id} ({n} vertices)")
 
     def delete_marker(self, marker_id: str) -> None:
-        """Deletes a marker.
+        """Deletes a marker after confirmation has already been obtained.
+
+        The confirmation dialog is handled by the widget layer.
 
         Args:
             marker_id: The object_id from the UI (not the actual marker.id).
@@ -467,20 +380,13 @@ class MapHandler(QObject):
             logger.warning(f"No marker mapping found for object_id: {marker_id}")
             return
 
-        confirm = QMessageBox.question(
-            self.window,
-            "Delete Marker",
-            "Remove this marker?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
-        if confirm == QMessageBox.StandardButton.Yes:
-            # Remove marker from UI immediately for instant feedback
-            self.window.map_widget.remove_marker(marker_id)
-            # Also remove from mapping
-            del self._marker_object_to_id[marker_id]
-            # Then execute the database command
-            cmd = DeleteMarkerCommand(actual_marker_id)
-            self.window.command_requested.emit(cmd)
+        # Remove marker from UI immediately for instant feedback
+        self._map_widget.remove_marker(marker_id)
+        # Also remove from mapping
+        del self._marker_object_to_id[marker_id]
+        # Then execute the database command
+        cmd = DeleteMarkerCommand(actual_marker_id)
+        self.command_requested.emit(cmd)
 
     @Slot(str, str)
     def on_marker_clicked(self, marker_id: str, object_type: str) -> None:
@@ -495,8 +401,8 @@ class MapHandler(QObject):
             f"on_marker_clicked called: marker_id={marker_id}, "
             f"object_type={object_type}"
         )
-        # Delegate to NavigationCoordinator for unified selection handling
-        self.window.navigation_coordinator.set_global_selection(object_type, marker_id)
+        # Delegate to the injected navigation callable for unified selection
+        self._navigation_set_selection(object_type, marker_id)
 
     @Slot(str, str)
     def on_marker_icon_changed(self, marker_id: str, icon: str) -> None:
@@ -513,7 +419,7 @@ class MapHandler(QObject):
             logger.warning(f"No marker mapping found for object_id: {marker_id}")
             return
         cmd = UpdateMarkerIconCommand(marker_id=actual_marker_id, icon=icon)
-        self.window.command_requested.emit(cmd)
+        self.command_requested.emit(cmd)
 
     @Slot(str, str)
     def on_marker_color_changed(self, marker_id: str, color: str) -> None:
@@ -530,7 +436,7 @@ class MapHandler(QObject):
             logger.warning(f"No marker mapping found for object_id: {marker_id}")
             return
         cmd = UpdateMarkerColorCommand(marker_id=actual_marker_id, color=color)
-        self.window.command_requested.emit(cmd)
+        self.command_requested.emit(cmd)
 
     @Slot(str, float, float)
     def on_marker_position_changed(self, marker_id: str, x: float, y: float) -> None:
@@ -550,7 +456,7 @@ class MapHandler(QObject):
         cmd = UpdateMarkerCommand(
             marker_id=actual_marker_id, update_data={"x": x, "y": y}
         )
-        self.window.command_requested.emit(cmd)
+        self.command_requested.emit(cmd)
 
     @Slot(list)
     def on_maps_ready(self, maps: list) -> None:
@@ -561,19 +467,19 @@ class MapHandler(QObject):
 
         """
         # Preserve the currently selected map ID to avoid triggering a reload
-        current_map_id = self.window.map_widget.get_selected_map_id()
+        current_map_id = self._map_widget.get_selected_map_id()
 
-        self.window.map_widget.set_maps(maps)
+        self._map_widget.set_maps(maps)
 
         # Restore the previous selection if it still exists
         if current_map_id and any(m.id == current_map_id for m in maps):
-            self.window.map_widget.select_map(current_map_id)
+            self._map_widget.select_map(current_map_id)
 
         # Auto-select first map if none selected
         if maps:
-            current_id = self.window.map_widget.map_selector.currentData()
+            current_id = self._map_widget.map_selector.currentData()
             if not current_id:
-                self.window.map_widget.select_map(maps[0].id)
+                self._map_widget.select_map(maps[0].id)
 
     @Slot(str, list)
     def on_markers_ready(self, map_id: str, processed_markers: list) -> None:
@@ -589,13 +495,13 @@ class MapHandler(QObject):
 
         """
         # Verify we are still looking at this map
-        current_map_id = self.window.map_widget.map_selector.currentData()
+        current_map_id = self._map_widget.map_selector.currentData()
         if current_map_id != map_id:
             return
 
         # Preserve the current view transform so the user's pan/zoom
         # position is maintained after the clear-and-rebuild cycle.
-        view = self.window.map_widget.view
+        view = self._map_widget.view
         saved_transform = view.transform()
         h_scroll = view.horizontalScrollBar().value()
         v_scroll = view.verticalScrollBar().value()
@@ -611,23 +517,23 @@ class MapHandler(QObject):
                 selected_marker_id = first.marker_id
 
         selected_layer_id: str | None = (
-            self.window.map_widget.layer_panel.selected_node_id
+            self._map_widget.layer_panel.selected_node_id
         )
 
-        self.window.map_widget.clear_markers()
+        self._map_widget.clear_markers()
         self._marker_object_to_id.clear()  # Reset mapping
 
         # Restore persisted layer tree from the selected map object
-        maps = self.window.map_widget.maps_data
+        maps = self._map_widget.maps_data
         selected_map = next((m for m in maps if m.id == map_id), None)
         if selected_map and selected_map.layers is not None:
-            self.window.map_widget._build_layer_model(selected_map.layers)
+            self._map_widget._build_layer_model(selected_map.layers)
         else:
-            self.window.map_widget._build_layer_model()
+            self._map_widget._build_layer_model()
 
         for marker_data in processed_markers:
             # Add marker to map (also auto-registers a layer node)
-            self.window.map_widget.add_marker(
+            self._map_widget.add_marker(
                 marker_id=marker_data["object_id"],
                 object_type=marker_data["object_type"],
                 label=marker_data["label"],
@@ -657,7 +563,7 @@ class MapHandler(QObject):
                 item.setSelected(True)
 
         if selected_layer_id:
-            self.window.map_widget.layer_panel.select_node(selected_layer_id)
+            self._map_widget.layer_panel.select_node(selected_layer_id)
 
     @Slot(list)
     def on_trajectories_ready(self, trajectories: list) -> None:
@@ -667,7 +573,7 @@ class MapHandler(QObject):
             trajectories: List of (marker_id, trajectory_id, keyframes) tuples.
 
         """
-        self.window.map_widget.set_trajectories(trajectories)
+        self._map_widget.set_trajectories(trajectories)
 
     @Slot(float)
     def on_map_scale_changed(self, width_meters: float) -> None:
@@ -677,14 +583,14 @@ class MapHandler(QObject):
             width_meters: The new width of the map in meters.
 
         """
-        current_map_id = self.window.map_widget.map_selector.currentData()
+        current_map_id = self._map_widget.map_selector.currentData()
         if not current_map_id:
             return
 
         cmd = UpdateMapCommand(
             current_map_id, {"attributes": {"width_meters": width_meters}}
         )
-        self.window.command_requested.emit(cmd)
+        self.command_requested.emit(cmd)
 
     # ------------------------------------------------------------------
     # Layer operations (routed through the command stack)
@@ -696,13 +602,13 @@ class MapHandler(QObject):
 
         Called whenever the in-memory layer model is mutated.
         """
-        map_id = self.window.map_widget.get_selected_map_id()
-        model = self.window.map_widget.get_layer_model()
+        map_id = self._map_widget.get_selected_map_id()
+        model = self._map_widget.get_layer_model()
         if not map_id or not model:
             return
         tree_dict = model.root.to_dict()
         cmd = SaveLayerTreeCommand(map_id, tree_dict)
-        self.window.command_requested.emit(cmd)
+        self.command_requested.emit(cmd)
 
     @Slot(str, float, float)
     def on_layer_opacity_changed(
@@ -716,11 +622,11 @@ class MapHandler(QObject):
             old_opacity: Previous opacity (for undo).
 
         """
-        map_id = self.window.map_widget.get_selected_map_id()
+        map_id = self._map_widget.get_selected_map_id()
         if not map_id:
             return
         cmd = SetLayerOpacityCommand(map_id, node_id, opacity, old_opacity)
-        self.window.command_requested.emit(cmd)
+        self.command_requested.emit(cmd)
 
     @Slot(str, str)
     def on_layer_renamed(self, node_id: str, new_name: str) -> None:
@@ -734,16 +640,16 @@ class MapHandler(QObject):
             new_name: New display name.
 
         """
-        map_id = self.window.map_widget.get_selected_map_id()
+        map_id = self._map_widget.get_selected_map_id()
         if not map_id:
             return
         # Serialize the current in-memory tree (already renamed by the UI)
-        model = self.window.map_widget.get_layer_model()
+        model = self._map_widget.get_layer_model()
         tree_dict = model.root.to_dict() if model else None
         # Resolve actual marker DB id from the object_id mapping
         actual_marker_id = self._marker_object_to_id.get(node_id)
         cmd = RenameLayerCommand(map_id, node_id, new_name, tree_dict, actual_marker_id)
-        self.window.command_requested.emit(cmd)
+        self.command_requested.emit(cmd)
 
     @Slot(str)
     def on_layer_feature_deleted(self, object_id: str) -> None:
@@ -763,4 +669,4 @@ class MapHandler(QObject):
             return
         del self._marker_object_to_id[object_id]
         cmd = DeleteMarkerCommand(actual_marker_id)
-        self.window.command_requested.emit(cmd)
+        self.command_requested.emit(cmd)

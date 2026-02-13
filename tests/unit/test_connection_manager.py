@@ -106,20 +106,9 @@ def mock_main_window(qapp):
     window.show_longform_filter_dialog = Mock()
     window.clear_longform_filter = Mock()
 
-    # Map methods
-    window._on_marker_position_changed = Mock()
-    window._on_marker_clicked = Mock()
-    window.create_map = Mock()
-    window.delete_map = Mock()
-    window.on_map_selected = Mock()
-    window.create_marker = Mock()
-    window.delete_marker = Mock()
-    window._on_marker_icon_changed = Mock()
-    window._on_marker_color_changed = Mock()
-    window._on_marker_dropped = Mock()
-    window._on_feature_drawn = Mock()
-    window._on_feature_style_changed = Mock()
-    window._on_feature_geometry_changed = Mock()
+    # Map methods — signals now connect directly to MapHandler
+    window._on_map_create_entity = Mock()
+    window._on_map_create_event = Mock()
 
     # AI Search methods
     window.perform_semantic_search = Mock()

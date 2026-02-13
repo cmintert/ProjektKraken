@@ -336,7 +336,10 @@ class ConnectionManager:
             failed_count += 1
 
         if not self._connect_signal_safe(
-            ul, "create_map_requested", self.window.create_map, "UnifiedList"
+            ul,
+            "create_map_requested",
+            self.window.map_widget._on_create_map_clicked,
+            "UnifiedList",
         ):
             failed_count += 1
 
@@ -696,18 +699,24 @@ class ConnectionManager:
     def connect_map_widget(self) -> int:
         """Connect signals from the map widget.
 
+        Signals are connected directly to MapHandler (no MainWindow
+        delegates).  MapHandler's own ``command_requested`` signal is
+        forwarded to ``MainWindow.command_requested`` during
+        initialisation, so commands still reach the worker thread.
+
         Returns:
             int: Number of failed connections.
 
         """
         map_widget = self.window.map_widget
+        map_handler = self.window.map_handler
         timeline = self.window.timeline
         failed_count = 0
 
         if not self._connect_signal_safe(
             map_widget,
             "marker_position_changed",
-            self.window._on_marker_position_changed,
+            map_handler.on_marker_position_changed,
             "MapWidget",
         ):
             failed_count += 1
@@ -715,7 +724,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             map_widget,
             "map_scale_changed",
-            self.window.map_handler.on_map_scale_changed,
+            map_handler.on_map_scale_changed,
             "MapWidget",
         ):
             failed_count += 1
@@ -723,38 +732,38 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             map_widget,
             "marker_clicked",
-            self.window._on_marker_clicked,
+            map_handler.on_marker_clicked,
             "MapWidget",
         ):
             failed_count += 1
 
         if not self._connect_signal_safe(
-            map_widget, "create_map_requested", self.window.create_map, "MapWidget"
+            map_widget, "map_created", map_handler.create_map, "MapWidget"
         ):
             failed_count += 1
 
         if not self._connect_signal_safe(
-            map_widget, "delete_map_requested", self.window.delete_map, "MapWidget"
+            map_widget, "map_deleted", map_handler.delete_map, "MapWidget"
         ):
             failed_count += 1
 
         if not self._connect_signal_safe(
-            map_widget, "map_selected", self.window.on_map_selected, "MapWidget"
+            map_widget, "map_selected", map_handler.on_map_selected, "MapWidget"
         ):
             failed_count += 1
 
         if not self._connect_signal_safe(
             map_widget,
-            "create_marker_requested",
-            self.window.create_marker,
+            "marker_created",
+            map_handler.create_marker,
             "MapWidget",
         ):
             failed_count += 1
 
         if not self._connect_signal_safe(
             map_widget,
-            "delete_marker_requested",
-            self.window.delete_marker,
+            "marker_delete_confirmed",
+            map_handler.delete_marker,
             "MapWidget",
         ):
             failed_count += 1
@@ -762,7 +771,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             map_widget,
             "change_marker_icon_requested",
-            self.window._on_marker_icon_changed,
+            map_handler.on_marker_icon_changed,
             "MapWidget",
         ):
             failed_count += 1
@@ -770,7 +779,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             map_widget,
             "change_marker_color_requested",
-            self.window._on_marker_color_changed,
+            map_handler.on_marker_color_changed,
             "MapWidget",
         ):
             failed_count += 1
@@ -778,15 +787,15 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             map_widget,
             "marker_drop_requested",
-            self.window._on_marker_dropped,
+            map_handler.on_marker_dropped,
             "MapWidget",
         ):
             failed_count += 1
 
         if not self._connect_signal_safe(
             map_widget,
-            "create_feature_requested",
-            self.window._on_feature_drawn,
+            "feature_created",
+            map_handler.on_feature_drawn,
             "MapWidget",
         ):
             failed_count += 1
@@ -794,7 +803,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             map_widget,
             "feature_style_changed",
-            self.window._on_feature_style_changed,
+            map_handler.on_feature_style_changed,
             "MapWidget",
         ):
             failed_count += 1
@@ -802,7 +811,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             map_widget,
             "feature_geometry_changed",
-            self.window._on_feature_geometry_changed,
+            map_handler.on_feature_geometry_changed,
             "MapWidget",
         ):
             failed_count += 1
@@ -863,11 +872,11 @@ class ConnectionManager:
         ):
             failed_count += 1
 
-        # Layer operations → MapHandler (command stack)
+        # Layer operations -> MapHandler (command stack)
         if not self._connect_signal_safe(
             map_widget,
             "layer_tree_changed",
-            self.window.map_handler.on_layer_tree_changed,
+            map_handler.on_layer_tree_changed,
             "MapWidget",
         ):
             failed_count += 1
@@ -875,7 +884,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             map_widget,
             "layer_opacity_change_requested",
-            self.window.map_handler.on_layer_opacity_changed,
+            map_handler.on_layer_opacity_changed,
             "MapWidget",
         ):
             failed_count += 1
@@ -883,7 +892,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             map_widget,
             "layer_rename_requested",
-            self.window.map_handler.on_layer_renamed,
+            map_handler.on_layer_renamed,
             "MapWidget",
         ):
             failed_count += 1
@@ -891,13 +900,29 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             map_widget,
             "layer_delete_feature_requested",
-            self.window.map_handler.on_layer_feature_deleted,
+            map_handler.on_layer_feature_deleted,
             "MapWidget",
         ):
             failed_count += 1
 
-        # 16 original + 4 layer signals
-        total_connections = 20
+        # Inline entity/event creation from map dialogs
+        if not self._connect_signal_safe(
+            map_widget,
+            "create_entity_requested",
+            self.window._on_map_create_entity,
+            "MapWidget",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            map_widget,
+            "create_event_requested",
+            self.window._on_map_create_event,
+            "MapWidget",
+        ):
+            failed_count += 1
+
+        total_connections = 26
         logger.debug(
             f"MapWidget connections: {total_connections - failed_count}"
             f"/{total_connections} succeeded, "
