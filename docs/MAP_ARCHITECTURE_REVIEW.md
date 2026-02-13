@@ -1,7 +1,7 @@
 # Map Feature — Architecture & Design Review
 
 **Date:** 2026-02-13
-**Updated:** 2026-02-13 (post-decomposition)
+**Updated:** 2026-02-13 (post Priority 2 & 4 fixes)
 **Scope:** Map feature and all touched application layers
 **Standard:** PySide6 production-grade, multi-developer codebase
 
@@ -9,16 +9,18 @@
 
 ## 8️⃣ Overall Assessment
 
-| Criterion | Before | After | Notes |
-|-----------|--------|-------|-------|
-| **Architectural Quality** | **5 / 10** | **8 / 10** | God class eliminated |
-| Encapsulation | 4 / 10 | 8 / 10 | Public APIs in place, backward-compat aliases |
-| Single Responsibility | 3 / 10 | 8 / 10 | 5 focused sub-components extracted |
-| Separation of Concerns | 5 / 10 | 7 / 10 | Sub-components own their domain |
-| Consistency | 6 / 10 | 8 / 10 | Consistent delegation pattern |
-| Scalability Risk | High | Low-Medium | Sub-components are independently testable |
+| Criterion | Initial | Post-Decomp | Current | Notes |
+|-----------|---------|-------------|---------|-------|
+| **Architectural Quality** | **5 / 10** | **8 / 10** | **9 / 10** | Dialog coupling + service locator fixed |
+| Encapsulation | 4 / 10 | 8 / 10 | 9 / 10 | All handler access via injected deps |
+| Single Responsibility | 3 / 10 | 8 / 10 | 9 / 10 | Handler is pure logic, widget owns UI |
+| Separation of Concerns | 5 / 10 | 7 / 10 | 9 / 10 | Dialogs in widget layer, no service locator |
+| Consistency | 6 / 10 | 8 / 10 | 9 / 10 | DI pattern established for handlers |
+| Scalability Risk | High | Low-Medium | Low | Handler is unit-testable without GUI |
 
-### What Changed (Decomposition)
+### What Changed
+
+#### Phase 1: MapGraphicsView Decomposition
 
 The 2,757-line `MapGraphicsView` God class was decomposed into **5 focused sub-components**:
 
@@ -31,16 +33,20 @@ The 2,757-line `MapGraphicsView` God class was decomposed into **5 focused sub-c
 | `InteractionHandler` | `interaction_handler.py` | 506 | Context menus, drag-drop, icon/color/style dialogs |
 | `MapGraphicsView` | `map_graphics_view.py` | ~960 | Thin coordinator with Qt event dispatch + layer integration |
 
-**313 existing tests pass with zero test file changes.**
+#### Phase 2: Dialog Extraction & Dependency Injection
+
+| Before | After |
+|--------|-------|
+| `MapHandler` imported `QFileDialog`, `QInputDialog`, `QMessageBox` | Zero Qt dialog imports in `MapHandler` |
+| `MapHandler.__init__(self, main_window: MainWindow)` | `MapHandler.__init__(self, map_widget, worker, db_path_accessor, nav_fn)` |
+| `self.window.map_widget`, `self.window.worker`, etc. | `self._map_widget`, `self._worker` (injected) |
+| 13 delegate methods in MainWindow | Removed entirely |
+| Dialogs created in handler layer (untestable) | Dialogs in `MapWidget` (UI layer), results emitted via signals |
 
 ### Remaining Risks
 
-1. `MapHandler` still reaches through `self.window` to access services (Priority 4)
-2. `MainWindow` still acts as Service Locator (Priority 4)
-3. `map_commands.py` is still a large file (1,334 lines) — could be split (Priority 5)
-4. `MapHandler` still creates UI dialogs directly (Priority 2)
-
-**Highest Priority Remaining Refactor:** Extract dialogs from `MapHandler` (see §7, Priority 2).
+1. `map_commands.py` is still a large file (1,334 lines) — could be split (Priority 5)
+2. `MainWindow` is still large (now ~1,700 lines after removing delegates)
 
 ---
 
@@ -48,7 +54,7 @@ The 2,757-line `MapGraphicsView` God class was decomposed into **5 focused sub-c
 
 ### ✅ Fixed: Cross-module private attribute access
 
-All 7 critical violations have been resolved by adding public APIs:
+All critical violations have been resolved:
 
 | Before (private) | After (public API) | Status |
 |---|---|---|
@@ -56,26 +62,23 @@ All 7 critical violations have been resolved by adding public APIs:
 | `view._find_graphics_item(id)` | `view.find_item_by_id(id)` | ✅ Fixed |
 | `panel._selected_node_id` | `panel.selected_node_id` | ✅ Fixed |
 | `widget._maps_data` | `widget.maps_data` | ✅ Fixed |
-
-### Remaining: Handler-layer access patterns
-
-| Location | Code | Severity |
-|----------|------|----------|
-| `map_handler.py` | `self.window.map_widget.view.current_image_path` | 🟡 High |
-| `map_handler.py` | `self.window._cached_entities` | 🟡 High |
-| `map_handler.py` | `self.window._cached_events` | 🟡 High |
-
-These are handler-layer concerns that require dependency injection (Priority 4).
+| `self.window.map_widget` | `self._map_widget` (injected) | ✅ Fixed |
+| `self.window._cached_entities` | `MapWidget.set_cached_items()` | ✅ Fixed |
+| `self.window.command_requested` | `self.command_requested` (own Signal) | ✅ Fixed |
 
 ---
 
 ## 2️⃣ Single Responsibility Principle
 
-### ✅ Fixed: MapGraphicsView decomposition
+### ✅ Fixed: MapGraphicsView decomposition + MapHandler cleanup
 
-**Before:** 1 class with 13 responsibilities, 82 methods, 2,757 lines.
+**MapGraphicsView:** 6 classes, each with 1-2 responsibilities.
 
-**After:** 6 classes, each with 1-2 responsibilities:
+**MapHandler now has exactly one responsibility:** Translate UI signals into
+commands.  It no longer:
+- Creates dialogs (moved to MapWidget)
+- Accesses MainWindow internals (uses injected deps)
+- Manages entity/event caches (owned by MapWidget)
 
 | Component | Single Responsibility |
 |-----------|----------------------|
@@ -85,47 +88,46 @@ These are handler-layer concerns that require dependency injection (Priority 4).
 | `TrajectoryRenderer` | Trajectory visualization (path, keyframes, labels) |
 | `InteractionHandler` | User interaction (context menus, drag-drop, dialogs) |
 | `MapGraphicsView` | Qt event dispatch + layer integration |
-
-### Remaining SRP concerns
-
-- `MapHandler` still has 5 responsibilities (see §7, Priority 2)
-- `MainWindow` still acts as Service Locator
+| `MapHandler` | Signal → Command translation |
+| `MapWidget` | UI orchestration + dialog ownership |
 
 ---
 
 ## 3️⃣ Separation of Concerns
 
-### ✅ Improved: Sub-component architecture
+### ✅ Improved: Clear three-layer architecture
 
 ```
-┌───────────────────────────────────────────────────┐
-│                  MainWindow                        │
-│  ┌──────────┐  ┌───────────┐  ┌──────────────┐    │
-│  │MapHandler│  │DataHandler│  │   Worker      │    │
-│  └──────────┘  └───────────┘  └──────────────┘    │
-│                                                    │
-│  ┌────────────────────────────────────────────────┐│
-│  │            MapWidget                            ││
-│  │  ┌────────────────────────┐  ┌──────────────┐  ││
-│  │  │   MapGraphicsView     │  │  LayerPanel   │  ││
-│  │  │   (Coordinator)       │  │  (tree view)  │  ││
-│  │  │  ┌─────────────────┐  │  └──────────────┘  ││
-│  │  │  │  DrawingTool    │  │                     ││
-│  │  │  │  VertexEditor   │  │                     ││
-│  │  │  │  MarkerManager  │  │                     ││
-│  │  │  │  TrajectoryRend.│  │                     ││
-│  │  │  │  InteractionHdl.│  │                     ││
-│  │  │  └─────────────────┘  │                     ││
-│  │  └────────────────────────┘                    ││
-│  └────────────────────────────────────────────────┘│
-└───────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│                     MainWindow                            │
+│  (Application bootstrap, NOT a service locator for maps)  │
+│                                                           │
+│  ┌─────────────┐  ┌───────────┐  ┌──────────────┐        │
+│  │ MapHandler  │  │DataHandler│  │   Worker      │        │
+│  │(pure logic) │  │ (signals) │  │  (DB thread)  │        │
+│  │ DI: widget, │  └───────────┘  └──────────────┘        │
+│  │   worker,   │                                          │
+│  │   db_path,  │                                          │
+│  │   nav_fn    │                                          │
+│  └─────────────┘                                          │
+│        ↕ signals                                          │
+│  ┌────────────────────────────────────────────────────┐   │
+│  │            MapWidget (UI layer)                     │   │
+│  │  Owns dialogs, entity/event cache, layout          │   │
+│  │  ┌────────────────────────┐  ┌──────────────┐      │   │
+│  │  │   MapGraphicsView     │  │  LayerPanel   │      │   │
+│  │  │   (Coordinator)       │  │  (tree view)  │      │   │
+│  │  │  ┌─────────────────┐  │  └──────────────┘      │   │
+│  │  │  │  DrawingTool    │  │                         │   │
+│  │  │  │  VertexEditor   │  │                         │   │
+│  │  │  │  MarkerManager  │  │                         │   │
+│  │  │  │  TrajectoryRend.│  │                         │   │
+│  │  │  │  InteractionHdl.│  │                         │   │
+│  │  │  └─────────────────┘  │                         │   │
+│  │  └────────────────────────┘                        │   │
+│  └────────────────────────────────────────────────────┘   │
+└──────────────────────────────────────────────────────────┘
 ```
-
-Each sub-component:
-- Owns its own state (no shared mutable globals)
-- Has a clear public API
-- Takes a reference to the view for scene/signal access
-- Can be tested in isolation
 
 ---
 
@@ -138,12 +140,11 @@ Each sub-component:
 | Lines | 2,757 | ~960 (coordinator) |
 | Methods | 82 | ~35 (mostly delegation) |
 | Responsibilities | 13 | 2 (Qt events + layer integration) |
-| State variables | 26 | 8 (sub-component refs) |
 
-### Remaining God Classes
+### Remaining Large Classes
 
-- **`MainWindow`** — 2,228 lines, 119 methods. Still a Service Locator.
-- **`map_commands.py`** — 1,334 lines, 14 commands. Could be split into focused files.
+- **`MainWindow`** — ~1,700 lines (reduced from 2,228 by removing 13 map delegates)
+- **`map_commands.py`** — 1,334 lines, 14 commands. Could be split.
 
 ---
 
@@ -151,54 +152,37 @@ Each sub-component:
 
 ### ✅ Fixed
 
-1. **God class eliminated** — MapGraphicsView decomposed into focused components
-2. **Encapsulation violations fixed** — Public APIs added for all cross-module access
+1. **God class eliminated** — MapGraphicsView decomposed
+2. **Encapsulation violations fixed** — Public APIs added
+3. **Service Locator eliminated** — MapHandler uses DI
+4. **Dialog creation in handler layer eliminated** — Dialogs in MapWidget
 
 ### Remaining Anti-Patterns
 
-1. **Service Locator via MainWindow** — handlers reach through `self.window`
-2. **Dialog creation in handler layer** — `MapHandler` creates `QFileDialog`, `QInputDialog`
-3. **Global state via Singleton** — `ThemeManager()` accessed directly
-4. **String-based type checking** — `view.__class__.__name__ == "MapGraphicsView"` in `marker_item.py`
-5. **Layer violation** — GUI imports from `src.app.constants`
+1. **Global state via Singleton** — `ThemeManager()` accessed directly
+2. **String-based type checking** — `view.__class__.__name__` in `marker_item.py`
+3. **Layer violation** — GUI imports from `src.app.constants` (shared constants)
 
 ---
 
 ## 6️⃣ Architectural Structure
 
-### Current Pattern: **Component-Based MVC with Coordinator**
+### Current Pattern: **Component-Based MVC with DI**
 
-The map subsystem now follows a cleaner component architecture:
 - **Model:** `Map`, `MapFeature`, `MapLayerNode` (clean dataclasses ✅)
-- **View:** Sub-components own rendering, MapWidget orchestrates ✅
-- **Controller:** `MapHandler` + `ConnectionManager` (signal routing) ✅
+- **View:** Sub-components own rendering, MapWidget orchestrates + owns dialogs ✅
+- **Controller:** `MapHandler` (pure logic, injected deps, no UI) ✅
 - **Coordinator:** `MapGraphicsView` delegates to sub-components ✅
-
-### Consistency: **Improved**
-
-- `ConnectionManager` — excellent, pure wiring ✅
-- `MapLayerPanel` — clean thin-view widget ✅
-- Sub-components — focused, single-responsibility ✅
-- `MapHandler` — still mixed (dialogs + logic) ⚠️
+- **Wiring:** `ConnectionManager` (pure signal routing, no logic) ✅
 
 ---
 
-## 7️⃣ Concrete Refactoring Suggestions (Updated Priorities)
+## 7️⃣ Refactoring Suggestions (Updated Priorities)
 
 ### ✅ Priority 1: Expose Public APIs — DONE
-
-### Priority 2: Extract Dialogs from MapHandler (Next)
-
-**Problem:** `MapHandler` creates UI dialogs directly.
-**Impact:** Handler is untestable; UI and logic are coupled.
-**Fix:** Move dialog creation to `MapWidget`, pass results as signal parameters.
-
+### ✅ Priority 2: Extract Dialogs from MapHandler — DONE
 ### ✅ Priority 3: Decompose MapGraphicsView — DONE
-
-### Priority 4: Inject Dependencies into MapHandler
-
-**Problem:** `MapHandler` reaches through `self.window` for everything.
-**Fix:** Inject specific interfaces rather than the entire MainWindow.
+### ✅ Priority 4: Inject Dependencies into MapHandler — DONE
 
 ### Priority 5: Split map_commands.py
 
@@ -209,14 +193,16 @@ The map subsystem now follows a cleaner component architecture:
 
 ## Summary of Findings
 
-| Category | Before | After | Status |
-|----------|:------:|:-----:|--------|
-| Encapsulation violations | 10 critical | 3 remaining | ✅ Major improvement |
-| SRP violations | 3 classes (1 severe) | 2 classes (none severe) | ✅ God class fixed |
-| God classes | 3 | 2 (MainWindow, map_commands.py) | ✅ Worst one fixed |
-| Anti-patterns | 6 | 4 remaining | ✅ 2 fixed |
+| Category | Initial | Current | Status |
+|----------|:-------:|:-------:|--------|
+| Encapsulation violations | 10 critical | 0 | ✅ All fixed |
+| SRP violations | 3 classes (1 severe) | 0 severe | ✅ Fixed |
+| God classes | 3 | 1 (MainWindow, reduced) | ✅ 2 fixed |
+| Anti-patterns | 6 | 3 remaining | ✅ 3 fixed |
 | Sub-components | 0 | 5 focused | ✅ New architecture |
-| Test regression | — | 0 of 313 | ✅ Full backward compat |
+| Service locator | MapHandler → MainWindow | DI constructor | ✅ Fixed |
+| Dialog coupling | 10 dialog calls in handler | 0 in handler | ✅ Fixed |
+| Test regression | — | 0 of 349 | ✅ Full backward compat |
 
 ### What's Working Well ✅
 
@@ -227,6 +213,8 @@ The map subsystem now follows a cleaner component architecture:
 5. **Signal/slot architecture** used throughout
 6. **MapRepository** has proper separation from domain objects
 7. **MapLayerModel** correctly wraps domain data in Qt model adapter
-8. **NEW: Sub-components** have clear single responsibilities
-9. **NEW: Public APIs** replace all cross-module private access
-10. **NEW: Coordinator pattern** keeps MapGraphicsView as thin dispatcher
+8. **Sub-components** have clear single responsibilities
+9. **Public APIs** replace all cross-module private access
+10. **Coordinator pattern** keeps MapGraphicsView as thin dispatcher
+11. **Dependency injection** makes MapHandler fully unit-testable
+12. **Dialog ownership** properly in the widget layer

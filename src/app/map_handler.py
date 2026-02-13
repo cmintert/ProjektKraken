@@ -12,7 +12,7 @@ received through signals.
 import shutil
 import uuid
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING, Callable
 
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt, Signal, Slot
 
