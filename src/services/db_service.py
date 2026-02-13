@@ -124,6 +124,21 @@ class DatabaseService:
             self.connect()
         return self._connection
 
+    @property
+    def map_repo(self) -> MapRepository:
+        """Gets the map repository.
+
+        Returns:
+            MapRepository: The map repository instance.
+
+        Raises:
+            RuntimeError: If the repository is not initialized.
+
+        """
+        if not self._map_repo:
+            raise RuntimeError("Map repository not initialized")
+        return self._map_repo
+
     def get_attachment_repo(self) -> AttachmentRepository:
         """Gets the attachment repository.
 
@@ -477,15 +492,11 @@ class DatabaseService:
                     )
                 except sqlite3.Error as e:
                     self._connection.rollback()
-                    logger.error(
-                        f"Failed to add feature_type column to markers: {e}"
-                    )
+                    logger.error(f"Failed to add feature_type column to markers: {e}")
                     raise
 
             if "geometry" not in marker_cols:
-                logger.info(
-                    "Applying migration: Add geometry column to markers table"
-                )
+                logger.info("Applying migration: Add geometry column to markers table")
                 try:
                     self._connection.execute(
                         "ALTER TABLE markers ADD COLUMN geometry TEXT"
@@ -496,15 +507,11 @@ class DatabaseService:
                     )
                 except sqlite3.Error as e:
                     self._connection.rollback()
-                    logger.error(
-                        f"Failed to add geometry column to markers: {e}"
-                    )
+                    logger.error(f"Failed to add geometry column to markers: {e}")
                     raise
 
             if "style" not in marker_cols:
-                logger.info(
-                    "Applying migration: Add style column to markers table"
-                )
+                logger.info("Applying migration: Add style column to markers table")
                 try:
                     self._connection.execute(
                         "ALTER TABLE markers ADD COLUMN style TEXT"
@@ -515,9 +522,7 @@ class DatabaseService:
                     )
                 except sqlite3.Error as e:
                     self._connection.rollback()
-                    logger.error(
-                        f"Failed to add style column to markers: {e}"
-                    )
+                    logger.error(f"Failed to add style column to markers: {e}")
                     raise
 
         except sqlite3.Error as e:

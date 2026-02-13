@@ -525,6 +525,100 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_tree_view_style() -> str:
+        """Returns QSS for themed tree views (e.g. layer panel).
+
+        Provides consistent background, text, selection, hover,
+        branch indicators and scrollbar styling.
+
+        Returns:
+            str: QSS stylesheet string for QTreeView widgets.
+
+        """
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+        primary = theme.get("primary", "#4A9EFF")
+
+        if len(primary) == 7 and primary.startswith("#"):
+            r = int(primary[1:3], 16)
+            g = int(primary[3:5], 16)
+            b = int(primary[5:7], 16)
+            hover_bg = f"rgba({r}, {g}, {b}, 0.1)"
+        else:
+            hover_bg = "rgba(74, 158, 255, 0.1)"
+
+        return (
+            f"QTreeView {{ "
+            f"background-color: {theme['surface']}; "
+            f"color: {theme['text_main']}; "
+            f"border: 1px solid {theme['border']}; "
+            f"border-radius: 4px; "
+            f"outline: none; }}"
+            f"QTreeView::item {{ "
+            f"padding: 4px 2px; border-radius: 2px; }}"
+            f"QTreeView::item:hover {{ "
+            f"background-color: {hover_bg}; }}"
+            f"QTreeView::item:selected {{ "
+            f"background-color: {theme['border']}; "
+            f"color: {theme['text_main']}; }}"
+            f"QTreeView::branch:has-children:!has-siblings:closed,"
+            f"QTreeView::branch:closed:has-children:has-siblings {{ "
+            f"border-image: none; }}"
+            f"QTreeView::branch:open:has-children:!has-siblings,"
+            f"QTreeView::branch:open:has-children:has-siblings {{ "
+            f"border-image: none; }}"
+            + StyleHelper.get_scrollbar_style()
+        )
+
+    @staticmethod
+    def get_slider_style() -> str:
+        """Returns QSS for themed sliders.
+
+        Provides consistent groove, handle, and hover styling.
+
+        Returns:
+            str: QSS stylesheet string for QSlider widgets.
+
+        """
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+        return (
+            f"QSlider::groove:horizontal {{ "
+            f"border: 1px solid {theme['border']}; "
+            f"height: 6px; "
+            f"background: {theme['surface']}; "
+            f"border-radius: 3px; }}"
+            f"QSlider::handle:horizontal {{ "
+            f"background: {theme['primary']}; "
+            f"border: 1px solid {theme['primary']}; "
+            f"width: 14px; margin: -5px 0; "
+            f"border-radius: 7px; }}"
+            f"QSlider::handle:horizontal:hover {{ "
+            f"background: {theme['text_main']}; }}"
+            f"QSlider::sub-page:horizontal {{ "
+            f"background: {theme['primary']}; "
+            f"border-radius: 3px; }}"
+        )
+
+    @staticmethod
+    def get_panel_header_style() -> str:
+        """Returns QSS for panel header labels (e.g. 'Layers' title).
+
+        Returns:
+            str: QSS stylesheet string for panel headers.
+
+        """
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+        return (
+            f"color: {theme['text_main']}; font-weight: bold; font-size: 11pt; "
+            f"padding: 2px 0px;"
+        )
+
+    @staticmethod
     def get_event_color() -> str:
         """Returns the theme-aware color for events.
 

@@ -9,54 +9,41 @@ from src.core.map import Map
 
 
 @pytest.fixture
-def mock_window():
-    window = MagicMock()
-    # Mock data structs
-    window.data_handler = MagicMock()
-    # Mock map selector default behavior
-    window.map_widget.map_selector.currentData.return_value = None
-    return window
+def mock_map_widget():
+    widget = MagicMock()
+    widget.map_selector.currentData.return_value = None
+    return widget
 
 
 @pytest.fixture
-def map_handler(mock_window):
-    return MapHandler(mock_window)
+def map_handler(mock_map_widget):
+    handler = MapHandler(
+        map_widget=mock_map_widget,
+        worker=MagicMock(),
+        db_path_accessor=lambda: "/tmp/test.db",
+        navigation_set_selection=MagicMock(),
+    )
+    return handler
 
 
-def test_on_map_scale_changed_emits_command(map_handler):
+def test_on_map_scale_changed_emits_command(map_handler, mock_map_widget):
     """Test that changing scale emits an update command."""
-    # Setup
-    # Mock the map selector to return a valid ID
-    map_handler.window.map_widget.map_selector.currentData.return_value = "map_1"
+    # Setup — mock the map selector to return a valid ID
+    mock_map_widget.map_selector.currentData.return_value = "map_1"
 
-    # We need to mock UpdateMapCommand to check if it's called
-    with patch("src.app.map_handler.UpdateMapCommand") as MockCommand:
-        # Action
-        map_handler.on_map_scale_changed(500.0)
+    # Spy on the real Signal
+    spy = MagicMock()
+    map_handler.command_requested.connect(spy)
 
-        # Verify
-        # Should create command
-        MockCommand.assert_called_once()
-        args, kwargs = MockCommand.call_args
-        assert args[0] == "map_1"  # map_id
+    map_handler.on_map_scale_changed(500.0)
 
-        # Check kwargs or second arg depending on constructor
-        # UpdateMapCommand(map_id, update_data)
-        if len(args) > 1:
-            assert args[1] == {"attributes": {"width_meters": 500.0}}
-        else:
-            # Maybe passed as kwargs?
-            # It seems constructor is UpdateMapCommand(map_id, update_data)
-            # Check call args carefully
-            assert args[1] == {"attributes": {"width_meters": 500.0}}
-
-        # Should emit command via window
-        map_handler.window.command_requested.emit.assert_called_once()
+    spy.assert_called_once()
+    cmd = spy.call_args[0][0]
+    assert cmd.__class__.__name__ == "UpdateMapCommand"
 
 
-def test_on_map_selected_loads_scale(map_handler):
+def test_on_map_selected_loads_scale(map_handler, mock_map_widget):
     """Test that selecting a map loads its scale."""
-    # Setup
     map_id = "map_1"
     mock_map = MagicMock(spec=Map)
     mock_map.id = map_id
@@ -68,24 +55,17 @@ def test_on_map_selected_loads_scale(map_handler):
     mock_map_default.image_path = "/tmp/test2.png"
     mock_map_default.attributes = {}
 
-    # MapHandler accesses map_widget._maps_data list
-    map_handler.window.map_widget._maps_data = [mock_map, mock_map_default]
-
-    # Mock the view
-    map_handler.window.map_widget.view = MagicMock()
+    mock_map_widget.maps_data = [mock_map, mock_map_default]
+    mock_map_widget.view = MagicMock()
 
     # Action 1: Load map with scale
     map_handler.on_map_selected(map_id)
 
-    # Verify
-    map_handler.window.map_widget.load_map.assert_called()
-    map_handler.window.map_widget.view.set_map_width_meters.assert_called_with(2500.0)
+    mock_map_widget.load_map.assert_called()
+    mock_map_widget.view.set_map_width_meters.assert_called_with(2500.0)
 
     # Action 2: Load map without scale (default)
-    map_handler.window.map_widget.view.set_map_width_meters.reset_mock()
+    mock_map_widget.view.set_map_width_meters.reset_mock()
     map_handler.on_map_selected("map_2")
 
-    # Verify default
-    map_handler.window.map_widget.view.set_map_width_meters.assert_called_with(
-        1_000_000.0
-    )
+    mock_map_widget.view.set_map_width_meters.assert_called_with(1_000_000.0)

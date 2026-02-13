@@ -12,6 +12,7 @@ maintainability:
 
 import logging
 import os
+import uuid
 from typing import Iterator, List, Optional, Tuple
 
 from PySide6.QtCore import QSettings, QSize, Qt, Signal, Slot
@@ -19,14 +20,28 @@ from PySide6.QtGui import QKeyEvent, QPaintEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
+    QFileDialog,
     QHBoxLayout,
+    QInputDialog,
     QLabel,
+    QMessageBox,
     QPushButton,
     QSizePolicy,
+    QSplitter,
     QToolBar,
     QVBoxLayout,
     QWidget,
 )
+
+from src.app.constants import (
+    IMAGE_FILE_FILTER,
+    MAP_LAYER_DEFAULT_GROUP_NAME,
+    MAP_LAYER_TYPE_GROUP,
+    MAP_LAYER_TYPE_MARKER,
+    MAP_LAYER_TYPE_PATH,
+    MAP_LAYER_TYPE_REGION,
+)
+from src.core.map import MapLayerNode
 
 from src.core.paths import get_resource_path
 from src.core.theme_manager import ThemeManager
@@ -34,6 +49,8 @@ from src.core.trajectory import KEYFRAME_TIME_EPSILON, interpolate_position
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.map.calibration_distance_dialog import CalibrationDistanceDialog
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
+from src.gui.widgets.map.map_layer_model import MapLayerModel
+from src.gui.widgets.map.map_layer_panel import MapLayerPanel
 from src.gui.widgets.map.map_scale_dialog import MapScaleDialog
 from src.gui.widgets.map.marker_item import MarkerItem
 
@@ -66,7 +83,7 @@ class NoLayoutLabel(QWidget):
 
     def __init__(self, text: str = "", parent: QWidget | None = None) -> None:
         """Initialize the scale indicator label.
-        
+
         Args:
             text: Initial text to display.
             parent: Optional parent widget.
@@ -78,7 +95,7 @@ class NoLayoutLabel(QWidget):
 
     def setText(self, text: str) -> None:
         """Set the label text without triggering layout recalculation.
-        
+
         Args:
             text: New text to display.
         """
@@ -89,7 +106,7 @@ class NoLayoutLabel(QWidget):
 
     def text(self) -> str:
         """Get the current label text.
-        
+
         Returns:
             The current text string.
         """
@@ -97,7 +114,7 @@ class NoLayoutLabel(QWidget):
 
     def sizeHint(self) -> QSize:
         """Get the preferred size hint.
-        
+
         Returns:
             Fixed size of 50x20 pixels.
         """
@@ -106,7 +123,7 @@ class NoLayoutLabel(QWidget):
 
     def minimumSizeHint(self) -> QSize:
         """Get the minimum size hint.
-        
+
         Returns:
             Minimum size of 50x20 pixels.
         """
@@ -114,7 +131,7 @@ class NoLayoutLabel(QWidget):
 
     def paintEvent(self, event: QPaintEvent) -> None:
         """Paint the scale indicator text.
-        
+
         Args:
             event: The paint event.
         """
@@ -151,15 +168,20 @@ class MapWidget(QWidget):
 
     marker_position_changed = Signal(str, float, float)
     marker_clicked = Signal(str, str)
-    create_map_requested = Signal()
-    delete_map_requested = Signal()
+    # map_created carries (file_path, name) after user completes dialogs
+    map_created = Signal(str, str)
+    # map_deleted carries map_id after user confirms
+    map_deleted = Signal(str)
     map_selected = Signal(str)  # map_id
-    create_marker_requested = Signal(float, float)  # x, y normalized
-    delete_marker_requested = Signal(str)  # marker_id
+    # marker_created carries (map_id, obj_id, obj_type, name, x, y)
+    marker_created = Signal(str, str, str, str, float, float)
+    # marker_delete_confirmed carries marker_id after user confirms
+    marker_delete_confirmed = Signal(str)
     change_marker_icon_requested = Signal(str, str)  # marker_id, new_icon
     change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
     marker_drop_requested = Signal(str, str, str, float, float)  # id, type, name, x, y
-    create_feature_requested = Signal(str, list)  # feature_type, geometry
+    # feature_created carries (map_id, obj_id, obj_type, name, feature_type, geometry)
+    feature_created = Signal(str, str, str, str, str, list)
     feature_style_changed = Signal(str, dict)  # marker_id, new style
     feature_geometry_changed = Signal(str, list)  # marker_id, new geometry
     add_keyframe_requested = Signal(
@@ -172,6 +194,17 @@ class MapWidget(QWidget):
     jump_to_time_requested = Signal(float)  # target_time
     map_scale_changed = Signal(float)  # For persisting map scale
     show_onboarding_requested = Signal()  # To trigger animation or hints
+    # Layer operations (routed through the command stack)
+    layer_tree_changed = Signal()  # auto-persist hook
+    layer_opacity_change_requested = Signal(
+        str, float, float
+    )  # node_id, opacity, old_opacity
+    layer_rename_requested = Signal(str, str)  # node_id, new_name
+    layer_delete_feature_requested = Signal(str)  # object_id of deleted leaf
+
+    # Emitted when inline entity/event creation is requested from the map.
+    create_entity_requested = Signal(str, str)  # new_id, name
+    create_event_requested = Signal(str, str)  # new_id, name
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the MapWidget.
@@ -207,12 +240,12 @@ class MapWidget(QWidget):
 
         self.btn_new_map = QPushButton("New Map")
         self.btn_new_map.setStyleSheet(tool_style)
-        self.btn_new_map.clicked.connect(self.create_map_requested.emit)
+        self.btn_new_map.clicked.connect(self._on_create_map_clicked)
         self.toolbar.addWidget(self.btn_new_map)
 
         self.btn_delete_map = QPushButton("Delete Map")
         self.btn_delete_map.setStyleSheet(StyleHelper.get_destructive_button_style())
-        self.btn_delete_map.clicked.connect(self.delete_map_requested.emit)
+        self.btn_delete_map.clicked.connect(self._on_delete_map_clicked)
         self.toolbar.addWidget(self.btn_delete_map)
 
         self.btn_fit_view = QPushButton("Fit to View")
@@ -253,9 +286,7 @@ class MapWidget(QWidget):
 
         # Snap toggle
         self.btn_snap = QPushButton("Snap")
-        self.btn_snap.setToolTip(
-            "Toggle snapping to nearby feature vertices and edges"
-        )
+        self.btn_snap.setToolTip("Toggle snapping to nearby feature vertices and edges")
         self.btn_snap.setCheckable(True)
         self.btn_snap.setChecked(True)  # enabled by default
         self.btn_snap.setStyleSheet(tool_style)
@@ -271,8 +302,23 @@ class MapWidget(QWidget):
         self._apply_mode_indicator_style("normal")
         self.toolbar.addWidget(self.mode_indicator)
 
-        # Add View (after toolbar)
-        layout.addWidget(self.view)
+        # Add View (after toolbar) — wrapped in a splitter with the layer panel
+        self._splitter = QSplitter(Qt.Orientation.Horizontal, self)
+
+        self._splitter.addWidget(self.view)
+
+        # Layer Panel (right side)
+        self.layer_panel = MapLayerPanel(self)
+        self._splitter.addWidget(self.layer_panel)
+
+        # Default proportions: 80% map, 20% layer panel
+        self._splitter.setStretchFactor(0, 4)
+        self._splitter.setStretchFactor(1, 1)
+
+        layout.addWidget(self._splitter)
+
+        # Layer model (created per-map; None until markers load)
+        self._layer_model: Optional[MapLayerModel] = None
 
         # Overlay Banner (Child of view, positioned at top)
         self.overlay_banner = QLabel(self.view)
@@ -315,8 +361,8 @@ class MapWidget(QWidget):
         self.view.keyframe_clock_mode_requested.connect(self._on_clock_mode_requested)
         self.view.keyframe_delete_requested.connect(self._on_keyframe_delete_requested)
         self.view.keyframe_edit_requested.connect(self._emit_keyframe_upsert)
-        self.view.add_marker_requested.connect(self.create_marker_requested.emit)
-        self.view.delete_marker_requested.connect(self.delete_marker_requested.emit)
+        self.view.add_marker_requested.connect(self._on_create_marker_requested)
+        self.view.delete_marker_requested.connect(self._on_delete_marker_requested)
         self.view.change_marker_icon_requested.connect(
             self.change_marker_icon_requested.emit
         )
@@ -331,6 +377,15 @@ class MapWidget(QWidget):
         self.view.feature_geometry_changed.connect(self.feature_geometry_changed.emit)
         self.view.feature_geometry_changed.connect(self._on_geometry_changed)
         self.view.scene.selectionChanged.connect(self._on_selection_changed)
+        # Bi-directional selection: marker click → highlight in layer panel
+        self.view.marker_clicked.connect(self._on_marker_clicked_select_layer)
+        self.layer_panel.layer_selected.connect(self._on_layer_panel_selected)
+        # Layer panel actions
+        self.layer_panel.create_group_requested.connect(self._on_create_group)
+        self.layer_panel.create_layer_requested.connect(self._on_create_layer)
+        self.layer_panel.delete_layer_requested.connect(self._on_delete_layer)
+        self.layer_panel.layer_renamed.connect(self._on_layer_renamed)
+        self.layer_panel.layer_opacity_changed.connect(self._on_layer_opacity_changed)
 
         self._maps_data = []  # List of maps for selector
         self._playhead_time: float = 0.0  # Current playhead time from Timeline
@@ -339,6 +394,10 @@ class MapWidget(QWidget):
         self._active_trajectories: dict[str, list] = {}  # marker_id -> list[Keyframe]
         self._selected_marker_id: Optional[str] = None
         self._transient_marker_ids: set[str] = set()  # Markers currently being dragged
+
+        # Entity/event caches for the object-selection dialog
+        self._cached_entities: list = []
+        self._cached_events: list = []
 
         # Update all markers with active trajectories
         self._update_trajectory_positions()
@@ -471,7 +530,7 @@ class MapWidget(QWidget):
 
     @Slot(str, list)
     def _on_drawing_finished(self, feature_type: str, geometry: list) -> None:
-        """Handles drawing completion — emits create_feature_requested.
+        """Handles drawing completion — shows object picker then emits feature_created.
 
         Args:
             feature_type: 'path' or 'region'.
@@ -481,8 +540,26 @@ class MapWidget(QWidget):
         self.btn_draw_path.setChecked(False)
         self.btn_draw_region.setChecked(False)
         self._update_mode_indicator()
-        self.create_feature_requested.emit(feature_type, geometry)
-        logger.info(f"Feature drawing complete: {feature_type}, {len(geometry)} vertices")
+
+        map_id = self.get_selected_map_id()
+        if not map_id:
+            QMessageBox.warning(
+                self, "No Map", "Please create or select a map first."
+            )
+            return
+
+        result = self._select_or_create_object(
+            f"Link {feature_type.title()}",
+            f"Select object for this {feature_type}:",
+        )
+        if not result:
+            return
+
+        obj_id, obj_type, name = result
+        self.feature_created.emit(map_id, obj_id, obj_type, name, feature_type, geometry)
+        logger.info(
+            f"Feature drawing complete: {feature_type}, {len(geometry)} vertices"
+        )
 
     @Slot()
     def _on_drawing_cancelled(self) -> None:
@@ -490,6 +567,170 @@ class MapWidget(QWidget):
         self.btn_draw_path.setChecked(False)
         self.btn_draw_region.setChecked(False)
         self._update_mode_indicator()
+
+    # ------------------------------------------------------------------
+    # Dialog methods (UI layer owns all user-facing dialogs)
+    # ------------------------------------------------------------------
+
+    # Sentinel values for the object-selection dialog
+    _NEW_ENTITY_SENTINEL = "<New Entity...>"
+    _NEW_EVENT_SENTINEL = "<New Event...>"
+
+    def set_cached_items(
+        self, entities: list, events: list
+    ) -> None:
+        """Stores the entity/event caches for the object-selection dialog.
+
+        Called by MainWindow when data is refreshed so the map's
+        object-picker dialog can offer existing entities and events.
+
+        Args:
+            entities: List of entity objects.  Each must have ``.id``
+                (``str``) and ``.name`` (``str``) attributes.
+            events: List of event objects.  Each must have ``.id``
+                (``str``) and ``.name`` (``str``) attributes.
+
+        """
+        self._cached_entities = entities
+        self._cached_events = events
+
+    def _select_or_create_object(
+        self, dialog_title: str, dialog_label: str
+    ) -> tuple[str, str, str] | None:
+        """Shows a selection dialog with existing items + new-item options.
+
+        Returns:
+            Tuple of (object_id, object_type, name) on success, or None
+            if the user cancels.
+
+        """
+        entities = getattr(self, "_cached_entities", [])
+        events = getattr(self, "_cached_events", [])
+
+        items: list[str] = [
+            self._NEW_ENTITY_SENTINEL,
+            self._NEW_EVENT_SENTINEL,
+        ]
+        for e in entities:
+            items.append(f"{e.name} (Entity)")
+        for e in events:
+            items.append(f"{e.name} (Event)")
+
+        # Sort existing items, keep sentinels at top
+        sentinels = items[:2]
+        existing = sorted(items[2:])
+        items = sentinels + existing
+
+        item_text, ok = QInputDialog.getItem(
+            self, dialog_title, dialog_label, items, 0, False
+        )
+        if not ok or not item_text:
+            return None
+
+        if item_text == self._NEW_ENTITY_SENTINEL:
+            return self._create_new_entity_inline()
+        if item_text == self._NEW_EVENT_SENTINEL:
+            return self._create_new_event_inline()
+
+        if item_text.endswith(" (Entity)"):
+            name = item_text[:-9]
+            obj = next((e for e in entities if e.name == name), None)
+            if obj:
+                return obj.id, "entity", obj.name
+        elif item_text.endswith(" (Event)"):
+            name = item_text[:-8]
+            obj = next((e for e in events if e.name == name), None)
+            if obj:
+                return obj.id, "event", obj.name
+
+        return None
+
+    def _create_new_entity_inline(self) -> tuple[str, str, str] | None:
+        """Prompts for a name and emits ``create_entity_requested``.
+
+        Returns:
+            Tuple of (new_id, 'entity', name) or None if cancelled.
+
+        """
+        name, ok = QInputDialog.getText(self, "New Entity", "Entity Name:")
+        if not ok or not name.strip():
+            return None
+        name = name.strip()
+        new_id = str(uuid.uuid4())
+        self.create_entity_requested.emit(new_id, name)
+        logger.info(f"Created new entity '{name}' ({new_id}) from map")
+        return new_id, "entity", name
+
+    def _create_new_event_inline(self) -> tuple[str, str, str] | None:
+        """Prompts for a name and emits ``create_event_requested``.
+
+        Returns:
+            Tuple of (new_id, 'event', name) or None if cancelled.
+
+        """
+        name, ok = QInputDialog.getText(self, "New Event", "Event Name:")
+        if not ok or not name.strip():
+            return None
+        name = name.strip()
+        new_id = str(uuid.uuid4())
+        self.create_event_requested.emit(new_id, name)
+        logger.info(f"Created new event '{name}' ({new_id}) from map")
+        return new_id, "event", name
+
+    @Slot()
+    def _on_create_map_clicked(self) -> None:
+        """Shows file/name dialogs and emits ``map_created``."""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select Map Image", "", IMAGE_FILE_FILTER
+        )
+        if not file_path:
+            return
+        name, ok = QInputDialog.getText(self, "New Map", "Map Name:")
+        if not ok or not name.strip():
+            return
+        self.map_created.emit(file_path, name.strip())
+
+    @Slot()
+    def _on_delete_map_clicked(self) -> None:
+        """Shows confirmation dialog and emits ``map_deleted``."""
+        map_id = self.map_selector.currentData()
+        if not map_id:
+            return
+        confirm = QMessageBox.question(
+            self,
+            "Delete Map",
+            "Are you sure you want to delete this map and all its markers?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if confirm == QMessageBox.StandardButton.Yes:
+            self.map_deleted.emit(map_id)
+
+    @Slot(float, float)
+    def _on_create_marker_requested(self, x: float, y: float) -> None:
+        """Shows object-selection dialog and emits ``marker_created``."""
+        map_id = self.get_selected_map_id()
+        if not map_id:
+            QMessageBox.warning(
+                self, "No Map", "Please create or select a map first."
+            )
+            return
+        result = self._select_or_create_object("Add Marker", "Select Object:")
+        if not result:
+            return
+        obj_id, obj_type, name = result
+        self.marker_created.emit(map_id, obj_id, obj_type, name, x, y)
+
+    @Slot(str)
+    def _on_delete_marker_requested(self, marker_id: str) -> None:
+        """Shows confirmation dialog and emits ``marker_delete_confirmed``."""
+        confirm = QMessageBox.question(
+            self,
+            "Delete Marker",
+            "Remove this marker?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if confirm == QMessageBox.StandardButton.Yes:
+            self.marker_delete_confirmed.emit(marker_id)
 
     @Slot()
     def _on_snap_toggled(self) -> None:
@@ -505,7 +746,7 @@ class MapWidget(QWidget):
         if self.view.is_drawing:
             self.view.finish_drawing()
         elif self.view.is_editing_vertices:
-            self.view._finish_vertex_editing()
+            self.view.finish_editing()
         self._update_mode_indicator()
 
     @Slot(str, list)
@@ -645,7 +886,7 @@ class MapWidget(QWidget):
         if self.view.is_drawing:
             self.view.cancel_drawing()
         if self.view.is_editing_vertices:
-            self.view._finish_vertex_editing()
+            self.view.finish_editing()
         self._update_mode_indicator()
 
         if index >= 0:
@@ -661,6 +902,11 @@ class MapWidget(QWidget):
         """
         index = self.map_selector.currentIndex()
         return self.map_selector.itemData(index) if index >= 0 else None
+
+    @property
+    def maps_data(self) -> list:
+        """The currently loaded list of :class:`Map` objects."""
+        return self._maps_data
 
     @Slot(str, float, float)
     def _on_marker_moved(self, marker_id: str, x: float, y: float) -> None:
@@ -762,6 +1008,330 @@ class MapWidget(QWidget):
         """
         return self.view.load_map(image_path)
 
+    # ------------------------------------------------------------------
+    # Layer management
+    # ------------------------------------------------------------------
+
+    def _build_layer_model(self, root: Optional[MapLayerNode] = None) -> MapLayerModel:
+        """Create (or replace) the layer model and wire it to the view.
+
+        Args:
+            root: An existing layer tree root.  If ``None`` a default
+                root with a "Default" group is created.
+
+        Returns:
+            MapLayerModel: The newly created model.
+
+        """
+        if root is None:
+            root = MapLayerNode(
+                name="Root",
+                layer_type=MAP_LAYER_TYPE_GROUP,
+                children=[
+                    MapLayerNode(
+                        name=MAP_LAYER_DEFAULT_GROUP_NAME,
+                        layer_type=MAP_LAYER_TYPE_GROUP,
+                    ),
+                ],
+            )
+        model = MapLayerModel(root=root)
+        self._layer_model = model
+        self.view.set_layer_model(model)
+        self.layer_panel.set_model(model)
+        # Forward model mutations → widget signal for command-stack persistence
+        model.layer_tree_changed.connect(self.layer_tree_changed.emit)
+        return model
+
+    def _ensure_layer_model(self) -> MapLayerModel:
+        """Return the current layer model, creating one if needed.
+
+        Returns:
+            MapLayerModel: The active layer model.
+
+        """
+        if self._layer_model is None:
+            return self._build_layer_model()
+        return self._layer_model
+
+    def _default_group(self) -> MapLayerNode:
+        """Return the "Default" group in the layer tree, creating it if needed.
+
+        Returns:
+            MapLayerNode: The default group node.
+
+        """
+        model = self._ensure_layer_model()
+        # Try to find an existing "Default" group
+        for child in model.root.children:
+            if (
+                child.layer_type == MAP_LAYER_TYPE_GROUP
+                and child.name == MAP_LAYER_DEFAULT_GROUP_NAME
+            ):
+                return child
+        # Create one
+        node = MapLayerNode(
+            name=MAP_LAYER_DEFAULT_GROUP_NAME,
+            layer_type=MAP_LAYER_TYPE_GROUP,
+        )
+        root_idx = model.index_from_node(model.root)
+        model.add_layer(root_idx, node)
+        return node
+
+    def _feature_type_to_layer_type(self, feature_type: str) -> str:
+        """Map a feature_type string to a layer_type constant.
+
+        Args:
+            feature_type: 'point', 'path', or 'region'.
+
+        Returns:
+            str: The corresponding MAP_LAYER_TYPE_* constant.
+
+        """
+        if feature_type == "path":
+            return MAP_LAYER_TYPE_PATH
+        if feature_type == "region":
+            return MAP_LAYER_TYPE_REGION
+        return MAP_LAYER_TYPE_MARKER
+
+    def _register_layer_node(
+        self,
+        marker_id: str,
+        label: str,
+        feature_type: str = "point",
+    ) -> None:
+        """Register a new feature as a layer node under the Default group.
+
+        If a node with this ID already exists in the tree, it is skipped.
+
+        Args:
+            marker_id: Unique identifier (same as graphics item key).
+            label: Display name for the layer.
+            feature_type: 'point', 'path', or 'region'.
+
+        """
+        model = self._ensure_layer_model()
+        if model.find_node_by_id(marker_id) is not None:
+            return  # Already tracked
+
+        layer_type = self._feature_type_to_layer_type(feature_type)
+        node = MapLayerNode(name=label, layer_type=layer_type, id=marker_id)
+        default_group = self._default_group()
+        parent_idx = model.index_from_node(default_group)
+        model.add_layer(parent_idx, node)
+
+    def _unregister_layer_node(self, marker_id: str) -> None:
+        """Remove a layer node when the corresponding feature is deleted.
+
+        Prevents "zombie nodes" (MEDIUM-7).
+
+        Args:
+            marker_id: ID of the node to remove.
+
+        """
+        if self._layer_model is None:
+            return
+        node = self._layer_model.find_node_by_id(marker_id)
+        if node is None:
+            return
+        idx = self._layer_model.index_from_node(node)
+        self._layer_model.remove_layer(idx)
+
+    @Slot(str, str)
+    def _on_marker_clicked_select_layer(self, marker_id: str, object_type: str) -> None:
+        """Bi-directional selection: marker click → highlight in layer panel.
+
+        Args:
+            marker_id: The clicked marker's ID.
+            object_type: 'entity' or 'event' (unused here).
+
+        """
+        self.layer_panel.select_node(marker_id)
+
+    @Slot(str)
+    def _on_layer_panel_selected(self, node_id: str) -> None:
+        """Bi-directional selection: layer panel click → select on map.
+
+        Args:
+            node_id: The clicked layer node's ID.
+
+        """
+        # Select the graphics item on the map
+        item = self.view.find_item_by_id(node_id)
+        if item is not None:
+            self.view.scene.clearSelection()
+            item.setSelected(True)
+
+    @Slot(str)
+    def _on_create_group(self, name: str) -> None:
+        """Handle request to create a new layer group.
+
+        The group is added under the root of the layer tree.
+
+        Args:
+            name: Display name for the new group.
+
+        """
+        model = self._ensure_layer_model()
+        node = MapLayerNode(name=name, layer_type=MAP_LAYER_TYPE_GROUP)
+        root_idx = model.index_from_node(model.root)
+        model.add_layer(root_idx, node)
+        logger.info(f"Created layer group: {name}")
+
+    @Slot(str)
+    def _on_create_layer(self, name: str) -> None:
+        """Handle request to create a new leaf layer.
+
+        The layer is added under the selected group, or the Default group
+        if no group is selected.
+
+        Args:
+            name: Display name for the new layer.
+
+        """
+        model = self._ensure_layer_model()
+        node = MapLayerNode(name=name, layer_type=MAP_LAYER_TYPE_MARKER)
+
+        # Find a suitable parent — the selected node if it's a group,
+        # else the Default group
+        parent_node = None
+        selected_id = self.layer_panel.selected_node_id
+        if selected_id:
+            selected_node = model.find_node_by_id(selected_id)
+            if selected_node and selected_node.layer_type == MAP_LAYER_TYPE_GROUP:
+                parent_node = selected_node
+
+        if parent_node is None:
+            parent_node = self._default_group()
+
+        parent_idx = model.index_from_node(parent_node)
+        model.add_layer(parent_idx, node)
+        logger.info(f"Created layer: {name}")
+
+    @Slot(str)
+    def _on_delete_layer(self, node_id: str) -> None:
+        """Handle request to delete a layer.
+
+        Removes graphics items, the layer node from the tree, and emits
+        ``layer_delete_feature_requested`` for each leaf feature so
+        the database marker is also deleted.
+
+        Args:
+            node_id: ID of the layer node to delete.
+
+        """
+        if self._layer_model is None:
+            return
+        node = self._layer_model.find_node_by_id(node_id)
+        if node is None:
+            return
+
+        # Don't delete the root
+        if node is self._layer_model.root:
+            logger.warning("Cannot delete the root node")
+            return
+
+        # Collect all leaf feature IDs before mutating the tree
+        leaf_ids = self._collect_leaf_ids(node)
+
+        # Remove the graphics item if it's a leaf feature
+        if node.layer_type != MAP_LAYER_TYPE_GROUP:
+            self.view.remove_marker(node_id)
+
+        # Also remove children's graphics items for groups
+        if node.layer_type == MAP_LAYER_TYPE_GROUP:
+            self._remove_children_graphics(node)
+
+        idx = self._layer_model.index_from_node(node)
+        self._layer_model.remove_layer(idx)
+        logger.info(f"Deleted layer: {node.name} ({node_id})")
+
+        # Request DB deletion for every leaf feature
+        for leaf_id in leaf_ids:
+            self.layer_delete_feature_requested.emit(leaf_id)
+
+    def _collect_leaf_ids(self, node: MapLayerNode) -> List[str]:
+        """Recursively collect IDs of all leaf (non-group) nodes.
+
+        Args:
+            node: The root node to search.
+
+        Returns:
+            List of leaf node IDs.
+
+        """
+        ids: List[str] = []
+        if node.layer_type != MAP_LAYER_TYPE_GROUP:
+            ids.append(node.id)
+        for child in node.children:
+            ids.extend(self._collect_leaf_ids(child))
+        return ids
+
+    def _remove_children_graphics(self, group_node: MapLayerNode) -> None:
+        """Recursively remove graphics items for all children of a group.
+
+        Args:
+            group_node: The parent group node.
+
+        """
+        for child in group_node.children:
+            if child.layer_type == MAP_LAYER_TYPE_GROUP:
+                self._remove_children_graphics(child)
+            else:
+                self.view.remove_marker(child.id)
+
+    @Slot(str, str)
+    def _on_layer_renamed(self, node_id: str, new_name: str) -> None:
+        """Handle a layer rename from the panel.
+
+        Updates the node name in the model, refreshes the view, and emits
+        a signal so the command stack can persist the change.
+
+        Args:
+            node_id: ID of the renamed node.
+            new_name: The new display name.
+
+        """
+        if self._layer_model is None:
+            return
+        node = self._layer_model.find_node_by_id(node_id)
+        if node is None:
+            return
+
+        node.name = new_name
+        idx = self._layer_model.index_from_node(node)
+        self._layer_model.dataChanged.emit(idx, idx, [Qt.ItemDataRole.DisplayRole])
+        self.layer_rename_requested.emit(node_id, new_name)
+
+    @Slot(str, float, float)
+    def _on_layer_opacity_changed(
+        self, node_id: str, opacity: float, old_opacity: float
+    ) -> None:
+        """Handle opacity change from the panel's slider.
+
+        The model is already updated by the panel; this emits a signal
+        so the command stack can persist the change.
+
+        Args:
+            node_id: ID of the node whose opacity changed.
+            opacity: New opacity (0.0–1.0).
+            old_opacity: Previous opacity (for undo).
+
+        """
+        self.layer_opacity_change_requested.emit(node_id, opacity, old_opacity)
+
+    def get_layer_model(self) -> Optional[MapLayerModel]:
+        """Return the current layer model (if any).
+
+        Returns:
+            Optional[MapLayerModel]: The active layer model.
+
+        """
+        return self._layer_model
+
+    # ------------------------------------------------------------------
+    # Marker CRUD (with layer integration)
+    # ------------------------------------------------------------------
+
     def add_marker(
         self,
         marker_id: str,
@@ -779,6 +1349,8 @@ class MapWidget(QWidget):
     ) -> None:
         """Adds a marker or feature to the map.
 
+        Also auto-registers a corresponding layer node (HIGH-6).
+
         Args:
             marker_id: Unique identifier for the marker.
             object_type: Type of object ('entity' or 'event').
@@ -795,9 +1367,21 @@ class MapWidget(QWidget):
 
         """
         self.view.add_marker(
-            marker_id, object_type, label, x, y, icon, color, description,
-            lore_date, feature_type, geometry, style,
+            marker_id,
+            object_type,
+            label,
+            x,
+            y,
+            icon,
+            color,
+            description,
+            lore_date,
+            feature_type,
+            geometry,
+            style,
         )
+        # Auto-register in layer hierarchy
+        self._register_layer_node(marker_id, label, feature_type)
 
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
         """Updates a marker's position.
@@ -811,17 +1395,20 @@ class MapWidget(QWidget):
         self.view.update_marker_position(marker_id, x, y)
 
     def remove_marker(self, marker_id: str) -> None:
-        """Removes a marker from the map.
+        """Removes a marker from the map and its layer node (MEDIUM-7).
 
         Args:
             marker_id: ID of the marker to remove.
 
         """
+        self._unregister_layer_node(marker_id)
         self.view.remove_marker(marker_id)
 
     def clear_markers(self) -> None:
-        """Removes all markers from the map."""
+        """Removes all markers from the map and resets the layer model."""
         self.view.clear_markers()
+        # Reset layer model — will be recreated when new markers load
+        self._layer_model = None
 
     @Slot()
     def _configure_map_width(self) -> None:
@@ -1238,7 +1825,7 @@ class OnboardingDialog(QDialog):
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the onboarding dialog.
-        
+
         Args:
             parent: Optional parent widget.
         """

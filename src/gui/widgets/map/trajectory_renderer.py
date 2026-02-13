@@ -1,0 +1,317 @@
+"""Trajectory Renderer for the Map Graphics View.
+
+Manages trajectory path visualization, keyframe dots, date labels,
+calendar integration, and pulsing animations.
+"""
+
+import logging
+from typing import TYPE_CHECKING, Optional
+
+from PySide6.QtCore import QPropertyAnimation, QRectF, Qt
+from PySide6.QtGui import QBrush, QColor, QFont, QPainterPath, QPen, QTransform
+from PySide6.QtWidgets import (
+    QGraphicsObject,
+    QGraphicsPathItem,
+    QGraphicsSimpleTextItem,
+)
+
+from src.app.constants import MAP_LAYER_Z_MARKERS, MAP_LAYER_Z_TRAJECTORIES
+from src.core.trajectory import KEYFRAME_TIME_EPSILON
+
+if TYPE_CHECKING:
+    from src.gui.widgets.map.map_graphics_view import KeyframeItem, MapGraphicsView
+
+logger = logging.getLogger(__name__)
+
+# Colors
+KEYFRAME_COLOR_DEFAULT = "#f1c40f"  # Yellow
+KEYFRAME_LABEL_COLOR = "#000000"  # Black
+TRAJECTORY_PATH_COLOR = "#3498db"  # Blue
+
+# Layout Constants
+KEYFRAME_LABEL_FONT_FAMILY = "Segoe UI"
+KEYFRAME_LABEL_FONT_SIZE = 12
+KEYFRAME_LABEL_OFFSET_X = -10
+KEYFRAME_LABEL_OFFSET_Y = 10
+KEYFRAME_LABEL_MIN_SIZE_PT = 8
+KEYFRAME_LABEL_MAX_SIZE_PT = 10
+
+
+class TrajectoryRenderer:
+    """Manages trajectory path, keyframes, labels, and animations.
+
+    Args:
+        view: The parent MapGraphicsView.
+    """
+
+    def __init__(self, view: "MapGraphicsView") -> None:
+        self._view = view
+
+        self.trajectory_path_item: Optional[QGraphicsPathItem] = None
+        self.keyframe_items: list["KeyframeItem"] = []
+        self.keyframe_label_items: list[QGraphicsSimpleTextItem] = []
+        self._calendar_converter: Optional[object] = None
+        self.trigger_first_use_animation: bool = False
+        self._animations: list[QPropertyAnimation] = []
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    def show_trajectory(
+        self, marker_id: str, keyframes: list
+    ) -> None:
+        """Visualizes the trajectory path and keyframes.
+
+        Args:
+            marker_id: The ID of the marker owning this trajectory.
+            keyframes: List of Keyframe objects.
+        """
+        from src.gui.widgets.map.map_graphics_view import KeyframeItem
+
+        self.clear_trajectory()
+        if not keyframes or len(keyframes) < 2:
+            return
+
+        view_scale = (
+            self._view.transform().m11()
+            if self._view.transform().m11() > 0
+            else 1.0
+        )
+        dot_radius = max(3.0 / view_scale, 3.0)
+
+        for kf in keyframes:
+            pos = self._view.coord_system.to_scene(kf.x, kf.y)
+            dot = KeyframeItem(
+                marker_id,
+                kf.t,
+                kf.x,
+                kf.y,
+                QRectF(
+                    -dot_radius,
+                    -dot_radius,
+                    dot_radius * 2,
+                    dot_radius * 2,
+                ),
+                self._on_keyframe_dropped,
+                self._update_trajectory_path,
+            )
+            dot.setPos(pos)
+            dot.setBrush(QBrush(QColor(KEYFRAME_COLOR_DEFAULT)))
+            dot.setPen(QPen(Qt.PenStyle.NoPen))
+            dot.setZValue(MAP_LAYER_Z_MARKERS + 1)
+            self._view.scene.addItem(dot)
+            self.keyframe_items.append(dot)
+
+            # Add date label
+            if self._calendar_converter:
+                try:
+                    date_str = self._calendar_converter.format_date(kf.t)
+                except Exception as e:
+                    logger.warning(
+                        f"Calendar formatting failed for keyframe at {kf.t}: {e}"
+                    )
+                    date_str = f"{kf.t:.0f}"
+            else:
+                date_str = f"{kf.t:.0f}"
+
+            label = QGraphicsSimpleTextItem(date_str)
+            label.setPos(pos)
+            label.setBrush(QBrush(QColor(KEYFRAME_LABEL_COLOR)))
+            font = QFont(KEYFRAME_LABEL_FONT_FAMILY, KEYFRAME_LABEL_FONT_SIZE)
+            label.setFont(font)
+            label.setZValue(MAP_LAYER_Z_MARKERS + 2)
+            label.setFlag(
+                QGraphicsSimpleTextItem.GraphicsItemFlag.ItemIgnoresTransformations
+            )
+            label.setTransform(
+                QTransform().translate(
+                    KEYFRAME_LABEL_OFFSET_X, KEYFRAME_LABEL_OFFSET_Y
+                )
+            )
+            self._view.scene.addItem(label)
+            self.keyframe_label_items.append(label)
+
+        self._update_trajectory_path()
+        self.update_label_scales()
+
+        if self.trigger_first_use_animation:
+            logger.debug(
+                f"Triggering pulsing animation for "
+                f"{len(self.keyframe_items)} keyframes"
+            )
+            self.trigger_first_use_animation = False
+            for dot in self.keyframe_items:
+                self._pulse_item(dot)
+
+    def clear_trajectory(self) -> None:
+        """Clears the rendered trajectory path, keyframes, and labels."""
+        if self.trajectory_path_item:
+            self._view.scene.removeItem(self.trajectory_path_item)
+            self.trajectory_path_item = None
+
+        for item in self.keyframe_items:
+            self._view.scene.removeItem(item)
+        self.keyframe_items.clear()
+
+        for label in self.keyframe_label_items:
+            self._view.scene.removeItem(label)
+        self.keyframe_label_items.clear()
+
+    def set_calendar_converter(self, converter: object) -> None:
+        """Sets the calendar converter for formatting keyframe date labels.
+
+        Args:
+            converter: A calendar converter with format_date(t) method.
+        """
+        self._calendar_converter = converter
+
+    def set_keyframe_pinned(
+        self, marker_id: str, t: float, pinned: bool
+    ) -> None:
+        """Set visual pinned state for a specific keyframe.
+
+        Args:
+            marker_id: The marker ID.
+            t: The keyframe time.
+            pinned: Whether to pin the keyframe.
+        """
+        from src.gui.widgets.map.map_graphics_view import KeyframeItem
+
+        for item in self.keyframe_items:
+            if (
+                isinstance(item, KeyframeItem)
+                and item.marker_id == marker_id
+                and abs(item.t - t) < KEYFRAME_TIME_EPSILON
+            ):
+                item.set_pinned(pinned)
+                logger.debug(
+                    f"Set keyframe {marker_id} at t={t} pinned={pinned}"
+                )
+                return
+
+    def update_keyframe_label(
+        self, marker_id: str, t: float, new_time: float
+    ) -> None:
+        """Updates the label of a specific keyframe to show a new time/date.
+
+        Args:
+            marker_id: The marker ID.
+            t: The keyframe time to find.
+            new_time: The new time value to display.
+        """
+        from src.gui.widgets.map.map_graphics_view import KeyframeItem
+
+        for i, item in enumerate(self.keyframe_items):
+            if (
+                isinstance(item, KeyframeItem)
+                and item.marker_id == marker_id
+                and abs(item.t - t) < KEYFRAME_TIME_EPSILON
+            ):
+                if i < len(self.keyframe_label_items):
+                    label = self.keyframe_label_items[i]
+                    if self._calendar_converter:
+                        try:
+                            text = self._calendar_converter.format_date(
+                                new_time
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                f"Calendar formatting failed for "
+                                f"time {new_time}: {e}"
+                            )
+                            text = f"{new_time:.0f}"
+                    else:
+                        text = f"{new_time:.0f}"
+                    label.setText(text)
+                return
+
+    def update_label_scales(self) -> None:
+        """Updates the scale of keyframe labels based on current zoom level."""
+        view_scale = self._view.transform().m11()
+        if view_scale <= 0:
+            return
+
+        min_s = KEYFRAME_LABEL_MIN_SIZE_PT / KEYFRAME_LABEL_FONT_SIZE
+        max_s = KEYFRAME_LABEL_MAX_SIZE_PT / KEYFRAME_LABEL_FONT_SIZE
+
+        s = max(min_s, min(view_scale, max_s))
+
+        transform = (
+            QTransform()
+            .translate(KEYFRAME_LABEL_OFFSET_X, KEYFRAME_LABEL_OFFSET_Y)
+            .scale(s, s)
+        )
+
+        for label in self.keyframe_label_items:
+            label.setTransform(transform)
+
+    # ------------------------------------------------------------------
+    # Internal
+    # ------------------------------------------------------------------
+
+    def _pulse_item(self, item: QGraphicsObject) -> None:
+        """Pulses the given item 3 times (scale 1.0 -> 1.1 -> 1.0)."""
+        item.setTransformOriginPoint(0, 0)
+
+        animation = QPropertyAnimation(item, b"scale_val")
+        animation.setDuration(600)
+        animation.setStartValue(1.0)
+        animation.setKeyValueAt(0.5, 1.1)
+        animation.setEndValue(1.0)
+        animation.setLoopCount(3)
+
+        self._animations.append(animation)
+        animation.finished.connect(
+            lambda: self._animations.remove(animation)
+        )
+
+        animation.start()
+
+    def _update_trajectory_path(self) -> None:
+        """Re-draws the trajectory path based on current keyframe positions."""
+        if not self.keyframe_items or len(self.keyframe_items) < 2:
+            if self.trajectory_path_item:
+                self._view.scene.removeItem(self.trajectory_path_item)
+                self.trajectory_path_item = None
+            return
+
+        sorted_items = sorted(
+            self.keyframe_items, key=lambda item: item.t
+        )
+
+        path = QPainterPath()
+        start = sorted_items[0].scenePos()
+        path.moveTo(start)
+
+        for i in range(1, len(sorted_items)):
+            path.lineTo(sorted_items[i].scenePos())
+
+        if not self.trajectory_path_item:
+            self.trajectory_path_item = self._create_trajectory_item(path)
+            self._view.scene.addItem(self.trajectory_path_item)
+        else:
+            self.trajectory_path_item.setPath(path)
+
+    def _create_trajectory_item(
+        self, path: QPainterPath
+    ) -> QGraphicsPathItem:
+        """Creates and configures the trajectory path item."""
+        item = QGraphicsPathItem(path)
+        pen = QPen(QColor(TRAJECTORY_PATH_COLOR), 1)
+        pen.setStyle(Qt.PenStyle.DashLine)
+        item.setPen(pen)
+        item.setZValue(MAP_LAYER_Z_TRAJECTORIES)
+        return item
+
+    def _on_keyframe_dropped(self, item: "KeyframeItem") -> None:
+        """Callback when a keyframe dot is released after dragging."""
+        scene_pos = item.scenePos()
+        norm_pos = self._view.coord_system.to_normalized(scene_pos)
+        x, y = norm_pos
+
+        logger.info(
+            f"Keyframe dropped for {item.marker_id} "
+            f"at t={item.t}: ({x:.3f}, {y:.3f})"
+        )
+        self._view.keyframe_moved.emit(item.marker_id, item.t, x, y)

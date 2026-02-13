@@ -1,154 +1,160 @@
-"""Tests for in-place entity/event creation from the Map handler."""
+"""Tests for in-place entity/event creation from MapWidget dialogs.
+
+These tests verify the object-selection dialog logic that was moved
+from MapHandler to MapWidget.  MapHandler now receives pre-resolved
+data via signals.
+"""
 
 from unittest.mock import MagicMock, patch
 
 import pytest
+from PySide6.QtWidgets import QApplication
 
-from src.app.map_handler import MapHandler
+from src.gui.widgets.map_widget import MapWidget
+
+
+@pytest.fixture(scope="session", autouse=True)
+def qapp():
+    """Ensure a QApplication exists for widget tests."""
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication([])
+    return app
 
 
 @pytest.fixture
-def mock_window():
-    """Creates a mock MainWindow with cached entities/events."""
-    window = MagicMock()
-    window.data_handler = MagicMock()
-    window.map_widget.map_selector.currentData.return_value = "map_1"
-    window.map_widget.get_selected_map_id.return_value = "map_1"
+def map_widget_fixture(qapp):
+    """Creates a MapWidget with cached entities/events."""
+    widget = MapWidget()
 
-    # Cached entities/events
     entity = MagicMock()
     entity.id = "ent_1"
     entity.name = "Rivendell"
-    window._cached_entities = [entity]
 
     event = MagicMock()
     event.id = "evt_1"
     event.name = "Battle of Five Armies"
-    window._cached_events = [event]
 
-    return window
+    widget.set_cached_items([entity], [event])
+    # Pre-select a map so get_selected_map_id() returns a value
+    from src.core.map import Map
 
+    test_map = Map(id="map_1", name="Middle-earth", image_path="x.png")
+    widget.set_maps([test_map])
+    widget.select_map("map_1")
 
-@pytest.fixture
-def handler(mock_window):
-    """Creates a MapHandler with a mocked window."""
-    return MapHandler(mock_window)
+    yield widget
+    widget.close()
 
 
 class TestSelectExistingItem:
-    """Tests for selecting existing entities/events (regression)."""
+    """Tests for selecting existing entities/events."""
 
-    def test_create_marker_existing_entity(self, handler):
-        """Selecting an existing entity emits only CreateMarkerCommand."""
+    def test_create_marker_existing_entity(self, map_widget_fixture):
+        """Selecting an existing entity emits marker_created."""
         with patch(
-            "src.app.map_handler.QInputDialog"
+            "src.gui.widgets.map_widget.QInputDialog"
         ) as MockDialog:
             MockDialog.getItem.return_value = ("Rivendell (Entity)", True)
 
-            handler.create_marker(0.5, 0.5)
+            spy = MagicMock()
+            map_widget_fixture.marker_created.connect(spy)
+            map_widget_fixture._on_create_marker_requested(0.5, 0.5)
 
-            # Should emit exactly one command (the marker)
-            handler.window.command_requested.emit.assert_called_once()
-            cmd = handler.window.command_requested.emit.call_args[0][0]
-            assert cmd.__class__.__name__ == "CreateMarkerCommand"
+            spy.assert_called_once()
+            args = spy.call_args[0]
+            assert args[0] == "map_1"  # map_id
+            assert args[1] == "ent_1"  # obj_id
+            assert args[2] == "entity"  # obj_type
 
-    def test_on_feature_drawn_existing_event(self, handler):
-        """Selecting an existing event for a feature emits only CreateMarkerCommand."""
+    def test_create_feature_existing_event(self, map_widget_fixture):
+        """Selecting an existing event for a feature emits feature_created."""
         geometry = [{"x": 0.1, "y": 0.1}, {"x": 0.5, "y": 0.5}, {"x": 0.9, "y": 0.1}]
         with patch(
-            "src.app.map_handler.QInputDialog"
+            "src.gui.widgets.map_widget.QInputDialog"
         ) as MockDialog:
             MockDialog.getItem.return_value = (
                 "Battle of Five Armies (Event)",
                 True,
             )
 
-            handler.on_feature_drawn("region", geometry)
+            spy = MagicMock()
+            map_widget_fixture.feature_created.connect(spy)
+            # Simulate drawing completion
+            map_widget_fixture._on_drawing_finished("region", geometry)
 
-            handler.window.command_requested.emit.assert_called_once()
-            cmd = handler.window.command_requested.emit.call_args[0][0]
-            assert cmd.__class__.__name__ == "CreateMarkerCommand"
+            spy.assert_called_once()
+            args = spy.call_args[0]
+            assert args[0] == "map_1"
+            assert args[1] == "evt_1"
+            assert args[2] == "event"
+            assert args[4] == "region"
 
 
 class TestCreateNewInline:
     """Tests for the new in-place creation flow."""
 
-    def test_create_marker_new_entity(self, handler):
-        """Selecting '<New Entity...>' emits CreateEntityCommand + CreateMarkerCommand."""
+    def test_create_marker_new_entity(self, map_widget_fixture):
+        """Selecting '<New Entity...>' emits create_entity_requested + marker_created."""
         with patch(
-            "src.app.map_handler.QInputDialog"
+            "src.gui.widgets.map_widget.QInputDialog"
         ) as MockDialog:
-            # First call: item selection -> choose sentinel
-            # Second call: getText -> enter name
             MockDialog.getItem.return_value = ("<New Entity...>", True)
             MockDialog.getText.return_value = ("Mount Doom", True)
 
-            handler.create_marker(0.3, 0.7)
+            entity_spy = MagicMock()
+            marker_spy = MagicMock()
+            map_widget_fixture.create_entity_requested.connect(entity_spy)
+            map_widget_fixture.marker_created.connect(marker_spy)
 
-            # Should emit two commands:
-            # 1. CreateEntityCommand (the new entity)
-            # 2. CreateMarkerCommand (the marker linked to it)
-            assert handler.window.command_requested.emit.call_count == 2
-            first_cmd = handler.window.command_requested.emit.call_args_list[0][0][0]
-            second_cmd = handler.window.command_requested.emit.call_args_list[1][0][0]
+            map_widget_fixture._on_create_marker_requested(0.3, 0.7)
 
-            assert first_cmd.__class__.__name__ == "CreateEntityCommand"
-            assert second_cmd.__class__.__name__ == "CreateMarkerCommand"
+            entity_spy.assert_called_once()
+            marker_spy.assert_called_once()
 
-    def test_create_marker_new_event(self, handler):
-        """Selecting '<New Event...>' emits CreateEventCommand + CreateMarkerCommand."""
+    def test_create_marker_new_event(self, map_widget_fixture):
+        """Selecting '<New Event...>' emits create_event_requested + marker_created."""
         with patch(
-            "src.app.map_handler.QInputDialog"
+            "src.gui.widgets.map_widget.QInputDialog"
         ) as MockDialog:
             MockDialog.getItem.return_value = ("<New Event...>", True)
             MockDialog.getText.return_value = ("Dragon Attack", True)
 
-            handler.create_marker(0.6, 0.4)
+            event_spy = MagicMock()
+            marker_spy = MagicMock()
+            map_widget_fixture.create_event_requested.connect(event_spy)
+            map_widget_fixture.marker_created.connect(marker_spy)
 
-            assert handler.window.command_requested.emit.call_count == 2
-            first_cmd = handler.window.command_requested.emit.call_args_list[0][0][0]
-            second_cmd = handler.window.command_requested.emit.call_args_list[1][0][0]
+            map_widget_fixture._on_create_marker_requested(0.6, 0.4)
 
-            assert first_cmd.__class__.__name__ == "CreateEventCommand"
-            assert second_cmd.__class__.__name__ == "CreateMarkerCommand"
+            event_spy.assert_called_once()
+            marker_spy.assert_called_once()
 
-    def test_new_entity_cancel_name_emits_nothing(self, handler):
+    def test_new_entity_cancel_name_emits_nothing(self, map_widget_fixture):
         """Cancelling the name dialog after choosing '<New Entity...>' emits nothing."""
         with patch(
-            "src.app.map_handler.QInputDialog"
+            "src.gui.widgets.map_widget.QInputDialog"
         ) as MockDialog:
             MockDialog.getItem.return_value = ("<New Entity...>", True)
-            MockDialog.getText.return_value = ("", False)  # User cancels
+            MockDialog.getText.return_value = ("", False)
 
-            handler.create_marker(0.5, 0.5)
+            marker_spy = MagicMock()
+            map_widget_fixture.marker_created.connect(marker_spy)
 
-            handler.window.command_requested.emit.assert_not_called()
+            map_widget_fixture._on_create_marker_requested(0.5, 0.5)
 
-    def test_on_feature_drawn_new_entity(self, handler):
-        """Drawing a path and creating a new entity emits both commands."""
-        geometry = [{"x": 0.1, "y": 0.2}, {"x": 0.8, "y": 0.9}]
-        with patch(
-            "src.app.map_handler.QInputDialog"
-        ) as MockDialog:
-            MockDialog.getItem.return_value = ("<New Entity...>", True)
-            MockDialog.getText.return_value = ("River Anduin", True)
+            marker_spy.assert_not_called()
 
-            handler.on_feature_drawn("path", geometry)
-
-            assert handler.window.command_requested.emit.call_count == 2
-            first_cmd = handler.window.command_requested.emit.call_args_list[0][0][0]
-            second_cmd = handler.window.command_requested.emit.call_args_list[1][0][0]
-
-            assert first_cmd.__class__.__name__ == "CreateEntityCommand"
-            assert second_cmd.__class__.__name__ == "CreateMarkerCommand"
-
-    def test_cancel_selection_emits_nothing(self, handler):
+    def test_cancel_selection_emits_nothing(self, map_widget_fixture):
         """Cancelling the item selection dialog emits nothing."""
         with patch(
-            "src.app.map_handler.QInputDialog"
+            "src.gui.widgets.map_widget.QInputDialog"
         ) as MockDialog:
-            MockDialog.getItem.return_value = ("", False)  # User cancels
+            MockDialog.getItem.return_value = ("", False)
 
-            handler.create_marker(0.5, 0.5)
+            marker_spy = MagicMock()
+            map_widget_fixture.marker_created.connect(marker_spy)
 
-            handler.window.command_requested.emit.assert_not_called()
+            map_widget_fixture._on_create_marker_requested(0.5, 0.5)
+
+            marker_spy.assert_not_called()

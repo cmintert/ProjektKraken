@@ -354,6 +354,16 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.entity_editor = EntityEditorWidget(self)
         self.timeline = TimelineWidget()
         self.map_widget = MapWidget()
+        # Propagate theme changes to the layer panel
+        try:
+            from src.core.theme_manager import ThemeManager
+
+            ThemeManager().theme_changed.connect(
+                lambda _: self.map_widget.layer_panel.refresh_styles()
+            )
+        except Exception as e:
+            logger.warning(f"Failed to connect theme->layer panel: {e}")
+
         self.ai_search_panel = AISearchPanelWidget()
         self.graph_widget = GraphWidget()
         self.longform_editor = LongformEditorWidget(db_path=self.db_path)
@@ -367,7 +377,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self._last_drag_drop_command_id = None  # Track last drag-drop command for toast
 
         # Initialize Managers
-        self.map_handler = MapHandler(self)
+        # MapHandler is initialized after coordinators (see below) because
+        # it needs navigation_coordinator's set_global_selection callable.
         self.grouping_manager = TimelineGroupingManager(self)
         self.ai_settings_dialog = None
         self.ai_search_manager = AISearchManager(self)
@@ -389,6 +400,18 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.navigation_coordinator = NavigationCoordinator(self)
         self.backup_coordinator = BackupCoordinator(self)
         self.time_coordinator = TimeCoordinator(self)
+
+        # Initialize MapHandler with injected dependencies (no self reference)
+        self.map_handler = MapHandler(
+            map_widget=self.map_widget,
+            worker=self.worker,
+            db_path_accessor=lambda: self.db_path,
+            navigation_set_selection=(
+                self.navigation_coordinator.set_global_selection
+            ),
+        )
+        # Forward MapHandler's command_requested to MainWindow's
+        self.map_handler.command_requested.connect(self.command_requested.emit)
 
         # Status Bar
         self.status_bar = QStatusBar()
@@ -986,9 +1009,13 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             self.calendar_converter = converter
 
             # Refresh status bar labels now that we have a converter
-            if hasattr(self, "timeline"):
-                self.update_world_time_label(self.timeline.get_current_time())
-                self.update_playhead_time_label(self.timeline.get_playhead_time())
+            if hasattr(self, "timeline") and hasattr(self, "time_coordinator"):
+                self.time_coordinator.update_world_time_label(
+                    self.timeline.get_current_time()
+                )
+                self.time_coordinator.update_playhead_time_label(
+                    self.timeline.get_playhead_time()
+                )
 
         except Exception as e:
             logger.warning(f"Failed to initialize calendar converter: {e}")
@@ -1289,6 +1316,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         logger.info(f"DEBUG: _on_events_ready received {len(events)} events")
         self.unified_list.set_data(self._cached_events, self._cached_entities)
         self.timeline.set_events(events)
+        # Forward to MapWidget for object-selection dialogs
+        self.map_widget.set_cached_items(self._cached_entities, self._cached_events)
 
         # Refresh graph to reflect changes (debounced)
         self._schedule_graph_refresh()
@@ -1303,6 +1332,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """
         self._cached_entities = entities
         self.unified_list.set_data(self._cached_events, self._cached_entities)
+        # Forward to MapWidget for object-selection dialogs
+        self.map_widget.set_cached_items(self._cached_entities, self._cached_events)
 
         # Refresh graph to reflect changes (debounced)
         self._schedule_graph_refresh()
@@ -1658,130 +1689,33 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """Requests loading of all maps."""
         self.map_handler.load_maps()
 
-    @Slot(str)
-    def on_map_selected(self, map_id: str) -> None:
-        """Handler for when a map is selected in the widget.
-
-        Loads the map image and requests markers.
-        """
-        self.map_handler.on_map_selected(map_id)
-
-    def create_map(self) -> None:
-        """Creates a new map via dialogs."""
-        self.map_handler.create_map()
-
-    def delete_map(self) -> None:
-        """Deletes the currently selected map."""
-        self.map_handler.delete_map()
-
-    def create_marker(self, x: float, y: float) -> None:
-        """Creates a new marker at the given normalized coordinates.
-
-        Prompts user to select an Entity or Event.
-        """
-        self.map_handler.create_marker(x, y)
-
-    def _on_marker_dropped(
-        self, item_id: str, item_type: str, item_name: str, x: float, y: float
-    ) -> None:
-        """Handle marker creation from drag-drop.
+    @Slot(str, str)
+    def _on_map_create_entity(self, new_id: str, name: str) -> None:
+        """Handle inline entity creation from the map object-selection dialog.
 
         Args:
-            item_id: ID of the dropped entity/event.
-            item_type: 'entity' or 'event'.
-            item_name: Display name of the item.
-            x: Normalized X coordinate [0.0, 1.0].
-            y: Normalized Y coordinate [0.0, 1.0].
+            new_id: Pre-generated UUID for the new entity.
+            name: Name of the new entity.
 
         """
-        self.map_handler.on_marker_dropped(item_id, item_type, item_name, x, y)
+        from src.commands.entity_commands import CreateEntityCommand
 
-    @Slot(str, list)
-    def _on_feature_drawn(self, feature_type: str, geometry: list) -> None:
-        """Handle feature creation from drawing mode.
-
-        Args:
-            feature_type: 'path' or 'region'.
-            geometry: List of normalised coordinate dicts.
-
-        """
-        self.map_handler.on_feature_drawn(feature_type, geometry)
-
-    @Slot(str, dict)
-    def _on_feature_style_changed(self, marker_id: str, new_style: dict) -> None:
-        """Handle feature style change from map widget.
-
-        Args:
-            marker_id: The marker/feature ID.
-            new_style: Updated style dict.
-
-        """
-        self.map_handler.on_feature_style_changed(marker_id, new_style)
-
-    @Slot(str, list)
-    def _on_feature_geometry_changed(self, marker_id: str, geometry: list) -> None:
-        """Handle feature geometry change from vertex editing.
-
-        Args:
-            marker_id: The marker/feature ID.
-            geometry: Updated list of normalized coordinate dicts.
-
-        """
-        self.map_handler.on_feature_geometry_changed(marker_id, geometry)
-
-    def delete_marker(self, marker_id: str) -> None:
-        """Deletes a marker.
-
-        Args:
-            marker_id: The object_id from the UI (not the actual marker.id).
-
-        """
-        self.map_handler.delete_marker(marker_id)
+        cmd = CreateEntityCommand({"id": new_id, "name": name, "type": "Location"})
+        self.command_requested.emit(cmd)
 
     @Slot(str, str)
-    def _on_marker_clicked(self, marker_id: str, object_type: str) -> None:
-        """Handle marker click from MapWidget.
+    def _on_map_create_event(self, new_id: str, name: str) -> None:
+        """Handle inline event creation from the map object-selection dialog.
 
         Args:
-            marker_id: The ID of the item.
-            object_type: 'event' or 'entity'.
+            new_id: Pre-generated UUID for the new event.
+            name: Name of the new event.
 
         """
-        self.map_handler.on_marker_clicked(marker_id, object_type)
+        from src.commands.event_commands import CreateEventCommand
 
-    @Slot(str, str)
-    def _on_marker_icon_changed(self, marker_id: str, icon: str) -> None:
-        """Handle marker icon change from MapWidget.
-
-        Args:
-            marker_id: ID of the marker (actually object_id from view)
-            icon: New icon filename
-
-        """
-        self.map_handler.on_marker_icon_changed(marker_id, icon)
-
-    @Slot(str, str)
-    def _on_marker_color_changed(self, marker_id: str, color: str) -> None:
-        """Handle marker color change from MapWidget.
-
-        Args:
-            marker_id: ID of the marker (actually object_id from view)
-            color: New color hex code
-
-        """
-        self.map_handler.on_marker_color_changed(marker_id, color)
-
-    @Slot(str, float, float)
-    def _on_marker_position_changed(self, marker_id: str, x: float, y: float) -> None:
-        """Handle marker position change from MapWidget.
-
-        Args:
-            marker_id: ID of the marker (actually object_id from view)
-            x: New normalized X coordinate
-            y: New normalized Y coordinate
-
-        """
-        self.map_handler.on_marker_position_changed(marker_id, x, y)
+        cmd = CreateEventCommand({"id": new_id, "name": name, "lore_date": 0.0})
+        self.command_requested.emit(cmd)
 
     # ----------------------------------------------------------------------
     # Timeline Grouping Methods

@@ -318,9 +318,26 @@ class DataHandler(QObject):
                 self._pending_select_type = "entity"
                 self._pending_select_id = result.data["id"]
 
-            if "Map" in command_name:
+            # These layer commands only persist the in-memory tree
+            # to the DB — no new data is created, so no reload needed.
+            _NO_RELOAD_LAYER_CMDS = {
+                "SetLayerOpacityCommand",
+                "SaveLayerTreeCommand",
+                "SetLayerVisibilityCommand",
+            }
+            if (
+                "Map" in command_name or "Layer" in command_name
+            ) and command_name not in _NO_RELOAD_LAYER_CMDS:
                 logger.debug("[DataHandler] Emitting reload_maps")
                 self.reload_maps.emit()
+
+            if command_name == "RenameLayerCommand":
+                logger.debug(
+                    "[DataHandler] Emitting lore reloads for RenameLayerCommand"
+                )
+                self.reload_entities.emit()
+                self.reload_events.emit()
+                self.reload_markers_for_current_map.emit()
 
             if "Marker" in command_name and "Update" not in command_name:
                 logger.debug("[DataHandler] Emitting reload_markers_for_current_map")

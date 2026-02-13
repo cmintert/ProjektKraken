@@ -122,3 +122,16 @@ class BaseCommand(ABC):
 
         """
         return self._is_executed
+
+    @property
+    def has_history(self) -> bool:
+        """Whether this command should be added to the undo/redo stack.
+
+        Override and return ``False`` for background synchronisation
+        commands that should execute silently.
+
+        Returns:
+            bool: True if the command should be tracked in the undo stack.
+
+        """
+        return True
