@@ -65,6 +65,9 @@ class MapHandler(QObject):
         Args:
             map_widget: The MapWidget instance (UI layer).
             worker: The DatabaseWorker for async DB operations.
+                Must support ``load_maps``, ``load_markers``, and
+                ``load_trajectories`` methods invocable via
+                ``QMetaObject.invokeMethod``.
             db_path_accessor: Callable that returns the current DB path.
             navigation_set_selection: Callable(object_type, object_id) for
                 unified selection handling.

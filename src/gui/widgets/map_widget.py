@@ -581,11 +581,14 @@ class MapWidget(QWidget):
     ) -> None:
         """Stores the entity/event caches for the object-selection dialog.
 
-        Called by MainWindow when data is refreshed.
+        Called by MainWindow when data is refreshed so the map's
+        object-picker dialog can offer existing entities and events.
 
         Args:
-            entities: List of entity objects (must have ``.id`` and ``.name``).
-            events: List of event objects (must have ``.id`` and ``.name``).
+            entities: List of entity objects.  Each must have ``.id``
+                (``str``) and ``.name`` (``str``) attributes.
+            events: List of event objects.  Each must have ``.id``
+                (``str``) and ``.name`` (``str``) attributes.
 
         """
         self._cached_entities = entities

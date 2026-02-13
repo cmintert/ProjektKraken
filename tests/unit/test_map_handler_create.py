@@ -23,7 +23,7 @@ def qapp():
 
 
 @pytest.fixture
-def map_widget(qapp):
+def map_widget_fixture(qapp):
     """Creates a MapWidget with cached entities/events."""
     widget = MapWidget()
 
@@ -50,7 +50,7 @@ def map_widget(qapp):
 class TestSelectExistingItem:
     """Tests for selecting existing entities/events."""
 
-    def test_create_marker_existing_entity(self, map_widget):
+    def test_create_marker_existing_entity(self, map_widget_fixture):
         """Selecting an existing entity emits marker_created."""
         with patch(
             "src.gui.widgets.map_widget.QInputDialog"
@@ -58,8 +58,8 @@ class TestSelectExistingItem:
             MockDialog.getItem.return_value = ("Rivendell (Entity)", True)
 
             spy = MagicMock()
-            map_widget.marker_created.connect(spy)
-            map_widget._on_create_marker_requested(0.5, 0.5)
+            map_widget_fixture.marker_created.connect(spy)
+            map_widget_fixture._on_create_marker_requested(0.5, 0.5)
 
             spy.assert_called_once()
             args = spy.call_args[0]
@@ -67,7 +67,7 @@ class TestSelectExistingItem:
             assert args[1] == "ent_1"  # obj_id
             assert args[2] == "entity"  # obj_type
 
-    def test_create_feature_existing_event(self, map_widget):
+    def test_create_feature_existing_event(self, map_widget_fixture):
         """Selecting an existing event for a feature emits feature_created."""
         geometry = [{"x": 0.1, "y": 0.1}, {"x": 0.5, "y": 0.5}, {"x": 0.9, "y": 0.1}]
         with patch(
@@ -79,9 +79,9 @@ class TestSelectExistingItem:
             )
 
             spy = MagicMock()
-            map_widget.feature_created.connect(spy)
+            map_widget_fixture.feature_created.connect(spy)
             # Simulate drawing completion
-            map_widget._on_drawing_finished("region", geometry)
+            map_widget_fixture._on_drawing_finished("region", geometry)
 
             spy.assert_called_once()
             args = spy.call_args[0]
@@ -94,7 +94,7 @@ class TestSelectExistingItem:
 class TestCreateNewInline:
     """Tests for the new in-place creation flow."""
 
-    def test_create_marker_new_entity(self, map_widget):
+    def test_create_marker_new_entity(self, map_widget_fixture):
         """Selecting '<New Entity...>' emits create_entity_requested + marker_created."""
         with patch(
             "src.gui.widgets.map_widget.QInputDialog"
@@ -104,15 +104,15 @@ class TestCreateNewInline:
 
             entity_spy = MagicMock()
             marker_spy = MagicMock()
-            map_widget.create_entity_requested.connect(entity_spy)
-            map_widget.marker_created.connect(marker_spy)
+            map_widget_fixture.create_entity_requested.connect(entity_spy)
+            map_widget_fixture.marker_created.connect(marker_spy)
 
-            map_widget._on_create_marker_requested(0.3, 0.7)
+            map_widget_fixture._on_create_marker_requested(0.3, 0.7)
 
             entity_spy.assert_called_once()
             marker_spy.assert_called_once()
 
-    def test_create_marker_new_event(self, map_widget):
+    def test_create_marker_new_event(self, map_widget_fixture):
         """Selecting '<New Event...>' emits create_event_requested + marker_created."""
         with patch(
             "src.gui.widgets.map_widget.QInputDialog"
@@ -122,15 +122,15 @@ class TestCreateNewInline:
 
             event_spy = MagicMock()
             marker_spy = MagicMock()
-            map_widget.create_event_requested.connect(event_spy)
-            map_widget.marker_created.connect(marker_spy)
+            map_widget_fixture.create_event_requested.connect(event_spy)
+            map_widget_fixture.marker_created.connect(marker_spy)
 
-            map_widget._on_create_marker_requested(0.6, 0.4)
+            map_widget_fixture._on_create_marker_requested(0.6, 0.4)
 
             event_spy.assert_called_once()
             marker_spy.assert_called_once()
 
-    def test_new_entity_cancel_name_emits_nothing(self, map_widget):
+    def test_new_entity_cancel_name_emits_nothing(self, map_widget_fixture):
         """Cancelling the name dialog after choosing '<New Entity...>' emits nothing."""
         with patch(
             "src.gui.widgets.map_widget.QInputDialog"
@@ -139,13 +139,13 @@ class TestCreateNewInline:
             MockDialog.getText.return_value = ("", False)
 
             marker_spy = MagicMock()
-            map_widget.marker_created.connect(marker_spy)
+            map_widget_fixture.marker_created.connect(marker_spy)
 
-            map_widget._on_create_marker_requested(0.5, 0.5)
+            map_widget_fixture._on_create_marker_requested(0.5, 0.5)
 
             marker_spy.assert_not_called()
 
-    def test_cancel_selection_emits_nothing(self, map_widget):
+    def test_cancel_selection_emits_nothing(self, map_widget_fixture):
         """Cancelling the item selection dialog emits nothing."""
         with patch(
             "src.gui.widgets.map_widget.QInputDialog"
@@ -153,8 +153,8 @@ class TestCreateNewInline:
             MockDialog.getItem.return_value = ("", False)
 
             marker_spy = MagicMock()
-            map_widget.marker_created.connect(marker_spy)
+            map_widget_fixture.marker_created.connect(marker_spy)
 
-            map_widget._on_create_marker_requested(0.5, 0.5)
+            map_widget_fixture._on_create_marker_requested(0.5, 0.5)
 
             marker_spy.assert_not_called()
