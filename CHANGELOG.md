@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-02-10
-**Commit:** `6b2ea0b`
+**Last Updated:** 2026-02-14
+**Commit:** `f62496a`
 ---
 
 # Changelog
@@ -10,6 +10,25 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Architecture
+- *(2026-02-13)* **Architecture**: Split `map_commands.py` (1,648 lines) into focused functional modules and decomposed `MapGraphicsView` into 5 sub-components for better maintainability.
+- *(2026-02-13)* **Architecture**: Decoupled `MapHandler` from dialog management and implemented service locator pattern for `MainWindow` access.
+- *(2026-02-11)* **Architecture**: Completed core Hierarchical Layer System (HLS) including themed layer management panel and database persistence.
+
+### Stability
+- *(2026-02-13)* **Stability**: Resolved "Layer node not found" race condition via signal-based UI snapshots in database commands.
+- *(2026-02-12)* **Stability**: Fixed map visibility overwrite issues by suppressing reloads for background sync and implementing selection persistence.
+- *(2026-02-12)* **Stability**: Resolved opacity slider flicker and ensured correct persistence of slider-triggered changes.
+- *(2026-02-11)* **Stability**: Integrated global undo/redo support for all layer operations with automatic persistence.
+
+### Map
+- *(2026-02-12)* **Map**: Implemented "Triple-Sync" rename logic ensuring bidirectional synchronization between Map Hierarchy and Unified List.
+- *(2026-02-10)* **Map**: Constrained map hovertips to a 150px maximum width for improved readability of long descriptions.
+
+### UX
+- *(2026-02-12)* **UX**: Improved map interaction by preserving viewport transform across marker and layer reload cycles.
+
 
 ### Added
 - *(2026-02-10)* **Map**: Implemented `SnappingManager` for robust map editing.
