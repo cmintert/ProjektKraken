@@ -437,7 +437,7 @@ class SetLayerOpacityCommand(BaseCommand):
         Args:
             map_id: The map whose layer tree is being modified.
             node_id: ID of the layer node to change.
-            opacity: New opacity (0.0-1.0).
+            opacity: New opacity (0.0–1.0).
             previous_opacity: The opacity before this change (for undo).
 
         """
