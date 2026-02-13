@@ -47,6 +47,7 @@ class SetLayerVisibilityCommand(BaseCommand):
         map_id: str,
         node_id: str,
         visible: bool,
+        layer_tree_dict: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Initialise the command.
 
@@ -54,12 +55,15 @@ class SetLayerVisibilityCommand(BaseCommand):
             map_id: The map whose layer tree is being modified.
             node_id: ID of the layer node to toggle.
             visible: New visibility state.
+            layer_tree_dict: Optional pre-serialised tree snapshot.
+                When provided, avoids stale DB reads.
 
         """
         super().__init__()
         self.map_id = map_id
         self.node_id = node_id
         self.visible = visible
+        self.layer_tree_dict = layer_tree_dict
         self._previous_visible: Optional[bool] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
@@ -74,10 +78,33 @@ class SetLayerVisibilityCommand(BaseCommand):
         """
         try:
             map_obj = db_service.map_repo.get_map(self.map_id)
-            if not map_obj or not map_obj.layers:
+            if not map_obj:
                 return CommandResult(
                     success=False,
-                    message="Map or layers not found.",
+                    message="Map not found.",
+                    command_name="SetLayerVisibilityCommand",
+                )
+
+            # Use snapshot if provided, else fallback to DB tree
+            if self.layer_tree_dict:
+                from src.core.map import MapLayerNode
+
+                # Reconstruct tree from snapshot
+                # Note: We trust the snapshot structure but we must ensure
+                # we're working with MapLayerNodes for logic consistency
+                # or just manipulate the dict directly.
+                # Here we'll convert to objects to reuse _find_layer_node logic
+                # which is safer but slightly slower, or just use `map_obj.layers`
+                # if we were to trust it.
+                # BETTER: Just save the snapshot with the modification.
+                # But we need to find the node to modify it inside the snapshot.
+                # So let's parse the snapshot into a temporary tree.
+                temp_root = MapLayerNode.from_dict(self.layer_tree_dict)
+                map_obj.layers = temp_root
+            elif not map_obj.layers:
+                return CommandResult(
+                    success=False,
+                    message="Map layers not found.",
                     command_name="SetLayerVisibilityCommand",
                 )
 
@@ -137,12 +164,18 @@ class SetLayerVisibilityCommand(BaseCommand):
             "map_id": self.map_id,
             "node_id": self.node_id,
             "visible": self.visible,
+            "layer_tree_dict": self.layer_tree_dict,
         }
 
     @classmethod
     def from_dict(cls, data: dict) -> "SetLayerVisibilityCommand":
         """Deserialize command from dictionary."""
-        return cls(data["map_id"], data["node_id"], data["visible"])
+        return cls(
+            data["map_id"],
+            data["node_id"],
+            data["visible"],
+            data.get("layer_tree_dict"),
+        )
 
 
 class MoveLayerCommand(BaseCommand):
@@ -431,6 +464,7 @@ class SetLayerOpacityCommand(BaseCommand):
         node_id: str,
         opacity: float,
         previous_opacity: Optional[float] = None,
+        layer_tree_dict: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Initialise the command.
 
@@ -439,12 +473,15 @@ class SetLayerOpacityCommand(BaseCommand):
             node_id: ID of the layer node to change.
             opacity: New opacity (0.0–1.0).
             previous_opacity: The opacity before this change (for undo).
+            layer_tree_dict: Optional pre-serialised tree snapshot.
+                When provided, avoids stale DB reads.
 
         """
         super().__init__()
         self.map_id = map_id
         self.node_id = node_id
         self.opacity = opacity
+        self.layer_tree_dict = layer_tree_dict
         self._previous_opacity = previous_opacity
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
@@ -459,10 +496,23 @@ class SetLayerOpacityCommand(BaseCommand):
         """
         try:
             map_obj = db_service.map_repo.get_map(self.map_id)
-            if not map_obj or not map_obj.layers:
+            if not map_obj:
                 return CommandResult(
                     success=False,
-                    message="Map or layers not found.",
+                    message="Map not found.",
+                    command_name="SetLayerOpacityCommand",
+                )
+
+            # Use snapshot if provided
+            if self.layer_tree_dict:
+                from src.core.map import MapLayerNode
+
+                temp_root = MapLayerNode.from_dict(self.layer_tree_dict)
+                map_obj.layers = temp_root
+            elif not map_obj.layers:
+                return CommandResult(
+                    success=False,
+                    message="Map layers not found.",
                     command_name="SetLayerOpacityCommand",
                 )
 
@@ -525,6 +575,7 @@ class SetLayerOpacityCommand(BaseCommand):
             "node_id": self.node_id,
             "opacity": self.opacity,
             "previous_opacity": self._previous_opacity,
+            "layer_tree_dict": self.layer_tree_dict,
         }
 
     @classmethod
@@ -535,6 +586,7 @@ class SetLayerOpacityCommand(BaseCommand):
             data["node_id"],
             data["opacity"],
             data.get("previous_opacity"),
+            data.get("layer_tree_dict"),
         )
 
 

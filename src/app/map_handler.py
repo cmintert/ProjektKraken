@@ -519,9 +519,7 @@ class MapHandler(QObject):
             if isinstance(first, MarkerItem):
                 selected_marker_id = first.marker_id
 
-        selected_layer_id: str | None = (
-            self._map_widget.layer_panel.selected_node_id
-        )
+        selected_layer_id: str | None = self._map_widget.layer_panel.selected_node_id
 
         self._map_widget.clear_markers()
         self._marker_object_to_id.clear()  # Reset mapping
@@ -628,7 +626,14 @@ class MapHandler(QObject):
         map_id = self._map_widget.get_selected_map_id()
         if not map_id:
             return
-        cmd = SetLayerOpacityCommand(map_id, node_id, opacity, old_opacity)
+
+        # Snapshot the tree to avoid stale DB reads (race condition fix)
+        model = self._map_widget.get_layer_model()
+        tree_dict = model.root.to_dict() if model else None
+
+        cmd = SetLayerOpacityCommand(
+            map_id, node_id, opacity, old_opacity, layer_tree_dict=tree_dict
+        )
         self.command_requested.emit(cmd)
 
     @Slot(str, str)

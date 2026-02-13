@@ -197,8 +197,8 @@ class GalleryWidget(QWidget):
         """Callback when data is loaded from worker."""
         if owner_type != self.owner_type or owner_id != self.owner_id:
             logger.debug(
-                f"GalleryWidget: Stale data {owner_type}/{owner_id} "
-                f"vs {self.owner_type}/{self.owner_id}"
+                f"GalleryWidget: Ignoring stale data for {owner_type}/{owner_id} "
+                f"(current targets: {self.owner_type}/{self.owner_id})"
             )
             return  # Stale data
 
@@ -214,12 +214,12 @@ class GalleryWidget(QWidget):
             item = QListWidgetItem()
             item.setText(att.caption or "Loading...")
             item.setData(Qt.ItemDataRole.UserRole, att.id)
-            
+
             # Set placeholder icon
             item.setIcon(placeholder_icon)
-            
+
             self.list_widget.addItem(item)
-            
+
             # Store reference for async update
             self._pending_thumbnails[att.id] = item
 
