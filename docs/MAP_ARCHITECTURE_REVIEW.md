@@ -1,7 +1,7 @@
 # Map Feature — Architecture & Design Review
 
 **Date:** 2026-02-13
-**Updated:** 2026-02-13 (post Priority 2 & 4 fixes)
+**Updated:** 2026-02-13 (post Priority 2, 4 & 5 fixes)
 **Scope:** Map feature and all touched application layers
 **Standard:** PySide6 production-grade, multi-developer codebase
 
@@ -45,7 +45,7 @@ The 2,757-line `MapGraphicsView` God class was decomposed into **5 focused sub-c
 
 ### Remaining Risks
 
-1. `map_commands.py` is still a large file (1,334 lines) — could be split (Priority 5)
+1. `map_commands.py` is still a large file (1,334 lines) — could be split (Priority 5) → ✅ **FIXED**
 2. `MainWindow` is still large (now ~1,700 lines after removing delegates)
 
 ---
@@ -144,7 +144,14 @@ commands.  It no longer:
 ### Remaining Large Classes
 
 - **`MainWindow`** — ~1,700 lines (reduced from 2,228 by removing 13 map delegates)
-- **`map_commands.py`** — 1,334 lines, 14 commands. Could be split.
+- ~~**`map_commands.py`** — 1,334 lines, 14 commands~~ → ✅ **Split into 3 files**
+
+| File | Lines | Commands |
+|------|-------|----------|
+| `map_crud_commands.py` | 290 | CreateMap, UpdateMap, DeleteMap |
+| `marker_commands.py` | 579 | CreateMarker, UpdateMarker, DeleteMarker, UpdateMarkerIcon, UpdateMarkerColor, DeleteKeyframe |
+| `layer_commands.py` | 789 | SetLayerVisibility, MoveLayer, SaveLayerTree, SetLayerOpacity, RenameLayer |
+| `map_commands.py` | 63 | Backward-compatible re-export facade |
 
 ---
 
@@ -184,10 +191,11 @@ commands.  It no longer:
 ### ✅ Priority 3: Decompose MapGraphicsView — DONE
 ### ✅ Priority 4: Inject Dependencies into MapHandler — DONE
 
-### Priority 5: Split map_commands.py
+### ✅ Priority 5: Split map_commands.py — DONE
 
 **Problem:** 1,334 lines, 14 commands in one file.
-**Fix:** Split into `map_crud_commands.py`, `marker_commands.py`, `layer_commands.py`.
+**Fix:** Split into `map_crud_commands.py` (290 lines), `marker_commands.py` (579 lines), `layer_commands.py` (789 lines).
+Backward-compatible facade in `map_commands.py` (63 lines) — all existing imports work unchanged.
 
 ---
 
@@ -202,7 +210,7 @@ commands.  It no longer:
 | Sub-components | 0 | 5 focused | ✅ New architecture |
 | Service locator | MapHandler → MainWindow | DI constructor | ✅ Fixed |
 | Dialog coupling | 10 dialog calls in handler | 0 in handler | ✅ Fixed |
-| Test regression | — | 0 of 349 | ✅ Full backward compat |
+| Test regression | — | 0 of 364 | ✅ Full backward compat |
 
 ### What's Working Well ✅
 

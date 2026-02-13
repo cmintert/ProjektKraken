@@ -1,0 +1,579 @@
+"""Commands for creating, updating, and deleting map markers and features.
+
+These commands handle marker-level CRUD operations including position
+updates, icon/color changes, and keyframe deletions.
+"""
+
+import dataclasses
+import logging
+from typing import Optional
+
+from src.commands.base_command import BaseCommand, CommandResult
+from src.core.marker import Marker
+from src.services.db_service import DatabaseService
+
+logger = logging.getLogger(__name__)
+
+
+class CreateMarkerCommand(BaseCommand):
+    """Command to create a new marker on a map."""
+
+    def __init__(self, marker_data: dict) -> None:
+        """Initializes the CreateMarkerCommand.
+
+        Args:
+            marker_data (dict): Dictionary containing marker data.
+                               Must include: map_id, object_id, object_type, x, y.
+
+        """
+        super().__init__()
+        self._marker = Marker(**marker_data)
+        self._actual_marker_id: Optional[str] = None
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Executes the command to create the marker.
+
+        Due to upsert behavior on UNIQUE(map_id, object_id, object_type),
+        the returned marker ID may differ from the one in marker_data if
+        a marker for this object already exists on this map.
+
+        Args:
+            db_service (DatabaseService): The database service to use.
+
+        Returns:
+            CommandResult: Result object indicating success or failure.
+
+        """
+        try:
+            # Insert may return different ID if upsert occurred
+            self._actual_marker_id = db_service.insert_marker(self._marker)
+            self._is_executed = True
+            logger.info(
+                f"Created/updated marker: {self._actual_marker_id} for "
+                f"{self._marker.object_type} {self._marker.object_id}"
+            )
+            return CommandResult(
+                success=True,
+                message="Marker created/updated.",
+                command_name="CreateMarkerCommand",
+                data={"id": self._actual_marker_id},
+            )
+        except Exception as e:
+            logger.error(f"Failed to create marker: {e}")
+            return CommandResult(
+                success=False,
+                message=f"Failed to create marker: {e}",
+                command_name="CreateMarkerCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Reverts the marker creation by deleting it from the database.
+
+        Args:
+            db_service (DatabaseService): The database service to operate on.
+
+        """
+        if self._is_executed and self._actual_marker_id:
+            db_service.delete_marker(self._actual_marker_id)
+            self._is_executed = False
+            logger.info(f"Undid creation of marker: {self._actual_marker_id}")
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            Dictionary representation of the command.
+        """
+        return {"marker_data": self._marker.to_dict()}
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "CreateMarkerCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Dictionary containing serialized command data.
+
+        Returns:
+            CreateMarkerCommand instance.
+        """
+        return cls(data["marker_data"])
+
+
+class UpdateMarkerCommand(BaseCommand):
+    """Command to update a marker's position or other properties."""
+
+    def __init__(self, marker_id: str, update_data: dict) -> None:
+        """Initializes the UpdateMarkerCommand.
+
+        Args:
+            marker_id (str): The ID of the marker to update.
+            update_data (dict): Dictionary of fields to update (e.g., x, y, label).
+
+        """
+        super().__init__()
+        self.marker_id = marker_id
+        self.update_data = update_data
+        self._previous_marker: Optional[Marker] = None
+        self._new_marker: Optional[Marker] = None
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Executes the update.
+
+        Args:
+            db_service (DatabaseService): The database service to use.
+
+        Returns:
+            CommandResult: Result object containing success status and messages.
+
+        """
+        try:
+            # Fetch current state before update
+            current = db_service.get_marker(self.marker_id)
+            if not current:
+                logger.error(f"Marker not found for update: {self.marker_id}")
+                return CommandResult(
+                    success=False,
+                    message=f"Marker not found: {self.marker_id}",
+                    command_name="UpdateMarkerCommand",
+                )
+
+            self._previous_marker = current
+
+            # Apply updates
+            valid_fields = {f.name for f in dataclasses.fields(Marker)}
+            clean_data = {
+                k: v for k, v in self.update_data.items() if k in valid_fields
+            }
+
+            self._new_marker = dataclasses.replace(current, **clean_data)
+
+            db_service.insert_marker(self._new_marker)
+            self._is_executed = True
+            logger.info(f"Updated marker: {self._new_marker.id}")
+            return CommandResult(
+                success=True,
+                message="Marker updated.",
+                command_name="UpdateMarkerCommand",
+            )
+        except Exception as e:
+            logger.error(f"Failed to update marker: {e}")
+            return CommandResult(
+                success=False,
+                message=f"Failed to update marker: {e}",
+                command_name="UpdateMarkerCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Reverts the marker update by restoring the previous state.
+
+        Args:
+            db_service (DatabaseService): The database service to operate on.
+
+        """
+        if self._is_executed and self._previous_marker:
+            db_service.insert_marker(self._previous_marker)
+            self._is_executed = False
+            logger.info(f"Undid update of marker: {self.marker_id}")
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            Dictionary representation of the command.
+        """
+        return {"marker_id": self.marker_id, "update_data": self.update_data}
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "UpdateMarkerCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Dictionary containing serialized command data.
+
+        Returns:
+            UpdateMarkerCommand instance.
+        """
+        return cls(data["marker_id"], data["update_data"])
+
+
+class DeleteMarkerCommand(BaseCommand):
+    """Command to delete a marker from a map."""
+
+    def __init__(self, marker_id: str) -> None:
+        """Initializes the DeleteMarkerCommand.
+
+        Args:
+            marker_id (str): The ID of the marker to delete.
+
+        """
+        super().__init__()
+        self.marker_id = marker_id
+        self._deleted_marker: Optional[Marker] = None
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Executes the deletion.
+
+        Args:
+            db_service (DatabaseService): The database service to use.
+
+        Returns:
+            CommandResult: Result object containing success status and messages.
+
+        """
+        try:
+            # Store marker for undo
+            self._deleted_marker = db_service.get_marker(self.marker_id)
+            if not self._deleted_marker:
+                return CommandResult(
+                    success=False,
+                    message=f"Marker not found: {self.marker_id}",
+                    command_name="DeleteMarkerCommand",
+                )
+
+            db_service.delete_marker(self.marker_id)
+            self._is_executed = True
+            logger.info(f"Deleted marker: {self.marker_id}")
+            return CommandResult(
+                success=True,
+                message="Marker deleted.",
+                command_name="DeleteMarkerCommand",
+            )
+        except Exception as e:
+            logger.error(f"Failed to delete marker: {e}")
+            return CommandResult(
+                success=False,
+                message=f"Failed to delete marker: {e}",
+                command_name="DeleteMarkerCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Reverts the deletion by restoring the marker.
+
+        Args:
+            db_service (DatabaseService): The database service to operate on.
+
+        """
+        if self._is_executed and self._deleted_marker:
+            db_service.insert_marker(self._deleted_marker)
+            self._is_executed = False
+            logger.info(f"Undid deletion of marker: {self.marker_id}")
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            Dictionary representation of the command.
+        """
+        return {"marker_id": self.marker_id}
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "DeleteMarkerCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Dictionary containing serialized command data.
+
+        Returns:
+            DeleteMarkerCommand instance.
+        """
+        return cls(data["marker_id"])
+
+
+class UpdateMarkerIconCommand(BaseCommand):
+    """Command to update a marker's icon.
+
+    Stores the icon filename in the marker's attributes dict.
+    """
+
+    def __init__(self, marker_id: str, icon: str) -> None:
+        """Initializes the UpdateMarkerIconCommand.
+
+        Args:
+            marker_id (str): The ID of the marker to update.
+            icon (str): The new icon filename (e.g., 'castle.svg').
+
+        """
+        super().__init__()
+        self.marker_id = marker_id
+        self.icon = icon
+        self._previous_icon: Optional[str] = None
+        self._marker: Optional[Marker] = None
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Executes the icon update.
+
+        Args:
+            db_service (DatabaseService): The database service to use.
+
+        Returns:
+            CommandResult: Result object containing success status and messages.
+
+        """
+        try:
+            # Fetch current marker
+            current = db_service.get_marker(self.marker_id)
+            if not current:
+                logger.error(f"Marker not found for icon update: {self.marker_id}")
+                return CommandResult(
+                    success=False,
+                    message=f"Marker not found: {self.marker_id}",
+                    command_name="UpdateMarkerIconCommand",
+                )
+
+            self._marker = current
+            self._previous_icon = current.attributes.get("icon")
+
+            # Update the icon in attributes
+            new_attributes = dict(current.attributes)
+            new_attributes["icon"] = self.icon
+
+            # Create updated marker
+            updated_marker = dataclasses.replace(current, attributes=new_attributes)
+
+            db_service.insert_marker(updated_marker)
+            self._is_executed = True
+            logger.info(f"Updated marker {self.marker_id} icon to: {self.icon}")
+            return CommandResult(
+                success=True,
+                message=f"Marker icon updated to {self.icon}.",
+                command_name="UpdateMarkerIconCommand",
+            )
+        except Exception as e:
+            logger.error(f"Failed to update marker icon: {e}")
+            return CommandResult(
+                success=False,
+                message=f"Failed to update marker icon: {e}",
+                command_name="UpdateMarkerIconCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Reverts the icon update by restoring the previous icon.
+
+        Args:
+            db_service (DatabaseService): The database service to operate on.
+
+        """
+        if self._is_executed and self._marker:
+            # Restore previous icon
+            new_attributes = dict(self._marker.attributes)
+            if self._previous_icon:
+                new_attributes["icon"] = self._previous_icon
+            else:
+                new_attributes.pop("icon", None)
+
+            restored_marker = dataclasses.replace(
+                self._marker, attributes=new_attributes
+            )
+            db_service.insert_marker(restored_marker)
+            self._is_executed = False
+            logger.info(f"Undid icon update of marker: {self.marker_id}")
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary."""
+        return {"marker_id": self.marker_id, "icon": self.icon}
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "UpdateMarkerIconCommand":
+        """Deserialize command from dictionary."""
+        return cls(data["marker_id"], data["icon"])
+
+
+class UpdateMarkerColorCommand(BaseCommand):
+    """Command to update a marker's color.
+
+    Stores the color hex code in the marker's attributes dict.
+    """
+
+    def __init__(self, marker_id: str, color: str) -> None:
+        """Initializes the UpdateMarkerColorCommand.
+
+        Args:
+            marker_id (str): The ID of the marker to update.
+            color (str): The new color hex code (e.g., '#FF5733').
+
+        """
+        super().__init__()
+        self.marker_id = marker_id
+        self.color = color
+        self._previous_color: Optional[str] = None
+        self._marker: Optional[Marker] = None
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Executes the color update.
+
+        Args:
+            db_service (DatabaseService): The database service to use.
+
+        Returns:
+            CommandResult: Result object containing success status and messages.
+
+        """
+        try:
+            # Fetch current marker
+            current = db_service.get_marker(self.marker_id)
+            if not current:
+                logger.error(f"Marker not found for color update: {self.marker_id}")
+                return CommandResult(
+                    success=False,
+                    message=f"Marker not found: {self.marker_id}",
+                    command_name="UpdateMarkerColorCommand",
+                )
+
+            self._marker = current
+            self._previous_color = current.attributes.get("color")
+
+            # Update the color in attributes
+            new_attributes = dict(current.attributes)
+            new_attributes["color"] = self.color
+
+            # Create updated marker
+            updated_marker = dataclasses.replace(current, attributes=new_attributes)
+
+            db_service.insert_marker(updated_marker)
+            self._is_executed = True
+            logger.info(f"Updated marker {self.marker_id} color to: {self.color}")
+            return CommandResult(
+                success=True,
+                message=f"Marker color updated to {self.color}.",
+                command_name="UpdateMarkerColorCommand",
+            )
+        except Exception as e:
+            logger.error(f"Failed to update marker color: {e}")
+            return CommandResult(
+                success=False,
+                message=f"Failed to update marker color: {e}",
+                command_name="UpdateMarkerColorCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Reverts the color update by restoring the previous color.
+
+        Args:
+            db_service (DatabaseService): The database service to operate on.
+
+        """
+        if self._is_executed and self._marker:
+            # Restore previous color
+            new_attributes = dict(self._marker.attributes)
+            if self._previous_color:
+                new_attributes["color"] = self._previous_color
+            else:
+                new_attributes.pop("color", None)
+
+            restored_marker = dataclasses.replace(
+                self._marker, attributes=new_attributes
+            )
+            db_service.insert_marker(restored_marker)
+            self._is_executed = False
+            logger.info(f"Undid color update of marker: {self.marker_id}")
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary."""
+        return {"marker_id": self.marker_id, "color": self.color}
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "UpdateMarkerColorCommand":
+        """Deserialize command from dictionary."""
+        return cls(data["marker_id"], data["color"])
+
+
+class DeleteKeyframeCommand(BaseCommand):
+    """Command to delete a keyframe from a marker's trajectory."""
+
+    def __init__(self, map_id: str, marker_id: str, t: float) -> None:
+        """Initializes the DeleteKeyframeCommand.
+
+        Args:
+            map_id: The ID of the map.
+            marker_id: The object ID of the marker (entity/event ID).
+            t: The timestamp of the keyframe to delete.
+
+        """
+        super().__init__()
+        self.map_id = map_id
+        self.marker_id = marker_id
+        self.t = t
+        self._deleted_keyframe: Optional[tuple] = None  # (t, x, y) for undo
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Executes the keyframe deletion.
+
+        Args:
+            db_service: The database service to use.
+
+        Returns:
+            CommandResult: Result object containing success status and messages.
+
+        """
+        try:
+            # Store keyframe for undo (get it before deletion)
+            from src.core.trajectory import KEYFRAME_TIME_EPSILON
+
+            trajectories = db_service.trajectory_repo.get_by_map_id(self.map_id)
+            for marker_id_db, traj_id, keyframes in trajectories:
+                if marker_id_db == self.marker_id:
+                    for kf in keyframes:
+                        if abs(kf.t - self.t) < KEYFRAME_TIME_EPSILON:
+                            self._deleted_keyframe = (kf.t, kf.x, kf.y)
+                            break
+                    break
+
+            result = db_service.trajectory_repo.delete_keyframe(
+                self.map_id, self.marker_id, self.t
+            )
+            self._is_executed = True
+
+            if result is None:
+                logger.info(
+                    f"Deleted keyframe at t={self.t:.2f} for {self.marker_id} "
+                    f"(trajectory removed - <2 keyframes remaining)"
+                )
+            else:
+                logger.info(f"Deleted keyframe at t={self.t:.2f} for {self.marker_id}")
+
+            return CommandResult(
+                success=True,
+                message="Keyframe deleted.",
+                command_name="DeleteKeyframeCommand",
+            )
+        except ValueError as e:
+            logger.warning(f"Keyframe delete failed: {e}")
+            return CommandResult(
+                success=False,
+                message=str(e),
+                command_name="DeleteKeyframeCommand",
+            )
+        except Exception as e:
+            logger.error(f"Failed to delete keyframe: {e}")
+            return CommandResult(
+                success=False,
+                message=f"Failed to delete keyframe: {e}",
+                command_name="DeleteKeyframeCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Reverts the keyframe deletion by restoring it.
+
+        Args:
+            db_service: The database service to operate on.
+
+        """
+        if self._is_executed and self._deleted_keyframe:
+            from src.core.trajectory import Keyframe
+
+            t, x, y = self._deleted_keyframe
+            keyframe = Keyframe(t=t, x=x, y=y)
+            db_service.trajectory_repo.add_keyframe(
+                self.map_id, self.marker_id, keyframe
+            )
+            self._is_executed = False
+            logger.info(f"Undid deletion of keyframe at t={t:.2f} for {self.marker_id}")
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary."""
+        return {"map_id": self.map_id, "marker_id": self.marker_id, "t": self.t}
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "DeleteKeyframeCommand":
+        """Deserialize command from dictionary."""
+        return cls(data["map_id"], data["marker_id"], data["t"])
