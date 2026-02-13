@@ -399,7 +399,20 @@
 <span class="sd">            bool: True if the command has been executed, False otherwise.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">has_history</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Whether this command should be added to the undo/redo stack.</span>
+
+<span class="sd">        Override and return ``False`` for background synchronisation</span>
+<span class="sd">        commands that should execute silently.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if the command should be tracked in the undo stack.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
 </pre></div>
         </article>
