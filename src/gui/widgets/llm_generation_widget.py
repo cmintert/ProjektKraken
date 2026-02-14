@@ -34,15 +34,10 @@ from src.services.llm_provider import create_provider
 from src.services.prompt_builder import DEFAULT_SYSTEM_PROMPT, PromptBuilder
 from src.services.prompt_loader import PromptLoader
 from src.services.reasoning_filter import filter_reasoning_tags
-
-# from src.services.search_service import create_search_service  # No longer needed directly
 from src.services.rag_service import RAGService
 
 logger = logging.getLogger(__name__)
 
-
-# Default system prompt is now defined in src.services.prompt_builder
-# and imported above as DEFAULT_SYSTEM_PROMPT.
 
 
 @runtime_checkable
@@ -103,21 +98,6 @@ class GenerationWorker(QThread):
         self.rag_limit = rag_limit
         self.exclude_names = exclude_names or []
         self._cancelled = False
-
-    def _perform_rag_search(self, query_text: str) -> str:
-        """Perform RAG search if db_path is set.
-
-        Args:
-            query_text: Text to use for RAG query.
-
-        Returns:
-            Formatted context string or empty string.
-
-        """
-        # This method is now effectively deprecated by the new _apply_rag_to_prompt
-        # but kept for context of the original diff.
-        # The new _apply_rag_to_prompt directly uses RAGService.
-        return ""
 
     def _apply_rag_to_prompt(self) -> None:
         """Inject RAG context into the prompt."""
