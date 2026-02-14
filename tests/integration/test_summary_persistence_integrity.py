@@ -178,11 +178,14 @@ class TestEditorSaveMergesAttributes:
         """When a new summary is pending, hidden attributes must still be merged."""
         hidden = {
             "_tags": ["old_tag"],
-            "_summary_data": {"text": "old", "hash": "x", "timestamp": 1.0,
-                              "model": "m"},
+            "_summary_data": {
+                "text": "old", "hash": "x", "timestamp": 1.0, "model": "m",
+            },
             "_custom_hidden": "preserve_me",
         }
-        pending = {"text": "new", "hash": "y", "timestamp": 2.0, "model": "m2"}
+        pending = {
+            "text": "new", "hash": "y", "timestamp": 2.0, "model": "m2",
+        }
 
         result = self._simulate_entity_editor_save(
             hidden_attributes=hidden,
@@ -225,11 +228,14 @@ class TestEditorSaveMergesAttributes:
         """Event editor: pending summary + hidden attributes must coexist."""
         hidden = {
             "_tags": ["old"],
-            "_summary_data": {"text": "old", "hash": "x", "timestamp": 1.0,
-                              "model": "m"},
+            "_summary_data": {
+                "text": "old", "hash": "x", "timestamp": 1.0, "model": "m",
+            },
             "_event_meta": "important",
         }
-        pending = {"text": "new", "hash": "y", "timestamp": 2.0, "model": "m2"}
+        pending = {
+            "text": "new", "hash": "y", "timestamp": 2.0, "model": "m2",
+        }
 
         result = self._simulate_event_editor_save(
             hidden_attributes=hidden,
