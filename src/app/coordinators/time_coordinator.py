@@ -79,7 +79,9 @@ class TimeCoordinator(BaseCoordinator):
         # Reload entity in normal editable mode
         entity_editor = self.main_window.entity_editor
         if entity_editor.isVisible() and entity_editor._current_entity_id:
-            self.main_window.load_entity_details(entity_editor._current_entity_id)
+            self.main_window.data_coordinator.load_entity_details(
+                entity_editor._current_entity_id
+            )
 
     def _format_time_string(self, time_val: float) -> str:
         """Formats time using calendar converter if available."""

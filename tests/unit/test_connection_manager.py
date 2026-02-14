@@ -50,6 +50,11 @@ def mock_main_window(qapp):
     window.longform_manager = Mock()
     window.map_handler = Mock()
 
+    # Add coordinator mocks
+    window.editor_coordinator = Mock()
+    window.data_coordinator = Mock()
+    window.import_coordinator = Mock()
+
     # Add mock methods that signals connect to
     window.load_data = Mock()
     window.add_relation = Mock()
@@ -58,7 +63,6 @@ def mock_main_window(qapp):
     window.navigate_to_entity = Mock()
     window.remove_relation = Mock()
     window.update_relation = Mock()
-    # window.on_return_to_present = Mock() # Moved to time coordinator
     window.load_event_details = Mock()
     window.load_entity_details = Mock()
     window._on_events_ready = Mock()
@@ -76,7 +80,6 @@ def mock_main_window(qapp):
     window.load_maps = Mock()
     window.load_longform_sequence = Mock()
     window._on_reload_active_editor_relations = Mock()
-    # window._on_entity_state_resolved = Mock() # Moved to time coordinator
     window.status_bar = Mock()
     window.create_event = Mock()
     window.create_entity = Mock()

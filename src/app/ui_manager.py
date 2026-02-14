@@ -452,12 +452,12 @@ class UIManager:
 
         # Open Database
         db_action = file_menu.addAction("Manage Databases...")
-        db_action.triggered.connect(self.main_window.show_database_manager)
+        db_action.triggered.connect(self.main_window.import_coordinator.show_database_manager)
 
         # Import Item
         import_action = file_menu.addAction("Import Item...")
-        if hasattr(self.main_window, "import_item_requested"):
-            import_action.triggered.connect(self.main_window.import_item_requested)
+        if hasattr(self.main_window, "import_coordinator"):
+            import_action.triggered.connect(self.main_window.import_coordinator.import_item_requested)
 
         file_menu.addSeparator()
 
@@ -738,12 +738,12 @@ class UIManager:
         # Grouping
         self.grouping_config_action = timeline_menu.addAction("Configure Grouping...")
         self.grouping_config_action.triggered.connect(
-            self.main_window._on_configure_grouping_requested
+            self.main_window.grouping_manager.on_configure_grouping_requested
         )
 
         self.grouping_clear_action = timeline_menu.addAction("Clear Grouping")
         self.grouping_clear_action.triggered.connect(
-            self.main_window._on_clear_grouping_requested
+            self.main_window.grouping_manager.on_clear_grouping_requested
         )
 
         timeline_menu.addSeparator()
@@ -835,9 +835,9 @@ class UIManager:
         search_settings_action = settings_menu.addAction(
             "AI Search Index and Settings..."
         )
-        if hasattr(self.main_window, "show_ai_settings_dialog"):
+        if hasattr(self.main_window, "ai_search_manager"):
             search_settings_action.triggered.connect(
-                self.main_window.show_ai_settings_dialog
+                self.main_window.ai_search_manager.show_ai_settings_dialog
             )
 
         settings_menu.addSeparator()

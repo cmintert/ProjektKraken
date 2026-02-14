@@ -217,8 +217,8 @@ class CommandCoordinator(QObject):
         """
         # Determine what needs refreshing based on command type
         # This could be enhanced to be more specific per command
-        if hasattr(self.window, "load_data"):
-            self.window.load_data()
+        if hasattr(self.window, "data_coordinator"):
+            self.window.data_coordinator.load_data()
 
     def log_stack_state(self) -> None:
         """Logs the current state of the undo/redo stacks."""

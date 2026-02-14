@@ -21,6 +21,11 @@ def mock_main_window():
         window.load_entity_details = MagicMock()
         window.check_unsaved_changes = MagicMock(return_value=True)
 
+        # Add data_coordinator mock for navigation coordinator
+        window.data_coordinator = MagicMock()
+        window.data_coordinator.load_event_details = window.load_event_details
+        window.data_coordinator.load_entity_details = window.load_entity_details
+
         # Initialize NavigationCoordinator manually since __init__ is mocked
         from src.app.coordinators.navigation_coordinator import NavigationCoordinator
 

@@ -38,7 +38,9 @@ class MockCommand(BaseCommand):
 class MockMainWindow(QObject):
     def __init__(self):
         super().__init__()
-        self.load_data = MagicMock()
+        self.data_coordinator = MagicMock()
+        # Backward-compatible alias
+        self.load_data = self.data_coordinator.load_data
 
 
 @pytest.fixture

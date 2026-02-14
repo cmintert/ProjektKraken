@@ -145,23 +145,24 @@ class ConnectionManager:
 
         """
         dh = self.window.data_handler
+        dc = self.window.data_coordinator
         failed_count = 0
 
-        # Data ready signals
+        # Data ready signals → DataCoordinator
         if not self._connect_signal_safe(
-            dh, "events_ready", self.window._on_events_ready, "DataHandler"
+            dh, "events_ready", dc.on_events_ready, "DataHandler"
         ):
             failed_count += 1
 
         if not self._connect_signal_safe(
-            dh, "entities_ready", self.window._on_entities_ready, "DataHandler"
+            dh, "entities_ready", dc.on_entities_ready, "DataHandler"
         ):
             failed_count += 1
 
         if not self._connect_signal_safe(
             dh,
             "suggestions_update_requested",
-            self.window._on_suggestions_update,
+            dc.on_suggestions_update,
             "DataHandler",
         ):
             failed_count += 1
@@ -169,7 +170,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             dh,
             "event_details_ready",
-            self.window._on_event_details_ready,
+            dc.on_event_details_ready,
             "DataHandler",
         ):
             failed_count += 1
@@ -177,7 +178,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             dh,
             "entity_details_ready",
-            self.window._on_entity_details_ready,
+            dc.on_entity_details_ready,
             "DataHandler",
         ):
             failed_count += 1
@@ -217,14 +218,14 @@ class ConnectionManager:
             failed_count += 1
 
         if not self._connect_signal_safe(
-            dh, "graph_data_ready", self.window._on_graph_data_ready, "DataHandler"
+            dh, "graph_data_ready", dc.on_graph_data_ready, "DataHandler"
         ):
             failed_count += 1
 
         if not self._connect_signal_safe(
             dh,
             "graph_metadata_ready",
-            self.window._on_graph_metadata_ready,
+            dc.on_graph_metadata_ready,
             "DataHandler",
         ):
             failed_count += 1
@@ -236,14 +237,14 @@ class ConnectionManager:
             failed_count += 1
 
         if not self._connect_signal_safe(
-            dh, "command_failed", self.window._on_command_failed, "DataHandler"
+            dh, "command_failed", dc.on_command_failed, "DataHandler"
         ):
             failed_count += 1
 
         if not self._connect_signal_safe(
             dh,
             "dock_raise_requested",
-            self.window._on_dock_raise_requested,
+            dc.on_dock_raise_requested,
             "DataHandler",
         ):
             failed_count += 1
@@ -251,19 +252,19 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             dh,
             "selection_requested",
-            self.window._on_selection_requested,
+            dc.on_selection_requested,
             "DataHandler",
         ):
             failed_count += 1
 
-        # Reload signals
+        # Reload signals → DataCoordinator
         if not self._connect_signal_safe(
-            dh, "reload_events", self.window.load_events, "DataHandler"
+            dh, "reload_events", dc.load_events, "DataHandler"
         ):
             failed_count += 1
 
         if not self._connect_signal_safe(
-            dh, "reload_entities", self.window.load_entities, "DataHandler"
+            dh, "reload_entities", dc.load_entities, "DataHandler"
         ):
             failed_count += 1
 
@@ -283,7 +284,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             dh,
             "reload_active_editor_relations",
-            self.window._on_reload_active_editor_relations,
+            dc.on_reload_active_editor_relations,
             "DataHandler",
         ):
             failed_count += 1
@@ -318,20 +319,22 @@ class ConnectionManager:
 
         """
         ul = self.window.unified_list
+        ec = self.window.editor_coordinator
+        dc = self.window.data_coordinator
         failed_count = 0
 
         if not self._connect_signal_safe(
-            ul, "refresh_requested", self.window.load_data, "UnifiedList"
+            ul, "refresh_requested", dc.load_data, "UnifiedList"
         ):
             failed_count += 1
 
         if not self._connect_signal_safe(
-            ul, "create_event_requested", self.window.create_event, "UnifiedList"
+            ul, "create_event_requested", ec.create_event, "UnifiedList"
         ):
             failed_count += 1
 
         if not self._connect_signal_safe(
-            ul, "create_entity_requested", self.window.create_entity, "UnifiedList"
+            ul, "create_entity_requested", ec.create_entity, "UnifiedList"
         ):
             failed_count += 1
 
@@ -346,7 +349,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             ul,
             "delete_requested",
-            self.window._on_item_delete_requested,
+            ec.on_item_delete_requested,
             "UnifiedList",
         ):
             failed_count += 1
@@ -406,20 +409,22 @@ class ConnectionManager:
 
         """
         failed_count = 0
+        ec = self.window.editor_coordinator
+        dc = self.window.data_coordinator
 
         # Generic connections for both editors
         for editor in [self.window.event_editor, self.window.entity_editor]:
             editor_name = editor.__class__.__name__
 
             if not self._connect_signal_safe(
-                editor, "add_relation_requested", self.window.add_relation, editor_name
+                editor, "add_relation_requested", ec.add_relation, editor_name
             ):
                 failed_count += 1
 
             if not self._connect_signal_safe(
                 editor,
                 "remove_relation_requested",
-                self.window.remove_relation,
+                ec.remove_relation,
                 editor_name,
             ):
                 failed_count += 1
@@ -427,7 +432,7 @@ class ConnectionManager:
             if not self._connect_signal_safe(
                 editor,
                 "update_relation_requested",
-                self.window.update_relation,
+                ec.update_relation,
                 editor_name,
             ):
                 failed_count += 1
@@ -452,7 +457,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             self.window.event_editor,
             "save_requested",
-            self.window.update_event,
+            ec.update_event,
             "EventEditor",
         ):
             failed_count += 1
@@ -460,7 +465,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             self.window.entity_editor,
             "save_requested",
-            self.window.update_entity,
+            ec.update_entity,
             "EntityEditor",
         ):
             failed_count += 1
@@ -482,11 +487,11 @@ class ConnectionManager:
         ):
             failed_count += 1
 
-        # Discard signals - reload from database
+        # Discard signals - reload from database → DataCoordinator
         if not self._connect_signal_safe(
             self.window.event_editor,
             "discard_requested",
-            self.window.load_event_details,
+            dc.load_event_details,
             "EventEditor",
         ):
             failed_count += 1
@@ -494,7 +499,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             self.window.entity_editor,
             "discard_requested",
-            self.window.load_entity_details,
+            dc.load_entity_details,
             "EntityEditor",
         ):
             failed_count += 1
@@ -516,7 +521,7 @@ class ConnectionManager:
         failed_count = 0
 
         if not self._connect_signal_safe(
-            timeline, "event_selected", self.window.load_event_details, "Timeline"
+            timeline, "event_selected", self.window.data_coordinator.load_event_details, "Timeline"
         ):
             failed_count += 1
 
@@ -547,7 +552,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             timeline,
             "event_date_changed",
-            self.window._on_event_date_changed,
+            self.window.editor_coordinator.on_event_date_changed,
             "Timeline",
         ):
             failed_count += 1
@@ -906,11 +911,11 @@ class ConnectionManager:
         ):
             failed_count += 1
 
-        # Inline entity/event creation from map dialogs
+        # Inline entity/event creation from map dialogs → EditorCoordinator
         if not self._connect_signal_safe(
             map_widget,
             "create_entity_requested",
-            self.window._on_map_create_entity,
+            self.window.editor_coordinator.on_map_create_entity,
             "MapWidget",
         ):
             failed_count += 1
@@ -918,7 +923,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             map_widget,
             "create_event_requested",
-            self.window._on_map_create_event,
+            self.window.editor_coordinator.on_map_create_event,
             "MapWidget",
         ):
             failed_count += 1
@@ -976,12 +981,12 @@ class ConnectionManager:
         failed_count = 0
 
         if not self._connect_signal_safe(
-            graph, "refresh_requested", self.window.load_graph_data, "GraphWidget"
+            graph, "refresh_requested", self.window.data_coordinator.load_graph_data, "GraphWidget"
         ):
             failed_count += 1
 
         if not self._connect_signal_safe(
-            graph, "filter_changed", self.window.load_graph_data, "GraphWidget"
+            graph, "filter_changed", self.window.data_coordinator.load_graph_data, "GraphWidget"
         ):
             failed_count += 1
 
