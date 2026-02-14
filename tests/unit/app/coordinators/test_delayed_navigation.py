@@ -43,7 +43,7 @@ def test_delayed_selection(qtbot, mock_main_window):
     assert coordinator._pending_selection == ("entity", "id_1")
     assert coordinator.selected_id is None
 
-    # Wait for timer (plus a little buffer)
+    # Wait for timer: NAVIGATION_SELECTION_DELAY_MS (250ms) + 100ms buffer
     qtbot.wait(350)
 
     # Should be selected now
