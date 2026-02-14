@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-02-14
-**Commit:** `d05c002`
+**Commit:** `aac2bcd`
 ---
 
 # Changelog
@@ -22,17 +22,21 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - *(2026-02-14)* **AI**: Fixed "Prompt Editor" autosave not triggering correctly in Settings Dialog.
   - Ensures custom prompt templates are persisted reliably when switching tabs or closing the dialog.
+- *(2026-02-14)* **Bug**: Fixed AI summaries not loading on restart by removing `summary_service` guard in `EventEditor`.
 - *(2026-02-13)* **Docs**: Corrected opacity slider docstring.
 
 ### Cleanup
 - *(2026-02-14)* **Architecture**: Removed deprecated `_perform_rag_search` method and unused AI constants from `AISearchManager` to simplify codebase.
 
 ### Architecture
+- *(2026-02-14)* **Architecture**: Continued `MainWindow` decomposition (Phase 1 & 2) by removing passthrough methods and rewiring `ConnectionManager` to access `LongformManager` directly.
 - *(2026-02-13)* **Architecture**: Split `map_commands.py` (1,648 lines) into focused functional modules and decomposed `MapGraphicsView` into 5 sub-components for better maintainability.
 - *(2026-02-13)* **Architecture**: Decoupled `MapHandler` from dialog management and implemented service locator pattern for `MainWindow` access.
 - *(2026-02-11)* **Architecture**: Completed core Hierarchical Layer System (HLS) including themed layer management panel and database persistence.
 
 ### Stability
+- *(2026-02-14)* **Stability**: Forced full map marker reload on undo/redo operations to ensure visual consistency.
+- *(2026-02-14)* **Testing**: Added integration tests verifying undo/redo triggers proper reload signals.
 - *(2026-02-13)* **Stability**: Resolved "Layer node not found" race condition via signal-based UI snapshots in database commands.
 - *(2026-02-12)* **Stability**: Fixed map visibility overwrite issues by suppressing reloads for background sync and implementing selection persistence.
 - *(2026-02-12)* **Stability**: Resolved opacity slider flicker and ensured correct persistence of slider-triggered changes.
