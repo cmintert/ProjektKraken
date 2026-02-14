@@ -32,6 +32,7 @@ from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.prompt_editor import PromptEditorWidget
 from src.services.llm_provider import create_provider
+from src.services.prompt_builder import DEFAULT_SYSTEM_PROMPT, PromptBuilder
 from src.services.prompt_loader import PromptLoader
 
 # from src.services.search_service import create_search_service  # No longer needed directly
@@ -68,19 +69,8 @@ def filter_reasoning_tags(text: str) -> str:
     return filtered.strip()
 
 
-# Default system prompt used for LLM content generation
-# This defines the LLM's role, tone, and behavior for worldbuilding tasks.
-# Can be customized via Settings → AI Settings → Text Generation tab.
-# Stored in QSettings under key 'ai_gen_system_prompt'.
-DEFAULT_SYSTEM_PROMPT = (
-    "You are an expert fantasy world-builder assisting a user in creating a "
-    "rich and immersive setting. Your tone is descriptive, evocative, and "
-    "consistent with high-fantasy literature.\n\n"
-    "IMPORTANT: Time in this world is represented as floating-point numbers "
-    "where 1.0 = 1 day. The decimal portion represents time within the day "
-    "(e.g., 0.5 = noon). When referencing dates or durations, understand "
-    "that event dates and durations use this numeric format."
-)
+# Default system prompt is now defined in src.services.prompt_builder
+# and imported above as DEFAULT_SYSTEM_PROMPT.
 
 
 @runtime_checkable
@@ -638,9 +628,6 @@ class LLMGenerationWidget(QWidget):
     @Slot()
     def _on_generate_clicked(self) -> None:
         """Handle generate button click."""
-        print("DEBUG: Generate button clicked")  # Direct stdout debug
-        logger.warning("DEBUG: Generate button clicked")
-
         logger.debug("Generate clicked.")
         # Get context from parent (Entity/Event)
         context = self._get_generation_context()
@@ -657,33 +644,14 @@ class LLMGenerationWidget(QWidget):
             self.status_label.setText("Error: Custom prompt is empty")
             return
 
-        # Construct composite prompt with context + user instruction
-        # Build context string dynamically from available fields
-        context_lines = []
-
-        # Order matters for readability
-        if "name" in context:
-            context_lines.append(f"Name: {context['name']}")
-        if "type" in context:
-            context_lines.append(f"Type: {context['type']}")
-        if "lore_date" in context:
-            context_lines.append(f"Lore Date: {context['lore_date']}")
-        if "existing_description" in context:
-            context_lines.append(f"Description: {context['existing_description']}")
-
-        # Add any additional context fields
-        context_lines.extend(
-            f"{k.replace('_', ' ').title()}: {v}"
-            for k, v in context.items()
-            if k
-            not in ["name", "type", "lore_date", "existing_description", "description"]
+        # Build prompt using PromptBuilder service
+        builder = PromptBuilder(system_prompt=self._get_system_prompt())
+        context_str = builder.build_context_string(context)
+        user_prompt = builder.substitute_variables(user_prompt, context)
+        prompt = builder.construct_prompt(
+            context_str, user_prompt,
+            include_rag_placeholder=self.rag_cb.isChecked(),
         )
-        context_str = "\n".join(context_lines)
-
-        # Substitute variables in user prompt
-        user_prompt = self._get_substituted_prompt(user_prompt, context)
-
-        prompt = self._construct_prompt(context_str, user_prompt)
         self.status_label.setText("Generating with context...")
 
         # Get temperature as float (0.0-2.0)
@@ -811,56 +779,23 @@ class LLMGenerationWidget(QWidget):
     def _construct_prompt(self, context_str: str, user_prompt: str) -> Dict[str, Any]:
         """Construct the final prompt with persona and delimited context.
 
+        .. deprecated::
+            Use :class:`~src.services.prompt_builder.PromptBuilder` instead.
+            Kept for backward compatibility with external callers.
+
         Args:
             context_str: Formatted context string with entity/event details.
             user_prompt: User's custom prompt/task.
 
         Returns:
-            Dict[str, Any]: Structured prompt dictionary containing:
-                - 'system' (str): System persona/role instructions
-                - 'user' (str): User message with context and prompt
-                Used for chat-based LLM APIs.
+            Dict[str, Any]: Structured prompt dictionary.
 
         """
-        # 1. Persona (System Role)
-        system_persona = self._get_system_prompt()
-
-        # 2. Data Injection (User Role) with Explicit Delimiters
-        # RAG Context (if any)
-        rag_placeholder = ""
-        if self.rag_cb.isChecked():
-            # RAG search happens inside GenerationWorker._apply_rag_to_prompt
-            # We insert a placeholder here that the worker will replace with the full block
-            rag_placeholder = "{{RAG_CONTEXT}}"
-
-        # Build User Message
-        user_message_parts = []
-
-        # -- TASK --
-        # Trinity Order: Persona -> Task -> Content
-        # We prefix with "Task:" to be clear, or just use the raw prompt.
-        # Given the clear separation, "Task:" prefix is good for structure.
-        user_message_parts.append(f"Task: {user_prompt}\n")
-
-        # -- DATA: ENTITY/EVENT DETAILS --
-        user_message_parts.append("--- DATA: ENTITY/EVENT DETAILS ---")
-        user_message_parts.append(context_str)
-
-        # -- DATA: RAG CONTEXT --
-        # Worker will replace this with:
-        # --- DATA: RAG CONTEXT ---
-        # [Content]
-        # or remove it if empty.
-        # We pre-format the placeholder to look like a placeholder for the block
-        user_message_parts.append(rag_placeholder)
-
-        user_message_parts.append("--- END DATA ---")
-
-        # Assemble
-        # Filter out empty parts (like placeholder if unchecked)
-        final_user_message = "\n".join(filter(None, user_message_parts))
-
-        return {"system": system_persona, "user": final_user_message}
+        builder = PromptBuilder(system_prompt=self._get_system_prompt())
+        return builder.construct_prompt(
+            context_str, user_prompt,
+            include_rag_placeholder=self.rag_cb.isChecked(),
+        )
 
     def _start_generation(
         self, prompt: dict, temperature: float, db_path: Optional[str] = None
@@ -1022,32 +957,14 @@ class LLMGenerationWidget(QWidget):
             )
             return
 
-        # Build context string dynamically
-        context_lines = []
-        if "name" in context:
-            context_lines.append(f"Name: {context['name']}")
-        if "type" in context:
-            context_lines.append(f"Type: {context['type']}")
-        if "lore_date" in context:
-            context_lines.append(f"Lore Date: {context['lore_date']}")
-        if "existing_description" in context:
-            context_lines.append(f"Description: {context['existing_description']}")
-
-        # Add any additional context fields
-        context_lines.extend(
-            f"{k.replace('_', ' ').title()}: {v}"
-            for k, v in context.items()
-            if k
-            not in ["name", "type", "lore_date", "existing_description", "description"]
+        # Build prompt using PromptBuilder (same as generate path)
+        builder = PromptBuilder(system_prompt=self._get_system_prompt())
+        context_str = builder.build_context_string(context)
+        user_prompt = builder.substitute_variables(user_prompt, context)
+        prompt = builder.construct_prompt(
+            context_str, user_prompt,
+            include_rag_placeholder=self.rag_cb.isChecked(),
         )
-
-        context_str = "\n".join(context_lines)
-
-        # Substitute variables in user prompt
-        user_prompt = self._get_substituted_prompt(user_prompt, context)
-
-        # Construct prompt using helper method
-        prompt = self._construct_prompt(context_str, user_prompt)
 
         # Show dialog
         dlg = QDialog(self)
@@ -1168,6 +1085,10 @@ class LLMGenerationWidget(QWidget):
     def _get_substituted_prompt(self, user_prompt: str, context: dict) -> str:
         """Substitute variables like {name} in the user prompt.
 
+        .. deprecated::
+            Use :class:`~src.services.prompt_builder.PromptBuilder` instead.
+            Kept for backward compatibility with external callers.
+
         Args:
             user_prompt: Raw user instruction.
             context: Context dictionary from editor.
@@ -1176,16 +1097,4 @@ class LLMGenerationWidget(QWidget):
             str: Substituted prompt.
 
         """
-        # Normalize keys for substitution
-        subst_context = {
-            "name": context.get("name", ""),
-            "type": context.get("type", ""),
-            "description": context.get("existing_description", ""),
-            "lore_date": context.get("lore_date", ""),
-        }
-
-        result = user_prompt
-        for key, val in subst_context.items():
-            result = result.replace(f"{{{key}}}", str(val))
-
-        return result
+        return PromptBuilder().substitute_variables(user_prompt, context)

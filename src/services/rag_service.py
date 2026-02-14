@@ -19,14 +19,27 @@ logger = logging.getLogger(__name__)
 class RAGService:
     """Service for retrieving and formatting world knowledge for LLM context."""
 
-    def __init__(self, db_path: str) -> None:
+    # Minimum similarity score for semantic results. Results below this
+    # threshold are considered noise and are filtered out to prevent
+    # irrelevant context from being injected into the prompt.
+    DEFAULT_MIN_SCORE: float = 0.25
+
+    def __init__(
+        self, db_path: str, min_score: Optional[float] = None
+    ) -> None:
         """Initialize RAG Service.
 
         Args:
             db_path: Path to the SQLite database.
+            min_score: Minimum similarity score for semantic results
+                (0.0–1.0). Results below this threshold are discarded.
+                Defaults to DEFAULT_MIN_SCORE.
 
         """
         self.db_path = db_path
+        self.min_score = (
+            min_score if min_score is not None else self.DEFAULT_MIN_SCORE
+        )
 
     def search(
         self, query: str, top_k: int = 3, object_type: Optional[str] = None
@@ -161,13 +174,18 @@ class RAGService:
                 merged.append(item)
                 seen_ids.add(item["id"])
 
-        # Fill with semantic results
+        # Fill with semantic results, filtering by similarity threshold
         for item in semantic:
-            # handle differences in structure if any (search_service.query returns specific dicts)
-            # assuming object_id or id is the key.
-            # search_service.query uses 'object_id' for UUID, 'id' for embedding UUID (usually)
-            # Wait, search_service.query returns: id (embedding), object_id (entity/event uuid)
-            # Let's use object_id as uniqueness key
+            # Skip low-score results to reduce context noise
+            score = item.get("score", 0.0)
+            if score < self.min_score:
+                logger.debug(
+                    f"RAG: Filtering low-score result "
+                    f"'{item.get('name', '?')}' (score={score:.3f} "
+                    f"< threshold={self.min_score})"
+                )
+                continue
+
             unique_key = item.get("object_id")
             if unique_key and unique_key not in seen_ids:
                 item["_match_type"] = "Semantic"
