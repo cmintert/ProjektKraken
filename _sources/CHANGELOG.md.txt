@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-14
 ### Internal
-- Force full marker reload on undo operations
+- Merge pull request #84 from cmintert/copilot/perform-code-review-on-kraken
 
 
 *This changelog was automatically generated.*
