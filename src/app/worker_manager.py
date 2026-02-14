@@ -265,6 +265,16 @@ class WorkerManager(QObject):
             except Exception as e:
                 logger.error(f"Failed to initialize GUI database service: {e}")
 
+            # Inject SummaryService into editors for staleness checks
+            try:
+                from src.services.summary_service import SummaryService
+
+                gui_summary_service = SummaryService(self.window.gui_db_service)
+                self.window.entity_editor.set_summary_service(gui_summary_service)
+                self.window.event_editor.set_summary_service(gui_summary_service)
+            except Exception as e:
+                logger.error(f"Failed to inject SummaryService into editors: {e}")
+
             # Initialize backup service
             try:
                 from src.core.backup_config import BackupConfig

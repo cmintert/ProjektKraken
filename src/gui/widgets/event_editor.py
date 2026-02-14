@@ -7,6 +7,7 @@ attributes, and relations.
 import logging
 import os
 import traceback
+from contextlib import suppress
 from typing import Any, Dict
 
 from PySide6.QtCore import QPoint, QSize, Qt, Signal, Slot
@@ -1049,17 +1050,15 @@ class EventEditorWidget(QWidget):
             self.attribute_editor.blockSignals(False)
 
             # Load Summary
-            if self.summary_service:
-                summary_data = event.attributes.get("_summary_data")
-                if summary_data:
-                    try:
-                        data = SummaryData.from_dict(summary_data)
-                        self.summary_widget.set_summary(data)
-                    except Exception:
-                        pass
+            summary_data = event.attributes.get("_summary_data")
+            if summary_data:
+                with suppress(Exception):
+                    data = SummaryData.from_dict(summary_data)
+                    self.summary_widget.set_summary(data)
 
-                is_stale = self.summary_service.is_stale(event)
-                self.summary_widget.set_stale(is_stale)
+                if self.summary_service:
+                    is_stale = self.summary_service.is_stale(event)
+                    self.summary_widget.set_stale(is_stale)
 
             # Load Tags
             self.tag_editor.load_tags(event.tags)

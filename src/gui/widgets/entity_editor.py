@@ -760,17 +760,15 @@ class EntityEditorWidget(QWidget):
             self.gallery.set_owner("entity", entity.id)
 
             # Load Summary
-            if self.summary_service and (
-                summary_data := entity.attributes.get("_summary_data")
-            ):
+            summary_data = entity.attributes.get("_summary_data")
+            if summary_data:
                 with suppress(Exception):
                     data = SummaryData.from_dict(summary_data)
                     self.summary_widget.set_summary(data)
-                    # Open if summary exists ? Or keep user preference?
-                    # Keep existing state or open if user preference set (later)
 
-                is_stale = self.summary_service.is_stale(entity)
-                self.summary_widget.set_stale(is_stale)
+                if self.summary_service:
+                    is_stale = self.summary_service.is_stale(entity)
+                    self.summary_widget.set_stale(is_stale)
 
             # Reset Read-Only mode (in case we were in temporal view)
             self.exit_read_only_mode()
@@ -881,22 +879,15 @@ class EntityEditorWidget(QWidget):
             base_attrs = self.attribute_editor.get_attributes()
             base_attrs["_tags"] = self.tag_editor.get_tags()
 
-            # Inject pending summary if exists
-            if hasattr(self, "_pending_summary_data") and self._pending_summary_data:
-                base_attrs["_summary_data"] = self._pending_summary_data
-            # Else? If we loaded an entity, it had _summary_data.
-            # If we didn't touch it, AttributeEditor didn't have it (filtered).
-            # So we lose it on save?!
-            # FIX: We must store the originally loaded hidden attributes and merge
-            # them back.
-            # This is a general issue with the editor if it filters attrs.
-            # Assuming AttributeEditor might hold onto them?
-            # Let's check AttributeEditor.
-            # If not, we need to cache hidden attrs on load.
-            elif hasattr(self, "_hidden_attributes"):
+            # Restore hidden attributes first, then overlay pending summary
+            if hasattr(self, "_hidden_attributes"):
                 for k, v in self._hidden_attributes.items():
                     if k not in base_attrs:
                         base_attrs[k] = v
+
+            # Pending summary takes precedence over any existing _summary_data
+            if hasattr(self, "_pending_summary_data") and self._pending_summary_data:
+                base_attrs["_summary_data"] = self._pending_summary_data
 
             entity_data = {
                 "id": self._current_entity_id,
