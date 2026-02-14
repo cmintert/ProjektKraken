@@ -126,7 +126,9 @@ class TestPromptBuilder:
         natural language, rather than repeating raw float values.
         """
         assert "narrative" in DEFAULT_SYSTEM_PROMPT.lower()
-        assert "translate" in DEFAULT_SYSTEM_PROMPT.lower() or \
-               "natural" in DEFAULT_SYSTEM_PROMPT.lower()
+        assert (
+            "translate" in DEFAULT_SYSTEM_PROMPT.lower()
+            or "natural" in DEFAULT_SYSTEM_PROMPT.lower()
+        )
         # Should NOT contain the old robotic instruction
         assert "IMPORTANT: Time in this world is represented" not in DEFAULT_SYSTEM_PROMPT

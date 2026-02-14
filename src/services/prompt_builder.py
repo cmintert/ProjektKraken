@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 
 # Default system prompt used for LLM content generation.
 # Defines the LLM's role, tone, and behavior for worldbuilding tasks.
-# Can be customized via Settings → AI Settings → Text Generation tab.
+# Used as a fallback when no custom persona is configured in QSettings
+# (key: 'ai_gen_system_prompt', managed via Settings → AI Settings).
 DEFAULT_SYSTEM_PROMPT = (
     "You are an expert fantasy world-builder assisting a user in creating a "
     "rich and immersive setting. Your tone is descriptive, evocative, and "
