@@ -161,7 +161,7 @@ class InjectTemplateCommand(BaseCommand):
 
         except Exception as e:
             # Log error but can't really fail an undo gracefully
-            logger.error(f"Undo failed for InjectTemplateCommand: {e}")
+            logger.error(f"Undo failed for InjectTemplateCommand: {e}", exc_info=True)
 
     def to_dict(self) -> Dict:
         """Serialize command to dictionary.
@@ -185,17 +185,18 @@ class InjectTemplateCommand(BaseCommand):
 
         Note:
             InjectTemplateCommand requires live object references (target,
-            template, manager) that cannot be fully reconstructed from a dict.
-            This returns a minimal stub for history display purposes.
+            template, manager) that cannot be reconstructed from a dict.
+            This method raises NotImplementedError because full
+            deserialization is not supported for this command type.
 
         Args:
             data: Dictionary containing command data.
 
         Returns:
-            InjectTemplateCommand: Partially reconstructed command instance.
+            InjectTemplateCommand: Not supported.
 
         Raises:
-            NotImplementedError: Full deserialization is not supported.
+            NotImplementedError: Always raised; live references required.
 
         """
         raise NotImplementedError(
