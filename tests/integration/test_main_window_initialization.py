@@ -95,7 +95,9 @@ def mock_main_window(qapp):
     window.load_entity_details = Mock()
     window.load_entity_details = Mock()
 
-    # Time Coordinator Mocks
+    # Coordinator Mocks
+    window.data_coordinator = Mock()
+    window.editor_coordinator = Mock()
     window.time_coordinator = Mock()
     window.time_coordinator.on_current_time_changed = Mock()
     window.time_coordinator.update_playhead_time_label = Mock()
