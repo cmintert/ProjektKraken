@@ -2,14 +2,14 @@
 project: ProjektKraken
 document: Main Project README
 last_updated: 2026-02-03
-commit: 0.11.0
+commit: 0.12.0
 ---
 
 # Projekt Kraken
 
 ## Version
 
-**v0.11.0 (Beta)**
+**v0.12.0 (Beta)**
 **Projekt Kraken** is a desktop worldbuilding environment designed for the "Architect" persona. It treats history as the primary axis of the world, offering a timeline-first approach to lore creation.
 
 ## Screenshot

@@ -4,7 +4,7 @@ Stores default values for UI configuration and magic numbers.
 """
 
 # Window Configuration
-VERSION = "0.11.0"
+VERSION = "0.12.0"
 WINDOW_TITLE = f"Project Kraken - v{VERSION} (Beta)"
 DEFAULT_WINDOW_WIDTH = 1280
 DEFAULT_WINDOW_HEIGHT = 720

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-02-14
-**Commit:** `ce2ab18`
+**Commit:** `0.12.0`
 ---
 
 # Changelog
@@ -10,6 +10,20 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [Unreleased]
+
+### Added
+
+### Fixed
+
+### Changed
+
+### Deprecated
+
+### Cleanup
+
+## [0.12.0]
 
 ### Added
 - *(2026-02-14)* **AI**: Added "Summary Temperature" setting (0.0 - 1.0) to control generation determinism.
