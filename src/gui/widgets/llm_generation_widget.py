@@ -33,11 +33,10 @@ from src.gui.widgets.prompt_editor import PromptEditorWidget
 from src.services.llm_provider import create_provider
 from src.services.prompt_builder import DEFAULT_SYSTEM_PROMPT, PromptBuilder
 from src.services.prompt_loader import PromptLoader
-from src.services.reasoning_filter import filter_reasoning_tags
 from src.services.rag_service import RAGService
+from src.services.reasoning_filter import filter_reasoning_tags
 
 logger = logging.getLogger(__name__)
-
 
 
 @runtime_checkable
@@ -46,7 +45,7 @@ class GenerationContextProvider(Protocol):
 
     def get_generation_context(self) -> Dict[str, Any]:
         """Return context dictionary for generation.
-        
+
         Returns:
             Dict[str, Any]: Context data for LLM prompt construction.
                 Typically includes keys like 'name', 'type', 'existing_description'.
@@ -149,9 +148,7 @@ class GenerationWorker(QThread):
         # Inject logic
         if is_dict:
             if "{{RAG_CONTEXT}}" in self.prompt["user"]:
-                replacement = (
-                    f"[Context]\n{rag_context}" if rag_context else ""
-                )
+                replacement = f"[Context]\n{rag_context}" if rag_context else ""
                 self.prompt["user"] = self.prompt["user"].replace(
                     "{{RAG_CONTEXT}}", replacement
                 )
@@ -163,14 +160,10 @@ class GenerationWorker(QThread):
         else:
             # String prompt
             if "{{RAG_CONTEXT}}" in self.prompt:
-                replacement = (
-                    f"[Context]\n{rag_context}" if rag_context else ""
-                )
+                replacement = f"[Context]\n{rag_context}" if rag_context else ""
                 self.prompt = self.prompt.replace("{{RAG_CONTEXT}}", replacement)
             elif rag_context:
-                self.prompt = (
-                    f"[Context]\n{rag_context}\n\n" + self.prompt
-                )
+                self.prompt = f"[Context]\n{rag_context}\n\n" + self.prompt
 
         if rag_context:
             logger.debug(f"Applied RAG context: {len(rag_context)} chars")
@@ -328,7 +321,7 @@ class LLMGenerationWidget(QWidget):
         grid_layout.addWidget(QLabel("Max Tokens:"), 1, 2)
 
         self.max_tokens_spin = QSpinBox()
-        self.max_tokens_spin.setRange(50, 4096)
+        self.max_tokens_spin.setRange(50, 100000)
         self.max_tokens_spin.setValue(512)
         self.max_tokens_spin.setToolTip("Maximum tokens to generate")
         self.max_tokens_spin.valueChanged.connect(self._save_settings)
@@ -462,6 +455,30 @@ class LLMGenerationWidget(QWidget):
             # Ensure at least the default exists
             if self.template_combo.count() == 0:
                 self.template_combo.addItem("Free Text / Custom", None)
+
+    def refresh_settings(self) -> None:
+        """Reload settings and refresh the template list.
+
+        Called when AI settings change in the settings dialog
+        so the widget picks up new providers, models,
+        and template changes without restarting.
+        """
+        logger.info("LLMGenerationWidget: refreshing settings")
+        # Remember current template selection
+        current_template_id = self.template_combo.currentData()
+
+        # Reload provider/generation settings
+        self._load_settings()
+
+        # Refresh template list (picks up new/modified/deleted templates)
+        self._populate_template_combo()
+
+        # Restore previous template selection if it still exists
+        if current_template_id:
+            for i in range(self.template_combo.count()):
+                if self.template_combo.itemData(i) == current_template_id:
+                    self.template_combo.setCurrentIndex(i)
+                    break
 
     @Slot()
     def _on_template_combo_changed(self) -> None:
@@ -601,7 +618,8 @@ class LLMGenerationWidget(QWidget):
         context_str = builder.build_context_string(context)
         user_prompt = builder.substitute_variables(user_prompt, context)
         prompt = builder.construct_prompt(
-            context_str, user_prompt,
+            context_str,
+            user_prompt,
             include_rag_placeholder=self.rag_cb.isChecked(),
         )
         self.status_label.setText("Generating with context...")
@@ -745,7 +763,8 @@ class LLMGenerationWidget(QWidget):
         """
         builder = PromptBuilder(system_prompt=self._get_system_prompt())
         return builder.construct_prompt(
-            context_str, user_prompt,
+            context_str,
+            user_prompt,
             include_rag_placeholder=self.rag_cb.isChecked(),
         )
 
@@ -804,10 +823,31 @@ class LLMGenerationWidget(QWidget):
         self.generate_btn.setEnabled(True)
         self.cancel_btn.setEnabled(False)
 
-        # Clean up worker first
+        # Capture audit data before cleaning up worker
+        worker_prompt = None
+        worker_model = "unknown"
+        if self._worker:
+            worker_prompt = self._worker.prompt
+            try:
+                worker_model = self._worker.provider.get_model_name()
+            except Exception:
+                pass
+
+        # Clean up worker
         if self._worker:
             self._worker.deleteLater()
             self._worker = None
+
+        # Audit log the interaction
+        if worker_prompt is not None:
+            from src.services.llm_provider import log_ai_interaction
+
+            log_ai_interaction(
+                prompt=worker_prompt,
+                response_text=text,
+                model=worker_model,
+                source="LLMGenerationWidget",
+            )
 
         # Show review dialog
         from src.gui.dialogs.generation_review_dialog import (
@@ -880,8 +920,8 @@ class LLMGenerationWidget(QWidget):
         context = self._get_generation_context()
         if not context:
             QMessageBox.warning(
-                self, 
-                "Preview Error", 
+                self,
+                "Preview Error",
                 "Could not get context information for preview.\n\n"
                 "Possible causes:\n"
                 "• No item is currently loaded in the editor\n"
@@ -889,7 +929,7 @@ class LLMGenerationWidget(QWidget):
                 "To fix:\n"
                 "1. Ensure an event or entity is loaded\n"
                 "2. Try closing and reopening the editor\n"
-                "3. If the issue persists, save your work and restart"
+                "3. If the issue persists, save your work and restart",
             )
             return
 
@@ -898,14 +938,14 @@ class LLMGenerationWidget(QWidget):
         user_prompt = self.custom_prompt_edit.toPlainText().strip()
         if not user_prompt:
             QMessageBox.warning(
-                self, 
-                "Preview Error", 
+                self,
+                "Preview Error",
                 "Please enter a prompt before previewing.\n\n"
                 "The preview shows what will be sent to the AI, but requires\n"
                 "a prompt to be entered in the text box above.\n\n"
                 "To fix:\n"
                 "1. Enter your generation prompt in the text field\n"
-                "2. Click Preview Context again to see what will be sent"
+                "2. Click Preview Context again to see what will be sent",
             )
             return
 
@@ -914,7 +954,8 @@ class LLMGenerationWidget(QWidget):
         context_str = builder.build_context_string(context)
         user_prompt = builder.substitute_variables(user_prompt, context)
         prompt = builder.construct_prompt(
-            context_str, user_prompt,
+            context_str,
+            user_prompt,
             include_rag_placeholder=self.rag_cb.isChecked(),
         )
 

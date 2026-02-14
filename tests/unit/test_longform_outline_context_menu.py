@@ -5,8 +5,7 @@ including Move up, Move down, Promote, Demote, and Delete operations.
 """
 
 import pytest
-from PySide6.QtCore import QPoint, Qt
-from PySide6.QtGui import QAction
+from PySide6.QtCore import QPoint
 from PySide6.QtWidgets import QMenu
 
 from src.gui.widgets.longform.outline import LongformOutlineWidget

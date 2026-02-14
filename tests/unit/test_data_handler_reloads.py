@@ -1,7 +1,9 @@
 """Tests for DataHandler reload signal emission."""
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+
 from src.app.data_handler import DataHandler
 from src.commands.base_command import CommandResult
 

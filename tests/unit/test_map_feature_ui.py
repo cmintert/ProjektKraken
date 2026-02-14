@@ -14,18 +14,15 @@ pytestmark = pytest.mark.skipif(
     reason="No display available for Qt tests",
 )
 
-from PySide6.QtCore import QPointF, QRectF, Qt
+from PySide6.QtCore import QPointF, Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QApplication, QGraphicsPixmapItem, QGraphicsScene
 
 from src.core.marker import (
     FEATURE_TYPE_PATH,
-    FEATURE_TYPE_POINT,
-    FEATURE_TYPE_REGION,
     MapFeature,
 )
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
-
 
 # --------------------------------------------------------------------------
 # Fixtures
@@ -1102,18 +1099,8 @@ class TestConstantsImport:
         """Key map feature constants are importable from constants.py."""
         from src.app.constants import (
             MAP_DEFAULT_WIDTH_METERS,
-            MAP_FEATURE_CLICK_THRESHOLD_PX,
-            MAP_FEATURE_DEFAULT_STROKE_COLOR,
-            MAP_FEATURE_DEFAULT_STROKE_WIDTH,
-            MAP_FEATURE_HIT_AREA_MARGIN,
-            MAP_FEATURE_HOVER_DEBOUNCE_MS,
-            MAP_FEATURE_SELECTION_PEN_COLOR,
-            MAP_FEATURE_Z_VALUE,
-            MAP_MIDPOINT_GHOST_OPACITY,
-            MAP_MIDPOINT_HANDLE_COLOR,
             MAP_MIDPOINT_HANDLE_RADIUS,
             MAP_SNAP_RADIUS_PX,
-            MAP_VERTEX_HANDLE_COLOR,
             MAP_VERTEX_HANDLE_RADIUS,
             MAP_ZOOM_IN_FACTOR,
         )

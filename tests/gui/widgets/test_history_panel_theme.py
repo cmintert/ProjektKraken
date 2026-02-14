@@ -1,7 +1,8 @@
 import pytest
-from src.gui.widgets.history_panel import HistoryPanelWidget
-from src.core.theme_manager import ThemeManager
+
 from src.commands.base_command import BaseCommand
+from src.core.theme_manager import ThemeManager
+from src.gui.widgets.history_panel import HistoryPanelWidget
 
 
 class MockCommand(BaseCommand):

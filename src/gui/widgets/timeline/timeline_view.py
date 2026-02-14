@@ -96,7 +96,6 @@ class TimelineView(QGraphicsView):
 
         # Import here to avoid circular import
         from src.gui.widgets.timeline_lane_packer import TimelineLanePacker
-        from src.gui.workers.layout_worker import LayoutWorker
 
         # Initialize semantic ruler engine
         self._ruler = TimelineRuler()

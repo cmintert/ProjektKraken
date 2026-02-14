@@ -13,8 +13,6 @@ Tests cover:
 import pytest
 
 from src.app.constants import (
-    MAP_LAYER_DEFAULT_MAX_ZOOM,
-    MAP_LAYER_DEFAULT_MIN_ZOOM,
     MAP_LAYER_DEFAULT_OPACITY,
     MAP_LAYER_TYPE_GROUP,
     MAP_LAYER_TYPE_MARKER,

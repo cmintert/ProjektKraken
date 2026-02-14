@@ -12,9 +12,11 @@ from logging.handlers import RotatingFileHandler
 # Configuration
 LOG_DIR = "logs"
 LOG_FILENAME = "kraken.log"
+AUDIT_LOG_FILENAME = "ai_audit_log.txt"
 MAX_BYTES = 5 * 1024 * 1024  # 5 MB
 BACKUP_COUNT = 5
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+AUDIT_LOG_FORMAT = "%(asctime)s - %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
@@ -105,6 +107,57 @@ def setup_logging(debug_mode: bool = False, log_to_console: bool = True) -> None
 
     # Force DEBUG for UnifiedList to troubleshoot focus issue
     logging.getLogger("src.gui.widgets.unified_list").setLevel(logging.DEBUG)
+
+    # 7. Set up AI Audit Logger (separate file)
+    setup_audit_logging()
+
+
+def setup_audit_logging() -> None:
+    """Configure the dedicated AI audit logger.
+
+    Creates a separate rotating file handler that writes AI prompts and
+    responses to ``logs/ai_audit_log.txt``.  The logger does **not**
+    propagate to the root logger so audit entries stay in their own file.
+    """
+    audit_logger = logging.getLogger("ai_audit")
+
+    # Avoid adding duplicate handlers on repeat calls
+    if audit_logger.handlers:
+        return
+
+    audit_logger.setLevel(logging.INFO)
+    audit_logger.propagate = False  # Don't spam the main log
+
+    try:
+        os.makedirs(LOG_DIR, exist_ok=True)
+        audit_path = os.path.join(LOG_DIR, AUDIT_LOG_FILENAME)
+    except OSError:
+        audit_path = AUDIT_LOG_FILENAME
+
+    try:
+        handler = SafeRotatingFileHandler(
+            audit_path,
+            maxBytes=MAX_BYTES,
+            backupCount=BACKUP_COUNT,
+            encoding="utf-8",
+            delay=True,  # Don't create file until first write
+        )
+        formatter = logging.Formatter(AUDIT_LOG_FORMAT, datefmt=DATE_FORMAT)
+        handler.setFormatter(formatter)
+        handler.setLevel(logging.INFO)
+        audit_logger.addHandler(handler)
+    except OSError as e:
+        logging.getLogger(__name__).warning(f"Could not set up AI audit logging: {e}")
+
+
+def get_audit_logger() -> logging.Logger:
+    """Return the dedicated AI audit logger.
+
+    Returns:
+        logging.Logger: The ``ai_audit`` logger instance.
+
+    """
+    return logging.getLogger("ai_audit")
 
 
 def get_logger(name: str) -> logging.Logger:

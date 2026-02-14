@@ -11,9 +11,9 @@ the anchor coordinate.
 
 import logging
 import math
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
-from PySide6.QtCore import QPointF, QRectF, QTimer, Qt, Signal
+from PySide6.QtCore import QPointF, QRectF, Qt, QTimer, Signal
 from PySide6.QtGui import (
     QBrush,
     QColor,
@@ -27,9 +27,7 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QGraphicsItem,
     QGraphicsObject,
-    QGraphicsPathItem,
     QGraphicsPixmapItem,
-    QGraphicsPolygonItem,
     QGraphicsSceneHoverEvent,
     QGraphicsSceneMouseEvent,
     QGraphicsSimpleTextItem,

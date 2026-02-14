@@ -3,7 +3,7 @@
 Combines multiple commands into a single executable unit.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from src.commands.base_command import BaseCommand, CommandResult
 from src.services.db_service import DatabaseService
@@ -118,13 +118,13 @@ class CompositeCommand(BaseCommand):
         reconstructed_commands = []
 
         # Pragmatic registry import for deserialization
-        from src.commands.event_commands import UpdateEventCommand, CreateEventCommand
         from src.commands.entity_commands import (
-            UpdateEntityCommand,
             CreateEntityCommand,
+            UpdateEntityCommand,
         )
-        from src.commands.wiki_commands import ProcessWikiLinksCommand
+        from src.commands.event_commands import CreateEventCommand, UpdateEventCommand
         from src.commands.relation_commands import AddRelationCommand
+        from src.commands.wiki_commands import ProcessWikiLinksCommand
 
         known_types = {
             "UpdateEventCommand": UpdateEventCommand,

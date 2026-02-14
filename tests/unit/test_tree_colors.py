@@ -2,7 +2,6 @@ from unittest.mock import patch
 
 import pytest
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor
 
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.longform.outline import LongformOutlineWidget

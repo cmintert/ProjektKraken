@@ -4,7 +4,6 @@ Tests prompt construction, variable substitution, context formatting,
 and the data-before-task ordering that reduces recency bias.
 """
 
-import pytest
 
 from src.services.prompt_builder import DEFAULT_SYSTEM_PROMPT, PromptBuilder
 

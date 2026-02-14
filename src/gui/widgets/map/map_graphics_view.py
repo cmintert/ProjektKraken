@@ -36,7 +36,6 @@ from PySide6.QtGui import (
     QKeyEvent,
     QMouseEvent,
     QPainter,
-    QPainterPath,
     QPen,
     QPixmap,
     QResizeEvent,
@@ -81,7 +80,7 @@ from src.gui.widgets.map.interaction_handler import InteractionHandler
 from src.gui.widgets.map.marker_item import MarkerItem
 from src.gui.widgets.map.marker_manager import MarkerManager
 from src.gui.widgets.map.scale_bar_painter import ScaleBarPainter
-from src.gui.widgets.map.snapping_manager import SnapType, SnappingManager
+from src.gui.widgets.map.snapping_manager import SnappingManager, SnapType
 from src.gui.widgets.map.trajectory_renderer import TrajectoryRenderer
 from src.gui.widgets.map.vertex_editor import VertexEditor
 

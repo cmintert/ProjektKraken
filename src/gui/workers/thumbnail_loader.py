@@ -5,7 +5,6 @@ Provides asynchronous thumbnail loading for the gallery widget.
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 from PySide6.QtCore import QObject, QRunnable, Qt, Signal
 from PySide6.QtGui import QIcon, QPixmap, QPixmapCache

@@ -1,7 +1,9 @@
 """Regression tests for layer command snapshots."""
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+
 from src.commands.layer_commands import (
     SetLayerOpacityCommand,
     SetLayerVisibilityCommand,

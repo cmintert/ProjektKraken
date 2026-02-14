@@ -1,8 +1,7 @@
-import pytest
-from PySide6.QtCore import QPoint
-from PySide6.QtWidgets import QWidget
 from unittest.mock import patch
 
+import pytest
+from PySide6.QtWidgets import QWidget
 from src.gui.widgets.toast_notification import ToastNotification
 
 

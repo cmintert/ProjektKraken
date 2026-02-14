@@ -499,6 +499,7 @@ class UIManager:
     def create_edit_menu(self, menu_bar: QMenuBar) -> None:
         """Creates the Edit menu with undo/redo actions."""
         from PySide6.QtGui import QKeySequence
+
         from src.gui.utils.shortcut_manager import ShortcutManager
 
         edit_menu = menu_bar.addMenu("Edit")

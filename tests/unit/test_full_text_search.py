@@ -1,5 +1,4 @@
 import pytest
-from PySide6.QtCore import Qt
 
 from src.core.entities import Entity
 from src.core.events import Event

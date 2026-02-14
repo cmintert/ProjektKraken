@@ -8,7 +8,7 @@ import datetime
 import os
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QObject, QSettings, Slot
+from PySide6.QtCore import QMetaObject, QObject, QSettings, Qt, Slot
 
 from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 from src.core.logging_config import get_logger
@@ -53,12 +53,39 @@ class AISearchManager(QObject):
             self.window.ai_settings_dialog.index_status_requested.connect(
                 self.refresh_search_index_status
             )
+            self.window.ai_settings_dialog.settings_saved.connect(
+                self._on_settings_saved
+            )
             # Initial status update
             self.refresh_search_index_status()
 
         self.window.ai_settings_dialog.show()
         self.window.ai_settings_dialog.raise_()
         self.window.ai_settings_dialog.activateWindow()
+
+    @Slot()
+    def _on_settings_saved(self) -> None:
+        """Handle settings saved from AI Settings dialog.
+
+        Propagates settings refresh to:
+        - DatabaseWorker (clears cached LLM provider in SummaryService)
+        - EntityEditor's LLMGenerationWidget (reloads templates/settings)
+        """
+        logger.info("AI settings saved — propagating refresh")
+
+        # Refresh worker-thread services (cross-thread call)
+        if hasattr(self.window, "worker") and self.window.worker:
+            QMetaObject.invokeMethod(
+                self.window.worker,
+                "refresh_ai_settings",
+                Qt.ConnectionType.QueuedConnection,
+            )
+
+        # Refresh entity editor's LLM generation widget
+        if hasattr(self.window, "entity_editor") and hasattr(
+            self.window.entity_editor, "llm_generator"
+        ):
+            self.window.entity_editor.llm_generator.refresh_settings()
 
     @Slot(str)
     def on_ai_settings_rebuild_requested(self, object_type: str) -> None:

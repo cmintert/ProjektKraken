@@ -15,7 +15,7 @@ from src.core.calendar import CalendarConfig
 from src.core.entities import Entity
 from src.core.events import Event
 from src.core.map import Map
-from src.core.marker import MapFeature, Marker
+from src.core.marker import Marker
 
 # Import repositories for modular CRUD operations
 from src.services.repositories import (

@@ -4,10 +4,8 @@ Tests cover complete tag pairs, unclosed/truncated tags, pipe-delimited tags,
 tags with attributes, edge cases, and whitespace normalisation.
 """
 
-import pytest
 
 from src.services.reasoning_filter import filter_reasoning_tags
-
 
 # ---------------------------------------------------------------------------
 # Complete standard tag pairs

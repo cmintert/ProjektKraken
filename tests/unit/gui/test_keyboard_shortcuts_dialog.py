@@ -51,8 +51,8 @@ def test_keyboard_shortcuts_dialog_displays_shortcuts(qapp):
 
 def test_keyboard_shortcuts_dialog_close_button(qapp):
     """Test that close button works."""
+
     from src.gui.dialogs.keyboard_shortcuts_dialog import KeyboardShortcutsDialog
-    from PySide6.QtCore import Qt
     
     dialog = KeyboardShortcutsDialog()
     
@@ -66,8 +66,9 @@ def test_keyboard_shortcuts_dialog_close_button(qapp):
 
 def test_keyboard_shortcuts_dialog_with_parent(qapp):
     """Test dialog creation with parent widget."""
-    from src.gui.dialogs.keyboard_shortcuts_dialog import KeyboardShortcutsDialog
     from PySide6.QtWidgets import QWidget
+
+    from src.gui.dialogs.keyboard_shortcuts_dialog import KeyboardShortcutsDialog
     
     parent = QWidget()
     dialog = KeyboardShortcutsDialog(parent)

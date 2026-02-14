@@ -8,7 +8,7 @@ import logging
 from typing import List, Optional
 
 from src.core.map import Map
-from src.core.marker import MapFeature, Marker
+from src.core.marker import Marker
 from src.services.repositories.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)

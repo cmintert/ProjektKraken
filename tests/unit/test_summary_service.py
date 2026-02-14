@@ -202,3 +202,56 @@ def test_is_stale_handles_corrupt_stored_hash(summary_service):
     }
     # Should be considered stale/invalid rather than crashing
     assert summary_service.is_stale(entity) is True
+
+
+def test_generate_summary_uses_configured_max_tokens(
+    summary_service, mock_llm_provider
+):
+    """Verify that generate_summary reads ai_gen_summary_max_tokens from settings."""
+    from PySide6.QtCore import QSettings
+
+    from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+
+    settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+    settings.setValue("ai_gen_summary_max_tokens", 4096)
+
+    entity = Entity(name="Hero", type="character", description="A brave hero.")
+    summary_service.generate_summary(entity)
+
+    call_args = mock_llm_provider.generate.call_args
+    assert call_args[1]["max_tokens"] == 4096
+
+    # Clean up
+    settings.remove("ai_gen_summary_max_tokens")
+
+
+def test_generate_summary_filters_reasoning_tags(summary_service, mock_llm_provider):
+    """Verify that reasoning tags are removed from summaries when filter is enabled."""
+    from PySide6.QtCore import QSettings
+
+    from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+
+    settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+    settings.setValue("ai_gen_filter_reasoning", True)
+
+    # Simulate a response with <think> tags (like DeepSeek R1)
+    mock_llm_provider.generate.return_value = {
+        "text": (
+            "<think>\nLet me analyze this entity...\n</think>\n"
+            "This is the actual summary."
+        ),
+        "model": "deepseek-r1",
+        "usage": {"total_tokens": 100},
+        "finish_reason": "stop",
+    }
+
+    entity = Entity(name="Hero", type="character", description="A brave hero.")
+    result = summary_service.generate_summary(entity)
+
+    # The <think> block should be gone
+    assert "<think>" not in result.text
+    assert "Let me analyze" not in result.text
+    assert "This is the actual summary." in result.text
+
+    # Clean up
+    settings.remove("ai_gen_filter_reasoning")

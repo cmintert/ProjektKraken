@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 from src.core.entities import Entity
 from src.core.events import Event
 from src.core.summary_data import SummaryData
-from src.services.llm_provider import create_provider
+from src.services.llm_provider import create_provider, log_ai_interaction
 
 if TYPE_CHECKING:
     from src.services.db_service import DatabaseService
@@ -79,6 +79,15 @@ class SummaryService:
             self._llm_provider = create_provider(provider_id)
 
         return self._llm_provider
+
+    def reset_provider(self) -> None:
+        """Reset the cached LLM provider.
+
+        Forces re-creation with current settings on next use.
+        Call this when AI provider/model settings change.
+        """
+        self._llm_provider = None
+        logger.info("SummaryService: LLM provider cache cleared")
 
     def _calculate_hash(self, item: Union[Entity, Event]) -> str:
         """Calculate a SHA-256 hash of the item's summarizable content.
@@ -157,17 +166,41 @@ class SummaryService:
             prompt = self._build_prompt(item)
             logger.info(f"Generating summary for {item.name}. Prompt:\n{prompt}")
 
-            # TODO: Make max_tokens configurable per request if needed
-            response = provider.generate(prompt, max_tokens=300)
+            # Read configured summary max tokens from settings
+            from PySide6.QtCore import QSettings
+
+            from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+
+            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+            summary_max_tokens = int(settings.value("ai_gen_summary_max_tokens", 2048))
+            response = provider.generate(prompt, max_tokens=summary_max_tokens)
             text = response.get("text", "").strip()
             model = response.get("model", "unknown")
-            logger.info(f"Summary generation successful. Response:\n{text}")
+            logger.info(f"Summary generation raw response:\n{text}")
+
+            # Apply reasoning tag filter if enabled
+            filter_reasoning = settings.value(
+                "ai_gen_filter_reasoning", True, type=bool
+            )
+            if filter_reasoning:
+                from src.services.reasoning_filter import filter_reasoning_tags
+
+                text = filter_reasoning_tags(text)
+                logger.info(f"Summary after reasoning filter:\n{text}")
 
             summary = SummaryData(
                 text=text,
                 hash=self._calculate_hash(item),
                 timestamp=time.time(),
                 model=model,
+            )
+
+            # Audit log prompt and response
+            log_ai_interaction(
+                prompt=prompt,
+                response_text=text,
+                model=model,
+                source="SummaryService",
             )
 
             # Update item

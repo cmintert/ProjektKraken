@@ -1,10 +1,11 @@
-import time
 import json
-import pytest
 from unittest.mock import MagicMock
-from src.services.history_service import HistoryService
+
+import pytest
+
 from src.commands.base_command import BaseCommand, CommandResult
 from src.services.db_service import DatabaseService
+from src.services.history_service import HistoryService
 
 
 # Mock proper BaseCommand implementation for testing

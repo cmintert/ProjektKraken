@@ -3,11 +3,13 @@ Regression test for MapWidget layer renaming double-signal issue.
 Verifies that renaming a layer does NOT emit layer_tree_changed.
 """
 
-import pytest
 from unittest.mock import MagicMock
-from src.gui.widgets.map_widget import MapWidget
+
+import pytest
+
 from src.core.map import MapLayerNode
 from src.gui.widgets.map.map_layer_model import MapLayerModel
+from src.gui.widgets.map_widget import MapWidget
 
 
 @pytest.fixture

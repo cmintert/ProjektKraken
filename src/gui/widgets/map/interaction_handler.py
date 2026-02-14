@@ -8,12 +8,11 @@ import json
 import logging
 from typing import TYPE_CHECKING, Optional
 
-from PySide6.QtCore import QPoint, QPointF, Qt
+from PySide6.QtCore import QPoint, QPointF
 from PySide6.QtGui import QAction, QColor
 from PySide6.QtWidgets import (
     QColorDialog,
     QDialog,
-    QGraphicsView,
     QMenu,
     QPushButton,
 )
@@ -201,6 +200,7 @@ class InteractionHandler:
             QDoubleSpinBox,
             QFormLayout,
         )
+
         from src.gui.widgets.map.feature_items import (
             DEFAULT_REGION_FILL_COLOR,
             DEFAULT_STROKE_COLOR,

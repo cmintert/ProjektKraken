@@ -7,7 +7,6 @@ factory routing, temporal state updates, and item tracking.
 import logging
 from typing import TYPE_CHECKING, Dict, Optional
 
-from PySide6.QtCore import QPointF
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsObject
 
 from src.app.constants import MAP_LAYER_Z_MARKERS
