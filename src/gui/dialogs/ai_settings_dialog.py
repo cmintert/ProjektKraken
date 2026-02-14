@@ -41,6 +41,7 @@ class AISettingsDialog(QDialog):
 
     rebuild_index_requested = Signal(str)  # object_type ('entity', 'event', 'all')
     index_status_requested = Signal()  # Request to refresh index status
+    settings_saved = Signal()  # Emitted after settings are persisted to QSettings
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the AI Settings Dialog.
@@ -297,7 +298,7 @@ class AISettingsDialog(QDialog):
         StyleHelper.apply_standard_list_spacing(params_layout)
 
         self.max_tokens_input = QSpinBox()
-        self.max_tokens_input.setRange(100, 4096)
+        self.max_tokens_input.setRange(100, 100000)
         self.max_tokens_input.setValue(512)
         self.max_tokens_input.setToolTip("Maximum tokens to generate per request")
         self.max_tokens_input.valueChanged.connect(self.save_settings)
@@ -490,6 +491,7 @@ class AISettingsDialog(QDialog):
             ]
         )
         system_layout.addWidget(self.system_prompt_edit)
+        self.system_prompt_edit.textChanged.connect(self.save_settings)
         main_layout.addWidget(system_group)
 
         # Summary Prompt
@@ -526,7 +528,27 @@ class AISettingsDialog(QDialog):
         )
         self.summary_prompt_edit.set_default_text(default_summary_prompt)
         summary_layout.addWidget(self.summary_prompt_edit)
+        self.summary_prompt_edit.textChanged.connect(self.save_settings)
         main_layout.addWidget(summary_group)
+
+        # Summary Generation Parameters
+        summary_params_group = QGroupBox("Summary Parameters")
+        summary_params_layout = QFormLayout(summary_params_group)
+        StyleHelper.apply_compact_spacing(summary_params_layout)
+
+        self.summary_max_tokens_input = QSpinBox()
+        self.summary_max_tokens_input.setRange(100, 100000)
+        self.summary_max_tokens_input.setValue(2048)
+        self.summary_max_tokens_input.setToolTip(
+            "Maximum tokens for summary generation.\n"
+            "Reasoning models (e.g. DeepSeek R1) need higher values\n"
+            "because <think> tags consume part of the budget."
+        )
+        self.summary_max_tokens_input.valueChanged.connect(self.save_settings)
+        summary_params_layout.addRow(
+            "Summary Max Tokens:", self.summary_max_tokens_input
+        )
+        main_layout.addWidget(summary_params_group)
 
         # Output Filters
         filters_group = QGroupBox("Output Control")
@@ -1007,12 +1029,16 @@ class AISettingsDialog(QDialog):
         settings.setValue(
             "ai_gen_summary_prompt", self.summary_prompt_edit.toPlainText()
         )
+        settings.setValue(
+            "ai_gen_summary_max_tokens", self.summary_max_tokens_input.value()
+        )
 
         logger.info(
             f"AI Settings saved. Embedding provider: {provider}, "
             f"Excluded attrs: {self.excluded_attrs_input.text()}"
         )
         self._show_save_status("Saved")
+        self.settings_saved.emit()
 
     def _show_save_status(self, message: str) -> None:
         """Show save status message with autohide.
@@ -1142,6 +1168,9 @@ class AISettingsDialog(QDialog):
         )
         self.summary_prompt_edit.setPlainText(
             settings.value("ai_gen_summary_prompt", default_summary_prompt)
+        )
+        self.summary_max_tokens_input.setValue(
+            int(settings.value("ai_gen_summary_max_tokens", 2048))
         )
 
     def update_status(self, model: str, counts: str, last_updated: str) -> None:
