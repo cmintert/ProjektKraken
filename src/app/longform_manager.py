@@ -239,6 +239,8 @@ class LongformManager(QObject):
         """
         # Calculate new position - between next sibling and the one after it
         sequence = self.window.data_coordinator.cached_longform_sequence
+
+        # Find current item in sequence
         current_idx = None
         for idx, item in enumerate(sequence):
             if item["table"] == table and item["id"] == row_id:
