@@ -335,3 +335,120 @@ class TestEditorSaveMergesAttributes:
         assert reloaded.attributes["_summary_data"]["text"] == "Generated summary text."
         assert reloaded.attributes["_custom_meta"] == {"visibility": "global"}
         assert reloaded.attributes["duration_hours"] == 3
+
+
+class TestSummaryLoadedOnEditorOpen:
+    """Summaries persisted in DB must appear in editor widgets on load."""
+
+    def test_entity_editor_loads_summary_without_summary_service(
+        self, qapp, db_service
+    ):
+        """Entity editor must display summary even when summary_service is None."""
+        from src.gui.widgets.entity_editor import EntityEditorWidget
+
+        summary_dict = {
+            "text": "A heroic knight.",
+            "hash": "abc",
+            "timestamp": 1000.0,
+            "model": "test-model",
+        }
+        entity = Entity(
+            name="Knight",
+            type="character",
+            description="A loyal knight.",
+            attributes={
+                "_tags": ["warrior"],
+                "_summary_data": summary_dict,
+            },
+        )
+        db_service.insert_entity(entity)
+        reloaded = db_service.get_entity(entity.id)
+
+        editor = EntityEditorWidget()
+        # summary_service is None by default (never injected)
+        assert editor.summary_service is None
+
+        # Mock gallery to avoid main_window dependency
+        editor.gallery = MagicMock()
+
+        editor.load_entity(reloaded)
+
+        # Summary must be displayed even without summary_service
+        displayed = editor.summary_widget.text_display.toPlainText()
+        assert "A heroic knight." in displayed
+
+    def test_event_editor_loads_summary_without_summary_service(
+        self, qapp, db_service
+    ):
+        """Event editor must display summary even when summary_service is None."""
+        from src.gui.widgets.event_editor import EventEditorWidget
+
+        summary_dict = {
+            "text": "A decisive battle.",
+            "hash": "xyz",
+            "timestamp": 2000.0,
+            "model": "test-model",
+        }
+        event = Event(
+            name="Battle",
+            lore_date=500.0,
+            description="A great battle.",
+            attributes={
+                "_tags": ["war"],
+                "_summary_data": summary_dict,
+            },
+        )
+        db_service.insert_event(event)
+        reloaded = db_service.get_event(event.id)
+
+        editor = EventEditorWidget()
+        assert editor.summary_service is None
+
+        # Mock gallery to avoid main_window dependency
+        editor.gallery = MagicMock()
+
+        editor.load_event(reloaded)
+
+        displayed = editor.summary_widget.text_display.toPlainText()
+        assert "A decisive battle." in displayed
+
+    def test_entity_editor_shows_staleness_with_summary_service(
+        self, qapp, db_service
+    ):
+        """When summary_service is injected, staleness should be checked."""
+        from src.gui.widgets.entity_editor import EntityEditorWidget
+
+        summary_dict = {
+            "text": "Old summary.",
+            "hash": "stale_hash",
+            "timestamp": 1000.0,
+            "model": "test-model",
+        }
+        entity = Entity(
+            name="Wizard",
+            type="character",
+            description="Changed description.",
+            attributes={
+                "_tags": ["magic"],
+                "_summary_data": summary_dict,
+            },
+        )
+        db_service.insert_entity(entity)
+        reloaded = db_service.get_entity(entity.id)
+
+        editor = EntityEditorWidget()
+        # Mock gallery to avoid main_window dependency
+        editor.gallery = MagicMock()
+
+        mock_service = MagicMock()
+        mock_service.is_stale.return_value = True
+        editor.set_summary_service(mock_service)
+
+        editor.load_entity(reloaded)
+
+        # Summary should still be displayed
+        displayed = editor.summary_widget.text_display.toPlainText()
+        assert "Old summary." in displayed
+
+        # Staleness check should have been called
+        mock_service.is_stale.assert_called_once()

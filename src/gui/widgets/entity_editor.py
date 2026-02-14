@@ -760,17 +760,15 @@ class EntityEditorWidget(QWidget):
             self.gallery.set_owner("entity", entity.id)
 
             # Load Summary
-            if self.summary_service and (
-                summary_data := entity.attributes.get("_summary_data")
-            ):
+            summary_data = entity.attributes.get("_summary_data")
+            if summary_data:
                 with suppress(Exception):
                     data = SummaryData.from_dict(summary_data)
                     self.summary_widget.set_summary(data)
-                    # Open if summary exists ? Or keep user preference?
-                    # Keep existing state or open if user preference set (later)
 
-                is_stale = self.summary_service.is_stale(entity)
-                self.summary_widget.set_stale(is_stale)
+                if self.summary_service:
+                    is_stale = self.summary_service.is_stale(entity)
+                    self.summary_widget.set_stale(is_stale)
 
             # Reset Read-Only mode (in case we were in temporal view)
             self.exit_read_only_mode()
