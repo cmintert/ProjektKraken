@@ -184,9 +184,6 @@ class WorkerManager(QObject):
         self.window.worker.completer_data_loaded.connect(
             self.window.on_completer_data_loaded, connection_type
         )
-        self.window.worker.completer_data_loaded.connect(
-            self.window.on_completer_data_loaded, connection_type
-        )
         self.window.worker.import_finished.connect(
             self.window._on_import_finished, connection_type
         )
@@ -312,20 +309,7 @@ class WorkerManager(QObject):
 
             # Initialize History Service for Phase 2 persistent undo/redo
             try:
-                from src.commands.entity_commands import (
-                    CreateEntityCommand,
-                )
-                from src.commands.entity_commands import (
-                    DeleteEntityCommand as DeleteEntityCmd,
-                )
-                from src.commands.entity_commands import (
-                    UpdateEntityCommand as UpdateEntityCmd,
-                )
-                from src.commands.event_commands import (
-                    CreateEventCommand,
-                    DeleteEventCommand,
-                    UpdateEventCommand,
-                )
+                from src.commands.registry import get_command_types
                 from src.services.history_service import HistoryService
 
                 # Create history service with current world ID
@@ -338,80 +322,9 @@ class WorkerManager(QObject):
                     self.window.gui_db_service, world_id
                 )
 
-                # Register command types for deserialization
-                # Event commands
-                self.window.history_service.register_command_type(
-                    "CreateEventCommand", CreateEventCommand
-                )
-                self.window.history_service.register_command_type(
-                    "UpdateEventCommand", UpdateEventCommand
-                )
-                self.window.history_service.register_command_type(
-                    "DeleteEventCommand", DeleteEventCommand
-                )
-
-                # Relation commands
-                from src.commands.relation_commands import (
-                    AddRelationCommand,
-                    RemoveRelationCommand,
-                    UpdateRelationCommand,
-                )
-
-                self.window.history_service.register_command_type(
-                    "AddRelationCommand", AddRelationCommand
-                )
-                self.window.history_service.register_command_type(
-                    "UpdateRelationCommand", UpdateRelationCommand
-                )
-                self.window.history_service.register_command_type(
-                    "RemoveRelationCommand", RemoveRelationCommand
-                )
-
-                # Composite and Wiki commands
-                from src.commands.composite_command import CompositeCommand
-                from src.commands.wiki_commands import ProcessWikiLinksCommand
-
-                self.window.history_service.register_command_type(
-                    "CompositeCommand", CompositeCommand
-                )
-                self.window.history_service.register_command_type(
-                    "ProcessWikiLinksCommand", ProcessWikiLinksCommand
-                )
-
-                # Entity commands
-                self.window.history_service.register_command_type(
-                    "CreateEntityCommand", CreateEntityCommand
-                )
-                self.window.history_service.register_command_type(
-                    "UpdateEntityCommand", UpdateEntityCmd
-                )
-                self.window.history_service.register_command_type(
-                    "DeleteEntityCommand", DeleteEntityCmd
-                )
-
-                # Map commands
-                from src.commands.map_commands import (
-                    CreateMapCommand,
-                    DeleteMapCommand,
-                    UpdateMapCommand,
-                )
-
-                self.window.history_service.register_command_type(
-                    "CreateMapCommand", CreateMapCommand
-                )
-                self.window.history_service.register_command_type(
-                    "UpdateMapCommand", UpdateMapCommand
-                )
-                self.window.history_service.register_command_type(
-                    "DeleteMapCommand", DeleteMapCommand
-                )
-
-                # Calendar commands
-                from src.commands.calendar_commands import UpdateCalendarConfigCommand
-
-                self.window.history_service.register_command_type(
-                    "UpdateCalendarConfigCommand", UpdateCalendarConfigCommand
-                )
+                # Register all known command types from centralized registry
+                for name, cls in get_command_types().items():
+                    self.window.history_service.register_command_type(name, cls)
 
                 # Connect to command coordinator
                 self.window.coordinator.set_history_service(self.window.history_service)

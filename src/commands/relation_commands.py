@@ -11,7 +11,7 @@ All commands support undo/redo operations and return CommandResult objects.
 import logging
 from typing import Any, Dict, Optional
 
-from src.commands.base_command import BaseCommand
+from src.commands.base_command import BaseCommand, CommandResult
 from src.services.db_service import DatabaseService
 
 logger = logging.getLogger(__name__)
@@ -47,11 +47,11 @@ class AddRelationCommand(BaseCommand):
 
         self._created_rel_ids: list[str] = []  # Store for Undo (list of IDs)
 
-    def execute(self, db_service: DatabaseService) -> bool:
+    def execute(self, db_service: DatabaseService) -> CommandResult:
         """Executes insertion of the relation(s).
 
         Returns:
-            bool: True if successful.
+            CommandResult: Result indicating success or failure.
 
         """
         try:
@@ -75,10 +75,18 @@ class AddRelationCommand(BaseCommand):
                 self._created_rel_ids.append(rev_id)
 
             self._is_executed = True
-            return True
+            return CommandResult(
+                success=True,
+                message=f"Added relation {self.source_id}->{self.target_id}",
+                command_name="AddRelationCommand",
+            )
         except Exception as e:
             logger.error(f"Failed to add relation: {e}")
-            return False
+            return CommandResult(
+                success=False,
+                message=str(e),
+                command_name="AddRelationCommand",
+            )
 
     def undo(self, db_service: DatabaseService) -> None:
         """Reverts the action by deleting the created relation(s)."""
@@ -130,21 +138,29 @@ class RemoveRelationCommand(BaseCommand):
         self.rel_id = rel_id
         self._backup_rel = None
 
-    def execute(self, db_service: DatabaseService) -> bool:
+    def execute(self, db_service: DatabaseService) -> CommandResult:
         """Executes the command to delete the relation.
 
         Returns:
-            bool: True if successful, False if error.
+            CommandResult: Result indicating success or failure.
 
         """
         # Backup logic would go here
         try:
             db_service.delete_relation(self.rel_id)
             self._is_executed = True
-            return True
+            return CommandResult(
+                success=True,
+                message=f"Removed relation {self.rel_id}",
+                command_name="RemoveRelationCommand",
+            )
         except Exception as e:
             logger.error(f"Failed to delete relation: {e}")
-            return False
+            return CommandResult(
+                success=False,
+                message=str(e),
+                command_name="RemoveRelationCommand",
+            )
 
     def undo(self, db_service: DatabaseService) -> None:
         """Reverts the deletion (Not fully implemented yet, needs backup logic)."""
@@ -191,18 +207,22 @@ class UpdateRelationCommand(BaseCommand):
 
         self._previous_state: Optional[Dict[str, Any]] = None
 
-    def execute(self, db_service: DatabaseService) -> bool:
+    def execute(self, db_service: DatabaseService) -> CommandResult:
         """Executes the update, snapshotting the old state.
 
         Returns:
-            bool: True if successful.
+            CommandResult: Result indicating success or failure.
 
         """
         # Snapshot
         current = db_service.get_relation(self.rel_id)
         if not current:
             logger.warning(f"Cannot update relation {self.rel_id}: Not found")
-            return False
+            return CommandResult(
+                success=False,
+                message=f"Relation {self.rel_id} not found",
+                command_name="UpdateRelationCommand",
+            )
 
         self._previous_state = current
 
@@ -212,10 +232,18 @@ class UpdateRelationCommand(BaseCommand):
                 self.rel_id, self.target_id, self.rel_type, self.attributes
             )
             self._is_executed = True
-            return True
+            return CommandResult(
+                success=True,
+                message=f"Updated relation {self.rel_id}",
+                command_name="UpdateRelationCommand",
+            )
         except Exception as e:
             logger.error(f"Failed to update relation: {e}")
-            return False
+            return CommandResult(
+                success=False,
+                message=str(e),
+                command_name="UpdateRelationCommand",
+            )
 
     def undo(self, db_service: DatabaseService) -> None:
         """Reverts the update."""

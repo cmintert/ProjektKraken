@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class TemporalManager(QObject):
-    """Manages temporal state resolution, catching, and invalidation."""
+    """Manages temporal state resolution, caching, and invalidation."""
 
     def __init__(self, db_service: Any) -> None:
         """Args:
