@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-02-14
-**Commit:** `f62496a`
+**Commit:** `d05c002`
 ---
 
 # Changelog
@@ -10,6 +10,22 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Added
+- *(2026-02-14)* **AI**: Added "Summary Temperature" setting (0.0 - 1.0) to control generation determinism.
+  - Defaults to `0.3` for consistent, factual summaries.
+  - Lower values produce more deterministic output; higher values allow for more creativity.
+- *(2026-02-14)* **AI**: Implemented robust settings refresh system; changes to models, providers, and prompt templates now apply immediately without requiring an application restart.
+  - `SummaryService` and `LLMGenerationWidget` now listen for `ai_settings_changed` signal.
+  - Automatically re-initializes provider connections when API keys or URLs change.
+
+### Fixed
+- *(2026-02-14)* **AI**: Fixed "Prompt Editor" autosave not triggering correctly in Settings Dialog.
+  - Ensures custom prompt templates are persisted reliably when switching tabs or closing the dialog.
+- *(2026-02-13)* **Docs**: Corrected opacity slider docstring.
+
+### Cleanup
+- *(2026-02-14)* **Architecture**: Removed deprecated `_perform_rag_search` method and unused AI constants from `AISearchManager` to simplify codebase.
 
 ### Architecture
 - *(2026-02-13)* **Architecture**: Split `map_commands.py` (1,648 lines) into focused functional modules and decomposed `MapGraphicsView` into 5 sub-components for better maintainability.
