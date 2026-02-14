@@ -130,7 +130,7 @@ def _normalise_whitespace(text: str) -> str:
         Cleaned text.
 
     """
-    # Collapse 3+ consecutive newlines (possibly with whitespace between)
-    # into exactly two newlines (one blank line).
-    text = re.sub(r"(\s*\n){3,}", "\n\n", text)
+    # Collapse 3+ consecutive newlines (with optional whitespace-only lines
+    # between them) into exactly two newlines (one visible blank line).
+    text = re.sub(r"(\n\s*){3,}", "\n\n", text)
     return text.strip()
