@@ -85,12 +85,11 @@ class TestPromptBuilder:
         )
         user_msg = result["user"]
 
-        data_pos = user_msg.index("--- DATA: ENTITY/EVENT DETAILS ---")
-        end_data_pos = user_msg.index("--- END DATA ---")
-        task_pos = user_msg.index("Task: Write a backstory")
+        entity_pos = user_msg.index("[Entity]")
+        task_pos = user_msg.index("[Task]")
 
         # Data block should come before Task
-        assert data_pos < end_data_pos < task_pos
+        assert entity_pos < task_pos
 
     def test_construct_prompt_with_rag_placeholder(self) -> None:
         """Test that RAG placeholder is included when requested."""
@@ -111,13 +110,13 @@ class TestPromptBuilder:
         assert "{{RAG_CONTEXT}}" not in result["user"]
 
     def test_construct_prompt_contains_delimiters(self) -> None:
-        """Test that prompt contains expected delimiters."""
+        """Test that prompt contains expected section markers."""
         builder = PromptBuilder()
         result = builder.construct_prompt("ctx", "task")
         user_msg = result["user"]
-        assert "--- DATA: ENTITY/EVENT DETAILS ---" in user_msg
-        assert "--- END DATA ---" in user_msg
-        assert "Task: task" in user_msg
+        assert "[Entity]" in user_msg
+        assert "[Task]" in user_msg
+        assert "task" in user_msg
 
     def test_default_system_prompt_narrative_temporal(self) -> None:
         """Test that default system prompt uses narrative-friendly temporal guidance.

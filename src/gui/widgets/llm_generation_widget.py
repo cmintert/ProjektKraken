@@ -170,7 +170,7 @@ class GenerationWorker(QThread):
         if is_dict:
             if "{{RAG_CONTEXT}}" in self.prompt["user"]:
                 replacement = (
-                    f"--- DATA: RAG CONTEXT ---\n{rag_context}" if rag_context else ""
+                    f"[Context]\n{rag_context}" if rag_context else ""
                 )
                 self.prompt["user"] = self.prompt["user"].replace(
                     "{{RAG_CONTEXT}}", replacement
@@ -178,18 +178,18 @@ class GenerationWorker(QThread):
             elif rag_context:
                 # Prepend if no placeholder but content found
                 self.prompt["user"] = (
-                    f"--- DATA: RAG CONTEXT ---\n{rag_context}\n" + self.prompt["user"]
+                    f"[Context]\n{rag_context}\n\n" + self.prompt["user"]
                 )
         else:
             # String prompt
             if "{{RAG_CONTEXT}}" in self.prompt:
                 replacement = (
-                    f"--- DATA: RAG CONTEXT ---\n{rag_context}" if rag_context else ""
+                    f"[Context]\n{rag_context}" if rag_context else ""
                 )
                 self.prompt = self.prompt.replace("{{RAG_CONTEXT}}", replacement)
             elif rag_context:
                 self.prompt = (
-                    f"--- DATA: RAG CONTEXT ---\n{rag_context}\n" + self.prompt
+                    f"[Context]\n{rag_context}\n\n" + self.prompt
                 )
 
         if rag_context:
@@ -1014,9 +1014,9 @@ class LLMGenerationWidget(QWidget):
 
             # Update the user message in the prompt dict
             replacement = (
-                f"--- DATA: RAG CONTEXT ---\n{rag_context}"
+                f"[Context]\n{rag_context}"
                 if rag_context
-                else "--- DATA: RAG CONTEXT ---\n(No results found for query)"
+                else "[Context]\n(No results found for query)"
             )
             prompt["user"] = user_msg.replace("{{RAG_CONTEXT}}", replacement)
 

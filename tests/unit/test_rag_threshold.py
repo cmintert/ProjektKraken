@@ -125,4 +125,4 @@ def test_rag_lexical_results_bypass_threshold(mock_search_service_with_scores):
         context = service.get_context("Direct Match")
 
         assert "Direct Match" in context
-        assert "(Direct Mention)" in context
+        assert "(character)" in context

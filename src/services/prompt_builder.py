@@ -130,19 +130,17 @@ class PromptBuilder:
         user_message_parts: List[str] = []
 
         # -- DATA: ENTITY/EVENT DETAILS -- (placed first)
-        user_message_parts.append("--- DATA: ENTITY/EVENT DETAILS ---")
-        user_message_parts.append(context_str)
+        if context_str:
+            user_message_parts.append(f"[Entity]\n{context_str}")
 
         # -- DATA: RAG CONTEXT -- (optional placeholder)
         if include_rag_placeholder:
             user_message_parts.append("{{RAG_CONTEXT}}")
 
-        user_message_parts.append("--- END DATA ---")
-
         # -- TASK -- (placed last to reduce recency bias)
-        user_message_parts.append(f"\nTask: {user_prompt}")
+        user_message_parts.append(f"[Task]\n{user_prompt}")
 
         # Filter out empty parts and assemble
-        final_user_message = "\n".join(filter(None, user_message_parts))
+        final_user_message = "\n\n".join(filter(None, user_message_parts))
 
         return {"system": self.system_prompt, "user": final_user_message}

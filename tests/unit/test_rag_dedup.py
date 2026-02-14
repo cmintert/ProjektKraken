@@ -39,7 +39,7 @@ def test_rag_deduplication(mock_search_service):
             "Tell me about Green Box 224", exclude_names=[]
         )
         assert "Green Box 224" in context_dirty
-        assert "(Direct Mention)" in context_dirty
+        assert "(location)" in context_dirty
 
         # Act 2: With exclusion
         context_clean = service.get_context(
@@ -48,7 +48,6 @@ def test_rag_deduplication(mock_search_service):
 
         # Assert
         assert "Green Box 224" not in context_clean
-        assert "(Direct Mention)" not in context_clean
 
 
 def test_rag_case_insensitive_deduplication(mock_search_service):

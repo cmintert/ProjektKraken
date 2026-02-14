@@ -200,79 +200,47 @@ class RAGService:
         return merged
 
     def _format_results(self, results: List[Dict[str, Any]]) -> str:
-        """Format results into Markdown for the LLM."""
-        context_parts = ["### World Knowledge (RAG Data):"]
+        """Format results into compact text for the LLM.
+
+        Uses a token-efficient format: one entry per block with minimal
+        markup. Descriptions are truncated to keep context windows lean.
+        """
+        context_parts: List[str] = []
 
         for r in results:
             name = r.get("name", "Unknown")
             rtype = r.get("type", "Unknown")
-            match_type = r.get("_match_type", "Semantic")
-
-            # Metadata/Attributes
-            # r.get("metadata", {})  # Unused
-            # We want to show attributes if available
-            # The search_service.query returns 'metadata' dict, but attributes might be buried or on disk?
-            # Current `query` implementation retrieves 'metadata' column which is json dumped.
-            # Does 'metadata' contain attributes?
-            # In index_entity/event: metadata = {"name": ..., "type": ...}
-            # It does NOT contain all attributes.
-            # To get attributes, we might need the TEXT SNIPPET which contains key: value pairs.
-            # OR we fetch from DB. Fetching from DB is cleaner but heavier.
-            # Accessing text_content (snippet) is easier.
 
             text_content = r.get("text_content", "")
 
-            # Simple parser to get relevant lines from text snippet
-            # Snippet format: Name: X\nType: Y\n[Tags: ...]\n[Description: ...]\nKey: Value...
-
             description = ""
-            attributes_lines = []
+            attributes_parts: List[str] = []
             tags_line = ""
 
             if text_content:
-                lines = text_content.split("\n\n")  # Snippets use double newline join?
-                # Check build_text_for_entity: "\n\n".join(parts)
-                # Yes.
-                for line in lines:
+                for line in text_content.split("\n\n"):
                     if line.startswith("Description: "):
-                        description = line.replace("Description: ", "").strip()
+                        description = line[len("Description: "):].strip()
                     elif line.startswith("Tags: "):
-                        tags_line = line.replace("Tags: ", "").strip()
-                    elif (
-                        line.startswith("Name:")
-                        or line.startswith("Type:")
-                        or line.startswith("Date:")
-                        or line.startswith("Duration:")
-                    ):
-                        continue  # Already have these or don't need repetition
-                    else:
-                        # Likely an attribute
-                        # Limit length of attributes?
-                        if len(line) < 100:
-                            attributes_lines.append(line)
+                        tags_line = line[len("Tags: "):].strip()
+                    elif line.startswith(("Name:", "Type:", "Date:", "Duration:")):
+                        continue
+                    elif len(line) < 100:
+                        attributes_parts.append(line)
 
-            # Assemble block
-            # **Name** (Type) [Direct Mention?]
-            header = f"**{name}** ({rtype})"
-            if match_type == "Direct Mention":
-                header += " *(Direct Mention)*"
-
-            block = [header]
-
+            # Compact single-line header
+            parts: List[str] = [f"{name} ({rtype})"]
             if tags_line:
-                block.append(f"Tags: {tags_line}")
-
-            if attributes_lines:
-                # Format attributes compactly? "Status: Alive | Location: Jail"
-                # Or list. Let's try pipe separator for compactness
-                block.append("Attributes: " + " | ".join(attributes_lines))
+                parts.append(f"[{tags_line}]")
+            if attributes_parts:
+                parts.append(" | ".join(attributes_parts))
+            header = " — ".join(parts)
 
             if description:
-                # Truncate overly long descriptions
-                if len(description) > 500:
-                    description = description[:497] + "..."
-                block.append(f"Description: {description}")
+                if len(description) > 300:
+                    description = description[:297] + "..."
+                context_parts.append(f"{header}\n{description}")
+            else:
+                context_parts.append(header)
 
-            context_parts.append("\n".join(block))
-
-        return "\n\n".join(context_parts) + "\n\n"
+        return "\n\n".join(context_parts)

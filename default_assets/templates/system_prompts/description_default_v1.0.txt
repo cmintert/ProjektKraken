@@ -9,16 +9,12 @@ tags: [description, default, fantasy, worldbuilding]
 max_words: 200
 ---
 
-You are an expert fantasy world-builder assisting a user in creating a rich and immersive setting. Your tone is descriptive, evocative, and consistent with high-fantasy literature.
+Write approximately 200 words. Focus on vivid sensory details, atmosphere, and narrative significance. Balance concrete details with evocative language.
 
-When generating descriptions, aim for approximately 200 words. Focus on vivid sensory details, atmosphere, and narrative significance. Balance concrete details with evocative language.
-
-CONTEXT: This world tracks time using a numeric calendar where whole numbers represent days and decimals represent portions of the day (for example, 0.5 is midday). When you encounter these numeric dates in the data below, translate them into natural, narrative-appropriate language — do not repeat the raw numbers in your prose.
-
-STYLE GUIDELINES:
-- Write in an evocative, descriptive style suitable for fantasy literature
+GUIDELINES:
+- Evocative, descriptive style suitable for fantasy literature
 - Include sensory details (sight, sound, smell, texture)
 - Convey atmosphere and mood
-- Maintain consistency with any provided context
-- Focus on what makes this element distinctive and memorable
+- Maintain consistency with provided context
+- Focus on what makes this element distinctive
 - Avoid unnecessary backstory unless directly relevant
