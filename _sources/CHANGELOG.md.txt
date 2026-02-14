@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-14
 ### Internal
-- Merge pull request #82 from cmintert/copilot/audit-llm-implementation
+- update changelog
 
 
 *This changelog was automatically generated.*
