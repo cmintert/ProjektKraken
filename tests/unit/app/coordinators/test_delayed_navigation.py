@@ -20,7 +20,10 @@ class MockMainWindow(QMainWindow):
         self.load_event_details = Mock()
         self.load_entity_details = Mock()
         self.timeline = Mock()
-        # self.graph_widget = Mock() # Less critical for this test
+        # Data coordinator mock for navigation
+        self.data_coordinator = Mock()
+        self.data_coordinator.load_event_details = self.load_event_details
+        self.data_coordinator.load_entity_details = self.load_entity_details
 
 
 @pytest.fixture
@@ -40,8 +43,8 @@ def test_delayed_selection(qtbot, mock_main_window):
     assert coordinator._pending_selection == ("entity", "id_1")
     assert coordinator.selected_id is None
 
-    # Wait for timer (plus a little buffer)
-    qtbot.wait(200)
+    # Wait for timer: NAVIGATION_SELECTION_DELAY_MS (250ms) + 100ms buffer
+    qtbot.wait(350)
 
     # Should be selected now
     assert coordinator._pending_selection is None

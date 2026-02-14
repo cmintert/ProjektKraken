@@ -67,7 +67,7 @@ class LongformManager(QObject):
     def on_longform_sequence_loaded(self, sequence: list) -> None:
         """Handler for when longform sequence is loaded."""
         self.window.longform_editor.load_sequence(sequence)
-        self.window._cached_longform_sequence = sequence
+        self.window.data_coordinator.cached_longform_sequence = sequence
 
     def on_command_finished_reload_longform(self) -> None:
         """Handler to reload longform sequence after command completion."""
@@ -169,7 +169,7 @@ class LongformManager(QObject):
 
         """
         # Calculate new position - between previous sibling and the one before it
-        sequence = self.window._cached_longform_sequence
+        sequence = self.window.data_coordinator.cached_longform_sequence
         
         # Find current item in sequence
         current_idx = None
@@ -238,8 +238,8 @@ class LongformManager(QObject):
 
         """
         # Calculate new position - between next sibling and the one after it
-        sequence = self.window._cached_longform_sequence
-        
+        sequence = self.window.data_coordinator.cached_longform_sequence
+
         # Find current item in sequence
         current_idx = None
         for idx, item in enumerate(sequence):
@@ -312,7 +312,7 @@ class LongformManager(QObject):
         if file_path:
             try:
                 lines = []
-                for item in self.window._cached_longform_sequence:
+                for item in self.window.data_coordinator.cached_longform_sequence:
                     heading_level = item["heading_level"]
                     title = item["meta"].get("title_override") or item["name"]
                     heading = "#" * heading_level + " " + title

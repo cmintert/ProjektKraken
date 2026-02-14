@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-02-14
-**Commit:** `aac2bcd`
+**Commit:** `ce2ab18`
 ---
 
 # Changelog
@@ -29,6 +29,7 @@ All notable changes to this project will be documented in this file.
 - *(2026-02-14)* **Architecture**: Removed deprecated `_perform_rag_search` method and unused AI constants from `AISearchManager` to simplify codebase.
 
 ### Architecture
+- *(2026-02-14)* **Refactor**: Removed backward compatibility hacks in coordinators and standardized usage of `DataCoordinator`.
 - *(2026-02-14)* **Architecture**: Continued `MainWindow` decomposition (Phase 1 & 2) by removing passthrough methods and rewiring `ConnectionManager` to access `LongformManager` directly.
 - *(2026-02-13)* **Architecture**: Split `map_commands.py` (1,648 lines) into focused functional modules and decomposed `MapGraphicsView` into 5 sub-components for better maintainability.
 - *(2026-02-13)* **Architecture**: Decoupled `MapHandler` from dialog management and implemented service locator pattern for `MainWindow` access.

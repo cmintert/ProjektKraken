@@ -17,7 +17,7 @@ def main_window(qtbot):
             patch("src.app.worker_manager.QThread"),
             patch("src.app.main_window.QTimer"),
             patch(
-                "src.app.main_window.QMessageBox.warning",
+                "src.app.coordinators.editor_coordinator.QMessageBox.warning",
                 return_value=QMessageBox.Discard,
             ),
         ):
@@ -37,7 +37,7 @@ def test_create_cancel_does_nothing(main_window):
         mock_input.return_value = ("", False)
 
         with patch("src.app.coordinators.editor_coordinator.CreateEntityCommand") as MockCmd:
-            main_window.create_entity()
+            main_window.editor_coordinator.create_entity()
             MockCmd.assert_not_called()
             main_window.worker.run_command.assert_not_called()
 
@@ -49,12 +49,12 @@ def test_select_item_switches_filter_if_needed(main_window):
     test_event = Event(id="evt1", name="Event 1", lore_date=10.0, type="generic")
 
     # Pre-populate
-    main_window._cached_entities = [test_entity]
-    main_window._cached_events = [test_event]
+    main_window.data_coordinator._cached_entities = [test_entity]
+    main_window.data_coordinator._cached_events = [test_event]
 
     # Set data on unified_list
     main_window.unified_list.set_data(
-        main_window._cached_events, main_window._cached_entities
+        main_window.data_coordinator.cached_events, main_window.data_coordinator.cached_entities
     )
 
     # 1. Set filter to "Entities Only"

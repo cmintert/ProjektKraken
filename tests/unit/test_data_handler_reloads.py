@@ -37,13 +37,17 @@ def test_on_command_finished_rename_layer_emits_reloads(data_handler):
 
 
 def test_on_command_finished_other_map_command_emits_maps_only(data_handler):
-    """Verify generic Map commands only trigger map reloads, not lore."""
+    """Verify generic Map commands trigger map reloads, not lore.
+
+    Uses CreateMapCommand as an example — it matches 'Map' in name
+    and is not in the no-reload set, so it emits reload_maps.
+    """
     data_handler.reload_maps = MagicMock()
     data_handler.reload_entities = MagicMock()
     data_handler.reload_events = MagicMock()
 
     result = CommandResult(
-        success=True, command_name="SaveLayerTreeCommand", message="Saved", data={}
+        success=True, command_name="CreateMapCommand", message="Created", data={}
     )
 
     # Execute

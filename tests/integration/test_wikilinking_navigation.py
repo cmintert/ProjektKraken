@@ -28,16 +28,16 @@ def test_navigate_to_entity_success(qtbot):
 
         # Setup cache
         target_entity = Entity(id="ent-1", name="Gandalf", type="Character")
-        window._cached_entities = [target_entity]
+        window.data_coordinator._cached_entities = [target_entity]
 
-        # Mock load method
-        window.load_entity_details = MagicMock()
+        # Mock load method on data_coordinator
+        window.data_coordinator.load_entity_details = MagicMock()
 
         # Execute
         window.navigation_coordinator.navigate_to_entity("Gandalf")
 
         # Verify
-        window.load_entity_details.assert_called_once_with("ent-1")
+        window.data_coordinator.load_entity_details.assert_called_once_with("ent-1")
 
         window.close()
 
@@ -58,12 +58,12 @@ def test_navigate_to_entity_case_insensitive(qtbot):
     ):
         window = MainWindow()
         window.worker = MagicMock()
-        window._cached_entities = [Entity(id="ent-1", name="Gandalf", type="Character")]
-        window.load_entity_details = MagicMock()
+        window.data_coordinator._cached_entities = [Entity(id="ent-1", name="Gandalf", type="Character")]
+        window.data_coordinator.load_entity_details = MagicMock()
 
         window.navigation_coordinator.navigate_to_entity("gAnDaLf")
 
-        window.load_entity_details.assert_called_once_with("ent-1")
+        window.data_coordinator.load_entity_details.assert_called_once_with("ent-1")
         window.close()
 
 
@@ -83,19 +83,17 @@ def test_navigate_to_entity_not_found(qtbot, monkeypatch):
     ):
         window = MainWindow()
         window.worker = MagicMock()
-        window._cached_entities = []
-        window._cached_events = []  # Also need to mock events cache
-        window.load_entity_details = MagicMock()
+        window.data_coordinator._cached_entities = []
+        window.data_coordinator._cached_events = []  # Also need to mock events cache
+        window.data_coordinator.load_entity_details = MagicMock()
 
         # Mock the _prompt_create_missing_target method to prevent blocking dialog
-        # Mock the _prompt_create_missing_target method on coordinator
         mock_prompt = MagicMock()
-        # Accessing internal method for mocking purposes
         window.navigation_coordinator._prompt_create_missing_target = mock_prompt
 
         window.navigation_coordinator.navigate_to_entity("Unknown")
 
-        window.load_entity_details.assert_not_called()
+        window.data_coordinator.load_entity_details.assert_not_called()
         mock_prompt.assert_called_once_with("Unknown")
 
         window.close()

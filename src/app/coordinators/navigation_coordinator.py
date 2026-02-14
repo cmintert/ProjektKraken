@@ -91,13 +91,13 @@ class NavigationCoordinator(BaseCoordinator):
 
         if item_type == "event":
             self.main_window.ui_manager.docks["event"].raise_()
-            self.main_window.load_event_details(item_id)
+            self.main_window.data_coordinator.load_event_details(item_id)
             # Sync Timeline (Focus and Select)
             self.main_window.timeline.focus_event(item_id)
 
         elif item_type == "entity":
             self.main_window.ui_manager.docks["entity"].raise_()
-            self.main_window.load_entity_details(item_id)
+            self.main_window.data_coordinator.load_entity_details(item_id)
 
         # 5. Sync Project Explorer (Unified List)
         # This ensures the list highlights the item even if selected via Graph/Link
@@ -131,14 +131,14 @@ class NavigationCoordinator(BaseCoordinator):
         if is_uuid:
             # ID-based navigation - direct lookup
             if entity := next(
-                (e for e in self.main_window._cached_entities if e.id == target),
+                (e for e in self.main_window.data_coordinator.cached_entities if e.id == target),
                 None,
             ):
                 self.set_global_selection("entity", entity.id)
                 return
 
             if event := next(
-                (e for e in self.main_window._cached_events if e.id == target), None
+                (e for e in self.main_window.data_coordinator.cached_events if e.id == target), None
             ):
                 self.set_global_selection("event", event.id)
                 return
@@ -162,7 +162,7 @@ class NavigationCoordinator(BaseCoordinator):
             if entity := next(
                 (
                     e
-                    for e in self.main_window._cached_entities
+                    for e in self.main_window.data_coordinator.cached_entities
                     if e.name.lower() == target.lower()
                 ),
                 None,
@@ -174,7 +174,7 @@ class NavigationCoordinator(BaseCoordinator):
             if event := next(
                 (
                     e
-                    for e in self.main_window._cached_events
+                    for e in self.main_window.data_coordinator.cached_events
                     if e.name.lower() == target.lower()
                 ),
                 None,

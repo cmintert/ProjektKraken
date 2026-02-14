@@ -79,7 +79,9 @@ class TimeCoordinator(BaseCoordinator):
         # Reload entity in normal editable mode
         entity_editor = self.main_window.entity_editor
         if entity_editor.isVisible() and entity_editor._current_entity_id:
-            self.main_window.load_entity_details(entity_editor._current_entity_id)
+            self.main_window.data_coordinator.load_entity_details(
+                entity_editor._current_entity_id
+            )
 
     def _format_time_string(self, time_val: float) -> str:
         """Formats time using calendar converter if available."""
@@ -115,3 +117,86 @@ class TimeCoordinator(BaseCoordinator):
         self.main_window.entity_editor.display_temporal_state(
             entity_id, attributes, self._current_playhead_time
         )
+
+    # ------------------------------------------------------------------
+    # Calendar Configuration
+    # ------------------------------------------------------------------
+
+    def request_calendar_config(self) -> None:
+        """Requests loading of the active calendar config from the worker."""
+        QMetaObject.invokeMethod(
+            self.main_window.worker,
+            "load_calendar_config",
+            Qt.ConnectionType.QueuedConnection,
+        )
+
+    def request_current_time(self) -> None:
+        """Requests loading of the current time from the worker."""
+        QMetaObject.invokeMethod(
+            self.main_window.worker,
+            "load_current_time",
+            Qt.ConnectionType.QueuedConnection,
+        )
+
+    @Slot(object)
+    def on_calendar_config_loaded(self, config: object) -> None:
+        """Handler for calendar config loaded from worker.
+
+        Creates a CalendarConverter and distributes it to all widgets
+        that need calendar formatting.
+
+        Args:
+            config: CalendarConfig or None.
+
+        """
+        try:
+            from src.core.calendar import CalendarConfig, CalendarConverter
+
+            if config:
+                converter = CalendarConverter(config)
+            else:
+                default_config = CalendarConfig.create_default()
+                converter = CalendarConverter(default_config)
+
+            self.main_window.event_editor.set_calendar_converter(converter)
+            self.main_window.timeline.set_calendar_converter(converter)
+            self.main_window.map_widget.set_calendar_converter(converter)
+            self.main_window.unified_list.set_calendar_converter(converter)
+
+            # Set calendar converter for timeline display in entity editor
+            from src.gui.widgets.timeline_display_widget import (
+                TimelineDisplayWidget,
+            )
+
+            TimelineDisplayWidget.set_calendar_converter(converter)
+
+            # Check if UIManager has a pending calendar dialog
+            self.main_window.ui_manager.show_calendar_dialog(config)
+
+            # Save converter for status bar formatting
+            self.main_window.calendar_converter = converter
+
+            # Refresh status bar labels now that we have a converter
+            if hasattr(self.main_window, "timeline") and hasattr(
+                self.main_window, "time_coordinator"
+            ):
+                self.update_world_time_label(
+                    self.main_window.timeline.get_current_time()
+                )
+                self.update_playhead_time_label(
+                    self.main_window.timeline.get_playhead_time()
+                )
+
+        except Exception as e:
+            logger.warning(f"Failed to initialize calendar converter: {e}")
+
+    @Slot(float)
+    def on_current_time_loaded(self, time: float) -> None:
+        """Handler for current time loaded from worker.
+
+        Args:
+            time: The current time in lore_date units.
+
+        """
+        self.main_window.timeline.set_current_time(time)
+        logger.debug(f"Current time loaded: {time}")

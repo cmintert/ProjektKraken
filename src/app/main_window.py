@@ -22,7 +22,6 @@ from typing import Optional
 # Remaining ~500 reportAttributeAccessIssue errors are for QMessageBox/QDialog
 # constants and other Qt classes that haven't been updated yet.
 from PySide6.QtCore import (
-    Q_ARG,
     QEvent,
     QMetaObject,
     QObject,
@@ -36,11 +35,8 @@ from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QDialog,
     QDockWidget,
-    QFileDialog,
     QLabel,
     QMainWindow,
-    QMessageBox,
-    QProgressDialog,
     QStatusBar,
     QWidget,
 )
@@ -62,8 +58,10 @@ from src.app.constants import (
     WINDOW_TITLE,
 )
 from src.app.coordinators.backup_coordinator import BackupCoordinator
+from src.app.coordinators.data_coordinator import DataCoordinator
 from src.app.coordinators.editor_coordinator import EditorCoordinator
 from src.app.coordinators.fast_inject_coordinator import FastInjectCoordinator
+from src.app.coordinators.import_coordinator import ImportCoordinator
 from src.app.coordinators.navigation_coordinator import NavigationCoordinator
 from src.app.coordinators.time_coordinator import TimeCoordinator
 from src.app.data_handler import DataHandler
@@ -75,9 +73,7 @@ from src.app.worker_manager import WorkerManager
 from src.core.fast_inject import FastInjectManager
 from src.core.logging_config import get_logger
 from src.core.paths import get_worlds_dir
-from src.gui.dialogs.database_manager_dialog import DatabaseManagerDialog
 from src.gui.dialogs.filter_dialog import FilterDialog
-from src.gui.dialogs.import_preview_dialog import ImportPreviewDialog
 from src.gui.mixins.layout_guard import LayoutGuardMixin
 from src.gui.widgets.ai_search_panel import AISearchPanelWidget
 from src.gui.widgets.entity_editor import EntityEditorWidget
@@ -273,6 +269,11 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # Initialize backup service (will be properly connected after DB init)
         self.backup_service = None
 
+        # Initialize coordinators needed by WorkerManager signal connections
+        self.time_coordinator = TimeCoordinator(self)
+        self.data_coordinator = DataCoordinator(self)
+        self.import_coordinator = ImportCoordinator(self)
+
         # Init Services (Worker Thread)
         self.worker_manager = WorkerManager(self)
         self.worker_manager.init_worker()
@@ -280,14 +281,9 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # Initialize state variables
         self.cached_event_count: Optional[int] = None
         self.longform_filter_config: dict = {}
-        self._cached_events = []
-        self._cached_entities = []
-        self._cached_longform_sequence = []
         self.calendar_converter = None
         self._pending_select_id = None
         self._pending_select_type = None
-        self._graph_reload_timer: QTimer | None = None
-        self._import_progress_dialog: Optional["QProgressDialog"] = None
 
     def _update_window_style(self, theme_data: dict) -> None:
         """Updates the Windows title bar style based on the current theme.
@@ -375,11 +371,10 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.event_editor.set_project_root(world_path)
         self.entity_editor.set_project_root(world_path)
 
-        # Initialize Coordinators (Phase 1)
+        # Initialize Coordinators
         self.fast_inject_coordinator = FastInjectCoordinator(self)
         self.navigation_coordinator = NavigationCoordinator(self)
         self.backup_coordinator = BackupCoordinator(self)
-        self.time_coordinator = TimeCoordinator(self)
         self.editor_coordinator = EditorCoordinator(self)
 
         # Initialize MapHandler with injected dependencies (no self reference)
@@ -784,41 +779,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         logger.debug("Dock state validation passed")
         return True
 
-    def update_item(self, data: dict) -> None:
-        """Placeholder for generalized update.
-
-        Currently unused as we split update_event/entity.
-        """
-        pass
-
-    def load_data(self) -> None:
-        """Refreshes data and active editors."""
-        self.load_events()
-        self.load_entities()
-        self.load_longform_sequence()
-        self.load_graph_data()
-        self.load_completer_data()
-
-        # Reload active editors to ensure they reflect current state (e.g. after undo)
-        # This prevents the editor from holding onto "future" state that might be
-        # auto-saved, restoring the undone change.
-        if (
-            hasattr(self.event_editor, "_current_event_id")
-            and self.event_editor._current_event_id
-        ):
-            self.load_event_details(self.event_editor._current_event_id)
-
-        if (
-            hasattr(self.entity_editor, "_current_entity_id")
-            and self.entity_editor._current_entity_id
-        ):
-            self.load_entity_details(self.entity_editor._current_entity_id)
-
-    def load_completer_data(self) -> None:
-        """Requests loading of completer data."""
-        QMetaObject.invokeMethod(
-            self.worker, "load_completer_data", Qt.ConnectionType.QueuedConnection
-        )
 
     def load_longform_sequence(self) -> None:
         """Loads the longform sequence. Delegates to LongformManager."""
@@ -842,20 +802,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """
         return self.editor_coordinator.check_unsaved_changes(editor)
 
-    def _on_editor_dirty_changed(self, editor: QWidget, dirty: bool) -> None:
-        """Updates the dock title with an asterisk if dirty.
-
-        Delegates to EditorCoordinator.
-        """
-        self.editor_coordinator.on_editor_dirty_changed(editor, dirty)
-
-    @Slot(str, str)
-    def _on_item_delete_requested(self, item_type: str, item_id: str) -> None:
-        """Handles deletion request from unified list.
-
-        Delegates to EditorCoordinator.
-        """
-        self.editor_coordinator.on_item_delete_requested(item_type, item_id)
 
     @Slot()
     def _update_history_panel(self) -> None:
@@ -908,74 +854,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """
         self.worker_manager.on_db_initialized(success)
 
-    def _request_calendar_config(self) -> None:
-        """Requests loading of the active calendar config from the worker."""
-        QMetaObject.invokeMethod(
-            self.worker, "load_calendar_config", Qt.ConnectionType.QueuedConnection
-        )
-
-    @Slot(object)
-    def on_calendar_config_loaded(self, config: object) -> None:
-        """Handler for calendar config loaded from worker.
-
-        Args:
-            config: CalendarConfig or None.
-
-        """
-        try:
-            from src.core.calendar import CalendarConfig, CalendarConverter
-
-            if config:
-                converter = CalendarConverter(config)
-            else:
-                # Use default if no active config
-                default_config = CalendarConfig.create_default()
-                converter = CalendarConverter(default_config)
-
-            self.event_editor.set_calendar_converter(converter)
-            self.timeline.set_calendar_converter(converter)
-            self.map_widget.set_calendar_converter(converter)
-            self.unified_list.set_calendar_converter(converter)
-
-            # Set calendar converter for timeline display in entity editor
-            from src.gui.widgets.timeline_display_widget import TimelineDisplayWidget
-
-            TimelineDisplayWidget.set_calendar_converter(converter)
-
-            # Check if UIManager has a pending calendar dialog
-            self.ui_manager.show_calendar_dialog(config)
-
-            # Save converter for status bar formatting
-            self.calendar_converter = converter
-
-            # Refresh status bar labels now that we have a converter
-            if hasattr(self, "timeline") and hasattr(self, "time_coordinator"):
-                self.time_coordinator.update_world_time_label(
-                    self.timeline.get_current_time()
-                )
-                self.time_coordinator.update_playhead_time_label(
-                    self.timeline.get_playhead_time()
-                )
-
-        except Exception as e:
-            logger.warning(f"Failed to initialize calendar converter: {e}")
-
-    def _request_current_time(self) -> None:
-        """Requests loading of the current time from the worker."""
-        QMetaObject.invokeMethod(
-            self.worker, "load_current_time", Qt.ConnectionType.QueuedConnection
-        )
-
-    @Slot(float)
-    def on_current_time_loaded(self, time: float) -> None:
-        """Handler for current time loaded from worker.
-
-        Args:
-            time (float): The current time in lore_date units.
-
-        """
-        self.timeline.set_current_time(time)
-        logger.debug(f"Current time loaded: {time}")
 
     @Slot()
     def toggle_auto_relation_setting(self) -> None:
@@ -1014,9 +892,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             logger.debug("Auto-refreshing longform editor")
             self.longform_manager.load_longform_sequence()
 
-    def on_command_finished_reload_longform(self) -> None:
-        """Handler to reload longform sequence after command completion."""
-        self.longform_manager.on_command_finished_reload_longform()
 
     def _request_grouping_config(self) -> None:
         """Requests loading of the timeline grouping configuration."""
@@ -1077,8 +952,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             self.timeline.save_state()
 
         # Stop debounce timer to prevent callbacks during shutdown
-        if self._graph_reload_timer is not None:
-            self._graph_reload_timer.stop()
+        if hasattr(self, "data_coordinator"):
+            self.data_coordinator.stop_graph_reload_timer()
 
         # Stop auto-backup timer if running
         if self.backup_service is not None:
@@ -1096,20 +971,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             self.worker_thread.wait()  # Wait for terminate to complete
 
         event.accept()
-
-    # ----------------------------------------------------------------------
-    # Methods that request data from Worker
-    # ----------------------------------------------------------------------
-
-    def seed_data(self) -> None:
-        """Populate the database with initial data (Deprecated).
-
-        Current implementation is a placeholder.
-        """
-        # Checking if empty is hard without async check.
-        # For now, let's just skip automatic seeding in this refactor or make it
-        # a command. Ideally, we should have a 'CheckEmpty' command or similar.
-        pass
 
     # TimelineDataProvider interface implementation
     def get_group_metadata(
@@ -1156,186 +1017,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             )
         return []
 
-    def load_events(self) -> None:
-        """Requests loading of all events."""
-        QMetaObject.invokeMethod(
-            self.worker, "load_events", Qt.ConnectionType.QueuedConnection
-        )
-
-    def load_entities(self) -> None:
-        """Requests loading of all entities."""
-        QMetaObject.invokeMethod(
-            self.worker, "load_entities", Qt.ConnectionType.QueuedConnection
-        )
-
-    def load_event_details(self, event_id: str) -> None:
-        """Requests loading details for a specific event."""
-        # Note: If called from selection, we already checked.
-        # But if called programmatically, we might want to check here too?
-        # Actually _on_item_selected calls this.
-        # But for robust safety, checking here is good, unless it causes double prompts.
-        # Let's rely on the caller (selection/navigation) to guard,
-        # as this is a "request" and checking UI state inside
-        # a low-level request might be mixing concerns slightly.
-        # However, to start simple, we guard at user-interaction points.
-
-        QMetaObject.invokeMethod(
-            self.worker,
-            "load_event_details",
-            Qt.ConnectionType.QueuedConnection,
-            Q_ARG(str, event_id),
-        )
-
-    def load_entity_details(self, entity_id: str) -> None:
-        """Requests loading details for a specific entity."""
-        QMetaObject.invokeMethod(
-            self.worker,
-            "load_entity_details",
-            Qt.ConnectionType.QueuedConnection,
-            Q_ARG(str, entity_id),
-        )
-
-    def load_graph_data(self, filter_config: Optional[dict] = None) -> None:
-        """Requests loading of graph data, optionally filtered.
-
-        Args:
-            filter_config: Optional dictionary with 'tags' and 'rel_types'.
-                           If not provided, uses current widget config.
-
-        """
-        # Get config from widget if not provided
-        if filter_config is None and self.graph_widget:
-            filter_config = self.graph_widget.get_filter_config()
-
-        tags = filter_config.get("tags") if filter_config else None
-        rel_types = filter_config.get("rel_types") if filter_config else None
-
-        # Emit signal with None supported (handled by Signal(object, object))
-        self.load_graph_data_requested.emit(tags, rel_types)
-
-    @Slot(list, list)
-    def _on_graph_data_ready(self, nodes: list[dict], edges: list[dict]) -> None:
-        """Updates the graph widget with loaded data.
-
-        Args:
-            nodes: List of node dictionaries.
-            edges: List of edge dictionaries.
-
-        """
-        if self.graph_widget:
-            # Pass the last selected ID to preserve focus
-            focus_id = self.navigation_coordinator.selected_id
-            self.graph_widget.display_graph(nodes, edges, focus_node_id=focus_id)
-
-    @Slot(list, list)
-    def _on_graph_metadata_ready(self, tags: list[str], rel_types: list[str]) -> None:
-        """Updates the graph widget with available metadata.
-
-        Args:
-            tags: List of available tags.
-            rel_types: List of available relation types.
-
-        """
-        if self.graph_widget:
-            self.graph_widget.set_available_tags(tags)
-            self.graph_widget.set_available_relation_types(rel_types)
 
     # DataHandler signal handlers (loose coupling via signals)
-    @Slot(list)
-    def _on_events_ready(self, events: list) -> None:
-        """Handle events ready signal from DataHandler.
-
-        Args:
-            events: List of Event objects.
-
-        """
-        self._cached_events = events
-        from src.core.logging_config import get_logger
-
-        logger = get_logger(__name__)
-        logger.info(f"DEBUG: _on_events_ready received {len(events)} events")
-        self.unified_list.set_data(self._cached_events, self._cached_entities)
-        self.timeline.set_events(events)
-        # Forward to MapWidget for object-selection dialogs
-        self.map_widget.set_cached_items(self._cached_entities, self._cached_events)
-
-        # Refresh graph to reflect changes (debounced)
-        self._schedule_graph_refresh()
-
-    @Slot(list)
-    def _on_entities_ready(self, entities: list) -> None:
-        """Handle entities ready signal from DataHandler.
-
-        Args:
-            entities: List of Entity objects.
-
-        """
-        self._cached_entities = entities
-        self.unified_list.set_data(self._cached_events, self._cached_entities)
-        # Forward to MapWidget for object-selection dialogs
-        self.map_widget.set_cached_items(self._cached_entities, self._cached_events)
-
-        # Refresh graph to reflect changes (debounced)
-        self._schedule_graph_refresh()
-
-    def _schedule_graph_refresh(self) -> None:
-        """Schedules a debounced graph refresh to avoid double-loading."""
-        if self._graph_reload_timer is None:
-            self._graph_reload_timer = QTimer()
-            self._graph_reload_timer.setSingleShot(True)
-            self._graph_reload_timer.timeout.connect(self.load_graph_data)
-        # Reset timer on each call (debounce)
-        self._graph_reload_timer.start(100)  # 100ms debounce
-
-    @Slot(list)
-    def _on_suggestions_update(self, items: list) -> None:
-        """Handle suggestions update request from DataHandler.
-
-        Args:
-            items: List of (id, name, type) tuples for completion.
-
-        """
-        self.event_editor.update_suggestions(items=items)
-        self.entity_editor.update_suggestions(items=items)
-
-    @Slot(object, list, list)
-    def _on_event_details_ready(
-        self, event: object, relations: list, incoming: list
-    ) -> None:
-        """Handle event details ready signal from DataHandler.
-
-        Args:
-            event: The Event object.
-            relations: List of outgoing relations.
-            incoming: List of incoming relations.
-
-        """
-        self.event_editor.load_event(event, relations, incoming)
-
-    @Slot(object, list, list)
-    def _on_entity_details_ready(
-        self, entity: object, relations: list, incoming: list
-    ) -> None:
-        """Handle entity details ready signal from DataHandler.
-
-        Args:
-            entity: The Entity object.
-            relations: List of outgoing relations.
-            incoming: List of incoming relations.
-
-        """
-        self.entity_editor.load_entity(entity, relations, incoming)
-
-    @Slot(list)
-    def _on_longform_sequence_ready(self, sequence: list) -> None:
-        """Handle longform sequence ready signal from DataHandler.
-
-        Args:
-            sequence: List of longform items.
-
-        """
-        self._cached_longform_sequence = sequence
-        self.longform_editor.load_sequence(sequence)
 
     @Slot(list)
     def _on_maps_ready(self, maps: list) -> None:
@@ -1358,209 +1041,16 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """
         self.map_handler.on_markers_ready(map_id, processed_markers)
 
-    @Slot(str)
-    def _on_dock_raise_requested(self, dock_name: str) -> None:
-        """Handle dock raise request from DataHandler.
-
-        Args:
-            dock_name: Name of the dock to raise ("event", "entity", etc).
-
-        """
-        if dock_name in self.ui_manager.docks:
-            self.ui_manager.docks[dock_name].raise_()
-
-    @Slot(str, str)
-    def _on_selection_requested(self, item_type: str, item_id: str) -> None:
-        """Handle selection request from DataHandler.
-
-        Args:
-            item_type: Type of item ("event" or "entity").
-            item_id: ID of the item to select.
-
-        """
-        self.unified_list.select_item(item_type, item_id)
-
-    @Slot(str)
-    def _on_command_failed(self, message: str) -> None:
-        """Handle command failure notification from DataHandler.
-
-        Args:
-            message: Error message from the failed command.
-
-        """
-        QMessageBox.warning(self, "Command Failed", message)
-
-    @Slot()
-    def _on_reload_active_editor_relations(self) -> None:
-        """Reload relations for whichever editor is currently active.
-
-        This is called after relation or wiki link commands complete.
-        """
-        logger.debug(
-            f"[MainWindow] _on_reload_active_editor_relations: "
-            f"event_id={self.event_editor._current_event_id}, "
-            f"entity_id={self.entity_editor._current_entity_id}, "
-            f"active_type={self.navigation_coordinator.selected_type}"
-        )
-
-        # Only reload the currently selected type to prevent focus jumping
-        # If we reload both, the DataHandler triggers 'raise_dock' for each,
-        # causing the last one loaded (usually Entity) to steal focus.
-        if (
-            self.navigation_coordinator.selected_type == "event"
-            and self.event_editor._current_event_id
-        ):
-            logger.debug("[MainWindow] Reloading active event details")
-            self.load_event_details(self.event_editor._current_event_id)
-
-        elif (
-            self.navigation_coordinator.selected_type == "entity"
-            and self.entity_editor._current_entity_id
-        ):
-            logger.debug("[MainWindow] Reloading active entity details")
-            self.load_entity_details(self.entity_editor._current_entity_id)
-
-        # If active type is none or mismatch, we might want to reload both safely?
-        # But generally, we only care about what the user is looking at.
-
-    def delete_event(self, event_id: str) -> None:
-        """Deletes an event. Delegates to EditorCoordinator.
-
-        Args:
-            event_id (str): The ID of the event to delete.
-
-        """
-        self.editor_coordinator.delete_event(event_id)
-
-    def update_event(self, event_data: dict) -> None:
-        """Updates an event. Delegates to EditorCoordinator.
-
-        Args:
-            event_data (dict): Dictionary containing event data
-                including the 'id' field.
-
-        """
-        self.editor_coordinator.update_event(event_data)
-
-    @Slot(str, float)
-    def _on_event_date_changed(self, event_id: str, new_lore_date: float) -> None:
-        """Handles event date changes from timeline dragging.
-
-        Delegates to EditorCoordinator.
-        """
-        self.editor_coordinator.on_event_date_changed(event_id, new_lore_date)
-
-    @Slot(object)
-    def _on_command_finished_check_toast(self, result) -> None:
-        """Check if completed command was a drag-drop relation.
-
-        Delegates to EditorCoordinator.
-        """
-        self.editor_coordinator.on_command_finished_check_toast(result)
-
-    def create_entity(self) -> None:
-        """Creates a new entity. Delegates to EditorCoordinator."""
-        self.editor_coordinator.create_entity()
-
-    def create_event(self) -> None:
-        """Creates a new event. Delegates to EditorCoordinator."""
-        self.editor_coordinator.create_event()
-
-    def delete_entity(self, entity_id: str) -> None:
-        """Deletes an entity. Delegates to EditorCoordinator.
-
-        Args:
-            entity_id (str): The ID of the entity to delete.
-
-        """
-        self.editor_coordinator.delete_entity(entity_id)
-
-    def update_entity(self, entity_data: dict) -> None:
-        """Updates an entity. Delegates to EditorCoordinator.
-
-        Args:
-            entity_data (dict): Dictionary containing entity data
-                including the 'id' field.
-
-        """
-        self.editor_coordinator.update_entity(entity_data)
-
-    def add_relation(
-        self,
-        source_id: str,
-        target_id: str,
-        rel_type: str,
-        attributes: dict = None,
-        bidirectional: bool = False,
-    ) -> None:
-        """Adds a relation. Delegates to EditorCoordinator.
-
-        Args:
-            source_id (str): The ID of the source entity.
-            target_id (str): The ID of the target entity.
-            rel_type (str): The type of relation.
-            attributes (dict, optional): Attributes for the relation.
-            bidirectional (bool, optional): Whether the relation is
-                bidirectional. Defaults to False.
-
-        """
-        self.editor_coordinator.add_relation(
-            source_id,
-            target_id,
-            rel_type,
-            attributes=attributes,
-            bidirectional=bidirectional,
-        )
 
     def load_maps(self) -> None:
         """Requests loading of all maps."""
         self.map_handler.load_maps()
 
-    @Slot(str, str)
-    def _on_map_create_entity(self, new_id: str, name: str) -> None:
-        """Handle inline entity creation from the map.
-
-        Delegates to EditorCoordinator.
-        """
-        self.editor_coordinator.on_map_create_entity(new_id, name)
-
-    @Slot(str, str)
-    def _on_map_create_event(self, new_id: str, name: str) -> None:
-        """Handle inline event creation from the map.
-
-        Delegates to EditorCoordinator.
-        """
-        self.editor_coordinator.on_map_create_event(new_id, name)
 
     # ----------------------------------------------------------------------
     # Timeline Grouping Methods
     # ----------------------------------------------------------------------
 
-    def _on_configure_grouping_requested(self) -> None:
-        """Opens grouping configuration dialog by requesting data from worker thread."""
-        self.grouping_manager.on_configure_grouping_requested()
-
-    def on_completer_data_loaded(
-        self,
-        tags: list[str],
-        rel_types: list[str],
-        attr_keys: list[str],
-        entity_types: list[str],
-    ) -> None:
-        """Handler for completer data loaded from worker.
-
-        Updates suggestions in both Entity and Event editors.
-        """
-        # Update Entity Editor
-        self.entity_editor.update_tag_suggestions(tags)
-        self.entity_editor.update_attribute_suggestions(attr_keys)
-        self.entity_editor.update_relation_type_suggestions(rel_types)
-        self.entity_editor.update_entity_type_suggestions(entity_types)
-
-        # Update Event Editor
-        self.event_editor.update_tag_suggestions(tags)
-        self.event_editor.update_attribute_suggestions(attr_keys)
-        self.event_editor.update_relation_type_suggestions(rel_types)
 
     @Slot(list, object)
     def on_grouping_dialog_data_loaded(
@@ -1572,14 +1062,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """
         self.grouping_manager.on_grouping_dialog_data_loaded(tags_data, current_config)
 
-    @Slot(list, str)
-    def _on_grouping_applied(self, tag_order: list, mode: str) -> None:
-        """Handle grouping applied from dialog. Delegates to GroupingManager."""
-        self.grouping_manager.on_grouping_applied(tag_order, mode)
-
-    def _on_clear_grouping_requested(self) -> None:
-        """Clears timeline grouping."""
-        self.grouping_manager.on_clear_grouping_requested()
 
     # Removed: _on_tag_color_change_requested, _on_remove_from_grouping_requested
     # rewired to GroupingManager in ConnectionManager
@@ -1634,217 +1116,16 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         settings.remove(SETTINGS_FILTER_CONFIG_KEY)
 
         self.status_bar.showMessage("Filters cleared.")
-        self.load_data()
+        self.data_coordinator.load_data()
 
     # Removed: show_longform_filter_dialog, clear_longform_filter
     # rewired to LongformManager in ConnectionManager
-
-    @Slot(list, list)
-    def _on_filter_results_ready(self, events: list, entities: list) -> None:
-        """Handler for filter results.
-
-        Updates the Unified List with filtered data.
-        """
-        self.unified_list.set_data(events, entities)
-        count = len(events) + len(entities)
-        self.status_bar.showMessage(f"Filter applied. Found {count} items.")
-
-    def remove_relation(self, rel_id: str) -> None:
-        """Removes a relation. Delegates to EditorCoordinator.
-
-        Args:
-            rel_id (str): The ID of the relation to remove.
-
-        """
-        self.editor_coordinator.remove_relation(rel_id)
-
-    def update_relation(
-        self, rel_id: str, target_id: str, rel_type: str, attributes: dict = None
-    ) -> None:
-        """Updates an existing relation. Delegates to EditorCoordinator.
-
-        Args:
-            rel_id (str): The ID of the relation to update.
-            target_id (str): The new target entity ID.
-            rel_type (str): The new relation type.
-            attributes (dict, optional): The new attributes.
-
-        """
-        self.editor_coordinator.update_relation(
-            rel_id, target_id, rel_type, attributes=attributes
-        )
 
     # Removed: navigate_to_entity/prompt_create moved to NavigationCoordinator
 
     # Removed: promote/demote/move/export longform_entry
     # rewired to LongformManager in ConnectionManager
 
-    # =========================================================================
-    # AI Search Panel & Settings Methods
-    # =========================================================================
-
-    @Slot()
-    def show_ai_settings_dialog(self) -> None:
-        """Shows the AI Settings dialog."""
-        self.ai_search_manager.show_ai_settings_dialog()
-
     # Removed: perform_semantic_search, rebuild_search_index,
     # _on_search_result_selected, refresh_search_index_status
     # rewired to AISearchManager in ConnectionManager
-
-    @Slot()
-    def show_database_manager(self) -> None:
-        """Shows the Database Manager dialog."""
-        dialog = DatabaseManagerDialog(self)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            # If accepted, it means a restart is required (implied by select button)
-            # We can offer to restart immediately or just close.
-            # The dialog already warns user to restart.
-            # We could do auto-restart:
-            # qApp.quit()
-            # QProcess.startDetached(sys.executable, sys.argv)
-            pass
-
-    @Slot()
-    def import_item_requested(self) -> None:
-        """Handles the request to import an item from a JSON file.
-
-        This method:
-        1. Opens a file dialog to select a JSON file
-        2. Parses the JSON content (no DB access needed)
-        3. Shows a preview dialog
-        4. If confirmed, sends the parsed data to the worker thread for import
-        """
-        file_path, _ = QFileDialog.getOpenFileName(
-            self, "Import Item", "", "JSON Files (*.json);;All Files (*)"
-        )
-
-        if not file_path:
-            return
-
-        try:
-            # 1. Read and Parse (no DB access needed)
-            with open(file_path, "r", encoding="utf-8") as f:
-                json_content = f.read()
-
-            from src.services.import_service import ImportService
-
-            parsed_data = ImportService.parse_only(json_content)
-
-            # 2. Show Preview Dialog
-            dialog = ImportPreviewDialog(self, parsed_data)
-            if dialog.exec() == QDialog.DialogCode.Accepted:
-                # 3. Send to worker thread for DB operations
-                # Serialize to JSON string since Q_ARG doesn't support dict
-                import json
-
-                parsed_json = json.dumps(parsed_data)
-                options = dialog.get_options()
-                options_json = json.dumps(options)
-
-                QMetaObject.invokeMethod(
-                    self.worker,
-                    "run_import",
-                    Qt.ConnectionType.QueuedConnection,
-                    Q_ARG(str, parsed_json),
-                    Q_ARG(str, options_json),
-                )
-
-                # Show progress dialog
-                from src.gui.dialogs.progress_dialog import ProgressDialog
-
-                self._import_progress_dialog = ProgressDialog(
-                    "Importing data...\n\nThis may take a moment for large files.",
-                    parent=self,
-                    cancelable=False,
-                    title="Import in Progress",
-                )
-                self.status_bar.showMessage("Importing...", 0)
-
-        except Exception as e:
-            logger.exception("Import error")
-            QMessageBox.critical(
-                self,
-                "Import Error",
-                f"An unexpected error occurred during import: {e}\n\n"
-                "Your existing data is safe and unchanged.\n\n"
-                "Possible causes:\n"
-                "• Invalid file format or corrupted data\n"
-                "• Unsupported import format\n"
-                "• File encoding issues (try UTF-8)\n\n"
-                "To fix:\n"
-                "1. Check that the file is a valid import format\n"
-                "2. Verify file is not corrupted\n"
-                "3. Check application logs for detailed error\n"
-                "4. Try exporting and re-importing a small test dataset",
-            )
-
-    @Slot(object)
-    def _on_import_finished(self, result: object) -> None:
-        """Handles the completion of an import operation.
-
-        Args:
-            result: ImportResult from the worker thread.
-
-        """
-        # Close progress dialog if open
-        if self._import_progress_dialog:
-            self._import_progress_dialog.finish()
-            self._import_progress_dialog = None
-
-        self.status_bar.clearMessage()
-
-        if result.success:
-            msg = (
-                "Import Successful!\n\n"
-                f"Entities: {len(result.created_entities)}\n"
-                f"Events: {len(result.created_events)}\n"
-                f"Relations: {len(result.created_relations)}"
-            )
-            if result.warnings:
-                msg += "\n\nWarnings:\n" + "\n".join(result.warnings[:5])
-                if len(result.warnings) > 5:
-                    msg += f"\n...and {len(result.warnings) - 5} more."
-
-            QMessageBox.information(self, "Import Complete", msg)
-        else:
-            err_msg = "\n".join(result.errors[:10])
-            if len(result.errors) > 10:
-                err_msg += f"\n...and {len(result.errors) - 10} more errors."
-
-            QMessageBox.critical(
-                self,
-                "Import Failed",
-                f"Import completed with errors. No data was imported.\n\n"
-                f"Errors ({len(result.errors)} total):\n{err_msg}\n\n"
-                "What to do:\n"
-                "1. Fix the errors in your source file\n"
-                "2. Check file format matches expected structure\n"
-                "3. Try importing a smaller subset first\n"
-                "4. Consult documentation for import format details",
-            )
-
-    @Slot(str, object)
-    def _on_summary_generated_result(self, item_id: str, summary_data: object) -> None:
-        """Handles asynchronous summary generation result.
-
-        Args:
-            item_id: The ID of the item the summary is for.
-            summary_data: The generated SummaryData object.
-
-        """
-        # Determine target editor logic
-        # Simple check: Does EntityEditor currently hold this ID?
-        if self.entity_editor._current_entity_id == item_id:
-            self.entity_editor.on_summary_generated(summary_data)
-            return
-
-        # Does EventEditor hold it?
-        if self.event_editor._current_event_id == item_id:
-            self.event_editor.on_summary_generated(summary_data)
-            return
-
-        # Warn if neither (user navigated away?)
-        self.show_error_message(
-            f"Summary generated for {item_id}, but item is no longer active in editor."
-        )

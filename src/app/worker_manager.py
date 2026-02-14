@@ -152,10 +152,10 @@ class WorkerManager(QObject):
             self.window.data_handler.on_longform_sequence_loaded, connection_type
         )
         self.window.worker.calendar_config_loaded.connect(
-            self.window.on_calendar_config_loaded, connection_type
+            self.window.time_coordinator.on_calendar_config_loaded, connection_type
         )
         self.window.worker.current_time_loaded.connect(
-            self.window.on_current_time_loaded, connection_type
+            self.window.time_coordinator.on_current_time_loaded, connection_type
         )
         self.window.worker.grouping_dialog_data_loaded.connect(
             self.window.on_grouping_dialog_data_loaded, connection_type
@@ -170,7 +170,7 @@ class WorkerManager(QObject):
             self.window.data_handler.on_trajectories_loaded, connection_type
         )
         self.window.worker.filter_results_ready.connect(
-            self.window._on_filter_results_ready, connection_type
+            self.window.data_coordinator.on_filter_results_ready, connection_type
         )
         self.window.worker.entity_state_resolved.connect(
             self.window.data_handler.on_entity_state_resolved, connection_type
@@ -182,13 +182,13 @@ class WorkerManager(QObject):
             self.window.data_handler.on_graph_metadata_loaded, connection_type
         )
         self.window.worker.completer_data_loaded.connect(
-            self.window.on_completer_data_loaded, connection_type
+            self.window.data_coordinator.on_completer_data_loaded, connection_type
         )
         self.window.worker.import_finished.connect(
-            self.window._on_import_finished, connection_type
+            self.window.import_coordinator.on_import_finished, connection_type
         )
         self.window.worker.summary_generated.connect(
-            self.window._on_summary_generated_result, connection_type
+            self.window.data_coordinator.on_summary_generated_result, connection_type
         )
 
         # Connect MainWindow signals to worker (cross-thread: main → worker)
@@ -339,14 +339,14 @@ class WorkerManager(QObject):
                 # Don't fail the entire app if history service fails to init
                 self.window.history_service = None
 
-            self.window.load_data()
-            self.window._request_calendar_config()
-            self.window._request_current_time()
+            self.window.data_coordinator.load_data()
+            self.window.time_coordinator.request_calendar_config()
+            self.window.time_coordinator.request_current_time()
             self.window._request_grouping_config()
             self.window.load_maps()
 
             # Refresh AI search index status
-            QTimer.singleShot(100, self.window.refresh_search_index_status)
+            QTimer.singleShot(100, self.window.ai_search_manager.refresh_search_index_status)
 
             # Restore filter configuration
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
