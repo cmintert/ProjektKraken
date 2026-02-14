@@ -120,14 +120,15 @@ def test_generate_summary_calls_llm_and_updates_entity(
     # Check LLM called
     mock_llm_provider.generate.assert_called_once()
 
-    # Check Entity updated
+    # Check Entity updated in memory
     assert "_summary_data" in entity.attributes
     saved_data = entity.attributes["_summary_data"]
     assert saved_data["text"] == "This is a summary."
     assert saved_data["hash"] == summary_service._calculate_hash(entity)
 
-    # Check DB update called
-    mock_db_service.insert_entity.assert_called_with(entity)
+    # Service should NOT persist directly; caller (editor) handles persistence
+    mock_db_service.insert_entity.assert_not_called()
+    mock_db_service.insert_event.assert_not_called()
 
 
 def test_prompt_contains_wiki_link_instruction(summary_service, mock_llm_provider):

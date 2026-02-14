@@ -210,14 +210,8 @@ class SummaryService:
                 source="SummaryService",
             )
 
-            # Update item
+            # Update item in memory (caller is responsible for persisting)
             item.attributes["_summary_data"] = summary.to_dict()
-
-            # Persist summary immediately
-            if isinstance(item, Entity):
-                self.db_service.insert_entity(item)
-            elif isinstance(item, Event):
-                self.db_service.insert_event(item)
 
             return summary
 
