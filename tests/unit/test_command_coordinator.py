@@ -34,6 +34,13 @@ class MockCommand(BaseCommand):
     def get_description(self):
         return f"Mock: {self.name}"
 
+    def to_dict(self) -> dict:
+        return {"name": self.name}
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "MockCommand":
+        return cls(name=data.get("name", "MockCommand"))
+
 
 class MockMainWindow(QObject):
     def __init__(self):

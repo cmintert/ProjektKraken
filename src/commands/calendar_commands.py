@@ -76,6 +76,34 @@ class CreateCalendarConfigCommand(BaseCommand):
             self._is_executed = False
             logger.info(f"Undid creation of calendar config: {self._config.id}")
 
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            dict: Command data for persistence.
+
+        """
+        return {
+            "config": self._config.to_dict(),
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "CreateCalendarConfigCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Command data from persistence.
+
+        Returns:
+            CreateCalendarConfigCommand: Reconstructed command.
+
+        """
+        config = CalendarConfig.from_dict(data["config"])
+        cmd = cls(config)
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
+
 
 class UpdateCalendarConfigCommand(BaseCommand):
     """Updates an existing calendar configuration.
@@ -136,6 +164,39 @@ class UpdateCalendarConfigCommand(BaseCommand):
             db_service.insert_calendar_config(self._original_config)
             self._is_executed = False
             logger.info(f"Undid update of calendar config: {self._config.id}")
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            dict: Command data for persistence.
+
+        """
+        result = {
+            "config": self._config.to_dict(),
+            "is_executed": self._is_executed,
+        }
+        if self._original_config:
+            result["original_config"] = self._original_config.to_dict()
+        return result
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "UpdateCalendarConfigCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Command data from persistence.
+
+        Returns:
+            UpdateCalendarConfigCommand: Reconstructed command.
+
+        """
+        config = CalendarConfig.from_dict(data["config"])
+        cmd = cls(config)
+        cmd._is_executed = data.get("is_executed", False)
+        if "original_config" in data:
+            cmd._original_config = CalendarConfig.from_dict(data["original_config"])
+        return cmd
 
 
 class DeleteCalendarConfigCommand(BaseCommand):
@@ -198,6 +259,38 @@ class DeleteCalendarConfigCommand(BaseCommand):
             self._is_executed = False
             logger.info(f"Undid deletion of calendar config: {self._config_id}")
 
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            dict: Command data for persistence.
+
+        """
+        result = {
+            "config_id": self._config_id,
+            "is_executed": self._is_executed,
+        }
+        if self._deleted_config:
+            result["deleted_config"] = self._deleted_config.to_dict()
+        return result
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "DeleteCalendarConfigCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Command data from persistence.
+
+        Returns:
+            DeleteCalendarConfigCommand: Reconstructed command.
+
+        """
+        cmd = cls(data["config_id"])
+        cmd._is_executed = data.get("is_executed", False)
+        if "deleted_config" in data:
+            cmd._deleted_config = CalendarConfig.from_dict(data["deleted_config"])
+        return cmd
+
 
 class SetActiveCalendarCommand(BaseCommand):
     """Sets a calendar configuration as the active one.
@@ -259,3 +352,32 @@ class SetActiveCalendarCommand(BaseCommand):
             db_service.set_active_calendar_config(self._previous_active_id)
             self._is_executed = False
             logger.info(f"Undid set active, restored: {self._previous_active_id}")
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            dict: Command data for persistence.
+
+        """
+        return {
+            "config_id": self._config_id,
+            "previous_active_id": self._previous_active_id,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "SetActiveCalendarCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Command data from persistence.
+
+        Returns:
+            SetActiveCalendarCommand: Reconstructed command.
+
+        """
+        cmd = cls(data["config_id"])
+        cmd._is_executed = data.get("is_executed", False)
+        cmd._previous_active_id = data.get("previous_active_id")
+        return cmd

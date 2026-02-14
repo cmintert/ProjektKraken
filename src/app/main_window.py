@@ -620,51 +620,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """
         return self.ui_manager.docks.get("map")
 
-    # ------------------------------------------------------------------
-    # Backward-compatible properties for cached data (delegates to
-    # DataCoordinator). These ensure existing coordinators can still
-    # access main_window._cached_events / _cached_entities etc.
-    # ------------------------------------------------------------------
-
-    @property
-    def _cached_events(self) -> list:
-        """Returns cached events from DataCoordinator."""
-        if hasattr(self, "data_coordinator"):
-            return self.data_coordinator.cached_events
-        return []
-
-    @_cached_events.setter
-    def _cached_events(self, value: list) -> None:
-        """Sets cached events on DataCoordinator."""
-        if hasattr(self, "data_coordinator"):
-            self.data_coordinator._cached_events = value
-
-    @property
-    def _cached_entities(self) -> list:
-        """Returns cached entities from DataCoordinator."""
-        if hasattr(self, "data_coordinator"):
-            return self.data_coordinator.cached_entities
-        return []
-
-    @_cached_entities.setter
-    def _cached_entities(self, value: list) -> None:
-        """Sets cached entities on DataCoordinator."""
-        if hasattr(self, "data_coordinator"):
-            self.data_coordinator._cached_entities = value
-
-    @property
-    def _cached_longform_sequence(self) -> list:
-        """Returns cached longform sequence from DataCoordinator."""
-        if hasattr(self, "data_coordinator"):
-            return self.data_coordinator.cached_longform_sequence
-        return []
-
-    @_cached_longform_sequence.setter
-    def _cached_longform_sequence(self, value: list) -> None:
-        """Sets cached longform sequence on DataCoordinator."""
-        if hasattr(self, "data_coordinator"):
-            self.data_coordinator.cached_longform_sequence = value
-
     def _restore_window_state(self) -> None:
         """Restores window geometry and state using staged approach.
 
