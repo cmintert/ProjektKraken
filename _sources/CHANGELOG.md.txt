@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-14
 ### Internal
-- Merge pull request #85 from cmintert/copilot/refactor-main-window-class
+- chore(release): Bump version to 0.12.0
 
 
 *This changelog was automatically generated.*
