@@ -33,7 +33,7 @@ def test_delete_event_success(main_window, qtbot):
     main_window.worker.db_service.delete_event.return_value = True
 
     # Mock command and wait for signal
-    with patch("src.app.main_window.DeleteEventCommand") as MockCmd:
+    with patch("src.app.coordinators.editor_coordinator.DeleteEventCommand") as MockCmd:
         with qtbot.waitSignal(main_window.command_requested, timeout=1000):
             main_window.delete_event("del1")
 
@@ -43,7 +43,7 @@ def test_delete_event_success(main_window, qtbot):
 
 def test_delete_event_sends_command(main_window, qtbot):
     """Test delete event sends command to worker."""
-    with patch("src.app.main_window.DeleteEventCommand"):
+    with patch("src.app.coordinators.editor_coordinator.DeleteEventCommand"):
         with qtbot.waitSignal(main_window.command_requested, timeout=1000):
             main_window.delete_event("nonexistent")
 
@@ -52,7 +52,7 @@ def test_update_event_success(main_window, qtbot):
     """Test successful event update."""
     event_data = {"id": "up1", "name": "Updated", "lore_date": 200.0, "type": "combat"}
 
-    with patch("src.app.main_window.UpdateEventCommand") as MockCmd:
+    with patch("src.app.coordinators.editor_coordinator.UpdateEventCommand") as MockCmd:
         with qtbot.waitSignal(main_window.command_requested, timeout=1000):
             main_window.update_event(event_data)
 
@@ -63,7 +63,7 @@ def test_update_event_sends_command(main_window, qtbot):
     """Test update event sends command to worker."""
     event_data = {"id": "up2", "name": "Failed", "lore_date": 300.0, "type": "generic"}
 
-    with patch("src.app.main_window.UpdateEventCommand") as MockCmd:
+    with patch("src.app.coordinators.editor_coordinator.UpdateEventCommand") as MockCmd:
         with qtbot.waitSignal(main_window.command_requested, timeout=1000):
             main_window.update_event(event_data)
 
@@ -72,7 +72,7 @@ def test_update_event_sends_command(main_window, qtbot):
 
 def test_add_relation_success(main_window, qtbot):
     """Test adding a relation."""
-    with patch("src.app.main_window.AddRelationCommand") as MockCmd:
+    with patch("src.app.coordinators.editor_coordinator.AddRelationCommand") as MockCmd:
         # Mock the load_event_details to avoid errors
         main_window.worker.db_service.get_event.return_value = Event(
             id="src", name="Source", lore_date=100.0, type="generic"
@@ -88,7 +88,7 @@ def test_add_relation_success(main_window, qtbot):
 
 def test_add_relation_bidirectional(main_window):
     """Test adding bidirectional relation."""
-    with patch("src.app.main_window.AddRelationCommand") as MockCmd:
+    with patch("src.app.coordinators.editor_coordinator.AddRelationCommand") as MockCmd:
         main_window.worker.db_service.get_event.return_value = Event(
             id="src", name="Source", lore_date=100.0, type="generic"
         )
@@ -106,7 +106,7 @@ def test_remove_relation_success(main_window, qtbot):
     """Test removing a relation."""
     main_window.event_editor._current_event_id = "evt1"
 
-    with patch("src.app.main_window.RemoveRelationCommand"):
+    with patch("src.app.coordinators.editor_coordinator.RemoveRelationCommand"):
         main_window.worker.db_service.get_event.return_value = Event(
             id="evt1", name="Event", lore_date=100.0, type="generic"
         )
@@ -121,7 +121,7 @@ def test_remove_relation_no_current_event(main_window):
     """Test removing relation when no current event."""
     main_window.event_editor._current_event_id = None
 
-    with patch("src.app.main_window.RemoveRelationCommand"):
+    with patch("src.app.coordinators.editor_coordinator.RemoveRelationCommand"):
         main_window.remove_relation("rel1")
 
         # Should not try to reload details
@@ -132,7 +132,7 @@ def test_update_relation_success(main_window, qtbot):
     """Test updating a relation."""
     main_window.event_editor._current_event_id = "evt1"
 
-    with patch("src.app.main_window.UpdateRelationCommand") as MockCmd:
+    with patch("src.app.coordinators.editor_coordinator.UpdateRelationCommand") as MockCmd:
         mock_cmd = MockCmd.return_value
         mock_cmd.execute.return_value = True
 
@@ -154,7 +154,7 @@ def test_update_relation_no_current_event(main_window, qtbot):
     """Test updating relation when no current event."""
     main_window.event_editor._current_event_id = None
 
-    with patch("src.app.main_window.UpdateRelationCommand"):
+    with patch("src.app.coordinators.editor_coordinator.UpdateRelationCommand"):
         with qtbot.waitSignal(main_window.command_requested, timeout=1000):
             main_window.update_relation("rel1", "tgt", "type")
 

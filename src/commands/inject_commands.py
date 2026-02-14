@@ -5,6 +5,7 @@ Undo/Redo operations.
 """
 
 import copy
+import logging
 from typing import Dict, Union
 
 from src.commands.base_command import BaseCommand, CommandResult
@@ -12,6 +13,8 @@ from src.core.entities import Entity
 from src.core.events import Event
 from src.core.fast_inject import FastInjectManager, FastInjectTemplate
 from src.services.db_service import DatabaseService
+
+logger = logging.getLogger(__name__)
 
 
 class InjectTemplateCommand(BaseCommand):
@@ -59,7 +62,7 @@ class InjectTemplateCommand(BaseCommand):
         self._target_id = target.id
         self._target_type_str = "entity" if isinstance(target, Entity) else "event"
 
-    def execute(self, db_service: DatabaseService) -> Union[bool, CommandResult]:
+    def execute(self, db_service: DatabaseService) -> CommandResult:
         """Executes the injection.
 
         Args:
@@ -158,4 +161,45 @@ class InjectTemplateCommand(BaseCommand):
 
         except Exception as e:
             # Log error but can't really fail an undo gracefully
-            print(f"Undo failed: {e}")
+            logger.error(f"Undo failed for InjectTemplateCommand: {e}", exc_info=True)
+
+    def to_dict(self) -> Dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            Dict: Dictionary containing command data for reconstruction.
+
+        """
+        return {
+            "target_id": self._target_id,
+            "target_type": self._target_type_str,
+            "template_name": self.template.name,
+            "overwrite": self.overwrite,
+            "variables": self.variables,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "InjectTemplateCommand":
+        """Deserialize command from dictionary.
+
+        Note:
+            InjectTemplateCommand requires live object references (target,
+            template, manager) that cannot be reconstructed from a dict.
+            This method raises NotImplementedError because full
+            deserialization is not supported for this command type.
+
+        Args:
+            data: Dictionary containing command data.
+
+        Returns:
+            InjectTemplateCommand: Not supported.
+
+        Raises:
+            NotImplementedError: Always raised; live references required.
+
+        """
+        raise NotImplementedError(
+            "InjectTemplateCommand requires live object references "
+            "and cannot be fully deserialized from a dictionary."
+        )

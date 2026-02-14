@@ -34,10 +34,14 @@ def test_entity_docks_exist(main_window):
 
 def test_create_entity(main_window, qtbot):
     """Test creating an entity."""
-    with patch("src.app.main_window.QInputDialog.getText") as mock_input:
+    with patch(
+        "src.app.coordinators.editor_coordinator.QInputDialog.getText"
+    ) as mock_input:
         mock_input.return_value = ("Test Entity", True)
 
-        with patch("src.app.main_window.CreateEntityCommand") as MockCmd:
+        with patch(
+            "src.app.coordinators.editor_coordinator.CreateEntityCommand"
+        ) as MockCmd:
             mock_cmd_instance = MockCmd.return_value
 
             # Use qtbot to wait for signal
@@ -52,7 +56,9 @@ def test_create_entity(main_window, qtbot):
 
 def test_delete_entity(main_window, qtbot):
     """Test deleting an entity."""
-    with patch("src.app.main_window.DeleteEntityCommand") as MockCmd:
+    with patch(
+        "src.app.coordinators.editor_coordinator.DeleteEntityCommand"
+    ) as MockCmd:
         mock_cmd_instance = MockCmd.return_value
 
         # Use qtbot to wait for signal
@@ -66,7 +72,9 @@ def test_update_entity(main_window, qtbot):
     """Test updating an entity."""
     entity_data = {"id": "ent1", "name": "Updated", "type": "Concept"}
 
-    with patch("src.app.main_window.UpdateEntityCommand") as MockCmd:
+    with patch(
+        "src.app.coordinators.editor_coordinator.UpdateEntityCommand"
+    ) as MockCmd:
         # Use qtbot to wait for signal
         with qtbot.waitSignal(main_window.command_requested, timeout=1000):
             main_window.update_entity(entity_data)
@@ -78,7 +86,9 @@ def test_entity_add_relation(main_window, qtbot):
     """Test adding a relation from entity editor."""
     main_window.entity_editor._current_entity_id = "src"
 
-    with patch("src.app.main_window.AddRelationCommand") as MockCmd:
+    with patch(
+        "src.app.coordinators.editor_coordinator.AddRelationCommand"
+    ) as MockCmd:
         mock_cmd_instance = MockCmd.return_value
 
         # Use qtbot to wait for signal
@@ -92,7 +102,9 @@ def test_entity_add_relation(main_window, qtbot):
 
 def test_entity_remove_relation(main_window, qtbot):
     """Test removing a relation from entity editor."""
-    with patch("src.app.main_window.RemoveRelationCommand") as MockCmd:
+    with patch(
+        "src.app.coordinators.editor_coordinator.RemoveRelationCommand"
+    ) as MockCmd:
         mock_cmd_instance = MockCmd.return_value
 
         # Use qtbot to wait for signal
@@ -104,7 +116,9 @@ def test_entity_remove_relation(main_window, qtbot):
 
 def test_entity_update_relation(main_window, qtbot):
     """Test updating a relation from entity editor."""
-    with patch("src.app.main_window.UpdateRelationCommand") as MockCmd:
+    with patch(
+        "src.app.coordinators.editor_coordinator.UpdateRelationCommand"
+    ) as MockCmd:
         mock_cmd_instance = MockCmd.return_value
 
         # Use qtbot to wait for signal

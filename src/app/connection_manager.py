@@ -275,7 +275,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             dh,
             "reload_longform",
-            self.window.load_longform_sequence,
+            self.window.longform_manager.load_longform_sequence,
             "DataHandler",
         ):
             failed_count += 1
@@ -557,7 +557,7 @@ class ConnectionManager:
             if not self._connect_signal_safe(
                 timeline._band_manager,
                 "tag_color_change_requested",
-                self.window._on_tag_color_change_requested,
+                self.window.grouping_manager.on_tag_color_change_requested,
                 "Timeline.BandManager",
             ):
                 failed_count += 1
@@ -565,7 +565,7 @@ class ConnectionManager:
             if not self._connect_signal_safe(
                 timeline._band_manager,
                 "remove_from_grouping_requested",
-                self.window._on_remove_from_grouping_requested,
+                self.window.grouping_manager.on_remove_from_grouping_requested,
                 "Timeline.BandManager",
             ):
                 failed_count += 1
@@ -584,12 +584,13 @@ class ConnectionManager:
 
         """
         longform = self.window.longform_editor
+        lm = self.window.longform_manager
         failed_count = 0
 
         if not self._connect_signal_safe(
             longform,
             "promote_requested",
-            self.window.promote_longform_entry,
+            lm.promote_longform_entry,
             "LongformEditor",
         ):
             failed_count += 1
@@ -597,7 +598,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             longform,
             "demote_requested",
-            self.window.demote_longform_entry,
+            lm.demote_longform_entry,
             "LongformEditor",
         ):
             failed_count += 1
@@ -605,7 +606,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             longform,
             "refresh_requested",
-            self.window.load_longform_sequence,
+            lm.load_longform_sequence,
             "LongformEditor",
         ):
             failed_count += 1
@@ -613,7 +614,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             longform,
             "export_requested",
-            self.window.export_longform_document,
+            lm.export_longform_document,
             "LongformEditor",
         ):
             failed_count += 1
@@ -621,7 +622,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             longform,
             "export_vault_requested",
-            self.window.longform_manager.export_as_vault,
+            lm.export_as_vault,
             "LongformEditor",
         ):
             failed_count += 1
@@ -637,7 +638,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             longform,
             "item_moved",
-            self.window.move_longform_entry,
+            lm.move_longform_entry,
             "LongformEditor",
         ):
             failed_count += 1
@@ -645,7 +646,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             longform,
             "delete_requested",
-            self.window.longform_manager.delete_longform_item,
+            lm.delete_longform_item,
             "LongformEditor",
         ):
             failed_count += 1
@@ -653,7 +654,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             longform,
             "move_up_requested",
-            self.window.longform_manager.move_up_longform_entry,
+            lm.move_up_longform_entry,
             "LongformEditor",
         ):
             failed_count += 1
@@ -661,7 +662,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             longform,
             "move_down_requested",
-            self.window.longform_manager.move_down_longform_entry,
+            lm.move_down_longform_entry,
             "LongformEditor",
         ):
             failed_count += 1
@@ -677,7 +678,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             longform,
             "show_filter_dialog_requested",
-            self.window.show_longform_filter_dialog,
+            lm.show_longform_filter_dialog,
             "LongformEditor",
         ):
             failed_count += 1
@@ -685,7 +686,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             longform,
             "clear_filters_requested",
-            self.window.clear_longform_filter,
+            lm.clear_longform_filter,
             "LongformEditor",
         ):
             failed_count += 1
@@ -938,13 +939,14 @@ class ConnectionManager:
 
         """
         panel = self.window.ai_search_panel
+        ai = self.window.ai_search_manager
         failed_count = 0
 
         # Search and index operations
         if not self._connect_signal_safe(
             panel,
             "search_requested",
-            self.window.perform_semantic_search,
+            ai.perform_semantic_search,
             "AISearchPanel",
         ):
             failed_count += 1
@@ -952,7 +954,7 @@ class ConnectionManager:
         if not self._connect_signal_safe(
             panel,
             "result_selected",
-            self.window._on_search_result_selected,
+            ai.on_search_result_selected,
             "AISearchPanel",
         ):
             failed_count += 1

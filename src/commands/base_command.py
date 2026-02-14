@@ -9,7 +9,7 @@ Classes:
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Dict, Union
+from typing import Dict
 
 from src.services.db_service import DatabaseService
 
@@ -50,14 +50,14 @@ class BaseCommand(ABC):
         self.timestamp: float = time.time()
 
     @abstractmethod
-    def execute(self, db_service: DatabaseService) -> Union[bool, CommandResult]:
+    def execute(self, db_service: DatabaseService) -> "CommandResult":
         """Performs the action.
 
         Args:
             db_service (DatabaseService): The database service to operate on.
 
         Returns:
-            Union[bool, CommandResult]: Result object or success boolean.
+            CommandResult: Standardized result object indicating success or failure.
 
         """
         pass

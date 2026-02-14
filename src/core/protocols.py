@@ -113,15 +113,12 @@ class MainWindowProtocol(Protocol):
     _on_marker_position_changed: Any
     _on_markers_ready: Any
     _on_reload_active_editor_relations: Any
-    _on_remove_from_grouping_requested: Any
-    _on_search_result_selected: Any
     _on_selection_requested: Any
     _on_suggestions_update: Any
-    _on_tag_color_change_requested: Any
     add_relation: Any
+    ai_search_manager: Any
     ai_search_panel: Any
     clear_filter: Any
-    clear_longform_filter: Any
     create_entity: Any
     create_event: Any
     create_map: Any
@@ -129,10 +126,10 @@ class MainWindowProtocol(Protocol):
     data_handler: Any
     delete_map: Any
     delete_marker: Any
-    demote_longform_entry: Any
+    editor_coordinator: Any
     entity_editor: Any
     event_editor: Any
-    export_longform_document: Any
+    grouping_manager: Any
     load_data: Any
     load_entities: Any
     load_entity_details: Any
@@ -141,16 +138,14 @@ class MainWindowProtocol(Protocol):
     load_longform_sequence: Any
     load_maps: Any
     longform_editor: Any
+    longform_manager: Any
     map_widget: Any
-    move_longform_entry: Any
     navigate_to_entity: Any
+    navigation_coordinator: Any
     on_current_time_changed: Any
     on_map_selected: Any
-    perform_semantic_search: Any
-    promote_longform_entry: Any
     remove_relation: Any
     show_filter_dialog: Any
-    show_longform_filter_dialog: Any
     status_bar: Any
     timeline: Any
     unified_list: Any

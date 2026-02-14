@@ -26,7 +26,8 @@ def test_add_relation_command(db_service):
 
     # Execute
     cmd = AddRelationCommand(s.id, t.id, "test_rel")
-    assert cmd.execute(db_service) is True
+    result = cmd.execute(db_service)
+    assert result.success is True
 
     rels = db_service.get_relations(s.id)
     assert len(rels) == 1
@@ -48,7 +49,8 @@ def test_remove_relation_command(db_service):
 
     # Execute
     cmd = RemoveRelationCommand(rel_id)
-    assert cmd.execute(db_service) is True
+    result = cmd.execute(db_service)
+    assert result.success is True
 
     assert db_service.get_relation(rel_id) is None
 
@@ -71,7 +73,8 @@ def test_update_relation_command(db_service):
 
     # Execute Update
     cmd = UpdateRelationCommand(rel_id, t2.id, "updated")
-    assert cmd.execute(db_service) is True
+    result = cmd.execute(db_service)
+    assert result.success is True
 
     updated = db_service.get_relation(rel_id)
     assert updated["target_id"] == t2.id
@@ -93,7 +96,8 @@ def test_add_relation_bidirectional(db_service):
 
     # Execute
     cmd = AddRelationCommand(s.id, t.id, "mutual_link", bidirectional=True)
-    assert cmd.execute(db_service) is True
+    result = cmd.execute(db_service)
+    assert result.success is True
 
     # Verify Forward
     rels_s = db_service.get_relations(s.id)

@@ -33,10 +33,10 @@ def main_window(qtbot):
 
 def test_create_cancel_does_nothing(main_window):
     """Test cancelling creation."""
-    with patch("src.app.main_window.QInputDialog.getText") as mock_input:
+    with patch("src.app.coordinators.editor_coordinator.QInputDialog.getText") as mock_input:
         mock_input.return_value = ("", False)
 
-        with patch("src.app.main_window.CreateEntityCommand") as MockCmd:
+        with patch("src.app.coordinators.editor_coordinator.CreateEntityCommand") as MockCmd:
             main_window.create_entity()
             MockCmd.assert_not_called()
             main_window.worker.run_command.assert_not_called()
