@@ -6,7 +6,6 @@ streaming output and appending to existing text.
 
 import asyncio
 import logging
-import re
 from typing import Any, Dict, Optional, Protocol, runtime_checkable
 
 from PySide6.QtCore import QSettings, Qt, QThread, Signal, Slot
@@ -34,39 +33,12 @@ from src.gui.widgets.prompt_editor import PromptEditorWidget
 from src.services.llm_provider import create_provider
 from src.services.prompt_builder import DEFAULT_SYSTEM_PROMPT, PromptBuilder
 from src.services.prompt_loader import PromptLoader
+from src.services.reasoning_filter import filter_reasoning_tags
 
 # from src.services.search_service import create_search_service  # No longer needed directly
 from src.services.rag_service import RAGService
 
 logger = logging.getLogger(__name__)
-
-
-# Regex pattern to match common reasoning/thinking tags from various models
-# Matches: <think>, <thinking>, <thought>, <reasoning>, <scratchpad>, <reflection>
-# Uses DOTALL to handle multiline content and non-greedy match
-_REASONING_TAG_PATTERN = re.compile(
-    r"<(think|thinking|thought|reasoning|scratchpad|reflection)>.*?</\1>",
-    re.DOTALL | re.IGNORECASE,
-)
-
-
-def filter_reasoning_tags(text: str) -> str:
-    """Remove reasoning/thinking tags from LLM output.
-
-    Filters out content between common reasoning tags used by various models:
-    - DeepSeek R1: <think>...</think>
-    - Claude: <thinking>...</thinking>
-    - Other models: <thought>, <reasoning>, <scratchpad>, <reflection>
-
-    Args:
-        text: Raw LLM output text.
-
-    Returns:
-        str: Text with reasoning tags and their content removed, stripped.
-
-    """
-    filtered = _REASONING_TAG_PATTERN.sub("", text)
-    return filtered.strip()
 
 
 # Default system prompt is now defined in src.services.prompt_builder
