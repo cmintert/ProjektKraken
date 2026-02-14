@@ -37,7 +37,6 @@ from PySide6.QtWidgets import (
     QDialog,
     QDockWidget,
     QFileDialog,
-    QInputDialog,
     QLabel,
     QMainWindow,
     QMessageBox,
@@ -63,6 +62,7 @@ from src.app.constants import (
     WINDOW_TITLE,
 )
 from src.app.coordinators.backup_coordinator import BackupCoordinator
+from src.app.coordinators.editor_coordinator import EditorCoordinator
 from src.app.coordinators.fast_inject_coordinator import FastInjectCoordinator
 from src.app.coordinators.navigation_coordinator import NavigationCoordinator
 from src.app.coordinators.time_coordinator import TimeCoordinator
@@ -72,23 +72,6 @@ from src.app.map_handler import MapHandler
 from src.app.timeline_grouping_manager import TimelineGroupingManager
 from src.app.ui_manager import UIManager
 from src.app.worker_manager import WorkerManager
-from src.commands.composite_command import CompositeCommand
-from src.commands.entity_commands import (
-    CreateEntityCommand,
-    DeleteEntityCommand,
-    UpdateEntityCommand,
-)
-from src.commands.event_commands import (
-    CreateEventCommand,
-    DeleteEventCommand,
-    UpdateEventCommand,
-)
-from src.commands.relation_commands import (
-    AddRelationCommand,
-    RemoveRelationCommand,
-    UpdateRelationCommand,
-)
-from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.core.fast_inject import FastInjectManager
 from src.core.logging_config import get_logger
 from src.core.paths import get_worlds_dir
@@ -97,7 +80,6 @@ from src.gui.dialogs.filter_dialog import FilterDialog
 from src.gui.dialogs.import_preview_dialog import ImportPreviewDialog
 from src.gui.mixins.layout_guard import LayoutGuardMixin
 from src.gui.widgets.ai_search_panel import AISearchPanelWidget
-from src.gui.widgets.auto_closing_message_box import AutoClosingMessageBox
 from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.event_editor import EventEditorWidget
 from src.gui.widgets.graph_view import GraphWidget
@@ -374,9 +356,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         self.history_panel = HistoryPanelWidget()
 
-        # Create Toast Notification (Sprint 1)
-        self._last_drag_drop_command_id = None  # Track last drag-drop command for toast
-
         # Initialize Managers
         # MapHandler is initialized after coordinators (see below) because
         # it needs navigation_coordinator's set_global_selection callable.
@@ -401,6 +380,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.navigation_coordinator = NavigationCoordinator(self)
         self.backup_coordinator = BackupCoordinator(self)
         self.time_coordinator = TimeCoordinator(self)
+        self.editor_coordinator = EditorCoordinator(self)
 
         # Initialize MapHandler with injected dependencies (no self reference)
         self.map_handler = MapHandler(
@@ -507,12 +487,16 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # Connect undo/redo menu actions (deferred from Phase 2)
         self.ui_manager.connect_undo_redo_actions()
 
-        # Connect editor dirty signals (these are safe to connect early)
+        # Connect editor dirty signals via EditorCoordinator
         self.event_editor.dirty_changed.connect(
-            lambda dirty: self._on_editor_dirty_changed(self.event_editor, dirty)
+            lambda dirty: self.editor_coordinator.on_editor_dirty_changed(
+                self.event_editor, dirty
+            )
         )
         self.entity_editor.dirty_changed.connect(
-            lambda dirty: self._on_editor_dirty_changed(self.entity_editor, dirty)
+            lambda dirty: self.editor_coordinator.on_editor_dirty_changed(
+                self.entity_editor, dirty
+            )
         )
 
         # Connect Fast Inject Signals (Delegated to Coordinator)
@@ -538,12 +522,16 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         )
 
         # Connect to worker's command_finished to show toast for
-        # drag-drop relations (Sprint 1)
+        # drag-drop relations via EditorCoordinator
         self.worker.command_finished.connect(
-            self._on_command_finished_check_toast, Qt.ConnectionType.QueuedConnection
+            self.editor_coordinator.on_command_finished_check_toast,
+            Qt.ConnectionType.QueuedConnection,
         )
 
         # Connect Coordinator Signals
+        self.editor_coordinator.command_requested.connect(
+            lambda cmd: self.command_requested.emit(cmd)
+        )
         self.fast_inject_coordinator.command_requested.connect(
             lambda cmd: self.command_requested.emit(cmd)
         )
@@ -848,75 +836,31 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     def check_unsaved_changes(self, editor: QWidget) -> bool:
         """Checks if the editor has unsaved changes and prompts the user.
 
+        Delegates to EditorCoordinator.
+
         Args:
             editor: The editor widget to check.
 
         Returns:
-            bool: True if safe to proceed (Saved, Discarded, or Clean).
-                  False if User Cancelled.
+            bool: True if safe to proceed, False if User Cancelled.
 
         """
-        if (
-            not hasattr(editor, "has_unsaved_changes")
-            or not editor.has_unsaved_changes()
-        ):
-            return True
-
-        # Determine readable name
-        editor_name = "Item"
-        if editor == self.event_editor:
-            editor_name = "Event"
-        elif editor == self.entity_editor:
-            editor_name = "Entity"
-
-        reply = QMessageBox.warning(
-            self,
-            "Unsaved Changes",
-            f"You have unsaved changes in the {editor_name} Editor.\n"
-            "Do you want to save them before proceeding?",
-            QMessageBox.StandardButton.Save
-            | QMessageBox.StandardButton.Discard
-            | QMessageBox.StandardButton.Cancel,
-        )
-
-        if reply == QMessageBox.StandardButton.Save:
-            # Trigger save
-            # We assume _on_save calls standard save mechanism
-            if hasattr(editor, "_on_save"):
-                editor._on_save()
-            return True
-        elif reply == QMessageBox.StandardButton.Discard:
-            return True
-        else:  # Cancel
-            return False
+        return self.editor_coordinator.check_unsaved_changes(editor)
 
     def _on_editor_dirty_changed(self, editor: QWidget, dirty: bool) -> None:
-        """Updates the dock title with an asterisk if dirty."""
-        dock_key = None
-        base_title = ""
+        """Updates the dock title with an asterisk if dirty.
 
-        # Determine which dock
-        if editor == self.event_editor:
-            dock_key = "event"
-            # Get base title from constants (need to import or hardcode fallback)
-            # Assuming UIManager set it initially. We can read current and strip *.
-            base_title = "Event Inspector"
-        elif editor == self.entity_editor:
-            dock_key = "entity"
-            base_title = "Entity Inspector"
-
-        if dock_key:
-            if dock := self.ui_manager.docks.get(dock_key):
-                new_title = base_title + (" *" if dirty else "")
-                dock.setWindowTitle(new_title)
+        Delegates to EditorCoordinator.
+        """
+        self.editor_coordinator.on_editor_dirty_changed(editor, dirty)
 
     @Slot(str, str)
     def _on_item_delete_requested(self, item_type: str, item_id: str) -> None:
-        """Handles deletion request from unified list."""
-        if item_type == "event":
-            self.delete_event(item_id)
-        elif item_type == "entity":
-            self.delete_entity(item_id)
+        """Handles deletion request from unified list.
+
+        Delegates to EditorCoordinator.
+        """
+        self.editor_coordinator.on_item_delete_requested(item_type, item_id)
 
     @Slot()
     def _update_history_panel(self) -> None:
@@ -1485,171 +1429,66 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # But generally, we only care about what the user is looking at.
 
     def delete_event(self, event_id: str) -> None:
-        """Deletes an event by emitting a delete command.
+        """Deletes an event. Delegates to EditorCoordinator.
 
         Args:
             event_id (str): The ID of the event to delete.
 
         """
-        cmd = DeleteEventCommand(event_id)
-        self.command_requested.emit(cmd)
+        self.editor_coordinator.delete_event(event_id)
 
     def update_event(self, event_data: dict) -> None:
-        """Updates an event with the provided data.
+        """Updates an event. Delegates to EditorCoordinator.
 
         Args:
             event_data (dict): Dictionary containing event data
                 including the 'id' field.
 
         """
-        event_id = event_data.get("id")
-        logger.info(
-            f"[MainWindow] update_event: id={event_id}, "
-            f"name='{event_data.get('name', '?')}'"
-        )
-        if not event_id:
-            logger.error("[MainWindow] update_event aborted - no ID")
-            return
-
-        cmds = []
-        cmds.append(UpdateEventCommand(event_id, event_data))
-
-        if "description" in event_data:
-            wiki_cmd = ProcessWikiLinksCommand(event_id, event_data["description"])
-            cmds.append(wiki_cmd)
-
-        if len(cmds) > 1:
-            desc = f"Update Event '{event_data.get('name', '?')}'"
-            cmd = CompositeCommand(cmds, description=desc)
-            logger.debug("[MainWindow] Emitting CompositeCommand (Update+Wiki)")
-        else:
-            cmd = cmds[0]
-            logger.debug(f"[MainWindow] Emitting {cmd.__class__.__name__}")
-
-        self.command_requested.emit(cmd)
+        self.editor_coordinator.update_event(event_data)
 
     @Slot(str, float)
     def _on_event_date_changed(self, event_id: str, new_lore_date: float) -> None:
-        """Handles event date changes from timeline dragging. Persists the new lore_date
-        via UpdateEventCommand.
+        """Handles event date changes from timeline dragging.
 
-        Args:
-            event_id: The ID of the event that was dragged.
-            new_lore_date: The new lore_date value.
-
+        Delegates to EditorCoordinator.
         """
-        logger.debug(f"Event {event_id} date changed to {new_lore_date}")
-        cmd = UpdateEventCommand(event_id, {"lore_date": new_lore_date})
-        self.command_requested.emit(cmd)
+        self.editor_coordinator.on_event_date_changed(event_id, new_lore_date)
 
     @Slot(object)
     def _on_command_finished_check_toast(self, result) -> None:
-        """Check if completed command was a drag-drop relation and show toast.
+        """Check if completed command was a drag-drop relation.
 
-        Args:
-            result: CommandResult object from worker.
+        Delegates to EditorCoordinator.
         """
-        # Check if this was a drag-drop relation command
-        if not result.success:
-            return
-
-        command = result.data.get("command")
-        if command is None:
-            return
-
-        # Check if this is the drag-drop command we're tracking
-        if id(command) == self._last_drag_drop_command_id:
-            # This was our drag-drop command, show toast
-            self._show_relation_created_toast()
-            # Clear the tracking ID
-            self._last_drag_drop_command_id = None
-
-    def _show_relation_created_toast(self) -> None:
-        """Show toast notification for successful relation creation."""
-        # Use AutoClosingMessageBox for consistency with deletion toast (themed + timed)
-        msg = "Relation created.\n\n(Ctrl+Z to Undo)"
-        popup = AutoClosingMessageBox("Success", msg, 1500, parent=self)
-        popup.exec()
-
-        logger.debug("Drag-drop relation toast displayed")
+        self.editor_coordinator.on_command_finished_check_toast(result)
 
     def create_entity(self) -> None:
-        """Creates a new entity by emitting a create command."""
-        if not self.check_unsaved_changes(self.entity_editor):
-            return
-
-        name, ok = QInputDialog.getText(self, "New Entity", "Entity Name:")
-        if not ok or not name.strip():
-            return
-
-        cmd = CreateEntityCommand({"name": name.strip(), "type": "Concept"})
-        self.command_requested.emit(cmd)
+        """Creates a new entity. Delegates to EditorCoordinator."""
+        self.editor_coordinator.create_entity()
 
     def create_event(self) -> None:
-        """Creates a new event by emitting a create command."""
-        if not self.check_unsaved_changes(self.event_editor):
-            return
-
-        name, ok = QInputDialog.getText(self, "New Event", "Event Name:")
-        if not ok or not name.strip():
-            return
-
-        cmd = CreateEventCommand({"name": name.strip(), "lore_date": 0.0})
-        self.command_requested.emit(cmd)
+        """Creates a new event. Delegates to EditorCoordinator."""
+        self.editor_coordinator.create_event()
 
     def delete_entity(self, entity_id: str) -> None:
-        """Deletes an entity by emitting a delete command.
+        """Deletes an entity. Delegates to EditorCoordinator.
 
         Args:
             entity_id (str): The ID of the entity to delete.
 
         """
-        cmd = DeleteEntityCommand(entity_id)
-        self.command_requested.emit(cmd)
+        self.editor_coordinator.delete_entity(entity_id)
 
     def update_entity(self, entity_data: dict) -> None:
-        """Updates an entity with the provided data.
+        """Updates an entity. Delegates to EditorCoordinator.
 
         Args:
             entity_data (dict): Dictionary containing entity data
                 including the 'id' field.
 
         """
-        entity_id = entity_data.get("id")
-        logger.info(
-            f"[MainWindow] update_entity: id={entity_id}, "
-            f"name='{entity_data.get('name', '?')}'"
-        )
-        # Log full data for debugging
-        logger.debug(f"[MainWindow] Entity data keys: {list(entity_data.keys())}")
-        if "description" in entity_data:
-            desc_preview = (
-                entity_data["description"][:100]
-                if entity_data["description"]
-                else "(empty)"
-            )
-            logger.debug(f"[MainWindow] Description preview: {desc_preview}")
-
-        if not entity_id:
-            logger.error("[MainWindow] update_entity aborted - no ID")
-            return
-
-        cmds = []
-        cmds.append(UpdateEntityCommand(entity_id, entity_data))
-
-        if "description" in entity_data:
-            wiki_cmd = ProcessWikiLinksCommand(entity_id, entity_data["description"])
-            cmds.append(wiki_cmd)
-
-        if len(cmds) > 1:
-            desc = f"Update Entity '{entity_data.get('name', '?')}'"
-            cmd = CompositeCommand(cmds, description=desc)
-            logger.debug("[MainWindow] Emitting CompositeCommand (Update+Wiki)")
-        else:
-            cmd = cmds[0]
-            logger.debug(f"[MainWindow] Emitting {cmd.__class__.__name__}")
-
-        self.command_requested.emit(cmd)
+        self.editor_coordinator.update_entity(entity_data)
 
     def add_relation(
         self,
@@ -1659,7 +1498,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         attributes: dict = None,
         bidirectional: bool = False,
     ) -> None:
-        """Adds a relation between entities.
+        """Adds a relation. Delegates to EditorCoordinator.
 
         Args:
             source_id (str): The ID of the source entity.
@@ -1670,7 +1509,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
                 bidirectional. Defaults to False.
 
         """
-        cmd = AddRelationCommand(
+        self.editor_coordinator.add_relation(
             source_id,
             target_id,
             rel_type,
@@ -1678,45 +1517,25 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             bidirectional=bidirectional,
         )
 
-        # Mark this command as a drag-drop command for toast display
-        # (This handles both drag-drop and manual creation, which is acceptable usually,
-        # or we could add a flag if strictly needed only for drag-drop.
-        # For now, showing toast for all relation creations is good UX.)
-        self._last_drag_drop_command_id = id(cmd)
-
-        self.command_requested.emit(cmd)
-
     def load_maps(self) -> None:
         """Requests loading of all maps."""
         self.map_handler.load_maps()
 
     @Slot(str, str)
     def _on_map_create_entity(self, new_id: str, name: str) -> None:
-        """Handle inline entity creation from the map object-selection dialog.
+        """Handle inline entity creation from the map.
 
-        Args:
-            new_id: Pre-generated UUID for the new entity.
-            name: Name of the new entity.
-
+        Delegates to EditorCoordinator.
         """
-        from src.commands.entity_commands import CreateEntityCommand
-
-        cmd = CreateEntityCommand({"id": new_id, "name": name, "type": "Location"})
-        self.command_requested.emit(cmd)
+        self.editor_coordinator.on_map_create_entity(new_id, name)
 
     @Slot(str, str)
     def _on_map_create_event(self, new_id: str, name: str) -> None:
-        """Handle inline event creation from the map object-selection dialog.
+        """Handle inline event creation from the map.
 
-        Args:
-            new_id: Pre-generated UUID for the new event.
-            name: Name of the new event.
-
+        Delegates to EditorCoordinator.
         """
-        from src.commands.event_commands import CreateEventCommand
-
-        cmd = CreateEventCommand({"id": new_id, "name": name, "lore_date": 0.0})
-        self.command_requested.emit(cmd)
+        self.editor_coordinator.on_map_create_event(new_id, name)
 
     # ----------------------------------------------------------------------
     # Timeline Grouping Methods
@@ -1868,19 +1687,18 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.status_bar.showMessage(f"Filter applied. Found {count} items.")
 
     def remove_relation(self, rel_id: str) -> None:
-        """Removes a relation by its ID.
+        """Removes a relation. Delegates to EditorCoordinator.
 
         Args:
             rel_id (str): The ID of the relation to remove.
 
         """
-        cmd = RemoveRelationCommand(rel_id)
-        self.command_requested.emit(cmd)
+        self.editor_coordinator.remove_relation(rel_id)
 
     def update_relation(
         self, rel_id: str, target_id: str, rel_type: str, attributes: dict = None
     ) -> None:
-        """Updates an existing relation.
+        """Updates an existing relation. Delegates to EditorCoordinator.
 
         Args:
             rel_id (str): The ID of the relation to update.
@@ -1889,8 +1707,9 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             attributes (dict, optional): The new attributes.
 
         """
-        cmd = UpdateRelationCommand(rel_id, target_id, rel_type, attributes=attributes)
-        self.command_requested.emit(cmd)
+        self.editor_coordinator.update_relation(
+            rel_id, target_id, rel_type, attributes=attributes
+        )
 
     # Removed: navigate_to_entity/prompt_create moved to NavigationCoordinator
 

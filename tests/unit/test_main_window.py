@@ -102,7 +102,7 @@ def test_add_relation(main_window, qtbot):
         main_window.add_relation("src", "dst", "relates_to", bidirectional=True)
 
 
-@patch("src.app.main_window.QMessageBox.warning")
+@patch("src.app.coordinators.editor_coordinator.QMessageBox.warning")
 def test_check_unsaved_changes_save(mock_warning, main_window):
     # Setup editor with unsaved changes
     main_window.event_editor.has_unsaved_changes = MagicMock(return_value=True)
@@ -119,7 +119,7 @@ def test_check_unsaved_changes_save(mock_warning, main_window):
     main_window.event_editor._on_save.assert_called_once()
 
 
-@patch("src.app.main_window.QMessageBox.warning")
+@patch("src.app.coordinators.editor_coordinator.QMessageBox.warning")
 def test_check_unsaved_changes_cancel(mock_warning, main_window):
     main_window.event_editor.has_unsaved_changes = MagicMock(return_value=True)
 
