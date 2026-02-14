@@ -1,14 +1,15 @@
 import pytest
-from PySide6.QtCore import Qt, QMimeData, QPoint, QRectF
+from PySide6.QtCore import QMimeData, QPoint, QRectF, Qt
 from PySide6.QtGui import (
     QDragEnterEvent,
-    QDragMoveEvent,
     QDragLeaveEvent,
+    QDragMoveEvent,
     QDropEvent,
     QImage,
     QPixmap,
 )
 from PySide6.QtWidgets import QGraphicsPixmapItem
+
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
 

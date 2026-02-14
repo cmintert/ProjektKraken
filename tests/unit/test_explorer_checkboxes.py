@@ -1,4 +1,5 @@
 from PySide6.QtCore import Qt
+
 from src.core.entities import Entity
 from src.core.events import Event
 from src.gui.models.explorer_model import ExplorerModel

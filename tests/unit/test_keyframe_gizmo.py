@@ -1,14 +1,15 @@
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 from PySide6.QtCore import QPointF, Qt
 from PySide6.QtWidgets import QGraphicsSceneMouseEvent
 
 # We need to import KeyframeGizmo, but it is inside map_graphics_view.py
 # and it might not be exported in __all__, but we can import it directly.
 from src.gui.widgets.map.map_graphics_view import (
+    GIZMO_SIZE,
     KeyframeGizmo,
     KeyframeItem,
-    GIZMO_SIZE,
 )
 
 

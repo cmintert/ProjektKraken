@@ -90,12 +90,11 @@ class EntityEditorWidget(QWidget):
         self.header_widget = QWidget()
         header_layout = QVBoxLayout(self.header_widget)
         header_layout.setContentsMargins(0, 0, 0, 0)
-        from src.gui.utils.style_helper import StyleHelper
-
         # It seems StyleHelper is imported inside __init__ in original code at line 84
-
         # Inject Button (QToolButton with Menu)
         from PySide6.QtWidgets import QToolButton
+
+        from src.gui.utils.style_helper import StyleHelper
 
         self.btn_inject = QToolButton()
         self.btn_inject.setText("Fast Inject")  # Down arrow
@@ -516,6 +515,7 @@ class EntityEditorWidget(QWidget):
             event: QDropEvent with MIME data.
         """
         import json
+
         from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
 
         if not event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE):

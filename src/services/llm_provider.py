@@ -14,6 +14,63 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
+def log_ai_interaction(
+    prompt: Any,
+    response_text: str,
+    model: str = "unknown",
+    source: str = "unknown",
+) -> None:
+    """Log an AI prompt/response pair to the audit log if auditing is enabled.
+
+    Checks the ``ai_gen_audit_log`` QSettings flag and, when enabled, writes
+    a structured entry containing the prompt, model response, and metadata
+    to the dedicated ``ai_audit`` rotating log file.
+
+    Args:
+        prompt: The prompt sent to the model (str or dict).
+        response_text: The text returned by the model.
+        model: Model identifier used for generation.
+        source: Caller identifier (e.g. ``"SummaryService"``).
+
+    """
+    try:
+        from PySide6.QtCore import QSettings
+
+        from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        audit_enabled = settings.value("ai_gen_audit_log", False, type=bool)
+
+        if not audit_enabled:
+            return
+
+        from src.core.logging_config import get_audit_logger
+
+        audit = get_audit_logger()
+
+        # Format prompt for logging
+        if isinstance(prompt, dict):
+            prompt_str = (
+                f"[system] {prompt.get('system', '')}\n"
+                f"[user] {prompt.get('user', '')}"
+            )
+        else:
+            prompt_str = str(prompt)
+
+        separator = "=" * 60
+        audit.info(
+            f"\n{separator}\n"
+            f"SOURCE: {source} | MODEL: {model}\n"
+            f"{separator}\n"
+            f"PROMPT:\n{prompt_str}\n"
+            f"{'-' * 40}\n"
+            f"RESPONSE:\n{response_text}\n"
+            f"{separator}"
+        )
+    except Exception as e:
+        logger.debug(f"Audit logging skipped: {e}")
+
+
 class Provider(ABC):
     """Abstract base class for LLM providers.
 

@@ -5,7 +5,6 @@ color-coded differentiation.
 """
 
 import json
-import logging
 from typing import Any, Dict, List, Optional, Union
 
 from PySide6.QtCore import QMimeData, QSize, Qt, Signal, Slot

@@ -1,5 +1,6 @@
 import pytest
 from PySide6.QtCore import Qt
+
 from src.gui.widgets.relation_type_picker import RelationTypePicker
 
 

@@ -9,11 +9,7 @@ tags: [description, concise, brief]
 max_words: 100
 ---
 
-You are a worldbuilding assistant. Write concise, evocative descriptions (50-100 words). Focus on the most distinctive features. Avoid unnecessary backstory—save that for the full narrative.
-
-TIME: Dates are floats where 1.0 = 1 day.
-
-STYLE: Sharp, vivid, minimal. Every word counts. Choose the most impactful details. Create a strong impression quickly.
+Write 50-100 words. Focus on the most distinctive features. Sharp, vivid, minimal — every word counts.
 
 GUIDELINES:
 - 50-100 words maximum

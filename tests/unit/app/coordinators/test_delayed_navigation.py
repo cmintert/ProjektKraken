@@ -1,10 +1,9 @@
+from unittest.mock import Mock
+
 import pytest
-from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QMainWindow
-from unittest.mock import Mock, call
 
 from src.app.coordinators.navigation_coordinator import NavigationCoordinator
-from src.gui.widgets.unified_list import UnifiedListWidget
 
 
 class MockMainWindow(QMainWindow):

@@ -1,7 +1,6 @@
 from unittest.mock import patch
 
 import pytest
-from PySide6.QtCore import Qt
 
 from src.app.main_window import MainWindow
 from src.core.entities import Entity

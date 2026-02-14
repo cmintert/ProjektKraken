@@ -75,12 +75,12 @@ def test_custom_prompt_structure(qtbot, widget, monkeypatch):
     else:
         prompt_text = prompt
 
-    assert "Task: My custom instruction" in prompt_text
-    # New Trinity Delimiters
-    assert "--- DATA: ENTITY/EVENT DETAILS ---" in prompt_text
+    assert "My custom instruction" in prompt_text
+    # New compact section markers
+    assert "[Entity]" in prompt_text
     # RAG context is a placeholder at this stage (before worker)
     assert "{{RAG_CONTEXT}}" in prompt_text
-    assert "--- END DATA ---" in prompt_text
+    assert "[Task]" in prompt_text
 
 
 def test_preview_fetches_rag(qtbot, widget, monkeypatch):
@@ -199,8 +199,8 @@ def test_preview_fetches_rag(qtbot, widget, monkeypatch):
 
     # Ensure RAG placeholder is present in the query
     assert "{{RAG_CONTEXT}}" in context_calls[0][0]
-    # Ensure delimiter is present
-    assert "--- DATA: ENTITY/EVENT DETAILS ---" in context_calls[0][0]
+    # Ensure section marker is present
+    assert "[Entity]" in context_calls[0][0]
 
 
 def test_default_system_prompt_fallback(qtbot, widget, monkeypatch):

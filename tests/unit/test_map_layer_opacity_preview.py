@@ -7,7 +7,6 @@ Verifies that:
 """
 
 import pytest
-from PySide6.QtCore import QObject, Signal
 
 from src.app.constants import MAP_LAYER_TYPE_MARKER
 from src.core.map import MapLayerNode

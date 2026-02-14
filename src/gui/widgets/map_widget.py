@@ -42,7 +42,6 @@ from src.app.constants import (
     MAP_LAYER_TYPE_REGION,
 )
 from src.core.map import MapLayerNode
-
 from src.core.paths import get_resource_path
 from src.core.theme_manager import ThemeManager
 from src.core.trajectory import KEYFRAME_TIME_EPSILON, interpolate_position

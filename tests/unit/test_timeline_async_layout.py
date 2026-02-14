@@ -7,7 +7,6 @@ lane packing calculations.
 
 import time
 
-import pytest
 from PySide6.QtCore import QThreadPool
 
 from src.core.events import Event

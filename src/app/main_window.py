@@ -23,7 +23,9 @@ from typing import Optional
 # constants and other Qt classes that haven't been updated yet.
 from PySide6.QtCore import (
     Q_ARG,
+    QEvent,
     QMetaObject,
+    QObject,
     QSettings,
     Qt,
     QTimer,
@@ -62,7 +64,6 @@ from src.app.constants import (
 )
 from src.app.coordinators.backup_coordinator import BackupCoordinator
 from src.app.coordinators.fast_inject_coordinator import FastInjectCoordinator
-from src.gui.widgets.auto_closing_message_box import AutoClosingMessageBox
 from src.app.coordinators.navigation_coordinator import NavigationCoordinator
 from src.app.coordinators.time_coordinator import TimeCoordinator
 from src.app.data_handler import DataHandler
@@ -71,6 +72,7 @@ from src.app.map_handler import MapHandler
 from src.app.timeline_grouping_manager import TimelineGroupingManager
 from src.app.ui_manager import UIManager
 from src.app.worker_manager import WorkerManager
+from src.commands.composite_command import CompositeCommand
 from src.commands.entity_commands import (
     CreateEntityCommand,
     DeleteEntityCommand,
@@ -87,7 +89,6 @@ from src.commands.relation_commands import (
     UpdateRelationCommand,
 )
 from src.commands.wiki_commands import ProcessWikiLinksCommand
-from src.commands.composite_command import CompositeCommand
 from src.core.fast_inject import FastInjectManager
 from src.core.logging_config import get_logger
 from src.core.paths import get_worlds_dir
@@ -96,6 +97,7 @@ from src.gui.dialogs.filter_dialog import FilterDialog
 from src.gui.dialogs.import_preview_dialog import ImportPreviewDialog
 from src.gui.mixins.layout_guard import LayoutGuardMixin
 from src.gui.widgets.ai_search_panel import AISearchPanelWidget
+from src.gui.widgets.auto_closing_message_box import AutoClosingMessageBox
 from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.event_editor import EventEditorWidget
 from src.gui.widgets.graph_view import GraphWidget
@@ -103,7 +105,6 @@ from src.gui.widgets.longform import LongformEditorWidget
 from src.gui.widgets.map_widget import MapWidget
 from src.gui.widgets.timeline import TimelineWidget
 from src.gui.widgets.unified_list import UnifiedListWidget
-from PySide6.QtCore import QObject, QEvent
 
 logger = get_logger(__name__)
 
@@ -230,8 +231,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         # Apply Windows Title Bar Style based on current theme
         try:
-            from src.gui.utils.window_utils import apply_windows_title_bar_style
             from src.core.theme_manager import ThemeManager
+            from src.gui.utils.window_utils import apply_windows_title_bar_style
 
             # Apply based on current theme
             theme_name = ThemeManager().current_theme_name
@@ -1098,8 +1099,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             theme_dict: The new theme dictionary from ThemeManager.
         """
         try:
-            from src.gui.utils.window_utils import apply_windows_title_bar_style
             from src.core.theme_manager import ThemeManager
+            from src.gui.utils.window_utils import apply_windows_title_bar_style
 
             # Determine if new theme is dark
             theme_name = ThemeManager().current_theme_name

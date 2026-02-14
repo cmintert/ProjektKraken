@@ -302,17 +302,21 @@ class WorkerManager(QObject):
 
             # Initialize History Service for Phase 2 persistent undo/redo
             try:
-                from src.services.history_service import HistoryService
-                from src.commands.event_commands import (
-                    CreateEventCommand,
-                    UpdateEventCommand,
-                    DeleteEventCommand,
-                )
                 from src.commands.entity_commands import (
                     CreateEntityCommand,
-                    UpdateEntityCommand as UpdateEntityCmd,
+                )
+                from src.commands.entity_commands import (
                     DeleteEntityCommand as DeleteEntityCmd,
                 )
+                from src.commands.entity_commands import (
+                    UpdateEntityCommand as UpdateEntityCmd,
+                )
+                from src.commands.event_commands import (
+                    CreateEventCommand,
+                    DeleteEventCommand,
+                    UpdateEventCommand,
+                )
+                from src.services.history_service import HistoryService
 
                 # Create history service with current world ID
                 world_id = (
@@ -339,8 +343,8 @@ class WorkerManager(QObject):
                 # Relation commands
                 from src.commands.relation_commands import (
                     AddRelationCommand,
-                    UpdateRelationCommand,
                     RemoveRelationCommand,
+                    UpdateRelationCommand,
                 )
 
                 self.window.history_service.register_command_type(
@@ -378,8 +382,8 @@ class WorkerManager(QObject):
                 # Map commands
                 from src.commands.map_commands import (
                     CreateMapCommand,
-                    UpdateMapCommand,
                     DeleteMapCommand,
+                    UpdateMapCommand,
                 )
 
                 self.window.history_service.register_command_type(

@@ -128,8 +128,8 @@ class DragPill(QWidget):
         self.type_label.setStyleSheet(f"font-size: 10pt; color: {text_dim};")
 
         # Add shadow effect
-        from PySide6.QtWidgets import QGraphicsDropShadowEffect
         from PySide6.QtGui import QColor
+        from PySide6.QtWidgets import QGraphicsDropShadowEffect
 
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(12)

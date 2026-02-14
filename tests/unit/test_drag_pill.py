@@ -2,7 +2,6 @@
 
 import pytest
 from PySide6.QtCore import QPoint
-from PySide6.QtWidgets import QApplication
 
 from src.gui.widgets.drag_pill import DragPill
 

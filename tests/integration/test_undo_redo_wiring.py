@@ -7,10 +7,6 @@ and that the UI actions respond to history changes.
 
 from unittest.mock import MagicMock, patch
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QAction
-
-from src.app.command_coordinator import CommandCoordinator
 from src.app.main_window import MainWindow
 from src.commands.base_command import CommandResult
 

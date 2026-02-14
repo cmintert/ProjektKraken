@@ -146,8 +146,7 @@ def test_rag_service_called(mock_rag_cls, widget, qtbot):
     mock_service.get_context.assert_called_with("Test Prompt", top_k=3, exclude_names=[])
 
     # Verify prompt modification
-    # "Test Prompt" -> "--- DATA: RAG CONTEXT ---\nRetrieved Context\nTest Prompt"
-    assert "--- DATA: RAG CONTEXT ---" in worker.prompt
+    assert "[Context]" in worker.prompt
     assert "Retrieved Context" in worker.prompt
 
 

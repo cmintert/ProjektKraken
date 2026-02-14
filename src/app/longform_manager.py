@@ -10,13 +10,13 @@ from typing import TYPE_CHECKING
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt, Slot
 from PySide6.QtWidgets import QDialog, QFileDialog
 
+from src.commands.entity_commands import DeleteEntityCommand
+from src.commands.event_commands import DeleteEventCommand
 from src.commands.longform_commands import (
     DemoteLongformEntryCommand,
     MoveLongformEntryCommand,
     PromoteLongformEntryCommand,
 )
-from src.commands.entity_commands import DeleteEntityCommand
-from src.commands.event_commands import DeleteEventCommand
 from src.core.logging_config import get_logger
 from src.services.longform_builder import DEFAULT_POSITION_GAP
 

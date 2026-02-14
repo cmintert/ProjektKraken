@@ -3,7 +3,7 @@ from PySide6.QtCore import QPointF, Qt
 from PySide6.QtWidgets import QApplication
 
 from src.core.events import Event
-from src.gui.widgets.timeline import EventItem, TimelineWidget, PlayheadItem
+from src.gui.widgets.timeline import EventItem, PlayheadItem, TimelineWidget
 
 
 @pytest.fixture

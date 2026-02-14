@@ -484,10 +484,10 @@ class DatabaseWorker(QObject):
                 success = result
                 msg = f"{command_name} {'succeeded' if success else 'failed'}"
                 result_obj = CommandResult(
-                    success=success, 
-                    message=msg, 
+                    success=success,
+                    message=msg,
                     command_name=command_name,
-                    data={"command": command}  # Include command for undo stack
+                    data={"command": command},  # Include command for undo stack
                 )
             elif isinstance(result, CommandResult):
                 result_obj = result
@@ -542,7 +542,7 @@ class DatabaseWorker(QObject):
         try:
             self.operation_started.emit(f"Undoing {command_name}...")
             command.undo(self.db_service)
-            
+
             result_obj = CommandResult(
                 success=True,
                 message=f"Undone: {command.get_description()}",
@@ -550,7 +550,7 @@ class DatabaseWorker(QObject):
             )
             self.command_finished.emit(result_obj)
             self.operation_finished.emit(f"Undone {command_name}.")
-            
+
         except Exception:
             logger.error(f"Undo {command_name} failed: {traceback.format_exc()}")
             self.error_occurred.emit(f"Undo {command_name} failed.")
@@ -581,7 +581,7 @@ class DatabaseWorker(QObject):
         try:
             self.operation_started.emit(f"Redoing {command_name}...")
             result = command.execute(self.db_service)
-            
+
             # Normalize result to CommandResult
             if isinstance(result, bool):
                 success = result
@@ -601,10 +601,10 @@ class DatabaseWorker(QObject):
                     message="Internal Error: Invalid command result",
                     command_name=f"Redo_{command_name}",
                 )
-            
+
             self.command_finished.emit(result_obj)
             self.operation_finished.emit(f"Redone {command_name}.")
-            
+
         except Exception:
             logger.error(f"Redo {command_name} failed: {traceback.format_exc()}")
             self.error_occurred.emit(f"Redo {command_name} failed.")
@@ -949,3 +949,14 @@ class DatabaseWorker(QObject):
         except Exception as e:
             logger.error(f"Summary generation failed: {e}\n{traceback.format_exc()}")
             self.error_occurred.emit(f"Summary generation failed: {str(e)}")
+
+    @Slot()
+    def refresh_ai_settings(self) -> None:
+        """Refresh AI settings in worker-thread services.
+
+        Clears cached LLM provider so the next generation
+        picks up the latest provider/model from QSettings.
+        """
+        if hasattr(self, "summary_service") and self.summary_service:
+            self.summary_service.reset_provider()
+        logger.info("DatabaseWorker: AI settings refreshed")

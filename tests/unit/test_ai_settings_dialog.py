@@ -71,3 +71,27 @@ def test_field_change_triggers_autosave_status(dialog, qtbot):
 
     # Should show "Saved" status after save completes
     assert dialog.save_status_label.text() == "Saved"
+
+
+def test_persona_prompt_change_triggers_autosave(dialog, qtbot):
+    """Test that editing the Persona prompt editor triggers autosave."""
+    # Clear status first
+    dialog.save_status_label.setText("")
+
+    # Type into the system prompt editor
+    dialog.system_prompt_edit.setPlainText("New persona text")
+
+    # The textChanged signal should have triggered save_settings
+    assert dialog.save_status_label.text() == "Saved"
+
+
+def test_summary_prompt_change_triggers_autosave(dialog, qtbot):
+    """Test that editing the Summary Prompt editor triggers autosave."""
+    # Clear status first
+    dialog.save_status_label.setText("")
+
+    # Type into the summary prompt editor
+    dialog.summary_prompt_edit.setPlainText("New summary prompt")
+
+    # The textChanged signal should have triggered save_settings
+    assert dialog.save_status_label.text() == "Saved"

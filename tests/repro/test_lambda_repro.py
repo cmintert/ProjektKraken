@@ -1,5 +1,4 @@
-from PySide6.QtCore import Signal, QObject
-import pytest
+from PySide6.QtCore import QObject, Signal
 
 
 class Signaller(QObject):

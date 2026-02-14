@@ -5,7 +5,7 @@ Provides asynchronous lane packing calculation for timeline events using QRunnab
 
 import logging
 import time
-from typing import Dict, List, Tuple
+from typing import List
 
 from PySide6.QtCore import QObject, QRunnable, Signal
 

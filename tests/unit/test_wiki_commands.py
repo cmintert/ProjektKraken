@@ -1,5 +1,5 @@
-import pytest
 from unittest.mock import MagicMock
+
 from src.commands.wiki_commands import ProcessWikiLinksCommand
 
 

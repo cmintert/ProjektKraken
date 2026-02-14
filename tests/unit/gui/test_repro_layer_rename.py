@@ -1,8 +1,8 @@
-import pytest
 from PySide6.QtCore import Qt
+
+from src.app.constants import MAP_LAYER_TYPE_GROUP, MAP_LAYER_TYPE_MARKER
 from src.core.map import MapLayerNode
 from src.gui.widgets.map.map_layer_model import MapLayerModel
-from src.app.constants import MAP_LAYER_TYPE_MARKER, MAP_LAYER_TYPE_GROUP
 
 
 class MockMapWidget:

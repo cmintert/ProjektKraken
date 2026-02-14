@@ -15,17 +15,16 @@ pytestmark = pytest.mark.skipif(
     reason="No display available for Qt tests",
 )
 
-from PySide6.QtCore import QPointF, QRectF, Qt
+from PySide6.QtCore import QPointF, Qt
 from PySide6.QtGui import QPixmap, QTransform
 from PySide6.QtWidgets import QApplication, QGraphicsPixmapItem, QGraphicsScene
 
 from src.gui.widgets.map.snapping_manager import (
+    SnappingManager,
     SnapResult,
     SnapType,
-    SnappingManager,
     point_to_segment_distance,
 )
-
 
 # --------------------------------------------------------------------------
 # Fixtures

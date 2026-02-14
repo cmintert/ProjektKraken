@@ -15,6 +15,15 @@ without modification.
 """
 
 # Map CRUD
+# Layer hierarchy
+from src.commands.layer_commands import (  # noqa: F401
+    MoveLayerCommand,
+    RenameLayerCommand,
+    SaveLayerTreeCommand,
+    SetLayerOpacityCommand,
+    SetLayerVisibilityCommand,
+    _find_layer_node,
+)
 from src.commands.map_crud_commands import (  # noqa: F401
     CreateMapCommand,
     DeleteMapCommand,
@@ -29,16 +38,6 @@ from src.commands.marker_commands import (  # noqa: F401
     UpdateMarkerColorCommand,
     UpdateMarkerCommand,
     UpdateMarkerIconCommand,
-)
-
-# Layer hierarchy
-from src.commands.layer_commands import (  # noqa: F401
-    MoveLayerCommand,
-    RenameLayerCommand,
-    SaveLayerTreeCommand,
-    SetLayerOpacityCommand,
-    SetLayerVisibilityCommand,
-    _find_layer_node,
 )
 
 __all__ = [

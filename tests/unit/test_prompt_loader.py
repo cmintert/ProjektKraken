@@ -343,7 +343,7 @@ def test_load_real_fantasy_worldbuilder_v1():
         assert template.template_id == "fantasy_worldbuilder"
         assert template.version == "1.0"
         assert "fantasy world-builder" in template.content.lower()
-        assert "1.0 = 1 day" in template.content
+        assert "numeric calendar" in template.content
     except FileNotFoundError:
         pytest.skip("Real templates not found (expected during isolated testing)")
 
@@ -375,7 +375,6 @@ def test_load_real_description_templates():
         default = loader.load_template("description_default", version="1.0")
         assert default.template_id == "description_default"
         assert default.version == "1.0"
-        assert "world-builder" in default.content.lower()
         assert "200 words" in default.content.lower() or "200" in default.metadata.get(
             "max_words", ""
         )
@@ -385,7 +384,8 @@ def test_load_real_description_templates():
         assert concise.template_id == "description_concise"
         assert concise.version == "1.0"
         assert (
-            "concise" in concise.content.lower() or "brief" in concise.content.lower()
+            "50-100 words" in concise.content.lower()
+            or "concise" in concise.content.lower()
         )
 
         # Test detailed template
@@ -393,8 +393,8 @@ def test_load_real_description_templates():
         assert detailed.template_id == "description_detailed"
         assert detailed.version == "1.0"
         assert (
-            "detailed" in detailed.content.lower()
-            or "expansive" in detailed.content.lower()
+            "300-500 words" in detailed.content.lower()
+            or "detailed" in detailed.content.lower()
         )
     except FileNotFoundError:
         pytest.skip("Real templates not found (expected during isolated testing)")

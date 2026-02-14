@@ -18,9 +18,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
-
 from src.core.theme_manager import ThemeManager
+from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
 
 if TYPE_CHECKING:
     from src.commands.base_command import BaseCommand

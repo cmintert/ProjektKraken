@@ -1,8 +1,7 @@
-import pytest
 from PySide6.QtWidgets import QLabel, QPushButton
 
-from src.gui.dialogs.about_dialog import AboutDialog
 from src.app.constants import VERSION
+from src.gui.dialogs.about_dialog import AboutDialog
 
 
 def test_about_dialog_initialization(qapp):

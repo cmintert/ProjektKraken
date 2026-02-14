@@ -5,9 +5,11 @@ Verifies that the UIManager correctly assigns shortcuts from ShortcutManager
 and sets the correct shortcut context.
 """
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence
+
 from src.app.main_window import MainWindow
 from src.gui.utils.shortcut_manager import ShortcutManager
 

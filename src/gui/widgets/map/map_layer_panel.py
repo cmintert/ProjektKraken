@@ -23,12 +23,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.constants import (
-    MAP_LAYER_DEFAULT_GROUP_NAME,
-    MAP_LAYER_DEFAULT_OPACITY,
-    MAP_LAYER_TYPE_GROUP,
-    MAP_LAYER_TYPE_MARKER,
-)
 from src.core.map import MapLayerNode
 from src.gui.utils.style_helper import StyleHelper
 

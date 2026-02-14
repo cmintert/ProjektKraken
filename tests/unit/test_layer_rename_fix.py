@@ -20,7 +20,6 @@ from src.commands.map_commands import (
 )
 from src.core.map import Map, MapLayerNode
 
-
 # ------------------------------------------------------------------
 #  1. has_history property
 # ------------------------------------------------------------------

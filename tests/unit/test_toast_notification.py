@@ -2,7 +2,6 @@
 
 import pytest
 from PySide6.QtCore import QPoint
-
 from src.gui.widgets.toast_notification import ToastNotification
 
 
