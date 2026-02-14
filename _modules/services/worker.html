@@ -791,10 +791,10 @@
                 <span class="n">success</span> <span class="o">=</span> <span class="n">result</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">command_name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">&#39;succeeded&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">success</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;failed&#39;</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="n">result_obj</span> <span class="o">=</span> <span class="n">CommandResult</span><span class="p">(</span>
-                    <span class="n">success</span><span class="o">=</span><span class="n">success</span><span class="p">,</span> 
-                    <span class="n">message</span><span class="o">=</span><span class="n">msg</span><span class="p">,</span> 
+                    <span class="n">success</span><span class="o">=</span><span class="n">success</span><span class="p">,</span>
+                    <span class="n">message</span><span class="o">=</span><span class="n">msg</span><span class="p">,</span>
                     <span class="n">command_name</span><span class="o">=</span><span class="n">command_name</span><span class="p">,</span>
-                    <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;command&quot;</span><span class="p">:</span> <span class="n">command</span><span class="p">}</span>  <span class="c1"># Include command for undo stack</span>
+                    <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;command&quot;</span><span class="p">:</span> <span class="n">command</span><span class="p">},</span>  <span class="c1"># Include command for undo stack</span>
                 <span class="p">)</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">CommandResult</span><span class="p">):</span>
                 <span class="n">result_obj</span> <span class="o">=</span> <span class="n">result</span>
@@ -852,7 +852,7 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">operation_started</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Undoing </span><span class="si">{</span><span class="n">command_name</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
             <span class="n">command</span><span class="o">.</span><span class="n">undo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">)</span>
-            
+
             <span class="n">result_obj</span> <span class="o">=</span> <span class="n">CommandResult</span><span class="p">(</span>
                 <span class="n">success</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                 <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Undone: </span><span class="si">{</span><span class="n">command</span><span class="o">.</span><span class="n">get_description</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
@@ -860,7 +860,7 @@
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">command_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">result_obj</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">operation_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Undone </span><span class="si">{</span><span class="n">command_name</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
-            
+
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Undo </span><span class="si">{</span><span class="n">command_name</span><span class="si">}</span><span class="s2"> failed: </span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Undo </span><span class="si">{</span><span class="n">command_name</span><span class="si">}</span><span class="s2"> failed.&quot;</span><span class="p">)</span>
@@ -894,7 +894,7 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">operation_started</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Redoing </span><span class="si">{</span><span class="n">command_name</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
             <span class="n">result</span> <span class="o">=</span> <span class="n">command</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">)</span>
-            
+
             <span class="c1"># Normalize result to CommandResult</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
                 <span class="n">success</span> <span class="o">=</span> <span class="n">result</span>
@@ -914,10 +914,10 @@
                     <span class="n">message</span><span class="o">=</span><span class="s2">&quot;Internal Error: Invalid command result&quot;</span><span class="p">,</span>
                     <span class="n">command_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Redo_</span><span class="si">{</span><span class="n">command_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
                 <span class="p">)</span>
-            
+
             <span class="bp">self</span><span class="o">.</span><span class="n">command_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">result_obj</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">operation_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Redone </span><span class="si">{</span><span class="n">command_name</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
-            
+
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Redo </span><span class="si">{</span><span class="n">command_name</span><span class="si">}</span><span class="s2"> failed: </span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Redo </span><span class="si">{</span><span class="n">command_name</span><span class="si">}</span><span class="s2"> failed.&quot;</span><span class="p">)</span>
@@ -1292,6 +1292,20 @@
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Summary generation failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Summary generation failed: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseWorker.refresh_ai_settings">
+<a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.refresh_ai_settings">[docs]</a>
+    <span class="nd">@Slot</span><span class="p">()</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">refresh_ai_settings</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Refresh AI settings in worker-thread services.</span>
+
+<span class="sd">        Clears cached LLM provider so the next generation</span>
+<span class="sd">        picks up the latest provider/model from QSettings.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;summary_service&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_service</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">summary_service</span><span class="o">.</span><span class="n">reset_provider</span><span class="p">()</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;DatabaseWorker: AI settings refreshed&quot;</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

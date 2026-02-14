@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-02-13
+## [Development] - 2026-02-14
 ### Internal
-- Merge pull request #81 from cmintert/copilot/design-hierarchical-layer-system
+- Merge pull request #82 from cmintert/copilot/audit-llm-implementation
 
 
 *This changelog was automatically generated.*

@@ -1544,6 +1544,20 @@ using the current log file instead of crashing.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="core.logging_config.get_audit_logger">
+<span class="sig-prename descclassname"><span class="pre">core.logging_config.</span></span><span class="sig-name descname"><span class="pre">get_audit_logger</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Logger</span></span></span><a class="reference internal" href="_modules/core/logging_config.html#get_audit_logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.logging_config.get_audit_logger" title="Link to this definition">¶</a></dt>
+<dd><p>Return the dedicated AI audit logger.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The <code class="docutils literal notranslate"><span class="pre">ai_audit</span></code> logger instance.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>logging.Logger</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="core.logging_config.get_logger">
 <span class="sig-prename descclassname"><span class="pre">core.logging_config.</span></span><span class="sig-name descname"><span class="pre">get_logger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Logger</span></span></span><a class="reference internal" href="_modules/core/logging_config.html#get_logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.logging_config.get_logger" title="Link to this definition">¶</a></dt>
 <dd><p>Convenience function to get a logger with the given name.</p>
@@ -1558,6 +1572,15 @@ using the current log file instead of crashing.</p>
 <dd class="field-odd"><p>logging.Logger</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.logging_config.setup_audit_logging">
+<span class="sig-prename descclassname"><span class="pre">core.logging_config.</span></span><span class="sig-name descname"><span class="pre">setup_audit_logging</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/core/logging_config.html#setup_audit_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.logging_config.setup_audit_logging" title="Link to this definition">¶</a></dt>
+<dd><p>Configure the dedicated AI audit logger.</p>
+<p>Creates a separate rotating file handler that writes AI prompts and
+responses to <code class="docutils literal notranslate"><span class="pre">logs/ai_audit_log.txt</span></code>.  The logger does <strong>not</strong>
+propagate to the root logger so audit entries stay in their own file.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -1818,7 +1841,9 @@ configuration, and theme management.</p>
 <li><a class="reference internal" href="#core.logging_config.SafeRotatingFileHandler.doRollover"><code class="docutils literal notranslate"><span class="pre">SafeRotatingFileHandler.doRollover()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#core.logging_config.get_audit_logger"><code class="docutils literal notranslate"><span class="pre">get_audit_logger()</span></code></a></li>
 <li><a class="reference internal" href="#core.logging_config.get_logger"><code class="docutils literal notranslate"><span class="pre">get_logger()</span></code></a></li>
+<li><a class="reference internal" href="#core.logging_config.setup_audit_logging"><code class="docutils literal notranslate"><span class="pre">setup_audit_logging()</span></code></a></li>
 <li><a class="reference internal" href="#core.logging_config.setup_logging"><code class="docutils literal notranslate"><span class="pre">setup_logging()</span></code></a></li>
 <li><a class="reference internal" href="#core.logging_config.shutdown_logging"><code class="docutils literal notranslate"><span class="pre">shutdown_logging()</span></code></a></li>
 </ul>
