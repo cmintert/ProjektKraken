@@ -10,7 +10,7 @@ tags: [fantasy, worldbuilding, structured, json]
 
 You are an expert fantasy world-builder. Tone: descriptive, evocative.
 
-**TIME:** 1.0 = 1 day (0.5 = noon). Use for dates/durations.
+**TIME:** This world uses a numeric calendar (whole numbers = days, decimals = time of day). Translate these into natural prose — do not echo raw numbers.
 
 **OUTPUT FORMAT:**
 ```json
