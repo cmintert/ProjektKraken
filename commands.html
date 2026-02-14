@@ -517,6 +517,37 @@ SetActiveCalendarCommand: Sets a calendar as the active one.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="commands.calendar_commands.CreateCalendarConfigCommand.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.calendar_commands.CreateCalendarConfigCommand" title="commands.calendar_commands.CreateCalendarConfigCommand"><span class="pre">CreateCalendarConfigCommand</span></a></span></span><a class="reference internal" href="_modules/commands/calendar_commands.html#CreateCalendarConfigCommand.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.CreateCalendarConfigCommand.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize command from dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> – Command data from persistence.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Reconstructed command.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.calendar_commands.CreateCalendarConfigCommand" title="commands.calendar_commands.CreateCalendarConfigCommand">CreateCalendarConfigCommand</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.calendar_commands.CreateCalendarConfigCommand.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/commands/calendar_commands.html#CreateCalendarConfigCommand.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.CreateCalendarConfigCommand.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize command to dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Command data for persistence.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="commands.calendar_commands.CreateCalendarConfigCommand.undo">
 <span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/calendar_commands.html#CreateCalendarConfigCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.CreateCalendarConfigCommand.undo" title="Link to this definition">¶</a></dt>
 <dd><p>Undoes the creation by deleting the config.</p>
@@ -559,6 +590,37 @@ SetActiveCalendarCommand: Sets a calendar as the active one.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.calendar_commands.DeleteCalendarConfigCommand.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.calendar_commands.DeleteCalendarConfigCommand" title="commands.calendar_commands.DeleteCalendarConfigCommand"><span class="pre">DeleteCalendarConfigCommand</span></a></span></span><a class="reference internal" href="_modules/commands/calendar_commands.html#DeleteCalendarConfigCommand.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.DeleteCalendarConfigCommand.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize command from dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> – Command data from persistence.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Reconstructed command.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.calendar_commands.DeleteCalendarConfigCommand" title="commands.calendar_commands.DeleteCalendarConfigCommand">DeleteCalendarConfigCommand</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.calendar_commands.DeleteCalendarConfigCommand.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/commands/calendar_commands.html#DeleteCalendarConfigCommand.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.DeleteCalendarConfigCommand.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize command to dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Command data for persistence.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
 </dd>
 </dl>
 </dd></dl>
@@ -611,6 +673,37 @@ SetActiveCalendarCommand: Sets a calendar as the active one.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="commands.calendar_commands.SetActiveCalendarCommand.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.calendar_commands.SetActiveCalendarCommand" title="commands.calendar_commands.SetActiveCalendarCommand"><span class="pre">SetActiveCalendarCommand</span></a></span></span><a class="reference internal" href="_modules/commands/calendar_commands.html#SetActiveCalendarCommand.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.SetActiveCalendarCommand.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize command from dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> – Command data from persistence.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Reconstructed command.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.calendar_commands.SetActiveCalendarCommand" title="commands.calendar_commands.SetActiveCalendarCommand">SetActiveCalendarCommand</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.calendar_commands.SetActiveCalendarCommand.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/commands/calendar_commands.html#SetActiveCalendarCommand.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.SetActiveCalendarCommand.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize command to dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Command data for persistence.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="commands.calendar_commands.SetActiveCalendarCommand.undo">
 <span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/calendar_commands.html#SetActiveCalendarCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.SetActiveCalendarCommand.undo" title="Link to this definition">¶</a></dt>
 <dd><p>Undoes by restoring the previously active calendar.</p>
@@ -653,6 +746,37 @@ SetActiveCalendarCommand: Sets a calendar as the active one.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult">CommandResult</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.calendar_commands.UpdateCalendarConfigCommand.from_dict">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.calendar_commands.UpdateCalendarConfigCommand" title="commands.calendar_commands.UpdateCalendarConfigCommand"><span class="pre">UpdateCalendarConfigCommand</span></a></span></span><a class="reference internal" href="_modules/commands/calendar_commands.html#UpdateCalendarConfigCommand.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.UpdateCalendarConfigCommand.from_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Deserialize command from dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> – Command data from persistence.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Reconstructed command.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#commands.calendar_commands.UpdateCalendarConfigCommand" title="commands.calendar_commands.UpdateCalendarConfigCommand">UpdateCalendarConfigCommand</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.calendar_commands.UpdateCalendarConfigCommand.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/commands/calendar_commands.html#UpdateCalendarConfigCommand.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.calendar_commands.UpdateCalendarConfigCommand.to_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Serialize command to dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Command data for persistence.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1845,24 +1969,32 @@ functionality. Commands encapsulate actions related to entities, events, and rel
 <li><a class="reference internal" href="#commands.calendar_commands.CreateCalendarConfigCommand"><code class="docutils literal notranslate"><span class="pre">CreateCalendarConfigCommand</span></code></a><ul>
 <li><a class="reference internal" href="#commands.calendar_commands.CreateCalendarConfigCommand.__init__"><code class="docutils literal notranslate"><span class="pre">CreateCalendarConfigCommand.__init__()</span></code></a></li>
 <li><a class="reference internal" href="#commands.calendar_commands.CreateCalendarConfigCommand.execute"><code class="docutils literal notranslate"><span class="pre">CreateCalendarConfigCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.calendar_commands.CreateCalendarConfigCommand.from_dict"><code class="docutils literal notranslate"><span class="pre">CreateCalendarConfigCommand.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#commands.calendar_commands.CreateCalendarConfigCommand.to_dict"><code class="docutils literal notranslate"><span class="pre">CreateCalendarConfigCommand.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#commands.calendar_commands.CreateCalendarConfigCommand.undo"><code class="docutils literal notranslate"><span class="pre">CreateCalendarConfigCommand.undo()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#commands.calendar_commands.DeleteCalendarConfigCommand"><code class="docutils literal notranslate"><span class="pre">DeleteCalendarConfigCommand</span></code></a><ul>
 <li><a class="reference internal" href="#commands.calendar_commands.DeleteCalendarConfigCommand.__init__"><code class="docutils literal notranslate"><span class="pre">DeleteCalendarConfigCommand.__init__()</span></code></a></li>
 <li><a class="reference internal" href="#commands.calendar_commands.DeleteCalendarConfigCommand.execute"><code class="docutils literal notranslate"><span class="pre">DeleteCalendarConfigCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.calendar_commands.DeleteCalendarConfigCommand.from_dict"><code class="docutils literal notranslate"><span class="pre">DeleteCalendarConfigCommand.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#commands.calendar_commands.DeleteCalendarConfigCommand.to_dict"><code class="docutils literal notranslate"><span class="pre">DeleteCalendarConfigCommand.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#commands.calendar_commands.DeleteCalendarConfigCommand.undo"><code class="docutils literal notranslate"><span class="pre">DeleteCalendarConfigCommand.undo()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#commands.calendar_commands.SetActiveCalendarCommand"><code class="docutils literal notranslate"><span class="pre">SetActiveCalendarCommand</span></code></a><ul>
 <li><a class="reference internal" href="#commands.calendar_commands.SetActiveCalendarCommand.__init__"><code class="docutils literal notranslate"><span class="pre">SetActiveCalendarCommand.__init__()</span></code></a></li>
 <li><a class="reference internal" href="#commands.calendar_commands.SetActiveCalendarCommand.execute"><code class="docutils literal notranslate"><span class="pre">SetActiveCalendarCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.calendar_commands.SetActiveCalendarCommand.from_dict"><code class="docutils literal notranslate"><span class="pre">SetActiveCalendarCommand.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#commands.calendar_commands.SetActiveCalendarCommand.to_dict"><code class="docutils literal notranslate"><span class="pre">SetActiveCalendarCommand.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#commands.calendar_commands.SetActiveCalendarCommand.undo"><code class="docutils literal notranslate"><span class="pre">SetActiveCalendarCommand.undo()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#commands.calendar_commands.UpdateCalendarConfigCommand"><code class="docutils literal notranslate"><span class="pre">UpdateCalendarConfigCommand</span></code></a><ul>
 <li><a class="reference internal" href="#commands.calendar_commands.UpdateCalendarConfigCommand.__init__"><code class="docutils literal notranslate"><span class="pre">UpdateCalendarConfigCommand.__init__()</span></code></a></li>
 <li><a class="reference internal" href="#commands.calendar_commands.UpdateCalendarConfigCommand.execute"><code class="docutils literal notranslate"><span class="pre">UpdateCalendarConfigCommand.execute()</span></code></a></li>
+<li><a class="reference internal" href="#commands.calendar_commands.UpdateCalendarConfigCommand.from_dict"><code class="docutils literal notranslate"><span class="pre">UpdateCalendarConfigCommand.from_dict()</span></code></a></li>
+<li><a class="reference internal" href="#commands.calendar_commands.UpdateCalendarConfigCommand.to_dict"><code class="docutils literal notranslate"><span class="pre">UpdateCalendarConfigCommand.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#commands.calendar_commands.UpdateCalendarConfigCommand.undo"><code class="docutils literal notranslate"><span class="pre">UpdateCalendarConfigCommand.undo()</span></code></a></li>
 </ul>
 </li>

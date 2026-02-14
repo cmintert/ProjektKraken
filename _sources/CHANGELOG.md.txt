@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-14
 ### Internal
-- update changelog
+- Merge pull request #85 from cmintert/copilot/refactor-main-window-class
 
 
 *This changelog was automatically generated.*
