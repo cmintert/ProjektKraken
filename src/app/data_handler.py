@@ -339,7 +339,19 @@ class DataHandler(QObject):
                 self.reload_events.emit()
                 self.reload_markers_for_current_map.emit()
 
-            if "Marker" in command_name and "Update" not in command_name:
+            # Full reload on any UNDO operation to ensure UI consistency
+            is_undo_operation = command_name.startswith("Undo_")
+            if is_undo_operation:
+                logger.debug("[DataHandler] UNDO detected - full reload")
+                self.reload_events.emit()
+                self.reload_entities.emit()
+                self.reload_markers_for_current_map.emit()
+                self.reload_maps.emit()
+                return  # Skip normal per-command logic for undo
+
+            # Reload markers for creation/deletion (but not normal updates)
+            is_update_operation = "Update" in command_name
+            if "Marker" in command_name and not is_update_operation:
                 logger.debug("[DataHandler] Emitting reload_markers_for_current_map")
                 self.reload_markers_for_current_map.emit()
 
