@@ -548,6 +548,19 @@ class AISettingsDialog(QDialog):
         summary_params_layout.addRow(
             "Summary Max Tokens:", self.summary_max_tokens_input
         )
+
+        self.summary_temperature_input = QSpinBox()
+        self.summary_temperature_input.setRange(0, 200)
+        self.summary_temperature_input.setValue(0)  # Default to 0 for determinism
+        self.summary_temperature_input.setToolTip(
+            "Temperature for summary generation (0-200, representing 0.0-2.0).\n"
+            "Lower values (e.g., 0) produce more deterministic and focused results.\n"
+            "Higher values produce more creative but less predictable results."
+        )
+        self.summary_temperature_input.valueChanged.connect(self.save_settings)
+        summary_params_layout.addRow(
+            "Summary Temperature:", self.summary_temperature_input
+        )
         main_layout.addWidget(summary_params_group)
 
         # Output Filters
@@ -1032,6 +1045,9 @@ class AISettingsDialog(QDialog):
         settings.setValue(
             "ai_gen_summary_max_tokens", self.summary_max_tokens_input.value()
         )
+        settings.setValue(
+            "ai_gen_summary_temperature", self.summary_temperature_input.value()
+        )
 
         logger.info(
             f"AI Settings saved. Embedding provider: {provider}, "
@@ -1171,6 +1187,9 @@ class AISettingsDialog(QDialog):
         )
         self.summary_max_tokens_input.setValue(
             int(settings.value("ai_gen_summary_max_tokens", 2048))
+        )
+        self.summary_temperature_input.setValue(
+            int(settings.value("ai_gen_summary_temperature", 0))
         )
 
     def update_status(self, model: str, counts: str, last_updated: str) -> None:

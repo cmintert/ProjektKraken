@@ -173,7 +173,14 @@ class SummaryService:
 
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
             summary_max_tokens = int(settings.value("ai_gen_summary_max_tokens", 2048))
-            response = provider.generate(prompt, max_tokens=summary_max_tokens)
+            # Retrieve temperature (0-200 int -> 0.0-2.0 float)
+            # Default to 0.0 for deterministic summaries
+            summary_temp_int = int(settings.value("ai_gen_summary_temperature", 0))
+            summary_temp = summary_temp_int / 100.0
+
+            response = provider.generate(
+                prompt, max_tokens=summary_max_tokens, temperature=summary_temp
+            )
             text = response.get("text", "").strip()
             model = response.get("model", "unknown")
             logger.info(f"Summary generation raw response:\n{text}")

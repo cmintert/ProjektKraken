@@ -255,3 +255,25 @@ def test_generate_summary_filters_reasoning_tags(summary_service, mock_llm_provi
 
     # Clean up
     settings.remove("ai_gen_filter_reasoning")
+
+
+def test_generate_summary_uses_configured_temperature(
+    summary_service, mock_llm_provider
+):
+    """Verify that generate_summary reads ai_gen_summary_temperature from settings."""
+    from PySide6.QtCore import QSettings
+
+    from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+
+    settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+    settings.setValue("ai_gen_summary_temperature", 25)  # 0.25
+
+    entity = Entity(name="Hero", type="character", description="A brave hero.")
+    summary_service.generate_summary(entity)
+
+    call_args = mock_llm_provider.generate.call_args
+    # Temperature 25 should become 0.25
+    assert call_args[1]["temperature"] == 0.25
+
+    # Clean up
+    settings.remove("ai_gen_summary_temperature")
