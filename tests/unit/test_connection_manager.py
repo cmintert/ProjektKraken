@@ -95,24 +95,34 @@ def mock_main_window(qapp):
 
     # Other Timeline signals
     window._on_event_date_changed = Mock()
-    window._on_tag_color_change_requested = Mock()
-    window._on_remove_from_grouping_requested = Mock()
 
-    # Longform methods
-    window.promote_longform_entry = Mock()
-    window.demote_longform_entry = Mock()
-    window.export_longform_document = Mock()
-    window.move_longform_entry = Mock()
-    window.show_longform_filter_dialog = Mock()
-    window.clear_longform_filter = Mock()
+    # Longform manager (signals now connect directly)
+    window.longform_manager = Mock()
+    window.longform_manager.promote_longform_entry = Mock()
+    window.longform_manager.demote_longform_entry = Mock()
+    window.longform_manager.export_longform_document = Mock()
+    window.longform_manager.export_as_vault = Mock()
+    window.longform_manager.move_longform_entry = Mock()
+    window.longform_manager.show_longform_filter_dialog = Mock()
+    window.longform_manager.clear_longform_filter = Mock()
+    window.longform_manager.load_longform_sequence = Mock()
+    window.longform_manager.delete_longform_item = Mock()
+    window.longform_manager.move_up_longform_entry = Mock()
+    window.longform_manager.move_down_longform_entry = Mock()
+
+    # Grouping manager (signals now connect directly)
+    window.grouping_manager = Mock()
+    window.grouping_manager.on_tag_color_change_requested = Mock()
+    window.grouping_manager.on_remove_from_grouping_requested = Mock()
 
     # Map methods — signals now connect directly to MapHandler
     window._on_map_create_entity = Mock()
     window._on_map_create_event = Mock()
 
-    # AI Search methods
-    window.perform_semantic_search = Mock()
-    window._on_search_result_selected = Mock()
+    # AI Search manager (signals now connect directly)
+    window.ai_search_manager = Mock()
+    window.ai_search_manager.perform_semantic_search = Mock()
+    window.ai_search_manager.on_search_result_selected = Mock()
 
     # Graph methods
     window.load_graph_data = Mock()

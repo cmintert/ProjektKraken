@@ -821,13 +821,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         )
 
     def load_longform_sequence(self) -> None:
-        """Loads the longform sequence, applying active filters if any."""
+        """Loads the longform sequence. Delegates to LongformManager."""
         self.longform_manager.load_longform_sequence()
-
-    @Slot(list)
-    def _on_longform_sequence_loaded(self, sequence: list) -> None:
-        """Handler for when longform sequence is loaded."""
-        self.longform_manager.on_longform_sequence_loaded(sequence)
 
     # Removed: set_global_selection logic moved to NavigationCoordinator
 
@@ -1573,47 +1568,21 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     ) -> None:
         """Handler for grouping dialog data loaded from worker.
 
-        Args:
-            tags_data: List of dicts with 'name', 'color', 'count' for each tag.
-            current_config: Current grouping config dict or None.
-
+        Delegates to GroupingManager.
         """
         self.grouping_manager.on_grouping_dialog_data_loaded(tags_data, current_config)
 
     @Slot(list, str)
     def _on_grouping_applied(self, tag_order: list, mode: str) -> None:
-        """Handle grouping applied from dialog.
-
-        Args:
-            tag_order: List of tag names in order.
-            mode: Grouping mode (DUPLICATE or FIRST_MATCH).
-
-        """
+        """Handle grouping applied from dialog. Delegates to GroupingManager."""
         self.grouping_manager.on_grouping_applied(tag_order, mode)
 
     def _on_clear_grouping_requested(self) -> None:
         """Clears timeline grouping."""
         self.grouping_manager.on_clear_grouping_requested()
 
-    @Slot(str)
-    def _on_tag_color_change_requested(self, tag_name: str) -> None:
-        """Handle tag color change from band context menu.
-
-        Args:
-            tag_name: The name of the tag to change color for.
-
-        """
-        self.grouping_manager.on_tag_color_change_requested(tag_name)
-
-    @Slot(str)
-    def _on_remove_from_grouping_requested(self, tag_name: str) -> None:
-        """Remove a tag from current grouping.
-
-        Args:
-            tag_name: The name of the tag to remove.
-
-        """
-        self.grouping_manager.on_remove_from_grouping_requested(tag_name)
+    # Removed: _on_tag_color_change_requested, _on_remove_from_grouping_requested
+    # rewired to GroupingManager in ConnectionManager
 
     @Slot()
     def show_filter_dialog(self) -> None:
@@ -1667,14 +1636,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.status_bar.showMessage("Filters cleared.")
         self.load_data()
 
-    @Slot()
-    def show_longform_filter_dialog(self) -> None:
-        """Shows filter dialog for the Longform editor (independent state)."""
-        self.longform_manager.show_longform_filter_dialog()
-
-    def clear_longform_filter(self) -> None:
-        """Clears the longform filter and reloads the longform view."""
-        self.longform_manager.clear_longform_filter()
+    # Removed: show_longform_filter_dialog, clear_longform_filter
+    # rewired to LongformManager in ConnectionManager
 
     @Slot(list, list)
     def _on_filter_results_ready(self, events: list, entities: list) -> None:
@@ -1713,48 +1676,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
     # Removed: navigate_to_entity/prompt_create moved to NavigationCoordinator
 
-    def promote_longform_entry(self, table: str, row_id: str, old_meta: dict) -> None:
-        """Promotes a longform entry by reducing its depth.
-
-        Args:
-            table (str): Table name ("events" or "entities").
-            row_id (str): ID of the item to promote.
-            old_meta (dict): Previous longform metadata for undo.
-
-        """
-        self.longform_manager.promote_longform_entry(table, row_id, old_meta)
-
-    def demote_longform_entry(self, table: str, row_id: str, old_meta: dict) -> None:
-        """Demotes a longform entry by increasing its depth.
-
-        Args:
-            table (str): Table name ("events" or "entities").
-            row_id (str): ID of the item to demote.
-            old_meta (dict): Previous longform metadata for undo.
-
-        """
-        self.longform_manager.demote_longform_entry(table, row_id, old_meta)
-
-    def move_longform_entry(
-        self, table: str, row_id: str, old_meta: dict, new_meta: dict
-    ) -> None:
-        """Moves a longform entry to a new position.
-
-        Args:
-            table (str): Table name.
-            row_id (str): ID.
-            old_meta (dict): Old metadata.
-            new_meta (dict): New metadata with position/parent/depth.
-
-        """
-        self.longform_manager.move_longform_entry(table, row_id, old_meta, new_meta)
-
-    def export_longform_document(self) -> None:
-        """Exports the current longform document to Markdown.
-
-        Opens a file dialog for the user to choose save location.
-        """
-        self.longform_manager.export_longform_document()
+    # Removed: promote/demote/move/export longform_entry
+    # rewired to LongformManager in ConnectionManager
 
     # =========================================================================
     # AI Search Panel & Settings Methods
@@ -1765,50 +1688,9 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """Shows the AI Settings dialog."""
         self.ai_search_manager.show_ai_settings_dialog()
 
-    @Slot(str)
-    def _on_ai_settings_rebuild_requested(self, object_type: str) -> None:
-        """Handle rebuild request from dialog."""
-        self.ai_search_manager.on_ai_settings_rebuild_requested(object_type)
-
-    @Slot(str, str, int)
-    def perform_semantic_search(
-        self, query: str, object_type_filter: str, top_k: int
-    ) -> None:
-        """Perform semantic search and display results.
-
-        Args:
-            query: Search query text.
-            object_type_filter: Filter by 'entity' or 'event', or empty for all.
-            top_k: Number of results to return.
-
-        """
-        self.ai_search_manager.perform_semantic_search(query, object_type_filter, top_k)
-
-    @Slot(str)
-    def rebuild_search_index(self, object_type: str) -> None:
-        """Rebuild the semantic search index.
-
-        Args:
-            object_type: Type to rebuild ('all', 'entity', 'event').
-
-        """
-        self.ai_search_manager.rebuild_search_index(object_type)
-
-    @Slot(str, str)
-    def _on_search_result_selected(self, object_type: str, object_id: str) -> None:
-        """Handle selection of a search result.
-
-        Args:
-            object_type: 'entity' or 'event'.
-            object_id: Object UUID.
-
-        """
-        self.ai_search_manager.on_search_result_selected(object_type, object_id)
-
-    @Slot()
-    def refresh_search_index_status(self) -> None:
-        """Refresh the search index status display."""
-        self.ai_search_manager.refresh_search_index_status()
+    # Removed: perform_semantic_search, rebuild_search_index,
+    # _on_search_result_selected, refresh_search_index_status
+    # rewired to AISearchManager in ConnectionManager
 
     @Slot()
     def show_database_manager(self) -> None:
