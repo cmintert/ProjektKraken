@@ -9,6 +9,7 @@ Extracts three distinct zones from a Markdown file:
 - Narrative Body (description text)
 """
 
+import hashlib
 import logging
 import re
 from dataclasses import dataclass, field
@@ -95,29 +96,9 @@ def parse_markdown(text: str) -> ParsedMarkdown:
                 }
             )
         # Remove the Related section from body
-        body = body[: related_match.start()].rstrip()
-        remaining = body[related_match.end() :] if related_match.end() < len(
-            body + related_match.group(0)
-        ) else ""
-        # Reconstruct body without related section
-        body = (
-            body[: related_match.start()].rstrip()
-            + ("\n\n" + body[related_match.end() :].strip()
-               if related_match.end() < len(post.content.strip())
-               else "")
-        )
-        # Simplify: just remove the related section
-        body_before = post.content.strip()
-        # Re-extract removing summary and related
-        body_before = _SUMMARY_PATTERN.sub("", body_before).strip()
-        related_match2 = related_section_pattern.search(body_before)
-        if related_match2:
-            body = (
-                body_before[: related_match2.start()].rstrip()
-                + body_before[related_match2.end() :].lstrip("\n")
-            ).strip()
-        else:
-            body = body_before
+        before = body[: related_match.start()].rstrip()
+        after = body[related_match.end() :].lstrip("\n")
+        body = (before + ("\n\n" + after if after else "")).strip()
 
     # Extract wiki-links from description body
     result.wiki_links = _WIKI_LINK_PATTERN.findall(body)
@@ -182,9 +163,12 @@ def markdown_to_import_data(parsed: ParsedMarkdown) -> Dict[str, Any]:
 
     # Summary -> _summary_data attribute
     if parsed.tl_dr_block:
+        summary_hash = hashlib.md5(
+            parsed.tl_dr_block.encode("utf-8")
+        ).hexdigest()
         data.setdefault("attributes", {})["_summary_data"] = {
             "text": parsed.tl_dr_block,
-            "hash": "",
+            "hash": summary_hash,
             "timestamp": 0.0,
             "model": "imported",
             "detail_level": "standard",

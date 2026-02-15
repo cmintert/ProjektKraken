@@ -207,6 +207,7 @@ class TestMarkdownToImportData:
         assert summary["text"] == (
             "A legendary tracker known for guarding the northern passes."
         )
+        assert len(summary["hash"]) > 0  # Should have a computed hash
 
     def test_description_preserved(self):
         """Test that description is preserved in import data."""

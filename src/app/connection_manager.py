@@ -405,7 +405,7 @@ class ConnectionManager:
                 failed_count += 1
 
         logger.debug(
-            f"UnifiedList connections: {7 - failed_count}/7 succeeded, "
+            f"UnifiedList connections: {8 - failed_count}/8 succeeded, "
             f"{failed_count} failed"
         )
         return failed_count
