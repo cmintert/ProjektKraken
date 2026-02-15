@@ -45,15 +45,14 @@ class ImportCoordinator(BaseCoordinator):
 
     @Slot()
     def import_item_requested(self) -> None:
-        """Handles the request to import an item from a JSON or Markdown file.
+        """Handles the request to import items from JSON or Markdown files.
 
         This method:
-        1. Opens a file dialog to select a JSON or Markdown file
-        2. Parses the content (no DB access needed)
-        3. Shows a preview dialog
-        4. If confirmed, sends the parsed data to the worker thread for import
+        1. Opens a file dialog to select one or more JSON/Markdown files
+        2. For a single file: parses, previews, and dispatches as before
+        3. For multiple .md files: collects contents and dispatches a batch
         """
-        file_path, _ = QFileDialog.getOpenFileName(
+        file_paths, _ = QFileDialog.getOpenFileNames(
             self.main_window,
             "Import Item",
             "",
@@ -61,10 +60,18 @@ class ImportCoordinator(BaseCoordinator):
             "Markdown Files (*.md);;All Files (*)",
         )
 
-        if not file_path:
+        if not file_paths:
             return
 
         try:
+            # Batch path: multiple Markdown files
+            md_paths = [p for p in file_paths if p.lower().endswith(".md")]
+            if len(file_paths) > 1 and len(md_paths) == len(file_paths):
+                self._import_markdown_batch(md_paths)
+                return
+
+            # Single-file path (original behaviour)
+            file_path = file_paths[0]
             with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
 
@@ -100,16 +107,7 @@ class ImportCoordinator(BaseCoordinator):
                         Q_ARG(str, options_json),
                     )
 
-                from src.gui.dialogs.progress_dialog import ProgressDialog
-
-                self._import_progress_dialog = ProgressDialog(
-                    "Importing data...\n\n"
-                    "This may take a moment for large files.",
-                    parent=self.main_window,
-                    cancelable=False,
-                    title="Import in Progress",
-                )
-                self.main_window.status_bar.showMessage("Importing...", 0)
+                self._show_import_progress()
 
         except Exception as e:
             logger.exception("Import error")
@@ -129,6 +127,46 @@ class ImportCoordinator(BaseCoordinator):
                 "4. Try exporting and re-importing a small test dataset",
             )
 
+    def _import_markdown_batch(self, file_paths: list) -> None:
+        """Read multiple Markdown files and dispatch a batch import.
+
+        Args:
+            file_paths: List of absolute paths to .md files.
+
+        """
+        import json
+
+        contents = []
+        for fp in file_paths:
+            with open(fp, "r", encoding="utf-8") as f:
+                contents.append(f.read())
+
+        contents_json = json.dumps(contents)
+        options_json = json.dumps({})
+
+        QMetaObject.invokeMethod(
+            self.main_window.worker,
+            "run_markdown_batch_import",
+            Qt.ConnectionType.QueuedConnection,
+            Q_ARG(str, contents_json),
+            Q_ARG(str, options_json),
+        )
+
+        self._show_import_progress()
+
+    def _show_import_progress(self) -> None:
+        """Display a non-cancellable progress dialog during import."""
+        from src.gui.dialogs.progress_dialog import ProgressDialog
+
+        self._import_progress_dialog = ProgressDialog(
+            "Importing data...\n\n"
+            "This may take a moment for large files.",
+            parent=self.main_window,
+            cancelable=False,
+            title="Import in Progress",
+        )
+        self.main_window.status_bar.showMessage("Importing...", 0)
+
     @Slot(object)
     def on_import_finished(self, result: object) -> None:
         """Handles the completion of an import operation.
@@ -144,6 +182,9 @@ class ImportCoordinator(BaseCoordinator):
         self.main_window.status_bar.clearMessage()
 
         if result.success:
+            # Trigger a full GUI refresh so editors, timeline, etc. update
+            self.main_window.data_coordinator.load_data()
+
             msg = (
                 "Import Successful!\n\n"
                 f"Entities: {len(result.created_entities)}\n"

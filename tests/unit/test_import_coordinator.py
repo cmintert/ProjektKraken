@@ -19,6 +19,7 @@ class FakeMainWindow(QObject):
         super().__init__()
         self.worker = MagicMock()
         self.status_bar = MagicMock()
+        self.data_coordinator = MagicMock()
         self._import_progress_dialog = None
 
 
@@ -53,7 +54,7 @@ class TestImportWorkflow:
         self, mock_dialog, coordinator, fake_window
     ):
         """Import should be cancelled when no file is selected."""
-        mock_dialog.getOpenFileName.return_value = ("", "")
+        mock_dialog.getOpenFileNames.return_value = ([], "")
         coordinator.import_item_requested()
         # Worker should not be invoked
         fake_window.worker.run_import.assert_not_called()
@@ -68,7 +69,7 @@ class TestImportWorkflow:
         """Import should be cancelled when preview dialog is rejected."""
         from PySide6.QtWidgets import QDialog
 
-        mock_dialog.getOpenFileName.return_value = ("/test/file.json", "")
+        mock_dialog.getOpenFileNames.return_value = (["/test/file.json"], "")
         mock_service.parse_only.return_value = {"type": "entity"}
         mock_preview_instance = MagicMock()
         mock_preview_instance.exec.return_value = (
@@ -86,7 +87,7 @@ class TestImportWorkflow:
         self, mock_dialog, mock_box, coordinator
     ):
         """Import errors should show a critical message."""
-        mock_dialog.getOpenFileName.return_value = ("/nonexistent.json", "")
+        mock_dialog.getOpenFileNames.return_value = (["/nonexistent.json"], "")
         coordinator.import_item_requested()
         mock_box.critical.assert_called_once()
 
@@ -145,6 +146,73 @@ class TestImportFinished:
         ):
             coordinator.on_import_finished(result)
             fake_window.status_bar.clearMessage.assert_called_once()
+
+    def test_on_import_finished_success_calls_load_data(
+        self, coordinator, fake_window
+    ):
+        """Successful import should trigger data_coordinator.load_data()."""
+        result = MagicMock()
+        result.success = True
+        result.created_entities = ["e1"]
+        result.created_events = []
+        result.created_relations = []
+        result.warnings = []
+
+        with patch(
+            "src.app.coordinators.import_coordinator.QMessageBox"
+        ):
+            coordinator.on_import_finished(result)
+
+        fake_window.data_coordinator.load_data.assert_called_once()
+
+    def test_on_import_finished_failure_skips_load_data(
+        self, coordinator, fake_window
+    ):
+        """Failed import should NOT trigger data_coordinator.load_data()."""
+        result = MagicMock()
+        result.success = False
+        result.errors = ["Error"]
+
+        coordinator._import_progress_dialog = MagicMock()
+
+        with patch(
+            "src.app.coordinators.import_coordinator.QMessageBox"
+        ):
+            coordinator.on_import_finished(result)
+
+        fake_window.data_coordinator.load_data.assert_not_called()
+
+
+class TestMarkdownBatchImport:
+    """Tests for multi-file Markdown batch import."""
+
+    @patch("src.app.coordinators.import_coordinator.QFileDialog")
+    @patch("builtins.open", mock_open(read_data="# File A"))
+    @patch("src.app.coordinators.import_coordinator.ImportCoordinator._show_import_progress")
+    def test_batch_import_multiple_md_files(
+        self, mock_progress, mock_dialog, coordinator, fake_window
+    ):
+        """Multiple .md files should trigger run_markdown_batch_import."""
+        mock_dialog.getOpenFileNames.return_value = (
+            ["/tmp/a.md", "/tmp/b.md"],
+            "",
+        )
+
+        coordinator.import_item_requested()
+
+        # Should NOT invoke the single-file methods
+        fake_window.worker.run_markdown_import.assert_not_called()
+        fake_window.worker.run_import.assert_not_called()
+
+    @patch("src.app.coordinators.import_coordinator.QFileDialog")
+    def test_empty_selection_is_noop(
+        self, mock_dialog, coordinator, fake_window
+    ):
+        """Empty file selection should do nothing."""
+        mock_dialog.getOpenFileNames.return_value = ([], "")
+        coordinator.import_item_requested()
+        fake_window.worker.run_import.assert_not_called()
+        fake_window.worker.run_markdown_import.assert_not_called()
 
 
 class TestDatabaseManager:
