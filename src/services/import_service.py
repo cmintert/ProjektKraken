@@ -167,7 +167,9 @@ class ImportService:
         return result
 
     @staticmethod
-    def parse_markdown_file(markdown_text: str) -> Dict[str, Any]:
+    def parse_markdown_file(
+        markdown_text: str, fallback_title: str = ""
+    ) -> Dict[str, Any]:
         """Parse Markdown text into import-ready batch data.
 
         Uses the markdown_parser module to extract YAML frontmatter,
@@ -176,6 +178,7 @@ class ImportService:
 
         Args:
             markdown_text: Raw Markdown content string.
+            fallback_title: Title to use if not specified in YAML.
 
         Returns:
             Dict containing 'entities' and/or 'events' lists suitable
@@ -189,7 +192,7 @@ class ImportService:
         )
 
         parsed = parse_markdown(markdown_text)
-        data = markdown_to_import_data(parsed)
+        data = markdown_to_import_data(parsed, fallback_title)
 
         result: Dict[str, Any] = {"entities": [], "events": [], "relations": []}
 
@@ -213,13 +216,19 @@ class ImportService:
 
         Args:
             markdown_text: Raw Markdown content string.
-            options: Import options (mode, source_name, etc.).
+            options: Import options (mode, source_name, filename, etc.).
 
         Returns:
             ImportResult with statistics and any errors.
 
         """
-        parsed_data = self.parse_markdown_file(markdown_text)
+        options = options or {}
+        filename = options.get("filename", "")
+        # fallback_title can be filename stem or full name, caller should prep it or we do here
+        # import_coordinator sends stem usually? Let's assume options has a 'filename' key
+        # We can strip extension if needed, but let's assume caller handles logic or we take raw string.
+
+        parsed_data = self.parse_markdown_file(markdown_text, fallback_title=filename)
         return self.import_batch(parsed_data, options)
 
     def import_batch(

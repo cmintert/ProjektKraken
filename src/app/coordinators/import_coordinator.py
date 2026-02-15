@@ -78,7 +78,12 @@ class ImportCoordinator(BaseCoordinator):
             is_markdown = file_path.lower().endswith(".md")
 
             if is_markdown:
-                parsed_data = ImportService.parse_markdown_file(content)
+                from pathlib import Path
+
+                filename_stem = Path(file_path).stem
+                parsed_data = ImportService.parse_markdown_file(
+                    content, fallback_title=filename_stem
+                )
             else:
                 parsed_data = ImportService.parse_only(content)
 
@@ -87,6 +92,11 @@ class ImportCoordinator(BaseCoordinator):
                 import json
 
                 options = dialog.get_options()
+                # Extracted filename stem for fallback title
+                from pathlib import Path
+
+                filename_stem = Path(file_path).stem
+                options["filename"] = filename_stem
                 options_json = json.dumps(options)
 
                 if is_markdown:
@@ -159,8 +169,7 @@ class ImportCoordinator(BaseCoordinator):
         from src.gui.dialogs.progress_dialog import ProgressDialog
 
         self._import_progress_dialog = ProgressDialog(
-            "Importing data...\n\n"
-            "This may take a moment for large files.",
+            "Importing data...\n\n" "This may take a moment for large files.",
             parent=self.main_window,
             cancelable=False,
             title="Import in Progress",
@@ -196,9 +205,7 @@ class ImportCoordinator(BaseCoordinator):
                 if len(result.warnings) > 5:
                     msg += f"\n...and {len(result.warnings) - 5} more."
 
-            QMessageBox.information(
-                self.main_window, "Import Complete", msg
-            )
+            QMessageBox.information(self.main_window, "Import Complete", msg)
         else:
             err_msg = "\n".join(result.errors[:10])
             if len(result.errors) > 10:
@@ -237,9 +244,7 @@ class ImportCoordinator(BaseCoordinator):
         from src.services.obsidian_exporter import ObsidianExporter
 
         if not self.main_window.gui_db_service:
-            self.main_window.status_bar.showMessage(
-                "No database connection", 3000
-            )
+            self.main_window.status_bar.showMessage("No database connection", 3000)
             return
 
         # Get the item from the database
@@ -284,9 +289,7 @@ class ImportCoordinator(BaseCoordinator):
                 )
                 logger.info(f"Exported {item_type} '{item.name}' to {target}")
             else:
-                self.main_window.status_bar.showMessage(
-                    "Export failed", 3000
-                )
+                self.main_window.status_bar.showMessage("Export failed", 3000)
         except Exception as e:
             logger.exception("Single item export error")
             QMessageBox.critical(

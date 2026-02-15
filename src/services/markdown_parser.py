@@ -20,9 +20,7 @@ import frontmatter
 logger = logging.getLogger(__name__)
 
 # Pattern for summary blockquote: > **Summary**: <text>
-_SUMMARY_PATTERN = re.compile(
-    r"^>\s*\*\*Summary\*\*:\s*(.+)$", re.MULTILINE
-)
+_SUMMARY_PATTERN = re.compile(r"^>\s*\*\*Summary\*\*:\s*(.+)$", re.MULTILINE)
 
 # Pattern for wiki-links: [[Name]]
 _WIKI_LINK_PATTERN = re.compile(r"\[\[([^\]]+)\]\]")
@@ -111,7 +109,9 @@ def parse_markdown(text: str) -> ParsedMarkdown:
     return result
 
 
-def markdown_to_import_data(parsed: ParsedMarkdown) -> Dict[str, Any]:
+def markdown_to_import_data(
+    parsed: ParsedMarkdown, fallback_title: str = ""
+) -> Dict[str, Any]:
     """Convert ParsedMarkdown to an import-ready data dictionary.
 
     Maps YAML metadata to the standard import schema used by ImportService.
@@ -120,6 +120,7 @@ def markdown_to_import_data(parsed: ParsedMarkdown) -> Dict[str, Any]:
 
     Args:
         parsed: A ParsedMarkdown instance from parse_markdown().
+        fallback_title: Title to use if not specified in YAML.
 
     Returns:
         Dict suitable for ImportService.import_batch().
@@ -136,6 +137,8 @@ def markdown_to_import_data(parsed: ParsedMarkdown) -> Dict[str, Any]:
     title = meta.get("title", "")
     if title:
         data["name"] = str(title)
+    elif fallback_title:
+        data["name"] = str(fallback_title)
 
     item_type = meta.get("type", "generic")
     data["type"] = str(item_type)
@@ -154,8 +157,15 @@ def markdown_to_import_data(parsed: ParsedMarkdown) -> Dict[str, Any]:
 
     # User-defined attributes from YAML (exclude known/internal keys)
     _RESERVED_KEYS = {
-        "uid", "title", "type", "tags", "lore_date", "lore_duration",
-        "created", "modified", "source",
+        "uid",
+        "title",
+        "type",
+        "tags",
+        "lore_date",
+        "lore_duration",
+        "created",
+        "modified",
+        "source",
     }
     for key, value in meta.items():
         if key not in _RESERVED_KEYS:
@@ -163,9 +173,7 @@ def markdown_to_import_data(parsed: ParsedMarkdown) -> Dict[str, Any]:
 
     # Summary -> _summary_data attribute
     if parsed.tl_dr_block:
-        summary_hash = hashlib.md5(
-            parsed.tl_dr_block.encode("utf-8")
-        ).hexdigest()
+        summary_hash = hashlib.md5(parsed.tl_dr_block.encode("utf-8")).hexdigest()
         data.setdefault("attributes", {})["_summary_data"] = {
             "text": parsed.tl_dr_block,
             "hash": summary_hash,

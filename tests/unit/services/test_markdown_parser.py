@@ -17,7 +17,7 @@ from src.services.markdown_parser import (
 )
 
 
-OPTIMAL_TEMPLATE = '''\
+OPTIMAL_TEMPLATE = """\
 ---
 uid: "a1-b2-c3-d4"
 title: "The Silver Ranger"
@@ -34,9 +34,9 @@ The Silver Ranger first appeared during the Great Thaw, carrying a message for t
 ## Related
 - mentor: [[The Grey Archmage]]
 - rival: [[Shadow Blade]]
-'''
+"""
 
-EVENT_TEMPLATE = '''\
+EVENT_TEMPLATE = """\
 ---
 uid: "ev-001"
 title: "The Great Thaw"
@@ -50,16 +50,16 @@ lore_duration: 0.5
 
 # Description
 A pivotal moment when the glaciers receded.
-'''
+"""
 
-MINIMAL_ENTITY = '''\
+MINIMAL_ENTITY = """\
 ---
 title: "Unnamed Hero"
 type: "character"
 ---
 
 A brief description.
-'''
+"""
 
 
 class TestParseMarkdownFrontmatter:
@@ -249,3 +249,28 @@ class TestIsEntityData:
         parsed = parse_markdown(EVENT_TEMPLATE)
         data = markdown_to_import_data(parsed)
         assert is_entity_data(data) is False
+
+
+class TestMarkdownImportDefaults:
+    """Tests for Markdown import defaults."""
+
+    def test_default_type_is_generic(self):
+        """Verify that the default type is 'generic'."""
+        text = "Just some text"
+        parsed = parse_markdown(text)
+        data = markdown_to_import_data(parsed)
+        assert data["type"] == "generic"
+
+    def test_uses_fallback_title(self):
+        """Verify that fallback_title is used when YAML title is missing."""
+        text = "Just some text"
+        parsed = parse_markdown(text)
+        data = markdown_to_import_data(parsed, fallback_title="MyFile")
+        assert data["name"] == "MyFile"
+
+    def test_description_is_populated(self):
+        """Verify that description is populated from the text."""
+        text = "Istari wizard"
+        parsed = parse_markdown(text)
+        data = markdown_to_import_data(parsed)
+        assert data["description"] == "Istari wizard"
