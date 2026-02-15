@@ -870,6 +870,17 @@ class DatabaseWorker(QObject):
             logger.error(f"Failed to load completer data: {traceback.format_exc()}")
             # self.error_occurred.emit("Failed to load completer data.")
 
+    def _refresh_after_import(self) -> None:
+        """Reload events, entities, and calendar after an import.
+
+        Ensures list, timeline, and calendar views receive fresh data.
+        Longform reload is handled by DataCoordinator.load_data() on the
+        UI thread via LongformManager (which supplies the required doc_id).
+        """
+        self.load_events()
+        self.load_entities()
+        self.load_calendar_config()
+
     @Slot(str, str)
     def run_import(self, parsed_json: str, options_json: str) -> None:
         """Runs import batch using worker's db_service.
@@ -904,8 +915,7 @@ class DatabaseWorker(QObject):
 
             if result.success:
                 # Auto-refresh data so UI updates immediately
-                self.load_events()
-                self.load_entities()
+                self._refresh_after_import()
                 self.operation_finished.emit("Import complete.")
             else:
                 self.operation_finished.emit("Import failed.")
@@ -915,6 +925,146 @@ class DatabaseWorker(QObject):
             from src.services.import_service import ImportResult
 
             result = ImportResult(success=False, errors=[str(e)])
+            self.import_finished.emit(result)
+
+    @Slot(str, str)
+    def run_markdown_import(
+        self, markdown_text: str, options_json: str
+    ) -> None:
+        """Import a Markdown file using worker's db_service.
+
+        Parses Markdown content and imports the item into the database
+        on the worker thread.
+
+        Args:
+            markdown_text: Raw Markdown content string.
+            options_json: JSON string of import options.
+
+        """
+        if not self.db_service:
+            from src.services.import_service import ImportResult
+
+            result = ImportResult(
+                success=False,
+                created_entities=[],
+                created_events=[],
+                created_relations=[],
+                errors=["Database not ready"],
+                warnings=[],
+            )
+            self.import_finished.emit(result)
+            return
+
+        try:
+            self.operation_started.emit("Importing Markdown...")
+            from src.services.import_service import ImportService
+
+            options = json.loads(options_json) if options_json else {}
+
+            import_service = ImportService(self.db_service)
+            result = import_service.import_markdown(markdown_text, options)
+
+            self.import_finished.emit(result)
+
+            if result.success:
+                self._refresh_after_import()
+                self.operation_finished.emit("Markdown import complete.")
+            else:
+                self.operation_finished.emit("Markdown import failed.")
+
+        except Exception as e:
+            logger.error(f"Markdown import failed: {traceback.format_exc()}")
+            from src.services.import_service import ImportResult
+
+            result = ImportResult(
+                success=False,
+                created_entities=[],
+                created_events=[],
+                created_relations=[],
+                errors=[str(e)],
+                warnings=[],
+            )
+            self.import_finished.emit(result)
+
+    @Slot(str, str)
+    def run_markdown_batch_import(
+        self, contents_json: str, options_json: str
+    ) -> None:
+        """Import multiple Markdown files in a single batch operation.
+
+        Parses each Markdown content string and imports all items,
+        aggregating results into a single ImportResult.
+
+        Args:
+            contents_json: JSON-encoded list of raw Markdown content strings.
+            options_json: JSON string of import options.
+
+        """
+        from src.services.import_service import ImportResult, ImportService
+
+        if not self.db_service:
+            result = ImportResult(
+                success=False,
+                created_entities=[],
+                created_events=[],
+                created_relations=[],
+                errors=["Database not ready"],
+                warnings=[],
+            )
+            self.import_finished.emit(result)
+            return
+
+        try:
+            self.operation_started.emit("Importing Markdown batch...")
+
+            contents = json.loads(contents_json)
+            options = json.loads(options_json) if options_json else {}
+
+            import_service = ImportService(self.db_service)
+
+            # Aggregate results across all files
+            all_entities: List[str] = []
+            all_events: List[str] = []
+            all_relations: List[str] = []
+            all_errors: List[str] = []
+            all_warnings: List[str] = []
+
+            for md_text in contents:
+                sub = import_service.import_markdown(md_text, options)
+                all_entities.extend(sub.created_entities)
+                all_events.extend(sub.created_events)
+                all_relations.extend(sub.created_relations)
+                all_errors.extend(sub.errors)
+                all_warnings.extend(sub.warnings)
+
+            result = ImportResult(
+                success=len(all_errors) == 0,
+                created_entities=all_entities,
+                created_events=all_events,
+                created_relations=all_relations,
+                errors=all_errors,
+                warnings=all_warnings,
+            )
+            self.import_finished.emit(result)
+
+            if result.success:
+                self._refresh_after_import()
+                self.operation_finished.emit("Markdown batch import complete.")
+            else:
+                self.operation_finished.emit("Markdown batch import failed.")
+
+        except Exception as e:
+            logger.error(
+                f"Markdown batch import failed: {traceback.format_exc()}"
+            )
+            result = ImportResult(
+                success=False,
+                created_entities=[],
+                created_events=[],
+                created_relations=[],
+                errors=[str(e)],
+                warnings=[],
+            )
             self.import_finished.emit(result)
 
     @Slot(object)  # Union[Entity, Event] - use object for union types

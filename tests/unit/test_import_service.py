@@ -172,3 +172,29 @@ def test_import_prevents_duplicate_relations():
     assert len(all_relations) == 1
 
     db.close()
+
+
+def test_import_markdown_uses_filename_fallback():
+    """Test that import_markdown uses filename from options as fallback title."""
+    mock_db = MagicMock()
+    service = ImportService(mock_db)
+
+    # Mock DB behavior to allow creation
+    mock_db.get_entities.return_value = []
+    mock_db.get_events.return_value = []
+
+    # Markdown without YAML title
+    markdown_text = "Just some description text."
+    options = {"filename": "MyFallbackTitle"}
+
+    # Execute import
+    result = service.import_markdown(markdown_text, options)
+
+    assert result.success is True
+    assert len(result.created_entities) == 1
+
+    # Verify insert called with correct name
+    mock_db.insert_entity.assert_called_once()
+    entity_arg = mock_db.insert_entity.call_args[0][0]
+    assert entity_arg.name == "MyFallbackTitle"
+    assert entity_arg.description == "Just some description text."

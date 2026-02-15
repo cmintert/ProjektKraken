@@ -9,7 +9,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Union
 
 from src.core.entities import Entity
 from src.core.events import Event
@@ -224,6 +224,104 @@ class ObsidianExporter:
             logger.warning(f"Failed to get relations for {item_id}: {e}")
         return relations
 
+    def export_single_item(
+        self,
+        item: Union[Entity, Event],
+        output_dir: Path,
+        include_relations: bool = False,
+    ) -> Optional[Path]:
+        """Export a single entity or event to an Obsidian-compatible .md file.
+
+        Args:
+            item: The Entity or Event to export.
+            output_dir: Directory to write the file to.
+            include_relations: Whether to include a "## Related" section.
+
+        Returns:
+            Path to the created file, or None on failure.
+
+        """
+        output_dir = output_dir.resolve()
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Build ID-to-name map for wiki-link resolution (if relations needed)
+        id_to_name: Dict[str, str] = {}
+        if include_relations:
+            for entity in self._db.get_all_entities():
+                id_to_name[entity.id] = entity.name
+            for event in self._db.get_all_events():
+                id_to_name[event.id] = event.name
+
+        relations = (
+            self._get_relations_for_item(item.id, id_to_name)
+            if include_relations
+            else []
+        )
+
+        if isinstance(item, Entity):
+            content = self._build_entity_markdown(item, relations)
+        else:
+            content = self._build_event_markdown(item, relations)
+
+        filename = self._sanitize_filename(item.name)
+        if not filename:
+            filename = "Untitled"
+        filepath = (output_dir / f"{filename}.md").resolve()
+
+        if not filepath.is_relative_to(output_dir):
+            logger.error(f"Security: filename '{filename}' attempts traversal")
+            return None
+
+        filepath.write_text(content, encoding="utf-8")
+        return filepath
+
+    def _get_user_attributes_yaml(
+        self, attributes: Dict[str, Any]
+    ) -> List[str]:
+        """Build YAML lines for user-defined attributes.
+
+        Excludes internal attributes (keys starting with '_').
+
+        Args:
+            attributes: The item's full attributes dict.
+
+        Returns:
+            List of YAML-formatted lines for user-defined attributes.
+
+        """
+        lines = []
+        for key, value in attributes.items():
+            if key.startswith("_"):
+                continue
+            if isinstance(value, str):
+                lines.append(f'{key}: "{self._escape_yaml_string(value)}"')
+            elif isinstance(value, list):
+                lines.append(f"{key}:")
+                for item in value:
+                    lines.append(f"  - {item}")
+            else:
+                lines.append(f"{key}: {value}")
+        return lines
+
+    def _get_summary_blockquote(
+        self, attributes: Dict[str, Any]
+    ) -> Optional[str]:
+        """Extract summary text from _summary_data and format as blockquote.
+
+        Args:
+            attributes: The item's full attributes dict.
+
+        Returns:
+            Blockquote string if summary exists, else None.
+
+        """
+        summary_data = attributes.get("_summary_data")
+        if isinstance(summary_data, dict):
+            text = summary_data.get("text", "")
+            if text:
+                return f"> **Summary**: {text}"
+        return None
+
     def _build_entity_markdown(
         self, entity: Entity, relations: List[Dict[str, str]]
     ) -> str:
@@ -250,12 +348,21 @@ class ObsidianExporter:
             for tag in tags:
                 lines.append(f"  - {tag}")
 
+        # User-defined attributes
+        lines.extend(self._get_user_attributes_yaml(entity.attributes))
+
         lines.append(f'uid: "{entity.id}"')
         lines.append(f"created: {self._format_timestamp(entity.created_at)}")
         lines.append(f"modified: {self._format_timestamp(entity.modified_at)}")
         lines.append("source: ProjektKraken")
         lines.append("---")
         lines.append("")
+
+        # Summary blockquote
+        summary = self._get_summary_blockquote(entity.attributes)
+        if summary:
+            lines.append(summary)
+            lines.append("")
 
         # Body content
         if entity.description:
@@ -302,12 +409,21 @@ class ObsidianExporter:
         if event.lore_duration > 0:
             lines.append(f"lore_duration: {event.lore_duration}")
 
+        # User-defined attributes
+        lines.extend(self._get_user_attributes_yaml(event.attributes))
+
         lines.append(f'uid: "{event.id}"')
         lines.append(f"created: {self._format_timestamp(event.created_at)}")
         lines.append(f"modified: {self._format_timestamp(event.modified_at)}")
         lines.append("source: ProjektKraken")
         lines.append("---")
         lines.append("")
+
+        # Summary blockquote
+        summary = self._get_summary_blockquote(event.attributes)
+        if summary:
+            lines.append(summary)
+            lines.append("")
 
         # Body content
         if event.description:

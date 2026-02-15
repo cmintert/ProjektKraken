@@ -395,8 +395,17 @@ class ConnectionManager:
             ):
                 failed_count += 1
 
+        if hasattr(ul, "export_obsidian_requested"):
+            if not self._connect_signal_safe(
+                ul,
+                "export_obsidian_requested",
+                self.window.import_coordinator.export_single_obsidian,
+                "UnifiedList",
+            ):
+                failed_count += 1
+
         logger.debug(
-            f"UnifiedList connections: {7 - failed_count}/7 succeeded, "
+            f"UnifiedList connections: {8 - failed_count}/8 succeeded, "
             f"{failed_count} failed"
         )
         return failed_count

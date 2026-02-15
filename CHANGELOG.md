@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-02-14
-**Commit:** `0.12.0`
+**Last Updated:** 2026-02-15
+**Commit:** `11f2ce8`
 ---
 
 # Changelog
@@ -14,8 +14,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-02-15)* **Import**: Implemented Markdown import defaults.
+  - Automatically uses filename (without extension) as title if YAML title is missing.
+  - Defaults type to `generic` (Entity) for valid Markdown files without a specified type.
+  - Populates entity description with the body of the Markdown file.
 
 ### Fixed
+- *(2026-02-15)* **Bug**: Fixed `TypeError` in Markdown import refresh caused by missing `doc_id` in `load_longform_sequence`.
 
 ### Changed
 
