@@ -45,11 +45,11 @@ class ImportCoordinator(BaseCoordinator):
 
     @Slot()
     def import_item_requested(self) -> None:
-        """Handles the request to import an item from a JSON file.
+        """Handles the request to import an item from a JSON or Markdown file.
 
         This method:
-        1. Opens a file dialog to select a JSON file
-        2. Parses the JSON content (no DB access needed)
+        1. Opens a file dialog to select a JSON or Markdown file
+        2. Parses the content (no DB access needed)
         3. Shows a preview dialog
         4. If confirmed, sends the parsed data to the worker thread for import
         """
@@ -57,7 +57,8 @@ class ImportCoordinator(BaseCoordinator):
             self.main_window,
             "Import Item",
             "",
-            "JSON Files (*.json);;All Files (*)",
+            "All Supported (*.json *.md);;JSON Files (*.json);;"
+            "Markdown Files (*.md);;All Files (*)",
         )
 
         if not file_path:
@@ -65,25 +66,39 @@ class ImportCoordinator(BaseCoordinator):
 
         try:
             with open(file_path, "r", encoding="utf-8") as f:
-                json_content = f.read()
+                content = f.read()
 
-            parsed_data = ImportService.parse_only(json_content)
+            is_markdown = file_path.lower().endswith(".md")
+
+            if is_markdown:
+                parsed_data = ImportService.parse_markdown_file(content)
+            else:
+                parsed_data = ImportService.parse_only(content)
 
             dialog = ImportPreviewDialog(self.main_window, parsed_data)
             if dialog.exec() == QDialog.DialogCode.Accepted:
                 import json
 
-                parsed_json = json.dumps(parsed_data)
                 options = dialog.get_options()
                 options_json = json.dumps(options)
 
-                QMetaObject.invokeMethod(
-                    self.main_window.worker,
-                    "run_import",
-                    Qt.ConnectionType.QueuedConnection,
-                    Q_ARG(str, parsed_json),
-                    Q_ARG(str, options_json),
-                )
+                if is_markdown:
+                    QMetaObject.invokeMethod(
+                        self.main_window.worker,
+                        "run_markdown_import",
+                        Qt.ConnectionType.QueuedConnection,
+                        Q_ARG(str, content),
+                        Q_ARG(str, options_json),
+                    )
+                else:
+                    parsed_json = json.dumps(parsed_data)
+                    QMetaObject.invokeMethod(
+                        self.main_window.worker,
+                        "run_import",
+                        Qt.ConnectionType.QueuedConnection,
+                        Q_ARG(str, parsed_json),
+                        Q_ARG(str, options_json),
+                    )
 
                 from src.gui.dialogs.progress_dialog import ProgressDialog
 
@@ -166,3 +181,75 @@ class ImportCoordinator(BaseCoordinator):
         dialog = DatabaseManagerDialog(self.main_window)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             pass
+
+    @Slot(str, str)
+    def export_single_obsidian(self, item_type: str, item_id: str) -> None:
+        """Export a single entity or event as an Obsidian Markdown file.
+
+        Args:
+            item_type: "event" or "entity".
+            item_id: The ID of the item to export.
+
+        """
+        from pathlib import Path
+
+        from src.services.obsidian_exporter import ObsidianExporter
+
+        if not self.main_window.gui_db_service:
+            self.main_window.status_bar.showMessage(
+                "No database connection", 3000
+            )
+            return
+
+        # Get the item from the database
+        db = self.main_window.gui_db_service
+        if item_type == "entity":
+            item = db.get_entity(item_id)
+        else:
+            item = db.get_event(item_id)
+
+        if not item:
+            self.main_window.status_bar.showMessage(
+                f"Could not find {item_type} to export", 3000
+            )
+            return
+
+        # Ask user where to save
+        file_path, _ = QFileDialog.getSaveFileName(
+            self.main_window,
+            "Export to Obsidian Markdown",
+            f"{item.name}.md",
+            "Markdown Files (*.md);;All Files (*)",
+        )
+
+        if not file_path:
+            return
+
+        try:
+            output_dir = Path(file_path).parent
+            exporter = ObsidianExporter(db)
+            filepath = exporter.export_single_item(
+                item, output_dir, include_relations=True
+            )
+
+            if filepath:
+                # Rename to user's chosen filename if different
+                target = Path(file_path)
+                if filepath != target:
+                    filepath.rename(target)
+
+                self.main_window.status_bar.showMessage(
+                    f"Exported '{item.name}' to {target}", 5000
+                )
+                logger.info(f"Exported {item_type} '{item.name}' to {target}")
+            else:
+                self.main_window.status_bar.showMessage(
+                    "Export failed", 3000
+                )
+        except Exception as e:
+            logger.exception("Single item export error")
+            QMessageBox.critical(
+                self.main_window,
+                "Export Error",
+                f"Failed to export '{item.name}': {e}",
+            )

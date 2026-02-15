@@ -145,6 +145,7 @@ class UnifiedListWidget(QWidget):
     clear_filter_requested = Signal()  # Request to clear filters
     status_message_requested = Signal(str, int)  # message, timeout_ms (Toast-like)
     drag_started = Signal()
+    export_obsidian_requested = Signal(str, str)  # type, id
 
     def __init__(self, parent: QWidget = None) -> None:
         """Initializes the UnifiedListWidget.
@@ -282,6 +283,14 @@ class UnifiedListWidget(QWidget):
             self._on_selection_changed
         )
         self.list_widget.drag_started.connect(self.drag_started)
+
+        # Enable context menu on the list
+        self.list_widget.setContextMenuPolicy(
+            Qt.ContextMenuPolicy.CustomContextMenu
+        )
+        self.list_widget.customContextMenuRequested.connect(
+            self._show_context_menu
+        )
 
         main_layout.addWidget(self.list_widget)
 
@@ -515,6 +524,32 @@ class UnifiedListWidget(QWidget):
         self._sort_ascending = not self._sort_ascending
         self.btn_sort_dir.setText("↑" if self._sort_ascending else "↓")
         self._render_list()
+
+    @Slot()
+    def _show_context_menu(self, position: Any) -> None:
+        """Show context menu for the selected list item.
+
+        Args:
+            position: The position where the context menu was requested.
+
+        """
+        index = self.list_widget.indexAt(position)
+        if not index.isValid():
+            return
+
+        source_index = self._proxy_model.mapToSource(index)
+        item_id = self._model.data(source_index, ExplorerModel.ItemIdRole)
+        item_type = self._model.data(source_index, ExplorerModel.ItemTypeRole)
+
+        if not item_id or not item_type:
+            return
+
+        menu = QMenu(self)
+        export_action = menu.addAction("Export to Obsidian (.md)...")
+        action = menu.exec(self.list_widget.viewport().mapToGlobal(position))
+
+        if action == export_action:
+            self.export_obsidian_requested.emit(item_type, item_id)
 
     @Slot()
     def _on_selection_changed(self) -> None:

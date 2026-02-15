@@ -917,6 +917,66 @@ class DatabaseWorker(QObject):
             result = ImportResult(success=False, errors=[str(e)])
             self.import_finished.emit(result)
 
+    @Slot(str, str)
+    def run_markdown_import(
+        self, markdown_text: str, options_json: str
+    ) -> None:
+        """Import a Markdown file using worker's db_service.
+
+        Parses Markdown content and imports the item into the database
+        on the worker thread.
+
+        Args:
+            markdown_text: Raw Markdown content string.
+            options_json: JSON string of import options.
+
+        """
+        if not self.db_service:
+            from src.services.import_service import ImportResult
+
+            result = ImportResult(
+                success=False,
+                created_entities=[],
+                created_events=[],
+                created_relations=[],
+                errors=["Database not ready"],
+                warnings=[],
+            )
+            self.import_finished.emit(result)
+            return
+
+        try:
+            self.operation_started.emit("Importing Markdown...")
+            from src.services.import_service import ImportService
+
+            options = json.loads(options_json) if options_json else {}
+
+            import_service = ImportService(self.db_service)
+            result = import_service.import_markdown(markdown_text, options)
+
+            self.import_finished.emit(result)
+
+            if result.success:
+                self.load_events()
+                self.load_entities()
+                self.operation_finished.emit("Markdown import complete.")
+            else:
+                self.operation_finished.emit("Markdown import failed.")
+
+        except Exception as e:
+            logger.error(f"Markdown import failed: {traceback.format_exc()}")
+            from src.services.import_service import ImportResult
+
+            result = ImportResult(
+                success=False,
+                created_entities=[],
+                created_events=[],
+                created_relations=[],
+                errors=[str(e)],
+                warnings=[],
+            )
+            self.import_finished.emit(result)
+
     @Slot(object)  # Union[Entity, Event] - use object for union types
     def generate_summary(self, item: object) -> None:
         """Generates a summary for the given item using LLM.

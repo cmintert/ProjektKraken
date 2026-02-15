@@ -60,7 +60,7 @@ class ImportResult:
 
 
 class ImportService:
-    """Service for importing data from JSON."""
+    """Service for importing data from JSON and Markdown."""
 
     def __init__(self, db_service: DatabaseService) -> None:
         """Initialize the ImportService.
@@ -165,6 +165,62 @@ class ImportService:
             result["events"] = [data]
 
         return result
+
+    @staticmethod
+    def parse_markdown_file(markdown_text: str) -> Dict[str, Any]:
+        """Parse Markdown text into import-ready batch data.
+
+        Uses the markdown_parser module to extract YAML frontmatter,
+        summary, description, and relations. Classifies the item as
+        an entity or event based on the presence of lore_date.
+
+        Args:
+            markdown_text: Raw Markdown content string.
+
+        Returns:
+            Dict containing 'entities' and/or 'events' lists suitable
+            for import_batch().
+
+        """
+        from src.services.markdown_parser import (
+            is_entity_data,
+            markdown_to_import_data,
+            parse_markdown,
+        )
+
+        parsed = parse_markdown(markdown_text)
+        data = markdown_to_import_data(parsed)
+
+        result: Dict[str, Any] = {"entities": [], "events": [], "relations": []}
+
+        if is_entity_data(data):
+            result["entities"] = [data]
+        else:
+            result["events"] = [data]
+
+        return result
+
+    def import_markdown(
+        self,
+        markdown_text: str,
+        options: Optional[Dict[str, Any]] = None,
+    ) -> ImportResult:
+        """Import a single Markdown file into the database.
+
+        Parses the Markdown content, classifies the item as an entity
+        or event, and delegates to import_batch for DB operations with
+        two-pass relation handling.
+
+        Args:
+            markdown_text: Raw Markdown content string.
+            options: Import options (mode, source_name, etc.).
+
+        Returns:
+            ImportResult with statistics and any errors.
+
+        """
+        parsed_data = self.parse_markdown_file(markdown_text)
+        return self.import_batch(parsed_data, options)
 
     def import_batch(
         self,
