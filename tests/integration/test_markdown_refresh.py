@@ -90,10 +90,32 @@ class TestMarkdownImportRefresh:
 
 
 class TestWorkerRefreshDepth:
-    """Verify that the worker refreshes calendar and longform after import."""
+    """Verify that the worker refreshes the correct data after import."""
 
-    def test_refresh_after_import_calls_all_loaders(self):
-        """_refresh_after_import must call events, entities, calendar, longform."""
+    def test_refresh_after_import_calls_core_loaders(self):
+        """_refresh_after_import must call events, entities, calendar."""
+        from src.services.worker import DatabaseWorker
+
+        worker = DatabaseWorker.__new__(DatabaseWorker)
+        worker.db_service = MagicMock()
+
+        worker.load_events = MagicMock()
+        worker.load_entities = MagicMock()
+        worker.load_calendar_config = MagicMock()
+
+        worker._refresh_after_import()
+
+        worker.load_events.assert_called_once()
+        worker.load_entities.assert_called_once()
+        worker.load_calendar_config.assert_called_once()
+
+    def test_refresh_after_import_does_not_call_longform(self):
+        """_refresh_after_import must NOT call load_longform_sequence.
+
+        load_longform_sequence requires a doc_id that the worker does
+        not have. Longform refresh is handled by DataCoordinator.load_data()
+        on the UI thread via LongformManager.
+        """
         from src.services.worker import DatabaseWorker
 
         worker = DatabaseWorker.__new__(DatabaseWorker)
@@ -106,7 +128,4 @@ class TestWorkerRefreshDepth:
 
         worker._refresh_after_import()
 
-        worker.load_events.assert_called_once()
-        worker.load_entities.assert_called_once()
-        worker.load_calendar_config.assert_called_once()
-        worker.load_longform_sequence.assert_called_once()
+        worker.load_longform_sequence.assert_not_called()

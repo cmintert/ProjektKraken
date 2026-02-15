@@ -871,15 +871,15 @@ class DatabaseWorker(QObject):
             # self.error_occurred.emit("Failed to load completer data.")
 
     def _refresh_after_import(self) -> None:
-        """Reload events, entities, calendar, and longform after an import.
+        """Reload events, entities, and calendar after an import.
 
-        Ensures all data-driven views (list, timeline, editors, longform)
-        receive fresh data from the database.
+        Ensures list, timeline, and calendar views receive fresh data.
+        Longform reload is handled by DataCoordinator.load_data() on the
+        UI thread via LongformManager (which supplies the required doc_id).
         """
         self.load_events()
         self.load_entities()
         self.load_calendar_config()
-        self.load_longform_sequence()
 
     @Slot(str, str)
     def run_import(self, parsed_json: str, options_json: str) -> None:
