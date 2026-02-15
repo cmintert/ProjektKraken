@@ -248,6 +248,45 @@ class DataCoordinator(BaseCoordinator):
         """
         self.main_window.entity_editor.load_entity(entity, relations, incoming)
 
+    @Slot(str)
+    def on_event_not_found(self, event_id: str) -> None:
+        """Handle event-not-found signal by clearing the event editor.
+
+        This prevents stale data from remaining in the inspector after
+        an event has been deleted.
+
+        Args:
+            event_id: The ID of the event that was not found.
+
+        """
+        if (
+            self.main_window.event_editor._current_event_id == event_id
+        ):
+            logger.info(
+                f"Clearing stale event editor for deleted event: {event_id}"
+            )
+            self.main_window.event_editor.clear()
+
+    @Slot(str)
+    def on_entity_not_found(self, entity_id: str) -> None:
+        """Handle entity-not-found signal by clearing the entity editor.
+
+        This prevents stale data from remaining in the inspector after
+        an entity has been deleted.
+
+        Args:
+            entity_id: The ID of the entity that was not found.
+
+        """
+        if (
+            self.main_window.entity_editor._current_entity_id == entity_id
+        ):
+            logger.info(
+                f"Clearing stale entity editor for deleted entity: "
+                f"{entity_id}"
+            )
+            self.main_window.entity_editor.clear()
+
     @Slot(list, list)
     def on_graph_data_ready(self, nodes: list, edges: list) -> None:
         """Updates the graph widget with loaded data.

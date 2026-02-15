@@ -49,6 +49,8 @@ class DataHandler(QObject):
     suggestions_update_requested = Signal(list)  # (items: list of tuples)
     event_details_ready = Signal(object, list, list)  # (event, relations, incoming)
     entity_details_ready = Signal(object, list, list)  # (entity, relations, incoming)
+    event_not_found = Signal(str)  # event_id when event no longer exists
+    entity_not_found = Signal(str)  # entity_id when entity no longer exists
     longform_sequence_ready = Signal(list)  # Emitted when longform data is processed
     maps_ready = Signal(list)  # Emitted when maps are processed
     markers_ready = Signal(str, list)  # (map_id, markers)
@@ -194,6 +196,26 @@ class DataHandler(QObject):
         """
         # Dock raising is now handled by the Controller (MainWindow) via user actions.
         self.entity_details_ready.emit(entity, relations, incoming)
+
+    @Slot(str)
+    def on_event_not_found(self, event_id: str) -> None:
+        """Forwards event-not-found signal from worker.
+
+        Args:
+            event_id: The ID of the event that was not found.
+
+        """
+        self.event_not_found.emit(event_id)
+
+    @Slot(str)
+    def on_entity_not_found(self, entity_id: str) -> None:
+        """Forwards entity-not-found signal from worker.
+
+        Args:
+            entity_id: The ID of the entity that was not found.
+
+        """
+        self.entity_not_found.emit(entity_id)
 
     @Slot(list)
     def on_longform_sequence_loaded(self, sequence: List[Any]) -> None:

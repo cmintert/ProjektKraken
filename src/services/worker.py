@@ -55,6 +55,8 @@ class DatabaseWorker(QObject):
 
     event_details_loaded = Signal(Event, list, list)  # Event, relations, incoming
     entity_details_loaded = Signal(Entity, list, list)  # Entity, relations, incoming
+    event_not_found = Signal(str)  # event_id when load_event_details finds nothing
+    entity_not_found = Signal(str)  # entity_id when load_entity_details finds nothing
     attachments_loaded = Signal(
         str, str, list
     )  # owner_type, owner_id, List[ImageAttachment]
@@ -330,6 +332,9 @@ class DatabaseWorker(QObject):
                     rel["source_name"] = self.db_service.get_name(rel["source_id"])
 
                 self.event_details_loaded.emit(event, rels, incoming)
+            else:
+                logger.warning(f"Event not found: {event_id}")
+                self.event_not_found.emit(event_id)
             self.operation_finished.emit("Event Details Loaded.")
         except Exception:
             logger.error(f"Failed to load event details: {traceback.format_exc()}")
@@ -354,6 +359,9 @@ class DatabaseWorker(QObject):
                     rel["source_name"] = self.db_service.get_name(rel["source_id"])
 
                 self.entity_details_loaded.emit(entity, rels, incoming)
+            else:
+                logger.warning(f"Entity not found: {entity_id}")
+                self.entity_not_found.emit(entity_id)
             self.operation_finished.emit("Entity Details Loaded.")
         except Exception:
             logger.error(f"Failed to load entity details: {traceback.format_exc()}")

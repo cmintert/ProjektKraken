@@ -1239,6 +1239,14 @@ class EventEditorWidget(QWidget):
 
         self.discard_requested.emit(self._current_event_id)
 
+    def clear(self) -> None:
+        """Clears the editor and disables it."""
+        self._current_event_id = None
+        self.name_edit.clear()
+        self.desc_edit.clear()
+        self.rel_list.clear()
+        self.setEnabled(False)
+
     def _populate_inject_menu(self) -> None:
         """Populate the Fast Inject menu with available actions.
 

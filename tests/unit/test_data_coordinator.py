@@ -389,3 +389,67 @@ class TestSummaryResult:
 
         # Should not raise
         coordinator.on_summary_generated_result("unknown-id", summary_data)
+
+
+class TestStaleEditorClearing:
+    """Tests for clearing stale editors after item deletion."""
+
+    def test_on_event_not_found_clears_matching_editor(
+        self, coordinator, fake_window
+    ):
+        """Event editor should be cleared when its active event is not found."""
+        fake_window.event_editor._current_event_id = "evt-deleted"
+
+        coordinator.on_event_not_found("evt-deleted")
+
+        fake_window.event_editor.clear.assert_called_once()
+
+    def test_on_event_not_found_ignores_different_id(
+        self, coordinator, fake_window
+    ):
+        """Event editor should not be cleared for a different event ID."""
+        fake_window.event_editor._current_event_id = "evt-active"
+
+        coordinator.on_event_not_found("evt-other")
+
+        fake_window.event_editor.clear.assert_not_called()
+
+    def test_on_event_not_found_no_active_editor(
+        self, coordinator, fake_window
+    ):
+        """Should not crash when no event is active in the editor."""
+        fake_window.event_editor._current_event_id = None
+
+        coordinator.on_event_not_found("evt-deleted")
+
+        fake_window.event_editor.clear.assert_not_called()
+
+    def test_on_entity_not_found_clears_matching_editor(
+        self, coordinator, fake_window
+    ):
+        """Entity editor should be cleared when its active entity is not found."""
+        fake_window.entity_editor._current_entity_id = "ent-deleted"
+
+        coordinator.on_entity_not_found("ent-deleted")
+
+        fake_window.entity_editor.clear.assert_called_once()
+
+    def test_on_entity_not_found_ignores_different_id(
+        self, coordinator, fake_window
+    ):
+        """Entity editor should not be cleared for a different entity ID."""
+        fake_window.entity_editor._current_entity_id = "ent-active"
+
+        coordinator.on_entity_not_found("ent-other")
+
+        fake_window.entity_editor.clear.assert_not_called()
+
+    def test_on_entity_not_found_no_active_editor(
+        self, coordinator, fake_window
+    ):
+        """Should not crash when no entity is active in the editor."""
+        fake_window.entity_editor._current_entity_id = None
+
+        coordinator.on_entity_not_found("ent-deleted")
+
+        fake_window.entity_editor.clear.assert_not_called()

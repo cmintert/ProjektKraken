@@ -136,6 +136,12 @@ class WorkerManager(QObject):
         self.window.worker.entity_details_loaded.connect(
             self.window.data_handler.on_entity_details_loaded, connection_type
         )
+        self.window.worker.event_not_found.connect(
+            self.window.data_handler.on_event_not_found, connection_type
+        )
+        self.window.worker.entity_not_found.connect(
+            self.window.data_handler.on_entity_not_found, connection_type
+        )
         self.window.worker.command_finished.connect(
             self.window.data_handler.on_command_finished, connection_type
         )

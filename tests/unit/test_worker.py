@@ -159,3 +159,69 @@ def test_save_current_time(worker, mock_db_service):
     worker.save_current_time(200.0)
 
     mock_db_service.set_current_time.assert_called_once_with(200.0)
+
+
+def test_load_event_details_not_found_emits_signal(worker, mock_db_service):
+    """Worker should emit event_not_found when the event doesn't exist."""
+    worker.db_service = mock_db_service
+    mock_db_service.get_event.return_value = None
+
+    spy = MagicMock()
+    worker.event_not_found.connect(spy)
+
+    worker.load_event_details("evt-deleted")
+
+    spy.assert_called_once_with("evt-deleted")
+
+
+def test_load_event_details_found_emits_details(worker, mock_db_service):
+    """Worker should emit event_details_loaded when event exists."""
+    worker.db_service = mock_db_service
+    mock_event = MagicMock()
+    mock_event.id = "evt-123"
+    mock_db_service.get_event.return_value = mock_event
+    mock_db_service.get_relations.return_value = []
+    mock_db_service.get_incoming_relations.return_value = []
+
+    found_spy = MagicMock()
+    not_found_spy = MagicMock()
+    worker.event_details_loaded.connect(found_spy)
+    worker.event_not_found.connect(not_found_spy)
+
+    worker.load_event_details("evt-123")
+
+    found_spy.assert_called_once()
+    not_found_spy.assert_not_called()
+
+
+def test_load_entity_details_not_found_emits_signal(worker, mock_db_service):
+    """Worker should emit entity_not_found when the entity doesn't exist."""
+    worker.db_service = mock_db_service
+    mock_db_service.get_entity.return_value = None
+
+    spy = MagicMock()
+    worker.entity_not_found.connect(spy)
+
+    worker.load_entity_details("ent-deleted")
+
+    spy.assert_called_once_with("ent-deleted")
+
+
+def test_load_entity_details_found_emits_details(worker, mock_db_service):
+    """Worker should emit entity_details_loaded when entity exists."""
+    worker.db_service = mock_db_service
+    mock_entity = MagicMock()
+    mock_entity.id = "ent-456"
+    mock_db_service.get_entity.return_value = mock_entity
+    mock_db_service.get_relations.return_value = []
+    mock_db_service.get_incoming_relations.return_value = []
+
+    found_spy = MagicMock()
+    not_found_spy = MagicMock()
+    worker.entity_details_loaded.connect(found_spy)
+    worker.entity_not_found.connect(not_found_spy)
+
+    worker.load_entity_details("ent-456")
+
+    found_spy.assert_called_once()
+    not_found_spy.assert_not_called()

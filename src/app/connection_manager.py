@@ -185,6 +185,22 @@ class ConnectionManager:
 
         if not self._connect_signal_safe(
             dh,
+            "event_not_found",
+            dc.on_event_not_found,
+            "DataHandler",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            dh,
+            "entity_not_found",
+            dc.on_entity_not_found,
+            "DataHandler",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            dh,
             "longform_sequence_ready",
             self.window.longform_manager.on_longform_sequence_loaded,
             "DataHandler",
