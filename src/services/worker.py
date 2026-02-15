@@ -1000,9 +1000,9 @@ class DatabaseWorker(QObject):
             options_json: JSON string of import options.
 
         """
-        if not self.db_service:
-            from src.services.import_service import ImportResult
+        from src.services.import_service import ImportResult, ImportService
 
+        if not self.db_service:
             result = ImportResult(
                 success=False,
                 created_entities=[],
@@ -1016,7 +1016,6 @@ class DatabaseWorker(QObject):
 
         try:
             self.operation_started.emit("Importing Markdown batch...")
-            from src.services.import_service import ImportResult, ImportService
 
             contents = json.loads(contents_json)
             options = json.loads(options_json) if options_json else {}
@@ -1058,8 +1057,6 @@ class DatabaseWorker(QObject):
             logger.error(
                 f"Markdown batch import failed: {traceback.format_exc()}"
             )
-            from src.services.import_service import ImportResult
-
             result = ImportResult(
                 success=False,
                 created_entities=[],
