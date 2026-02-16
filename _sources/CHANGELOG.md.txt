@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-16
-### Changed
-- Refactor OnboardingDialog styling and add tests
+### Added
+- feat(map): add keyframe indicators and update docstrings
 
 
 *This changelog was automatically generated.*
