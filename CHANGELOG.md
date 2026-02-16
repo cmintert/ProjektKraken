@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-02-16
-**Commit:** `b4d31b8`
+**Last Updated:** 2026-02-17
+**Commit:** `cf2173a`
 ---
 
 # Changelog
@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-02-17)* **Graph**: Implemented flicker-free incremental graph updates for smoother visualization changes.
+- *(2026-02-17)* **Graph**: Implemented view state preservation (zoom/pan) across data reloads.
 - *(2026-02-16)* **Map**: Added visual keyframe indicator (8px dot) to markers with trajectories to improve discoverability of temporal data.
 
 - *(2026-02-16)* **UI**: Extended theme-aware `StandardCheckbox` styling to Map Hierarchy (QTreeView).
@@ -23,6 +25,8 @@ All notable changes to this project will be documented in this file.
   - Populates entity description with the body of the Markdown file.
 
 ### Fixed
+- *(2026-02-17)* **Graph**: Fixed regression where edges disappeared during incremental updates by enforcing stable relationship IDs.
+- *(2026-02-17)* **Graph**: Fixed entity renames not updating in the graph view by mapping internal properties to presentation layer.
 - *(2026-02-16)* **UI**: Removed background color from checked checkbox indicators for cleaner look.
 - *(2026-02-16)* **UI**: Fixed checkbox icon visibility issue on Windows by using robust absolute resource paths (`get_resource_path`).
 - *(2026-02-15)* **Bug**: Fixed `TypeError` in Markdown import refresh caused by missing `doc_id` in `load_longform_sequence`.
