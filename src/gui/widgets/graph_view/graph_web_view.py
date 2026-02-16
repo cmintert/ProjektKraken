@@ -1,10 +1,6 @@
-"""Graph Web View Module.
-
-Private internal component encapsulating QWebEngineView for graph display.
-"""
-
+import json
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 from PySide6.QtCore import QObject, Signal, Slot
 from PySide6.QtGui import QColor
@@ -104,3 +100,58 @@ class GraphWebView(QWidget):
     def clear(self) -> None:
         """Clears the web view content."""
         self._web_view.setHtml("")
+
+    def update_graph_data(
+        self,
+        nodes: list[dict[str, Any]],
+        edges: list[dict[str, Any]],
+        focus_id: str | None = None,
+    ) -> None:
+        """Updates the graph data incrementally without reloading the page.
+
+        Args:
+            nodes: New list of node dictionaries.
+            edges: New list of edge dictionaries.
+            focus_id: Optional ID to focus on.
+        """
+        # Map our internal keys to Vis.js keys
+        js_edges = []
+        for e in edges:
+            js_edge = e.copy()
+            # source_id -> from, target_id -> to
+            if "source_id" in js_edge:
+                js_edge["from"] = js_edge.pop("source_id")
+            if "target_id" in js_edge:
+                js_edge["to"] = js_edge.pop("target_id")
+            # Ensure label/title are synced if rel_type is provided
+            if "rel_type" in js_edge:
+                js_edge["label"] = js_edge["rel_type"]
+                js_edge["title"] = js_edge["rel_type"]
+            js_edges.append(js_edge)
+
+        # Map internal node keys (name -> label)
+        js_nodes = []
+        for n in nodes:
+            js_node = n.copy()
+            if "name" in js_node:
+                js_node["label"] = js_node["name"]
+                # Also set title for tooltip if not present
+                if "title" not in js_node:
+                    obj_type = js_node.get("object_type", "item").title()
+                    js_node["title"] = f"{obj_type}: {js_node['name']}"
+            js_nodes.append(js_node)
+
+        nodes_json = json.dumps(js_nodes)
+        edges_json = json.dumps(js_edges)
+        focus_json = json.dumps(focus_id) if focus_id else "null"
+
+        script = (
+            f"if (window.updateGraph) {{ "
+            f"updateGraph({nodes_json}, {edges_json}, {focus_json}); "
+            f"}}"
+        )
+        self._web_view.page().runJavaScript(script)
+        logger.debug(
+            f"Triggered incremental graph update: Nodes={len(js_nodes)}, "
+            f"Edges={len(js_edges)}"
+        )

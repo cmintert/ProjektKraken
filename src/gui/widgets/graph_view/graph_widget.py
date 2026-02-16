@@ -68,6 +68,7 @@ class GraphWidget(QWidget):
         # View State Cache (scale, position)
         self._last_view_state: Optional[dict[str, Any]] = None
         self._last_focus_node_id: Optional[str] = None
+        self._is_renderer_ready: bool = False
 
         # Filter State
         self._search_term: str = ""
@@ -136,6 +137,9 @@ class GraphWidget(QWidget):
         # Update Web View background to match theme immediately
         bg_color = self._current_theme_config.get("background_color", "#1e1e1e")
         self._web_view.set_background_color(bg_color)
+
+        # Force a full rebuild on theme changes to apply new colors
+        self._is_renderer_ready = False
 
         # Refresh display with new colors
         self._refresh_display_locally()
@@ -287,12 +291,11 @@ class GraphWidget(QWidget):
             self._web_view.load_html(
                 self._builder.build_empty_html(self._current_theme_config)
             )
+            self._is_renderer_ready = False
         else:
             # Smart View Preservation Logic:
-            # 1. If we are focusing on the SAME node as before, it's likely a data refresh.
-            #    -> Preserve the view state.
-            # 2. If we are focusing on a DIFFERENT node (or None), it's navigation.
-            #    -> Reset view to center on new target.
+            # 1. Same node = Preserve view.
+            # 2. Different node (or None) = Reset view.
             should_preserve_view = (
                 focus_node_id is not None
                 and focus_node_id == self._last_focus_node_id
@@ -310,20 +313,28 @@ class GraphWidget(QWidget):
                     f"Resetting graph view for node {focus_node_id} (Navigation)"
                 )
 
-            html = self._builder.build_html(
-                filtered_nodes,
-                filtered_edges,
-                theme_config=self._current_theme_config,
-                focus_node_id=focus_node_id,
-                view_state=view_state,
-            )
-            self._web_view.load_html(html)
+            # Incremental vs Full Update
+            if self._is_renderer_ready:
+                self._web_view.update_graph_data(
+                    filtered_nodes, filtered_edges, focus_id=focus_node_id
+                )
+            else:
+                html = self._builder.build_html(
+                    filtered_nodes,
+                    filtered_edges,
+                    theme_config=self._current_theme_config,
+                    focus_node_id=focus_node_id,
+                    view_state=view_state,
+                )
+                self._web_view.load_html(html)
+                self._is_renderer_ready = True
 
             # Update tracking
             self._last_focus_node_id = focus_node_id
             self._logger.debug(
                 f"Refreshed graph: {len(filtered_nodes)} nodes, "
-                f"{len(filtered_edges)} edges, focus_id={focus_node_id}"
+                f"{len(filtered_edges)} edges, focus_id={focus_node_id}, "
+                f"incremental={self._is_renderer_ready}"
             )
 
     def _passes_tag_filter(self, node: dict, config: dict) -> bool:

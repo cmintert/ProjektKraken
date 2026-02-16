@@ -69,6 +69,7 @@ class GraphDataService:
         # Build edges list using strip_id_prefix to match node ID format
         edges = [
             {
+                "id": r["id"],
                 "source_id": strip_id_prefix(r["source_id"]),
                 "target_id": strip_id_prefix(r["target_id"]),
                 "rel_type": r["rel_type"],

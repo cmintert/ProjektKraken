@@ -245,6 +245,7 @@ class GraphBuilder:
             net.add_edge(
                 edge["source_id"],
                 edge["target_id"],
+                id=edge.get("id"),
                 title=edge.get("rel_type", ""),
                 label=edge.get("rel_type", ""),
                 color=edge_color,
@@ -450,6 +451,42 @@ class GraphBuilder:
                         restoreFocus();
                     }
 
+                    // Incremental Data Update
+                    window.updateGraph = function(newNodes, newEdges, newFocusId) {
+                        try {
+                            // Access datasets via network instance for reliability
+                            var nodes = network.body.data.nodes;
+                            var edges = network.body.data.edges;
+
+                            nodes.update(newNodes);
+                            var newNodeIds = newNodes.map(function(n) {
+                                return n.id;
+                            });
+                            var currentIds = nodes.getIds();
+                            var idsToRemove = currentIds.filter(function(id) {
+                                return newNodeIds.indexOf(id) === -1;
+                            });
+                            nodes.remove(idsToRemove);
+
+                            edges.update(newEdges);
+                            var newEdgeIds = newEdges.map(function(e) {
+                                return e.id;
+                            });
+                            var currentEdgeIds = edges.getIds();
+                            var edgesToRemove = currentEdgeIds.filter(function(id) {
+                                return newEdgeIds.indexOf(id) === -1;
+                            });
+                            edges.remove(edgesToRemove);
+
+                            if (newFocusId) {
+                                focusId = newFocusId;
+                                network.selectNodes([newFocusId]);
+                            }
+                        } catch (err) {
+                            console.error("Graph: Update failed", err);
+                        }
+                    };
+
                     // Report View State Changes
                     // We debounce this to avoid flooding Python with signals
                     var viewStateTimeout;
@@ -472,9 +509,12 @@ class GraphBuilder:
                     network.on("animationFinished", reportViewState);
 
 
-                    // Try stabilized event first, with timeout fallback (Only if we didn't already restore viewState)
-                    // If we have viewState, we already set the camera, so we don't need to center on focusId.
-                    // But if we DON'T have viewState, we need to wait for stabilization to center on focusId.
+                    // Try stabilized event first, with timeout fallback
+                    // (Only if we didn't already restore viewState)
+                    // If we have viewState, we already set the camera,
+                    // so we don't need to center on focusId.
+                    // But if we DON'T have viewState, we need to wait
+                    // for stabilization to center on focusId.
                     if (!viewState) {
                         var focusRestored = false;
                         network.once("stabilized", function() {
