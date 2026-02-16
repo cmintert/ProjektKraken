@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-02-15
-### Internal
-- Merge pull request #86 from cmintert/copilot/bidirectional-obsidian-integration
+## [Development] - 2026-02-16
+### Added
+- feat(gui): implement click-to-deselect in Project Explorer
 
 
 *This changelog was automatically generated.*
