@@ -458,15 +458,19 @@ class StyleHelper:
         Returns:
             str: QSS stylesheet string for checkboxes.
         """
-        from PySide6.QtCore import QUrl
-
-        from src.core.paths import get_resource_path
         from src.core.theme_manager import ThemeManager
 
+        from src.core.paths import get_resource_path
+
         theme = ThemeManager().get_theme()
+
+        # Use get_resource_path for robust absolute path resolution (works in PyInstaller)
+        # Ensure forward slashes and quoting to handle spaces/Windows issues
         check_icon_path = get_resource_path("default_assets/icons/ui_icons/check.svg")
-        # Use file:/// schema for more robust path resolution in QSS
-        icon_url = QUrl.fromLocalFile(check_icon_path).toString()
+        check_icon_path = check_icon_path.replace("\\", "/")
+        icon_url = f"'{check_icon_path}'"
+
+
 
         return (
             f"QCheckBox {{ color: {theme['text_main']}; spacing: 8px; }}"

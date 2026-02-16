@@ -7,7 +7,7 @@ handled via StyleHelper QSS or global QSS.
 from typing import Optional
 
 from PySide6.QtCore import QSize
-from PySide6.QtWidgets import QPushButton, QWidget
+from PySide6.QtWidgets import QCheckBox, QPushButton, QWidget
 
 
 class StandardButton(QPushButton):
@@ -107,6 +107,37 @@ class DestructiveButton(StandardButton):
         from src.gui.utils.style_helper import StyleHelper
 
         self.setStyleSheet(StyleHelper.get_destructive_button_style())
+
+    def _on_theme_changed(self) -> None:
+        """Handles theme change events."""
+        self._apply_style()
+
+
+class StandardCheckbox(QCheckBox):
+    """A standard checkbox with consistent styling.
+
+    Applies StyleHelper checkbox styling and updates on theme changes.
+    """
+
+    def __init__(self, text: str = "", parent: Optional[QWidget] = None) -> None:
+        """Initializes a standard checkbox.
+
+        Args:
+            text: The checkbox text.
+            parent: The parent widget, if any.
+        """
+        super().__init__(text, parent)
+        self._apply_style()
+
+        from src.core.theme_manager import ThemeManager
+
+        ThemeManager().theme_changed.connect(self._on_theme_changed)
+
+    def _apply_style(self) -> None:
+        """Applies the current theme style."""
+        from src.gui.utils.style_helper import StyleHelper
+
+        self.setStyleSheet(StyleHelper.get_checkbox_style())
 
     def _on_theme_changed(self) -> None:
         """Handles theme change events."""

@@ -34,6 +34,7 @@ from src.gui.widgets.standard_buttons import (
     DestructiveButton,
     PrimaryButton,
     StandardButton,
+    StandardCheckbox,
 )
 from src.gui.widgets.summary_widget import SummaryWidget
 from src.gui.widgets.tag_editor import TagEditorWidget
@@ -196,8 +197,8 @@ class EntityEditorWidget(QWidget):
         timeline_outer_layout.setContentsMargins(0, 0, 0, 0)
         timeline_outer_layout.setSpacing(EDITOR_SECTION_SPACING)
 
-        self.timeline_checkbox = QCheckBox("")  # Text in form label
-        self.timeline_checkbox.setStyleSheet(StyleHelper.get_checkbox_style())
+        self.timeline_checkbox = StandardCheckbox("")  # Text in form label
+
         timeline_outer_layout.addWidget(self.timeline_checkbox)
 
         self.timeline_display = TimelineDisplayWidget()
@@ -215,8 +216,8 @@ class EntityEditorWidget(QWidget):
         summary_outer_layout.setContentsMargins(0, 0, 0, 0)
         summary_outer_layout.setSpacing(EDITOR_SECTION_SPACING)
 
-        self.summary_checkbox = QCheckBox("")
-        self.summary_checkbox.setStyleSheet(StyleHelper.get_checkbox_style())
+        self.summary_checkbox = StandardCheckbox("")
+
         summary_outer_layout.addWidget(self.summary_checkbox)
 
         self.summary_widget = SummaryWidget()
@@ -238,8 +239,8 @@ class EntityEditorWidget(QWidget):
         llm_outer_layout.setContentsMargins(0, 0, 0, 0)
         llm_outer_layout.setSpacing(EDITOR_SECTION_SPACING)
 
-        self.llm_checkbox = QCheckBox("")
-        self.llm_checkbox.setStyleSheet(StyleHelper.get_checkbox_style())
+        self.llm_checkbox = StandardCheckbox("")
+
         llm_outer_layout.addWidget(self.llm_checkbox)
 
         self.llm_generator = LLMGenerationWidget(self, context_provider=self)
@@ -853,9 +854,8 @@ class EntityEditorWidget(QWidget):
         )
 
         # Update Checkboxes
-        self.timeline_checkbox.setStyleSheet(StyleHelper.get_checkbox_style())
-        self.summary_checkbox.setStyleSheet(StyleHelper.get_checkbox_style())
-        self.llm_checkbox.setStyleSheet(StyleHelper.get_checkbox_style())
+        # StandardCheckbox handles its own styling on theme change
+
 
     @Slot()
     def _on_save(self) -> None:

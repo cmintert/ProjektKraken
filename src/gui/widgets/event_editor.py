@@ -46,6 +46,7 @@ from src.gui.widgets.standard_buttons import (
     DestructiveButton,
     PrimaryButton,
     StandardButton,
+    StandardCheckbox,
 )
 from src.gui.widgets.summary_widget import SummaryWidget
 from src.gui.widgets.tag_editor import TagEditorWidget
@@ -232,8 +233,8 @@ class EventEditorWidget(QWidget):
         summary_outer_layout.setContentsMargins(0, 0, 0, 0)
         summary_outer_layout.setSpacing(EDITOR_SECTION_SPACING)
 
-        self.summary_checkbox = QCheckBox("")
-        self.summary_checkbox.setStyleSheet(StyleHelper.get_checkbox_style())
+        self.summary_checkbox = StandardCheckbox("")
+
         summary_outer_layout.addWidget(self.summary_checkbox)
 
         self.summary_widget = SummaryWidget()
@@ -255,8 +256,8 @@ class EventEditorWidget(QWidget):
         llm_outer_layout.setContentsMargins(0, 0, 0, 0)
         llm_outer_layout.setSpacing(EDITOR_SECTION_SPACING)
 
-        self.llm_checkbox = QCheckBox("")
-        self.llm_checkbox.setStyleSheet(StyleHelper.get_checkbox_style())
+        self.llm_checkbox = StandardCheckbox("")
+
         llm_outer_layout.addWidget(self.llm_checkbox)
 
         self.llm_generator = LLMGenerationWidget(self, context_provider=self)
@@ -1157,8 +1158,8 @@ class EventEditorWidget(QWidget):
         )
 
         # Update Checkboxes
-        self.summary_checkbox.setStyleSheet(StyleHelper.get_checkbox_style())
-        self.llm_checkbox.setStyleSheet(StyleHelper.get_checkbox_style())
+        # StandardCheckbox handles its own styling on theme change
+
 
         # Update Relations Tab Buttons (Icons and Styles)
         icon_path = os.path.join("default_assets", "icons", "ui_icons", "plus.svg")
