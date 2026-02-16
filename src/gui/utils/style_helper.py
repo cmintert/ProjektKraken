@@ -488,7 +488,6 @@ class StyleHelper:
             f"QListWidget::indicator:checked, "
             f"QListView::indicator:checked, "
             f"QTreeView::indicator:checked {{ "
-            f"background-color: {theme['primary']}; "
             f"border: 1px solid {theme['primary']}; "
             f"image: url({icon_url}); }}"
         )
