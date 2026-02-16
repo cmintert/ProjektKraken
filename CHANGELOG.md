@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-02-16
-**Commit:** `326afbb`
+**Commit:** `b4d31b8`
 ---
 
 # Changelog
@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-02-16)* **UI**: Extended theme-aware `StandardCheckbox` styling to Map Hierarchy (QTreeView).
+- *(2026-02-16)* **Assets**: Updated polyline icon to Phosphor 'bezier-curve' variant for better "Path" visualization.
 - *(2026-02-16)* **UI**: Implemented `StandardCheckbox` widget for consistent, theme-aware checkbox styling across the application.
 - *(2026-02-15)* **Import**: Implemented Markdown import defaults.
   - Automatically uses filename (without extension) as title if YAML title is missing.
@@ -19,6 +21,7 @@ All notable changes to this project will be documented in this file.
   - Populates entity description with the body of the Markdown file.
 
 ### Fixed
+- *(2026-02-16)* **UI**: Removed background color from checked checkbox indicators for cleaner look.
 - *(2026-02-16)* **UI**: Fixed checkbox icon visibility issue on Windows by using robust absolute resource paths (`get_resource_path`).
 - *(2026-02-15)* **Bug**: Fixed `TypeError` in Markdown import refresh caused by missing `doc_id` in `load_longform_sequence`.
 
@@ -26,6 +29,7 @@ All notable changes to this project will be documented in this file.
 - *(2026-02-16)* **GUI**: Implemented "click empty space to deselect" in Project Explorer, matching behavior of Entity/Event Editor relation lists.
 
 ### Refactor
+- *(2026-02-16)* **UI**: Refactored `OnboardingDialog` to use `StyleHelper` and fully support application themes.
 - *(2026-02-16)* **UI**: Refactored `EventEditor` and `EntityEditor` to use `StandardCheckbox`, removing redundant manual stylesheet updates.
 
 ### Deprecated
