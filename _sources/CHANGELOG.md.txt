@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-16
-### Internal
-- style(gui): remove background-color from checked checkbox indicator
+### Changed
+- Refactor OnboardingDialog styling and add tests
 
 
 *This changelog was automatically generated.*
