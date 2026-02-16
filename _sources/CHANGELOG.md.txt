@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-16
 ### Added
-- feat(gui): implement click-to-deselect in Project Explorer
+- feat(gui): implement StandardCheckbox and fix SVG visibility
 
 
 *This changelog was automatically generated.*
