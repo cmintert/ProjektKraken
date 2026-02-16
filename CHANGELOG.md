@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-02-16)* **Map**: Added visual keyframe indicator (8px dot) to markers with trajectories to improve discoverability of temporal data.
+
 - *(2026-02-16)* **UI**: Extended theme-aware `StandardCheckbox` styling to Map Hierarchy (QTreeView).
 - *(2026-02-16)* **Assets**: Updated polyline icon to Phosphor 'bezier-curve' variant for better "Path" visualization.
 - *(2026-02-16)* **UI**: Implemented `StandardCheckbox` widget for consistent, theme-aware checkbox styling across the application.
@@ -29,6 +31,8 @@ All notable changes to this project will be documented in this file.
 - *(2026-02-16)* **GUI**: Implemented "click empty space to deselect" in Project Explorer, matching behavior of Entity/Event Editor relation lists.
 
 ### Refactor
+- *(2026-02-16)* **Docs**: Updated `MarkerItem` docstrings to Google style guide.
+
 - *(2026-02-16)* **UI**: Refactored `OnboardingDialog` to use `StyleHelper` and fully support application themes.
 - *(2026-02-16)* **UI**: Refactored `EventEditor` and `EntityEditor` to use `StandardCheckbox`, removing redundant manual stylesheet updates.
 

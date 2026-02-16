@@ -52,10 +52,9 @@ class MarkerItem(QGraphicsObject):
     Emits signals through the parent MapGraphicsView when dragged.
     Supports custom SVG icons with fallback to colored circles.
 
-    Signals:
-        clicked: Emitted when the marker is clicked
-                 (released within threshold distance).
-                 Args: (marker_id: str, object_type: str)
+    Attributes:
+        clicked (Signal): Emitted when the marker is clicked (released within
+            threshold distance). Arguments are (marker_id: str, object_type: str).
     """
 
     clicked = Signal(str, str)
@@ -90,7 +89,6 @@ class MarkerItem(QGraphicsObject):
             color: Optional color hex string.
             description: Optional description for tooltip. Falls back to label if empty.
             lore_date: Optional lore timestamp for temporal filtering.
-
         """
         super().__init__()
 
@@ -111,6 +109,7 @@ class MarkerItem(QGraphicsObject):
         self.lore_date = lore_date
         self.is_future = False
         self.is_past = False
+        self.has_keyframes = False
 
         # Load icon if specified
         self._load_icon(icon)
@@ -161,7 +160,6 @@ class MarkerItem(QGraphicsObject):
 
         Args:
             icon_name: Filename of the icon (e.g., 'castle.svg').
-
         """
         if not icon_name:
             icon_name = self.DEFAULT_ICON
@@ -183,7 +181,6 @@ class MarkerItem(QGraphicsObject):
 
         Args:
             icon_name: Filename of the new icon.
-
         """
         self._load_icon(icon_name)
         self.update()
@@ -193,7 +190,6 @@ class MarkerItem(QGraphicsObject):
 
         Returns:
             Optional[str]: The icon filename or None if using fallback.
-
         """
         return self._icon_name
 
@@ -202,7 +198,6 @@ class MarkerItem(QGraphicsObject):
 
         Args:
             color: The hex color string (e.g., '#FF5733').
-
         """
         self._custom_color = color
         self._color = QColor(color)
@@ -213,9 +208,18 @@ class MarkerItem(QGraphicsObject):
 
         Returns:
             Optional[str]: The hex color string or None.
-
         """
         return self._custom_color
+
+    def set_has_keyframes(self, state: bool) -> None:
+        """Sets whether this marker has keyframes (trajectory).
+
+        Args:
+            state: True if trajectory exists, False otherwise.
+        """
+        if self.has_keyframes != state:
+            self.has_keyframes = state
+            self.update()
 
     def set_temporal_state(self, is_future: bool, is_past: bool = False) -> None:
         """Updates the marker's visual state based on its temporal relation.
@@ -223,7 +227,6 @@ class MarkerItem(QGraphicsObject):
         Args:
             is_future: If True, marker is in the future (dull/faded).
             is_past: If True, marker is in the past (reserved for "visited" styling).
-
         """
         if self.is_future == is_future and self.is_past == is_past:
             return
@@ -243,8 +246,12 @@ class MarkerItem(QGraphicsObject):
         self.update()
 
     def _get_effective_color(self) -> QColor:
-        """Returns the color modified by current state (e.g., deseaturated if
-        future).
+        """Returns the color modified by current state.
+
+        For example, deseaturates the color if the marker is in the future.
+
+        Returns:
+            QColor: The effective color to use for painting.
         """
         color = QColor(self._color)
 
@@ -264,7 +271,6 @@ class MarkerItem(QGraphicsObject):
 
         Returns:
             QRectF: The bounding rect centered on (0, 0).
-
         """
         half = self.MARKER_SIZE / 2
         return QRectF(-half, -half, self.MARKER_SIZE, self.MARKER_SIZE)
@@ -281,7 +287,6 @@ class MarkerItem(QGraphicsObject):
             painter: The QPainter to use.
             option: Style options.
             widget: The widget being painted on.
-
         """
         painter.setRenderHint(QPainter.Antialiasing)
         rect = self.boundingRect()
@@ -292,7 +297,12 @@ class MarkerItem(QGraphicsObject):
             self._draw_fallback_circle(painter, rect)
 
     def _draw_svg_icon(self, painter: QPainter, rect: QRectF) -> None:
-        """Draws the SVG icon, applying custom color tint if set."""
+        """Draws the SVG icon, applying custom color tint if set.
+
+        Args:
+            painter: The painter to draw with.
+            rect: The rectangle to draw into.
+        """
         # removed shadow/background
 
         if self._custom_color:
@@ -304,6 +314,9 @@ class MarkerItem(QGraphicsObject):
             # Standard SVG rendering (no tint)
             self._svg_renderer.render(painter, rect)
 
+        if self.has_keyframes:
+            self._draw_keyframe_indicator(painter)
+
         # Draw selection highlight
         if self.isSelected():
             painter.setPen(QPen(QColor(255, 255, 255), 2))
@@ -311,7 +324,11 @@ class MarkerItem(QGraphicsObject):
             painter.drawRect(rect)
 
     def _render_svg_to_pixmap(self) -> QPixmap:
-        """Renders the current SVG to a transparent QPixmap."""
+        """Renders the current SVG to a transparent QPixmap.
+
+        Returns:
+            QPixmap: The rendered SVG as a pixmap.
+        """
         pixmap = QPixmap(int(self.MARKER_SIZE), int(self.MARKER_SIZE))
         pixmap.fill(Qt.GlobalColor.transparent)
 
@@ -322,20 +339,66 @@ class MarkerItem(QGraphicsObject):
         return pixmap
 
     def _tint_pixmap(self, pixmap: QPixmap, color: QColor) -> None:
-        """Tint a pixmap with the given color."""
+        """Tint a pixmap with the given color.
+
+        Args:
+            pixmap: The pixmap to tint.
+            color: The color to use for tinting.
+        """
         painter = QPainter(pixmap)
         painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
         painter.fillRect(pixmap.rect(), color)
         painter.end()
 
     def _draw_fallback_circle(self, painter: QPainter, rect: QRectF) -> None:
-        """Draws a fallback colored circle."""
+        """Draws a fallback colored circle.
+
+        Args:
+            painter: The painter to draw with.
+            rect: The rectangle to draw into.
+        """
         painter.setPen(QPen(QColor(255, 255, 255), 2))
         painter.setBrush(QBrush(self._get_effective_color()))
         painter.drawEllipse(rect)
 
+        if self.has_keyframes:
+            self._draw_keyframe_indicator(painter)
+
+    def _draw_keyframe_indicator(self, painter: QPainter) -> None:
+        """Draws a small dot indicator for markers with keyframes.
+
+        Args:
+            painter: The painter to draw with.
+        """
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+        primary_color = QColor(theme.get("primary", "#FF9900"))
+
+        # Position: Centered horizontally, slightly above the icon
+        # Marker is centered at 0,0. Top edge is -MARKER_SIZE/2
+        # We want it, say, 4px above that.
+        # Indicator size: 5px
+        indicator_size = 8.0
+        y_pos = -(self.MARKER_SIZE / 2) - 4 - (indicator_size / 2)
+
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QBrush(primary_color))
+        painter.drawEllipse(
+            QRectF(
+                -indicator_size / 2,
+                y_pos,
+                indicator_size,
+                indicator_size,
+            )
+        )
+
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        """Track drag start."""
+        """Track drag start.
+
+        Args:
+            event: The mouse event.
+        """
         if event.button() == Qt.MouseButton.LeftButton:
             self._is_dragging = True
             self._drag_start_pos = self.pos()
@@ -345,7 +408,11 @@ class MarkerItem(QGraphicsObject):
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        """Emit position change on drag end, or clicked signal if distance small."""
+        """Emit position change on drag end, or clicked signal if distance small.
+
+        Args:
+            event: The mouse event.
+        """
         if event.button() != Qt.MouseButton.LeftButton:
             super().mouseReleaseEvent(event)
             return
@@ -380,7 +447,12 @@ class MarkerItem(QGraphicsObject):
                     )
 
     def _get_normalized_position(self) -> Optional[tuple[float, float]]:
-        """Calculates the current normalized position of the marker."""
+        """Calculates the current normalized position of the marker.
+
+        Returns:
+            Optional[tuple[float, float]]: A tuple of (normalized_x, normalized_y)
+                values between 0.0 and 1.0, or None if calculation fails.
+        """
         if not (self.pixmap_item and self.pixmap_item.pixmap()):
             return None
 
@@ -412,7 +484,6 @@ class MarkerItem(QGraphicsObject):
             value: The new value.
 
         Returns:
-            The processed value.
-
+            Any: The processed value.
         """
         return super().itemChange(change, value)

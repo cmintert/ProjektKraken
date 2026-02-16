@@ -469,6 +469,19 @@ class MapWidget(QWidget):
         # Update visualization if selection exists
         if self._selected_marker_id:
             self._update_trajectory_visualization(self._selected_marker_id)
+            
+        # Update marker indicators
+        self._update_marker_indicators()
+
+    def _update_marker_indicators(self) -> None:
+        """Updates the has_keyframes state for all markers."""
+        if not self.view.scene:
+            return
+
+        for item in self.view.scene.items():
+            if isinstance(item, MarkerItem):
+                has_traj = item.marker_id in self._active_trajectories
+                item.set_has_keyframes(has_traj)
 
     # Note: Skipping unrelated methods to reach _on_add_keyframe
 
