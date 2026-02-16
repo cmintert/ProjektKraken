@@ -474,17 +474,20 @@ class StyleHelper:
 
         return (
             f"QCheckBox {{ color: {theme['text_main']}; spacing: 8px; }}"
-            f"QCheckBox::indicator, QListWidget::indicator, QListView::indicator {{ "
+            f"QCheckBox::indicator, QListWidget::indicator, QListView::indicator, "
+            f"QTreeView::indicator {{ "
             f"width: 16px; height: 16px; "
             f"border: 1px solid {theme['border']}; border-radius: 3px; "
             f"background-color: {theme['surface']}; }}"
             f"QCheckBox::indicator:unchecked:hover, "
             f"QListWidget::indicator:unchecked:hover, "
-            f"QListView::indicator:unchecked:hover {{ "
+            f"QListView::indicator:unchecked:hover, "
+            f"QTreeView::indicator:unchecked:hover {{ "
             f"border: 1px solid {theme['primary']}; }}"
             f"QCheckBox::indicator:checked, "
             f"QListWidget::indicator:checked, "
-            f"QListView::indicator:checked {{ "
+            f"QListView::indicator:checked, "
+            f"QTreeView::indicator:checked {{ "
             f"background-color: {theme['primary']}; "
             f"border: 1px solid {theme['primary']}; "
             f"image: url({icon_url}); }}"
@@ -573,6 +576,7 @@ class StyleHelper:
             f"QTreeView::branch:open:has-children:has-siblings {{ "
             f"border-image: none; }}"
             + StyleHelper.get_scrollbar_style()
+            + StyleHelper.get_checkbox_style()
         )
 
     @staticmethod
