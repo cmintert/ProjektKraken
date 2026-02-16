@@ -46,8 +46,25 @@ class DraggableListView(QListView):
         self.setDragEnabled(True)
         self.setDragDropMode(QListView.DragOnly)
         self._drag_pill = None  # Will be created during drag
+        self.setMouseTracking(True)  # Enable mouse tracking for hover effects
 
     drag_started = Signal()
+
+    def mousePressEvent(self, event) -> None:
+        """Override to deselect items when clicking into free space.
+
+        Args:
+            event: The mouse event.
+
+        """
+        from PySide6.QtCore import QModelIndex
+
+        index = self.indexAt(event.position().toPoint())
+        if not index.isValid():
+            self.clearSelection()
+            self.setCurrentIndex(QModelIndex())
+
+        super().mousePressEvent(event)
 
     def startDrag(self, supportedActions: Qt.DropAction) -> None:
         """Override to provide custom MIME data for dragged items.

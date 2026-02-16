@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-02-15
-**Commit:** `11f2ce8`
+**Last Updated:** 2026-02-16
+**Commit:** `0ced4fa`
 ---
 
 # Changelog
@@ -23,6 +23,7 @@ All notable changes to this project will be documented in this file.
 - *(2026-02-15)* **Bug**: Fixed `TypeError` in Markdown import refresh caused by missing `doc_id` in `load_longform_sequence`.
 
 ### Changed
+- *(2026-02-16)* **GUI**: Implemented "click empty space to deselect" in Project Explorer, matching behavior of Entity/Event Editor relation lists.
 
 ### Deprecated
 

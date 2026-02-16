@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 import pytest
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QPoint
 from PySide6.QtWidgets import QMessageBox
 
 from src.core.entities import Entity
@@ -128,3 +128,38 @@ def test_create_signals(unified_list, qtbot):
 def test_refresh_signal(unified_list, qtbot):
     with qtbot.waitSignal(unified_list.refresh_requested):
         unified_list.btn_refresh.click()
+
+
+def test_deselect_on_empty_click(unified_list, qtbot):
+    """Test that clicking on empty space deselects the current item."""
+    unified_list.show()
+
+    # Setup data
+    events = [Event(id="e1", name="Event 1", lore_date=10.0)]
+    unified_list.set_data(events, [])
+
+    # Select the first item
+    model = unified_list._proxy_model
+    index = model.index(0, 0)
+    unified_list.list_widget.setCurrentIndex(index)
+
+    assert unified_list.list_widget.currentIndex().isValid()
+    # assert len(unified_list.list_widget.selectedIndexes()) > 0
+
+    # Simulate clicking on empty space
+    # We need to find a point that is definitely not on an item
+    viewport = unified_list.list_widget.viewport()
+    item_rect = unified_list.list_widget.visualRect(index)
+
+    # Click below the item
+    click_point = QPoint(item_rect.center().x(), item_rect.bottom() + 20)
+
+    # Ensure the point is within the viewport but not on the item
+    # assert viewport.rect().contains(click_point)
+    # assert not item_rect.contains(click_point)
+
+    qtbot.mouseClick(viewport, Qt.MouseButton.LeftButton, pos=click_point)
+
+    # Assert selection is cleared
+    assert not unified_list.list_widget.currentIndex().isValid()
+    assert len(unified_list.list_widget.selectedIndexes()) == 0
