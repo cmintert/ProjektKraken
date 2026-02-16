@@ -1831,37 +1831,21 @@ class OnboardingDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("✨ Keyframe Created!")
         self.setFixedWidth(400)
-        self.setStyleSheet(
-            """
-            QDialog {
-                background-color: #2c3e50;
-                color: white;
-            }
-            QLabel {
-                color: white;
-                font-size: 13px;
-            }
-            QPushButton {
-                background-color: #3498db;
-                color: white;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 4px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #2980b9;
-            }
-        """
-        )
+        
+        # Apply theme-aware styling
+        self.setStyleSheet(StyleHelper.get_dialog_base_style())
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
+        StyleHelper.apply_standard_list_spacing(layout)
         layout.setSpacing(15)
 
         title = QLabel("✨ Keyframe Created!")
-        title.setStyleSheet("font-size: 18px; font-weight: bold;")
+        title.setStyleSheet(f"font-size: 18px; {StyleHelper.get_section_header_style()}")
         layout.addWidget(title)
+        
+        # Get theme for specific text colors not covered by base style
+        from src.core.theme_manager import ThemeManager
+        theme = ThemeManager().get_theme()
 
         body = QLabel(
             "Hover over yellow dots to reveal editing tools:<br/>"
@@ -1870,19 +1854,22 @@ class OnboardingDialog(QDialog):
             "• Click ✕ to <b>delete</b>"
         )
         body.setWordWrap(True)
+        # Ensure body text matches theme standard
+        body.setStyleSheet(f"color: {theme['text_main']}; font-size: 13px;")
         layout.addWidget(body)
 
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
+        
+        from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
 
-        self.btn_got_it = QPushButton("Got it!")
-        self.btn_got_it.clicked.connect(self.accept)
-        btn_layout.addWidget(self.btn_got_it)
-
-        self.btn_tutorial = QPushButton("Show Tutorial Video")
-        self.btn_tutorial.setStyleSheet("background-color: #7f8c8d;")
+        self.btn_tutorial = StandardButton("Show Tutorial Video")
         # In a real app, this would open a URL
         self.btn_tutorial.clicked.connect(self.accept)
         btn_layout.addWidget(self.btn_tutorial)
+
+        self.btn_got_it = PrimaryButton("Got it!")
+        self.btn_got_it.clicked.connect(self.accept)
+        btn_layout.addWidget(self.btn_got_it)
 
         layout.addLayout(btn_layout)
