@@ -72,10 +72,11 @@ class GraphBuilder:
 
         """
         is_entity = node.get("object_type") == "entity"
+        name = node.get("name", "Unnamed")
         return {
             "id": node["id"],
-            "label": node.get("name", "Unnamed"),
-            "title": f"{node.get('object_type', 'item').title()}: {node.get('name')}",
+            "label": name,
+            "title": f"{node.get('object_type', 'item').title()}: {name}",
             "color": entity_color if is_entity else event_color,
             "shape": (
                 GraphBuilder.ENTITY_SHAPE if is_entity else GraphBuilder.EVENT_SHAPE

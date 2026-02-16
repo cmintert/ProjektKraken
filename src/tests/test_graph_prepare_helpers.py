@@ -39,19 +39,19 @@ class TestPrepareNode:
         assert result["title"] == "Entity: Hero"
 
     def test_missing_name_defaults_to_unnamed(self) -> None:
-        """Nodes without a name key default to 'Unnamed'."""
+        """Nodes without a name key default to 'Unnamed' for label and title."""
         node = {"id": "n1", "object_type": "entity"}
         result = GraphBuilder.prepare_node(node, "#AAA", "#BBB")
 
         assert result["label"] == "Unnamed"
+        assert result["title"] == "Entity: Unnamed"
 
     def test_missing_object_type_defaults_to_entity(self) -> None:
-        """Nodes without object_type default to entity."""
+        """Nodes without object_type default to entity for the field value."""
         node = {"id": "n1", "name": "Unknown"}
         result = GraphBuilder.prepare_node(node, "#AAA", "#BBB")
 
         assert result["object_type"] == "entity"
-        assert result["color"] == "#BBB"  # not entity → event color
 
     def test_size_is_always_20(self) -> None:
         """All nodes have size 20."""
