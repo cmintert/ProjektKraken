@@ -60,9 +60,11 @@ def test_subsequent_load_uses_incremental_update(graph_widget: GraphWidget) -> N
     # Should call update_graph_data (incremental update)
     # This will fail initially because the method doesn't exist or isn't called
     assert hasattr(graph_widget._web_view, "update_graph_data")
-    graph_widget._web_view.update_graph_data.assert_called_with(
-        nodes_2, edges_2, focus_id=None
-    )
+    graph_widget._web_view.update_graph_data.assert_called_once()
+    call_args = graph_widget._web_view.update_graph_data.call_args
+    assert call_args[0][0] == nodes_2
+    assert call_args[0][1] == edges_2
+    assert call_args[1]["focus_id"] is None
 
 
 def test_theme_change_forces_full_reload(graph_widget: GraphWidget) -> None:

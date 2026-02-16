@@ -316,7 +316,8 @@ class GraphWidget(QWidget):
             # Incremental vs Full Update
             if self._is_renderer_ready:
                 self._web_view.update_graph_data(
-                    filtered_nodes, filtered_edges, focus_id=focus_node_id
+                    filtered_nodes, filtered_edges, focus_id=focus_node_id,
+                    theme_config=self._current_theme_config,
                 )
             else:
                 html = self._builder.build_html(

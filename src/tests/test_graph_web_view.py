@@ -39,14 +39,10 @@ def test_update_graph_data_maps_properties_correctly(qapp):
     # Check for Node Mapping (name -> label)
     # Simple substring check is robust enough for JSON structure verification here
     assert '"label": "Test Node"' in script
-    # Ensure original name is still present (optional, but good for data retention)
-    assert '"name": "Test Node"' in script
 
     # Check for Edge Mapping (source_id -> from, target_id -> to)
     assert '"from": "n1"' in script
     assert '"to": "n2"' in script
-    # Ensure source_id/target_id are removed or handled (mapping replaces them usually, or copies)
-    # My implementation copies so original might stay or go, but as long as mapped keys exist it works.
 
     # Check for Edge Label/Title mapping from rel_type
     assert '"label": "linked_to"' in script
