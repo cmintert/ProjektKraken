@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-16
-### Added
-- feat(gui): extend StandardCheckbox styling to Map Hierarchy (QTreeView)
+### Internal
+- style(gui): remove background-color from checked checkbox indicator
 
 
 *This changelog was automatically generated.*
