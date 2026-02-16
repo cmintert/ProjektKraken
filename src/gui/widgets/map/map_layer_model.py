@@ -20,7 +20,11 @@ from PySide6.QtCore import (
     QModelIndex,
     Qt,
     Signal,
+    Slot,
 )
+
+from src.gui.utils.icon_loader import load_icon
+from src.core.theme_manager import ThemeManager
 
 from src.app.constants import (
     MAP_LAYER_DEFAULT_OPACITY,
@@ -38,13 +42,7 @@ logger = logging.getLogger(__name__)
 # Internal MIME type for drag-and-drop reordering
 _LAYER_MIME_TYPE = "application/x-kraken-layer-node-id"
 
-# Unicode icon prefixes for layer type display (LOW-11)
-_LAYER_TYPE_ICONS = {
-    MAP_LAYER_TYPE_GROUP: "\U0001f4c2",  # 📂
-    MAP_LAYER_TYPE_MARKER: "\U0001f4cd",  # 📍
-    MAP_LAYER_TYPE_PATH: "\U00002935",  # ⤵
-    MAP_LAYER_TYPE_REGION: "\U00002b1c",  # ⬜
-}
+ # Icons are now handled via DecorationRole with themes (LOW-11)
 
 
 class MapLayerModel(QAbstractItemModel):
@@ -96,6 +94,8 @@ class MapLayerModel(QAbstractItemModel):
         self._zoom_cache: Dict[str, bool] = {}
         self._last_zoom: Optional[float] = None
         self._last_time: Optional[float] = None
+        self._icon_cache: Dict[str, Any] = {}
+        ThemeManager().theme_changed.connect(self._on_theme_changed)
 
     # ------------------------------------------------------------------
     # Public helpers
@@ -242,8 +242,9 @@ class MapLayerModel(QAbstractItemModel):
             return None
         node = self.node_from_index(index)
         if role == Qt.ItemDataRole.DisplayRole:
-            icon = _LAYER_TYPE_ICONS.get(node.layer_type, "")
-            return f"{icon} {node.name}" if icon else node.name
+            return node.name
+        if role == Qt.ItemDataRole.DecorationRole:
+            return self._get_icon(node.layer_type)
         if role == Qt.ItemDataRole.CheckStateRole:
             return Qt.CheckState.Checked if node.visible else Qt.CheckState.Unchecked
         if role == self.LayerTypeRole:
@@ -711,6 +712,43 @@ class MapLayerModel(QAbstractItemModel):
         self._zoom_cache = {}
         self._last_zoom = None
         self._last_time = None
+
+    @Slot()
+    def _on_theme_changed(self) -> None:
+        """Clear the icon cache when the theme changes."""
+        self._icon_cache.clear()
+        self.layoutChanged.emit()
+
+    def _get_icon(self, layer_type: str) -> Any:
+        """Return a themed QIcon for the given layer type, using caching."""
+        if layer_type in self._icon_cache:
+            return self._icon_cache[layer_type]
+
+        theme = ThemeManager().get_theme()
+        icon: Optional[Any] = None
+
+        if layer_type == MAP_LAYER_TYPE_GROUP:
+            icon = load_icon(
+                "default_assets/icons/ui_icons/folder.svg", theme.get("text_main")
+            )
+        elif layer_type == MAP_LAYER_TYPE_MARKER:
+            icon = load_icon(
+                "default_assets/icons/markers/map-pin.svg", theme.get("primary")
+            )
+        elif layer_type == MAP_LAYER_TYPE_PATH:
+            icon = load_icon(
+                "default_assets/icons/markers/polyline.svg",
+                theme.get("accent_secondary"),
+            )
+        elif layer_type == MAP_LAYER_TYPE_REGION:
+            icon = load_icon(
+                "default_assets/icons/markers/polygon.svg",
+                theme.get("accent_secondary"),
+            )
+
+        if icon:
+            self._icon_cache[layer_type] = icon
+        return icon
 
     # ------------------------------------------------------------------
     # Private helpers
