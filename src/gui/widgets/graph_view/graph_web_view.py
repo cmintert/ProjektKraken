@@ -20,11 +20,18 @@ class GraphBridge(QObject):
 
     # Signal emitted when JS calls nodeClicked
     node_clicked = Signal(str, str)  # (object_type, object_id)
+    # Signal emitted when JS updates view state (scale, position)
+    view_state_changed = Signal(dict)
 
     @Slot(str, str)
     def nodeClicked(self, object_type: str, object_id: str) -> None:
         """Called from JavaScript when a node is clicked."""
         self.node_clicked.emit(object_type, object_id)
+
+    @Slot(dict)
+    def viewStateChanged(self, state: dict) -> None:
+        """Called from JavaScript when view state changes."""
+        self.view_state_changed.emit(state)
 
 
 class GraphWebView(QWidget):
@@ -35,9 +42,11 @@ class GraphWebView(QWidget):
 
     Signals:
         node_clicked: Emitted when a graph node is clicked (via JS bridge).
+        view_state_changed: Emitted when graph view state changes (scale/pan).
     """
 
     node_clicked = Signal(str, str)  # (object_type, object_id)
+    view_state_changed = Signal(dict)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the GraphWebView.
@@ -49,6 +58,7 @@ class GraphWebView(QWidget):
         super().__init__(parent)
         self._bridge = GraphBridge()
         self._bridge.node_clicked.connect(self.node_clicked.emit)
+        self._bridge.view_state_changed.connect(self.view_state_changed.emit)
         self._setup_ui()
 
     def _setup_ui(self) -> None:

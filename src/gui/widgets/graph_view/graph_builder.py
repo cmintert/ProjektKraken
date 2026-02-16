@@ -102,6 +102,7 @@ class GraphBuilder:
         width: str = "100%",
         theme_config: dict[str, str] = None,
         focus_node_id: str | None = None,
+        view_state: dict[str, Any] | None = None,
     ) -> str:
         """Builds a PyVis network and returns HTML string.
 
@@ -112,6 +113,7 @@ class GraphBuilder:
             width: Width of the graph visualization.
             theme_config: Optional dictionary with color settings.
             focus_node_id: Optional ID of the node to focus on stabilize.
+            view_state: Optional dict with 'scale' and 'position' to restore.
 
         Returns:
             HTML string for embedding in QWebEngineView.
@@ -120,7 +122,7 @@ class GraphBuilder:
         try:
             theme = theme_config or self.DEFAULT_THEME
             network = self._build_network(nodes, edges, height, width, theme)
-            html = self._generate_html(network, theme, focus_node_id)
+            html = self._generate_html(network, theme, focus_node_id, view_state)
             logger.debug(
                 f"Generated graph HTML: {len(nodes)} nodes, {len(edges)} edges"
             )
@@ -251,13 +253,18 @@ class GraphBuilder:
         return net
 
     def _generate_html(
-        self, network: Network, theme: dict[str, str], focus_node_id: str | None = None
+        self,
+        network: Network,
+        theme: dict[str, str],
+        focus_node_id: str | None = None,
+        view_state: dict[str, Any] | None = None,
     ) -> str:
         """Generates HTML string from a PyVis network.
 
         Args:
             network: Configured PyVis Network.
             theme: Theme configuration dictionary.
+            view_state: Optional view state to restore.
 
         Returns:
             HTML string.
@@ -406,9 +413,18 @@ class GraphBuilder:
                     // Interaction: Restore Focus
                     // Use 'stabilized' event which fires when physics stops
                     var focusId = %FOCUS_ID%;
+                    var viewState = %VIEW_STATE%;
 
                     function restoreFocus() {
-                        if (focusId !== null) {
+                        if (viewState) {
+                            // Restore exact previous view (pan/zoom)
+                            network.moveTo({
+                                position: viewState.position,
+                                scale: viewState.scale,
+                                animation: false // Instant restore
+                            });
+                            console.log("Graph: Restored view state", viewState);
+                        } else if (focusId !== null) {
                             // Check if node exists in dataset
                             var nodeData = nodes.get(focusId);
                             if (nodeData) {
@@ -429,30 +445,64 @@ class GraphBuilder:
                         }
                     }
 
-                    // Try stabilized event first, with timeout fallback
-                    var focusRestored = false;
-                    network.once("stabilized", function() {
-                        if (!focusRestored) {
-                            focusRestored = true;
-                            restoreFocus();
-                        }
-                    });
+                    // Immediate Restore for View State
+                    if (viewState) {
+                        restoreFocus();
+                    }
 
-                    // Fallback: if stabilized doesn't fire within 2s, force focus
-                    setTimeout(function() {
-                        if (!focusRestored) {
-                            focusRestored = true;
-                            restoreFocus();
-                        }
-                    }, 2000);
+                    // Report View State Changes
+                    // We debounce this to avoid flooding Python with signals
+                    var viewStateTimeout;
+                    function reportViewState() {
+                        clearTimeout(viewStateTimeout);
+                        viewStateTimeout = setTimeout(function() {
+                            if (window.bridge) {
+                                var scale = network.getScale();
+                                var position = network.getViewPosition();
+                                window.bridge.viewStateChanged({
+                                    scale: scale,
+                                    position: position
+                                });
+                            }
+                        }, 200);
+                    }
+
+                    network.on("zoom", reportViewState);
+                    network.on("dragEnd", reportViewState);
+                    network.on("animationFinished", reportViewState);
+
+
+                    // Try stabilized event first, with timeout fallback (Only if we didn't already restore viewState)
+                    // If we have viewState, we already set the camera, so we don't need to center on focusId.
+                    // But if we DON'T have viewState, we need to wait for stabilization to center on focusId.
+                    if (!viewState) {
+                        var focusRestored = false;
+                        network.once("stabilized", function() {
+                            if (!focusRestored) {
+                                focusRestored = true;
+                                restoreFocus();
+                            }
+                        });
+
+                        // Fallback: if stabilized doesn't fire within 2s, force focus
+                        setTimeout(function() {
+                            if (!focusRestored) {
+                                focusRestored = true;
+                                restoreFocus();
+                            }
+                        }, 2000);
+                    }
                 }
-            }, 100);
+            }, 50); // Reduced check interval for responsiveness
         </script>
         """
 
         # Replace placeholder with JSON-serialized ID for safe JS injection
         focus_json = json.dumps(focus_node_id) if focus_node_id else "null"
+        view_state_json = json.dumps(view_state) if view_state else "null"
+
         interaction_script = interaction_script.replace("%FOCUS_ID%", focus_json)
+        interaction_script = interaction_script.replace("%VIEW_STATE%", view_state_json)
 
         html_content = html_content.replace(
             "</body>", f"{qwebchannel_script}\n{interaction_script}\n</body>"

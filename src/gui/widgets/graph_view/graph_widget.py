@@ -65,6 +65,9 @@ class GraphWidget(QWidget):
         # Data Cache
         self._all_nodes: list[dict[str, Any]] = []
         self._all_edges: list[dict[str, Any]] = []
+        # View State Cache (scale, position)
+        self._last_view_state: Optional[dict[str, Any]] = None
+        self._last_focus_node_id: Optional[str] = None
 
         # Filter State
         self._search_term: str = ""
@@ -111,6 +114,8 @@ class GraphWidget(QWidget):
         """
         # Forward web view node clicks
         self._web_view.node_clicked.connect(self.node_clicked.emit)
+        # Handle view state updates
+        self._web_view.view_state_changed.connect(self._on_view_state_changed)
 
         # Forward filter bar signals
         self._filter_bar.refresh_requested.connect(self.refresh_requested.emit)
@@ -189,6 +194,14 @@ class GraphWidget(QWidget):
         """
         self._search_term = text.strip()
         self._refresh_display_locally()
+
+    def _on_view_state_changed(self, state: dict) -> None:
+        """Handles view state updates from the web view.
+
+        Args:
+            state: Dictionary containing 'scale' and 'position' keys.
+        """
+        self._last_view_state = state
 
     def show_filter_dialog(self) -> None:
         """Shows the advanced filter dialog.
@@ -275,13 +288,39 @@ class GraphWidget(QWidget):
                 self._builder.build_empty_html(self._current_theme_config)
             )
         else:
+            # Smart View Preservation Logic:
+            # 1. If we are focusing on the SAME node as before, it's likely a data refresh.
+            #    -> Preserve the view state.
+            # 2. If we are focusing on a DIFFERENT node (or None), it's navigation.
+            #    -> Reset view to center on new target.
+            should_preserve_view = (
+                focus_node_id is not None
+                and focus_node_id == self._last_focus_node_id
+                and self._last_view_state is not None
+            )
+
+            view_state = self._last_view_state if should_preserve_view else None
+
+            if should_preserve_view:
+                self._logger.debug(
+                    f"Preserving graph view for node {focus_node_id} (Data Refresh)"
+                )
+            elif focus_node_id:
+                self._logger.debug(
+                    f"Resetting graph view for node {focus_node_id} (Navigation)"
+                )
+
             html = self._builder.build_html(
                 filtered_nodes,
                 filtered_edges,
                 theme_config=self._current_theme_config,
                 focus_node_id=focus_node_id,
+                view_state=view_state,
             )
             self._web_view.load_html(html)
+
+            # Update tracking
+            self._last_focus_node_id = focus_node_id
             self._logger.debug(
                 f"Refreshed graph: {len(filtered_nodes)} nodes, "
                 f"{len(filtered_edges)} edges, focus_id={focus_node_id}"
@@ -437,7 +476,7 @@ class GraphWidget(QWidget):
 
     def showEvent(self, event: QEvent) -> None:
         """Handle widget show event by refreshing the graph view.
-        
+
         Args:
             event: The show event.
         """
@@ -461,7 +500,7 @@ class GraphWidget(QWidget):
 
     def hideEvent(self, event: QEvent) -> None:
         """Handle widget hide event.
-        
+
         Args:
             event: The hide event.
         """
@@ -469,7 +508,7 @@ class GraphWidget(QWidget):
 
     def resizeEvent(self, event: QEvent) -> None:
         """Handle widget resize event.
-        
+
         Args:
             event: The resize event.
         """
