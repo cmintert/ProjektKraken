@@ -87,17 +87,13 @@ class DataCoordinator(BaseCoordinator):
             hasattr(self.main_window.event_editor, "_current_event_id")
             and self.main_window.event_editor._current_event_id
         ):
-            self.load_event_details(
-                self.main_window.event_editor._current_event_id
-            )
+            self.load_event_details(self.main_window.event_editor._current_event_id)
 
         if (
             hasattr(self.main_window.entity_editor, "_current_entity_id")
             and self.main_window.entity_editor._current_entity_id
         ):
-            self.load_entity_details(
-                self.main_window.entity_editor._current_entity_id
-            )
+            self.load_entity_details(self.main_window.entity_editor._current_entity_id)
 
     def load_events(self) -> None:
         """Requests loading of all events from the worker thread."""
@@ -264,9 +260,7 @@ class DataCoordinator(BaseCoordinator):
             )
 
     @Slot(list, list)
-    def on_graph_metadata_ready(
-        self, tags: list, rel_types: list
-    ) -> None:
+    def on_graph_metadata_ready(self, tags: list, rel_types: list) -> None:
         """Updates the graph widget with available metadata.
 
         Args:
@@ -276,14 +270,10 @@ class DataCoordinator(BaseCoordinator):
         """
         if self.main_window.graph_widget:
             self.main_window.graph_widget.set_available_tags(tags)
-            self.main_window.graph_widget.set_available_relation_types(
-                rel_types
-            )
+            self.main_window.graph_widget.set_available_relation_types(rel_types)
 
     @Slot(dict, dict)
-    def on_graph_lexicon_ready(
-        self, raw_lexicon: dict, resolved_lexicon: dict
-    ) -> None:
+    def on_graph_lexicon_ready(self, raw_lexicon: dict, resolved_lexicon: dict) -> None:
         """Updates the graph widget with the visual lexicon configuration.
 
         Also sets the available entity types and world assets directory
@@ -303,7 +293,8 @@ class DataCoordinator(BaseCoordinator):
             from src.services.graph_data_service import GraphDataService
 
             try:
-                db = self.main_window.worker_manager.db_service
+                # Use gui_db_service which is initialized on MainWindow
+                db = self.main_window.gui_db_service
                 if db:
                     service = GraphDataService()
                     entity_types = service.get_all_entity_types(db)
@@ -320,12 +311,11 @@ class DataCoordinator(BaseCoordinator):
             try:
                 from pathlib import Path
 
-                db = self.main_window.worker_manager.db_service
+                # Use gui_db_service
+                db = self.main_window.gui_db_service
                 if db and db.db_path != ":memory:":
                     assets_dir = str(Path(db.db_path).parent / "assets")
-                    self.main_window.graph_widget.set_world_assets_dir(
-                        assets_dir
-                    )
+                    self.main_window.graph_widget.set_world_assets_dir(assets_dir)
             except Exception:
                 logger.debug(
                     "Could not resolve world assets directory",
@@ -333,9 +323,7 @@ class DataCoordinator(BaseCoordinator):
                 )
 
     @Slot(list, list)
-    def on_filter_results_ready(
-        self, events: list, entities: list
-    ) -> None:
+    def on_filter_results_ready(self, events: list, entities: list) -> None:
         """Handler for filter results.
 
         Updates the Unified List with filtered data.
@@ -347,9 +335,7 @@ class DataCoordinator(BaseCoordinator):
         """
         self.main_window.unified_list.set_data(events, entities)
         count = len(events) + len(entities)
-        self.main_window.status_bar.showMessage(
-            f"Filter applied. Found {count} items."
-        )
+        self.main_window.status_bar.showMessage(f"Filter applied. Found {count} items.")
 
     @Slot(str)
     def on_dock_raise_requested(self, dock_name: str) -> None:
@@ -402,18 +388,14 @@ class DataCoordinator(BaseCoordinator):
             and self.main_window.event_editor._current_event_id
         ):
             logger.debug("Reloading active event details")
-            self.load_event_details(
-                self.main_window.event_editor._current_event_id
-            )
+            self.load_event_details(self.main_window.event_editor._current_event_id)
 
         elif (
             self.main_window.navigation_coordinator.selected_type == "entity"
             and self.main_window.entity_editor._current_entity_id
         ):
             logger.debug("Reloading active entity details")
-            self.load_entity_details(
-                self.main_window.entity_editor._current_entity_id
-            )
+            self.load_entity_details(self.main_window.entity_editor._current_entity_id)
 
     def on_completer_data_loaded(
         self,
@@ -435,23 +417,15 @@ class DataCoordinator(BaseCoordinator):
         """
         self.main_window.entity_editor.update_tag_suggestions(tags)
         self.main_window.entity_editor.update_attribute_suggestions(attr_keys)
-        self.main_window.entity_editor.update_relation_type_suggestions(
-            rel_types
-        )
-        self.main_window.entity_editor.update_entity_type_suggestions(
-            entity_types
-        )
+        self.main_window.entity_editor.update_relation_type_suggestions(rel_types)
+        self.main_window.entity_editor.update_entity_type_suggestions(entity_types)
 
         self.main_window.event_editor.update_tag_suggestions(tags)
         self.main_window.event_editor.update_attribute_suggestions(attr_keys)
-        self.main_window.event_editor.update_relation_type_suggestions(
-            rel_types
-        )
+        self.main_window.event_editor.update_relation_type_suggestions(rel_types)
 
     @Slot(str, object)
-    def on_summary_generated_result(
-        self, item_id: str, summary_data: object
-    ) -> None:
+    def on_summary_generated_result(self, item_id: str, summary_data: object) -> None:
         """Handles asynchronous summary generation result.
 
         Routes the generated summary to the correct editor.
