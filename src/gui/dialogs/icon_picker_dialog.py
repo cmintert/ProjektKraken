@@ -379,7 +379,7 @@ class IconPickerDialog(QDialog):
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )
-        if reply != QMessageBox.StandardButton.Yes or self._world_root is None:
+        if reply != QMessageBox.StandardButton.Yes:
             return
 
         if remove_project_icon(self._world_root, rel_path):
