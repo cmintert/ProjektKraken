@@ -109,6 +109,7 @@ class GraphWebView(QWidget):
         edges: list[dict[str, Any]],
         focus_id: str | None = None,
         theme_config: dict[str, str] | None = None,
+        lexicon_config: dict[str, Any] | None = None,
     ) -> None:
         """Updates the graph data incrementally without reloading the page.
 
@@ -117,6 +118,8 @@ class GraphWebView(QWidget):
             edges: New list of edge dictionaries.
             focus_id: Optional ID to focus on.
             theme_config: Optional theme config for node/edge colors.
+            lexicon_config: Optional resolved lexicon config with
+                'nodes' and 'edges' keys for visual styling.
         """
         theme = theme_config or GraphBuilder.DEFAULT_THEME
         entity_color = theme.get(
@@ -127,12 +130,18 @@ class GraphWebView(QWidget):
         )
         edge_color = theme.get("edge_color", "#888888")
 
+        node_lexicon = (lexicon_config or {}).get("nodes")
+        edge_lexicon = (lexicon_config or {}).get("edges")
+
         js_nodes = [
-            GraphBuilder.prepare_node(n, entity_color, event_color)
+            GraphBuilder.prepare_node(
+                n, entity_color, event_color, lexicon=node_lexicon
+            )
             for n in nodes
         ]
         js_edges = [
-            GraphBuilder.prepare_edge(e, edge_color) for e in edges
+            GraphBuilder.prepare_edge(e, edge_color, lexicon=edge_lexicon)
+            for e in edges
         ]
 
         nodes_json = json.dumps(js_nodes)

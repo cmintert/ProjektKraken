@@ -4,12 +4,15 @@ Business logic layer for building PyVis networks from graph data. Stateless util
 class that transforms node/edge data into HTML output.
 """
 
+import base64
 import json
 import logging
+import mimetypes
 import os
 import re
 import tempfile
-from typing import Any
+from pathlib import Path
+from typing import Any, Optional
 
 from pyvis.network import Network
 
@@ -54,6 +57,7 @@ class GraphBuilder:
         node: dict[str, Any],
         entity_color: str,
         event_color: str,
+        lexicon: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
         """Maps an internal node dict to a Vis.js-compatible node dict.
 
@@ -65,6 +69,8 @@ class GraphBuilder:
             node: Internal node dict with id, name, object_type keys.
             entity_color: Hex color for entity nodes.
             event_color: Hex color for event nodes.
+            lexicon: Optional lexicon node config dict keyed by type name.
+                Each value may contain 'color', 'shape', and 'image' keys.
 
         Returns:
             Dict with Vis.js-compatible keys (id, label, title, color, shape,
@@ -73,22 +79,44 @@ class GraphBuilder:
         """
         is_entity = node.get("object_type") == "entity"
         name = node.get("name", "Unnamed")
-        return {
+        node_type = node.get("type", "")
+
+        # Defaults
+        color = entity_color if is_entity else event_color
+        shape = GraphBuilder.ENTITY_SHAPE if is_entity else GraphBuilder.EVENT_SHAPE
+
+        # Apply lexicon overrides if available
+        if lexicon and node_type in lexicon:
+            style = lexicon[node_type]
+            if "color" in style:
+                color = style["color"]
+            if "shape" in style:
+                shape = style["shape"]
+
+        result: dict[str, Any] = {
             "id": node["id"],
             "label": name,
             "title": f"{node.get('object_type', 'item').title()}: {name}",
-            "color": entity_color if is_entity else event_color,
-            "shape": (
-                GraphBuilder.ENTITY_SHAPE if is_entity else GraphBuilder.EVENT_SHAPE
-            ),
+            "color": color,
+            "shape": shape,
             "size": 20,
             "object_type": node.get("object_type", "entity"),
         }
+
+        # If shape is 'image' and a Base64 data URI is provided, set image
+        if lexicon and node_type in lexicon:
+            style = lexicon[node_type]
+            image_data = style.get("image", "")
+            if shape == "image" and image_data:
+                result["image"] = image_data
+
+        return result
 
     @staticmethod
     def prepare_edge(
         edge: dict[str, Any],
         edge_color: str,
+        lexicon: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
         """Maps an internal edge dict to a Vis.js-compatible edge dict.
 
@@ -99,20 +127,117 @@ class GraphBuilder:
         Args:
             edge: Internal edge dict with source_id, target_id, rel_type keys.
             edge_color: Hex color for edges.
+            lexicon: Optional lexicon edge config dict keyed by rel_type.
+                Each value may contain 'color', 'width', and 'dashes' keys.
 
         Returns:
             Dict with Vis.js-compatible keys (id, from, to, label, title,
             color).
 
         """
-        return {
+        rel_type = edge.get("rel_type", "")
+
+        # Defaults
+        color = edge_color
+        width: Optional[int] = None
+        dashes: Optional[bool] = None
+
+        # Apply lexicon overrides if available
+        if lexicon and rel_type in lexicon:
+            style = lexicon[rel_type]
+            if "color" in style:
+                color = style["color"]
+            if "width" in style:
+                width = style["width"]
+            if "dashes" in style:
+                dashes = style["dashes"]
+
+        result: dict[str, Any] = {
             "id": edge.get("id"),
             "from": edge["source_id"],
             "to": edge["target_id"],
-            "label": edge.get("rel_type", ""),
-            "title": edge.get("rel_type", ""),
-            "color": edge_color,
+            "label": rel_type,
+            "title": rel_type,
+            "color": color,
         }
+
+        if width is not None:
+            result["width"] = width
+        if dashes is not None:
+            result["dashes"] = dashes
+
+        return result
+
+    @staticmethod
+    def image_to_base64(file_path: Path) -> str:
+        """Converts an image file to a Base64 data URI for secure rendering.
+
+        Uses MIME type detection to produce a proper data URI that can be
+        safely embedded in HTML/JavaScript without file:// protocol issues.
+
+        Args:
+            file_path: Absolute path to the image file.
+
+        Returns:
+            Base64 data URI string, or empty string if file not found.
+
+        """
+        if not file_path.exists():
+            logger.warning(f"Image file not found for Base64 encoding: {file_path}")
+            return ""
+
+        mime_type, _ = mimetypes.guess_type(str(file_path))
+        if not mime_type:
+            mime_type = "application/octet-stream"
+
+        try:
+            with open(file_path, "rb") as f:
+                encoded = base64.b64encode(f.read()).decode("utf-8")
+            return f"data:{mime_type};base64,{encoded}"
+        except OSError as e:
+            logger.error(f"Failed to read image for Base64 encoding: {e}")
+            return ""
+
+    @staticmethod
+    def resolve_lexicon_images(
+        lexicon: dict[str, Any],
+        project_root: Path,
+    ) -> dict[str, Any]:
+        """Resolves relative icon paths in a lexicon to Base64 data URIs.
+
+        Iterates through the 'nodes' section of a lexicon config and replaces
+        relative file paths with inline Base64 data URIs for secure rendering
+        in QWebEngineView.
+
+        Args:
+            lexicon: Lexicon configuration dictionary with 'nodes' and
+                optionally 'edges' keys.
+            project_root: Absolute path to the world root directory.
+
+        Returns:
+            New lexicon dict with icon paths replaced by Base64 data URIs.
+
+        """
+        resolved: dict[str, Any] = {}
+
+        # Resolve node icons
+        nodes = lexicon.get("nodes", {})
+        resolved_nodes: dict[str, Any] = {}
+        for type_name, style in nodes.items():
+            resolved_style = dict(style)
+            icon_path = style.get("icon", "")
+            if icon_path:
+                full_path = project_root / icon_path
+                data_uri = GraphBuilder.image_to_base64(full_path)
+                if data_uri:
+                    resolved_style["image"] = data_uri
+            resolved_nodes[type_name] = resolved_style
+        resolved["nodes"] = resolved_nodes
+
+        # Pass edges through unchanged
+        resolved["edges"] = lexicon.get("edges", {})
+
+        return resolved
 
     @classmethod
     def _load_local_vis_assets(cls) -> tuple[str, str, str]:
@@ -168,6 +293,7 @@ class GraphBuilder:
         theme_config: dict[str, str] = None,
         focus_node_id: str | None = None,
         view_state: dict[str, Any] | None = None,
+        lexicon_config: dict[str, Any] | None = None,
     ) -> str:
         """Builds a PyVis network and returns HTML string.
 
@@ -179,6 +305,8 @@ class GraphBuilder:
             theme_config: Optional dictionary with color settings.
             focus_node_id: Optional ID of the node to focus on stabilize.
             view_state: Optional dict with 'scale' and 'position' to restore.
+            lexicon_config: Optional resolved lexicon with Base64 images.
+                Expected structure: {"nodes": {...}, "edges": {...}}.
 
         Returns:
             HTML string for embedding in QWebEngineView.
@@ -186,7 +314,9 @@ class GraphBuilder:
         """
         try:
             theme = theme_config or self.DEFAULT_THEME
-            network = self._build_network(nodes, edges, height, width, theme)
+            network = self._build_network(
+                nodes, edges, height, width, theme, lexicon_config
+            )
             html = self._generate_html(network, theme, focus_node_id, view_state)
             logger.debug(
                 f"Generated graph HTML: {len(nodes)} nodes, {len(edges)} edges"
@@ -210,6 +340,7 @@ class GraphBuilder:
         height: str,
         width: str,
         theme: dict[str, str],
+        lexicon_config: dict[str, Any] | None = None,
     ) -> Network:
         """Creates a PyVis Network from node/edge data.
 
@@ -219,6 +350,8 @@ class GraphBuilder:
             height: Graph height.
             width: Graph width.
             theme: Theme configuration dictionary.
+            lexicon_config: Optional resolved lexicon config with
+                'nodes' and 'edges' keys for visual styling.
 
         Returns:
             Configured PyVis Network.
@@ -287,14 +420,19 @@ class GraphBuilder:
         event_color = theme.get("node_event_color", self.EVENT_COLOR)
         edge_color = theme.get("edge_color", "#888888")
 
+        node_lexicon = (lexicon_config or {}).get("nodes")
+        edge_lexicon = (lexicon_config or {}).get("edges")
+
         for node in nodes:
-            prepared = self.prepare_node(node, entity_color, event_color)
+            prepared = self.prepare_node(
+                node, entity_color, event_color, lexicon=node_lexicon
+            )
             n_id = prepared.pop("id")
             net.add_node(n_id, **prepared)
 
         # Add edges
         for edge in edges:
-            prepared = self.prepare_edge(edge, edge_color)
+            prepared = self.prepare_edge(edge, edge_color, lexicon=edge_lexicon)
             source = prepared.pop("from")
             target = prepared.pop("to")
             net.add_edge(source, target, **prepared)

@@ -230,6 +230,14 @@ class ConnectionManager:
         ):
             failed_count += 1
 
+        if not self._connect_signal_safe(
+            dh,
+            "graph_lexicon_ready",
+            dc.on_graph_lexicon_ready,
+            "DataHandler",
+        ):
+            failed_count += 1
+
         # UI action signals
         if not self._connect_signal_safe(
             dh, "status_message", self.window.status_bar.showMessage, "DataHandler"
@@ -988,17 +996,21 @@ class ConnectionManager:
         """
         graph = self.window.graph_widget
         failed_count = 0
+        total = 0
 
+        total += 1
         if not self._connect_signal_safe(
             graph, "refresh_requested", self.window.data_coordinator.load_graph_data, "GraphWidget"
         ):
             failed_count += 1
 
+        total += 1
         if not self._connect_signal_safe(
             graph, "filter_changed", self.window.data_coordinator.load_graph_data, "GraphWidget"
         ):
             failed_count += 1
 
+        total += 1
         if not self._connect_signal_safe(
             graph,
             "node_clicked",
@@ -1007,8 +1019,18 @@ class ConnectionManager:
         ):
             failed_count += 1
 
+        # Lexicon save → worker (thread-safe via QueuedConnection)
+        total += 1
+        if not self._connect_signal_safe(
+            graph,
+            "lexicon_save_requested",
+            self.window.worker.save_graph_lexicon,
+            "GraphWidget",
+        ):
+            failed_count += 1
+
         logger.debug(
-            f"GraphWidget connections: {3 - failed_count}/3 succeeded, "
+            f"GraphWidget connections: {total - failed_count}/{total} succeeded, "
             f"{failed_count} failed"
         )
         return failed_count

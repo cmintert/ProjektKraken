@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-02-17
-**Commit:** `cf2173a`
+**Commit:** `0ebd4f2`
 ---
 
 # Changelog
@@ -12,8 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-02-17)* **Graph**: Implemented immediate visual feedback in Lexicon Editor; changes to colors, shapes, and icons now update the graph in real-time.
+- *(2026-02-17)* **Graph**: Implemented "Cancel" logic for Lexicon Editor to revert changes if the dialog is rejected.
 - *(2026-02-17)* **Graph**: Implemented flicker-free incremental graph updates for smoother visualization changes.
 - *(2026-02-17)* **Graph**: Implemented view state preservation (zoom/pan) across data reloads.
+
+### Changed
+- *(2026-02-17)* **UI**: Renamed "Save" button to "OK" in Lexicon Editor to better reflect the immediate nature of the changes.
 - *(2026-02-16)* **Map**: Added visual keyframe indicator (8px dot) to markers with trajectories to improve discoverability of temporal data.
 
 - *(2026-02-16)* **UI**: Extended theme-aware `StandardCheckbox` styling to Map Hierarchy (QTreeView).
@@ -25,6 +30,8 @@ All notable changes to this project will be documented in this file.
   - Populates entity description with the body of the Markdown file.
 
 ### Fixed
+- *(2026-02-17)* **Graph**: Fixed shape revert bug in Lexicon Editor where user-selected shapes were overridden by images.
+- *(2026-02-17)* **Graph**: Fixed `AttributeError` in `DataCoordinator` occurring during graph lexicon handling.
 - *(2026-02-17)* **Graph**: Fixed regression where edges disappeared during incremental updates by enforcing stable relationship IDs.
 - *(2026-02-17)* **Graph**: Fixed entity renames not updating in the graph view by mapping internal properties to presentation layer.
 - *(2026-02-16)* **UI**: Removed background color from checked checkbox indicators for cleaner look.

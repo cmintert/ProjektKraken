@@ -49,6 +49,7 @@ class DatabaseWorker(QObject):
     )  # tags_data, GroupingConfig | None (use object for union types)
     graph_data_loaded = Signal(list, list)  # nodes, edges
     graph_metadata_loaded = Signal(list, list)  # tags, rel_types
+    graph_lexicon_loaded = Signal(dict, dict)  # raw_lexicon, resolved_lexicon
     completer_data_loaded = Signal(
         list, list, list, list
     )  # tags, rel_types, attr_keys, entity_types
@@ -653,6 +654,28 @@ class DatabaseWorker(QObject):
             logger.error(f"Failed to save current_time: {traceback.format_exc()}")
             self.error_occurred.emit("Failed to save current time.")
 
+    @Slot(dict)
+    def save_graph_lexicon(self, config: dict) -> None:
+        """Saves the visual lexicon configuration and reloads the graph.
+
+        Args:
+            config: Raw lexicon configuration dictionary.
+
+        """
+        if not self.db_service:
+            return
+
+        try:
+            self.db_service.set_graph_lexicon(config)
+            logger.info("Saved graph lexicon config")
+            # Reload graph data so the new lexicon takes effect
+            self.load_graph_data()
+        except Exception:
+            logger.error(
+                f"Failed to save graph lexicon: {traceback.format_exc()}"
+            )
+            self.error_occurred.emit("Failed to save graph lexicon.")
+
     @Slot()
     def load_grouping_dialog_data(self) -> None:
         """Loads all necessary data for the grouping configuration dialog.
@@ -816,6 +839,9 @@ class DatabaseWorker(QObject):
     ) -> None:
         """Loads graph data filtered by tags and relation types.
 
+        Also loads the visual lexicon configuration and resolves icon paths
+        to Base64 data URIs for secure rendering.
+
         Args:
             tags: List of tags to include.
             rel_types: List of relation types to include.
@@ -825,6 +851,9 @@ class DatabaseWorker(QObject):
             return
 
         try:
+            from pathlib import Path
+
+            from src.gui.widgets.graph_view.graph_builder import GraphBuilder
             from src.services.graph_data_service import GraphDataService
 
             self.operation_started.emit("Loading Graph Data...")
@@ -839,6 +868,17 @@ class DatabaseWorker(QObject):
 
             self.graph_data_loaded.emit(nodes, edges)
             self.graph_metadata_loaded.emit(all_tags, all_rel_types)
+
+            # Load and resolve lexicon
+            raw_lexicon = self.db_service.get_graph_lexicon() or {
+                "nodes": {},
+                "edges": {},
+            }
+            project_root = Path(self.db_service.db_path).parent
+            resolved = GraphBuilder.resolve_lexicon_images(
+                raw_lexicon, project_root
+            )
+            self.graph_lexicon_loaded.emit(raw_lexicon, resolved)
 
             self.operation_finished.emit(
                 f"Graph Data Loaded ({len(nodes)} nodes, {len(edges)} edges)."

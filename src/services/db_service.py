@@ -2290,6 +2290,71 @@ class DatabaseService:
         logger.debug("Cleared timeline grouping config")
 
     # --------------------------------------------------------------------------
+    # Graph Lexicon (Visual Styling Configuration)
+    # --------------------------------------------------------------------------
+
+    def get_graph_lexicon(self) -> Optional[Dict[str, Any]]:
+        """Retrieves the graph visual lexicon configuration.
+
+        The lexicon defines custom visual styles (icon, color, shape) for
+        entity types and (color, width, dashes) for relation types.
+
+        Returns:
+            Optional[Dict[str, Any]]: Lexicon config dict with 'nodes' and
+                'edges' keys, or None if not configured.
+
+        """
+        if not self._connection:
+            self.connect()
+        assert self._connection is not None
+
+        cursor = self._connection.execute(
+            "SELECT value FROM system_meta WHERE key = 'graph_lexicon_config'"
+        )
+        result = cursor.fetchone()
+
+        if result and result["value"]:
+            try:
+                return json.loads(result["value"])
+            except (json.JSONDecodeError, TypeError):
+                logger.warning("Invalid graph_lexicon_config value in system_meta")
+                return None
+        return None
+
+    def set_graph_lexicon(self, data: Dict[str, Any]) -> None:
+        """Stores the graph visual lexicon configuration.
+
+        Serializes the configuration dictionary to JSON and persists it in
+        the system_meta table under the key 'graph_lexicon_config'.
+
+        Args:
+            data: Lexicon configuration dictionary. Expected structure:
+                {
+                    "nodes": {
+                        "<entity_type>": {"color": str, "shape": str,
+                                          "icon": str}
+                    },
+                    "edges": {
+                        "<rel_type>": {"color": str, "width": int,
+                                       "dashes": bool}
+                    }
+                }
+
+        """
+        config_json = json.dumps(data)
+
+        with self.transaction() as conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO system_meta (key, value)
+                VALUES ('graph_lexicon_config', ?)
+                """,
+                (config_json,),
+            )
+
+        logger.debug(f"Saved graph lexicon config: {len(config_json)} bytes")
+
+    # --------------------------------------------------------------------------
     # Temporal Trajectories - Delegates to TrajectoryRepository
     # --------------------------------------------------------------------------
 

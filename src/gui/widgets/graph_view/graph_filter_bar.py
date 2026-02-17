@@ -33,6 +33,7 @@ class GraphFilterBar(QWidget):
     refresh_requested = Signal()
     search_text_changed = Signal(str)
     show_advanced_filter_requested = Signal()
+    show_lexicon_editor_requested = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the GraphFilterBar.
@@ -82,6 +83,12 @@ class GraphFilterBar(QWidget):
         self._rel_type_combo.addItem("All Types", None)
         self._rel_type_combo.currentIndexChanged.connect(self._on_filter_changed)
         layout.addWidget(self._rel_type_combo)
+
+        # Visual Lexicon editor button
+        self._lexicon_btn = QPushButton("🎨 Lexicon")
+        self._lexicon_btn.setToolTip("Edit visual styles for entity and relation types")
+        self._lexicon_btn.clicked.connect(self.show_lexicon_editor_requested.emit)
+        layout.addWidget(self._lexicon_btn)
 
         # Refresh button
         self._refresh_btn = QPushButton("🔄 Refresh")

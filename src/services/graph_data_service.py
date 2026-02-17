@@ -5,7 +5,7 @@ concerns from the widget layer.
 """
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Dict
 
 if TYPE_CHECKING:
     from src.services.db_service import DatabaseService
@@ -138,6 +138,27 @@ class GraphDataService:
         """
         types = {getattr(e, "type", "entity") for e in db_service.get_all_entities()}
         return sorted(types)
+
+    def get_lexicon_schema(
+        self, db_service: "DatabaseService"
+    ) -> Dict[str, list[str]]:
+        """Returns the schema of types available for visual lexicon mapping.
+
+        Dynamically discovers all distinct entity types and relation types
+        from the database, providing the basis for user-defined visual styling.
+
+        Args:
+            db_service: Database service instance.
+
+        Returns:
+            Dictionary with 'entity_types' and 'relation_types' keys,
+            each containing a sorted list of unique type strings.
+
+        """
+        return {
+            "entity_types": self.get_all_entity_types(db_service),
+            "relation_types": self.get_all_relation_types(db_service),
+        }
 
     def get_all_attribute_keys(self, db_service: "DatabaseService") -> list[str]:
         """Returns all unique attribute keys across entities and events.
