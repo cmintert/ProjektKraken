@@ -49,3 +49,19 @@ DEFAULT_EVENT_COLOR: str = "#FF9900"
 
 DEFAULT_BORDER_COLOR: str = "#FFFFFF"
 """Fallback border color (white)."""
+
+# ---------------------------------------------------------------------------
+# UI dialog constraints
+# ---------------------------------------------------------------------------
+
+MIN_SCALE: float = 0.5
+"""Minimum allowed size scale in the UI."""
+
+MAX_SCALE: float = 3.0
+"""Maximum allowed size scale in the UI."""
+
+MIN_BORDER_WIDTH: int = 0
+"""Minimum border width in the UI (pixels)."""
+
+MAX_BORDER_WIDTH: int = 10
+"""Maximum border width in the UI (pixels)."""

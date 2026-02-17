@@ -17,7 +17,16 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 
-from src.core.style_constants import V_BORDER, V_BORDER_WIDTH, V_FILL, V_SIZE_SCALE
+from src.core.style_constants import (
+    MAX_BORDER_WIDTH,
+    MAX_SCALE,
+    MIN_BORDER_WIDTH,
+    MIN_SCALE,
+    V_BORDER,
+    V_BORDER_WIDTH,
+    V_FILL,
+    V_SIZE_SCALE,
+)
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.dialogs.icon_picker_dialog import IconPickerDialog
 from src.gui.widgets.map.marker_item import MarkerItem
@@ -241,7 +250,7 @@ class InteractionHandler:
         layout = QFormLayout(dialog)
 
         spin = QDoubleSpinBox()
-        spin.setRange(0.5, 3.0)
+        spin.setRange(MIN_SCALE, MAX_SCALE)
         spin.setSingleStep(0.1)
         spin.setDecimals(1)
         current = marker_item._visual_attributes.get(V_SIZE_SCALE, 1.0)
@@ -280,7 +289,7 @@ class InteractionHandler:
         layout = QFormLayout(dialog)
 
         spin = QSpinBox()
-        spin.setRange(0, 10)
+        spin.setRange(MIN_BORDER_WIDTH, MAX_BORDER_WIDTH)
         current = marker_item._visual_attributes.get(V_BORDER_WIDTH, 2)
         spin.setValue(int(current))
         layout.addRow("Border Width (px):", spin)
