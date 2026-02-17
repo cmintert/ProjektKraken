@@ -174,6 +174,12 @@ class BaseCommand(ABC):
 - Retention policy management
 - Integrity verification
 
+#### AssetStore (`asset_store.py`)
+- Image import (WebP conversion for photos)
+- Icon import (`import_icon`) — preserves SVG/PNG/JPG extension
+- Trash / restore for undo/redo support
+- UUID-based collision-free filenames
+
 #### RAGService (`rag_service.py`)
 - Retrieval-Augmented Generation
 - Hybrid search (lexical + semantic)

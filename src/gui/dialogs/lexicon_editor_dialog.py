@@ -6,6 +6,7 @@ relation types in the relationship graph.
 """
 
 import logging
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import Qt, Signal
@@ -206,7 +207,7 @@ class LexiconEditorDialog(QDialog):
         grid.setContentsMargins(8, 8, 8, 8)
 
         # Header row
-        for col, text in enumerate(["Type", "Color", "Shape", "Icon"]):
+        for col, text in enumerate(["Type", "Color", "Shape", "Icon", ""]):
             lbl = QLabel(text)
             lbl.setStyleSheet(StyleHelper.get_section_header_style())
             grid.addWidget(lbl, 0, col)
@@ -216,7 +217,7 @@ class LexiconEditorDialog(QDialog):
         if not self._entity_types:
             empty = QLabel("No entity types found. Create entities first.")
             empty.setStyleSheet(StyleHelper.get_empty_state_style())
-            grid.addWidget(empty, 1, 0, 1, 4)
+            grid.addWidget(empty, 1, 0, 1, 5)
         else:
             for row_idx, etype in enumerate(self._entity_types, start=1):
                 style = nodes_cfg.get(etype, {})
@@ -275,53 +276,71 @@ class LexiconEditorDialog(QDialog):
         )
         grid.addWidget(icon_btn, row, 3)
 
+        # Clear icon button
+        clear_btn = QPushButton("✖")
+        clear_btn.setFixedSize(28, 28)
+        clear_btn.setToolTip("Clear icon")
+        clear_btn.setStyleSheet(StyleHelper.get_tool_button_style())
+        clear_btn.setEnabled(bool(icon_path))
+        clear_btn.clicked.connect(
+            lambda checked, tn=type_name: self._clear_icon(tn)
+        )
+        grid.addWidget(clear_btn, row, 4)
+
         self._node_rows[type_name] = {
             "color": color_btn,
             "shape": shape_combo,
             "icon_btn": icon_btn,
+            "clear_btn": clear_btn,
             "icon_path": icon_path,
         }
 
     def _select_icon(
         self, type_name: str, button: QPushButton, shape_combo: QComboBox
     ) -> None:
-        """Handles icon import for a given entity type.
+        """Opens the shared IconPickerDialog for a given entity type.
 
         Args:
-            type_name: The entity type to import an icon for.
+            type_name: The entity type to select an icon for.
             button: The QPushButton for the icon.
             shape_combo: The QComboBox for the shape.
         """
-        from pathlib import Path
+        from src.gui.dialogs.icon_picker_dialog import IconPickerDialog
 
-        from PySide6.QtWidgets import QFileDialog
+        # _assets_dir points to the assets directory; world_root is its parent
+        world_root = str(Path(self._assets_dir).parent) if self._assets_dir else None
+        dialog = IconPickerDialog(self, world_root=world_root)
+        if dialog.exec() == QDialog.DialogCode.Accepted and dialog.selected_icon:
+            selected = dialog.selected_icon
+            row_data = self._node_rows.get(type_name)
+            if row_data:
+                self._node_rows[type_name]["icon_path"] = selected
+                button.setText("✅ Change")
+                button.setToolTip(selected)
+                shape_combo.setCurrentText("image")
+                row_data["clear_btn"].setEnabled(True)
+                self._emit_config_changed()
+            logger.info(f"Selected icon for '{type_name}': {selected}")
 
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            f"Import Icon for '{type_name}'",
-            "",
-            "Image Files (*.svg *.png *.jpg *.jpeg);;All Files (*)",
-        )
-        if not file_path:
+    def _clear_icon(self, type_name: str) -> None:
+        """Clears the icon for a given entity type.
+
+        Args:
+            type_name: The entity type to clear the icon for.
+        """
+        row_data = self._node_rows.get(type_name)
+        if not row_data:
             return
 
-        if self._assets_dir:
-            from src.gui.widgets.map.icon_picker_dialog import import_asset_file
-
-            relative_path = import_asset_file(file_path, Path(self._assets_dir))
-            if relative_path:
-                row_data = self._node_rows.get(type_name)
-                if row_data:
-                    self._node_rows[type_name]["icon_path"] = relative_path
-                    # Provide visual feedback
-                    button.setText("✅ Change")
-                    button.setToolTip(relative_path)
-                    # Force shape to 'image'
-                    shape_combo.setCurrentText("image")
-                    self._emit_config_changed()
-                logger.info(f"Imported icon for '{type_name}': {relative_path}")
-        else:
-            logger.warning("No assets directory set; cannot import icon.")
+        row_data["icon_path"] = ""
+        row_data["icon_btn"].setText("📁 Import")
+        row_data["icon_btn"].setToolTip("Import an SVG/PNG icon")
+        row_data["clear_btn"].setEnabled(False)
+        # Reset shape from 'image' back to 'dot'
+        if row_data["shape"].currentText() == "image":
+            row_data["shape"].setCurrentText("dot")
+        self._emit_config_changed()
+        logger.info(f"Cleared icon for '{type_name}'")
 
     # ------------------------------------------------------------------
     # Edge (Relation Type) tab

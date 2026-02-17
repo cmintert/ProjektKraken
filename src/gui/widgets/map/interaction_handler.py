@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
-from src.gui.widgets.map.icon_picker_dialog import IconPickerDialog
+from src.gui.dialogs.icon_picker_dialog import IconPickerDialog
 from src.gui.widgets.map.marker_item import MarkerItem
 
 if TYPE_CHECKING:
@@ -160,7 +160,9 @@ class InteractionHandler:
         Args:
             marker_item: The marker to change the icon for.
         """
-        dialog = IconPickerDialog(self._view)
+        dialog = IconPickerDialog(
+            self._view, world_root=self._view._world_root
+        )
         if dialog.exec() == QDialog.DialogCode.Accepted and (
             selected_icon := dialog.selected_icon
         ):

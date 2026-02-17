@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-02-17
-**Commit:** `0ebd4f2`
+**Commit:** `18f65d5`
 ---
 
 # Changelog
@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-02-17)* **UI**: Implemented `ProjectIconCard` widget for a modern, card-based interface in the Project Icons tab.
+- *(2026-02-17)* **UI**: Added theme-aware icon management with support for removing project icons and clearing lexicon icons.
+- *(2026-02-17)* **UI**: Added unified `IconPickerDialog` shared between Lexicon Editor and Map Editor with Default Icons, Project Icons, and Import from Disk tabs.
+- *(2026-02-17)* **UI**: Added "Clear Icon" button in Lexicon Editor to remove an icon and reset entity-type shape.
+- *(2026-02-17)* **Assets**: Added `AssetStore.import_icon()` for importing SVG/PNG/JPG icons while preserving the original file extension.
 - *(2026-02-17)* **Graph**: Implemented immediate visual feedback in Lexicon Editor; changes to colors, shapes, and icons now update the graph in real-time.
 - *(2026-02-17)* **Graph**: Implemented "Cancel" logic for Lexicon Editor to revert changes if the dialog is rejected.
 - *(2026-02-17)* **Graph**: Implemented flicker-free incremental graph updates for smoother visualization changes.
@@ -30,6 +35,7 @@ All notable changes to this project will be documented in this file.
   - Populates entity description with the body of the Markdown file.
 
 ### Fixed
+- *(2026-02-17)* **Graph**: Fixed "Image file not found" warnings in Relationship Graph by supporting bundled default icon resolution.
 - *(2026-02-17)* **Graph**: Fixed shape revert bug in Lexicon Editor where user-selected shapes were overridden by images.
 - *(2026-02-17)* **Graph**: Fixed `AttributeError` in `DataCoordinator` occurring during graph lexicon handling.
 - *(2026-02-17)* **Graph**: Fixed regression where edges disappeared during incremental updates by enforcing stable relationship IDs.

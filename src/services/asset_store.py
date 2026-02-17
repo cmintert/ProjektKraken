@@ -39,10 +39,58 @@ class AssetStore:
 
         self._ensure_directories()
 
+    # Allowed extensions for icon imports (no WebP conversion)
+    ALLOWED_ICON_EXTENSIONS = {".svg", ".png", ".jpg", ".jpeg"}
+
     def _ensure_directories(self) -> None:
         """Creates necessary asset directories if they don't exist."""
         for path in [self.images_dir, self.thumbs_dir, self.trash_dir]:
             path.mkdir(parents=True, exist_ok=True)
+
+    def import_icon(self, source_path: str) -> str:
+        """Imports an icon file into the world's assets/images directory.
+
+        Copies the file preserving its original extension (svg/png/jpg).
+        Generates a UUID-based filename to avoid collisions.
+
+        Args:
+            source_path: Absolute path to the source icon file.
+
+        Returns:
+            Relative posix path (e.g. 'assets/images/icon_<uuid>.svg').
+
+        Raises:
+            FileNotFoundError: If the source file does not exist.
+            ValueError: If the file extension is not allowed.
+            OSError: If the copy operation fails.
+
+        """
+        source = Path(source_path)
+
+        if not source.is_file():
+            raise FileNotFoundError(f"Source file not found: {source_path}")
+
+        ext = source.suffix.lower()
+        if ext not in self.ALLOWED_ICON_EXTENSIONS:
+            raise ValueError(
+                f"Disallowed icon file type: {ext}. "
+                f"Allowed: {self.ALLOWED_ICON_EXTENSIONS}"
+            )
+
+        self.images_dir.mkdir(parents=True, exist_ok=True)
+        safe_name = f"icon_{uuid.uuid4().hex}{ext}"
+        target = self.images_dir / safe_name
+
+        try:
+            shutil.copy2(str(source), str(target))
+            rel_path = target.relative_to(self.project_root).as_posix()
+            logger.info(f"Imported icon: {source_path} -> {rel_path}")
+            return rel_path
+        except OSError as e:
+            logger.error(f"Failed to import icon: {e}")
+            if target.exists():
+                target.unlink()
+            raise
 
     def get_owner_dir(
         self, owner_type: str, owner_id: str, is_thumbnail: bool = False

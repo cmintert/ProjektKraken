@@ -227,7 +227,20 @@ class GraphBuilder:
             resolved_style = dict(style)
             icon_path = style.get("icon", "")
             if icon_path:
+                # 1. Try project root (Project Icons/Imports)
                 full_path = project_root / icon_path
+
+                # 2. If not found, try default assets (Default Icons)
+                if not full_path.exists():
+                    try:
+                        from src.app.constants import DEFAULT_MARKER_ICONS_PATH
+
+                        default_dir = Path(get_resource_path(DEFAULT_MARKER_ICONS_PATH))
+                        full_path = default_dir / icon_path
+                    except ImportError:
+                        # Fallback for tests or environments where constants is missing
+                        pass
+
                 data_uri = GraphBuilder.image_to_base64(full_path)
                 if data_uri:
                     resolved_style["image"] = data_uri

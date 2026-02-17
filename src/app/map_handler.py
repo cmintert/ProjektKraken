@@ -106,6 +106,10 @@ class MapHandler(QObject):
                 project_dir = Path(self._db_path_accessor()).parent
                 image_path = str(project_dir / image_path)
 
+            # Propagate world root so the icon picker can show project icons
+            world_root = str(Path(self._db_path_accessor()).parent)
+            self._map_widget.view.set_world_root(world_root)
+
             # Only load the map image if it's different from the current one
             # This preserves the view transform (zoom/pan) during map list refreshes
             if self._map_widget.view.current_image_path != image_path:

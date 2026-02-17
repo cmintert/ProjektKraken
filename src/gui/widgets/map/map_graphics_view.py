@@ -785,6 +785,9 @@ class MapGraphicsView(QGraphicsView):
         # Track loaded map image
         self.current_image_path: Optional[str] = None
 
+        # World root (set when a world is opened)
+        self._world_root: Optional[str] = None
+
     # ------------------------------------------------------------------
     # Backward-compatible property aliases for sub-component state
     # ------------------------------------------------------------------
@@ -822,6 +825,14 @@ class MapGraphicsView(QGraphicsView):
     @trigger_first_use_animation.setter
     def trigger_first_use_animation(self, value: bool) -> None:
         self._trajectory.trigger_first_use_animation = value
+
+    def set_world_root(self, world_root: Optional[str]) -> None:
+        """Sets the world root directory for icon import support.
+
+        Args:
+            world_root: Absolute path to the world directory, or None.
+        """
+        self._world_root = world_root
 
     @property
     def _drawing_mode(self) -> Optional[str]:
