@@ -1,6 +1,7 @@
 """Tests for the shared IconPickerDialog.
 
-Validates default icon listing, project icon listing, and import behaviour.
+Validates default icon listing, project icon listing, removal, theming,
+and import behaviour.
 """
 
 import os
@@ -15,6 +16,7 @@ from src.gui.dialogs.icon_picker_dialog import (
     IconPickerDialog,
     get_available_default_icons,
     get_project_icons,
+    remove_project_icon,
 )
 
 
@@ -114,6 +116,44 @@ class TestGetProjectIcons:
 
 
 # ---------------------------------------------------------------------------
+# remove_project_icon
+# ---------------------------------------------------------------------------
+
+
+class TestRemoveProjectIcon:
+    """Tests for remove_project_icon."""
+
+    def test_removes_existing_icon(self, tmp_path):
+        """Deletes an existing project icon file."""
+        images_dir = tmp_path / "assets" / "images"
+        images_dir.mkdir(parents=True)
+        icon_file = images_dir / "icon_abc.svg"
+        icon_file.write_text("<svg/>")
+
+        assert remove_project_icon(str(tmp_path), "assets/images/icon_abc.svg")
+        assert not icon_file.exists()
+
+    def test_returns_false_for_missing_icon(self, tmp_path):
+        """Returns False when the icon file does not exist."""
+        assert not remove_project_icon(
+            str(tmp_path), "assets/images/icon_missing.svg"
+        )
+
+    def test_icon_gone_from_project_list(self, tmp_path):
+        """After removal the icon is no longer in get_project_icons."""
+        images_dir = tmp_path / "assets" / "images"
+        images_dir.mkdir(parents=True)
+        (images_dir / "icon_keep.svg").write_text("<svg/>")
+        (images_dir / "icon_gone.svg").write_text("<svg/>")
+
+        remove_project_icon(str(tmp_path), "assets/images/icon_gone.svg")
+
+        result = get_project_icons(str(tmp_path))
+        assert len(result) == 1
+        assert "icon_keep.svg" in result[0]
+
+
+# ---------------------------------------------------------------------------
 # IconPickerDialog construction
 # ---------------------------------------------------------------------------
 
@@ -137,3 +177,17 @@ class TestIconPickerDialogCreation:
         dialog = IconPickerDialog()
         dialog._on_icon_selected("castle.svg")
         assert dialog.selected_icon == "castle.svg"
+
+    def test_dialog_has_theme_stylesheet(self, qapp):
+        """Dialog applies dialog base style from StyleHelper."""
+        dialog = IconPickerDialog()
+        assert dialog.styleSheet() != ""
+
+    def test_icon_buttons_have_neutral_background(self, qapp):
+        """Icon buttons use a neutral background for visibility."""
+        from src.gui.dialogs.icon_picker_dialog import _ICON_PREVIEW_BG
+
+        dialog = IconPickerDialog()
+        # Check that _make_icon_button sets a background
+        btn = dialog._make_icon_button("/fake/icon.svg", "test")
+        assert _ICON_PREVIEW_BG in btn.styleSheet()

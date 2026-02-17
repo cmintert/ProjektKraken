@@ -160,7 +160,9 @@ class InteractionHandler:
         Args:
             marker_item: The marker to change the icon for.
         """
-        dialog = IconPickerDialog(self._view)
+        dialog = IconPickerDialog(
+            self._view, world_root=self._view._world_root
+        )
         if dialog.exec() == QDialog.DialogCode.Accepted and (
             selected_icon := dialog.selected_icon
         ):

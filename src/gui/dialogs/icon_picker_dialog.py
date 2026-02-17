@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 from typing import List, Optional
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QDialog,
@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QLabel,
+    QMessageBox,
     QPushButton,
     QScrollArea,
     QTabWidget,
@@ -31,8 +32,13 @@ from PySide6.QtWidgets import (
 
 from src.app.constants import DEFAULT_MARKER_ICONS_PATH
 from src.core.paths import get_resource_path
+from src.gui.utils.style_helper import StyleHelper
 
 logger = logging.getLogger(__name__)
+
+# Neutral background colour for icon preview buttons so icons are
+# clearly visible regardless of theme.
+_ICON_PREVIEW_BG = "#D9D9D9"
 
 
 def _get_default_icons_dir() -> str:
@@ -79,11 +85,35 @@ def get_project_icons(world_root: str) -> List[str]:
     return sorted(icons)
 
 
+def remove_project_icon(world_root: str, rel_path: str) -> bool:
+    """Deletes a previously imported project icon from disk.
+
+    Args:
+        world_root: Absolute path to the world directory.
+        rel_path: Relative posix path of the icon (e.g.
+                  ``assets/images/icon_<uuid>.svg``).
+
+    Returns:
+        True if the file was removed, False otherwise.
+
+    """
+    abs_path = Path(world_root) / rel_path
+    if abs_path.is_file():
+        try:
+            abs_path.unlink()
+            logger.info(f"Removed project icon: {rel_path}")
+            return True
+        except OSError as exc:
+            logger.error(f"Failed to remove icon {rel_path}: {exc}")
+    return False
+
+
 class IconPickerDialog(QDialog):
     """Dialog for selecting an icon from default, project, or disk sources.
 
     Displays tabs for default bundled icons, project icons already imported
-    into the world, and an import-from-disk action.
+    into the world, and an import-from-disk action.  Adheres to the
+    application's theme via :class:`StyleHelper`.
 
     The ``selected_icon`` attribute holds the result after acceptance:
       - For default icons: the filename (e.g. ``castle.svg``)
@@ -106,7 +136,8 @@ class IconPickerDialog(QDialog):
         """
         super().__init__(parent)
         self.setWindowTitle("Select Icon")
-        self.setMinimumSize(360, 300)
+        self.setMinimumSize(420, 380)
+        self.setStyleSheet(StyleHelper.get_dialog_base_style())
         self.selected_icon: Optional[str] = None
         self._world_root = world_root
 
@@ -119,6 +150,7 @@ class IconPickerDialog(QDialog):
     def _setup_ui(self) -> None:
         """Builds the tabbed dialog layout."""
         layout = QVBoxLayout(self)
+        StyleHelper.apply_form_spacing(layout)
 
         tabs = QTabWidget()
         layout.addWidget(tabs, 1)
@@ -129,13 +161,17 @@ class IconPickerDialog(QDialog):
 
         # Tab 2: Project Icons (only when world_root is set)
         if self._world_root is not None:
-            project_tab = self._build_project_icons_tab()
-            tabs.addTab(project_tab, "Project Icons")
+            self._project_tab_container = QWidget()
+            self._project_tab_layout = QVBoxLayout(self._project_tab_container)
+            StyleHelper.apply_no_margins(self._project_tab_layout)
+            self._rebuild_project_icons_tab()
+            tabs.addTab(self._project_tab_container, "Project Icons")
 
         # Import from Disk button (only when world_root is set)
         if self._world_root is not None:
             btn_layout = QHBoxLayout()
-            import_btn = QPushButton("Import from Disk...")
+            import_btn = QPushButton("Import from Disk…")
+            import_btn.setStyleSheet(StyleHelper.get_tool_button_style())
             import_btn.setToolTip(
                 "Import an SVG, PNG, or JPG file from your filesystem"
             )
@@ -157,21 +193,25 @@ class IconPickerDialog(QDialog):
         """
         container = QWidget()
         outer = QVBoxLayout(container)
+        StyleHelper.apply_no_margins(outer)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setStyleSheet(StyleHelper.get_scroll_area_style())
 
         inner = QWidget()
         grid = QGridLayout(inner)
         grid.setSpacing(8)
+        grid.setContentsMargins(8, 8, 8, 8)
 
         icons = get_available_default_icons()
         if not icons:
             label = QLabel("No default icons found.")
+            label.setStyleSheet(StyleHelper.get_empty_state_style())
             grid.addWidget(label, 0, 0)
         else:
-            cols = 4
+            cols = 5
             icons_dir = _get_default_icons_dir()
             for i, icon_name in enumerate(icons):
                 row, col = divmod(i, cols)
@@ -191,42 +231,63 @@ class IconPickerDialog(QDialog):
     # Project Icons tab
     # ------------------------------------------------------------------
 
-    def _build_project_icons_tab(self) -> QWidget:
-        """Builds a scrollable grid of previously imported project icons.
+    def _rebuild_project_icons_tab(self) -> None:
+        """(Re)builds the project icons grid inside the existing container.
 
-        Returns:
-            QWidget: The project icons tab widget.
-
+        Called on initial construction and after a project icon is removed.
         """
-        container = QWidget()
-        outer = QVBoxLayout(container)
+        # Clear previous contents
+        for i in reversed(range(self._project_tab_layout.count())):
+            widget = self._project_tab_layout.itemAt(i).widget()
+            if widget:
+                widget.deleteLater()
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setStyleSheet(StyleHelper.get_scroll_area_style())
 
         inner = QWidget()
         grid = QGridLayout(inner)
         grid.setSpacing(8)
+        grid.setContentsMargins(8, 8, 8, 8)
 
         icons = get_project_icons(self._world_root) if self._world_root else []
         if not icons:
             label = QLabel("No project icons found.")
+            label.setStyleSheet(StyleHelper.get_empty_state_style())
             grid.addWidget(label, 0, 0)
         else:
-            cols = 4
+            cols = 5
             for i, rel_path in enumerate(icons):
-                row, col = divmod(i, cols)
+                grid_row, col = divmod(i, cols)
                 abs_path = os.path.join(self._world_root, rel_path)
+
+                # Wrap icon button + remove button in a small vbox
+                cell = QWidget()
+                cell_layout = QVBoxLayout(cell)
+                cell_layout.setSpacing(2)
+                cell_layout.setContentsMargins(0, 0, 0, 0)
+
                 btn = self._make_icon_button(abs_path, rel_path)
                 btn.clicked.connect(
                     lambda checked, rp=rel_path: self._on_icon_selected(rp)
                 )
-                grid.addWidget(btn, row, col)
+                cell_layout.addWidget(btn, 0, Qt.AlignmentFlag.AlignCenter)
+
+                remove_btn = QPushButton("✖")
+                remove_btn.setFixedSize(20, 20)
+                remove_btn.setToolTip("Remove this icon from the project")
+                remove_btn.setStyleSheet(StyleHelper.get_destructive_button_style())
+                remove_btn.clicked.connect(
+                    lambda checked, rp=rel_path: self._on_remove_project_icon(rp)
+                )
+                cell_layout.addWidget(remove_btn, 0, Qt.AlignmentFlag.AlignCenter)
+
+                grid.addWidget(cell, grid_row, col)
 
         scroll.setWidget(inner)
-        outer.addWidget(scroll)
-        return container
+        self._project_tab_layout.addWidget(scroll)
 
     # ------------------------------------------------------------------
     # Helpers
@@ -235,6 +296,9 @@ class IconPickerDialog(QDialog):
     @staticmethod
     def _make_icon_button(icon_path: str, tooltip: str) -> QPushButton:
         """Creates a 48×48 icon button with a preview pixmap.
+
+        The button uses a neutral light background so that icons are
+        clearly visible regardless of the current theme.
 
         Args:
             icon_path: Absolute path to the icon file.
@@ -247,10 +311,20 @@ class IconPickerDialog(QDialog):
         btn = QPushButton()
         btn.setFixedSize(48, 48)
         btn.setToolTip(tooltip)
+        btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn.setStyleSheet(
+            f"QPushButton {{ background-color: {_ICON_PREVIEW_BG}; "
+            f"border: 1px solid #888; border-radius: 4px; }}"
+            f"QPushButton:hover {{ border: 2px solid #555; }}"
+        )
         pixmap = QPixmap(icon_path)
         if not pixmap.isNull():
-            btn.setIcon(pixmap.scaled(32, 32, Qt.AspectRatioMode.KeepAspectRatio))
-            btn.setIconSize(pixmap.size())
+            btn.setIcon(pixmap.scaled(
+                32, 32,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            ))
+            btn.setIconSize(QSize(32, 32))
         return btn
 
     def _on_icon_selected(self, icon_identifier: str) -> None:
@@ -288,3 +362,25 @@ class IconPickerDialog(QDialog):
             self.accept()
         except Exception as exc:
             logger.error(f"Failed to import icon: {exc}")
+
+    def _on_remove_project_icon(self, rel_path: str) -> None:
+        """Asks for confirmation and removes a project icon.
+
+        After removal the Project Icons tab is rebuilt.
+
+        Args:
+            rel_path: Relative posix path of the project icon.
+        """
+        reply = QMessageBox.question(
+            self,
+            "Remove Icon",
+            f"Remove icon '{Path(rel_path).name}' from the project?\n\n"
+            "This will delete the file from disk.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if reply != QMessageBox.StandardButton.Yes or self._world_root is None:
+            return
+
+        if remove_project_icon(self._world_root, rel_path):
+            self._rebuild_project_icons_tab()
