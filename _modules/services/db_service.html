@@ -2757,6 +2757,77 @@
 
 
     <span class="c1"># --------------------------------------------------------------------------</span>
+    <span class="c1"># Graph Lexicon (Visual Styling Configuration)</span>
+    <span class="c1"># --------------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="DatabaseService.get_graph_lexicon">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_graph_lexicon">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_graph_lexicon</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the graph visual lexicon configuration.</span>
+
+<span class="sd">        The lexicon defines custom visual styles (icon, color, shape) for</span>
+<span class="sd">        entity types and (color, width, dashes) for relation types.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Optional[Dict[str, Any]]: Lexicon config dict with &#39;nodes&#39; and</span>
+<span class="sd">                &#39;edges&#39; keys, or None if not configured.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="s2">&quot;SELECT value FROM system_meta WHERE key = &#39;graph_lexicon_config&#39;&quot;</span>
+        <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">result</span> <span class="ow">and</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">])</span>
+            <span class="k">except</span> <span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Invalid graph_lexicon_config value in system_meta&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.set_graph_lexicon">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.set_graph_lexicon">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_graph_lexicon</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Stores the graph visual lexicon configuration.</span>
+
+<span class="sd">        Serializes the configuration dictionary to JSON and persists it in</span>
+<span class="sd">        the system_meta table under the key &#39;graph_lexicon_config&#39;.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data: Lexicon configuration dictionary. Expected structure:</span>
+<span class="sd">                {</span>
+<span class="sd">                    &quot;nodes&quot;: {</span>
+<span class="sd">                        &quot;&lt;entity_type&gt;&quot;: {&quot;color&quot;: str, &quot;shape&quot;: str,</span>
+<span class="sd">                                          &quot;icon&quot;: str}</span>
+<span class="sd">                    },</span>
+<span class="sd">                    &quot;edges&quot;: {</span>
+<span class="sd">                        &quot;&lt;rel_type&gt;&quot;: {&quot;color&quot;: str, &quot;width&quot;: int,</span>
+<span class="sd">                                       &quot;dashes&quot;: bool}</span>
+<span class="sd">                    }</span>
+<span class="sd">                }</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">config_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<span class="w">                </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">                INSERT OR REPLACE INTO system_meta (key, value)</span>
+<span class="sd">                VALUES (&#39;graph_lexicon_config&#39;, ?)</span>
+<span class="sd">                &quot;&quot;&quot;</span><span class="p">,</span>
+                <span class="p">(</span><span class="n">config_json</span><span class="p">,),</span>
+            <span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saved graph lexicon config: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">config_json</span><span class="p">)</span><span class="si">}</span><span class="s2"> bytes&quot;</span><span class="p">)</span></div>
+
+
+    <span class="c1"># --------------------------------------------------------------------------</span>
     <span class="c1"># Temporal Trajectories - Delegates to TrajectoryRepository</span>
     <span class="c1"># --------------------------------------------------------------------------</span>
 
