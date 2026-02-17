@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 
+from src.core.style_constants import V_BORDER, V_BORDER_WIDTH, V_FILL, V_SIZE_SCALE
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.dialogs.icon_picker_dialog import IconPickerDialog
 from src.gui.widgets.map.marker_item import MarkerItem
@@ -65,6 +66,35 @@ class InteractionHandler:
             lambda: self.show_color_picker(item)
         )
         menu.addAction(change_color_action)
+
+        # --- Visual Styling sub-menu ---
+        style_menu = QMenu("Visual Styling", self._view)
+
+        scale_action = QAction("Set Scale...", self._view)
+        scale_action.triggered.connect(
+            lambda: self.show_scale_dialog(item)
+        )
+        style_menu.addAction(scale_action)
+
+        border_action = QAction("Set Border Strength...", self._view)
+        border_action.triggered.connect(
+            lambda: self.show_border_strength_dialog(item)
+        )
+        style_menu.addAction(border_action)
+
+        fill_action = QAction("Set Fill Color...", self._view)
+        fill_action.triggered.connect(
+            lambda: self.show_fill_color_picker(item)
+        )
+        style_menu.addAction(fill_action)
+
+        border_color_action = QAction("Set Border Color...", self._view)
+        border_color_action.triggered.connect(
+            lambda: self.show_border_color_picker(item)
+        )
+        style_menu.addAction(border_color_action)
+
+        menu.addMenu(style_menu)
 
         menu.addSeparator()
 
@@ -187,6 +217,126 @@ class InteractionHandler:
             marker_item.set_color(color_hex)
             self._view.change_marker_color_requested.emit(
                 marker_item.marker_id, color_hex
+            )
+
+    # ------------------------------------------------------------------
+    # Visual Styling Dialogs
+    # ------------------------------------------------------------------
+
+    def show_scale_dialog(self, marker_item: MarkerItem) -> None:
+        """Shows a dialog to set the marker's size scale.
+
+        Args:
+            marker_item: The marker to change the scale for.
+        """
+        from PySide6.QtWidgets import (
+            QDialogButtonBox,
+            QDoubleSpinBox,
+            QFormLayout,
+        )
+
+        dialog = QDialog(self._view)
+        dialog.setWindowTitle("Set Marker Scale")
+        dialog.setMinimumWidth(250)
+        layout = QFormLayout(dialog)
+
+        spin = QDoubleSpinBox()
+        spin.setRange(0.5, 3.0)
+        spin.setSingleStep(0.1)
+        spin.setDecimals(1)
+        current = marker_item._visual_attributes.get(V_SIZE_SCALE, 1.0)
+        spin.setValue(float(current))
+        layout.addRow("Scale:", spin)
+
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok
+            | QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addRow(buttons)
+
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self._view.marker_visual_style_changed.emit(
+                marker_item.marker_id,
+                {V_SIZE_SCALE: spin.value()},
+            )
+
+    def show_border_strength_dialog(self, marker_item: MarkerItem) -> None:
+        """Shows a dialog to set the marker's border width.
+
+        Args:
+            marker_item: The marker to change the border for.
+        """
+        from PySide6.QtWidgets import (
+            QDialogButtonBox,
+            QFormLayout,
+            QSpinBox,
+        )
+
+        dialog = QDialog(self._view)
+        dialog.setWindowTitle("Set Border Strength")
+        dialog.setMinimumWidth(250)
+        layout = QFormLayout(dialog)
+
+        spin = QSpinBox()
+        spin.setRange(0, 10)
+        current = marker_item._visual_attributes.get(V_BORDER_WIDTH, 2)
+        spin.setValue(int(current))
+        layout.addRow("Border Width (px):", spin)
+
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok
+            | QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addRow(buttons)
+
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self._view.marker_visual_style_changed.emit(
+                marker_item.marker_id,
+                {V_BORDER_WIDTH: spin.value()},
+            )
+
+    def show_fill_color_picker(self, marker_item: MarkerItem) -> None:
+        """Shows a color picker for the marker's visual fill color.
+
+        Args:
+            marker_item: The marker to change the fill color for.
+        """
+        from src.services.visual_resolver import VisualResolver
+
+        initial = VisualResolver.resolve_fill(
+            marker_item._visual_attributes, marker_item.object_type
+        )
+        color = QColorDialog.getColor(
+            QColor(initial), self._view, "Select Fill Color"
+        )
+        if color.isValid():
+            self._view.marker_visual_style_changed.emit(
+                marker_item.marker_id,
+                {V_FILL: color.name().upper()},
+            )
+
+    def show_border_color_picker(self, marker_item: MarkerItem) -> None:
+        """Shows a color picker for the marker's border color.
+
+        Args:
+            marker_item: The marker to change the border color for.
+        """
+        from src.services.visual_resolver import VisualResolver
+
+        initial = VisualResolver.resolve_border_color(
+            marker_item._visual_attributes, marker_item.object_type
+        )
+        color = QColorDialog.getColor(
+            QColor(initial), self._view, "Select Border Color"
+        )
+        if color.isValid():
+            self._view.marker_visual_style_changed.emit(
+                marker_item.marker_id,
+                {V_BORDER: color.name().upper()},
             )
 
     def show_feature_style_dialog(

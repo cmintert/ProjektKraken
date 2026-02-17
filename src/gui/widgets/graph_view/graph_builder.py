@@ -17,6 +17,7 @@ from typing import Any, Optional
 from pyvis.network import Network
 
 from src.core.paths import get_resource_path
+from src.services.visual_resolver import VisualResolver
 
 logger = logging.getLogger(__name__)
 
@@ -80,10 +81,15 @@ class GraphBuilder:
         is_entity = node.get("object_type") == "entity"
         name = node.get("name", "Unnamed")
         node_type = node.get("type", "")
+        attrs = node.get("attributes", {})
+        obj_type = "entity" if is_entity else "event"
 
-        # Defaults
-        color = entity_color if is_entity else event_color
+        # Defaults — resolved via VisualResolver (cascading)
+        color = VisualResolver.resolve_fill(attrs, obj_type)
+        border_color = VisualResolver.resolve_border_color(attrs, obj_type)
         shape = GraphBuilder.ENTITY_SHAPE if is_entity else GraphBuilder.EVENT_SHAPE
+        size = VisualResolver.resolve_size(attrs)
+        border_width = VisualResolver.resolve_border_width(attrs)
 
         # Apply lexicon overrides if available
         if lexicon and node_type in lexicon:
@@ -97,9 +103,13 @@ class GraphBuilder:
             "id": node["id"],
             "label": name,
             "title": f"{node.get('object_type', 'item').title()}: {name}",
-            "color": color,
+            "color": {
+                "background": color,
+                "border": border_color,
+            },
             "shape": shape,
-            "size": 20,
+            "size": size,
+            "borderWidth": border_width,
             "object_type": node.get("object_type", "entity"),
         }
 

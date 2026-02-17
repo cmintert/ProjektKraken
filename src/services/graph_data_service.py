@@ -284,7 +284,8 @@ class GraphDataService:
             entity: The Entity object to convert.
 
         Returns:
-            A dictionary with id, name, type, object_type, and tags keys.
+            A dictionary with id, name, type, object_type, tags, and
+            attributes keys.
 
         """
         return {
@@ -293,6 +294,7 @@ class GraphDataService:
             "type": getattr(entity, "type", "entity"),
             "object_type": "entity",
             "tags": getattr(entity, "tags", []),
+            "attributes": getattr(entity, "attributes", {}),
         }
 
     def _event_to_node(self, event: Any) -> dict[str, Any]:
@@ -302,7 +304,8 @@ class GraphDataService:
             event: The Event object to convert.
 
         Returns:
-            A dictionary with id, name, type, object_type, and tags keys.
+            A dictionary with id, name, type, object_type, tags, and
+            attributes keys.
 
         """
         return {
@@ -311,6 +314,7 @@ class GraphDataService:
             "type": getattr(event, "type", "event"),
             "object_type": "event",
             "tags": getattr(event, "tags", []),
+            "attributes": getattr(event, "attributes", {}),
         }
 
     def _entity_matches_tags(self, entity: Any, include_tags: list[str] | None) -> bool:

@@ -7,7 +7,7 @@ import logging
 import os
 
 # Forward declaration to avoid circular import
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 from PySide6.QtCore import QRectF, Qt, Signal
 from PySide6.QtGui import (
@@ -29,6 +29,9 @@ from PySide6.QtWidgets import (
     QStyleOptionGraphicsItem,
     QWidget,
 )
+
+from src.core.style_constants import BASE_SIZE
+from src.services.visual_resolver import VisualResolver
 
 # Resolve marker icons path
 MARKER_ICONS_PATH = os.path.join(
@@ -59,7 +62,7 @@ class MarkerItem(QGraphicsObject):
 
     clicked = Signal(str, str)
 
-    MARKER_SIZE = 24  # Size of the marker icon
+    MARKER_SIZE = BASE_SIZE  # Size of the marker icon
     COLORS = {
         "entity": QColor("#3498DB"),  # Blue
         "event": QColor("#F39C12"),  # Orange
@@ -77,6 +80,7 @@ class MarkerItem(QGraphicsObject):
         color: Optional[str] = None,
         description: Optional[str] = None,
         lore_date: Optional[float] = None,
+        visual_attributes: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Initializes a MarkerItem.
 
@@ -89,6 +93,7 @@ class MarkerItem(QGraphicsObject):
             color: Optional color hex string.
             description: Optional description for tooltip. Falls back to label if empty.
             lore_date: Optional lore timestamp for temporal filtering.
+            visual_attributes: Optional dict with ``_v_*`` visual override keys.
         """
         super().__init__()
 
@@ -99,11 +104,16 @@ class MarkerItem(QGraphicsObject):
         self._icon_name = icon
         self._svg_renderer: Optional[QSvgRenderer] = None
         self._custom_color = color
-        self._color = (
-            QColor(color)
-            if color
-            else self.COLORS.get(object_type, self.COLORS["default"])
-        )
+        self._visual_attributes: Dict[str, Any] = visual_attributes or {}
+
+        # Resolve fill color via VisualResolver (user override → theme → fallback)
+        if color:
+            self._color = QColor(color)
+        else:
+            resolved = VisualResolver.resolve_fill(
+                self._visual_attributes, object_type
+            )
+            self._color = QColor(resolved)
 
         # Temporal State
         self.lore_date = lore_date
@@ -149,10 +159,11 @@ class MarkerItem(QGraphicsObject):
     def _update_label_position(self) -> None:
         """Centers the label below the marker."""
         rect = self._label_item.boundingRect()
+        size = self.resolved_size
         # Center horizontally relative to 0 (marker center)
         x = -rect.width() / 2
-        # Position vertically below the marker (MARKER_SIZE/2 is bottom edge)
-        y = (self.MARKER_SIZE / 2) + 2  # 2px padding
+        # Position vertically below the marker (size/2 is bottom edge)
+        y = (size / 2) + 2  # 2px padding
         self._label_item.setPos(x, y)
 
     def _load_icon(self, icon_name: Optional[str]) -> None:
@@ -266,14 +277,41 @@ class MarkerItem(QGraphicsObject):
 
         return color
 
+    @property
+    def resolved_size(self) -> int:
+        """Returns the computed marker size (BASE_SIZE * scale).
+
+        Returns:
+            int: Pixel size of this marker.
+        """
+        return VisualResolver.resolve_size(self._visual_attributes)
+
+    def set_visual_attributes(self, attrs: Dict[str, Any]) -> None:
+        """Replaces the visual attributes and refreshes the marker.
+
+        Args:
+            attrs: New visual attributes dict.
+        """
+        self._visual_attributes = attrs
+        # Re-resolve color unless a custom color is explicitly set
+        if not self._custom_color:
+            resolved = VisualResolver.resolve_fill(
+                self._visual_attributes, self.object_type
+            )
+            self._color = QColor(resolved)
+        self._update_label_position()
+        self.prepareGeometryChange()
+        self.update()
+
     def boundingRect(self) -> QRectF:
         """Returns the bounding rectangle for the marker.
 
         Returns:
             QRectF: The bounding rect centered on (0, 0).
         """
-        half = self.MARKER_SIZE / 2
-        return QRectF(-half, -half, self.MARKER_SIZE, self.MARKER_SIZE)
+        size = self.resolved_size
+        half = size / 2
+        return QRectF(-half, -half, size, size)
 
     def paint(
         self,
@@ -329,7 +367,8 @@ class MarkerItem(QGraphicsObject):
         Returns:
             QPixmap: The rendered SVG as a pixmap.
         """
-        pixmap = QPixmap(int(self.MARKER_SIZE), int(self.MARKER_SIZE))
+        size = self.resolved_size
+        pixmap = QPixmap(size, size)
         pixmap.fill(Qt.GlobalColor.transparent)
 
         p = QPainter(pixmap)
@@ -357,7 +396,13 @@ class MarkerItem(QGraphicsObject):
             painter: The painter to draw with.
             rect: The rectangle to draw into.
         """
-        painter.setPen(QPen(QColor(255, 255, 255), 2))
+        border_color = QColor(
+            VisualResolver.resolve_border_color(
+                self._visual_attributes, self.object_type
+            )
+        )
+        border_width = VisualResolver.resolve_border_width(self._visual_attributes)
+        painter.setPen(QPen(border_color, border_width))
         painter.setBrush(QBrush(self._get_effective_color()))
         painter.drawEllipse(rect)
 
@@ -375,12 +420,10 @@ class MarkerItem(QGraphicsObject):
         theme = ThemeManager().get_theme()
         primary_color = QColor(theme.get("primary", "#FF9900"))
 
+        size = self.resolved_size
         # Position: Centered horizontally, slightly above the icon
-        # Marker is centered at 0,0. Top edge is -MARKER_SIZE/2
-        # We want it, say, 4px above that.
-        # Indicator size: 5px
         indicator_size = 8.0
-        y_pos = -(self.MARKER_SIZE / 2) - 4 - (indicator_size / 2)
+        y_pos = -(size / 2) - 4 - (indicator_size / 2)
 
         painter.setPen(Qt.NoPen)
         painter.setBrush(QBrush(primary_color))

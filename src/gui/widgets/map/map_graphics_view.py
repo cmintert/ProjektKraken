@@ -675,6 +675,9 @@ class MapGraphicsView(QGraphicsView):
     feature_style_changed = Signal(str, dict)
     feature_geometry_changed = Signal(str, list)
 
+    # -- Visual styling signal (marker_id, style_overrides_dict) --
+    marker_visual_style_changed = Signal(str, dict)
+
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the MapGraphicsView.
 
