@@ -25,6 +25,7 @@ from src.commands.map_commands import (
     SaveLayerTreeCommand,
     SetLayerOpacityCommand,
     UpdateMapCommand,
+    UpdateMarkerAttributeCommand,
     UpdateMarkerColorCommand,
     UpdateMarkerCommand,
     UpdateMarkerIconCommand,
@@ -445,6 +446,28 @@ class MapHandler(QObject):
         cmd = UpdateMarkerColorCommand(marker_id=actual_marker_id, color=color)
         self.command_requested.emit(cmd)
 
+    @Slot(str, dict)
+    def on_marker_visual_style_changed(
+        self, marker_id: str, updates: dict
+    ) -> None:
+        """Persists visual style changes via UpdateMarkerAttributeCommand.
+
+        Args:
+            marker_id: The object_id of the marker from the view.
+            updates: Dictionary of ``_v_*`` attribute overrides.
+
+        """
+        actual_marker_id = self._marker_object_to_id.get(marker_id)
+        if not actual_marker_id:
+            logger.warning(
+                f"No marker mapping for visual style update: {marker_id}"
+            )
+            return
+
+        cmd = UpdateMarkerAttributeCommand(actual_marker_id, updates)
+        self.command_requested.emit(cmd)
+        logger.info(f"Visual style updated for {marker_id}: {list(updates.keys())}")
+
     @Slot(str, float, float)
     def on_marker_position_changed(self, marker_id: str, x: float, y: float) -> None:
         """Handle marker position change from MapWidget.
@@ -551,6 +574,7 @@ class MapHandler(QObject):
                 feature_type=marker_data.get("feature_type", "point"),
                 geometry=marker_data.get("geometry"),
                 style=marker_data.get("style"),
+                visual_attributes=marker_data.get("attributes"),
             )
 
             # Store mapping for later updates (object_id -> marker.id)

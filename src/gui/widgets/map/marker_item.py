@@ -63,11 +63,6 @@ class MarkerItem(QGraphicsObject):
     clicked = Signal(str, str)
 
     MARKER_SIZE = BASE_SIZE  # Size of the marker icon
-    COLORS = {
-        "entity": QColor("#3498DB"),  # Blue
-        "event": QColor("#F39C12"),  # Orange
-        "default": QColor("#888888"),  # Gray
-    }
     DEFAULT_ICON = "map-pin.svg"
 
     def __init__(

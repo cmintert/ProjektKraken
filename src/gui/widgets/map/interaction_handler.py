@@ -213,10 +213,17 @@ class InteractionHandler:
     def show_color_picker(self, marker_item: MarkerItem) -> None:
         """Shows the color picker dialog for a marker.
 
+        Routes through the unified ``_v_fill`` visual-attribute key
+        so the change is persisted via ``UpdateMarkerAttributeCommand``.
+
         Args:
             marker_item: The marker to change the color for.
         """
-        initial_color = marker_item.get_color() or "#FFFFFF"
+        from src.services.visual_resolver import VisualResolver
+
+        initial_color = marker_item.get_color() or VisualResolver.resolve_fill(
+            marker_item._visual_attributes, marker_item.object_type
+        )
         color = QColorDialog.getColor(
             QColor(initial_color), self._view, "Select Marker Color"
         )
@@ -224,8 +231,8 @@ class InteractionHandler:
         if color.isValid():
             color_hex = color.name().upper()
             marker_item.set_color(color_hex)
-            self._view.change_marker_color_requested.emit(
-                marker_item.marker_id, color_hex
+            self._view.marker_visual_style_changed.emit(
+                marker_item.marker_id, {V_FILL: color_hex}
             )
 
     # ------------------------------------------------------------------

@@ -256,6 +256,11 @@ class DataHandler(QObject):
                     lore_date = getattr(event, "lore_date", None)
 
             # Create marker data dict
+            # Prefer ``_v_fill`` over the legacy ``color`` key
+            fill_color = (
+                marker.attributes.get("_v_fill")
+                or marker.attributes.get("color")
+            )
             processed_markers.append(
                 {
                     "id": marker.id,
@@ -266,11 +271,12 @@ class DataHandler(QObject):
                     "x": marker.x,
                     "y": marker.y,
                     "icon": marker.attributes.get("icon"),
-                    "color": marker.attributes.get("color"),
+                    "color": fill_color,
                     "lore_date": lore_date,
                     "feature_type": getattr(marker, "feature_type", "point"),
                     "geometry": getattr(marker, "geometry", None),
                     "style": getattr(marker, "style", None),
+                    "attributes": marker.attributes,
                 }
             )
 

@@ -1067,6 +1067,7 @@ class MapGraphicsView(QGraphicsView):
         feature_type: str = "point",
         geometry: Optional[list] = None,
         style: Optional[dict] = None,
+        visual_attributes: Optional[dict] = None,
     ) -> None:
         """Adds a marker or feature to the map at normalized coordinates.
 
@@ -1083,6 +1084,7 @@ class MapGraphicsView(QGraphicsView):
             feature_type: 'point', 'path', or 'region'.
             geometry: Optional list of coordinate dicts.
             style: Optional visual override dict.
+            visual_attributes: Optional dict with ``_v_*`` visual override keys.
         """
         self._marker_manager.add_marker(
             marker_id,
@@ -1097,6 +1099,7 @@ class MapGraphicsView(QGraphicsView):
             feature_type,
             geometry,
             style,
+            visual_attributes,
         )
 
     def update_marker_position(
