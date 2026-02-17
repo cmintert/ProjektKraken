@@ -273,9 +273,12 @@ class InteractionHandler:
         layout.addRow(buttons)
 
         if dialog.exec() == QDialog.DialogCode.Accepted:
+            updates = {V_SIZE_SCALE: spin.value()}
+            new_attrs = dict(marker_item._visual_attributes)
+            new_attrs.update(updates)
+            marker_item.set_visual_attributes(new_attrs)
             self._view.marker_visual_style_changed.emit(
-                marker_item.marker_id,
-                {V_SIZE_SCALE: spin.value()},
+                marker_item.marker_id, updates,
             )
 
     def show_border_strength_dialog(self, marker_item: MarkerItem) -> None:
@@ -310,9 +313,12 @@ class InteractionHandler:
         layout.addRow(buttons)
 
         if dialog.exec() == QDialog.DialogCode.Accepted:
+            updates = {V_BORDER_WIDTH: spin.value()}
+            new_attrs = dict(marker_item._visual_attributes)
+            new_attrs.update(updates)
+            marker_item.set_visual_attributes(new_attrs)
             self._view.marker_visual_style_changed.emit(
-                marker_item.marker_id,
-                {V_BORDER_WIDTH: spin.value()},
+                marker_item.marker_id, updates,
             )
 
     def show_fill_color_picker(self, marker_item: MarkerItem) -> None:
@@ -330,9 +336,15 @@ class InteractionHandler:
             QColor(initial), self._view, "Select Fill Color"
         )
         if color.isValid():
+            color_hex = color.name().upper()
+            updates = {V_FILL: color_hex}
+            new_attrs = dict(marker_item._visual_attributes)
+            new_attrs.update(updates)
+            marker_item._custom_color = color_hex
+            marker_item._color = QColor(color_hex)
+            marker_item.set_visual_attributes(new_attrs)
             self._view.marker_visual_style_changed.emit(
-                marker_item.marker_id,
-                {V_FILL: color.name().upper()},
+                marker_item.marker_id, updates,
             )
 
     def show_border_color_picker(self, marker_item: MarkerItem) -> None:
@@ -350,9 +362,13 @@ class InteractionHandler:
             QColor(initial), self._view, "Select Border Color"
         )
         if color.isValid():
+            color_hex = color.name().upper()
+            updates = {V_BORDER: color_hex}
+            new_attrs = dict(marker_item._visual_attributes)
+            new_attrs.update(updates)
+            marker_item.set_visual_attributes(new_attrs)
             self._view.marker_visual_style_changed.emit(
-                marker_item.marker_id,
-                {V_BORDER: color.name().upper()},
+                marker_item.marker_id, updates,
             )
 
     def show_feature_style_dialog(

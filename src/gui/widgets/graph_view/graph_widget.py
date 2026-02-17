@@ -303,7 +303,8 @@ class GraphWidget(QWidget):
         resolved = GraphBuilder.resolve_lexicon_images(config, project_root)
         self._resolved_lexicon = resolved
 
-        # Refresh display
+        # Force full rebuild so shape/icon changes take effect
+        self._is_renderer_ready = False
         self._refresh_display_locally()
 
     def _refresh_display_locally(self, focus_node_id: str | None = None) -> None:

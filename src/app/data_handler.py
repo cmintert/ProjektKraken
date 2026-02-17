@@ -362,6 +362,20 @@ class DataHandler(QObject):
                 logger.debug("[DataHandler] Emitting reload_markers_for_current_map")
                 self.reload_markers_for_current_map.emit()
 
+            # Visual attribute/colour changes also need a marker reload
+            # so the map re-reads updated attributes from the DB.
+            _MARKER_VISUAL_CMDS = {
+                "UpdateMarkerAttributeCommand",
+                "UpdateMarkerColorCommand",
+                "UpdateMarkerIconCommand",
+            }
+            if command_name in _MARKER_VISUAL_CMDS:
+                logger.debug(
+                    "[DataHandler] Emitting reload_markers_for_current_map "
+                    "(visual update)"
+                )
+                self.reload_markers_for_current_map.emit()
+
             if "Event" in command_name:
                 logger.debug("[DataHandler] Emitting reload_events (Event command)")
                 self.reload_events.emit()

@@ -17,6 +17,7 @@ from typing import Any, Optional
 from pyvis.network import Network
 
 from src.core.paths import get_resource_path
+from src.core.style_constants import V_FILL
 from src.services.visual_resolver import VisualResolver
 
 logger = logging.getLogger(__name__)
@@ -91,10 +92,12 @@ class GraphBuilder:
         size = VisualResolver.resolve_size(attrs)
         border_width = VisualResolver.resolve_border_width(attrs)
 
-        # Apply lexicon overrides if available
+        # Apply lexicon overrides if available.
+        # Per-entity _v_fill user overrides take priority over lexicon color.
+        has_user_fill = bool(attrs.get(V_FILL))
         if lexicon and node_type in lexicon:
             style = lexicon[node_type]
-            if "color" in style:
+            if "color" in style and not has_user_fill:
                 color = style["color"]
             if "shape" in style:
                 shape = style["shape"]
