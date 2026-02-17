@@ -50,6 +50,9 @@ STATUS_DB_INIT_FAIL = "Database Initialization Failed!"
 STATUS_ERROR_PREFIX = "Error: "
 
 
+# Default marker icons bundled with the application
+DEFAULT_MARKER_ICONS_PATH = "default_assets/icons/markers"
+
 # File Dialog Filters
 SUPPORTED_IMAGE_FORMATS = ["png", "jpg", "jpeg", "bmp", "webp"]
 IMAGE_FILE_FILTER = (

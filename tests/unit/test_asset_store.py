@@ -322,3 +322,56 @@ def test_asset_store_webp_format(asset_store, test_image):
     # Verify it's actually a WebP image
     with Image.open(image_path) as img:
         assert img.format == "WEBP"
+
+
+# ---------------------------------------------------------------------------
+# import_icon
+# ---------------------------------------------------------------------------
+
+
+def test_import_icon_svg(asset_store, temp_project_root):
+    """Test importing an SVG icon preserves the .svg extension."""
+    import os
+
+    fd, tmp_path = tempfile.mkstemp(suffix=".svg")
+    os.write(fd, b"<svg></svg>")
+    os.close(fd)
+
+    try:
+        rel_path = asset_store.import_icon(tmp_path)
+
+        assert rel_path.startswith("assets/images/icon_")
+        assert rel_path.endswith(".svg")
+        assert (asset_store.project_root / rel_path).exists()
+    finally:
+        Path(tmp_path).unlink(missing_ok=True)
+
+
+def test_import_icon_png(asset_store, test_image):
+    """Test importing a PNG icon preserves the .png extension."""
+    rel_path = asset_store.import_icon(test_image)
+
+    assert rel_path.startswith("assets/images/icon_")
+    assert rel_path.endswith(".png")
+    assert (asset_store.project_root / rel_path).exists()
+
+
+def test_import_icon_missing_file(asset_store):
+    """Test import_icon raises FileNotFoundError for missing source."""
+    with pytest.raises(FileNotFoundError):
+        asset_store.import_icon("/nonexistent/icon.svg")
+
+
+def test_import_icon_disallowed_extension(asset_store, temp_project_root):
+    """Test import_icon raises ValueError for disallowed extensions."""
+    import os
+
+    fd, tmp_path = tempfile.mkstemp(suffix=".exe")
+    os.write(fd, b"MZ")
+    os.close(fd)
+
+    try:
+        with pytest.raises(ValueError):
+            asset_store.import_icon(tmp_path)
+    finally:
+        Path(tmp_path).unlink(missing_ok=True)

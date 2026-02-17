@@ -12,6 +12,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-02-17)* **UI**: Added unified `IconPickerDialog` shared between Lexicon Editor and Map Editor with Default Icons, Project Icons, and Import from Disk tabs.
+- *(2026-02-17)* **UI**: Added "Clear Icon" button in Lexicon Editor to remove an icon and reset entity-type shape.
+- *(2026-02-17)* **Assets**: Added `AssetStore.import_icon()` for importing SVG/PNG/JPG icons while preserving the original file extension.
 - *(2026-02-17)* **Graph**: Implemented immediate visual feedback in Lexicon Editor; changes to colors, shapes, and icons now update the graph in real-time.
 - *(2026-02-17)* **Graph**: Implemented "Cancel" logic for Lexicon Editor to revert changes if the dialog is rejected.
 - *(2026-02-17)* **Graph**: Implemented flicker-free incremental graph updates for smoother visualization changes.
