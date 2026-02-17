@@ -231,7 +231,6 @@ class GraphBuilder:
                 data_uri = GraphBuilder.image_to_base64(full_path)
                 if data_uri:
                     resolved_style["image"] = data_uri
-                    resolved_style["shape"] = "image"
             resolved_nodes[type_name] = resolved_style
         resolved["nodes"] = resolved_nodes
 

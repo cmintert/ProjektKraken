@@ -51,9 +51,11 @@ class _ColorButton(QPushButton):
 
     color_changed = Signal(str)
 
-    def __init__(self, color: QColor, parent: Optional[QWidget] = None) -> None:
+    def __init__(
+        self, color: QColor | str = "#888888", parent: Optional[QWidget] = None
+    ) -> None:
         super().__init__(parent)
-        self._color = color
+        self._color = QColor(color) if isinstance(color, str) else color
         self.setFixedSize(28, 28)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setToolTip("Click to change color")

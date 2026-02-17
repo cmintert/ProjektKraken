@@ -44,17 +44,17 @@ class TestColorButton:
     def test_init_stores_color(self, qapp):
         """Initial color is stored correctly."""
         btn = _ColorButton("#FF0000")
-        assert btn.color() == "#FF0000"
+        assert btn.color().upper() == "#FF0000"
 
     def test_default_color(self, qapp):
         """Default color is grey."""
         btn = _ColorButton()
-        assert btn.color() == "#888888"
+        assert btn.color().upper() == "#888888"
 
     def test_style_contains_color(self, qapp):
         """Button stylesheet contains the color."""
         btn = _ColorButton("#00FF00")
-        assert "#00FF00" in btn.styleSheet()
+        assert "#00ff00" in btn.styleSheet().lower()
 
 
 # ---------------------------------------------------------------------------
@@ -72,9 +72,7 @@ class TestLexiconEditorDialogCreation:
 
     def test_creates_with_entity_types(self, qapp):
         """Dialog creates rows for each entity type."""
-        dialog = LexiconEditorDialog(
-            entity_types=["deity", "starship", "faction"]
-        )
+        dialog = LexiconEditorDialog(entity_types=["deity", "starship", "faction"])
         assert len(dialog._node_rows) == 3
         assert "deity" in dialog._node_rows
         assert "starship" in dialog._node_rows
@@ -82,18 +80,14 @@ class TestLexiconEditorDialogCreation:
 
     def test_creates_with_relation_types(self, qapp):
         """Dialog creates rows for each relation type."""
-        dialog = LexiconEditorDialog(
-            relation_types=["allied_with", "enemy_of"]
-        )
+        dialog = LexiconEditorDialog(relation_types=["allied_with", "enemy_of"])
         assert len(dialog._edge_rows) == 2
         assert "allied_with" in dialog._edge_rows
         assert "enemy_of" in dialog._edge_rows
 
     def test_empty_types_shows_no_rows(self, qapp):
         """Empty type lists result in no data rows."""
-        dialog = LexiconEditorDialog(
-            entity_types=[], relation_types=[]
-        )
+        dialog = LexiconEditorDialog(entity_types=[], relation_types=[])
         assert len(dialog._node_rows) == 0
         assert len(dialog._edge_rows) == 0
 
@@ -150,9 +144,9 @@ class TestLexiconEditorDialogConfig:
         )
         config = dialog.get_lexicon_config()
 
-        assert config["nodes"]["deity"]["color"] == "#FFD700"
+        assert config["nodes"]["deity"]["color"].upper() == "#FFD700"
         assert config["nodes"]["deity"]["shape"] == "star"
-        assert config["edges"]["enemy_of"]["color"] == "#FF0000"
+        assert config["edges"]["enemy_of"]["color"].upper() == "#FF0000"
         assert config["edges"]["enemy_of"]["width"] == 3
         assert config["edges"]["enemy_of"]["dashes"] is True
 
@@ -261,15 +255,77 @@ class TestGraphWidgetLexiconAPI:
 
         # Provide some data to trigger the render path
         nodes = [
-            {"id": "1", "name": "Zeus", "object_type": "entity", "type": "deity",
-             "tags": []}
+            {
+                "id": "1",
+                "name": "Zeus",
+                "object_type": "entity",
+                "type": "deity",
+                "tags": [],
+            }
         ]
         edges = []
 
         # Patch builder to capture arguments
-        with patch.object(widget._builder, "build_html", return_value="<html/>") as mock_build:
+        with patch.object(
+            widget._builder, "build_html", return_value="<html/>"
+        ) as mock_build:
             widget.display_graph(nodes, edges)
             if mock_build.called:
                 call_kwargs = mock_build.call_args
                 # Check lexicon_config was passed
                 assert call_kwargs.kwargs.get("lexicon_config") is not None
+
+
+# ---------------------------------------------------------------------------
+# Regression: Shape Revert Bug
+# ---------------------------------------------------------------------------
+
+
+def test_resolve_lexicon_images_respects_existing_shape():
+    """Verify that resolve_lexicon_images doesn't override shape if it's not 'image'."""
+    from pathlib import Path
+
+    lexicon = {
+        "nodes": {
+            "hero": {
+                "color": "#FF0000",
+                "shape": "dot",  # User wants a dot
+                "icon": "assets/icon.png",  # But an icon path exists
+            }
+        }
+    }
+
+    # Mock image_to_base64 to avoid file I/O
+    with patch(
+        "src.gui.widgets.graph_view.graph_builder.GraphBuilder.image_to_base64"
+    ) as MockB64:
+        MockB64.return_value = "data:image/png;base64,dummy"
+
+        resolved = GraphBuilder.resolve_lexicon_images(lexicon, Path("C:/dummy"))
+
+        hero_style = resolved["nodes"]["hero"]
+
+        # This is what previously failed: it got overridden to 'image'
+        assert (
+            hero_style["shape"] == "dot"
+        ), "Shape should remain 'dot' even if icon exists"
+        assert "image" in hero_style, "Image data should still be resolved"
+
+
+def test_prepare_node_ignores_image_if_shape_not_image():
+    """Verify prepare_node doesn't use image data if shape is not 'image'."""
+    node = {"id": "1", "name": "Hero", "type": "hero", "object_type": "entity"}
+    lexicon = {
+        "hero": {
+            "color": "#FF0000",
+            "shape": "dot",
+            "image": "data:image/png;base64,dummy",
+        }
+    }
+
+    prepared = GraphBuilder.prepare_node(node, "#CCC", "#EEE", lexicon)
+
+    assert prepared["shape"] == "dot"
+    assert (
+        "image" not in prepared
+    ), "Image property should be omitted if shape is not 'image'"
