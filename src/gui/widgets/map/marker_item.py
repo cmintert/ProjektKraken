@@ -5,11 +5,12 @@ Provides the MarkerItem class for rendering markers on the map.
 
 import logging
 import os
+from pathlib import Path
 
 # Forward declaration to avoid circular import
 from typing import Any, Dict, Optional
 
-from PySide6.QtCore import QRectF, Qt, Signal
+from PySide6.QtCore import QByteArray, QRectF, Qt, Signal
 from PySide6.QtGui import (
     QBrush,
     QColor,
@@ -31,6 +32,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.style_constants import BASE_SIZE
+from src.gui.utils.svg_utils import apply_svg_inline_styles, svg_file_to_string
 from src.services.visual_resolver import VisualResolver
 
 # Resolve marker icons path
@@ -105,9 +107,7 @@ class MarkerItem(QGraphicsObject):
         if color:
             self._color = QColor(color)
         else:
-            resolved = VisualResolver.resolve_fill(
-                self._visual_attributes, object_type
-            )
+            resolved = VisualResolver.resolve_fill(self._visual_attributes, object_type)
             self._color = QColor(resolved)
 
         # Temporal State
@@ -164,6 +164,9 @@ class MarkerItem(QGraphicsObject):
     def _load_icon(self, icon_name: Optional[str]) -> None:
         """Loads an SVG icon for the marker.
 
+        Reads the SVG file, applies inline styles (fill color from
+        ``_custom_color``), and loads the styled SVG into the renderer.
+
         Args:
             icon_name: Filename of the icon (e.g., 'castle.svg').
         """
@@ -171,15 +174,39 @@ class MarkerItem(QGraphicsObject):
             icon_name = self.DEFAULT_ICON
 
         icon_path = os.path.join(MARKER_ICONS_PATH, icon_name)
-        if os.path.exists(icon_path):
-            self._svg_renderer = QSvgRenderer(icon_path)
-            if not self._svg_renderer.isValid():
-                logger.warning(f"Invalid SVG file: {icon_path}")
-                self._svg_renderer = None
-            else:
-                self._icon_name = icon_name
-        else:
+        if not os.path.exists(icon_path):
             logger.debug(f"Icon not found: {icon_path}, using fallback circle")
+            self._svg_renderer = None
+            return
+
+        # Read raw SVG content
+        svg_content = svg_file_to_string(Path(icon_path))
+        if not svg_content:
+            self._svg_renderer = None
+            return
+
+        # Cache the raw SVG for re-styling later
+        self._raw_svg = svg_content
+        self._icon_name = icon_name
+
+        # Apply inline styles and load
+        self._apply_and_load_svg()
+
+    def _apply_and_load_svg(self) -> None:
+        """Applies inline styles to cached SVG and loads into renderer."""
+        if not hasattr(self, "_raw_svg") or not self._raw_svg:
+            return
+
+        styled = apply_svg_inline_styles(
+            self._raw_svg,
+            fill_color=self._custom_color,
+        )
+
+        renderer = QSvgRenderer(QByteArray(styled.encode("utf-8")))
+        if renderer.isValid():
+            self._svg_renderer = renderer
+        else:
+            logger.warning("Failed to load styled SVG into renderer")
             self._svg_renderer = None
 
     def set_icon(self, icon_name: str) -> None:
@@ -207,6 +234,8 @@ class MarkerItem(QGraphicsObject):
         """
         self._custom_color = color
         self._color = QColor(color)
+        # Re-style SVG with new fill color
+        self._apply_and_load_svg()
         self.update()
 
     def get_color(self) -> Optional[str]:
@@ -294,6 +323,8 @@ class MarkerItem(QGraphicsObject):
                 self._visual_attributes, self.object_type
             )
             self._color = QColor(resolved)
+        # Re-style SVG with updated visual attributes
+        self._apply_and_load_svg()
         self._update_label_position()
         self.prepareGeometryChange()
         self.update()
@@ -330,22 +361,14 @@ class MarkerItem(QGraphicsObject):
             self._draw_fallback_circle(painter, rect)
 
     def _draw_svg_icon(self, painter: QPainter, rect: QRectF) -> None:
-        """Draws the SVG icon, applying custom color tint if set.
+        """Draws the SVG icon with inline styles already applied.
 
         Args:
             painter: The painter to draw with.
             rect: The rectangle to draw into.
         """
-        # removed shadow/background
-
-        if self._custom_color:
-            pixmap = self._render_svg_to_pixmap()
-            self._tint_pixmap(pixmap, self._get_effective_color())
-
-            painter.drawPixmap(rect.toRect(), pixmap)
-        else:
-            # Standard SVG rendering (no tint)
-            self._svg_renderer.render(painter, rect)
+        # SVG already has inline fill/stroke styles applied via _apply_and_load_svg
+        self._svg_renderer.render(painter, rect)
 
         if self.has_keyframes:
             self._draw_keyframe_indicator(painter)

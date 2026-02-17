@@ -4,6 +4,7 @@ Validates the LexiconEditorDialog construction, widget creation,
 and configuration readback, as well as GraphWidget lexicon API.
 """
 
+import base64
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -329,3 +330,216 @@ def test_prepare_node_ignores_image_if_shape_not_image():
     assert (
         "image" not in prepared
     ), "Image property should be omitted if shape is not 'image'"
+
+
+# ---------------------------------------------------------------------------
+# Lexicon Editor: border_color, border_width, size_scale
+# ---------------------------------------------------------------------------
+
+
+class TestLexiconEditorVisualProperties:
+    """Tests for border_color, border_width, and size_scale in the dialog."""
+
+    def test_node_config_has_border_and_size_keys(self, qapp):
+        """get_lexicon_config returns border_color, border_width, size_scale."""
+        dialog = LexiconEditorDialog(entity_types=["deity"])
+        config = dialog.get_lexicon_config()
+
+        node_cfg = config["nodes"]["deity"]
+        assert "border_color" in node_cfg
+        assert "border_width" in node_cfg
+        assert "size_scale" in node_cfg
+
+    def test_default_border_width_and_size(self, qapp):
+        """No existing config → defaults are sensible."""
+        dialog = LexiconEditorDialog(entity_types=["deity"])
+        config = dialog.get_lexicon_config()
+
+        node_cfg = config["nodes"]["deity"]
+        assert node_cfg["border_color"].upper() == "#FFFFFF"
+        assert node_cfg["border_width"] == 2
+        assert node_cfg["size_scale"] == 1.0
+
+    def test_existing_border_config_populates_widgets(self, qapp):
+        """Pre-existing border/size values are reflected on readback."""
+        existing = {
+            "nodes": {
+                "deity": {
+                    "color": "#FFD700",
+                    "shape": "star",
+                    "border_color": "#00FF00",
+                    "border_width": 5,
+                    "size_scale": 2.0,
+                }
+            },
+            "edges": {},
+        }
+        dialog = LexiconEditorDialog(
+            entity_types=["deity"],
+            current_config=existing,
+        )
+        config = dialog.get_lexicon_config()
+
+        node_cfg = config["nodes"]["deity"]
+        assert node_cfg["border_color"].upper() == "#00FF00"
+        assert node_cfg["border_width"] == 5
+        assert node_cfg["size_scale"] == 2.0
+
+
+# ---------------------------------------------------------------------------
+# prepare_node: lexicon border/size overrides
+# ---------------------------------------------------------------------------
+
+
+class TestPrepareNodeVisualProperties:
+    """Tests for prepare_node consuming lexicon border/size values."""
+
+    def test_lexicon_border_color_applied(self):
+        """Lexicon border_color overrides the default."""
+        node = {"id": "1", "name": "Zeus", "type": "deity", "object_type": "entity"}
+        lexicon = {"deity": {"border_color": "#00FF00"}}
+
+        prepared = GraphBuilder.prepare_node(node, "#CCC", "#EEE", lexicon)
+
+        assert prepared["color"]["border"] == "#00FF00"
+
+    def test_lexicon_border_width_applied(self):
+        """Lexicon border_width overrides the default."""
+        node = {"id": "1", "name": "Zeus", "type": "deity", "object_type": "entity"}
+        lexicon = {"deity": {"border_width": 6}}
+
+        prepared = GraphBuilder.prepare_node(node, "#CCC", "#EEE", lexicon)
+
+        assert prepared["borderWidth"] == 6
+
+    def test_lexicon_size_scale_applied(self):
+        """Lexicon size_scale is applied to the node size."""
+        from src.core.style_constants import BASE_SIZE
+
+        node = {"id": "1", "name": "Zeus", "type": "deity", "object_type": "entity"}
+        lexicon = {"deity": {"size_scale": 2.0}}
+
+        prepared = GraphBuilder.prepare_node(node, "#CCC", "#EEE", lexicon)
+
+        assert prepared["size"] == BASE_SIZE * 2.0
+
+    def test_user_v_border_overrides_lexicon(self):
+        """Per-entity _v_border takes priority over lexicon border_color."""
+        from src.core.style_constants import V_BORDER
+
+        node = {
+            "id": "1",
+            "name": "Zeus",
+            "type": "deity",
+            "object_type": "entity",
+            "attributes": {V_BORDER: "#FF0000"},
+        }
+        lexicon = {"deity": {"border_color": "#00FF00"}}
+
+        prepared = GraphBuilder.prepare_node(node, "#CCC", "#EEE", lexicon)
+
+        # Per-entity override should win
+        assert prepared["color"]["border"] == "#FF0000"
+
+
+# ---------------------------------------------------------------------------
+# SVG Dynamic Styling
+# ---------------------------------------------------------------------------
+
+
+class TestSVGDynamicStyling:
+    """Tests for apply_svg_styling and SVG icon styling in prepare_node."""
+
+    def test_svg_styling_injects_border_color(self):
+        """apply_svg_styling injects stroke CSS for border_color."""
+        svg_content = '<svg xmlns="http://www.w3.org/2000/svg"><circle r="10"/></svg>'
+        data_uri = (
+            "data:image/svg+xml;base64,"
+            + base64.b64encode(svg_content.encode()).decode()
+        )
+
+        result = GraphBuilder.apply_svg_styling(data_uri, border_color="#FF0000")
+
+        # Decode and check for injected CSS
+        decoded = base64.b64decode(result.split(",")[1]).decode()
+        assert "stroke:#FF0000" in decoded
+
+    def test_svg_styling_injects_fill_color(self):
+        """apply_svg_styling injects fill CSS for fill_color."""
+        svg_content = '<svg xmlns="http://www.w3.org/2000/svg"><circle r="10"/></svg>'
+        data_uri = (
+            "data:image/svg+xml;base64,"
+            + base64.b64encode(svg_content.encode()).decode()
+        )
+
+        result = GraphBuilder.apply_svg_styling(data_uri, fill_color="#00FF00")
+
+        decoded = base64.b64decode(result.split(",")[1]).decode()
+        assert "fill:#00FF00" in decoded
+
+    def test_svg_styling_injects_border_width(self):
+        """apply_svg_styling injects stroke-width CSS for border_width."""
+        svg_content = '<svg xmlns="http://www.w3.org/2000/svg"><circle r="10"/></svg>'
+        data_uri = (
+            "data:image/svg+xml;base64,"
+            + base64.b64encode(svg_content.encode()).decode()
+        )
+
+        result = GraphBuilder.apply_svg_styling(data_uri, border_width=5)
+
+        decoded = base64.b64decode(result.split(",")[1]).decode()
+        assert "stroke-width:5px" in decoded
+
+    def test_svg_styling_injects_size_scale(self):
+        """apply_svg_styling injects transform scale for size_scale."""
+        svg_content = '<svg xmlns="http://www.w3.org/2000/svg"><circle r="10"/></svg>'
+        data_uri = (
+            "data:image/svg+xml;base64,"
+            + base64.b64encode(svg_content.encode()).decode()
+        )
+
+        result = GraphBuilder.apply_svg_styling(data_uri, size_scale=2.0)
+
+        decoded = base64.b64decode(result.split(",")[1]).decode()
+        assert 'transform="scale(2.0)"' in decoded
+
+    def test_png_icon_unaffected_by_svg_styling(self):
+        """apply_svg_styling passes through PNG data URIs unchanged."""
+        png_data_uri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA"
+
+        result = GraphBuilder.apply_svg_styling(
+            png_data_uri,
+            border_color="#FF0000",
+            border_width=5,
+            size_scale=2.0,
+        )
+
+        assert result == png_data_uri
+
+    def test_prepare_node_applies_svg_styling_from_lexicon(self):
+        """prepare_node applies SVG styling when lexicon has border/size settings."""
+        svg_content = '<svg xmlns="http://www.w3.org/2000/svg"><circle r="10"/></svg>'
+        image_data = (
+            "data:image/svg+xml;base64,"
+            + base64.b64encode(svg_content.encode()).decode()
+        )
+
+        node = {"id": "1", "name": "Zeus", "type": "deity", "object_type": "entity"}
+        lexicon = {
+            "deity": {
+                "shape": "image",
+                "image": image_data,
+                "border_color": "#FFD700",
+                "border_width": 3,
+                "size_scale": 1.5,
+            }
+        }
+
+        prepared = GraphBuilder.prepare_node(node, "#CCC", "#EEE", lexicon)
+
+        # Verify the image was styled
+        assert "image" in prepared
+        styled_svg = base64.b64decode(prepared["image"].split(",")[1]).decode()
+        assert "stroke:#FFD700" in styled_svg
+        assert "stroke-width:3px" in styled_svg
+        assert 'transform="scale(1.5)"' in styled_svg

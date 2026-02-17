@@ -248,9 +248,7 @@ class TestGraphLexiconPersistence:
             "nodes": {
                 "Faction": {"color": "#FFD700", "shape": "image", "icon": "a.svg"}
             },
-            "edges": {
-                "enemy_of": {"color": "#FF0000", "width": 3, "dashes": True}
-            },
+            "edges": {"enemy_of": {"color": "#FF0000", "width": 3, "dashes": True}},
         }
 
         db_service.set_graph_lexicon(lexicon)
@@ -477,7 +475,9 @@ class TestResolveLexiconImages:
 
         result = GraphBuilder.resolve_lexicon_images(lexicon, tmp_path)
 
-        assert result["nodes"]["Faction"]["shape"] == "image"
+        # resolve_lexicon_images preserves the user's chosen shape; it only
+        # adds the Base64 data URI without overriding shape to 'image'.
+        assert result["nodes"]["Faction"]["shape"] == "dot"
         assert result["nodes"]["Faction"]["image"].startswith("data:")
 
     def test_missing_icon_does_not_override_shape(self, tmp_path):
