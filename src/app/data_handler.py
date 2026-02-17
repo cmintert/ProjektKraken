@@ -56,6 +56,7 @@ class DataHandler(QObject):
     entity_state_resolved = Signal(str, dict)  # (entity_id, attributes)
     graph_data_ready = Signal(list, list)  # (nodes, edges)
     graph_metadata_ready = Signal(list, list)  # (tags, rel_types)
+    graph_lexicon_ready = Signal(dict, dict)  # (raw_lexicon, resolved_lexicon)
 
     # Signals for UI actions
     status_message = Signal(str)  # Status bar message updates
@@ -412,3 +413,16 @@ class DataHandler(QObject):
 
         """
         self.graph_metadata_ready.emit(tags, rel_types)
+
+    @Slot(dict, dict)
+    def on_graph_lexicon_loaded(
+        self, raw_lexicon: dict, resolved_lexicon: dict
+    ) -> None:
+        """Emits signal for graph widget to apply visual lexicon styles.
+
+        Args:
+            raw_lexicon: Raw lexicon config with file paths.
+            resolved_lexicon: Resolved lexicon with Base64 data URIs.
+
+        """
+        self.graph_lexicon_ready.emit(raw_lexicon, resolved_lexicon)

@@ -44,6 +44,7 @@ class GraphWidget(QWidget):
     node_clicked = Signal(str, str)  # (object_type, object_id)
     refresh_requested = Signal()
     filter_changed = Signal()
+    lexicon_save_requested = Signal(dict)  # raw lexicon config to persist
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the GraphWidget.
@@ -65,6 +66,10 @@ class GraphWidget(QWidget):
         # Data Cache
         self._all_nodes: list[dict[str, Any]] = []
         self._all_edges: list[dict[str, Any]] = []
+        # View State Cache (scale, position)
+        self._last_view_state: Optional[dict[str, Any]] = None
+        self._last_focus_node_id: Optional[str] = None
+        self._is_renderer_ready: bool = False
 
         # Filter State
         self._search_term: str = ""
@@ -72,6 +77,12 @@ class GraphWidget(QWidget):
 
         self._available_tags: list[str] = []
         self._available_rel_types: list[str] = []
+
+        # Lexicon (Visual Styling)
+        self._raw_lexicon: dict[str, Any] = {"nodes": {}, "edges": {}}
+        self._resolved_lexicon: dict[str, Any] = {"nodes": {}, "edges": {}}
+        self._available_entity_types: list[str] = []
+        self._world_assets_dir: str | None = None
 
         # Theme Handling
         from src.core.theme_manager import ThemeManager
@@ -111,6 +122,8 @@ class GraphWidget(QWidget):
         """
         # Forward web view node clicks
         self._web_view.node_clicked.connect(self.node_clicked.emit)
+        # Handle view state updates
+        self._web_view.view_state_changed.connect(self._on_view_state_changed)
 
         # Forward filter bar signals
         self._filter_bar.refresh_requested.connect(self.refresh_requested.emit)
@@ -118,6 +131,7 @@ class GraphWidget(QWidget):
         self._filter_bar.filters_changed.connect(self._on_toolbar_filter_changed)
         self._filter_bar.search_text_changed.connect(self._on_search_text_changed)
         self._filter_bar.show_advanced_filter_requested.connect(self.show_filter_dialog)
+        self._filter_bar.show_lexicon_editor_requested.connect(self.show_lexicon_editor)
 
     def _on_theme_changed(self, theme_data: dict[str, Any]) -> None:
         """Handles theme changes by refreshing the graph with new colors.
@@ -131,6 +145,9 @@ class GraphWidget(QWidget):
         # Update Web View background to match theme immediately
         bg_color = self._current_theme_config.get("background_color", "#1e1e1e")
         self._web_view.set_background_color(bg_color)
+
+        # Force a full rebuild on theme changes to apply new colors
+        self._is_renderer_ready = False
 
         # Refresh display with new colors
         self._refresh_display_locally()
@@ -190,6 +207,14 @@ class GraphWidget(QWidget):
         self._search_term = text.strip()
         self._refresh_display_locally()
 
+    def _on_view_state_changed(self, state: dict) -> None:
+        """Handles view state updates from the web view.
+
+        Args:
+            state: Dictionary containing 'scale' and 'position' keys.
+        """
+        self._last_view_state = state
+
     def show_filter_dialog(self) -> None:
         """Shows the advanced filter dialog.
 
@@ -216,6 +241,70 @@ class GraphWidget(QWidget):
             # Since advanced filter might change what we need from DB (includes),
             # we request a refresh.
             self.filter_changed.emit()
+
+    def show_lexicon_editor(self) -> None:
+        """Opens the Visual Lexicon Editor dialog.
+
+        Lets the user configure per-type colors, shapes, icons (for entities)
+        and per-type colors, widths, dashes (for relations).  On accept the
+        updated raw config is emitted via *lexicon_save_requested* so the
+        coordinator can persist it and reload the graph.
+        """
+        from PySide6.QtWidgets import QDialog
+
+        from src.gui.dialogs.lexicon_editor_dialog import LexiconEditorDialog
+
+        # Cache current state for revert
+        original_raw = self._raw_lexicon
+        original_resolved = self._resolved_lexicon
+
+        dialog = LexiconEditorDialog(
+            parent=self,
+            entity_types=self._available_entity_types,
+            relation_types=self._available_rel_types,
+            current_config=self._raw_lexicon,
+            assets_dir=self._world_assets_dir,
+        )
+
+        # Connect for immediate preview
+        dialog.config_changed.connect(self._on_lexicon_preview_requested)
+
+        result = dialog.exec()
+
+        if result == QDialog.DialogCode.Accepted:
+            new_config = dialog.get_lexicon_config()
+            self._raw_lexicon = new_config
+            self._logger.info("Lexicon updated via editor dialog")
+            self.lexicon_save_requested.emit(new_config)
+            # Ensure final state is consistent (though preview should have updated it)
+            self._on_lexicon_preview_requested(new_config)
+        else:
+            # Revert to original state on Cancel
+            self.set_lexicon_config(original_raw, original_resolved)
+
+    def _on_lexicon_preview_requested(self, config: dict[str, Any]) -> None:
+        """Updates the graph display immediately based on new lexicon config.
+
+        Args:
+            config: The new lexicon configuration from the dialog.
+        """
+        # Update raw lexicon
+        self._raw_lexicon = config
+
+        # Resolve images locally
+        from src.gui.widgets.graph_view.graph_builder import GraphBuilder
+        from pathlib import Path
+
+        project_root = (
+            Path(self._world_assets_dir).parent
+            if self._world_assets_dir
+            else Path.cwd()
+        )
+        resolved = GraphBuilder.resolve_lexicon_images(config, project_root)
+        self._resolved_lexicon = resolved
+
+        # Refresh display
+        self._refresh_display_locally()
 
     def _refresh_display_locally(self, focus_node_id: str | None = None) -> None:
         """Refreshes the graph display using cached data and local filters.
@@ -274,17 +363,61 @@ class GraphWidget(QWidget):
             self._web_view.load_html(
                 self._builder.build_empty_html(self._current_theme_config)
             )
+            self._is_renderer_ready = False
         else:
-            html = self._builder.build_html(
-                filtered_nodes,
-                filtered_edges,
-                theme_config=self._current_theme_config,
-                focus_node_id=focus_node_id,
+            # Smart View Preservation Logic:
+            # 1. Same node = Preserve view.
+            # 2. Different node (or None) = Reset view.
+            should_preserve_view = (
+                focus_node_id is not None
+                and focus_node_id == self._last_focus_node_id
+                and self._last_view_state is not None
             )
-            self._web_view.load_html(html)
+
+            view_state = self._last_view_state if should_preserve_view else None
+
+            if should_preserve_view:
+                self._logger.debug(
+                    f"Preserving graph view for node {focus_node_id} (Data Refresh)"
+                )
+            elif focus_node_id:
+                self._logger.debug(
+                    f"Resetting graph view for node {focus_node_id} (Navigation)"
+                )
+
+            # Incremental vs Full Update
+            lexicon = (
+                self._resolved_lexicon
+                if self._resolved_lexicon.get("nodes")
+                or self._resolved_lexicon.get("edges")
+                else None
+            )
+            if self._is_renderer_ready:
+                self._web_view.update_graph_data(
+                    filtered_nodes,
+                    filtered_edges,
+                    focus_id=focus_node_id,
+                    theme_config=self._current_theme_config,
+                    lexicon_config=lexicon,
+                )
+            else:
+                html = self._builder.build_html(
+                    filtered_nodes,
+                    filtered_edges,
+                    theme_config=self._current_theme_config,
+                    focus_node_id=focus_node_id,
+                    view_state=view_state,
+                    lexicon_config=lexicon,
+                )
+                self._web_view.load_html(html)
+                self._is_renderer_ready = True
+
+            # Update tracking
+            self._last_focus_node_id = focus_node_id
             self._logger.debug(
                 f"Refreshed graph: {len(filtered_nodes)} nodes, "
-                f"{len(filtered_edges)} edges, focus_id={focus_node_id}"
+                f"{len(filtered_edges)} edges, focus_id={focus_node_id}, "
+                f"incremental={self._is_renderer_ready}"
             )
 
     def _passes_tag_filter(self, node: dict, config: dict) -> bool:
@@ -381,6 +514,42 @@ class GraphWidget(QWidget):
         self._available_rel_types = rel_types
         self._filter_bar.set_available_relation_types(rel_types)
 
+    def set_lexicon_config(
+        self,
+        raw: dict[str, Any],
+        resolved: dict[str, Any],
+    ) -> None:
+        """Sets the visual lexicon configuration.
+
+        Args:
+            raw: Raw lexicon config with file paths (for editor dialog).
+            resolved: Resolved lexicon config with Base64 data URIs (for rendering).
+
+        """
+        self._raw_lexicon = raw
+        self._resolved_lexicon = resolved
+        # Force full rebuild to apply new styles
+        self._is_renderer_ready = False
+        self._refresh_display_locally()
+
+    def set_available_entity_types(self, entity_types: list[str]) -> None:
+        """Sets the available entity types for the lexicon editor.
+
+        Args:
+            entity_types: List of entity type strings.
+
+        """
+        self._available_entity_types = entity_types
+
+    def set_world_assets_dir(self, path: str | None) -> None:
+        """Sets the world assets directory for icon imports.
+
+        Args:
+            path: Absolute path to the world's assets directory, or None.
+
+        """
+        self._world_assets_dir = path
+
     def get_filter_config(self) -> dict[str, list[str]]:
         """Returns the current filter configuration.
 
@@ -437,7 +606,7 @@ class GraphWidget(QWidget):
 
     def showEvent(self, event: QEvent) -> None:
         """Handle widget show event by refreshing the graph view.
-        
+
         Args:
             event: The show event.
         """
@@ -461,7 +630,7 @@ class GraphWidget(QWidget):
 
     def hideEvent(self, event: QEvent) -> None:
         """Handle widget hide event.
-        
+
         Args:
             event: The hide event.
         """
@@ -469,7 +638,7 @@ class GraphWidget(QWidget):
 
     def resizeEvent(self, event: QEvent) -> None:
         """Handle widget resize event.
-        
+
         Args:
             event: The resize event.
         """
