@@ -181,6 +181,9 @@ class WorkerManager(QObject):
         self.window.worker.graph_metadata_loaded.connect(
             self.window.data_handler.on_graph_metadata_loaded, connection_type
         )
+        self.window.worker.graph_lexicon_loaded.connect(
+            self.window.data_handler.on_graph_lexicon_loaded, connection_type
+        )
         self.window.worker.completer_data_loaded.connect(
             self.window.data_coordinator.on_completer_data_loaded, connection_type
         )

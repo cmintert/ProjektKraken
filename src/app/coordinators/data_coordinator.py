@@ -280,6 +280,52 @@ class DataCoordinator(BaseCoordinator):
                 rel_types
             )
 
+    @Slot(dict, dict)
+    def on_graph_lexicon_ready(
+        self, raw_lexicon: dict, resolved_lexicon: dict
+    ) -> None:
+        """Updates the graph widget with the visual lexicon configuration.
+
+        Also sets the available entity types and world assets directory
+        for the lexicon editor dialog.
+
+        Args:
+            raw_lexicon: Raw lexicon config with file paths.
+            resolved_lexicon: Resolved lexicon config with Base64 URIs.
+
+        """
+        if self.main_window.graph_widget:
+            self.main_window.graph_widget.set_lexicon_config(
+                raw_lexicon, resolved_lexicon
+            )
+            # Set entity types from the raw lexicon's node keys + any from
+            # completer data (entity_types come from graph_metadata_loaded)
+            from src.services.graph_data_service import GraphDataService
+
+            try:
+                db = self.main_window.worker_manager.db_service
+                if db:
+                    service = GraphDataService()
+                    entity_types = service.get_all_entity_types(db)
+                    self.main_window.graph_widget.set_available_entity_types(
+                        entity_types
+                    )
+            except Exception:
+                pass  # Non-critical, editor will show no types
+
+            # Set world assets dir from DB path
+            try:
+                from pathlib import Path
+
+                db = self.main_window.worker_manager.db_service
+                if db and db.db_path != ":memory:":
+                    assets_dir = str(Path(db.db_path).parent / "assets")
+                    self.main_window.graph_widget.set_world_assets_dir(
+                        assets_dir
+                    )
+            except Exception:
+                pass  # Non-critical
+
     @Slot(list, list)
     def on_filter_results_ready(
         self, events: list, entities: list

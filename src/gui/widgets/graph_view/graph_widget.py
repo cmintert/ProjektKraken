@@ -44,6 +44,7 @@ class GraphWidget(QWidget):
     node_clicked = Signal(str, str)  # (object_type, object_id)
     refresh_requested = Signal()
     filter_changed = Signal()
+    lexicon_save_requested = Signal(dict)  # raw lexicon config to persist
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the GraphWidget.
@@ -76,6 +77,12 @@ class GraphWidget(QWidget):
 
         self._available_tags: list[str] = []
         self._available_rel_types: list[str] = []
+
+        # Lexicon (Visual Styling)
+        self._raw_lexicon: dict[str, Any] = {"nodes": {}, "edges": {}}
+        self._resolved_lexicon: dict[str, Any] = {"nodes": {}, "edges": {}}
+        self._available_entity_types: list[str] = []
+        self._world_assets_dir: str | None = None
 
         # Theme Handling
         from src.core.theme_manager import ThemeManager
@@ -124,6 +131,9 @@ class GraphWidget(QWidget):
         self._filter_bar.filters_changed.connect(self._on_toolbar_filter_changed)
         self._filter_bar.search_text_changed.connect(self._on_search_text_changed)
         self._filter_bar.show_advanced_filter_requested.connect(self.show_filter_dialog)
+        self._filter_bar.show_lexicon_editor_requested.connect(
+            self.show_lexicon_editor
+        )
 
     def _on_theme_changed(self, theme_data: dict[str, Any]) -> None:
         """Handles theme changes by refreshing the graph with new colors.
@@ -234,6 +244,32 @@ class GraphWidget(QWidget):
             # we request a refresh.
             self.filter_changed.emit()
 
+    def show_lexicon_editor(self) -> None:
+        """Opens the Visual Lexicon Editor dialog.
+
+        Lets the user configure per-type colors, shapes, icons (for entities)
+        and per-type colors, widths, dashes (for relations).  On accept the
+        updated raw config is emitted via *lexicon_save_requested* so the
+        coordinator can persist it and reload the graph.
+        """
+        from PySide6.QtWidgets import QDialog
+
+        from src.gui.dialogs.lexicon_editor_dialog import LexiconEditorDialog
+
+        dialog = LexiconEditorDialog(
+            parent=self,
+            entity_types=self._available_entity_types,
+            relation_types=self._available_rel_types,
+            current_config=self._raw_lexicon,
+            assets_dir=self._world_assets_dir,
+        )
+
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            new_config = dialog.get_lexicon_config()
+            self._raw_lexicon = new_config
+            self._logger.info("Lexicon updated via editor dialog")
+            self.lexicon_save_requested.emit(new_config)
+
     def _refresh_display_locally(self, focus_node_id: str | None = None) -> None:
         """Refreshes the graph display using cached data and local filters.
 
@@ -314,10 +350,12 @@ class GraphWidget(QWidget):
                 )
 
             # Incremental vs Full Update
+            lexicon = self._resolved_lexicon or None
             if self._is_renderer_ready:
                 self._web_view.update_graph_data(
                     filtered_nodes, filtered_edges, focus_id=focus_node_id,
                     theme_config=self._current_theme_config,
+                    lexicon_config=lexicon,
                 )
             else:
                 html = self._builder.build_html(
@@ -326,6 +364,7 @@ class GraphWidget(QWidget):
                     theme_config=self._current_theme_config,
                     focus_node_id=focus_node_id,
                     view_state=view_state,
+                    lexicon_config=lexicon,
                 )
                 self._web_view.load_html(html)
                 self._is_renderer_ready = True
@@ -431,6 +470,42 @@ class GraphWidget(QWidget):
         """
         self._available_rel_types = rel_types
         self._filter_bar.set_available_relation_types(rel_types)
+
+    def set_lexicon_config(
+        self,
+        raw: dict[str, Any],
+        resolved: dict[str, Any],
+    ) -> None:
+        """Sets the visual lexicon configuration.
+
+        Args:
+            raw: Raw lexicon config with file paths (for editor dialog).
+            resolved: Resolved lexicon config with Base64 data URIs (for rendering).
+
+        """
+        self._raw_lexicon = raw
+        self._resolved_lexicon = resolved
+        # Force full rebuild to apply new styles
+        self._is_renderer_ready = False
+        self._refresh_display_locally()
+
+    def set_available_entity_types(self, entity_types: list[str]) -> None:
+        """Sets the available entity types for the lexicon editor.
+
+        Args:
+            entity_types: List of entity type strings.
+
+        """
+        self._available_entity_types = entity_types
+
+    def set_world_assets_dir(self, path: str | None) -> None:
+        """Sets the world assets directory for icon imports.
+
+        Args:
+            path: Absolute path to the world's assets directory, or None.
+
+        """
+        self._world_assets_dir = path
 
     def get_filter_config(self) -> dict[str, list[str]]:
         """Returns the current filter configuration.
