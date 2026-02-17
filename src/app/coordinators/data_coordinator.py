@@ -311,7 +311,10 @@ class DataCoordinator(BaseCoordinator):
                         entity_types
                     )
             except Exception:
-                pass  # Non-critical, editor will show no types
+                logger.debug(
+                    "Could not load entity types for lexicon editor",
+                    exc_info=True,
+                )
 
             # Set world assets dir from DB path
             try:
@@ -324,7 +327,10 @@ class DataCoordinator(BaseCoordinator):
                         assets_dir
                     )
             except Exception:
-                pass  # Non-critical
+                logger.debug(
+                    "Could not resolve world assets directory",
+                    exc_info=True,
+                )
 
     @Slot(list, list)
     def on_filter_results_ready(

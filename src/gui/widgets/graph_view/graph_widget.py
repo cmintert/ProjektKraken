@@ -350,7 +350,7 @@ class GraphWidget(QWidget):
                 )
 
             # Incremental vs Full Update
-            lexicon = self._resolved_lexicon or None
+            lexicon = self._resolved_lexicon if self._resolved_lexicon.get("nodes") or self._resolved_lexicon.get("edges") else None
             if self._is_renderer_ready:
                 self._web_view.update_graph_data(
                     filtered_nodes, filtered_edges, focus_id=focus_node_id,
