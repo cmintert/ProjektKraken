@@ -41,6 +41,98 @@ logger = logging.getLogger(__name__)
 _ICON_PREVIEW_BG = "#D9D9D9"
 
 
+class ProjectIconCard(QWidget):
+    """A custom widget for displaying project icons with a context menu.
+
+    Provides a clean card interface with right-click context menu for deletion.
+    """
+
+    def __init__(
+        self,
+        icon_path: str,
+        relative_path: str,
+        on_select_callback,
+        on_delete_callback,
+        parent: Optional[QWidget] = None,
+    ) -> None:
+        """Initializes the ProjectIconCard.
+
+        Args:
+            icon_path: Absolute path to the icon file.
+            relative_path: Relative path for identification.
+            on_select_callback: Callback when icon is clicked.
+            on_delete_callback: Callback when delete is selected from menu.
+            parent: Optional parent widget.
+        """
+        super().__init__(parent)
+        self._icon_path = icon_path
+        self._relative_path = relative_path
+        self._on_select = on_select_callback
+        self._on_delete = on_delete_callback
+        self.setFixedSize(64, 64)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.customContextMenuRequested.connect(self._show_context_menu)
+
+        # Create the icon button (main clickable area)
+        self._icon_btn = QPushButton(self)
+        self._icon_btn.setFixedSize(64, 64)
+        self._icon_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._icon_btn.setToolTip(relative_path)
+        self._icon_btn.clicked.connect(self._on_select)
+
+        # Load and set icon
+        pixmap = QPixmap(icon_path)
+        if not pixmap.isNull():
+            self._icon_btn.setIcon(
+                pixmap.scaled(
+                    48,
+                    48,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+            )
+            self._icon_btn.setIconSize(QSize(48, 48))
+
+        self._update_style()
+
+    def _update_style(self) -> None:
+        """Updates the widget styling."""
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+
+        card_style = (
+            f"QWidget {{ background-color: {theme['surface']}; "
+            f"border: 1px solid {theme['border']}; "
+            f"border-radius: 4px; }}"
+        )
+        icon_btn_style = (
+            f"QPushButton {{ background-color: {_ICON_PREVIEW_BG}; "
+            f"border: none; border-radius: 4px; }}"
+            f"QPushButton:hover {{ border: 2px solid {theme['primary']}; }}"
+        )
+
+        self.setStyleSheet(card_style)
+        self._icon_btn.setStyleSheet(icon_btn_style)
+
+    def _show_context_menu(self, position) -> None:
+        """Shows the context menu for this icon card.
+
+        Args:
+            position: The position where the menu should appear.
+        """
+        from PySide6.QtWidgets import QMenu
+
+        menu = QMenu(self)
+
+        delete_action = menu.addAction("Delete Icon")
+        delete_action.triggered.connect(self._on_delete)
+
+        # Show menu at the cursor position
+        menu.exec(self.mapToGlobal(position))
+
+
 def _get_default_icons_dir() -> str:
     """Returns the absolute path to the bundled marker icons directory."""
     return get_resource_path(DEFAULT_MARKER_ICONS_PATH)
@@ -263,28 +355,18 @@ class IconPickerDialog(QDialog):
                 grid_row, col = divmod(i, cols)
                 abs_path = os.path.join(self._world_root, rel_path)
 
-                # Wrap icon button + remove button in a small vbox
-                cell = QWidget()
-                cell_layout = QVBoxLayout(cell)
-                cell_layout.setSpacing(2)
-                cell_layout.setContentsMargins(0, 0, 0, 0)
-
-                btn = self._make_icon_button(abs_path, rel_path)
-                btn.clicked.connect(
-                    lambda checked, rp=rel_path: self._on_icon_selected(rp)
+                # Create ProjectIconCard with callbacks
+                card = ProjectIconCard(
+                    icon_path=abs_path,
+                    relative_path=rel_path,
+                    on_select_callback=lambda checked=False, rp=rel_path: (
+                        self._on_icon_selected(rp)
+                    ),
+                    on_delete_callback=lambda checked=False, rp=rel_path: (
+                        self._on_remove_project_icon(rp)
+                    ),
                 )
-                cell_layout.addWidget(btn, 0, Qt.AlignmentFlag.AlignCenter)
-
-                remove_btn = QPushButton("✖")
-                remove_btn.setFixedSize(20, 20)
-                remove_btn.setToolTip("Remove this icon from the project")
-                remove_btn.setStyleSheet(StyleHelper.get_destructive_button_style())
-                remove_btn.clicked.connect(
-                    lambda checked, rp=rel_path: self._on_remove_project_icon(rp)
-                )
-                cell_layout.addWidget(remove_btn, 0, Qt.AlignmentFlag.AlignCenter)
-
-                grid.addWidget(cell, grid_row, col)
+                grid.addWidget(card, grid_row, col)
 
         scroll.setWidget(inner)
         self._project_tab_layout.addWidget(scroll)
@@ -319,11 +401,14 @@ class IconPickerDialog(QDialog):
         )
         pixmap = QPixmap(icon_path)
         if not pixmap.isNull():
-            btn.setIcon(pixmap.scaled(
-                32, 32,
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
-            ))
+            btn.setIcon(
+                pixmap.scaled(
+                    32,
+                    32,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+            )
             btn.setIconSize(QSize(32, 32))
         return btn
 
