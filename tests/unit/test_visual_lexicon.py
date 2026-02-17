@@ -312,7 +312,7 @@ class TestPrepareNodeWithLexicon:
         node = {"id": "1", "name": "Alice", "object_type": "entity", "type": "human"}
         result = GraphBuilder.prepare_node(node, "#CCC", "#AAA")
 
-        assert result["color"] == "#CCC"
+        assert result["color"]["background"] == "#4DA6FF"
         assert result["shape"] == GraphBuilder.ENTITY_SHAPE
 
     def test_lexicon_overrides_color(self):
@@ -322,7 +322,7 @@ class TestPrepareNodeWithLexicon:
 
         result = GraphBuilder.prepare_node(node, "#CCC", "#AAA", lexicon=lexicon)
 
-        assert result["color"] == "#FFD700"
+        assert result["color"]["background"] == "#FFD700"
 
     def test_lexicon_overrides_shape(self):
         """Lexicon shape overrides the default shape."""
@@ -351,7 +351,7 @@ class TestPrepareNodeWithLexicon:
 
         result = GraphBuilder.prepare_node(node, "#CCC", "#AAA", lexicon=lexicon)
 
-        assert result["color"] == "#CCC"
+        assert result["color"]["background"] == "#4DA6FF"
 
     def test_event_node_without_lexicon(self):
         """Event nodes get event color by default."""
@@ -359,7 +359,7 @@ class TestPrepareNodeWithLexicon:
 
         result = GraphBuilder.prepare_node(node, "#CCC", "#AAA")
 
-        assert result["color"] == "#AAA"
+        assert result["color"]["background"] == "#FF9900"
         assert result["shape"] == GraphBuilder.EVENT_SHAPE
 
 

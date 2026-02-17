@@ -19,7 +19,8 @@ class TestPrepareNode:
 
         assert result["id"] == "n1"
         assert result["label"] == "Kingdom"
-        assert result["color"] == "#AAA"
+        assert isinstance(result["color"], dict)
+        assert "background" in result["color"]
         assert result["shape"] == GraphBuilder.ENTITY_SHAPE
         assert result["object_type"] == "entity"
 
@@ -28,7 +29,7 @@ class TestPrepareNode:
         node = {"id": "n2", "name": "Battle", "object_type": "event"}
         result = GraphBuilder.prepare_node(node, "#AAA", "#BBB")
 
-        assert result["color"] == "#BBB"
+        assert isinstance(result["color"], dict)
         assert result["shape"] == GraphBuilder.EVENT_SHAPE
 
     def test_title_generated_from_object_type_and_name(self) -> None:
@@ -53,12 +54,12 @@ class TestPrepareNode:
 
         assert result["object_type"] == "entity"
 
-    def test_size_is_always_20(self) -> None:
-        """All nodes have size 20."""
+    def test_size_is_24_by_default(self) -> None:
+        """All nodes have size 24 (BASE_SIZE) by default."""
         node = {"id": "n1", "name": "X", "object_type": "entity"}
         result = GraphBuilder.prepare_node(node, "#AAA", "#BBB")
 
-        assert result["size"] == 20
+        assert result["size"] == 24
 
 
 class TestPrepareEdge:
