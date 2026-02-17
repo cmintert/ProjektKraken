@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-02-17
-**Commit:** `cf2173a`
+**Commit:** `0ebd4f2`
 ---
 
 # Changelog
@@ -30,6 +30,8 @@ All notable changes to this project will be documented in this file.
   - Populates entity description with the body of the Markdown file.
 
 ### Fixed
+- *(2026-02-17)* **Graph**: Fixed shape revert bug in Lexicon Editor where user-selected shapes were overridden by images.
+- *(2026-02-17)* **Graph**: Fixed `AttributeError` in `DataCoordinator` occurring during graph lexicon handling.
 - *(2026-02-17)* **Graph**: Fixed regression where edges disappeared during incremental updates by enforcing stable relationship IDs.
 - *(2026-02-17)* **Graph**: Fixed entity renames not updating in the graph view by mapping internal properties to presentation layer.
 - *(2026-02-16)* **UI**: Removed background color from checked checkbox indicators for cleaner look.
