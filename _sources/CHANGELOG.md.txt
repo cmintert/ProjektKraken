@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-17
 ### Internal
-- Merge pull request #88 from cmintert/Graph_Improvements
+- Merge pull request #91 from cmintert/copilot/feat-unified-icon-picker
 
 
 *This changelog was automatically generated.*
