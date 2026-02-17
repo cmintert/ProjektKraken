@@ -12,8 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-02-17)* **Graph**: Implemented immediate visual feedback in Lexicon Editor; changes to colors, shapes, and icons now update the graph in real-time.
+- *(2026-02-17)* **Graph**: Implemented "Cancel" logic for Lexicon Editor to revert changes if the dialog is rejected.
 - *(2026-02-17)* **Graph**: Implemented flicker-free incremental graph updates for smoother visualization changes.
 - *(2026-02-17)* **Graph**: Implemented view state preservation (zoom/pan) across data reloads.
+
+### Changed
+- *(2026-02-17)* **UI**: Renamed "Save" button to "OK" in Lexicon Editor to better reflect the immediate nature of the changes.
 - *(2026-02-16)* **Map**: Added visual keyframe indicator (8px dot) to markers with trajectories to improve discoverability of temporal data.
 
 - *(2026-02-16)* **UI**: Extended theme-aware `StandardCheckbox` styling to Map Hierarchy (QTreeView).

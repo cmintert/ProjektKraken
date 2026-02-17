@@ -131,9 +131,7 @@ class GraphWidget(QWidget):
         self._filter_bar.filters_changed.connect(self._on_toolbar_filter_changed)
         self._filter_bar.search_text_changed.connect(self._on_search_text_changed)
         self._filter_bar.show_advanced_filter_requested.connect(self.show_filter_dialog)
-        self._filter_bar.show_lexicon_editor_requested.connect(
-            self.show_lexicon_editor
-        )
+        self._filter_bar.show_lexicon_editor_requested.connect(self.show_lexicon_editor)
 
     def _on_theme_changed(self, theme_data: dict[str, Any]) -> None:
         """Handles theme changes by refreshing the graph with new colors.
@@ -256,6 +254,10 @@ class GraphWidget(QWidget):
 
         from src.gui.dialogs.lexicon_editor_dialog import LexiconEditorDialog
 
+        # Cache current state for revert
+        original_raw = self._raw_lexicon
+        original_resolved = self._resolved_lexicon
+
         dialog = LexiconEditorDialog(
             parent=self,
             entity_types=self._available_entity_types,
@@ -264,11 +266,45 @@ class GraphWidget(QWidget):
             assets_dir=self._world_assets_dir,
         )
 
-        if dialog.exec() == QDialog.DialogCode.Accepted:
+        # Connect for immediate preview
+        dialog.config_changed.connect(self._on_lexicon_preview_requested)
+
+        result = dialog.exec()
+
+        if result == QDialog.DialogCode.Accepted:
             new_config = dialog.get_lexicon_config()
             self._raw_lexicon = new_config
             self._logger.info("Lexicon updated via editor dialog")
             self.lexicon_save_requested.emit(new_config)
+            # Ensure final state is consistent (though preview should have updated it)
+            self._on_lexicon_preview_requested(new_config)
+        else:
+            # Revert to original state on Cancel
+            self.set_lexicon_config(original_raw, original_resolved)
+
+    def _on_lexicon_preview_requested(self, config: dict[str, Any]) -> None:
+        """Updates the graph display immediately based on new lexicon config.
+
+        Args:
+            config: The new lexicon configuration from the dialog.
+        """
+        # Update raw lexicon
+        self._raw_lexicon = config
+
+        # Resolve images locally
+        from src.gui.widgets.graph_view.graph_builder import GraphBuilder
+        from pathlib import Path
+
+        project_root = (
+            Path(self._world_assets_dir).parent
+            if self._world_assets_dir
+            else Path.cwd()
+        )
+        resolved = GraphBuilder.resolve_lexicon_images(config, project_root)
+        self._resolved_lexicon = resolved
+
+        # Refresh display
+        self._refresh_display_locally()
 
     def _refresh_display_locally(self, focus_node_id: str | None = None) -> None:
         """Refreshes the graph display using cached data and local filters.
@@ -350,10 +386,17 @@ class GraphWidget(QWidget):
                 )
 
             # Incremental vs Full Update
-            lexicon = self._resolved_lexicon if self._resolved_lexicon.get("nodes") or self._resolved_lexicon.get("edges") else None
+            lexicon = (
+                self._resolved_lexicon
+                if self._resolved_lexicon.get("nodes")
+                or self._resolved_lexicon.get("edges")
+                else None
+            )
             if self._is_renderer_ready:
                 self._web_view.update_graph_data(
-                    filtered_nodes, filtered_edges, focus_id=focus_node_id,
+                    filtered_nodes,
+                    filtered_edges,
+                    focus_id=focus_node_id,
                     theme_config=self._current_theme_config,
                     lexicon_config=lexicon,
                 )

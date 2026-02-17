@@ -8,7 +8,7 @@ relation types in the relationship graph.
 import logging
 from typing import Any, Dict, List, Optional
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -47,43 +47,34 @@ NODE_SHAPES = [
 
 
 class _ColorButton(QPushButton):
-    """A small button that displays and lets the user pick a color.
+    """Helper button that shows a color dialog."""
 
-    Shows the current color as background; clicking opens QColorDialog.
-    """
+    color_changed = Signal(str)
 
-    def __init__(
-        self, color: str = "#888888", parent: Optional[QWidget] = None
-    ) -> None:
-        """Initializes the color button.
-
-        Args:
-            color: Initial hex color string.
-            parent: Parent widget.
-
-        """
+    def __init__(self, color: QColor, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self._color = color
         self.setFixedSize(28, 28)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setToolTip("Click to change color")
-        self._apply_swatch()
-        self.clicked.connect(self._pick_color)
+        self.clicked.connect(self._choose_color)
+        self._update_style()
 
-    def _apply_swatch(self) -> None:
+    def _update_style(self) -> None:
         """Updates the button background to reflect the current color."""
         self.setStyleSheet(
-            f"QPushButton {{ background-color: {self._color}; "
+            f"QPushButton {{ background-color: {self._color.name()}; "
             f"border: 1px solid #555; border-radius: 4px; }}"
             f"QPushButton:hover {{ border: 1px solid #aaa; }}"
         )
 
-    def _pick_color(self) -> None:
+    def _choose_color(self) -> None:
         """Opens QColorDialog and updates the stored color."""
-        dlg = QColorDialog(QColor(self._color), self)
-        if dlg.exec() == QColorDialog.DialogCode.Accepted:
-            self._color = dlg.selectedColor().name()
-            self._apply_swatch()
+        color = QColorDialog.getColor(self._color, self, "Select Color")
+        if color.isValid():
+            self._color = color
+            self._update_style()
+            self.color_changed.emit(self._color.name())
 
     def color(self) -> str:
         """Returns the current hex color string.
@@ -92,7 +83,12 @@ class _ColorButton(QPushButton):
             str: Hex color such as '#FF0000'.
 
         """
-        return self._color
+        return self._color.name()
+
+    def set_color(self, color: str) -> None:
+        self._color = QColor(color)
+        self._update_style()
+        self.color_changed.emit(self._color.name())
 
 
 class LexiconEditorDialog(QDialog):
@@ -102,6 +98,8 @@ class LexiconEditorDialog(QDialog):
     and another for relation-type edge styling (color, width, dashes).
     Uses StyleHelper for consistent dark-theme appearance.
     """
+
+    config_changed = Signal(dict)
 
     def __init__(
         self,
@@ -175,6 +173,7 @@ class LexiconEditorDialog(QDialog):
         )
         save_btn = button_box.button(QDialogButtonBox.StandardButton.Save)
         if save_btn:
+            save_btn.setText("OK")
             save_btn.setStyleSheet(StyleHelper.get_primary_button_style())
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
@@ -246,7 +245,9 @@ class LexiconEditorDialog(QDialog):
         grid.addWidget(label, row, 0)
 
         # Color button
-        color_btn = _ColorButton(style.get("color", "#888888"))
+        color_btn = _ColorButton(QColor(style.get("color", "#888888")))
+        color_btn.setFixedSize(28, 28)  # Keep original size
+        color_btn.color_changed.connect(self._emit_config_changed)
         grid.addWidget(color_btn, row, 1, Qt.AlignmentFlag.AlignCenter)
 
         # Shape dropdown
@@ -257,6 +258,7 @@ class LexiconEditorDialog(QDialog):
         if idx >= 0:
             shape_combo.setCurrentIndex(idx)
         shape_combo.setStyleSheet(StyleHelper.get_input_field_style())
+        shape_combo.currentTextChanged.connect(self._emit_config_changed)
         grid.addWidget(shape_combo, row, 2)
 
         # Icon import button
@@ -265,7 +267,9 @@ class LexiconEditorDialog(QDialog):
         icon_btn.setStyleSheet(StyleHelper.get_tool_button_style())
         icon_btn.setToolTip(icon_path if icon_path else "Import an SVG/PNG icon")
         icon_btn.clicked.connect(
-            lambda checked, tn=type_name: self._on_import_icon(tn)
+            lambda checked, tn=type_name, ib=icon_btn, sc=shape_combo: self._select_icon(
+                tn, ib, sc
+            )
         )
         grid.addWidget(icon_btn, row, 3)
 
@@ -276,12 +280,15 @@ class LexiconEditorDialog(QDialog):
             "icon_path": icon_path,
         }
 
-    def _on_import_icon(self, type_name: str) -> None:
+    def _select_icon(
+        self, type_name: str, button: QPushButton, shape_combo: QComboBox
+    ) -> None:
         """Handles icon import for a given entity type.
 
         Args:
             type_name: The entity type to import an icon for.
-
+            button: The QPushButton for the icon.
+            shape_combo: The QComboBox for the shape.
         """
         from pathlib import Path
 
@@ -299,16 +306,18 @@ class LexiconEditorDialog(QDialog):
         if self._assets_dir:
             from src.gui.widgets.map.icon_picker_dialog import import_asset_file
 
-            relative = import_asset_file(file_path, Path(self._assets_dir))
-            if relative:
+            relative_path = import_asset_file(file_path, Path(self._assets_dir))
+            if relative_path:
                 row_data = self._node_rows.get(type_name)
                 if row_data:
-                    row_data["icon_path"] = relative
-                    row_data["icon_btn"].setText("✅ Change")
-                    row_data["icon_btn"].setToolTip(relative)
-                    # Auto-switch shape to 'image'
-                    row_data["shape"].setCurrentText("image")
-                logger.info(f"Imported icon for '{type_name}': {relative}")
+                    self._node_rows[type_name]["icon_path"] = relative_path
+                    # Provide visual feedback
+                    button.setText("✅ Change")
+                    button.setToolTip(relative_path)
+                    # Force shape to 'image'
+                    shape_combo.setCurrentText("image")
+                    self._emit_config_changed()
+                logger.info(f"Imported icon for '{type_name}': {relative_path}")
         else:
             logger.warning("No assets directory set; cannot import icon.")
 
@@ -378,7 +387,9 @@ class LexiconEditorDialog(QDialog):
         grid.addWidget(label, row, 0)
 
         # Color button
-        color_btn = _ColorButton(style.get("color", "#888888"))
+        color_btn = _ColorButton(QColor(style.get("color", "#888888")))
+        color_btn.setFixedSize(28, 28)  # Keep original size
+        color_btn.color_changed.connect(self._emit_config_changed)
         grid.addWidget(color_btn, row, 1, Qt.AlignmentFlag.AlignCenter)
 
         # Width spinner
@@ -386,12 +397,14 @@ class LexiconEditorDialog(QDialog):
         width_spin.setRange(1, 10)
         width_spin.setValue(style.get("width", 1))
         width_spin.setStyleSheet(StyleHelper.get_input_field_style())
+        width_spin.valueChanged.connect(self._emit_config_changed)
         grid.addWidget(width_spin, row, 2)
 
         # Dashes checkbox
         dashes_cb = QCheckBox()
         dashes_cb.setChecked(style.get("dashes", False))
         dashes_cb.setStyleSheet(StyleHelper.get_checkbox_style())
+        dashes_cb.toggled.connect(self._emit_config_changed)
         grid.addWidget(dashes_cb, row, 3, Qt.AlignmentFlag.AlignCenter)
 
         self._edge_rows[rel_type] = {
@@ -431,3 +444,10 @@ class LexiconEditorDialog(QDialog):
             }
 
         return {"nodes": nodes, "edges": edges}
+
+    def _emit_config_changed(self) -> None:
+        try:
+            config = self.get_lexicon_config()
+            self.config_changed.emit(config)
+        except Exception:
+            pass
