@@ -8,6 +8,8 @@ from PySide6.QtWebChannel import QWebChannel
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
+from src.gui.widgets.graph_view.graph_builder import GraphBuilder
+
 logger = logging.getLogger(__name__)
 
 
@@ -106,6 +108,7 @@ class GraphWebView(QWidget):
         nodes: list[dict[str, Any]],
         edges: list[dict[str, Any]],
         focus_id: str | None = None,
+        theme_config: dict[str, str] | None = None,
     ) -> None:
         """Updates the graph data incrementally without reloading the page.
 
@@ -113,33 +116,24 @@ class GraphWebView(QWidget):
             nodes: New list of node dictionaries.
             edges: New list of edge dictionaries.
             focus_id: Optional ID to focus on.
+            theme_config: Optional theme config for node/edge colors.
         """
-        # Map our internal keys to Vis.js keys
-        js_edges = []
-        for e in edges:
-            js_edge = e.copy()
-            # source_id -> from, target_id -> to
-            if "source_id" in js_edge:
-                js_edge["from"] = js_edge.pop("source_id")
-            if "target_id" in js_edge:
-                js_edge["to"] = js_edge.pop("target_id")
-            # Ensure label/title are synced if rel_type is provided
-            if "rel_type" in js_edge:
-                js_edge["label"] = js_edge["rel_type"]
-                js_edge["title"] = js_edge["rel_type"]
-            js_edges.append(js_edge)
+        theme = theme_config or GraphBuilder.DEFAULT_THEME
+        entity_color = theme.get(
+            "node_entity_color", GraphBuilder.ENTITY_COLOR
+        )
+        event_color = theme.get(
+            "node_event_color", GraphBuilder.EVENT_COLOR
+        )
+        edge_color = theme.get("edge_color", "#888888")
 
-        # Map internal node keys (name -> label)
-        js_nodes = []
-        for n in nodes:
-            js_node = n.copy()
-            if "name" in js_node:
-                js_node["label"] = js_node["name"]
-                # Also set title for tooltip if not present
-                if "title" not in js_node:
-                    obj_type = js_node.get("object_type", "item").title()
-                    js_node["title"] = f"{obj_type}: {js_node['name']}"
-            js_nodes.append(js_node)
+        js_nodes = [
+            GraphBuilder.prepare_node(n, entity_color, event_color)
+            for n in nodes
+        ]
+        js_edges = [
+            GraphBuilder.prepare_edge(e, edge_color) for e in edges
+        ]
 
         nodes_json = json.dumps(js_nodes)
         edges_json = json.dumps(js_edges)

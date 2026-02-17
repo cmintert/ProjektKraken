@@ -49,6 +49,71 @@ class GraphBuilder:
     _vis_css_content: str | None = None
     _vis_utils_content: str | None = None
 
+    @staticmethod
+    def prepare_node(
+        node: dict[str, Any],
+        entity_color: str,
+        event_color: str,
+    ) -> dict[str, Any]:
+        """Maps an internal node dict to a Vis.js-compatible node dict.
+
+        Centralizes the node property mapping so that both the full render
+        path (_build_network) and the incremental update path
+        (GraphWebView.update_graph_data) produce identical output.
+
+        Args:
+            node: Internal node dict with id, name, object_type keys.
+            entity_color: Hex color for entity nodes.
+            event_color: Hex color for event nodes.
+
+        Returns:
+            Dict with Vis.js-compatible keys (id, label, title, color, shape,
+            size, object_type).
+
+        """
+        is_entity = node.get("object_type") == "entity"
+        name = node.get("name", "Unnamed")
+        return {
+            "id": node["id"],
+            "label": name,
+            "title": f"{node.get('object_type', 'item').title()}: {name}",
+            "color": entity_color if is_entity else event_color,
+            "shape": (
+                GraphBuilder.ENTITY_SHAPE if is_entity else GraphBuilder.EVENT_SHAPE
+            ),
+            "size": 20,
+            "object_type": node.get("object_type", "entity"),
+        }
+
+    @staticmethod
+    def prepare_edge(
+        edge: dict[str, Any],
+        edge_color: str,
+    ) -> dict[str, Any]:
+        """Maps an internal edge dict to a Vis.js-compatible edge dict.
+
+        Centralizes the edge property mapping so that both the full render
+        path (_build_network) and the incremental update path
+        (GraphWebView.update_graph_data) produce identical output.
+
+        Args:
+            edge: Internal edge dict with source_id, target_id, rel_type keys.
+            edge_color: Hex color for edges.
+
+        Returns:
+            Dict with Vis.js-compatible keys (id, from, to, label, title,
+            color).
+
+        """
+        return {
+            "id": edge.get("id"),
+            "from": edge["source_id"],
+            "to": edge["target_id"],
+            "label": edge.get("rel_type", ""),
+            "title": edge.get("rel_type", ""),
+            "color": edge_color,
+        }
+
     @classmethod
     def _load_local_vis_assets(cls) -> tuple[str, str, str]:
         """Loads local vis-network JS, CSS, and PyVis utils files for offline use.
@@ -223,33 +288,16 @@ class GraphBuilder:
         edge_color = theme.get("edge_color", "#888888")
 
         for node in nodes:
-            color = entity_color if node.get("object_type") == "entity" else event_color
-            shape = (
-                self.ENTITY_SHAPE
-                if node.get("object_type") == "entity"
-                else self.EVENT_SHAPE
-            )
-
-            net.add_node(
-                node["id"],
-                label=node.get("name", "Unnamed"),
-                title=f"{node.get('object_type', 'item').title()}: {node.get('name')}",
-                color=color,
-                shape=shape,
-                size=20,
-                object_type=node.get("object_type", "entity"),
-            )
+            prepared = self.prepare_node(node, entity_color, event_color)
+            n_id = prepared.pop("id")
+            net.add_node(n_id, **prepared)
 
         # Add edges
         for edge in edges:
-            net.add_edge(
-                edge["source_id"],
-                edge["target_id"],
-                id=edge.get("id"),
-                title=edge.get("rel_type", ""),
-                label=edge.get("rel_type", ""),
-                color=edge_color,
-            )
+            prepared = self.prepare_edge(edge, edge_color)
+            source = prepared.pop("from")
+            target = prepared.pop("to")
+            net.add_edge(source, target, **prepared)
 
         return net
 
@@ -424,7 +472,6 @@ class GraphBuilder:
                                 scale: viewState.scale,
                                 animation: false // Instant restore
                             });
-                            console.log("Graph: Restored view state", viewState);
                         } else if (focusId !== null) {
                             // Check if node exists in dataset
                             var nodeData = nodes.get(focusId);
@@ -439,9 +486,6 @@ class GraphBuilder:
                                         easingFunction: "easeInOutQuad"
                                     }
                                 });
-                                console.log("Graph: Focused on node", focusId);
-                            } else {
-                                console.log("Graph: Focus node not found", focusId);
                             }
                         }
                     }
