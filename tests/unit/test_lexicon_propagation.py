@@ -3,7 +3,6 @@
 from unittest.mock import MagicMock, patch
 import pytest
 from PySide6.QtWidgets import QApplication, QDialog, QDialogButtonBox
-from PySide6.QtCore import Qt
 
 from src.gui.dialogs.lexicon_editor_dialog import LexiconEditorDialog, _ColorButton
 from src.gui.widgets.graph_view.graph_widget import GraphWidget
@@ -23,7 +22,9 @@ class TestLexiconPropagation:
 
     def test_color_button_has_signal(self, qapp):
         """Verify _ColorButton has a color_changed signal."""
-        btn = _ColorButton()
+        from PySide6.QtGui import QColor
+
+        btn = _ColorButton(QColor("red"))
         assert hasattr(btn, "color_changed")
 
     def test_dialog_emits_config_changed_on_color_change(self, qapp):
@@ -44,11 +45,17 @@ class TestLexiconPropagation:
         # We need to simulate the signal emission from the button if we can't click it
         # But first let's see if the button even has the signal
         if hasattr(color_btn, "color_changed"):
-            color_btn.color_changed.emit("#123456")
+            # Use set_color to ensure internal state is updated too
+            if hasattr(color_btn, "set_color"):
+                color_btn.set_color("#123456")
+            else:
+                # Fallback if set_color missing
+                color_btn.color_changed.emit("#123456")
+
             mock_slot.assert_called()
             # Verify payload structure
             args = mock_slot.call_args[0][0]
-            assert args["nodes"]["hero"]["color"] == "#123456"
+            assert args["nodes"]["hero"]["color"].lower() == "#123456"
         else:
             pytest.fail("_ColorButton missing color_changed signal")
 
