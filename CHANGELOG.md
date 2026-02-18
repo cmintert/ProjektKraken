@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-02-18
-**Commit:** `55080b3`
+**Commit:** `0.13.0`
 ---
 
 # Changelog
@@ -10,6 +10,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [0.13.0]
 
 ### Added
 - *(2026-02-18)* **Map**: Added "No Fill (Transparent)" and "No Border" options to the marker right-click Visual Styling sub-menu.
