@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Any, Optional
 
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QObject, Qt, Signal, Slot
 from PySide6.QtGui import QColor
 from PySide6.QtWebChannel import QWebChannel
 from PySide6.QtWebEngineWidgets import QWebEngineView
@@ -78,6 +78,9 @@ class GraphWebView(QWidget):
         # Set the page's default background color (fills empty space)
         self._web_view.page().setBackgroundColor(QColor("#1e1e1e"))
 
+        # Disable default context menu
+        self._web_view.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
+
         layout.addWidget(self._web_view)
 
     def load_html(self, html: str) -> None:
@@ -122,12 +125,8 @@ class GraphWebView(QWidget):
                 'nodes' and 'edges' keys for visual styling.
         """
         theme = theme_config or GraphBuilder.DEFAULT_THEME
-        entity_color = theme.get(
-            "node_entity_color", GraphBuilder.ENTITY_COLOR
-        )
-        event_color = theme.get(
-            "node_event_color", GraphBuilder.EVENT_COLOR
-        )
+        entity_color = theme.get("node_entity_color", GraphBuilder.ENTITY_COLOR)
+        event_color = theme.get("node_event_color", GraphBuilder.EVENT_COLOR)
         edge_color = theme.get("edge_color", "#888888")
 
         node_lexicon = (lexicon_config or {}).get("nodes")
