@@ -197,9 +197,26 @@ class MarkerItem(QGraphicsObject):
         if not hasattr(self, "_raw_svg") or not self._raw_svg:
             return
 
+        from src.core.style_constants import V_BORDER, V_BORDER_WIDTH, V_SIZE_SCALE
+
+        fill = self._custom_color  # May be a hex string or "none"
+        stroke = self._visual_attributes.get(V_BORDER)
+        stroke_width = self._visual_attributes.get(V_BORDER_WIDTH)
+        scale = self._visual_attributes.get(V_SIZE_SCALE)
+
+        # Convert "none" border to explicit stroke:none in SVG
+        stroke_val = stroke if stroke else None
+        stroke_width_val = (
+            int(stroke_width) if stroke_width is not None and stroke != "none" else None
+        )
+        scale_val = float(scale) if scale is not None else None
+
         styled = apply_svg_inline_styles(
             self._raw_svg,
-            fill_color=self._custom_color,
+            fill_color=fill,
+            stroke_color=stroke_val,
+            stroke_width=stroke_width_val,
+            scale=scale_val,
         )
 
         renderer = QSvgRenderer(QByteArray(styled.encode("utf-8")))
@@ -316,9 +333,18 @@ class MarkerItem(QGraphicsObject):
         Args:
             attrs: New visual attributes dict.
         """
+        from src.core.style_constants import V_FILL
+
         self._visual_attributes = attrs
-        # Re-resolve color unless a custom color is explicitly set
-        if not self._custom_color:
+        # Re-resolve color unless a custom color is explicitly set.
+        # "none" is a valid explicit value (transparent fill).
+        fill_override = attrs.get(V_FILL)
+        if fill_override is not None:
+            # Explicit fill in attributes takes priority
+            self._custom_color = fill_override
+            if fill_override != "none":
+                self._color = QColor(fill_override)
+        elif not self._custom_color:
             resolved = VisualResolver.resolve_fill(
                 self._visual_attributes, self.object_type
             )
@@ -414,14 +440,31 @@ class MarkerItem(QGraphicsObject):
             painter: The painter to draw with.
             rect: The rectangle to draw into.
         """
-        border_color = QColor(
-            VisualResolver.resolve_border_color(
-                self._visual_attributes, self.object_type
-            )
+        from src.core.style_constants import V_BORDER, V_BORDER_WIDTH, V_FILL
+
+        border_color_str = VisualResolver.resolve_border_color(
+            self._visual_attributes, self.object_type
         )
         border_width = VisualResolver.resolve_border_width(self._visual_attributes)
-        painter.setPen(QPen(border_color, border_width))
-        painter.setBrush(QBrush(self._get_effective_color()))
+        no_border = (
+            self._visual_attributes.get(V_BORDER) == "none"
+            or self._visual_attributes.get(V_BORDER_WIDTH) == 0
+            or border_width == 0
+        )
+        if no_border:
+            painter.setPen(Qt.PenStyle.NoPen)
+        else:
+            painter.setPen(QPen(QColor(border_color_str), border_width))
+
+        no_fill = (
+            self._custom_color == "none"
+            or self._visual_attributes.get(V_FILL) == "none"
+        )
+        if no_fill:
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+        else:
+            painter.setBrush(QBrush(self._get_effective_color()))
+
         painter.drawEllipse(rect)
 
         if self.has_keyframes:
