@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-18
 ### Internal
-- Merge pull request #92 from cmintert/copilot/add-unified-visual-styling
+- Bump version to 0.13.0
 
 
 *This changelog was automatically generated.*
