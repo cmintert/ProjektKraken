@@ -65,11 +65,6 @@ class InteractionHandler:
         change_icon_action.triggered.connect(lambda: self.show_icon_picker(item))
         menu.addAction(change_icon_action)
 
-        change_color_action = QAction(self._view)
-        change_color_action.setText("Change Color...")
-        change_color_action.triggered.connect(lambda: self.show_color_picker(item))
-        menu.addAction(change_color_action)
-
         # --- Visual Styling sub-menu ---
         style_menu = QMenu("Visual Styling", self._view)
 
@@ -200,31 +195,6 @@ class InteractionHandler:
             marker_item.set_icon(selected_icon)
             self._view.change_marker_icon_requested.emit(
                 marker_item.marker_id, selected_icon
-            )
-
-    def show_color_picker(self, marker_item: MarkerItem) -> None:
-        """Shows the color picker dialog for a marker.
-
-        Routes through the unified ``_v_fill`` visual-attribute key
-        so the change is persisted via ``UpdateMarkerAttributeCommand``.
-
-        Args:
-            marker_item: The marker to change the color for.
-        """
-        from src.services.visual_resolver import VisualResolver
-
-        initial_color = marker_item.get_color() or VisualResolver.resolve_fill(
-            marker_item._visual_attributes, marker_item.object_type
-        )
-        color = QColorDialog.getColor(
-            QColor(initial_color), self._view, "Select Marker Color"
-        )
-
-        if color.isValid():
-            color_hex = color.name().upper()
-            marker_item.set_color(color_hex)
-            self._view.marker_visual_style_changed.emit(
-                marker_item.marker_id, {V_FILL: color_hex}
             )
 
     # ------------------------------------------------------------------

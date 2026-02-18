@@ -19,7 +19,6 @@ from PySide6.QtGui import (
     QMouseEvent,
     QPainter,
     QPen,
-    QPixmap,
 )
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (
@@ -404,34 +403,6 @@ class MarkerItem(QGraphicsObject):
             painter.setPen(QPen(QColor(255, 255, 255), 2))
             painter.setBrush(Qt.NoBrush)
             painter.drawRect(rect)
-
-    def _render_svg_to_pixmap(self) -> QPixmap:
-        """Renders the current SVG to a transparent QPixmap.
-
-        Returns:
-            QPixmap: The rendered SVG as a pixmap.
-        """
-        size = self.resolved_size
-        pixmap = QPixmap(size, size)
-        pixmap.fill(Qt.GlobalColor.transparent)
-
-        p = QPainter(pixmap)
-        if self._svg_renderer:
-            self._svg_renderer.render(p)
-        p.end()
-        return pixmap
-
-    def _tint_pixmap(self, pixmap: QPixmap, color: QColor) -> None:
-        """Tint a pixmap with the given color.
-
-        Args:
-            pixmap: The pixmap to tint.
-            color: The color to use for tinting.
-        """
-        painter = QPainter(pixmap)
-        painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
-        painter.fillRect(pixmap.rect(), color)
-        painter.end()
 
     def _draw_fallback_circle(self, painter: QPainter, rect: QRectF) -> None:
         """Draws a fallback colored circle.
