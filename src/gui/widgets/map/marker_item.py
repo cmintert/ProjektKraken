@@ -5,11 +5,12 @@ Provides the MarkerItem class for rendering markers on the map.
 
 import logging
 import os
+from pathlib import Path
 
 # Forward declaration to avoid circular import
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
-from PySide6.QtCore import QRectF, Qt, Signal
+from PySide6.QtCore import QByteArray, QRectF, Qt, Signal
 from PySide6.QtGui import (
     QBrush,
     QColor,
@@ -18,7 +19,6 @@ from PySide6.QtGui import (
     QMouseEvent,
     QPainter,
     QPen,
-    QPixmap,
 )
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (
@@ -29,6 +29,10 @@ from PySide6.QtWidgets import (
     QStyleOptionGraphicsItem,
     QWidget,
 )
+
+from src.core.style_constants import BASE_SIZE
+from src.gui.utils.svg_utils import apply_svg_inline_styles, svg_file_to_string
+from src.services.visual_resolver import VisualResolver
 
 # Resolve marker icons path
 MARKER_ICONS_PATH = os.path.join(
@@ -59,12 +63,7 @@ class MarkerItem(QGraphicsObject):
 
     clicked = Signal(str, str)
 
-    MARKER_SIZE = 24  # Size of the marker icon
-    COLORS = {
-        "entity": QColor("#3498DB"),  # Blue
-        "event": QColor("#F39C12"),  # Orange
-        "default": QColor("#888888"),  # Gray
-    }
+    MARKER_SIZE = BASE_SIZE  # Size of the marker icon
     DEFAULT_ICON = "map-pin.svg"
 
     def __init__(
@@ -77,6 +76,7 @@ class MarkerItem(QGraphicsObject):
         color: Optional[str] = None,
         description: Optional[str] = None,
         lore_date: Optional[float] = None,
+        visual_attributes: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Initializes a MarkerItem.
 
@@ -89,6 +89,7 @@ class MarkerItem(QGraphicsObject):
             color: Optional color hex string.
             description: Optional description for tooltip. Falls back to label if empty.
             lore_date: Optional lore timestamp for temporal filtering.
+            visual_attributes: Optional dict with ``_v_*`` visual override keys.
         """
         super().__init__()
 
@@ -99,11 +100,14 @@ class MarkerItem(QGraphicsObject):
         self._icon_name = icon
         self._svg_renderer: Optional[QSvgRenderer] = None
         self._custom_color = color
-        self._color = (
-            QColor(color)
-            if color
-            else self.COLORS.get(object_type, self.COLORS["default"])
-        )
+        self._visual_attributes: Dict[str, Any] = visual_attributes or {}
+
+        # Resolve fill color via VisualResolver (user override → theme → fallback)
+        if color:
+            self._color = QColor(color)
+        else:
+            resolved = VisualResolver.resolve_fill(self._visual_attributes, object_type)
+            self._color = QColor(resolved)
 
         # Temporal State
         self.lore_date = lore_date
@@ -149,14 +153,18 @@ class MarkerItem(QGraphicsObject):
     def _update_label_position(self) -> None:
         """Centers the label below the marker."""
         rect = self._label_item.boundingRect()
+        size = self.resolved_size
         # Center horizontally relative to 0 (marker center)
         x = -rect.width() / 2
-        # Position vertically below the marker (MARKER_SIZE/2 is bottom edge)
-        y = (self.MARKER_SIZE / 2) + 2  # 2px padding
+        # Position vertically below the marker (size/2 is bottom edge)
+        y = (size / 2) + 2  # 2px padding
         self._label_item.setPos(x, y)
 
     def _load_icon(self, icon_name: Optional[str]) -> None:
         """Loads an SVG icon for the marker.
+
+        Reads the SVG file, applies inline styles (fill color from
+        ``_custom_color``), and loads the styled SVG into the renderer.
 
         Args:
             icon_name: Filename of the icon (e.g., 'castle.svg').
@@ -165,15 +173,56 @@ class MarkerItem(QGraphicsObject):
             icon_name = self.DEFAULT_ICON
 
         icon_path = os.path.join(MARKER_ICONS_PATH, icon_name)
-        if os.path.exists(icon_path):
-            self._svg_renderer = QSvgRenderer(icon_path)
-            if not self._svg_renderer.isValid():
-                logger.warning(f"Invalid SVG file: {icon_path}")
-                self._svg_renderer = None
-            else:
-                self._icon_name = icon_name
-        else:
+        if not os.path.exists(icon_path):
             logger.debug(f"Icon not found: {icon_path}, using fallback circle")
+            self._svg_renderer = None
+            return
+
+        # Read raw SVG content
+        svg_content = svg_file_to_string(Path(icon_path))
+        if not svg_content:
+            self._svg_renderer = None
+            return
+
+        # Cache the raw SVG for re-styling later
+        self._raw_svg = svg_content
+        self._icon_name = icon_name
+
+        # Apply inline styles and load
+        self._apply_and_load_svg()
+
+    def _apply_and_load_svg(self) -> None:
+        """Applies inline styles to cached SVG and loads into renderer."""
+        if not hasattr(self, "_raw_svg") or not self._raw_svg:
+            return
+
+        from src.core.style_constants import V_BORDER, V_BORDER_WIDTH, V_SIZE_SCALE
+
+        fill = self._custom_color  # May be a hex string or "none"
+        stroke = self._visual_attributes.get(V_BORDER)
+        stroke_width = self._visual_attributes.get(V_BORDER_WIDTH)
+        scale = self._visual_attributes.get(V_SIZE_SCALE)
+
+        # Convert "none" border to explicit stroke:none in SVG
+        stroke_val = stroke if stroke else None
+        stroke_width_val = (
+            int(stroke_width) if stroke_width is not None and stroke != "none" else None
+        )
+        scale_val = float(scale) if scale is not None else None
+
+        styled = apply_svg_inline_styles(
+            self._raw_svg,
+            fill_color=fill,
+            stroke_color=stroke_val,
+            stroke_width=stroke_width_val,
+            scale=scale_val,
+        )
+
+        renderer = QSvgRenderer(QByteArray(styled.encode("utf-8")))
+        if renderer.isValid():
+            self._svg_renderer = renderer
+        else:
+            logger.warning("Failed to load styled SVG into renderer")
             self._svg_renderer = None
 
     def set_icon(self, icon_name: str) -> None:
@@ -201,6 +250,8 @@ class MarkerItem(QGraphicsObject):
         """
         self._custom_color = color
         self._color = QColor(color)
+        # Re-style SVG with new fill color
+        self._apply_and_load_svg()
         self.update()
 
     def get_color(self) -> Optional[str]:
@@ -266,14 +317,52 @@ class MarkerItem(QGraphicsObject):
 
         return color
 
+    @property
+    def resolved_size(self) -> int:
+        """Returns the computed marker size (BASE_SIZE * scale).
+
+        Returns:
+            int: Pixel size of this marker.
+        """
+        return VisualResolver.resolve_size(self._visual_attributes)
+
+    def set_visual_attributes(self, attrs: Dict[str, Any]) -> None:
+        """Replaces the visual attributes and refreshes the marker.
+
+        Args:
+            attrs: New visual attributes dict.
+        """
+        from src.core.style_constants import V_FILL
+
+        self._visual_attributes = attrs
+        # Re-resolve color unless a custom color is explicitly set.
+        # "none" is a valid explicit value (transparent fill).
+        fill_override = attrs.get(V_FILL)
+        if fill_override is not None:
+            # Explicit fill in attributes takes priority
+            self._custom_color = fill_override
+            if fill_override != "none":
+                self._color = QColor(fill_override)
+        elif not self._custom_color:
+            resolved = VisualResolver.resolve_fill(
+                self._visual_attributes, self.object_type
+            )
+            self._color = QColor(resolved)
+        # Re-style SVG with updated visual attributes
+        self._apply_and_load_svg()
+        self._update_label_position()
+        self.prepareGeometryChange()
+        self.update()
+
     def boundingRect(self) -> QRectF:
         """Returns the bounding rectangle for the marker.
 
         Returns:
             QRectF: The bounding rect centered on (0, 0).
         """
-        half = self.MARKER_SIZE / 2
-        return QRectF(-half, -half, self.MARKER_SIZE, self.MARKER_SIZE)
+        size = self.resolved_size
+        half = size / 2
+        return QRectF(-half, -half, size, size)
 
     def paint(
         self,
@@ -297,22 +386,14 @@ class MarkerItem(QGraphicsObject):
             self._draw_fallback_circle(painter, rect)
 
     def _draw_svg_icon(self, painter: QPainter, rect: QRectF) -> None:
-        """Draws the SVG icon, applying custom color tint if set.
+        """Draws the SVG icon with inline styles already applied.
 
         Args:
             painter: The painter to draw with.
             rect: The rectangle to draw into.
         """
-        # removed shadow/background
-
-        if self._custom_color:
-            pixmap = self._render_svg_to_pixmap()
-            self._tint_pixmap(pixmap, self._get_effective_color())
-
-            painter.drawPixmap(rect.toRect(), pixmap)
-        else:
-            # Standard SVG rendering (no tint)
-            self._svg_renderer.render(painter, rect)
+        # SVG already has inline fill/stroke styles applied via _apply_and_load_svg
+        self._svg_renderer.render(painter, rect)
 
         if self.has_keyframes:
             self._draw_keyframe_indicator(painter)
@@ -323,33 +404,6 @@ class MarkerItem(QGraphicsObject):
             painter.setBrush(Qt.NoBrush)
             painter.drawRect(rect)
 
-    def _render_svg_to_pixmap(self) -> QPixmap:
-        """Renders the current SVG to a transparent QPixmap.
-
-        Returns:
-            QPixmap: The rendered SVG as a pixmap.
-        """
-        pixmap = QPixmap(int(self.MARKER_SIZE), int(self.MARKER_SIZE))
-        pixmap.fill(Qt.GlobalColor.transparent)
-
-        p = QPainter(pixmap)
-        if self._svg_renderer:
-            self._svg_renderer.render(p)
-        p.end()
-        return pixmap
-
-    def _tint_pixmap(self, pixmap: QPixmap, color: QColor) -> None:
-        """Tint a pixmap with the given color.
-
-        Args:
-            pixmap: The pixmap to tint.
-            color: The color to use for tinting.
-        """
-        painter = QPainter(pixmap)
-        painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
-        painter.fillRect(pixmap.rect(), color)
-        painter.end()
-
     def _draw_fallback_circle(self, painter: QPainter, rect: QRectF) -> None:
         """Draws a fallback colored circle.
 
@@ -357,8 +411,31 @@ class MarkerItem(QGraphicsObject):
             painter: The painter to draw with.
             rect: The rectangle to draw into.
         """
-        painter.setPen(QPen(QColor(255, 255, 255), 2))
-        painter.setBrush(QBrush(self._get_effective_color()))
+        from src.core.style_constants import V_BORDER, V_BORDER_WIDTH, V_FILL
+
+        border_color_str = VisualResolver.resolve_border_color(
+            self._visual_attributes, self.object_type
+        )
+        border_width = VisualResolver.resolve_border_width(self._visual_attributes)
+        no_border = (
+            self._visual_attributes.get(V_BORDER) == "none"
+            or self._visual_attributes.get(V_BORDER_WIDTH) == 0
+            or border_width == 0
+        )
+        if no_border:
+            painter.setPen(Qt.PenStyle.NoPen)
+        else:
+            painter.setPen(QPen(QColor(border_color_str), border_width))
+
+        no_fill = (
+            self._custom_color == "none"
+            or self._visual_attributes.get(V_FILL) == "none"
+        )
+        if no_fill:
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+        else:
+            painter.setBrush(QBrush(self._get_effective_color()))
+
         painter.drawEllipse(rect)
 
         if self.has_keyframes:
@@ -375,12 +452,10 @@ class MarkerItem(QGraphicsObject):
         theme = ThemeManager().get_theme()
         primary_color = QColor(theme.get("primary", "#FF9900"))
 
+        size = self.resolved_size
         # Position: Centered horizontally, slightly above the icon
-        # Marker is centered at 0,0. Top edge is -MARKER_SIZE/2
-        # We want it, say, 4px above that.
-        # Indicator size: 5px
         indicator_size = 8.0
-        y_pos = -(self.MARKER_SIZE / 2) - 4 - (indicator_size / 2)
+        y_pos = -(size / 2) - 4 - (indicator_size / 2)
 
         painter.setPen(Qt.NoPen)
         painter.setBrush(QBrush(primary_color))

@@ -10,15 +10,15 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QMouseEvent
 from PySide6.QtWidgets import (
     QCheckBox,
     QColorDialog,
     QComboBox,
     QDialog,
     QDialogButtonBox,
+    QDoubleSpinBox,
     QGridLayout,
-    QHBoxLayout,
     QLabel,
     QPushButton,
     QScrollArea,
@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core import style_constants as SC
 from src.gui.utils.style_helper import StyleHelper
 
 logger = logging.getLogger(__name__)
@@ -48,7 +49,11 @@ NODE_SHAPES = [
 
 
 class _ColorButton(QPushButton):
-    """Helper button that shows a color dialog."""
+    """Helper button that shows a color dialog.
+
+    Supports a 'none' state (right-click to clear) for nofill/noborder.
+    Shows diagonal hatching when in 'none' mode.
+    """
 
     color_changed = Signal(str)
 
@@ -56,42 +61,79 @@ class _ColorButton(QPushButton):
         self, color: QColor | str = "#888888", parent: Optional[QWidget] = None
     ) -> None:
         super().__init__(parent)
-        self._color = QColor(color) if isinstance(color, str) else color
+        self._is_none = False
+        if isinstance(color, str) and color.lower() == "none":
+            self._is_none = True
+            self._color = QColor("#888888")
+        else:
+            self._color = QColor(color) if isinstance(color, str) else color
         self.setFixedSize(28, 28)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setToolTip("Click to change color")
+        self.setToolTip("Left-click: pick color · Right-click: set none")
         self.clicked.connect(self._choose_color)
         self._update_style()
 
     def _update_style(self) -> None:
         """Updates the button background to reflect the current color."""
-        self.setStyleSheet(
-            f"QPushButton {{ background-color: {self._color.name()}; "
-            f"border: 1px solid #555; border-radius: 4px; }}"
-            f"QPushButton:hover {{ border: 1px solid #aaa; }}"
-        )
+        if self._is_none:
+            # Diagonal hatching pattern via CSS gradient for 'none' state
+            self.setStyleSheet(
+                "QPushButton { background: qlineargradient("
+                "x1:0, y1:0, x2:1, y2:1, "
+                "stop:0 #444, stop:0.49 #444, "
+                "stop:0.5 #888, stop:0.51 #444, stop:1 #444); "
+                "border: 1px solid #555; border-radius: 4px; "
+                "color: #ccc; font-size: 10px; font-weight: bold; }"
+                "QPushButton:hover { border: 1px solid #aaa; }"
+            )
+            self.setText("∅")
+        else:
+            self.setStyleSheet(
+                f"QPushButton {{ background-color: {self._color.name()}; "
+                f"border: 1px solid #555; border-radius: 4px; }}"
+                f"QPushButton:hover {{ border: 1px solid #aaa; }}"
+            )
+            self.setText("")
 
     def _choose_color(self) -> None:
         """Opens QColorDialog and updates the stored color."""
-        color = QColorDialog.getColor(self._color, self, "Select Color")
+        initial = self._color if not self._is_none else QColor("#888888")
+        color = QColorDialog.getColor(initial, self, "Select Color")
         if color.isValid():
+            self._is_none = False
             self._color = color
             self._update_style()
             self.color_changed.emit(self._color.name())
 
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        """Handle right-click to set 'none' state."""
+        if event.button() == Qt.MouseButton.RightButton:
+            self._is_none = True
+            self._update_style()
+            self.color_changed.emit("none")
+            return
+        super().mousePressEvent(event)
+
     def color(self) -> str:
-        """Returns the current hex color string.
+        """Returns the current hex color string or 'none'.
 
         Returns:
-            str: Hex color such as '#FF0000'.
+            str: Hex color such as '#FF0000', or 'none'.
 
         """
+        if self._is_none:
+            return "none"
         return self._color.name()
 
     def set_color(self, color: str) -> None:
-        self._color = QColor(color)
+        """Sets the button color, or 'none' for transparent."""
+        if color.lower() == "none":
+            self._is_none = True
+        else:
+            self._is_none = False
+            self._color = QColor(color)
         self._update_style()
-        self.color_changed.emit(self._color.name())
+        self.color_changed.emit(self.color())
 
 
 class LexiconEditorDialog(QDialog):
@@ -124,8 +166,8 @@ class LexiconEditorDialog(QDialog):
         """
         super().__init__(parent)
         self.setWindowTitle("Visual Lexicon Editor")
-        self.setMinimumSize(520, 480)
-        self.resize(560, 560)
+        self.setMinimumSize(720, 480)
+        self.resize(760, 560)
         self.setStyleSheet(StyleHelper.get_dialog_base_style())
 
         self._entity_types = entity_types or []
@@ -207,7 +249,17 @@ class LexiconEditorDialog(QDialog):
         grid.setContentsMargins(8, 8, 8, 8)
 
         # Header row
-        for col, text in enumerate(["Type", "Color", "Shape", "Icon", ""]):
+        headers = [
+            "Type",
+            "Color",
+            "Border",
+            "Border W.",
+            "Size",
+            "Shape",
+            "Icon",
+            "",
+        ]
+        for col, text in enumerate(headers):
             lbl = QLabel(text)
             lbl.setStyleSheet(StyleHelper.get_section_header_style())
             grid.addWidget(lbl, 0, col)
@@ -243,15 +295,51 @@ class LexiconEditorDialog(QDialog):
             style: Current style dict for this type.
 
         """
+        col = 0
+
         # Type label
         label = QLabel(type_name)
-        grid.addWidget(label, row, 0)
+        grid.addWidget(label, row, col)
+        col += 1
 
-        # Color button
-        color_btn = _ColorButton(QColor(style.get("color", "#888888")))
-        color_btn.setFixedSize(28, 28)  # Keep original size
+        # Color button (fill) — supports 'none' for transparent
+        fill_color = style.get("color", "#888888")
+        color_btn = _ColorButton(fill_color)
+        color_btn.setFixedSize(28, 28)
         color_btn.color_changed.connect(self._emit_config_changed)
-        grid.addWidget(color_btn, row, 1, Qt.AlignmentFlag.AlignCenter)
+        grid.addWidget(color_btn, row, col, Qt.AlignmentFlag.AlignCenter)
+        col += 1
+
+        # Border color button — supports 'none' for no border
+        border_color_val = style.get("border_color", SC.DEFAULT_BORDER_COLOR)
+        border_color_btn = _ColorButton(border_color_val)
+        border_color_btn.setFixedSize(28, 28)
+        border_color_btn.color_changed.connect(self._emit_config_changed)
+        grid.addWidget(
+            border_color_btn, row, col,
+            Qt.AlignmentFlag.AlignCenter,
+        )
+        col += 1
+
+        # Border width spinner
+        border_width_spin = QSpinBox()
+        border_width_spin.setRange(SC.MIN_BORDER_WIDTH, SC.MAX_BORDER_WIDTH)
+        border_width_spin.setValue(style.get("border_width", SC.BASE_BORDER_WIDTH))
+        border_width_spin.setStyleSheet(StyleHelper.get_input_field_style())
+        border_width_spin.valueChanged.connect(self._emit_config_changed)
+        grid.addWidget(border_width_spin, row, col)
+        col += 1
+
+        # Size scale spinner
+        size_spin = QDoubleSpinBox()
+        size_spin.setRange(SC.MIN_SCALE, SC.MAX_SCALE)
+        size_spin.setSingleStep(0.1)
+        size_spin.setDecimals(1)
+        size_spin.setValue(style.get("size_scale", SC.BASE_SCALE))
+        size_spin.setStyleSheet(StyleHelper.get_input_field_style())
+        size_spin.valueChanged.connect(self._emit_config_changed)
+        grid.addWidget(size_spin, row, col)
+        col += 1
 
         # Shape dropdown
         shape_combo = QComboBox()
@@ -262,19 +350,21 @@ class LexiconEditorDialog(QDialog):
             shape_combo.setCurrentIndex(idx)
         shape_combo.setStyleSheet(StyleHelper.get_input_field_style())
         shape_combo.currentTextChanged.connect(self._emit_config_changed)
-        grid.addWidget(shape_combo, row, 2)
+        grid.addWidget(shape_combo, row, col)
+        col += 1
 
         # Icon import button
         icon_path = style.get("icon", "")
         icon_btn = QPushButton("📁 Import" if not icon_path else "✅ Change")
         icon_btn.setStyleSheet(StyleHelper.get_tool_button_style())
-        icon_btn.setToolTip(icon_path if icon_path else "Import an SVG/PNG icon")
+        icon_btn.setToolTip(icon_path or "Import an SVG/PNG icon")
         icon_btn.clicked.connect(
             lambda checked, tn=type_name, ib=icon_btn, sc=shape_combo: self._select_icon(
                 tn, ib, sc
             )
         )
-        grid.addWidget(icon_btn, row, 3)
+        grid.addWidget(icon_btn, row, col)
+        col += 1
 
         # Clear icon button
         clear_btn = QPushButton("✖")
@@ -282,13 +372,14 @@ class LexiconEditorDialog(QDialog):
         clear_btn.setToolTip("Clear icon")
         clear_btn.setStyleSheet(StyleHelper.get_tool_button_style())
         clear_btn.setEnabled(bool(icon_path))
-        clear_btn.clicked.connect(
-            lambda checked, tn=type_name: self._clear_icon(tn)
-        )
-        grid.addWidget(clear_btn, row, 4)
+        clear_btn.clicked.connect(lambda checked, tn=type_name: self._clear_icon(tn))
+        grid.addWidget(clear_btn, row, col)
 
         self._node_rows[type_name] = {
             "color": color_btn,
+            "border_color": border_color_btn,
+            "border_width": border_width_spin,
+            "size_scale": size_spin,
             "shape": shape_combo,
             "icon_btn": icon_btn,
             "clear_btn": clear_btn,
@@ -450,6 +541,9 @@ class LexiconEditorDialog(QDialog):
         for type_name, widgets in self._node_rows.items():
             entry: Dict[str, Any] = {
                 "color": widgets["color"].color(),
+                "border_color": widgets["border_color"].color(),
+                "border_width": widgets["border_width"].value(),
+                "size_scale": widgets["size_scale"].value(),
                 "shape": widgets["shape"].currentText(),
             }
             if widgets.get("icon_path"):

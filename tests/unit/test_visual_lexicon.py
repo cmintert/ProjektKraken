@@ -248,9 +248,7 @@ class TestGraphLexiconPersistence:
             "nodes": {
                 "Faction": {"color": "#FFD700", "shape": "image", "icon": "a.svg"}
             },
-            "edges": {
-                "enemy_of": {"color": "#FF0000", "width": 3, "dashes": True}
-            },
+            "edges": {"enemy_of": {"color": "#FF0000", "width": 3, "dashes": True}},
         }
 
         db_service.set_graph_lexicon(lexicon)
@@ -312,7 +310,7 @@ class TestPrepareNodeWithLexicon:
         node = {"id": "1", "name": "Alice", "object_type": "entity", "type": "human"}
         result = GraphBuilder.prepare_node(node, "#CCC", "#AAA")
 
-        assert result["color"] == "#CCC"
+        assert result["color"]["background"] == "#4DA6FF"
         assert result["shape"] == GraphBuilder.ENTITY_SHAPE
 
     def test_lexicon_overrides_color(self):
@@ -322,7 +320,7 @@ class TestPrepareNodeWithLexicon:
 
         result = GraphBuilder.prepare_node(node, "#CCC", "#AAA", lexicon=lexicon)
 
-        assert result["color"] == "#FFD700"
+        assert result["color"]["background"] == "#FFD700"
 
     def test_lexicon_overrides_shape(self):
         """Lexicon shape overrides the default shape."""
@@ -351,7 +349,7 @@ class TestPrepareNodeWithLexicon:
 
         result = GraphBuilder.prepare_node(node, "#CCC", "#AAA", lexicon=lexicon)
 
-        assert result["color"] == "#CCC"
+        assert result["color"]["background"] == "#4DA6FF"
 
     def test_event_node_without_lexicon(self):
         """Event nodes get event color by default."""
@@ -359,7 +357,7 @@ class TestPrepareNodeWithLexicon:
 
         result = GraphBuilder.prepare_node(node, "#CCC", "#AAA")
 
-        assert result["color"] == "#AAA"
+        assert result["color"]["background"] == "#FF9900"
         assert result["shape"] == GraphBuilder.EVENT_SHAPE
 
 
@@ -477,7 +475,9 @@ class TestResolveLexiconImages:
 
         result = GraphBuilder.resolve_lexicon_images(lexicon, tmp_path)
 
-        assert result["nodes"]["Faction"]["shape"] == "image"
+        # resolve_lexicon_images preserves the user's chosen shape; it only
+        # adds the Base64 data URI without overriding shape to 'image'.
+        assert result["nodes"]["Faction"]["shape"] == "dot"
         assert result["nodes"]["Faction"]["image"].startswith("data:")
 
     def test_missing_icon_does_not_override_shape(self, tmp_path):

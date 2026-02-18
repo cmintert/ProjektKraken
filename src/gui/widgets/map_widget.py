@@ -178,6 +178,7 @@ class MapWidget(QWidget):
     marker_delete_confirmed = Signal(str)
     change_marker_icon_requested = Signal(str, str)  # marker_id, new_icon
     change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
+    marker_visual_style_changed = Signal(str, dict)  # marker_id, style overrides
     marker_drop_requested = Signal(str, str, str, float, float)  # id, type, name, x, y
     # feature_created carries (map_id, obj_id, obj_type, name, feature_type, geometry)
     feature_created = Signal(str, str, str, str, str, list)
@@ -367,6 +368,9 @@ class MapWidget(QWidget):
         )
         self.view.change_marker_color_requested.connect(
             self.change_marker_color_requested.emit
+        )
+        self.view.marker_visual_style_changed.connect(
+            self.marker_visual_style_changed.emit
         )
         self.view.marker_drop_requested.connect(self.marker_drop_requested.emit)
         self.view.mouse_coordinates_changed.connect(self._on_mouse_coordinates_changed)
@@ -1358,6 +1362,7 @@ class MapWidget(QWidget):
         feature_type: str = "point",
         geometry: Optional[list] = None,
         style: Optional[dict] = None,
+        visual_attributes: Optional[dict] = None,
     ) -> None:
         """Adds a marker or feature to the map.
 
@@ -1376,6 +1381,7 @@ class MapWidget(QWidget):
             feature_type: 'point', 'path', or 'region'.
             geometry: Optional list of coordinate dicts for paths/regions.
             style: Optional visual override dict.
+            visual_attributes: Optional dict with ``_v_*`` visual override keys.
 
         """
         self.view.add_marker(
@@ -1391,6 +1397,7 @@ class MapWidget(QWidget):
             feature_type,
             geometry,
             style,
+            visual_attributes,
         )
         # Auto-register in layer hierarchy
         self._register_layer_node(marker_id, label, feature_type)

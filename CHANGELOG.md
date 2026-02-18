@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-02-17
-**Commit:** `18f65d5`
+**Last Updated:** 2026-02-18
+**Commit:** `55080b3`
 ---
 
 # Changelog
@@ -12,8 +12,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- *(2026-02-17)* **UI**: Implemented `ProjectIconCard` widget for a modern, card-based interface in the Project Icons tab.
-- *(2026-02-17)* **UI**: Added theme-aware icon management with support for removing project icons and clearing lexicon icons.
+- *(2026-02-18)* **Map**: Added "No Fill (Transparent)" and "No Border" options to the marker right-click Visual Styling sub-menu.
+  - Markers can now have a fully transparent background or no border, persisted via the undo/redo command stack.
+- *(2026-02-17)* **Graph**: Added Border Color, Border Width, and Size Scale columns to Lexicon Editor node rows.
+- *(2026-02-17)* **Graph**: Extended `_ColorButton` in Lexicon Editor with a "none" state (right-click to clear); displays ∅ symbol with gradient hatching.
+- *(2026-02-17)* **Architecture**: Introduced `src/gui/utils/svg_utils.py` with shared SVG inline-style injection utilities (`apply_svg_inline_styles`, `apply_svg_styling_to_data_uri`, `svg_file_to_string`).
+- *(2026-02-17)* **Architecture**: Introduced `VisualResolver` service and `style_constants.py` for centralized, cascading visual property resolution across map markers and graph nodes.
+- *(2026-02-17)* **Map**: Map markers now respect `_v_border`, `_v_border_width`, and `_v_size_scale` visual attributes; SVG icons are re-styled on attribute change.
 - *(2026-02-17)* **UI**: Added unified `IconPickerDialog` shared between Lexicon Editor and Map Editor with Default Icons, Project Icons, and Import from Disk tabs.
 - *(2026-02-17)* **UI**: Added "Clear Icon" button in Lexicon Editor to remove an icon and reset entity-type shape.
 - *(2026-02-17)* **Assets**: Added `AssetStore.import_icon()` for importing SVG/PNG/JPG icons while preserving the original file extension.
@@ -21,11 +26,13 @@ All notable changes to this project will be documented in this file.
 - *(2026-02-17)* **Graph**: Implemented "Cancel" logic for Lexicon Editor to revert changes if the dialog is rejected.
 - *(2026-02-17)* **Graph**: Implemented flicker-free incremental graph updates for smoother visualization changes.
 - *(2026-02-17)* **Graph**: Implemented view state preservation (zoom/pan) across data reloads.
+- *(2026-02-17)* **UI**: Implemented `ProjectIconCard` widget for a modern, card-based interface in the Project Icons tab.
+- *(2026-02-17)* **UI**: Added theme-aware icon management with support for removing project icons and clearing lexicon icons.
 
 ### Changed
-- *(2026-02-17)* **UI**: Renamed "Save" button to "OK" in Lexicon Editor to better reflect the immediate nature of the changes.
+- *(2026-02-18)* **Map**: Removed redundant top-level "Change Color..." marker context menu item (superseded by "Set Fill Color..." in Visual Styling sub-menu).
+- *(2026-02-17)* **Graph**: Renamed "Save" button to "OK" in Lexicon Editor to better reflect the immediate nature of the changes.
 - *(2026-02-16)* **Map**: Added visual keyframe indicator (8px dot) to markers with trajectories to improve discoverability of temporal data.
-
 - *(2026-02-16)* **UI**: Extended theme-aware `StandardCheckbox` styling to Map Hierarchy (QTreeView).
 - *(2026-02-16)* **Assets**: Updated polyline icon to Phosphor 'bezier-curve' variant for better "Path" visualization.
 - *(2026-02-16)* **UI**: Implemented `StandardCheckbox` widget for consistent, theme-aware checkbox styling across the application.
@@ -44,14 +51,15 @@ All notable changes to this project will be documented in this file.
 - *(2026-02-16)* **UI**: Fixed checkbox icon visibility issue on Windows by using robust absolute resource paths (`get_resource_path`).
 - *(2026-02-15)* **Bug**: Fixed `TypeError` in Markdown import refresh caused by missing `doc_id` in `load_longform_sequence`.
 
-### Changed
-- *(2026-02-16)* **GUI**: Implemented "click empty space to deselect" in Project Explorer, matching behavior of Entity/Event Editor relation lists.
-
 ### Refactor
+- *(2026-02-18)* **Map**: Removed dead code from `MarkerItem` (`_render_svg_to_pixmap`, `_tint_pixmap`) and cleaned up unused imports.
+- *(2026-02-17)* **Graph**: `GraphBuilder.apply_svg_styling` now delegates to shared `svg_utils` module (DRY).
 - *(2026-02-16)* **Docs**: Updated `MarkerItem` docstrings to Google style guide.
-
 - *(2026-02-16)* **UI**: Refactored `OnboardingDialog` to use `StyleHelper` and fully support application themes.
 - *(2026-02-16)* **UI**: Refactored `EventEditor` and `EntityEditor` to use `StandardCheckbox`, removing redundant manual stylesheet updates.
+
+### Changed
+- *(2026-02-16)* **GUI**: Implemented "click empty space to deselect" in Project Explorer, matching behavior of Entity/Event Editor relation lists.
 
 ### Deprecated
 

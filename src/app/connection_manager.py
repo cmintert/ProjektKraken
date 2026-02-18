@@ -809,6 +809,14 @@ class ConnectionManager:
 
         if not self._connect_signal_safe(
             map_widget,
+            "marker_visual_style_changed",
+            map_handler.on_marker_visual_style_changed,
+            "MapWidget",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            map_widget,
             "marker_drop_requested",
             map_handler.on_marker_dropped,
             "MapWidget",

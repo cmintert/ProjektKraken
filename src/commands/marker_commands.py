@@ -477,6 +477,95 @@ class UpdateMarkerColorCommand(BaseCommand):
         return cls(data["marker_id"], data["color"])
 
 
+class UpdateMarkerAttributeCommand(BaseCommand):
+    """Command to update visual-style keys in a marker's attributes dict.
+
+    Merges the provided key/value pairs into the marker's ``attributes``
+    and supports full undo by restoring the previous attribute snapshot.
+    """
+
+    def __init__(self, marker_id: str, updates: dict) -> None:
+        """Initializes the UpdateMarkerAttributeCommand.
+
+        Args:
+            marker_id: The ID of the marker to update.
+            updates: Dictionary of attribute keys/values to merge
+                (e.g. ``{"_v_size_scale": 1.5, "_v_border_width": 4}``).
+        """
+        super().__init__()
+        self.marker_id = marker_id
+        self.updates = updates
+        self._previous_attributes: Optional[dict] = None
+        self._marker: Optional[Marker] = None
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Executes the attribute update.
+
+        Args:
+            db_service: The database service to use.
+
+        Returns:
+            CommandResult: Result object containing success status.
+        """
+        try:
+            current = db_service.get_marker(self.marker_id)
+            if not current:
+                return CommandResult(
+                    success=False,
+                    message=f"Marker not found: {self.marker_id}",
+                    command_name="UpdateMarkerAttributeCommand",
+                )
+
+            self._marker = current
+            self._previous_attributes = dict(current.attributes)
+
+            new_attributes = dict(current.attributes)
+            new_attributes.update(self.updates)
+
+            updated = dataclasses.replace(current, attributes=new_attributes)
+            db_service.insert_marker(updated)
+            self._is_executed = True
+            logger.info(
+                f"Updated marker {self.marker_id} attributes: "
+                f"{list(self.updates.keys())}"
+            )
+            return CommandResult(
+                success=True,
+                message="Marker attributes updated.",
+                command_name="UpdateMarkerAttributeCommand",
+            )
+        except Exception as e:
+            logger.error(f"Failed to update marker attributes: {e}")
+            return CommandResult(
+                success=False,
+                message=f"Failed to update marker attributes: {e}",
+                command_name="UpdateMarkerAttributeCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Reverts the attribute update by restoring previous attributes.
+
+        Args:
+            db_service: The database service to operate on.
+        """
+        if self._is_executed and self._marker and self._previous_attributes is not None:
+            restored = dataclasses.replace(
+                self._marker, attributes=self._previous_attributes
+            )
+            db_service.insert_marker(restored)
+            self._is_executed = False
+            logger.info(f"Undid attribute update of marker: {self.marker_id}")
+
+    def to_dict(self) -> dict:
+        """Serialize command to dictionary."""
+        return {"marker_id": self.marker_id, "updates": self.updates}
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "UpdateMarkerAttributeCommand":
+        """Deserialize command from dictionary."""
+        return cls(data["marker_id"], data["updates"])
+
+
 class DeleteKeyframeCommand(BaseCommand):
     """Command to delete a keyframe from a marker's trajectory."""
 

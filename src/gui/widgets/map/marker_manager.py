@@ -49,6 +49,7 @@ class MarkerManager:
         feature_type: str = "point",
         geometry: Optional[list] = None,
         style: Optional[dict] = None,
+        visual_attributes: Optional[Dict] = None,
     ) -> None:
         """Adds a marker or feature to the map at normalized coordinates.
 
@@ -68,6 +69,7 @@ class MarkerManager:
             feature_type: 'point', 'path', or 'region'.
             geometry: Optional list of coordinate dicts.
             style: Optional visual override dict.
+            visual_attributes: Optional dict with ``_v_*`` visual override keys.
         """
         if not self._view.pixmap_item:
             logger.warning("Cannot add marker: no map loaded")
@@ -130,6 +132,7 @@ class MarkerManager:
             color,
             description,
             lore_date,
+            visual_attributes=visual_attributes,
         )
 
         scene_pos = self._view.coord_system.to_scene(x, y)

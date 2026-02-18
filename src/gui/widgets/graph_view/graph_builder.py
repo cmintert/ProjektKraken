@@ -16,7 +16,10 @@ from typing import Any, Optional
 
 from pyvis.network import Network
 
+from src.core import style_constants as SC
 from src.core.paths import get_resource_path
+from src.core.style_constants import V_BORDER, V_BORDER_WIDTH, V_FILL, V_SIZE_SCALE
+from src.services.visual_resolver import VisualResolver
 
 logger = logging.getLogger(__name__)
 
@@ -80,26 +83,46 @@ class GraphBuilder:
         is_entity = node.get("object_type") == "entity"
         name = node.get("name", "Unnamed")
         node_type = node.get("type", "")
+        attrs = node.get("attributes", {})
+        obj_type = "entity" if is_entity else "event"
 
-        # Defaults
-        color = entity_color if is_entity else event_color
+        # Defaults — resolved via VisualResolver (cascading)
+        color = VisualResolver.resolve_fill(attrs, obj_type)
+        border_color = VisualResolver.resolve_border_color(attrs, obj_type)
         shape = GraphBuilder.ENTITY_SHAPE if is_entity else GraphBuilder.EVENT_SHAPE
+        size = VisualResolver.resolve_size(attrs)
+        border_width = VisualResolver.resolve_border_width(attrs)
 
-        # Apply lexicon overrides if available
+        # Apply lexicon overrides if available.
+        # Per-entity _v_* user overrides take priority over lexicon values.
+        has_user_fill = bool(attrs.get(V_FILL))
+        has_user_border = bool(attrs.get(V_BORDER))
+        has_user_border_width = bool(attrs.get(V_BORDER_WIDTH))
+        has_user_size = bool(attrs.get(V_SIZE_SCALE))
         if lexicon and node_type in lexicon:
             style = lexicon[node_type]
-            if "color" in style:
+            if "color" in style and not has_user_fill:
                 color = style["color"]
             if "shape" in style:
                 shape = style["shape"]
+            if "border_color" in style and not has_user_border:
+                border_color = style["border_color"]
+            if "border_width" in style and not has_user_border_width:
+                border_width = style["border_width"]
+            if "size_scale" in style and not has_user_size:
+                size = SC.BASE_SIZE * style["size_scale"]
 
         result: dict[str, Any] = {
             "id": node["id"],
             "label": name,
             "title": f"{node.get('object_type', 'item').title()}: {name}",
-            "color": color,
+            "color": {
+                "background": color,
+                "border": border_color,
+            },
             "shape": shape,
-            "size": 20,
+            "size": size,
+            "borderWidth": border_width,
             "object_type": node.get("object_type", "entity"),
         }
 
@@ -108,7 +131,15 @@ class GraphBuilder:
             style = lexicon[node_type]
             image_data = style.get("image", "")
             if shape == "image" and image_data:
-                result["image"] = image_data
+                # Apply SVG styling if we have fill/border/size settings
+                styled_image = GraphBuilder.apply_svg_styling(
+                    image_data,
+                    fill_color=style.get("color"),
+                    border_color=style.get("border_color"),
+                    border_width=style.get("border_width"),
+                    size_scale=style.get("size_scale"),
+                )
+                result["image"] = styled_image
 
         return result
 
@@ -197,6 +228,41 @@ class GraphBuilder:
         except OSError as e:
             logger.error(f"Failed to read image for Base64 encoding: {e}")
             return ""
+
+    @staticmethod
+    def apply_svg_styling(
+        data_uri: str,
+        fill_color: Optional[str] = None,
+        border_color: Optional[str] = None,
+        border_width: Optional[int] = None,
+        size_scale: Optional[float] = None,
+    ) -> str:
+        """Injects inline styling into an SVG data URI.
+
+        Delegates to ``svg_utils.apply_svg_styling_to_data_uri`` for the
+        actual styling logic. Non-SVG data URIs pass through unchanged.
+
+        Args:
+            data_uri: Base64 data URI (e.g., "data:image/svg+xml;base64,...")
+            fill_color: Hex color for fill (e.g., "#00FF00")
+            border_color: Hex color for stroke (e.g., "#FF0000")
+            border_width: Stroke width in pixels
+            size_scale: Scale factor (e.g., 1.5 for 150%)
+
+        Returns:
+            Modified data URI with injected inline styles, or original
+            if not SVG.
+
+        """
+        from src.gui.utils.svg_utils import apply_svg_styling_to_data_uri
+
+        return apply_svg_styling_to_data_uri(
+            data_uri,
+            fill_color=fill_color,
+            stroke_color=border_color,
+            stroke_width=border_width,
+            scale=size_scale,
+        )
 
     @staticmethod
     def resolve_lexicon_images(

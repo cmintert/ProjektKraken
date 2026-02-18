@@ -256,6 +256,11 @@ class DataHandler(QObject):
                     lore_date = getattr(event, "lore_date", None)
 
             # Create marker data dict
+            # Prefer ``_v_fill`` over the legacy ``color`` key
+            fill_color = (
+                marker.attributes.get("_v_fill")
+                or marker.attributes.get("color")
+            )
             processed_markers.append(
                 {
                     "id": marker.id,
@@ -266,11 +271,12 @@ class DataHandler(QObject):
                     "x": marker.x,
                     "y": marker.y,
                     "icon": marker.attributes.get("icon"),
-                    "color": marker.attributes.get("color"),
+                    "color": fill_color,
                     "lore_date": lore_date,
                     "feature_type": getattr(marker, "feature_type", "point"),
                     "geometry": getattr(marker, "geometry", None),
                     "style": getattr(marker, "style", None),
+                    "attributes": marker.attributes,
                 }
             )
 
@@ -354,6 +360,20 @@ class DataHandler(QObject):
             is_update_operation = "Update" in command_name
             if "Marker" in command_name and not is_update_operation:
                 logger.debug("[DataHandler] Emitting reload_markers_for_current_map")
+                self.reload_markers_for_current_map.emit()
+
+            # Visual attribute/colour changes also need a marker reload
+            # so the map re-reads updated attributes from the DB.
+            _MARKER_VISUAL_CMDS = {
+                "UpdateMarkerAttributeCommand",
+                "UpdateMarkerColorCommand",
+                "UpdateMarkerIconCommand",
+            }
+            if command_name in _MARKER_VISUAL_CMDS:
+                logger.debug(
+                    "[DataHandler] Emitting reload_markers_for_current_map "
+                    "(visual update)"
+                )
                 self.reload_markers_for_current_map.emit()
 
             if "Event" in command_name:

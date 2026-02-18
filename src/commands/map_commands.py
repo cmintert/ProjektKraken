@@ -35,6 +35,7 @@ from src.commands.marker_commands import (  # noqa: F401
     CreateMarkerCommand,
     DeleteKeyframeCommand,
     DeleteMarkerCommand,
+    UpdateMarkerAttributeCommand,
     UpdateMarkerColorCommand,
     UpdateMarkerCommand,
     UpdateMarkerIconCommand,
@@ -51,6 +52,7 @@ __all__ = [
     "DeleteMarkerCommand",
     "UpdateMarkerIconCommand",
     "UpdateMarkerColorCommand",
+    "UpdateMarkerAttributeCommand",
     "DeleteKeyframeCommand",
     # Layer hierarchy
     "SetLayerVisibilityCommand",
