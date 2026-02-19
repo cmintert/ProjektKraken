@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-02-18
+## [Development] - 2026-02-19
 ### Internal
-- Bump version to 0.13.0
+- Merge pull request #94 from cmintert/copilot/implement-main-window-layout
 
 
 *This changelog was automatically generated.*
