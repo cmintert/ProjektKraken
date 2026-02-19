@@ -94,6 +94,10 @@ def test_on_timeline_clicked_toggles(qtbot):
         win._on_timeline_clicked()
     assert not win.timeline_dock.isVisible()
 
+    with qtbot.waitSignal(win.timeline_requested, timeout=1000):
+        win._on_timeline_clicked()
+    assert win.timeline_dock.isVisible()
+
 
 def test_on_relations_clicked_toggles(qtbot):
     """_on_relations_clicked toggles dock and emits signal."""
@@ -105,6 +109,10 @@ def test_on_relations_clicked_toggles(qtbot):
     with qtbot.waitSignal(win.relations_requested, timeout=1000):
         win._on_relations_clicked()
     assert not win.relations_dock.isVisible()
+
+    with qtbot.waitSignal(win.relations_requested, timeout=1000):
+        win._on_relations_clicked()
+    assert win.relations_dock.isVisible()
 
 
 # -- Editor tab tests --------------------------------------------------------

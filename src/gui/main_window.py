@@ -217,22 +217,42 @@ class MainWindow(QMainWindow):
     # -- Slots (private) -----------------------------------------------------
 
     def _on_explorer_clicked(self, checked: bool = False) -> None:
-        """Handle Explorer activity button click."""
+        """Handle Explorer activity button click.
+
+        Args:
+            checked: Action toggle state from ``QAction.triggered``.
+                Unused; visibility is derived from the dock's current state.
+        """
         self.toggle_explorer()
         self.explorer_requested.emit()
 
     def _on_timeline_clicked(self, checked: bool = False) -> None:
-        """Handle Timeline activity button click."""
+        """Handle Timeline activity button click.
+
+        Args:
+            checked: Action toggle state from ``QAction.triggered``.
+                Unused; visibility is derived from the dock's current state.
+        """
         self.toggle_timeline()
         self.timeline_requested.emit()
 
     def _on_relations_clicked(self, checked: bool = False) -> None:
-        """Handle Relations activity button click."""
+        """Handle Relations activity button click.
+
+        Args:
+            checked: Action toggle state from ``QAction.triggered``.
+                Unused; visibility is derived from the dock's current state.
+        """
         self.toggle_relations()
         self.relations_requested.emit()
 
     def _on_console_clicked(self, checked: bool = False) -> None:
-        """Handle Console activity button click."""
+        """Handle Console activity button click.
+
+        Args:
+            checked: Action toggle state from ``QAction.triggered``.
+                Unused; visibility is derived from the dock's current state.
+        """
         self.toggle_console()
 
     def _on_tab_close_requested(self, index: int) -> None:
