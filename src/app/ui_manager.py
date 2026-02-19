@@ -690,11 +690,23 @@ class UIManager:
 
         layout_data = layouts[name]
 
-        # Restore geometry first, then state
-        if "geometry" in layout_data:
-            self.main_window.restoreGeometry(layout_data["geometry"])
-        if "state" in layout_data:
-            self.main_window.restoreState(layout_data["state"])
+        try:
+            # Restore geometry first, then state
+            if "geometry" in layout_data:
+                self.main_window.restoreGeometry(layout_data["geometry"])
+            if "state" in layout_data:
+                if not self.main_window.restoreState(layout_data["state"]):
+                    logger.warning(
+                        f"restoreState failed for layout '{name}', "
+                        f"falling back to default"
+                    )
+                    self.reset_layout()
+        except Exception as e:
+            logger.error(
+                f"Failed to restore layout '{name}': {e}. "
+                f"Falling back to default."
+            )
+            self.reset_layout()
 
     def delete_layout(self, name: str) -> None:
         """Deletes a saved layout.
@@ -753,7 +765,11 @@ class UIManager:
         calendar_action.triggered.connect(self._open_calendar_config)
 
     def reset_layout(self) -> None:
-        """Restores the default docking layout."""
+        """Restores the default docking layout.
+
+        Tries a saved default layout file first, then falls back to
+        a hardcoded arrangement that positions all known docks.
+        """
         # 1. Try to load from default_layout.json
         from src.core.paths import get_default_layout_path
 
@@ -772,36 +788,60 @@ class UIManager:
                     )
                 if "state" in layout_data:
                     self.main_window.restoreState(bytes.fromhex(layout_data["state"]))
+                logger.info("Default layout restored from file")
                 return
             except Exception as e:
-                # Fallback if load fails
-                logger.warning(f"Failed to load custom layout: {e}")
-                pass
+                logger.warning(f"Failed to load default layout file: {e}")
 
-        # 2. Hardcoded fallback
+        # 2. Hardcoded fallback - position ALL docks
+        logger.info("Applying hardcoded default layout")
+
+        # Left: Project Explorer
         if "list" in self.docks:
             self.main_window.addDockWidget(
                 Qt.DockWidgetArea.LeftDockWidgetArea, self.docks["list"]
             )
             self.docks["list"].show()
 
-        if "event" in self.docks and "entity" in self.docks:
-            self.main_window.addDockWidget(
-                Qt.DockWidgetArea.RightDockWidgetArea, self.docks["event"]
-            )
-            self.main_window.addDockWidget(
-                Qt.DockWidgetArea.RightDockWidgetArea, self.docks["entity"]
-            )
-            self.main_window.tabifyDockWidget(self.docks["event"], self.docks["entity"])
-            self.docks["event"].show()
-            self.docks["entity"].show()
-
-            self.docks["timeline"].show()
-            if "map" in self.docks:
-                self.main_window.tabifyDockWidget(
-                    self.docks["timeline"], self.docks["map"]
+        # Right: Inspectors (tabified)
+        right_docks = ["event", "entity", "longform", "ai_search", "history"]
+        first_right = None
+        for key in right_docks:
+            if key in self.docks:
+                self.main_window.addDockWidget(
+                    Qt.DockWidgetArea.RightDockWidgetArea, self.docks[key]
                 )
-                self.docks["map"].show()
+                self.docks[key].show()
+                if first_right is None:
+                    first_right = key
+                else:
+                    self.main_window.tabifyDockWidget(
+                        self.docks[first_right], self.docks[key]
+                    )
+
+        # Raise the event inspector tab if available
+        if "event" in self.docks:
+            self.docks["event"].raise_()
+
+        # Bottom: Timeline, Map, Graph (tabified)
+        bottom_docks = ["timeline", "map", "graph"]
+        first_bottom = None
+        for key in bottom_docks:
+            if key in self.docks:
+                self.main_window.addDockWidget(
+                    Qt.DockWidgetArea.BottomDockWidgetArea, self.docks[key]
+                )
+                self.docks[key].show()
+                if first_bottom is None:
+                    first_bottom = key
+                else:
+                    self.main_window.tabifyDockWidget(
+                        self.docks[first_bottom], self.docks[key]
+                    )
+
+        # Raise the timeline tab if available
+        if "timeline" in self.docks:
+            self.docks["timeline"].raise_()
 
     def save_as_default_layout(self) -> None:
         """Saves the current layout as the default factory layout.

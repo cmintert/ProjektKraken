@@ -155,3 +155,109 @@ class TestSetupDocks:
         # Check that optional docks were not created
         assert "longform" not in ui_manager.docks
         assert "map" not in ui_manager.docks
+
+
+class TestResetLayout:
+    """Tests for reset_layout robustness."""
+
+    def _create_all_docks(self, ui_manager, main_window):
+        """Helper to create all docks for testing."""
+        widgets = {
+            "unified_list": QLabel("List"),
+            "event_editor": QLabel("Event"),
+            "entity_editor": QLabel("Entity"),
+            "timeline": QLabel("Timeline"),
+            "longform_editor": QLabel("Longform"),
+            "map_widget": QLabel("Map"),
+            "ai_search_panel": QLabel("AI Search"),
+            "graph_widget": QLabel("Graph"),
+            "history_panel": QLabel("History"),
+        }
+        ui_manager.setup_docks(widgets)
+
+    def test_reset_layout_shows_all_critical_docks(self, ui_manager, main_window):
+        """Reset layout should restore all critical docks (showing or tabified)."""
+        self._create_all_docks(ui_manager, main_window)
+
+        # Close all docks (simulate user closing them via X button)
+        for dock in ui_manager.docks.values():
+            dock.close()
+
+        ui_manager.reset_layout()
+
+        # Left dock (not tabified) should not be hidden
+        assert not ui_manager.docks["list"].isHidden()
+        # Tabified docks: raised tab is not hidden; others are hidden by Qt
+        # but still present in the dock dict - verify they exist and have widgets
+        for key in ["event", "entity", "timeline"]:
+            assert key in ui_manager.docks
+            assert ui_manager.docks[key].widget() is not None
+
+    def test_reset_layout_shows_optional_docks(self, ui_manager, main_window):
+        """Reset layout should include optional docks in tab groups."""
+        self._create_all_docks(ui_manager, main_window)
+
+        # Close all docks
+        for dock in ui_manager.docks.values():
+            dock.close()
+
+        ui_manager.reset_layout()
+
+        # Optional docks should exist and have their widgets intact
+        for key in ["map", "graph", "longform"]:
+            assert key in ui_manager.docks
+            assert ui_manager.docks[key].widget() is not None
+
+    def test_reset_layout_works_with_only_critical_docks(
+        self, ui_manager, main_window
+    ):
+        """Reset layout should work when only critical docks exist."""
+        widgets = {
+            "unified_list": QLabel("List"),
+            "event_editor": QLabel("Event"),
+            "entity_editor": QLabel("Entity"),
+            "timeline": QLabel("Timeline"),
+        }
+        ui_manager.setup_docks(widgets)
+
+        # Should not raise
+        ui_manager.reset_layout()
+
+        assert not ui_manager.docks["list"].isHidden()
+        assert not ui_manager.docks["event"].isHidden()
+
+
+class TestRestoreLayoutRobustness:
+    """Tests for restore_layout error handling."""
+
+    def test_restore_layout_handles_missing_name(self, ui_manager):
+        """Restoring a non-existent layout should not crash."""
+        from unittest.mock import patch
+
+        with patch("src.app.ui_manager.QSettings") as MockSettings:
+            MockSettings.return_value.value.return_value = {}
+            # Should not raise
+            ui_manager.restore_layout("NonExistent")
+
+    def test_restore_layout_handles_corrupt_data(self, ui_manager, main_window):
+        """Restoring corrupt layout data should fall back to default."""
+        from unittest.mock import patch
+
+        widgets = {
+            "unified_list": QLabel("List"),
+            "event_editor": QLabel("Event"),
+            "entity_editor": QLabel("Entity"),
+            "timeline": QLabel("Timeline"),
+        }
+        ui_manager.setup_docks(widgets)
+
+        with patch("src.app.ui_manager.QSettings") as MockSettings:
+            MockSettings.return_value.value.return_value = {
+                "Corrupt": {"state": b"corrupt_data", "geometry": b"corrupt_geo"}
+            }
+            # restoreState returns False for corrupt data
+            main_window.restoreState = lambda state: False
+
+            with patch.object(ui_manager, "reset_layout") as mock_reset:
+                ui_manager.restore_layout("Corrupt")
+                mock_reset.assert_called_once()

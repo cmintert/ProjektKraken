@@ -704,7 +704,13 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         # Restore window state (includes dock positions)
         if state := settings.value("windowState"):
-            if self.restoreState(state):
+            try:
+                restored = self.restoreState(state)
+            except Exception as e:
+                logger.error(f"restoreState raised exception: {e}")
+                restored = False
+
+            if restored:
                 logger.debug("Critical docks state restored")
 
                 # Validate critical docks are present
@@ -712,6 +718,9 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
                     logger.warning("Critical dock validation failed, resetting layout")
                     self.ui_manager.reset_layout()
                     settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
+
+                # Repair any collapsed docks after restore
+                self.guard_validate_dock_sizes()
             else:
                 logger.warning("Failed to restore window state, using default layout")
                 self.ui_manager.reset_layout()
@@ -938,14 +947,23 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # Save State
         from src.app.constants import LAYOUT_VERSION, SETTINGS_LAYOUT_VERSION_KEY
 
-        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        settings.setValue("geometry", self.saveGeometry())
-        settings.setValue("windowState", self.saveState())
-        settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
+        try:
+            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+            settings.setValue("geometry", self.saveGeometry())
+            settings.setValue("windowState", self.saveState())
+            settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
+        except Exception as e:
+            logger.error(f"Failed to save window state: {e}")
 
         # Save as Default Layout if requested
         if self.capture_layout_on_exit:
-            self.ui_manager.save_as_default_layout()
+            try:
+                self.ui_manager.save_as_default_layout()
+            except Exception as e:
+                logger.error(f"Failed to save default layout: {e}")
+
+        # Clear crash detection flag on clean exit
+        self.guard_clear_crash_flag()
 
         # Save Persistent Widget States
         if hasattr(self, "timeline"):
