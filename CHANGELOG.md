@@ -11,6 +11,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Security
+- *(2026-02-19)* **Security**: Updated `Pillow` to `12.1.1` to address CVE-2026-25990 (high-severity vulnerability).
+
 ### Added
 - *(2026-02-19)* **UI**: Implemented actionable empty states across editors (Longform Editor, MapWidget, Timeline, Unified List).
   - Added primary action buttons (e.g., "Create Document", "New Entity") to empty states for improved onboarding.
