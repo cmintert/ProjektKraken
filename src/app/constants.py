@@ -68,6 +68,7 @@ UI_INIT_DELAY_MS = 100  # Initial delay for completing app initialization
 UI_DOCK_RESTORE_DELAY_MS = 100  # Delay for restoring critical docks
 UI_OPTIONAL_DOCK_DELAY_MS = 500  # Delay for restoring optional docks
 UI_LAYOUT_GUARD_DELAY_MS = 100  # Delay for layout constraint resets
+UI_DOCK_VALIDATE_DELAY_MS = 200  # Delay for dock size validation after restoreState
 UI_SEARCH_INDEX_REFRESH_DELAY_MS = 100  # Delay for search index status refresh
 UI_CLEANUP_DELAY_MS = 200  # Delay for cleanup operations
 

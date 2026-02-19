@@ -215,6 +215,11 @@ class MapWidget(QWidget):
         """
         super().__init__(parent)
 
+        # Expanding policy prevents dock collapse during resize.
+        self.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
+
         # Create view
         self.view = MapGraphicsView(self)
 
@@ -404,6 +409,24 @@ class MapWidget(QWidget):
 
         # Update all markers with active trajectories
         self._update_trajectory_positions()
+
+    # -- Size hints ----------------------------------------------------------
+
+    def minimumSizeHint(self) -> QSize:
+        """Allow the widget to shrink inside its dock.
+
+        Returns:
+            QSize: Minimum usable size for the map widget.
+        """
+        return QSize(200, 150)
+
+    def sizeHint(self) -> QSize:
+        """Preferred size for the map widget.
+
+        Returns:
+            QSize: Comfortable working size for map interaction.
+        """
+        return QSize(600, 400)
 
     def _on_selection_changed(self) -> None:
         """Updates UI state based on selection."""

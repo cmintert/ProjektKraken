@@ -36,6 +36,7 @@ from src.commands.relation_commands import (  # noqa: F401
     RemoveRelationCommand,
     UpdateRelationCommand,
 )
+from src.gui.main_window import MainWindow as VSCodeMainWindow  # noqa: F401
 from src.services.worker import DatabaseWorker  # noqa: F401
 
 # Support direct execution

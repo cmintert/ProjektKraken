@@ -55,6 +55,7 @@ from PySide6.QtWidgets import (
     QGraphicsSimpleTextItem,
     QGraphicsView,
     QLabel,
+    QSizePolicy,
     QStyleOptionGraphicsItem,
     QWidget,
 )
@@ -685,6 +686,12 @@ class MapGraphicsView(QGraphicsView):
             parent: Parent widget.
         """
         super().__init__(parent)
+
+        # Expanding policy ensures the view fills available dock space and
+        # prevents collapse when the parent dock is resized.
+        self.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
 
         # Initialize Coordinate System
         self.coord_system = MapCoordinateSystem()
