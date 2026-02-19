@@ -207,22 +207,22 @@ def test_create_new_editor_tab(qtbot):
     """create_new_editor_tab adds a tab and returns its index."""
     win = MainWindow()
     qtbot.addWidget(win)
-    initial = win.editor_tabs.count()
+    initial_tab_count = win.editor_tabs.count()
 
     idx = win.create_new_editor_tab()
-    assert win.editor_tabs.count() == initial + 1
-    assert idx == initial
+    assert win.editor_tabs.count() == initial_tab_count + 1
+    assert idx == initial_tab_count
 
 
 def test_create_multiple_tabs(qtbot):
     """Multiple tabs can be created with custom titles."""
     win = MainWindow()
     qtbot.addWidget(win)
-    initial = win.editor_tabs.count()
+    initial_tab_count = win.editor_tabs.count()
 
     idx1 = win.create_new_editor_tab("File A")
     idx2 = win.create_new_editor_tab("File B")
-    assert win.editor_tabs.count() == initial + 2
+    assert win.editor_tabs.count() == initial_tab_count + 2
     assert win.editor_tabs.tabText(idx1) == "File A"
     assert win.editor_tabs.tabText(idx2) == "File B"
 
@@ -233,10 +233,10 @@ def test_close_tab(qtbot):
     qtbot.addWidget(win)
 
     idx = win.create_new_editor_tab("Temp")
-    count_before = win.editor_tabs.count()
+    initial_tab_count = win.editor_tabs.count()
 
     win._on_tab_close_requested(idx)
-    assert win.editor_tabs.count() == count_before - 1
+    assert win.editor_tabs.count() == initial_tab_count - 1
 
 
 # -- Structure tests ---------------------------------------------------------
