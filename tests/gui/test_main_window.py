@@ -6,6 +6,9 @@ real widget integration, signal forwarding, and window state persistence.
 
 from __future__ import annotations
 
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QDockWidget, QMainWindow
+
 from src.gui.main_window import MainWindow
 from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.event_editor import EventEditorWidget
@@ -263,6 +266,73 @@ def test_dock_widgets_exist(qtbot):
     assert win.console_dock is not None
 
 
+def test_dock_nesting_enabled(qtbot):
+    """Dock nesting and tabbed docking are enabled."""
+    win = MainWindow()
+    qtbot.addWidget(win)
+
+    opts = win.dockOptions()
+    assert opts & QMainWindow.DockOption.AllowNestedDocks
+    assert opts & QMainWindow.DockOption.AllowTabbedDocks
+    assert opts & QMainWindow.DockOption.AnimatedDocks
+
+
+def test_docks_are_movable_floatable_closable(qtbot):
+    """All docks have movable, floatable, and closable features set."""
+    win = MainWindow()
+    qtbot.addWidget(win)
+
+    expected = (
+        QDockWidget.DockWidgetFeature.DockWidgetMovable
+        | QDockWidget.DockWidgetFeature.DockWidgetFloatable
+        | QDockWidget.DockWidgetFeature.DockWidgetClosable
+    )
+    for dock in (
+        win.explorer_dock,
+        win.timeline_dock,
+        win.relations_dock,
+        win.console_dock,
+    ):
+        assert dock.features() == expected, (
+            f"{dock.objectName()} features mismatch"
+        )
+
+
+def test_docks_allowed_in_all_areas(qtbot):
+    """All docks accept all dock areas."""
+    win = MainWindow()
+    qtbot.addWidget(win)
+
+    for dock in (
+        win.explorer_dock,
+        win.timeline_dock,
+        win.relations_dock,
+        win.console_dock,
+    ):
+        assert dock.allowedAreas() == Qt.DockWidgetArea.AllDockWidgetAreas, (
+            f"{dock.objectName()} areas mismatch"
+        )
+
+
+def test_docks_have_minimum_size(qtbot):
+    """All docks have a non-zero minimum size."""
+    win = MainWindow()
+    qtbot.addWidget(win)
+
+    for dock in (
+        win.explorer_dock,
+        win.timeline_dock,
+        win.relations_dock,
+        win.console_dock,
+    ):
+        assert dock.minimumWidth() >= 250, (
+            f"{dock.objectName()} min width too small"
+        )
+        assert dock.minimumHeight() >= 100, (
+            f"{dock.objectName()} min height too small"
+        )
+
+
 def test_central_widget_is_splitter(qtbot):
     """Central widget is a QSplitter containing the editor tab widget."""
     win = MainWindow()
@@ -273,6 +343,15 @@ def test_central_widget_is_splitter(qtbot):
     assert isinstance(win.centralWidget(), QSplitter)
     assert win.editor_tabs is not None
     assert win.editor_tabs.tabsClosable()
+
+
+def test_splitter_not_collapsible(qtbot):
+    """Central splitter does not allow children to collapse."""
+    win = MainWindow()
+    qtbot.addWidget(win)
+
+    assert not win._splitter.childrenCollapsible()
+    assert win._splitter.handleWidth() >= 4
 
 
 def test_editor_tabs_closable(qtbot):

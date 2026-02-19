@@ -20,6 +20,7 @@ from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QDockWidget,
     QMainWindow,
+    QSizePolicy,
     QSplitter,
     QTabWidget,
     QTextEdit,
@@ -83,12 +84,44 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(800, 600)
         logger.info("Initializing VS Code-style MainWindow")
 
+        self._configure_dock_options()
         self._init_activity_bar()
         self._init_docks()
         self._init_central_area()
         self._restore_window_state()
 
         logger.info("MainWindow initialization complete")
+
+    # -- Dock options --------------------------------------------------------
+
+    def _configure_dock_options(self) -> None:
+        """Enable animated docks, nesting, and tabbed docking."""
+        self.setDockOptions(
+            QMainWindow.DockOption.AnimatedDocks
+            | QMainWindow.DockOption.AllowNestedDocks
+            | QMainWindow.DockOption.AllowTabbedDocks
+        )
+        self.setTabPosition(
+            Qt.DockWidgetArea.AllDockWidgetAreas,
+            QTabWidget.TabPosition.North,
+        )
+        # Map corners so left/right docks span full height.
+        self.setCorner(
+            Qt.Corner.TopLeftCorner, Qt.DockWidgetArea.LeftDockWidgetArea
+        )
+        self.setCorner(
+            Qt.Corner.BottomLeftCorner, Qt.DockWidgetArea.LeftDockWidgetArea
+        )
+        self.setCorner(
+            Qt.Corner.TopRightCorner, Qt.DockWidgetArea.RightDockWidgetArea
+        )
+        self.setCorner(
+            Qt.Corner.BottomRightCorner,
+            Qt.DockWidgetArea.RightDockWidgetArea,
+        )
+        logger.debug(
+            "Dock options configured: nested, tabbed, animated"
+        )
 
     # -- Activity Bar --------------------------------------------------------
 
@@ -124,13 +157,27 @@ class MainWindow(QMainWindow):
         - Timeline → ``TimelineWidget``
         - Relations → ``GraphWidget``
         - Console  → read-only ``QTextEdit`` (placeholder)
+
+        All docks are movable, floatable, closable, and allowed in every
+        dock area so the user can freely rearrange the layout.
         """
+        _dock_features = (
+            QDockWidget.DockWidgetFeature.DockWidgetMovable
+            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
+            | QDockWidget.DockWidgetFeature.DockWidgetClosable
+        )
+
         # Explorer (left) – UnifiedListWidget
         self.explorer_dock = QDockWidget("Explorer", self)
         self.explorer_dock.setObjectName("ExplorerDock")
+        self.explorer_dock.setFeatures(_dock_features)
+        self.explorer_dock.setAllowedAreas(
+            Qt.DockWidgetArea.AllDockWidgetAreas
+        )
         self.unified_list = UnifiedListWidget()
         self.unified_list.item_selected.connect(self.item_selected)
         self.explorer_dock.setWidget(self.unified_list)
+        self._apply_dock_size_policy(self.explorer_dock)
         self.addDockWidget(
             Qt.DockWidgetArea.LeftDockWidgetArea, self.explorer_dock
         )
@@ -138,9 +185,14 @@ class MainWindow(QMainWindow):
         # Timeline (left, tabified with Explorer) – TimelineWidget
         self.timeline_dock = QDockWidget("Timeline", self)
         self.timeline_dock.setObjectName("TimelineDock")
+        self.timeline_dock.setFeatures(_dock_features)
+        self.timeline_dock.setAllowedAreas(
+            Qt.DockWidgetArea.AllDockWidgetAreas
+        )
         self.timeline = TimelineWidget()
         self.timeline.event_selected.connect(self.event_selected)
         self.timeline_dock.setWidget(self.timeline)
+        self._apply_dock_size_policy(self.timeline_dock)
         self.addDockWidget(
             Qt.DockWidgetArea.LeftDockWidgetArea, self.timeline_dock
         )
@@ -149,9 +201,14 @@ class MainWindow(QMainWindow):
         # Relations (right) – GraphWidget
         self.relations_dock = QDockWidget("Relations", self)
         self.relations_dock.setObjectName("RelationsDock")
+        self.relations_dock.setFeatures(_dock_features)
+        self.relations_dock.setAllowedAreas(
+            Qt.DockWidgetArea.AllDockWidgetAreas
+        )
         self.graph_widget = GraphWidget()
         self.graph_widget.node_clicked.connect(self.node_clicked)
         self.relations_dock.setWidget(self.graph_widget)
+        self._apply_dock_size_policy(self.relations_dock)
         self.addDockWidget(
             Qt.DockWidgetArea.RightDockWidgetArea, self.relations_dock
         )
@@ -159,10 +216,15 @@ class MainWindow(QMainWindow):
         # Console (bottom)
         self.console_dock = QDockWidget("Console", self)
         self.console_dock.setObjectName("ConsoleDock")
+        self.console_dock.setFeatures(_dock_features)
+        self.console_dock.setAllowedAreas(
+            Qt.DockWidgetArea.AllDockWidgetAreas
+        )
         self._console_widget = QTextEdit()
         self._console_widget.setReadOnly(True)
         self._console_widget.setPlaceholderText("Console output...")
         self.console_dock.setWidget(self._console_widget)
+        self._apply_dock_size_policy(self.console_dock, min_h=100)
         self.addDockWidget(
             Qt.DockWidgetArea.BottomDockWidgetArea, self.console_dock
         )
@@ -171,6 +233,28 @@ class MainWindow(QMainWindow):
             "Dock widgets created: Explorer (UnifiedListWidget), "
             "Timeline (TimelineWidget), Relations (GraphWidget), Console"
         )
+
+    @staticmethod
+    def _apply_dock_size_policy(
+        dock: QDockWidget,
+        min_w: int = 250,
+        min_h: int = 150,
+    ) -> None:
+        """Set minimum size and a Preferred/stretch-1 size policy on *dock*.
+
+        Args:
+            dock: The dock widget to configure.
+            min_w: Minimum width in pixels.
+            min_h: Minimum height in pixels.
+        """
+        dock.setMinimumWidth(min_w)
+        dock.setMinimumHeight(min_h)
+        policy = QSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred
+        )
+        policy.setHorizontalStretch(1)
+        policy.setVerticalStretch(1)
+        dock.setSizePolicy(policy)
 
     # -- Central Editor Area -------------------------------------------------
 
@@ -183,6 +267,9 @@ class MainWindow(QMainWindow):
         default tabs.
         """
         self._splitter = QSplitter(Qt.Orientation.Horizontal, self)
+        self._splitter.setChildrenCollapsible(False)
+        self._splitter.setHandleWidth(4)
+
         self.editor_tabs = QTabWidget()
         self.editor_tabs.setTabsClosable(True)
         self.editor_tabs.tabCloseRequested.connect(
@@ -196,6 +283,7 @@ class MainWindow(QMainWindow):
         self.editor_tabs.addTab(self.entity_editor, "Entity Editor")
 
         self._splitter.addWidget(self.editor_tabs)
+        self._splitter.setStretchFactor(0, 1)
         self.setCentralWidget(self._splitter)
         logger.debug(
             "Central editor area created with Event and Entity editor tabs"
