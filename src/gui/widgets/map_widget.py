@@ -46,6 +46,7 @@ from src.core.paths import get_resource_path
 from src.core.theme_manager import ThemeManager
 from src.core.trajectory import KEYFRAME_TIME_EPSILON, interpolate_position
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.map.calibration_distance_dialog import CalibrationDistanceDialog
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 from src.gui.widgets.map.map_layer_model import MapLayerModel
@@ -216,9 +217,7 @@ class MapWidget(QWidget):
         super().__init__(parent)
 
         # Expanding policy prevents dock collapse during resize.
-        self.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
-        )
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         # Create view
         self.view = MapGraphicsView(self)
@@ -321,6 +320,18 @@ class MapWidget(QWidget):
         self._splitter.setStretchFactor(1, 1)
 
         layout.addWidget(self._splitter)
+
+        # Empty State
+        self.empty_state = EmptyStateWidget(
+            title="No Map Available",
+            description="Create or select a map to start exploring.",
+            parent=self,
+        )
+        self.empty_state.add_action(
+            "Create Map", self._on_create_map_clicked, primary=True
+        )
+        layout.addWidget(self.empty_state)
+        # Hidden by default
 
         # Layer model (created per-map; None until markers load)
         self._layer_model: Optional[MapLayerModel] = None
@@ -496,7 +507,7 @@ class MapWidget(QWidget):
         # Update visualization if selection exists
         if self._selected_marker_id:
             self._update_trajectory_visualization(self._selected_marker_id)
-            
+
         # Update marker indicators
         self._update_marker_indicators()
 
@@ -582,9 +593,7 @@ class MapWidget(QWidget):
 
         map_id = self.get_selected_map_id()
         if not map_id:
-            QMessageBox.warning(
-                self, "No Map", "Please create or select a map first."
-            )
+            QMessageBox.warning(self, "No Map", "Please create or select a map first.")
             return
 
         result = self._select_or_create_object(
@@ -595,7 +604,9 @@ class MapWidget(QWidget):
             return
 
         obj_id, obj_type, name = result
-        self.feature_created.emit(map_id, obj_id, obj_type, name, feature_type, geometry)
+        self.feature_created.emit(
+            map_id, obj_id, obj_type, name, feature_type, geometry
+        )
         logger.info(
             f"Feature drawing complete: {feature_type}, {len(geometry)} vertices"
         )
@@ -615,9 +626,7 @@ class MapWidget(QWidget):
     _NEW_ENTITY_SENTINEL = "<New Entity...>"
     _NEW_EVENT_SENTINEL = "<New Event...>"
 
-    def set_cached_items(
-        self, entities: list, events: list
-    ) -> None:
+    def set_cached_items(self, entities: list, events: list) -> None:
         """Stores the entity/event caches for the object-selection dialog.
 
         Called by MainWindow when data is refreshed so the map's
@@ -749,9 +758,7 @@ class MapWidget(QWidget):
         """Shows object-selection dialog and emits ``marker_created``."""
         map_id = self.get_selected_map_id()
         if not map_id:
-            QMessageBox.warning(
-                self, "No Map", "Please create or select a map first."
-            )
+            QMessageBox.warning(self, "No Map", "Please create or select a map first.")
             return
         result = self._select_or_create_object("Add Marker", "Select Object:")
         if not result:
@@ -904,6 +911,15 @@ class MapWidget(QWidget):
 
         self.map_selector.setCurrentIndex(-1)
         self.map_selector.blockSignals(False)
+
+        if not maps:
+            self._splitter.hide()
+            self.toolbar.hide()
+            self.empty_state.show()
+        else:
+            self.empty_state.hide()
+            self.toolbar.show()
+            self._splitter.show()
 
     def select_map(self, map_id: str) -> None:
         """Selects the map with the given ID in the dropdown."""
@@ -1874,7 +1890,7 @@ class OnboardingDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("✨ Keyframe Created!")
         self.setFixedWidth(400)
-        
+
         # Apply theme-aware styling
         self.setStyleSheet(StyleHelper.get_dialog_base_style())
 
@@ -1883,11 +1899,14 @@ class OnboardingDialog(QDialog):
         layout.setSpacing(15)
 
         title = QLabel("✨ Keyframe Created!")
-        title.setStyleSheet(f"font-size: 18px; {StyleHelper.get_section_header_style()}")
+        title.setStyleSheet(
+            f"font-size: 18px; {StyleHelper.get_section_header_style()}"
+        )
         layout.addWidget(title)
-        
+
         # Get theme for specific text colors not covered by base style
         from src.core.theme_manager import ThemeManager
+
         theme = ThemeManager().get_theme()
 
         body = QLabel(
@@ -1903,7 +1922,7 @@ class OnboardingDialog(QDialog):
 
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
-        
+
         from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
 
         self.btn_tutorial = StandardButton("Show Tutorial Video")

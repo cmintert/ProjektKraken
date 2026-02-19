@@ -167,7 +167,7 @@ def test_marker_item_draggable(map_view):
     assert marker.flags() & QGraphicsItem.ItemSendsGeometryChanges
 
 
-def test_marker_item_colors():
+def test_marker_item_colors(qtbot):
     """Test that MarkerItem has different colors for different types."""
     # Create mock pixmap item
     mock_pixmap_item = MagicMock()
@@ -176,11 +176,11 @@ def test_marker_item_colors():
     event_marker = MarkerItem("m2", "event", "Event Label", mock_pixmap_item)
     default_marker = MarkerItem("m3", "unknown", "Unknown", mock_pixmap_item)
 
-    # Colors should be different (now using internal _color attribute)
+    # Colors should be different (now using VisualResolver)
     assert entity_marker._color != event_marker._color
-    assert entity_marker._color == MarkerItem.COLORS["entity"]
-    assert event_marker._color == MarkerItem.COLORS["event"]
-    assert default_marker._color == MarkerItem.COLORS["default"]
+    assert entity_marker._color.name() == "#4da6ff"
+    assert event_marker._color.name() == "#ff9900"
+    assert default_marker._color.name() == "#4da6ff"  # Fallback color in ThemeManager
 
 
 def test_marker_item_tooltip():
