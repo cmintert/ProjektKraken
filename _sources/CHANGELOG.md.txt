@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-19
-### Internal
-- Merge pull request #94 from cmintert/copilot/implement-main-window-layout
+### Documentation
+- docs: remove VS Code mentions from code and changelog
 
 
 *This changelog was automatically generated.*
