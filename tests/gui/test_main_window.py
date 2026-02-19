@@ -1,12 +1,17 @@
 """Tests for the VS Code-style MainWindow layout.
 
 Validates activity bar toggle behaviour, editor tab management,
-and window state persistence.
+real widget integration, signal forwarding, and window state persistence.
 """
 
 from __future__ import annotations
 
 from src.gui.main_window import MainWindow
+from src.gui.widgets.entity_editor import EntityEditorWidget
+from src.gui.widgets.event_editor import EventEditorWidget
+from src.gui.widgets.graph_view.graph_widget import GraphWidget
+from src.gui.widgets.timeline import TimelineWidget
+from src.gui.widgets.unified_list import UnifiedListWidget
 
 # -- Activity-bar toggle tests -----------------------------------------------
 
@@ -115,6 +120,86 @@ def test_on_relations_clicked_toggles(qtbot):
     assert win.relations_dock.isVisible()
 
 
+# -- Real widget integration tests -------------------------------------------
+
+
+def test_explorer_uses_unified_list(qtbot):
+    """Explorer dock contains a UnifiedListWidget."""
+    win = MainWindow()
+    qtbot.addWidget(win)
+    assert isinstance(win.unified_list, UnifiedListWidget)
+    assert win.explorer_dock.widget() is win.unified_list
+
+
+def test_timeline_uses_timeline_widget(qtbot):
+    """Timeline dock contains a TimelineWidget."""
+    win = MainWindow()
+    qtbot.addWidget(win)
+    assert isinstance(win.timeline, TimelineWidget)
+    assert win.timeline_dock.widget() is win.timeline
+
+
+def test_relations_uses_graph_widget(qtbot):
+    """Relations dock contains a GraphWidget."""
+    win = MainWindow()
+    qtbot.addWidget(win)
+    assert isinstance(win.graph_widget, GraphWidget)
+    assert win.relations_dock.widget() is win.graph_widget
+
+
+def test_event_editor_tab_exists(qtbot):
+    """Central tabs include an EventEditorWidget."""
+    win = MainWindow()
+    qtbot.addWidget(win)
+    assert isinstance(win.event_editor, EventEditorWidget)
+    assert win.editor_tabs.indexOf(win.event_editor) != -1
+
+
+def test_entity_editor_tab_exists(qtbot):
+    """Central tabs include an EntityEditorWidget."""
+    win = MainWindow()
+    qtbot.addWidget(win)
+    assert isinstance(win.entity_editor, EntityEditorWidget)
+    assert win.editor_tabs.indexOf(win.entity_editor) != -1
+
+
+def test_default_editor_tabs_count(qtbot):
+    """MainWindow starts with 2 default editor tabs (Event + Entity)."""
+    win = MainWindow()
+    qtbot.addWidget(win)
+    assert win.editor_tabs.count() == 2
+
+
+# -- Signal forwarding tests -------------------------------------------------
+
+
+def test_item_selected_signal_forwarded(qtbot):
+    """UnifiedListWidget.item_selected is forwarded to MainWindow."""
+    win = MainWindow()
+    qtbot.addWidget(win)
+
+    with qtbot.waitSignal(win.item_selected, timeout=1000):
+        win.unified_list.item_selected.emit("event", "test-id-1")
+
+
+def test_event_selected_signal_forwarded(qtbot):
+    """TimelineWidget.event_selected is forwarded to MainWindow."""
+    win = MainWindow()
+    qtbot.addWidget(win)
+
+    with qtbot.waitSignal(win.event_selected, timeout=1000):
+        win.timeline.event_selected.emit("test-event-id")
+
+
+def test_node_clicked_signal_forwarded(qtbot):
+    """GraphWidget.node_clicked is forwarded to MainWindow."""
+    win = MainWindow()
+    qtbot.addWidget(win)
+
+    with qtbot.waitSignal(win.node_clicked, timeout=1000):
+        win.graph_widget.node_clicked.emit("entity", "test-node-id")
+
+
 # -- Editor tab tests --------------------------------------------------------
 
 
@@ -133,10 +218,11 @@ def test_create_multiple_tabs(qtbot):
     """Multiple tabs can be created with custom titles."""
     win = MainWindow()
     qtbot.addWidget(win)
+    initial = win.editor_tabs.count()
 
     idx1 = win.create_new_editor_tab("File A")
     idx2 = win.create_new_editor_tab("File B")
-    assert win.editor_tabs.count() == 2
+    assert win.editor_tabs.count() == initial + 2
     assert win.editor_tabs.tabText(idx1) == "File A"
     assert win.editor_tabs.tabText(idx2) == "File B"
 
@@ -146,11 +232,11 @@ def test_close_tab(qtbot):
     win = MainWindow()
     qtbot.addWidget(win)
 
-    win.create_new_editor_tab("Temp")
-    assert win.editor_tabs.count() == 1
+    idx = win.create_new_editor_tab("Temp")
+    count_before = win.editor_tabs.count()
 
-    win._on_tab_close_requested(0)
-    assert win.editor_tabs.count() == 0
+    win._on_tab_close_requested(idx)
+    assert win.editor_tabs.count() == count_before - 1
 
 
 # -- Structure tests ---------------------------------------------------------

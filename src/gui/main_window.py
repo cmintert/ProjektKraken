@@ -3,6 +3,11 @@
 Provides an Activity Bar, dockable Explorer/Timeline/Relations/Console panes,
 and a central tabbed editor area.  Layout geometry and dock state are persisted
 via ``QSettings`` across application runs.
+
+Real production widgets from the ``src.gui.widgets`` package are used for the
+Explorer (``UnifiedListWidget``), Timeline (``TimelineWidget``), and Relations
+(``GraphWidget``) docks.  Event and Entity editors are available as central
+editor tabs.
 """
 
 from __future__ import annotations
@@ -14,7 +19,6 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QDockWidget,
-    QListWidget,
     QMainWindow,
     QSplitter,
     QTabWidget,
@@ -22,6 +26,12 @@ from PySide6.QtWidgets import (
     QToolBar,
     QWidget,
 )
+
+from src.gui.widgets.entity_editor import EntityEditorWidget
+from src.gui.widgets.event_editor import EventEditorWidget
+from src.gui.widgets.graph_view.graph_widget import GraphWidget
+from src.gui.widgets.timeline import TimelineWidget
+from src.gui.widgets.unified_list import UnifiedListWidget
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +44,8 @@ class MainWindow(QMainWindow):
 
     Provides:
         - A left-side Activity Bar with toggle buttons for docks.
-        - Explorer, Timeline, and Relations dock widgets.
+        - Explorer (``UnifiedListWidget``), Timeline (``TimelineWidget``),
+          and Relations (``GraphWidget``) dock widgets.
         - A central ``QTabWidget`` (closable tabs) inside a ``QSplitter``.
         - A bottom Console dock (read-only ``QTextEdit`` placeholder).
         - Geometry and dock state persistence via ``QSettings``.
@@ -46,11 +57,20 @@ class MainWindow(QMainWindow):
             clicked.
         relations_requested: Emitted when the Relations activity button is
             clicked.
+        item_selected: Forwarded from the Explorer when an item is selected.
+            Carries ``(item_type, item_id)`` strings.
+        event_selected: Forwarded from the Timeline when an event is clicked.
+            Carries the event ID string.
+        node_clicked: Forwarded from the Relations graph when a node is
+            clicked.  Carries ``(object_type, object_id)`` strings.
     """
 
     explorer_requested = Signal()
     timeline_requested = Signal()
     relations_requested = Signal()
+    item_selected = Signal(str, str)
+    event_selected = Signal(str)
+    node_clicked = Signal(str, str)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialise the VS Code-style MainWindow.
@@ -97,40 +117,41 @@ class MainWindow(QMainWindow):
     # -- Dock Widgets --------------------------------------------------------
 
     def _init_docks(self) -> None:
-        """Create Explorer, Timeline, Relations, and Console dock widgets."""
-        # Explorer (left)
+        """Create Explorer, Timeline, Relations, and Console dock widgets.
+
+        Uses production widgets from ``src.gui.widgets``:
+        - Explorer → ``UnifiedListWidget``
+        - Timeline → ``TimelineWidget``
+        - Relations → ``GraphWidget``
+        - Console  → read-only ``QTextEdit`` (placeholder)
+        """
+        # Explorer (left) – UnifiedListWidget
         self.explorer_dock = QDockWidget("Explorer", self)
         self.explorer_dock.setObjectName("ExplorerDock")
-        self._explorer_widget = QListWidget()
-        self._explorer_widget.addItems(
-            ["(placeholder) Item 1", "(placeholder) Item 2"]
-        )
-        self.explorer_dock.setWidget(self._explorer_widget)
+        self.unified_list = UnifiedListWidget()
+        self.unified_list.item_selected.connect(self.item_selected)
+        self.explorer_dock.setWidget(self.unified_list)
         self.addDockWidget(
             Qt.DockWidgetArea.LeftDockWidgetArea, self.explorer_dock
         )
 
-        # Timeline (left, tabified with Explorer)
+        # Timeline (left, tabified with Explorer) – TimelineWidget
         self.timeline_dock = QDockWidget("Timeline", self)
         self.timeline_dock.setObjectName("TimelineDock")
-        self._timeline_widget = QListWidget()
-        self._timeline_widget.addItems(
-            ["(placeholder) Event A", "(placeholder) Event B"]
-        )
-        self.timeline_dock.setWidget(self._timeline_widget)
+        self.timeline = TimelineWidget()
+        self.timeline.event_selected.connect(self.event_selected)
+        self.timeline_dock.setWidget(self.timeline)
         self.addDockWidget(
             Qt.DockWidgetArea.LeftDockWidgetArea, self.timeline_dock
         )
         self.tabifyDockWidget(self.explorer_dock, self.timeline_dock)
 
-        # Relations (right)
+        # Relations (right) – GraphWidget
         self.relations_dock = QDockWidget("Relations", self)
         self.relations_dock.setObjectName("RelationsDock")
-        self._relations_widget = QListWidget()
-        self._relations_widget.addItems(
-            ["(placeholder) Rel 1", "(placeholder) Rel 2"]
-        )
-        self.relations_dock.setWidget(self._relations_widget)
+        self.graph_widget = GraphWidget()
+        self.graph_widget.node_clicked.connect(self.node_clicked)
+        self.relations_dock.setWidget(self.graph_widget)
         self.addDockWidget(
             Qt.DockWidgetArea.RightDockWidgetArea, self.relations_dock
         )
@@ -147,7 +168,8 @@ class MainWindow(QMainWindow):
         )
 
         logger.debug(
-            "Dock widgets created: Explorer, Timeline, Relations, Console"
+            "Dock widgets created: Explorer (UnifiedListWidget), "
+            "Timeline (TimelineWidget), Relations (GraphWidget), Console"
         )
 
     # -- Central Editor Area -------------------------------------------------
@@ -157,6 +179,8 @@ class MainWindow(QMainWindow):
 
         The ``QTabWidget`` supports closable tabs and is wrapped in a
         ``QSplitter`` so that future secondary editor groups can be added.
+        An ``EventEditorWidget`` and an ``EntityEditorWidget`` are added as
+        default tabs.
         """
         self._splitter = QSplitter(Qt.Orientation.Horizontal, self)
         self.editor_tabs = QTabWidget()
@@ -164,9 +188,18 @@ class MainWindow(QMainWindow):
         self.editor_tabs.tabCloseRequested.connect(
             self._on_tab_close_requested
         )
+
+        # Default editor tabs
+        self.event_editor = EventEditorWidget()
+        self.entity_editor = EntityEditorWidget()
+        self.editor_tabs.addTab(self.event_editor, "Event Editor")
+        self.editor_tabs.addTab(self.entity_editor, "Entity Editor")
+
         self._splitter.addWidget(self.editor_tabs)
         self.setCentralWidget(self._splitter)
-        logger.debug("Central editor area created")
+        logger.debug(
+            "Central editor area created with Event and Entity editor tabs"
+        )
 
     # -- Public Toggle Methods -----------------------------------------------
 
