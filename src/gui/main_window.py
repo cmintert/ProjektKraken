@@ -39,6 +39,12 @@ logger = logging.getLogger(__name__)
 _SETTINGS_KEY_GEOMETRY = "vscode_layout/geometry"
 _SETTINGS_KEY_STATE = "vscode_layout/windowState"
 
+_DOCK_FEATURES = (
+    QDockWidget.DockWidgetFeature.DockWidgetMovable
+    | QDockWidget.DockWidgetFeature.DockWidgetFloatable
+    | QDockWidget.DockWidgetFeature.DockWidgetClosable
+)
+
 
 class MainWindow(QMainWindow):
     """VS Code-style main window with activity bar, docks, and tabbed editors.
@@ -161,16 +167,10 @@ class MainWindow(QMainWindow):
         All docks are movable, floatable, closable, and allowed in every
         dock area so the user can freely rearrange the layout.
         """
-        _dock_features = (
-            QDockWidget.DockWidgetFeature.DockWidgetMovable
-            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
-            | QDockWidget.DockWidgetFeature.DockWidgetClosable
-        )
-
         # Explorer (left) – UnifiedListWidget
         self.explorer_dock = QDockWidget("Explorer", self)
         self.explorer_dock.setObjectName("ExplorerDock")
-        self.explorer_dock.setFeatures(_dock_features)
+        self.explorer_dock.setFeatures(_DOCK_FEATURES)
         self.explorer_dock.setAllowedAreas(
             Qt.DockWidgetArea.AllDockWidgetAreas
         )
@@ -185,7 +185,7 @@ class MainWindow(QMainWindow):
         # Timeline (left, tabified with Explorer) – TimelineWidget
         self.timeline_dock = QDockWidget("Timeline", self)
         self.timeline_dock.setObjectName("TimelineDock")
-        self.timeline_dock.setFeatures(_dock_features)
+        self.timeline_dock.setFeatures(_DOCK_FEATURES)
         self.timeline_dock.setAllowedAreas(
             Qt.DockWidgetArea.AllDockWidgetAreas
         )
@@ -201,7 +201,7 @@ class MainWindow(QMainWindow):
         # Relations (right) – GraphWidget
         self.relations_dock = QDockWidget("Relations", self)
         self.relations_dock.setObjectName("RelationsDock")
-        self.relations_dock.setFeatures(_dock_features)
+        self.relations_dock.setFeatures(_DOCK_FEATURES)
         self.relations_dock.setAllowedAreas(
             Qt.DockWidgetArea.AllDockWidgetAreas
         )
@@ -216,7 +216,7 @@ class MainWindow(QMainWindow):
         # Console (bottom)
         self.console_dock = QDockWidget("Console", self)
         self.console_dock.setObjectName("ConsoleDock")
-        self.console_dock.setFeatures(_dock_features)
+        self.console_dock.setFeatures(_DOCK_FEATURES)
         self.console_dock.setAllowedAreas(
             Qt.DockWidgetArea.AllDockWidgetAreas
         )
