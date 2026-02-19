@@ -426,10 +426,13 @@ class UIManager:
                 | QDockWidget.DockWidgetFeature.DockWidgetClosable
             )
 
-            # Set minimum sizes to prevent collapse
-            # Base minimum that shows title bar + some content
-            dock.setMinimumWidth(250)  # Enough for form labels
-            dock.setMinimumHeight(150)  # Enough for controls
+            # Set minimum sizes on the inner widget to prevent collapse.
+            # Constraints on the dock container itself can be overridden by
+            # restoreState(), which may collapse the container to 0x0.
+            widget.setMinimumWidth(250)  # Enough for form labels
+            widget.setMinimumHeight(150)  # Enough for controls
+            dock.setMinimumWidth(0)
+            dock.setMinimumHeight(0)
 
             # Set size policy to allow shrinking but with limits
             policy = QSizePolicy(
@@ -778,30 +781,50 @@ class UIManager:
                 logger.warning(f"Failed to load custom layout: {e}")
                 pass
 
-        # 2. Hardcoded fallback
+        # 2. Hardcoded fallback — guard every key to avoid KeyError
+        applied = []
+
         if "list" in self.docks:
             self.main_window.addDockWidget(
                 Qt.DockWidgetArea.LeftDockWidgetArea, self.docks["list"]
             )
             self.docks["list"].show()
+            applied.append("list")
 
-        if "event" in self.docks and "entity" in self.docks:
+        if "event" in self.docks:
             self.main_window.addDockWidget(
                 Qt.DockWidgetArea.RightDockWidgetArea, self.docks["event"]
             )
+            self.docks["event"].show()
+            applied.append("event")
+
+        if "entity" in self.docks:
             self.main_window.addDockWidget(
                 Qt.DockWidgetArea.RightDockWidgetArea, self.docks["entity"]
             )
-            self.main_window.tabifyDockWidget(self.docks["event"], self.docks["entity"])
-            self.docks["event"].show()
             self.docks["entity"].show()
-
-            self.docks["timeline"].show()
-            if "map" in self.docks:
+            applied.append("entity")
+            if "event" in self.docks:
                 self.main_window.tabifyDockWidget(
-                    self.docks["timeline"], self.docks["map"]
+                    self.docks["event"], self.docks["entity"]
                 )
-                self.docks["map"].show()
+
+        if "timeline" in self.docks:
+            self.main_window.addDockWidget(
+                Qt.DockWidgetArea.BottomDockWidgetArea, self.docks["timeline"]
+            )
+            self.docks["timeline"].show()
+            applied.append("timeline")
+
+        for key in ("map", "longform", "ai_search", "history", "graph"):
+            if key in self.docks:
+                self.main_window.addDockWidget(
+                    Qt.DockWidgetArea.BottomDockWidgetArea, self.docks[key]
+                )
+                self.docks[key].show()
+                applied.append(key)
+
+        logger.info(f"reset_layout applied docks: {applied}")
 
     def save_as_default_layout(self) -> None:
         """Saves the current layout as the default factory layout.

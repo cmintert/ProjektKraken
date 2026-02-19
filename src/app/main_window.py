@@ -52,6 +52,7 @@ from src.app.constants import (
     SETTINGS_FILTER_CONFIG_KEY,
     UI_DOCK_RESTORE_DELAY_MS,
     UI_INIT_DELAY_MS,
+    UI_LAYOUT_GUARD_DELAY_MS,
     UI_OPTIONAL_DOCK_DELAY_MS,
     WINDOW_SETTINGS_APP,
     WINDOW_SETTINGS_KEY,
@@ -637,11 +638,10 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         # Check for crash loop / blocked docks immediately
         if self.guard_check_crash_flag():
-            logger.info(
-                "Crash flag detected - considering safety measures "
-                "(logging only for now)"
+            logger.warning(
+                "Crash flag detected - scheduling layout reset to avoid crash loop"
             )
-            # We could force reset here if enabled
+            QTimer.singleShot(0, self.ui_manager.reset_layout)
 
         # Stage 2: Critical docks after defined delay
         QTimer.singleShot(UI_DOCK_RESTORE_DELAY_MS, self._restore_critical_docks)
@@ -706,6 +706,9 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         if state := settings.value("windowState"):
             if self.restoreState(state):
                 logger.debug("Critical docks state restored")
+                QTimer.singleShot(
+                    UI_LAYOUT_GUARD_DELAY_MS, self.guard_validate_dock_sizes
+                )
 
                 # Validate critical docks are present
                 if not self._validate_dock_state():

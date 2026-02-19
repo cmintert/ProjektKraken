@@ -64,13 +64,13 @@ class TestDockCreation:
         assert dock is None
 
     def test_create_dock_sets_minimum_sizes(self, ui_manager):
-        """Test that dock creation sets appropriate minimum sizes."""
+        """Test that dock creation sets appropriate minimum sizes on the inner widget."""
         widget = QLabel("Test Widget")
         dock = ui_manager._create_dock("Test Dock", "TestDockObject", widget)
 
         assert dock is not None
-        assert dock.minimumWidth() == 250
-        assert dock.minimumHeight() == 150
+        assert dock.widget().minimumWidth() == 250
+        assert dock.widget().minimumHeight() == 150
 
     def test_create_dock_sets_features(self, ui_manager):
         """Test that dock has correct features enabled."""
