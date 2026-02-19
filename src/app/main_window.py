@@ -712,6 +712,14 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
                     logger.warning("Critical dock validation failed, resetting layout")
                     self.ui_manager.reset_layout()
                     settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
+                else:
+                    # Schedule dock size validation after the event loop
+                    # processes the restored layout.  restoreState()
+                    # deserializes sizes but doesn't trigger a full layout
+                    # pass, so docks (especially map/timeline in the bottom
+                    # area) can end up collapsed.  Deferring the check lets
+                    # Qt finish its internal layout negotiation first.
+                    QTimer.singleShot(200, self.guard_validate_dock_sizes)
             else:
                 logger.warning("Failed to restore window state, using default layout")
                 self.ui_manager.reset_layout()
