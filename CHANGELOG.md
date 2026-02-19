@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-02-19
-**Commit:** `33ae312`
+**Commit:** `2995ba7`
 ---
 
 # Changelog
@@ -11,6 +11,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- *(2026-02-19)* **UI**: Implemented actionable empty states across editors (Longform Editor, MapWidget, Timeline, Unified List).
+  - Added primary action buttons (e.g., "Create Document", "New Entity") to empty states for improved onboarding.
+  - Ensured consistent button styling and states across all empty state views.
+
 ### UI
 - *(2026-02-19)* **UI**: Implemented MainWindow with dockable panes and layout persistence.
   - Replaced placeholder widgets with real Explorer, Timeline, Relations, and Editor widgets.
@@ -18,6 +23,12 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - *(2026-02-19)* **Stability**: Fixed widget resize/collapse stability and dock collapse on startup using size policies and validation delays.
+
+### Documentation
+- *(2026-02-19)* **Docs**: Removed obsolete VS Code mentions from codebase and configuration files.
+
+### Testing
+- *(2026-02-19)* **Testing**: Standardized variable naming conventions in UI test files to address review feedback.
 
 ## [0.13.0]
 
