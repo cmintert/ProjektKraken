@@ -24,9 +24,6 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - *(2026-02-19)* **Stability**: Fixed widget resize/collapse stability and dock collapse on startup using size policies and validation delays.
 
-### Documentation
-- *(2026-02-19)* **Docs**: Removed obsolete VS Code mentions from codebase and configuration files.
-
 ### Testing
 - *(2026-02-19)* **Testing**: Standardized variable naming conventions in UI test files to address review feedback.
 
