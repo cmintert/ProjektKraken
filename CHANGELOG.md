@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-02-18
-**Commit:** `0.13.0`
+**Last Updated:** 2026-02-19
+**Commit:** `33ae312`
 ---
 
 # Changelog
@@ -10,6 +10,14 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### UI
+- *(2026-02-19)* **UI**: Implemented MainWindow with dockable panes and layout persistence.
+  - Replaced placeholder widgets with real Explorer, Timeline, Relations, and Editor widgets.
+  - Enabled dock nesting, resizing, redocking, and robust splitter configuration.
+
+### Fixed
+- *(2026-02-19)* **Stability**: Fixed widget resize/collapse stability and dock collapse on startup using size policies and validation delays.
 
 ## [0.13.0]
 

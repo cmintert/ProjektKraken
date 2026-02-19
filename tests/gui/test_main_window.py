@@ -1,4 +1,4 @@
-"""Tests for the VS Code-style MainWindow layout.
+"""Tests for the MainWindow layout.
 
 Validates activity bar toggle behaviour, editor tab management,
 real widget integration, signal forwarding, and window state persistence.
@@ -293,9 +293,7 @@ def test_docks_are_movable_floatable_closable(qtbot):
         win.relations_dock,
         win.console_dock,
     ):
-        assert dock.features() == expected, (
-            f"{dock.objectName()} features mismatch"
-        )
+        assert dock.features() == expected, f"{dock.objectName()} features mismatch"
 
 
 def test_docks_allowed_in_all_areas(qtbot):
@@ -309,9 +307,9 @@ def test_docks_allowed_in_all_areas(qtbot):
         win.relations_dock,
         win.console_dock,
     ):
-        assert dock.allowedAreas() == Qt.DockWidgetArea.AllDockWidgetAreas, (
-            f"{dock.objectName()} areas mismatch"
-        )
+        assert (
+            dock.allowedAreas() == Qt.DockWidgetArea.AllDockWidgetAreas
+        ), f"{dock.objectName()} areas mismatch"
 
 
 def test_docks_have_minimum_size(qtbot):
@@ -325,12 +323,8 @@ def test_docks_have_minimum_size(qtbot):
         win.relations_dock,
         win.console_dock,
     ):
-        assert dock.minimumWidth() >= 250, (
-            f"{dock.objectName()} min width too small"
-        )
-        assert dock.minimumHeight() >= 100, (
-            f"{dock.objectName()} min height too small"
-        )
+        assert dock.minimumWidth() >= 250, f"{dock.objectName()} min width too small"
+        assert dock.minimumHeight() >= 100, f"{dock.objectName()} min height too small"
 
 
 def test_inner_widgets_have_expanding_size_policy(qtbot):
@@ -345,12 +339,12 @@ def test_inner_widgets_have_expanding_size_policy(qtbot):
     ):
         hp = widget.sizePolicy().horizontalPolicy()
         vp = widget.sizePolicy().verticalPolicy()
-        assert hp == QSizePolicy.Policy.Expanding, (
-            f"{name} horizontal policy is {hp}, expected Expanding"
-        )
-        assert vp == QSizePolicy.Policy.Expanding, (
-            f"{name} vertical policy is {vp}, expected Expanding"
-        )
+        assert (
+            hp == QSizePolicy.Policy.Expanding
+        ), f"{name} horizontal policy is {hp}, expected Expanding"
+        assert (
+            vp == QSizePolicy.Policy.Expanding
+        ), f"{name} vertical policy is {vp}, expected Expanding"
 
 
 def test_inner_widgets_have_size_hints(qtbot):
@@ -365,12 +359,12 @@ def test_inner_widgets_have_size_hints(qtbot):
     ):
         sh = widget.sizeHint()
         msh = widget.minimumSizeHint()
-        assert sh.width() > 0 and sh.height() > 0, (
-            f"{name} sizeHint is degenerate: {sh}"
-        )
-        assert msh.width() > 0 and msh.height() > 0, (
-            f"{name} minimumSizeHint is degenerate: {msh}"
-        )
+        assert (
+            sh.width() > 0 and sh.height() > 0
+        ), f"{name} sizeHint is degenerate: {sh}"
+        assert (
+            msh.width() > 0 and msh.height() > 0
+        ), f"{name} minimumSizeHint is degenerate: {msh}"
 
 
 def test_central_widget_is_splitter(qtbot):
