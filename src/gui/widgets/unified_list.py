@@ -302,12 +302,8 @@ class UnifiedListWidget(QWidget):
         self.list_widget.drag_started.connect(self.drag_started)
 
         # Enable context menu on the list
-        self.list_widget.setContextMenuPolicy(
-            Qt.ContextMenuPolicy.CustomContextMenu
-        )
-        self.list_widget.customContextMenuRequested.connect(
-            self._show_context_menu
-        )
+        self.list_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.list_widget.customContextMenuRequested.connect(self._show_context_menu)
 
         main_layout.addWidget(self.list_widget)
 
@@ -324,7 +320,7 @@ class UnifiedListWidget(QWidget):
             "Create Event", self.create_event_requested.emit, primary=True
         )
         self.empty_state.add_action(
-            "Create Entity", self.create_entity_requested.emit
+            "Create Entity", self.create_entity_requested.emit, primary=True
         )
         main_layout.addWidget(self.empty_state)
 
@@ -469,10 +465,10 @@ class UnifiedListWidget(QWidget):
             item_tuple: tuple[str, Union[Event, Entity]],
         ) -> Union[str, float]:
             """Get sort key for an item based on current sort field.
-            
+
             Args:
                 item_tuple: Tuple of (item_type, item_object).
-                
+
             Returns:
                 Sort key value (string or float).
             """
