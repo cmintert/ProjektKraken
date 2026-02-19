@@ -212,9 +212,6 @@ class TimelineView(QGraphicsView):
             QSize: A small minimum size (200x100) to allow shrinking.
 
         """
-        if self._playhead:
-            self._playhead.set_zoom(self._current_zoom * self.scale_factor)
-
         return QSize(200, 100)
 
     def sizeHint(self) -> QSize:
