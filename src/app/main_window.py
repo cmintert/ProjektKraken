@@ -51,6 +51,7 @@ from src.app.constants import (
     SETTINGS_AUTO_RELATION_KEY,
     SETTINGS_FILTER_CONFIG_KEY,
     UI_DOCK_RESTORE_DELAY_MS,
+    UI_DOCK_VALIDATE_DELAY_MS,
     UI_INIT_DELAY_MS,
     UI_OPTIONAL_DOCK_DELAY_MS,
     WINDOW_SETTINGS_APP,
@@ -719,7 +720,10 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
                     # pass, so docks (especially map/timeline in the bottom
                     # area) can end up collapsed.  Deferring the check lets
                     # Qt finish its internal layout negotiation first.
-                    QTimer.singleShot(200, self.guard_validate_dock_sizes)
+                    QTimer.singleShot(
+                        UI_DOCK_VALIDATE_DELAY_MS,
+                        self.guard_validate_dock_sizes,
+                    )
             else:
                 logger.warning("Failed to restore window state, using default layout")
                 self.ui_manager.reset_layout()
