@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-19
-### Documentation
-- docs: remove VS Code mentions from code and changelog
+### Internal
+- Merge pull request #95 from cmintert/copilot/implement-actionable-empty-state
 
 
 *This changelog was automatically generated.*
