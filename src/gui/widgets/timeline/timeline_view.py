@@ -31,6 +31,7 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import QGraphicsView, QSizePolicy, QWidget
 
 from src.core.theme_manager import ThemeManager
+from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.timeline.event_item import EventItem
 from src.gui.widgets.timeline.group_band_manager import GroupBandManager
 from src.gui.widgets.timeline.group_label_overlay import GroupLabelOverlay
@@ -61,6 +62,7 @@ class TimelineView(QGraphicsView):
     playhead_time_changed = Signal(float)  # Emitted when playhead position changes
     current_time_changed = Signal(float)  # Emitted when current time is changed
     event_date_changed = Signal(str, float)  # (event_id, new_lore_date)
+    create_event_requested = Signal()  # Emitted from empty state action
 
     # Use the tallest event type height for lane spacing
     LANE_HEIGHT = EventItem.DURATION_EVENT_HEIGHT
@@ -201,6 +203,17 @@ class TimelineView(QGraphicsView):
         # Set corner widget for themed scrollbar corner
         self._update_corner_widget(ThemeManager().get_theme())
 
+        # Empty state overlay (parented to viewport, not the scene)
+        self._empty_state = EmptyStateWidget(
+            title="Timeline Empty",
+            description="Your world's history begins here.",
+            parent=self.viewport(),
+        )
+        self._empty_state.add_action(
+            "Create Event", self.create_event_requested.emit, primary=True
+        )
+        self._empty_state.show()
+
     def minimumSizeHint(self) -> QSize:
         """Override minimum size hint to allow vertical shrinking.
 
@@ -280,6 +293,11 @@ class TimelineView(QGraphicsView):
 
             # Update label positions
             self._update_label_overlay()
+
+        # Keep empty state overlay centered in viewport
+        if hasattr(self, "_empty_state"):
+            vp = self.viewport()
+            self._empty_state.setGeometry(0, 0, vp.width(), vp.height())
 
     # Height allocated for sticky parent context tier
     CONTEXT_TIER_HEIGHT = 14
@@ -496,6 +514,14 @@ class TimelineView(QGraphicsView):
         - Sort events by start time.
         - Packs into first available lane.
         """
+        # Show/hide empty state overlay based on event list
+        if hasattr(self, "_empty_state"):
+            if events:
+                self._empty_state.hide()
+            else:
+                self._empty_state.show()
+                self._empty_state.raise_()
+
         # Cleanup duplicates first to avoid pollution when scanning scene
         self._clear_duplicates()
 

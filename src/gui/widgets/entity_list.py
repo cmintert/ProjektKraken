@@ -8,7 +8,6 @@ from typing import List, Optional
 from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QHBoxLayout,
-    QLabel,
     QListWidget,
     QListWidgetItem,
     QPushButton,
@@ -18,6 +17,7 @@ from PySide6.QtWidgets import (
 
 from src.core.entities import Entity
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.empty_state_widget import EmptyStateWidget
 
 
 class EntityListWidget(QWidget):
@@ -69,11 +69,18 @@ class EntityListWidget(QWidget):
         main_layout.addWidget(self.list_widget)
 
         # Empty State
-        self.empty_label = QLabel("No Entities Loaded")
-        self.empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.empty_label.setStyleSheet(StyleHelper.get_empty_state_style())
-        main_layout.addWidget(self.empty_label)
-        self.empty_label.hide()
+        self.empty_state = EmptyStateWidget(
+            title="No Entities Found",
+            description=(
+                "Entities are the characters, locations, and artifacts"
+                " of your world."
+            ),
+            parent=self,
+        )
+        self.empty_state.add_action(
+            "Create First Entity", self.create_requested.emit, primary=True
+        )
+        main_layout.addWidget(self.empty_state)
 
     def set_entities(self, entities: List[Entity]) -> None:
         """Populates the list widget with the provided entities."""
@@ -81,11 +88,11 @@ class EntityListWidget(QWidget):
 
         if not entities:
             self.list_widget.hide()
-            self.empty_label.show()
+            self.empty_state.show()
             return
 
         self.list_widget.show()
-        self.empty_label.hide()
+        self.empty_state.hide()
 
         for entity in entities:
             # Display: Name (Type)

@@ -8,7 +8,6 @@ from typing import List, Optional
 from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QHBoxLayout,
-    QLabel,
     QListWidget,
     QListWidgetItem,
     QPushButton,
@@ -18,6 +17,7 @@ from PySide6.QtWidgets import (
 
 from src.core.events import Event
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.empty_state_widget import EmptyStateWidget
 
 
 class EventListWidget(QWidget):
@@ -30,6 +30,7 @@ class EventListWidget(QWidget):
     event_selected = Signal(str)  # event_id
     refresh_requested = Signal()
     delete_requested = Signal(str)  # event_id
+    create_requested = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the EventListWidget.
@@ -63,12 +64,16 @@ class EventListWidget(QWidget):
         self.list_widget.itemSelectionChanged.connect(self._on_selection_changed)
         main_layout.addWidget(self.list_widget)
 
-        # Empty State (Spec 7.2)
-        self.empty_label = QLabel("No Events Loaded")
-        self.empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.empty_label.setStyleSheet(StyleHelper.get_empty_state_style())
-        main_layout.addWidget(self.empty_label)
-        self.empty_label.hide()
+        # Empty State
+        self.empty_state = EmptyStateWidget(
+            title="No Events Found",
+            description="Events mark the key moments in your world's history.",
+            parent=self,
+        )
+        self.empty_state.add_action(
+            "Create First Event", self.create_requested.emit, primary=True
+        )
+        main_layout.addWidget(self.empty_state)
 
     def set_events(self, events: List[Event]) -> None:
         """Populates the list widget with the provided events.
@@ -81,11 +86,11 @@ class EventListWidget(QWidget):
 
         if not events:
             self.list_widget.hide()
-            self.empty_label.show()
+            self.empty_state.show()
             return
 
         self.list_widget.show()
-        self.empty_label.hide()
+        self.empty_state.hide()
 
         for event in events:
             # Display: Date - Name (Type)

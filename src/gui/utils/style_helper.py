@@ -157,6 +157,28 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_secondary_button_style() -> str:
+        """Returns QSS for secondary (ghost) action buttons.
+
+        Secondary buttons use a transparent background with a subtle border,
+        suitable for less prominent actions alongside primary buttons.
+
+        Returns:
+            str: QSS stylesheet string for secondary buttons.
+
+        """
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+        return (
+            f"QPushButton {{ background-color: transparent; "
+            f"color: {theme['text_main']}; border: 1px solid {theme['border']}; "
+            f"border-radius: 4px; padding: 6px 16px; }}"
+            f"QPushButton:hover {{ background-color: {theme['surface']}; }}"
+            f"QPushButton:pressed {{ background-color: {theme['border']}; }}"
+        )
+
+    @staticmethod
     def get_tool_button_style() -> str:
         """Returns QSS for tool/secondary action buttons.
 
