@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-19
-### Internal
-- Merge pull request #95 from cmintert/copilot/implement-actionable-empty-state
+### Documentation
+- docs: update CHANGELOG.md with recent unreleased changes
 
 
 *This changelog was automatically generated.*
