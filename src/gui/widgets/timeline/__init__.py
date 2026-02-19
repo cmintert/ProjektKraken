@@ -12,10 +12,11 @@ maintainability:
 
 from typing import Any, Optional
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QPushButton,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -46,6 +47,12 @@ class TimelineWidget(QWidget):
         """
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+        # Expanding size policy prevents dock collapse during resize.
+        self.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
+
         main_layout = QVBoxLayout(self)
         main_layout.setSpacing(0)
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -233,6 +240,24 @@ class TimelineWidget(QWidget):
     def save_state(self) -> None:
         """Saves the current state of the timeline widget (e.g. playhead time)."""
         self.view.save_state()
+
+    # -- Size hints ----------------------------------------------------------
+
+    def minimumSizeHint(self) -> QSize:
+        """Allow the widget to shrink inside its dock.
+
+        Returns:
+            QSize: Minimum usable size for the timeline.
+        """
+        return QSize(200, 100)
+
+    def sizeHint(self) -> QSize:
+        """Preferred size for the timeline widget.
+
+        Returns:
+            QSize: Comfortable working size for the timeline.
+        """
+        return QSize(600, 200)
 
 
 __all__ = [

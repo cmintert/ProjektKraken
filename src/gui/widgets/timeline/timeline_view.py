@@ -28,7 +28,7 @@ from PySide6.QtGui import (
     QTransform,
     QWheelEvent,
 )
-from PySide6.QtWidgets import QGraphicsView, QWidget
+from PySide6.QtWidgets import QGraphicsView, QSizePolicy, QWidget
 
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.timeline.event_item import EventItem
@@ -91,6 +91,13 @@ class TimelineView(QGraphicsView):
 
         """
         super().__init__(parent)
+
+        # Expanding policy lets the view fill available dock space and
+        # prevents collapse when the parent dock is resized.
+        self.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
+
         self.scene = TimelineScene(self)
         self.setScene(self.scene)
 
@@ -205,12 +212,18 @@ class TimelineView(QGraphicsView):
             QSize: A small minimum size (200x100) to allow shrinking.
 
         """
-        from PySide6.QtCore import QSize
-
         if self._playhead:
             self._playhead.set_zoom(self._current_zoom * self.scale_factor)
 
         return QSize(200, 100)
+
+    def sizeHint(self) -> QSize:
+        """Return a stable preferred size.
+
+        Returns:
+            QSize: Comfortable default size for the timeline view.
+        """
+        return QSize(600, 200)
 
     def _on_playhead_moved(self, x_pos: float) -> None:
         """Called when playhead is dragged manually.

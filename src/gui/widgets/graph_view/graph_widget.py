@@ -6,8 +6,8 @@ public interface for the graph view functionality.
 
 from typing import Any, Optional
 
-from PySide6.QtCore import QEvent, QTimer, Signal
-from PySide6.QtWidgets import QVBoxLayout, QWidget
+from PySide6.QtCore import QEvent, QSize, QTimer, Signal
+from PySide6.QtWidgets import QSizePolicy, QVBoxLayout, QWidget
 
 from src.core.logging_config import get_logger
 from src.gui.widgets.graph_view.graph_builder import GraphBuilder
@@ -54,6 +54,11 @@ class GraphWidget(QWidget):
 
         """
         super().__init__(parent)
+
+        # Expanding policy prevents dock collapse during resize.
+        self.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
 
         # Initialize logger
         self._logger = get_logger(__name__)
@@ -113,6 +118,22 @@ class GraphWidget(QWidget):
 
         # Web view fills remaining space
         layout.addWidget(self._web_view, 1)
+
+    def minimumSizeHint(self) -> QSize:
+        """Allow the widget to shrink inside its dock.
+
+        Returns:
+            QSize: Minimum usable size for the graph widget.
+        """
+        return QSize(MIN_GRAPH_WIDTH, MIN_GRAPH_HEIGHT)
+
+    def sizeHint(self) -> QSize:
+        """Preferred size for the graph widget.
+
+        Returns:
+            QSize: Comfortable working size for graph interaction.
+        """
+        return QSize(400, 300)
 
     def _connect_internal_signals(self) -> None:
         """Connects internal component signals to public signals.

@@ -7,7 +7,7 @@ real widget integration, signal forwarding, and window state persistence.
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QDockWidget, QMainWindow
+from PySide6.QtWidgets import QDockWidget, QMainWindow, QSizePolicy
 
 from src.gui.main_window import MainWindow
 from src.gui.widgets.entity_editor import EntityEditorWidget
@@ -330,6 +330,46 @@ def test_docks_have_minimum_size(qtbot):
         )
         assert dock.minimumHeight() >= 100, (
             f"{dock.objectName()} min height too small"
+        )
+
+
+def test_inner_widgets_have_expanding_size_policy(qtbot):
+    """Inner dock widgets use Expanding size policy to prevent collapse."""
+    win = MainWindow()
+    qtbot.addWidget(win)
+
+    for widget, name in (
+        (win.unified_list, "UnifiedListWidget"),
+        (win.timeline, "TimelineWidget"),
+        (win.graph_widget, "GraphWidget"),
+    ):
+        hp = widget.sizePolicy().horizontalPolicy()
+        vp = widget.sizePolicy().verticalPolicy()
+        assert hp == QSizePolicy.Policy.Expanding, (
+            f"{name} horizontal policy is {hp}, expected Expanding"
+        )
+        assert vp == QSizePolicy.Policy.Expanding, (
+            f"{name} vertical policy is {vp}, expected Expanding"
+        )
+
+
+def test_inner_widgets_have_size_hints(qtbot):
+    """Inner dock widgets provide stable sizeHint and minimumSizeHint."""
+    win = MainWindow()
+    qtbot.addWidget(win)
+
+    for widget, name in (
+        (win.unified_list, "UnifiedListWidget"),
+        (win.timeline, "TimelineWidget"),
+        (win.graph_widget, "GraphWidget"),
+    ):
+        sh = widget.sizeHint()
+        msh = widget.minimumSizeHint()
+        assert sh.width() > 0 and sh.height() > 0, (
+            f"{name} sizeHint is degenerate: {sh}"
+        )
+        assert msh.width() > 0 and msh.height() > 0, (
+            f"{name} minimumSizeHint is degenerate: {msh}"
         )
 
 
