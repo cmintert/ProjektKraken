@@ -30,6 +30,7 @@ from src.gui.utils.shortcut_manager import ShortcutManager
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.longform.content import LongformContentWidget
 from src.gui.widgets.longform.outline import LongformOutlineWidget
+from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.services.web_service_manager import WebServiceManager
 
 logger = logging.getLogger(__name__)
@@ -211,7 +212,7 @@ class LongformEditorWidget(QWidget):
         layout.addWidget(self.search_widget)
 
         # Splitter with outline and content
-        splitter = QSplitter(Qt.Orientation.Horizontal)
+        self._splitter = QSplitter(Qt.Orientation.Horizontal)
 
         # Left: Outline
         self.outline = LongformOutlineWidget()
@@ -228,13 +229,26 @@ class LongformEditorWidget(QWidget):
         self.content.link_clicked.connect(self.link_clicked.emit)
         self.content.item_selected.connect(self.item_selected.emit)
 
-        splitter.addWidget(self.outline)
-        splitter.addWidget(self.content)
+        self._splitter.addWidget(self.outline)
+        self._splitter.addWidget(self.content)
 
         # Set initial sizes (30% outline, 70% content)
-        splitter.setSizes([300, 700])
+        self._splitter.setSizes([300, 700])
 
-        layout.addWidget(splitter, 1)  # Stretch factor 1
+        layout.addWidget(self._splitter, 1)  # Stretch factor 1
+
+        # Empty State
+        self.empty_state = EmptyStateWidget(
+            title="No Content Available",
+            description=(
+                "The longform document is currently empty.\n"
+                "Create new events/entities or adjust your filters."
+            ),
+        )
+        self.empty_state.add_action(
+            "Clear Filters", self.clear_filters_requested.emit, primary=True
+        )
+        layout.addWidget(self.empty_state, 1)
 
         # Status bar
         self.status_label = QLabel("No items loaded")
@@ -250,6 +264,14 @@ class LongformEditorWidget(QWidget):
         self._sequence = sequence
         self.outline.load_sequence(sequence)
         self.content.load_content(sequence)
+
+        # Toggle empty state
+        if not sequence:
+            self._splitter.hide()
+            self.empty_state.show()
+        else:
+            self._splitter.show()
+            self.empty_state.hide()
 
         # Update status
         count = len(sequence)

@@ -12,7 +12,6 @@ from PySide6.QtGui import QDrag
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
-    QLabel,
     QLineEdit,
     QListView,
     QMenu,
@@ -28,6 +27,7 @@ from src.gui.models.explorer_filter_proxy import ExplorerFilterProxyModel
 from src.gui.models.explorer_model import ExplorerModel
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.auto_closing_message_box import AutoClosingMessageBox
+from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.standard_buttons import DestructiveButton
 
 KRAKEN_ITEM_MIME_TYPE = "application/x-kraken-item"
@@ -302,21 +302,27 @@ class UnifiedListWidget(QWidget):
         self.list_widget.drag_started.connect(self.drag_started)
 
         # Enable context menu on the list
-        self.list_widget.setContextMenuPolicy(
-            Qt.ContextMenuPolicy.CustomContextMenu
-        )
-        self.list_widget.customContextMenuRequested.connect(
-            self._show_context_menu
-        )
+        self.list_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.list_widget.customContextMenuRequested.connect(self._show_context_menu)
 
         main_layout.addWidget(self.list_widget)
 
         # Empty State
-        self.empty_label = QLabel("No Items Loaded")
-        self.empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.empty_label.setStyleSheet(StyleHelper.get_empty_state_style())
-        main_layout.addWidget(self.empty_label)
-        self.empty_label.hide()
+        self.empty_state = EmptyStateWidget(
+            title="No Items Found",
+            description=(
+                "Your world is empty. Create events, entities, or maps to"
+                " start building."
+            ),
+            parent=self,
+        )
+        self.empty_state.add_action(
+            "Create Event", self.create_event_requested.emit, primary=True
+        )
+        self.empty_state.add_action(
+            "Create Entity", self.create_entity_requested.emit, primary=True
+        )
+        main_layout.addWidget(self.empty_state)
 
         # Data Cache
         self._events: List[Event] = []
@@ -459,10 +465,10 @@ class UnifiedListWidget(QWidget):
             item_tuple: tuple[str, Union[Event, Entity]],
         ) -> Union[str, float]:
             """Get sort key for an item based on current sort field.
-            
+
             Args:
                 item_tuple: Tuple of (item_type, item_object).
-                
+
             Returns:
                 Sort key value (string or float).
             """
@@ -488,7 +494,7 @@ class UnifiedListWidget(QWidget):
         has_items = self._proxy_model.rowCount() > 0
         if has_items:
             self.list_widget.show()
-            self.empty_label.hide()
+            self.empty_state.hide()
 
             # Restore selection if possible
             if current_id and current_type:
@@ -500,7 +506,7 @@ class UnifiedListWidget(QWidget):
                         self.list_widget.setCurrentIndex(proxy_index)
         else:
             self.list_widget.hide()
-            self.empty_label.show()
+            self.empty_state.show()
 
     @Slot(str)
     @Slot(str)

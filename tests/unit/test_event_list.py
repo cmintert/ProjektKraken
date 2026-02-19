@@ -32,7 +32,7 @@ def test_init(event_list):
     assert event_list.btn_refresh is not None
     assert event_list.btn_delete is not None
     assert event_list.list_widget is not None
-    assert event_list.empty_label is not None
+    assert event_list.empty_state is not None
     assert event_list.btn_delete.isEnabled() is False
 
 
@@ -41,7 +41,7 @@ def test_set_events_empty(event_list):
     event_list.set_events([])
 
     assert event_list.list_widget.isHidden()
-    assert not event_list.empty_label.isHidden()
+    assert not event_list.empty_state.isHidden()
     assert event_list.list_widget.count() == 0
 
 
@@ -50,7 +50,7 @@ def test_set_events_with_data(event_list, sample_events):
     event_list.set_events(sample_events)
 
     assert not event_list.list_widget.isHidden()
-    assert event_list.empty_label.isHidden()
+    assert event_list.empty_state.isHidden()
     assert event_list.list_widget.count() == 3
 
     # Check first item
@@ -125,12 +125,12 @@ def test_empty_to_populated_transition(event_list, sample_events):
     """Test transition from empty to populated state."""
     # Start empty
     event_list.set_events([])
-    assert not event_list.empty_label.isHidden()
+    assert not event_list.empty_state.isHidden()
 
     # Populate
     event_list.set_events(sample_events)
     assert not event_list.list_widget.isHidden()
-    assert event_list.empty_label.isHidden()
+    assert event_list.empty_state.isHidden()
 
 
 def test_populated_to_empty_transition(event_list, sample_events):
@@ -142,4 +142,4 @@ def test_populated_to_empty_transition(event_list, sample_events):
     # Clear
     event_list.set_events([])
     assert event_list.list_widget.isHidden()
-    assert not event_list.empty_label.isHidden()
+    assert not event_list.empty_state.isHidden()

@@ -538,7 +538,18 @@ class ConnectionManager:
         failed_count = 0
 
         if not self._connect_signal_safe(
-            timeline, "event_selected", self.window.data_coordinator.load_event_details, "Timeline"
+            timeline,
+            "event_selected",
+            self.window.data_coordinator.load_event_details,
+            "Timeline",
+        ):
+            failed_count += 1
+
+        if not self._connect_signal_safe(
+            timeline,
+            "create_event_requested",
+            self.window.editor_coordinator.create_event,
+            "Timeline",
         ):
             failed_count += 1
 
@@ -1008,13 +1019,19 @@ class ConnectionManager:
 
         total += 1
         if not self._connect_signal_safe(
-            graph, "refresh_requested", self.window.data_coordinator.load_graph_data, "GraphWidget"
+            graph,
+            "refresh_requested",
+            self.window.data_coordinator.load_graph_data,
+            "GraphWidget",
         ):
             failed_count += 1
 
         total += 1
         if not self._connect_signal_safe(
-            graph, "filter_changed", self.window.data_coordinator.load_graph_data, "GraphWidget"
+            graph,
+            "filter_changed",
+            self.window.data_coordinator.load_graph_data,
+            "GraphWidget",
         ):
             failed_count += 1
 

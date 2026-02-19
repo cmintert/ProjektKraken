@@ -37,6 +37,7 @@ class TimelineWidget(QWidget):
     playhead_time_changed = Signal(float)  # Expose playhead signal from view
     current_time_changed = Signal(float)  # Expose current time signal from view
     event_date_changed = Signal(str, float)  # (event_id, new_lore_date)
+    create_event_requested = Signal()  # Expose empty state action from view
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the TimelineWidget.
@@ -116,6 +117,7 @@ class TimelineWidget(QWidget):
         self.view.playhead_time_changed.connect(self.playhead_time_changed.emit)
         self.view.current_time_changed.connect(self.current_time_changed.emit)
         self.view.event_date_changed.connect(self.event_date_changed.emit)
+        self.view.create_event_requested.connect(self.create_event_requested.emit)
         main_layout.addWidget(self.view)
 
     def set_data_provider(self, provider: Any) -> None:

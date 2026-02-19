@@ -20,7 +20,7 @@ def unified_list(qtbot):
 def test_init(unified_list):
     model = unified_list._proxy_model
     assert model.rowCount() == 0
-    assert not unified_list.empty_label.isHidden()
+    assert not unified_list.empty_state.isHidden()
     # Check default filter
     assert unified_list.filter_combo.currentText() == "All Items"
 
@@ -33,7 +33,7 @@ def test_set_data(unified_list):
 
     model = unified_list._proxy_model
     assert model.rowCount() == 2
-    assert unified_list.empty_label.isHidden()
+    assert unified_list.empty_state.isHidden()
 
     # Check items - get data from model
     index0 = model.index(0, 0)
