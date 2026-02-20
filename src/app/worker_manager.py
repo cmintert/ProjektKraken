@@ -224,6 +224,7 @@ class WorkerManager(QObject):
         # Busy cursor
         QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
 
+    @Slot(str)
     def clear_status_message(self, message: str) -> None:
         """Clears the status bar message after a delay and restores cursor.
 
@@ -255,92 +256,10 @@ class WorkerManager(QObject):
 
         """
         if success:
-            # Initialize GUI database connection for timeline data provider
-            try:
-                # Use the same db_path as the worker
-                self.window.gui_db_service = DatabaseService(self.window.db_path)
-                self.window.gui_db_service.connect()
-                # Set MainWindow as data provider (implements the interface)
-                self.window.timeline.set_data_provider(self.window)
-            except Exception as e:
-                logger.error(f"Failed to initialize GUI database service: {e}")
-
-            # Inject SummaryService into editors for staleness checks
-            try:
-                from src.services.summary_service import SummaryService
-
-                gui_summary_service = SummaryService(self.window.gui_db_service)
-                self.window.entity_editor.set_summary_service(gui_summary_service)
-                self.window.event_editor.set_summary_service(gui_summary_service)
-            except Exception as e:
-                logger.error(f"Failed to inject SummaryService into editors: {e}")
-
-            # Initialize backup service
-            try:
-                from src.core.backup_config import BackupConfig
-                from src.services.backup_service import BackupService
-
-                # Load backup config from settings or use defaults
-                backup_config = BackupConfig()
-
-                # Initialize backup service
-                self.window.backup_service = BackupService(backup_config)
-                self.window.backup_service.set_database_path(self.window.db_path)
-
-                # Register with database service for integration
-                if hasattr(self.window, "gui_db_service"):
-                    self.window.gui_db_service.register_backup_service(
-                        self.window.backup_service
-                    )
-
-                logger.info("Backup service initialized successfully")
-
-                # Start auto-backup if enabled
-                if (
-                    backup_config.enabled
-                    and backup_config.auto_save_interval_minutes > 0
-                ):
-                    self.window.backup_service.start_auto_backup()
-                    logger.info(
-                        f"Auto-backup enabled with {backup_config.auto_save_interval_minutes} minute interval"
-                    )
-
-            except Exception as e:
-                logger.error(f"Failed to initialize backup service: {e}")
-                # Don't fail the entire app if backup service fails to init
-                self.window.backup_service = None
-
-            # Initialize History Service for Phase 2 persistent undo/redo
-            try:
-                from src.commands.registry import get_command_types
-                from src.services.history_service import HistoryService
-
-                # Create history service with current world ID
-                world_id = (
-                    self.window.current_world.id
-                    if self.window.current_world
-                    else "default"
-                )
-                self.window.history_service = HistoryService(
-                    self.window.gui_db_service, world_id
-                )
-
-                # Register all known command types from centralized registry
-                for name, cls in get_command_types().items():
-                    self.window.history_service.register_command_type(name, cls)
-
-                # Connect to command coordinator
-                self.window.coordinator.set_history_service(self.window.history_service)
-
-                # Load command history from database
-                self.window.coordinator.load_history()
-
-                logger.info("History service initialized successfully")
-
-            except Exception as e:
-                logger.error(f"Failed to initialize history service: {e}")
-                # Don't fail the entire app if history service fails to init
-                self.window.history_service = None
+            self._init_gui_db_service()
+            self._init_summary_service()
+            self._init_backup_service()
+            self._init_history_service()
 
             self.window.data_coordinator.load_data()
             self.window.time_coordinator.request_calendar_config()
@@ -372,6 +291,83 @@ class WorkerManager(QObject):
             )
         else:
             self.window.status_bar.showMessage(STATUS_DB_INIT_FAIL)
+
+    def _init_gui_db_service(self) -> None:
+        """Initializes the GUI-thread DatabaseService and wires the timeline data provider."""
+        try:
+            self.window.gui_db_service = DatabaseService(self.window.db_path)
+            self.window.gui_db_service.connect()
+            self.window.timeline.set_data_provider(self.window)
+        except Exception as e:
+            logger.error(f"Failed to initialize GUI database service: {e}")
+
+    def _init_summary_service(self) -> None:
+        """Injects a SummaryService into the event and entity editors for staleness checks."""
+        try:
+            from src.services.summary_service import SummaryService
+
+            gui_summary_service = SummaryService(self.window.gui_db_service)
+            self.window.entity_editor.set_summary_service(gui_summary_service)
+            self.window.event_editor.set_summary_service(gui_summary_service)
+        except Exception as e:
+            logger.error(f"Failed to inject SummaryService into editors: {e}")
+
+    def _init_backup_service(self) -> None:
+        """Initializes the BackupService and registers it with the GUI database service."""
+        try:
+            from src.core.backup_config import BackupConfig
+            from src.services.backup_service import BackupService
+
+            backup_config = BackupConfig()
+            self.window.backup_service = BackupService(backup_config)
+            self.window.backup_service.set_database_path(self.window.db_path)
+
+            if hasattr(self.window, "gui_db_service"):
+                self.window.gui_db_service.register_backup_service(
+                    self.window.backup_service
+                )
+
+            logger.info("Backup service initialized successfully")
+
+            if (
+                backup_config.enabled
+                and backup_config.auto_save_interval_minutes > 0
+            ):
+                self.window.backup_service.start_auto_backup()
+                logger.info(
+                    f"Auto-backup enabled with {backup_config.auto_save_interval_minutes} minute interval"
+                )
+
+        except Exception as e:
+            logger.error(f"Failed to initialize backup service: {e}")
+            self.window.backup_service = None
+
+    def _init_history_service(self) -> None:
+        """Initializes the HistoryService and registers all known command types."""
+        try:
+            from src.commands.registry import get_command_types
+            from src.services.history_service import HistoryService
+
+            world_id = (
+                self.window.current_world.id
+                if self.window.current_world
+                else "default"
+            )
+            self.window.history_service = HistoryService(
+                self.window.gui_db_service, world_id
+            )
+
+            for name, cls in get_command_types().items():
+                self.window.history_service.register_command_type(name, cls)
+
+            self.window.coordinator.set_history_service(self.window.history_service)
+            self.window.coordinator.load_history()
+
+            logger.info("History service initialized successfully")
+
+        except Exception as e:
+            logger.error(f"Failed to initialize history service: {e}")
+            self.window.history_service = None
 
     @Slot(object)
     def generate_summary(self, item: object) -> None:

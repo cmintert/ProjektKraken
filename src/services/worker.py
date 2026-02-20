@@ -812,8 +812,8 @@ class DatabaseWorker(QObject):
             self.error_occurred.emit("Failed to apply filter.")
 
     @Slot(str, float)
-    def resolve_entity_state(self, entity_id: str, time: float) -> None:
-        """Resolves the state of an entity at a specific time using TemporalManager.
+    def resolve_entity_state(self, entity_id: str, lore_date: float) -> None:
+        """Resolves the state of an entity at a specific lore date using TemporalManager.
 
         Emits entity_state_resolved.
         """
@@ -821,9 +821,9 @@ class DatabaseWorker(QObject):
             return
 
         try:
-            # self.operation_started.emit(f"Resolving state for {entity_id} at {time}...")
+            # self.operation_started.emit(f"Resolving state for {entity_id} at {lore_date}...")
             # (Quiet operation for smooth scrubbing)
-            state = self.temporal_manager.get_entity_state_at(entity_id, time)
+            state = self.temporal_manager.get_entity_state_at(entity_id, lore_date)
             self.entity_state_resolved.emit(entity_id, state)
             # self.operation_finished.emit("State Resolved.")
         except Exception:

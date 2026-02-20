@@ -32,13 +32,13 @@ class TemporalManager(QObject):
         # a starting point.
         self._cache: Dict[Tuple[str, float], Dict[str, Any]] = {}
 
-    def get_entity_state_at(self, entity_id: str, time: float) -> Dict[str, Any]:
-        """Returns the resolved state of an entity at a specific time.
+    def get_entity_state_at(self, entity_id: str, lore_date: float) -> Dict[str, Any]:
+        """Returns the resolved state of an entity at a specific lore date.
 
         Uses cache if available.
         """
         # 1. Check Cache
-        cache_key = (entity_id, time)
+        cache_key = (entity_id, lore_date)
         if cache_key in self._cache:
             return self._cache[cache_key]
 
@@ -54,7 +54,7 @@ class TemporalManager(QObject):
         relations = self._db.get_incoming_relations(entity_id)
 
         # 3. Resolve
-        state = self._resolver.resolve_entity_state(entity, relations, time)
+        state = self._resolver.resolve_entity_state(entity, relations, lore_date)
 
         # 4. Cache and Return
         self._cache[cache_key] = state
@@ -116,10 +116,10 @@ class TemporalManager(QObject):
         )
 
     def clear_all_cache(self) -> None:
-        """Nuclear option: Clears ALL cached states.
+        """Clears ALL cached chronological states.
 
-        Useful for global changes that might affect many entities
-        (e.g., changing calendar system, bulk date adjustments).
+        Use for global changes that may affect many entities
+        (e.g., changing the calendar system or bulk date adjustments).
         """
         cache_size = len(self._cache)
         self._cache.clear()

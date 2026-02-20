@@ -60,7 +60,7 @@ def test_moving_event_invalidates_linked_entities(db_service, temporal_manager):
     )
 
     # 4. Warm the cache
-    state_at_1500 = temporal_manager.get_entity_state_at("ent1", time=1500.0)
+    state_at_1500 = temporal_manager.get_entity_state_at("ent1", lore_date=1500.0)
     assert state_at_1500["status"] == "Traveling"
 
     # 5. Move the event to a later date
@@ -75,7 +75,7 @@ def test_moving_event_invalidates_linked_entities(db_service, temporal_manager):
     temporal_manager.on_event_changed("ev1")
 
     # 7. Fetch again - cache should be invalidated
-    state_at_1500_after = temporal_manager.get_entity_state_at("ent1", time=1500.0)
+    state_at_1500_after = temporal_manager.get_entity_state_at("ent1", lore_date=1500.0)
 
     # Verify cache was cleared (even if state is same, it should have re-queried)
     assert state_at_1500_after != state_at_1500 or True  # Allow same state
@@ -93,7 +93,7 @@ def test_adding_relation_invalidates_target_entity(db_service, temporal_manager)
     db_service.insert_event(event)
 
     # 2. Warm cache (no relations yet)
-    state_before = temporal_manager.get_entity_state_at("ent1", time=3020.0)
+    state_before = temporal_manager.get_entity_state_at("ent1", lore_date=3020.0)
 
     # 3. Add a new relation
     add_cmd = AddRelationCommand(
@@ -109,7 +109,7 @@ def test_adding_relation_invalidates_target_entity(db_service, temporal_manager)
     temporal_manager.on_relation_changed("new_rel_id", "ev1", "ent1")
 
     # 5. Refetch
-    state_after = temporal_manager.get_entity_state_at("ent1", time=3020.0)
+    state_after = temporal_manager.get_entity_state_at("ent1", lore_date=3020.0)
 
     # Should now include "title": "King"
     assert state_after.get("title") == "King"
@@ -136,7 +136,7 @@ def test_deleting_relation_invalidates_target_entity(db_service, temporal_manage
     )
 
     # 3. Warm cache
-    state_with_relation = temporal_manager.get_entity_state_at("ent1", time=1500.0)
+    state_with_relation = temporal_manager.get_entity_state_at("ent1", lore_date=1500.0)
     assert state_with_relation.get("location") == "Shire"
 
     # 4. Delete the relation
@@ -151,7 +151,7 @@ def test_deleting_relation_invalidates_target_entity(db_service, temporal_manage
     temporal_manager.on_relation_changed(rel_id, "ev1", "ent1")
 
     # 6. Refetch
-    state_after_delete = temporal_manager.get_entity_state_at("ent1", time=1500.0)
+    state_after_delete = temporal_manager.get_entity_state_at("ent1", lore_date=1500.0)
 
     # Should no longer have "location"
     assert "location" not in state_after_delete

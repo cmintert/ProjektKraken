@@ -28,7 +28,7 @@ def base_entity():
 
 def test_resolve_entity_state_no_relations(resolver, base_entity):
     """Test that resolving with no relations returns base state."""
-    state = resolver.resolve_entity_state(base_entity, [], time=100.0)
+    state = resolver.resolve_entity_state(base_entity, [], lore_date=100.0)
     assert state == base_entity.attributes
 
 
@@ -42,11 +42,11 @@ def test_resolve_entity_state_basic_override(resolver, base_entity):
     ]
 
     # Check before event
-    state_before = resolver.resolve_entity_state(base_entity, relations, time=40.0)
+    state_before = resolver.resolve_entity_state(base_entity, relations, lore_date=40.0)
     assert state_before["status"] == "Alive"
 
     # Check after event
-    state_after = resolver.resolve_entity_state(base_entity, relations, time=60.0)
+    state_after = resolver.resolve_entity_state(base_entity, relations, lore_date=60.0)
     assert state_after["status"] == "Dead"
     # Unchanged fields should remain from base
     assert state_after["location"] == "Winterfell"
@@ -119,7 +119,7 @@ def test_resolve_entity_state_priority(resolver, base_entity):
     # Scenario A: If Manual is meant to stick REGARDLESS of future events (like a forceful fix),
     # it needs higher sort index.
 
-    state = resolver.resolve_entity_state(base_entity, relations, time=30.0)
+    state = resolver.resolve_entity_state(base_entity, relations, lore_date=30.0)
     # Based on tuple sort (Time, Priority), (10, 2) < (20, 1), so Event is last.
     assert state["rank"] == "Event Rank"
 
@@ -154,7 +154,7 @@ def test_resolve_entity_state_priority(resolver, base_entity):
     ]
 
     state_conflict = resolver.resolve_entity_state(
-        base_entity, relations_same_time, time=60.0
+        base_entity, relations_same_time, lore_date=60.0
     )
     # Manual (priority 2) > Event (priority 1)
     # So Manual applies Last.

@@ -60,7 +60,7 @@ def manager(mock_db_service, signal_source):
 
 def test_get_state_delegates_to_resolver(manager, mock_db_service):
     """Test that manager fetches data and uses resolver logic."""
-    state = manager.get_entity_state_at("e1", time=150.0)
+    state = manager.get_entity_state_at("e1", lore_date=150.0)
 
     # Should resolve to "Overridden" because 150 > 100
     assert state["status"] == "Overridden"
@@ -73,23 +73,23 @@ def test_get_state_delegates_to_resolver(manager, mock_db_service):
 def test_caching_behavior(manager, mock_db_service):
     """Test that repeated calls use the cache."""
     # First call
-    manager.get_entity_state_at("e1", time=150.0)
+    manager.get_entity_state_at("e1", lore_date=150.0)
     assert mock_db_service.get_incoming_relations.call_count == 1
 
     # Second call - should use cache
-    manager.get_entity_state_at("e1", time=150.0)
+    manager.get_entity_state_at("e1", lore_date=150.0)
     assert mock_db_service.get_incoming_relations.call_count == 1
 
     # Different time - might need re-resolve depending on cache granularity.
     # For MVP, checking if it naively caches by (id, time).
-    manager.get_entity_state_at("e1", time=200.0)
+    manager.get_entity_state_at("e1", lore_date=200.0)
     # If caching is (id, time), this is a miss.
 
 
 def test_invalidation_on_signal(manager, mock_db_service, signal_source):
     """Test that signals clear the cache."""
     # Warm cache
-    manager.get_entity_state_at("e1", time=150.0)
+    manager.get_entity_state_at("e1", lore_date=150.0)
     assert mock_db_service.get_incoming_relations.call_count == 1
 
     # Fire signal targeting e1
@@ -97,7 +97,7 @@ def test_invalidation_on_signal(manager, mock_db_service, signal_source):
     signal_source.relation_changed.emit("r1", "evt1", "e1")
 
     # Call again - should re-fetch
-    manager.get_entity_state_at("e1", time=150.0)
+    manager.get_entity_state_at("e1", lore_date=150.0)
     assert mock_db_service.get_incoming_relations.call_count == 2
 
 
@@ -115,14 +115,14 @@ def test_event_change_invalidates_linked_entities(
     ]
 
     # Warm cache for e1
-    manager.get_entity_state_at("e1", time=150.0)
+    manager.get_entity_state_at("e1", lore_date=150.0)
     assert mock_db_service.get_incoming_relations.call_count == 1
 
     # Event changes (e.g., date moved)
     signal_source.event_changed.emit("evt1")
 
     # Verify cache was cleared for e1
-    manager.get_entity_state_at("e1", time=150.0)
+    manager.get_entity_state_at("e1", lore_date=150.0)
     assert mock_db_service.get_incoming_relations.call_count == 2
 
 
@@ -137,28 +137,28 @@ def test_event_change_with_no_relations(manager, mock_db_service, signal_source)
 def test_relation_add_invalidates_target(manager, mock_db_service, signal_source):
     """Test that adding a new relation invalidates the target entity's cache."""
     # Warm cache
-    manager.get_entity_state_at("e1", time=150.0)
+    manager.get_entity_state_at("e1", lore_date=150.0)
     call_count_before = mock_db_service.get_incoming_relations.call_count
 
     # New relation added
     signal_source.relation_changed.emit("r_new", "evt1", "e1")
 
     # Cache should be invalidated
-    manager.get_entity_state_at("e1", time=150.0)
+    manager.get_entity_state_at("e1", lore_date=150.0)
     assert mock_db_service.get_incoming_relations.call_count > call_count_before
 
 
 def test_relation_delete_invalidates_target(manager, mock_db_service, signal_source):
     """Test that deleting a relation invalidates the target entity's cache."""
     # Warm cache
-    manager.get_entity_state_at("e1", time=150.0)
+    manager.get_entity_state_at("e1", lore_date=150.0)
     call_count_before = mock_db_service.get_incoming_relations.call_count
 
     # Relation deleted
     signal_source.relation_changed.emit("r1", "evt1", "e1")
 
     # Cache should be invalidated
-    manager.get_entity_state_at("e1", time=150.0)
+    manager.get_entity_state_at("e1", lore_date=150.0)
     assert mock_db_service.get_incoming_relations.call_count > call_count_before
 
 
@@ -168,34 +168,34 @@ def test_multiple_time_points_invalidated(manager, mock_db_service, signal_sourc
     Edge case: Entity cached at T=100, T=200, T=300.
     """
     # Warm cache at multiple time points
-    manager.get_entity_state_at("e1", time=100.0)
-    manager.get_entity_state_at("e1", time=200.0)
-    manager.get_entity_state_at("e1", time=300.0)
+    manager.get_entity_state_at("e1", lore_date=100.0)
+    manager.get_entity_state_at("e1", lore_date=200.0)
+    manager.get_entity_state_at("e1", lore_date=300.0)
     assert mock_db_service.get_incoming_relations.call_count == 3
 
     # Invalidate
     signal_source.relation_changed.emit("r1", "evt1", "e1")
 
     # All time points should be cleared
-    manager.get_entity_state_at("e1", time=100.0)
-    manager.get_entity_state_at("e1", time=200.0)
-    manager.get_entity_state_at("e1", time=300.0)
+    manager.get_entity_state_at("e1", lore_date=100.0)
+    manager.get_entity_state_at("e1", lore_date=200.0)
+    manager.get_entity_state_at("e1", lore_date=300.0)
     assert mock_db_service.get_incoming_relations.call_count == 6
 
 
 def test_nuclear_clear_cache(manager, mock_db_service):
     """Test that clear_all_cache() removes all entries."""
     # Warm cache with multiple entities at multiple times
-    manager.get_entity_state_at("e1", time=100.0)
-    manager.get_entity_state_at("e2", time=200.0)
+    manager.get_entity_state_at("e1", lore_date=100.0)
+    manager.get_entity_state_at("e2", lore_date=200.0)
     assert mock_db_service.get_incoming_relations.call_count == 2
 
     # Nuclear clear
     manager.clear_all_cache()
 
     # All should be re-fetched
-    manager.get_entity_state_at("e1", time=100.0)
-    manager.get_entity_state_at("e2", time=200.0)
+    manager.get_entity_state_at("e1", lore_date=100.0)
+    manager.get_entity_state_at("e2", lore_date=200.0)
     assert mock_db_service.get_incoming_relations.call_count == 4
 
 
@@ -216,20 +216,20 @@ def test_invalidation_does_not_affect_other_entities(
     )
 
     # Warm both caches
-    manager.get_entity_state_at("e1", time=100.0)
-    manager.get_entity_state_at("e2", time=100.0)
+    manager.get_entity_state_at("e1", lore_date=100.0)
+    manager.get_entity_state_at("e2", lore_date=100.0)
     call_count_after_warm = mock_db_service.get_incoming_relations.call_count
 
     # Invalidate only e1
     signal_source.relation_changed.emit("r1", "evt1", "e1")
 
     # e2 should still be cached
-    manager.get_entity_state_at("e2", time=100.0)
+    manager.get_entity_state_at("e2", lore_date=100.0)
     # Should not have incremented (still cached)
     assert mock_db_service.get_incoming_relations.call_count == call_count_after_warm
 
     # e1 should be invalidated
-    manager.get_entity_state_at("e1", time=100.0)
+    manager.get_entity_state_at("e1", lore_date=100.0)
     assert (
         mock_db_service.get_incoming_relations.call_count == call_count_after_warm + 1
     )
@@ -239,7 +239,7 @@ def test_nonexistent_entity_does_not_crash(manager, mock_db_service):
     """Edge case: Requesting state for entity that doesn't exist."""
     mock_db_service.get_entity.return_value = None
 
-    state = manager.get_entity_state_at("nonexistent", time=100.0)
+    state = manager.get_entity_state_at("nonexistent", lore_date=100.0)
 
     # Should return empty dict
     assert state == {}

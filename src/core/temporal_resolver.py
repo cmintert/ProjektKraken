@@ -19,16 +19,16 @@ class TemporalResolver:
         self,
         entity: Entity,
         relations: List[Dict[str, Any]],
-        time: float,
+        lore_date: float,
         include_base_state: bool = True,
     ) -> Dict[str, Any]:
-        """Computes the merged state of an entity at a specific time.
+        """Computes the merged state of an entity at a specific lore date.
 
         Args:
             entity: The base Entity object (contains static/default attributes).
             relations: List of relation dicts targeted at this entity.
                        Must include 'attributes' with 'valid_from', 'payload'.
-            time: The timestamp (lore_date) to resolve at.
+            lore_date: The timeline date (lore_date) to resolve at.
             include_base_state: If True, starts with entity.attributes.
                                 If False, returns only the temporal overrides.
 
@@ -61,9 +61,9 @@ class TemporalResolver:
                 continue
 
             # Check time bounds
-            # active if valid_from <= time AND (valid_to is None OR valid_to > time)
-            if valid_from <= time:
-                if valid_to is None or valid_to > time:
+            # active if valid_from <= lore_date AND (valid_to is None OR valid_to > lore_date)
+            if valid_from <= lore_date:
+                if valid_to is None or valid_to > lore_date:
                     applicable_relations.append(rel)
 
         # 3. Sort relations to determine application order
@@ -84,7 +84,7 @@ class TemporalResolver:
             if not payload:
                 continue
 
-            self._merge_payload(current_state, payload)
+            self._apply_attribute_overrides(current_state, payload)
 
         return current_state
 
@@ -115,8 +115,10 @@ class TemporalResolver:
 
         return (valid_from, priority_score, modified_at, rel_id)
 
-    def _merge_payload(self, state: Dict[str, Any], payload: Dict[str, Any]) -> None:
-        """Merges a payload into the state.
+    def _apply_attribute_overrides(
+        self, state: Dict[str, Any], payload: Dict[str, Any]
+    ) -> None:
+        """Applies a chronological payload's attribute overrides to the current state.
 
         Currently implements a shallow merge (overwrite).
         """
