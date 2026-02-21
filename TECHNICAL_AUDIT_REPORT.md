@@ -12,22 +12,22 @@ ProjektKraken is a substantial desktop worldbuilding application (~127K LOC tota
 
 However, organic growth has introduced measurable **technical debt** that, if left unaddressed, will impede velocity and onboarding.
 
-### Maintainability Score: **8.5 / 10** *(up from 8.0 after critical bug fix and test stabilization)*
+### Maintainability Score: **9.0 / 10** *(up from 8.5 after MapWidget mixin decomposition)*
 
 | Dimension              | Score | Notes |
 |------------------------|-------|-------|
 | Architectural Intent   | 9/10  | AppCoordinator facade; full repository delegation; proper DI |
-| Coupling               | 7/10  | AppCoordinator reduces MainWindow imports 29→24; declarative signal registry; DI for all repos |
-| Single Responsibility  | 7/10  | DatabaseService decomposed (2509→1389 LOC); TagRepository + MetaRepository extracted; MapWidget documented |
-| DRY                    | 7.5/10 | Editor mixin; style_helper consolidated; repository pattern fully leveraged |
-| Documentation          | 8/10  | All new repos/coordinators well-documented; MapWidget responsibility groups documented |
-| Testability            | 9/10  | 50+ new tests; all 117 unit tests passing; DI enables test injection; 0 pre-existing failures remaining |
-| Extensibility          | 8/10  | Full DI for 9 repos; AppCoordinator facade; McCabe complexity lint gate |
+| Coupling               | 7.5/10 | AppCoordinator reduces MainWindow imports 29→24; declarative signal registry; DI for all repos |
+| Single Responsibility  | 8.5/10 | DatabaseService decomposed (2509→1389 LOC); MapWidget decomposed (1946→1005 LOC via 5 mixins); editor mixin |
+| DRY                    | 8/10  | Editor mixin; style_helper consolidated; repository pattern fully leveraged; shared mixin protocols |
+| Documentation          | 8/10  | All new repos/coordinators/mixins well-documented; mixin contracts specify required host attributes |
+| Testability            | 9.5/10 | 87 mixin regression tests + 50+ prior new tests; all 299 unit tests passing; DI enables test injection |
+| Extensibility          | 9/10  | Full DI for 9 repos; AppCoordinator facade; McCabe complexity lint gate; MapWidget extensible via mixins |
 
 ### Remaining Risks
 
-1. **MapWidget complexity** — Still 1,580 LOC with 75 methods. Mixin extraction deferred due to API differences (`node.id` vs `node.feature_id`). Documented responsibility groups serve as refactoring guide.
-2. **MainWindow import count** — Reduced from 29→24 but still high due to widget construction requirements. Further reduction requires widget factory pattern.
+1. **MainWindow import count** — Reduced from 29→24 but still high due to widget construction requirements. Further reduction requires widget factory pattern.
+2. ~~**MapWidget complexity**~~ — **RESOLVED**: Decomposed from 1,946→1,005 LOC via 5 focused mixins (MapLayerMixin, MapTrajectoryMixin, MapDrawingMixin, MapCalibrationMixin, MapDialogMixin). Each mixin has a clear contract specifying required host attributes.
 
 ### Bugs Fixed This Cycle
 
@@ -316,7 +316,7 @@ The following files have **excellent** documentation and should be used as templ
 | # | Task | Files | Effort | Status |
 |---|------|-------|--------|--------|
 | 13 | Decompose `DatabaseService` — created `TagRepository` (24 methods) and `MetaRepository` (8 methods), moved marker/relation SQL to existing repos | `db_service.py` (2509→1389 LOC), `tag_repository.py`, `meta_repository.py`, `map_repository.py`, `relation_repository.py` | 16h | ✅ Done |
-| 14 | Document `MapWidget` responsibility groups — full decomposition deferred due to `node.id` vs `node.feature_id` API mismatch | `map_widget.py` | 2h | ✅ Documented (decomposition deferred) |
+| 14 | Decompose `MapWidget` into 5 focused mixins — `MapLayerMixin`, `MapTrajectoryMixin`, `MapDrawingMixin`, `MapCalibrationMixin`, `MapDialogMixin` | `map_widget.py` (1946→1005 LOC), 5 new mixin files | 8h | ✅ Done |
 | 15 | Introduce `AppCoordinator` facade to reduce MainWindow import count from 29 to 24 | `main_window.py`, `app_coordinator.py` | 4h | ✅ Done |
 | 16 | Add 14 integration tests for decomposed components | `test_integration_decomposition.py` | 4h | ✅ Done |
 | 17 | Add McCabe complexity lint rule (C901, max-complexity=15) via ruff config | `pyproject.toml` | 15m | ✅ Done |
@@ -330,12 +330,12 @@ The following files have **excellent** documentation and should be used as templ
                │
         Medium │  #6-7 ✅ Done    #8,9,11 ✅ Done       #15,16 ✅ Done
                │
-           Low │                                        #14 🟡 Documented  #17 ✅ Done
+           Low │                                        #14 ✅ Done          #17 ✅ Done
                └──────────────────────────────────────────────────► Risk
                     Low              Medium                 High
 ```
 
-### Complete Roadmap Status: 17/17 items addressed (15 fully implemented, 2 documented/deferred) + 3 critical bugs fixed
+### Complete Roadmap Status: 17/17 items fully implemented + 3 critical bugs fixed + 87 mixin regression tests
 
 ---
 
