@@ -7,6 +7,7 @@ switches reliably update the UI.
 
 from PySide6.QtWidgets import QLayout
 
+from src.core.theme_manager import ThemeManager
 
 class StyleHelper:
     """Centralized style helper that provides theme-aware QSS strings.
@@ -27,7 +28,6 @@ class StyleHelper:
             str: QSS stylesheet string for empty state labels.
 
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return f"color: {theme['text_dim']}; font-size: 14pt;"
@@ -43,7 +43,6 @@ class StyleHelper:
             str: QSS stylesheet string for preview labels.
 
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return f"color: {theme['text_dim']}; font-style: italic;"
@@ -59,7 +58,6 @@ class StyleHelper:
             str: QSS stylesheet string for error labels.
 
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return f"color: {theme['error']}; font-weight: bold;"
@@ -87,7 +85,6 @@ class StyleHelper:
             str: QSS stylesheet string for frames.
 
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return (
@@ -106,7 +103,6 @@ class StyleHelper:
             str: QSS stylesheet string for lore frames.
 
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return (
@@ -126,7 +122,6 @@ class StyleHelper:
             str: QSS stylesheet string for map viewports.
 
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return (
@@ -144,7 +139,6 @@ class StyleHelper:
             str: QSS stylesheet string for primary buttons.
 
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return (
@@ -167,7 +161,6 @@ class StyleHelper:
             str: QSS stylesheet string for secondary buttons.
 
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return (
@@ -188,7 +181,6 @@ class StyleHelper:
             str: QSS stylesheet string for tool buttons.
 
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return (
@@ -212,7 +204,6 @@ class StyleHelper:
             str: QSS stylesheet string for destructive buttons.
 
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return (
@@ -235,7 +226,6 @@ class StyleHelper:
         Returns:
             str: QSS stylesheet string for icon buttons.
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return (
@@ -271,7 +261,6 @@ class StyleHelper:
             str: QSS stylesheet string.
 
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return (
@@ -287,7 +276,6 @@ class StyleHelper:
 
         Used when the input is wrapped in a styled frame.
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return (
@@ -307,7 +295,6 @@ class StyleHelper:
             str: QSS stylesheet string for dialog buttons.
 
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
 
@@ -340,7 +327,6 @@ class StyleHelper:
             str: QSS stylesheet string for dialog base.
 
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return (
@@ -358,7 +344,6 @@ class StyleHelper:
             str: QSS stylesheet string for scrollbars.
 
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return (
@@ -394,7 +379,6 @@ class StyleHelper:
             str: QSS stylesheet string for wiki links.
 
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
 
@@ -413,7 +397,6 @@ class StyleHelper:
             str: QSS stylesheet string for timeline headers.
 
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return (
@@ -480,7 +463,6 @@ class StyleHelper:
         Returns:
             str: QSS stylesheet string for checkboxes.
         """
-        from src.core.theme_manager import ThemeManager
 
         from src.core.paths import get_resource_path
 
@@ -491,8 +473,6 @@ class StyleHelper:
         check_icon_path = get_resource_path("default_assets/icons/ui_icons/check.svg")
         check_icon_path = check_icon_path.replace("\\", "/")
         icon_url = f"'{check_icon_path}'"
-
-
 
         return (
             f"QCheckBox {{ color: {theme['text_main']}; spacing: 8px; }}"
@@ -523,7 +503,6 @@ class StyleHelper:
         Returns:
             str: QSS stylesheet string for list widgets.
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         primary = theme.get("primary", "#4A9EFF")
@@ -563,7 +542,6 @@ class StyleHelper:
             str: QSS stylesheet string for QTreeView widgets.
 
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         primary = theme.get("primary", "#4A9EFF")
@@ -610,7 +588,6 @@ class StyleHelper:
             str: QSS stylesheet string for QSlider widgets.
 
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return (
@@ -639,7 +616,6 @@ class StyleHelper:
             str: QSS stylesheet string for panel headers.
 
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return (
@@ -654,7 +630,6 @@ class StyleHelper:
         Returns:
             str: Hex color string.
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return theme.get("event_main", theme.get("primary", "#888888"))
@@ -666,7 +641,6 @@ class StyleHelper:
         Returns:
             str: Hex color string.
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return theme.get("entity_main", theme.get("accent_secondary", "#4A90D9"))
@@ -682,7 +656,6 @@ class StyleHelper:
             str: QSS stylesheet string for spinboxes.
         """
         from src.core.paths import get_resource_path
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         base_style = StyleHelper.get_input_field_style()
@@ -723,7 +696,6 @@ class StyleHelper:
         Returns:
             str: QSS stylesheet string for shortcut keys.
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return (
@@ -741,7 +713,6 @@ class StyleHelper:
         Returns:
             str: QSS stylesheet string.
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return (
@@ -760,7 +731,6 @@ class StyleHelper:
         Returns:
             str: CSS stylesheet string for HTML content.
         """
-        from src.core.theme_manager import ThemeManager
 
         theme = ThemeManager().get_theme()
         return f"""

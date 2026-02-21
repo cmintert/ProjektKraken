@@ -69,14 +69,11 @@ class DatabaseService:
         """Establishes connection to the database."""
         try:
             self._connection = sqlite3.connect(self.db_path)
-            # Enable Foreign Keys
             self._connection.execute("PRAGMA foreign_keys = ON;")
-            # Enable Write-Ahead Logging for better concurrency
-            # WAL mode allows concurrent readers with a single writer
             if self.db_path != ":memory:":
+                # WAL enables concurrent reads during background writes
                 self._connection.execute("PRAGMA journal_mode=WAL;")
                 logger.debug("WAL mode enabled for database.")
-            # Return rows as Row objects for name access
             self._connection.row_factory = sqlite3.Row
             logger.debug("Database connection established.")
 

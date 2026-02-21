@@ -719,7 +719,6 @@ class EntityEditorWidget(QWidget):
             self._current_created_at = entity.created_at
 
             # Block signals
-            # Block signals
             self._set_input_signals_blocked(True)
 
             if self.name_edit.text() != entity.name:
@@ -830,7 +829,6 @@ class EntityEditorWidget(QWidget):
 
             self.setEnabled(True)
 
-            # Unblock & Reset
             # Unblock & Reset
             self._set_input_signals_blocked(False)
             self.set_dirty(False)

@@ -999,7 +999,6 @@ class EventEditorWidget(QWidget):
         self._is_loading = True
         try:
             # Block signals to prevent dirty trigger during load
-            # Block signals to prevent dirty trigger during load
             self.name_edit.blockSignals(True)
             self.date_edit.blockSignals(True)
             self.duration_widget.blockSignals(True)
@@ -1010,23 +1009,14 @@ class EventEditorWidget(QWidget):
             if self.name_edit.text() != event.name:
                 self.name_edit.setText(event.name)
 
-            # Date/Time widgets have set_value which triggers internal updates
-            # Ideally we check value equality first.
-            # Lore/Duration override eq? Assuming they do or are value types.
+            # Avoid redundant updates
             if self.date_edit.get_value() != event.lore_date:
                 self.date_edit.set_value(event.lore_date)
 
-            # Initialize duration widgets
-            # Duration widget logic is complex (updates end date etc).
-            # Safer to check value match before setting.
             self.duration_widget.set_start_date(event.lore_date)
             if self.duration_widget.get_value() != event.lore_duration:
                 self.duration_widget.set_value(event.lore_duration)
 
-            # End date follows start + duration unless manually set differently?
-            # Usually end date is derived. load_event sets it explicitly.
-            # If duration matches, end date match is implied if logic is consistent.
-            # But let's check.
             target_end = event.lore_date + event.lore_duration
             if self.end_date_edit.get_value() != target_end:
                 self.end_date_edit.set_value(target_end)
