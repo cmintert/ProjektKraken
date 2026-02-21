@@ -799,6 +799,9 @@ class TagRepository(BaseRepository):
     def _generate_tag_color(self, tag_name: str) -> str:
         """Generates a deterministic color for a tag based on its name.
 
+        Uses MD5 hashing (non-cryptographic) to produce a stable color from
+        the tag name. This is intentional — we need determinism, not security.
+
         Args:
             tag_name: The name of the tag.
 

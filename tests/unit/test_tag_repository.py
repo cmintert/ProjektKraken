@@ -171,10 +171,11 @@ class TestTagRepository:
         entities = tag_repo.get_entities_by_tag("equipment")
         assert len(entities) == 2
 
-    def test_generate_tag_color_deterministic(self, db, tag_repo):
-        """Test that _generate_tag_color is deterministic."""
-        color1 = tag_repo._generate_tag_color("test")
-        color2 = tag_repo._generate_tag_color("test")
+    def test_tag_color_deterministic(self, db, tag_repo):
+        """Test that tag color generation is deterministic."""
+        tag_repo.create_tag("deterministic")
+        color1 = tag_repo.get_tag_color("deterministic")
+        color2 = tag_repo.get_tag_color("deterministic")
         assert color1 == color2
         assert color1.startswith("#")
 

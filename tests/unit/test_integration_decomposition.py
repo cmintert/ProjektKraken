@@ -204,16 +204,14 @@ class TestAppCoordinatorIntegration:
         assert AppCoordinator is not None
 
     def test_app_coordinator_has_all_coordinators(self):
-        """Test AppCoordinator exposes all expected coordinator types."""
+        """Test AppCoordinator exposes all expected coordinator attributes."""
         from src.app.coordinators.app_coordinator import AppCoordinator
 
-        # Verify the class has the expected init that creates coordinators
-        import inspect
-        source = inspect.getsource(AppCoordinator.__init__)
-        assert "DataCoordinator" in source
-        assert "TimeCoordinator" in source
-        assert "EditorCoordinator" in source
-        assert "NavigationCoordinator" in source
-        assert "BackupCoordinator" in source
-        assert "FastInjectCoordinator" in source
-        assert "ImportCoordinator" in source
+        # Verify the class defines __init__ that sets the expected attrs
+        expected_attrs = ["data", "time", "editor", "navigation",
+                          "backup", "fast_inject", "import_coord"]
+        init_code = AppCoordinator.__init__.__code__
+        # All expected attrs should be referenced in the init bytecode
+        for attr in expected_attrs:
+            assert attr in init_code.co_names or attr in str(init_code.co_consts), \
+                f"AppCoordinator missing expected attribute: {attr}"

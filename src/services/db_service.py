@@ -1177,10 +1177,6 @@ class DatabaseService:
         """Gets the color for a tag, generating one if not set."""
         return self._tag_repo.get_tag_color(tag_name)
 
-    def _generate_tag_color(self, tag_name: str) -> str:
-        """Generates a deterministic color for a tag based on its name."""
-        return self._tag_repo._generate_tag_color(tag_name)
-
     def filter_ids_by_tags(
         self,
         object_type: Optional[str] = None,
