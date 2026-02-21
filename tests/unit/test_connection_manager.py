@@ -277,3 +277,64 @@ class TestConnectAll:
         assert any(
             "signal connections" in record.message.lower() for record in caplog.records
         )
+
+
+class TestConnectBatch:
+    """Tests for the _connect_batch declarative signal registry."""
+
+    def test_batch_all_succeed(self, qapp):
+        """Test _connect_batch processes all specs and returns 0 failures."""
+
+        class Source(QObject):
+            sig_a = Signal()
+            sig_b = Signal(str)
+
+        source = Source()
+        mock_window = Mock()
+        cm = ConnectionManager(mock_window)
+
+        specs = [
+            (source, "sig_a", lambda: None, "Source"),
+            (source, "sig_b", lambda s: None, "Source"),
+        ]
+
+        failed = cm._connect_batch(specs, "TestGroup")
+        assert failed == 0
+        assert cm._connection_stats["succeeded"] >= 2
+
+    def test_batch_counts_failures(self, qapp):
+        """Test _connect_batch counts failures for missing signals."""
+        source = Mock(spec=[])
+        mock_window = Mock()
+        cm = ConnectionManager(mock_window)
+
+        specs = [
+            (source, "nonexistent_signal", lambda: None, "Source"),
+        ]
+
+        failed = cm._connect_batch(specs, "TestGroup")
+        assert failed == 1
+
+    def test_batch_empty_specs(self, qapp):
+        """Test _connect_batch handles empty spec list."""
+        mock_window = Mock()
+        cm = ConnectionManager(mock_window)
+        assert cm._connect_batch([], "EmptyGroup") == 0
+
+    def test_batch_with_connection_type(self, qapp):
+        """Test _connect_batch handles 5-element specs with QueuedConnection."""
+        from PySide6.QtCore import Qt
+
+        class Source(QObject):
+            cross_thread = Signal()
+
+        source = Source()
+        mock_window = Mock()
+        cm = ConnectionManager(mock_window)
+
+        specs = [
+            (source, "cross_thread", lambda: None, "Source", Qt.ConnectionType.QueuedConnection),
+        ]
+
+        failed = cm._connect_batch(specs, "CrossThread")
+        assert failed == 0
