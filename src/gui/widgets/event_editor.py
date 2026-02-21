@@ -11,7 +11,7 @@ from contextlib import suppress
 from typing import Any, Dict
 
 from PySide6.QtCore import QPoint, QSize, Qt, Signal, Slot
-from PySide6.QtGui import QDragEnterEvent, QDragLeaveEvent, QDragMoveEvent, QDropEvent
+from PySide6.QtGui import QDropEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
@@ -36,6 +36,7 @@ from src.app.constants import (
 from src.core.events import Event
 from src.core.summary_data import SummaryData
 from src.gui.mixins.autosave_mixin import AutoSaveManager
+from src.gui.mixins.editor_mixin import BaseEditorMixin
 from src.gui.utils.icon_loader import load_icon
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.compact_date_widget import CompactDateWidget
@@ -55,7 +56,7 @@ from src.gui.widgets.wiki_text_edit import WikiTextEdit
 logger = logging.getLogger(__name__)
 
 
-class EventEditorWidget(QWidget):
+class EventEditorWidget(BaseEditorMixin, QWidget):
     """A form to edit the details of an Event.
 
     Emits 'save_requested' signal with the modified Event object. Emits
@@ -366,6 +367,14 @@ class EventEditorWidget(QWidget):
         self._type_picker = None
         self._selected_relation_type = "related"  # Default type
 
+    def _get_current_item_id(self) -> str | None:
+        """Returns the current event ID or None."""
+        return self._current_event_id
+
+    def _get_editor_label(self) -> str:
+        """Returns the editor label for logging."""
+        return "EventEditor"
+
     def _show_drop_hint(self, rel_type: str = "related") -> None:
         """Show drop hint overlay during drag-over.
 
@@ -400,123 +409,6 @@ class EventEditorWidget(QWidget):
         """Hide drop hint overlay."""
         if self._drop_hint_label:
             self._drop_hint_label.hide()
-
-    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-        """Handle drag enter event to accept MIME data from Project Explorer.
-
-        Args:
-            event: QDragEnterEvent with MIME data.
-        """
-        from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
-
-        # Accept if MIME type matches and we have an event loaded
-        if event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE) and self._current_event_id:
-            event.acceptProposedAction()
-            self._is_drag_over = True
-
-            # Always use default hint, no inline picker
-            self._selected_relation_type = "related"
-            self._show_drop_hint(self._selected_relation_type)
-
-            logger.debug("EventEditor: Accepting drag from Project Explorer")
-        else:
-            event.ignore()
-
-    def dragMoveEvent(self, event: QDragMoveEvent) -> None:
-        """Handle drag move event.
-
-        Args:
-            event: QDragMoveEvent.
-        """
-        from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
-
-        if event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE) and self._current_event_id:
-            event.acceptProposedAction()
-
-            event.acceptProposedAction()
-
-            # Keep drop hint visible during drag
-            if not self._is_drag_over:
-                self._is_drag_over = True
-            self._show_drop_hint(self._selected_relation_type)
-        else:
-            event.ignore()
-
-    def dragLeaveEvent(self, event: QDragLeaveEvent) -> None:
-        """Handle drag leave event - hide drop hint and type picker.
-
-        Args:
-            event: QDragLeaveEvent.
-        """
-        self._is_drag_over = False
-        self._hide_drop_hint()
-
-        # Hide type picker if visible
-        if self._type_picker and self._type_picker.isVisible():
-            self._type_picker.hide()
-
-        logger.debug("EventEditor: Drag left editor area")
-
-    def _show_type_picker(self, position: QPoint) -> None:
-        """Show the relation type picker at the specified position.
-
-        Args:
-            position: Position relative to this widget.
-        """
-        if not self._type_picker:
-            from src.gui.widgets.relation_type_picker import RelationTypePicker
-
-            self._type_picker = RelationTypePicker()
-
-            # Connect to type selection signal
-            self._type_picker.type_selected.connect(self._on_relation_type_selected)
-
-        # Define default relation types
-        default_types = [
-            "related",
-            "caused",
-            "participated_in",
-            "located_at",
-            "owns",
-            "created_by",
-            "part_of",
-        ]
-
-        # Merge with backend suggestions if available
-        all_types = set(default_types)
-        if hasattr(self, "_suggestion_types") and self._suggestion_types:
-            all_types.update(self._suggestion_types)
-
-        # Update picker with current types
-        self._type_picker.set_relation_types(list(all_types))
-
-        # Convert position to global coordinates
-        global_pos = self.mapToGlobal(position)
-        self._type_picker.show_at_position(global_pos)
-
-        # Hide drop hint while picker is visible
-        self._hide_drop_hint()
-
-    def _on_relation_type_selected(self, relation_type: str) -> None:
-        """Handle relation type selection from picker.
-
-        Args:
-            relation_type: The selected relation type.
-        """
-        if hasattr(self, "_initiated_relation_drop") and self._initiated_relation_drop:
-            # Complete the drop
-            data = self._initiated_relation_drop
-            self._create_relation(
-                data["source_id"],
-                data["source_type"],
-                data["source_name"],
-                relation_type,
-            )
-            self._initiated_relation_drop = None
-        else:
-            self._selected_relation_type = relation_type
-            logger.info(f"EventEditor: Relation type selected: {relation_type}")
-            self._show_drop_hint(self._selected_relation_type)
 
     def dropEvent(self, event: QDropEvent) -> None:
         """Handle drop event to create relation from dragged item to current event.
@@ -883,39 +775,6 @@ class EventEditorWidget(QWidget):
         self.tag_editor.tags_changed.connect(lambda: self.set_dirty(True))
         self.attribute_editor.attributes_changed.connect(lambda: self.set_dirty(True))
 
-    def set_dirty(self, dirty: bool) -> None:
-        """Sets the dirty state of the editor.
-
-        Args:
-            dirty (bool): True if changes are unsaved, False otherwise.
-
-        """
-        if self._is_loading and dirty:
-            logger.debug(
-                f"[EventEditor] set_dirty({dirty}) ignored - loading in progress"
-            )
-            return
-
-        if self._current_event_id is None and dirty:
-            logger.debug(f"[EventEditor] set_dirty({dirty}) ignored - no event loaded")
-            return
-
-        if self._is_dirty != dirty:
-            self._is_dirty = dirty
-            self.dirty_changed.emit(dirty)
-            self.btn_save.setEnabled(dirty)
-            self.btn_discard.setEnabled(dirty)
-            if dirty:
-                self.btn_save.setText("Save Changes *")
-                self.autosave_manager.start_timer()
-            else:
-                self.btn_save.setText("Save Changes")
-                self.autosave_manager.stop_timer()
-
-    def has_unsaved_changes(self) -> bool:
-        """Returns True if the editor has unsaved changes."""
-        return self._is_dirty
-
     @Slot(float)
     def _on_start_date_changed(self, new_start: float) -> None:
         """Updates duration widget context and recalculates end date."""
@@ -1072,13 +931,7 @@ class EventEditorWidget(QWidget):
             event: The event whose attributes to load.
 
         """
-        self._hidden_attributes = {
-            k: v for k, v in event.attributes.items() if k.startswith("_")
-        }
-
-        display_attrs = {
-            k: v for k, v in event.attributes.items() if not k.startswith("_")
-        }
+        display_attrs = self._extract_hidden_attributes(event.attributes)
         self.attribute_editor.blockSignals(True)
         self.attribute_editor.load_attributes(display_attrs)
         self.attribute_editor.blockSignals(False)
@@ -1216,15 +1069,7 @@ class EventEditorWidget(QWidget):
             # Inject pending summary/hidden attributes
             if hasattr(self, "_pending_summary_data") and self._pending_summary_data:
                 base_attrs["_summary_data"] = self._pending_summary_data
-                # Also need others?
-                if hasattr(self, "_hidden_attributes"):
-                    for k, v in self._hidden_attributes.items():
-                        if k not in base_attrs and k != "_summary_data":
-                            base_attrs[k] = v
-            elif hasattr(self, "_hidden_attributes"):
-                for k, v in self._hidden_attributes.items():
-                    if k not in base_attrs:
-                        base_attrs[k] = v
+            self._merge_hidden_attributes(base_attrs)
 
             event_data = {
                 "id": self._current_event_id,
