@@ -975,8 +975,6 @@ class TimelineView(QGraphicsView):
             elif hasattr(item, "setLine") and hasattr(item, "event_id"):
                 drop_lines[item.event_id] = item
 
-        # (Cleanup already done by caller: repack_events)
-
         # 1. Partition events
         groups, ungrouped = self._partition_events(
             self.events, self._grouping_tag_order, self._grouping_mode
@@ -985,7 +983,50 @@ class TimelineView(QGraphicsView):
         current_y = 60  # Start below ruler
         placed_event_ids = set()
 
-        # 2. Iterate Groups
+        # 2. Position tag group bands and their events
+        current_y = self._position_tag_group_events(
+            groups, event_items, drop_lines, placed_event_ids, current_y
+        )
+
+        # 3. Position "All Events" group
+        current_y = self._position_all_events_group(
+            event_items, drop_lines, placed_event_ids, current_y
+        )
+
+        # Update scene rect
+        current_rect = self.scene.sceneRect()
+        self.scene.setSceneRect(
+            current_rect.x(), 0, current_rect.width(), current_y + 100
+        )
+
+        # Update label overlay to reflect new band positions
+        self._update_label_overlay()
+
+    def _position_tag_group_events(
+        self,
+        groups: dict,
+        event_items: dict,
+        drop_lines: dict,
+        placed_event_ids: set,
+        current_y: float,
+    ) -> float:
+        """Positions events within their tag group bands.
+
+        Iterates through each configured tag group, positions its band header,
+        and lays out contained events using the lane packer.
+
+        Args:
+            groups: Mapping of tag name to list of events in that group.
+            event_items: Mapping of event ID to its EventItem scene item.
+            drop_lines: Mapping of event ID to its drop-line scene item.
+            placed_event_ids: Set tracking which event IDs have been placed
+                (mutated in place to support duplicate detection).
+            current_y: Starting Y coordinate for placement.
+
+        Returns:
+            Updated current_y after all tag groups are positioned.
+
+        """
         for tag in self._grouping_tag_order:
             events_in_group = groups[tag]
             band = self._band_manager.get_band(tag) if self._band_manager else None
@@ -1010,19 +1051,16 @@ class TimelineView(QGraphicsView):
 
             # Band is expanded - pack and show events
             if events_in_group:
-                # Pack events for this group
                 layout_map, lane_heights = self._lane_packer.pack_events(
                     events_in_group
                 )
 
-                # Position events
                 for event in events_in_group:
                     if event.id not in event_items:
                         continue
 
                     # Choose item: Original or Duplicate
                     if event.id in placed_event_ids:
-                        # Duplicate for subsequent groups
                         item = EventItem(event, self.scale_factor)
                         item.on_drag_complete = self._on_event_drag_complete
                         self.scene.addItem(item)
@@ -1056,18 +1094,36 @@ class TimelineView(QGraphicsView):
                         + (len(lane_heights) - 1) * self._lane_packer.LANE_PADDING
                     )
 
-                current_y += total_group_height + 20  # Padding between groups
+                current_y += total_group_height + 20
             else:
-                # No events in this group
-                current_y += 10  # Minimal padding
+                current_y += 10
 
-        # 3. Add "All Events" Group
-        # This group shows ALL events:
-        # - Ungrouped events use their ORIGINAL EventItem (not positioned yet)
-        # - Grouped events use DUPLICATE EventItem instances
+        return current_y
+
+    def _position_all_events_group(
+        self,
+        event_items: dict,
+        drop_lines: dict,
+        placed_event_ids: set,
+        current_y: float,
+    ) -> float:
+        """Positions the 'All Events' summary group.
+
+        Shows all events in a combined band: ungrouped events use their original
+        EventItem, while previously-grouped events use duplicate instances.
+
+        Args:
+            event_items: Mapping of event ID to its EventItem scene item.
+            drop_lines: Mapping of event ID to its drop-line scene item.
+            placed_event_ids: Set of event IDs already placed in tag groups.
+            current_y: Starting Y coordinate for placement.
+
+        Returns:
+            Updated current_y after the "All Events" group is positioned.
+
+        """
         current_y += 20
 
-        # Create/get "All events" band
         all_events_band = None
         if self._band_manager:
             all_events_band = self._band_manager.get_band(self.ALL_EVENTS_GROUP_NAME)
@@ -1075,27 +1131,20 @@ class TimelineView(QGraphicsView):
         if not all_events_band:
             logger.warning(f"Band for '{self.ALL_EVENTS_GROUP_NAME}' not found")
         else:
-            # Position "All events" band
             all_events_band.setY(current_y)
             all_events_band.setVisible(True)
             band_height = all_events_band.get_height()
             current_y += band_height + 25
 
-        # The "All events" group will use placed_event_ids to determine duplication
         grouped_event_ids = placed_event_ids
 
-        # Check if "All events" band is collapsed - skip event positioning
         if all_events_band and all_events_band.is_collapsed:
-            # Hide ungrouped events (their original items)
             for event in self.events:
                 if event.id not in grouped_event_ids and event.id in event_items:
                     event_items[event.id].setVisible(False)
                     if event.id in drop_lines:
                         drop_lines[event.id].setVisible(False)
         else:
-            # Band is expanded - show all events
-
-            # Pack ALL events for the "All events" section
             layout_map, lane_heights = self._lane_packer.pack_events(self.events)
 
             for event in self.events:
@@ -1107,17 +1156,12 @@ class TimelineView(QGraphicsView):
                 target_y = current_y + y_offset
 
                 if event.id in grouped_event_ids:
-                    # Event was already in a tag group - create a DUPLICATE
                     duplicate_item = EventItem(event, self.scale_factor)
                     duplicate_item.on_drag_complete = self._on_event_drag_complete
-
-                    # Add to scene
                     self.scene.addItem(duplicate_item)
                     self._duplicate_event_items.append(duplicate_item)
-
                     self._position_event_item(duplicate_item, target_y)
                 elif event.id in event_items:
-                    # Event was ungrouped - use its ORIGINAL item
                     item = event_items[event.id]
                     self._position_event_item(item, target_y, drop_lines)
 
@@ -1126,15 +1170,7 @@ class TimelineView(QGraphicsView):
                     len(lane_heights) * self._lane_packer.LANE_PADDING
                 )
 
-        # Update scene rect
-        current_rect = self.scene.sceneRect()
-        # Ensure we cover everything
-        self.scene.setSceneRect(
-            current_rect.x(), 0, current_rect.width(), current_y + 100
-        )
-
-        # Update label overlay to reflect new band positions
-        self._update_label_overlay()
+        return current_y
 
     def fit_all(self) -> None:
         """Fits the view to encompass all event items, playhead, and current time line.
