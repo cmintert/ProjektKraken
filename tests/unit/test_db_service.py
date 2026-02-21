@@ -141,3 +141,55 @@ def test_get_tags_with_events(db_service):
     assert "EntityTag" in all_tag_names
     assert "SharedTag" in all_tag_names
     assert "UnusedTag" in all_tag_names
+
+
+def test_di_custom_repositories():
+    """Test that DatabaseService accepts injected repositories."""
+    from unittest.mock import MagicMock
+
+    from src.services.db_service import DatabaseService
+    from src.services.repositories import EventRepository
+
+    custom_event_repo = MagicMock(spec=EventRepository)
+    service = DatabaseService(":memory:", event_repo=custom_event_repo)
+
+    # Verify the injected repository was used instead of creating a new one
+    assert service._event_repo is custom_event_repo
+
+
+def test_di_default_repositories():
+    """Test that DatabaseService creates default repositories when none injected."""
+    from src.services.db_service import DatabaseService
+    from src.services.repositories import (
+        AttachmentRepository,
+        CalendarRepository,
+        EntityRepository,
+        EventRepository,
+        MapRepository,
+        RelationRepository,
+        TrajectoryRepository,
+    )
+
+    service = DatabaseService(":memory:")
+
+    assert isinstance(service._event_repo, EventRepository)
+    assert isinstance(service._entity_repo, EntityRepository)
+    assert isinstance(service._relation_repo, RelationRepository)
+    assert isinstance(service._map_repo, MapRepository)
+    assert isinstance(service._calendar_repo, CalendarRepository)
+    assert isinstance(service._attachment_repo, AttachmentRepository)
+    assert isinstance(service._trajectory_repo, TrajectoryRepository)
+
+
+def test_di_partial_injection():
+    """Test that only injected repos are used, others get defaults."""
+    from unittest.mock import MagicMock
+
+    from src.services.db_service import DatabaseService
+    from src.services.repositories import EntityRepository, EventRepository
+
+    custom_event_repo = MagicMock(spec=EventRepository)
+    service = DatabaseService(":memory:", event_repo=custom_event_repo)
+
+    assert service._event_repo is custom_event_repo
+    assert isinstance(service._entity_repo, EntityRepository)

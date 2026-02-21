@@ -41,26 +41,48 @@ class DatabaseService:
 
     This service delegates CRUD operations to specialized repository classes while
     maintaining schema management and connection handling.
+
+    Repositories can be injected via the constructor for testing or custom
+    configurations. When omitted, default repository instances are created.
     """
 
-    def __init__(self, db_path: str = ":memory:") -> None:
-        """Args:
-        db_path: Path to the .kraken database file.
-                 Defaults to :memory: for testing.
+    def __init__(
+        self,
+        db_path: str = ":memory:",
+        *,
+        event_repo: Optional[EventRepository] = None,
+        entity_repo: Optional[EntityRepository] = None,
+        relation_repo: Optional[RelationRepository] = None,
+        map_repo: Optional[MapRepository] = None,
+        calendar_repo: Optional[CalendarRepository] = None,
+        attachment_repo: Optional[AttachmentRepository] = None,
+        trajectory_repo: Optional[TrajectoryRepository] = None,
+    ) -> None:
+        """Initializes the database service with optional dependency injection.
+
+        Args:
+            db_path: Path to the .kraken database file.
+                     Defaults to :memory: for testing.
+            event_repo: Optional EventRepository instance (injected for testing).
+            entity_repo: Optional EntityRepository instance.
+            relation_repo: Optional RelationRepository instance.
+            map_repo: Optional MapRepository instance.
+            calendar_repo: Optional CalendarRepository instance.
+            attachment_repo: Optional AttachmentRepository instance.
+            trajectory_repo: Optional TrajectoryRepository instance.
 
         """
         self.db_path = db_path
         self._connection: Optional[sqlite3.Connection] = None
-        self._backup_service = None  # Optional backup service integration
+        self._backup_service = None
 
-        # Initialize repositories (will be connected after connection is established)
-        self._event_repo = EventRepository()
-        self._entity_repo = EntityRepository()
-        self._relation_repo = RelationRepository()
-        self._map_repo = MapRepository()
-        self._calendar_repo = CalendarRepository()
-        self._attachment_repo = AttachmentRepository()
-        self._trajectory_repo = TrajectoryRepository()
+        self._event_repo = event_repo or EventRepository()
+        self._entity_repo = entity_repo or EntityRepository()
+        self._relation_repo = relation_repo or RelationRepository()
+        self._map_repo = map_repo or MapRepository()
+        self._calendar_repo = calendar_repo or CalendarRepository()
+        self._attachment_repo = attachment_repo or AttachmentRepository()
+        self._trajectory_repo = trajectory_repo or TrajectoryRepository()
         self.attachment_service: Optional["AttachmentService"] = None
 
         logger.info(f"DatabaseService initialized with path: {self.db_path}")
