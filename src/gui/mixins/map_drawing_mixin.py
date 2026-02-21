@@ -10,7 +10,7 @@ from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QMessageBox
 
 if TYPE_CHECKING:
-    from src.gui.widgets.map_widget import MapWidget
+    pass
 
 logger = logging.getLogger(__name__)
 

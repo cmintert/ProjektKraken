@@ -20,7 +20,7 @@ from src.core.map import MapLayerNode
 from src.gui.widgets.map.map_layer_model import MapLayerModel
 
 if TYPE_CHECKING:
-    from src.gui.widgets.map_widget import MapWidget
+    pass
 
 logger = logging.getLogger(__name__)
 

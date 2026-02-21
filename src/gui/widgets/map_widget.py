@@ -8,23 +8,26 @@ maintainability:
 - map/marker_item.py - MarkerItem rendering
 - map/map_graphics_view.py - Main view with zoom/pan and interaction
 - map/icon_picker_dialog.py - Icon selection dialog
+
+Behaviour is composed from focused mixins:
+- MapLayerMixin       – Layer tree CRUD & selection sync
+- MapTrajectoryMixin  – Trajectory interpolation & clock-mode editing
+- MapDrawingMixin     – Path/region drawing toggle & completion
+- MapCalibrationMixin – Map-scale configuration & calibration
+- MapDialogMixin      – User-facing dialogs (object picker, CRUD confirms)
 """
 
 import logging
 import os
-import uuid
-from typing import Iterator, List, Optional, Tuple
+from typing import List, Optional
 
-from PySide6.QtCore import QSettings, QSize, Qt, Signal, Slot
+from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtGui import QKeyEvent, QPaintEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
-    QFileDialog,
     QHBoxLayout,
-    QInputDialog,
     QLabel,
-    QMessageBox,
     QPushButton,
     QSizePolicy,
     QSplitter,
@@ -33,25 +36,18 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.constants import (
-    IMAGE_FILE_FILTER,
-    MAP_LAYER_DEFAULT_GROUP_NAME,
-    MAP_LAYER_TYPE_GROUP,
-    MAP_LAYER_TYPE_MARKER,
-    MAP_LAYER_TYPE_PATH,
-    MAP_LAYER_TYPE_REGION,
-)
-from src.core.map import MapLayerNode
 from src.core.paths import get_resource_path
 from src.core.theme_manager import ThemeManager
-from src.core.trajectory import KEYFRAME_TIME_EPSILON, interpolate_position
+from src.gui.mixins.map_calibration_mixin import MapCalibrationMixin
+from src.gui.mixins.map_dialog_mixin import MapDialogMixin
+from src.gui.mixins.map_drawing_mixin import MapDrawingMixin
+from src.gui.mixins.map_layer_mixin import MapLayerMixin
+from src.gui.mixins.map_trajectory_mixin import MapTrajectoryMixin
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
-from src.gui.widgets.map.calibration_distance_dialog import CalibrationDistanceDialog
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 from src.gui.widgets.map.map_layer_model import MapLayerModel
 from src.gui.widgets.map.map_layer_panel import MapLayerPanel
-from src.gui.widgets.map.map_scale_dialog import MapScaleDialog
 from src.gui.widgets.map.marker_item import MarkerItem
 
 logger = logging.getLogger(__name__)
@@ -155,18 +151,19 @@ class NoLayoutLabel(QWidget):
         )
 
 
-class MapWidget(QWidget):
+class MapWidget(
+    MapLayerMixin,
+    MapTrajectoryMixin,
+    MapDrawingMixin,
+    MapCalibrationMixin,
+    MapDialogMixin,
+    QWidget,
+):
     """Container widget for the map view.
 
-    Provides a clean interface to the map system with signal routing.
-
-    Responsibilities are organized into logical groups:
-    - **Layer Management**: Layer model, register/unregister nodes, CRUD
-    - **Marker Management**: Add, remove, clear markers with layer integration
-    - **View State**: Map selection, coordinate display, trajectory updates
-    - **Drawing Tools**: Path/region drawing, calibration, snapping
-    - **Clock Mode**: Temporal keyframe editing via playhead scrubbing
-    - **Signal Forwarding**: Keyframe, onboarding, and object creation signals
+    Behaviour is composed from focused mixins (see module docstring).
+    This class owns the signals, the ``__init__`` setup, and the
+    remaining thin orchestration methods that glue the mixins together.
 
     Signals:
         marker_position_changed: Emitted when a marker is moved by the user.
@@ -478,313 +475,7 @@ class MapWidget(QWidget):
                     "Save current marker position at current time"
                 )
 
-    def set_trajectories(self, trajectories: list) -> None:
-        """Sets the active trajectories for the current map.
-
-        Args:
-            trajectories: List of (marker_id, trajectory_id, keyframes) tuples.
-
-        """
-        self._active_trajectories.clear()
-        count = 0
-        for marker_id, _, keyframes in trajectories:
-            self._active_trajectories[marker_id] = keyframes
-            count += 1
-
-        # Detect first trajectory use for animation
-        settings = QSettings()
-        is_first_trajectories = not settings.value(
-            "map/trajectories_initialized", False, type=bool
-        )
-        logger.debug(
-            f"set_trajectories: count={count}, is_first={is_first_trajectories}"
-        )
-        if is_first_trajectories and count > 0:
-            logger.info(
-                "First trajectory display detected - enabling pulsing animation"
-            )
-            settings.setValue("map/trajectories_initialized", True)
-            self.view.trigger_first_use_animation = True
-
-        logger.debug(f"Loaded {count} temporal trajectories for map")
-        # Force an update immediately so markers jump to correct spot for current time
-        self._transient_marker_ids.clear()
-        self._update_trajectory_positions()
-        self._update_mode_indicator()
-
-        # Update visualization if selection exists
-        if self._selected_marker_id:
-            self._update_trajectory_visualization(self._selected_marker_id)
-
-        # Update marker indicators
-        self._update_marker_indicators()
-
-    def _update_marker_indicators(self) -> None:
-        """Updates the has_keyframes state for all markers."""
-        if not self.view.scene:
-            return
-
-        for item in self.view.scene.items():
-            if isinstance(item, MarkerItem):
-                has_traj = item.marker_id in self._active_trajectories
-                item.set_has_keyframes(has_traj)
-
-    # Note: Skipping unrelated methods to reach _on_add_keyframe
-
-    @Slot()
-    def _on_add_keyframe(self) -> None:
-        """Captures the current position of the selected marker and saves it as a
-        keyframe.
-        """
-        selected_items = self.view.scene.selectedItems()
-        if not selected_items:
-            logger.warning("Cannot add keyframe: No marker selected.")
-            return
-
-        # Assuming single selection for now
-        item = selected_items[0]
-        if not isinstance(item, MarkerItem):
-            logger.warning("Selected item is not a marker.")
-            return
-
-        if item.object_type == "event":
-            logger.warning(f"Cannot add keyframe for event marker {item.marker_id}")
-            return
-
-        marker_id = item.marker_id
-        t = self._playhead_time
-
-        # Get position in normalized coordinates
-        pos = item.pos()
-        norm_pos = self.view.coord_system.to_normalized(pos)
-        x, y = norm_pos
-
-        logger.info(f"Adding keyframe for {marker_id} at t={t}: ({x:.3f}, {y:.3f})")
-        self._emit_keyframe_upsert(marker_id, t, x, y, is_add=True)
-
-    # ------------------------------------------------------------------
-    # Drawing Mode
-    # ------------------------------------------------------------------
-
-    @Slot()
-    def _on_draw_path_clicked(self) -> None:
-        """Toggles path drawing mode."""
-        if self.view.is_drawing:
-            self.view.cancel_drawing()
-            return
-        self.btn_draw_region.setChecked(False)
-        self.view.start_drawing("path")
-        self._update_mode_indicator()
-
-    @Slot()
-    def _on_draw_region_clicked(self) -> None:
-        """Toggles region drawing mode."""
-        if self.view.is_drawing:
-            self.view.cancel_drawing()
-            return
-        self.btn_draw_path.setChecked(False)
-        self.view.start_drawing("region")
-        self._update_mode_indicator()
-
-    @Slot(str, list)
-    def _on_drawing_finished(self, feature_type: str, geometry: list) -> None:
-        """Handles drawing completion — shows object picker then emits feature_created.
-
-        Args:
-            feature_type: 'path' or 'region'.
-            geometry: List of normalized coordinate dicts.
-
-        """
-        self.btn_draw_path.setChecked(False)
-        self.btn_draw_region.setChecked(False)
-        self._update_mode_indicator()
-
-        map_id = self.get_selected_map_id()
-        if not map_id:
-            QMessageBox.warning(self, "No Map", "Please create or select a map first.")
-            return
-
-        result = self._select_or_create_object(
-            f"Link {feature_type.title()}",
-            f"Select object for this {feature_type}:",
-        )
-        if not result:
-            return
-
-        obj_id, obj_type, name = result
-        self.feature_created.emit(
-            map_id, obj_id, obj_type, name, feature_type, geometry
-        )
-        logger.info(
-            f"Feature drawing complete: {feature_type}, {len(geometry)} vertices"
-        )
-
-    @Slot()
-    def _on_drawing_cancelled(self) -> None:
-        """Handles drawing cancellation — resets UI state."""
-        self.btn_draw_path.setChecked(False)
-        self.btn_draw_region.setChecked(False)
-        self._update_mode_indicator()
-
-    # ------------------------------------------------------------------
-    # Dialog methods (UI layer owns all user-facing dialogs)
-    # ------------------------------------------------------------------
-
-    # Sentinel values for the object-selection dialog
-    _NEW_ENTITY_SENTINEL = "<New Entity...>"
-    _NEW_EVENT_SENTINEL = "<New Event...>"
-
-    def set_cached_items(self, entities: list, events: list) -> None:
-        """Stores the entity/event caches for the object-selection dialog.
-
-        Called by MainWindow when data is refreshed so the map's
-        object-picker dialog can offer existing entities and events.
-
-        Args:
-            entities: List of entity objects.  Each must have ``.id``
-                (``str``) and ``.name`` (``str``) attributes.
-            events: List of event objects.  Each must have ``.id``
-                (``str``) and ``.name`` (``str``) attributes.
-
-        """
-        self._cached_entities = entities
-        self._cached_events = events
-
-    def _select_or_create_object(
-        self, dialog_title: str, dialog_label: str
-    ) -> tuple[str, str, str] | None:
-        """Shows a selection dialog with existing items + new-item options.
-
-        Returns:
-            Tuple of (object_id, object_type, name) on success, or None
-            if the user cancels.
-
-        """
-        entities = getattr(self, "_cached_entities", [])
-        events = getattr(self, "_cached_events", [])
-
-        items: list[str] = [
-            self._NEW_ENTITY_SENTINEL,
-            self._NEW_EVENT_SENTINEL,
-        ]
-        for e in entities:
-            items.append(f"{e.name} (Entity)")
-        for e in events:
-            items.append(f"{e.name} (Event)")
-
-        # Sort existing items, keep sentinels at top
-        sentinels = items[:2]
-        existing = sorted(items[2:])
-        items = sentinels + existing
-
-        item_text, ok = QInputDialog.getItem(
-            self, dialog_title, dialog_label, items, 0, False
-        )
-        if not ok or not item_text:
-            return None
-
-        if item_text == self._NEW_ENTITY_SENTINEL:
-            return self._create_new_entity_inline()
-        if item_text == self._NEW_EVENT_SENTINEL:
-            return self._create_new_event_inline()
-
-        if item_text.endswith(" (Entity)"):
-            name = item_text[:-9]
-            obj = next((e for e in entities if e.name == name), None)
-            if obj:
-                return obj.id, "entity", obj.name
-        elif item_text.endswith(" (Event)"):
-            name = item_text[:-8]
-            obj = next((e for e in events if e.name == name), None)
-            if obj:
-                return obj.id, "event", obj.name
-
-        return None
-
-    def _create_new_entity_inline(self) -> tuple[str, str, str] | None:
-        """Prompts for a name and emits ``create_entity_requested``.
-
-        Returns:
-            Tuple of (new_id, 'entity', name) or None if cancelled.
-
-        """
-        name, ok = QInputDialog.getText(self, "New Entity", "Entity Name:")
-        if not ok or not name.strip():
-            return None
-        name = name.strip()
-        new_id = str(uuid.uuid4())
-        self.create_entity_requested.emit(new_id, name)
-        logger.info(f"Created new entity '{name}' ({new_id}) from map")
-        return new_id, "entity", name
-
-    def _create_new_event_inline(self) -> tuple[str, str, str] | None:
-        """Prompts for a name and emits ``create_event_requested``.
-
-        Returns:
-            Tuple of (new_id, 'event', name) or None if cancelled.
-
-        """
-        name, ok = QInputDialog.getText(self, "New Event", "Event Name:")
-        if not ok or not name.strip():
-            return None
-        name = name.strip()
-        new_id = str(uuid.uuid4())
-        self.create_event_requested.emit(new_id, name)
-        logger.info(f"Created new event '{name}' ({new_id}) from map")
-        return new_id, "event", name
-
-    @Slot()
-    def _on_create_map_clicked(self) -> None:
-        """Shows file/name dialogs and emits ``map_created``."""
-        file_path, _ = QFileDialog.getOpenFileName(
-            self, "Select Map Image", "", IMAGE_FILE_FILTER
-        )
-        if not file_path:
-            return
-        name, ok = QInputDialog.getText(self, "New Map", "Map Name:")
-        if not ok or not name.strip():
-            return
-        self.map_created.emit(file_path, name.strip())
-
-    @Slot()
-    def _on_delete_map_clicked(self) -> None:
-        """Shows confirmation dialog and emits ``map_deleted``."""
-        map_id = self.map_selector.currentData()
-        if not map_id:
-            return
-        confirm = QMessageBox.question(
-            self,
-            "Delete Map",
-            "Are you sure you want to delete this map and all its markers?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
-        if confirm == QMessageBox.StandardButton.Yes:
-            self.map_deleted.emit(map_id)
-
-    @Slot(float, float)
-    def _on_create_marker_requested(self, x: float, y: float) -> None:
-        """Shows object-selection dialog and emits ``marker_created``."""
-        map_id = self.get_selected_map_id()
-        if not map_id:
-            QMessageBox.warning(self, "No Map", "Please create or select a map first.")
-            return
-        result = self._select_or_create_object("Add Marker", "Select Object:")
-        if not result:
-            return
-        obj_id, obj_type, name = result
-        self.marker_created.emit(map_id, obj_id, obj_type, name, x, y)
-
-    @Slot(str)
-    def _on_delete_marker_requested(self, marker_id: str) -> None:
-        """Shows confirmation dialog and emits ``marker_delete_confirmed``."""
-        confirm = QMessageBox.question(
-            self,
-            "Delete Marker",
-            "Remove this marker?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
-        if confirm == QMessageBox.StandardButton.Yes:
-            self.marker_delete_confirmed.emit(marker_id)
+    # -- Trajectory / drawing / dialog methods provided by mixins ------
 
     @Slot()
     def _on_snap_toggled(self) -> None:
@@ -814,94 +505,7 @@ class MapWidget(QWidget):
         """
         self._update_mode_indicator()
 
-    def _iter_trajectory_positions(self) -> Iterator[Tuple[str, float, float]]:
-        """Yield (marker_id, x, y) for markers with trajectories at current time."""
-        for marker_id, keyframes in self._active_trajectories.items():
-            position = interpolate_position(keyframes, self._playhead_time)
-            if position:
-                x, y = position
-                yield marker_id, x, y
-
-    def _update_trajectory_positions(self, force_all: bool = False) -> None:
-        """Updates all trajectory-based markers for the current playhead time.
-
-        Args:
-            force_all: If True, even markers in transient state are snapped back.
-
-        """
-        for marker_id, x, y in self._iter_trajectory_positions():
-            if not force_all and marker_id in self._transient_marker_ids:
-                logger.debug(f"Skipping update for transient marker {marker_id}")
-                continue
-            self.view.update_marker_position(marker_id, x, y)
-
-    @Slot(float)
-    def on_time_changed(self, time: float) -> None:
-        """Receives playhead time updates from the Timeline.
-
-        Updates the internal time state, refreshes the status display,
-        and updates any trajectory-based markers.
-
-        Args:
-            time: Current playhead time in lore_date units.
-
-        """
-        # Round to 4 decimal places to prevent float precision drift
-        # during rapid playhead scrubbing
-        time = round(time, 4)
-
-        self._playhead_time = time
-        self._update_time_display()
-
-        # In Clock Mode: don't update positions, just track time for later commit
-        if self._pinned_marker_id:
-            logger.debug(
-                f"Clock Mode: playhead={time:.1f}, "
-                f"pinned={self._pinned_marker_id} "
-                f"at orig_t={self._pinned_original_t:.1f}"
-            )
-            # Live update of the keyframe date label
-            if self._pinned_original_t is not None:
-                self.view.update_keyframe_label(
-                    self._pinned_marker_id, self._pinned_original_t, time
-                )
-        else:
-            # Normal Mode: update marker positions along trajectories
-            # When playhead moves, we force a snap-back to the authoritative path
-            self._transient_marker_ids.clear()
-            self._update_trajectory_positions(force_all=True)
-
-        # Update marker visuals (dull/vivid) based on new time
-        self.view.update_markers_temporal_state(self._playhead_time, self._current_time)
-
-    @Slot(float)
-    def on_current_time_changed(self, time: float) -> None:
-        """Receives current time ("Now") updates from the Timeline.
-
-        This represents the story's current moment, distinct from the playhead.
-
-        Args:
-            time: Current time in lore_date units.
-
-        """
-        self._current_time = time
-        self._update_time_display()
-
-        # Update marker visuals (dull/vivid) based on new 'Now'
-        self.view.update_markers_temporal_state(self._playhead_time, self._current_time)
-
-    def _update_time_display(self) -> None:
-        """Updates the coord_label to include playhead and current time."""
-        # Get existing coordinate text or default
-        current_text = self.coord_label.text()
-
-        # Remove any existing time suffix
-        if " | T:" in current_text:
-            current_text = current_text.split(" | T:")[0]
-
-        # Append time (Playhead and Now)
-        time_str = f"T: {self._playhead_time:.1f} | Now: {self._current_time:.1f}"
-        self.coord_label.setText(f"{current_text} | {time_str}")
+    # -- Trajectory position / time methods provided by MapTrajectoryMixin --
 
     def set_maps(self, maps: list) -> None:
         """Populates the map selector with available maps.
@@ -1071,325 +675,7 @@ class MapWidget(QWidget):
         """
         return self.view.load_map(image_path)
 
-    # ------------------------------------------------------------------
-    # Layer management
-    # ------------------------------------------------------------------
-
-    def _build_layer_model(self, root: Optional[MapLayerNode] = None) -> MapLayerModel:
-        """Create (or replace) the layer model and wire it to the view.
-
-        Args:
-            root: An existing layer tree root.  If ``None`` a default
-                root with a "Default" group is created.
-
-        Returns:
-            MapLayerModel: The newly created model.
-
-        """
-        if root is None:
-            root = MapLayerNode(
-                name="Root",
-                layer_type=MAP_LAYER_TYPE_GROUP,
-                children=[
-                    MapLayerNode(
-                        name=MAP_LAYER_DEFAULT_GROUP_NAME,
-                        layer_type=MAP_LAYER_TYPE_GROUP,
-                    ),
-                ],
-            )
-        model = MapLayerModel(root=root)
-        self._layer_model = model
-        self.view.set_layer_model(model)
-        self.layer_panel.set_model(model)
-        # Forward model mutations → widget signal for command-stack persistence
-        model.layer_tree_changed.connect(self.layer_tree_changed.emit)
-        return model
-
-    def _ensure_layer_model(self) -> MapLayerModel:
-        """Return the current layer model, creating one if needed.
-
-        Returns:
-            MapLayerModel: The active layer model.
-
-        """
-        if self._layer_model is None:
-            return self._build_layer_model()
-        return self._layer_model
-
-    def _default_group(self) -> MapLayerNode:
-        """Return the "Default" group in the layer tree, creating it if needed.
-
-        Returns:
-            MapLayerNode: The default group node.
-
-        """
-        model = self._ensure_layer_model()
-        # Try to find an existing "Default" group
-        for child in model.root.children:
-            if (
-                child.layer_type == MAP_LAYER_TYPE_GROUP
-                and child.name == MAP_LAYER_DEFAULT_GROUP_NAME
-            ):
-                return child
-        # Create one
-        node = MapLayerNode(
-            name=MAP_LAYER_DEFAULT_GROUP_NAME,
-            layer_type=MAP_LAYER_TYPE_GROUP,
-        )
-        root_idx = model.index_from_node(model.root)
-        model.add_layer(root_idx, node)
-        return node
-
-    def _feature_type_to_layer_type(self, feature_type: str) -> str:
-        """Map a feature_type string to a layer_type constant.
-
-        Args:
-            feature_type: 'point', 'path', or 'region'.
-
-        Returns:
-            str: The corresponding MAP_LAYER_TYPE_* constant.
-
-        """
-        if feature_type == "path":
-            return MAP_LAYER_TYPE_PATH
-        if feature_type == "region":
-            return MAP_LAYER_TYPE_REGION
-        return MAP_LAYER_TYPE_MARKER
-
-    def _register_layer_node(
-        self,
-        marker_id: str,
-        label: str,
-        feature_type: str = "point",
-    ) -> None:
-        """Register a new feature as a layer node under the Default group.
-
-        If a node with this ID already exists in the tree, it is skipped.
-
-        Args:
-            marker_id: Unique identifier (same as graphics item key).
-            label: Display name for the layer.
-            feature_type: 'point', 'path', or 'region'.
-
-        """
-        model = self._ensure_layer_model()
-        if model.find_node_by_id(marker_id) is not None:
-            return  # Already tracked
-
-        layer_type = self._feature_type_to_layer_type(feature_type)
-        node = MapLayerNode(name=label, layer_type=layer_type, id=marker_id)
-        default_group = self._default_group()
-        parent_idx = model.index_from_node(default_group)
-        model.add_layer(parent_idx, node)
-
-    def _unregister_layer_node(self, marker_id: str) -> None:
-        """Remove a layer node when the corresponding feature is deleted.
-
-        Prevents "zombie nodes" (MEDIUM-7).
-
-        Args:
-            marker_id: ID of the node to remove.
-
-        """
-        if self._layer_model is None:
-            return
-        node = self._layer_model.find_node_by_id(marker_id)
-        if node is None:
-            return
-        idx = self._layer_model.index_from_node(node)
-        self._layer_model.remove_layer(idx)
-
-    @Slot(str, str)
-    def _on_marker_clicked_select_layer(self, marker_id: str, object_type: str) -> None:
-        """Bi-directional selection: marker click → highlight in layer panel.
-
-        Args:
-            marker_id: The clicked marker's ID.
-            object_type: 'entity' or 'event' (unused here).
-
-        """
-        self.layer_panel.select_node(marker_id)
-
-    @Slot(str)
-    def _on_layer_panel_selected(self, node_id: str) -> None:
-        """Bi-directional selection: layer panel click → select on map.
-
-        Args:
-            node_id: The clicked layer node's ID.
-
-        """
-        # Select the graphics item on the map
-        item = self.view.find_item_by_id(node_id)
-        if item is not None:
-            self.view.scene.clearSelection()
-            item.setSelected(True)
-
-    @Slot(str)
-    def _on_create_group(self, name: str) -> None:
-        """Handle request to create a new layer group.
-
-        The group is added under the root of the layer tree.
-
-        Args:
-            name: Display name for the new group.
-
-        """
-        model = self._ensure_layer_model()
-        node = MapLayerNode(name=name, layer_type=MAP_LAYER_TYPE_GROUP)
-        root_idx = model.index_from_node(model.root)
-        model.add_layer(root_idx, node)
-        logger.info(f"Created layer group: {name}")
-
-    @Slot(str)
-    def _on_create_layer(self, name: str) -> None:
-        """Handle request to create a new leaf layer.
-
-        The layer is added under the selected group, or the Default group
-        if no group is selected.
-
-        Args:
-            name: Display name for the new layer.
-
-        """
-        model = self._ensure_layer_model()
-        node = MapLayerNode(name=name, layer_type=MAP_LAYER_TYPE_MARKER)
-
-        # Find a suitable parent — the selected node if it's a group,
-        # else the Default group
-        parent_node = None
-        selected_id = self.layer_panel.selected_node_id
-        if selected_id:
-            selected_node = model.find_node_by_id(selected_id)
-            if selected_node and selected_node.layer_type == MAP_LAYER_TYPE_GROUP:
-                parent_node = selected_node
-
-        if parent_node is None:
-            parent_node = self._default_group()
-
-        parent_idx = model.index_from_node(parent_node)
-        model.add_layer(parent_idx, node)
-        logger.info(f"Created layer: {name}")
-
-    @Slot(str)
-    def _on_delete_layer(self, node_id: str) -> None:
-        """Handle request to delete a layer.
-
-        Removes graphics items, the layer node from the tree, and emits
-        ``layer_delete_feature_requested`` for each leaf feature so
-        the database marker is also deleted.
-
-        Args:
-            node_id: ID of the layer node to delete.
-
-        """
-        if self._layer_model is None:
-            return
-        node = self._layer_model.find_node_by_id(node_id)
-        if node is None:
-            return
-
-        # Don't delete the root
-        if node is self._layer_model.root:
-            logger.warning("Cannot delete the root node")
-            return
-
-        # Collect all leaf feature IDs before mutating the tree
-        leaf_ids = self._collect_leaf_ids(node)
-
-        # Remove the graphics item if it's a leaf feature
-        if node.layer_type != MAP_LAYER_TYPE_GROUP:
-            self.view.remove_marker(node_id)
-
-        # Also remove children's graphics items for groups
-        if node.layer_type == MAP_LAYER_TYPE_GROUP:
-            self._remove_children_graphics(node)
-
-        idx = self._layer_model.index_from_node(node)
-        self._layer_model.remove_layer(idx)
-        logger.info(f"Deleted layer: {node.name} ({node_id})")
-
-        # Request DB deletion for every leaf feature
-        for leaf_id in leaf_ids:
-            self.layer_delete_feature_requested.emit(leaf_id)
-
-    def _collect_leaf_ids(self, node: MapLayerNode) -> List[str]:
-        """Recursively collect IDs of all leaf (non-group) nodes.
-
-        Args:
-            node: The root node to search.
-
-        Returns:
-            List of leaf node IDs.
-
-        """
-        ids: List[str] = []
-        if node.layer_type != MAP_LAYER_TYPE_GROUP:
-            ids.append(node.id)
-        for child in node.children:
-            ids.extend(self._collect_leaf_ids(child))
-        return ids
-
-    def _remove_children_graphics(self, group_node: MapLayerNode) -> None:
-        """Recursively remove graphics items for all children of a group.
-
-        Args:
-            group_node: The parent group node.
-
-        """
-        for child in group_node.children:
-            if child.layer_type == MAP_LAYER_TYPE_GROUP:
-                self._remove_children_graphics(child)
-            else:
-                self.view.remove_marker(child.id)
-
-    @Slot(str, str)
-    def _on_layer_renamed(self, node_id: str, new_name: str) -> None:
-        """Handle a layer rename from the panel.
-
-        Updates the node name in the model, refreshes the view, and emits
-        a signal so the command stack can persist the change.
-
-        Args:
-            node_id: ID of the renamed node.
-            new_name: The new display name.
-
-        """
-        if self._layer_model is None:
-            return
-        node = self._layer_model.find_node_by_id(node_id)
-        if node is None:
-            return
-
-        node.name = new_name
-        idx = self._layer_model.index_from_node(node)
-        self._layer_model.dataChanged.emit(idx, idx, [Qt.ItemDataRole.DisplayRole])
-        self.layer_rename_requested.emit(node_id, new_name)
-
-    @Slot(str, float, float)
-    def _on_layer_opacity_changed(
-        self, node_id: str, opacity: float, old_opacity: float
-    ) -> None:
-        """Handle opacity change from the panel's slider.
-
-        The model is already updated by the panel; this emits a signal
-        so the command stack can persist the change.
-
-        Args:
-            node_id: ID of the node whose opacity changed.
-            opacity: New opacity (0.0–1.0).
-            old_opacity: Previous opacity (for undo).
-
-        """
-        self.layer_opacity_change_requested.emit(node_id, opacity, old_opacity)
-
-    def get_layer_model(self) -> Optional[MapLayerModel]:
-        """Return the current layer model (if any).
-
-        Returns:
-            Optional[MapLayerModel]: The active layer model.
-
-        """
-        return self._layer_model
+    # -- Layer management provided by MapLayerMixin --------------------
 
     # ------------------------------------------------------------------
     # Marker CRUD (with layer integration)
@@ -1476,190 +762,9 @@ class MapWidget(QWidget):
         # Reset layer model — will be recreated when new markers load
         self._layer_model = None
 
-    @Slot()
-    def _configure_map_width(self) -> None:
-        """Opens dialog to configure the map's total real-world width."""
-        current_map_id = self.get_selected_map_id()
-        if not current_map_id:
-            logger.warning("No map selected, cannot configure scale")
-            return
+    # -- Calibration provided by MapCalibrationMixin -------------------
 
-        map_name = self.map_selector.currentText()
-        current_width = self.view.map_width_meters
-
-        dialog = MapScaleDialog(current_width, self, map_name)
-
-        # Determine behavior on result
-        dialog.calibrate_requested.connect(self._handle_calibration_request)
-
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            new_width = dialog.get_width()
-            if new_width != current_width:
-                self.view.set_map_width_meters(new_width)
-                self.map_scale_changed.emit(new_width)
-                logger.info(f"Updated map width to {new_width:.2f} m")
-
-    @Slot()
-    def _handle_calibration_request(self) -> None:
-        """Starts the map calibration workflow from the dialog."""
-        logger.info("Starting map calibration via measurement")
-
-        # Disconnect any old connections to avoid duplicates
-        try:
-            self.view.calibration_completed.disconnect()
-        except Exception:
-            pass  # No slots connected
-
-        self.view.calibration_completed.connect(
-            self._on_calibration_measurement_finished
-        )
-
-        self.view.start_calibration()
-
-        # Show hint
-        self.overlay_banner.setText(
-            "Click two points on the map to measure a known distance."
-        )
-        self.overlay_banner.show()
-
-    @Slot(float)
-    def _on_calibration_measurement_finished(self, px_distance: float) -> None:
-        """Handle completion of the calibration measurement step."""
-        # 1. Hide overlay
-        self.overlay_banner.hide()
-
-        # 2. Ask for real world distance
-        if px_distance < 1.0:
-            logger.warning("Measured distance too small, ignoring.")
-            return
-
-        dialog = CalibrationDistanceDialog(self)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            segment_meters = dialog.get_distance_meters()
-
-            if segment_meters <= 0:
-                return
-
-            # Calculate new total width
-            # Total Width / Image Width = Segment Real / Segment px
-            # Total Width = (Image Width * Segment Real) / Segment px
-
-            pixmap_item = getattr(self.view, "pixmap_item", None)
-            if not pixmap_item:
-                return
-
-            image_width_px = pixmap_item.boundingRect().width()
-
-            new_total_width = (image_width_px * segment_meters) / px_distance
-
-            self.view.set_map_width_meters(new_total_width)
-            self.map_scale_changed.emit(new_total_width)
-
-            # Show confirmation details
-            from PySide6.QtWidgets import QMessageBox
-
-            QMessageBox.information(
-                self,
-                "Calibration Complete",
-                f"Map scale updated.\n\n"
-                f"Segment: {segment_meters:.1f} m ({px_distance:.1f} px)\n"
-                f"New Total Width: {new_total_width:.2f} m",
-            )
-
-        # Cleanup
-        try:
-            self.view.calibration_completed.disconnect(
-                self._on_calibration_measurement_finished
-            )
-        except Exception:
-            pass
-
-    def _emit_keyframe_upsert(
-        self, marker_id: str, t: float, x: float, y: float, is_add: bool = False
-    ) -> None:
-        """Emits signal to upsert (add/update) a keyframe."""
-        map_id = self.get_selected_map_id()
-        if map_id:
-            self.add_keyframe_requested.emit(map_id, marker_id, t, x, y)
-
-            # Onboarding check - Only on new creation
-            if is_add:
-                settings = QSettings()
-                if not settings.value(
-                    "map/onboarding_keyframe_created", False, type=bool
-                ):
-                    self._show_onboarding_dialog()
-                    settings.setValue("map/onboarding_keyframe_created", True)
-
-    def _show_onboarding_dialog(self) -> None:
-        """Shows the onboarding dialog for first-time keyframe creation."""
-        dialog = OnboardingDialog(self)
-        dialog.exec()
-
-    @Slot(str, str)
-    def _on_marker_clicked_internal(self, marker_id: str, object_type: str) -> None:
-        """Internal handler for marker click to update visualization."""
-        self._selected_marker_id = marker_id
-        self._update_trajectory_visualization(marker_id)
-
-    def _update_trajectory_visualization(self, marker_id: str) -> None:
-        """Updates the view to show the trajectory for the given marker."""
-        keyframes = self._active_trajectories.get(marker_id, [])
-        if keyframes:
-            self.view.show_trajectory(marker_id, keyframes)
-        else:
-            self.view.clear_trajectory()
-
-    @Slot(str, float, float, float)
-    def _on_keyframe_moved(self, marker_id: str, t: float, x: float, y: float) -> None:
-        """Handle drag-to-edit of keyframes."""
-        self._emit_keyframe_upsert(marker_id, t, x, y, is_add=False)
-
-    def _enter_clock_mode(self, marker_id: str, t: float) -> None:
-        """Transition: Default -> Clock Mode."""
-        if self._pinned_marker_id:
-            self._cancel_clock_mode()  # clear previous without commit
-        logger.info(f"Clock Mode activated for marker {marker_id} at t={t}")
-        self._pinned_marker_id = marker_id
-        self._pinned_original_t = t
-        self.view.set_keyframe_pinned(marker_id, t, True)
-
-        # Update UI state
-        self._update_mode_indicator()
-
-        # Jump playhead to keyframe time
-        self.jump_to_time_requested.emit(t)
-
-    def _commit_clock_mode(self) -> None:
-        """Transition: Clock Mode -> Default (Committing change)."""
-        if not (self._pinned_marker_id and self._pinned_original_t is not None):
-            return
-
-        # Check if time actually changed and playhead checks pass
-        map_id = self.get_selected_map_id()
-        if (
-            map_id
-            and self._playhead_time is not None
-            and abs(self._playhead_time - self._pinned_original_t)
-            > KEYFRAME_TIME_EPSILON
-        ):
-            logger.info(
-                f"Unpinning {self._pinned_marker_id}: "
-                f"{self._pinned_original_t:.1f} → {self._playhead_time:.1f}"
-            )
-            self.update_keyframe_time_requested.emit(
-                map_id,
-                self._pinned_marker_id,
-                self._pinned_original_t,
-                self._playhead_time,
-            )
-
-        self._clear_clock_mode_visuals()
-
-    def _cancel_clock_mode(self) -> None:
-        """Transition: Clock Mode -> Default (Aborting change)."""
-        logger.info("Clock Mode cancelled")
-        self._clear_clock_mode_visuals()
+    # -- Keyframe / clock-mode methods provided by MapTrajectoryMixin --
 
     def _apply_mode_indicator_style(self, mode: str) -> None:
         """Applies themed style to the mode indicator label.
@@ -1782,58 +887,13 @@ class MapWidget(QWidget):
             # Normal cursor
             self.view.setCursor(Qt.CursorShape.ArrowCursor)
 
-    def _clear_clock_mode_visuals(self) -> None:
-        """Resets visual pinned state and internal tracking."""
-        if self._pinned_marker_id and self._pinned_original_t is not None:
-            self.view.set_keyframe_pinned(
-                self._pinned_marker_id, self._pinned_original_t, False
-            )
-        self._pinned_marker_id = None
-        self._pinned_original_t = None
-        self._update_mode_indicator()
-
-    def _handle_clock_mode_time_change(self, time: float) -> None:
-        """Log or process time changes while in Clock Mode (without moving marker)."""
-        logger.debug(
-            f"Clock Mode: playhead={time:.1f}, "
-            f"pinned={self._pinned_marker_id} "
-            f"at orig_t={self._pinned_original_t:.1f}"
-        )
-
-    @Slot(str, float)
-    def _on_clock_mode_requested(self, marker_id: str, t: float) -> None:
-        """Enter/Exit Clock Mode - toggle pin/unpin for temporal editing."""
-        if self._pinned_marker_id == marker_id:
-            logger.info(f"Clock Mode: Committing changes for {marker_id}")
-            self._commit_clock_mode()
-        else:
-            if self._pinned_marker_id:
-                logger.info(
-                    f"Clock Mode: Switching from "
-                    f"{self._pinned_marker_id} to {marker_id}"
-                )
-            self._enter_clock_mode(marker_id, t)
+    # -- Clock-mode visuals / keyframe delete provided by MapTrajectoryMixin --
 
     def set_calendar_converter(self, converter: object) -> None:
         """Sets the calendar converter for formatting keyframe date labels."""
         self.view.set_calendar_converter(converter)
 
-    @Slot(str, float)
-    def _on_keyframe_delete_requested(self, marker_id: str, t: float) -> None:
-        """Handle keyframe delete request from gizmo.
-
-        Args:
-            marker_id: The ID of the marker (object_id).
-            t: The timestamp of the keyframe to delete.
-
-        """
-        map_id = self.map_selector.currentData()
-        if not map_id:
-            logger.warning("Cannot delete keyframe: no map selected")
-            return
-
-        logger.info(f"Requesting keyframe delete: marker={marker_id}, t={t}")
-        self.delete_keyframe_requested.emit(map_id, marker_id, t)
+    # -- Keyframe delete provided by MapTrajectoryMixin ----------------
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Handle keyboard shortcuts for MapWidget."""

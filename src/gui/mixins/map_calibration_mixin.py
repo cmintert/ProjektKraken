@@ -5,16 +5,16 @@ for the MapWidget.
 """
 
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Slot
-from PySide6.QtWidgets import QDialog, QMessageBox
+from PySide6.QtWidgets import QDialog
 
 from src.gui.widgets.map.calibration_distance_dialog import CalibrationDistanceDialog
 from src.gui.widgets.map.map_scale_dialog import MapScaleDialog
 
 if TYPE_CHECKING:
-    from src.gui.widgets.map_widget import MapWidget
+    pass
 
 logger = logging.getLogger(__name__)
 

@@ -5,7 +5,7 @@ and clock-mode temporal editing for the MapWidget.
 """
 
 import logging
-from typing import TYPE_CHECKING, Iterator, Optional, Tuple
+from typing import TYPE_CHECKING, Iterator, Tuple
 
 from PySide6.QtCore import QSettings, Slot
 
@@ -13,7 +13,7 @@ from src.core.trajectory import KEYFRAME_TIME_EPSILON, interpolate_position
 from src.gui.widgets.map.marker_item import MarkerItem
 
 if TYPE_CHECKING:
-    from src.gui.widgets.map_widget import MapWidget
+    pass
 
 logger = logging.getLogger(__name__)
 

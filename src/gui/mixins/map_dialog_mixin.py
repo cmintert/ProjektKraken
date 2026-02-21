@@ -6,7 +6,7 @@ creation/deletion confirmation dialogs for the MapWidget.
 
 import logging
 import uuid
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QFileDialog, QInputDialog, QMessageBox
@@ -14,7 +14,7 @@ from PySide6.QtWidgets import QFileDialog, QInputDialog, QMessageBox
 from src.app.constants import IMAGE_FILE_FILTER
 
 if TYPE_CHECKING:
-    from src.gui.widgets.map_widget import MapWidget
+    pass
 
 logger = logging.getLogger(__name__)
 

@@ -412,11 +412,13 @@ def test_configure_map_width_emits_signal(map_widget, monkeypatch):
     mock_dialog.exec.return_value = QDialog.DialogCode.Accepted
     mock_dialog.get_width.return_value = 5000.0
 
-    # Patch the class in map_widget module
+    # Patch the class in the calibration mixin module (where it's imported)
     mock_class = MagicMock(return_value=mock_dialog)
-    import src.gui.widgets.map_widget
+    import src.gui.mixins.map_calibration_mixin
 
-    monkeypatch.setattr(src.gui.widgets.map_widget, "MapScaleDialog", mock_class)
+    monkeypatch.setattr(
+        src.gui.mixins.map_calibration_mixin, "MapScaleDialog", mock_class
+    )
 
     # Spy on the new signal
     signal_spy = []
