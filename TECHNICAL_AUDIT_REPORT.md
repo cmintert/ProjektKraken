@@ -1,6 +1,6 @@
 # 🛡️ Technical Audit Report: ProjektKraken
 
-> **Date:** 2026-02-21 (Quick Wins implemented same day)  
+> **Date:** 2026-02-21 (Quick Wins + Structural Improvements implemented same day)  
 > **Scope:** Full codebase — `src/` (234 files, ~77,400 LOC) and `tests/` (265 files, ~49,800 LOC)  
 > **Methodology:** Static analysis, dependency mapping, clean-code review, documentation audit
 
@@ -12,17 +12,17 @@ ProjektKraken is a substantial desktop worldbuilding application (~127K LOC tota
 
 However, organic growth has introduced measurable **technical debt** that, if left unaddressed, will impede velocity and onboarding.
 
-### Maintainability Score: **7.0 / 10** *(up from 6.5 after Quick Wins)*
+### Maintainability Score: **7.5 / 10** *(up from 7.0 after Structural Improvements)*
 
 | Dimension              | Score | Notes |
 |------------------------|-------|-------|
 | Architectural Intent   | 8/10  | Well-defined layers, Command + Repository patterns |
-| Coupling               | 5/10  | MainWindow imports 22+ modules; ConnectionManager has 101 `_connect_signal_safe` calls |
-| Single Responsibility  | 5/10  | Multiple God Objects (1,500–2,500 LOC files); methods up to 290 lines |
+| Coupling               | 6/10  | ConnectionManager declarative registry (101→batched); DI for DatabaseService |
+| Single Responsibility  | 6/10  | Long methods decomposed (#8,#9); shared editor logic in mixin (#11); God Objects remain for 61-90 |
 | DRY                    | 7/10  | `style_helper.py` lazy imports consolidated; editor duplication addressed via method extraction |
 | Documentation          | 7.5/10  | Core/Services well-documented; signal docstrings added to editors; MainWindow phase-init documented |
 | Testability            | 7/10  | Good test coverage infrastructure; in-memory DB pattern |
-| Extensibility          | 6/10  | LLM providers use Strategy pattern; but DI is manual in Services layer |
+| Extensibility          | 7/10  | DI in DatabaseService (#10); declarative signal registry (#12); LLM Strategy pattern |
 
 ### Critical Risks
 
@@ -67,7 +67,7 @@ However, organic growth has introduced measurable **technical debt** that, if le
 | Module | LOC | Inbound Deps | Outbound Deps | Assessment |
 |--------|-----|-------------|---------------|------------|
 | `main_window.py` | 1,143 | Low (entry point) | **22+ src/ imports** | 🔴 Hub bottleneck |
-| `connection_manager.py` | 1,061 | 1 (type-only) | **101 signal connections** | 🟡 Fragile wiring |
+| `connection_manager.py` | 353 | 1 (type-only) | **Declarative `_connect_batch` registry** | ✅ Fixed (was 1,061 LOC / 101 calls) |
 | `db_service.py` | 2,509 | Many consumers | **7 repo + 4 entity imports** | 🔴 God Object |
 | `worker.py` | 1,152 | App layer | **11 src/ imports** | 🟡 Mediator coupling |
 | `data_handler.py` | 448 | App layer | 3 src/ imports | ✅ Well-isolated |
@@ -91,13 +91,13 @@ However, organic growth has introduced measurable **technical debt** that, if le
 |----------|----------|---------|-------------|-------------------|
 | 🔴 Critical | God Object | `db_service.py` (2,509 LOC, 86 methods) | Single class owns all DB operations across 7 domains — events, entities, relations, maps, calendars, attachments, trajectories. | Delegate domain-specific queries entirely to repositories; reduce `DatabaseService` to connection management + transaction coordination. |
 | 🔴 Critical | God Object | `map_widget.py` (1,937 LOC, 68 methods) | Manages layers, events, markers, drawing, interactions, and view state in one class. | Extract `MapLayerController`, `MapEventController`, and `MapViewState` into separate classes. |
-| 🔴 Critical | Long Method | `graph_builder.py::_generate_html` (291 LOC) | Single method handles file I/O, 5 regex substitutions, CSS injection, and JS injection. | Extract `_replace_cdn_assets()`, `_inject_css()`, `_inject_javascript()`. |
+| 🔴 Critical | Long Method | `graph_builder.py::_generate_html` (291 LOC) | Single method handles file I/O, 5 regex substitutions, CSS injection, and JS injection. | ✅ **Fixed** — decomposed into `_render_network_to_html`, `_replace_cdn_with_local_assets`, `_inject_theme_css`, `_inject_interaction_js`. |
 | 🟠 High | Long Method | `event_editor.py::load_event` (156 LOC) | Loads fields, attributes, tags, gallery, and relations in one method. | Extract `_load_fields()`, `_load_attributes()`, `_load_relations()`. |
-| 🟠 High | Long Method | `timeline_view.py::_repack_grouped_events` (183 LOC) | Manages band positioning, event partitioning, and scene rect updates. | Extract `_position_bands()`, `_position_group_events()`. |
-| 🟠 High | Hardcoded DI | `db_service.py:56-63` | 7 repository classes directly instantiated in `__init__`; no injection. | Accept repositories via constructor or factory method. |
-| 🟠 High | Shotgun Surgery | `connection_manager.py` (101 signal wires) | Adding any new signal requires modifying this file and its caller. | Use declarative signal registration. |
+| 🟠 High | Long Method | `timeline_view.py::_repack_grouped_events` (183 LOC) | Manages band positioning, event partitioning, and scene rect updates. | ✅ **Fixed** — decomposed into `_position_tag_group_events`, `_position_all_events_group`. |
+| 🟠 High | Hardcoded DI | `db_service.py:56-63` | 7 repository classes directly instantiated in `__init__`; no injection. | ✅ **Fixed** — keyword-only constructor params with defaults. |
+| 🟠 High | Shotgun Surgery | `connection_manager.py` (101 signal wires) | Adding any new signal requires modifying this file and its caller. | ✅ **Fixed** — declarative `_connect_batch` registry (1061→353 LOC). |
 | 🟡 Medium | DRY Violation | `style_helper.py` | `from src.core.theme_manager import ThemeManager` repeated **29 times** inside methods. | ✅ **Fixed** — moved to single module-level import. |
-| 🟡 Medium | DRY Violation | `event_editor.py` / `entity_editor.py` | Near-identical `__init__`, drag-drop, signal-blocking, and dirty-tracking logic across both editors. | Extract shared behavior into `BaseEditorWidget` mixin or abstract base class. |
+| 🟡 Medium | DRY Violation | `event_editor.py` / `entity_editor.py` | Near-identical `__init__`, drag-drop, signal-blocking, and dirty-tracking logic across both editors. | ✅ **Fixed** — extracted into `BaseEditorMixin` (`src/gui/mixins/editor_mixin.py`). |
 | 🟡 Medium | Duplicate Comment | `event_editor.py:1001-1002` | `# Block signals to prevent dirty trigger during load` duplicated on consecutive lines. | ✅ **Fixed** — duplicate removed. |
 | 🟡 Medium | Commentary Noise | `db_service.py:72` | `# Enable Foreign Keys` restates `PRAGMA foreign_keys = ON;`. | ✅ **Fixed** — comment removed. |
 | 🟡 Medium | Commentary Noise | `db_service.py:79` | `# Return rows as Row objects for name access` restates `row_factory = sqlite3.Row`. | ✅ **Fixed** — comment removed. |
@@ -109,7 +109,7 @@ However, organic growth has introduced measurable **technical debt** that, if le
 
 ## 4. Clean Coding & Refactoring Examples
 
-### 4.1 Extract Method — `DatabaseService.__init__`
+### 4.1 Extract Method — `DatabaseService.__init__` ✅ Implemented
 
 **Before** (`src/services/db_service.py:46-63`):
 ```python
@@ -128,33 +128,27 @@ def __init__(self, db_path: str = ":memory:") -> None:
     self.attachment_service: Optional["AttachmentService"] = None
 ```
 
-**After** (Dependency Injection + Factory):
+**After** (Dependency Injection via keyword-only params):
 ```python
 def __init__(
     self,
     db_path: str = ":memory:",
-    repositories: dict[str, "BaseRepository"] | None = None,
+    *,
+    event_repo: Optional[EventRepository] = None,
+    entity_repo: Optional[EntityRepository] = None,
+    relation_repo: Optional[RelationRepository] = None,
+    map_repo: Optional[MapRepository] = None,
+    calendar_repo: Optional[CalendarRepository] = None,
+    attachment_repo: Optional[AttachmentRepository] = None,
+    trajectory_repo: Optional[TrajectoryRepository] = None,
 ) -> None:
     self.db_path = db_path
-    self._connection: Optional[sqlite3.Connection] = None
-    self._backup_service = None
-    self.attachment_service: Optional["AttachmentService"] = None
-    self._repos = repositories or self._create_default_repositories()
-
-@staticmethod
-def _create_default_repositories() -> dict[str, "BaseRepository"]:
-    return {
-        "event": EventRepository(),
-        "entity": EntityRepository(),
-        "relation": RelationRepository(),
-        "map": MapRepository(),
-        "calendar": CalendarRepository(),
-        "attachment": AttachmentRepository(),
-        "trajectory": TrajectoryRepository(),
-    }
+    self._event_repo = event_repo or EventRepository()
+    self._entity_repo = entity_repo or EntityRepository()
+    # ... etc
 ```
 
-### 4.2 Extract Method — `_generate_html`
+### 4.2 Extract Method — `_generate_html` ✅ Implemented
 
 **Before** (`src/gui/widgets/graph_view/graph_builder.py:521-812` — 291 lines):
 ```python
@@ -169,10 +163,10 @@ def _generate_html(self, network, theme, focus_node_id=None, view_state=None):
 **After** (Single Responsibility per method):
 ```python
 def _generate_html(self, network, theme, focus_node_id=None, view_state=None):
-    raw_html = self._render_network_to_html(network)
-    html = self._replace_cdn_with_local_assets(raw_html)
+    html = self._render_network_to_html(network)
+    html = self._replace_cdn_with_local_assets(html)
     html = self._inject_theme_css(html, theme)
-    html = self._inject_interaction_js(html, theme, focus_node_id, view_state)
+    html = self._inject_interaction_js(html, focus_node_id, view_state)
     return html
 ```
 
@@ -305,13 +299,13 @@ The following files have **excellent** documentation and should be used as templ
 
 ### 🚀 Days 31–60: Structural Improvements (Medium Risk)
 
-| # | Task | Files | Effort | Impact |
+| # | Task | Files | Effort | Status |
 |---|------|-------|--------|--------|
-| 8 | Extract `_replace_cdn_assets()`, `_inject_css()`, `_inject_javascript()` from `graph_builder.py::_generate_html` | `graph_builder.py` | 3h | SRP; testability |
-| 9 | Extract `_position_bands()`, `_position_group_events()` from `timeline_view.py::_repack_grouped_events` | `timeline_view.py` | 3h | SRP; testability |
-| 10 | Introduce DI for `DatabaseService` repositories (accept via constructor, default to current behavior) | `db_service.py`, tests | 4h | Testability; decoupling |
-| 11 | Extract shared editor logic into `BaseEditorMixin` (signal blocking, dirty tracking, drag-drop) | `event_editor.py`, `entity_editor.py`, new mixin | 6h | DRY; maintainability |
-| 12 | Replace `ConnectionManager` individual calls with declarative signal registry | `connection_manager.py` | 8h | Reduced Shotgun Surgery |
+| 8 | Extract `_render_network_to_html()`, `_replace_cdn_with_local_assets()`, `_inject_theme_css()`, `_inject_interaction_js()` from `_generate_html` | `graph_builder.py` | 3h | ✅ Done |
+| 9 | Extract `_position_tag_group_events()`, `_position_all_events_group()` from `_repack_grouped_events` | `timeline_view.py` | 3h | ✅ Done |
+| 10 | Introduce DI for `DatabaseService` repositories (keyword-only constructor params, backward compatible) | `db_service.py`, tests | 4h | ✅ Done |
+| 11 | Extract shared editor logic into `BaseEditorMixin` (set_dirty, drag-drop, hidden attributes) | `event_editor.py`, `entity_editor.py`, `editor_mixin.py` | 6h | ✅ Done |
+| 12 | Replace `ConnectionManager` individual calls with declarative `_connect_batch` registry | `connection_manager.py` (1061→353 LOC) | 8h | ✅ Done |
 
 ### 🏗️ Days 61–90: Architectural Refactoring (Higher Risk)
 
@@ -328,9 +322,9 @@ The following files have **excellent** documentation and should be used as templ
 ```
                Impact
                ▲
-          High │  #1-5 ✅ Done    #10,12 (Structural)  #13,14 (Architectural)
+          High │  #1-5 ✅ Done    #10,12 ✅ Done        #13,14 (Architectural)
                │
-        Medium │  #6-7 ✅ Done    #8,9,11 (Structural)  #15,16 (Architectural)
+        Medium │  #6-7 ✅ Done    #8,9,11 ✅ Done       #15,16 (Architectural)
                │
            Low │                                        #17 (Preventive)
                └──────────────────────────────────────────────────► Risk
