@@ -75,8 +75,9 @@ class TestGranularDuration:
         # Start: 0.0
         widget.date_edit.set_value(0.0)
 
-        # Set End Date: 15.0
+        # Set End Date: 15.0 and emit signal to trigger sync
         widget.end_date_edit.set_value(15.0)
+        widget.end_date_edit.value_changed.emit(15.0)
 
         # Check Duration
         assert widget.duration_widget.get_value() == 15.0

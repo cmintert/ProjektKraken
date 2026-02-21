@@ -85,7 +85,10 @@ def mock_invoke_method():
         return
 
     try:
-        with patch("PySide6.QtCore.QMetaObject.invokeMethod") as mock:
+        with (
+            patch("PySide6.QtCore.QMetaObject.invokeMethod") as mock,
+            patch("src.app.main_window.QMetaObject.invokeMethod"),
+        ):
             yield mock
     except (ImportError, AttributeError):
         yield None

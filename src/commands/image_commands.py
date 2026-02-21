@@ -97,6 +97,20 @@ class AddImagesCommand(BaseCommand):
 
         self._is_executed = False
 
+    def to_dict(self) -> dict:
+        """Serialize command state to a dictionary."""
+        return {
+            "type": self.__class__.__name__,
+            "owner_type": self.owner_type,
+            "owner_id": self.owner_id,
+            "source_paths": self.source_paths,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "AddImagesCommand":
+        """Deserialize command from a dictionary."""
+        return cls(data["owner_type"], data["owner_id"], data["source_paths"])
+
 
 class RemoveImageCommand(BaseCommand):
     """Command to remove an image attachment."""
@@ -155,6 +169,18 @@ class RemoveImageCommand(BaseCommand):
         if self._trash_info and db_service.attachment_service:
             db_service.attachment_service.restore_image(self._trash_info)
             self._is_executed = False
+
+    def to_dict(self) -> dict:
+        """Serialize command state to a dictionary."""
+        return {
+            "type": self.__class__.__name__,
+            "attachment_id": self.attachment_id,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "RemoveImageCommand":
+        """Deserialize command from a dictionary."""
+        return cls(data["attachment_id"])
 
 
 class ReorderImagesCommand(BaseCommand):
@@ -226,6 +252,20 @@ class ReorderImagesCommand(BaseCommand):
             )
             self._is_executed = False
 
+    def to_dict(self) -> dict:
+        """Serialize command state to a dictionary."""
+        return {
+            "type": self.__class__.__name__,
+            "owner_type": self.owner_type,
+            "owner_id": self.owner_id,
+            "new_order_ids": self.new_order_ids,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "ReorderImagesCommand":
+        """Deserialize command from a dictionary."""
+        return cls(data["owner_type"], data["owner_id"], data["new_order_ids"])
+
 
 class UpdateImageCaptionCommand(BaseCommand):
     """Command to update an image caption."""
@@ -288,3 +328,16 @@ class UpdateImageCaptionCommand(BaseCommand):
                 self.attachment_id, self._old_caption
             )
             self._is_executed = False
+
+    def to_dict(self) -> dict:
+        """Serialize command state to a dictionary."""
+        return {
+            "type": self.__class__.__name__,
+            "attachment_id": self.attachment_id,
+            "new_caption": self.new_caption,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "UpdateImageCaptionCommand":
+        """Deserialize command from a dictionary."""
+        return cls(data["attachment_id"], data.get("new_caption"))
