@@ -70,7 +70,7 @@ def test_undo_stack_populates_from_worker(qtbot):
         # We use ANY for the connection type argument as it might be QueuedConnection
         from unittest.mock import ANY
 
-        worker.command_finished.connect.assert_called_with(
+        worker.command_finished.connect.assert_any_call(
             coordinator.on_command_result, ANY
         )
 

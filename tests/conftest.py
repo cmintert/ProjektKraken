@@ -156,3 +156,100 @@ def mock_qsettings_global():
     yield mock_class
 
     patcher.stop()
+
+
+@pytest.fixture(autouse=True)
+def _shutdown_web_engines():
+    """Shut down all QWebEngineView instances after each test.
+
+    QWebEngineView must release its page before the profile is deleted,
+    otherwise Qt crashes with a segfault during event processing.
+    This fixture finds and shuts down all GraphWebView instances,
+    then processes pending events to complete the cleanup.
+    """
+    yield
+
+    if QApplication is None:
+        return
+
+    app = QApplication.instance()
+    if app is None:
+        return
+
+    try:
+        from PySide6.QtWebEngineWidgets import QWebEngineView
+    except ImportError:
+        return
+
+    for widget in app.allWidgets():
+        if isinstance(widget, QWebEngineView):
+            try:
+                page = widget.page()
+                if page:
+                    page.setWebChannel(None)
+                widget.setParent(None)
+                widget.close()
+                widget.deleteLater()
+            except RuntimeError:
+                pass
+
+    app.processEvents()
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _mock_web_engine_view():
+    """Replace QWebEngineView with a lightweight stub for all tests.
+
+    QWebEngineView creates a Chromium subprocess that causes segfaults
+    during pytest-qt's event processing on teardown. This replaces it
+    with a lightweight QWidget stub that has the same API surface used
+    by GraphWebView.
+    """
+    from unittest.mock import patch
+
+    if QApplication is None:
+        yield
+        return
+
+    try:
+        from PySide6.QtCore import Qt
+        from PySide6.QtWidgets import QWidget
+    except ImportError:
+        yield
+        return
+
+    class _StubPage:
+        """Minimal stub for QWebEnginePage."""
+
+        def setWebChannel(self, channel):
+            pass
+
+        def setBackgroundColor(self, color):
+            pass
+
+        def runJavaScript(self, script):
+            pass
+
+    class _StubWebEngineView(QWidget):
+        """Lightweight stand-in for QWebEngineView in tests."""
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self._page = _StubPage()
+
+        def page(self):
+            return self._page
+
+        def setHtml(self, html):
+            pass
+
+        def setPage(self, page):
+            self._page = page
+
+    patcher = patch(
+        "src.gui.widgets.graph_view.graph_web_view.QWebEngineView",
+        _StubWebEngineView,
+    )
+    patcher.start()
+    yield
+    patcher.stop()

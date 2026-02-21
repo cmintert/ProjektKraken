@@ -107,6 +107,10 @@ def mock_main_window(qapp):
 
     window._on_event_date_changed = Mock()
 
+    # Import coordinator (for obsidian export)
+    window.import_coordinator = Mock()
+    window.import_coordinator.export_single_obsidian = Mock()
+
     # Longform manager (signals now connect directly)
     window.longform_manager.promote_longform_entry = Mock()
     window.longform_manager.demote_longform_entry = Mock()

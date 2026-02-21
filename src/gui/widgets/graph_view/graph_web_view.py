@@ -106,6 +106,28 @@ class GraphWebView(QWidget):
         """Clears the web view content."""
         self._web_view.setHtml("")
 
+    def shutdown(self) -> None:
+        """Shut down the web engine to prevent teardown segfaults.
+
+        Must be called before the widget is destroyed to ensure the
+        QWebEnginePage is released before the profile is deleted.
+        """
+        try:
+            page = self._web_view.page()
+            if page:
+                page.setWebChannel(None)
+                # Load blank to stop any pending loads
+                self._web_view.setHtml("")
+            # Remove from layout so Qt doesn't try to manage it
+            layout = self.layout()
+            if layout:
+                layout.removeWidget(self._web_view)
+            self._web_view.setParent(None)
+            self._web_view.close()
+            self._web_view.deleteLater()
+        except RuntimeError:
+            pass
+
     def update_graph_data(
         self,
         nodes: list[dict[str, Any]],

@@ -6,101 +6,81 @@ from src.app.main_window import MainWindow
 from src.core.entities import Entity
 from src.core.events import Event
 
-
-@pytest.fixture
-def main_window(qtbot):
-    # Mocking dependencies to avoid full app startup
-    with (
-        patch("src.app.main_window.ConnectionManager"),
-        patch("src.app.main_window.FastInjectManager"),
-        patch("src.app.main_window.UIManager"),
-        patch("src.app.main_window.TimeCoordinator"),
-        patch("src.app.main_window.BackupCoordinator"),
-        patch("src.app.main_window.FastInjectCoordinator"),
-        patch("src.app.main_window.get_worlds_dir", return_value="."),
-    ):
-
-        window = MainWindow()
-        qtbot.addWidget(window)
-
-        # Manually verify or setup coordinators if mocked too hard
-        # We need NavigationCoordinator to be real or at least functional
-        # MainWindow initializes NavigationCoordinator in __init__
-
-        return window
+# Common patches needed for headless MainWindow testing
+MAIN_WINDOW_PATCHES = [
+    patch("src.app.worker_manager.DatabaseWorker"),
+    patch("src.app.worker_manager.QThread"),
+    patch("src.app.main_window.QTimer"),
+    patch("src.app.ui_manager.UIManager.create_timeline_menu"),
+    patch("src.app.ui_manager.UIManager.create_settings_menu"),
+    patch("src.app.ui_manager.UIManager.create_file_menu"),
+    patch("src.app.ui_manager.UIManager.create_view_menu"),
+    patch("src.app.ui_manager.UIManager.create_layouts_menu"),
+]
 
 
 def test_longform_selection_reflects_in_unified_list(qtbot):
-    # 1. Setup minimal MainWindow parts needed
-    # We need NavigationCoordinator, UnifiedList, LongformEditor
-    # The MainWindow __init__ creates them.
+    """Verify longform outline selection syncs to unified list."""
+    for p in MAIN_WINDOW_PATCHES:
+        p.start()
+    try:
+        window = MainWindow()
+        qtbot.addWidget(window)
 
-    # But we mocked UIManager which holds references to docks/widgets?
-    # No, MainWindow creates widgets first, THEN UIManager setups docks.
-    # So window.unified_list and window.longform_editor exist.
+        # Manually connect signals normally handled by ConnectionManager
+        window.longform_editor.item_selected.connect(
+            window.navigation_coordinator.on_item_selected
+        )
 
-    # We need to manually connect signals because ConnectionManager is mocked
-    window = MainWindow()
-    qtbot.addWidget(window)
+        # Populate Unified List
+        event = Event(id="evt1", name="Test Event", lore_date=10.0)
+        entity = Entity(id="ent1", name="Test Entity", type="Character")
+        window.unified_list.set_data([event], [entity])
 
-    # Manually connect signals normally handled by ConnectionManager
-    window.longform_editor.item_selected.connect(
-        window.navigation_coordinator.on_item_selected
-    )
+        model = window.unified_list._proxy_model
+        assert model.rowCount() == 2
 
-    # We verified ConnectionManager DOES this, so this manual step replicates reality
-    # for the isolated test environment.
+        # Populate Longform Editor
+        sequence = [
+            {
+                "table": "events",
+                "id": "evt1",
+                "name": "Chapter 1",
+                "meta": {},
+                "heading_level": 1,
+            },
+            {
+                "table": "entities",
+                "id": "ent1",
+                "name": "Character Intro",
+                "meta": {},
+                "heading_level": 1,
+            },
+        ]
+        window.longform_editor.load_sequence(sequence)
 
-    # 2. Populate Unified List
-    event = Event(id="evt1", name="Test Event", lore_date=10.0)
-    entity = Entity(id="ent1", name="Test Entity", type="Character")
+        # Select item in Longform Outline
+        outline = window.longform_editor.outline
+        item = outline.topLevelItem(0)
+        outline.setCurrentItem(item)
 
-    window.unified_list.set_data([event], [entity])
+        # NavigationCoordinator.on_item_selected is timer-based.
+        # Trigger the pending selection directly since QTimer is mocked.
+        window.navigation_coordinator._perform_delayed_selection()
 
-    # Verify items are in list
-    model = window.unified_list._proxy_model
-    assert model.rowCount() == 2
+        # Verify Unified List reflects the selection
+        selection_model = window.unified_list.list_widget.selectionModel()
+        selected_indexes = selection_model.selectedIndexes()
+        assert len(selected_indexes) == 1
 
-    # 3. Populate Longform Editor
-    sequence = [
-        {
-            "table": "events",
-            "id": "evt1",
-            "name": "Chapter 1",
-            "meta": {},
-            "heading_level": 1,
-        },
-        {
-            "table": "entities",
-            "id": "ent1",
-            "name": "Character Intro",
-            "meta": {},
-            "heading_level": 1,
-        },
-    ]
-    window.longform_editor.load_sequence(sequence)
+        selected_idx = selected_indexes[0]
+        source_idx = model.mapToSource(selected_idx)
+        source_model = model.sourceModel()
+        item_id = source_model.data(source_idx, source_model.ItemIdRole)
+        item_type = source_model.data(source_idx, source_model.ItemTypeRole)
 
-    # 4. Select item in Longform Outline
-    # We need to find the item in outline
-    outline = window.longform_editor.outline
-    item = outline.topLevelItem(0)  # Should be evt1
-
-    # Trigger selection
-    outline.setCurrentItem(item)
-
-    # 5. Check if Unified List selection updated
-    # This might be async or immediate. Signals are synchronous by default in single thread.
-
-    selection_model = window.unified_list.list_widget.selectionModel()
-    selected_indexes = selection_model.selectedIndexes()
-    assert len(selected_indexes) == 1
-
-    # Get item data through model
-    selected_idx = selected_indexes[0]
-    source_idx = model.mapToSource(selected_idx)
-    source_model = model.sourceModel()
-    item_id = source_model.data(source_idx, source_model.ItemIdRole)
-    item_type = source_model.data(source_idx, source_model.ItemTypeRole)
-    
-    assert item_id == "evt1"
-    assert item_type == "event"
+        assert item_id == "evt1"
+        assert item_type == "event"
+    finally:
+        for p in MAIN_WINDOW_PATCHES:
+            p.stop()
