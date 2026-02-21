@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QLayout
 
 from src.core.theme_manager import ThemeManager
 
+
 class StyleHelper:
     """Centralized style helper that provides theme-aware QSS strings.
 

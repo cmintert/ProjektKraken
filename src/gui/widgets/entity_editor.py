@@ -724,7 +724,14 @@ class EntityEditorWidget(QWidget):
     def load_entity(
         self, entity: Entity, relations: list = None, incoming_relations: list = None
     ) -> None:
-        """Populates the form with entity data and relations."""
+        """Populates the form with entity data and relations.
+
+        Args:
+            entity: The entity to edit.
+            relations: List of outgoing relation dicts.
+            incoming_relations: List of incoming relation dicts.
+
+        """
         self._is_loading = True
         try:
             self._current_entity_id = entity.id
@@ -733,111 +740,10 @@ class EntityEditorWidget(QWidget):
             # Block signals
             self._set_input_signals_blocked(True)
 
-            if self.name_edit.text() != entity.name:
-                self.name_edit.setText(entity.name)
-
-            if self.type_edit.currentText() != entity.type:
-                self.type_edit.setCurrentText(entity.type)
-
-            # Check against the actual current content of the editor instead of internal
-            # storage. This ensures we don't reload if the text is effectively the same.
-            # (resolving cursor reset)
-            if self.desc_edit.get_wiki_text() != entity.description:
-                self.desc_edit.set_wiki_text(entity.description)
-
-            # Load Attributes (filter out _tags for display)
-            # Store hidden attributes to preserve them on save
-            self._hidden_attributes = {
-                k: v for k, v in entity.attributes.items() if k.startswith("_")
-            }
-            # Also ensure _summary_data is in there
-
-            display_attrs = {
-                k: v for k, v in entity.attributes.items() if not k.startswith("_")
-            }
-            self.attribute_editor.blockSignals(True)
-            try:
-                self.attribute_editor.load_attributes(display_attrs)
-            finally:
-                self.attribute_editor.blockSignals(False)
-
-            # Load Tags
-            self.tag_editor.blockSignals(True)
-            try:
-                self.tag_editor.load_tags(entity.tags)
-            finally:
-                self.tag_editor.blockSignals(False)
-
-            # Load Gallery
-            self.gallery.set_owner("entity", entity.id)
-
-            # Load Summary
-            summary_data = entity.attributes.get("_summary_data")
-            if summary_data:
-                with suppress(Exception):
-                    data = SummaryData.from_dict(summary_data)
-                    self.summary_widget.set_summary(data)
-
-                if self.summary_service:
-                    is_stale = self.summary_service.is_stale(entity)
-                    self.summary_widget.set_stale(is_stale)
-
-            # Reset Read-Only mode (in case we were in temporal view)
+            self._load_entity_fields(entity)
+            self._load_entity_attributes(entity)
             self.exit_read_only_mode()
-
-            self.rel_list.clear()
-
-            # Outgoing
-            if relations:
-                for rel in relations:
-                    target_display = rel.get("target_name") or rel["target_id"]
-                    label = f"→ {target_display} [{rel['rel_type']}]"
-
-                    # Create custom widget with Go to button
-                    widget = RelationItemWidget(
-                        label=label,
-                        target_id=rel["target_id"],
-                        target_name=target_display,
-                        attributes=rel.get("attributes"),
-                    )
-                    widget.go_to_clicked.connect(
-                        lambda tid, tn: self.navigate_to_relation.emit(tid)
-                    )
-
-                    # Create list item with explicit size hint BEFORE adding
-                    item = QListWidgetItem()
-                    item.setData(Qt.ItemDataRole.UserRole, rel)
-                    item.setSizeHint(QSize(200, 36))  # Explicit height for button
-                    self.rel_list.addItem(item)
-                    self.rel_list.setItemWidget(item, widget)
-
-            # Incoming
-            if incoming_relations:
-                for rel in incoming_relations:
-                    source_display = rel.get("source_name") or rel["source_id"]
-                    label = f"← {source_display} [{rel['rel_type']}]"
-
-                    # Create custom widget - navigate to source for incoming
-                    widget = RelationItemWidget(
-                        label=label,
-                        target_id=rel["source_id"],
-                        target_name=source_display,
-                        attributes=rel.get("attributes"),
-                    )
-                    widget.go_to_clicked.connect(
-                        lambda tid, tn: self.navigate_to_relation.emit(tid)
-                    )
-                    widget.label.setStyleSheet("color: gray;")
-
-                    # Create list item with explicit size hint BEFORE adding
-                    item = QListWidgetItem()
-                    item.setData(Qt.ItemDataRole.UserRole, rel)
-                    item.setSizeHint(QSize(200, 36))  # Explicit height for button
-                    self.rel_list.addItem(item)
-                    self.rel_list.setItemWidget(item, widget)
-
-            # Populate Timeline Display with incoming relations (sorted by date)
-            self.timeline_display.set_relations(incoming_relations or [])
+            self._load_entity_relations(relations, incoming_relations)
 
             self.setEnabled(True)
 
@@ -846,6 +752,121 @@ class EntityEditorWidget(QWidget):
             self.set_dirty(False)
         finally:
             self._is_loading = False
+
+    def _load_entity_fields(self, entity: Entity) -> None:
+        """Loads core form fields from the entity, skipping redundant updates.
+
+        Args:
+            entity: The entity whose fields to load.
+
+        """
+        if self.name_edit.text() != entity.name:
+            self.name_edit.setText(entity.name)
+
+        if self.type_edit.currentText() != entity.type:
+            self.type_edit.setCurrentText(entity.type)
+
+        if self.desc_edit.get_wiki_text() != entity.description:
+            self.desc_edit.set_wiki_text(entity.description)
+
+    def _load_entity_attributes(self, entity: Entity) -> None:
+        """Loads attributes, tags, summary, and gallery from the entity.
+
+        Separates hidden (underscore-prefixed) attributes from display attributes
+        so that internal keys like ``_tags`` and ``_summary_data`` are preserved
+        on save without being shown in the attribute editor.
+
+        Args:
+            entity: The entity whose attributes to load.
+
+        """
+        self._hidden_attributes = {
+            k: v for k, v in entity.attributes.items() if k.startswith("_")
+        }
+
+        display_attrs = {
+            k: v for k, v in entity.attributes.items() if not k.startswith("_")
+        }
+        self.attribute_editor.blockSignals(True)
+        try:
+            self.attribute_editor.load_attributes(display_attrs)
+        finally:
+            self.attribute_editor.blockSignals(False)
+
+        self.tag_editor.blockSignals(True)
+        try:
+            self.tag_editor.load_tags(entity.tags)
+        finally:
+            self.tag_editor.blockSignals(False)
+
+        self.gallery.set_owner("entity", entity.id)
+
+        summary_data = entity.attributes.get("_summary_data")
+        if summary_data:
+            with suppress(Exception):
+                data = SummaryData.from_dict(summary_data)
+                self.summary_widget.set_summary(data)
+
+            if self.summary_service:
+                is_stale = self.summary_service.is_stale(entity)
+                self.summary_widget.set_stale(is_stale)
+
+    def _load_entity_relations(
+        self, relations: list | None, incoming_relations: list | None
+    ) -> None:
+        """Loads outgoing and incoming relations into the relation list widget.
+
+        Args:
+            relations: List of outgoing relation dicts, or None.
+            incoming_relations: List of incoming relation dicts, or None.
+
+        """
+        self.rel_list.clear()
+
+        if relations:
+            for rel in relations:
+                target_display = rel.get("target_name") or rel["target_id"]
+                label = f"→ {target_display} [{rel['rel_type']}]"
+
+                widget = RelationItemWidget(
+                    label=label,
+                    target_id=rel["target_id"],
+                    target_name=target_display,
+                    attributes=rel.get("attributes"),
+                )
+                widget.go_to_clicked.connect(
+                    lambda tid, tn: self.navigate_to_relation.emit(tid)
+                )
+
+                item = QListWidgetItem()
+                item.setData(Qt.ItemDataRole.UserRole, rel)
+                item.setSizeHint(QSize(200, 36))
+                self.rel_list.addItem(item)
+                self.rel_list.setItemWidget(item, widget)
+
+        if incoming_relations:
+            for rel in incoming_relations:
+                source_display = rel.get("source_name") or rel["source_id"]
+                label = f"← {source_display} [{rel['rel_type']}]"
+
+                widget = RelationItemWidget(
+                    label=label,
+                    target_id=rel["source_id"],
+                    target_name=source_display,
+                    attributes=rel.get("attributes"),
+                )
+                widget.go_to_clicked.connect(
+                    lambda tid, tn: self.navigate_to_relation.emit(tid)
+                )
+                widget.label.setStyleSheet("color: gray;")
+
+                item = QListWidgetItem()
+                item.setData(Qt.ItemDataRole.UserRole, rel)
+                item.setSizeHint(QSize(200, 36))
+                self.rel_list.addItem(item)
+                self.rel_list.setItemWidget(item, widget)
+
+        self.timeline_display.set_relations(incoming_relations or [])
 
     @Slot(dict)
     def _on_theme_changed(self, theme: dict) -> None:
