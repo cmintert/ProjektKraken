@@ -160,6 +160,14 @@ class MapWidget(QWidget):
 
     Provides a clean interface to the map system with signal routing.
 
+    Responsibilities are organized into logical groups:
+    - **Layer Management**: Layer model, register/unregister nodes, CRUD
+    - **Marker Management**: Add, remove, clear markers with layer integration
+    - **View State**: Map selection, coordinate display, trajectory updates
+    - **Drawing Tools**: Path/region drawing, calibration, snapping
+    - **Clock Mode**: Temporal keyframe editing via playhead scrubbing
+    - **Signal Forwarding**: Keyframe, onboarding, and object creation signals
+
     Signals:
         marker_position_changed: Emitted when a marker is moved by the user.
                                 Args: (marker_id: str, x: float, y: float)
