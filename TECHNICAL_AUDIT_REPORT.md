@@ -100,7 +100,7 @@ However, organic growth has introduced measurable **technical debt** that, if le
 | 🟡 Medium | DRY Violation | `event_editor.py` / `entity_editor.py` | Near-identical `__init__`, drag-drop, signal-blocking, and dirty-tracking logic across both editors. | Extract shared behavior into `BaseEditorWidget` mixin or abstract base class. |
 | 🟡 Medium | Duplicate Comment | `event_editor.py:1001-1002` | `# Block signals to prevent dirty trigger during load` duplicated on consecutive lines. | Remove duplicate line. |
 | 🟡 Medium | Commentary Noise | `db_service.py:72` | `# Enable Foreign Keys` restates `PRAGMA foreign_keys = ON;`. | Remove comment — the code is self-documenting. |
-| 🟡 Medium | Commentary Noise | `db_service.py:79` | `# Return rows as Row objects for name access` restates `row_factory = sqlite3.Row`. | Remove or explain *why* Row objects are needed (named column access). |
+| 🟡 Medium | Commentary Noise | `db_service.py:79` | `# Return rows as Row objects for name access` restates `row_factory = sqlite3.Row`. | **Rewrite** to explain the benefit (e.g., "Enable dict-like column access"). |
 | 🟢 Low | Missing Docs | `event_editor.py:58-80` | Signal definitions (`save_requested`, `delete_requested`, etc.) lack docstrings. | Add brief docstring to each signal explaining payload type and emission trigger. |
 | 🟢 Low | Missing Docs | `main_window.py:242-246` | Phase-based initialization (`_init_core_services`) lacks explanation of *why* deferred init is needed. | Add docstring explaining Qt event loop timing requirements. |
 | 🟢 Low | Verbose Block Comment | `main_window.py:9-23` | ~15-line comment block explaining PySide6 enum paths. Already documented in `PYSIDE6_ENUM_SOLUTION.md`. | Replace with single-line reference to the design doc. |
@@ -261,7 +261,7 @@ class StyleHelper:
 | File | Line(s) | Current Comment | Action |
 |------|---------|----------------|--------|
 | `src/services/db_service.py` | 72 | `# Enable Foreign Keys` | **Remove** — `PRAGMA foreign_keys = ON` is self-evident. |
-| `src/services/db_service.py` | 79 | `# Return rows as Row objects for name access` | **Remove** — `row_factory = sqlite3.Row` is standard SQLite. |
+| `src/services/db_service.py` | 79 | `# Return rows as Row objects for name access` | **Rewrite** — explain the benefit: "Enable dict-like column access instead of positional indexing". |
 | `src/gui/widgets/event_editor.py` | 1001-1002 | Duplicate `# Block signals to prevent dirty trigger during load` | **Remove duplicate** — line appears twice consecutively. |
 | `src/gui/widgets/event_editor.py` | 1013-1015 | `# Date/Time widgets have set_value which triggers internal updates / Ideally we check value equality first.` | **Rewrite** — convert to a brief inline `# Avoid redundant updates`. |
 | `src/gui/widgets/event_editor.py` | 1019-1021 | `# Initialize duration widgets / Duration widget logic is complex...` | **Remove** — the code already shows `set_start_date` + conditional `set_value`. |
