@@ -44,13 +44,7 @@ from src.app.constants import (
     WINDOW_SETTINGS_KEY,
     WINDOW_TITLE,
 )
-from src.app.coordinators.backup_coordinator import BackupCoordinator
-from src.app.coordinators.data_coordinator import DataCoordinator
-from src.app.coordinators.editor_coordinator import EditorCoordinator
-from src.app.coordinators.fast_inject_coordinator import FastInjectCoordinator
-from src.app.coordinators.import_coordinator import ImportCoordinator
-from src.app.coordinators.navigation_coordinator import NavigationCoordinator
-from src.app.coordinators.time_coordinator import TimeCoordinator
+from src.app.coordinators.app_coordinator import AppCoordinator
 from src.app.data_handler import DataHandler
 from src.app.longform_manager import LongformManager
 from src.app.map_handler import MapHandler
@@ -262,10 +256,11 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # Initialize backup service (will be properly connected after DB init)
         self.backup_service = None
 
-        # Initialize coordinators needed by WorkerManager signal connections
-        self.time_coordinator = TimeCoordinator(self)
-        self.data_coordinator = DataCoordinator(self)
-        self.import_coordinator = ImportCoordinator(self)
+        # Initialize coordinators via AppCoordinator facade
+        self.app_coordinator = AppCoordinator(self)
+        self.time_coordinator = self.app_coordinator.time
+        self.data_coordinator = self.app_coordinator.data
+        self.import_coordinator = self.app_coordinator.import_coord
 
         # Init Services (Worker Thread)
         self.worker_manager = WorkerManager(self)
@@ -364,11 +359,11 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.event_editor.set_project_root(world_path)
         self.entity_editor.set_project_root(world_path)
 
-        # Initialize Coordinators
-        self.fast_inject_coordinator = FastInjectCoordinator(self)
-        self.navigation_coordinator = NavigationCoordinator(self)
-        self.backup_coordinator = BackupCoordinator(self)
-        self.editor_coordinator = EditorCoordinator(self)
+        # Expose remaining coordinators from AppCoordinator facade
+        self.fast_inject_coordinator = self.app_coordinator.fast_inject
+        self.navigation_coordinator = self.app_coordinator.navigation
+        self.backup_coordinator = self.app_coordinator.backup
+        self.editor_coordinator = self.app_coordinator.editor
 
         # Initialize MapHandler with injected dependencies (no self reference)
         self.map_handler = MapHandler(
