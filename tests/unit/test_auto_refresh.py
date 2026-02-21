@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from PySide6.QtCore import QSettings
 
 from src.app.main_window import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY, MainWindow
@@ -36,7 +38,12 @@ def test_auto_refresh_logic(qtbot):
     3. The toggle setting updates button visibility and triggers refresh.
     """
     # Setup
-    main_window = MainWindow()
+    with (
+        patch("src.app.worker_manager.DatabaseWorker"),
+        patch("src.app.worker_manager.QThread"),
+        patch("src.app.main_window.QTimer"),
+    ):
+        main_window = MainWindow()
     qtbot.addWidget(main_window)
 
     # Mock components to isolate logic

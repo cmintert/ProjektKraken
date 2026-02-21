@@ -11,6 +11,7 @@ def main_window(qtbot):
     with (
         patch("src.app.worker_manager.DatabaseWorker") as MockWorker,
         patch("src.app.worker_manager.QThread"),
+        patch("src.app.main_window.QTimer"),
     ):
         mock_worker = MockWorker.return_value
         mock_db = mock_worker.db_service

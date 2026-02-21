@@ -12,15 +12,10 @@ def test_navigate_to_entity_success(qtbot):
     """Test navigation to an existing entity."""
     from unittest.mock import patch
 
-    from PySide6.QtWidgets import QMessageBox
-
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.main_window.QTimer"),
         patch("src.app.worker_manager.QThread"),
-        patch(
-            "src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard
-        ),
     ):
         window = MainWindow()
         # Mock worker
@@ -46,15 +41,10 @@ def test_navigate_to_entity_case_insensitive(qtbot):
     """Test case-insensitive lookup."""
     from unittest.mock import patch
 
-    from PySide6.QtWidgets import QMessageBox
-
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.main_window.QTimer"),
         patch("src.app.worker_manager.QThread"),
-        patch(
-            "src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard
-        ),
     ):
         window = MainWindow()
         window.worker = MagicMock()
@@ -71,15 +61,10 @@ def test_navigate_to_entity_not_found(qtbot, monkeypatch):
     """Test behavior when entity is not found."""
     from unittest.mock import patch
 
-    from PySide6.QtWidgets import QMessageBox
-
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.main_window.QTimer"),
         patch("src.app.worker_manager.QThread"),
-        patch(
-            "src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard
-        ),
     ):
         window = MainWindow()
         window.worker = MagicMock()
