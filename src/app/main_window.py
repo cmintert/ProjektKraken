@@ -6,21 +6,7 @@ signal/slot connections.
 
 from typing import Optional
 
-# NOTE: PySide6 Fully Qualified Enum Paths
-# =========================================
-# This codebase uses fully qualified enum paths for all Qt enums, which is
-# the official PySide6 6.4+ recommendation for proper type checking.
-#
-# Examples:
-#   Qt.ConnectionType.QueuedConnection  (not Qt.ConnectionType.QueuedConnection)
-#   Qt.MouseButton.LeftButton           (not Qt.MouseButton.LeftButton)
-#   Qt.AlignmentFlag.AlignCenter        (not Qt.AlignmentFlag.AlignCenter)
-#
-# This ensures Pyright can properly type-check Qt enum usage while maintaining
-# full runtime compatibility. See docs/PYSIDE6_ENUM_SOLUTION.md for details.
-#
-# Remaining ~500 reportAttributeAccessIssue errors are for QMessageBox/QDialog
-# constants and other Qt classes that haven't been updated yet.
+# NOTE: Uses fully qualified PySide6 enum paths. See docs/PYSIDE6_ENUM_SOLUTION.md.
 from PySide6.QtCore import (
     QEvent,
     QMetaObject,
@@ -174,6 +160,12 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     - Signal/Slot connections between UI and persistent storage.
 
     Adheres to "Dumb UI" philosophy: logic delegates to Worker/Commands.
+
+    Initialization follows a three-phase approach to avoid blocking the Qt
+    event loop during startup:
+    - Phase 1: Core services (data handler, worker thread, window properties).
+    - Phase 2: UI skeleton (widgets, dock layout, menus) — no data loaded.
+    - Phase 3: Deferred via QTimer (DB init, signal wiring, state restore).
     """
 
     # Signal to send commands to worker thread

@@ -60,30 +60,40 @@ class EventEditorWidget(QWidget):
 
     Emits 'save_requested' signal with the modified Event object. Emits
     'add_relation_requested' signal (source, target, type).
+
+    Signals:
+        save_requested(dict): Emitted when user clicks Save; payload is the event data.
+        discard_requested(str): Emitted when user discards changes; payload is item_id.
+        add_relation_requested(str, str, str, dict, bool): Request to create a relation
+            (source_id, target_id, rel_type, attributes, bidirectional).
+        remove_relation_requested(str): Request to delete a relation by rel_id.
+        update_relation_requested(str, str, str, dict): Request to update a relation
+            (rel_id, target_id, rel_type, attributes).
+        inject_ui_requested(str): Request to open the inject dialog for an event_id.
+        create_template_requested(dict): Request to create a new template from data.
+        summary_generation_requested(object): Request AI summary for the given Event.
+        link_clicked(str): Emitted when a wiki link is clicked; payload is target_name.
+        navigate_to_relation(str): Emitted when Go-to is clicked; payload is target_id.
+        dirty_changed(bool): Emitted when the editor's dirty state changes.
+        current_data_changed(dict): Emitted with current event data for live preview.
     """
 
     save_requested = Signal(dict)
-    discard_requested = Signal(str)  # item_id to reload
-    add_relation_requested = Signal(
-        str, str, str, dict, bool
-    )  # source_id, target_id, type, attributes, bidirectional
-    remove_relation_requested = Signal(str)  # rel_id
-    update_relation_requested = Signal(
-        str, str, str, dict
-    )  # rel_id, target_id, rel_type, attributes, attributes
+    discard_requested = Signal(str)
+    add_relation_requested = Signal(str, str, str, dict, bool)
+    remove_relation_requested = Signal(str)
+    update_relation_requested = Signal(str, str, str, dict)
 
-    inject_ui_requested = Signal(
-        str
-    )  # Signals that main window should open inject dialog
-    create_template_requested = Signal(dict)  # Signals to create a new template
-    summary_generation_requested = Signal(object)  # event object
+    inject_ui_requested = Signal(str)
+    create_template_requested = Signal(dict)
+    summary_generation_requested = Signal(object)
 
     # ... (omitted)
 
-    link_clicked = Signal(str)  # target_name
-    navigate_to_relation = Signal(str)  # target_id for Go to button
+    link_clicked = Signal(str)
+    navigate_to_relation = Signal(str)
     dirty_changed = Signal(bool)
-    current_data_changed = Signal(dict)  # Emits current event data for preview
+    current_data_changed = Signal(dict)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         """Initializes the editor widget with form fields.

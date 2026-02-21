@@ -47,24 +47,36 @@ class EntityEditorWidget(QWidget):
     """A form to edit the details of an Entity.
 
     Emits 'save_requested' signal with the modified Entity object.
+
+    Signals:
+        save_requested(dict): Emitted when user clicks Save; payload is entity data.
+        discard_requested(str): Emitted when user discards changes; payload is item_id.
+        inject_requested(dict): Request to run inject command with given data.
+        add_relation_requested(str, str, str, dict, bool): Request to create a relation
+            (source_id, target_id, rel_type, attributes, bidirectional).
+        remove_relation_requested(str): Request to delete a relation by rel_id.
+        update_relation_requested(str, str, str, dict): Request to update a relation
+            (rel_id, target_id, rel_type, attributes).
+        link_clicked(str): Emitted when a wiki link is clicked; payload is target_name.
+        navigate_to_relation(str): Emitted when Go-to is clicked; payload is target_id.
+        dirty_changed(bool): Emitted when the editor's dirty state changes.
+        return_to_present_requested(): Emitted to exit temporal past/future view.
+        inject_ui_requested(str): Request to open inject dialog for an entity_id.
+        summary_generation_requested(object): Request AI summary for the given Entity.
     """
 
     save_requested = Signal(dict)
-    discard_requested = Signal(str)  # item_id to reload
-    inject_requested = Signal(
-        dict
-    )  # Signals that main window should run the inject command
-    add_relation_requested = Signal(
-        str, str, str, dict, bool
-    )  # src, tgt, type, attrs, bi
+    discard_requested = Signal(str)
+    inject_requested = Signal(dict)
+    add_relation_requested = Signal(str, str, str, dict, bool)
     remove_relation_requested = Signal(str)
     update_relation_requested = Signal(str, str, str, dict)
     link_clicked = Signal(str)
-    navigate_to_relation = Signal(str)  # target_id for Go to button
+    navigate_to_relation = Signal(str)
     dirty_changed = Signal(bool)
-    return_to_present_requested = Signal()  # Request to exit past/future view
-    inject_ui_requested = Signal(str)  # entity_id
-    summary_generation_requested = Signal(object)  # entity object
+    return_to_present_requested = Signal()
+    inject_ui_requested = Signal(str)
+    summary_generation_requested = Signal(object)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the EntityEditorWidget.
