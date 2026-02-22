@@ -201,8 +201,6 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self.form_layout.addRow("Description:", self.desc_edit)
 
         # Add Timeline Display Widget (above LLM section)
-        from PySide6.QtWidgets import QCheckBox
-
         from src.gui.widgets.timeline_display_widget import TimelineDisplayWidget
 
         self.timeline_container = QWidget()
@@ -576,6 +574,16 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             # Block signals
             self._set_input_signals_blocked(True)
 
+            from src.core.theme_manager import ThemeManager
+
+            theme = ThemeManager().get_theme()
+            self.tag_editor.set_base_color(theme["entity_main"])
+
+            # Block signals to prevent dirty trigger during load
+            self.name_edit.blockSignals(True)
+            self.type_edit.blockSignals(True)
+            self.desc_edit.blockSignals(True)
+
             self._load_entity_fields(entity)
             self._load_entity_attributes(entity)
             self.exit_read_only_mode()
@@ -584,7 +592,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self.setEnabled(True)
 
             # Unblock & Reset
-            self._set_input_signals_blocked(False)
+            self.name_edit.blockSignals(False)
+            self.type_edit.blockSignals(False)
+            self.desc_edit.blockSignals(False)
             self.set_dirty(False)
         finally:
             self._is_loading = False
@@ -716,7 +726,6 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         # Update Checkboxes
         # StandardCheckbox handles its own styling on theme change
-
 
     @Slot()
     def _on_save(self) -> None:

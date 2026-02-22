@@ -8,14 +8,14 @@ import logging
 from typing import Optional
 
 from PySide6.QtCore import QPoint, Qt
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QWidget
+from PySide6.QtGui import QPainter
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QStyle, QStyleOption, QWidget
 
-from src.core.theme_manager import ThemeManager
 
 logger = logging.getLogger(__name__)
 
 
-class DragPill(QWidget):
+class DragPill(QFrame):
     """Floating widget that displays item information during drag operations.
 
     Shows an icon, item name, and item type, styled with theme colors.
@@ -62,12 +62,7 @@ class DragPill(QWidget):
         self.hide()
 
     def _setup_ui(self) -> None:
-        """Set up the UI layout and components.
-
-        Creates a frameless, floating window with icon, name, and type labels
-        arranged horizontally.
-        """
-        # Set window flags for floating, frameless, always-on-top window
+        """Set up the UI layout and components."""
         from PySide6.QtWidgets import QSizePolicy
 
         self.setWindowFlags(
@@ -76,25 +71,24 @@ class DragPill(QWidget):
             | Qt.WindowType.WindowStaysOnTopHint
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setObjectName("DragPill")
 
         # Create layout
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 6, 8, 6)
+        layout.setContentsMargins(8, 2, 8, 2)  # Refined margins
         layout.setSpacing(8)
-        # Force layout to respect child constraints for size hint
         layout.setSizeConstraint(QHBoxLayout.SizeConstraint.SetMaximumSize)
 
         # Icon label
         self.icon_label = QLabel(self.ICONS.get(self.item_type, "📄"))
-        self.icon_label.setStyleSheet("font-size: 16px;")
+        self.icon_label.setStyleSheet("font-size: 16px; background: transparent;")
         layout.addWidget(self.icon_label)
 
         # Name label
         self.name_label = QLabel(self.item_name)
-        self.name_label.setStyleSheet("font-size: 14pt; font-weight: bold;")
-        # Allow name label to shrink and cap it to prevent pushing layout
         self.name_label.setMinimumWidth(20)
-        self.name_label.setMaximumWidth(100)  # Aggressive cap
+        self.name_label.setMaximumWidth(100)
         self.name_label.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
         )
@@ -102,41 +96,16 @@ class DragPill(QWidget):
 
         # Type label
         self.type_label = QLabel(f"({self.item_type})")
-        self.type_label.setStyleSheet("font-size: 10pt;")
         layout.addWidget(self.type_label)
 
     def _apply_theme(self) -> None:
-        """Apply theme colors to the widget.
+        """Apply unified pill styling using StyleHelper."""
+        from src.gui.utils.style_helper import StyleHelper
 
-        Retrieves colors from ThemeManager and applies them to the background,
-        borders, and text. Also adds a drop shadow effect for depth.
-        """
-        theme_manager = ThemeManager()
-        theme = theme_manager.get_theme()
-
-        # Get theme colors
-        surface = theme.get("surface", "#323232")
-        border = theme.get("border", "#454545")
-        text_main = theme.get("text_main", "#E0E0E0")
-        text_dim = theme.get("text_dim", "#9E9E9E")
-
-        # Apply stylesheet
-        self.setStyleSheet(
-            f"""
-            QWidget {{
-                background-color: {surface};
-                border: 1px solid {border};
-                border-radius: 6px;
-                color: {text_main};
-            }}
-            """
+        style = StyleHelper.get_pill_style(
+            object_name="DragPill", has_delete=False, height=40
         )
-
-        # Update text colors
-        self.name_label.setStyleSheet(
-            f"font-size: 14pt; font-weight: bold; color: {text_main};"
-        )
-        self.type_label.setStyleSheet(f"font-size: 10pt; color: {text_dim};")
+        self.setStyleSheet(style)
 
         # Add shadow effect
         from PySide6.QtGui import QColor
@@ -144,7 +113,7 @@ class DragPill(QWidget):
 
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(12)
-        shadow.setColor(QColor(0, 0, 0, 76))  # rgba(0, 0, 0, 0.3)
+        shadow.setColor(QColor(0, 0, 0, 76))
         shadow.setOffset(0, 4)
         self.setGraphicsEffect(shadow)
 
@@ -165,13 +134,16 @@ class DragPill(QWidget):
         )
 
     def update_position(self, position: QPoint) -> None:
-        """Update the drag pill position during drag.
-
-        Args:
-            position: New base position (usually cursor position).
-        """
+        """Update the drag pill position during drag."""
         offset_position = position + self.cursor_offset
         self.move(offset_position)
+
+    def paintEvent(self, event) -> None:
+        """Ensure QSS styling (background, border-radius) is rendered correctly."""
+        opt = QStyleOption()
+        opt.initFrom(self)
+        p = QPainter(self)
+        self.style().drawPrimitive(QStyle.PrimitiveElement.PE_Widget, opt, p, self)
 
     def hide(self) -> None:
         """Hide the drag pill widget."""

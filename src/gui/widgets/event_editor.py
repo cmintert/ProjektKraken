@@ -237,8 +237,6 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         # Add Summary Widget (Collapsible)
         # Add Summary Widget (Collapsible)
-        from PySide6.QtWidgets import QCheckBox
-
         self.summary_container = QWidget()
         summary_outer_layout = QVBoxLayout(self.summary_container)
         summary_outer_layout.setContentsMargins(0, 0, 0, 0)
@@ -1033,7 +1031,6 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         # Update Checkboxes
         # StandardCheckbox handles its own styling on theme change
-
 
         # Update Relations Tab Buttons (Icons and Styles)
         icon_path = os.path.join("default_assets", "icons", "ui_icons", "plus.svg")

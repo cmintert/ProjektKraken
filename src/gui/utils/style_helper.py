@@ -5,6 +5,8 @@ generate consistent QSS strings. This eliminates hardcoded colors and ensures th
 switches reliably update the UI.
 """
 
+from typing import Optional
+
 from PySide6.QtWidgets import QLayout
 
 from src.core.theme_manager import ThemeManager
@@ -188,8 +190,10 @@ class StyleHelper:
             f"QToolButton, QPushButton {{ background-color: {theme['surface']}; "
             f"color: {theme['text_main']}; border: 1px solid {theme['border']}; "
             f"border-radius: 4px; padding: 4px; }}"
-            f"QToolButton:hover, QPushButton:hover {{ background-color: {theme['border']}; }}"
-            f"QToolButton:pressed, QPushButton:pressed {{ background-color: {theme['app_bg']}; }}"
+            f"QToolButton:hover, QPushButton:hover {{ "
+            f"background-color: {theme['border']}; }}"
+            f"QToolButton:pressed, QPushButton:pressed {{ "
+            f"background-color: {theme['app_bg']}; }}"
             f"QToolButton:checked, QPushButton:checked {{ "
             f"background-color: {theme['border']}; "
             f"border: 1px solid {theme['primary']}; }}"
@@ -214,8 +218,84 @@ class StyleHelper:
             f"QPushButton:hover {{ background-color: {theme['border']}; "
             f"color: {theme['text_main']}; }}"
             f"QPushButton:disabled {{ background-color: {theme['surface']}; "
-            f"color: {theme['text_dim']}; border: 1px solid {theme['border']}; }}"
+            f"color: {theme['text_dim']}; "
+            f"border: 1px solid {theme['border']}; }}"
         )
+
+    @staticmethod
+    def get_pill_style(
+        object_name: str,
+        base_color: Optional[str] = None,
+        has_delete: bool = False,
+        height: int = 24,
+    ) -> str:
+        """Returns QSS for premium, themed pill widgets (rounded/oblong).
+
+        Args:
+            object_name: The objectName of the widget.
+            base_color: Optional hex color.
+            has_delete: Whether to include delete button styling.
+            height: The fixed height of the pill, used to calculate border-radius.
+
+        Returns:
+            str: QSS stylesheet string.
+        """
+        theme = ThemeManager().get_theme()
+        color = base_color or theme.get("accent_secondary", "#4A90D9")
+        radius = height // 2
+
+        # Convert hex to rgba
+        r, g, b = 74, 144, 217
+        if color.startswith("#") and len(color) == 7:
+            r = int(color[1:3], 16)
+            g = int(color[3:5], 16)
+            b = int(color[5:7], 16)
+
+        style = (
+            f"#{object_name}, QFrame#{object_name} {{ "
+            f"  background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, "
+            f"    stop:0 rgba({r}, {g}, {b}, 0.25), "
+            f"    stop:1 rgba({r}, {g}, {b}, 0.15)); "
+            f"  border: 1px solid rgba({r}, {g}, {b}, 0.6); "
+            f"  border-radius: {radius}px; "
+            f"  margin: 2px; "
+            f"}} "
+            f"#{object_name}:hover {{ "
+            f"  background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, "
+            f"    stop:0 rgba({r}, {g}, {b}, 0.35), "
+            f"    stop:1 rgba({r}, {g}, {b}, 0.25)); "
+            f"  border: 1px solid {color}; "
+            f"}} "
+            f"#{object_name} QLabel {{ "
+            f"  color: {theme['text_main']}; "
+            f"  border: none; background: transparent; "
+            f"  font-size: 9pt; "
+            f"  padding: 0 4px 0 8px; "
+            f"}} "
+        )
+
+        if has_delete:
+            style += (
+                f"#{object_name} QToolButton {{ "
+                f"  border: none; background: transparent; "
+                f"  color: rgba({r}, {g}, {b}, 0.8); "
+                f"  font-weight: bold; font-size: 10pt; "
+                f"  padding: 0px 8px 0px 4px; "
+                f"  margin: 0; "
+                f"  border-radius: 10px; "
+                f"}} "
+                f"#{object_name} QToolButton:hover {{ "
+                f"  color: {theme['error']}; "
+                f"  background-color: rgba({r}, {g}, {b}, 0.2); "
+                f"}} "
+            )
+
+        return style
+
+    @staticmethod
+    def get_tag_pill_style(base_color: Optional[str] = None) -> str:
+        """Legacy wrapper for TagPill styling."""
+        return StyleHelper.get_pill_style("TagPill", base_color, has_delete=True)
 
     @staticmethod
     def get_icon_button_style() -> str:
@@ -453,7 +533,6 @@ class StyleHelper:
 
         Args:
             layout: The QLayout to configure.
-
         """
         layout.setContentsMargins(0, 0, 0, 0)
 
@@ -682,6 +761,7 @@ class StyleHelper:
             f"background-color: transparent; "
             f"margin-bottom: 1px; margin-right: 1px; }}"
             f"QSpinBox::up-button:hover, QSpinBox::down-button:hover {{ "
+            f"background-color: {theme['border']}; }}"
             f"QSpinBox::up-button:pressed, QSpinBox::down-button:pressed {{ "
             f"background-color: {theme['primary']}; }}"
             f"QSpinBox::up-arrow {{ "
@@ -700,10 +780,9 @@ class StyleHelper:
 
         theme = ThemeManager().get_theme()
         return (
-            f"background-color: {theme['surface']}; "
-            f"color: {theme['text_main']}; "
-            f"border: 1px solid {theme['border']}; "
-            f"border-radius: 4px; padding: 4px 8px; "
+            f"background-color: {theme['surface']}; color: {theme['text_main']}; "
+            f"border: 1px solid {theme['border']}; border-radius: 4px; "
+            f"padding: 4px; font-weight: bold;"
             f"font-family: monospace; font-weight: bold;"
         )
 
