@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-22
-### Internal
-- Merge pull request #97 from cmintert/copilot/conduct-technical-debt-assessment
+### Added
+- feat: Add default application UI layout configuration.
 
 
 *This changelog was automatically generated.*
