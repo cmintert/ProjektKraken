@@ -62,9 +62,6 @@ class DragPill(QFrame):
         width = min(hint.width(), 200)
         self.setFixedSize(width, 40)
 
-        # Elide name text to fit available space
-        self._elide_name_text()
-
         # Start hidden
         self.hide()
 
@@ -115,6 +112,11 @@ class DragPill(QFrame):
                 self._full_name, Qt.TextElideMode.ElideRight, available
             )
             self.name_label.setText(elided)
+
+    def resizeEvent(self, event) -> None:
+        """Re-elide name text when widget is resized."""
+        super().resizeEvent(event)
+        self._elide_name_text()
 
     def _apply_theme(self) -> None:
         """Apply unified pill styling using StyleHelper."""

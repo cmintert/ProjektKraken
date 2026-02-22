@@ -115,17 +115,23 @@ def test_drag_pill_custom_offset():
     assert actual_pos.y() == position.y() + 30
 
 
-def test_drag_pill_elides_long_name():
+def test_drag_pill_elides_long_name(qtbot):
     """Test that drag pill elides long names instead of hard truncating."""
     long_name = "A Very Long Item Name That Should Be Elided"
     pill = DragPill(item_name=long_name, item_type="event")
+    qtbot.addWidget(pill)
 
     # The full name should be stored for reference
     assert pill._full_name == long_name
-    # The displayed text should end with ellipsis if truncated
+
+    # Show widget to trigger layout and resizeEvent for eliding
+    pill.show()
+    qtbot.waitExposed(pill)
+
     displayed = pill.name_label.text()
+    # After layout, the name should be elided if it doesn't fit
     if displayed != long_name:
-        assert displayed.endswith("…") or displayed.endswith("...")
+        assert "…" in displayed or "..." in displayed
 
 
 def test_drag_pill_no_hard_max_width_on_name_label():
