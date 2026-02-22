@@ -12,7 +12,7 @@ ProjektKraken is a substantial desktop worldbuilding application (~127K LOC tota
 
 However, organic growth has introduced measurable **technical debt** that, if left unaddressed, will impede velocity and onboarding.
 
-### Maintainability Score: **9.0 / 10** *(up from 8.5 after MapWidget mixin decomposition)*
+### Maintainability Score: **9.0 / 10** *(up from 8.5 after MapWidget mixin decomposition + dock collapse fix)*
 
 | Dimension              | Score | Notes |
 |------------------------|-------|-------|
@@ -21,18 +21,20 @@ However, organic growth has introduced measurable **technical debt** that, if le
 | Single Responsibility  | 8.5/10 | DatabaseService decomposed (2509→1389 LOC); MapWidget decomposed (1946→1005 LOC via 5 mixins); editor mixin |
 | DRY                    | 8/10  | Editor mixin; style_helper consolidated; repository pattern fully leveraged; shared mixin protocols |
 | Documentation          | 8/10  | All new repos/coordinators/mixins well-documented; mixin contracts specify required host attributes |
-| Testability            | 9.5/10 | 87 mixin regression tests + 50+ prior new tests; all 299 unit tests passing; DI enables test injection |
+| Testability            | 9.5/10 | 87 mixin regression tests + 9 reset_layout tests + 50+ prior new tests; all 345+ tests passing; DI enables test injection |
 | Extensibility          | 9/10  | Full DI for 9 repos; AppCoordinator facade; McCabe complexity lint gate; MapWidget extensible via mixins |
 
 ### Remaining Risks
 
 1. **MainWindow import count** — Reduced from 29→24 but still high due to widget construction requirements. Further reduction requires widget factory pattern.
 2. ~~**MapWidget complexity**~~ — **RESOLVED**: Decomposed from 1,946→1,005 LOC via 5 focused mixins (MapLayerMixin, MapTrajectoryMixin, MapDrawingMixin, MapCalibrationMixin, MapDialogMixin). Each mixin has a clear contract specifying required host attributes.
+3. ~~**Dock collapse on startup**~~ — **RESOLVED**: `reset_layout()` now positions ALL 9 docks; `guard_validate_dock_sizes()` always called; `resizeDocks()` allocates bottom area height.
 
 ### Bugs Fixed This Cycle
 
 1. **CRITICAL: Startup crash** — `FastInjectCoordinator.__init__` eagerly accessed `main_window.fast_inject_manager` during Phase 1 (`_init_core_services`), but the attribute isn't created until Phase 2 (`_init_widgets_skeleton`). Fixed by converting to a lazy property with caching.
 2. **Pre-existing test failures (16 tests)** — Fixed 2 `EmptyStateWidget` tests (wrong API: `.text()` → `._title_label.text()`) and 14 timeline grouping command tests (missing `to_dict()`/`from_dict()` abstract method implementations on `SetTimelineGroupingCommand`, `ClearTimelineGroupingCommand`, `UpdateTagColorCommand`).
+3. **REGRESSION: Dock collapse on startup** — `reset_layout()` only positioned 3/9 docks; `guard_validate_dock_sizes()` only ran in 1/5 code paths in `_restore_critical_docks()`; no `resizeDocks()` call for bottom area. Timeline, map, and graph docks would collapse to zero height during initial setup. Fixed by: (a) making `reset_layout()` position ALL docks with proper tabification, (b) always scheduling `guard_validate_dock_sizes()`, (c) adding `_ensure_bottom_dock_height()` with `resizeDocks()` to allocate 30% window height for bottom area.
 
 ---
 

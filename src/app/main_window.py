@@ -710,10 +710,9 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             self.ui_manager.reset_layout()
             settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
 
-        # Always schedule dock size validation after the event loop
-        # processes the layout.  Both restoreState() and reset_layout()
-        # can leave bottom docks (timeline, map, graph) collapsed when
-        # Qt hasn't finished its internal layout negotiation.
+        # Always schedule dock size validation regardless of which code
+        # path was taken above.  Qt's internal layout negotiation may
+        # leave bottom docks (timeline, map, graph) collapsed.
         QTimer.singleShot(
             UI_DOCK_VALIDATE_DELAY_MS,
             self.guard_validate_dock_sizes,
