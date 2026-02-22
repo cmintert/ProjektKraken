@@ -6,13 +6,11 @@ Provides a rounded rectangular component for displaying a tag with a delete butt
 from typing import Optional
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QPainter
+from PySide6.QtGui import QBrush, QColor, QLinearGradient, QPainter, QPen
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
-    QStyle,
-    QStyleOption,
     QToolButton,
     QWidget,
 )
@@ -50,7 +48,7 @@ class TagPill(QFrame):
         self.base_color = base_color
 
         # Enforce fixed height for consistent pill shape
-        self.setFixedHeight(26)
+        self.setFixedHeight(32)
 
         # Enable QSS background support
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
@@ -62,10 +60,13 @@ class TagPill(QFrame):
     def _setup_ui(self) -> None:
         """Sets up the layout and sub-widgets."""
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 2, 4, 2)
-        layout.setSpacing(4)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(2)
 
         self.label = QLabel(self.text)
+        font = self.label.font()
+        font.setPointSize(10)
+        self.label.setFont(font)
         layout.addWidget(self.label)
 
         self.btn_delete = QToolButton()
@@ -83,20 +84,59 @@ class TagPill(QFrame):
             object_name="TagPill",
             base_color=self.base_color,
             has_delete=True,
-            height=26,
         )
         self.setStyleSheet(style)
+
+    def enterEvent(self, event) -> None:
+        """Trigger repaint on hover enter."""
+        super().enterEvent(event)
+        self.update()
+
+    def leaveEvent(self, event) -> None:
+        """Trigger repaint on hover leave."""
+        super().leaveEvent(event)
+        self.update()
 
     def _on_delete_clicked(self) -> None:
         """Handles the delete button click."""
         self.deleted.emit(self.text)
 
     def paintEvent(self, event) -> None:
-        """Ensure QSS styling (background, border-radius) is rendered correctly."""
-        opt = QStyleOption()
-        opt.initFrom(self)
+        """High-fidelity rendering of the pill shape with Antialiasing."""
+        from src.gui.utils.style_helper import StyleHelper
+
         p = QPainter(self)
-        self.style().drawPrimitive(QStyle.PrimitiveElement.PE_Widget, opt, p, self)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        # Get color data from StyleHelper
+        data = StyleHelper.get_pill_painter_data(self.base_color)
+        r, g, b = data["r"], data["g"], data["b"]
+
+        # Hover state detection
+        is_hovered = self.underMouse()
+        alpha_start = 0.35 if is_hovered else 0.25
+        alpha_end = 0.25 if is_hovered else 0.15
+        border_alpha = 0.9 if is_hovered else 0.6
+        border_color = (
+            QColor(data["hex"])
+            if is_hovered
+            else QColor(r, g, b, int(255 * border_alpha))
+        )
+
+        # Define pill geometry (accounting for margin and border)
+        rect = self.contentsRect().adjusted(2, 2, -2, -2)
+        radius = rect.height() / 2
+
+        # Create gradient
+        gradient = QLinearGradient(rect.topLeft(), rect.bottomLeft())
+        gradient.setColorAt(0, QColor(r, g, b, int(255 * alpha_start)))
+        gradient.setColorAt(1, QColor(r, g, b, int(255 * alpha_end)))
+
+        # Draw pill
+        p.setBrush(QBrush(gradient))
+        p.setPen(QPen(border_color, 1))
+        p.drawRoundedRect(rect, radius, radius)
+        p.end()
 
 
 # Add Qt namespace import at the top

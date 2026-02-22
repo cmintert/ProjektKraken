@@ -223,11 +223,32 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_pill_painter_data(base_color: Optional[str] = None) -> dict:
+        """Returns color data for manual QPainter rendering of pills.
+
+        Args:
+            base_color: Optional hex color.
+
+        Returns:
+            dict: { 'color': QColor, 'r': int, 'g': int, 'b': int }
+        """
+        theme = ThemeManager().get_theme()
+        hex_color = base_color or theme.get("accent_secondary", "#4A90D9")
+
+        # Convert hex to rgba
+        r, g, b = 74, 144, 217
+        if hex_color.startswith("#") and len(hex_color) == 7:
+            r = int(hex_color[1:3], 16)
+            g = int(hex_color[3:5], 16)
+            b = int(hex_color[5:7], 16)
+
+        return {"hex": hex_color, "r": r, "g": g, "b": b}
+
+    @staticmethod
     def get_pill_style(
         object_name: str,
         base_color: Optional[str] = None,
         has_delete: bool = False,
-        height: int = 24,
     ) -> str:
         """Returns QSS for premium, themed pill widgets (rounded/oblong).
 
@@ -235,36 +256,20 @@ class StyleHelper:
             object_name: The objectName of the widget.
             base_color: Optional hex color.
             has_delete: Whether to include delete button styling.
-            height: The fixed height of the pill, used to calculate border-radius.
 
         Returns:
             str: QSS stylesheet string.
         """
         theme = ThemeManager().get_theme()
-        color = base_color or theme.get("accent_secondary", "#4A90D9")
-        radius = height // 2
+        data = StyleHelper.get_pill_painter_data(base_color)
+        r, g, b = data["r"], data["g"], data["b"]
 
-        # Convert hex to rgba
-        r, g, b = 74, 144, 217
-        if color.startswith("#") and len(color) == 7:
-            r = int(color[1:3], 16)
-            g = int(color[3:5], 16)
-            b = int(color[5:7], 16)
-
+        # Main style is now transparent background to allow QPainter to draw the pill
         style = (
             f"#{object_name}, QFrame#{object_name} {{ "
-            f"  background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, "
-            f"    stop:0 rgba({r}, {g}, {b}, 0.25), "
-            f"    stop:1 rgba({r}, {g}, {b}, 0.15)); "
-            f"  border: 1px solid rgba({r}, {g}, {b}, 0.6); "
-            f"  border-radius: {radius}px; "
+            f"  background-color: transparent; "
+            f"  border: none; "
             f"  margin: 2px; "
-            f"}} "
-            f"#{object_name}:hover {{ "
-            f"  background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, "
-            f"    stop:0 rgba({r}, {g}, {b}, 0.35), "
-            f"    stop:1 rgba({r}, {g}, {b}, 0.25)); "
-            f"  border: 1px solid {color}; "
             f"}} "
             f"#{object_name} QLabel {{ "
             f"  color: {theme['text_main']}; "
@@ -291,11 +296,6 @@ class StyleHelper:
             )
 
         return style
-
-    @staticmethod
-    def get_tag_pill_style(base_color: Optional[str] = None) -> str:
-        """Legacy wrapper for TagPill styling."""
-        return StyleHelper.get_pill_style("TagPill", base_color, has_delete=True)
 
     @staticmethod
     def get_icon_button_style() -> str:
@@ -548,7 +548,8 @@ class StyleHelper:
 
         theme = ThemeManager().get_theme()
 
-        # Use get_resource_path for robust absolute path resolution (works in PyInstaller)
+        # Use get_resource_path for robust absolute path resolution
+        # (works in PyInstaller)
         # Ensure forward slashes and quoting to handle spaces/Windows issues
         check_icon_path = get_resource_path("default_assets/icons/ui_icons/check.svg")
         check_icon_path = check_icon_path.replace("\\", "/")

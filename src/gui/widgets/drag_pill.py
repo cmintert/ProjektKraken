@@ -8,8 +8,8 @@ import logging
 from typing import Optional
 
 from PySide6.QtCore import QPoint, Qt
-from PySide6.QtGui import QPainter
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QStyle, QStyleOption, QWidget
+from PySide6.QtGui import QBrush, QColor, QLinearGradient, QPainter, QPen
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 
 
 logger = logging.getLogger(__name__)
@@ -102,9 +102,7 @@ class DragPill(QFrame):
         """Apply unified pill styling using StyleHelper."""
         from src.gui.utils.style_helper import StyleHelper
 
-        style = StyleHelper.get_pill_style(
-            object_name="DragPill", has_delete=False, height=40
-        )
+        style = StyleHelper.get_pill_style(object_name="DragPill", has_delete=False)
         self.setStyleSheet(style)
 
         # Add shadow effect
@@ -139,11 +137,30 @@ class DragPill(QFrame):
         self.move(offset_position)
 
     def paintEvent(self, event) -> None:
-        """Ensure QSS styling (background, border-radius) is rendered correctly."""
-        opt = QStyleOption()
-        opt.initFrom(self)
+        """High-fidelity rendering of the drag pill shape with Antialiasing."""
+        from src.gui.utils.style_helper import StyleHelper
+
         p = QPainter(self)
-        self.style().drawPrimitive(QStyle.PrimitiveElement.PE_Widget, opt, p, self)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        # Get color data from StyleHelper (DragPill uses default accent)
+        data = StyleHelper.get_pill_painter_data(None)
+        r, g, b = data["r"], data["g"], data["b"]
+
+        # Define pill geometry
+        rect = self.contentsRect().adjusted(2, 2, -2, -2)
+        radius = rect.height() / 2
+
+        # Create gradient
+        gradient = QLinearGradient(rect.topLeft(), rect.bottomLeft())
+        gradient.setColorAt(0, QColor(r, g, b, int(255 * 0.25)))
+        gradient.setColorAt(1, QColor(r, g, b, int(255 * 0.15)))
+
+        # Draw pill
+        p.setBrush(QBrush(gradient))
+        p.setPen(QPen(QColor(r, g, b, int(255 * 0.6)), 1))
+        p.drawRoundedRect(rect, radius, radius)
+        p.end()
 
     def hide(self) -> None:
         """Hide the drag pill widget."""
