@@ -11,6 +11,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- *(2026-02-22)* **Map**: Fixed Z-order overlap where keyframe dots and labels appeared above markers. Implemented dynamic Z-inheritance so trajectory components always sit exactly underneath their parent marker.
+
 ## [0.13.5]
 
 ### Security

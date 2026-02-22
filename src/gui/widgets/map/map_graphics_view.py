@@ -1436,6 +1436,9 @@ class MapGraphicsView(QGraphicsView):
             item = self._find_graphics_item(node_id)
             if item is not None:
                 item.setZValue(z_val)
+        
+        # Sync trajectory z-values if a trajectory is visible
+        self._trajectory.update_z_values()
 
     def _get_current_zoom_level(self) -> float:
         """Compute the current zoom level from the view transform.

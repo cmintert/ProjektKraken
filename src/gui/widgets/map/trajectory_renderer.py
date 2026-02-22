@@ -80,6 +80,9 @@ class TrajectoryRenderer:
         )
         dot_radius = max(3.0 / view_scale, 3.0)
 
+        marker = self._view._marker_manager.find_item(marker_id)
+        base_z = marker.zValue() if marker else MAP_LAYER_Z_MARKERS
+        
         for kf in keyframes:
             pos = self._view.coord_system.to_scene(kf.x, kf.y)
             dot = KeyframeItem(
@@ -99,7 +102,7 @@ class TrajectoryRenderer:
             dot.setPos(pos)
             dot.setBrush(QBrush(QColor(KEYFRAME_COLOR_DEFAULT)))
             dot.setPen(QPen(Qt.PenStyle.NoPen))
-            dot.setZValue(MAP_LAYER_Z_MARKERS + 1)
+            dot.setZValue(base_z - 0.2)
             self._view.scene.addItem(dot)
             self.keyframe_items.append(dot)
 
@@ -120,7 +123,7 @@ class TrajectoryRenderer:
             label.setBrush(QBrush(QColor(KEYFRAME_LABEL_COLOR)))
             font = QFont(KEYFRAME_LABEL_FONT_FAMILY, KEYFRAME_LABEL_FONT_SIZE)
             label.setFont(font)
-            label.setZValue(MAP_LAYER_Z_MARKERS + 2)
+            label.setZValue(base_z - 0.1)
             label.setFlag(
                 QGraphicsSimpleTextItem.GraphicsItemFlag.ItemIgnoresTransformations
             )
@@ -132,7 +135,7 @@ class TrajectoryRenderer:
             self._view.scene.addItem(label)
             self.keyframe_label_items.append(label)
 
-        self._update_trajectory_path()
+        self._update_trajectory_path(base_z)
         self.update_label_scales()
 
         if self.trigger_first_use_animation:
@@ -143,6 +146,24 @@ class TrajectoryRenderer:
             self.trigger_first_use_animation = False
             for dot in self.keyframe_items:
                 self._pulse_item(dot)
+
+    def update_z_values(self) -> None:
+        """Updates Z-values for active trajectory components to match the parent marker."""
+        if not self.keyframe_items:
+            return
+
+        marker_id = self.keyframe_items[0].marker_id
+        marker = self._view._marker_manager.find_item(marker_id)
+        base_z = marker.zValue() if marker else MAP_LAYER_Z_MARKERS
+
+        if self.trajectory_path_item:
+            self.trajectory_path_item.setZValue(base_z - 0.3)
+            
+        for dot in self.keyframe_items:
+            dot.setZValue(base_z - 0.2)
+            
+        for label in self.keyframe_label_items:
+            label.setZValue(base_z - 0.1)
 
     def clear_trajectory(self) -> None:
         """Clears the rendered trajectory path, keyframes, and labels."""
@@ -268,7 +289,7 @@ class TrajectoryRenderer:
 
         animation.start()
 
-    def _update_trajectory_path(self) -> None:
+    def _update_trajectory_path(self, base_z: float = MAP_LAYER_Z_MARKERS) -> None:
         """Re-draws the trajectory path based on current keyframe positions."""
         if not self.keyframe_items or len(self.keyframe_items) < 2:
             if self.trajectory_path_item:
@@ -288,20 +309,20 @@ class TrajectoryRenderer:
             path.lineTo(sorted_items[i].scenePos())
 
         if not self.trajectory_path_item:
-            self.trajectory_path_item = self._create_trajectory_item(path)
+            self.trajectory_path_item = self._create_trajectory_item(path, base_z)
             self._view.scene.addItem(self.trajectory_path_item)
         else:
             self.trajectory_path_item.setPath(path)
 
     def _create_trajectory_item(
-        self, path: QPainterPath
+        self, path: QPainterPath, base_z: float
     ) -> QGraphicsPathItem:
         """Creates and configures the trajectory path item."""
         item = QGraphicsPathItem(path)
         pen = QPen(QColor(TRAJECTORY_PATH_COLOR), 1)
         pen.setStyle(Qt.PenStyle.DashLine)
         item.setPen(pen)
-        item.setZValue(MAP_LAYER_Z_TRAJECTORIES)
+        item.setZValue(base_z - 0.3)
         return item
 
     def _on_keyframe_dropped(self, item: "KeyframeItem") -> None:
