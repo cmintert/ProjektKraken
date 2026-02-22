@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-22
 ### Added
-- feat(gui): implement themed pill background for keyframe labels
+- feat(gui): implement themed pill backgrounds for map marker labels
 
 
 *This changelog was automatically generated.*
