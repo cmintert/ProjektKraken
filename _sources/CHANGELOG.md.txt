@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-22
-### Fixed
-- fix(map): ensure markers are above keyframe points in Z-order
+### Added
+- feat(gui): implement themed pill background for keyframe labels
 
 
 *This changelog was automatically generated.*
