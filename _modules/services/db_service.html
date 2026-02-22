@@ -279,7 +279,9 @@
     <span class="n">EntityRepository</span><span class="p">,</span>
     <span class="n">EventRepository</span><span class="p">,</span>
     <span class="n">MapRepository</span><span class="p">,</span>
+    <span class="n">MetaRepository</span><span class="p">,</span>
     <span class="n">RelationRepository</span><span class="p">,</span>
+    <span class="n">TagRepository</span><span class="p">,</span>
     <span class="n">TrajectoryRepository</span><span class="p">,</span>
 <span class="p">)</span>
 
@@ -298,28 +300,56 @@
 
 <span class="sd">    This service delegates CRUD operations to specialized repository classes while</span>
 <span class="sd">    maintaining schema management and connection handling.</span>
+
+<span class="sd">    Repositories can be injected via the constructor for testing or custom</span>
+<span class="sd">    configurations. When omitted, default repository instances are created.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="DatabaseService.__init__">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;:memory:&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Args:</span>
-<span class="sd">        db_path: Path to the .kraken database file.</span>
-<span class="sd">                 Defaults to :memory: for testing.</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">db_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;:memory:&quot;</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">event_repo</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EventRepository</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">entity_repo</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">EntityRepository</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">relation_repo</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RelationRepository</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">map_repo</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MapRepository</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">calendar_repo</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">CalendarRepository</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">attachment_repo</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AttachmentRepository</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">trajectory_repo</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TrajectoryRepository</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">tag_repo</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TagRepository</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">meta_repo</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MetaRepository</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the database service with optional dependency injection.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            db_path: Path to the .kraken database file.</span>
+<span class="sd">                     Defaults to :memory: for testing.</span>
+<span class="sd">            event_repo: Optional EventRepository instance (injected for testing).</span>
+<span class="sd">            entity_repo: Optional EntityRepository instance.</span>
+<span class="sd">            relation_repo: Optional RelationRepository instance.</span>
+<span class="sd">            map_repo: Optional MapRepository instance.</span>
+<span class="sd">            calendar_repo: Optional CalendarRepository instance.</span>
+<span class="sd">            attachment_repo: Optional AttachmentRepository instance.</span>
+<span class="sd">            trajectory_repo: Optional TrajectoryRepository instance.</span>
+<span class="sd">            tag_repo: Optional TagRepository instance.</span>
+<span class="sd">            meta_repo: Optional MetaRepository instance.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">db_path</span> <span class="o">=</span> <span class="n">db_path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">sqlite3</span><span class="o">.</span><span class="n">Connection</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_backup_service</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Optional backup service integration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_backup_service</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="c1"># Initialize repositories (will be connected after connection is established)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_event_repo</span> <span class="o">=</span> <span class="n">EventRepository</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_entity_repo</span> <span class="o">=</span> <span class="n">EntityRepository</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_relation_repo</span> <span class="o">=</span> <span class="n">RelationRepository</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_map_repo</span> <span class="o">=</span> <span class="n">MapRepository</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_calendar_repo</span> <span class="o">=</span> <span class="n">CalendarRepository</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_attachment_repo</span> <span class="o">=</span> <span class="n">AttachmentRepository</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_trajectory_repo</span> <span class="o">=</span> <span class="n">TrajectoryRepository</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_event_repo</span> <span class="o">=</span> <span class="n">event_repo</span> <span class="ow">or</span> <span class="n">EventRepository</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_entity_repo</span> <span class="o">=</span> <span class="n">entity_repo</span> <span class="ow">or</span> <span class="n">EntityRepository</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_relation_repo</span> <span class="o">=</span> <span class="n">relation_repo</span> <span class="ow">or</span> <span class="n">RelationRepository</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_map_repo</span> <span class="o">=</span> <span class="n">map_repo</span> <span class="ow">or</span> <span class="n">MapRepository</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_calendar_repo</span> <span class="o">=</span> <span class="n">calendar_repo</span> <span class="ow">or</span> <span class="n">CalendarRepository</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_attachment_repo</span> <span class="o">=</span> <span class="n">attachment_repo</span> <span class="ow">or</span> <span class="n">AttachmentRepository</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_trajectory_repo</span> <span class="o">=</span> <span class="n">trajectory_repo</span> <span class="ow">or</span> <span class="n">TrajectoryRepository</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span> <span class="o">=</span> <span class="n">tag_repo</span> <span class="ow">or</span> <span class="n">TagRepository</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_meta_repo</span> <span class="o">=</span> <span class="n">meta_repo</span> <span class="ow">or</span> <span class="n">MetaRepository</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attachment_service</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;AttachmentService&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DatabaseService initialized with path: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">db_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
@@ -331,14 +361,11 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Establishes connection to the database.&quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_path</span><span class="p">)</span>
-            <span class="c1"># Enable Foreign Keys</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;PRAGMA foreign_keys = ON;&quot;</span><span class="p">)</span>
-            <span class="c1"># Enable Write-Ahead Logging for better concurrency</span>
-            <span class="c1"># WAL mode allows concurrent readers with a single writer</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_path</span> <span class="o">!=</span> <span class="s2">&quot;:memory:&quot;</span><span class="p">:</span>
+                <span class="c1"># WAL enables concurrent reads during background writes</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;PRAGMA journal_mode=WAL;&quot;</span><span class="p">)</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;WAL mode enabled for database.&quot;</span><span class="p">)</span>
-            <span class="c1"># Return rows as Row objects for name access</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">row_factory</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Row</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Database connection established.&quot;</span><span class="p">)</span>
 
@@ -353,6 +380,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_calendar_repo</span><span class="o">.</span><span class="n">set_connection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_attachment_repo</span><span class="o">.</span><span class="n">set_connection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_trajectory_repo</span><span class="o">.</span><span class="n">set_connection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">set_connection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_meta_repo</span><span class="o">.</span><span class="n">set_connection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to connect to database: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -1113,20 +1142,8 @@
 <div class="viewcode-block" id="DatabaseService.get_relation">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_relation">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_relation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rel_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves a single relation by its ID.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            rel_id (str): The unique identifier of the relation.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Optional[Dict[str, Any]]: The relation dict or None.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">relations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_relation_repo</span><span class="o">.</span><span class="n">get_all</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">rel</span> <span class="ow">in</span> <span class="n">relations</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">rel</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">rel_id</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">rel</span>
-        <span class="k">return</span> <span class="kc">None</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves a single relation by its ID.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_relation_repo</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="n">rel_id</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.delete_relation">
@@ -1152,73 +1169,17 @@
         <span class="n">rel_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">attributes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Updates an existing relationship.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            rel_id (str): The ID of the relation to update.</span>
-<span class="sd">            target_id (str): New target ID.</span>
-<span class="sd">            rel_type (str): New relationship type.</span>
-<span class="sd">            attributes (Dict[str, Any]): New attributes.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            sqlite3.Error: If DB fails.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Updates an existing relationship.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">attributes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">attributes</span> <span class="o">=</span> <span class="p">{}</span>
-
-        <span class="c1"># Note: RelationRepository.update doesn&#39;t update target_id</span>
-        <span class="c1"># We need to add that functionality or handle it here</span>
-        <span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">            UPDATE relations</span>
-<span class="s2">            SET target_id = ?, rel_type = ?, attributes = ?</span>
-<span class="s2">            WHERE id = ?</span>
-<span class="s2">        &quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-                <span class="n">sql</span><span class="p">,</span>
-                <span class="p">(</span>
-                    <span class="n">target_id</span><span class="p">,</span>
-                    <span class="n">rel_type</span><span class="p">,</span>
-                    <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">attributes</span><span class="p">),</span>
-                    <span class="n">rel_id</span><span class="p">,</span>
-                <span class="p">),</span>
-            <span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_relation_repo</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">rel_id</span><span class="p">,</span> <span class="n">rel_type</span><span class="p">,</span> <span class="n">attributes</span><span class="p">,</span> <span class="n">target_id</span><span class="o">=</span><span class="n">target_id</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.get_name">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_name">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the name of an entity or event by its ID.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            object_id (str): The ID to resolve.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Optional[str]: The name if found, else None.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-        <span class="c1"># Try Entity</span>
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-            <span class="s2">&quot;SELECT name FROM entities WHERE id = ?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">object_id</span><span class="p">,)</span>
-        <span class="p">)</span>
-        <span class="n">row</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">row</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
-
-        <span class="c1"># Try Event</span>
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-            <span class="s2">&quot;SELECT name FROM events WHERE id = ?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">object_id</span><span class="p">,)</span>
-        <span class="p">)</span>
-        <span class="n">row</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">row</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span>
-
-        <span class="k">return</span> <span class="kc">None</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the name of an entity or event by its ID.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meta_repo</span><span class="o">.</span><span class="n">get_name</span><span class="p">(</span><span class="n">object_id</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.insert_events_bulk">
@@ -1379,49 +1340,15 @@
 <div class="viewcode-block" id="DatabaseService.get_current_time">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_current_time">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_current_time</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the current time in the world from system_meta.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Optional[float]: The current time in lore_date units, or None if not set.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;SELECT value FROM system_meta WHERE key = &#39;current_time&#39;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">)</span>
-        <span class="n">row</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-
-        <span class="k">if</span> <span class="n">row</span> <span class="ow">and</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">])</span>
-            <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid current_time value: </span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                <span class="k">return</span> <span class="kc">None</span>
-        <span class="k">return</span> <span class="kc">None</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the current time in the world from system_meta.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meta_repo</span><span class="o">.</span><span class="n">get_current_time</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.set_current_time">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.set_current_time">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_current_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_time</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the current time in the world and persists it to system_meta.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            current_time (float): The current time in lore_date units.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            sqlite3.Error: If the database operation fails.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">            INSERT INTO system_meta (key, value)</span>
-<span class="s2">            VALUES (&#39;current_time&#39;, ?)</span>
-<span class="s2">            ON CONFLICT(key) DO UPDATE SET value=excluded.value</span>
-<span class="s2">        &quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">current_time</span><span class="p">),))</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Set current_time to </span><span class="si">{</span><span class="n">current_time</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the current time in the world and persists it to system_meta.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_meta_repo</span><span class="o">.</span><span class="n">set_current_time</span><span class="p">(</span><span class="n">current_time</span><span class="p">)</span></div>
 
 
     <span class="c1"># --------------------------------------------------------------------------</span>
@@ -1500,124 +1427,29 @@
 <div class="viewcode-block" id="DatabaseService.insert_marker">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.insert_marker">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">insert_marker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker</span><span class="p">:</span> <span class="n">Marker</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Inserts a new marker/feature or updates an existing one (Upsert).</span>
-
-<span class="sd">        Upserts on UNIQUE(map_id, object_id, object_type). On conflict,</span>
-<span class="sd">        the existing row&#39;s id is retained.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            marker (Marker): The marker/feature domain object to persist.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            str: The ID of the inserted/updated marker (may differ from marker.id</span>
-<span class="sd">                 if a conflict occurred and the existing row was updated).</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            sqlite3.Error: If the database operation fails.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Note: Repository insert_marker doesn&#39;t return ID, so we need special handling</span>
-        <span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">            INSERT INTO markers (id, map_id, object_id, object_type, x, y,</span>
-<span class="s2">                               label, attributes, created_at, modified_at,</span>
-<span class="s2">                               feature_type, geometry, style)</span>
-<span class="s2">            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)</span>
-<span class="s2">            ON CONFLICT(map_id, object_id, object_type) DO UPDATE SET</span>
-<span class="s2">                x=excluded.x,</span>
-<span class="s2">                y=excluded.y,</span>
-<span class="s2">                label=excluded.label,</span>
-<span class="s2">                attributes=excluded.attributes,</span>
-<span class="s2">                modified_at=excluded.modified_at,</span>
-<span class="s2">                feature_type=excluded.feature_type,</span>
-<span class="s2">                geometry=excluded.geometry,</span>
-<span class="s2">                style=excluded.style</span>
-<span class="s2">            RETURNING id;</span>
-<span class="s2">        &quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-            <span class="n">cursor</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-                <span class="n">sql</span><span class="p">,</span>
-                <span class="p">(</span>
-                    <span class="n">marker</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
-                    <span class="n">marker</span><span class="o">.</span><span class="n">map_id</span><span class="p">,</span>
-                    <span class="n">marker</span><span class="o">.</span><span class="n">object_id</span><span class="p">,</span>
-                    <span class="n">marker</span><span class="o">.</span><span class="n">object_type</span><span class="p">,</span>
-                    <span class="n">marker</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
-                    <span class="n">marker</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
-                    <span class="n">marker</span><span class="o">.</span><span class="n">label</span><span class="p">,</span>
-                    <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">marker</span><span class="o">.</span><span class="n">attributes</span><span class="p">),</span>
-                    <span class="n">marker</span><span class="o">.</span><span class="n">created_at</span><span class="p">,</span>
-                    <span class="n">marker</span><span class="o">.</span><span class="n">modified_at</span><span class="p">,</span>
-                    <span class="n">marker</span><span class="o">.</span><span class="n">feature_type</span><span class="p">,</span>
-                    <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">marker</span><span class="o">.</span><span class="n">geometry</span><span class="p">)</span> <span class="k">if</span> <span class="n">marker</span><span class="o">.</span><span class="n">geometry</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-                    <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">marker</span><span class="o">.</span><span class="n">style</span><span class="p">)</span> <span class="k">if</span> <span class="n">marker</span><span class="o">.</span><span class="n">style</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-                <span class="p">),</span>
-            <span class="p">)</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-            <span class="k">return</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">result</span> <span class="k">else</span> <span class="n">marker</span><span class="o">.</span><span class="n">id</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Inserts a new marker/feature or updates an existing one (Upsert).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_map_repo</span><span class="o">.</span><span class="n">insert_marker</span><span class="p">(</span><span class="n">marker</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.get_marker">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_marker">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_marker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Marker</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves a single marker by its UUID.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            marker_id (str): The unique identifier of the marker.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Optional[Marker]: The Marker object if found, else None.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves a single marker by its UUID.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_map_repo</span><span class="o">.</span><span class="n">get_marker</span><span class="p">(</span><span class="n">marker_id</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.get_markers_for_map">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_markers_for_map">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_markers_for_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">map_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Marker</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all markers for a specific map.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            map_id (str): The unique identifier of the map.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            List[Marker]: List of all Marker objects on the map.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all markers for a specific map.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_map_repo</span><span class="o">.</span><span class="n">get_markers_by_map</span><span class="p">(</span><span class="n">map_id</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.get_markers_for_object">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_markers_for_object">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_markers_for_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Marker</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all markers for a specific entity or event.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            object_id (str): The unique identifier of the entity or event.</span>
-<span class="sd">            object_type (str): Type of object (&#39;entity&#39; or &#39;event&#39;).</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            List[Marker]: List of all Marker objects for the object.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;SELECT * FROM markers WHERE object_id = ? AND object_type = ?&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="p">(</span><span class="n">object_id</span><span class="p">,</span> <span class="n">object_type</span><span class="p">))</span>
-        <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
-
-        <span class="n">markers</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attributes&quot;</span><span class="p">):</span>
-                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">])</span>
-            <span class="n">markers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Marker</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">markers</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all markers for a specific entity or event.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_map_repo</span><span class="o">.</span><span class="n">get_markers_for_object</span><span class="p">(</span><span class="n">object_id</span><span class="p">,</span> <span class="n">object_type</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.get_marker_by_composite">
@@ -1625,485 +1457,117 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">get_marker_by_composite</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">map_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">object_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Marker</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves a marker by its composite key (map_id, object_id, object_type).</span>
-
-<span class="sd">        This is useful after an upsert to retrieve the canonical marker with its</span>
-<span class="sd">        actual database ID.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            map_id (str): The unique identifier of the map.</span>
-<span class="sd">            object_id (str): The unique identifier of the entity or event.</span>
-<span class="sd">            object_type (str): Type of object (&#39;entity&#39; or &#39;event&#39;).</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Optional[Marker]: The Marker object if found, else None.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">            SELECT * FROM markers</span>
-<span class="s2">            WHERE map_id = ? AND object_id = ? AND object_type = ?</span>
-<span class="s2">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="p">(</span><span class="n">map_id</span><span class="p">,</span> <span class="n">object_id</span><span class="p">,</span> <span class="n">object_type</span><span class="p">))</span>
-        <span class="n">row</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-
-        <span class="k">if</span> <span class="n">row</span><span class="p">:</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attributes&quot;</span><span class="p">):</span>
-                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">])</span>
-            <span class="k">return</span> <span class="n">Marker</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-        <span class="k">return</span> <span class="kc">None</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves a marker by its composite key (map_id, object_id, object_type).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_map_repo</span><span class="o">.</span><span class="n">get_marker_by_composite</span><span class="p">(</span><span class="n">map_id</span><span class="p">,</span> <span class="n">object_id</span><span class="p">,</span> <span class="n">object_type</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.delete_marker">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.delete_marker">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">delete_marker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">marker_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deletes a marker from the database.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            marker_id (str): The unique identifier of the marker to delete.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            sqlite3.Error: If the database operation fails.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">sql</span> <span class="o">=</span> <span class="s2">&quot;DELETE FROM markers WHERE id = ?&quot;</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="p">(</span><span class="n">marker_id</span><span class="p">,))</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deletes a marker from the database.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_map_repo</span><span class="o">.</span><span class="n">delete_marker</span><span class="p">(</span><span class="n">marker_id</span><span class="p">)</span></div>
 
 
     <span class="c1"># --------------------------------------------------------------------------</span>
-    <span class="c1"># Tag Management - Normalized Tags</span>
+    <span class="c1"># Tag Management - Delegates to TagRepository</span>
     <span class="c1"># --------------------------------------------------------------------------</span>
 
 <div class="viewcode-block" id="DatabaseService.get_all_tags">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_all_tags">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_all_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all tags from the database.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            List[Dict[str, Any]]: List of tag dictionaries with id, name, created_at.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-            <span class="s2">&quot;SELECT id, name, created_at FROM tags ORDER BY name&quot;</span>
-        <span class="p">)</span>
-        <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
-        <span class="c1"># Convert sqlite3.Row to dict</span>
-        <span class="k">return</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">([</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;created_at&quot;</span><span class="p">],</span> <span class="n">row</span><span class="p">))</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all tags from the database.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">get_all_tags</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.get_tags_with_events">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_tags_with_events">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_tags_with_events</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves tags that are associated with at least one event.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            List[Dict[str, Any]]: List of distinct tag dictionaries.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            SELECT DISTINCT t.id, t.name, t.created_at</span>
-<span class="sd">            FROM tags t</span>
-<span class="sd">            INNER JOIN event_tags et ON t.id = et.tag_id</span>
-<span class="sd">            ORDER BY t.name</span>
-<span class="sd">            &quot;&quot;&quot;</span>
-        <span class="p">)</span>
-        <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
-        <span class="k">return</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves tags that are associated with at least one event.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">get_tags_with_events</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.get_active_tags">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_active_tags">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_active_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves tags that are associated with at least one event OR entity.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves tags associated with at least one event or entity.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">get_active_tags</span><span class="p">()</span></div>
 
-<span class="sd">        Returns:</span>
-<span class="sd">            List[Dict[str, Any]]: List of distinct tag dictionaries.</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-        <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">        SELECT DISTINCT t.id, t.name, t.created_at</span>
-<span class="s2">        FROM tags t</span>
-<span class="s2">        WHERE t.id IN (SELECT tag_id FROM event_tags)</span>
-<span class="s2">           OR t.id IN (SELECT tag_id FROM entity_tags)</span>
-<span class="s2">        ORDER BY t.name</span>
-<span class="s2">        &quot;&quot;&quot;</span>
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
-        <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
-        <span class="k">return</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">([</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;created_at&quot;</span><span class="p">],</span> <span class="n">row</span><span class="p">))</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span></div>
+<div class="viewcode-block" id="DatabaseService.get_tag_by_name">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_tag_by_name">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_tag_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves a tag by its name.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">get_tag_by_name</span><span class="p">(</span><span class="n">tag_name</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.create_tag">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.create_tag">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">create_tag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a new tag or returns existing tag ID.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            tag_name (str): The name of the tag to create.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            str: The UUID of the tag (new or existing).</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            ValueError: If tag_name is empty or whitespace-only.</span>
-<span class="sd">            sqlite3.Error: If the database operation fails.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
-        <span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
-
-        <span class="c1"># Validate and normalize tag name</span>
-        <span class="n">normalized_name</span> <span class="o">=</span> <span class="n">tag_name</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">normalized_name</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tag name cannot be empty or whitespace-only&quot;</span><span class="p">)</span>
-
-        <span class="c1"># Check if tag already exists</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-            <span class="s2">&quot;SELECT id FROM tags WHERE name = ?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">normalized_name</span><span class="p">,)</span>
-        <span class="p">)</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
-
-        <span class="c1"># Create new tag</span>
-        <span class="n">tag_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
-        <span class="n">created_at</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-                <span class="s2">&quot;INSERT INTO tags (id, name, created_at) VALUES (?, ?, ?)&quot;</span><span class="p">,</span>
-                <span class="p">(</span><span class="n">tag_id</span><span class="p">,</span> <span class="n">normalized_name</span><span class="p">,</span> <span class="n">created_at</span><span class="p">),</span>
-            <span class="p">)</span>
-
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Created tag: </span><span class="si">{</span><span class="n">normalized_name</span><span class="si">}</span><span class="s2"> (ID: </span><span class="si">{</span><span class="n">tag_id</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">tag_id</span></div>
-
-
-<div class="viewcode-block" id="DatabaseService.assign_tag_to_event">
-<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.assign_tag_to_event">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">assign_tag_to_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assigns a tag to an event, creating the tag if it doesn&#39;t exist.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            event_id (str): The ID of the event.</span>
-<span class="sd">            tag_name (str): The name of the tag to assign.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            ValueError: If tag_name is empty.</span>
-<span class="sd">            sqlite3.Error: If the database operation fails.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
-
-        <span class="c1"># Create tag if it doesn&#39;t exist</span>
-        <span class="n">tag_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_tag</span><span class="p">(</span><span class="n">tag_name</span><span class="p">)</span>
-
-        <span class="c1"># Create association (idempotent due to PRIMARY KEY constraint)</span>
-        <span class="n">created_at</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-                <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-<span class="w">                    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">                    INSERT OR IGNORE INTO event_tags (event_id, tag_id, created_at)</span>
-<span class="sd">                    VALUES (?, ?, ?)</span>
-<span class="sd">                    &quot;&quot;&quot;</span><span class="p">,</span>
-                    <span class="p">(</span><span class="n">event_id</span><span class="p">,</span> <span class="n">tag_id</span><span class="p">,</span> <span class="n">created_at</span><span class="p">),</span>
-                <span class="p">)</span>
-        <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to assign tag &#39;</span><span class="si">{</span><span class="n">tag_name</span><span class="si">}</span><span class="s2">&#39; to event </span><span class="si">{</span><span class="n">event_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">raise</span></div>
-
-
-<div class="viewcode-block" id="DatabaseService.assign_tag_to_entity">
-<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.assign_tag_to_entity">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">assign_tag_to_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assigns a tag to an entity, creating the tag if it doesn&#39;t exist.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            entity_id (str): The ID of the entity.</span>
-<span class="sd">            tag_name (str): The name of the tag to assign.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            ValueError: If tag_name is empty.</span>
-<span class="sd">            sqlite3.Error: If the database operation fails.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
-
-        <span class="c1"># Create tag if it doesn&#39;t exist</span>
-        <span class="n">tag_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_tag</span><span class="p">(</span><span class="n">tag_name</span><span class="p">)</span>
-
-        <span class="c1"># Create association (idempotent due to PRIMARY KEY constraint)</span>
-        <span class="n">created_at</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-                <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-<span class="w">                    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">                    INSERT OR IGNORE INTO entity_tags (entity_id, tag_id, created_at)</span>
-<span class="sd">                    VALUES (?, ?, ?)</span>
-<span class="sd">                    &quot;&quot;&quot;</span><span class="p">,</span>
-                    <span class="p">(</span><span class="n">entity_id</span><span class="p">,</span> <span class="n">tag_id</span><span class="p">,</span> <span class="n">created_at</span><span class="p">),</span>
-                <span class="p">)</span>
-        <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Error</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Failed to assign tag &#39;</span><span class="si">{</span><span class="n">tag_name</span><span class="si">}</span><span class="s2">&#39; to entity </span><span class="si">{</span><span class="n">entity_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="p">)</span>
-            <span class="k">raise</span></div>
-
-
-<div class="viewcode-block" id="DatabaseService.remove_tag_from_event">
-<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.remove_tag_from_event">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">remove_tag_from_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Removes a tag from an event.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            event_id (str): The ID of the event.</span>
-<span class="sd">            tag_name (str): The name of the tag to remove.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            sqlite3.Error: If the database operation fails.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Get tag ID</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-            <span class="s2">&quot;SELECT id FROM tags WHERE name = ?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">tag_name</span><span class="o">.</span><span class="n">strip</span><span class="p">(),)</span>
-        <span class="p">)</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">:</span>
-            <span class="c1"># Tag doesn&#39;t exist, nothing to remove</span>
-            <span class="k">return</span>
-
-        <span class="n">tag_id</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
-
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-                <span class="s2">&quot;DELETE FROM event_tags WHERE event_id = ? AND tag_id = ?&quot;</span><span class="p">,</span>
-                <span class="p">(</span><span class="n">event_id</span><span class="p">,</span> <span class="n">tag_id</span><span class="p">),</span>
-            <span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="DatabaseService.remove_tag_from_entity">
-<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.remove_tag_from_entity">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">remove_tag_from_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Removes a tag from an entity.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            entity_id (str): The ID of the entity.</span>
-<span class="sd">            tag_name (str): The name of the tag to remove.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            sqlite3.Error: If the database operation fails.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Get tag ID</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-            <span class="s2">&quot;SELECT id FROM tags WHERE name = ?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">tag_name</span><span class="o">.</span><span class="n">strip</span><span class="p">(),)</span>
-        <span class="p">)</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">:</span>
-            <span class="c1"># Tag doesn&#39;t exist, nothing to remove</span>
-            <span class="k">return</span>
-
-        <span class="n">tag_id</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
-
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-                <span class="s2">&quot;DELETE FROM entity_tags WHERE entity_id = ? AND tag_id = ?&quot;</span><span class="p">,</span>
-                <span class="p">(</span><span class="n">entity_id</span><span class="p">,</span> <span class="n">tag_id</span><span class="p">),</span>
-            <span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="DatabaseService.get_tags_for_event">
-<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_tags_for_event">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_tags_for_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all tags for a specific event.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            event_id (str): The ID of the event.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            List[Dict[str, Any]]: List of tag dictionaries.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            SELECT t.id, t.name, t.created_at</span>
-<span class="sd">            FROM tags t</span>
-<span class="sd">            INNER JOIN event_tags et ON t.id = et.tag_id</span>
-<span class="sd">            WHERE et.event_id = ?</span>
-<span class="sd">            ORDER BY t.name</span>
-<span class="sd">            &quot;&quot;&quot;</span><span class="p">,</span>
-            <span class="p">(</span><span class="n">event_id</span><span class="p">,),</span>
-        <span class="p">)</span>
-        <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
-        <span class="k">return</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span></div>
-
-
-<div class="viewcode-block" id="DatabaseService.get_tags_for_entity">
-<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_tags_for_entity">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_tags_for_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all tags for a specific entity.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            entity_id (str): The ID of the entity.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            List[Dict[str, Any]]: List of tag dictionaries.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            SELECT t.id, t.name, t.created_at</span>
-<span class="sd">            FROM tags t</span>
-<span class="sd">            INNER JOIN entity_tags et ON t.id = et.tag_id</span>
-<span class="sd">            WHERE et.entity_id = ?</span>
-<span class="sd">            ORDER BY t.name</span>
-<span class="sd">            &quot;&quot;&quot;</span><span class="p">,</span>
-            <span class="p">(</span><span class="n">entity_id</span><span class="p">,),</span>
-        <span class="p">)</span>
-        <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
-        <span class="k">return</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a new tag or returns existing tag ID.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">create_tag</span><span class="p">(</span><span class="n">tag_name</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.delete_tag">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.delete_tag">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">delete_tag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deletes a tag and all its associations.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deletes a tag and all its associations.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">delete_tag</span><span class="p">(</span><span class="n">tag_name</span><span class="p">)</span></div>
 
-<span class="sd">        Args:</span>
-<span class="sd">            tag_name (str): The name of the tag to delete.</span>
 
-<span class="sd">        Raises:</span>
-<span class="sd">            sqlite3.Error: If the database operation fails.</span>
+<div class="viewcode-block" id="DatabaseService.assign_tag_to_event">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.assign_tag_to_event">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assign_tag_to_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assigns a tag to an event, creating the tag if it doesn&#39;t exist.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">assign_tag_to_event</span><span class="p">(</span><span class="n">event_id</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">)</span></div>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Get tag ID</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-            <span class="s2">&quot;SELECT id FROM tags WHERE name = ?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">tag_name</span><span class="o">.</span><span class="n">strip</span><span class="p">(),)</span>
-        <span class="p">)</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">:</span>
-            <span class="c1"># Tag doesn&#39;t exist, nothing to delete</span>
-            <span class="k">return</span>
 
-        <span class="n">tag_id</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
+<div class="viewcode-block" id="DatabaseService.assign_tag_to_entity">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.assign_tag_to_entity">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">assign_tag_to_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assigns a tag to an entity, creating the tag if it doesn&#39;t exist.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">assign_tag_to_entity</span><span class="p">(</span><span class="n">entity_id</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">)</span></div>
 
-        <span class="c1"># Delete tag (CASCADE will handle associations)</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;DELETE FROM tags WHERE id = ?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">tag_id</span><span class="p">,))</span>
 
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Deleted tag: </span><span class="si">{</span><span class="n">tag_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+<div class="viewcode-block" id="DatabaseService.remove_tag_from_event">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.remove_tag_from_event">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">remove_tag_from_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Removes a tag from an event.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">remove_tag_from_event</span><span class="p">(</span><span class="n">event_id</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.remove_tag_from_entity">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.remove_tag_from_entity">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">remove_tag_from_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Removes a tag from an entity.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">remove_tag_from_entity</span><span class="p">(</span><span class="n">entity_id</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.get_tags_for_event">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_tags_for_event">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_tags_for_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all tags for a specific event.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">get_tags_for_event</span><span class="p">(</span><span class="n">event_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.get_tags_for_entity">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_tags_for_entity">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_tags_for_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all tags for a specific entity.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">get_tags_for_entity</span><span class="p">(</span><span class="n">entity_id</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.get_events_by_tag">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_events_by_tag">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_events_by_tag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Event</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all events that have a specific tag.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            tag_name (str): The name of the tag.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            List[Event]: List of Event objects with the specified tag.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            SELECT e.*</span>
-<span class="sd">            FROM events e</span>
-<span class="sd">            INNER JOIN event_tags et ON e.id = et.event_id</span>
-<span class="sd">            INNER JOIN tags t ON et.tag_id = t.id</span>
-<span class="sd">            WHERE t.name = ?</span>
-<span class="sd">            ORDER BY e.lore_date</span>
-<span class="sd">            &quot;&quot;&quot;</span><span class="p">,</span>
-            <span class="p">(</span><span class="n">tag_name</span><span class="o">.</span><span class="n">strip</span><span class="p">(),),</span>
-        <span class="p">)</span>
-        <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
-
-        <span class="n">events</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attributes&quot;</span><span class="p">):</span>
-                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">])</span>
-            <span class="n">events</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Event</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">events</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all events that have a specific tag.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">get_events_by_tag</span><span class="p">(</span><span class="n">tag_name</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.get_entities_by_tag">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_entities_by_tag">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_entities_by_tag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Entity</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all entities that have a specific tag.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            tag_name (str): The name of the tag.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            List[Entity]: List of Entity objects with the specified tag.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            SELECT e.*</span>
-<span class="sd">            FROM entities e</span>
-<span class="sd">            INNER JOIN entity_tags et ON e.id = et.entity_id</span>
-<span class="sd">            INNER JOIN tags t ON et.tag_id = t.id</span>
-<span class="sd">            WHERE t.name = ?</span>
-<span class="sd">            ORDER BY e.name</span>
-<span class="sd">            &quot;&quot;&quot;</span><span class="p">,</span>
-            <span class="p">(</span><span class="n">tag_name</span><span class="o">.</span><span class="n">strip</span><span class="p">(),),</span>
-        <span class="p">)</span>
-        <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
-
-        <span class="n">entities</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attributes&quot;</span><span class="p">):</span>
-                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">])</span>
-            <span class="n">entities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Entity</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">entities</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves all entities that have a specific tag.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">get_entities_by_tag</span><span class="p">(</span><span class="n">tag_name</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.get_events_grouped_by_tags">
@@ -2114,117 +1578,8 @@
         <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;DUPLICATE&quot;</span><span class="p">,</span>
         <span class="n">date_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Groups events by tags with support for DUPLICATE and FIRST_MATCH modes.</span>
-
-<span class="sd">        In DUPLICATE mode (default), events with multiple tags appear in all</span>
-<span class="sd">        matching groups. In FIRST_MATCH mode, events appear only in their first</span>
-<span class="sd">        matching group (by tag_order).</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            tag_order: List of tag names defining groups and their order.</span>
-<span class="sd">            mode: Grouping mode - &quot;DUPLICATE&quot; (default) or &quot;FIRST_MATCH&quot;.</span>
-<span class="sd">            date_range: Optional tuple (start_date, end_date) to filter events.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Dict containing:</span>
-<span class="sd">                - groups: List of dicts with tag_name and events list</span>
-<span class="sd">                - remaining: List of events with no matching group tags</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            ValueError: If mode is not DUPLICATE or FIRST_MATCH.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;DUPLICATE&quot;</span><span class="p">,</span> <span class="s2">&quot;FIRST_MATCH&quot;</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid mode: </span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2">. Must be DUPLICATE or FIRST_MATCH&quot;</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-        <span class="c1"># Build date filter clause</span>
-        <span class="n">date_filter</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-        <span class="n">date_params</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">if</span> <span class="n">date_range</span><span class="p">:</span>
-            <span class="n">date_filter</span> <span class="o">=</span> <span class="s2">&quot;AND e.lore_date &gt;= ? AND e.lore_date &lt;= ?&quot;</span>
-            <span class="n">date_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">date_range</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">date_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
-
-        <span class="c1"># Initialize result structure</span>
-        <span class="n">groups</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">assigned_event_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-
-        <span class="c1"># Process each tag in order</span>
-        <span class="k">for</span> <span class="n">tag_name</span> <span class="ow">in</span> <span class="n">tag_order</span><span class="p">:</span>
-            <span class="c1"># Get events for this tag</span>
-            <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">                SELECT e.*</span>
-<span class="s2">                FROM events e</span>
-<span class="s2">                INNER JOIN event_tags et ON e.id = et.event_id</span>
-<span class="s2">                INNER JOIN tags t ON et.tag_id = t.id</span>
-<span class="s2">                WHERE t.name = ?</span>
-<span class="s2">                </span><span class="si">{</span><span class="n">date_filter</span><span class="si">}</span>
-<span class="s2">                ORDER BY e.lore_date</span>
-<span class="s2">            &quot;&quot;&quot;</span>
-            <span class="n">params</span> <span class="o">=</span> <span class="p">[</span><span class="n">tag_name</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span> <span class="o">+</span> <span class="n">date_params</span>
-
-            <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
-            <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
-
-            <span class="c1"># Convert rows to Event objects</span>
-            <span class="n">events</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
-                <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attributes&quot;</span><span class="p">):</span>
-                    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">])</span>
-                <span class="n">event</span> <span class="o">=</span> <span class="n">Event</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-
-                <span class="c1"># In FIRST_MATCH mode, skip if already assigned</span>
-                <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;FIRST_MATCH&quot;</span> <span class="ow">and</span> <span class="n">event</span><span class="o">.</span><span class="n">id</span> <span class="ow">in</span> <span class="n">assigned_event_ids</span><span class="p">:</span>
-                    <span class="k">continue</span>
-
-                <span class="n">events</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-                <span class="n">assigned_event_ids</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
-
-            <span class="c1"># Add group even if empty (to maintain tag_order)</span>
-            <span class="n">groups</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;tag_name&quot;</span><span class="p">:</span> <span class="n">tag_name</span><span class="p">,</span> <span class="s2">&quot;events&quot;</span><span class="p">:</span> <span class="n">events</span><span class="p">})</span>
-
-        <span class="c1"># Get remaining events (those not in any group)</span>
-        <span class="n">remaining_query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">            SELECT e.*</span>
-<span class="s2">            FROM events e</span>
-<span class="s2">            WHERE e.id NOT IN (</span>
-<span class="s2">                SELECT DISTINCT et.event_id</span>
-<span class="s2">                FROM event_tags et</span>
-<span class="s2">                INNER JOIN tags t ON et.tag_id = t.id</span>
-<span class="s2">                WHERE t.name IN (</span><span class="si">{</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;?&quot;</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">tag_order</span><span class="p">))</span><span class="si">}</span><span class="s2">)</span>
-<span class="s2">            )</span>
-<span class="s2">            </span><span class="si">{</span><span class="n">date_filter</span><span class="si">}</span>
-<span class="s2">            ORDER BY e.lore_date</span>
-<span class="s2">        &quot;&quot;&quot;</span>
-
-        <span class="c1"># Handle case where tag_order is empty</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">tag_order</span><span class="p">:</span>
-            <span class="n">remaining_query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">                SELECT e.*</span>
-<span class="s2">                FROM events e</span>
-<span class="s2">                WHERE 1=1</span>
-<span class="s2">                </span><span class="si">{</span><span class="n">date_filter</span><span class="si">}</span>
-<span class="s2">                ORDER BY e.lore_date</span>
-<span class="s2">            &quot;&quot;&quot;</span>
-            <span class="n">remaining_params</span> <span class="o">=</span> <span class="n">date_params</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">remaining_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tag_order</span><span class="p">]</span> <span class="o">+</span> <span class="n">date_params</span>
-
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">remaining_query</span><span class="p">,</span> <span class="n">remaining_params</span><span class="p">)</span>
-        <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
-
-        <span class="n">remaining</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attributes&quot;</span><span class="p">):</span>
-                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">])</span>
-            <span class="n">remaining</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Event</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
-
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;groups&quot;</span><span class="p">:</span> <span class="n">groups</span><span class="p">,</span> <span class="s2">&quot;remaining&quot;</span><span class="p">:</span> <span class="n">remaining</span><span class="p">}</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Groups events by tags with support for DUPLICATE and FIRST_MATCH modes.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">get_events_grouped_by_tags</span><span class="p">(</span><span class="n">tag_order</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">date_range</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.get_group_counts">
@@ -2234,60 +1589,9 @@
         <span class="n">tag_order</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
         <span class="n">date_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns count and metadata for each tag group.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns count and metadata for each tag group.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">get_group_counts</span><span class="p">(</span><span class="n">tag_order</span><span class="p">,</span> <span class="n">date_range</span><span class="p">)</span></div>
 
-<span class="sd">        Args:</span>
-<span class="sd">            tag_order: List of tag names to get counts for.</span>
-<span class="sd">            date_range: Optional tuple (start_date, end_date) to filter events.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            List of dicts with tag_name, count, earliest_date, latest_date.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-        <span class="c1"># Build date filter clause</span>
-        <span class="n">date_filter</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-        <span class="n">date_params</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">if</span> <span class="n">date_range</span><span class="p">:</span>
-            <span class="n">date_filter</span> <span class="o">=</span> <span class="s2">&quot;AND e.lore_date &gt;= ? AND e.lore_date &lt;= ?&quot;</span>
-            <span class="n">date_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">date_range</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">date_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
-
-        <span class="n">counts</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">tag_name</span> <span class="ow">in</span> <span class="n">tag_order</span><span class="p">:</span>
-            <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">                SELECT</span>
-<span class="s2">                    COUNT(DISTINCT e.id) as count,</span>
-<span class="s2">                    MIN(e.lore_date) as earliest_date,</span>
-<span class="s2">                    MAX(e.lore_date) as latest_date</span>
-<span class="s2">                FROM events e</span>
-<span class="s2">                INNER JOIN event_tags et ON e.id = et.event_id</span>
-<span class="s2">                INNER JOIN tags t ON et.tag_id = t.id</span>
-<span class="s2">                WHERE t.name = ?</span>
-<span class="s2">                </span><span class="si">{</span><span class="n">date_filter</span><span class="si">}</span>
-<span class="s2">            &quot;&quot;&quot;</span>
-            <span class="n">params</span> <span class="o">=</span> <span class="p">[</span><span class="n">tag_name</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span> <span class="o">+</span> <span class="n">date_params</span>
-
-            <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
-            <span class="n">row</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-
-            <span class="n">counts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="p">{</span>
-                    <span class="s2">&quot;tag_name&quot;</span><span class="p">:</span> <span class="n">tag_name</span><span class="p">,</span>
-                    <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">row</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
-                    <span class="s2">&quot;earliest_date&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;earliest_date&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">row</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-                    <span class="s2">&quot;latest_date&quot;</span><span class="p">:</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;latest_date&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">row</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-                <span class="p">}</span>
-            <span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">counts</span></div>
-
-
-    <span class="c1"># --------------------------------------------------------------------------</span>
-    <span class="c1"># Timeline Grouping Service Methods (Milestone 2)</span>
-    <span class="c1"># --------------------------------------------------------------------------</span>
 
 <div class="viewcode-block" id="DatabaseService.get_group_metadata">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_group_metadata">[docs]</a>
@@ -2296,65 +1600,8 @@
         <span class="n">tag_order</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
         <span class="n">date_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns metadata for each tag group including color, count, and date span.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            tag_order: List of tag names to get metadata for.</span>
-<span class="sd">            date_range: Optional tuple (start_date, end_date) to filter events.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            List of dicts with tag_name, color, count, earliest_date, latest_date.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">metadata</span> <span class="o">=</span> <span class="p">[]</span>
-
-        <span class="c1"># Separate &quot;All events&quot; from regular tags</span>
-        <span class="n">ALL_EVENTS_TAG</span> <span class="o">=</span> <span class="s2">&quot;All events&quot;</span>
-        <span class="n">regular_tags</span> <span class="o">=</span> <span class="p">[</span><span class="n">tag</span> <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">tag_order</span> <span class="k">if</span> <span class="n">tag</span> <span class="o">!=</span> <span class="n">ALL_EVENTS_TAG</span><span class="p">]</span>
-        <span class="n">has_all_events</span> <span class="o">=</span> <span class="n">ALL_EVENTS_TAG</span> <span class="ow">in</span> <span class="n">tag_order</span>
-
-        <span class="c1"># Get counts for regular tags</span>
-        <span class="k">if</span> <span class="n">regular_tags</span><span class="p">:</span>
-            <span class="n">counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_group_counts</span><span class="p">(</span>
-                <span class="n">tag_order</span><span class="o">=</span><span class="n">regular_tags</span><span class="p">,</span> <span class="n">date_range</span><span class="o">=</span><span class="n">date_range</span>
-            <span class="p">)</span>
-
-            <span class="c1"># Add color to each metadata entry</span>
-            <span class="k">for</span> <span class="n">count_info</span> <span class="ow">in</span> <span class="n">counts</span><span class="p">:</span>
-                <span class="n">tag_name</span> <span class="o">=</span> <span class="n">count_info</span><span class="p">[</span><span class="s2">&quot;tag_name&quot;</span><span class="p">]</span>
-                <span class="n">color</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_tag_color</span><span class="p">(</span><span class="n">tag_name</span><span class="p">)</span>
-
-                <span class="n">metadata</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="p">{</span>
-                        <span class="s2">&quot;tag_name&quot;</span><span class="p">:</span> <span class="n">tag_name</span><span class="p">,</span>
-                        <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="n">color</span><span class="p">,</span>
-                        <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">count_info</span><span class="p">[</span><span class="s2">&quot;count&quot;</span><span class="p">],</span>
-                        <span class="s2">&quot;earliest_date&quot;</span><span class="p">:</span> <span class="n">count_info</span><span class="p">[</span><span class="s2">&quot;earliest_date&quot;</span><span class="p">],</span>
-                        <span class="s2">&quot;latest_date&quot;</span><span class="p">:</span> <span class="n">count_info</span><span class="p">[</span><span class="s2">&quot;latest_date&quot;</span><span class="p">],</span>
-                    <span class="p">}</span>
-                <span class="p">)</span>
-
-        <span class="c1"># Add &quot;All events&quot; metadata if requested</span>
-        <span class="k">if</span> <span class="n">has_all_events</span><span class="p">:</span>
-            <span class="c1"># Count ALL events in database</span>
-            <span class="n">all_events</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_events</span><span class="p">()</span>
-            <span class="n">count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_events</span><span class="p">)</span>
-
-            <span class="c1"># Get min/max dates</span>
-            <span class="n">earliest</span> <span class="o">=</span> <span class="nb">min</span><span class="p">((</span><span class="n">e</span><span class="o">.</span><span class="n">lore_date</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">all_events</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
-            <span class="n">latest</span> <span class="o">=</span> <span class="nb">max</span><span class="p">((</span><span class="n">e</span><span class="o">.</span><span class="n">lore_date</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">all_events</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
-
-            <span class="n">metadata</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="p">{</span>
-                    <span class="s2">&quot;tag_name&quot;</span><span class="p">:</span> <span class="n">ALL_EVENTS_TAG</span><span class="p">,</span>
-                    <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="s2">&quot;#808080&quot;</span><span class="p">,</span>  <span class="c1"># Neutral gray</span>
-                    <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">count</span><span class="p">,</span>
-                    <span class="s2">&quot;earliest_date&quot;</span><span class="p">:</span> <span class="n">earliest</span><span class="p">,</span>
-                    <span class="s2">&quot;latest_date&quot;</span><span class="p">:</span> <span class="n">latest</span><span class="p">,</span>
-                <span class="p">}</span>
-            <span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">metadata</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns metadata for each tag group including color, count, and date span.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">get_group_metadata</span><span class="p">(</span><span class="n">tag_order</span><span class="p">,</span> <span class="n">date_range</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.get_events_for_group">
@@ -2364,186 +1611,22 @@
         <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">date_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Event</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns all events for a specific tag group.</span>
-
-<span class="sd">        This is a convenience wrapper around get_events_by_tag with date filtering.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            tag_name: The tag name to filter events by.</span>
-<span class="sd">            date_range: Optional tuple (start_date, end_date) to filter events.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            List[Event]: Events with the specified tag, sorted by lore_date.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-        <span class="c1"># Build date filter clause</span>
-        <span class="n">date_filter</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-        <span class="n">params</span> <span class="o">=</span> <span class="p">[</span><span class="n">tag_name</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
-
-        <span class="k">if</span> <span class="n">date_range</span><span class="p">:</span>
-            <span class="n">date_filter</span> <span class="o">=</span> <span class="s2">&quot;AND e.lore_date &gt;= ? AND e.lore_date &lt;= ?&quot;</span>
-            <span class="n">params</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">date_range</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">date_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
-
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">            SELECT e.*</span>
-<span class="s2">            FROM events e</span>
-<span class="s2">            INNER JOIN event_tags et ON e.id = et.event_id</span>
-<span class="s2">            INNER JOIN tags t ON et.tag_id = t.id</span>
-<span class="s2">            WHERE t.name = ?</span>
-<span class="s2">            </span><span class="si">{</span><span class="n">date_filter</span><span class="si">}</span>
-<span class="s2">            ORDER BY e.lore_date</span>
-<span class="s2">            &quot;&quot;&quot;</span><span class="p">,</span>
-            <span class="nb">tuple</span><span class="p">(</span><span class="n">params</span><span class="p">),</span>
-        <span class="p">)</span>
-        <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
-
-        <span class="n">events</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attributes&quot;</span><span class="p">):</span>
-                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">])</span>
-            <span class="n">events</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Event</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">events</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns all events for a specific tag group.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">get_events_for_group</span><span class="p">(</span><span class="n">tag_name</span><span class="p">,</span> <span class="n">date_range</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.set_tag_color">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.set_tag_color">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_tag_color</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">color</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the color for a tag.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            tag_name: The name of the tag.</span>
-<span class="sd">            color: Hex color string (e.g., &quot;#FF0000&quot; or &quot;#abc&quot;), or None to clear.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            ValueError: If color format is invalid.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Get or create tag</span>
-        <span class="n">tag_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_tag</span><span class="p">(</span><span class="n">tag_name</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">color</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1"># Clear color</span>
-            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-                <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-                    <span class="s2">&quot;UPDATE tags SET color = NULL WHERE id = ?&quot;</span><span class="p">,</span>
-                    <span class="p">(</span><span class="n">tag_id</span><span class="p">,),</span>
-                <span class="p">)</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cleared color for tag &#39;</span><span class="si">{</span><span class="n">tag_name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
-            <span class="k">return</span>
-
-        <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
-
-        <span class="c1"># Validate hex color format</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;^#[0-9A-Fa-f]</span><span class="si">{3}</span><span class="s2">$|^#[0-9A-Fa-f]</span><span class="si">{6}</span><span class="s2">$&quot;</span><span class="p">,</span> <span class="n">color</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid hex color format: </span><span class="si">{</span><span class="n">color</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-        <span class="c1"># Normalize short form to long form</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">color</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
-            <span class="n">color</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;#</span><span class="si">{</span><span class="n">color</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}{</span><span class="n">color</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}{</span><span class="n">color</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}{</span><span class="n">color</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}{</span><span class="n">color</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="si">}{</span><span class="n">color</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
-
-        <span class="c1"># Update color</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-                <span class="s2">&quot;UPDATE tags SET color = ? WHERE id = ?&quot;</span><span class="p">,</span>
-                <span class="p">(</span><span class="n">color</span><span class="p">,</span> <span class="n">tag_id</span><span class="p">),</span>
-            <span class="p">)</span>
-
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Set color </span><span class="si">{</span><span class="n">color</span><span class="si">}</span><span class="s2"> for tag &#39;</span><span class="si">{</span><span class="n">tag_name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the color for a tag.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">set_tag_color</span><span class="p">(</span><span class="n">tag_name</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.get_tag_color">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_tag_color">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_tag_color</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets the color for a tag, generating one if not set.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            tag_name: The name of the tag.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            str: Hex color string (e.g., &quot;#FF0000&quot;).</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-        <span class="c1"># Get tag</span>
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-            <span class="s2">&quot;SELECT id, color FROM tags WHERE name = ?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">tag_name</span><span class="o">.</span><span class="n">strip</span><span class="p">(),)</span>
-        <span class="p">)</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="p">:</span>
-            <span class="c1"># Tag doesn&#39;t exist, create it and generate color</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">create_tag</span><span class="p">(</span><span class="n">tag_name</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_tag_color</span><span class="p">(</span><span class="n">tag_name</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">]:</span>
-            <span class="k">return</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">]</span>
-
-        <span class="c1"># Generate deterministic color</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generate_tag_color</span><span class="p">(</span><span class="n">tag_name</span><span class="p">)</span></div>
-
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_generate_tag_color</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates a deterministic color for a tag based on its name.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            tag_name: The name of the tag.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            str: Hex color string (e.g., &quot;#FF0000&quot;).</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
-
-        <span class="c1"># Use hash of tag name for deterministic color</span>
-        <span class="n">hash_value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="n">tag_name</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()[:</span><span class="mi">6</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
-
-        <span class="c1"># Generate RGB values that are reasonably visible</span>
-        <span class="n">r</span> <span class="o">=</span> <span class="p">(</span><span class="n">hash_value</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span>
-        <span class="n">g</span> <span class="o">=</span> <span class="p">(</span><span class="n">hash_value</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFF</span>
-        <span class="n">b</span> <span class="o">=</span> <span class="n">hash_value</span> <span class="o">&amp;</span> <span class="mh">0xFF</span>
-
-        <span class="c1"># Ensure colors are not too dark (min 50 per channel)</span>
-        <span class="n">r</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
-        <span class="n">g</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
-        <span class="n">b</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;#</span><span class="si">{</span><span class="n">r</span><span class="si">:</span><span class="s2">02X</span><span class="si">}{</span><span class="n">g</span><span class="si">:</span><span class="s2">02X</span><span class="si">}{</span><span class="n">b</span><span class="si">:</span><span class="s2">02X</span><span class="si">}</span><span class="s2">&quot;</span>
-
-<div class="viewcode-block" id="DatabaseService.get_tag_by_name">
-<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_tag_by_name">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_tag_by_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves a tag by its name.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            tag_name: The name of the tag.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Optional[Dict[str, Any]]: Tag dictionary with id, name, color, created_at</span>
-<span class="sd">                                      or None if not found.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-            <span class="s2">&quot;SELECT id, name, color, created_at FROM tags WHERE name = ?&quot;</span><span class="p">,</span>
-            <span class="p">(</span><span class="n">tag_name</span><span class="o">.</span><span class="n">strip</span><span class="p">(),),</span>
-        <span class="p">)</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-
-        <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-        <span class="k">return</span> <span class="kc">None</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets the color for a tag, generating one if not set.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">get_tag_color</span><span class="p">(</span><span class="n">tag_name</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.filter_ids_by_tags">
@@ -2557,59 +1640,8 @@
         <span class="n">exclude_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;any&quot;</span><span class="p">,</span>
         <span class="n">case_sensitive</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience wrapper for tag-based filtering of entities and events.</span>
-
-<span class="sd">        Filters objects by tags using include/exclude lists with &#39;any&#39; or &#39;all&#39;</span>
-<span class="sd">        semantics. Returns lightweight (object_type, object_id) tuples.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            object_type: Optional filter for &#39;entity&#39; or &#39;event&#39;. If None, both.</span>
-<span class="sd">            include: List of tag names to include. Empty or None means all objects.</span>
-<span class="sd">            include_mode: &#39;any&#39; (default) or &#39;all&#39;. Whether object must have</span>
-<span class="sd">                         any or all include tags.</span>
-<span class="sd">            exclude: List of tag names to exclude. Empty or None means no exclusions.</span>
-<span class="sd">            exclude_mode: &#39;any&#39; (default) or &#39;all&#39;. Whether to exclude if object</span>
-<span class="sd">                         has any or all exclude tags.</span>
-<span class="sd">            case_sensitive: If True, use exact case matching. If False (default),</span>
-<span class="sd">                           case-insensitive.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            List[tuple[str, str]]: List of (object_type, object_id) tuples where</span>
-<span class="sd">                object_type is &#39;entity&#39; or &#39;event&#39;.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            ValueError: If object_type is invalid or modes are invalid.</span>
-
-<span class="sd">        Examples:</span>
-<span class="sd">            # Get all entities with tag &quot;important&quot;</span>
-<span class="sd">            &gt;&gt;&gt; db.filter_ids_by_tags(object_type=&#39;entity&#39;, include=[&#39;important&#39;])</span>
-<span class="sd">            [(&#39;entity&#39;, &#39;uuid-1&#39;), (&#39;entity&#39;, &#39;uuid-2&#39;)]</span>
-
-<span class="sd">            # Get events with ALL of [&#39;battle&#39;, &#39;victory&#39;]</span>
-<span class="sd">            &gt;&gt;&gt; db.filter_ids_by_tags(</span>
-<span class="sd">            ...     object_type=&#39;event&#39;,</span>
-<span class="sd">            ...     include=[&#39;battle&#39;, &#39;victory&#39;],</span>
-<span class="sd">            ...     include_mode=&#39;all&#39;</span>
-<span class="sd">            ... )</span>
-<span class="sd">            [(&#39;event&#39;, &#39;uuid-3&#39;)]</span>
-
-<span class="sd">            # Get all objects with &#39;important&#39; but not &#39;archived&#39;</span>
-<span class="sd">            &gt;&gt;&gt; db.filter_ids_by_tags(</span>
-<span class="sd">            ...     include=[&#39;important&#39;],</span>
-<span class="sd">            ...     exclude=[&#39;archived&#39;]</span>
-<span class="sd">            ... )</span>
-<span class="sd">            [(&#39;entity&#39;, &#39;uuid-1&#39;), (&#39;event&#39;, &#39;uuid-4&#39;)]</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-        <span class="c1"># Import locally to avoid circular imports</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">src.services</span><span class="w"> </span><span class="kn">import</span> <span class="n">tag_filter</span>
-
-        <span class="k">return</span> <span class="n">tag_filter</span><span class="o">.</span><span class="n">filter_object_ids</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">,</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenience wrapper for tag-based filtering of entities and events.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">filter_ids_by_tags</span><span class="p">(</span>
             <span class="n">object_type</span><span class="o">=</span><span class="n">object_type</span><span class="p">,</span>
             <span class="n">include</span><span class="o">=</span><span class="n">include</span><span class="p">,</span>
             <span class="n">include_mode</span><span class="o">=</span><span class="n">include_mode</span><span class="p">,</span>
@@ -2624,64 +1656,13 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">get_objects_by_ids</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">object_ids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Event</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">Entity</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves full object instances for a list of (type, id) tuples.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves full object instances for a list of (type, id) tuples.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tag_repo</span><span class="o">.</span><span class="n">get_objects_by_ids</span><span class="p">(</span><span class="n">object_ids</span><span class="p">)</span></div>
 
-<span class="sd">        This method is used to hydrate results from `filter_ids_by_tags`.</span>
-<span class="sd">        Results are returned sorted by their natural order:</span>
-<span class="sd">        - Events: by lore_date</span>
-<span class="sd">        - Entities: by name</span>
 
-<span class="sd">        Args:</span>
-<span class="sd">            object_ids: List of (object_type, object_id) tuples.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Tuple containing (List[Event], List[Entity]).</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-        <span class="n">event_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">oid</span> <span class="k">for</span> <span class="n">otype</span><span class="p">,</span> <span class="n">oid</span> <span class="ow">in</span> <span class="n">object_ids</span> <span class="k">if</span> <span class="n">otype</span> <span class="o">==</span> <span class="s2">&quot;event&quot;</span><span class="p">]</span>
-        <span class="n">entity_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">oid</span> <span class="k">for</span> <span class="n">otype</span><span class="p">,</span> <span class="n">oid</span> <span class="ow">in</span> <span class="n">object_ids</span> <span class="k">if</span> <span class="n">otype</span> <span class="o">==</span> <span class="s2">&quot;entity&quot;</span><span class="p">]</span>
-
-        <span class="n">events</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">entities</span> <span class="o">=</span> <span class="p">[]</span>
-
-        <span class="c1"># Fetch Events</span>
-        <span class="k">if</span> <span class="n">event_ids</span><span class="p">:</span>
-            <span class="n">placeholders</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;?&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">event_ids</span><span class="p">))</span>
-            <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">                SELECT * FROM events</span>
-<span class="s2">                WHERE id IN (</span><span class="si">{</span><span class="n">placeholders</span><span class="si">}</span><span class="s2">)</span>
-<span class="s2">                ORDER BY lore_date</span>
-<span class="s2">            &quot;&quot;&quot;</span>
-            <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">event_ids</span><span class="p">)</span>
-            <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
-            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
-                <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attributes&quot;</span><span class="p">):</span>
-                    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">])</span>
-                <span class="n">events</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Event</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
-
-        <span class="c1"># Fetch Entities</span>
-        <span class="k">if</span> <span class="n">entity_ids</span><span class="p">:</span>
-            <span class="n">placeholders</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s2">&quot;?&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">entity_ids</span><span class="p">))</span>
-            <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">                SELECT * FROM entities</span>
-<span class="s2">                WHERE id IN (</span><span class="si">{</span><span class="n">placeholders</span><span class="si">}</span><span class="s2">)</span>
-<span class="s2">                ORDER BY name</span>
-<span class="s2">            &quot;&quot;&quot;</span>
-            <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">entity_ids</span><span class="p">)</span>
-            <span class="n">rows</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
-            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
-                <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attributes&quot;</span><span class="p">):</span>
-                    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;attributes&quot;</span><span class="p">])</span>
-                <span class="n">entities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Entity</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
-
-        <span class="k">return</span> <span class="n">events</span><span class="p">,</span> <span class="n">entities</span></div>
-
+    <span class="c1"># --------------------------------------------------------------------------</span>
+    <span class="c1"># Meta / Config - Delegates to MetaRepository</span>
+    <span class="c1"># --------------------------------------------------------------------------</span>
 
 <div class="viewcode-block" id="DatabaseService.set_timeline_grouping_config">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.set_timeline_grouping_config">[docs]</a>
@@ -2690,141 +1671,36 @@
         <span class="n">tag_order</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
         <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;DUPLICATE&quot;</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Stores timeline grouping configuration.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            tag_order: List of tag names defining groups and their order.</span>
-<span class="sd">            mode: Grouping mode - &quot;DUPLICATE&quot; or &quot;FIRST_MATCH&quot;.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            ValueError: If mode is invalid.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;DUPLICATE&quot;</span><span class="p">,</span> <span class="s2">&quot;FIRST_MATCH&quot;</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid mode: </span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2">. Must be DUPLICATE or FIRST_MATCH&quot;</span><span class="p">)</span>
-
-        <span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;tag_order&quot;</span><span class="p">:</span> <span class="n">tag_order</span><span class="p">,</span> <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="n">mode</span><span class="p">}</span>
-        <span class="n">config_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
-
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-<span class="w">                </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">                INSERT OR REPLACE INTO system_meta (key, value)</span>
-<span class="sd">                VALUES (&#39;timeline_grouping_config&#39;, ?)</span>
-<span class="sd">                &quot;&quot;&quot;</span><span class="p">,</span>
-                <span class="p">(</span><span class="n">config_json</span><span class="p">,),</span>
-            <span class="p">)</span>
-
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Saved timeline grouping config: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">tag_order</span><span class="p">)</span><span class="si">}</span><span class="s2"> tags, mode=</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="p">)</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Stores timeline grouping configuration.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_meta_repo</span><span class="o">.</span><span class="n">set_timeline_grouping_config</span><span class="p">(</span><span class="n">tag_order</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.get_timeline_grouping_config">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_timeline_grouping_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_timeline_grouping_config</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves timeline grouping configuration.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Optional[Dict[str, Any]]: Config dict with tag_order and mode,</span>
-<span class="sd">                                      or None if not set.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-            <span class="s2">&quot;SELECT value FROM system_meta WHERE key = &#39;timeline_grouping_config&#39;&quot;</span>
-        <span class="p">)</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-
-        <span class="k">if</span> <span class="n">result</span> <span class="ow">and</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]:</span>
-            <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">])</span>
-        <span class="k">return</span> <span class="kc">None</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves timeline grouping configuration.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meta_repo</span><span class="o">.</span><span class="n">get_timeline_grouping_config</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.clear_timeline_grouping_config">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.clear_timeline_grouping_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">clear_timeline_grouping_config</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Clears timeline grouping configuration.&quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-                <span class="s2">&quot;DELETE FROM system_meta WHERE key = &#39;timeline_grouping_config&#39;&quot;</span>
-            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_meta_repo</span><span class="o">.</span><span class="n">clear_timeline_grouping_config</span><span class="p">()</span></div>
 
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Cleared timeline grouping config&quot;</span><span class="p">)</span></div>
-
-
-    <span class="c1"># --------------------------------------------------------------------------</span>
-    <span class="c1"># Graph Lexicon (Visual Styling Configuration)</span>
-    <span class="c1"># --------------------------------------------------------------------------</span>
 
 <div class="viewcode-block" id="DatabaseService.get_graph_lexicon">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_graph_lexicon">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_graph_lexicon</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the graph visual lexicon configuration.</span>
-
-<span class="sd">        The lexicon defines custom visual styles (icon, color, shape) for</span>
-<span class="sd">        entity types and (color, width, dashes) for relation types.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Optional[Dict[str, Any]]: Lexicon config dict with &#39;nodes&#39; and</span>
-<span class="sd">                &#39;edges&#39; keys, or None if not configured.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-
-        <span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-            <span class="s2">&quot;SELECT value FROM system_meta WHERE key = &#39;graph_lexicon_config&#39;&quot;</span>
-        <span class="p">)</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
-
-        <span class="k">if</span> <span class="n">result</span> <span class="ow">and</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">])</span>
-            <span class="k">except</span> <span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Invalid graph_lexicon_config value in system_meta&quot;</span><span class="p">)</span>
-                <span class="k">return</span> <span class="kc">None</span>
-        <span class="k">return</span> <span class="kc">None</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the graph visual lexicon configuration.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meta_repo</span><span class="o">.</span><span class="n">get_graph_lexicon</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="DatabaseService.set_graph_lexicon">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.set_graph_lexicon">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_graph_lexicon</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Stores the graph visual lexicon configuration.</span>
-
-<span class="sd">        Serializes the configuration dictionary to JSON and persists it in</span>
-<span class="sd">        the system_meta table under the key &#39;graph_lexicon_config&#39;.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            data: Lexicon configuration dictionary. Expected structure:</span>
-<span class="sd">                {</span>
-<span class="sd">                    &quot;nodes&quot;: {</span>
-<span class="sd">                        &quot;&lt;entity_type&gt;&quot;: {&quot;color&quot;: str, &quot;shape&quot;: str,</span>
-<span class="sd">                                          &quot;icon&quot;: str}</span>
-<span class="sd">                    },</span>
-<span class="sd">                    &quot;edges&quot;: {</span>
-<span class="sd">                        &quot;&lt;rel_type&gt;&quot;: {&quot;color&quot;: str, &quot;width&quot;: int,</span>
-<span class="sd">                                       &quot;dashes&quot;: bool}</span>
-<span class="sd">                    }</span>
-<span class="sd">                }</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">config_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
-            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
-<span class="w">                </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">                INSERT OR REPLACE INTO system_meta (key, value)</span>
-<span class="sd">                VALUES (&#39;graph_lexicon_config&#39;, ?)</span>
-<span class="sd">                &quot;&quot;&quot;</span><span class="p">,</span>
-                <span class="p">(</span><span class="n">config_json</span><span class="p">,),</span>
-            <span class="p">)</span>
-
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saved graph lexicon config: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">config_json</span><span class="p">)</span><span class="si">}</span><span class="s2"> bytes&quot;</span><span class="p">)</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Stores the graph visual lexicon configuration.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_meta_repo</span><span class="o">.</span><span class="n">set_graph_lexicon</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
 
 
     <span class="c1"># --------------------------------------------------------------------------</span>
