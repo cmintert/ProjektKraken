@@ -8,7 +8,16 @@ import logging
 from typing import TYPE_CHECKING, Optional
 
 from PySide6.QtCore import QPropertyAnimation, QRectF, Qt
-from PySide6.QtGui import QBrush, QColor, QFont, QPainterPath, QPen, QTransform
+from PySide6.QtGui import (
+    QBrush,
+    QColor,
+    QFont,
+    QPainterPath,
+    QPen,
+    QTransform,
+    QPainter,
+    QFontMetrics,
+)
 from PySide6.QtWidgets import (
     QGraphicsObject,
     QGraphicsPathItem,
@@ -17,6 +26,8 @@ from PySide6.QtWidgets import (
 
 from src.app.constants import MAP_LAYER_Z_MARKERS, MAP_LAYER_Z_TRAJECTORIES
 from src.core.trajectory import KEYFRAME_TIME_EPSILON
+
+from src.core.theme_manager import ThemeManager
 
 if TYPE_CHECKING:
     from src.gui.widgets.map.map_graphics_view import KeyframeItem, MapGraphicsView
@@ -37,6 +48,58 @@ KEYFRAME_LABEL_MIN_SIZE_PT = 8
 KEYFRAME_LABEL_MAX_SIZE_PT = 10
 
 
+class KeyframeLabelItem(QGraphicsObject):
+    """Custom graphics item for keyframe labels with a themed background pill."""
+
+    def __init__(self, text: str, parent=None):
+        super().__init__(parent)
+        self._text = text
+        self._font = QFont(KEYFRAME_LABEL_FONT_FAMILY, KEYFRAME_LABEL_FONT_SIZE)
+        self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIgnoresTransformations)
+        
+        self._padding_x = 6
+        self._padding_y = 2
+        self._rect = QRectF()
+        self._update_rect()
+
+    def _update_rect(self):
+        fm = QFontMetrics(self._font)
+        text_rect = fm.boundingRect(self._text)
+        width = text_rect.width() + self._padding_x * 2
+        height = text_rect.height() + self._padding_y * 2
+        self._rect = QRectF(0, 0, float(width), float(height))
+        self.prepareGeometryChange()
+
+    def boundingRect(self) -> QRectF:
+        return self._rect
+
+    def setText(self, text: str):
+        if self._text != text:
+            self._text = text
+            self._update_rect()
+            self.update()
+
+    def paint(self, painter: QPainter, option, widget=None):
+        theme = ThemeManager().get_theme()
+        bg_color = QColor(theme.get("surface", "#1A1A1A"))
+        text_color = QColor(theme.get("text_main", "#FFFFFF"))
+        border_color = QColor(theme.get("border", "#333333"))
+
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        # Draw the pill background
+        painter.setBrush(QBrush(bg_color))
+        painter.setPen(QPen(border_color, 1))
+        
+        radius = self._rect.height() / 2.0
+        painter.drawRoundedRect(self._rect, radius, radius)
+        
+        # Draw the text
+        painter.setFont(self._font)
+        painter.setPen(QPen(text_color))
+        painter.drawText(self._rect, Qt.AlignmentFlag.AlignCenter, self._text)
+
+
 class TrajectoryRenderer:
     """Manages trajectory path, keyframes, labels, and animations.
 
@@ -49,7 +112,7 @@ class TrajectoryRenderer:
 
         self.trajectory_path_item: Optional[QGraphicsPathItem] = None
         self.keyframe_items: list["KeyframeItem"] = []
-        self.keyframe_label_items: list[QGraphicsSimpleTextItem] = []
+        self.keyframe_label_items: list[KeyframeLabelItem] = []
         self._calendar_converter: Optional[object] = None
         self.trigger_first_use_animation: bool = False
         self._animations: list[QPropertyAnimation] = []
@@ -118,15 +181,9 @@ class TrajectoryRenderer:
             else:
                 date_str = f"{kf.t:.0f}"
 
-            label = QGraphicsSimpleTextItem(date_str)
+            label = KeyframeLabelItem(date_str)
             label.setPos(pos)
-            label.setBrush(QBrush(QColor(KEYFRAME_LABEL_COLOR)))
-            font = QFont(KEYFRAME_LABEL_FONT_FAMILY, KEYFRAME_LABEL_FONT_SIZE)
-            label.setFont(font)
             label.setZValue(base_z - 0.1)
-            label.setFlag(
-                QGraphicsSimpleTextItem.GraphicsItemFlag.ItemIgnoresTransformations
-            )
             label.setTransform(
                 QTransform().translate(
                     KEYFRAME_LABEL_OFFSET_X, KEYFRAME_LABEL_OFFSET_Y
