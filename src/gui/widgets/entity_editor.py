@@ -10,7 +10,7 @@ from contextlib import suppress
 from typing import Any, Dict, Optional
 
 from PySide6.QtCore import QPoint, QSize, Qt, Signal, Slot
-from PySide6.QtGui import QDragEnterEvent, QDragLeaveEvent, QDragMoveEvent, QDropEvent
+from PySide6.QtGui import QDropEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
 from src.core.entities import Entity
 from src.core.summary_data import SummaryData
 from src.gui.mixins.autosave_mixin import AutoSaveManager
+from src.gui.mixins.editor_mixin import BaseEditorMixin
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.relation_item_widget import RelationItemWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
@@ -43,28 +44,40 @@ from src.gui.widgets.wiki_text_edit import WikiTextEdit
 logger = logging.getLogger(__name__)
 
 
-class EntityEditorWidget(QWidget):
+class EntityEditorWidget(BaseEditorMixin, QWidget):
     """A form to edit the details of an Entity.
 
     Emits 'save_requested' signal with the modified Entity object.
+
+    Signals:
+        save_requested(dict): Emitted when user clicks Save; payload is entity data.
+        discard_requested(str): Emitted when user discards changes; payload is item_id.
+        inject_requested(dict): Request to run inject command with given data.
+        add_relation_requested(str, str, str, dict, bool): Request to create a relation
+            (source_id, target_id, rel_type, attributes, bidirectional).
+        remove_relation_requested(str): Request to delete a relation by rel_id.
+        update_relation_requested(str, str, str, dict): Request to update a relation
+            (rel_id, target_id, rel_type, attributes).
+        link_clicked(str): Emitted when a wiki link is clicked; payload is target_name.
+        navigate_to_relation(str): Emitted when Go-to is clicked; payload is target_id.
+        dirty_changed(bool): Emitted when the editor's dirty state changes.
+        return_to_present_requested(): Emitted to exit temporal past/future view.
+        inject_ui_requested(str): Request to open inject dialog for an entity_id.
+        summary_generation_requested(object): Request AI summary for the given Entity.
     """
 
     save_requested = Signal(dict)
-    discard_requested = Signal(str)  # item_id to reload
-    inject_requested = Signal(
-        dict
-    )  # Signals that main window should run the inject command
-    add_relation_requested = Signal(
-        str, str, str, dict, bool
-    )  # src, tgt, type, attrs, bi
+    discard_requested = Signal(str)
+    inject_requested = Signal(dict)
+    add_relation_requested = Signal(str, str, str, dict, bool)
     remove_relation_requested = Signal(str)
     update_relation_requested = Signal(str, str, str, dict)
     link_clicked = Signal(str)
-    navigate_to_relation = Signal(str)  # target_id for Go to button
+    navigate_to_relation = Signal(str)
     dirty_changed = Signal(bool)
-    return_to_present_requested = Signal()  # Request to exit past/future view
-    inject_ui_requested = Signal(str)  # entity_id
-    summary_generation_requested = Signal(object)  # entity object
+    return_to_present_requested = Signal()
+    inject_ui_requested = Signal(str)
+    summary_generation_requested = Signal(object)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the EntityEditorWidget.
@@ -360,6 +373,14 @@ class EntityEditorWidget(QWidget):
         self._type_picker = None
         self._selected_relation_type = "related"  # Default type
 
+    def _get_current_item_id(self) -> str | None:
+        """Returns the current entity ID or None."""
+        return self._current_entity_id
+
+    def _get_editor_label(self) -> str:
+        """Returns the editor label for logging."""
+        return "EntityEditor"
+
     def _show_drop_hint(self, rel_type: str = "related") -> None:
         """Show drop hint overlay during drag-over.
 
@@ -384,130 +405,6 @@ class EntityEditorWidget(QWidget):
         """Hide drop hint overlay."""
         if self._drop_hint_label:
             self._drop_hint_label.hide()
-
-    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-        """Handle drag enter event to accept MIME data from Project Explorer.
-
-        Args:
-            event: QDragEnterEvent with MIME data.
-        """
-        from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
-
-        # Accept if MIME type matches and we have an entity loaded
-        if (
-            event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE)
-            and self._current_entity_id
-        ):
-            event.acceptProposedAction()
-            self._is_drag_over = True
-
-            # Always use default hint, no inline picker
-            self._selected_relation_type = "related"
-            self._show_drop_hint(self._selected_relation_type)
-
-            logger.debug("EntityEditor: Accepting drag from Project Explorer")
-        else:
-            event.ignore()
-
-    def dragMoveEvent(self, event: QDragMoveEvent) -> None:
-        """Handle drag move event.
-
-        Args:
-            event: QDragMoveEvent.
-        """
-        from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
-
-        if (
-            event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE)
-            and self._current_entity_id
-        ):
-            event.acceptProposedAction()
-
-            event.acceptProposedAction()
-
-            # Keep drop hint visible during drag
-            if not self._is_drag_over:
-                self._is_drag_over = True
-            self._show_drop_hint(self._selected_relation_type)
-        else:
-            event.ignore()
-
-    def dragLeaveEvent(self, event: QDragLeaveEvent) -> None:
-        """Handle drag leave event - hide drop hint and type picker.
-
-        Args:
-            event: QDragLeaveEvent.
-        """
-        self._is_drag_over = False
-        self._hide_drop_hint()
-
-        # Hide type picker if visible
-        if self._type_picker and self._type_picker.isVisible():
-            self._type_picker.hide()
-
-        logger.debug("EntityEditor: Drag left editor area")
-
-    def _show_type_picker(self, position: QPoint) -> None:
-        """Show the relation type picker at the specified position.
-
-        Args:
-            position: Position relative to this widget.
-        """
-        if not self._type_picker:
-            from src.gui.widgets.relation_type_picker import RelationTypePicker
-
-            self._type_picker = RelationTypePicker()
-
-            # Connect to type selection signal
-            self._type_picker.type_selected.connect(self._on_relation_type_selected)
-
-        # Define default relation types
-        default_types = [
-            "related",
-            "caused",
-            "participated_in",
-            "located_at",
-            "owns",
-            "created_by",
-            "part_of",
-        ]
-
-        # Merge with backend suggestions if available
-        all_types = set(default_types)
-        if hasattr(self, "_suggestion_types") and self._suggestion_types:
-            all_types.update(self._suggestion_types)
-
-        # Update picker with current types
-        self._type_picker.set_relation_types(list(all_types))
-
-        # Convert position to global coordinates
-        global_pos = self.mapToGlobal(position)
-        self._type_picker.show_at_position(global_pos)
-
-        # Hide drop hint while picker is visible
-        self._hide_drop_hint()
-
-    def _on_relation_type_selected(self, relation_type: str) -> None:
-        """Handle relation type selection from picker.
-
-        Args:
-            relation_type: The selected relation type.
-        """
-        if hasattr(self, "_initiated_relation_drop") and self._initiated_relation_drop:
-            # Complete the drop
-            data = self._initiated_relation_drop
-            self._create_relation(
-                data["source_id"],
-                data["source_type"],
-                data["source_name"],
-                relation_type,
-            )
-            self._initiated_relation_drop = None
-        else:
-            # Just verify logic for pre-selection (legacy/unused now but good to keep)
-            self._selected_relation_type = relation_type
-            logger.info(f"EntityEditor: Relation type selected: {relation_type}")
-            self._show_drop_hint(self._selected_relation_type)
 
     def dropEvent(self, event: QDropEvent) -> None:
         """Handle drop event to create relation from dragged item to current entity.
@@ -606,55 +503,6 @@ class EntityEditorWidget(QWidget):
         self.tag_editor.tags_changed.connect(lambda: self.set_dirty(True))
         self.attribute_editor.attributes_changed.connect(lambda: self.set_dirty(True))
 
-    def set_dirty(self, dirty: bool) -> None:
-        """Sets dirty state and updates UI."""
-        # Don't set dirty during loading
-        if self._is_loading and dirty:
-            logger.debug(
-                f"[EntityEditor] set_dirty({dirty}) ignored - loading in progress"
-            )
-            return
-
-        if self._current_entity_id is None and dirty:
-            logger.debug(
-                f"[EntityEditor] set_dirty({dirty}) ignored - no entity loaded"
-            )
-            return
-
-        if self._is_dirty != dirty:
-            self._update_dirty_ui(dirty)
-
-    def _update_dirty_ui(self, dirty: bool) -> None:
-        """Updates the UI based on the dirty state.
-
-        Args:
-            dirty: The new dirty state.
-        """
-        logger.info(
-            f"[EntityEditor] set_dirty: {self._is_dirty} -> {dirty} "
-            f"(entity_id={self._current_entity_id})"
-        )
-        if not dirty:
-            # Log stack trace when clearing dirty to trace the source
-            logger.debug(
-                f"[EntityEditor] Clearing dirty state. Stack trace:\n"
-                f"{traceback.format_stack(limit=10)}"
-            )
-        self._is_dirty = dirty
-        self.dirty_changed.emit(dirty)
-        self.btn_save.setEnabled(dirty)
-        self.btn_discard.setEnabled(dirty)
-        if dirty:
-            self.btn_save.setText("Save Changes *")
-            self.autosave_manager.start_timer()
-        else:
-            self.btn_save.setText("Save Changes")
-            self.autosave_manager.stop_timer()
-
-    def has_unsaved_changes(self) -> bool:
-        """Returns True if dirty."""
-        return self._is_dirty
-
     def update_suggestions(
         self, items: list[tuple[str, str, str]] = None, names: list[str] = None
     ) -> None:
@@ -712,130 +560,143 @@ class EntityEditorWidget(QWidget):
     def load_entity(
         self, entity: Entity, relations: list = None, incoming_relations: list = None
     ) -> None:
-        """Populates the form with entity data and relations."""
+        """Populates the form with entity data and relations.
+
+        Args:
+            entity: The entity to edit.
+            relations: List of outgoing relation dicts.
+            incoming_relations: List of incoming relation dicts.
+
+        """
         self._is_loading = True
         try:
             self._current_entity_id = entity.id
             self._current_created_at = entity.created_at
 
             # Block signals
-            # Block signals
             self._set_input_signals_blocked(True)
 
-            if self.name_edit.text() != entity.name:
-                self.name_edit.setText(entity.name)
-
-            if self.type_edit.currentText() != entity.type:
-                self.type_edit.setCurrentText(entity.type)
-
-            # Check against the actual current content of the editor instead of internal
-            # storage. This ensures we don't reload if the text is effectively the same.
-            # (resolving cursor reset)
-            if self.desc_edit.get_wiki_text() != entity.description:
-                self.desc_edit.set_wiki_text(entity.description)
-
-            # Load Attributes (filter out _tags for display)
-            # Store hidden attributes to preserve them on save
-            self._hidden_attributes = {
-                k: v for k, v in entity.attributes.items() if k.startswith("_")
-            }
-            # Also ensure _summary_data is in there
-
-            display_attrs = {
-                k: v for k, v in entity.attributes.items() if not k.startswith("_")
-            }
-            self.attribute_editor.blockSignals(True)
-            try:
-                self.attribute_editor.load_attributes(display_attrs)
-            finally:
-                self.attribute_editor.blockSignals(False)
-
-            # Load Tags
-            self.tag_editor.blockSignals(True)
-            try:
-                self.tag_editor.load_tags(entity.tags)
-            finally:
-                self.tag_editor.blockSignals(False)
-
-            # Load Gallery
-            self.gallery.set_owner("entity", entity.id)
-
-            # Load Summary
-            summary_data = entity.attributes.get("_summary_data")
-            if summary_data:
-                with suppress(Exception):
-                    data = SummaryData.from_dict(summary_data)
-                    self.summary_widget.set_summary(data)
-
-                if self.summary_service:
-                    is_stale = self.summary_service.is_stale(entity)
-                    self.summary_widget.set_stale(is_stale)
-
-            # Reset Read-Only mode (in case we were in temporal view)
+            self._load_entity_fields(entity)
+            self._load_entity_attributes(entity)
             self.exit_read_only_mode()
-
-            self.rel_list.clear()
-
-            # Outgoing
-            if relations:
-                for rel in relations:
-                    target_display = rel.get("target_name") or rel["target_id"]
-                    label = f"→ {target_display} [{rel['rel_type']}]"
-
-                    # Create custom widget with Go to button
-                    widget = RelationItemWidget(
-                        label=label,
-                        target_id=rel["target_id"],
-                        target_name=target_display,
-                        attributes=rel.get("attributes"),
-                    )
-                    widget.go_to_clicked.connect(
-                        lambda tid, tn: self.navigate_to_relation.emit(tid)
-                    )
-
-                    # Create list item with explicit size hint BEFORE adding
-                    item = QListWidgetItem()
-                    item.setData(Qt.ItemDataRole.UserRole, rel)
-                    item.setSizeHint(QSize(200, 36))  # Explicit height for button
-                    self.rel_list.addItem(item)
-                    self.rel_list.setItemWidget(item, widget)
-
-            # Incoming
-            if incoming_relations:
-                for rel in incoming_relations:
-                    source_display = rel.get("source_name") or rel["source_id"]
-                    label = f"← {source_display} [{rel['rel_type']}]"
-
-                    # Create custom widget - navigate to source for incoming
-                    widget = RelationItemWidget(
-                        label=label,
-                        target_id=rel["source_id"],
-                        target_name=source_display,
-                        attributes=rel.get("attributes"),
-                    )
-                    widget.go_to_clicked.connect(
-                        lambda tid, tn: self.navigate_to_relation.emit(tid)
-                    )
-                    widget.label.setStyleSheet("color: gray;")
-
-                    # Create list item with explicit size hint BEFORE adding
-                    item = QListWidgetItem()
-                    item.setData(Qt.ItemDataRole.UserRole, rel)
-                    item.setSizeHint(QSize(200, 36))  # Explicit height for button
-                    self.rel_list.addItem(item)
-                    self.rel_list.setItemWidget(item, widget)
-
-            # Populate Timeline Display with incoming relations (sorted by date)
-            self.timeline_display.set_relations(incoming_relations or [])
+            self._load_entity_relations(relations, incoming_relations)
 
             self.setEnabled(True)
 
-            # Unblock & Reset
             # Unblock & Reset
             self._set_input_signals_blocked(False)
             self.set_dirty(False)
         finally:
             self._is_loading = False
+
+    def _load_entity_fields(self, entity: Entity) -> None:
+        """Loads core form fields from the entity, skipping redundant updates.
+
+        Args:
+            entity: The entity whose fields to load.
+
+        """
+        if self.name_edit.text() != entity.name:
+            self.name_edit.setText(entity.name)
+
+        if self.type_edit.currentText() != entity.type:
+            self.type_edit.setCurrentText(entity.type)
+
+        if self.desc_edit.get_wiki_text() != entity.description:
+            self.desc_edit.set_wiki_text(entity.description)
+
+    def _load_entity_attributes(self, entity: Entity) -> None:
+        """Loads attributes, tags, summary, and gallery from the entity.
+
+        Separates hidden (underscore-prefixed) attributes from display attributes
+        so that internal keys like ``_tags`` and ``_summary_data`` are preserved
+        on save without being shown in the attribute editor.
+
+        Args:
+            entity: The entity whose attributes to load.
+
+        """
+        display_attrs = self._extract_hidden_attributes(entity.attributes)
+        self.attribute_editor.blockSignals(True)
+        try:
+            self.attribute_editor.load_attributes(display_attrs)
+        finally:
+            self.attribute_editor.blockSignals(False)
+
+        self.tag_editor.blockSignals(True)
+        try:
+            self.tag_editor.load_tags(entity.tags)
+        finally:
+            self.tag_editor.blockSignals(False)
+
+        self.gallery.set_owner("entity", entity.id)
+
+        summary_data = entity.attributes.get("_summary_data")
+        if summary_data:
+            with suppress(Exception):
+                data = SummaryData.from_dict(summary_data)
+                self.summary_widget.set_summary(data)
+
+            if self.summary_service:
+                is_stale = self.summary_service.is_stale(entity)
+                self.summary_widget.set_stale(is_stale)
+
+    def _load_entity_relations(
+        self, relations: list | None, incoming_relations: list | None
+    ) -> None:
+        """Loads outgoing and incoming relations into the relation list widget.
+
+        Args:
+            relations: List of outgoing relation dicts, or None.
+            incoming_relations: List of incoming relation dicts, or None.
+
+        """
+        self.rel_list.clear()
+
+        if relations:
+            for rel in relations:
+                target_display = rel.get("target_name") or rel["target_id"]
+                label = f"→ {target_display} [{rel['rel_type']}]"
+
+                widget = RelationItemWidget(
+                    label=label,
+                    target_id=rel["target_id"],
+                    target_name=target_display,
+                    attributes=rel.get("attributes"),
+                )
+                widget.go_to_clicked.connect(
+                    lambda tid, tn: self.navigate_to_relation.emit(tid)
+                )
+
+                item = QListWidgetItem()
+                item.setData(Qt.ItemDataRole.UserRole, rel)
+                item.setSizeHint(QSize(200, 36))
+                self.rel_list.addItem(item)
+                self.rel_list.setItemWidget(item, widget)
+
+        if incoming_relations:
+            for rel in incoming_relations:
+                source_display = rel.get("source_name") or rel["source_id"]
+                label = f"← {source_display} [{rel['rel_type']}]"
+
+                widget = RelationItemWidget(
+                    label=label,
+                    target_id=rel["source_id"],
+                    target_name=source_display,
+                    attributes=rel.get("attributes"),
+                )
+                widget.go_to_clicked.connect(
+                    lambda tid, tn: self.navigate_to_relation.emit(tid)
+                )
+                widget.label.setStyleSheet("color: gray;")
+
+                item = QListWidgetItem()
+                item.setData(Qt.ItemDataRole.UserRole, rel)
+                item.setSizeHint(QSize(200, 36))
+                self.rel_list.addItem(item)
+                self.rel_list.setItemWidget(item, widget)
+
+        self.timeline_display.set_relations(incoming_relations or [])
 
     @Slot(dict)
     def _on_theme_changed(self, theme: dict) -> None:
@@ -880,10 +741,7 @@ class EntityEditorWidget(QWidget):
             base_attrs["_tags"] = self.tag_editor.get_tags()
 
             # Restore hidden attributes first, then overlay pending summary
-            if hasattr(self, "_hidden_attributes"):
-                for k, v in self._hidden_attributes.items():
-                    if k not in base_attrs:
-                        base_attrs[k] = v
+            self._merge_hidden_attributes(base_attrs)
 
             # Pending summary takes precedence over any existing _summary_data
             if hasattr(self, "_pending_summary_data") and self._pending_summary_data:

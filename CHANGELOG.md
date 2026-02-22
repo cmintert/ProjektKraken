@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-02-19
-**Commit:** `2995ba7`
+**Last Updated:** 2026-02-22
+**Commit:** `61eb1ca`
 ---
 
 # Changelog
@@ -25,10 +25,34 @@ All notable changes to this project will be documented in this file.
   - Enabled dock nesting, resizing, redocking, and robust splitter configuration.
 
 ### Fixed
+- *(2026-02-22)* **Stability**: Fixed dock collapse regression by ensuring `reset_layout` consistently positions all docks.
+- *(2026-02-21)* **Stability**: Fixed `FastInjectCoordinator` startup crash by deferring manager access.
+- *(2026-02-21)* **Bug**: Enforced `DragPill` max width constraint to fix UI layout issues.
 - *(2026-02-19)* **Stability**: Fixed widget resize/collapse stability and dock collapse on startup using size policies and validation delays.
 
+### Architecture
+- *(2026-02-22)* **Architecture**: Addressed code review feedback, improved comment clarity, and updated `TECHNICAL_AUDIT_REPORT.md` regarding dock collapse fix.
+- *(2026-02-21)* **Architecture**: Decomposed `DatabaseService` God Object into `TagRepository` and `MetaRepository`, reducing LOC from 2509 to 1389.
+- *(2026-02-21)* **Architecture**: Introduced Dependency Injection (DI) for database repositories with a backward-compatible constructor.
+- *(2026-02-21)* **Architecture**: Introduced `AppCoordinator` facade to dramatically reduce `MainWindow` dependencies.
+
+### Refactor
+- *(2026-02-21)* **Refactor**: Refactored `ConnectionManager` to use declarative `_connect_batch` registry (1061 to 353 LOC).
+- *(2026-02-21)* **Refactor**: Decomposed `MapWidget` into 5 focused mixins (MapDialog, Calibration, Drawing, Trajectory, Layer), reducing LOC by 48%.
+- *(2026-02-21)* **Refactor**: Extracted dialog and user-input methods from `MapWidget` into a dedicated `MapDialogMixin`.
+- *(2026-02-21)* **Refactor**: Extracted shared editor logic (`set_dirty`, drag-drop) into `BaseEditorMixin` and simplified data loading in editor widgets.
+- *(2026-02-21)* **Refactor**: Extracted complex core methods from `GraphBuilder` and `TimelineView`.
+
 ### Testing
+- *(2026-02-21)* **Testing**: Added 14 new integration tests for decomposed components (`TagRepo`, `MetaRepo`, `DI`, `AppCoordinator`).
+- *(2026-02-21)* **Testing**: Fixed graph engine teardown segfaults by mocking `QWebEngineView`, resolving 16 pre-existing test failures.
+- *(2026-02-21)* **Testing**: Fixed test teardown errors by adding `QTimer` mock and fixing `QMessageBox` patch targets.
+- *(2026-02-21)* **Testing**: Added McCabe complexity lint rule (C901 max-complexity=15) to `pyproject.toml`.
 - *(2026-02-19)* **Testing**: Standardized variable naming conventions in UI test files to address review feedback.
+
+### Documentation
+- *(2026-02-21)* **Docs**: Introduced comprehensive `TECHNICAL_AUDIT_REPORT.md` and updated it continuously alongside structural improvements.
+- *(2026-02-21)* **Docs**: Enhanced docstrings for signals, `MainWindow`, and documented `MapWidget` responsibility groups.
 
 ## [0.13.0]
 

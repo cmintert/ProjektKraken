@@ -27,10 +27,20 @@ class FastInjectCoordinator(BaseCoordinator):
 
     def __init__(self, main_window: Any) -> None:
         super().__init__(main_window)
-        # We access managers via main_window properties or arguments?
-        # Ideally, we should receive them. But for Refactor Phase 1,
-        # accessing via main_window is the extraction step.
-        self.fast_inject_manager = self.main_window.fast_inject_manager
+        self._fast_inject_manager: Any = None
+
+    @property
+    def fast_inject_manager(self) -> Any:
+        """Lazy accessor for FastInjectManager.
+
+        The manager is created on MainWindow during Phase 2
+        (_init_widgets_skeleton), but this coordinator is instantiated
+        in Phase 1 (_init_core_services).  Deferring access avoids an
+        AttributeError at startup.
+        """
+        if self._fast_inject_manager is None:
+            self._fast_inject_manager = self.main_window.fast_inject_manager
+        return self._fast_inject_manager
 
     @Slot(str)
     def request_fast_inject_for_entity(self, entity_id: str) -> None:

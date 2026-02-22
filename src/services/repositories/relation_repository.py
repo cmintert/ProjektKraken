@@ -4,7 +4,7 @@ Handles CRUD operations for Relation entities in the database.
 """
 
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from src.services.repositories.base_repository import BaseRepository
 
@@ -181,24 +181,73 @@ class RelationRepository(BaseRepository):
         with self.transaction() as conn:
             conn.execute("DELETE FROM relations WHERE id = ?", (relation_id,))
 
+    def get_by_id(self, relation_id: str) -> Dict[str, Any] | None:
+        """Retrieve a single relation by its ID.
+
+        Args:
+            relation_id: The unique identifier of the relation.
+
+        Returns:
+            Relation dictionary if found, None otherwise.
+
+        """
+        sql = "SELECT * FROM relations WHERE id = ? LIMIT 1"
+
+        if not self._connection:
+            raise RuntimeError("Database connection not initialized")
+
+        cursor = self._connection.execute(sql, (relation_id,))
+        row = cursor.fetchone()
+        if row:
+            data = dict(row)
+            if data.get("attributes"):
+                data["attributes"] = self._deserialize_json(data["attributes"])
+            return data
+        return None
+
     def update(
-        self, relation_id: str, rel_type: str, attributes: Dict[str, Any]
+        self,
+        relation_id: str,
+        rel_type: str,
+        attributes: Dict[str, Any],
+        target_id: Optional[str] = None,
     ) -> None:
-        """Update a relation's type and attributes.
+        """Update a relation's type, attributes, and optionally target_id.
 
         Args:
             relation_id: The unique identifier of the relation.
             rel_type: New type for the relation.
             attributes: New attributes for the relation.
+            target_id: Optional new target ID for the relation.
 
         Raises:
             sqlite3.Error: If the database operation fails.
 
         """
-        sql = """
-            UPDATE relations
-            SET rel_type = ?, attributes = ?
-            WHERE id = ?
-        """
-        with self.transaction() as conn:
-            conn.execute(sql, (rel_type, self._serialize_json(attributes), relation_id))
+        if target_id is not None:
+            sql = """
+                UPDATE relations
+                SET target_id = ?, rel_type = ?, attributes = ?
+                WHERE id = ?
+            """
+            with self.transaction() as conn:
+                conn.execute(
+                    sql,
+                    (
+                        target_id,
+                        rel_type,
+                        self._serialize_json(attributes),
+                        relation_id,
+                    ),
+                )
+        else:
+            sql = """
+                UPDATE relations
+                SET rel_type = ?, attributes = ?
+                WHERE id = ?
+            """
+            with self.transaction() as conn:
+                conn.execute(
+                    sql,
+                    (rel_type, self._serialize_json(attributes), relation_id),
+                )

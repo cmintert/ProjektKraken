@@ -6,21 +6,7 @@ signal/slot connections.
 
 from typing import Optional
 
-# NOTE: PySide6 Fully Qualified Enum Paths
-# =========================================
-# This codebase uses fully qualified enum paths for all Qt enums, which is
-# the official PySide6 6.4+ recommendation for proper type checking.
-#
-# Examples:
-#   Qt.ConnectionType.QueuedConnection  (not Qt.ConnectionType.QueuedConnection)
-#   Qt.MouseButton.LeftButton           (not Qt.MouseButton.LeftButton)
-#   Qt.AlignmentFlag.AlignCenter        (not Qt.AlignmentFlag.AlignCenter)
-#
-# This ensures Pyright can properly type-check Qt enum usage while maintaining
-# full runtime compatibility. See docs/PYSIDE6_ENUM_SOLUTION.md for details.
-#
-# Remaining ~500 reportAttributeAccessIssue errors are for QMessageBox/QDialog
-# constants and other Qt classes that haven't been updated yet.
+# NOTE: Uses fully qualified PySide6 enum paths. See docs/PYSIDE6_ENUM_SOLUTION.md.
 from PySide6.QtCore import (
     QEvent,
     QMetaObject,
@@ -58,13 +44,7 @@ from src.app.constants import (
     WINDOW_SETTINGS_KEY,
     WINDOW_TITLE,
 )
-from src.app.coordinators.backup_coordinator import BackupCoordinator
-from src.app.coordinators.data_coordinator import DataCoordinator
-from src.app.coordinators.editor_coordinator import EditorCoordinator
-from src.app.coordinators.fast_inject_coordinator import FastInjectCoordinator
-from src.app.coordinators.import_coordinator import ImportCoordinator
-from src.app.coordinators.navigation_coordinator import NavigationCoordinator
-from src.app.coordinators.time_coordinator import TimeCoordinator
+from src.app.coordinators.app_coordinator import AppCoordinator
 from src.app.data_handler import DataHandler
 from src.app.longform_manager import LongformManager
 from src.app.map_handler import MapHandler
@@ -174,6 +154,12 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     - Signal/Slot connections between UI and persistent storage.
 
     Adheres to "Dumb UI" philosophy: logic delegates to Worker/Commands.
+
+    Initialization follows a three-phase approach to avoid blocking the Qt
+    event loop during startup:
+    - Phase 1: Core services (data handler, worker thread, window properties).
+    - Phase 2: UI skeleton (widgets, dock layout, menus) — no data loaded.
+    - Phase 3: Deferred via QTimer (DB init, signal wiring, state restore).
     """
 
     # Signal to send commands to worker thread
@@ -270,10 +256,11 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # Initialize backup service (will be properly connected after DB init)
         self.backup_service = None
 
-        # Initialize coordinators needed by WorkerManager signal connections
-        self.time_coordinator = TimeCoordinator(self)
-        self.data_coordinator = DataCoordinator(self)
-        self.import_coordinator = ImportCoordinator(self)
+        # Initialize coordinators via AppCoordinator facade
+        self.app_coordinator = AppCoordinator(self)
+        self.time_coordinator = self.app_coordinator.time
+        self.data_coordinator = self.app_coordinator.data
+        self.import_coordinator = self.app_coordinator.import_coord
 
         # Init Services (Worker Thread)
         self.worker_manager = WorkerManager(self)
@@ -372,11 +359,11 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.event_editor.set_project_root(world_path)
         self.entity_editor.set_project_root(world_path)
 
-        # Initialize Coordinators
-        self.fast_inject_coordinator = FastInjectCoordinator(self)
-        self.navigation_coordinator = NavigationCoordinator(self)
-        self.backup_coordinator = BackupCoordinator(self)
-        self.editor_coordinator = EditorCoordinator(self)
+        # Expose remaining coordinators from AppCoordinator facade
+        self.fast_inject_coordinator = self.app_coordinator.fast_inject
+        self.navigation_coordinator = self.app_coordinator.navigation
+        self.backup_coordinator = self.app_coordinator.backup
+        self.editor_coordinator = self.app_coordinator.editor
 
         # Initialize MapHandler with injected dependencies (no self reference)
         self.map_handler = MapHandler(
@@ -687,6 +674,9 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         Critical docks: list, event editor, entity editor, timeline.
         These are essential for basic functionality.
+
+        Always schedules ``guard_validate_dock_sizes`` after layout
+        is established — whether from saved state or from reset_layout.
         """
         from src.app.constants import LAYOUT_VERSION, SETTINGS_LAYOUT_VERSION_KEY
         from src.core.logging_config import get_logger
@@ -701,10 +691,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             logger.info("Resetting to default layout due to version mismatch")
             self.ui_manager.reset_layout()
             settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
-            return
-
-        # Restore window state (includes dock positions)
-        if state := settings.value("windowState"):
+        elif state := settings.value("windowState"):
+            # Restore window state (includes dock positions)
             if self.restoreState(state):
                 logger.debug("Critical docks state restored")
 
@@ -713,17 +701,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
                     logger.warning("Critical dock validation failed, resetting layout")
                     self.ui_manager.reset_layout()
                     settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
-                else:
-                    # Schedule dock size validation after the event loop
-                    # processes the restored layout.  restoreState()
-                    # deserializes sizes but doesn't trigger a full layout
-                    # pass, so docks (especially map/timeline in the bottom
-                    # area) can end up collapsed.  Deferring the check lets
-                    # Qt finish its internal layout negotiation first.
-                    QTimer.singleShot(
-                        UI_DOCK_VALIDATE_DELAY_MS,
-                        self.guard_validate_dock_sizes,
-                    )
             else:
                 logger.warning("Failed to restore window state, using default layout")
                 self.ui_manager.reset_layout()
@@ -732,6 +709,14 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             logger.info("No saved state found, using default layout")
             self.ui_manager.reset_layout()
             settings.setValue(SETTINGS_LAYOUT_VERSION_KEY, LAYOUT_VERSION)
+
+        # Always schedule dock size validation regardless of which code
+        # path was taken above.  Qt's internal layout negotiation may
+        # leave bottom docks (timeline, map, graph) collapsed.
+        QTimer.singleShot(
+            UI_DOCK_VALIDATE_DELAY_MS,
+            self.guard_validate_dock_sizes,
+        )
 
     def _restore_optional_docks(self) -> None:
         """Stage 3: Restore optional dock configurations.

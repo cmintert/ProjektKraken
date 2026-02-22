@@ -52,6 +52,12 @@ class DragPill(QWidget):
         self._setup_ui()
         self._apply_theme()
 
+        # Set size constraints and clamp width
+        # Use sizeHint but cap at 200
+        hint = self.sizeHint()
+        width = min(hint.width(), 200)
+        self.setFixedSize(width, 40)
+
         # Start hidden
         self.hide()
 
@@ -62,6 +68,8 @@ class DragPill(QWidget):
         arranged horizontally.
         """
         # Set window flags for floating, frameless, always-on-top window
+        from PySide6.QtWidgets import QSizePolicy
+
         self.setWindowFlags(
             Qt.WindowType.Tool
             | Qt.WindowType.FramelessWindowHint
@@ -73,6 +81,8 @@ class DragPill(QWidget):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(8, 6, 8, 6)
         layout.setSpacing(8)
+        # Force layout to respect child constraints for size hint
+        layout.setSizeConstraint(QHBoxLayout.SizeConstraint.SetMaximumSize)
 
         # Icon label
         self.icon_label = QLabel(self.ICONS.get(self.item_type, "📄"))
@@ -82,17 +92,18 @@ class DragPill(QWidget):
         # Name label
         self.name_label = QLabel(self.item_name)
         self.name_label.setStyleSheet("font-size: 14pt; font-weight: bold;")
+        # Allow name label to shrink and cap it to prevent pushing layout
+        self.name_label.setMinimumWidth(20)
+        self.name_label.setMaximumWidth(100)  # Aggressive cap
+        self.name_label.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+        )
         layout.addWidget(self.name_label)
 
         # Type label
         self.type_label = QLabel(f"({self.item_type})")
         self.type_label.setStyleSheet("font-size: 10pt;")
         layout.addWidget(self.type_label)
-
-        # Set size constraints
-        self.setMaximumWidth(200)
-        self.setFixedHeight(40)
-        self.adjustSize()
 
     def _apply_theme(self) -> None:
         """Apply theme colors to the widget.

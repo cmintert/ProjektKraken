@@ -51,7 +51,10 @@ def test_mainwindow_close_event_cleanups_worker(qapp, mock_db_service):
 
         # Instantiate MainWindow
         # We need to patch where MainWindow instantiates these
-        with patch("src.app.worker_manager.QThread", return_value=mock_thread):
+        with (
+            patch("src.app.worker_manager.QThread", return_value=mock_thread),
+            patch("src.app.main_window.QTimer"),
+        ):
             window = MainWindow()
             # Manually inject our specific mock worker if the constructor didn't use it
             # (It instantiates DatabaseWorker inside __init__, so our patch above handles it)
@@ -84,6 +87,7 @@ def test_mainwindow_close_calls_worker_cleanup_logic(qapp):
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.worker_manager.QThread"),
+        patch("src.app.main_window.QTimer"),
         patch("src.app.main_window.QMetaObject.invokeMethod") as mock_invoke,
         patch("src.app.main_window.QSettings") as MockSettings,
     ):

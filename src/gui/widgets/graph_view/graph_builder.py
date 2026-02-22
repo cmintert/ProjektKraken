@@ -527,71 +527,114 @@ class GraphBuilder:
     ) -> str:
         """Generates HTML string from a PyVis network.
 
+        Delegates to focused helper methods for each stage of HTML generation:
+        rendering, CDN replacement, CSS injection, and JS injection.
+
         Args:
             network: Configured PyVis Network.
             theme: Theme configuration dictionary.
+            focus_node_id: Optional node ID to focus on after render.
             view_state: Optional view state to restore.
 
         Returns:
             HTML string.
 
         """
-        # PyVis requires writing to a file, so we use a temp file
+        html = self._render_network_to_html(network)
+        html = self._replace_cdn_with_local_assets(html)
+        html = self._inject_theme_css(html, theme)
+        html = self._inject_interaction_js(html, focus_node_id, view_state)
+        return html
+
+    def _render_network_to_html(self, network: Network) -> str:
+        """Renders a PyVis network to raw HTML via a temp file.
+
+        Args:
+            network: Configured PyVis Network.
+
+        Returns:
+            Raw HTML string from PyVis.
+
+        """
         with tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False) as f:
             temp_path = f.name
             network.save_graph(temp_path)
             f.flush()
 
-        # Read back the HTML and clean up
         try:
             with open(temp_path, encoding="utf-8") as html_file:
-                html_content = html_file.read()
+                return html_file.read()
         finally:
             os.unlink(temp_path)
 
-        # Replace CDN-loaded vis-network with inline local assets for offline use
-        vis_js, vis_css, vis_utils = self._load_local_vis_assets()
-        if vis_js and vis_css:
-            # Remove CDN script tags for vis-network
-            html_content = re.sub(
-                r'<script[^>]*src="[^"]*vis-network[^"]*"[^>]*>\s*</script>',
-                "",
-                html_content,
-            )
-            # Remove CDN link tags for vis-network CSS
-            html_content = re.sub(
-                r'<link[^>]*href="[^"]*vis-network[^"]*"[^>]*/?>',
-                "",
-                html_content,
-            )
-            # Remove Bootstrap CDN (not needed for embedded graph)
-            html_content = re.sub(
-                r'<link[^>]*href="[^"]*bootstrap[^"]*"[^>]*/?>',
-                "",
-                html_content,
-            )
-            html_content = re.sub(
-                r'<script[^>]*src="[^"]*bootstrap[^"]*"[^>]*>\s*</script>',
-                "",
-                html_content,
-            )
-            # Remove PyVis utils.js relative path reference (doesn't work with setHtml)
-            html_content = re.sub(
-                r'<script[^>]*src="lib/bindings/utils\.js"[^>]*>\s*</script>',
-                "",
-                html_content,
-            )
+    def _replace_cdn_with_local_assets(self, html_content: str) -> str:
+        """Replaces CDN-loaded vis-network assets with inline local copies.
 
-            # Inject local vis-network CSS, JS, and utils inline
-            inline_vis = f"""
+        Removes CDN script/link tags for vis-network, Bootstrap, and PyVis
+        utils.js, then injects local vis-network CSS, JS, and utils inline.
+
+        Args:
+            html_content: Raw HTML string.
+
+        Returns:
+            HTML string with local assets inlined.
+
+        """
+        vis_js, vis_css, vis_utils = self._load_local_vis_assets()
+        if not (vis_js and vis_css):
+            return html_content
+
+        # Remove CDN script tags for vis-network
+        html_content = re.sub(
+            r'<script[^>]*src="[^"]*vis-network[^"]*"[^>]*>\s*</script>',
+            "",
+            html_content,
+        )
+        # Remove CDN link tags for vis-network CSS
+        html_content = re.sub(
+            r'<link[^>]*href="[^"]*vis-network[^"]*"[^>]*/?>',
+            "",
+            html_content,
+        )
+        # Remove Bootstrap CDN (not needed for embedded graph)
+        html_content = re.sub(
+            r'<link[^>]*href="[^"]*bootstrap[^"]*"[^>]*/?>',
+            "",
+            html_content,
+        )
+        html_content = re.sub(
+            r'<script[^>]*src="[^"]*bootstrap[^"]*"[^>]*>\s*</script>',
+            "",
+            html_content,
+        )
+        # Remove PyVis utils.js relative path reference (doesn't work with setHtml)
+        html_content = re.sub(
+            r'<script[^>]*src="lib/bindings/utils\.js"[^>]*>\s*</script>',
+            "",
+            html_content,
+        )
+
+        # Inject local vis-network CSS, JS, and utils inline
+        inline_vis = f"""
             <style type="text/css">{vis_css}</style>
             <script type="text/javascript">{vis_js}</script>
             <script type="text/javascript">{vis_utils}</script>
             """
-            # Insert after <head>
-            html_content = html_content.replace("<head>", f"<head>{inline_vis}")
+        html_content = html_content.replace("<head>", f"<head>{inline_vis}")
 
-        # Inject CSS to set background color and ensure full container height
+        return html_content
+
+    def _inject_theme_css(self, html_content: str, theme: dict[str, str]) -> str:
+        """Injects CSS for background color and full-container layout.
+
+        Args:
+            html_content: HTML string to modify.
+            theme: Theme configuration dictionary.
+
+        Returns:
+            HTML string with theme CSS injected.
+
+        """
         bg_color = theme.get("background_color", "#1e1e1e")
 
         background_fix_css = f"""
@@ -631,17 +674,31 @@ class GraphBuilder:
             }}
         </style>
         """
-        # Insert CSS right after <head>
-        html_content = html_content.replace("<head>", f"<head>{background_fix_css}")
+        return html_content.replace("<head>", f"<head>{background_fix_css}")
 
-        # Inject QWebChannel script and interaction logic
+    def _inject_interaction_js(
+        self,
+        html_content: str,
+        focus_node_id: str | None = None,
+        view_state: dict[str, Any] | None = None,
+    ) -> str:
+        """Injects QWebChannel setup and interaction JavaScript.
+
+        Adds click handling, focus/view-state restoration, incremental graph
+        updates, and view-state change reporting via the Qt bridge.
+
+        Args:
+            html_content: HTML string to modify.
+            focus_node_id: Optional node ID to focus on after render.
+            view_state: Optional view state to restore (position/scale).
+
+        Returns:
+            HTML string with interaction JS injected.
+
+        """
         qwebchannel_script = (
             '<script src="qrc:///qtwebchannel/qwebchannel.js"></script>'
         )
-
-        # We need to hook into the pyvis generated script.
-        # PyVis creates a variable 'network' (the vis.Network instance) and 'nodes'.
-        # We append our script at the end of the body to ensure variable exists.
 
         interaction_script = """
         <script type="text/javascript">
@@ -652,10 +709,6 @@ class GraphBuilder:
                 });
             });
 
-            // Wait for network to be initialized (PyVis usually inits at bottom).
-            // Safer to set timeout or check if network is defined.
-            // PyVis 0.3.2+ typically matches 'network' variable name.
-
             var checkNetwork = setInterval(function() {
                 if (typeof network !== 'undefined') {
                     clearInterval(checkNetwork);
@@ -664,12 +717,9 @@ class GraphBuilder:
                     network.on("click", function (params) {
                         if (params.nodes.length > 0) {
                             var nodeId = params.nodes[0];
-                            // We need to look up object_type.
-                            // PyVis 'nodes' is a vis.DataSet or DataView.
                             var nodeData = nodes.get(nodeId);
 
                             if (nodeData && window.bridge) {
-                                // Default to 'entity' if missing, but should be there
                                 var objType = nodeData.object_type || "entity";
                                 window.bridge.nodeClicked(objType, String(nodeId));
                             }
@@ -677,25 +727,20 @@ class GraphBuilder:
                     });
 
                     // Interaction: Restore Focus
-                    // Use 'stabilized' event which fires when physics stops
                     var focusId = %FOCUS_ID%;
                     var viewState = %VIEW_STATE%;
 
                     function restoreFocus() {
                         if (viewState) {
-                            // Restore exact previous view (pan/zoom)
                             network.moveTo({
                                 position: viewState.position,
                                 scale: viewState.scale,
-                                animation: false // Instant restore
+                                animation: false
                             });
                         } else if (focusId !== null) {
-                            // Check if node exists in dataset
                             var nodeData = nodes.get(focusId);
                             if (nodeData) {
-                                // Select node visually
                                 network.selectNodes([focusId]);
-                                // Focus view on node
                                 network.focus(focusId, {
                                     scale: 1.0,
                                     animation: {
@@ -707,7 +752,6 @@ class GraphBuilder:
                         }
                     }
 
-                    // Immediate Restore for View State
                     if (viewState) {
                         restoreFocus();
                     }
@@ -715,7 +759,6 @@ class GraphBuilder:
                     // Incremental Data Update
                     window.updateGraph = function(newNodes, newEdges, newFocusId) {
                         try {
-                            // Access datasets via network instance for reliability
                             var nodes = network.body.data.nodes;
                             var edges = network.body.data.edges;
 
@@ -748,8 +791,7 @@ class GraphBuilder:
                         }
                     };
 
-                    // Report View State Changes
-                    // We debounce this to avoid flooding Python with signals
+                    // Report View State Changes (debounced)
                     var viewStateTimeout;
                     function reportViewState() {
                         clearTimeout(viewStateTimeout);
@@ -769,13 +811,6 @@ class GraphBuilder:
                     network.on("dragEnd", reportViewState);
                     network.on("animationFinished", reportViewState);
 
-
-                    // Try stabilized event first, with timeout fallback
-                    // (Only if we didn't already restore viewState)
-                    // If we have viewState, we already set the camera,
-                    // so we don't need to center on focusId.
-                    // But if we DON'T have viewState, we need to wait
-                    // for stabilization to center on focusId.
                     if (!viewState) {
                         var focusRestored = false;
                         network.once("stabilized", function() {
@@ -794,22 +829,19 @@ class GraphBuilder:
                         }, 2000);
                     }
                 }
-            }, 50); // Reduced check interval for responsiveness
+            }, 50);
         </script>
         """
 
-        # Replace placeholder with JSON-serialized ID for safe JS injection
         focus_json = json.dumps(focus_node_id) if focus_node_id else "null"
         view_state_json = json.dumps(view_state) if view_state else "null"
 
         interaction_script = interaction_script.replace("%FOCUS_ID%", focus_json)
         interaction_script = interaction_script.replace("%VIEW_STATE%", view_state_json)
 
-        html_content = html_content.replace(
+        return html_content.replace(
             "</body>", f"{qwebchannel_script}\n{interaction_script}\n</body>"
         )
-
-        return html_content
 
     def build_empty_html(self, theme_config: dict[str, str] = None) -> str:
         """Returns HTML for an empty state message.

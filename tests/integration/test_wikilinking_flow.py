@@ -16,15 +16,10 @@ def mock_window(qtbot):
     """Create a MainWindow with mocked worker."""
     from unittest.mock import patch
 
-    from PySide6.QtWidgets import QMessageBox
-
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.main_window.QTimer"),
         patch("src.app.worker_manager.QThread"),
-        patch(
-            "src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard
-        ),
     ):
         window = MainWindow()
         window.worker = MagicMock()
@@ -33,37 +28,36 @@ def mock_window(qtbot):
 
 
 def test_update_event_triggers_commands(qtbot):
-    """Test using direct slot connection."""
+    """Test that update_event creates composite command with wiki processing."""
     from unittest.mock import patch
 
-    from PySide6.QtWidgets import QMessageBox
+    from src.commands.composite_command import CompositeCommand
 
     with (
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.main_window.QTimer"),
         patch("src.app.worker_manager.QThread"),
-        patch(
-            "src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard
-        ),
     ):
         window = MainWindow()
         try:
             mock_slot = MagicMock()
-            window.command_requested.connect(mock_slot)
+            window.editor_coordinator.command_requested.connect(mock_slot)
 
             event_id = "event-123"
             data = {"id": event_id, "description": "See [[Gandalf]]."}
 
-            window.update_event(data)
+            window.editor_coordinator.update_event(data)
 
-            assert mock_slot.call_count == 2
-            args1 = mock_slot.call_args_list[0][0][0]
-            args2 = mock_slot.call_args_list[1][0][0]
+            assert mock_slot.call_count == 1
+            cmd = mock_slot.call_args_list[0][0][0]
 
-            assert isinstance(args1, UpdateEventCommand)
-            assert isinstance(args2, ProcessWikiLinksCommand)
-            assert args2.source_id == event_id
-            assert args2.text_content == "See [[Gandalf]]."
+            # EditorCoordinator now wraps update + wiki in a CompositeCommand
+            assert isinstance(cmd, CompositeCommand)
+            assert len(cmd.commands) == 2
+            assert isinstance(cmd.commands[0], UpdateEventCommand)
+            assert isinstance(cmd.commands[1], ProcessWikiLinksCommand)
+            assert cmd.commands[1].source_id == event_id
+            assert cmd.commands[1].text_content == "See [[Gandalf]]."
         finally:
             if hasattr(window, "worker_thread") and window.worker_thread.isRunning():
                 window.worker_thread.quit()

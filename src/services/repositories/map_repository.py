@@ -144,11 +144,17 @@ class MapRepository(BaseRepository):
             conn.execute("DELETE FROM maps WHERE id = ?", (map_id,))
 
     # Marker operations
-    def insert_marker(self, marker: Marker) -> None:
+    def insert_marker(self, marker: Marker) -> str:
         """Insert a new marker/feature or update an existing one (Upsert).
+
+        Upserts on UNIQUE(map_id, object_id, object_type). On conflict,
+        the existing row's id is retained.
 
         Args:
             marker: The marker/feature domain object to persist.
+
+        Returns:
+            str: The ID of the inserted/updated marker.
 
         Raises:
             sqlite3.Error: If the database operation fails.
@@ -159,7 +165,7 @@ class MapRepository(BaseRepository):
                                 label, attributes, created_at, modified_at,
                                 feature_type, geometry, style)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
+            ON CONFLICT(map_id, object_id, object_type) DO UPDATE SET
                 x=excluded.x,
                 y=excluded.y,
                 label=excluded.label,
@@ -167,10 +173,11 @@ class MapRepository(BaseRepository):
                 modified_at=excluded.modified_at,
                 feature_type=excluded.feature_type,
                 geometry=excluded.geometry,
-                style=excluded.style;
+                style=excluded.style
+            RETURNING id;
         """
         with self.transaction() as conn:
-            conn.execute(
+            cursor = conn.execute(
                 sql,
                 (
                     marker.id,
@@ -188,6 +195,8 @@ class MapRepository(BaseRepository):
                     json.dumps(marker.style) if marker.style else None,
                 ),
             )
+            result = cursor.fetchone()
+            return result[0] if result else marker.id
 
     def get_markers_by_map(self, map_id: str) -> List[Marker]:
         """Retrieve all markers for a specific map.
@@ -229,6 +238,65 @@ class MapRepository(BaseRepository):
             raise RuntimeError("Database connection not initialized")
 
         cursor = self._connection.execute(sql, (marker_id,))
+        row = cursor.fetchone()
+
+        if row:
+            data = dict(row)
+            if data.get("attributes"):
+                data["attributes"] = self._deserialize_json(data["attributes"])
+            return Marker.from_dict(data)
+        return None
+
+    def get_markers_for_object(
+        self, object_id: str, object_type: str
+    ) -> List[Marker]:
+        """Retrieve all markers for a specific entity or event.
+
+        Args:
+            object_id: The unique identifier of the entity or event.
+            object_type: Type of object ('entity' or 'event').
+
+        Returns:
+            List of Marker objects for the object.
+
+        """
+        sql = "SELECT * FROM markers WHERE object_id = ? AND object_type = ?"
+
+        if not self._connection:
+            raise RuntimeError("Database connection not initialized")
+
+        cursor = self._connection.execute(sql, (object_id, object_type))
+        markers = []
+        for row in cursor.fetchall():
+            data = dict(row)
+            if data.get("attributes"):
+                data["attributes"] = self._deserialize_json(data["attributes"])
+            markers.append(Marker.from_dict(data))
+        return markers
+
+    def get_marker_by_composite(
+        self, map_id: str, object_id: str, object_type: str
+    ) -> Optional[Marker]:
+        """Retrieve a marker by its composite key (map_id, object_id, object_type).
+
+        Args:
+            map_id: The unique identifier of the map.
+            object_id: The unique identifier of the entity or event.
+            object_type: Type of object ('entity' or 'event').
+
+        Returns:
+            The Marker object if found, else None.
+
+        """
+        sql = """
+            SELECT * FROM markers
+            WHERE map_id = ? AND object_id = ? AND object_type = ?
+        """
+
+        if not self._connection:
+            raise RuntimeError("Database connection not initialized")
+
+        cursor = self._connection.execute(sql, (map_id, object_id, object_type))
         row = cursor.fetchone()
 
         if row:

@@ -6,7 +6,6 @@ from unittest.mock import MagicMock, patch
 
 import PySide6.QtCore
 import pytest
-from PySide6.QtWidgets import QMessageBox
 
 from src.app.constants import (
     SETTINGS_LAST_ITEM_ID_KEY,
@@ -63,12 +62,7 @@ def main_window(qapp, qtbot, mock_settings):
         patch("src.app.main_window.UIManager"),
         patch("src.app.main_window.DataHandler"),
         patch("src.app.main_window.ConnectionManager"),
-        patch(
-            "src.app.main_window.QMessageBox.question", return_value=QMessageBox.Discard
-        ),
-        patch(
-            "src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard
-        ),
+        patch("src.app.main_window.QTimer"),
     ):
         window = MainWindow()
         qtbot.addWidget(window)

@@ -62,7 +62,7 @@ target-version = "py313"
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
 # Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
 # McCabe complexity (`C901`) by default.
-select = ["E4", "E7", "E9", "F", "I", "ANN"]
+select = ["E4", "E7", "E9", "F", "I", "ANN", "C901"]
 ignore = [
     "ANN401", # Dynamically typed expressions (Any) are allowed
 ]
@@ -73,6 +73,10 @@ unfixable = []
 
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.mccabe]
+# Flag functions with cyclomatic complexity > 15 (default 10 is too strict for existing code)
+max-complexity = 15
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["ANN"]

@@ -9,7 +9,7 @@ All commands support undo/redo operations and return CommandResult objects.
 """
 
 import logging
-from typing import List
+from typing import Dict, List
 
 from src.commands.base_command import BaseCommand, CommandResult
 from src.services.db_service import DatabaseService
@@ -32,6 +32,36 @@ class SetTimelineGroupingCommand(BaseCommand):
         self.tag_order = tag_order
         self.mode = mode
         self._previous_config = None
+
+    def to_dict(self) -> Dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            Dict: Command data for persistence.
+
+        """
+        return {
+            "tag_order": self.tag_order,
+            "mode": self.mode,
+            "previous_config": self._previous_config,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "SetTimelineGroupingCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Dictionary containing command data.
+
+        Returns:
+            SetTimelineGroupingCommand: Reconstructed command instance.
+
+        """
+        cmd = cls(tag_order=data["tag_order"], mode=data.get("mode", "DUPLICATE"))
+        cmd._previous_config = data.get("previous_config")
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Executes the command to set timeline grouping configuration.
@@ -112,6 +142,34 @@ class ClearTimelineGroupingCommand(BaseCommand):
         super().__init__()
         self._previous_config = None
 
+    def to_dict(self) -> Dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            Dict: Command data for persistence.
+
+        """
+        return {
+            "previous_config": self._previous_config,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "ClearTimelineGroupingCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Dictionary containing command data.
+
+        Returns:
+            ClearTimelineGroupingCommand: Reconstructed command instance.
+
+        """
+        cmd = cls()
+        cmd._previous_config = data.get("previous_config")
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
+
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Executes the command to clear timeline grouping configuration.
 
@@ -182,6 +240,36 @@ class UpdateTagColorCommand(BaseCommand):
         self.tag_name = tag_name
         self.color = color
         self._previous_color = None
+
+    def to_dict(self) -> Dict:
+        """Serialize command to dictionary.
+
+        Returns:
+            Dict: Command data for persistence.
+
+        """
+        return {
+            "tag_name": self.tag_name,
+            "color": self.color,
+            "previous_color": self._previous_color,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "UpdateTagColorCommand":
+        """Deserialize command from dictionary.
+
+        Args:
+            data: Dictionary containing command data.
+
+        Returns:
+            UpdateTagColorCommand: Reconstructed command instance.
+
+        """
+        cmd = cls(tag_name=data["tag_name"], color=data["color"])
+        cmd._previous_color = data.get("previous_color")
+        cmd._is_executed = data.get("is_executed", False)
+        return cmd
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Executes the command to update tag color.

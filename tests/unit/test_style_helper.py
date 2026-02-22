@@ -319,7 +319,7 @@ def test_empty_state_widget_initialization(qapp):
     from src.gui.widgets.empty_state_widget import EmptyStateWidget
 
     widget = EmptyStateWidget("Test Message")
-    assert widget.text() == "Test Message"
+    assert widget._title_label.text() == "Test Message"
     assert not widget.isVisible()  # Should be hidden by default
 
 
@@ -329,4 +329,4 @@ def test_empty_state_widget_set_message(qapp):
 
     widget = EmptyStateWidget("Initial")
     widget.set_message("Updated")
-    assert widget.text() == "Updated"
+    assert widget._title_label.text() == "Updated"

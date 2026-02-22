@@ -11,7 +11,7 @@ from contextlib import suppress
 from typing import Any, Dict
 
 from PySide6.QtCore import QPoint, QSize, Qt, Signal, Slot
-from PySide6.QtGui import QDragEnterEvent, QDragLeaveEvent, QDragMoveEvent, QDropEvent
+from PySide6.QtGui import QDropEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
@@ -36,6 +36,7 @@ from src.app.constants import (
 from src.core.events import Event
 from src.core.summary_data import SummaryData
 from src.gui.mixins.autosave_mixin import AutoSaveManager
+from src.gui.mixins.editor_mixin import BaseEditorMixin
 from src.gui.utils.icon_loader import load_icon
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.compact_date_widget import CompactDateWidget
@@ -55,35 +56,45 @@ from src.gui.widgets.wiki_text_edit import WikiTextEdit
 logger = logging.getLogger(__name__)
 
 
-class EventEditorWidget(QWidget):
+class EventEditorWidget(BaseEditorMixin, QWidget):
     """A form to edit the details of an Event.
 
     Emits 'save_requested' signal with the modified Event object. Emits
     'add_relation_requested' signal (source, target, type).
+
+    Signals:
+        save_requested(dict): Emitted when user clicks Save; payload is the event data.
+        discard_requested(str): Emitted when user discards changes; payload is item_id.
+        add_relation_requested(str, str, str, dict, bool): Request to create a relation
+            (source_id, target_id, rel_type, attributes, bidirectional).
+        remove_relation_requested(str): Request to delete a relation by rel_id.
+        update_relation_requested(str, str, str, dict): Request to update a relation
+            (rel_id, target_id, rel_type, attributes).
+        inject_ui_requested(str): Request to open the inject dialog for an event_id.
+        create_template_requested(dict): Request to create a new template from data.
+        summary_generation_requested(object): Request AI summary for the given Event.
+        link_clicked(str): Emitted when a wiki link is clicked; payload is target_name.
+        navigate_to_relation(str): Emitted when Go-to is clicked; payload is target_id.
+        dirty_changed(bool): Emitted when the editor's dirty state changes.
+        current_data_changed(dict): Emitted with current event data for live preview.
     """
 
     save_requested = Signal(dict)
-    discard_requested = Signal(str)  # item_id to reload
-    add_relation_requested = Signal(
-        str, str, str, dict, bool
-    )  # source_id, target_id, type, attributes, bidirectional
-    remove_relation_requested = Signal(str)  # rel_id
-    update_relation_requested = Signal(
-        str, str, str, dict
-    )  # rel_id, target_id, rel_type, attributes, attributes
+    discard_requested = Signal(str)
+    add_relation_requested = Signal(str, str, str, dict, bool)
+    remove_relation_requested = Signal(str)
+    update_relation_requested = Signal(str, str, str, dict)
 
-    inject_ui_requested = Signal(
-        str
-    )  # Signals that main window should open inject dialog
-    create_template_requested = Signal(dict)  # Signals to create a new template
-    summary_generation_requested = Signal(object)  # event object
+    inject_ui_requested = Signal(str)
+    create_template_requested = Signal(dict)
+    summary_generation_requested = Signal(object)
 
     # ... (omitted)
 
-    link_clicked = Signal(str)  # target_name
-    navigate_to_relation = Signal(str)  # target_id for Go to button
+    link_clicked = Signal(str)
+    navigate_to_relation = Signal(str)
     dirty_changed = Signal(bool)
-    current_data_changed = Signal(dict)  # Emits current event data for preview
+    current_data_changed = Signal(dict)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         """Initializes the editor widget with form fields.
@@ -356,6 +367,14 @@ class EventEditorWidget(QWidget):
         self._type_picker = None
         self._selected_relation_type = "related"  # Default type
 
+    def _get_current_item_id(self) -> str | None:
+        """Returns the current event ID or None."""
+        return self._current_event_id
+
+    def _get_editor_label(self) -> str:
+        """Returns the editor label for logging."""
+        return "EventEditor"
+
     def _show_drop_hint(self, rel_type: str = "related") -> None:
         """Show drop hint overlay during drag-over.
 
@@ -390,123 +409,6 @@ class EventEditorWidget(QWidget):
         """Hide drop hint overlay."""
         if self._drop_hint_label:
             self._drop_hint_label.hide()
-
-    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-        """Handle drag enter event to accept MIME data from Project Explorer.
-
-        Args:
-            event: QDragEnterEvent with MIME data.
-        """
-        from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
-
-        # Accept if MIME type matches and we have an event loaded
-        if event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE) and self._current_event_id:
-            event.acceptProposedAction()
-            self._is_drag_over = True
-
-            # Always use default hint, no inline picker
-            self._selected_relation_type = "related"
-            self._show_drop_hint(self._selected_relation_type)
-
-            logger.debug("EventEditor: Accepting drag from Project Explorer")
-        else:
-            event.ignore()
-
-    def dragMoveEvent(self, event: QDragMoveEvent) -> None:
-        """Handle drag move event.
-
-        Args:
-            event: QDragMoveEvent.
-        """
-        from src.gui.widgets.unified_list import KRAKEN_ITEM_MIME_TYPE
-
-        if event.mimeData().hasFormat(KRAKEN_ITEM_MIME_TYPE) and self._current_event_id:
-            event.acceptProposedAction()
-
-            event.acceptProposedAction()
-
-            # Keep drop hint visible during drag
-            if not self._is_drag_over:
-                self._is_drag_over = True
-            self._show_drop_hint(self._selected_relation_type)
-        else:
-            event.ignore()
-
-    def dragLeaveEvent(self, event: QDragLeaveEvent) -> None:
-        """Handle drag leave event - hide drop hint and type picker.
-
-        Args:
-            event: QDragLeaveEvent.
-        """
-        self._is_drag_over = False
-        self._hide_drop_hint()
-
-        # Hide type picker if visible
-        if self._type_picker and self._type_picker.isVisible():
-            self._type_picker.hide()
-
-        logger.debug("EventEditor: Drag left editor area")
-
-    def _show_type_picker(self, position: QPoint) -> None:
-        """Show the relation type picker at the specified position.
-
-        Args:
-            position: Position relative to this widget.
-        """
-        if not self._type_picker:
-            from src.gui.widgets.relation_type_picker import RelationTypePicker
-
-            self._type_picker = RelationTypePicker()
-
-            # Connect to type selection signal
-            self._type_picker.type_selected.connect(self._on_relation_type_selected)
-
-        # Define default relation types
-        default_types = [
-            "related",
-            "caused",
-            "participated_in",
-            "located_at",
-            "owns",
-            "created_by",
-            "part_of",
-        ]
-
-        # Merge with backend suggestions if available
-        all_types = set(default_types)
-        if hasattr(self, "_suggestion_types") and self._suggestion_types:
-            all_types.update(self._suggestion_types)
-
-        # Update picker with current types
-        self._type_picker.set_relation_types(list(all_types))
-
-        # Convert position to global coordinates
-        global_pos = self.mapToGlobal(position)
-        self._type_picker.show_at_position(global_pos)
-
-        # Hide drop hint while picker is visible
-        self._hide_drop_hint()
-
-    def _on_relation_type_selected(self, relation_type: str) -> None:
-        """Handle relation type selection from picker.
-
-        Args:
-            relation_type: The selected relation type.
-        """
-        if hasattr(self, "_initiated_relation_drop") and self._initiated_relation_drop:
-            # Complete the drop
-            data = self._initiated_relation_drop
-            self._create_relation(
-                data["source_id"],
-                data["source_type"],
-                data["source_name"],
-                relation_type,
-            )
-            self._initiated_relation_drop = None
-        else:
-            self._selected_relation_type = relation_type
-            logger.info(f"EventEditor: Relation type selected: {relation_type}")
-            self._show_drop_hint(self._selected_relation_type)
 
     def dropEvent(self, event: QDropEvent) -> None:
         """Handle drop event to create relation from dragged item to current event.
@@ -873,39 +775,6 @@ class EventEditorWidget(QWidget):
         self.tag_editor.tags_changed.connect(lambda: self.set_dirty(True))
         self.attribute_editor.attributes_changed.connect(lambda: self.set_dirty(True))
 
-    def set_dirty(self, dirty: bool) -> None:
-        """Sets the dirty state of the editor.
-
-        Args:
-            dirty (bool): True if changes are unsaved, False otherwise.
-
-        """
-        if self._is_loading and dirty:
-            logger.debug(
-                f"[EventEditor] set_dirty({dirty}) ignored - loading in progress"
-            )
-            return
-
-        if self._current_event_id is None and dirty:
-            logger.debug(f"[EventEditor] set_dirty({dirty}) ignored - no event loaded")
-            return
-
-        if self._is_dirty != dirty:
-            self._is_dirty = dirty
-            self.dirty_changed.emit(dirty)
-            self.btn_save.setEnabled(dirty)
-            self.btn_discard.setEnabled(dirty)
-            if dirty:
-                self.btn_save.setText("Save Changes *")
-                self.autosave_manager.start_timer()
-            else:
-                self.btn_save.setText("Save Changes")
-                self.autosave_manager.stop_timer()
-
-    def has_unsaved_changes(self) -> bool:
-        """Returns True if the editor has unsaved changes."""
-        return self._is_dirty
-
     @Slot(float)
     def _on_start_date_changed(self, new_start: float) -> None:
         """Updates duration widget context and recalculates end date."""
@@ -999,7 +868,6 @@ class EventEditorWidget(QWidget):
         self._is_loading = True
         try:
             # Block signals to prevent dirty trigger during load
-            # Block signals to prevent dirty trigger during load
             self.name_edit.blockSignals(True)
             self.date_edit.blockSignals(True)
             self.duration_widget.blockSignals(True)
@@ -1007,125 +875,9 @@ class EventEditorWidget(QWidget):
             self.type_edit.blockSignals(True)
             self.desc_edit.blockSignals(True)
 
-            if self.name_edit.text() != event.name:
-                self.name_edit.setText(event.name)
-
-            # Date/Time widgets have set_value which triggers internal updates
-            # Ideally we check value equality first.
-            # Lore/Duration override eq? Assuming they do or are value types.
-            if self.date_edit.get_value() != event.lore_date:
-                self.date_edit.set_value(event.lore_date)
-
-            # Initialize duration widgets
-            # Duration widget logic is complex (updates end date etc).
-            # Safer to check value match before setting.
-            self.duration_widget.set_start_date(event.lore_date)
-            if self.duration_widget.get_value() != event.lore_duration:
-                self.duration_widget.set_value(event.lore_duration)
-
-            # End date follows start + duration unless manually set differently?
-            # Usually end date is derived. load_event sets it explicitly.
-            # If duration matches, end date match is implied if logic is consistent.
-            # But let's check.
-            target_end = event.lore_date + event.lore_duration
-            if self.end_date_edit.get_value() != target_end:
-                self.end_date_edit.set_value(target_end)
-
-            if self.type_edit.currentText() != event.type:
-                self.type_edit.setCurrentText(event.type)
-
-            if self.desc_edit.get_wiki_text() != event.description:
-                self.desc_edit.set_wiki_text(event.description)
-
-            # Load Attributes (filter out _tags for display)
-            # Store hidden attributes to preserve them on save
-            self._hidden_attributes = {
-                k: v for k, v in event.attributes.items() if k.startswith("_")
-            }
-
-            display_attrs = {
-                k: v for k, v in event.attributes.items() if not k.startswith("_")
-            }
-            self.attribute_editor.blockSignals(True)
-            self.attribute_editor.load_attributes(display_attrs)
-            self.attribute_editor.blockSignals(False)
-
-            # Load Summary
-            summary_data = event.attributes.get("_summary_data")
-            if summary_data:
-                with suppress(Exception):
-                    data = SummaryData.from_dict(summary_data)
-                    self.summary_widget.set_summary(data)
-
-                if self.summary_service:
-                    is_stale = self.summary_service.is_stale(event)
-                    self.summary_widget.set_stale(is_stale)
-
-            # Load Tags
-            self.tag_editor.load_tags(event.tags)
-
-            # Load Gallery
-            self.gallery.set_owner("event", event.id)
-
-            # Load relations
-            self.rel_list.clear()
-            self.participant_list.clear()
-            self.location_list.clear()
-
-            # Helper to create widget and item
-            def add_relation_item(
-                list_widget: QListWidget, rel: dict, prefix: str = "→"
-            ) -> None:
-                """Add a relation item to the specified list widget."""
-                # Determine display name
-                if prefix == "→":
-                    target_display = rel.get("target_name") or rel["target_id"]
-                    other_id = rel["target_id"]
-                else:
-                    target_display = rel.get("source_name") or rel["source_id"]
-                    other_id = rel["source_id"]
-
-                label = f"{prefix} {target_display} [{rel['rel_type']}]"
-
-                # Create custom widget with Go to button
-                widget = RelationItemWidget(
-                    label=label,
-                    target_id=other_id,
-                    target_name=target_display,
-                    attributes=rel.get("attributes"),
-                )
-                widget.go_to_clicked.connect(
-                    lambda tid, tn: self.navigate_to_relation.emit(tid)
-                )
-
-                if prefix == "←":
-                    widget.label.setStyleSheet("color: gray;")
-
-                # Create list item
-                item = QListWidgetItem()
-                item.setData(Qt.ItemDataRole.UserRole, rel)
-                item.setSizeHint(QSize(200, 36))
-
-                list_widget.addItem(item)
-                list_widget.setItemWidget(item, widget)
-
-            # Outgoing
-            if relations:
-                for rel in relations:
-                    rtype = rel.get("rel_type")
-                    if rtype in ("involved", "participated_in", "member_of"):
-                        add_relation_item(self.participant_list, rel, "→")
-                    elif rtype == "located_at":
-                        add_relation_item(self.location_list, rel, "→")
-                    else:
-                        add_relation_item(self.rel_list, rel, "→")
-
-            # Incoming (Always goes to Other Relations for now,
-            # or maybe context dependent?)
-            # Usually incoming are less structural context and more backlinks.
-            if incoming_relations:
-                for rel in incoming_relations:
-                    add_relation_item(self.rel_list, rel, "←")
+            self._load_event_fields(event)
+            self._load_event_attributes(event)
+            self._load_event_relations(relations, incoming_relations)
 
             # Unblock signals
             self.name_edit.blockSignals(False)
@@ -1139,6 +891,128 @@ class EventEditorWidget(QWidget):
             self.setEnabled(True)
         finally:
             self._is_loading = False
+
+    def _load_event_fields(self, event: Event) -> None:
+        """Loads core form fields from the event, skipping redundant updates.
+
+        Args:
+            event: The event whose fields to load.
+
+        """
+        if self.name_edit.text() != event.name:
+            self.name_edit.setText(event.name)
+
+        # Avoid redundant updates
+        if self.date_edit.get_value() != event.lore_date:
+            self.date_edit.set_value(event.lore_date)
+
+        self.duration_widget.set_start_date(event.lore_date)
+        if self.duration_widget.get_value() != event.lore_duration:
+            self.duration_widget.set_value(event.lore_duration)
+
+        target_end = event.lore_date + event.lore_duration
+        if self.end_date_edit.get_value() != target_end:
+            self.end_date_edit.set_value(target_end)
+
+        if self.type_edit.currentText() != event.type:
+            self.type_edit.setCurrentText(event.type)
+
+        if self.desc_edit.get_wiki_text() != event.description:
+            self.desc_edit.set_wiki_text(event.description)
+
+    def _load_event_attributes(self, event: Event) -> None:
+        """Loads attributes, tags, summary, and gallery from the event.
+
+        Separates hidden (underscore-prefixed) attributes from display attributes
+        so that internal keys like ``_tags`` and ``_summary_data`` are preserved
+        on save without being shown in the attribute editor.
+
+        Args:
+            event: The event whose attributes to load.
+
+        """
+        display_attrs = self._extract_hidden_attributes(event.attributes)
+        self.attribute_editor.blockSignals(True)
+        self.attribute_editor.load_attributes(display_attrs)
+        self.attribute_editor.blockSignals(False)
+
+        # Load Summary
+        summary_data = event.attributes.get("_summary_data")
+        if summary_data:
+            with suppress(Exception):
+                data = SummaryData.from_dict(summary_data)
+                self.summary_widget.set_summary(data)
+
+            if self.summary_service:
+                is_stale = self.summary_service.is_stale(event)
+                self.summary_widget.set_stale(is_stale)
+
+        self.tag_editor.load_tags(event.tags)
+        self.gallery.set_owner("event", event.id)
+
+    def _load_event_relations(
+        self, relations: list | None, incoming_relations: list | None
+    ) -> None:
+        """Loads outgoing and incoming relations into their respective list widgets.
+
+        Outgoing relations are categorized into participants, locations, and
+        general relations. Incoming relations are displayed as backlinks.
+
+        Args:
+            relations: List of outgoing relation dicts, or None.
+            incoming_relations: List of incoming relation dicts, or None.
+
+        """
+        self.rel_list.clear()
+        self.participant_list.clear()
+        self.location_list.clear()
+
+        def add_relation_item(
+            list_widget: QListWidget, rel: dict, prefix: str = "→"
+        ) -> None:
+            """Add a relation item to the specified list widget."""
+            if prefix == "→":
+                target_display = rel.get("target_name") or rel["target_id"]
+                other_id = rel["target_id"]
+            else:
+                target_display = rel.get("source_name") or rel["source_id"]
+                other_id = rel["source_id"]
+
+            label = f"{prefix} {target_display} [{rel['rel_type']}]"
+
+            widget = RelationItemWidget(
+                label=label,
+                target_id=other_id,
+                target_name=target_display,
+                attributes=rel.get("attributes"),
+            )
+            widget.go_to_clicked.connect(
+                lambda tid, tn: self.navigate_to_relation.emit(tid)
+            )
+
+            if prefix == "←":
+                widget.label.setStyleSheet("color: gray;")
+
+            item = QListWidgetItem()
+            item.setData(Qt.ItemDataRole.UserRole, rel)
+            item.setSizeHint(QSize(200, 36))
+
+            list_widget.addItem(item)
+            list_widget.setItemWidget(item, widget)
+
+        if relations:
+            for rel in relations:
+                rtype = rel.get("rel_type")
+                if rtype in ("involved", "participated_in", "member_of"):
+                    add_relation_item(self.participant_list, rel, "→")
+                elif rtype == "located_at":
+                    add_relation_item(self.location_list, rel, "→")
+                else:
+                    add_relation_item(self.rel_list, rel, "→")
+
+        if incoming_relations:
+            for rel in incoming_relations:
+                add_relation_item(self.rel_list, rel, "←")
 
     @Slot(dict)
     def _on_theme_changed(self, theme: dict) -> None:
@@ -1195,15 +1069,7 @@ class EventEditorWidget(QWidget):
             # Inject pending summary/hidden attributes
             if hasattr(self, "_pending_summary_data") and self._pending_summary_data:
                 base_attrs["_summary_data"] = self._pending_summary_data
-                # Also need others?
-                if hasattr(self, "_hidden_attributes"):
-                    for k, v in self._hidden_attributes.items():
-                        if k not in base_attrs and k != "_summary_data":
-                            base_attrs[k] = v
-            elif hasattr(self, "_hidden_attributes"):
-                for k, v in self._hidden_attributes.items():
-                    if k not in base_attrs:
-                        base_attrs[k] = v
+            self._merge_hidden_attributes(base_attrs)
 
             event_data = {
                 "id": self._current_event_id,

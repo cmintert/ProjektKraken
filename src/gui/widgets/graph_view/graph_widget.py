@@ -7,6 +7,7 @@ public interface for the graph view functionality.
 from typing import Any, Optional
 
 from PySide6.QtCore import QEvent, QSize, QTimer, Signal
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import QSizePolicy, QVBoxLayout, QWidget
 
 from src.core.logging_config import get_logger
@@ -134,6 +135,15 @@ class GraphWidget(QWidget):
             QSize: Comfortable working size for graph interaction.
         """
         return QSize(400, 300)
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """Shut down the web engine before the widget is destroyed.
+
+        Args:
+            event: The close event.
+        """
+        self._web_view.shutdown()
+        super().closeEvent(event)
 
     def _connect_internal_signals(self) -> None:
         """Connects internal component signals to public signals.

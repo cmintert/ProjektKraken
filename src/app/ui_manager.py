@@ -753,7 +753,18 @@ class UIManager:
         calendar_action.triggered.connect(self._open_calendar_config)
 
     def reset_layout(self) -> None:
-        """Restores the default docking layout."""
+        """Restores the default docking layout.
+
+        Positions ALL docks to their canonical locations:
+        - Left: Project Explorer
+        - Right: Event Inspector, Entity Inspector (tabified), plus
+          Longform, AI Search, History (tabified)
+        - Bottom: Timeline, Map, Graph (tabified)
+
+        After positioning, raises Event Inspector and Timeline as
+        the active tabs and allocates a reasonable height for the
+        bottom dock area via ``resizeDocks``.
+        """
         # 1. Try to load from default_layout.json
         from src.core.paths import get_default_layout_path
 
@@ -774,34 +785,87 @@ class UIManager:
                     self.main_window.restoreState(bytes.fromhex(layout_data["state"]))
                 return
             except Exception as e:
-                # Fallback if load fails
                 logger.warning(f"Failed to load custom layout: {e}")
-                pass
 
-        # 2. Hardcoded fallback
+        # 2. Hardcoded fallback — position ALL docks explicitly
+        # --- Left panel ---
         if "list" in self.docks:
             self.main_window.addDockWidget(
                 Qt.DockWidgetArea.LeftDockWidgetArea, self.docks["list"]
             )
             self.docks["list"].show()
 
-        if "event" in self.docks and "entity" in self.docks:
+        # --- Right panel (editors + optional panels, all tabified) ---
+        right_order = ["event", "entity", "longform", "ai_search", "history"]
+        first_right = None
+        for key in right_order:
+            if key not in self.docks:
+                continue
             self.main_window.addDockWidget(
-                Qt.DockWidgetArea.RightDockWidgetArea, self.docks["event"]
+                Qt.DockWidgetArea.RightDockWidgetArea, self.docks[key]
             )
-            self.main_window.addDockWidget(
-                Qt.DockWidgetArea.RightDockWidgetArea, self.docks["entity"]
-            )
-            self.main_window.tabifyDockWidget(self.docks["event"], self.docks["entity"])
-            self.docks["event"].show()
-            self.docks["entity"].show()
+            self.docks[key].show()
+            if first_right is not None:
+                self.main_window.tabifyDockWidget(first_right, self.docks[key])
+            else:
+                first_right = self.docks[key]
 
-            self.docks["timeline"].show()
-            if "map" in self.docks:
-                self.main_window.tabifyDockWidget(
-                    self.docks["timeline"], self.docks["map"]
-                )
-                self.docks["map"].show()
+        # Raise Event Inspector as default active tab
+        if "event" in self.docks:
+            self.docks["event"].raise_()
+
+        # --- Bottom panel (timeline + map + graph, all tabified) ---
+        bottom_order = ["timeline", "map", "graph"]
+        first_bottom = None
+        for key in bottom_order:
+            if key not in self.docks:
+                continue
+            self.main_window.addDockWidget(
+                Qt.DockWidgetArea.BottomDockWidgetArea, self.docks[key]
+            )
+            self.docks[key].show()
+            if first_bottom is not None:
+                self.main_window.tabifyDockWidget(first_bottom, self.docks[key])
+            else:
+                first_bottom = self.docks[key]
+
+        # Raise Timeline as default active tab
+        if "timeline" in self.docks:
+            self.docks["timeline"].raise_()
+
+        # --- Allocate reasonable height for the bottom dock area ---
+        # Without explicit sizing the bottom area can collapse to zero
+        # because all four corners are assigned to left/right.
+        self._ensure_bottom_dock_height()
+
+    def _ensure_bottom_dock_height(self) -> None:
+        """Allocates explicit height for bottom dock area via resizeDocks.
+
+        All four corners are assigned to left/right panels, so Qt may
+        give the bottom area zero height unless we explicitly request
+        space.  This uses ``QMainWindow.resizeDocks`` which is the only
+        API that can influence splitter positions programmatically.
+        """
+        bottom_docks = [
+            self.docks[k]
+            for k in ("timeline", "map", "graph")
+            if k in self.docks and not self.docks[k].isHidden()
+        ]
+        if not bottom_docks:
+            return
+
+        # Request 30% of window height for the bottom area (min 200px)
+        window_height = self.main_window.height()
+        target_height = max(200, int(window_height * 0.30))
+
+        try:
+            self.main_window.resizeDocks(
+                bottom_docks,
+                [target_height] * len(bottom_docks),
+                Qt.Orientation.Vertical,
+            )
+        except Exception as e:
+            logger.warning(f"resizeDocks failed: {e}")
 
     def save_as_default_layout(self) -> None:
         """Saves the current layout as the default factory layout.
