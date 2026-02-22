@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-22
-### Added
-- feat: Add default application UI layout configuration.
+### Internal
+- build: bump version to 0.13.5
 
 
 *This changelog was automatically generated.*
