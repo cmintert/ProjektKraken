@@ -19,18 +19,19 @@ from PySide6.QtGui import (
     QMouseEvent,
     QPainter,
     QPen,
+    QFontMetrics,
 )
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (
     QGraphicsItem,
     QGraphicsObject,
     QGraphicsPixmapItem,
-    QGraphicsSimpleTextItem,
     QStyleOptionGraphicsItem,
     QWidget,
 )
 
 from src.core.style_constants import BASE_SIZE
+from src.core.theme_manager import ThemeManager
 from src.gui.utils.svg_utils import apply_svg_inline_styles, svg_file_to_string
 from src.services.visual_resolver import VisualResolver
 
@@ -47,6 +48,58 @@ MARKER_ICONS_PATH = os.path.join(
 )
 
 logger = logging.getLogger(__name__)
+
+class MarkerLabelItem(QGraphicsObject):
+    """Custom graphics item for marker labels that displays a themed background pill."""
+
+    def __init__(self, text: str, parent=None):
+        super().__init__(parent)
+        self._text = text
+        self._font = QFont("Segoe UI", 8)
+        self._font.setBold(True)
+        self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIgnoresTransformations)
+        
+        self._padding_x = 6
+        self._padding_y = 2
+        self._rect = QRectF()
+        self._update_rect()
+
+    def _update_rect(self):
+        fm = QFontMetrics(self._font)
+        text_rect = fm.boundingRect(self._text)
+        width = text_rect.width() + self._padding_x * 2
+        height = text_rect.height() + self._padding_y * 2
+        self._rect = QRectF(0, 0, float(width), float(height))
+        self.prepareGeometryChange()
+
+    def boundingRect(self) -> QRectF:
+        return self._rect
+
+    def setText(self, text: str):
+        if self._text != text:
+            self._text = text
+            self._update_rect()
+            self.update()
+
+    def paint(self, painter: QPainter, option, widget=None):
+        theme = ThemeManager().get_theme()
+        bg_color = QColor(theme.get("surface", "#1A1A1A"))
+        text_color = QColor(theme.get("text_main", "#FFFFFF"))
+        border_color = QColor(theme.get("border", "#333333"))
+
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        # Draw the pill background
+        painter.setBrush(QBrush(bg_color))
+        painter.setPen(QPen(border_color, 1))
+        
+        radius = self._rect.height() / 2.0
+        painter.drawRoundedRect(self._rect, radius, radius)
+        
+        # Draw the text
+        painter.setFont(self._font)
+        painter.setPen(QPen(text_color))
+        painter.drawText(self._rect, Qt.AlignmentFlag.AlignCenter, self._text)
 
 
 class MarkerItem(QGraphicsObject):
@@ -139,13 +192,8 @@ class MarkerItem(QGraphicsObject):
         self._is_dragging = False
         self._drag_start_pos = None
 
-        # Text Label - dark grey for visibility on light/dark backgrounds
-        self._label_item = QGraphicsSimpleTextItem(label, self)
-        self._label_item.setBrush(QBrush(QColor("#333333")))  # Dark grey
-
-        font = QFont("Segoe UI", 8)
-        font.setBold(True)
-        self._label_item.setFont(font)
+        # Text Label - pill background
+        self._label_item = MarkerLabelItem(label, self)
 
         # Center the label below the marker
         self._update_label_position()
