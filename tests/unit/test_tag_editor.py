@@ -144,3 +144,32 @@ class TestTagEditorWidget:
         assert len(tags) == 2
         assert "Important" in tags
         assert "important" in tags
+
+    def test_completer_reused_across_updates(self, tag_editor):
+        """Test that the same QCompleter instance is reused when updating suggestions."""
+        completer_before = tag_editor.tag_input.completer()
+        tag_editor.update_suggestions(["tag1", "tag2"])
+        completer_after = tag_editor.tag_input.completer()
+
+        assert completer_before is completer_after
+
+    def test_completer_model_updated(self, tag_editor):
+        """Test that update_suggestions updates the underlying model's string list."""
+        tag_editor.update_suggestions(["alpha", "beta", "gamma"])
+        model = tag_editor._completer_model
+        assert model.stringList() == ["alpha", "beta", "gamma"]
+
+        tag_editor.update_suggestions(["delta"])
+        assert model.stringList() == ["delta"]
+
+    def test_completer_configuration_preserved(self, tag_editor):
+        """Test that completer config is preserved across suggestion updates."""
+        tag_editor.update_suggestions(["foo"])
+        completer = tag_editor._completer
+
+        assert completer.caseSensitivity() == Qt.CaseSensitivity.CaseInsensitive
+        assert completer.filterMode() == Qt.MatchFlag.MatchContains
+
+        tag_editor.update_suggestions(["bar", "baz"])
+        assert completer.caseSensitivity() == Qt.CaseSensitivity.CaseInsensitive
+        assert completer.filterMode() == Qt.MatchFlag.MatchContains

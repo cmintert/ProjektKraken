@@ -5,7 +5,7 @@ Provides a list-based interface for managing tags on entities and events.
 
 from typing import List, Optional
 
-from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtCore import QStringListModel, Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QCompleter,
     QLineEdit,
@@ -55,6 +55,13 @@ class TagEditorWidget(QWidget):
         self.tag_input.setMinimumWidth(100)
         self.tag_input.setStyleSheet(StyleHelper.get_transparent_input_style())
         self.tag_input.returnPressed.connect(self._on_add)
+
+        # Persistent completer + model (avoids QObject churn on each update)
+        self._completer_model = QStringListModel(self)
+        self._completer = QCompleter(self._completer_model, self)
+        self._completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self._completer.setFilterMode(Qt.MatchFlag.MatchContains)
+        self.tag_input.setCompleter(self._completer)
 
         # We'll wrap the flow container in a styled frame to look like an input box
         self.container_frame = QWidget()
@@ -132,10 +139,7 @@ class TagEditorWidget(QWidget):
             tags: List of existing tags for completion.
 
         """
-        completer = QCompleter(tags, self)
-        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-        completer.setFilterMode(Qt.MatchFlag.MatchContains)
-        self.tag_input.setCompleter(completer)
+        self._completer_model.setStringList(tags)
 
     @Slot()
     def _on_add(self) -> None:

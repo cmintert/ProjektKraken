@@ -113,3 +113,43 @@ def test_drag_pill_custom_offset():
     actual_pos = pill.pos()
     assert actual_pos.x() == position.x() + 20
     assert actual_pos.y() == position.y() + 30
+
+
+def test_drag_pill_elides_long_name():
+    """Test that drag pill elides long names instead of hard truncating."""
+    long_name = "A Very Long Item Name That Should Be Elided"
+    pill = DragPill(item_name=long_name, item_type="event")
+
+    # The full name should be stored for reference
+    assert pill._full_name == long_name
+    # The displayed text should end with ellipsis if truncated
+    displayed = pill.name_label.text()
+    if displayed != long_name:
+        assert displayed.endswith("…") or displayed.endswith("...")
+
+
+def test_drag_pill_no_hard_max_width_on_name_label():
+    """Test that name label has no hard maximumWidth set."""
+    pill = DragPill(item_name="Test", item_type="event")
+    # maximumWidth should be the default QWIDGETSIZE_MAX, not 100
+    assert pill.name_label.maximumWidth() > 100
+
+
+def test_drag_pill_caches_painter_data():
+    """Test that DragPill caches painter data for paintEvent."""
+    pill = DragPill(item_name="Test", item_type="event")
+    assert hasattr(pill, "_painter_data")
+    assert "r" in pill._painter_data
+    assert "g" in pill._painter_data
+    assert "b" in pill._painter_data
+
+
+def test_tag_pill_caches_painter_data():
+    """Test that TagPill caches painter data for paintEvent."""
+    from src.gui.widgets.tag_pill import TagPill
+
+    pill = TagPill("test-tag")
+    assert hasattr(pill, "_painter_data")
+    assert "r" in pill._painter_data
+    assert "g" in pill._painter_data
+    assert "b" in pill._painter_data

@@ -57,6 +57,9 @@ class TagPill(QFrame):
         self._setup_ui()
         self._apply_style()
 
+        # Cache painter data once (avoids repeated lookups in paintEvent)
+        self._painter_data = StyleHelper.get_pill_painter_data(self.base_color)
+
     def _setup_ui(self) -> None:
         """Sets up the layout and sub-widgets."""
         layout = QHBoxLayout(self)
@@ -103,13 +106,11 @@ class TagPill(QFrame):
 
     def paintEvent(self, event) -> None:
         """High-fidelity rendering of the pill shape with Antialiasing."""
-        from src.gui.utils.style_helper import StyleHelper
-
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        # Get color data from StyleHelper
-        data = StyleHelper.get_pill_painter_data(self.base_color)
+        # Use cached color data
+        data = self._painter_data
         r, g, b = data["r"], data["g"], data["b"]
 
         # Hover state detection

@@ -8,9 +8,10 @@ import logging
 from typing import Optional
 
 from PySide6.QtCore import QPoint, Qt
-from PySide6.QtGui import QBrush, QColor, QLinearGradient, QPainter, QPen
+from PySide6.QtGui import QBrush, QColor, QFontMetrics, QLinearGradient, QPainter, QPen
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 
+from src.gui.utils.style_helper import StyleHelper
 
 logger = logging.getLogger(__name__)
 
@@ -52,11 +53,17 @@ class DragPill(QFrame):
         self._setup_ui()
         self._apply_theme()
 
+        # Cache painter data once (avoids repeated lookups in paintEvent)
+        self._painter_data = StyleHelper.get_pill_painter_data(None)
+
         # Set size constraints and clamp width
         # Use sizeHint but cap at 200
         hint = self.sizeHint()
         width = min(hint.width(), 200)
         self.setFixedSize(width, 40)
+
+        # Elide name text to fit available space
+        self._elide_name_text()
 
         # Start hidden
         self.hide()
@@ -85,23 +92,32 @@ class DragPill(QFrame):
         self.icon_label.setStyleSheet("font-size: 16px; background: transparent;")
         layout.addWidget(self.icon_label)
 
-        # Name label
-        self.name_label = QLabel(self.item_name)
+        # Name label with text eliding instead of hard width cap
+        self.name_label = QLabel()
         self.name_label.setMinimumWidth(20)
-        self.name_label.setMaximumWidth(100)
         self.name_label.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
         )
+        self._full_name = self.item_name
+        self.name_label.setText(self._full_name)
         layout.addWidget(self.name_label)
 
         # Type label
         self.type_label = QLabel(f"({self.item_type})")
         layout.addWidget(self.type_label)
 
+    def _elide_name_text(self) -> None:
+        """Elide the name label text to fit available width."""
+        metrics = QFontMetrics(self.name_label.font())
+        available = self.name_label.width()
+        if available > 0:
+            elided = metrics.elidedText(
+                self._full_name, Qt.TextElideMode.ElideRight, available
+            )
+            self.name_label.setText(elided)
+
     def _apply_theme(self) -> None:
         """Apply unified pill styling using StyleHelper."""
-        from src.gui.utils.style_helper import StyleHelper
-
         style = StyleHelper.get_pill_style(object_name="DragPill", has_delete=False)
         self.setStyleSheet(style)
 
@@ -138,14 +154,15 @@ class DragPill(QFrame):
 
     def paintEvent(self, event) -> None:
         """High-fidelity rendering of the drag pill shape with Antialiasing."""
-        from src.gui.utils.style_helper import StyleHelper
-
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        # Get color data from StyleHelper (DragPill uses default accent)
-        data = StyleHelper.get_pill_painter_data(None)
-        r, g, b = data["r"], data["g"], data["b"]
+        # Use cached color data
+        r, g, b = (
+            self._painter_data["r"],
+            self._painter_data["g"],
+            self._painter_data["b"],
+        )
 
         # Define pill geometry
         rect = self.contentsRect().adjusted(2, 2, -2, -2)
