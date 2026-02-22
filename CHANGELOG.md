@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-02-22
-**Commit:** `61eb1ca`
+**Commit:** 0.13.5
 ---
 
 # Changelog
@@ -10,6 +10,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [0.13.5]
 
 ### Security
 - *(2026-02-19)* **Security**: Updated `Pillow` to `12.1.1` to address CVE-2026-25990 (high-severity vulnerability).
