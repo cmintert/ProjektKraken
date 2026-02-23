@@ -625,6 +625,24 @@ We use a two-pronged approach:
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_embedding_stats">
+<span class="sig-name descname"><span class="pre">get_embedding_stats</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_embedding_stats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_embedding_stats" title="Link to this definition">¶</a></dt>
+<dd><p>Returns aggregate statistics for the embeddings table.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>A dictionary with <code class="docutils literal notranslate"><span class="pre">&quot;count&quot;</span></code> (int) and</dt><dd><p><code class="docutils literal notranslate"><span class="pre">&quot;last_updated&quot;</span></code> (float or None) keys.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict[str, Any]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.get_entities">
 <span class="sig-name descname"><span class="pre">get_entities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Entity</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_entities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_entities" title="Link to this definition">¶</a></dt>
 <dd><p>Retrieves entities, optionally filtered by type.</p>
@@ -2276,6 +2294,7 @@ background workers.</p>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_connection"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_connection()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_current_time"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_current_time()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_db_file_path"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_db_file_path()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_embedding_stats"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_embedding_stats()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_entities"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_entities()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_entities_by_tag"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_entities_by_tag()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_entity()</span></code></a></li>

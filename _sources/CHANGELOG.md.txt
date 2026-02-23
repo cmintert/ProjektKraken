@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-23
 ### Internal
-- map: standardized z-layers to ensure markers always appear above trajectory lines
+- Merge pull request #101 from cmintert/copilot/technical-debt-assessment
 
 
 *This changelog was automatically generated.*
