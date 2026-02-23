@@ -1383,3 +1383,31 @@ class DatabaseService:
         except sqlite3.Error as e:
             logger.error(f"VACUUM failed: {e}")
             return False
+
+    # --------------------------------------------------------------------------
+    # Embedding Stats
+    # --------------------------------------------------------------------------
+
+    def get_embedding_stats(self) -> Dict[str, Any]:
+        """Returns aggregate statistics for the embeddings table.
+
+        Returns:
+            Dict[str, Any]: A dictionary with ``"count"`` (int) and
+                ``"last_updated"`` (float or None) keys.
+
+        """
+        if not self._connection:
+            return {"count": 0, "last_updated": None}
+
+        try:
+            row = self._connection.execute(
+                "SELECT COUNT(*) AS cnt, MAX(created_at) AS latest "
+                "FROM embeddings"
+            ).fetchone()
+            return {
+                "count": row["cnt"] if row else 0,
+                "last_updated": row["latest"] if row else None,
+            }
+        except Exception as e:
+            logger.error(f"Failed to get embedding stats: {e}")
+            return {"count": 0, "last_updated": None}

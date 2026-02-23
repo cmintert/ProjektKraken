@@ -505,7 +505,6 @@ class UIManager:
         edit_menu = menu_bar.addMenu("Edit")
 
         # Undo Action
-        # Undo Action
         self.undo_action = edit_menu.addAction("Undo")
         self.undo_action.setShortcut(ShortcutManager.UNDO.key_sequence)
         self.undo_action.setShortcutContext(Qt.ShortcutContext.ApplicationShortcut)

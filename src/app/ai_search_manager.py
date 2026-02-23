@@ -250,31 +250,18 @@ class AISearchManager(QObject):
             if not hasattr(self.window, "gui_db_service"):
                 return
 
-            # Get model configuration
             provider = os.getenv("EMBED_PROVIDER", "lmstudio")
             model = os.getenv("LMSTUDIO_MODEL", "Not configured")
 
-            # Count indexed objects
-            # Use gui_db_service connection (Main Thread)
-            assert self.window.gui_db_service._connection is not None
-            cursor = self.window.gui_db_service._connection.execute(
-                "SELECT COUNT(*) FROM embeddings"
-            )
-            count = cursor.fetchone()[0]
+            stats = self.window.gui_db_service.get_embedding_stats()
+            count = stats["count"]
 
-            # Get last indexed time
-            assert self.window.gui_db_service._connection is not None
-            cursor = self.window.gui_db_service._connection.execute(
-                "SELECT MAX(created_at) FROM embeddings"
-            )
-            if last_time := cursor.fetchone()[0]:
+            if last_time := stats["last_updated"]:
                 dt = datetime.datetime.fromtimestamp(last_time)
                 last_indexed = dt.strftime("%Y-%m-%d %H:%M:%S")
             else:
                 last_indexed = "Never"
 
-            # Update panel
-            # Update dialog if visible
             if (
                 hasattr(self.window, "ai_settings_dialog")
                 and self.window.ai_settings_dialog

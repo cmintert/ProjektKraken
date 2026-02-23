@@ -73,6 +73,9 @@ class GlobalShortcutFilter(QObject):
 
     Installed on QApplication to capture Ctrl+Z (Undo) and Ctrl+Y/Ctrl+Shift+Z
     (Redo) before individual widgets can consume them.
+
+    Shortcuts are defined declaratively in ``_SHORTCUTS`` to keep the
+    event filter body simple and data-driven.
     """
 
     def __init__(self, main_window: "MainWindow") -> None:
@@ -85,6 +88,48 @@ class GlobalShortcutFilter(QObject):
         super().__init__(main_window)
         self.main_window = main_window
 
+    def _try_undo(self) -> bool:
+        """Attempt to undo the last command.
+
+        Returns:
+            True if the undo was performed, False otherwise.
+
+        """
+        if hasattr(self.main_window, "coordinator"):
+            if self.main_window.coordinator.can_undo():
+                self.main_window.coordinator.undo()
+                return True
+        return False
+
+    def _try_redo(self) -> bool:
+        """Attempt to redo the last undone command.
+
+        Returns:
+            True if the redo was performed, False otherwise.
+
+        """
+        if hasattr(self.main_window, "coordinator"):
+            if self.main_window.coordinator.can_redo():
+                self.main_window.coordinator.redo()
+                return True
+        return False
+
+    def _try_create(self, action_name: str) -> bool:
+        """Trigger a creation action on the list widget.
+
+        Args:
+            action_name: The attribute name of the action on the list widget
+                (e.g. ``"action_create_event"``).
+
+        Returns:
+            True if the action was triggered, False otherwise.
+
+        """
+        if hasattr(self.main_window, "list_widget"):
+            getattr(self.main_window.list_widget, action_name).trigger()
+            return True
+        return False
+
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         """Filter key events and intercept global shortcuts.
 
@@ -96,53 +141,29 @@ class GlobalShortcutFilter(QObject):
             True if the event was handled (consumed), False otherwise.
 
         """
-        if event.type() == QEvent.Type.KeyPress:
-            key_event = event  # type: QKeyEvent
-            key = key_event.key()
-            modifiers = key_event.modifiers()
+        if event.type() != QEvent.Type.KeyPress:
+            return False
 
-            # Check for Ctrl+Z (Undo)
-            if key == Qt.Key.Key_Z and modifiers == Qt.KeyboardModifier.ControlModifier:
-                if hasattr(self.main_window, "coordinator"):
-                    if self.main_window.coordinator.can_undo():
-                        self.main_window.coordinator.undo()
-                        return True  # Consume the event
+        key_event = event  # type: QKeyEvent
+        key = key_event.key()
+        modifiers = key_event.modifiers()
+        ctrl = Qt.KeyboardModifier.ControlModifier
+        ctrl_shift = ctrl | Qt.KeyboardModifier.ShiftModifier
 
-            # Check for Ctrl+Y (Redo)
-            if key == Qt.Key.Key_Y and modifiers == Qt.KeyboardModifier.ControlModifier:
-                if hasattr(self.main_window, "coordinator"):
-                    if self.main_window.coordinator.can_redo():
-                        self.main_window.coordinator.redo()
-                        return True  # Consume the event
+        _SHORTCUTS = {
+            (Qt.Key.Key_Z, ctrl): self._try_undo,
+            (Qt.Key.Key_Y, ctrl): self._try_redo,
+            (Qt.Key.Key_Z, ctrl_shift): self._try_redo,
+            (Qt.Key.Key_E, ctrl): lambda: self._try_create("action_create_event"),
+            (Qt.Key.Key_I, ctrl): lambda: self._try_create("action_create_entity"),
+            (Qt.Key.Key_M, ctrl): lambda: self._try_create("action_create_map"),
+        }
 
-            # Check for Ctrl+Shift+Z (Redo alternative)
-            if key == Qt.Key.Key_Z and modifiers == (
-                Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier
-            ):
-                if hasattr(self.main_window, "coordinator"):
-                    if self.main_window.coordinator.can_redo():
-                        self.main_window.coordinator.redo()
-                        return True  # Consume the event
+        handler = _SHORTCUTS.get((key, modifiers))
+        if handler is not None:
+            return handler()
 
-            # Check for Ctrl+E (Create Event)
-            if key == Qt.Key.Key_E and modifiers == Qt.KeyboardModifier.ControlModifier:
-                if hasattr(self.main_window, "list_widget"):
-                    self.main_window.list_widget.action_create_event.trigger()
-                    return True
-
-            # Check for Ctrl+I (Create Entity)
-            if key == Qt.Key.Key_I and modifiers == Qt.KeyboardModifier.ControlModifier:
-                if hasattr(self.main_window, "list_widget"):
-                    self.main_window.list_widget.action_create_entity.trigger()
-                    return True
-
-            # Check for Ctrl+M (Create Map)
-            if key == Qt.Key.Key_M and modifiers == Qt.KeyboardModifier.ControlModifier:
-                if hasattr(self.main_window, "list_widget"):
-                    self.main_window.list_widget.action_create_map.trigger()
-                    return True
-
-        return False  # Don't consume, let event propagate
+        return False
 
 
 class MainWindow(QMainWindow, LayoutGuardMixin):
