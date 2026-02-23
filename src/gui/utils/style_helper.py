@@ -5,6 +5,8 @@ generate consistent QSS strings. This eliminates hardcoded colors and ensures th
 switches reliably update the UI.
 """
 
+from typing import Optional
+
 from PySide6.QtWidgets import QLayout
 
 from src.core.theme_manager import ThemeManager
@@ -174,13 +176,13 @@ class StyleHelper:
 
     @staticmethod
     def get_tool_button_style() -> str:
-        """Returns QSS for tool/secondary action buttons.
-
-        Tool buttons use surface background and border, good for toolbars.
-
+        """
+        Style sheet for tool and secondary action buttons targeting QToolButton and QPushButton.
+        
+        The style uses the theme's surface, text, border, primary, and app background colors and defines base, hover, pressed, and checked states.
+        
         Returns:
-            str: QSS stylesheet string for tool buttons.
-
+            str: QSS stylesheet string for tool and secondary action buttons.
         """
 
         theme = ThemeManager().get_theme()
@@ -188,8 +190,10 @@ class StyleHelper:
             f"QToolButton, QPushButton {{ background-color: {theme['surface']}; "
             f"color: {theme['text_main']}; border: 1px solid {theme['border']}; "
             f"border-radius: 4px; padding: 4px; }}"
-            f"QToolButton:hover, QPushButton:hover {{ background-color: {theme['border']}; }}"
-            f"QToolButton:pressed, QPushButton:pressed {{ background-color: {theme['app_bg']}; }}"
+            f"QToolButton:hover, QPushButton:hover {{ "
+            f"background-color: {theme['border']}; }}"
+            f"QToolButton:pressed, QPushButton:pressed {{ "
+            f"background-color: {theme['app_bg']}; }}"
             f"QToolButton:checked, QPushButton:checked {{ "
             f"background-color: {theme['border']}; "
             f"border: 1px solid {theme['primary']}; }}"
@@ -197,13 +201,13 @@ class StyleHelper:
 
     @staticmethod
     def get_destructive_button_style() -> str:
-        """Returns QSS for destructive action buttons.
-
-        Destructive buttons (delete, remove) use error color.
-
+        """
+        Provide QSS for destructive action buttons using the theme's destructive color.
+        
+        Styles normal, hover, and disabled states for QPushButton to ensure consistent destructive button appearance.
+        
         Returns:
-            str: QSS stylesheet string for destructive buttons.
-
+            str: QSS stylesheet string for destructive action buttons.
         """
 
         theme = ThemeManager().get_theme()
@@ -214,18 +218,100 @@ class StyleHelper:
             f"QPushButton:hover {{ background-color: {theme['border']}; "
             f"color: {theme['text_main']}; }}"
             f"QPushButton:disabled {{ background-color: {theme['surface']}; "
-            f"color: {theme['text_dim']}; border: 1px solid {theme['border']}; }}"
+            f"color: {theme['text_dim']}; "
+            f"border: 1px solid {theme['border']}; }}"
         )
 
     @staticmethod
-    def get_icon_button_style() -> str:
-        """Returns QSS for theme-aware square icon buttons.
-
-        Provides consistent styling for small buttons that contain only icons,
-        matching the look of search buttons while using theme tokens.
-
+    def get_pill_painter_data(base_color: Optional[str] = None) -> dict:
+        """
+        Return RGB components and hex color for painting pill widgets.
+        
+        Parameters:
+            base_color (Optional[str]): Optional hex color string in `#RRGGBB` form; when omitted the theme's `accent_secondary` color is used.
+        
         Returns:
-            str: QSS stylesheet string for icon buttons.
+            dict: Mapping with keys:
+                - "hex" (str): The hex color string used.
+                - "r" (int): Red component (0-255).
+                - "g" (int): Green component (0-255).
+                - "b" (int): Blue component (0-255).
+        """
+        theme = ThemeManager().get_theme()
+        hex_color = base_color or theme.get("accent_secondary", "#4A90D9")
+
+        # Convert hex to rgba
+        r, g, b = 74, 144, 217
+        if hex_color.startswith("#") and len(hex_color) == 7:
+            r = int(hex_color[1:3], 16)
+            g = int(hex_color[3:5], 16)
+            b = int(hex_color[5:7], 16)
+
+        return {"hex": hex_color, "r": r, "g": g, "b": b}
+
+    @staticmethod
+    def get_pill_style(
+        object_name: str,
+        base_color: Optional[str] = None,
+        has_delete: bool = False,
+    ) -> str:
+        """
+        Generate themed QSS for a pill-style (rounded/oblong) widget.
+        
+        Parameters:
+        	object_name (str): The widget's objectName used as the selector.
+        	base_color (Optional[str]): Optional hex base color to derive pill RGB values; if omitted, theme accent_secondary is used.
+        	has_delete (bool): If True, include styling for an inline delete QToolButton inside the pill.
+        
+        Returns:
+        	str: QSS stylesheet string targeting the pill widget and optional delete button.
+        """
+        theme = ThemeManager().get_theme()
+        data = StyleHelper.get_pill_painter_data(base_color)
+        r, g, b = data["r"], data["g"], data["b"]
+
+        # Main style is now transparent background to allow QPainter to draw the pill
+        style = (
+            f"#{object_name}, QFrame#{object_name} {{ "
+            f"  background-color: transparent; "
+            f"  border: none; "
+            f"  margin: 2px; "
+            f"}} "
+            f"#{object_name} QLabel {{ "
+            f"  color: {theme['text_main']}; "
+            f"  border: none; background: transparent; "
+            f"  font-size: 9pt; "
+            f"  padding: 0 4px 0 8px; "
+            f"}} "
+        )
+
+        if has_delete:
+            style += (
+                f"#{object_name} QToolButton {{ "
+                f"  border: none; background: transparent; "
+                f"  color: rgba({r}, {g}, {b}, 0.8); "
+                f"  font-weight: bold; font-size: 10pt; "
+                f"  padding: 0px 8px 0px 4px; "
+                f"  margin: 0; "
+                f"  border-radius: 10px; "
+                f"}} "
+                f"#{object_name} QToolButton:hover {{ "
+                f"  color: {theme['error']}; "
+                f"  background-color: rgba({r}, {g}, {b}, 0.2); "
+                f"}} "
+            )
+
+        return style
+
+    @staticmethod
+    def get_icon_button_style() -> str:
+        """
+        QSS for square, icon-only buttons that reflect the current theme.
+        
+        Includes base, hover, and pressed states using theme surface, border, and app background colors.
+        
+        Returns:
+            str: The QSS stylesheet string for icon buttons.
         """
 
         theme = ThemeManager().get_theme()
@@ -447,29 +533,29 @@ class StyleHelper:
 
     @staticmethod
     def apply_no_margins(layout: QLayout) -> None:
-        """Removes margins from a layout.
-
-        Useful for nested layouts or widgets that need edge-to-edge content.
-
-        Args:
-            layout: The QLayout to configure.
-
+        """
+        Remove all margins from the given layout.
+        
+        Parameters:
+            layout (QLayout): Layout to modify; margins will be set to 0 on all sides.
         """
         layout.setContentsMargins(0, 0, 0, 0)
 
     @staticmethod
     def get_checkbox_style() -> str:
-        """Returns QSS for themed checkboxes.
-
+        """
+        QSS stylesheet for themed checkbox indicators and related view indicators.
+        
         Returns:
-            str: QSS stylesheet string for checkboxes.
+            str: Stylesheet configuring checkbox, QListWidget/QListView/QTreeView indicators (size, border, radius, background), hover border color, checked state border and embedded check icon.
         """
 
         from src.core.paths import get_resource_path
 
         theme = ThemeManager().get_theme()
 
-        # Use get_resource_path for robust absolute path resolution (works in PyInstaller)
+        # Use get_resource_path for robust absolute path resolution
+        # (works in PyInstaller)
         # Ensure forward slashes and quoting to handle spaces/Windows issues
         check_icon_path = get_resource_path("default_assets/icons/ui_icons/check.svg")
         check_icon_path = check_icon_path.replace("\\", "/")
@@ -648,13 +734,13 @@ class StyleHelper:
 
     @staticmethod
     def get_spinbox_style() -> str:
-        """Returns QSS for themed spinboxes with custom up/down buttons.
-
-        Fixes the issue where setting background/border on QSpinBox hides the
-        native arrows. Uses arrow SVG icons from default assets.
-
+        """
+        Generate QSS for themed QSpinBox widgets with custom up/down buttons.
+        
+        Prevents native arrows from being hidden when background or border styles are applied and uses bundled SVG arrow assets for the up/down controls.
+        
         Returns:
-            str: QSS stylesheet string for spinboxes.
+            str: QSS stylesheet string for QSpinBox widgets.
         """
         from src.core.paths import get_resource_path
 
@@ -682,6 +768,7 @@ class StyleHelper:
             f"background-color: transparent; "
             f"margin-bottom: 1px; margin-right: 1px; }}"
             f"QSpinBox::up-button:hover, QSpinBox::down-button:hover {{ "
+            f"background-color: {theme['border']}; }}"
             f"QSpinBox::up-button:pressed, QSpinBox::down-button:pressed {{ "
             f"background-color: {theme['primary']}; }}"
             f"QSpinBox::up-arrow {{ "
@@ -692,18 +779,18 @@ class StyleHelper:
 
     @staticmethod
     def get_shortcut_key_style() -> str:
-        """Returns QSS for keyboard shortcut keys.
-
+        """
+        QSS for keyboard shortcut key widgets styled as monospace, bold tokens with padding and rounded borders.
+        
         Returns:
-            str: QSS stylesheet string for shortcut keys.
+            str: Stylesheet string using the theme's surface, text_main, and border colors.
         """
 
         theme = ThemeManager().get_theme()
         return (
-            f"background-color: {theme['surface']}; "
-            f"color: {theme['text_main']}; "
-            f"border: 1px solid {theme['border']}; "
-            f"border-radius: 4px; padding: 4px 8px; "
+            f"background-color: {theme['surface']}; color: {theme['text_main']}; "
+            f"border: 1px solid {theme['border']}; border-radius: 4px; "
+            f"padding: 4px; font-weight: bold;"
             f"font-family: monospace; font-weight: bold;"
         )
 

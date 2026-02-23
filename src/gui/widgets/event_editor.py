@@ -237,8 +237,6 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         # Add Summary Widget (Collapsible)
         # Add Summary Widget (Collapsible)
-        from PySide6.QtWidgets import QCheckBox
-
         self.summary_container = QWidget()
         summary_outer_layout = QVBoxLayout(self.summary_container)
         summary_outer_layout.setContentsMargins(0, 0, 0, 0)
@@ -1016,11 +1014,13 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
     @Slot(dict)
     def _on_theme_changed(self, theme: dict) -> None:
-        """Updates UI elements when the theme changes.
-
-        Args:
-            theme (dict): The new theme data.
-
+        """
+        Apply theme changes to specific UI elements.
+        
+        Updates the inject button stylesheet and the icons/styles for relation add-buttons using values from the provided theme. Expects the `theme` mapping to include a `text_main` color value used for icon tinting.
+        
+        Parameters:
+        	theme (dict): Theme data containing color and style values (must include `text_main`).
         """
         from src.gui.utils.icon_loader import load_icon
         from src.gui.utils.style_helper import StyleHelper
@@ -1033,7 +1033,6 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         # Update Checkboxes
         # StandardCheckbox handles its own styling on theme change
-
 
         # Update Relations Tab Buttons (Icons and Styles)
         icon_path = os.path.join("default_assets", "icons", "ui_icons", "plus.svg")

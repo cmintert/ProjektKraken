@@ -5,24 +5,23 @@ Provides a list-based interface for managing tags on entities and events.
 
 from typing import List, Optional
 
-from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtCore import QStringListModel, Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QCompleter,
-    QHBoxLayout,
     QLineEdit,
-    QListWidget,
-    QListWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
-from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
+from src.gui.widgets.flow_layout import FlowLayout
+from src.gui.widgets.tag_pill import TagPill
 
 
 class TagEditorWidget(QWidget):
-    """A widget for managing tags (list of strings).
+    """A widget for managing tags using a modern flow-based pill interface.
 
-    Provides an input field for adding tags and a list for viewing/removing them.
+    Tags are displayed as rounded pills in a row, wrapping automatically.
+    A text input field is integrated into the flow for adding new tags.
 
     Signals:
         tags_changed: Emitted when tags are added or removed.
@@ -31,87 +30,132 @@ class TagEditorWidget(QWidget):
     tags_changed = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """Initializes the TagEditorWidget.
-
-        Args:
-            parent (QWidget, optional): The parent widget. Defaults to None.
-
+        """
+        Create a tag editor widget with a wrapping flow of tag "pill" widgets and an integrated text input that supports completion.
+        
+        Sets up the flow container and layout for tag pills, an inline QLineEdit for adding tags, a persistent QStringListModel-backed QCompleter for suggestions, and a styled frame around the flow. The widget starts with only the input present.
+        
+        Parameters:
+            parent (QWidget | None): Optional parent widget.
         """
         super().__init__(parent)
+        self._base_color: Optional[str] = None
+
         main_layout = QVBoxLayout(self)
         from src.gui.utils.style_helper import StyleHelper
 
         StyleHelper.apply_compact_spacing(main_layout)
 
-        # Toolbar with action buttons
-        toolbar_layout = QHBoxLayout()
-        self.btn_add = StandardButton("Add Tag")
-        self.btn_add.clicked.connect(self._on_add)
-        toolbar_layout.addWidget(self.btn_add)
+        # Flow container for pills and input
+        self.flow_container = QWidget()
+        self.flow_layout = FlowLayout(self.flow_container)
+        self.flow_layout.setSpacing(6)
 
-        self.btn_remove = DestructiveButton("Remove")
-        self.btn_remove.clicked.connect(self._on_remove)
-        self.btn_remove.setEnabled(False)
-        toolbar_layout.addWidget(self.btn_remove)
-
-        toolbar_layout.addStretch()
-        main_layout.addLayout(toolbar_layout)
-
-        # Input row
-        input_layout = QHBoxLayout()
+        # Tag input - integrated into flow
         self.tag_input = QLineEdit()
-        self.tag_input.setPlaceholderText("Enter tag and press Enter...")
+        self.tag_input.setPlaceholderText("Add tag...")
+        self.tag_input.setMinimumWidth(100)
+        self.tag_input.setStyleSheet(StyleHelper.get_transparent_input_style())
         self.tag_input.returnPressed.connect(self._on_add)
-        input_layout.addWidget(self.tag_input)
-        main_layout.addLayout(input_layout)
 
-        # Tag list
-        self.tag_list = QListWidget()
-        self.tag_list.setSelectionMode(QListWidget.SingleSelection)
-        self.tag_list.itemSelectionChanged.connect(self._update_button_states)
-        main_layout.addWidget(self.tag_list)
+        # Persistent completer + model (avoids QObject churn on each update)
+        self._completer_model = QStringListModel(self)
+        self._completer = QCompleter(self._completer_model, self)
+        self._completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self._completer.setFilterMode(Qt.MatchFlag.MatchContains)
+        self.tag_input.setCompleter(self._completer)
+
+        # We'll wrap the flow container in a styled frame to look like an input box
+        self.container_frame = QWidget()
+        self.container_frame.setStyleSheet(StyleHelper.get_input_field_style())
+        frame_layout = QVBoxLayout(self.container_frame)
+        frame_layout.setContentsMargins(4, 4, 4, 4)
+        frame_layout.addWidget(self.flow_container)
+
+        main_layout.addWidget(self.container_frame)
+
+        # Initial state: just the input
+        self.flow_layout.addWidget(self.tag_input)
+
+    def set_base_color(self, color: str) -> None:
+        """
+        Set the base color used to style tag pills and update existing pills to reflect it.
+        
+        Parameters:
+            color (str): Hex color string (e.g., "#RRGGBB") to apply as the pill base color.
+        """
+        self._base_color = color
+        # Refresh existing pills
+        self.load_tags(self.get_tags())
 
     def load_tags(self, tags: List[str]) -> None:
-        """Populates the widget with the given list of tags.
-
-        Args:
-            tags (list): List of tag strings.
-
         """
-        self.tag_list.clear()
+        Replace the displayed tags with the provided list by creating a TagPill for each entry.
+        
+        This clears all existing tag pills (preserving the integrated input field) and adds new pills in the same order as the provided list so the input remains at the end.
+        
+        Parameters:
+            tags (List[str]): List of tag strings to display; order determines left-to-right pill order.
+        """
+        # Clear existing pills (everything except the input)
+        for i in reversed(range(self.flow_layout.count())):
+            item = self.flow_layout.itemAt(i)
+            widget = item.widget()
+            if widget != self.tag_input:
+                self.flow_layout.takeAt(i)
+                widget.deleteLater()
+
         for tag in tags:
-            item = QListWidgetItem(tag)
-            item.setData(Qt.ItemDataRole.UserRole, tag)
-            self.tag_list.addItem(item)
+            self._add_pill(tag)
+
+    def _add_pill(self, tag: str) -> None:
+        """
+        Add a TagPill widget for the given tag into the flow layout immediately before the input field.
+        
+        The pill's `deleted` signal is connected to the widget's deletion handler so removing the pill emits updates.
+        
+        Parameters:
+            tag (str): Text to display on the created tag pill.
+        """
+        pill = TagPill(tag, base_color=self._base_color)
+        pill.deleted.connect(self._on_pill_deleted)
+
+        # Insert before the input field
+        self.flow_layout.takeAt(self.flow_layout.count() - 1)
+        self.flow_layout.addWidget(pill)
+        self.flow_layout.addWidget(self.tag_input)
 
     def get_tags(self) -> List[str]:
-        """Returns the current list of tags.
-
+        """
+        Get the current tag texts in display order.
+        
         Returns:
-            list: List of tag strings.
-
+            List[str]: Tag texts from the flow layout, in left-to-right wrapping order.
         """
         tags = []
-        for i in range(self.tag_list.count()):
-            item = self.tag_list.item(i)
-            tags.append(item.data(Qt.ItemDataRole.UserRole))
+        for i in range(self.flow_layout.count()):
+            item = self.flow_layout.itemAt(i)
+            widget = item.widget()
+            if isinstance(widget, TagPill):
+                tags.append(widget.text)
         return tags
 
     def update_suggestions(self, tags: List[str]) -> None:
-        """Updates the tag completer with new suggestions.
-
-        Args:
-            tags: List of existing tags for completion.
-
         """
-        completer = QCompleter(tags, self)
-        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-        completer.setFilterMode(Qt.MatchFlag.MatchContains)
-        self.tag_input.setCompleter(completer)
+        Update the autocomplete suggestions used by the tag input completer.
+        
+        Parameters:
+            tags: Iterable of suggestion strings to set for the completer; replaces any previous suggestions.
+        """
+        self._completer_model.setStringList(tags)
 
     @Slot()
     def _on_add(self) -> None:
-        """Handles adding a new tag."""
+        """
+        Add the tag currently entered in the input to the widget if valid and not a duplicate.
+        
+        Reads and trims the input text; if the result is non-empty and not already present, creates a new tag pill, clears the input, and emits the `tags_changed` signal.
+        """
         raw_tag = self.tag_input.text().strip()
         if not raw_tag:
             return
@@ -123,22 +167,24 @@ class TagEditorWidget(QWidget):
             return
 
         # Add the tag
-        item = QListWidgetItem(raw_tag)
-        item.setData(Qt.ItemDataRole.UserRole, raw_tag)
-        self.tag_list.addItem(item)
+        self._add_pill(raw_tag)
 
         self.tag_input.clear()
         self.tags_changed.emit()
 
-    def _update_button_states(self) -> None:
-        """Updates enabled state for Remove button based on selection."""
-        has_selection = self.tag_list.currentItem() is not None
-        self.btn_remove.setEnabled(has_selection)
-
-    @Slot()
-    def _on_remove(self) -> None:
-        """Handles removing the selected tag."""
-        if current_item := self.tag_list.currentItem():
-            row = self.tag_list.row(current_item)
-            self.tag_list.takeItem(row)
-            self.tags_changed.emit()
+    @Slot(str)
+    def _on_pill_deleted(self, tag: str) -> None:
+        """
+        Remove the first tag pill whose text matches the provided tag and emit the `tags_changed` signal.
+        
+        Parameters:
+            tag (str): The tag text to remove. If no matching pill exists, the method does nothing.
+        """
+        for i in range(self.flow_layout.count()):
+            item = self.flow_layout.itemAt(i)
+            widget = item.widget()
+            if isinstance(widget, TagPill) and widget.text == tag:
+                self.flow_layout.takeAt(i)
+                widget.deleteLater()
+                self.tags_changed.emit()
+                break
