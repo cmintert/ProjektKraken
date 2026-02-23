@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-02-22
-### Added
-- feat(gui): implement themed pill backgrounds for map marker labels
+## [Development] - 2026-02-23
+### Internal
+- Merge pull request #99 from cmintert/pill-tags
 
 
 *This changelog was automatically generated.*
