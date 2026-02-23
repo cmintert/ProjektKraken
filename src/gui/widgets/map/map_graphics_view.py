@@ -493,145 +493,6 @@ class KeyframeItem(QGraphicsObject):
         return super().itemChange(change, value)
 
 
-class _VertexHandle(QGraphicsEllipseItem):
-    """Draggable handle displayed on a feature vertex during editing.
-
-    Each handle is a small circle that the user can drag to reshape
-    a path or region. On release, the callback fires with the new position.
-    Right-clicking the handle removes the vertex.
-
-    The handle scales inversely with the view zoom so it maintains a
-    constant screen-pixel size, enabling precise work at high zoom.
-
-    Args:
-        index: The vertex index this handle represents.
-        on_moved: Callback ``(index, QPointF)`` invoked when dragging finishes.
-        on_delete: Optional callback ``(index,)`` invoked on right-click delete.
-
-    """
-
-    def __init__(
-        self,
-        index: int,
-        on_moved: "Callable[[int, QPointF], None]",
-        on_delete: "Optional[Callable[[int], None]]" = None,
-    ) -> None:
-        r = MAP_VERTEX_HANDLE_RADIUS
-        super().__init__(-r, -r, r * 2, r * 2)
-        self.index = index
-        self._on_moved = on_moved
-        self._on_delete = on_delete
-        self.setBrush(QBrush(QColor(MAP_VERTEX_HANDLE_COLOR)))
-        self.setPen(QPen(QColor(MAP_VERTEX_HANDLE_BORDER_COLOR), 1))
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True)
-        self.setAcceptHoverEvents(True)
-        self.setCursor(QCursor(Qt.CursorShape.SizeAllCursor))
-        self.setZValue(LAYER_UI_OVERLAY + 1)
-
-    def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
-        """Notifies parent when the handle position changes.
-
-        Args:
-            change: The type of change.
-            value: The new value.
-
-        Returns:
-            The processed value.
-
-        """
-        if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
-            self._on_moved(self.index, self.pos())
-        return super().itemChange(change, value)
-
-    def mousePressEvent(self, event: "QGraphicsSceneMouseEvent") -> None:
-        """Handles right-click to delete the vertex.
-
-        Args:
-            event: The mouse press event.
-
-        """
-        if event.button() == Qt.MouseButton.RightButton and self._on_delete:
-            self._on_delete(self.index)
-            event.accept()
-            return
-        super().mousePressEvent(event)
-
-
-class _MidpointHandle(QGraphicsEllipseItem):
-    """Ghost handle on the midpoint of a segment for inserting new vertices.
-
-    Displayed as a semi-transparent circle between two consecutive vertex
-    handles. When dragged, it converts into a real vertex by invoking the
-    ``on_insert`` callback with the segment index and the new position.
-
-    The handle scales inversely with the view zoom so it maintains a
-    constant screen-pixel size.
-
-    Args:
-        segment_index: Index of the segment (vertex *before* the midpoint).
-        on_insert: Callback ``(segment_index, QPointF)`` invoked on drag.
-
-    """
-
-    def __init__(
-        self,
-        segment_index: int,
-        on_insert: "Callable[[int, QPointF], None]",
-    ) -> None:
-        r = MAP_MIDPOINT_HANDLE_RADIUS
-        super().__init__(-r, -r, r * 2, r * 2)
-        self.segment_index = segment_index
-        self._on_insert = on_insert
-        self._activated = False
-        self.setBrush(QBrush(QColor(MAP_MIDPOINT_HANDLE_COLOR)))
-        self.setPen(QPen(QColor(MAP_MIDPOINT_HANDLE_BORDER_COLOR), 1))
-        self.setOpacity(MAP_MIDPOINT_GHOST_OPACITY)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True)
-        self.setAcceptHoverEvents(True)
-        self.setCursor(QCursor(Qt.CursorShape.CrossCursor))
-        self.setZValue(LAYER_UI_OVERLAY)
-
-    def hoverEnterEvent(self, event: "QGraphicsSceneHoverEvent") -> None:
-        """Highlights the ghost handle on hover.
-
-        Args:
-            event: The hover enter event.
-
-        """
-        self.setOpacity(MAP_MIDPOINT_HOVER_OPACITY)
-        super().hoverEnterEvent(event)
-
-    def hoverLeaveEvent(self, event: "QGraphicsSceneHoverEvent") -> None:
-        """Resets ghost handle opacity on hover leave.
-
-        Args:
-            event: The hover leave event.
-
-        """
-        if not self._activated:
-            self.setOpacity(MAP_MIDPOINT_GHOST_OPACITY)
-        super().hoverLeaveEvent(event)
-
-    def mouseMoveEvent(self, event: "QGraphicsSceneMouseEvent") -> None:
-        """On first drag, insert the vertex.
-
-        Args:
-            event: The mouse move event.
-
-        """
-        if not self._activated:
-            self._activated = True
-            self.setOpacity(1.0)
-            self._on_insert(self.segment_index, self.pos())
-        super().mouseMoveEvent(event)
-
-
-
-
 class MapGraphicsView(QGraphicsView):
     """Graphics view for displaying a map image with draggable markers.
 
@@ -691,9 +552,7 @@ class MapGraphicsView(QGraphicsView):
 
         # Expanding policy ensures the view fills available dock space and
         # prevents collapse when the parent dock is resized.
-        self.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
-        )
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         # Initialize Coordinate System
         self.coord_system = MapCoordinateSystem()
@@ -719,8 +578,7 @@ class MapGraphicsView(QGraphicsView):
 
             except ImportError:
                 logger.warning(
-                    "QtOpenGLWidgets not available. "
-                    "Requesting software rendering."
+                    "QtOpenGLWidgets not available. " "Requesting software rendering."
                 )
             except Exception as e:
                 logger.warning(
@@ -729,8 +587,7 @@ class MapGraphicsView(QGraphicsView):
                 )
         else:
             logger.info(
-                "OpenGL disabled via KRAKEN_NO_OPENGL. "
-                "Using software rendering."
+                "OpenGL disabled via KRAKEN_NO_OPENGL. " "Using software rendering."
             )
 
         self.scene = QGraphicsScene(self)
@@ -740,21 +597,13 @@ class MapGraphicsView(QGraphicsView):
         self.setRenderHint(QPainter.Antialiasing)
         self.setRenderHint(QPainter.SmoothPixmapTransform)
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
-        self.setTransformationAnchor(
-            QGraphicsView.ViewportAnchor.AnchorUnderMouse
-        )
-        self.setResizeAnchor(
-            QGraphicsView.ViewportAnchor.AnchorUnderMouse
-        )
+        self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setMouseTracking(True)
 
         # Disable scrollbars for infinite canvas feel
-        self.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
-        )
-        self.setVerticalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
-        )
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         # Map background
         self.pixmap_item: Optional[QGraphicsPixmapItem] = None
@@ -771,9 +620,7 @@ class MapGraphicsView(QGraphicsView):
         self._drop_hint_overlay = QLabel(self.viewport())
         from src.gui.utils.style_helper import StyleHelper
 
-        self._drop_hint_overlay.setStyleSheet(
-            StyleHelper.get_drag_overlay_style()
-        )
+        self._drop_hint_overlay.setStyleSheet(StyleHelper.get_drag_overlay_style())
         self._drop_hint_overlay.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._drop_hint_overlay.setText("Drop to Place Marker")
         self._drop_hint_overlay.hide()
@@ -796,9 +643,7 @@ class MapGraphicsView(QGraphicsView):
         self._layout_debounce_timer = QTimer(self)
         self._layout_debounce_timer.setSingleShot(True)
         self._layout_debounce_timer.setInterval(50)
-        self._layout_debounce_timer.timeout.connect(
-            self._execute_label_layout
-        )
+        self._layout_debounce_timer.timeout.connect(self._execute_label_layout)
 
         # Hierarchical Layer Model
         self._layer_model: Optional["MapLayerModel"] = None
@@ -916,9 +761,7 @@ class MapGraphicsView(QGraphicsView):
     # Backward-compatible method aliases for sub-component methods
     # ------------------------------------------------------------------
 
-    def _start_vertex_editing(
-        self, item: "PathItem | RegionItem"
-    ) -> None:
+    def _start_vertex_editing(self, item: "PathItem | RegionItem") -> None:
         """Backward-compatible alias for VertexEditor.start_vertex_editing."""
         self._vertex_editor.start_vertex_editing(item)
 
@@ -946,9 +789,7 @@ class MapGraphicsView(QGraphicsView):
         """Backward-compatible alias for VertexEditor._on_vertex_deleted."""
         self._vertex_editor._on_vertex_deleted(index)
 
-    def _on_midpoint_insert(
-        self, segment_index: int, scene_pos: QPointF
-    ) -> None:
+    def _on_midpoint_insert(self, segment_index: int, scene_pos: QPointF) -> None:
         """Backward-compatible alias for VertexEditor._on_midpoint_insert."""
         self._vertex_editor._on_midpoint_insert(segment_index, scene_pos)
 
@@ -960,9 +801,7 @@ class MapGraphicsView(QGraphicsView):
         """Backward-compatible alias for InteractionHandler."""
         self._interaction.show_edit_keyframe_dialog(item)
 
-    def _show_feature_style_dialog(
-        self, item: "PathItem | RegionItem"
-    ) -> None:
+    def _show_feature_style_dialog(self, item: "PathItem | RegionItem") -> None:
         """Backward-compatible alias for InteractionHandler."""
         self._interaction.show_feature_style_dialog(item)
 
@@ -1028,13 +867,9 @@ class MapGraphicsView(QGraphicsView):
             self.pixmap_item.setZValue(LAYER_MAP_BG)
             self.scene.addItem(self.pixmap_item)
 
-            self.coord_system.set_scene_rect(
-                self.pixmap_item.boundingRect()
-            )
+            self.coord_system.set_scene_rect(self.pixmap_item.boundingRect())
 
-            self.fitInView(
-                self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio
-            )
+            self.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
             self.scene.setSceneRect(self.pixmap_item.boundingRect())
 
             self.current_image_path = image_path
@@ -1065,9 +900,7 @@ class MapGraphicsView(QGraphicsView):
     def fit_to_view(self) -> None:
         """Fits the map to the current view size."""
         if self.pixmap_item:
-            self.fitInView(
-                self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio
-            )
+            self.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
 
     # ------------------------------------------------------------------
     # Label layout (delegated to LabelManager)
@@ -1091,9 +924,7 @@ class MapGraphicsView(QGraphicsView):
             marker_list, view_scale, extra_obstacles=extra
         )
 
-    def _collect_keyframe_obstacles(
-        self, view_scale: float
-    ) -> list[QRectF]:
+    def _collect_keyframe_obstacles(self, view_scale: float) -> list[QRectF]:
         """Builds a list of scene-coordinate rects for keyframe elements.
 
         Args:
@@ -1106,6 +937,8 @@ class MapGraphicsView(QGraphicsView):
         inv_scale = 1.0 / view_scale if view_scale > 0 else 1.0
 
         for dot in self._trajectory.keyframe_items:
+            if not dot.isVisible():
+                continue
             r = dot.boundingRect()
             sp = dot.scenePos()
             obstacles.append(
@@ -1118,16 +951,20 @@ class MapGraphicsView(QGraphicsView):
             )
 
         for label in self._trajectory.keyframe_label_items:
-            r = label.boundingRect()
-            sp = label.scenePos()
-            # Labels use ItemIgnoresTransformations, so convert to
-            # scene size by multiplying by inv_scale.
+            if not label.isVisible():
+                continue
+            # Labels have local transforms (translation + scale) and use
+            # ItemIgnoresTransformations. Map their bounds through the local
+            # transform to get the correct device-pixel offset, then scale
+            # to scene coordinates.
+            tr_rect = label.transform().mapRect(label.boundingRect())
+            sp = label.pos()  # Use pos() to avoid double-translation from scenePos()
             obstacles.append(
                 QRectF(
-                    sp.x() + r.x() * inv_scale,
-                    sp.y() + r.y() * inv_scale,
-                    r.width() * inv_scale,
-                    r.height() * inv_scale,
+                    sp.x() + tr_rect.x() * inv_scale,
+                    sp.y() + tr_rect.y() * inv_scale,
+                    tr_rect.width() * inv_scale,
+                    tr_rect.height() * inv_scale,
                 )
             )
 
@@ -1187,9 +1024,7 @@ class MapGraphicsView(QGraphicsView):
         )
         self._schedule_label_layout()
 
-    def update_marker_position(
-        self, marker_id: str, x: float, y: float
-    ) -> None:
+    def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
         """Update a marker's position to new normalized coordinates.
 
         Args:
@@ -1217,9 +1052,7 @@ class MapGraphicsView(QGraphicsView):
         self, playhead_time: float, current_time: float
     ) -> None:
         """Updates the temporal visual state of all markers and features."""
-        self._marker_manager.update_markers_temporal_state(
-            playhead_time, current_time
-        )
+        self._marker_manager.update_markers_temporal_state(playhead_time, current_time)
 
     # ------------------------------------------------------------------
     # Drawing mode (delegated to DrawingTool)
@@ -1300,15 +1133,11 @@ class MapGraphicsView(QGraphicsView):
         """Sets the calendar converter for formatting keyframe labels."""
         self._trajectory.set_calendar_converter(converter)
 
-    def set_keyframe_pinned(
-        self, marker_id: str, t: float, pinned: bool
-    ) -> None:
+    def set_keyframe_pinned(self, marker_id: str, t: float, pinned: bool) -> None:
         """Set visual pinned state for a specific keyframe."""
         self._trajectory.set_keyframe_pinned(marker_id, t, pinned)
 
-    def update_keyframe_label(
-        self, marker_id: str, t: float, new_time: float
-    ) -> None:
+    def update_keyframe_label(self, marker_id: str, t: float, new_time: float) -> None:
         """Updates the label of a specific keyframe."""
         self._trajectory.update_keyframe_label(marker_id, t, new_time)
 
@@ -1336,9 +1165,7 @@ class MapGraphicsView(QGraphicsView):
         if not value:
             self._hide_snap_indicator()
 
-    def _show_snap_indicator(
-        self, pos: QPointF, snap_type: "SnapType"
-    ) -> None:
+    def _show_snap_indicator(self, pos: QPointF, snap_type: "SnapType") -> None:
         """Shows a visual snap indicator at the given position.
 
         Args:
@@ -1414,9 +1241,7 @@ class MapGraphicsView(QGraphicsView):
     # Item lookup
     # ------------------------------------------------------------------
 
-    def find_item_by_id(
-        self, object_id: str
-    ) -> Optional[QGraphicsItem]:
+    def find_item_by_id(self, object_id: str) -> Optional[QGraphicsItem]:
         """Public API: look up a graphics item by its object ID.
 
         Args:
@@ -1427,9 +1252,7 @@ class MapGraphicsView(QGraphicsView):
         """
         return self._marker_manager.find_item(object_id)
 
-    def _find_graphics_item(
-        self, node_id: str
-    ) -> Optional[QGraphicsItem]:
+    def _find_graphics_item(self, node_id: str) -> Optional[QGraphicsItem]:
         """Look up a graphics item by layer node ID.
 
         Args:
@@ -1475,15 +1298,11 @@ class MapGraphicsView(QGraphicsView):
 
         self._layer_model = model
 
-        model.layer_visibility_changed.connect(
-            self._on_layer_visibility_changed
-        )
+        model.layer_visibility_changed.connect(self._on_layer_visibility_changed)
         model.layer_opacity_changed.connect(self._on_layer_opacity_changed)
         model.layer_order_changed.connect(self._on_layer_order_changed)
 
-    def _on_layer_visibility_changed(
-        self, node_id: str, visible: bool
-    ) -> None:
+    def _on_layer_visibility_changed(self, node_id: str, visible: bool) -> None:
         """Respond to a layer visibility change.
 
         Args:
@@ -1494,9 +1313,7 @@ class MapGraphicsView(QGraphicsView):
         if item is not None:
             item.setVisible(visible)
 
-    def _on_layer_opacity_changed(
-        self, node_id: str, opacity: float
-    ) -> None:
+    def _on_layer_opacity_changed(self, node_id: str, opacity: float) -> None:
         """Respond to a layer opacity change.
 
         Args:
@@ -1516,7 +1333,7 @@ class MapGraphicsView(QGraphicsView):
             item = self._find_graphics_item(node_id)
             if item is not None:
                 item.setZValue(z_val)
-        
+
         # Sync trajectory z-values if a trajectory is visible
         self._trajectory.update_z_values()
 
@@ -1585,9 +1402,7 @@ class MapGraphicsView(QGraphicsView):
                     dist = math.sqrt(dx * dx + dy * dy)
 
                     self.calibration_mode = False
-                    self.setDragMode(
-                        QGraphicsView.DragMode.ScrollHandDrag
-                    )
+                    self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
                     self.setCursor(Qt.ArrowCursor)
                     self.calibration_completed.emit(dist)
 
@@ -1621,9 +1436,7 @@ class MapGraphicsView(QGraphicsView):
         # Drawing mode
         if self._drawing_tool.handle_mouse_move(scene_pos):
             pass
-        elif self._vertex_editor.handle_mouse_move(
-            event.position().toPoint()
-        ):
+        elif self._vertex_editor.handle_mouse_move(event.position().toPoint()):
             pass
 
         # Calibration cursor
@@ -1639,9 +1452,7 @@ class MapGraphicsView(QGraphicsView):
             item_pos = self.pixmap_item.mapFromScene(sp)
             if self.pixmap_item.contains(item_pos):
                 norm_pos = self.coord_system.to_normalized(sp)
-                self.mouse_coordinates_changed.emit(
-                    norm_pos[0], norm_pos[1], True
-                )
+                self.mouse_coordinates_changed.emit(norm_pos[0], norm_pos[1], True)
             else:
                 self.mouse_coordinates_changed.emit(0.0, 0.0, False)
 
@@ -1672,11 +1483,7 @@ class MapGraphicsView(QGraphicsView):
         """Handle mouse wheel for zooming."""
         zoom_out_factor = 1 / MAP_ZOOM_IN_FACTOR
 
-        factor = (
-            MAP_ZOOM_IN_FACTOR
-            if event.angleDelta().y() > 0
-            else zoom_out_factor
-        )
+        factor = MAP_ZOOM_IN_FACTOR if event.angleDelta().y() > 0 else zoom_out_factor
 
         self.scale(factor, factor)
         self._trajectory.update_label_scales()
@@ -1698,13 +1505,9 @@ class MapGraphicsView(QGraphicsView):
         pos = event.pos()
         item = self.itemAt(pos)
         if isinstance(item, MarkerItem):
-            self._interaction.show_marker_context_menu(
-                item, event.globalPos()
-            )
+            self._interaction.show_marker_context_menu(item, event.globalPos())
         elif isinstance(item, (PathItem, RegionItem)):
-            self._interaction.show_feature_context_menu(
-                item, event.globalPos()
-            )
+            self._interaction.show_feature_context_menu(item, event.globalPos())
         else:
             scene_pos = self.mapToScene(pos)
             item_pos = self.pixmap_item.mapFromScene(scene_pos)
