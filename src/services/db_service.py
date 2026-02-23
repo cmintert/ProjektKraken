@@ -454,7 +454,28 @@ class DatabaseService:
             raise
 
     def _run_migrations(self) -> None:
-        """Runs necessary schema migrations."""
+        """Run all incremental schema migrations against the connected database.
+
+        Applies the following migrations in order, skipping any that have
+        already been applied:
+
+        1. Add ``color`` column to the ``tags`` table (tag coloring feature).
+        2. Add ``timestamp`` column to the ``command_history`` table (undo/redo
+           history timestamps).
+        3. Convert legacy trajectory data from ``[[t, x, y], …]`` lists to the
+           MF-JSON ``MovingPoint`` format via
+           :meth:`_migrate_trajectories_to_mfjson`.
+        4. Add ``feature_type``, ``geometry``, and ``style`` columns to the
+           ``markers`` table (map-feature geometry/style support).
+
+        Each migration is guarded by a ``PRAGMA table_info`` check so it is
+        idempotent and safe to call on an already-migrated database.
+
+        Raises:
+            sqlite3.Error: If any migration step fails; the offending
+                transaction is rolled back before re-raising.
+
+        """
         try:
             # Check for 'color' column in 'tags' table
             assert self._connection is not None
@@ -820,7 +841,17 @@ class DatabaseService:
         return self._relation_repo.get_by_target(target_id)
 
     def get_relation(self, rel_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieves a single relation by its ID."""
+        """Retrieves a single relation by its ID.
+
+        Args:
+            rel_id: The unique identifier of the relation.
+
+        Returns:
+            A dictionary containing the relation data (keys: ``id``,
+            ``source_id``, ``target_id``, ``rel_type``, ``attributes``,
+            ``created_at``), or ``None`` if no relation with that ID exists.
+
+        """
         return self._relation_repo.get_by_id(rel_id)
 
     def delete_relation(self, rel_id: str) -> None:
@@ -841,13 +872,34 @@ class DatabaseService:
         rel_type: str,
         attributes: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """Updates an existing relationship."""
+        """Updates an existing relationship's target, type, and attributes.
+
+        Args:
+            rel_id: The unique identifier of the relation to update.
+            target_id: New target object ID for the relation.
+            rel_type: New relationship type label (e.g. ``"caused"``).
+            attributes: Optional metadata dict to replace the existing
+                attributes.  Defaults to an empty dict when omitted.
+
+        """
         if attributes is None:
             attributes = {}
         self._relation_repo.update(rel_id, rel_type, attributes, target_id=target_id)
 
     def get_name(self, object_id: str) -> Optional[str]:
-        """Retrieves the name of an entity or event by its ID."""
+        """Retrieves the display name of an entity or event by its ID.
+
+        Queries the unified meta-repository which covers both the ``events``
+        and ``entities`` tables, so the caller does not need to know which
+        table the object lives in.
+
+        Args:
+            object_id: The UUID of the entity or event.
+
+        Returns:
+            The ``name`` column value if the object exists, otherwise ``None``.
+
+        """
         return self._meta_repo.get_name(object_id)
 
     def insert_events_bulk(self, events: List[Event]) -> None:

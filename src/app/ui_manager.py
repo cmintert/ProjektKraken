@@ -447,7 +447,24 @@ class UIManager:
             return None
 
     def create_file_menu(self, menu_bar: QMenuBar) -> None:
-        """Creates the File menu."""
+        """Create and populate the File menu on the given menu bar.
+
+        Adds the following items:
+
+        - **Manage Databases…** – opens the database manager dialog.
+        - **Import Item…** – triggers the import-item workflow.
+        - *Separator*
+        - **Backup & Restore** submenu containing *Create Backup…*,
+          *Restore from Backup…*, *Show Backup Location*, and
+          *Backup Settings…*.
+        - *Separator*
+        - **Exit** – closes the main window.
+
+        Args:
+            menu_bar: The application menu bar to which the File menu
+                is added.
+
+        """
         file_menu = menu_bar.addMenu("File")
 
         # Open Database
@@ -497,7 +514,18 @@ class UIManager:
         exit_action.triggered.connect(self.main_window.close)
 
     def create_edit_menu(self, menu_bar: QMenuBar) -> None:
-        """Creates the Edit menu with undo/redo actions."""
+        """Create and populate the Edit menu on the given menu bar.
+
+        Adds **Undo** (Ctrl+Z) and **Redo** (Ctrl+Y / Ctrl+Shift+Z) actions
+        with application-wide shortcut scope.  Both actions are disabled by
+        default; enable them by calling :meth:`connect_undo_redo_actions` once
+        the command coordinator is ready.
+
+        Args:
+            menu_bar: The application menu bar to which the Edit menu
+                is added.
+
+        """
         from PySide6.QtGui import QKeySequence
 
         from src.gui.utils.shortcut_manager import ShortcutManager

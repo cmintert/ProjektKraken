@@ -372,11 +372,24 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self._selected_relation_type = "related"  # Default type
 
     def _get_current_item_id(self) -> str | None:
-        """Returns the current entity ID or None."""
+        """Return the UUID of the entity currently loaded in the editor.
+
+        Returns:
+            The entity UUID string, or ``None`` if no entity is loaded.
+
+        """
         return self._current_entity_id
 
     def _get_editor_label(self) -> str:
-        """Returns the editor label for logging."""
+        """Return a human-readable label identifying this editor type.
+
+        Used in log messages to distinguish between the event and entity
+        editors when the same base-class code is shared.
+
+        Returns:
+            The string ``"EntityEditor"``.
+
+        """
         return "EntityEditor"
 
     def _show_drop_hint(self, rel_type: str = "related") -> None:
@@ -405,10 +418,24 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self._drop_hint_label.hide()
 
     def dropEvent(self, event: QDropEvent) -> None:
-        """Handle drop event to create relation from dragged item to current entity.
+        """Handle a drop event to create a relation from the dragged item.
+
+        Accepts drops carrying the custom MIME type
+        ``application/x-kraken-item`` (see
+        :data:`~src.gui.widgets.unified_list.KRAKEN_ITEM_MIME_TYPE`).  The
+        MIME payload is a UTF-8–encoded JSON object with the keys:
+
+        - ``"id"`` (str): UUID of the dragged item.
+        - ``"type"`` (str): Domain type, e.g. ``"entity"`` or ``"event"``.
+        - ``"name"`` (str): Display name of the dragged item.
+
+        If the **Shift** key is held during the drop, a type-picker popup is
+        shown so the user can choose a specific relation type.  Otherwise the
+        default relation type ``"related"`` is used.
 
         Args:
-            event: QDropEvent with MIME data.
+            event: The Qt drop event carrying the MIME data.
+
         """
         import json
 
@@ -464,7 +491,20 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
     def _create_relation(
         self, source_id: str, source_type: str, source_name: str, rel_type: str
     ) -> None:
-        """Helper to emit relation creation signal."""
+        """Emit the signal to create a new directed relation via drop.
+
+        Logs the creation attempt and emits :attr:`add_relation_requested` so
+        that the application coordinator can execute the corresponding command.
+        Cleans up drop-UI state (overlay and type-picker) after emitting.
+
+        Args:
+            source_id: UUID of the item that was dropped onto this editor.
+            source_type: Domain type of the dropped item (e.g. ``"entity"``
+                or ``"event"``).
+            source_name: Display name of the dropped item, used for logging.
+            rel_type: Relation type label to assign (e.g. ``"related"``).
+
+        """
         logger.info(
             f"EntityEditor: Creating relation {source_id} -> {self._current_entity_id} "
             f"(dropped {source_type}: {source_name}, type: {rel_type})"
@@ -485,16 +525,38 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self._type_picker.hide()
 
     def set_summary_service(self, service: Any) -> None:
-        """Sets the summary service for generation and staleness checks."""
+        """Set the summary service used to generate and check entity summaries.
+
+        Args:
+            service: An object implementing ``generate(entity)`` and
+                ``is_stale(entity) -> bool``, or ``None`` to disable
+                summary functionality.
+
+        """
         self.summary_service = service
 
     def set_project_root(self, path: Any) -> None:
-        """Sets the project root for child widgets."""
+        """Set the project root directory for child widgets that need file paths.
+
+        Propagates the path to the gallery widget so it can resolve image
+        paths relative to the world directory.
+
+        Args:
+            path: A :class:`pathlib.Path` (or path-like) object pointing to
+                the active world's root directory.
+
+        """
         if hasattr(self, "gallery"):
             self.gallery.set_project_root(path)
 
     def _connect_dirty_signals(self) -> None:
-        """Connects signals that should trigger dirty state."""
+        """Connect form-field change signals to the dirty-state tracker.
+
+        After this call, any user edit to the name, type, description, tags,
+        or attributes fields will mark the editor as having unsaved changes via
+        :meth:`set_dirty`.
+
+        """
         self.name_edit.textChanged.connect(lambda: self.set_dirty(True))
         self.type_edit.currentTextChanged.connect(lambda: self.set_dirty(True))
         self.desc_edit.textChanged.connect(lambda: self.set_dirty(True))
@@ -529,21 +591,43 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self._suggestion_items = items or []
 
     def update_tag_suggestions(self, tags: list[str]) -> None:
-        """Updates tag suggestions."""
+        """Update the tag autocomplete suggestions in the tag editor.
+
+        Args:
+            tags: List of known tag strings to offer as suggestions.
+
+        """
         self.tag_editor.update_suggestions(tags)
 
     def update_attribute_suggestions(self, keys: list[str]) -> None:
-        """Updates attribute key suggestions."""
+        """Update the attribute key autocomplete suggestions.
+
+        Args:
+            keys: List of known attribute key strings to offer as suggestions.
+
+        """
         self.attribute_editor.update_suggestions(keys)
 
     def update_relation_type_suggestions(self, types: list[str]) -> None:
-        """Updates relation type suggestions."""
+        """Update the relation type suggestions used in the relation dialog.
+
+        Args:
+            types: List of known relation type strings (e.g. ``["caused",
+                "mentions", "related"]``).
+
+        """
         self._suggestion_types = types
 
     def update_entity_type_suggestions(self, types: list[str]) -> None:
-        """Updates entity type suggestions.
+        """Update the entity type combobox with database-sourced type suggestions.
 
-        Merges fetched types with default types and updates the combobox.
+        Merges the provided types with the built-in default types and
+        refreshes the combobox while preserving the current selection.
+
+        Args:
+            types: Entity type strings fetched from the database to merge
+                with the hard-coded defaults.
+
         """
         current = self.type_edit.currentText()
         default_types = ["Character", "Location", "Faction", "Item", "Concept"]
@@ -558,16 +642,22 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
     def load_entity(
         self, entity: Entity, relations: list = None, incoming_relations: list = None
     ) -> None:
-        """
-        Populate the editor UI with data from the given Entity and its relations.
-        
-        Parameters:
-            entity (Entity): Entity whose fields, attributes, tags, gallery and summary will be loaded into the editor.
-            relations (list, optional): Outgoing relations to display for this entity; each item is a relation dict.
-            incoming_relations (list, optional): Incoming relations to display; each item is a relation dict.
-        
-        Side effects:
-            Updates the editor's current entity id and created timestamp, applies theme to the tag editor, loads fields/attributes/relations into the UI, enables the editor, and clears the dirty state.
+        """Populate the editor UI with data from the given entity and its relations.
+
+        Loads all editable fields (name, type, description), attributes, tags,
+        gallery images, and the summary widget.  Outgoing and incoming
+        relations are rendered in the Relations tab.  The editor is enabled and
+        the dirty flag is cleared after loading.
+
+        Args:
+            entity: The entity whose data will be loaded into the editor.
+            relations: Outgoing relation dicts to display; each dict must
+                contain at least ``"target_id"``, ``"rel_type"``, and ``"id"``.
+                Pass ``None`` to display no outgoing relations.
+            incoming_relations: Incoming relation dicts to display; each dict
+                must contain at least ``"source_id"``, ``"rel_type"``, and
+                ``"id"``.  Pass ``None`` to display no incoming relations.
+
         """
         self._is_loading = True
         try:
@@ -713,11 +803,15 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
     @Slot(dict)
     def _on_theme_changed(self, theme: dict) -> None:
-        """
-        Apply a new theme to editor UI elements.
-        
-        Parameters:
-            theme (dict): Mapping of theme tokens to values used to refresh UI styling.
+        """Apply a new theme to editor UI elements.
+
+        Re-applies stylesheets that cannot be handled by Qt's global QSS
+        (e.g. tool-button menu-indicator overrides).
+
+        Args:
+            theme: Theme token dict emitted by
+                :class:`~src.core.theme_manager.ThemeManager`.
+
         """
         from src.gui.utils.style_helper import StyleHelper
 
@@ -732,16 +826,26 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
     @Slot()
     def _on_save(self) -> None:
-        """
-        Handle the save action: assemble current entity data and emit the save_requested signal.
-        
-        This collects the editor's current fields (id, name, type, description), merges attributes
-        and tags (tags are stored under the "_tags" attribute), restores any hidden attributes,
-        and overlays a pending summary (stored under "_summary_data") if present. If the Save
-        button text reads "Return to Present", emits return_to_present_requested instead and does
-        not emit save_requested. Emits save_requested with a dict containing keys:
-        "id", "name", "type", "description", "attributes", and "tags". Does not clear the editor's
-        dirty state; clearing occurs after the entity is reloaded.
+        """Handle the Save button click.
+
+        Assembles the current form data into a dict and emits
+        :attr:`save_requested`.  If the save button currently reads
+        *"Return to Present"* (temporal-view mode), emits
+        :attr:`return_to_present_requested` instead and returns early.
+
+        The emitted dict contains the keys ``"id"``, ``"name"``, ``"type"``,
+        ``"description"``, ``"attributes"``, and ``"tags"``.  Tags are also
+        stored inside ``"attributes"`` under the ``"_tags"`` key.  Any hidden
+        (underscore-prefixed) attributes loaded with the entity are restored
+        before emitting, and a pending AI-generated summary (if any) is
+        overlaid under ``"_summary_data"``.
+
+        Note:
+            The dirty flag is **not** cleared here.  It is cleared when the
+            saved entity is reloaded via :meth:`load_entity`, which avoids
+            race conditions between the signal-processing pipeline and the
+            reload cycle.
+
         """
         logger.info(
             f"[EntityEditor] _on_save() called (entity_id={self._current_entity_id})"
@@ -803,14 +907,26 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
     @Slot()
     def _on_discard(self) -> None:
-        """Discards changes by emitting signal to reload the current entity."""
+        """Discard unsaved changes by emitting a signal to reload the current entity.
+
+        Emits :attr:`discard_requested` with the current entity ID so the
+        coordinator can re-fetch the entity from the database and call
+        :meth:`load_entity`, effectively reverting all unsaved edits.
+
+        """
         if not self._current_entity_id:
             return
 
         self.discard_requested.emit(self._current_entity_id)
 
     def clear(self) -> None:
-        """Clears the editor."""
+        """Clear all editor fields and disable the widget.
+
+        Resets the internal entity ID, clears the name, description, and
+        relation list, and disables the editor to indicate that no entity is
+        loaded.
+
+        """
         self._current_entity_id = None
         self.name_edit.clear()
         self.desc_edit.clear()
@@ -819,9 +935,15 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
     @Slot()
     def _on_add_relation(self) -> None:
-        """Handles adding a new relation.
+        """Open the relation dialog to add a new outgoing relation.
 
-        Uses RelationEditDialog with autocompletion.
+        Launches :class:`~src.gui.dialogs.relation_dialog.RelationEditDialog`
+        pre-populated with known entity/event items and relation types for
+        autocompletion.  On acceptance, emits :attr:`add_relation_requested`
+        with the chosen target, type, bidirectional flag, and extra attributes.
+
+        Returns early if no entity is currently loaded.
+
         """
         if not self._current_entity_id:
             return
@@ -1281,10 +1403,22 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
     @Slot()
     def _on_summary_generate_requested(self) -> None:
-        """Handles summary generation request."""
-        print(f"[DEBUG] _on_summary_generate_requested ID: {self._current_entity_id}")
+        """Handle a summary-generation request from the summary widget.
+
+        Builds a temporary :class:`~src.core.entities.Entity` from the current
+        form state and emits :attr:`summary_generation_requested` so the
+        worker thread can call the LLM service.  The generate button is
+        disabled while generation is in progress; it is re-enabled by
+        :meth:`on_summary_generated`.
+
+        Returns early if no entity is currently loaded.
+
+        """
+        logger.debug(
+            f"[EntityEditor] _on_summary_generate_requested ID: {self._current_entity_id}"
+        )
         if not self._current_entity_id:
-            print("[DEBUG] Aborting: No current entity ID")
+            logger.debug("[EntityEditor] Aborting summary request: no current entity ID")
             return
 
         # Construct temporary entity from form
@@ -1295,7 +1429,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             id=self._current_entity_id,
             attributes=self.attribute_editor.get_attributes(),
         )
-        print(f"[DEBUG] Emitting summary_generation_requested for {temp_entity.name}")
+        logger.debug(
+            f"[EntityEditor] Emitting summary_generation_requested for {temp_entity.name}"
+        )
 
         # Disable button
         self.summary_widget.generate_btn.setEnabled(False)
@@ -1305,7 +1441,17 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
     @Slot(object)
     def on_summary_generated(self, summary_data: SummaryData) -> None:
-        """Callback when summary is generated."""
+        """Apply a freshly generated summary to the editor UI.
+
+        Re-enables the generate button, updates the summary widget display,
+        stores the summary dict as pending data to be merged on the next save,
+        and marks the editor dirty so the user is prompted to save.
+
+        Args:
+            summary_data: The :class:`~src.core.summary.SummaryData` object
+                returned by the LLM worker.
+
+        """
         self.summary_widget.generate_btn.setEnabled(True)
         self.summary_widget.generate_btn.setText("Regenerate")
 
