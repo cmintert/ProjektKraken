@@ -176,13 +176,13 @@ class StyleHelper:
 
     @staticmethod
     def get_tool_button_style() -> str:
-        """Returns QSS for tool/secondary action buttons.
-
-        Tool buttons use surface background and border, good for toolbars.
-
+        """
+        Style sheet for tool and secondary action buttons targeting QToolButton and QPushButton.
+        
+        The style uses the theme's surface, text, border, primary, and app background colors and defines base, hover, pressed, and checked states.
+        
         Returns:
-            str: QSS stylesheet string for tool buttons.
-
+            str: QSS stylesheet string for tool and secondary action buttons.
         """
 
         theme = ThemeManager().get_theme()
@@ -201,13 +201,13 @@ class StyleHelper:
 
     @staticmethod
     def get_destructive_button_style() -> str:
-        """Returns QSS for destructive action buttons.
-
-        Destructive buttons (delete, remove) use error color.
-
+        """
+        Provide QSS for destructive action buttons using the theme's destructive color.
+        
+        Styles normal, hover, and disabled states for QPushButton to ensure consistent destructive button appearance.
+        
         Returns:
-            str: QSS stylesheet string for destructive buttons.
-
+            str: QSS stylesheet string for destructive action buttons.
         """
 
         theme = ThemeManager().get_theme()
@@ -224,13 +224,18 @@ class StyleHelper:
 
     @staticmethod
     def get_pill_painter_data(base_color: Optional[str] = None) -> dict:
-        """Returns color data for manual QPainter rendering of pills.
-
-        Args:
-            base_color: Optional hex color.
-
+        """
+        Return RGB components and hex color for painting pill widgets.
+        
+        Parameters:
+            base_color (Optional[str]): Optional hex color string in `#RRGGBB` form; when omitted the theme's `accent_secondary` color is used.
+        
         Returns:
-            dict: { 'color': QColor, 'r': int, 'g': int, 'b': int }
+            dict: Mapping with keys:
+                - "hex" (str): The hex color string used.
+                - "r" (int): Red component (0-255).
+                - "g" (int): Green component (0-255).
+                - "b" (int): Blue component (0-255).
         """
         theme = ThemeManager().get_theme()
         hex_color = base_color or theme.get("accent_secondary", "#4A90D9")
@@ -250,15 +255,16 @@ class StyleHelper:
         base_color: Optional[str] = None,
         has_delete: bool = False,
     ) -> str:
-        """Returns QSS for premium, themed pill widgets (rounded/oblong).
-
-        Args:
-            object_name: The objectName of the widget.
-            base_color: Optional hex color.
-            has_delete: Whether to include delete button styling.
-
+        """
+        Generate themed QSS for a pill-style (rounded/oblong) widget.
+        
+        Parameters:
+        	object_name (str): The widget's objectName used as the selector.
+        	base_color (Optional[str]): Optional hex base color to derive pill RGB values; if omitted, theme accent_secondary is used.
+        	has_delete (bool): If True, include styling for an inline delete QToolButton inside the pill.
+        
         Returns:
-            str: QSS stylesheet string.
+        	str: QSS stylesheet string targeting the pill widget and optional delete button.
         """
         theme = ThemeManager().get_theme()
         data = StyleHelper.get_pill_painter_data(base_color)
@@ -299,13 +305,13 @@ class StyleHelper:
 
     @staticmethod
     def get_icon_button_style() -> str:
-        """Returns QSS for theme-aware square icon buttons.
-
-        Provides consistent styling for small buttons that contain only icons,
-        matching the look of search buttons while using theme tokens.
-
+        """
+        QSS for square, icon-only buttons that reflect the current theme.
+        
+        Includes base, hover, and pressed states using theme surface, border, and app background colors.
+        
         Returns:
-            str: QSS stylesheet string for icon buttons.
+            str: The QSS stylesheet string for icon buttons.
         """
 
         theme = ThemeManager().get_theme()
@@ -527,21 +533,21 @@ class StyleHelper:
 
     @staticmethod
     def apply_no_margins(layout: QLayout) -> None:
-        """Removes margins from a layout.
-
-        Useful for nested layouts or widgets that need edge-to-edge content.
-
-        Args:
-            layout: The QLayout to configure.
+        """
+        Remove all margins from the given layout.
+        
+        Parameters:
+            layout (QLayout): Layout to modify; margins will be set to 0 on all sides.
         """
         layout.setContentsMargins(0, 0, 0, 0)
 
     @staticmethod
     def get_checkbox_style() -> str:
-        """Returns QSS for themed checkboxes.
-
+        """
+        QSS stylesheet for themed checkbox indicators and related view indicators.
+        
         Returns:
-            str: QSS stylesheet string for checkboxes.
+            str: Stylesheet configuring checkbox, QListWidget/QListView/QTreeView indicators (size, border, radius, background), hover border color, checked state border and embedded check icon.
         """
 
         from src.core.paths import get_resource_path
@@ -728,13 +734,13 @@ class StyleHelper:
 
     @staticmethod
     def get_spinbox_style() -> str:
-        """Returns QSS for themed spinboxes with custom up/down buttons.
-
-        Fixes the issue where setting background/border on QSpinBox hides the
-        native arrows. Uses arrow SVG icons from default assets.
-
+        """
+        Generate QSS for themed QSpinBox widgets with custom up/down buttons.
+        
+        Prevents native arrows from being hidden when background or border styles are applied and uses bundled SVG arrow assets for the up/down controls.
+        
         Returns:
-            str: QSS stylesheet string for spinboxes.
+            str: QSS stylesheet string for QSpinBox widgets.
         """
         from src.core.paths import get_resource_path
 
@@ -773,10 +779,11 @@ class StyleHelper:
 
     @staticmethod
     def get_shortcut_key_style() -> str:
-        """Returns QSS for keyboard shortcut keys.
-
+        """
+        QSS for keyboard shortcut key widgets styled as monospace, bold tokens with padding and rounded borders.
+        
         Returns:
-            str: QSS stylesheet string for shortcut keys.
+            str: Stylesheet string using the theme's surface, text_main, and border colors.
         """
 
         theme = ThemeManager().get_theme()

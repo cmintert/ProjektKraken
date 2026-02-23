@@ -30,11 +30,13 @@ class TagEditorWidget(QWidget):
     tags_changed = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """Initializes the TagEditorWidget.
-
-        Args:
-            parent (QWidget, optional): The parent widget. Defaults to None.
-
+        """
+        Create a tag editor widget with a wrapping flow of tag "pill" widgets and an integrated text input that supports completion.
+        
+        Sets up the flow container and layout for tag pills, an inline QLineEdit for adding tags, a persistent QStringListModel-backed QCompleter for suggestions, and a styled frame around the flow. The widget starts with only the input present.
+        
+        Parameters:
+            parent (QWidget | None): Optional parent widget.
         """
         super().__init__(parent)
         self._base_color: Optional[str] = None
@@ -76,21 +78,24 @@ class TagEditorWidget(QWidget):
         self.flow_layout.addWidget(self.tag_input)
 
     def set_base_color(self, color: str) -> None:
-        """Sets the base color for tag pills.
-
-        Args:
-            color: Hex color string.
+        """
+        Set the base color used to style tag pills and update existing pills to reflect it.
+        
+        Parameters:
+            color (str): Hex color string (e.g., "#RRGGBB") to apply as the pill base color.
         """
         self._base_color = color
         # Refresh existing pills
         self.load_tags(self.get_tags())
 
     def load_tags(self, tags: List[str]) -> None:
-        """Populates the widget with the given list of tags.
-
-        Args:
-            tags (list): List of tag strings.
-
+        """
+        Replace the displayed tags with the provided list by creating a TagPill for each entry.
+        
+        This clears all existing tag pills (preserving the integrated input field) and adds new pills in the same order as the provided list so the input remains at the end.
+        
+        Parameters:
+            tags (List[str]): List of tag strings to display; order determines left-to-right pill order.
         """
         # Clear existing pills (everything except the input)
         for i in reversed(range(self.flow_layout.count())):
@@ -104,10 +109,13 @@ class TagEditorWidget(QWidget):
             self._add_pill(tag)
 
     def _add_pill(self, tag: str) -> None:
-        """Creates and adds a TagPill to the flow.
-
-        Args:
-            tag: The tag text.
+        """
+        Add a TagPill widget for the given tag into the flow layout immediately before the input field.
+        
+        The pill's `deleted` signal is connected to the widget's deletion handler so removing the pill emits updates.
+        
+        Parameters:
+            tag (str): Text to display on the created tag pill.
         """
         pill = TagPill(tag, base_color=self._base_color)
         pill.deleted.connect(self._on_pill_deleted)
@@ -118,11 +126,11 @@ class TagEditorWidget(QWidget):
         self.flow_layout.addWidget(self.tag_input)
 
     def get_tags(self) -> List[str]:
-        """Returns the current list of tags.
-
+        """
+        Get the current tag texts in display order.
+        
         Returns:
-            list: List of tag strings.
-
+            List[str]: Tag texts from the flow layout, in left-to-right wrapping order.
         """
         tags = []
         for i in range(self.flow_layout.count()):
@@ -133,17 +141,21 @@ class TagEditorWidget(QWidget):
         return tags
 
     def update_suggestions(self, tags: List[str]) -> None:
-        """Updates the tag completer with new suggestions.
-
-        Args:
-            tags: List of existing tags for completion.
-
+        """
+        Update the autocomplete suggestions used by the tag input completer.
+        
+        Parameters:
+            tags: Iterable of suggestion strings to set for the completer; replaces any previous suggestions.
         """
         self._completer_model.setStringList(tags)
 
     @Slot()
     def _on_add(self) -> None:
-        """Handles adding a new tag."""
+        """
+        Add the tag currently entered in the input to the widget if valid and not a duplicate.
+        
+        Reads and trims the input text; if the result is non-empty and not already present, creates a new tag pill, clears the input, and emits the `tags_changed` signal.
+        """
         raw_tag = self.tag_input.text().strip()
         if not raw_tag:
             return
@@ -162,10 +174,11 @@ class TagEditorWidget(QWidget):
 
     @Slot(str)
     def _on_pill_deleted(self, tag: str) -> None:
-        """Handles removing a tag pill.
-
-        Args:
-            tag: The text of the tag to remove.
+        """
+        Remove the first tag pill whose text matches the provided tag and emit the `tags_changed` signal.
+        
+        Parameters:
+            tag (str): The tag text to remove. If no matching pill exists, the method does nothing.
         """
         for i in range(self.flow_layout.count()):
             item = self.flow_layout.itemAt(i)

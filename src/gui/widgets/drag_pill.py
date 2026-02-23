@@ -37,13 +37,14 @@ class DragPill(QFrame):
         cursor_offset: Optional[QPoint] = None,
         parent: Optional[QWidget] = None,
     ) -> None:
-        """Initialize the drag pill widget.
-
-        Args:
-            item_name: Name of the item being dragged.
-            item_type: Type of the item ('event', 'entity', etc.).
-            cursor_offset: Offset from cursor position (default: QPoint(10, 10)).
-            parent: Parent widget (usually None for floating window).
+        """
+        Create a floating drag pill that represents the dragged item and follows the cursor.
+        
+        Parameters:
+            item_name: The display name shown in the pill.
+            item_type: Item category used for icon and type label (e.g., "event", "entity", "map").
+            cursor_offset: Cursor offset applied when positioning the pill; defaults to QPoint(10, 10).
+            parent: Optional parent widget for Qt ownership; typically None for a floating tool window.
         """
         super().__init__(parent)
         self.item_name = item_name
@@ -66,7 +67,14 @@ class DragPill(QFrame):
         self.hide()
 
     def _setup_ui(self) -> None:
-        """Set up the UI layout and components."""
+        """
+        Initialize window flags, widget attributes, and child controls, and arrange them in a horizontal layout.
+        
+        Sets the widget as a frameless, top-most tool window that is transparent to mouse events and uses a styled background. Builds a horizontal layout with refined margins and spacing, constrains its maximum size, and adds:
+        - an icon label using a type-to-icon fallback,
+        - a name label that stores the full name for later elision and uses an expanding size policy,
+        - a type label showing the item type in parentheses.
+        """
         from PySide6.QtWidgets import QSizePolicy
 
         self.setWindowFlags(
@@ -104,7 +112,11 @@ class DragPill(QFrame):
         layout.addWidget(self.type_label)
 
     def _elide_name_text(self) -> None:
-        """Elide the name label text to fit available width."""
+        """
+        Update the name label to an elided version of the full name so it fits the label's current width.
+        
+        Uses the label's font metrics and a right-side ellipsis; if the label has zero width, the text is not modified.
+        """
         metrics = QFontMetrics(self.name_label.font())
         available = self.name_label.width()
         if available > 0:
@@ -114,12 +126,18 @@ class DragPill(QFrame):
             self.name_label.setText(elided)
 
     def resizeEvent(self, event) -> None:
-        """Re-elide name text when widget is resized."""
+        """
+        Update the displayed item name's elision to fit the widget's new width.
+        """
         super().resizeEvent(event)
         self._elide_name_text()
 
     def _apply_theme(self) -> None:
-        """Apply unified pill styling using StyleHelper."""
+        """
+        Apply the pill stylesheet from StyleHelper and attach a drop shadow effect.
+        
+        Retrieves the pill style for this widget via StyleHelper.get_pill_style and sets it as the widget stylesheet, then creates and installs a QGraphicsDropShadowEffect with a 12px blur, RGBA(0,0,0,76) color, and vertical offset of 4px.
+        """
         style = StyleHelper.get_pill_style(object_name="DragPill", has_delete=False)
         self.setStyleSheet(style)
 
@@ -134,10 +152,11 @@ class DragPill(QFrame):
         self.setGraphicsEffect(shadow)
 
     def show_at_position(self, position: QPoint) -> None:
-        """Show the drag pill at the specified position.
-
-        Args:
-            position: Base position (usually cursor position).
+        """
+        Display the drag pill at a specified base position, applying the widget's cursor offset.
+        
+        Parameters:
+            position (QPoint): Base position (typically the cursor); the widget is moved to position + cursor_offset, shown, and raised above other windows.
         """
         # Apply offset and move to position
         offset_position = position + self.cursor_offset
@@ -150,12 +169,21 @@ class DragPill(QFrame):
         )
 
     def update_position(self, position: QPoint) -> None:
-        """Update the drag pill position during drag."""
+        """
+        Reposition the drag pill so it follows the cursor, applying the configured cursor offset.
+        
+        Parameters:
+            position (QPoint): Current cursor position; the widget is moved to position + self.cursor_offset.
+        """
         offset_position = position + self.cursor_offset
         self.move(offset_position)
 
     def paintEvent(self, event) -> None:
-        """High-fidelity rendering of the drag pill shape with Antialiasing."""
+        """
+        Render the drag pill background and border as a rounded, vertically graded shape.
+        
+        Paints a rounded rectangle inside the widget's content area using cached painter colors; applies antialiasing, fills with a semi-transparent vertical gradient, and draws a semi-transparent border stroke.
+        """
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
 

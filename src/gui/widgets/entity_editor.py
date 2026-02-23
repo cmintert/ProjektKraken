@@ -558,13 +558,16 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
     def load_entity(
         self, entity: Entity, relations: list = None, incoming_relations: list = None
     ) -> None:
-        """Populates the form with entity data and relations.
-
-        Args:
-            entity: The entity to edit.
-            relations: List of outgoing relation dicts.
-            incoming_relations: List of incoming relation dicts.
-
+        """
+        Populate the editor UI with data from the given Entity and its relations.
+        
+        Parameters:
+            entity (Entity): Entity whose fields, attributes, tags, gallery and summary will be loaded into the editor.
+            relations (list, optional): Outgoing relations to display for this entity; each item is a relation dict.
+            incoming_relations (list, optional): Incoming relations to display; each item is a relation dict.
+        
+        Side effects:
+            Updates the editor's current entity id and created timestamp, applies theme to the tag editor, loads fields/attributes/relations into the UI, enables the editor, and clears the dirty state.
         """
         self._is_loading = True
         try:
@@ -710,11 +713,11 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
     @Slot(dict)
     def _on_theme_changed(self, theme: dict) -> None:
-        """Updates UI elements when the theme changes.
-
-        Args:
-            theme (dict): The new theme data.
-
+        """
+        Apply a new theme to editor UI elements.
+        
+        Parameters:
+            theme (dict): Mapping of theme tokens to values used to refresh UI styling.
         """
         from src.gui.utils.style_helper import StyleHelper
 
@@ -729,7 +732,17 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
     @Slot()
     def _on_save(self) -> None:
-        """Collects data and emits save signal."""
+        """
+        Handle the save action: assemble current entity data and emit the save_requested signal.
+        
+        This collects the editor's current fields (id, name, type, description), merges attributes
+        and tags (tags are stored under the "_tags" attribute), restores any hidden attributes,
+        and overlays a pending summary (stored under "_summary_data") if present. If the Save
+        button text reads "Return to Present", emits return_to_present_requested instead and does
+        not emit save_requested. Emits save_requested with a dict containing keys:
+        "id", "name", "type", "description", "attributes", and "tags". Does not clear the editor's
+        dirty state; clearing occurs after the entity is reloaded.
+        """
         logger.info(
             f"[EntityEditor] _on_save() called (entity_id={self._current_entity_id})"
         )

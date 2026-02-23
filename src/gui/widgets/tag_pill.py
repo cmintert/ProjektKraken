@@ -35,13 +35,15 @@ class TagPill(QFrame):
         base_color: Optional[str] = None,
         parent: Optional[QWidget] = None,
     ) -> None:
-        """Initializes the TagPill.
-
-        Args:
-            text: The text to display on the pill.
-            base_color: Optional hex color string for the pill's theme.
-                        If None, uses accent_secondary from current theme.
-            parent: The parent widget.
+        """
+        Create a TagPill widget that displays a tag label with an optional color and a delete control.
+        
+        Sets the widget's fixed height to 32, enables styled-background support, applies the pill stylesheet, and caches painter data used for custom painting.
+        
+        Parameters:
+            text: The tag text to display.
+            base_color: Optional hex color string defining the pill's base theme; when omitted the theme's secondary accent is used.
+            parent: Optional parent widget.
         """
         super().__init__(parent)
         self.text = text
@@ -61,7 +63,11 @@ class TagPill(QFrame):
         self._painter_data = StyleHelper.get_pill_painter_data(self.base_color)
 
     def _setup_ui(self) -> None:
-        """Sets up the layout and sub-widgets."""
+        """
+        Create and arrange the tag label and delete button in a horizontal layout.
+        
+        Creates a QLabel showing self.text and a QToolButton (object name "TagPillDeleteButton") displaying "✕"; the button uses a pointing-hand cursor, has a tooltip "Remove tag: {self.text}", its clicked signal is connected to _on_delete_clicked, and both widgets are added to the layout.
+        """
         layout = QHBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(2)
@@ -82,7 +88,11 @@ class TagPill(QFrame):
         layout.addWidget(self.btn_delete)
 
     def _apply_style(self) -> None:
-        """Applies the pill styling using StyleHelper."""
+        """
+        Apply the TagPill stylesheet from StyleHelper to this widget.
+        
+        Retrieves the pill style using the widget's object name, configured base color, and delete-button presence, and sets it as the widget's stylesheet.
+        """
         style = StyleHelper.get_pill_style(
             object_name="TagPill",
             base_color=self.base_color,
@@ -96,16 +106,27 @@ class TagPill(QFrame):
         self.update()
 
     def leaveEvent(self, event) -> None:
-        """Trigger repaint on hover leave."""
+        """
+        Handle the mouse leave event and request a repaint to update hover visuals.
+        """
         super().leaveEvent(event)
         self.update()
 
     def _on_delete_clicked(self) -> None:
-        """Handles the delete button click."""
+        """
+        Emit the TagPill's deleted signal carrying its current text.
+        
+        Emits:
+            deleted (str): The tag text of this pill.
+        """
         self.deleted.emit(self.text)
 
     def paintEvent(self, event) -> None:
-        """High-fidelity rendering of the pill shape with Antialiasing."""
+        """
+        Paints the tag pill with a rounded gradient fill and a hover-aware border.
+        
+        Uses cached color data and antialiasing to render a vertically graded rounded rectangle for the pill background; when hovered, increases gradient intensity and uses a stronger border color, otherwise draws a subtler border with reduced opacity.
+        """
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
 

@@ -15,12 +15,13 @@ class FlowLayout(QLayout):
     """
 
     def __init__(self, parent: QWidget = None, margin: int = -1, spacing: int = -1):
-        """Initializes the FlowLayout.
-
-        Args:
-            parent: The parent widget.
-            margin: The margin around the layout.
-            spacing: The spacing between widgets.
+        """
+        Create a FlowLayout with an optional parent, an optional uniform contents margin, and an optional item spacing.
+        
+        Parameters:
+            parent: Optional parent widget for the layout.
+            margin: If not -1, set all contents margins to this value.
+            spacing: Spacing between layout items (passed to the layout's spacing setting).
         """
         super().__init__(parent)
         if margin != -1:
@@ -39,44 +40,95 @@ class FlowLayout(QLayout):
         self._items.append(item)
 
     def count(self) -> int:
-        """Returns the number of items in the layout."""
+        """
+        Return the number of items managed by the layout.
+        
+        Returns:
+            count (int): Number of QLayoutItem objects currently stored in the layout.
+        """
         return len(self._items)
 
     def itemAt(self, index: int) -> QLayoutItem:
-        """Returns the item at the given index."""
+        """
+        Retrieve the layout item at the specified index.
+        
+        Returns:
+            The QLayoutItem at the given index, or `None` if the index is out of range.
+        """
         if 0 <= index < len(self._items):
             return self._items[index]
         return None
 
     def takeAt(self, index: int) -> QLayoutItem:
-        """Removes and returns the item at the given index."""
+        """
+        Remove and return the layout item at the specified index.
+        
+        Parameters:
+            index (int): Position of the item to remove.
+        
+        Returns:
+            QLayoutItem or None: The removed layout item if index is in range, `None` otherwise.
+        """
         if 0 <= index < len(self._items):
             return self._items.pop(index)
         return None
 
     def expandingDirections(self) -> Qt.Orientation:
-        """Returns the expanding directions."""
+        """
+        Indicates that the layout may expand in the horizontal direction.
+        
+        Returns:
+            Qt.Orientation: `Qt.Orientation.Horizontal` when the layout can expand horizontally.
+        """
         return Qt.Orientation.Horizontal
 
     def hasHeightForWidth(self) -> bool:
-        """Returns True as the height depends on the width."""
+        """
+        Indicates whether the layout's preferred height depends on its width.
+        
+        Returns:
+            bool: `True` if the layout's height depends on its width, `False` otherwise.
+        """
         return True
 
     def heightForWidth(self, width: int) -> int:
-        """Returns the preferred height for the given width."""
+        """
+        Compute the preferred height for a given available width.
+        
+        Parameters:
+            width (int): Available width in pixels that constrains the layout.
+        
+        Returns:
+            int: Preferred height in pixels required to arrange all items within the given width.
+        """
         return self._do_layout(QRect(0, 0, width, 0), True)
 
     def setGeometry(self, rect: QRect):
-        """Sets the geometry of the layout."""
+        """
+        Apply the given rectangle to the layout and arrange child items within it.
+        
+        Parameters:
+            rect (QRect): The bounding rectangle to assign to the layout; used to position and size child items.
+        """
         super().setGeometry(rect)
         self._do_layout(rect, False)
 
     def sizeHint(self) -> QSize:
-        """Returns the preferred size of the layout."""
+        """
+        Provide the layout's preferred size.
+        
+        Returns:
+            QSize: Preferred size of the layout.
+        """
         return self.minimumSize()
 
     def minimumSize(self) -> QSize:
-        """Returns the minimum size of the layout."""
+        """
+        Compute the minimum QSize required to contain all layout items, including the layout's contents margins.
+        
+        Returns:
+            QSize: The minimum width and height that accommodate every item's minimumSize plus left/right and top/bottom margins.
+        """
         size = QSize()
         for item in self._items:
             size = size.expandedTo(item.minimumSize())
@@ -87,14 +139,15 @@ class FlowLayout(QLayout):
         return size
 
     def _do_layout(self, rect: QRect, test_only: bool) -> int:
-        """Calculates the positions of the items.
-
-        Args:
-            rect: The rectangle to layout the items in.
-            test_only: If True, only calculates the height without moving items.
-
+        """
+        Arrange layout items inside the given rectangle, wrapping items to new lines when they exceed the available width.
+        
+        Parameters:
+            rect (QRect): Bounding rectangle available for laying out items.
+            test_only (bool): If True, compute and return the total height without setting item geometries.
+        
         Returns:
-            int: The total height of the layout.
+            int: Total height consumed by the laid-out items (including layout margins).
         """
         left, top, right, bottom = self.getContentsMargins()
         effective_rect = rect.adjusted(+left, +top, -right, -bottom)
