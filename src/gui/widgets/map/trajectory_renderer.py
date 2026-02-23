@@ -66,8 +66,8 @@ class KeyframeLabelItem(QGraphicsObject):
         text_rect = fm.boundingRect(self._text)
         width = text_rect.width() + self._padding_x * 2
         height = text_rect.height() + self._padding_y * 2
-        self._rect = QRectF(0, 0, float(width), float(height))
         self.prepareGeometryChange()
+        self._rect = QRectF(0, 0, float(width), float(height))
 
     def boundingRect(self) -> QRectF:
         return self._rect
