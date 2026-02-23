@@ -960,10 +960,11 @@ class MapGraphicsView(QGraphicsView):
         )
 
     def _collect_keyframe_obstacles(self, view_scale: float) -> list[QRectF]:
-        """Builds a list of scene-coordinate rects for keyframe elements.
+        """Builds a list of scene-coordinate rects for keyframe labels.
 
-        Keyframe dots and labels are registered as immovable obstacles
-        so that marker labels avoid them.
+        Keyframe labels are registered as immovable obstacles so that
+        marker labels avoid them.  Keyframe dots are intentionally
+        excluded so they do not block marker label placement.
 
         Args:
             view_scale: Current view transform scale factor.
@@ -973,20 +974,6 @@ class MapGraphicsView(QGraphicsView):
         """
         obstacles: list[QRectF] = []
         inv_scale = 1.0 / view_scale if view_scale > 0 else 1.0
-
-        for dot in self._trajectory.keyframe_items:
-            if not dot.isVisible():
-                continue
-            r = dot.boundingRect()
-            sp = dot.scenePos()
-            obstacles.append(
-                QRectF(
-                    sp.x() + r.x(),
-                    sp.y() + r.y(),
-                    r.width(),
-                    r.height(),
-                )
-            )
 
         for label in self._trajectory.keyframe_label_items:
             if not label.isVisible():
