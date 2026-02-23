@@ -10,9 +10,10 @@ Sub-components of MapGraphicsView:
     - InteractionHandler: Context menus, drag-drop, dialogs
 """
 
-from src.gui.widgets.map.drawing_tool import DrawingTool
 from src.gui.dialogs.icon_picker_dialog import IconPickerDialog
+from src.gui.widgets.map.drawing_tool import DrawingTool
 from src.gui.widgets.map.interaction_handler import InteractionHandler
+from src.gui.widgets.map.label_manager import LabelManager
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 from src.gui.widgets.map.marker_item import MarkerItem
 from src.gui.widgets.map.marker_manager import MarkerManager
@@ -23,6 +24,7 @@ __all__ = [
     "DrawingTool",
     "IconPickerDialog",
     "InteractionHandler",
+    "LabelManager",
     "MapGraphicsView",
     "MarkerItem",
     "MarkerManager",

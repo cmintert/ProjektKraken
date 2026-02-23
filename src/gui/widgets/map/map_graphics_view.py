@@ -22,6 +22,7 @@ from PySide6.QtCore import (
     QSettings,
     QSize,
     Qt,
+    QTimer,
     Signal,
 )
 from PySide6.QtGui import (
@@ -78,6 +79,7 @@ from src.gui.widgets.map.coordinate_system import MapCoordinateSystem
 from src.gui.widgets.map.drawing_tool import DrawingTool
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.interaction_handler import InteractionHandler
+from src.gui.widgets.map.label_manager import LabelManager
 from src.gui.widgets.map.marker_item import MarkerItem
 from src.gui.widgets.map.marker_manager import MarkerManager
 from src.gui.widgets.map.scale_bar_painter import ScaleBarPainter
@@ -789,6 +791,15 @@ class MapGraphicsView(QGraphicsView):
         self._trajectory = TrajectoryRenderer(self)
         self._interaction = InteractionHandler(self)
 
+        # Label layout engine (Greedy PAL-Lite)
+        self.label_manager = LabelManager()
+        self._layout_debounce_timer = QTimer(self)
+        self._layout_debounce_timer.setSingleShot(True)
+        self._layout_debounce_timer.setInterval(50)
+        self._layout_debounce_timer.timeout.connect(
+            self._execute_label_layout
+        )
+
         # Hierarchical Layer Model
         self._layer_model: Optional["MapLayerModel"] = None
 
@@ -1029,6 +1040,7 @@ class MapGraphicsView(QGraphicsView):
             self.current_image_path = image_path
 
             logger.info(f"Loaded map: {image_path}")
+            self._schedule_label_layout()
             return True
 
         except Exception as e:
@@ -1040,6 +1052,7 @@ class MapGraphicsView(QGraphicsView):
         super().resizeEvent(event)
         if hasattr(self, "_drop_hint_overlay") and self._drop_hint_overlay:
             self._drop_hint_overlay.setGeometry(self.viewport().rect())
+        self._schedule_label_layout()
 
     def sizeHint(self) -> QSize:
         """Return a stable preferred size.
@@ -1055,6 +1068,21 @@ class MapGraphicsView(QGraphicsView):
             self.fitInView(
                 self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio
             )
+
+    # ------------------------------------------------------------------
+    # Label layout (delegated to LabelManager)
+    # ------------------------------------------------------------------
+
+    def _schedule_label_layout(self) -> None:
+        """Restarts the debounce timer to schedule a label layout pass."""
+        if hasattr(self, "_layout_debounce_timer"):
+            self._layout_debounce_timer.start()
+
+    def _execute_label_layout(self) -> None:
+        """Runs the label layout engine over all current markers."""
+        marker_list = list(self.markers.values())
+        view_scale = self.transform().m11()
+        self.label_manager.run_layout_pass(marker_list, view_scale)
 
     # ------------------------------------------------------------------
     # Marker management (delegated to MarkerManager)
@@ -1108,6 +1136,7 @@ class MapGraphicsView(QGraphicsView):
             style,
             visual_attributes,
         )
+        self._schedule_label_layout()
 
     def update_marker_position(
         self, marker_id: str, x: float, y: float
@@ -1120,6 +1149,7 @@ class MapGraphicsView(QGraphicsView):
             y: New Y coordinate (normalized 0-1).
         """
         self._marker_manager.update_marker_position(marker_id, x, y)
+        self._schedule_label_layout()
 
     def remove_marker(self, marker_id: str) -> None:
         """Remove a marker or feature from the map.
@@ -1128,6 +1158,7 @@ class MapGraphicsView(QGraphicsView):
             marker_id: Unique identifier for the marker to remove.
         """
         self._marker_manager.remove_marker(marker_id)
+        self._schedule_label_layout()
 
     def clear_markers(self) -> None:
         """Remove all markers and features from the map."""
@@ -1601,6 +1632,7 @@ class MapGraphicsView(QGraphicsView):
         self.scale(factor, factor)
         self._trajectory.update_label_scales()
         self._apply_scale_dependent_visibility()
+        self._schedule_label_layout()
 
     def contextMenuEvent(self, event: QContextMenuEvent) -> None:
         """Handle context menu events.

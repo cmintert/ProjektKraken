@@ -192,21 +192,27 @@ class MarkerItem(QGraphicsObject):
         self._is_dragging = False
         self._drag_start_pos = None
 
-        # Text Label - pill background
+        # Lore priority – set externally before a layout pass.
+        self.connection_count: int = 0
+
+        # Text Label - pill background (hidden until first layout pass)
         self._label_item = MarkerLabelItem(label, self)
+        self._label_item.setVisible(False)
 
-        # Center the label below the marker
-        self._update_label_position()
+    def apply_label_position(
+        self, local_x: float, local_y: float, is_visible: bool
+    ) -> None:
+        """Applies a computed label position and visibility.
 
-    def _update_label_position(self) -> None:
-        """Centers the label below the marker."""
-        rect = self._label_item.boundingRect()
-        size = self.resolved_size
-        # Center horizontally relative to 0 (marker center)
-        x = -rect.width() / 2
-        # Position vertically below the marker (size/2 is bottom edge)
-        y = (size / 2) + 2  # 2px padding
-        self._label_item.setPos(x, y)
+        Called by :class:`LabelManager` after each layout pass.
+
+        Args:
+            local_x: X offset in local (marker) coordinates.
+            local_y: Y offset in local (marker) coordinates.
+            is_visible: Whether the label should be shown.
+        """
+        self._label_item.setPos(local_x, local_y)
+        self._label_item.setVisible(is_visible)
 
     def _load_icon(self, icon_name: Optional[str]) -> None:
         """Loads an SVG icon for the marker.
@@ -398,7 +404,6 @@ class MarkerItem(QGraphicsObject):
             self._color = QColor(resolved)
         # Re-style SVG with updated visual attributes
         self._apply_and_load_svg()
-        self._update_label_position()
         self.prepareGeometryChange()
         self.update()
 
