@@ -949,61 +949,25 @@ class MapGraphicsView(QGraphicsView):
     def _execute_label_layout(self) -> None:
         """Runs the label layout engine over all current markers.
 
-        Keyframe dots and labels from the active trajectory are
-        registered as extra obstacles so marker labels avoid them.
+        Keyframe dots and their labels from the active trajectory are
+        passed as pairs so the label engine places them dynamically.
         """
         marker_list = list(self.markers.values())
         view_scale = self.transform().m11()
-        extra = self._collect_keyframe_obstacles(view_scale)
-        self.label_manager.run_layout_pass(
-            marker_list, view_scale, extra_obstacles=extra
+
+        # Build (dot, label) pairs for keyframe labels.
+        kf_pairs = list(
+            zip(
+                self._trajectory.keyframe_items,
+                self._trajectory.keyframe_label_items,
+            )
         )
 
-    def _collect_keyframe_obstacles(self, view_scale: float) -> list[QRectF]:
-        """Builds a list of scene-coordinate rects for keyframe elements.
-
-        Args:
-            view_scale: Current view transform scale factor.
-
-        Returns:
-            List of QRectF obstacles in scene coordinates.
-        """
-        obstacles: list[QRectF] = []
-        inv_scale = 1.0 / view_scale if view_scale > 0 else 1.0
-
-        for dot in self._trajectory.keyframe_items:
-            if not dot.isVisible():
-                continue
-            r = dot.boundingRect()
-            sp = dot.scenePos()
-            obstacles.append(
-                QRectF(
-                    sp.x() + r.x(),
-                    sp.y() + r.y(),
-                    r.width(),
-                    r.height(),
-                )
-            )
-
-        for label in self._trajectory.keyframe_label_items:
-            if not label.isVisible():
-                continue
-            # Labels have local transforms (translation + scale) and use
-            # ItemIgnoresTransformations. Map their bounds through the local
-            # transform to get the correct device-pixel offset, then scale
-            # to scene coordinates.
-            tr_rect = label.transform().mapRect(label.boundingRect())
-            sp = label.pos()  # Use pos() to avoid double-translation from scenePos()
-            obstacles.append(
-                QRectF(
-                    sp.x() + tr_rect.x() * inv_scale,
-                    sp.y() + tr_rect.y() * inv_scale,
-                    tr_rect.width() * inv_scale,
-                    tr_rect.height() * inv_scale,
-                )
-            )
-
-        return obstacles
+        self.label_manager.run_layout_pass(
+            marker_list,
+            view_scale,
+            keyframe_pairs=kf_pairs if kf_pairs else None,
+        )
 
     # ------------------------------------------------------------------
     # Marker management (delegated to MarkerManager)

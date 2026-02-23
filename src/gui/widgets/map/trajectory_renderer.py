@@ -59,6 +59,7 @@ class KeyframeLabelItem(QGraphicsObject):
         self._padding_x = 6
         self._padding_y = 2
         self._rect = QRectF()
+        self._label_scale: float = 1.0
         self._update_rect()
 
     def _update_rect(self):
@@ -77,6 +78,37 @@ class KeyframeLabelItem(QGraphicsObject):
             self._text = text
             self._update_rect()
             self.update()
+
+    def set_label_scale(self, scale: float) -> None:
+        """Stores the current label display scale.
+
+        Called by :meth:`TrajectoryRenderer.update_label_scales` whenever
+        the zoom level changes.  The stored value is used by
+        :meth:`apply_label_position` when rebuilding the transform.
+
+        Args:
+            scale: The scale factor to apply to the label.
+        """
+        self._label_scale = scale
+
+    def apply_label_position(
+        self, offset_x: float, offset_y: float, is_visible: bool
+    ) -> None:
+        """Applies a computed label offset and visibility.
+
+        Called by :class:`LabelManager` after each layout pass.
+
+        Args:
+            offset_x: X translation offset (device pixels).
+            offset_y: Y translation offset (device pixels).
+            is_visible: Whether the label should be shown.
+        """
+        self.setTransform(
+            QTransform()
+            .translate(offset_x, offset_y)
+            .scale(self._label_scale, self._label_scale)
+        )
+        self.setVisible(is_visible)
 
     def paint(self, painter: QPainter, option, widget=None):
         theme = ThemeManager().get_theme()
@@ -179,9 +211,8 @@ class TrajectoryRenderer:
             label = KeyframeLabelItem(date_str)
             label.setPos(pos)
             label.setZValue(base_z - 0.1)
-            label.setTransform(
-                QTransform().translate(KEYFRAME_LABEL_OFFSET_X, KEYFRAME_LABEL_OFFSET_Y)
-            )
+            # Hidden until the label engine places it.
+            label.setVisible(False)
             self._view.scene.addItem(label)
             self.keyframe_label_items.append(label)
 
@@ -294,7 +325,12 @@ class TrajectoryRenderer:
                 return
 
     def update_label_scales(self) -> None:
-        """Updates the scale of keyframe labels based on current zoom level."""
+        """Updates the scale of keyframe labels based on current zoom level.
+
+        Stores the computed scale on each label so that
+        :meth:`KeyframeLabelItem.apply_label_position` can rebuild the
+        transform with the correct scale after a layout pass.
+        """
         view_scale = self._view.transform().m11()
         if view_scale <= 0:
             return
@@ -304,14 +340,8 @@ class TrajectoryRenderer:
 
         s = max(min_s, min(view_scale, max_s))
 
-        transform = (
-            QTransform()
-            .translate(KEYFRAME_LABEL_OFFSET_X, KEYFRAME_LABEL_OFFSET_Y)
-            .scale(s, s)
-        )
-
         for label in self.keyframe_label_items:
-            label.setTransform(transform)
+            label.set_label_scale(s)
 
     # ------------------------------------------------------------------
     # Internal
