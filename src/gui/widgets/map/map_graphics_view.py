@@ -197,24 +197,59 @@ class KeyframeGizmo(QGraphicsItemGroup):
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """Handle icon clicks - clock for Clock Mode, X for delete.
 
+        Uses hit-testing on child items / geometry instead of a fixed
+        x-threshold so that font/DPI/layout changes don't break behavior.
+
         Args:
             event: The mouse press event.
         """
-        # Determine which icon was clicked based on local position
-        click_x = event.pos().x()
+        scene_pos = event.scenePos()
+        handled = False
 
-        if click_x < GIZMO_SIZE + 1:
-            # Clock icon clicked - enter Clock Mode
+        if self.clock_icon.contains(self.clock_icon.mapFromScene(scene_pos)):
             logger.info(f"Clock icon clicked for marker {self.keyframe_item.marker_id}")
             self.keyframe_item.set_mode("clock")
-        else:
-            # Delete icon clicked - request keyframe deletion
+            handled = True
+        elif self.delete_icon.contains(self.delete_icon.mapFromScene(scene_pos)):
             logger.info(
                 f"Delete icon clicked for keyframe {self.keyframe_item.marker_id} "
                 f"at t={self.keyframe_item.t}"
             )
             self.keyframe_item.request_delete()
-        event.accept()
+            handled = True
+        else:
+            # Fallback: use generic scene hit-testing if explicit bounds missed
+            # e.g., for overflowing child text items
+            scene = self.scene()
+            if scene is not None:
+                from PySide6.QtGui import QTransform
+
+                clicked_item = scene.itemAt(scene_pos, QTransform())
+                if clicked_item is not None:
+                    if (
+                        clicked_item is self.clock_icon
+                        or clicked_item.parentItem() is self.clock_icon
+                    ):
+                        logger.info(
+                            f"Clock icon clicked for marker {self.keyframe_item.marker_id}"
+                        )
+                        self.keyframe_item.set_mode("clock")
+                        handled = True
+                    elif (
+                        clicked_item is self.delete_icon
+                        or clicked_item.parentItem() is self.delete_icon
+                    ):
+                        logger.info(
+                            f"Delete icon clicked for keyframe {self.keyframe_item.marker_id} "
+                            f"at t={self.keyframe_item.t}"
+                        )
+                        self.keyframe_item.request_delete()
+                        handled = True
+
+        if handled:
+            event.accept()
+        else:
+            super().mousePressEvent(event)
 
 
 class KeyframeItem(QGraphicsObject):
@@ -1545,7 +1580,7 @@ class MapGraphicsView(QGraphicsView):
         if self.calibration_mode and len(self.calibration_points) > 0:
             painter.save()
 
-            theme = ThemeManager().get_theme()
+            theme = self.tm.get_theme()
             pen = QPen(QColor(theme.get("destructive", "#e74c3c")))
             pen.setWidth(2)
             pen.setStyle(Qt.DashLine)
