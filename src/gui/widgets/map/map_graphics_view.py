@@ -1517,7 +1517,7 @@ class MapGraphicsView(QGraphicsView):
         # Forward modal-mode keys to the owning MapWidget.
         map_widget = self._find_map_widget()
         if map_widget is not None:
-            in_clock = getattr(map_widget, "_pinned_marker_id", None)
+            in_clock = getattr(map_widget, "_pinned_marker_id", None) is not None
             in_draft = bool(
                 getattr(map_widget, "_transient_marker_ids", None)
             )
