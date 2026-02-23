@@ -163,6 +163,10 @@ class TestCollectKeyframeObstacles:
         # Should not raise ZeroDivisionError.
         obstacles = view._collect_keyframe_obstacles(0.0)
         assert len(obstacles) == 4
+        # Verify dimensions are finite and non-negative.
+        for rect in obstacles:
+            assert rect.width() >= 0
+            assert rect.height() >= 0
 
     def test_cleared_trajectory_produces_no_obstacles(self, qtbot):
         """After clearing trajectory, no keyframe obstacles remain."""
