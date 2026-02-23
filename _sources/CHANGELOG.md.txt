@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-23
-### Changed
-- Refactor: Remove performance debug logging from TimelineView and update changelog
+### Internal
+- map: standardized z-layers to ensure markers always appear above trajectory lines
 
 
 *This changelog was automatically generated.*
