@@ -21,10 +21,9 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QGraphicsObject,
     QGraphicsPathItem,
-    QGraphicsSimpleTextItem,
 )
 
-from src.app.constants import MAP_LAYER_Z_MARKERS, MAP_LAYER_Z_TRAJECTORIES
+from src.app.constants import MAP_LAYER_Z_MARKERS
 from src.core.trajectory import KEYFRAME_TIME_EPSILON
 
 from src.core.theme_manager import ThemeManager
@@ -56,7 +55,7 @@ class KeyframeLabelItem(QGraphicsObject):
         self._text = text
         self._font = QFont(KEYFRAME_LABEL_FONT_FAMILY, KEYFRAME_LABEL_FONT_SIZE)
         self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIgnoresTransformations)
-        
+
         self._padding_x = 6
         self._padding_y = 2
         self._rect = QRectF()
@@ -67,8 +66,8 @@ class KeyframeLabelItem(QGraphicsObject):
         text_rect = fm.boundingRect(self._text)
         width = text_rect.width() + self._padding_x * 2
         height = text_rect.height() + self._padding_y * 2
-        self._rect = QRectF(0, 0, float(width), float(height))
         self.prepareGeometryChange()
+        self._rect = QRectF(0, 0, float(width), float(height))
 
     def boundingRect(self) -> QRectF:
         return self._rect
@@ -90,10 +89,10 @@ class KeyframeLabelItem(QGraphicsObject):
         # Draw the pill background
         painter.setBrush(QBrush(bg_color))
         painter.setPen(QPen(border_color, 1))
-        
+
         radius = self._rect.height() / 2.0
         painter.drawRoundedRect(self._rect, radius, radius)
-        
+
         # Draw the text
         painter.setFont(self._font)
         painter.setPen(QPen(text_color))
@@ -121,9 +120,7 @@ class TrajectoryRenderer:
     # Public API
     # ------------------------------------------------------------------
 
-    def show_trajectory(
-        self, marker_id: str, keyframes: list
-    ) -> None:
+    def show_trajectory(self, marker_id: str, keyframes: list) -> None:
         """Visualizes the trajectory path and keyframes.
 
         Args:
@@ -137,15 +134,13 @@ class TrajectoryRenderer:
             return
 
         view_scale = (
-            self._view.transform().m11()
-            if self._view.transform().m11() > 0
-            else 1.0
+            self._view.transform().m11() if self._view.transform().m11() > 0 else 1.0
         )
         dot_radius = max(3.0 / view_scale, 3.0)
 
         marker = self._view._marker_manager.find_item(marker_id)
         base_z = marker.zValue() if marker else MAP_LAYER_Z_MARKERS
-        
+
         for kf in keyframes:
             pos = self._view.coord_system.to_scene(kf.x, kf.y)
             dot = KeyframeItem(
@@ -185,9 +180,7 @@ class TrajectoryRenderer:
             label.setPos(pos)
             label.setZValue(base_z - 0.1)
             label.setTransform(
-                QTransform().translate(
-                    KEYFRAME_LABEL_OFFSET_X, KEYFRAME_LABEL_OFFSET_Y
-                )
+                QTransform().translate(KEYFRAME_LABEL_OFFSET_X, KEYFRAME_LABEL_OFFSET_Y)
             )
             self._view.scene.addItem(label)
             self.keyframe_label_items.append(label)
@@ -204,8 +197,10 @@ class TrajectoryRenderer:
             for dot in self.keyframe_items:
                 self._pulse_item(dot)
 
+        self._view._schedule_label_layout()
+
     def update_z_values(self) -> None:
-        """Updates Z-values for active trajectory components to match the parent marker."""
+        """Updates Z-values for active trajectory components to match marker."""
         if not self.keyframe_items:
             return
 
@@ -215,10 +210,10 @@ class TrajectoryRenderer:
 
         if self.trajectory_path_item:
             self.trajectory_path_item.setZValue(base_z - 0.3)
-            
+
         for dot in self.keyframe_items:
             dot.setZValue(base_z - 0.2)
-            
+
         for label in self.keyframe_label_items:
             label.setZValue(base_z - 0.1)
 
@@ -236,6 +231,8 @@ class TrajectoryRenderer:
             self._view.scene.removeItem(label)
         self.keyframe_label_items.clear()
 
+        self._view._schedule_label_layout()
+
     def set_calendar_converter(self, converter: object) -> None:
         """Sets the calendar converter for formatting keyframe date labels.
 
@@ -244,9 +241,7 @@ class TrajectoryRenderer:
         """
         self._calendar_converter = converter
 
-    def set_keyframe_pinned(
-        self, marker_id: str, t: float, pinned: bool
-    ) -> None:
+    def set_keyframe_pinned(self, marker_id: str, t: float, pinned: bool) -> None:
         """Set visual pinned state for a specific keyframe.
 
         Args:
@@ -263,14 +258,10 @@ class TrajectoryRenderer:
                 and abs(item.t - t) < KEYFRAME_TIME_EPSILON
             ):
                 item.set_pinned(pinned)
-                logger.debug(
-                    f"Set keyframe {marker_id} at t={t} pinned={pinned}"
-                )
+                logger.debug(f"Set keyframe {marker_id} at t={t} pinned={pinned}")
                 return
 
-    def update_keyframe_label(
-        self, marker_id: str, t: float, new_time: float
-    ) -> None:
+    def update_keyframe_label(self, marker_id: str, t: float, new_time: float) -> None:
         """Updates the label of a specific keyframe to show a new time/date.
 
         Args:
@@ -290,9 +281,7 @@ class TrajectoryRenderer:
                     label = self.keyframe_label_items[i]
                     if self._calendar_converter:
                         try:
-                            text = self._calendar_converter.format_date(
-                                new_time
-                            )
+                            text = self._calendar_converter.format_date(new_time)
                         except Exception as e:
                             logger.warning(
                                 f"Calendar formatting failed for "
@@ -340,9 +329,7 @@ class TrajectoryRenderer:
         animation.setLoopCount(3)
 
         self._animations.append(animation)
-        animation.finished.connect(
-            lambda: self._animations.remove(animation)
-        )
+        animation.finished.connect(lambda: self._animations.remove(animation))
 
         animation.start()
 
@@ -354,9 +341,7 @@ class TrajectoryRenderer:
                 self.trajectory_path_item = None
             return
 
-        sorted_items = sorted(
-            self.keyframe_items, key=lambda item: item.t
-        )
+        sorted_items = sorted(self.keyframe_items, key=lambda item: item.t)
 
         path = QPainterPath()
         start = sorted_items[0].scenePos()

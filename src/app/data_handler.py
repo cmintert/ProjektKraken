@@ -277,6 +277,9 @@ class DataHandler(QObject):
                     "geometry": getattr(marker, "geometry", None),
                     "style": getattr(marker, "style", None),
                     "attributes": marker.attributes,
+                    "connection_count": getattr(
+                        marker, "connection_count", 0
+                    ),
                 }
             )
 

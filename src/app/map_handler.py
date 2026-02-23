@@ -577,6 +577,13 @@ class MapHandler(QObject):
                 visual_attributes=marker_data.get("attributes"),
             )
 
+            # Set lore priority (connection_count) on the MarkerItem
+            obj_id = marker_data["object_id"]
+            if obj_id in view.markers:
+                view.markers[obj_id].connection_count = marker_data.get(
+                    "connection_count", 0
+                )
+
             # Store mapping for later updates (object_id -> marker.id)
             self._marker_object_to_id[marker_data["object_id"]] = marker_data["id"]
 
