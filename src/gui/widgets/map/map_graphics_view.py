@@ -1079,10 +1079,59 @@ class MapGraphicsView(QGraphicsView):
             self._layout_debounce_timer.start()
 
     def _execute_label_layout(self) -> None:
-        """Runs the label layout engine over all current markers."""
+        """Runs the label layout engine over all current markers.
+
+        Keyframe dots and labels from the active trajectory are
+        registered as extra obstacles so marker labels avoid them.
+        """
         marker_list = list(self.markers.values())
         view_scale = self.transform().m11()
-        self.label_manager.run_layout_pass(marker_list, view_scale)
+        extra = self._collect_keyframe_obstacles(view_scale)
+        self.label_manager.run_layout_pass(
+            marker_list, view_scale, extra_obstacles=extra
+        )
+
+    def _collect_keyframe_obstacles(
+        self, view_scale: float
+    ) -> list[QRectF]:
+        """Builds a list of scene-coordinate rects for keyframe elements.
+
+        Args:
+            view_scale: Current view transform scale factor.
+
+        Returns:
+            List of QRectF obstacles in scene coordinates.
+        """
+        obstacles: list[QRectF] = []
+        inv_scale = 1.0 / view_scale if view_scale > 0 else 1.0
+
+        for dot in self._trajectory.keyframe_items:
+            r = dot.boundingRect()
+            sp = dot.scenePos()
+            obstacles.append(
+                QRectF(
+                    sp.x() + r.x(),
+                    sp.y() + r.y(),
+                    r.width(),
+                    r.height(),
+                )
+            )
+
+        for label in self._trajectory.keyframe_label_items:
+            r = label.boundingRect()
+            sp = label.scenePos()
+            # Labels use ItemIgnoresTransformations, so convert to
+            # scene size by multiplying by inv_scale.
+            obstacles.append(
+                QRectF(
+                    sp.x() + r.x() * inv_scale,
+                    sp.y() + r.y() * inv_scale,
+                    r.width() * inv_scale,
+                    r.height() * inv_scale,
+                )
+            )
+
+        return obstacles
 
     # ------------------------------------------------------------------
     # Marker management (delegated to MarkerManager)

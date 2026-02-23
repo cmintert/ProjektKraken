@@ -7,7 +7,7 @@ and lower-priority labels gracefully hide when no free space exists.
 """
 
 import logging
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 from PySide6.QtCore import QRectF
 
@@ -52,14 +52,18 @@ class LabelManager:
     # ------------------------------------------------------------------
 
     def run_layout_pass(
-        self, markers: List["MarkerItem"], view_scale: float
+        self,
+        markers: List["MarkerItem"],
+        view_scale: float,
+        extra_obstacles: Optional[List[QRectF]] = None,
     ) -> None:
         """Runs a full label-layout pass over the given markers.
 
         1. Clears previously occupied rectangles.
-        2. Registers every marker icon bounding rect as an obstacle.
-        3. Sorts markers by ``connection_count`` (descending).
-        4. For each marker, tests 8 candidate positions and assigns
+        2. Registers any extra obstacles (e.g. keyframe labels).
+        3. Registers every marker icon bounding rect as an obstacle.
+        4. Sorts markers by ``connection_count`` (descending).
+        5. For each marker, tests 8 candidate positions and assigns
            the first collision-free slot.  If none is free the label
            is hidden.
 
@@ -68,8 +72,15 @@ class LabelManager:
             view_scale: Current view transform scale factor
                 (``transform().m11()``), used to convert label sizes
                 from device-independent to scene coordinates.
+            extra_obstacles: Optional list of scene-coordinate rects
+                to pre-register as occupied (e.g. keyframe dots and
+                labels) before placing marker labels.
         """
         self._occupied_rects.clear()
+
+        # Step 0 – register extra obstacles (keyframe labels, etc.).
+        if extra_obstacles:
+            self._occupied_rects.extend(extra_obstacles)
 
         if not markers:
             return
