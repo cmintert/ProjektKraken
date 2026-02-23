@@ -91,6 +91,11 @@ class KeyframeLabelItem(QGraphicsObject):
         """
         self._label_scale = scale
 
+    @property
+    def label_scale(self) -> float:
+        """Returns the current label display scale."""
+        return self._label_scale
+
     def apply_label_position(
         self, offset_x: float, offset_y: float, is_visible: bool
     ) -> None:

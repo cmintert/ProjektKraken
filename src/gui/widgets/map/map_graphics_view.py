@@ -1506,9 +1506,11 @@ class MapGraphicsView(QGraphicsView):
         Returns:
             The MapWidget ancestor, or None.
         """
+        # Avoid circular import – check for the duck-type attribute
+        # that only MapWidget carries.
         widget = self.parentWidget()
         while widget is not None:
-            if widget.__class__.__name__ == "MapWidget":
+            if hasattr(widget, "_pinned_marker_id"):
                 return widget
             widget = widget.parentWidget()
         return None

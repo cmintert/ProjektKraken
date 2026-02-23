@@ -202,7 +202,7 @@ class LabelManager:
             inv_scale: Inverse of the current view scale.
         """
         label_rect = label.boundingRect()
-        scale = getattr(label, "_label_scale", 1.0)
+        scale = label.label_scale
         label_w = label_rect.width() * scale * inv_scale
         label_h = label_rect.height() * scale * inv_scale
 
