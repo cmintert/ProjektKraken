@@ -7,11 +7,14 @@ Classes:
     BaseCommand: Abstract base class implementing command pattern with undo/redo.
 """
 
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Dict
+from typing import Dict, List, Set
 
 from src.services.db_service import DatabaseService
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -135,3 +138,72 @@ class BaseCommand(ABC):
 
         """
         return True
+
+    @staticmethod
+    def _assign_tags(
+        db_service: DatabaseService,
+        object_id: str,
+        tags: List[str],
+        object_type: str,
+    ) -> None:
+        """Assigns a list of tags to an entity or event.
+
+        Args:
+            db_service: The database service to use.
+            object_id: The ID of the entity or event.
+            tags: List of tag names to assign.
+            object_type: Either ``"entity"`` or ``"event"``.
+
+        """
+        assign_fn = (
+            db_service.assign_tag_to_entity
+            if object_type == "entity"
+            else db_service.assign_tag_to_event
+        )
+        for tag_name in tags:
+            try:
+                assign_fn(object_id, tag_name)
+            except Exception as e:
+                logger.warning(f"Failed to assign tag '{tag_name}': {e}")
+
+    @staticmethod
+    def _sync_tags(
+        db_service: DatabaseService,
+        object_id: str,
+        new_tags: Set[str],
+        object_type: str,
+    ) -> None:
+        """Synchronizes normalized tag rows for an entity or event.
+
+        Computes the diff between the currently stored tags and the desired
+        set, then removes stale tags and adds new ones.
+
+        Args:
+            db_service: The database service to use.
+            object_id: The ID of the entity or event.
+            new_tags: The desired set of tag names after the update.
+            object_type: Either ``"entity"`` or ``"event"``.
+
+        """
+        if object_type == "entity":
+            get_fn = db_service.get_tags_for_entity
+            remove_fn = db_service.remove_tag_from_entity
+            assign_fn = db_service.assign_tag_to_entity
+        else:
+            get_fn = db_service.get_tags_for_event
+            remove_fn = db_service.remove_tag_from_event
+            assign_fn = db_service.assign_tag_to_event
+
+        current_tags: Set[str] = {t["name"] for t in get_fn(object_id)}
+
+        for tag_name in current_tags - new_tags:
+            try:
+                remove_fn(object_id, tag_name)
+            except Exception as e:
+                logger.warning(f"Failed to remove tag '{tag_name}': {e}")
+
+        for tag_name in new_tags - current_tags:
+            try:
+                assign_fn(object_id, tag_name)
+            except Exception as e:
+                logger.warning(f"Failed to assign tag '{tag_name}': {e}")
