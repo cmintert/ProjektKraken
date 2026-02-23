@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-02-22
-**Commit:** 0.13.5
+**Last Updated:** 2026-02-23
+**Commit:** d6507e8
 ---
 
 # Changelog
@@ -11,8 +11,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- *(2026-02-23)* **Map**: Implemented dynamic collision-aware label engine for both map marker labels and keyframe labels.
+- *(2026-02-22)* **UI**: Implemented high-fidelity, anti-aliased pill system for `TagPill` and `DragPill` components.
+- *(2026-02-22)* **Map**: Implemented themed pill backgrounds with dynamic scaling for map marker and keyframe labels.
+
+### Changed
+- *(2026-02-22)* **UI**: Refined UI based on review recommendations, standardizing component behavior.
+
 ### Fixed
+- *(2026-02-23)* **Bug**: Fixed ESC key not correctly cancelling Clock Mode or Draft Mode when the map view has focus.
+- *(2026-02-23)* **Bug**: Repaired keyframe label collision logic, ensuring labels smoothly dodge obstacles without geometry artifacts.
+- *(2026-02-22)* **Bug**: Fixed `DragPill` text eliding issues by calculating constraints dynamically on resize.
 - *(2026-02-22)* **Map**: Fixed Z-order overlap where keyframe dots and labels appeared above markers. Implemented dynamic Z-inheritance so trajectory components always sit exactly underneath their parent marker.
+
+### Refactor
+- *(2026-02-23)* **Refactor**: Hardened Gizmo hit-testing and centralized ThemeManager usage within `MapGraphicsView`.
+- *(2026-02-23)* **Refactor**: Removed high-frequency performance debug logging from `TimelineView`.
+- *(2026-02-23)* **Docs**: Added comprehensive Google-style docstrings to pill UI components for consistency.
 
 ## [0.13.5]
 

@@ -96,9 +96,7 @@ class TimelineView(QGraphicsView):
 
         # Expanding policy lets the view fill available dock space and
         # prevents collapse when the parent dock is resized.
-        self.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
-        )
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         self.scene = TimelineScene(self)
         self.setScene(self.scene)
@@ -311,7 +309,6 @@ class TimelineView(QGraphicsView):
         - Label collision avoidance
         - Sticky parent context label
         """
-        start_time = time.perf_counter()
 
         # 1. Switch to Screen Coordinates
         painter.save()
@@ -436,9 +433,6 @@ class TimelineView(QGraphicsView):
 
         # 9. Clean up
         painter.restore()
-
-        elapsed = (time.perf_counter() - start_time) * 1000
-        logger.debug(f"DrawForeground took {elapsed:.2f}ms")
 
     def _draw_playhead_handle(self, painter: QPainter, rect: QRectF) -> None:
         """Draws a handle for the playhead in the ruler area."""
@@ -705,7 +699,6 @@ class TimelineView(QGraphicsView):
         Args:
             effective_scale: The effective scale factor (scene scale * view zoom).
         """
-        start_time = time.perf_counter()
 
         # Update packer with effective scale
         self._lane_packer.update_scale_factor(effective_scale)
@@ -717,11 +710,6 @@ class TimelineView(QGraphicsView):
 
         # Apply layout
         self._apply_layout_results(event_lane_assignments, lane_heights)
-
-        elapsed = (time.perf_counter() - start_time) * 1000
-        logger.debug(
-            f"Repack events sync ({len(self.events)} items) took {elapsed:.2f}ms"
-        )
 
     def _repack_events_async(self, effective_scale: float) -> None:
         """Asynchronous version of event repacking for large datasets.
