@@ -1502,17 +1502,52 @@ class MapGraphicsView(QGraphicsView):
         super().mouseDoubleClickEvent(event)
 
     def keyPressEvent(self, event: "QKeyEvent") -> None:
-        """Handle key presses for drawing/editing modes.
+        """Handle key presses for drawing/editing and clock mode.
+
+        Clock-mode ESC/Enter are forwarded to the parent ``MapWidget``
+        because the view typically has keyboard focus during map
+        interaction, but clock-mode state lives in the widget.
 
         Args:
             event: The key press event.
         """
+        # Forward clock-mode keys to the owning MapWidget.
+        map_widget = self._find_map_widget()
+        if map_widget is not None and getattr(
+            map_widget, "_pinned_marker_id", None
+        ):
+            if event.key() in (
+                Qt.Key.Key_Escape,
+                Qt.Key.Key_Return,
+                Qt.Key.Key_Enter,
+            ):
+                map_widget.keyPressEvent(event)
+                return
+
         if event.key() == Qt.Key.Key_Escape:
             if self._drawing_tool.handle_key_escape():
                 return
             if self._vertex_editor.handle_key_escape():
                 return
+            # Clear selection when no drawing/vertex editing is active
+            if self.scene.selectedItems():
+                self.scene.clearSelection()
+                event.accept()
+                return
         super().keyPressEvent(event)
+
+    def _find_map_widget(self) -> "Optional[QWidget]":
+        """Walks up the parent chain to find the owning MapWidget.
+
+        Returns:
+            The MapWidget ancestor, or None.
+        """
+        widget = self.parentWidget()
+        while widget is not None:
+            if widget.__class__.__name__ == "MapWidget":
+                return widget
+            widget = widget.parentWidget()
+        return None
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         """Handle mouse wheel for zooming."""

@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QImage, QKeyEvent, QPixmap
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsPixmapItem
 
 from src.gui.widgets.map.marker_item import MarkerItem
@@ -401,6 +401,77 @@ def test_mode_indicator_ui(map_widget, qtbot):
 
     assert map_widget.mode_indicator.text() == "Normal Mode"
     assert not map_widget.overlay_banner.isVisible()
+
+
+def test_esc_cancels_clock_mode_via_view(map_widget, qtbot):
+    """Test that ESC pressed in MapGraphicsView cancels clock mode.
+
+    The view typically has focus during map interaction, so ESC events
+    arrive at the view first.  The view must forward clock-mode ESC
+    to the parent MapWidget so that _cancel_clock_mode() is called.
+    """
+    # Enter Clock Mode
+    map_widget.view.set_keyframe_pinned = MagicMock()
+    map_widget._on_clock_mode_requested("marker1", 100.0)
+    assert map_widget._pinned_marker_id == "marker1"
+
+    # Simulate ESC key press on the VIEW (where focus actually is)
+    esc_event = QKeyEvent(
+        QKeyEvent.Type.KeyPress, Qt.Key.Key_Escape, Qt.KeyboardModifier.NoModifier
+    )
+    map_widget.view.keyPressEvent(esc_event)
+
+    # Clock mode should be cancelled
+    assert map_widget._pinned_marker_id is None
+    assert map_widget.mode_indicator.text() == "Normal Mode"
+
+
+def test_enter_commits_clock_mode_via_view(map_widget, qtbot):
+    """Test that Enter pressed in MapGraphicsView commits clock mode."""
+    map_widget.view.set_keyframe_pinned = MagicMock()
+    map_widget._on_clock_mode_requested("marker1", 100.0)
+    assert map_widget._pinned_marker_id == "marker1"
+
+    # Simulate scrubbing
+    map_widget.on_time_changed(200.0)
+    map_widget.get_selected_map_id = MagicMock(return_value="map1")
+
+    commit_spy = []
+    map_widget.update_keyframe_time_requested.connect(
+        lambda mid, mkid, ot, nt: commit_spy.append((mid, mkid, ot, nt))
+    )
+
+    # Simulate Enter key press on the VIEW
+    enter_event = QKeyEvent(
+        QKeyEvent.Type.KeyPress, Qt.Key.Key_Return, Qt.KeyboardModifier.NoModifier
+    )
+    map_widget.view.keyPressEvent(enter_event)
+
+    # Clock mode should be committed
+    assert map_widget._pinned_marker_id is None
+    assert len(commit_spy) == 1
+
+
+def test_esc_in_view_without_clock_mode_clears_selection(map_widget, qtbot):
+    """Test that ESC in normal mode (no clock mode) clears selection."""
+    # Make sure we're NOT in clock mode
+    assert map_widget._pinned_marker_id is None
+
+    # Add a mock selected item to the scene
+    setup_map_with_pixmap(map_widget.view)
+    map_widget.view.add_marker("m1", "entity", "Test", 0.5, 0.5)
+    marker = map_widget.view.markers["m1"]
+    marker.setSelected(True)
+    assert len(map_widget.view.scene.selectedItems()) > 0
+
+    # Simulate ESC key press on the VIEW
+    esc_event = QKeyEvent(
+        QKeyEvent.Type.KeyPress, Qt.Key.Key_Escape, Qt.KeyboardModifier.NoModifier
+    )
+    map_widget.view.keyPressEvent(esc_event)
+
+    # Selection should be cleared
+    assert len(map_widget.view.scene.selectedItems()) == 0
 
 
 def test_configure_map_width_emits_signal(map_widget, monkeypatch):
