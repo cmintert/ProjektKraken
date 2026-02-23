@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-23
 ### Internal
-- Merge pull request #99 from cmintert/pill-tags
+- Merge pull request #100 from cmintert/copilot/dynamic-label-engine-implementation
 
 
 *This changelog was automatically generated.*
