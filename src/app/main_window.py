@@ -88,6 +88,17 @@ class GlobalShortcutFilter(QObject):
         super().__init__(main_window)
         self.main_window = main_window
 
+        ctrl = Qt.KeyboardModifier.ControlModifier
+        ctrl_shift = ctrl | Qt.KeyboardModifier.ShiftModifier
+        self._shortcuts = {
+            (Qt.Key.Key_Z, ctrl): self._try_undo,
+            (Qt.Key.Key_Y, ctrl): self._try_redo,
+            (Qt.Key.Key_Z, ctrl_shift): self._try_redo,
+            (Qt.Key.Key_E, ctrl): lambda: self._try_create("action_create_event"),
+            (Qt.Key.Key_I, ctrl): lambda: self._try_create("action_create_entity"),
+            (Qt.Key.Key_M, ctrl): lambda: self._try_create("action_create_map"),
+        }
+
     def _try_undo(self) -> bool:
         """Attempt to undo the last command.
 
@@ -147,19 +158,8 @@ class GlobalShortcutFilter(QObject):
         key_event = event  # type: QKeyEvent
         key = key_event.key()
         modifiers = key_event.modifiers()
-        ctrl = Qt.KeyboardModifier.ControlModifier
-        ctrl_shift = ctrl | Qt.KeyboardModifier.ShiftModifier
 
-        _SHORTCUTS = {
-            (Qt.Key.Key_Z, ctrl): self._try_undo,
-            (Qt.Key.Key_Y, ctrl): self._try_redo,
-            (Qt.Key.Key_Z, ctrl_shift): self._try_redo,
-            (Qt.Key.Key_E, ctrl): lambda: self._try_create("action_create_event"),
-            (Qt.Key.Key_I, ctrl): lambda: self._try_create("action_create_entity"),
-            (Qt.Key.Key_M, ctrl): lambda: self._try_create("action_create_map"),
-        }
-
-        handler = _SHORTCUTS.get((key, modifiers))
+        handler = self._shortcuts.get((key, modifiers))
         if handler is not None:
             return handler()
 

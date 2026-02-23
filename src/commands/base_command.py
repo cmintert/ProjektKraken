@@ -173,7 +173,7 @@ class BaseCommand(ABC):
         new_tags: Set[str],
         object_type: str,
     ) -> None:
-        """Synchronises normalised tag rows for an entity or event.
+        """Synchronizes normalized tag rows for an entity or event.
 
         Computes the diff between the currently stored tags and the desired
         set, then removes stale tags and adds new ones.
