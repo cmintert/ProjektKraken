@@ -1,34 +1,30 @@
 """Label Manager for Dynamic GIS-style Label Layout.
 
 Provides a collision-aware label layout engine (Greedy PAL-Lite) that
-dynamically positions marker labels and keyframe labels to minimize
-overlap.  Labels are placed at the best available position from an
-8-candidate hierarchy, and lower-priority labels gracefully hide
-when no free space exists.
+dynamically positions marker labels to minimize overlap.  Labels are
+placed at the best available position from an 8-candidate hierarchy,
+and lower-priority labels gracefully hide when no free space exists.
 """
 
 import logging
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Optional
 
 from PySide6.QtCore import QRectF
-from PySide6.QtWidgets import QGraphicsObject
 
 if TYPE_CHECKING:
     from src.gui.widgets.map.marker_item import MarkerItem
-    from src.gui.widgets.map.trajectory_renderer import KeyframeLabelItem
 
 logger = logging.getLogger(__name__)
 
 
 class LabelManager:
-    """Spatial index and layout calculator for marker and keyframe labels.
+    """Spatial index and layout calculator for marker labels.
 
     Tracks occupied rectangles in scene coordinates and assigns
-    each label to the best free position from an 8-slot candidate
-    hierarchy (Bottom, Top, Right, Left, and diagonals).
+    each marker label to the best free position from an 8-slot
+    candidate hierarchy (Bottom, Top, Right, Left, and diagonals).
     Markers are processed in descending ``connection_count`` order
     so that high-priority entities claim the best real estate first.
-    Keyframe labels are placed after marker labels.
     """
 
     # Candidate offsets as (dx_factor, dy_factor) relative to anchor size.
@@ -60,19 +56,14 @@ class LabelManager:
         markers: List["MarkerItem"],
         view_scale: float,
         extra_obstacles: Optional[List[QRectF]] = None,
-        keyframe_pairs: Optional[
-            List[Tuple[QGraphicsObject, "KeyframeLabelItem"]]
-        ] = None,
     ) -> None:
-        """Runs a full label-layout pass over markers and keyframe labels.
+        """Runs a full label-layout pass over the given markers.
 
         1. Clears previously occupied rectangles.
-        2. Registers any extra obstacles (e.g. keyframe dots).
+        2. Registers any extra obstacles (e.g. keyframe dots and labels).
         3. Registers every marker icon bounding rect as an obstacle.
         4. Sorts markers by ``connection_count`` (descending) and places
            their labels.
-        5. Registers keyframe dot bounding rects and places keyframe
-           labels.
 
         Args:
             markers: List of MarkerItem instances to lay out.
@@ -80,16 +71,17 @@ class LabelManager:
                 (``transform().m11()``), used to convert label sizes
                 from device-independent to scene coordinates.
             extra_obstacles: Optional list of scene-coordinate rects
-                to pre-register as occupied before placing any labels.
-            keyframe_pairs: Optional list of ``(dot, label)`` tuples
-                where *dot* is a ``KeyframeItem`` (the anchor) and
-                *label* is the corresponding ``KeyframeLabelItem``.
+                to pre-register as occupied (e.g. keyframe dots and
+                labels) before placing marker labels.
         """
         self._occupied_rects.clear()
 
-        # Step 0 – register extra obstacles.
+        # Step 0 – register extra obstacles (keyframe labels, etc.).
         if extra_obstacles:
             self._occupied_rects.extend(extra_obstacles)
+
+        if not markers:
+            return
 
         inv_scale = 1.0 / view_scale if view_scale > 0 else 1.0
 
@@ -116,25 +108,6 @@ class LabelManager:
         )
         for marker in sorted_markers:
             self._place_label(marker, inv_scale)
-
-        # Step 3 – place keyframe labels.
-        if keyframe_pairs:
-            for dot, kf_label in keyframe_pairs:
-                if not dot.isVisible():
-                    kf_label.setVisible(False)
-                    continue
-                # Register the dot as an obstacle.
-                dr = dot.boundingRect()
-                dsp = dot.scenePos()
-                self._occupied_rects.append(
-                    QRectF(
-                        dsp.x() + dr.x(),
-                        dsp.y() + dr.y(),
-                        dr.width(),
-                        dr.height(),
-                    )
-                )
-                self._place_keyframe_label(dot, kf_label, inv_scale)
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -187,58 +160,6 @@ class LabelManager:
 
         # All 8 candidates collided – hide the label.
         marker.apply_label_position(0.0, 0.0, False)
-
-    def _place_keyframe_label(
-        self,
-        dot: QGraphicsObject,
-        label: "KeyframeLabelItem",
-        inv_scale: float,
-    ) -> None:
-        """Tries to place a keyframe label at the best candidate.
-
-        Args:
-            dot: The keyframe dot (anchor graphics item).
-            label: The ``KeyframeLabelItem`` to position.
-            inv_scale: Inverse of the current view scale.
-        """
-        label_rect = label.boundingRect()
-        scale = label.label_scale
-        label_w = label_rect.width() * scale * inv_scale
-        label_h = label_rect.height() * scale * inv_scale
-
-        scene_pos = dot.scenePos()
-        dot_rect = dot.boundingRect()
-        half_w = dot_rect.width() / 2.0
-        half_h = dot_rect.height() / 2.0
-        padding = self._PADDING * inv_scale
-
-        for dx_factor, dy_factor in self._CANDIDATE_OFFSETS:
-            if dx_factor == 0.0:
-                cx = scene_pos.x() - label_w / 2.0
-            elif dx_factor > 0:
-                cx = scene_pos.x() + half_w + padding
-            else:
-                cx = scene_pos.x() - half_w - padding - label_w
-
-            if dy_factor > 0:
-                cy = scene_pos.y() + half_h + padding
-            elif dy_factor < 0:
-                cy = scene_pos.y() - half_h - padding - label_h
-            else:
-                cy = scene_pos.y() - label_h / 2.0
-
-            candidate = QRectF(cx, cy, label_w, label_h)
-
-            if self._is_space_free(candidate):
-                # Offset in device pixels (before scene scaling).
-                offset_x = (cx - scene_pos.x()) / inv_scale / scale
-                offset_y = (cy - scene_pos.y()) / inv_scale / scale
-                label.apply_label_position(offset_x, offset_y, True)
-                self._occupied_rects.append(candidate)
-                return
-
-        # All 8 candidates collided – hide the label.
-        label.apply_label_position(0.0, 0.0, False)
 
     def _is_space_free(self, candidate: QRectF) -> bool:
         """Checks whether *candidate* overlaps any occupied rectangle.

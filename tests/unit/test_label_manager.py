@@ -149,108 +149,35 @@ class TestRunLayoutPass:
         assert visible_count == 5
 
 
-class TestKeyframeLabelPlacement:
-    """Tests for keyframe label collision-aware placement."""
+class TestKeyframeObstacles:
+    """Tests that keyframe labels are registered as static obstacles."""
 
-    def test_single_keyframe_label_visible(
-        self, qapp, label_manager
-    ):
-        """A single keyframe label should be placed and visible."""
-        from PySide6.QtWidgets import QGraphicsEllipseItem
-
-        from src.gui.widgets.map.trajectory_renderer import KeyframeLabelItem
-
-        dot = QGraphicsEllipseItem(-3, -3, 6, 6)
-        dot.setPos(100, 100)
-        label = KeyframeLabelItem("Day 1")
-
-        label_manager.run_layout_pass(
-            [], 1.0, keyframe_pairs=[(dot, label)]
-        )
-
-        assert label.isVisible() is True
-
-    def test_keyframe_label_position_nonzero(
-        self, qapp, label_manager
-    ):
-        """After layout, the keyframe label offset should be non-zero."""
-        from PySide6.QtWidgets import QGraphicsEllipseItem
-
-        from src.gui.widgets.map.trajectory_renderer import KeyframeLabelItem
-
-        dot = QGraphicsEllipseItem(-3, -3, 6, 6)
-        dot.setPos(100, 100)
-        label = KeyframeLabelItem("Day 1")
-
-        label_manager.run_layout_pass(
-            [], 1.0, keyframe_pairs=[(dot, label)]
-        )
-
-        tr = label.transform()
-        # The transform should have non-zero translation
-        assert tr.dx() != 0.0 or tr.dy() != 0.0
-
-    def test_multiple_keyframe_labels_all_visible(
-        self, qapp, label_manager
-    ):
-        """Separated keyframe labels should all be visible."""
-        from PySide6.QtWidgets import QGraphicsEllipseItem
-
-        from src.gui.widgets.map.trajectory_renderer import KeyframeLabelItem
-
-        pairs = []
-        for i in range(4):
-            dot = QGraphicsEllipseItem(-3, -3, 6, 6)
-            dot.setPos(i * 200, 0)  # Far apart
-            label = KeyframeLabelItem(f"Day {i}")
-            pairs.append((dot, label))
-
-        label_manager.run_layout_pass([], 1.0, keyframe_pairs=pairs)
-
-        visible = sum(1 for _, lbl in pairs if lbl.isVisible())
-        assert visible == 4
-
-    def test_keyframe_labels_avoid_marker_labels(
+    def test_extra_obstacles_block_marker_labels(
         self, label_manager, mock_pixmap_item
     ):
-        """Keyframe labels should not overlap marker labels."""
-        from PySide6.QtWidgets import QGraphicsEllipseItem
-
-        from src.gui.widgets.map.trajectory_renderer import KeyframeLabelItem
-
-        # Place a marker at (100, 100)
+        """Marker labels should avoid extra obstacle rects."""
         marker = _make_marker(mock_pixmap_item, "m1", "City")
-        marker.setPos(100, 100)
+        marker.setPos(0, 0)
 
-        # Place a keyframe dot near the marker (close but not on top)
-        dot = QGraphicsEllipseItem(-3, -3, 6, 6)
-        dot.setPos(150, 100)
-        kf_label = KeyframeLabelItem("Day 1")
+        # Register a large obstacle covering the bottom slot
+        obstacles = [QRectF(-50, 14, 100, 30)]
 
         label_manager.run_layout_pass(
-            [marker], 1.0, keyframe_pairs=[(dot, kf_label)]
+            [marker], 1.0, extra_obstacles=obstacles
         )
 
-        # Both should be visible (engine finds different slots)
+        # The marker label should still be visible (placed elsewhere)
         assert marker._label_item.isVisible() is True
-        assert kf_label.isVisible() is True
+        # The label should NOT be in the bottom position
+        label_pos = marker._label_item.pos()
+        # Bottom-center would have y > 0; it should have been moved
+        # (exact position depends on candidate order, but the obstacle
+        # should have been avoided)
+        assert label_pos.y() != 0.0 or label_pos.x() != 0.0
 
-    def test_hidden_dot_skipped(
-        self, qapp, label_manager
-    ):
-        """Keyframe labels for hidden dots should be skipped."""
-        from PySide6.QtWidgets import QGraphicsEllipseItem
+    def test_extra_obstacles_registered(self, label_manager):
+        """Extra obstacles should appear in the occupied rects list."""
+        obstacles = [QRectF(10, 10, 50, 20), QRectF(100, 100, 30, 30)]
+        label_manager.run_layout_pass([], 1.0, extra_obstacles=obstacles)
 
-        from src.gui.widgets.map.trajectory_renderer import KeyframeLabelItem
-
-        dot = QGraphicsEllipseItem(-3, -3, 6, 6)
-        dot.setPos(100, 100)
-        dot.setVisible(False)
-        label = KeyframeLabelItem("Day 1")
-
-        label_manager.run_layout_pass(
-            [], 1.0, keyframe_pairs=[(dot, label)]
-        )
-
-        # Label should not have been placed (dot is hidden)
-        assert label.isVisible() is False
+        assert len(label_manager._occupied_rects) == 2

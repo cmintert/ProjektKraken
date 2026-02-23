@@ -363,8 +363,9 @@ class LongformEditorWidget(QWidget):
         self.find_shortcut = QShortcut(ShortcutManager.FIND.key_sequence, self)
         self.find_shortcut.activated.connect(self._toggle_search)
 
-        # Escape to close search
+        # Escape to close search (only when this editor has focus)
         self.esc_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Escape), self)
+        self.esc_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
         self.esc_shortcut.activated.connect(self._handle_escape)
 
     def _toggle_search(self) -> None:

@@ -949,25 +949,64 @@ class MapGraphicsView(QGraphicsView):
     def _execute_label_layout(self) -> None:
         """Runs the label layout engine over all current markers.
 
-        Keyframe dots and their labels from the active trajectory are
-        passed as pairs so the label engine places them dynamically.
+        Keyframe dots and labels from the active trajectory are
+        registered as extra obstacles so marker labels avoid them.
         """
         marker_list = list(self.markers.values())
         view_scale = self.transform().m11()
-
-        # Build (dot, label) pairs for keyframe labels.
-        kf_pairs = list(
-            zip(
-                self._trajectory.keyframe_items,
-                self._trajectory.keyframe_label_items,
-            )
-        )
-
+        extra = self._collect_keyframe_obstacles(view_scale)
         self.label_manager.run_layout_pass(
-            marker_list,
-            view_scale,
-            keyframe_pairs=kf_pairs if kf_pairs else None,
+            marker_list, view_scale, extra_obstacles=extra
         )
+
+    def _collect_keyframe_obstacles(self, view_scale: float) -> list[QRectF]:
+        """Builds a list of scene-coordinate rects for keyframe elements.
+
+        Keyframe dots and labels are registered as immovable obstacles
+        so that marker labels avoid them.
+
+        Args:
+            view_scale: Current view transform scale factor.
+
+        Returns:
+            List of QRectF obstacles in scene coordinates.
+        """
+        obstacles: list[QRectF] = []
+        inv_scale = 1.0 / view_scale if view_scale > 0 else 1.0
+
+        for dot in self._trajectory.keyframe_items:
+            if not dot.isVisible():
+                continue
+            r = dot.boundingRect()
+            sp = dot.scenePos()
+            obstacles.append(
+                QRectF(
+                    sp.x() + r.x(),
+                    sp.y() + r.y(),
+                    r.width(),
+                    r.height(),
+                )
+            )
+
+        for label in self._trajectory.keyframe_label_items:
+            if not label.isVisible():
+                continue
+            # Labels have local transforms (translation + scale) and use
+            # ItemIgnoresTransformations. Map their bounds through the
+            # local transform to get the correct device-pixel offset,
+            # then scale to scene coordinates.
+            tr_rect = label.transform().mapRect(label.boundingRect())
+            sp = label.pos()
+            obstacles.append(
+                QRectF(
+                    sp.x() + tr_rect.x() * inv_scale,
+                    sp.y() + tr_rect.y() * inv_scale,
+                    tr_rect.width() * inv_scale,
+                    tr_rect.height() * inv_scale,
+                )
+            )
+
+        return obstacles
 
     # ------------------------------------------------------------------
     # Marker management (delegated to MarkerManager)
@@ -1466,25 +1505,30 @@ class MapGraphicsView(QGraphicsView):
         super().mouseDoubleClickEvent(event)
 
     def keyPressEvent(self, event: "QKeyEvent") -> None:
-        """Handle key presses for drawing/editing and clock mode.
+        """Handle key presses for drawing/editing, clock, and draft modes.
 
-        Clock-mode ESC/Enter are forwarded to the parent ``MapWidget``
-        because the view typically has keyboard focus during map
-        interaction, but clock-mode state lives in the widget.
+        Clock-mode ESC/Enter and Draft-mode ESC are forwarded to the
+        parent ``MapWidget`` because the view typically has keyboard
+        focus during map interaction, but modal state lives in the widget.
 
         Args:
             event: The key press event.
         """
-        # Forward clock-mode keys to the owning MapWidget.
+        # Forward modal-mode keys to the owning MapWidget.
         map_widget = self._find_map_widget()
-        if map_widget is not None and getattr(
-            map_widget, "_pinned_marker_id", None
-        ):
-            if event.key() in (
+        if map_widget is not None:
+            in_clock = getattr(map_widget, "_pinned_marker_id", None)
+            in_draft = bool(
+                getattr(map_widget, "_transient_marker_ids", None)
+            )
+            if in_clock and event.key() in (
                 Qt.Key.Key_Escape,
                 Qt.Key.Key_Return,
                 Qt.Key.Key_Enter,
             ):
+                map_widget.keyPressEvent(event)
+                return
+            if in_draft and event.key() == Qt.Key.Key_Escape:
                 map_widget.keyPressEvent(event)
                 return
 

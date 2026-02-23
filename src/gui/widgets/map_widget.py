@@ -907,6 +907,14 @@ class MapWidget(
                 event.accept()
                 return
         elif event.key() == Qt.Key_Escape:
+            # Draft Mode: discard unsaved marker positions
+            if self._transient_marker_ids:
+                logger.debug("Esc pressed: Discarding draft marker positions")
+                self._transient_marker_ids.clear()
+                self._update_trajectory_positions(force_all=True)
+                self._update_mode_indicator()
+                event.accept()
+                return
             # Deselect all items in the scene
             if self.view.scene.selectedItems():
                 logger.debug("Esc pressed: Clearing selection")

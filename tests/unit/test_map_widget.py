@@ -474,6 +474,46 @@ def test_esc_in_view_without_clock_mode_clears_selection(map_widget, qtbot):
     assert len(map_widget.view.scene.selectedItems()) == 0
 
 
+def test_esc_cancels_draft_mode_via_view(map_widget, qtbot):
+    """Test that ESC cancels Draft Mode (unsaved marker positions).
+
+    Draft Mode activates when markers are moved but not yet saved as
+    keyframes.  ESC should discard the draft and return to Normal Mode.
+    """
+    # Enter Draft Mode by adding a transient marker
+    map_widget._transient_marker_ids.add("marker1")
+    map_widget._update_mode_indicator()
+    assert "DRAFT MODE" in map_widget.mode_indicator.text()
+
+    # Simulate ESC key press on the VIEW
+    esc_event = QKeyEvent(
+        QKeyEvent.Type.KeyPress, Qt.Key.Key_Escape, Qt.KeyboardModifier.NoModifier
+    )
+    map_widget.view.keyPressEvent(esc_event)
+
+    # Draft mode should be cleared
+    assert len(map_widget._transient_marker_ids) == 0
+    assert map_widget.mode_indicator.text() == "Normal Mode"
+
+
+def test_esc_cancels_draft_mode_via_widget(map_widget, qtbot):
+    """Test that ESC sent directly to MapWidget cancels Draft Mode."""
+    # Enter Draft Mode
+    map_widget._transient_marker_ids.add("marker1")
+    map_widget._update_mode_indicator()
+    assert "DRAFT MODE" in map_widget.mode_indicator.text()
+
+    # Simulate ESC key press directly on MapWidget
+    esc_event = QKeyEvent(
+        QKeyEvent.Type.KeyPress, Qt.Key.Key_Escape, Qt.KeyboardModifier.NoModifier
+    )
+    map_widget.keyPressEvent(esc_event)
+
+    # Draft mode should be cleared
+    assert len(map_widget._transient_marker_ids) == 0
+    assert map_widget.mode_indicator.text() == "Normal Mode"
+
+
 def test_configure_map_width_emits_signal(map_widget, monkeypatch):
     """Test that configuring map width emits the signal via MapScaleDialog."""
     from PySide6.QtWidgets import QDialog
