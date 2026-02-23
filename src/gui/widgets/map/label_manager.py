@@ -80,7 +80,7 @@ class LabelManager:
         for marker in markers:
             icon_rect = marker.boundingRect()
             scene_pos = marker.scenePos()
-            # Icon rect is in local coords centred on (0,0).
+            # Icon rect is in local coords centered on (0,0).
             # Map to scene by shifting by the marker's scene position,
             # then scaling by inv_scale (since ItemIgnoresTransformations).
             obstacle = QRectF(
