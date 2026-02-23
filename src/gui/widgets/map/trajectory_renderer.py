@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
     QGraphicsPathItem,
 )
 
-from src.app.constants import MAP_LAYER_Z_MARKERS
+from src.app.constants import MAP_LAYER_Z_TRAJECTORIES
 from src.core.trajectory import KEYFRAME_TIME_EPSILON
 
 from src.core.theme_manager import ThemeManager
@@ -138,8 +138,9 @@ class TrajectoryRenderer:
         )
         dot_radius = max(3.0 / view_scale, 3.0)
 
-        marker = self._view._marker_manager.find_item(marker_id)
-        base_z = marker.zValue() if marker else MAP_LAYER_Z_MARKERS
+        # Trajectories now live in a fixed low-layer (0.2-0.4) below all markers
+        # and features, rather than inheriting from the marker's current layer.
+        base_z = MAP_LAYER_Z_TRAJECTORIES
 
         for kf in keyframes:
             pos = self._view.coord_system.to_scene(kf.x, kf.y)
@@ -204,9 +205,9 @@ class TrajectoryRenderer:
         if not self.keyframe_items:
             return
 
-        marker_id = self.keyframe_items[0].marker_id
-        marker = self._view._marker_manager.find_item(marker_id)
-        base_z = marker.zValue() if marker else MAP_LAYER_Z_MARKERS
+        # Trajectories now live in a fixed low-layer (0.2-0.4) below all markers
+        # and features, rather than inheriting from the marker's current layer.
+        base_z = MAP_LAYER_Z_TRAJECTORIES
 
         if self.trajectory_path_item:
             self.trajectory_path_item.setZValue(base_z - 0.3)
@@ -333,7 +334,7 @@ class TrajectoryRenderer:
 
         animation.start()
 
-    def _update_trajectory_path(self, base_z: float = MAP_LAYER_Z_MARKERS) -> None:
+    def _update_trajectory_path(self, base_z: float = MAP_LAYER_Z_TRAJECTORIES) -> None:
         """Re-draws the trajectory path based on current keyframe positions."""
         if not self.keyframe_items or len(self.keyframe_items) < 2:
             if self.trajectory_path_item:

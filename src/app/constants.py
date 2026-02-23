@@ -183,7 +183,7 @@ MAP_ZOOM_IN_FACTOR = 1.25
 
 # Static Z-values for layer ordering in the graphics scene
 MAP_LAYER_Z_MAP_BG = 0
-MAP_LAYER_Z_TRAJECTORIES = 5
+MAP_LAYER_Z_TRAJECTORIES = 0.5
 MAP_LAYER_Z_FEATURES = 8  # paths / regions
 MAP_LAYER_Z_MARKERS = 10
 MAP_LAYER_Z_UI_OVERLAY = 100

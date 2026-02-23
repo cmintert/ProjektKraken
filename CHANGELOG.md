@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file.
 - *(2026-02-22)* **Map**: Implemented themed pill backgrounds with dynamic scaling for map marker and keyframe labels.
 
 ### Changed
+- *(2026-02-23)* **Map**: Standardized map z-layers to ensure markers always appear above trajectory lines, regardless of layer hierarchy.
 - *(2026-02-22)* **UI**: Refined UI based on review recommendations, standardizing component behavior.
 
 ### Fixed
