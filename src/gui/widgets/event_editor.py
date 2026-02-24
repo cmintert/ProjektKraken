@@ -730,43 +730,37 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.btn_remove_rel.setEnabled(has_selection)
 
     def eventFilter(self, obj: QWidget, event: Any) -> bool:
-        """Event filter to handle clicks on empty space in relation lists.
-
-        Args:
-            obj: Object that received the event.
-            event: The event.
-
-        Returns:
-            True if event was handled, False otherwise.
-
-        """
+        """Event filter to handle clicks on empty space in relation lists."""
         from PySide6.QtCore import QEvent
         from PySide6.QtGui import QMouseEvent
 
-        # Check if this is a mouse press on a relation list viewport
-        if (
-            isinstance(event, QMouseEvent)
-            and event.type() == QEvent.Type.MouseButtonPress
-        ):
-            if event.button() == Qt.MouseButton.LeftButton:
-                # Find the list widget this viewport belongs to
-                parent = obj.parent()
-                if isinstance(parent, QListWidget) and parent.property(
-                    "_relation_list_widget"
-                ):
-                    # Get the item at the click position
-                    item = parent.itemAt(event.pos())
+        try:
+            # Check if this is a mouse press on a relation list viewport
+            if (
+                isinstance(event, QMouseEvent)
+                and event.type() == QEvent.Type.MouseButtonPress
+            ):
+                if event.button() == Qt.MouseButton.LeftButton:
+                    # Find the list widget this viewport belongs to
+                    parent = obj.parent()
+                    if isinstance(parent, QListWidget) and parent.property(
+                        "_relation_list_widget"
+                    ):
+                        # Get the item at the click position
+                        item = parent.itemAt(event.pos())
 
-                    if item is None:
-                        # Clicked on empty space - clear selection
-                        parent.clearSelection()
-                        parent.setCurrentItem(None)
-                        return False  # Let Qt handle the event normally
-                    elif item.isSelected():
-                        # Clicked on already-selected item - deselect it
-                        parent.clearSelection()
-                        parent.setCurrentItem(None)
-                        return True  # Consume the event to prevent re-selection
+                        if item is None:
+                            # Clicked on empty space - clear selection
+                            parent.clearSelection()
+                            parent.setCurrentItem(None)
+                            return False  # Let Qt handle the event normally
+                        elif item.isSelected():
+                            # Clicked on already-selected item - deselect it
+                            parent.clearSelection()
+                            parent.setCurrentItem(None)
+                            return True  # Prevent re-selection
+        except RuntimeError:
+            return False
 
         return super().eventFilter(obj, event)
 
