@@ -28,7 +28,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMenu,
-    QRubberBand,
     QScrollArea,
     QSizePolicy,
     QToolBar,
@@ -402,6 +401,101 @@ class SpacerWidget(QFrame):
             pass
 
 
+class _GhostWidget(QWidget):
+    """Semi-transparent drag preview that follows the cursor during DnD.
+
+    Displays the attribute key in a styled label to give WYSIWYG feedback
+    about which attribute is being moved.
+    """
+
+    def __init__(self, key: str, parent: Optional[QWidget] = None) -> None:
+        """Initialize the ghost widget.
+
+        Args:
+            key: The attribute key to display.
+            parent: Optional parent widget.
+        """
+        super().__init__(parent)
+        self.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.Tool
+            | Qt.WindowType.WindowStaysOnTopHint
+        )
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setWindowOpacity(0.7)
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(8, 4, 8, 4)
+
+        self._label = QLabel(key)
+        self._label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self._label)
+
+        self._theme_mgr = ThemeManager()
+        self._apply_theme()
+        self.adjustSize()
+
+    def _apply_theme(self) -> None:
+        """Apply current theme colors."""
+        theme = self._theme_mgr.get_theme()
+        primary = theme.get("primary", "#5C82FF")
+        text = theme.get("text", "#E0E0E0")
+        self._label.setStyleSheet(
+            f"""
+            QLabel {{
+                background-color: {primary};
+                color: {text};
+                border-radius: 4px;
+                padding: 4px 12px;
+                font-weight: bold;
+            }}
+        """
+        )
+
+    def move_to(self, global_pos: QPoint) -> None:
+        """Position the ghost near the given global cursor position.
+
+        Args:
+            global_pos: The global cursor position.
+        """
+        self.move(global_pos.x() + 10, global_pos.y() + 10)
+
+
+class _InsertionLine(QFrame):
+    """A thin colored line indicating where a dragged item will land.
+
+    Shown between rows or between items within a row during drag-move.
+    """
+
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
+        """Initialize the insertion line.
+
+        Args:
+            parent: Optional parent widget.
+        """
+        super().__init__(parent)
+        self.setFrameShape(QFrame.Shape.HLine)
+        self.setFixedHeight(3)
+        self.hide()
+
+        self._theme_mgr = ThemeManager()
+        self._apply_theme()
+
+    def _apply_theme(self) -> None:
+        """Apply current theme colors."""
+        theme = self._theme_mgr.get_theme()
+        primary = theme.get("primary", "#5C82FF")
+        self.setStyleSheet(
+            f"""
+            _InsertionLine {{
+                background-color: {primary};
+                border: none;
+                border-radius: 1px;
+            }}
+        """
+        )
+
+
 class _ResizeHandle(QWidget):
     """Invisible drag handle between adjacent items in a row.
 
@@ -432,6 +526,7 @@ class _ResizeHandle(QWidget):
         self._right_idx = right_idx
         self._dragging = False
         self._drag_start_x = 0
+        self._weight_overlay: Optional[QLabel] = None
 
         self.setFixedWidth(6)
         self.setCursor(QCursor(Qt.CursorShape.SplitHCursor))
@@ -502,6 +597,8 @@ class _ResizeHandle(QWidget):
                 self._dragging = False
                 return
 
+            # Show weight overlay
+            self._show_weight_overlay()
             event.accept()
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
@@ -556,6 +653,7 @@ class _ResizeHandle(QWidget):
             ):
                 self._hlayout.setStretch(self._left_idx, left_stretch)
                 self._hlayout.setStretch(self._right_idx, right_stretch)
+                self._update_weight_overlay()
         except RuntimeError:
             self._dragging = False
             return
@@ -566,6 +664,7 @@ class _ResizeHandle(QWidget):
         """End resize tracking and emit completion."""
         if event.button() == Qt.MouseButton.LeftButton and self._dragging:
             self._dragging = False
+            self._hide_weight_overlay()
 
             if not shiboken6.isValid(self._hlayout):
                 return
@@ -618,6 +717,66 @@ class _ResizeHandle(QWidget):
             # Only emit the signal when the user stops dragging
             self.resize_done.emit()
             event.accept()
+
+    # ------------------------------------------------------------------
+    # Weight overlay helpers
+    # ------------------------------------------------------------------
+
+    def _show_weight_overlay(self) -> None:
+        """Create and show the weight percentage overlay above the handle."""
+        if self._weight_overlay is None:
+            self._weight_overlay = QLabel(self.parentWidget() or self)
+            self._weight_overlay.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            theme = self._theme_mgr.get_theme()
+            primary = theme.get("primary", "#5C82FF")
+            self._weight_overlay.setStyleSheet(
+                f"""
+                QLabel {{
+                    background-color: {primary};
+                    color: white;
+                    border-radius: 3px;
+                    padding: 2px 6px;
+                    font-size: 10px;
+                    font-weight: bold;
+                }}
+            """
+            )
+        self._update_weight_overlay()
+        self._weight_overlay.show()
+        self._weight_overlay.raise_()
+
+    def _update_weight_overlay(self) -> None:
+        """Update the overlay text and position to reflect current stretches."""
+        if self._weight_overlay is None:
+            return
+
+        try:
+            left_s = max(1, self._hlayout.stretch(self._left_idx))
+            right_s = max(1, self._hlayout.stretch(self._right_idx))
+        except RuntimeError:
+            return
+
+        total = left_s + right_s
+        left_pct = round(left_s / total * 100)
+        right_pct = 100 - left_pct
+        self._weight_overlay.setText(f"{left_pct}% | {right_pct}%")
+        self._weight_overlay.adjustSize()
+
+        # Position the overlay above the handle
+        handle_pos = self.mapToParent(self.rect().center())
+        overlay_w = self._weight_overlay.width()
+        overlay_h = self._weight_overlay.height()
+        self._weight_overlay.move(
+            handle_pos.x() - overlay_w // 2,
+            handle_pos.y() - overlay_h - 4,
+        )
+
+    def _hide_weight_overlay(self) -> None:
+        """Hide and clean up the weight overlay."""
+        if self._weight_overlay is not None:
+            self._weight_overlay.hide()
+            self._weight_overlay.deleteLater()
+            self._weight_overlay = None
 
 
 class SheetBuilderWidget(QWidget):
@@ -694,8 +853,9 @@ class SheetBuilderWidget(QWidget):
         # Pair widget lookup: key -> AttributePairWidget
         self._pairs: Dict[str, AttributePairWidget] = {}
 
-        # Rubber-band for drag feedback
-        self._rubber_band: Optional[QRubberBand] = None
+        # WYSIWYG drag-and-drop feedback widgets
+        self._ghost: Optional[_GhostWidget] = None
+        self._insertion_line: _InsertionLine = _InsertionLine(self._container)
 
         # Reentrance-safe signal suppression counter (> 0 means suppressed)
         self._block_depth: int = 0
@@ -957,49 +1117,40 @@ class SheetBuilderWidget(QWidget):
     # ------------------------------------------------------------------
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-        """Accept drags carrying the sheet MIME type."""
+        """Accept drags carrying the sheet MIME type and show ghost preview."""
         if event.mimeData().hasFormat(_SHEET_DRAG_MIME):
             event.acceptProposedAction()
+            # Create ghost widget showing the dragged attribute key
+            key = bytes(event.mimeData().data(_SHEET_DRAG_MIME)).decode("utf-8")
+            self._ghost = _GhostWidget(key)
+            self._ghost.show()
         else:
             event.ignore()
 
     def dragMoveEvent(self, event: QDragMoveEvent) -> None:
-        """Show rubber-band feedback during drag."""
+        """Show insertion line and move ghost during drag."""
         if not event.mimeData().hasFormat(_SHEET_DRAG_MIME):
             event.ignore()
             return
 
         event.acceptProposedAction()
+
+        # Move ghost to follow cursor
+        if self._ghost is not None:
+            self._ghost.move_to(QCursor.pos())
+
+        # Calculate drop position and show insertion line
         drop_row, insert_col = self._calc_drop_position(event.position().toPoint())
-
-        # Show rubber-band feedback
-        if self._rubber_band is None:
-            self._rubber_band = QRubberBand(
-                QRubberBand.Shape.Rectangle, self._container
-            )
-
-        if drop_row < self._grid_layout.count():
-            row_item = self._grid_layout.itemAt(drop_row)
-            if row_item and row_item.layout():
-                geom = row_item.layout().geometry()
-                self._rubber_band.setGeometry(geom)
-                self._rubber_band.show()
-                return
-
-        # Indicate new row at the bottom
-        y = self._container.height() - 4
-        self._rubber_band.setGeometry(4, y, self._container.width() - 8, 4)
-        self._rubber_band.show()
+        self._show_insertion_indicator(drop_row, insert_col)
 
     def dragLeaveEvent(self, event: Any) -> None:
-        """Hide rubber-band when drag leaves the widget."""
-        if self._rubber_band is not None:
-            self._rubber_band.hide()
+        """Hide ghost and insertion line when drag leaves the widget."""
+        self._cleanup_drag_feedback()
 
     def dropEvent(self, event: QDropEvent) -> None:
         """Handle attribute pill drop – move the attribute into the target row."""
-        if self._rubber_band is not None:
-            self._rubber_band.hide()
+        # Clean up drag feedback
+        self._cleanup_drag_feedback()
 
         mime = event.mimeData()
         if not mime.hasFormat(_SHEET_DRAG_MIME):
@@ -1243,6 +1394,51 @@ class SheetBuilderWidget(QWidget):
             self._theme_mgr.theme_changed.disconnect(self._apply_theme)
         except (RuntimeError, TypeError):
             pass
+        # Clean up ghost if still alive
+        if self._ghost is not None:
+            self._ghost.close()
+            self._ghost = None
+
+    # ------------------------------------------------------------------
+    # Drag feedback helpers
+    # ------------------------------------------------------------------
+
+    def _show_insertion_indicator(self, drop_row: int, insert_col: int) -> None:
+        """Position and show the insertion line at the given drop location.
+
+        Args:
+            drop_row: The target row index.
+            insert_col: The target column index within the row.
+        """
+        if self._insertion_line is None:
+            self._insertion_line = _InsertionLine(self._container)
+
+        if drop_row < self._grid_layout.count():
+            row_item = self._grid_layout.itemAt(drop_row)
+            if row_item and row_item.layout():
+                geom = row_item.layout().geometry()
+                # Show a thin line at the top of the target row
+                self._insertion_line.setGeometry(
+                    geom.x(), geom.y() - 2, geom.width(), 3
+                )
+                self._insertion_line.show()
+                self._insertion_line.raise_()
+                return
+
+        # Indicate new row at the bottom
+        y = self._container.height() - 4
+        self._insertion_line.setGeometry(4, y, self._container.width() - 8, 3)
+        self._insertion_line.show()
+        self._insertion_line.raise_()
+
+    def _cleanup_drag_feedback(self) -> None:
+        """Clean up all drag feedback widgets (ghost + insertion line)."""
+        if self._ghost is not None:
+            self._ghost.close()
+            self._ghost.deleteLater()
+            self._ghost = None
+        if self._insertion_line is not None:
+            self._insertion_line.hide()
 
     # ------------------------------------------------------------------
     # Toolbar action handlers

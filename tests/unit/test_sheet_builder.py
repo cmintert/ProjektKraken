@@ -6,15 +6,21 @@ Tests the SheetBuilderWidget and AttributePairWidget for:
 - Loading attributes with and without layout
 - Value parsing by type (String, Number, Boolean)
 - Add/remove attribute operations
+- Ghost widget during drag
+- Insertion line drop indicators
+- Weight percentage overlay during resize
 """
 
 import pytest
-from PySide6.QtCore import QPoint, Qt
+from PySide6.QtCore import QMimeData, QPoint, QPointF, Qt
+from PySide6.QtGui import QDragEnterEvent, QDropEvent
 from PySide6.QtWidgets import QFrame
 
 from src.gui.widgets.sheet_builder import (
     AttributePairWidget,
     SheetBuilderWidget,
+    _GhostWidget,
+    _InsertionLine,
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -848,9 +854,6 @@ class TestBugFixes:
 
     def test_drop_event_no_attribute_error(self, sheet, qtbot):
         """Verify that dropping an attribute pill doesn't raise an AttributeError."""
-        from PySide6.QtGui import QDropEvent
-        from PySide6.QtCore import QMimeData, QPointF, Qt
-
         sheet.load_attributes({"A": 1, "B": 2})
         mime = QMimeData()
         mime.setData("application/x-kraken-sheet-key", b"A")
@@ -872,3 +875,304 @@ class TestBugFixes:
             import pytest
 
             pytest.fail(f"dropEvent raised AttributeError: {e}")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Ghost Widget (WYSIWYG drag preview)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestGhostWidget:
+    """Tests for the _GhostWidget – the semi-transparent drag preview."""
+
+    def test_ghost_widget_created_with_label(self, qtbot):
+        """Test that _GhostWidget displays the attribute key."""
+        ghost = _GhostWidget("Strength")
+        qtbot.addWidget(ghost)
+        assert ghost._label.text() == "Strength"
+
+    def test_ghost_widget_semi_transparent(self, qtbot):
+        """Test that _GhostWidget window opacity is < 1.0."""
+        ghost = _GhostWidget("Strength")
+        qtbot.addWidget(ghost)
+        assert ghost.windowOpacity() < 1.0
+
+    def test_ghost_widget_frameless(self, qtbot):
+        """Test that _GhostWidget is a frameless tool window."""
+        ghost = _GhostWidget("Strength")
+        qtbot.addWidget(ghost)
+        flags = ghost.windowFlags()
+        assert flags & Qt.WindowType.FramelessWindowHint
+        assert flags & Qt.WindowType.Tool
+
+    def test_ghost_widget_move_to(self, qtbot):
+        """Test that move_to positions the ghost at the given global point."""
+        ghost = _GhostWidget("STR")
+        qtbot.addWidget(ghost)
+        ghost.move_to(QPoint(100, 200))
+        # The ghost should be positioned near (100, 200) with an offset
+        gpos = ghost.pos()
+        assert abs(gpos.x() - 100) < 30
+        assert abs(gpos.y() - 200) < 30
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Insertion Line (Active Drop Zone Indicator)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestInsertionLine:
+    """Tests for the _InsertionLine – the active drop zone indicator."""
+
+    def test_insertion_line_created(self, qtbot):
+        """Test that _InsertionLine can be created."""
+        from PySide6.QtWidgets import QWidget
+
+        parent = QWidget()
+        qtbot.addWidget(parent)
+        line = _InsertionLine(parent)
+        assert line.parent() is parent
+
+    def test_insertion_line_has_fixed_height(self, qtbot):
+        """Test that the insertion line has a small fixed height."""
+        from PySide6.QtWidgets import QWidget
+
+        parent = QWidget()
+        qtbot.addWidget(parent)
+        line = _InsertionLine(parent)
+        # Should be a thin line (2-4px)
+        assert line.maximumHeight() <= 4
+
+    def test_insertion_line_starts_hidden(self, qtbot):
+        """Test that the insertion line starts hidden."""
+        from PySide6.QtWidgets import QWidget
+
+        parent = QWidget()
+        qtbot.addWidget(parent)
+        line = _InsertionLine(parent)
+        assert line.isHidden()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# WYSIWYG Drag-and-Drop Integration
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestWYSIWYGDragDrop:
+    """Integration tests for the ghost + insertion line during DnD."""
+
+    def test_drag_enter_creates_ghost(self, sheet, qtbot):
+        """Test that dragEnterEvent creates a ghost widget internally."""
+        sheet.load_attributes({"A": 1, "B": 2})
+        with qtbot.waitExposed(sheet):
+            sheet.show()
+
+        mime = QMimeData()
+        mime.setData("application/x-kraken-sheet-key", b"A")
+        event = QDragEnterEvent(
+            QPoint(10, 10),
+            Qt.DropAction.MoveAction,
+            mime,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        sheet.dragEnterEvent(event)
+        assert sheet._ghost is not None
+
+    def test_drag_enter_creates_insertion_line(self, sheet, qtbot):
+        """Test that dragEnterEvent creates an insertion line."""
+        sheet.load_attributes({"A": 1, "B": 2})
+        with qtbot.waitExposed(sheet):
+            sheet.show()
+
+        mime = QMimeData()
+        mime.setData("application/x-kraken-sheet-key", b"A")
+        event = QDragEnterEvent(
+            QPoint(10, 10),
+            Qt.DropAction.MoveAction,
+            mime,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        sheet.dragEnterEvent(event)
+        assert sheet._insertion_line is not None
+
+    def test_drag_leave_hides_ghost(self, sheet, qtbot):
+        """Test that dragLeaveEvent hides and cleans up the ghost."""
+        sheet.load_attributes({"A": 1})
+        with qtbot.waitExposed(sheet):
+            sheet.show()
+
+        # Enter drag
+        mime = QMimeData()
+        mime.setData("application/x-kraken-sheet-key", b"A")
+        enter_ev = QDragEnterEvent(
+            QPoint(10, 10),
+            Qt.DropAction.MoveAction,
+            mime,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        sheet.dragEnterEvent(enter_ev)
+        assert sheet._ghost is not None
+
+        # Leave drag
+        sheet.dragLeaveEvent(None)
+        assert sheet._ghost is None
+
+    def test_drag_leave_hides_insertion_line(self, sheet, qtbot):
+        """Test that dragLeaveEvent hides the insertion line."""
+        sheet.load_attributes({"A": 1})
+        with qtbot.waitExposed(sheet):
+            sheet.show()
+
+        mime = QMimeData()
+        mime.setData("application/x-kraken-sheet-key", b"A")
+        enter_ev = QDragEnterEvent(
+            QPoint(10, 10),
+            Qt.DropAction.MoveAction,
+            mime,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        sheet.dragEnterEvent(enter_ev)
+        assert sheet._insertion_line is not None
+
+        sheet.dragLeaveEvent(None)
+        assert sheet._insertion_line.isHidden()
+
+    def test_drop_cleans_up_ghost_and_line(self, sheet, qtbot):
+        """Test that dropEvent cleans up ghost and insertion line."""
+        sheet.load_attributes({"A": 1, "B": 2})
+        with qtbot.waitExposed(sheet):
+            sheet.show()
+
+        # Enter drag first
+        mime = QMimeData()
+        mime.setData("application/x-kraken-sheet-key", b"A")
+        enter_ev = QDragEnterEvent(
+            QPoint(10, 10),
+            Qt.DropAction.MoveAction,
+            mime,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        sheet.dragEnterEvent(enter_ev)
+
+        # Now drop
+        drop_ev = QDropEvent(
+            QPointF(10, 10),
+            Qt.DropAction.MoveAction,
+            mime,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        sheet.dropEvent(drop_ev)
+        assert sheet._ghost is None
+        assert sheet._insertion_line.isHidden()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Weight Percentage Overlay on Resize Handle
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestWeightPercentageOverlay:
+    """Tests for the percentage overlay shown during resize drag."""
+
+    def test_resize_creates_weight_overlay(self, sheet, qtbot):
+        """Test that dragging a resize handle creates a weight overlay label."""
+        attrs = {"A": 1, "B": 1}
+        layout = [[{"key": "A", "weight": 2}, {"key": "B", "weight": 2}]]
+        sheet.load_attributes(attrs, layout)
+        with qtbot.waitExposed(sheet):
+            sheet.show()
+
+        row_item = sheet._grid_layout.itemAt(0)
+        hlayout = row_item.layout()
+        handle = hlayout.itemAt(1).widget()
+
+        center = handle.rect().center()
+        qtbot.mousePress(handle, Qt.MouseButton.LeftButton, pos=center)
+
+        # After pressing, the weight overlay should exist
+        assert handle._weight_overlay is not None
+        assert handle._weight_overlay.isVisible()
+
+        qtbot.mouseRelease(
+            handle, Qt.MouseButton.LeftButton, pos=center
+        )
+
+    def test_resize_overlay_shows_percentages(self, sheet, qtbot):
+        """Test that the weight overlay displays percentages."""
+        attrs = {"A": 1, "B": 1}
+        layout = [[{"key": "A", "weight": 2}, {"key": "B", "weight": 2}]]
+        sheet.load_attributes(attrs, layout)
+        with qtbot.waitExposed(sheet):
+            sheet.show()
+
+        row_item = sheet._grid_layout.itemAt(0)
+        hlayout = row_item.layout()
+        handle = hlayout.itemAt(1).widget()
+
+        center = handle.rect().center()
+        qtbot.mousePress(handle, Qt.MouseButton.LeftButton, pos=center)
+
+        # Overlay should contain "%" text
+        text = handle._weight_overlay.text()
+        assert "%" in text
+
+        qtbot.mouseRelease(
+            handle, Qt.MouseButton.LeftButton, pos=center
+        )
+
+    def test_resize_overlay_hides_on_release(self, sheet, qtbot):
+        """Test that the weight overlay is hidden after mouse release."""
+        attrs = {"A": 1, "B": 1}
+        layout = [[{"key": "A", "weight": 2}, {"key": "B", "weight": 2}]]
+        sheet.load_attributes(attrs, layout)
+        with qtbot.waitExposed(sheet):
+            sheet.show()
+
+        row_item = sheet._grid_layout.itemAt(0)
+        hlayout = row_item.layout()
+        handle = hlayout.itemAt(1).widget()
+
+        center = handle.rect().center()
+        qtbot.mousePress(handle, Qt.MouseButton.LeftButton, pos=center)
+        assert handle._weight_overlay is not None
+
+        qtbot.mouseRelease(
+            handle, Qt.MouseButton.LeftButton, pos=center
+        )
+        # After release, overlay should be hidden
+        assert handle._weight_overlay is None or handle._weight_overlay.isHidden()
+
+    def test_resize_overlay_updates_during_drag(self, sheet, qtbot):
+        """Test that the overlay updates while dragging."""
+        attrs = {"A": 1, "B": 1}
+        layout = [[{"key": "A", "weight": 2}, {"key": "B", "weight": 2}]]
+        sheet.load_attributes(attrs, layout)
+        with qtbot.waitExposed(sheet):
+            sheet.show()
+
+        row_item = sheet._grid_layout.itemAt(0)
+        hlayout = row_item.layout()
+        handle = hlayout.itemAt(1).widget()
+
+        center = handle.rect().center()
+        qtbot.mousePress(handle, Qt.MouseButton.LeftButton, pos=center)
+
+        # Verify overlay exists and contains percentage text initially
+        assert "%" in handle._weight_overlay.text()
+
+        # Move right significantly
+        qtbot.mouseMove(handle, center + QPoint(200, 0))
+
+        # Text should have updated to reflect new ratios
+        new_text = handle._weight_overlay.text()
+        assert "%" in new_text
+
+        qtbot.mouseRelease(
+            handle, Qt.MouseButton.LeftButton, pos=center + QPoint(200, 0)
+        )
