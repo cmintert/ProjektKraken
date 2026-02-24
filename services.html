@@ -813,7 +813,18 @@ We use a two-pronged approach:
 <dl class="py method">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.get_name">
 <span class="sig-name descname"><span class="pre">get_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">object_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_name" title="Link to this definition">¶</a></dt>
-<dd><p>Retrieves the name of an entity or event by its ID.</p>
+<dd><p>Retrieves the display name of an entity or event by its ID.</p>
+<p>Queries the unified meta-repository which covers both the <code class="docutils literal notranslate"><span class="pre">events</span></code>
+and <code class="docutils literal notranslate"><span class="pre">entities</span></code> tables, so the caller does not need to know which
+table the object lives in.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>object_id</strong> – The UUID of the entity or event.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The <code class="docutils literal notranslate"><span class="pre">name</span></code> column value if the object exists, otherwise <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -826,6 +837,19 @@ We use a two-pronged approach:
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.get_relation">
 <span class="sig-name descname"><span class="pre">get_relation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rel_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_relation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_relation" title="Link to this definition">¶</a></dt>
 <dd><p>Retrieves a single relation by its ID.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>rel_id</strong> – The unique identifier of the relation.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">id</span></code>,
+<code class="docutils literal notranslate"><span class="pre">source_id</span></code>, <code class="docutils literal notranslate"><span class="pre">target_id</span></code>, <code class="docutils literal notranslate"><span class="pre">rel_type</span></code>, <code class="docutils literal notranslate"><span class="pre">attributes</span></code>,
+<code class="docutils literal notranslate"><span class="pre">created_at</span></code>), or <code class="docutils literal notranslate"><span class="pre">None</span></code> if no relation with that ID exists.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A dictionary containing the relation data (keys</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1171,7 +1195,18 @@ for large datasets by reducing transaction overhead.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.update_relation">
 <span class="sig-name descname"><span class="pre">update_relation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rel_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.update_relation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.update_relation" title="Link to this definition">¶</a></dt>
-<dd><p>Updates an existing relationship.</p>
+<dd><p>Updates an existing relationship’s target, type, and attributes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rel_id</strong> – The unique identifier of the relation to update.</p></li>
+<li><p><strong>target_id</strong> – New target object ID for the relation.</p></li>
+<li><p><strong>rel_type</strong> – New relationship type label (e.g. <code class="docutils literal notranslate"><span class="pre">&quot;caused&quot;</span></code>).</p></li>
+<li><p><strong>attributes</strong> – Optional metadata dict to replace the existing
+attributes.  Defaults to an empty dict when omitted.</p></li>
+</ul>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">

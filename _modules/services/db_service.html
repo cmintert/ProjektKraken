@@ -735,7 +735,28 @@
             <span class="k">raise</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_run_migrations</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Runs necessary schema migrations.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run all incremental schema migrations against the connected database.</span>
+
+<span class="sd">        Applies the following migrations in order, skipping any that have</span>
+<span class="sd">        already been applied:</span>
+
+<span class="sd">        1. Add ``color`` column to the ``tags`` table (tag coloring feature).</span>
+<span class="sd">        2. Add ``timestamp`` column to the ``command_history`` table (undo/redo</span>
+<span class="sd">           history timestamps).</span>
+<span class="sd">        3. Convert legacy trajectory data from ``[[t, x, y], …]`` lists to the</span>
+<span class="sd">           MF-JSON ``MovingPoint`` format via</span>
+<span class="sd">           :meth:`_migrate_trajectories_to_mfjson`.</span>
+<span class="sd">        4. Add ``feature_type``, ``geometry``, and ``style`` columns to the</span>
+<span class="sd">           ``markers`` table (map-feature geometry/style support).</span>
+
+<span class="sd">        Each migration is guarded by a ``PRAGMA table_info`` check so it is</span>
+<span class="sd">        idempotent and safe to call on an already-migrated database.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            sqlite3.Error: If any migration step fails; the offending</span>
+<span class="sd">                transaction is rolled back before re-raising.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Check for &#39;color&#39; column in &#39;tags&#39; table</span>
             <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
@@ -1142,7 +1163,17 @@
 <div class="viewcode-block" id="DatabaseService.get_relation">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_relation">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_relation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rel_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves a single relation by its ID.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves a single relation by its ID.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            rel_id: The unique identifier of the relation.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A dictionary containing the relation data (keys: ``id``,</span>
+<span class="sd">            ``source_id``, ``target_id``, ``rel_type``, ``attributes``,</span>
+<span class="sd">            ``created_at``), or ``None`` if no relation with that ID exists.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_relation_repo</span><span class="o">.</span><span class="n">get_by_id</span><span class="p">(</span><span class="n">rel_id</span><span class="p">)</span></div>
 
 
@@ -1169,7 +1200,16 @@
         <span class="n">rel_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">attributes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Updates an existing relationship.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Updates an existing relationship&#39;s target, type, and attributes.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            rel_id: The unique identifier of the relation to update.</span>
+<span class="sd">            target_id: New target object ID for the relation.</span>
+<span class="sd">            rel_type: New relationship type label (e.g. ``&quot;caused&quot;``).</span>
+<span class="sd">            attributes: Optional metadata dict to replace the existing</span>
+<span class="sd">                attributes.  Defaults to an empty dict when omitted.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">attributes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">attributes</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_relation_repo</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">rel_id</span><span class="p">,</span> <span class="n">rel_type</span><span class="p">,</span> <span class="n">attributes</span><span class="p">,</span> <span class="n">target_id</span><span class="o">=</span><span class="n">target_id</span><span class="p">)</span></div>
@@ -1178,7 +1218,19 @@
 <div class="viewcode-block" id="DatabaseService.get_name">
 <a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_name">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">object_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the name of an entity or event by its ID.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the display name of an entity or event by its ID.</span>
+
+<span class="sd">        Queries the unified meta-repository which covers both the ``events``</span>
+<span class="sd">        and ``entities`` tables, so the caller does not need to know which</span>
+<span class="sd">        table the object lives in.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            object_id: The UUID of the entity or event.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The ``name`` column value if the object exists, otherwise ``None``.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meta_repo</span><span class="o">.</span><span class="n">get_name</span><span class="p">(</span><span class="n">object_id</span><span class="p">)</span></div>
 
 
