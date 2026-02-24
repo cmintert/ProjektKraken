@@ -68,6 +68,7 @@ class AttributePairWidget(QFrame):
         """
         super().__init__(parent)
         self._key = key
+        self.weight = 1  # Default stretch factor
         self._drag_start_pos: Optional[QPoint] = None
 
         self.setFrameShape(QFrame.Shape.StyledPanel)
@@ -303,13 +304,15 @@ class SheetBuilderWidget(QWidget):
     def load_attributes(
         self,
         attributes: Dict[str, Any],
-        layout: Optional[List[List[str]]] = None,
+        layout: Optional[List[List[Any]]] = None,
     ) -> None:
         """Populate the sheet from an attributes dict and optional layout.
 
         Args:
             attributes: Key-value attribute pairs (user-visible, no ``_`` prefix).
-            layout: Optional 2D list of key strings describing the row arrangement.
+            layout: Optional 2D list describing the row arrangement. Items can be
+                string keys, dicts like `{"key": "str", "weight": 2}`, or
+                dicts like `{"type": "spacer", "weight": 1}`.
                 If ``None``, each attribute gets its own row.
         """
         self._block_signals = True
@@ -318,20 +321,44 @@ class SheetBuilderWidget(QWidget):
         if layout is not None:
             # Build rows according to layout, skipping keys not in attributes
             placed_keys: set[str] = set()
-            for row_keys in layout:
-                valid_keys = [k for k in row_keys if k in attributes]
-                if valid_keys:
-                    self._add_row([(k, attributes[k]) for k in valid_keys])
-                    placed_keys.update(valid_keys)
+            for row_items in layout:
+                row_configs = []
+                for item in row_items:
+                    if isinstance(item, str):
+                        if item in attributes:
+                            row_configs.append(
+                                {"key": item, "value": attributes[item], "weight": 1}
+                            )
+                            placed_keys.add(item)
+                    elif isinstance(item, dict):
+                        is_spacer = (
+                            item.get("type") == "spacer" or item.get("spacer") is True
+                        )
+                        weight = int(item.get("weight", 1))
+                        if is_spacer:
+                            row_configs.append({"spacer": True, "weight": weight})
+                        else:
+                            key = item.get("key")
+                            if key and key in attributes:
+                                row_configs.append(
+                                    {
+                                        "key": key,
+                                        "value": attributes[key],
+                                        "weight": weight,
+                                    }
+                                )
+                                placed_keys.add(key)
+                if row_configs:
+                    self._add_row(row_configs)
 
             # Append any remaining attributes not referenced by the layout
             for key, value in attributes.items():
                 if key not in placed_keys:
-                    self._add_row([(key, value)])
+                    self._add_row([{"key": key, "value": value, "weight": 1}])
         else:
             # No layout – one attribute per row
             for key, value in attributes.items():
-                self._add_row([(key, value)])
+                self._add_row([{"key": key, "value": value, "weight": 1}])
 
         self._block_signals = False
 
@@ -343,28 +370,38 @@ class SheetBuilderWidget(QWidget):
         """
         return {key: pair.get_parsed_value() for key, pair in self._pairs.items()}
 
-    def get_layout(self) -> List[List[str]]:
-        """Serialize the current row arrangement as a 2D list of key strings.
+    def get_layout(self) -> List[List[Any]]:
+        """Serialize the current row arrangement as a 2D list.
 
         Returns:
-            List of rows, where each row is a list of attribute key strings.
+            List of rows, where each row is a list of attribute key strings,
+            or dicts describing items with custom weights and/or spacers.
         """
-        rows: List[List[str]] = []
+        rows: List[List[Any]] = []
         for row_idx in range(self._grid_layout.count()):
             row_layout = self._grid_layout.itemAt(row_idx)
             if row_layout is None or row_layout.layout() is None:
                 continue
             hlayout = row_layout.layout()
-            keys: List[str] = []
+            row_items: List[Any] = []
             for col_idx in range(hlayout.count()):
                 item = hlayout.itemAt(col_idx)
-                if item is None or item.widget() is None:
+                if item is None:
                     continue
                 widget = item.widget()
                 if isinstance(widget, AttributePairWidget):
-                    keys.append(widget.key)
-            if keys:
-                rows.append(keys)
+                    stretch = hlayout.stretch(col_idx) or widget.weight
+                    if stretch == 1:
+                        row_items.append(widget.key)
+                    else:
+                        row_items.append({"key": widget.key, "weight": stretch})
+                elif item.spacerItem():
+                    stretch = hlayout.stretch(col_idx)
+                    row_items.append(
+                        {"type": "spacer", "weight": stretch if stretch > 0 else 1}
+                    )
+            if row_items:
+                rows.append(row_items)
         return rows
 
     def add_attribute(self, key: str, value: Any = "") -> None:
@@ -376,7 +413,7 @@ class SheetBuilderWidget(QWidget):
         """
         if key in self._pairs:
             return
-        self._add_row([(key, value)])
+        self._add_row([{"key": key, "value": value, "weight": 1}])
         if not self._block_signals:
             self.attributes_changed.emit()
 
@@ -496,7 +533,7 @@ class SheetBuilderWidget(QWidget):
             if row_item and row_item.layout():
                 hlayout = row_item.layout()
                 idx = min(insert_col, hlayout.count())
-                hlayout.insertWidget(idx, pair)
+                hlayout.insertWidget(idx, pair, stretch=pair.weight)
             else:
                 self._append_new_row(pair)
         else:
@@ -526,21 +563,30 @@ class SheetBuilderWidget(QWidget):
                     if child.widget():
                         child.widget().setParent(None)
 
-    def _add_row(self, pairs: List[tuple]) -> None:
-        """Add a new horizontal row of AttributePairWidgets.
+    def _add_row(self, items_config: List[Dict[str, Any]]) -> None:
+        """Add a new horizontal row of AttributePairWidgets and spacers.
 
         Args:
-            pairs: List of (key, value) tuples for each widget in the row.
+            items_config: List of dicts representing each item.
         """
         hlayout = QHBoxLayout()
         hlayout.setSpacing(4)
         hlayout.setContentsMargins(0, 0, 0, 0)
 
-        for key, value in pairs:
-            if key in self._pairs:
-                logger.warning(
-                    f"Duplicate attribute key '{key}' ignored in sheet builder."
-                )
+        for config in items_config:
+            weight = int(config.get("weight", 1))
+            if config.get("spacer"):
+                hlayout.addStretch(weight)
+                continue
+
+            key = config.get("key")
+            value = config.get("value")
+
+            if not key or key in self._pairs:
+                if key in self._pairs:
+                    logger.warning(
+                        f"Duplicate attribute key '{key}' ignored in sheet builder."
+                    )
                 continue
 
             vtype = "String"
@@ -554,8 +600,9 @@ class SheetBuilderWidget(QWidget):
                 str_val = str(value) if value is not None else ""
 
             pair = AttributePairWidget(key, str_val, vtype)
+            pair.weight = weight
             pair.value_changed.connect(self._on_pair_changed)
-            hlayout.addWidget(pair)
+            hlayout.addWidget(pair, stretch=weight)
             self._pairs[key] = pair
 
         self._grid_layout.addLayout(hlayout)
@@ -565,7 +612,7 @@ class SheetBuilderWidget(QWidget):
         hlayout = QHBoxLayout()
         hlayout.setSpacing(4)
         hlayout.setContentsMargins(0, 0, 0, 0)
-        hlayout.addWidget(pair)
+        hlayout.addWidget(pair, stretch=pair.weight)
         self._grid_layout.addLayout(hlayout)
 
     def _detach_pair(self, pair: AttributePairWidget) -> None:
@@ -606,9 +653,8 @@ class SheetBuilderWidget(QWidget):
                 # Determine column insertion point
                 hlayout = row_item.layout()
                 for col_idx in range(hlayout.count()):
-                    widget_item = hlayout.itemAt(col_idx)
-                    if widget_item and widget_item.widget():
-                        w_geom = widget_item.widget().geometry()
+                    if widget_item := hlayout.itemAt(col_idx):
+                        w_geom = widget_item.geometry()
                         if container_pos.x() < w_geom.center().x():
                             target_col = col_idx
                             return target_row, target_col

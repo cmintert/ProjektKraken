@@ -28,9 +28,10 @@ def pair(qtbot):
 class TestAttributePairWidget:
     """Tests for the AttributePairWidget."""
 
-    def test_key_property(self, pair):
-        """Test that the key property returns the attribute key."""
+    def test_key_property_and_default_weight(self, pair):
+        """Test that key returns attribute key and default weight is 1."""
         assert pair.key == "Strength"
+        assert pair.weight == 1
 
     def test_get_value(self, pair):
         """Test that get_value returns the current value string."""
@@ -153,6 +154,43 @@ class TestSheetBuilderWidget:
         assert len(layout) == 3
         assert all(len(row) == 1 for row in layout)
 
+    def test_load_attributes_with_layout_strings_and_weights(self, sheet):
+        """Test loading attributes with a 2D layout mixing strings and dicts."""
+        attrs = {
+            "Strength": 10,
+            "Dexterity": 15,
+            "Intelligence": 12,
+        }
+        layout = [
+            ["Strength"],
+            [{"key": "Dexterity", "weight": 2}],
+            [{"type": "spacer", "weight": 1}, "Intelligence"],
+        ]
+        sheet.load_attributes(attrs, layout)
+
+        grid = sheet._grid_layout
+        assert grid.count() == 3
+
+        # Row 1: "Strength"
+        row1 = grid.itemAt(0).layout()
+        assert row1.count() == 1
+        assert row1.itemAt(0).widget().key == "Strength"
+        assert row1.stretch(0) == 1  # Default stretch
+
+        # Row 2: "Dexterity" with weight 2
+        row2 = grid.itemAt(1).layout()
+        assert row2.count() == 1
+        assert row2.itemAt(0).widget().key == "Dexterity"
+        assert row2.stretch(0) == 2
+
+        # Row 3: Spacer then "Intelligence"
+        row3 = grid.itemAt(2).layout()
+        assert row3.count() == 2
+        assert row3.itemAt(0).spacerItem() is not None
+        assert row3.stretch(0) == 1
+        assert row3.itemAt(1).widget().key == "Intelligence"
+        assert row3.stretch(1) == 1
+
     def test_load_attributes_with_layout(self, sheet):
         """Test loading attributes with a 2D layout arrangement."""
         attrs = {"STR": 18, "DEX": 14, "CON": 16, "Name": "Fighter"}
@@ -237,6 +275,20 @@ class TestSheetBuilderWidget:
 
         assert result == layout
 
+    def test_get_layout_mixed_types(self, sheet):
+        """Test that get_layout serializes keys, weights, and spacers."""
+        attrs = {"A": 1, "B": 2, "C": 3}
+        layout = [
+            ["A", {"key": "B", "weight": 3}],
+            [{"type": "spacer", "weight": 2}, "C"],
+        ]
+        sheet.load_attributes(attrs, layout)
+
+        saved_layout = sheet.get_layout()
+        assert len(saved_layout) == 2
+        assert saved_layout[0] == ["A", {"key": "B", "weight": 3}]
+        assert saved_layout[1] == [{"type": "spacer", "weight": 2}, "C"]
+
     def test_attributes_changed_on_value_edit(self, sheet, qtbot):
         """Test that editing a pair value emits attributes_changed."""
         sheet.load_attributes({"STR": 18})
@@ -262,3 +314,40 @@ class TestSheetBuilderWidget:
         # Empty layout means unplaced attributes get appended
         result = sheet.get_layout()
         assert len(result) == 2
+
+    def test_calc_drop_position_with_spacers(self, sheet):
+        """Test drop position calculation works correctly with spacers."""
+        # Create a layout with a spacer
+        attrs = {"A": 1, "B": 2, "C": 3}
+        layout = [["A", {"type": "spacer", "weight": 2}, "B"], ["C"]]
+        sheet.load_attributes(attrs, layout)
+
+        # Force layout to compute geometries
+        sheet._container.adjustSize()
+        sheet._grid_layout.invalidate()
+        sheet._grid_layout.activate()
+
+        # Get geometries of widgets in the first row
+        row_layout = sheet._grid_layout.itemAt(0).layout()
+        item_A = row_layout.itemAt(0)
+        item_spacer = row_layout.itemAt(1)
+        item_B = row_layout.itemAt(2)
+
+        # 1. Drop before 'A'
+        pos = item_A.geometry().topLeft()
+        row, col = sheet._calc_drop_position(pos)
+        assert row == 0
+        assert col == 0
+
+        # 2. Drop on the spacer (inserts before 'B' if passed center)
+        # exact drop col depends on center().x(), so we test right side of spacer
+        pos = item_spacer.geometry().topRight()
+        row, col = sheet._calc_drop_position(pos)
+        assert row == 0
+        assert col == 2  # After A(0), Spacer(1)
+
+        # 3. Drop on 'B' right side
+        pos = item_B.geometry().topRight()
+        row, col = sheet._calc_drop_position(pos)
+        assert row == 0
+        assert col == 3  # End of row
