@@ -843,3 +843,32 @@ class TestBugFixes:
         assert (
             pair.type_combo.isHidden()
         ), "type_combo should be hidden when type returns to String"
+
+    # ── Fix: dropEvent raises AttributeError ──────────────────────────────
+
+    def test_drop_event_no_attribute_error(self, sheet, qtbot):
+        """Verify that dropping an attribute pill doesn't raise an AttributeError."""
+        from PySide6.QtGui import QDropEvent
+        from PySide6.QtCore import QMimeData, QPointF, Qt
+
+        sheet.load_attributes({"A": 1, "B": 2})
+        mime = QMimeData()
+        mime.setData("application/x-kraken-sheet-key", b"A")
+
+        drop_event = QDropEvent(
+            QPointF(10, 10),
+            Qt.DropAction.MoveAction,
+            mime,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+
+        # Should not raise AttributeError: 'SheetBuilderWidget' object
+        # has no attribute '_block_signals'
+        try:
+            with qtbot.waitSignal(sheet.attributes_changed, timeout=1000):
+                sheet.dropEvent(drop_event)
+        except AttributeError as e:
+            import pytest
+
+            pytest.fail(f"dropEvent raised AttributeError: {e}")

@@ -1032,7 +1032,7 @@ class SheetBuilderWidget(QWidget):
             self._append_new_row(pair)
 
         event.acceptProposedAction()
-        if not self._block_signals:
+        if self._block_depth == 0:
             self.attributes_changed.emit()
 
     # ------------------------------------------------------------------
