@@ -660,3 +660,59 @@ class TestResizeHandle:
 
         # Should be exactly 1 after release
         assert signal_count == 1
+
+    def test_resize_handle_disconnects_on_destroy(self, qtbot):
+        """Test that destroying a handle disconnects it from ThemeManager."""
+        from src.core.theme_manager import ThemeManager
+        from src.gui.widgets.sheet_builder import _ResizeHandle
+        from PySide6.QtWidgets import QHBoxLayout
+        from PySide6.QtWidgets import QWidget
+        import pytest
+
+        tm = ThemeManager()
+
+        parent = QWidget()
+        layout = QHBoxLayout(parent)
+        qtbot.addWidget(parent)
+
+        handle = _ResizeHandle(layout, 0, 1)
+        qtbot.addWidget(handle)
+
+        handle.deleteLater()
+        qtbot.wait(50)  # Allow event loop to process deleteLater
+
+        # Emitting the signal should not raise RuntimeError: wrapped C/C++ object...
+        try:
+            tm.theme_changed.emit(tm.get_theme())
+        except RuntimeError as e:
+            pytest.fail(f"Signal emission caused RuntimeError: {e}")
+
+
+class TestSheetBuilderMemoryLeaks:
+    """Tests for memory leaks and signal cleanup in SheetBuilderWidget."""
+
+    def test_clear_disconnects_all_widgets(self, sheet, qtbot):
+        """Test that _clear properly deletes widgets and disconnects them from ThemeManager."""
+        from src.core.theme_manager import ThemeManager
+        import pytest
+
+        tm = ThemeManager()
+
+        # Load a complex layout
+        attrs = {"STR": 18, "DEX": 14}
+        layout = [
+            [{"type": "text", "text": "Stats"}],
+            [{"type": "divider"}],
+            ["STR", "DEX"],
+        ]
+        sheet.load_attributes(attrs, layout)
+
+        # Clear the sheet
+        sheet._clear()
+        qtbot.wait(50)  # Process deleteLater events
+
+        # Emitting the signal should not raise RuntimeError
+        try:
+            tm.theme_changed.emit(tm.get_theme())
+        except RuntimeError as e:
+            pytest.fail(f"Signal emission caused RuntimeError: {e}")

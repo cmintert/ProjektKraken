@@ -394,6 +394,7 @@ class _ResizeHandle(QWidget):
         self._theme_mgr = ThemeManager()
         self._apply_theme()
         self._theme_mgr.theme_changed.connect(self._apply_theme)
+        self.destroyed.connect(self._on_destroyed)
 
     def _apply_theme(self) -> None:
         """Apply current theme colors."""
@@ -411,27 +412,75 @@ class _ResizeHandle(QWidget):
         """
         )
 
+    def _on_destroyed(self) -> None:
+        """Disconnect theme signal when destroyed."""
+        try:
+            self._theme_mgr.theme_changed.disconnect(self._apply_theme)
+        except (RuntimeError, TypeError):
+            pass
+
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Begin resize tracking."""
+        import shiboken6
+
+        if not shiboken6.isValid(self._hlayout):
+            return
+
         if event.button() == Qt.MouseButton.LeftButton:
             self._dragging = True
             self._drag_start_x = event.globalPosition().toPoint().x()
 
-            # Record initial state
-            self._initial_left_stretch = max(1, self._hlayout.stretch(self._left_idx))
-            self._initial_right_stretch = max(1, self._hlayout.stretch(self._right_idx))
+            try:
+                # Record initial state with high granularity multiplier
+                multiplier = 100
+                self._initial_left_stretch = (
+                    max(1, self._hlayout.stretch(self._left_idx)) * multiplier
+                )
+                self._initial_right_stretch = (
+                    max(1, self._hlayout.stretch(self._right_idx)) * multiplier
+                )
 
-            left_widget = self._hlayout.itemAt(self._left_idx).widget()
-            right_widget = self._hlayout.itemAt(self._right_idx).widget()
+                left_widget = self._hlayout.itemAt(self._left_idx).widget()
+                right_widget = self._hlayout.itemAt(self._right_idx).widget()
 
-            self._initial_left_width = left_widget.width() if left_widget else 1
-            self._initial_right_width = right_widget.width() if right_widget else 1
+                # Fallback to 100px for headless unit tests where width() == 0
+                self._initial_left_width = (
+                    left_widget.width()
+                    if left_widget and left_widget.width() > 0
+                    else 100
+                )
+                self._initial_right_width = (
+                    right_widget.width()
+                    if right_widget and right_widget.width() > 0
+                    else 100
+                )
+            except RuntimeError:
+                self._dragging = False
+                return
 
             event.accept()
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         """Adjust weights proportionally during drag."""
         if not self._dragging:
+            return
+
+        import shiboken6
+
+        if not shiboken6.isValid(self._hlayout):
+            self._dragging = False
+            return
+
+        try:
+            # Abort if layout has been structurally changed (e.g. by autosave reload)
+            if (
+                self._left_idx >= self._hlayout.count()
+                or self._right_idx >= self._hlayout.count()
+            ):
+                self._dragging = False
+                return
+        except RuntimeError:
+            self._dragging = False
             return
 
         dx = event.globalPosition().toPoint().x() - self._drag_start_x
@@ -442,70 +491,90 @@ class _ResizeHandle(QWidget):
 
         total_stretch = self._initial_left_stretch + self._initial_right_stretch
 
-        # Calculate new proportional width for the left widget
+        # Calculate new proportional width for the widgets
         new_left_width = self._initial_left_width + dx
 
-        # Keep width within logical bounds
+        # Enforce minimums to prevent collapsing
         new_left_width = max(10, min(new_left_width, total_width - 10))
 
-        # Map the new width to the total stretch pool
-        # +0.5 for rounding to nearest int
+        # Calculate new stretch values based on the ratio of new widths to total width
         left_stretch = int((new_left_width / total_width) * total_stretch + 0.5)
 
-        # Enforce minimums to prevent dividing by zero or breaking layout
+        # Ensure minimum stretch of 1 (this allows for large granularity like 190:10)
         left_stretch = max(1, left_stretch)
         right_stretch = max(1, total_stretch - left_stretch)
 
-        # Allow expanding bounds if pulling all the way and hit the edge
-        # which can happen if initial total_stretch was small (e.g. 1+1=2)
-        if dx > 0 and right_stretch == 1 and new_left_width > self._initial_left_width:
-            # Calculate expansion based on dx exceeding the initial mapping
-            extra_pixels = dx - (total_width - self._initial_left_width)
-            if extra_pixels > 20:
-                # Expand total scope
-                left_stretch = self._initial_left_stretch + int(extra_pixels / 20)
+        try:
+            current_left_stretch = self._hlayout.stretch(self._left_idx)
+            current_right_stretch = self._hlayout.stretch(self._right_idx)
 
-        if dx < 0 and left_stretch == 1 and new_left_width < self._initial_left_width:
-            extra_pixels = abs(dx) - self._initial_left_width
-            if extra_pixels > 20:
-                right_stretch = self._initial_right_stretch + int(extra_pixels / 20)
-
-        # Enforce ceilings (20 is our max logic limit to prevent unbounded expansion)
-        left_stretch = min(20, left_stretch)
-        right_stretch = min(20, right_stretch)
-
-        if left_stretch != self._hlayout.stretch(
-            self._left_idx
-        ) or right_stretch != self._hlayout.stretch(self._right_idx):
-            self._hlayout.setStretch(self._left_idx, left_stretch)
-            self._hlayout.setStretch(self._right_idx, right_stretch)
+            if (
+                left_stretch != current_left_stretch
+                or right_stretch != current_right_stretch
+            ):
+                self._hlayout.setStretch(self._left_idx, left_stretch)
+                self._hlayout.setStretch(self._right_idx, right_stretch)
+        except RuntimeError:
+            self._dragging = False
+            return
 
         event.accept()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """End resize tracking and emit completion."""
-        if event.button() == Qt.MouseButton.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton and self._dragging:
             self._dragging = False
 
-            # Update final weight on the widgets and trigger save
-            left_stretch = self._hlayout.stretch(self._left_idx)
-            right_stretch = self._hlayout.stretch(self._right_idx)
+            import shiboken6
 
-            left_item = self._hlayout.itemAt(self._left_idx)
-            right_item = self._hlayout.itemAt(self._right_idx)
+            if not shiboken6.isValid(self._hlayout):
+                return
 
-            if (
-                left_item
-                and left_item.widget()
-                and hasattr(left_item.widget(), "weight")
-            ):
-                left_item.widget().weight = left_stretch
-            if (
-                right_item
-                and right_item.widget()
-                and hasattr(right_item.widget(), "weight")
-            ):
-                right_item.widget().weight = right_stretch
+            try:
+                # Update final weight on the widgets and trigger save
+                if (
+                    self._left_idx >= self._hlayout.count()
+                    or self._right_idx >= self._hlayout.count()
+                ):
+                    return
+
+                import math
+
+                left_stretch = self._hlayout.stretch(self._left_idx)
+                right_stretch = self._hlayout.stretch(self._right_idx)
+
+                # Normalize to clean numbers (max scale of 20) for saved JSON output
+                total = left_stretch + right_stretch
+                if total > 0:
+                    left_pct = left_stretch / total
+                    norm_left = int(left_pct * 20 + 0.5)
+                    norm_left = max(1, min(norm_left, 19))
+                    norm_right = 20 - norm_left
+
+                    gcd = math.gcd(norm_left, norm_right)
+                    final_left = norm_left // gcd
+                    final_right = norm_right // gcd
+
+                    self._hlayout.setStretch(self._left_idx, final_left)
+                    self._hlayout.setStretch(self._right_idx, final_right)
+
+                left_item = self._hlayout.itemAt(self._left_idx)
+                right_item = self._hlayout.itemAt(self._right_idx)
+
+                if (
+                    left_item
+                    and left_item.widget()
+                    and hasattr(left_item.widget(), "weight")
+                ):
+                    left_item.widget().weight = left_stretch
+                if (
+                    right_item
+                    and right_item.widget()
+                    and hasattr(right_item.widget(), "weight")
+                ):
+                    right_item.widget().weight = right_stretch
+            except RuntimeError:
+                return
 
             # Only emit the signal when the user stops dragging
             self.resize_done.emit()
@@ -597,6 +666,7 @@ class SheetBuilderWidget(QWidget):
         self._apply_theme()
         self._theme_mgr.theme_changed.connect(self._apply_theme)
         self.destroyed.connect(self._on_builder_destroyed)
+        logger.debug("SheetBuilderWidget initialized.")
 
     def _apply_theme(self) -> None:
         """Apply current theme colors to the widget."""
@@ -663,6 +733,9 @@ class SheetBuilderWidget(QWidget):
                 ``{"type": "divider"}``.
                 If ``None``, each attribute gets its own row.
         """
+        logger.debug(
+            f"Loading {len(attributes)} attributes with layout={layout is not None}"
+        )
         self._block_signals = True
         self._clear()
 
@@ -678,6 +751,10 @@ class SheetBuilderWidget(QWidget):
                                 {"key": item, "value": attributes[item], "weight": 1}
                             )
                             placed_keys.add(item)
+                        else:
+                            logger.debug(
+                                f"Key '{item}' in layout but not in attributes."
+                            )
                     elif isinstance(item, dict):
                         item_type = item.get("type", "")
                         is_spacer = item_type == "spacer" or item.get("spacer") is True
@@ -714,6 +791,7 @@ class SheetBuilderWidget(QWidget):
                 self._add_row([{"key": key, "value": value, "weight": 1}])
 
         self._block_signals = False
+        logger.debug("Attributes loaded successfully.")
 
     def get_attributes(self) -> Dict[str, Any]:
         """Return the current attribute values as a dict.
@@ -816,6 +894,8 @@ class SheetBuilderWidget(QWidget):
                     # If the row is now empty, remove it
                     if hlayout.count() == 0:
                         self._grid_layout.removeItem(row_item)
+                        hlayout.setParent(None)
+                        hlayout.deleteLater()
                     if not self._block_signals:
                         self.attributes_changed.emit()
                     return
@@ -909,7 +989,9 @@ class SheetBuilderWidget(QWidget):
 
     def _clear(self) -> None:
         """Remove all rows and pair widgets."""
-        for pair in list(self._pairs.values()):
+        logger.debug(f"Clearing sheet builder. Currently has {len(self._pairs)} pairs.")
+        for key, pair in list(self._pairs.items()):
+            logger.debug(f"Deleting pair widget for key: {key}")
             pair.setParent(None)
             pair.deleteLater()
         self._pairs.clear()
@@ -920,7 +1002,15 @@ class SheetBuilderWidget(QWidget):
                 while item.layout().count():
                     child = item.layout().takeAt(0)
                     if child.widget():
-                        child.widget().setParent(None)
+                        w = child.widget()
+                        logger.debug(f"Removing widget from layout: {type(w).__name__}")
+                        w.setParent(None)
+                        w.deleteLater()
+
+                # Delete the QHBoxLayout to prevent memory leaks
+                h_layout = item.layout()
+                h_layout.setParent(None)
+                h_layout.deleteLater()
 
     def _add_row(self, items_config: List[Dict[str, Any]]) -> None:
         """Add a new horizontal row of AttributePairWidgets, spacers, text, dividers.
@@ -1040,6 +1130,8 @@ class SheetBuilderWidget(QWidget):
                     hlayout.removeWidget(pair)
                     if hlayout.count() == 0:
                         self._grid_layout.removeItem(row_item)
+                        hlayout.setParent(None)
+                        hlayout.deleteLater()
                     return
 
     def _calc_drop_position(self, pos: QPoint) -> tuple:
@@ -1082,6 +1174,7 @@ class SheetBuilderWidget(QWidget):
 
     def _on_builder_destroyed(self) -> None:
         """Disconnect theme signal when destroyed."""
+        logger.debug("SheetBuilderWidget being destroyed.")
         try:
             self._theme_mgr.theme_changed.disconnect(self._apply_theme)
         except (RuntimeError, TypeError):
