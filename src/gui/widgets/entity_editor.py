@@ -336,10 +336,10 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         # --- Tab 6: Sheet ---
         self.tab_sheet = QWidget()
-        sheet_layout = QVBoxLayout(self.tab_sheet)
-        StyleHelper.apply_no_margins(sheet_layout)
+        sheet_tab_layout = QVBoxLayout(self.tab_sheet)
+        StyleHelper.apply_no_margins(sheet_tab_layout)
         self.sheet_builder = SheetBuilderWidget()
-        sheet_layout.addWidget(self.sheet_builder)
+        sheet_tab_layout.addWidget(self.sheet_builder)
         self.inspector.add_tab(self.tab_sheet, "Sheet")
 
         # Buttons
