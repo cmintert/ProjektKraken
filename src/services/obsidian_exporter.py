@@ -461,13 +461,16 @@ class ObsidianExporter:
     ) -> Optional[str]:
         """Build an Obsidian callout stat block from a sheet layout.
 
-        Reads the ``_sheet_layout`` metadata (a 2D list of attribute key strings)
-        and formats it as an Obsidian ``[!stat]`` callout (Admonition).
+        Reads the ``_sheet_layout`` metadata (a 2D list) and formats it as an
+        Obsidian ``[!stat]`` callout (Admonition).
 
         Translation rules:
-        - Grid container → ``> [!stat] Name``
-        - Multi-key row  → ``> **Key 1:** Value 1 | **Key 2:** Value 2``
-        - Single-key row → ``> **Key:** Value``
+        - Grid container    → ``> [!stat] Name``
+        - Multi-key row     → ``> **Key 1:** Value 1 | **Key 2:** Value 2``
+        - Single-key row    → ``> **Key:** Value``
+        - Text block        → ``> *text*``
+        - Divider           → ``> ---``
+        - Spacers are ignored in export.
 
         Args:
             name: Display name for the callout title.
@@ -484,14 +487,33 @@ class ObsidianExporter:
         user_attrs = {k: v for k, v in attributes.items() if not k.startswith("_")}
 
         lines = [f"> [!stat] {name}"]
-        for row_keys in layout:
-            if not isinstance(row_keys, list) or not row_keys:
+        for row_items in layout:
+            if not isinstance(row_items, list) or not row_items:
                 continue
             parts = []
-            for key in row_keys:
-                value = user_attrs.get(key, "")
-                parts.append(f"**{key}:** {value}")
-            lines.append("> " + " | ".join(parts))
+            for item in row_items:
+                if isinstance(item, str):
+                    value = user_attrs.get(item, "")
+                    parts.append(f"**{item}:** {value}")
+                elif isinstance(item, dict):
+                    item_type = item.get("type", "")
+                    if item_type == "text":
+                        text = item.get("text", "")
+                        if text:
+                            lines.append(f"> *{text}*")
+                        continue
+                    elif item_type == "divider":
+                        lines.append("> ---")
+                        continue
+                    elif item_type == "spacer":
+                        continue  # Spacers are not rendered
+                    else:
+                        key = item.get("key", "")
+                        if key:
+                            value = user_attrs.get(key, "")
+                            parts.append(f"**{key}:** {value}")
+            if parts:
+                lines.append("> " + " | ".join(parts))
 
         return "\n".join(lines) if len(lines) > 1 else None
 

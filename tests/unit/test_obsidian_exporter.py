@@ -436,3 +436,63 @@ class TestObsidianExporterStatBlock:
 
         result = exporter._build_stat_block("Hero", {"_sheet_layout": "invalid"})
         assert result is None
+
+    def test_stat_block_with_text(self):
+        """Test stat block renders text blocks as italic."""
+        db = MockDbService()
+        exporter = ObsidianExporter(db)
+
+        attrs = {
+            "STR": 18,
+            "_sheet_layout": [
+                [{"type": "text", "text": "Abilities"}],
+                ["STR"],
+            ],
+        }
+        result = exporter._build_stat_block("Hero", attrs)
+        assert "> *Abilities*" in result
+        assert "> **STR:** 18" in result
+
+    def test_stat_block_with_divider(self):
+        """Test stat block renders dividers as horizontal rules."""
+        db = MockDbService()
+        exporter = ObsidianExporter(db)
+
+        attrs = {
+            "STR": 18,
+            "_sheet_layout": [
+                ["STR"],
+                [{"type": "divider"}],
+            ],
+        }
+        result = exporter._build_stat_block("Hero", attrs)
+        assert "> **STR:** 18" in result
+        assert "> ---" in result
+
+    def test_stat_block_with_weighted_keys(self):
+        """Test stat block handles dict-style keys with weights."""
+        db = MockDbService()
+        exporter = ObsidianExporter(db)
+
+        attrs = {
+            "STR": 18,
+            "DEX": 14,
+            "_sheet_layout": [[{"key": "STR", "weight": 2}, "DEX"]],
+        }
+        result = exporter._build_stat_block("Hero", attrs)
+        assert "> **STR:** 18 | **DEX:** 14" in result
+
+    def test_stat_block_spacers_ignored(self):
+        """Test that spacers in layout don't produce output."""
+        db = MockDbService()
+        exporter = ObsidianExporter(db)
+
+        attrs = {
+            "STR": 18,
+            "_sheet_layout": [
+                [{"type": "spacer", "weight": 1}, "STR"],
+            ],
+        }
+        result = exporter._build_stat_block("Hero", attrs)
+        assert "> **STR:** 18" in result
+        assert "spacer" not in result

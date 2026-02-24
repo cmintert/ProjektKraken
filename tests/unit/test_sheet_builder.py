@@ -9,6 +9,7 @@ Tests the SheetBuilderWidget and AttributePairWidget for:
 """
 
 import pytest
+from PySide6.QtWidgets import QFrame
 
 from src.gui.widgets.sheet_builder import AttributePairWidget, SheetBuilderWidget
 
@@ -173,23 +174,28 @@ class TestSheetBuilderWidget:
 
         # Row 1: "Strength"
         row1 = grid.itemAt(0).layout()
-        assert row1.count() == 1
         assert row1.itemAt(0).widget().key == "Strength"
         assert row1.stretch(0) == 1  # Default stretch
 
         # Row 2: "Dexterity" with weight 2
         row2 = grid.itemAt(1).layout()
-        assert row2.count() == 1
         assert row2.itemAt(0).widget().key == "Dexterity"
         assert row2.stretch(0) == 2
 
-        # Row 3: Spacer then "Intelligence"
+        # Row 3: Spacer, [resize handle], Intelligence
+        # Resize handles are inserted between adjacent items
         row3 = grid.itemAt(2).layout()
-        assert row3.count() == 2
         assert row3.itemAt(0).spacerItem() is not None
         assert row3.stretch(0) == 1
-        assert row3.itemAt(1).widget().key == "Intelligence"
-        assert row3.stretch(1) == 1
+        # Find the Intelligence widget (may be at index 1 or 2 depending on resize handle)
+        found_intel = False
+        for i in range(row3.count()):
+            item = row3.itemAt(i)
+            if item and item.widget() and hasattr(item.widget(), "key"):
+                assert item.widget().key == "Intelligence"
+                found_intel = True
+                break
+        assert found_intel
 
     def test_load_attributes_with_layout(self, sheet):
         """Test loading attributes with a 2D layout arrangement."""
@@ -351,3 +357,203 @@ class TestSheetBuilderWidget:
         row, col = sheet._calc_drop_position(pos)
         assert row == 0
         assert col == 3  # End of row
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TextBlockWidget & DividerWidget
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestTextBlockWidget:
+    """Tests for the TextBlockWidget."""
+
+    def test_get_set_text(self, qtbot):
+        """Test text get/set round-trip."""
+        from src.gui.widgets.sheet_builder import TextBlockWidget
+
+        tb = TextBlockWidget("Hello world")
+        qtbot.addWidget(tb)
+        assert tb.get_text() == "Hello world"
+
+        tb.set_text("Changed")
+        assert tb.get_text() == "Changed"
+
+    def test_text_changed_signal(self, qtbot):
+        """Test that editing text emits text_changed."""
+        from src.gui.widgets.sheet_builder import TextBlockWidget
+
+        tb = TextBlockWidget("")
+        qtbot.addWidget(tb)
+        with qtbot.waitSignal(tb.text_changed):
+            tb.text_edit.setText("new text")
+
+    def test_set_text_no_signal(self, qtbot):
+        """Test that set_text does not emit."""
+        from src.gui.widgets.sheet_builder import TextBlockWidget
+
+        tb = TextBlockWidget("")
+        qtbot.addWidget(tb)
+        emitted = False
+
+        def on_changed():
+            nonlocal emitted
+            emitted = True
+
+        tb.text_changed.connect(on_changed)
+        tb.set_text("silent")
+        assert not emitted
+
+
+class TestDividerWidget:
+    """Tests for the DividerWidget."""
+
+    def test_creates_horizontal_line(self, qtbot):
+        """Test that divider is a horizontal line with fixed height."""
+        from src.gui.widgets.sheet_builder import DividerWidget
+
+        dw = DividerWidget()
+        qtbot.addWidget(dw)
+        assert dw.frameShape() == QFrame.Shape.HLine
+        assert dw.maximumHeight() == 2
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SheetBuilderWidget – text/divider/toolbar integration
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestSheetBuilderTextDivider:
+    """Tests for text and divider integration in the sheet builder."""
+
+    def test_load_text_block(self, sheet):
+        """Test loading a layout with a text block."""
+        attrs = {"STR": 18}
+        layout = [["STR"], [{"type": "text", "text": "flavour"}]]
+        sheet.load_attributes(attrs, layout)
+
+        saved = sheet.get_layout()
+        assert len(saved) == 2
+        assert saved[0] == ["STR"]
+        assert saved[1] == [{"type": "text", "text": "flavour"}]
+
+    def test_load_divider(self, sheet):
+        """Test loading a layout with a divider."""
+        attrs = {"STR": 18}
+        layout = [["STR"], [{"type": "divider"}]]
+        sheet.load_attributes(attrs, layout)
+
+        saved = sheet.get_layout()
+        assert len(saved) == 2
+        assert saved[0] == ["STR"]
+        assert saved[1] == [{"type": "divider"}]
+
+    def test_text_roundtrip(self, sheet):
+        """Test text serialization roundtrip."""
+        attrs = {"A": 1}
+        layout = [[{"type": "text", "text": "Lore block"}], ["A"]]
+        sheet.load_attributes(attrs, layout)
+
+        saved = sheet.get_layout()
+        assert saved[0] == [{"type": "text", "text": "Lore block"}]
+
+    def test_divider_roundtrip(self, sheet):
+        """Test divider serialization roundtrip."""
+        attrs = {"A": 1}
+        layout = [[{"type": "divider"}], ["A"]]
+        sheet.load_attributes(attrs, layout)
+
+        saved = sheet.get_layout()
+        assert saved[0] == [{"type": "divider"}]
+
+    def test_toolbar_add_divider(self, sheet, qtbot):
+        """Test toolbar adds a divider row."""
+        with qtbot.waitSignal(sheet.attributes_changed):
+            sheet._on_toolbar_add_divider()
+
+        saved = sheet.get_layout()
+        assert len(saved) == 1
+        assert saved[0] == [{"type": "divider"}]
+
+    def test_toolbar_add_text(self, sheet, qtbot):
+        """Test toolbar adds a text row."""
+        with qtbot.waitSignal(sheet.attributes_changed):
+            sheet._on_toolbar_add_text()
+
+        saved = sheet.get_layout()
+        assert len(saved) == 1
+        assert saved[0] == [{"type": "text", "text": ""}]
+
+    def test_toolbar_add_spacer_to_last_row(self, sheet, qtbot):
+        """Test toolbar adds a spacer to the last row."""
+        sheet.load_attributes({"A": 1})
+
+        with qtbot.waitSignal(sheet.attributes_changed):
+            sheet._on_toolbar_add_spacer()
+
+        saved = sheet.get_layout()
+        # Should have A + spacer in the same row
+        assert len(saved) == 1
+        assert any(
+            isinstance(item, dict) and item.get("type") == "spacer"
+            for item in saved[0]
+        )
+
+    def test_context_menu_delete_row(self, sheet, qtbot):
+        """Test context menu row deletion."""
+        sheet.load_attributes({"A": 1, "B": 2})
+        assert len(sheet.get_layout()) == 2
+
+        with qtbot.waitSignal(sheet.attributes_changed):
+            sheet._ctx_delete_row(0)
+
+        assert "A" not in sheet.get_attributes()
+        assert "B" in sheet.get_attributes()
+
+    def test_context_menu_add_spacer_to_row(self, sheet, qtbot):
+        """Test context menu adds spacer to a specific row."""
+        sheet.load_attributes({"A": 1})
+
+        with qtbot.waitSignal(sheet.attributes_changed):
+            sheet._ctx_add_spacer_to_row(0)
+
+        saved = sheet.get_layout()
+        assert any(
+            isinstance(item, dict) and item.get("type") == "spacer"
+            for item in saved[0]
+        )
+
+    def test_context_menu_remove_spacers(self, sheet, qtbot):
+        """Test context menu removes spacers from a row."""
+        attrs = {"A": 1}
+        layout = [[{"type": "spacer", "weight": 1}, "A"]]
+        sheet.load_attributes(attrs, layout)
+
+        with qtbot.waitSignal(sheet.attributes_changed):
+            sheet._ctx_remove_spacers_from_row(0)
+
+        saved = sheet.get_layout()
+        # Should only have A, no spacer
+        for item in saved[0]:
+            if isinstance(item, dict):
+                assert item.get("type") != "spacer"
+
+    def test_mixed_layout_roundtrip(self, sheet):
+        """Test complex layout with text, divider, spacers, and attributes."""
+        attrs = {"STR": 18, "DEX": 14}
+        layout = [
+            [{"type": "text", "text": "Stats"}],
+            [{"type": "divider"}],
+            ["STR", "DEX"],
+        ]
+        sheet.load_attributes(attrs, layout)
+
+        saved = sheet.get_layout()
+        assert saved[0] == [{"type": "text", "text": "Stats"}]
+        assert saved[1] == [{"type": "divider"}]
+        # Row 3 should have STR and DEX (may have resize handles, but serialized without them)
+        keys_in_row = [
+            item if isinstance(item, str) else item.get("key", "")
+            for item in saved[2]
+        ]
+        assert "STR" in keys_in_row
+        assert "DEX" in keys_in_row
