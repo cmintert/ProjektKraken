@@ -424,18 +424,24 @@ class _ResizeHandle(QWidget):
             return
 
         dx = event.globalPosition().toPoint().x() - self._drag_start_x
-        if abs(dx) < 20:
+        if abs(dx) < 10:
             return
 
         left_stretch = max(1, self._hlayout.stretch(self._left_idx))
         right_stretch = max(1, self._hlayout.stretch(self._right_idx))
 
-        if dx > 0 and right_stretch > 1:
-            left_stretch += 1
-            right_stretch -= 1
-        elif dx < 0 and left_stretch > 1:
-            left_stretch -= 1
-            right_stretch += 1
+        if dx > 0:
+            if right_stretch > 1:
+                left_stretch += 1
+                right_stretch -= 1
+            elif left_stretch < 20:
+                left_stretch += 1
+        elif dx < 0:
+            if left_stretch > 1:
+                left_stretch -= 1
+                right_stretch += 1
+            elif right_stretch < 20:
+                right_stretch += 1
 
         self._hlayout.setStretch(self._left_idx, left_stretch)
         self._hlayout.setStretch(self._right_idx, right_stretch)
@@ -526,12 +532,8 @@ class SheetBuilderWidget(QWidget):
 
         # Inner container
         self._container = QWidget()
-        self._container.setContextMenuPolicy(
-            Qt.ContextMenuPolicy.CustomContextMenu
-        )
-        self._container.customContextMenuRequested.connect(
-            self._show_context_menu
-        )
+        self._container.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self._container.customContextMenuRequested.connect(self._show_context_menu)
         self._grid_layout = QVBoxLayout(self._container)
         self._grid_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self._grid_layout.setSpacing(4)
@@ -1048,9 +1050,7 @@ class SheetBuilderWidget(QWidget):
 
     def _on_toolbar_add_attribute(self) -> None:
         """Prompt for a new attribute key and add it as a new row."""
-        key, ok = QInputDialog.getText(
-            self, "New Attribute", "Attribute key:"
-        )
+        key, ok = QInputDialog.getText(self, "New Attribute", "Attribute key:")
         if ok and key and key.strip():
             key = key.strip()
             if key in self._pairs:
@@ -1094,17 +1094,13 @@ class SheetBuilderWidget(QWidget):
         menu = QMenu(self)
 
         if clicked_row >= 0:
-            self._build_row_context_menu(
-                menu, clicked_row, clicked_col, clicked_widget
-            )
+            self._build_row_context_menu(menu, clicked_row, clicked_col, clicked_widget)
         else:
             self._build_empty_context_menu(menu)
 
         menu.exec(self._container.mapToGlobal(pos))
 
-    def _find_clicked_item(
-        self, pos: QPoint
-    ) -> tuple:
+    def _find_clicked_item(self, pos: QPoint) -> tuple:
         """Find the row, column, and widget at a given position.
 
         Returns:
@@ -1123,7 +1119,11 @@ class SheetBuilderWidget(QWidget):
                 clicked_row = row_idx
                 for col_idx in range(hlayout.count()):
                     item = hlayout.itemAt(col_idx)
-                    if item and item.widget() and item.widget().geometry().contains(pos):
+                    if (
+                        item
+                        and item.widget()
+                        and item.widget().geometry().contains(pos)
+                    ):
                         clicked_widget = item.widget()
                         clicked_col = col_idx
                         break
@@ -1189,9 +1189,7 @@ class SheetBuilderWidget(QWidget):
 
     def _ctx_insert_row(self, at_index: int) -> None:
         """Insert an empty attribute row at the given index via a prompt."""
-        key, ok = QInputDialog.getText(
-            self, "New Attribute", "Attribute key:"
-        )
+        key, ok = QInputDialog.getText(self, "New Attribute", "Attribute key:")
         if ok and key and key.strip():
             key = key.strip()
             if key in self._pairs:

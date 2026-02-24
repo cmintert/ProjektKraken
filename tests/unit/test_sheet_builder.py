@@ -9,9 +9,13 @@ Tests the SheetBuilderWidget and AttributePairWidget for:
 """
 
 import pytest
+from PySide6.QtCore import QPoint, Qt
 from PySide6.QtWidgets import QFrame
 
-from src.gui.widgets.sheet_builder import AttributePairWidget, SheetBuilderWidget
+from src.gui.widgets.sheet_builder import (
+    AttributePairWidget,
+    SheetBuilderWidget,
+)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # AttributePairWidget
@@ -494,8 +498,7 @@ class TestSheetBuilderTextDivider:
         # Should have A + spacer in the same row
         assert len(saved) == 1
         assert any(
-            isinstance(item, dict) and item.get("type") == "spacer"
-            for item in saved[0]
+            isinstance(item, dict) and item.get("type") == "spacer" for item in saved[0]
         )
 
     def test_context_menu_delete_row(self, sheet, qtbot):
@@ -518,8 +521,7 @@ class TestSheetBuilderTextDivider:
 
         saved = sheet.get_layout()
         assert any(
-            isinstance(item, dict) and item.get("type") == "spacer"
-            for item in saved[0]
+            isinstance(item, dict) and item.get("type") == "spacer" for item in saved[0]
         )
 
     def test_context_menu_remove_spacers(self, sheet, qtbot):
@@ -552,8 +554,71 @@ class TestSheetBuilderTextDivider:
         assert saved[1] == [{"type": "divider"}]
         # Row 3 should have STR and DEX (may have resize handles, but serialized without them)
         keys_in_row = [
-            item if isinstance(item, str) else item.get("key", "")
-            for item in saved[2]
+            item if isinstance(item, str) else item.get("key", "") for item in saved[2]
         ]
         assert "STR" in keys_in_row
         assert "DEX" in keys_in_row
+
+
+class TestResizeHandle:
+    """Tests for the _ResizeHandle widget."""
+
+    def test_resize_handle_drag_increases_weight(self, sheet, qtbot):
+        """Test that dragging a resize handle changes item weights."""
+        # Use heavier weights to avoid the 1-minimum issue for now
+        attrs = {"A": 1, "B": 1}
+        layout = [[{"key": "A", "weight": 2}, {"key": "B", "weight": 2}]]
+        sheet.load_attributes(attrs, layout)
+        sheet.show()
+        qtbot.waitForWindowShown(sheet)
+
+        row_item = sheet._grid_layout.itemAt(0)
+        hlayout = row_item.layout()
+        handle = hlayout.itemAt(1).widget()
+
+        # Initial stretch
+        assert hlayout.stretch(0) == 2
+        assert hlayout.stretch(2) == 2
+
+        # Simulate drag right by 30 pixels
+        # Need to move enough to pass the 20px threshold
+        center = handle.rect().center()
+
+        qtbot.mousePress(handle, Qt.MouseButton.LeftButton, pos=center)
+        # Move 30 pixels to the right
+        qtbot.mouseMove(handle, center + QPoint(30, 0))
+        qtbot.mouseRelease(
+            handle, Qt.MouseButton.LeftButton, pos=center + QPoint(30, 0)
+        )
+
+        # Should have updated stretches: left (0) +, right (2) -
+        assert hlayout.stretch(0) == 3
+        assert hlayout.stretch(2) == 1
+
+    def test_resize_handle_drag_at_minimum_succeeds(self, sheet, qtbot):
+        """Confirm that dragging works even when weights are at 1:1."""
+        attrs = {"A": 1, "B": 1}
+        layout = [["A", "B"]]  # defaults to 1:1
+        sheet.load_attributes(attrs, layout)
+        sheet.show()
+        qtbot.waitForWindowShown(sheet)
+
+        row_item = sheet._grid_layout.itemAt(0)
+        hlayout = row_item.layout()
+        handle = hlayout.itemAt(1).widget()
+
+        assert hlayout.stretch(0) == 1
+        assert hlayout.stretch(2) == 1
+
+        center = handle.rect().center()
+        qtbot.mousePress(handle, Qt.MouseButton.LeftButton, pos=center)
+        # Move right by 30 pixels (threshold will be 10px)
+        qtbot.mouseMove(handle, center + QPoint(30, 0))
+        qtbot.mouseRelease(
+            handle, Qt.MouseButton.LeftButton, pos=center + QPoint(30, 0)
+        )
+
+        # We expect the left widget to increase its weight,
+        # and the right widget to stay at 1 (minimum).
+        assert hlayout.stretch(0) == 2
+        assert hlayout.stretch(2) == 1

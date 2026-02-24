@@ -155,7 +155,8 @@ def test_mainwindow_check_unsaved_changes(qtbot):
         mock_event_editor.unsaved = True
 
         with patch(
-            "src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Save
+            "src.app.coordinators.editor_coordinator.QMessageBox.warning",
+            return_value=QMessageBox.Save,
         ):
             # We mock _on_save on the instance
             with patch.object(mock_event_editor, "_on_save") as mock_on_save:
@@ -164,7 +165,8 @@ def test_mainwindow_check_unsaved_changes(qtbot):
 
         # 3. Dirty Editor, User selects Discard
         with patch(
-            "src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard
+            "src.app.coordinators.editor_coordinator.QMessageBox.warning",
+            return_value=QMessageBox.Discard,
         ):
             with patch.object(mock_event_editor, "_on_save") as mock_on_save:
                 assert window.check_unsaved_changes(window.event_editor)
@@ -172,7 +174,8 @@ def test_mainwindow_check_unsaved_changes(qtbot):
 
         # 4. Dirty Editor, User selects Cancel
         with patch(
-            "src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Cancel
+            "src.app.coordinators.editor_coordinator.QMessageBox.warning",
+            return_value=QMessageBox.Cancel,
         ):
             with patch.object(mock_event_editor, "_on_save") as mock_on_save:
                 assert not window.check_unsaved_changes(window.event_editor)
