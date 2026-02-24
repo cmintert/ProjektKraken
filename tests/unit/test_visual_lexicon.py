@@ -8,9 +8,6 @@ Tests cover:
 """
 
 import base64
-import os
-import tempfile
-from pathlib import Path
 
 import pytest
 
@@ -23,7 +20,6 @@ from src.gui.widgets.map.icon_picker_dialog import (
 )
 from src.services.db_service import DatabaseService
 from src.services.graph_data_service import GraphDataService
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

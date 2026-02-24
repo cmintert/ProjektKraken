@@ -1,12 +1,13 @@
 """Unit tests for StandardCheckbox."""
 
-import pytest
 from PySide6.QtWidgets import QCheckBox
+
+from src.core.theme_manager import ThemeManager
+from src.gui.utils.style_helper import StyleHelper
 
 # We expect this import to fail initially or the class to be missing
 from src.gui.widgets.standard_buttons import StandardCheckbox
-from src.core.theme_manager import ThemeManager
-from src.gui.utils.style_helper import StyleHelper
+
 
 def test_standard_checkbox_init(qtbot):
     """Test that StandardCheckbox initializes with correct defaults."""

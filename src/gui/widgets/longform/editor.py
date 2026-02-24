@@ -28,9 +28,9 @@ from src.core.theme_manager import ThemeManager
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.shortcut_manager import ShortcutManager
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.longform.content import LongformContentWidget
 from src.gui.widgets.longform.outline import LongformOutlineWidget
-from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.services.web_service_manager import WebServiceManager
 
 logger = logging.getLogger(__name__)

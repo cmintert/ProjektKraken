@@ -3,8 +3,9 @@
 import pytest
 from PySide6.QtCore import QRectF
 from PySide6.QtWidgets import QGraphicsPixmapItem
-from src.gui.widgets.map.map_graphics_view import MapGraphicsView
+
 from src.core.trajectory import Keyframe
+from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 
 
 @pytest.fixture
@@ -14,8 +15,8 @@ def map_view(qtbot):
     qtbot.addWidget(view)
 
     # Initialize with a dummy pixmap
-    from PySide6.QtGui import QPixmap, QImage
     from PySide6.QtCore import Qt
+    from PySide6.QtGui import QImage, QPixmap
 
     img = QImage(1000, 1000, QImage.Format.Format_RGB32)
     img.fill(Qt.GlobalColor.white)

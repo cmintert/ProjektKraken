@@ -570,8 +570,65 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self.type_edit.currentTextChanged.connect(lambda: self.set_dirty(True))
         self.desc_edit.textChanged.connect(lambda: self.set_dirty(True))
         self.tag_editor.tags_changed.connect(lambda: self.set_dirty(True))
-        self.attribute_editor.attributes_changed.connect(lambda: self.set_dirty(True))
-        self.sheet_builder.attributes_changed.connect(lambda: self.set_dirty(True))
+
+        # Connect attribute and sheet builder changes to both dirty state AND sync
+        self.attribute_editor.attributes_changed.connect(self._on_attributes_changed)
+        self.sheet_builder.attributes_changed.connect(self._on_sheet_changed)
+
+    def _on_attributes_changed(self) -> None:
+        """Handle changes from the attribute editor table."""
+        self.set_dirty(True)
+        self._sync_attributes(source="table")
+
+    def _on_sheet_changed(self) -> None:
+        """Handle changes from the sheet builder."""
+        self.set_dirty(True)
+        self._sync_attributes(source="sheet")
+
+    def _sync_attributes(self, source: str) -> None:
+        """Synchronize values between Attribute Editor and Sheet Builder.
+
+        Args:
+            source (str): "table" if the change originated in the attribute editor,
+                or "sheet" if it originated in the sheet builder.
+        """
+        if self._is_loading:
+            return
+
+        if source == "sheet":
+            sheet_attrs = self.sheet_builder.get_attributes()
+            attr_attrs = self.attribute_editor.get_attributes()
+
+            for key, val in sheet_attrs.items():
+                if key in attr_attrs and attr_attrs[key] != val:
+                    self.attribute_editor.update_attribute_value(key, val)
+                elif key not in attr_attrs:
+                    self.attribute_editor._block_signals = True
+                    self.attribute_editor._add_row(key, val)
+                    self.attribute_editor._block_signals = False
+
+            for key in list(attr_attrs.keys()):
+                if key not in sheet_attrs and key in self.sheet_builder._pairs:
+                    # User removed an attribute from the table? No, this is sheet source.
+                    pass
+        elif source == "table":
+            sheet_attrs = self.sheet_builder.get_attributes()
+            attr_attrs = self.attribute_editor.get_attributes()
+
+            for key, val in attr_attrs.items():
+                if key in sheet_attrs and sheet_attrs[key] != val:
+                    self.sheet_builder.update_attribute_value(key, val)
+                elif key not in sheet_attrs and key in self.sheet_builder._pairs:
+                    # Attribute was added to the table, but the sheet only shows
+                    # things in its layout. We don't auto-add to the sheet layout.
+                    pass
+
+            # If removed from table, remove from sheet
+            for key in list(sheet_attrs.keys()):
+                if key not in attr_attrs:
+                    self.sheet_builder._block_signals = True
+                    self.sheet_builder.remove_attribute(key)
+                    self.sheet_builder._block_signals = False
 
     def update_suggestions(
         self, items: list[tuple[str, str, str]] = None, names: list[str] = None
@@ -1441,7 +1498,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             f"[EntityEditor] _on_summary_generate_requested ID: {self._current_entity_id}"
         )
         if not self._current_entity_id:
-            logger.debug("[EntityEditor] Aborting summary request: no current entity ID")
+            logger.debug(
+                "[EntityEditor] Aborting summary request: no current entity ID"
+            )
             return
 
         # Construct temporary entity from form

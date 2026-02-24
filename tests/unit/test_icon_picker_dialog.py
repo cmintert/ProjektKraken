@@ -4,9 +4,6 @@ Validates default icon listing, project icon listing, removal, theming,
 and import behaviour.
 """
 
-import os
-import tempfile
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest

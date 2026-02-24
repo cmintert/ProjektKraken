@@ -323,8 +323,9 @@ class GraphWidget(QWidget):
         self._raw_lexicon = config
 
         # Resolve images locally
-        from src.gui.widgets.graph_view.graph_builder import GraphBuilder
         from pathlib import Path
+
+        from src.gui.widgets.graph_view.graph_builder import GraphBuilder
 
         project_root = (
             Path(self._world_assets_dir).parent

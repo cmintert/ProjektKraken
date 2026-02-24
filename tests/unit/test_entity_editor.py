@@ -207,3 +207,30 @@ def test_auto_relation_disabled(editor, qtbot, monkeypatch):
 
     # 4. Verify Dialog was not called
     mock_dialog_cls.assert_not_called()
+
+
+def test_sheet_builder_data_loss(editor, qtbot):
+    """Test that manipulating the sheet builder updates the attribute editor and
+    saves correctly.
+    """
+    ent = Entity(id="1", name="Test", type="Character", attributes={"Strength": 10})
+    editor.load_entity(ent)
+
+    # Verify both editors start with the value
+    assert editor.attribute_editor.get_attributes()["Strength"] == 10
+    assert "Strength" in editor.sheet_builder.get_attributes()
+    assert editor.sheet_builder.get_attributes()["Strength"] == 10
+
+    # Modify "Strength" in Sheet Builder
+    strength_pair = editor.sheet_builder._pairs["Strength"]
+    strength_pair.value_edit.setText("15")
+
+    # Check if Attribute Editor is updated
+    assert editor.attribute_editor.get_attributes()["Strength"] == 15
+
+    # Simulate Save
+    with qtbot.waitSignal(editor.save_requested) as blocker:
+        editor.btn_save.click()
+
+    saved_data = blocker.args[0]
+    assert saved_data["attributes"]["Strength"] == 15

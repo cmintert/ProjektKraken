@@ -1,6 +1,7 @@
 """Tests for immediate lexicon propagation (TDD)."""
 
 from unittest.mock import MagicMock, patch
+
 import pytest
 from PySide6.QtWidgets import QApplication, QDialog, QDialogButtonBox
 

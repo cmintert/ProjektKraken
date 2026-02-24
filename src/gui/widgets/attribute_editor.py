@@ -75,6 +75,7 @@ class AttributeEditorWidget(QWidget):
 
         # Set up custom delegate for type-aware editing
         from src.gui.delegates.attribute_delegate import AttributeDelegate
+
         self._delegate = AttributeDelegate(self.table)
         self._delegate.set_attribute_widget(self)
         self.table.setItemDelegateForColumn(1, self._delegate)  # Apply to Value column
@@ -115,6 +116,26 @@ class AttributeEditorWidget(QWidget):
             attrs[key] = parsed_val
 
         return attrs
+
+    def update_attribute_value(self, key: str, value: Any) -> None:
+        """Updates the value of an existing attribute in the table without breaking focus.
+
+        Args:
+            key (str): The attribute key.
+            value (Any): The new value.
+        """
+        self._block_signals = True
+        try:
+            for row in range(self.table.rowCount()):
+                key_item = self.table.item(row, 0)
+                if key_item and key_item.text().strip() == key:
+                    val_item = self.table.item(row, 1)
+                    if val_item:
+                        str_val = str(value) if value is not None else ""
+                        val_item.setText(str_val)
+                    break
+        finally:
+            self._block_signals = False
 
     def _add_row(self, key: str = "", value: Optional[Any] = None) -> None:
         """Adds a new row to the attribute table.
@@ -176,14 +197,14 @@ class AttributeEditorWidget(QWidget):
             existing_keys = self.get_attributes().keys()
             if key in existing_keys:
                 QMessageBox.warning(
-                    self, 
-                    "Duplicate Attribute", 
+                    self,
+                    "Duplicate Attribute",
                     f"The attribute key '{key}' already exists.\n\n"
                     "Each attribute must have a unique key name.\n\n"
                     "To fix:\n"
                     "1. Choose a different key name\n"
                     "2. Or modify the existing attribute with this key\n"
-                    "3. Consider using a naming pattern like 'key_2', 'key_v2'"
+                    "3. Consider using a naming pattern like 'key_2', 'key_v2'",
                 )
                 return
 

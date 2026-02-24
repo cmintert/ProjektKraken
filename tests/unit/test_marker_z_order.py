@@ -3,9 +3,8 @@
 import pytest
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QImage, QPixmap
-from PySide6.QtWidgets import QGraphicsPixmapItem, QGraphicsScene, QGraphicsView
+from PySide6.QtWidgets import QGraphicsPixmapItem
 
-from src.app.constants import MAP_LAYER_Z_MARKERS
 from src.core.trajectory import Keyframe
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 

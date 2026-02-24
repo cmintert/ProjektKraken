@@ -5,7 +5,7 @@ and configuration readback, as well as GraphWidget lexicon API.
 """
 
 import base64
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from PySide6.QtWidgets import QApplication
@@ -18,7 +18,6 @@ from src.gui.dialogs.lexicon_editor_dialog import (
 from src.gui.widgets.graph_view.graph_builder import GraphBuilder
 from src.gui.widgets.graph_view.graph_filter_bar import GraphFilterBar
 from src.gui.widgets.graph_view.graph_widget import GraphWidget
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

@@ -1,11 +1,9 @@
 """Tests for TagRepository."""
 
-import sqlite3
 
 import pytest
 
 from src.services.db_service import DatabaseService
-from src.services.repositories.tag_repository import TagRepository
 
 
 @pytest.fixture

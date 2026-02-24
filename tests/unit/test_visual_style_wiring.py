@@ -7,13 +7,12 @@ Verifies:
 - MarkerManager passes visual_attributes through to MarkerItem
 """
 
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from src.commands.marker_commands import UpdateMarkerAttributeCommand
 from src.core.style_constants import V_BORDER_WIDTH, V_FILL, V_SIZE_SCALE
-
 
 # ---------------------------------------------------------------------------
 # MapHandler – visual style signal → command

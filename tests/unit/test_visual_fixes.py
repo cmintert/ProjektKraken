@@ -6,12 +6,12 @@ Verifies:
 - Lexicon preview forces full rebuild
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from PySide6.QtWidgets import QApplication
 
-from src.core.style_constants import V_BORDER, V_BORDER_WIDTH, V_FILL, V_SIZE_SCALE
+from src.core.style_constants import V_BORDER_WIDTH, V_FILL, V_SIZE_SCALE
 from src.gui.widgets.graph_view.graph_builder import GraphBuilder
 
 

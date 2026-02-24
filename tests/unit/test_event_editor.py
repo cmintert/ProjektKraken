@@ -199,3 +199,30 @@ def test_auto_relation_disabled(editor, qtbot, monkeypatch):
 
     # 4. Verify Dialog was not called
     mock_dialog_cls.assert_not_called()
+
+
+def test_sheet_builder_data_loss(editor, qtbot):
+    """Test that manipulating the sheet builder updates the attribute editor and
+    saves correctly.
+    """
+    ev = Event(id="1", name="Test", lore_date=0.0, attributes={"Focus": 10})
+    editor.load_event(ev)
+
+    # Verify both editors start with the value
+    assert editor.attribute_editor.get_attributes()["Focus"] == 10
+    assert "Focus" in editor.sheet_builder.get_attributes()
+    assert editor.sheet_builder.get_attributes()["Focus"] == 10
+
+    # Modify "Focus" in Sheet Builder
+    focus_pair = editor.sheet_builder._pairs["Focus"]
+    focus_pair.value_edit.setText("20")
+
+    # Check if Attribute Editor is updated
+    assert editor.attribute_editor.get_attributes()["Focus"] == 20
+
+    # Simulate Save
+    with qtbot.waitSignal(editor.save_requested) as blocker:
+        editor.btn_save.click()
+
+    saved_data = blocker.args[0]
+    assert saved_data["attributes"]["Focus"] == 20

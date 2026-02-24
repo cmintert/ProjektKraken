@@ -780,8 +780,62 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.type_edit.currentTextChanged.connect(lambda: self.set_dirty(True))
         self.desc_edit.textChanged.connect(lambda: self.set_dirty(True))
         self.tag_editor.tags_changed.connect(lambda: self.set_dirty(True))
-        self.attribute_editor.attributes_changed.connect(lambda: self.set_dirty(True))
-        self.sheet_builder.attributes_changed.connect(lambda: self.set_dirty(True))
+
+        # Connect attribute and sheet builder changes to both dirty state AND sync
+        self.attribute_editor.attributes_changed.connect(self._on_attributes_changed)
+        self.sheet_builder.attributes_changed.connect(self._on_sheet_changed)
+
+    def _on_attributes_changed(self) -> None:
+        """Handle changes from the attribute editor table."""
+        self.set_dirty(True)
+        self._sync_attributes(source="table")
+
+    def _on_sheet_changed(self) -> None:
+        """Handle changes from the sheet builder."""
+        self.set_dirty(True)
+        self._sync_attributes(source="sheet")
+
+    def _sync_attributes(self, source: str) -> None:
+        """Synchronize values between Attribute Editor and Sheet Builder.
+
+        Args:
+            source (str): "table" if the change originated in the attribute editor,
+                or "sheet" if it originated in the sheet builder.
+        """
+        if self._is_loading:
+            return
+
+        if source == "sheet":
+            sheet_attrs = self.sheet_builder.get_attributes()
+            attr_attrs = self.attribute_editor.get_attributes()
+
+            for key, val in sheet_attrs.items():
+                if key in attr_attrs and attr_attrs[key] != val:
+                    self.attribute_editor.update_attribute_value(key, val)
+                elif key not in attr_attrs:
+                    self.attribute_editor._block_signals = True
+                    self.attribute_editor._add_row(key, val)
+                    self.attribute_editor._block_signals = False
+
+            for key in list(attr_attrs.keys()):
+                if key not in sheet_attrs and key in self.sheet_builder._pairs:
+                    pass
+        elif source == "table":
+            sheet_attrs = self.sheet_builder.get_attributes()
+            attr_attrs = self.attribute_editor.get_attributes()
+
+            for key, val in attr_attrs.items():
+                if key in sheet_attrs and sheet_attrs[key] != val:
+                    self.sheet_builder.update_attribute_value(key, val)
+                elif key not in sheet_attrs and key in self.sheet_builder._pairs:
+                    pass
+
+            # If removed from table, remove from sheet
+            for key in list(sheet_attrs.keys()):
+                if key not in attr_attrs:
+                    self.sheet_builder._block_signals = True
+                    self.sheet_builder.remove_attribute(key)
+                    self.sheet_builder._block_signals = False
 
     @Slot(float)
     def _on_start_date_changed(self, new_start: float) -> None:
@@ -1034,11 +1088,14 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
     def _on_theme_changed(self, theme: dict) -> None:
         """
         Apply theme changes to specific UI elements.
-        
-        Updates the inject button stylesheet and the icons/styles for relation add-buttons using values from the provided theme. Expects the `theme` mapping to include a `text_main` color value used for icon tinting.
-        
+
+        Updates the inject button stylesheet and the icons/styles for relation
+        add-buttons using values from the provided theme. Expects the `theme`
+        mapping to include a `text_main` color value used for icon tinting.
+
         Parameters:
-        	theme (dict): Theme data containing color and style values (must include `text_main`).
+            theme (dict): Theme data containing color and style values
+                          (must include `text_main`).
         """
         from src.gui.utils.icon_loader import load_icon
         from src.gui.utils.style_helper import StyleHelper

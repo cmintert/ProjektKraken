@@ -9,6 +9,7 @@ import logging
 from typing import Any, Dict, List, Optional, Union
 
 from PySide6.QtCore import QMimeData, QPoint, Qt, Signal
+from src.core.theme_manager import ThemeManager
 from PySide6.QtGui import (
     QDrag,
     QDragEnterEvent,
@@ -94,6 +95,46 @@ class AttributePairWidget(QFrame):
         self.type_combo.currentTextChanged.connect(self._on_value_changed)
         self.type_combo.setMaximumWidth(90)
         layout.addWidget(self.type_combo)
+
+        # Apply initial theme and connect to changes
+        self._apply_theme()
+        ThemeManager().theme_changed.connect(self._apply_theme)
+
+    def _apply_theme(self) -> None:
+        """Apply current theme colors to the widget."""
+        theme = ThemeManager().get_theme()
+        surface_alt = theme.get("surface_alt", "#2A2A2A")
+        border = theme.get("border", "#333333")
+        text = theme.get("text", "#E0E0E0")
+
+        self.setStyleSheet(
+            f"""
+            AttributePairWidget {{
+                background-color: {surface_alt};
+                border: 1px solid {border};
+                border-radius: 4px;
+            }}
+            QLabel {{
+                color: {text};
+            }}
+            QLineEdit, QComboBox {{
+                background-color: transparent;
+                border: 1px solid {border};
+                border-radius: 2px;
+                color: {text};
+                padding: 2px;
+            }}
+            QLineEdit:focus, QComboBox:focus {{
+                border: 1px solid {theme.get('primary', '#5C82FF')};
+            }}
+            QComboBox::drop-down {{
+                border: none;
+            }}
+            QComboBox::down-arrow {{
+                image: none;
+            }}
+        """
+        )
 
     # ------------------------------------------------------------------
     # Public API
@@ -220,6 +261,21 @@ class SheetBuilderWidget(QWidget):
         # Block signals flag
         self._block_signals = False
 
+        # Apply initial theme and connect to changes
+        self._apply_theme()
+        ThemeManager().theme_changed.connect(self._apply_theme)
+
+    def _apply_theme(self) -> None:
+        """Apply current theme colors to the widget."""
+        theme = ThemeManager().get_theme()
+        surface = theme.get("surface", "#1A1A1A")
+
+        # Style the scroll area and container to match the app's surface
+        self._scroll.setStyleSheet(
+            f"QScrollArea {{ background-color: {surface}; border: none; }}"
+        )
+        self._container.setStyleSheet(f"QWidget {{ background-color: {surface}; }}")
+
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
@@ -245,9 +301,7 @@ class SheetBuilderWidget(QWidget):
             for row_keys in layout:
                 valid_keys = [k for k in row_keys if k in attributes]
                 if valid_keys:
-                    self._add_row(
-                        [(k, attributes[k]) for k in valid_keys]
-                    )
+                    self._add_row([(k, attributes[k]) for k in valid_keys])
                     placed_keys.update(valid_keys)
 
             # Append any remaining attributes not referenced by the layout
@@ -306,6 +360,22 @@ class SheetBuilderWidget(QWidget):
         if not self._block_signals:
             self.attributes_changed.emit()
 
+    def update_attribute_value(self, key: str, value: Any) -> None:
+        """Update the value of an existing attribute in the sheet.
+
+        Args:
+            key (str): The attribute key to update.
+            value (Any): The new value.
+        """
+        if key in self._pairs:
+            self._block_signals = True
+            try:
+                pair = self._pairs[key]
+                str_val = str(value) if value is not None else ""
+                pair.set_value(str_val)
+            finally:
+                self._block_signals = False
+
     def remove_attribute(self, key: str) -> None:
         """Remove an attribute from the sheet.
 
@@ -356,7 +426,9 @@ class SheetBuilderWidget(QWidget):
 
         # Show rubber-band feedback
         if self._rubber_band is None:
-            self._rubber_band = QRubberBand(QRubberBand.Shape.Rectangle, self._container)
+            self._rubber_band = QRubberBand(
+                QRubberBand.Shape.Rectangle, self._container
+            )
 
         if drop_row < self._grid_layout.count():
             row_item = self._grid_layout.itemAt(drop_row)

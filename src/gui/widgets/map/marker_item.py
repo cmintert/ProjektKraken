@@ -16,10 +16,10 @@ from PySide6.QtGui import (
     QColor,
     QCursor,
     QFont,
+    QFontMetrics,
     QMouseEvent,
     QPainter,
     QPen,
-    QFontMetrics,
 )
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (

@@ -6,14 +6,12 @@ Verifies that:
 3. Tags and other hidden attributes are preserved through the save cycle.
 """
 
-import time
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from src.core.entities import Entity
 from src.core.events import Event
-from src.core.summary_data import SummaryData
 from src.services.summary_service import SummaryService
 
 

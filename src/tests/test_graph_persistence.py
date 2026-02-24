@@ -1,5 +1,5 @@
 from typing import Any
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 
 import pytest
 from PySide6.QtCore import QObject, Signal

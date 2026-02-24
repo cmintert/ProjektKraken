@@ -4,7 +4,6 @@ Validates the full delegation chain: DatabaseService → Repository → SQLite
 for all domain areas, ensuring the refactoring maintains backward compatibility.
 """
 
-import json
 
 import pytest
 

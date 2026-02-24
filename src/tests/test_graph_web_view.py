@@ -1,5 +1,5 @@
 from unittest.mock import MagicMock
-import pytest
+
 from src.gui.widgets.graph_view.graph_web_view import GraphWebView
 
 
