@@ -65,6 +65,7 @@ class TestProcessWikiLinksCommand:
         # Let's check DB Service signature later, but for now test intent.
 
         cmd._created_relations = ["rel_123"]  # Simulating created relation ID
+        cmd._is_executed = True  # Simulating command execution
 
         cmd.undo(mock_db)
 

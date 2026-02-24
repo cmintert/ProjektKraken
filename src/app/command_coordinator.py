@@ -108,8 +108,11 @@ class CommandCoordinator(QObject):
 
         command = self.undo_stack.pop()
         logger.debug(f"Undoing command: {command.__class__.__name__}")
-        self.undo_requested.emit(command)
-        self.redo_stack.append(command)
+        # Optimistically move to redo stack to keep UI responsive
+        # The worker will actually perform the DB operation
+        if command.has_history:
+            self.redo_stack.append(command)
+
         self.history_changed.emit()
 
     @Slot()
