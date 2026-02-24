@@ -416,56 +416,99 @@ class _ResizeHandle(QWidget):
         if event.button() == Qt.MouseButton.LeftButton:
             self._dragging = True
             self._drag_start_x = event.globalPosition().toPoint().x()
+
+            # Record initial state
+            self._initial_left_stretch = max(1, self._hlayout.stretch(self._left_idx))
+            self._initial_right_stretch = max(1, self._hlayout.stretch(self._right_idx))
+
+            left_widget = self._hlayout.itemAt(self._left_idx).widget()
+            right_widget = self._hlayout.itemAt(self._right_idx).widget()
+
+            self._initial_left_width = left_widget.width() if left_widget else 1
+            self._initial_right_width = right_widget.width() if right_widget else 1
+
             event.accept()
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        """Adjust weights during drag."""
+        """Adjust weights proportionally during drag."""
         if not self._dragging:
             return
 
         dx = event.globalPosition().toPoint().x() - self._drag_start_x
-        if abs(dx) < 10:
+
+        total_width = self._initial_left_width + self._initial_right_width
+        if total_width <= 0:
             return
 
-        left_stretch = max(1, self._hlayout.stretch(self._left_idx))
-        right_stretch = max(1, self._hlayout.stretch(self._right_idx))
+        total_stretch = self._initial_left_stretch + self._initial_right_stretch
 
-        if dx > 0:
-            if right_stretch > 1:
-                left_stretch += 1
-                right_stretch -= 1
-            elif left_stretch < 20:
-                left_stretch += 1
-        elif dx < 0:
-            if left_stretch > 1:
-                left_stretch -= 1
-                right_stretch += 1
-            elif right_stretch < 20:
-                right_stretch += 1
+        # Calculate new proportional width for the left widget
+        new_left_width = self._initial_left_width + dx
 
-        self._hlayout.setStretch(self._left_idx, left_stretch)
-        self._hlayout.setStretch(self._right_idx, right_stretch)
+        # Keep width within logical bounds
+        new_left_width = max(10, min(new_left_width, total_width - 10))
 
-        # Update weight on the widget if applicable
-        left_item = self._hlayout.itemAt(self._left_idx)
-        right_item = self._hlayout.itemAt(self._right_idx)
-        if left_item and left_item.widget() and hasattr(left_item.widget(), "weight"):
-            left_item.widget().weight = left_stretch
-        if (
-            right_item
-            and right_item.widget()
-            and hasattr(right_item.widget(), "weight")
-        ):
-            right_item.widget().weight = right_stretch
+        # Map the new width to the total stretch pool
+        # +0.5 for rounding to nearest int
+        left_stretch = int((new_left_width / total_width) * total_stretch + 0.5)
 
-        self._drag_start_x = event.globalPosition().toPoint().x()
-        self.resize_done.emit()
+        # Enforce minimums to prevent dividing by zero or breaking layout
+        left_stretch = max(1, left_stretch)
+        right_stretch = max(1, total_stretch - left_stretch)
+
+        # Allow expanding bounds if pulling all the way and hit the edge
+        # which can happen if initial total_stretch was small (e.g. 1+1=2)
+        if dx > 0 and right_stretch == 1 and new_left_width > self._initial_left_width:
+            # Calculate expansion based on dx exceeding the initial mapping
+            extra_pixels = dx - (total_width - self._initial_left_width)
+            if extra_pixels > 20:
+                # Expand total scope
+                left_stretch = self._initial_left_stretch + int(extra_pixels / 20)
+
+        if dx < 0 and left_stretch == 1 and new_left_width < self._initial_left_width:
+            extra_pixels = abs(dx) - self._initial_left_width
+            if extra_pixels > 20:
+                right_stretch = self._initial_right_stretch + int(extra_pixels / 20)
+
+        # Enforce ceilings (20 is our max logic limit to prevent unbounded expansion)
+        left_stretch = min(20, left_stretch)
+        right_stretch = min(20, right_stretch)
+
+        if left_stretch != self._hlayout.stretch(
+            self._left_idx
+        ) or right_stretch != self._hlayout.stretch(self._right_idx):
+            self._hlayout.setStretch(self._left_idx, left_stretch)
+            self._hlayout.setStretch(self._right_idx, right_stretch)
+
         event.accept()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        """End resize tracking."""
+        """End resize tracking and emit completion."""
         if event.button() == Qt.MouseButton.LeftButton:
             self._dragging = False
+
+            # Update final weight on the widgets and trigger save
+            left_stretch = self._hlayout.stretch(self._left_idx)
+            right_stretch = self._hlayout.stretch(self._right_idx)
+
+            left_item = self._hlayout.itemAt(self._left_idx)
+            right_item = self._hlayout.itemAt(self._right_idx)
+
+            if (
+                left_item
+                and left_item.widget()
+                and hasattr(left_item.widget(), "weight")
+            ):
+                left_item.widget().weight = left_stretch
+            if (
+                right_item
+                and right_item.widget()
+                and hasattr(right_item.widget(), "weight")
+            ):
+                right_item.widget().weight = right_stretch
+
+            # Only emit the signal when the user stops dragging
+            self.resize_done.emit()
             event.accept()
 
 

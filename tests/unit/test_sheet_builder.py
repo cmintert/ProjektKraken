@@ -580,20 +580,20 @@ class TestResizeHandle:
         assert hlayout.stretch(0) == 2
         assert hlayout.stretch(2) == 2
 
-        # Simulate drag right by 30 pixels
-        # Need to move enough to pass the 20px threshold
+        # Simulate drag right by 200 pixels
+        # Needs to be a significant portion of the width
         center = handle.rect().center()
 
         qtbot.mousePress(handle, Qt.MouseButton.LeftButton, pos=center)
-        # Move 30 pixels to the right
-        qtbot.mouseMove(handle, center + QPoint(30, 0))
+        # Move 200 pixels to the right
+        qtbot.mouseMove(handle, center + QPoint(200, 0))
         qtbot.mouseRelease(
-            handle, Qt.MouseButton.LeftButton, pos=center + QPoint(30, 0)
+            handle, Qt.MouseButton.LeftButton, pos=center + QPoint(200, 0)
         )
 
-        # Should have updated stretches: left (0) +, right (2) -
-        assert hlayout.stretch(0) == 3
-        assert hlayout.stretch(2) == 1
+        # Should have updated stretches
+        assert hlayout.stretch(0) > 2
+        assert hlayout.stretch(2) < 2
 
     def test_resize_handle_drag_at_minimum_succeeds(self, sheet, qtbot):
         """Confirm that dragging works even when weights are at 1:1."""
@@ -612,13 +612,51 @@ class TestResizeHandle:
 
         center = handle.rect().center()
         qtbot.mousePress(handle, Qt.MouseButton.LeftButton, pos=center)
-        # Move right by 30 pixels (threshold will be 10px)
-        qtbot.mouseMove(handle, center + QPoint(30, 0))
+        # Move right by 200 pixels
+        qtbot.mouseMove(handle, center + QPoint(200, 0))
         qtbot.mouseRelease(
-            handle, Qt.MouseButton.LeftButton, pos=center + QPoint(30, 0)
+            handle, Qt.MouseButton.LeftButton, pos=center + QPoint(200, 0)
         )
 
         # We expect the left widget to increase its weight,
         # and the right widget to stay at 1 (minimum).
-        assert hlayout.stretch(0) == 2
+        assert hlayout.stretch(0) > 1
         assert hlayout.stretch(2) == 1
+
+    def test_resize_handle_signal_timing(self, sheet, qtbot):
+        """Verify that attributes_changed is only emitted after drag release."""
+        attrs = {"A": 1, "B": 1}
+        layout = [["A", "B"]]
+        sheet.load_attributes(attrs, layout)
+        sheet.show()
+        qtbot.waitForWindowShown(sheet)
+
+        row_item = sheet._grid_layout.itemAt(0)
+        hlayout = row_item.layout()
+        handle = hlayout.itemAt(1).widget()
+
+        # Connect a spy to count signals
+        signal_count = 0
+
+        def count():
+            nonlocal signal_count
+            signal_count += 1
+
+        sheet.attributes_changed.connect(count)
+
+        center = handle.rect().center()
+        qtbot.mousePress(handle, Qt.MouseButton.LeftButton, pos=center)
+        # Move past threshold (currently 10px)
+        qtbot.mouseMove(handle, center + QPoint(15, 0))
+        qtbot.mouseMove(handle, center + QPoint(30, 0))
+
+        # Currently, it results in multiple signals.
+        # We WANT it to be 0 here.
+        assert signal_count == 0, f"Expected 0 signals during drag, got {signal_count}"
+
+        qtbot.mouseRelease(
+            handle, Qt.MouseButton.LeftButton, pos=center + QPoint(30, 0)
+        )
+
+        # Should be exactly 1 after release
+        assert signal_count == 1
