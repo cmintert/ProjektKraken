@@ -308,8 +308,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             app_bg = theme_data.get("app_bg", "#2B2B2B")
             text_main = theme_data.get("text_main", "#E0E0E0")
 
-            # Determine if dark mode (simple heuristic or based on theme name logic)
-            # Generally, if app_bg is dark, we want dark mode.
+            # Determine if dark mode: dark backgrounds have lightness < 128.
             bg_color = QColor(app_bg)
             is_dark = bg_color.lightness() < 128
 
@@ -323,7 +322,17 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             logger.warning(f"Failed to update window style: {e}")
 
     def _create_status_label(self, text: str, color: str) -> QLabel:
-        """Creates a styled status bar label."""
+        """Create a styled, permanent label and add it to the status bar.
+
+        Args:
+            text: Initial display text for the label.
+            color: CSS color string (e.g. ``"#3498db"``) applied to the
+                label's foreground via an inline stylesheet.
+
+        Returns:
+            The configured ``QLabel`` that has been added to the status bar.
+
+        """
         lbl = QLabel(text)
         lbl.setMinimumWidth(250)
         lbl.setStyleSheet(f"color: {color}; font-weight: bold;")
