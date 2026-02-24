@@ -6,8 +6,10 @@ and supports serialization of the spatial layout to a 2D list for persistence.
 """
 
 import logging
+import math
 from typing import Any, Dict, List, Optional, Union
 
+import shiboken6
 from PySide6.QtCore import QMimeData, QPoint, QSize, Qt, Signal
 from PySide6.QtGui import (
     QAction,
@@ -465,8 +467,6 @@ class _ResizeHandle(QWidget):
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Begin resize tracking."""
-        import shiboken6
-
         if not shiboken6.isValid(self._hlayout):
             return
 
@@ -508,8 +508,6 @@ class _ResizeHandle(QWidget):
         """Adjust weights proportionally during drag."""
         if not self._dragging:
             return
-
-        import shiboken6
 
         if not shiboken6.isValid(self._hlayout):
             self._dragging = False
@@ -569,8 +567,6 @@ class _ResizeHandle(QWidget):
         if event.button() == Qt.MouseButton.LeftButton and self._dragging:
             self._dragging = False
 
-            import shiboken6
-
             if not shiboken6.isValid(self._hlayout):
                 return
 
@@ -581,8 +577,6 @@ class _ResizeHandle(QWidget):
                     or self._right_idx >= self._hlayout.count()
                 ):
                     return
-
-                import math
 
                 left_stretch = self._hlayout.stretch(self._left_idx)
                 right_stretch = self._hlayout.stretch(self._right_idx)
@@ -605,18 +599,19 @@ class _ResizeHandle(QWidget):
                 left_item = self._hlayout.itemAt(self._left_idx)
                 right_item = self._hlayout.itemAt(self._right_idx)
 
+                # Use final_left/final_right (normalized), not pre-normalization values
                 if (
                     left_item
                     and left_item.widget()
                     and hasattr(left_item.widget(), "weight")
                 ):
-                    left_item.widget().weight = left_stretch
+                    left_item.widget().weight = final_left
                 if (
                     right_item
                     and right_item.widget()
                     and hasattr(right_item.widget(), "weight")
                 ):
-                    right_item.widget().weight = right_stretch
+                    right_item.widget().weight = final_right
             except RuntimeError:
                 return
 
@@ -702,8 +697,8 @@ class SheetBuilderWidget(QWidget):
         # Rubber-band for drag feedback
         self._rubber_band: Optional[QRubberBand] = None
 
-        # Block signals flag
-        self._block_signals = False
+        # Reentrance-safe signal suppression counter (> 0 means suppressed)
+        self._block_depth: int = 0
 
         # Apply initial theme and connect to changes
         self._theme_mgr = ThemeManager()
@@ -780,61 +775,68 @@ class SheetBuilderWidget(QWidget):
         logger.debug(
             f"Loading {len(attributes)} attributes with layout={layout is not None}"
         )
-        self._block_signals = True
-        self._clear()
+        self._block_depth += 1
+        try:
+            self._clear()
 
-        if layout is not None:
-            # Build rows according to layout, skipping keys not in attributes
-            placed_keys: set[str] = set()
-            for row_items in layout:
-                row_configs = []
-                for item in row_items:
-                    if isinstance(item, str):
-                        if item in attributes:
-                            row_configs.append(
-                                {"key": item, "value": attributes[item], "weight": 1}
-                            )
-                            placed_keys.add(item)
-                        else:
-                            logger.debug(
-                                f"Key '{item}' in layout but not in attributes."
-                            )
-                    elif isinstance(item, dict):
-                        item_type = item.get("type", "")
-                        is_spacer = item_type == "spacer" or item.get("spacer") is True
-                        weight = int(item.get("weight", 1))
-                        if item_type == "text":
-                            row_configs.append(
-                                {"type": "text", "text": item.get("text", "")}
-                            )
-                        elif item_type == "divider":
-                            row_configs.append({"type": "divider"})
-                        elif is_spacer:
-                            row_configs.append({"spacer": True, "weight": weight})
-                        else:
-                            key = item.get("key")
-                            if key and key in attributes:
+            if layout is not None:
+                # Build rows according to layout, skipping keys not in attributes
+                placed_keys: set[str] = set()
+                for row_items in layout:
+                    row_configs = []
+                    for item in row_items:
+                        if isinstance(item, str):
+                            if item in attributes:
                                 row_configs.append(
                                     {
-                                        "key": key,
-                                        "value": attributes[key],
-                                        "weight": weight,
+                                        "key": item,
+                                        "value": attributes[item],
+                                        "weight": 1,
                                     }
                                 )
-                                placed_keys.add(key)
-                if row_configs:
-                    self._add_row(row_configs)
+                                placed_keys.add(item)
+                            else:
+                                logger.debug(
+                                    f"Key '{item}' in layout but not in attributes."
+                                )
+                        elif isinstance(item, dict):
+                            item_type = item.get("type", "")
+                            is_spacer = (
+                                item_type == "spacer" or item.get("spacer") is True
+                            )
+                            weight = int(item.get("weight", 1))
+                            if item_type == "text":
+                                row_configs.append(
+                                    {"type": "text", "text": item.get("text", "")}
+                                )
+                            elif item_type == "divider":
+                                row_configs.append({"type": "divider"})
+                            elif is_spacer:
+                                row_configs.append({"spacer": True, "weight": weight})
+                            else:
+                                key = item.get("key")
+                                if key and key in attributes:
+                                    row_configs.append(
+                                        {
+                                            "key": key,
+                                            "value": attributes[key],
+                                            "weight": weight,
+                                        }
+                                    )
+                                    placed_keys.add(key)
+                    if row_configs:
+                        self._add_row(row_configs)
 
-            # Append any remaining attributes not referenced by the layout
-            for key, value in attributes.items():
-                if key not in placed_keys:
+                # Append any remaining attributes not referenced by the layout
+                for key, value in attributes.items():
+                    if key not in placed_keys:
+                        self._add_row([{"key": key, "value": value, "weight": 1}])
+            else:
+                # No layout – one attribute per row
+                for key, value in attributes.items():
                     self._add_row([{"key": key, "value": value, "weight": 1}])
-        else:
-            # No layout – one attribute per row
-            for key, value in attributes.items():
-                self._add_row([{"key": key, "value": value, "weight": 1}])
-
-        self._block_signals = False
+        finally:
+            self._block_depth -= 1
         logger.debug("Attributes loaded successfully.")
 
     def get_attributes(self) -> Dict[str, Any]:
@@ -865,7 +867,9 @@ class SheetBuilderWidget(QWidget):
                     continue
                 widget = item.widget()
                 if isinstance(widget, AttributePairWidget):
-                    stretch = hlayout.stretch(col_idx) or widget.weight
+                    # Explicit > 0 check: stretch() returns 0 for unset, not None
+                    raw = hlayout.stretch(col_idx)
+                    stretch = raw if raw > 0 else widget.weight
                     if stretch == 1:
                         row_items.append(widget.key)
                     else:
@@ -875,10 +879,9 @@ class SheetBuilderWidget(QWidget):
                 elif isinstance(widget, DividerWidget):
                     row_items.append({"type": "divider"})
                 elif isinstance(widget, SpacerWidget):
-                    stretch = hlayout.stretch(col_idx) or widget.weight
-                    row_items.append(
-                        {"type": "spacer", "weight": stretch if stretch > 0 else 1}
-                    )
+                    raw = hlayout.stretch(col_idx)
+                    stretch = raw if raw > 0 else widget.weight
+                    row_items.append({"type": "spacer", "weight": stretch})
                 elif isinstance(widget, _ResizeHandle):
                     continue  # Skip resize handles in serialization
             if row_items:
@@ -895,7 +898,7 @@ class SheetBuilderWidget(QWidget):
         if key in self._pairs:
             return
         self._add_row([{"key": key, "value": value, "weight": 1}])
-        if not self._block_signals:
+        if self._block_depth == 0:
             self.attributes_changed.emit()
 
     def update_attribute_value(self, key: str, value: Any) -> None:
@@ -906,13 +909,13 @@ class SheetBuilderWidget(QWidget):
             value (Any): The new value.
         """
         if key in self._pairs:
-            self._block_signals = True
+            self._block_depth += 1
             try:
                 pair = self._pairs[key]
                 str_val = str(value) if value is not None else ""
                 pair.set_value(str_val)
             finally:
-                self._block_signals = False
+                self._block_depth -= 1
 
     def remove_attribute(self, key: str) -> None:
         """Remove an attribute from the sheet.
@@ -935,12 +938,17 @@ class SheetBuilderWidget(QWidget):
                     hlayout.removeWidget(pair)
                     pair.setParent(None)
                     pair.deleteLater()
+                    # Remove stale adjacent _ResizeHandles whose indices are now invalid
+                    self._strip_resize_handles(hlayout)
                     # If the row is now empty, remove it
                     if hlayout.count() == 0:
                         self._grid_layout.removeItem(row_item)
                         hlayout.setParent(None)
                         hlayout.deleteLater()
-                    if not self._block_signals:
+                    else:
+                        # Re-inject handles at correct positions
+                        self._rebuild_resize_handles(hlayout)
+                    if self._block_depth == 0:
                         self.attributes_changed.emit()
                     return
 
@@ -1134,17 +1142,22 @@ class SheetBuilderWidget(QWidget):
     ) -> None:
         """Insert resize handles between adjacent items in a row layout.
 
+        Each inserted handle shifts all following item indices by +1, so we
+        accumulate an ``offset`` as we iterate left-to-right.
+
         Args:
             hlayout: The horizontal layout to add handles to.
             widget_indices: Original indices of real items (before handles inserted).
         """
-        # We insert handles from right to left to avoid index shifting
-        pairs_for_handles = []
-        for i in range(len(widget_indices) - 1):
-            left = widget_indices[i]
-            right = widget_indices[i + 1]
-            pairs_for_handles.append((left, right))
+        if len(widget_indices) < 2:
+            return
 
+        pairs_for_handles = [
+            (widget_indices[i], widget_indices[i + 1])
+            for i in range(len(widget_indices) - 1)
+        ]
+
+        # offset accumulates because each inserted handle shifts subsequent indices by 1
         offset = 0
         for left_orig, right_orig in pairs_for_handles:
             left_actual = left_orig + offset
@@ -1180,6 +1193,23 @@ class SheetBuilderWidget(QWidget):
                         hlayout.deleteLater()
                     return
 
+    def _row_at_pos(self, pos: QPoint) -> Optional[tuple]:
+        """Return (row_idx, hlayout) for the row whose geometry contains *pos*.
+
+        Args:
+            pos: Position in container coordinates.
+
+        Returns:
+            ``(row_idx, hlayout)`` tuple, or ``None`` if no row matched.
+        """
+        for row_idx in range(self._grid_layout.count()):
+            row_item = self._grid_layout.itemAt(row_idx)
+            if row_item is None or row_item.layout() is None:
+                continue
+            if row_item.layout().geometry().contains(pos):
+                return row_idx, row_item.layout()
+        return None
+
     def _calc_drop_position(self, pos: QPoint) -> tuple:
         """Determine the target row index and column index for a drop.
 
@@ -1190,32 +1220,20 @@ class SheetBuilderWidget(QWidget):
             Tuple of (row_index, col_index).
         """
         container_pos = self._container.mapFrom(self, pos)
-        target_row = self._grid_layout.count()  # default: new row at end
-        target_col = 0
+        result = self._row_at_pos(container_pos)
+        if result is None:
+            return self._grid_layout.count(), 0
 
-        for row_idx in range(self._grid_layout.count()):
-            row_item = self._grid_layout.itemAt(row_idx)
-            if row_item is None or row_item.layout() is None:
-                continue
-            geom = row_item.layout().geometry()
-            if geom.contains(container_pos):
-                target_row = row_idx
-                # Determine column insertion point
-                hlayout = row_item.layout()
-                for col_idx in range(hlayout.count()):
-                    if widget_item := hlayout.itemAt(col_idx):
-                        w_geom = widget_item.geometry()
-                        if container_pos.x() < w_geom.center().x():
-                            target_col = col_idx
-                            return target_row, target_col
-                target_col = hlayout.count()
-                break
-
-        return target_row, target_col
+        target_row, hlayout = result
+        for col_idx in range(hlayout.count()):
+            if widget_item := hlayout.itemAt(col_idx):
+                if container_pos.x() < widget_item.geometry().center().x():
+                    return target_row, col_idx
+        return target_row, hlayout.count()
 
     def _on_pair_changed(self) -> None:
         """Forward pair value changes as attributes_changed."""
-        if not self._block_signals:
+        if self._block_depth == 0:
             self.attributes_changed.emit()
 
     def _on_builder_destroyed(self) -> None:
@@ -1244,27 +1262,30 @@ class SheetBuilderWidget(QWidget):
         if self._grid_layout.count() > 0:
             last_item = self._grid_layout.itemAt(self._grid_layout.count() - 1)
             if last_item and last_item.layout():
+                hlayout = last_item.layout()
                 sw = SpacerWidget()
                 sw.weight = 1
-                last_item.layout().addWidget(sw, stretch=1)
-                if not self._block_signals:
+                hlayout.addWidget(sw, stretch=1)
+                # Re-inject resize handles so the new spacer is resizable
+                self._rebuild_resize_handles(hlayout)
+                if self._block_depth == 0:
                     self.attributes_changed.emit()
                 return
         # No rows yet – create a row containing only a spacer
         self._add_row([{"spacer": True, "weight": 1}])
-        if not self._block_signals:
+        if self._block_depth == 0:
             self.attributes_changed.emit()
 
     def _on_toolbar_add_divider(self) -> None:
         """Add a full-width divider row."""
         self._add_row([{"type": "divider"}])
-        if not self._block_signals:
+        if self._block_depth == 0:
             self.attributes_changed.emit()
 
     def _on_toolbar_add_text(self) -> None:
         """Add a full-width text block row."""
         self._add_row([{"type": "text", "text": ""}])
-        if not self._block_signals:
+        if self._block_depth == 0:
             self.attributes_changed.emit()
 
     # ------------------------------------------------------------------
@@ -1334,10 +1355,10 @@ class SheetBuilderWidget(QWidget):
 
         menu.addSeparator()
 
-        act = menu.addAction("⬜ Add Spacer to Row")
+        act = menu.addAction("\u2b1c Add Spacer to Row")
         act.triggered.connect(lambda: self._ctx_add_spacer_to_row(row_idx))
 
-        act = menu.addAction("✕ Remove Spacers from Row")
+        act = menu.addAction("\u2715 Remove Spacers from Row")
         act.triggered.connect(lambda: self._ctx_remove_spacers_from_row(row_idx))
 
         menu.addSeparator()
@@ -1386,17 +1407,20 @@ class SheetBuilderWidget(QWidget):
             hlayout.addWidget(pair, stretch=1)
             self._pairs[key] = pair
             self._grid_layout.insertLayout(at_index, hlayout)
-            if not self._block_signals:
+            if self._block_depth == 0:
                 self.attributes_changed.emit()
 
     def _ctx_add_spacer_to_row(self, row_idx: int) -> None:
         """Append a spacer to the given row."""
         row_item = self._grid_layout.itemAt(row_idx)
         if row_item and row_item.layout():
+            hlayout = row_item.layout()
             sw = SpacerWidget()
             sw.weight = 1
-            row_item.layout().addWidget(sw, stretch=1)
-            if not self._block_signals:
+            hlayout.addWidget(sw, stretch=1)
+            # Re-inject resize handles so the new spacer is resizable
+            self._rebuild_resize_handles(hlayout)
+            if self._block_depth == 0:
                 self.attributes_changed.emit()
 
     def _ctx_remove_spacers_from_row(self, row_idx: int) -> None:
@@ -1413,7 +1437,10 @@ class SheetBuilderWidget(QWidget):
                 hlayout.removeWidget(widget)
                 widget.setParent(None)
                 widget.deleteLater()
-        if not self._block_signals:
+        # Clean up any now-stale resize handles and rebuild
+        self._strip_resize_handles(hlayout)
+        self._rebuild_resize_handles(hlayout)
+        if self._block_depth == 0:
             self.attributes_changed.emit()
 
     def _ctx_delete_row(self, row_idx: int) -> None:
@@ -1432,7 +1459,7 @@ class SheetBuilderWidget(QWidget):
                 widget.setParent(None)
                 widget.deleteLater()
         self._grid_layout.removeItem(row_item)
-        if not self._block_signals:
+        if self._block_depth == 0:
             self.attributes_changed.emit()
 
     def _ctx_set_weight(
@@ -1450,15 +1477,55 @@ class SheetBuilderWidget(QWidget):
             widget.weight = new_weight
             if hlayout:
                 hlayout.setStretch(col_idx, new_weight)
-            if not self._block_signals:
+            if self._block_depth == 0:
                 self.attributes_changed.emit()
 
     def _ctx_toggle_type(self, widget: AttributePairWidget) -> None:
-        """Cycle the attribute type: String → Number → Boolean → String."""
+        """Cycle the attribute type: String → Number → Boolean → String.
+
+        The type combo is shown when the type is non-default (Number / Boolean)
+        and hidden again when cycling back to String.
+        """
         cycle = {"String": "Number", "Number": "Boolean", "Boolean": "String"}
         new_type = cycle.get(widget.get_type(), "String")
         widget.set_type(new_type)
-        # Show the combo briefly on toggle (make it visible)
-        widget.type_combo.setVisible(True)
-        if not self._block_signals:
+        # Hide the combo when back to the default String type
+        widget.type_combo.setVisible(new_type != "String")
+        if self._block_depth == 0:
             self.attributes_changed.emit()
+
+    # ------------------------------------------------------------------
+    # Internal resize-handle helpers
+    # ------------------------------------------------------------------
+
+    def _strip_resize_handles(self, hlayout: QHBoxLayout) -> None:
+        """Remove all _ResizeHandle widgets from *hlayout* in-place.
+
+        Args:
+            hlayout: The row layout to strip handles from.
+        """
+        for i in range(hlayout.count() - 1, -1, -1):
+            item = hlayout.itemAt(i)
+            if item and isinstance(item.widget(), _ResizeHandle):
+                w = item.widget()
+                hlayout.removeWidget(w)
+                w.setParent(None)
+                w.deleteLater()
+
+    def _rebuild_resize_handles(self, hlayout: QHBoxLayout) -> None:
+        """Strip all existing handles from *hlayout* then re-insert them correctly.
+
+        Use this after any in-place structural change to a row (append spacer,
+        remove attribute, etc.) to keep handles in sync with real item indices.
+
+        Args:
+            hlayout: The row layout to rebuild handles for.
+        """
+        self._strip_resize_handles(hlayout)
+        # Collect indices of non-handle items
+        widget_indices: List[int] = [
+            i
+            for i in range(hlayout.count())
+            if not isinstance(hlayout.itemAt(i).widget(), _ResizeHandle)
+        ]
+        self._insert_resize_handles(hlayout, widget_indices)

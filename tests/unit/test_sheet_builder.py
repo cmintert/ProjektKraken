@@ -603,8 +603,8 @@ class TestResizeHandle:
         attrs = {"A": 1, "B": 1}
         layout = [["A", "B"]]  # defaults to 1:1
         sheet.load_attributes(attrs, layout)
-        sheet.show()
-        qtbot.waitForWindowShown(sheet)
+        with qtbot.waitExposed(sheet):
+            sheet.show()
 
         row_item = sheet._grid_layout.itemAt(0)
         hlayout = row_item.layout()
@@ -631,8 +631,8 @@ class TestResizeHandle:
         attrs = {"A": 1, "B": 1}
         layout = [["A", "B"]]
         sheet.load_attributes(attrs, layout)
-        sheet.show()
-        qtbot.waitForWindowShown(sheet)
+        with qtbot.waitExposed(sheet):
+            sheet.show()
 
         row_item = sheet._grid_layout.itemAt(0)
         hlayout = row_item.layout()
@@ -666,11 +666,11 @@ class TestResizeHandle:
 
     def test_resize_handle_disconnects_on_destroy(self, qtbot):
         """Test that destroying a handle disconnects it from ThemeManager."""
+        import pytest
+        from PySide6.QtWidgets import QHBoxLayout, QWidget
+
         from src.core.theme_manager import ThemeManager
         from src.gui.widgets.sheet_builder import _ResizeHandle
-        from PySide6.QtWidgets import QHBoxLayout
-        from PySide6.QtWidgets import QWidget
-        import pytest
 
         tm = ThemeManager()
 
@@ -697,8 +697,9 @@ class TestSheetBuilderMemoryLeaks:
     def test_clear_disconnects_all_widgets(self, sheet, qtbot):
         """Test that _clear properly deletes widgets and disconnects
         them from ThemeManager."""
-        from src.core.theme_manager import ThemeManager
         import pytest
+
+        from src.core.theme_manager import ThemeManager
 
         tm = ThemeManager()
 
@@ -720,3 +721,125 @@ class TestSheetBuilderMemoryLeaks:
             tm.theme_changed.emit(tm.get_theme())
         except RuntimeError as e:
             pytest.fail(f"Signal emission caused RuntimeError: {e}")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Bug-fix regression tests
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestBugFixes:
+    """Regression tests for the code-review bug fixes."""
+
+    # ── Fix #1: stale weight after resize release ─────────────────────────
+
+    def test_weight_written_correctly_after_release(self, sheet, qtbot):
+        """widget.weight must reflect final_left/final_right after release, not
+        the pre-normalisation scratch values."""
+        attrs = {"A": 1, "B": 1}
+        layout = [[{"key": "A", "weight": 2}, {"key": "B", "weight": 2}]]
+        sheet.load_attributes(attrs, layout)
+        with qtbot.waitExposed(sheet):
+            sheet.show()
+
+        row_item = sheet._grid_layout.itemAt(0)
+        hlayout = row_item.layout()
+        handle = hlayout.itemAt(1).widget()
+
+        center = handle.rect().center()
+        qtbot.mousePress(handle, Qt.MouseButton.LeftButton, pos=center)
+        qtbot.mouseMove(handle, center + QPoint(200, 0))
+        qtbot.mouseRelease(
+            handle, Qt.MouseButton.LeftButton, pos=center + QPoint(200, 0)
+        )
+
+        left_widget = hlayout.itemAt(0).widget()
+        right_widget = hlayout.itemAt(2).widget()
+
+        # weight on the widget must equal what the layout reports
+        assert left_widget.weight == hlayout.stretch(0)
+        assert right_widget.weight == hlayout.stretch(2)
+
+    # ── Fix #2: toolbar spacer injects resize handle ──────────────────────
+
+    def test_toolbar_spacer_adds_resize_handle(self, sheet, qtbot):
+        """After toolbar adds a spacer to an existing row, a resize handle must
+        be present between the existing widget and the new spacer."""
+        from src.gui.widgets.sheet_builder import SpacerWidget, _ResizeHandle
+
+        sheet.load_attributes({"A": 1})
+        sheet._on_toolbar_add_spacer()
+
+        hlayout = sheet._grid_layout.itemAt(0).layout()
+        widget_types = [
+            type(hlayout.itemAt(i).widget()) for i in range(hlayout.count())
+        ]
+        assert (
+            _ResizeHandle in widget_types
+        ), "No _ResizeHandle found after toolbar spacer add"
+        assert SpacerWidget in widget_types
+
+    # ── Fix #3: ctx-menu spacer injects resize handle ─────────────────────
+
+    def test_ctx_spacer_adds_resize_handle(self, sheet, qtbot):
+        """After the context-menu adds a spacer to a row, a resize handle must
+        be present between the existing widget and the new spacer."""
+        from src.gui.widgets.sheet_builder import SpacerWidget, _ResizeHandle
+
+        sheet.load_attributes({"A": 1})
+        sheet._ctx_add_spacer_to_row(0)
+
+        hlayout = sheet._grid_layout.itemAt(0).layout()
+        widget_types = [
+            type(hlayout.itemAt(i).widget()) for i in range(hlayout.count())
+        ]
+        assert (
+            _ResizeHandle in widget_types
+        ), "No _ResizeHandle found after ctx-menu spacer add"
+        assert SpacerWidget in widget_types
+
+    # ── Fix #8: stale handles cleaned up on remove_attribute ─────────────
+
+    def test_remove_attribute_clears_stale_handles(self, sheet, qtbot):
+        """Removing one of two attributes in a row must remove the _ResizeHandle
+        that sat between them — no stale handles should remain."""
+        from src.gui.widgets.sheet_builder import _ResizeHandle
+
+        sheet.load_attributes({"A": 1, "B": 1}, [["A", "B"]])
+        sheet.remove_attribute("A")
+
+        # Row with "B" should still exist
+        assert "B" in sheet.get_attributes()
+
+        # If a row remains, verify it contains no _ResizeHandle
+        if sheet._grid_layout.count() > 0:
+            hlayout = sheet._grid_layout.itemAt(0).layout()
+            for i in range(hlayout.count()):
+                assert not isinstance(
+                    hlayout.itemAt(i).widget(), _ResizeHandle
+                ), "Stale _ResizeHandle found after remove_attribute"
+
+    # ── Fix #10: type_combo toggles back to hidden ────────────────────────
+
+    def test_type_combo_toggles_back_to_hidden(self, sheet, qtbot):
+        """Cycling String->Number->Boolean->String must hide the combo on return.
+
+        Uses isHidden() (explicit visibility flag) rather than isVisible() so
+        the assertion works without the parent widget being shown.
+        """
+        sheet.load_attributes({"X": "hello"})
+        pair = sheet._pairs["X"]
+
+        # Initially explicitly hidden
+        assert pair.type_combo.isHidden()
+
+        sheet._ctx_toggle_type(pair)  # String -> Number
+        assert not pair.type_combo.isHidden()
+
+        sheet._ctx_toggle_type(pair)  # Number -> Boolean
+        assert not pair.type_combo.isHidden()
+
+        sheet._ctx_toggle_type(pair)  # Boolean -> String (back to default)
+        assert (
+            pair.type_combo.isHidden()
+        ), "type_combo should be hidden when type returns to String"

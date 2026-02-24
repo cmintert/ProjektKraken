@@ -41,8 +41,8 @@ def setup_gui(window, qtbot):
     )
     unified_list.set_data(events=[], entities=[dummy_entity])
 
-    window.show()
-    qtbot.waitForWindowShown(window)
+    with qtbot.waitExposed(window):
+        window.show()
 
     return unified_list, text_edit, line_edit
 
