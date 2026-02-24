@@ -356,6 +356,50 @@ class DividerWidget(QFrame):
             pass
 
 
+class SpacerWidget(QFrame):
+    """A visual spacer widget to represent empty flexible space."""
+
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
+        """Initialize the SpacerWidget.
+
+        Args:
+            parent: Optional parent widget.
+        """
+        super().__init__(parent)
+        self.weight = 1
+        self.setObjectName("SpacerWidget")
+        self.setFrameShape(QFrame.Shape.StyledPanel)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        self.setMinimumWidth(20)
+
+        self._theme_mgr = ThemeManager()
+        self._apply_theme()
+        self._theme_mgr.theme_changed.connect(self._apply_theme)
+        self.destroyed.connect(self._on_spacer_destroyed)
+
+    def _apply_theme(self) -> None:
+        """Apply current theme colors."""
+        theme = self._theme_mgr.get_theme()
+        border = theme.get("border", "#333333")
+        # Faint dashed border to give it a placeholder look
+        self.setStyleSheet(
+            f"""
+            SpacerWidget {{
+                background-color: transparent;
+                border: 1px dashed {border};
+                border-radius: 4px;
+            }}
+        """
+        )
+
+    def _on_spacer_destroyed(self) -> None:
+        """Disconnect theme signal when destroyed."""
+        try:
+            self._theme_mgr.theme_changed.disconnect(self._apply_theme)
+        except (RuntimeError, TypeError):
+            pass
+
+
 class _ResizeHandle(QWidget):
     """Invisible drag handle between adjacent items in a row.
 
@@ -830,13 +874,13 @@ class SheetBuilderWidget(QWidget):
                     row_items.append({"type": "text", "text": widget.get_text()})
                 elif isinstance(widget, DividerWidget):
                     row_items.append({"type": "divider"})
-                elif isinstance(widget, _ResizeHandle):
-                    continue  # Skip resize handles in serialization
-                elif item.spacerItem():
-                    stretch = hlayout.stretch(col_idx)
+                elif isinstance(widget, SpacerWidget):
+                    stretch = hlayout.stretch(col_idx) or widget.weight
                     row_items.append(
                         {"type": "spacer", "weight": stretch if stretch > 0 else 1}
                     )
+                elif isinstance(widget, _ResizeHandle):
+                    continue  # Skip resize handles in serialization
             if row_items:
                 rows.append(row_items)
         return rows
@@ -1044,8 +1088,10 @@ class SheetBuilderWidget(QWidget):
                 continue
 
             if config.get("spacer"):
+                sw = SpacerWidget()
+                sw.weight = weight
                 idx = hlayout.count()
-                hlayout.addStretch(weight)
+                hlayout.addWidget(sw, stretch=weight)
                 widget_indices.append(idx)
                 continue
 
@@ -1198,7 +1244,9 @@ class SheetBuilderWidget(QWidget):
         if self._grid_layout.count() > 0:
             last_item = self._grid_layout.itemAt(self._grid_layout.count() - 1)
             if last_item and last_item.layout():
-                last_item.layout().addStretch(1)
+                sw = SpacerWidget()
+                sw.weight = 1
+                last_item.layout().addWidget(sw, stretch=1)
                 if not self._block_signals:
                     self.attributes_changed.emit()
                 return
@@ -1345,7 +1393,9 @@ class SheetBuilderWidget(QWidget):
         """Append a spacer to the given row."""
         row_item = self._grid_layout.itemAt(row_idx)
         if row_item and row_item.layout():
-            row_item.layout().addStretch(1)
+            sw = SpacerWidget()
+            sw.weight = 1
+            row_item.layout().addWidget(sw, stretch=1)
             if not self._block_signals:
                 self.attributes_changed.emit()
 
@@ -1358,8 +1408,11 @@ class SheetBuilderWidget(QWidget):
         # Iterate backwards to safely remove
         for i in range(hlayout.count() - 1, -1, -1):
             item = hlayout.itemAt(i)
-            if item and item.spacerItem():
-                hlayout.removeItem(item)
+            if item and item.widget() and isinstance(item.widget(), SpacerWidget):
+                widget = item.widget()
+                hlayout.removeWidget(widget)
+                widget.setParent(None)
+                widget.deleteLater()
         if not self._block_signals:
             self.attributes_changed.emit()
 

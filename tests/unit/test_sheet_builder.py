@@ -189,9 +189,11 @@ class TestSheetBuilderWidget:
         # Row 3: Spacer, [resize handle], Intelligence
         # Resize handles are inserted between adjacent items
         row3 = grid.itemAt(2).layout()
-        assert row3.itemAt(0).spacerItem() is not None
+        assert row3.itemAt(0).widget() is not None
+        assert row3.itemAt(0).widget().objectName() == "SpacerWidget"
         assert row3.stretch(0) == 1
-        # Find the Intelligence widget (may be at index 1 or 2 depending on resize handle)
+        # Find the Intelligence widget (may be at index 1 or 2
+        # depending on resize handle)
         found_intel = False
         for i in range(row3.count()):
             item = row3.itemAt(i)
@@ -552,7 +554,8 @@ class TestSheetBuilderTextDivider:
         saved = sheet.get_layout()
         assert saved[0] == [{"type": "text", "text": "Stats"}]
         assert saved[1] == [{"type": "divider"}]
-        # Row 3 should have STR and DEX (may have resize handles, but serialized without them)
+        # Row 3 should have STR and DEX
+        # (may have resize handles, but serialized without them)
         keys_in_row = [
             item if isinstance(item, str) else item.get("key", "") for item in saved[2]
         ]
@@ -692,7 +695,8 @@ class TestSheetBuilderMemoryLeaks:
     """Tests for memory leaks and signal cleanup in SheetBuilderWidget."""
 
     def test_clear_disconnects_all_widgets(self, sheet, qtbot):
-        """Test that _clear properly deletes widgets and disconnects them from ThemeManager."""
+        """Test that _clear properly deletes widgets and disconnects
+        them from ThemeManager."""
         from src.core.theme_manager import ThemeManager
         import pytest
 
