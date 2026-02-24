@@ -104,6 +104,19 @@ class TestAttributePairWidget:
         qtbot.addWidget(widget)
         assert widget.get_type() == "String"
 
+    def test_inline_layout_and_hidden_type(self, pair):
+        """Test that the widget uses horizontal layout and hides the type selector."""
+        # Check layout type
+        from PySide6.QtWidgets import QHBoxLayout
+
+        assert isinstance(pair.layout(), QHBoxLayout)
+
+        # Check type selector visibility
+        assert not pair.type_combo.isVisible()
+
+        # Check label has colon
+        assert ":" in pair.key_label.text()
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SheetBuilderWidget

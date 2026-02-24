@@ -9,7 +9,6 @@ import logging
 from typing import Any, Dict, List, Optional, Union
 
 from PySide6.QtCore import QMimeData, QPoint, Qt, Signal
-from src.core.theme_manager import ThemeManager
 from PySide6.QtGui import (
     QDrag,
     QDragEnterEvent,
@@ -29,6 +28,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from src.core.theme_manager import ThemeManager
 
 logger = logging.getLogger(__name__)
 
@@ -73,13 +74,15 @@ class AttributePairWidget(QFrame):
         self.setObjectName("AttributePairWidget")
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(6, 4, 6, 4)
-        layout.setSpacing(2)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(8, 4, 8, 4)
+        layout.setSpacing(8)
 
         # Bold key label
-        self.key_label = QLabel(f"<b>{key}</b>")
-        self.key_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.key_label = QLabel(f"<b>{key}:</b>")
+        self.key_label.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
         layout.addWidget(self.key_label)
 
         # Value line-edit
@@ -88,21 +91,29 @@ class AttributePairWidget(QFrame):
         self.value_edit.textChanged.connect(self._on_value_changed)
         layout.addWidget(self.value_edit)
 
-        # Type toggle (compact combo)
+        # Type toggle (compact combo) - Hidden by default
         self.type_combo = QComboBox()
         self.type_combo.addItems(["String", "Number", "Boolean"])
         self.type_combo.setCurrentText(value_type)
         self.type_combo.currentTextChanged.connect(self._on_value_changed)
         self.type_combo.setMaximumWidth(90)
+        self.type_combo.setVisible(False)
         layout.addWidget(self.type_combo)
 
+        # Ensure value edit expands
+        self.value_edit.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+        )
+
         # Apply initial theme and connect to changes
+        self._theme_mgr = ThemeManager()
         self._apply_theme()
-        ThemeManager().theme_changed.connect(self._apply_theme)
+        self._theme_mgr.theme_changed.connect(self._apply_theme)
+        self.destroyed.connect(self._on_destroyed)
 
     def _apply_theme(self) -> None:
         """Apply current theme colors to the widget."""
-        theme = ThemeManager().get_theme()
+        theme = self._theme_mgr.get_theme()
         surface_alt = theme.get("surface_alt", "#2A2A2A")
         border = theme.get("border", "#333333")
         text = theme.get("text", "#E0E0E0")
@@ -211,6 +222,13 @@ class AttributePairWidget(QFrame):
         """Emit value_changed signal."""
         self.value_changed.emit()
 
+    def _on_destroyed(self) -> None:
+        """Disconnect theme signal when destroyed."""
+        try:
+            self._theme_mgr.theme_changed.disconnect(self._apply_theme)
+        except (RuntimeError, TypeError):
+            pass
+
 
 class SheetBuilderWidget(QWidget):
     """Visual grid builder for entity/event "stat blocks".
@@ -262,12 +280,14 @@ class SheetBuilderWidget(QWidget):
         self._block_signals = False
 
         # Apply initial theme and connect to changes
+        self._theme_mgr = ThemeManager()
         self._apply_theme()
-        ThemeManager().theme_changed.connect(self._apply_theme)
+        self._theme_mgr.theme_changed.connect(self._apply_theme)
+        self.destroyed.connect(self._on_destroyed)
 
     def _apply_theme(self) -> None:
         """Apply current theme colors to the widget."""
-        theme = ThemeManager().get_theme()
+        theme = self._theme_mgr.get_theme()
         surface = theme.get("surface", "#1A1A1A")
 
         # Style the scroll area and container to match the app's surface
@@ -517,6 +537,12 @@ class SheetBuilderWidget(QWidget):
         hlayout.setContentsMargins(0, 0, 0, 0)
 
         for key, value in pairs:
+            if key in self._pairs:
+                logger.warning(
+                    f"Duplicate attribute key '{key}' ignored in sheet builder."
+                )
+                continue
+
             vtype = "String"
             if isinstance(value, bool):
                 vtype = "Boolean"
@@ -595,3 +621,10 @@ class SheetBuilderWidget(QWidget):
         """Forward pair value changes as attributes_changed."""
         if not self._block_signals:
             self.attributes_changed.emit()
+
+    def _on_destroyed(self) -> None:
+        """Disconnect theme signal when destroyed."""
+        try:
+            self._theme_mgr.theme_changed.disconnect(self._apply_theme)
+        except (RuntimeError, TypeError):
+            pass
