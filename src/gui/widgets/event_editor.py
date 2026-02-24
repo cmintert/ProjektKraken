@@ -925,8 +925,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         try:
             # Preserve scroll position and description cursor across reload
             scroll_pos = self.scroll_area.verticalScrollBar().value()
-            desc_cursor = self.desc_edit.editor.textCursor().position() if hasattr(self.desc_edit, 'editor') else 0
-            desc_had_focus = hasattr(self.desc_edit, 'editor') and self.desc_edit.editor.hasFocus()
+            desc_cursor, desc_had_focus = self._save_desc_cursor_state()
 
             # Block signals to prevent dirty trigger during load
             self.name_edit.blockSignals(True)
@@ -951,15 +950,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             self.set_dirty(False)
             self.setEnabled(True)
 
-            # Restore scroll position
+            # Restore scroll position and description cursor
             self.scroll_area.verticalScrollBar().setValue(scroll_pos)
-
-            # Restore description cursor if it had focus
-            if desc_had_focus and hasattr(self.desc_edit, 'editor'):
-                cursor = self.desc_edit.editor.textCursor()
-                cursor.setPosition(min(desc_cursor, len(self.desc_edit.editor.toPlainText())))
-                self.desc_edit.editor.setTextCursor(cursor)
-                self.desc_edit.editor.setFocus()
+            self._restore_desc_cursor_state(desc_cursor, desc_had_focus)
         finally:
             self._is_loading = False
 
