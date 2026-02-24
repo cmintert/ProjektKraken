@@ -1176,3 +1176,164 @@ class TestWeightPercentageOverlay:
         qtbot.mouseRelease(
             handle, Qt.MouseButton.LeftButton, pos=center + QPoint(200, 0)
         )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Focus Preservation During Reload
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class TestFocusPreservation:
+    """Tests for focus and scroll preservation during load_attributes reload."""
+
+    def test_load_preserves_focused_key(self, sheet, qtbot):
+        """After reload, if user was editing key 'B', focus should return to 'B'."""
+        from PySide6.QtWidgets import QApplication
+
+        attrs = {"A": "1", "B": "2", "C": "3"}
+        layout = [["A", "B", "C"]]
+        sheet.load_attributes(attrs, layout)
+        sheet.show()
+        sheet.activateWindow()
+        qtbot.waitExposed(sheet)
+
+        # Focus the value edit of key 'B'
+        pair_b = sheet._pairs["B"]
+        pair_b.value_edit.setFocus()
+        pair_b.value_edit.setCursorPosition(1)
+        QApplication.processEvents()
+
+        # Reload with same data (simulates autosave reload)
+        sheet.load_attributes(attrs, layout)
+        QApplication.processEvents()
+
+        # After reload, the new 'B' widget's value_edit should have focus
+        new_pair_b = sheet._pairs["B"]
+        assert new_pair_b.value_edit.hasFocus()
+
+    def test_load_preserves_cursor_position(self, sheet, qtbot):
+        """Cursor position within the value edit is preserved after reload."""
+        from PySide6.QtWidgets import QApplication
+
+        attrs = {"Name": "Hello World"}
+        sheet.load_attributes(attrs)
+        sheet.show()
+        sheet.activateWindow()
+        qtbot.waitExposed(sheet)
+
+        pair = sheet._pairs["Name"]
+        pair.value_edit.setFocus()
+        pair.value_edit.setCursorPosition(5)  # After "Hello"
+        QApplication.processEvents()
+
+        sheet.load_attributes(attrs)
+        QApplication.processEvents()
+
+        new_pair = sheet._pairs["Name"]
+        assert new_pair.value_edit.hasFocus()
+        assert new_pair.value_edit.cursorPosition() == 5
+
+    def test_load_preserves_scroll_position(self, sheet, qtbot):
+        """Scroll position of the sheet is preserved after reload."""
+        # Create many rows to enable scrolling
+        attrs = {f"Attr{i}": str(i) for i in range(20)}
+        sheet.load_attributes(attrs)
+        sheet.resize(300, 200)
+        sheet.show()
+        sheet.activateWindow()
+        qtbot.waitExposed(sheet)
+
+        # Scroll down
+        scrollbar = sheet._scroll.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum() // 2)
+        saved_scroll = scrollbar.value()
+
+        # Reload
+        sheet.load_attributes(attrs)
+
+        # Scroll position should be restored
+        assert sheet._scroll.verticalScrollBar().value() == saved_scroll
+
+    def test_load_handles_missing_key_gracefully(self, sheet, qtbot):
+        """If focused key no longer exists after reload, no crash occurs."""
+        from PySide6.QtWidgets import QApplication
+
+        attrs = {"A": "1", "B": "2"}
+        sheet.load_attributes(attrs)
+        sheet.show()
+        sheet.activateWindow()
+        qtbot.waitExposed(sheet)
+
+        pair_b = sheet._pairs["B"]
+        pair_b.value_edit.setFocus()
+        QApplication.processEvents()
+
+        # Reload without 'B'
+        sheet.load_attributes({"A": "1"})
+
+        # Should not crash; focus goes somewhere reasonable (or nowhere)
+        assert "B" not in sheet._pairs
+
+    def test_load_no_focus_when_sheet_unfocused(self, sheet, qtbot):
+        """If no widget in the sheet had focus, no focus is forced after reload."""
+        attrs = {"A": "1", "B": "2"}
+        sheet.load_attributes(attrs)
+        sheet.show()
+        sheet.activateWindow()
+        qtbot.waitExposed(sheet)
+
+        # Don't focus anything in the sheet
+        # Reload
+        sheet.load_attributes(attrs)
+
+        # No pair should have forced focus
+        for pair in sheet._pairs.values():
+            assert not pair.value_edit.hasFocus()
+
+    def test_load_preserves_text_block_focus(self, sheet, qtbot):
+        """Focus in a TextBlockWidget is preserved across reload."""
+        from PySide6.QtWidgets import QApplication
+
+        attrs = {"A": "1"}
+        layout = [["A"], [{"type": "text", "text": "some lore"}]]
+        sheet.load_attributes(attrs, layout)
+        sheet.show()
+        sheet.activateWindow()
+        qtbot.waitExposed(sheet)
+
+        # Find the text block and focus it
+        from src.gui.widgets.sheet_builder import TextBlockWidget
+
+        text_block = None
+        for row_idx in range(sheet._grid_layout.count()):
+            row_item = sheet._grid_layout.itemAt(row_idx)
+            if row_item and row_item.layout():
+                hlayout = row_item.layout()
+                for col_idx in range(hlayout.count()):
+                    item = hlayout.itemAt(col_idx)
+                    if item and isinstance(item.widget(), TextBlockWidget):
+                        text_block = item.widget()
+                        break
+        assert text_block is not None
+        text_block.text_edit.setFocus()
+        text_block.text_edit.setCursorPosition(4)
+        QApplication.processEvents()
+
+        # Reload
+        sheet.load_attributes(attrs, layout)
+        QApplication.processEvents()
+
+        # Find new text block and verify focus
+        new_text_block = None
+        for row_idx in range(sheet._grid_layout.count()):
+            row_item = sheet._grid_layout.itemAt(row_idx)
+            if row_item and row_item.layout():
+                hlayout = row_item.layout()
+                for col_idx in range(hlayout.count()):
+                    item = hlayout.itemAt(col_idx)
+                    if item and isinstance(item.widget(), TextBlockWidget):
+                        new_text_block = item.widget()
+                        break
+        assert new_text_block is not None
+        assert new_text_block.text_edit.hasFocus()
+        assert new_text_block.text_edit.cursorPosition() == 4

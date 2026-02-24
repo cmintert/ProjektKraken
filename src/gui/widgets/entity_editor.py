@@ -731,6 +731,11 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self._current_entity_id = entity.id
             self._current_created_at = entity.created_at
 
+            # Preserve scroll position and description cursor across reload
+            scroll_pos = self.scroll_area.verticalScrollBar().value()
+            desc_cursor = self.desc_edit.editor.textCursor().position() if hasattr(self.desc_edit, 'editor') else 0
+            desc_had_focus = hasattr(self.desc_edit, 'editor') and self.desc_edit.editor.hasFocus()
+
             # Block signals
             self._set_input_signals_blocked(True)
 
@@ -756,6 +761,16 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self.type_edit.blockSignals(False)
             self.desc_edit.blockSignals(False)
             self.set_dirty(False)
+
+            # Restore scroll position
+            self.scroll_area.verticalScrollBar().setValue(scroll_pos)
+
+            # Restore description cursor if it had focus
+            if desc_had_focus and hasattr(self.desc_edit, 'editor'):
+                cursor = self.desc_edit.editor.textCursor()
+                cursor.setPosition(min(desc_cursor, len(self.desc_edit.editor.toPlainText())))
+                self.desc_edit.editor.setTextCursor(cursor)
+                self.desc_edit.editor.setFocus()
         finally:
             self._is_loading = False
 

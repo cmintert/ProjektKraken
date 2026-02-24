@@ -7,6 +7,7 @@ and supports serialization of the spatial layout to a 2D list for persistence.
 
 import logging
 import math
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Union
 
 import shiboken6
@@ -41,6 +42,25 @@ logger = logging.getLogger(__name__)
 
 # Internal MIME type for drag-and-drop within the sheet builder
 _SHEET_DRAG_MIME = "application/x-kraken-sheet-key"
+
+
+@dataclass
+class _FocusState:
+    """Snapshot of focus/scroll state for preservation across reloads.
+
+    Attributes:
+        focused_key: The attribute key that had focus, or None.
+        focused_text_block_index: Index of the focused TextBlockWidget, or -1.
+        cursor_position: Cursor position within the focused line-edit.
+        scroll_value: Vertical scroll bar value.
+        had_focus: Whether any widget inside the sheet had focus.
+    """
+
+    focused_key: Optional[str] = None
+    focused_text_block_index: int = -1
+    cursor_position: int = 0
+    scroll_value: int = 0
+    had_focus: bool = False
 
 
 class AttributePairWidget(QFrame):
@@ -923,6 +943,9 @@ class SheetBuilderWidget(QWidget):
     ) -> None:
         """Populate the sheet from an attributes dict and optional layout.
 
+        Focus, cursor position, and scroll position are preserved across
+        reloads so that auto-save does not disrupt the user's editing flow.
+
         Args:
             attributes: Key-value attribute pairs (user-visible, no ``_`` prefix).
             layout: Optional 2D list describing the row arrangement. Items can be
@@ -935,6 +958,10 @@ class SheetBuilderWidget(QWidget):
         logger.debug(
             f"Loading {len(attributes)} attributes with layout={layout is not None}"
         )
+
+        # Save focus/scroll state before clearing
+        focus_state = self._save_focus_state()
+
         self._block_depth += 1
         try:
             self._clear()
@@ -997,6 +1024,9 @@ class SheetBuilderWidget(QWidget):
                     self._add_row([{"key": key, "value": value, "weight": 1}])
         finally:
             self._block_depth -= 1
+
+        # Restore focus/scroll state after rebuild
+        self._restore_focus_state(focus_state)
         logger.debug("Attributes loaded successfully.")
 
     def get_attributes(self) -> Dict[str, Any]:
@@ -1189,6 +1219,98 @@ class SheetBuilderWidget(QWidget):
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    def _save_focus_state(self) -> _FocusState:
+        """Capture the current focus, cursor, and scroll state.
+
+        Returns:
+            A ``_FocusState`` snapshot that can later be passed to
+            :meth:`_restore_focus_state`.
+        """
+        from PySide6.QtWidgets import QApplication
+
+        state = _FocusState()
+        state.scroll_value = self._scroll.verticalScrollBar().value()
+
+        focus_widget = QApplication.focusWidget()
+        if focus_widget is None:
+            return state
+
+        # Check if focus is inside one of our AttributePairWidgets
+        for key, pair in self._pairs.items():
+            if pair.value_edit is focus_widget:
+                state.had_focus = True
+                state.focused_key = key
+                state.cursor_position = pair.value_edit.cursorPosition()
+                return state
+
+        # Check if focus is inside a TextBlockWidget
+        text_block_idx = 0
+        for row_idx in range(self._grid_layout.count()):
+            row_item = self._grid_layout.itemAt(row_idx)
+            if row_item is None or row_item.layout() is None:
+                continue
+            hlayout = row_item.layout()
+            for col_idx in range(hlayout.count()):
+                item = hlayout.itemAt(col_idx)
+                if item is None:
+                    continue
+                widget = item.widget()
+                if isinstance(widget, TextBlockWidget):
+                    if widget.text_edit is focus_widget:
+                        state.had_focus = True
+                        state.focused_text_block_index = text_block_idx
+                        state.cursor_position = widget.text_edit.cursorPosition()
+                        return state
+                    text_block_idx += 1
+
+        return state
+
+    def _restore_focus_state(self, state: _FocusState) -> None:
+        """Restore focus, cursor position, and scroll position from a snapshot.
+
+        Args:
+            state: The ``_FocusState`` to restore.
+        """
+        # Restore scroll position
+        self._scroll.verticalScrollBar().setValue(state.scroll_value)
+
+        if not state.had_focus:
+            return
+
+        # Restore focus to an AttributePairWidget
+        if state.focused_key is not None and state.focused_key in self._pairs:
+            pair = self._pairs[state.focused_key]
+            pair.value_edit.setFocus()
+            cursor_pos = min(
+                state.cursor_position, len(pair.value_edit.text())
+            )
+            pair.value_edit.setCursorPosition(cursor_pos)
+            return
+
+        # Restore focus to a TextBlockWidget by index
+        if state.focused_text_block_index >= 0:
+            text_block_idx = 0
+            for row_idx in range(self._grid_layout.count()):
+                row_item = self._grid_layout.itemAt(row_idx)
+                if row_item is None or row_item.layout() is None:
+                    continue
+                hlayout = row_item.layout()
+                for col_idx in range(hlayout.count()):
+                    item = hlayout.itemAt(col_idx)
+                    if item is None:
+                        continue
+                    widget = item.widget()
+                    if isinstance(widget, TextBlockWidget):
+                        if text_block_idx == state.focused_text_block_index:
+                            widget.text_edit.setFocus()
+                            cursor_pos = min(
+                                state.cursor_position,
+                                len(widget.text_edit.text()),
+                            )
+                            widget.text_edit.setCursorPosition(cursor_pos)
+                            return
+                        text_block_idx += 1
 
     def _clear(self) -> None:
         """Remove all rows and pair widgets."""
