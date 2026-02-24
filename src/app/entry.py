@@ -46,6 +46,10 @@ logger = get_logger(__name__)
 
 def main() -> None:
     """Application entry point."""
+    import faulthandler
+
+    faulthandler.enable()
+
     # Defer MainWindow import to ensure AA_ShareOpenGLContexts is already set
     from src.app.main_window import MainWindow
 

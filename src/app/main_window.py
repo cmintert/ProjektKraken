@@ -400,9 +400,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             map_widget=self.map_widget,
             worker=self.worker,
             db_path_accessor=lambda: self.db_path,
-            navigation_set_selection=(
-                self.navigation_coordinator.set_global_selection
-            ),
+            navigation_set_selection=(self.navigation_coordinator.set_global_selection),
         )
         # Forward MapHandler's command_requested to MainWindow's
         self.map_handler.command_requested.connect(self.command_requested.emit)
@@ -806,7 +804,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         logger.debug("Dock state validation passed")
         return True
 
-
     def load_longform_sequence(self) -> None:
         """Loads the longform sequence. Delegates to LongformManager."""
         self.longform_manager.load_longform_sequence()
@@ -829,16 +826,32 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """
         return self.editor_coordinator.check_unsaved_changes(editor)
 
-
     @Slot()
     def _update_history_panel(self) -> None:
         """Update the history panel with current undo/redo stacks."""
         try:
             if hasattr(self, "history_panel") and hasattr(self, "command_coordinator"):
-                self.history_panel.update_history(
-                    self.command_coordinator.undo_stack,
-                    self.command_coordinator.redo_stack,
-                )
+                # Create lightweight snapshots of the commands.
+                # Do NOT pass the Command objects themselves, as the worker
+                # thread mutates them during undo/redo execution, which
+                # causes C++ access violations when the UI iterates or clears them.
+                undo_snapshots = [
+                    {
+                        "description": cmd.get_description(),
+                        "timestamp": getattr(cmd, "timestamp", None),
+                    }
+                    for cmd in self.command_coordinator.undo_stack
+                ]
+
+                redo_snapshots = [
+                    {
+                        "description": cmd.get_description(),
+                        "timestamp": getattr(cmd, "timestamp", None),
+                    }
+                    for cmd in self.command_coordinator.redo_stack
+                ]
+
+                self.history_panel.update_history(undo_snapshots, redo_snapshots)
         except Exception as e:
             logger.error(f"Failed to update history panel: {e}")
 
@@ -881,7 +894,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """
         self.worker_manager.on_db_initialized(success)
 
-
     @Slot()
     def toggle_auto_relation_setting(self) -> None:
         """Toggles the auto-creation of relations from wikilinks."""
@@ -918,7 +930,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         if settings.value("longform_auto_refresh", True, type=bool):
             logger.debug("Auto-refreshing longform editor")
             self.longform_manager.load_longform_sequence()
-
 
     def _request_grouping_config(self) -> None:
         """Requests loading of the timeline grouping configuration."""
@@ -1044,7 +1055,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             )
         return []
 
-
     # DataHandler signal handlers (loose coupling via signals)
 
     @Slot(list)
@@ -1068,16 +1078,13 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """
         self.map_handler.on_markers_ready(map_id, processed_markers)
 
-
     def load_maps(self) -> None:
         """Requests loading of all maps."""
         self.map_handler.load_maps()
 
-
     # ----------------------------------------------------------------------
     # Timeline Grouping Methods
     # ----------------------------------------------------------------------
-
 
     @Slot(list, object)
     def on_grouping_dialog_data_loaded(
@@ -1088,7 +1095,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         Delegates to GroupingManager.
         """
         self.grouping_manager.on_grouping_dialog_data_loaded(tags_data, current_config)
-
 
     # Removed: _on_tag_color_change_requested, _on_remove_from_grouping_requested
     # rewired to GroupingManager in ConnectionManager

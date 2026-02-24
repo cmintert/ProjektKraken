@@ -53,6 +53,7 @@ class CommandCoordinator(QObject):
         self.redo_stack: List["BaseCommand"] = []
         self.max_stack_size = 100  # Limit memory usage
         self.history_service: Optional["HistoryService"] = None
+        self._undo_redo_in_progress = False
         logger.debug("CommandCoordinator initialized with undo/redo support")
 
     def set_history_service(self, history_service: "HistoryService") -> None:
@@ -101,19 +102,32 @@ class CommandCoordinator(QObject):
 
         Pops a command from the undo stack, requests its undo execution,
         and pushes it to the redo stack.
+
+        Guarded: only one undo/redo can be in-flight at a time to
+        prevent overlapping UI rebuilds that crash Qt.
         """
         if not self.can_undo():
             logger.warning("Undo called with empty undo stack")
             return
 
+        if self._undo_redo_in_progress:
+            logger.debug("Undo skipped — previous operation in progress")
+            return
+
+        self._undo_redo_in_progress = True
         command = self.undo_stack.pop()
         logger.debug(f"Undoing command: {command.__class__.__name__}")
         # Optimistically move to redo stack to keep UI responsive
-        # The worker will actually perform the DB operation
         if command.has_history:
             self.redo_stack.append(command)
 
+        # Update UI BEFORE dispatching to worker, so the history
+        # panel finishes reading command attributes before the
+        # worker thread starts mutating them during undo.
         self.history_changed.emit()
+
+        # Now dispatch to the worker thread (QueuedConnection)
+        self.undo_requested.emit(command)
 
     @Slot()
     def redo(self) -> None:
@@ -121,16 +135,27 @@ class CommandCoordinator(QObject):
 
         Pops a command from the redo stack, requests its re-execution,
         and pushes it to the undo stack.
+
+        Guarded: only one undo/redo can be in-flight at a time.
         """
         if not self.can_redo():
             logger.warning("Redo called with empty redo stack")
             return
 
+        if self._undo_redo_in_progress:
+            logger.debug("Redo skipped — previous operation in progress")
+            return
+
+        self._undo_redo_in_progress = True
         command = self.redo_stack.pop()
         logger.debug(f"Redoing command: {command.__class__.__name__}")
-        self.redo_requested.emit(command)
         self.undo_stack.append(command)
+
+        # Update UI BEFORE dispatching to worker
         self.history_changed.emit()
+
+        # Now dispatch to the worker thread (QueuedConnection)
+        self.redo_requested.emit(command)
 
     def can_undo(self) -> bool:
         """Check if undo operation is available.
@@ -178,6 +203,16 @@ class CommandCoordinator(QObject):
             result: CommandResult object containing execution status.
 
         """
+        # Clear the undo/redo guard when the worker result arrives
+        is_undo_redo = result.command_name.startswith(
+            (
+                "Undo_",
+                "Redo_",
+            )
+        )
+        if is_undo_redo:
+            self._undo_redo_in_progress = False
+
         if result.success:
             logger.info(f"Command succeeded: {result.message}")
 
@@ -199,14 +234,24 @@ class CommandCoordinator(QObject):
                 if len(self.undo_stack) > self.max_stack_size:
                     removed = self.undo_stack.pop(0)
                     logger.debug(
-                        f"Removed oldest command from stack: {removed.__class__.__name__}"
+                        f"Removed oldest command from stack: "
+                        f"{removed.__class__.__name__}"
                     )
 
                 self.history_changed.emit()
                 self.log_stack_state()
 
-            # Trigger data refresh based on command type
-            self._refresh_after_command(result)
+            # Trigger data refresh based on command type.
+            # Skip for Undo/Redo results — DataHandler already handles
+            # those reloads via its own command_finished connection.
+            is_undo_redo = result.command_name.startswith(
+                (
+                    "Undo_",
+                    "Redo_",
+                )
+            )
+            if not is_undo_redo:
+                self._refresh_after_command(result)
         else:
             logger.error(f"Command failed: {result.message}")
             self._show_error(result.message)

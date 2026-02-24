@@ -173,16 +173,16 @@ class HistoryPanelWidget(QWidget):
 
     @Slot(list, list)
     def update_history(
-        self, undo_stack: List["BaseCommand"], redo_stack: List["BaseCommand"]
+        self, undo_snapshots: List[dict], redo_snapshots: List[dict]
     ) -> None:
         """Update the history display with current stacks.
 
         Args:
-            undo_stack: List of commands that can be undone
-            redo_stack: List of commands that can be redone
+            undo_snapshots: List of command snapshot dicts
+            redo_snapshots: List of command snapshot dicts
         """
-        self._undo_stack = undo_stack
-        self._redo_stack = redo_stack
+        self._undo_stack = undo_snapshots
+        self._redo_stack = redo_snapshots
         self._refresh_display()
 
     def _refresh_display(self) -> None:
@@ -219,7 +219,7 @@ class HistoryPanelWidget(QWidget):
 
     def _add_command_item(
         self,
-        command: "BaseCommand",
+        command_snapshot: dict,
         can_undo: bool = False,
         can_redo: bool = False,
         is_top: bool = False,
@@ -227,21 +227,20 @@ class HistoryPanelWidget(QWidget):
         """Add a command to the list display.
 
         Args:
-            command: The command to display
+            command_snapshot: Dictionary containing command details
             can_undo: Whether this command can be undone
             can_redo: Whether this command can be redone
             is_top: Whether this is the most recent command in its stack
         """
         try:
-            # Get command description
-            description = command.get_description()
-
-            # Format timestamp
-            import datetime
-
+            description = command_snapshot.get("description", "Unknown Command")
             ts_str = ""
-            if hasattr(command, "timestamp") and command.timestamp:
-                dt = datetime.datetime.fromtimestamp(command.timestamp)
+            timestamp = command_snapshot.get("timestamp")
+
+            if timestamp:
+                import datetime
+
+                dt = datetime.datetime.fromtimestamp(timestamp)
                 ts_str = dt.strftime("%Y-%m-%d %H:%M:%S")
 
             # Build display text

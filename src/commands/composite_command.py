@@ -3,10 +3,13 @@
 Combines multiple commands into a single executable unit.
 """
 
+import logging
 from typing import Dict, List
 
 from src.commands.base_command import BaseCommand, CommandResult
 from src.services.db_service import DatabaseService
+
+logger = logging.getLogger(__name__)
 
 
 class CompositeCommand(BaseCommand):
