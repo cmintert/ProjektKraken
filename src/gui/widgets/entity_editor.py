@@ -30,6 +30,7 @@ from src.gui.mixins.autosave_mixin import AutoSaveManager
 from src.gui.mixins.editor_mixin import BaseEditorMixin
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.relation_item_widget import RelationItemWidget
+from src.gui.widgets.sheet_builder import SheetBuilderWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
 from src.gui.widgets.standard_buttons import (
     DestructiveButton,
@@ -333,6 +334,14 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         attr_layout.addWidget(self.attribute_editor)
         self.inspector.add_tab(self.tab_attributes, "Attributes")
 
+        # --- Tab 6: Sheet ---
+        self.tab_sheet = QWidget()
+        sheet_layout = QVBoxLayout(self.tab_sheet)
+        StyleHelper.apply_no_margins(sheet_layout)
+        self.sheet_builder = SheetBuilderWidget()
+        sheet_layout.addWidget(self.sheet_builder)
+        self.inspector.add_tab(self.tab_sheet, "Sheet")
+
         # Buttons
         btn_layout = QHBoxLayout()
         self.btn_save = PrimaryButton("Save Changes")
@@ -562,6 +571,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self.desc_edit.textChanged.connect(lambda: self.set_dirty(True))
         self.tag_editor.tags_changed.connect(lambda: self.set_dirty(True))
         self.attribute_editor.attributes_changed.connect(lambda: self.set_dirty(True))
+        self.sheet_builder.attributes_changed.connect(lambda: self.set_dirty(True))
 
     def update_suggestions(
         self, items: list[tuple[str, str, str]] = None, names: list[str] = None
@@ -726,6 +736,14 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         finally:
             self.attribute_editor.blockSignals(False)
 
+        # Load sheet builder with the same display attributes + stored layout
+        sheet_layout = entity.attributes.get("_sheet_layout")
+        self.sheet_builder.blockSignals(True)
+        try:
+            self.sheet_builder.load_attributes(display_attrs, sheet_layout)
+        finally:
+            self.sheet_builder.blockSignals(False)
+
         self.tag_editor.blockSignals(True)
         try:
             self.tag_editor.load_tags(entity.tags)
@@ -872,6 +890,11 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             # Pending summary takes precedence over any existing _summary_data
             if hasattr(self, "_pending_summary_data") and self._pending_summary_data:
                 base_attrs["_summary_data"] = self._pending_summary_data
+
+            # Persist the sheet layout arrangement
+            sheet_layout = self.sheet_builder.get_layout()
+            if sheet_layout:
+                base_attrs["_sheet_layout"] = sheet_layout
 
             entity_data = {
                 "id": self._current_entity_id,

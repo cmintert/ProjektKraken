@@ -364,6 +364,12 @@ class ObsidianExporter:
             lines.append(summary)
             lines.append("")
 
+        # Stat block from sheet layout
+        stat_block = self._build_stat_block(entity.name, entity.attributes)
+        if stat_block:
+            lines.append(stat_block)
+            lines.append("")
+
         # Body content
         if entity.description:
             lines.append(entity.description.strip())
@@ -425,6 +431,12 @@ class ObsidianExporter:
             lines.append(summary)
             lines.append("")
 
+        # Stat block from sheet layout
+        stat_block = self._build_stat_block(event.name, event.attributes)
+        if stat_block:
+            lines.append(stat_block)
+            lines.append("")
+
         # Body content
         if event.description:
             lines.append(event.description.strip())
@@ -443,6 +455,45 @@ class ObsidianExporter:
     def _escape_yaml_string(self, value: str) -> str:
         """Escape quotes in YAML string values."""
         return value.replace('"', '\\"')
+
+    def _build_stat_block(
+        self, name: str, attributes: Dict[str, Any]
+    ) -> Optional[str]:
+        """Build an Obsidian callout stat block from a sheet layout.
+
+        Reads the ``_sheet_layout`` metadata (a 2D list of attribute key strings)
+        and formats it as an Obsidian ``[!stat]`` callout (Admonition).
+
+        Translation rules:
+        - Grid container → ``> [!stat] Name``
+        - Multi-key row  → ``> **Key 1:** Value 1 | **Key 2:** Value 2``
+        - Single-key row → ``> **Key:** Value``
+
+        Args:
+            name: Display name for the callout title.
+            attributes: Full attributes dict (including ``_sheet_layout``).
+
+        Returns:
+            Formatted callout string, or ``None`` if no layout is stored.
+        """
+        layout = attributes.get("_sheet_layout")
+        if not layout or not isinstance(layout, list):
+            return None
+
+        # Collect user-visible attributes for value lookup
+        user_attrs = {k: v for k, v in attributes.items() if not k.startswith("_")}
+
+        lines = [f"> [!stat] {name}"]
+        for row_keys in layout:
+            if not isinstance(row_keys, list) or not row_keys:
+                continue
+            parts = []
+            for key in row_keys:
+                value = user_attrs.get(key, "")
+                parts.append(f"**{key}:** {value}")
+            lines.append("> " + " | ".join(parts))
+
+        return "\n".join(lines) if len(lines) > 1 else None
 
     def _format_timestamp(self, timestamp: float) -> str:
         """Convert Unix timestamp to ISO date string."""

@@ -42,6 +42,7 @@ from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.compact_duration_widget import CompactDurationWidget
 from src.gui.widgets.relation_item_widget import RelationItemWidget
+from src.gui.widgets.sheet_builder import SheetBuilderWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
 from src.gui.widgets.standard_buttons import (
     DestructiveButton,
@@ -325,6 +326,14 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.attribute_editor = AttributeEditorWidget()
         attr_layout.addWidget(self.attribute_editor)
         self.inspector.add_tab(self.tab_attributes, "Attributes")
+
+        # --- Tab 6: Sheet ---
+        self.tab_sheet = QWidget()
+        sheet_tab_layout = QVBoxLayout(self.tab_sheet)
+        StyleHelper.apply_no_margins(sheet_tab_layout)
+        self.sheet_builder = SheetBuilderWidget()
+        sheet_tab_layout.addWidget(self.sheet_builder)
+        self.inspector.add_tab(self.tab_sheet, "Sheet")
 
         # Buttons
         btn_layout = QHBoxLayout()
@@ -772,6 +781,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.desc_edit.textChanged.connect(lambda: self.set_dirty(True))
         self.tag_editor.tags_changed.connect(lambda: self.set_dirty(True))
         self.attribute_editor.attributes_changed.connect(lambda: self.set_dirty(True))
+        self.sheet_builder.attributes_changed.connect(lambda: self.set_dirty(True))
 
     @Slot(float)
     def _on_start_date_changed(self, new_start: float) -> None:
@@ -934,6 +944,14 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.attribute_editor.load_attributes(display_attrs)
         self.attribute_editor.blockSignals(False)
 
+        # Load sheet builder with the same display attributes + stored layout
+        sheet_layout = event.attributes.get("_sheet_layout")
+        self.sheet_builder.blockSignals(True)
+        try:
+            self.sheet_builder.load_attributes(display_attrs, sheet_layout)
+        finally:
+            self.sheet_builder.blockSignals(False)
+
         # Load Summary
         summary_data = event.attributes.get("_summary_data")
         if summary_data:
@@ -1069,6 +1087,11 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             if hasattr(self, "_pending_summary_data") and self._pending_summary_data:
                 base_attrs["_summary_data"] = self._pending_summary_data
             self._merge_hidden_attributes(base_attrs)
+
+            # Persist the sheet layout arrangement
+            sheet_layout = self.sheet_builder.get_layout()
+            if sheet_layout:
+                base_attrs["_sheet_layout"] = sheet_layout
 
             event_data = {
                 "id": self._current_event_id,
