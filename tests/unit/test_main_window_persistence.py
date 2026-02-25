@@ -76,10 +76,6 @@ def main_window(qapp, qtbot, mock_settings):
         window.entity_editor = MagicMock()
         window.entity_editor.has_unsaved_changes.return_value = False
 
-        # Mock load methods to prevent actual DB calls
-        window.load_event_details = MagicMock()
-        window.load_entity_details = MagicMock()
-
         yield window
 
 
@@ -118,14 +114,17 @@ def test_restore_last_selection_event(main_window):
     settings.setValue(SETTINGS_LAST_ITEM_ID_KEY, test_id)
     settings.setValue(SETTINGS_LAST_ITEM_TYPE_KEY, test_type)
 
+    # Mock data_coordinator.load_event_details to track calls
+    main_window.data_coordinator = MagicMock()
+
     # Trigger restore
     main_window.navigation_coordinator.restore_last_selection()
 
     # Verify actions
-    main_window.load_event_details.assert_called_with(test_id)
+    main_window.data_coordinator.load_event_details.assert_called_with(test_id)
     main_window.ui_manager.docks["event"].raise_.assert_called_once()
     main_window.unified_list.select_item.assert_called_with(test_type, test_id)
-    main_window.load_entity_details.assert_not_called()
+    main_window.data_coordinator.load_entity_details.assert_not_called()
 
 
 def test_restore_last_selection_entity(main_window):
@@ -138,14 +137,17 @@ def test_restore_last_selection_entity(main_window):
     settings.setValue(SETTINGS_LAST_ITEM_ID_KEY, test_id)
     settings.setValue(SETTINGS_LAST_ITEM_TYPE_KEY, test_type)
 
+    # Mock data_coordinator.load_entity_details to track calls
+    main_window.data_coordinator = MagicMock()
+
     # Trigger restore
     main_window.navigation_coordinator.restore_last_selection()
 
     # Verify actions
-    main_window.load_entity_details.assert_called_with(test_id)
+    main_window.data_coordinator.load_entity_details.assert_called_with(test_id)
     main_window.ui_manager.docks["entity"].raise_.assert_called_once()
     main_window.unified_list.select_item.assert_called_with(test_type, test_id)
-    main_window.load_event_details.assert_not_called()
+    main_window.data_coordinator.load_event_details.assert_not_called()
 
 
 def test_restore_last_selection_none(main_window):
@@ -155,10 +157,14 @@ def test_restore_last_selection_none(main_window):
     settings.remove(SETTINGS_LAST_ITEM_ID_KEY)
     settings.remove(SETTINGS_LAST_ITEM_TYPE_KEY)
 
+    # Mock data_coordinator to track calls
+    main_window.data_coordinator = MagicMock()
+
     # Trigger restore
     main_window.navigation_coordinator.restore_last_selection()
 
     # Verify no actions
-    main_window.load_event_details.assert_not_called()
-    main_window.load_entity_details.assert_not_called()
+    main_window.data_coordinator.load_event_details.assert_not_called()
+    main_window.data_coordinator.load_entity_details.assert_not_called()
+    main_window.unified_list.select_item.assert_not_called()
     main_window.unified_list.select_item.assert_not_called()

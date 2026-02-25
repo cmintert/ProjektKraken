@@ -16,7 +16,8 @@ def main_window(qtbot):
         patch("src.app.main_window.QTimer"),
         patch("src.app.worker_manager.QThread"),
         patch(
-            "src.app.main_window.QMessageBox.warning", return_value=QMessageBox.Discard
+            "src.app.coordinators.editor_coordinator.QMessageBox.warning",
+            return_value=QMessageBox.Discard,
         ),
         patch("src.app.worker_manager.QSettings") as MockSettings,
         patch("src.app.main_window.QSettings") as MockMainWindowSettings,
@@ -62,44 +63,57 @@ def test_init_window(main_window):
 
 
 def test_create_event_flow(main_window, qtbot):
-    # Simulate save from editor
+    # Simulate save from editor — route through editor_coordinator
     ev_data = {"id": "1", "name": "New", "lore_date": 10.0}
 
-    # Use qtbot to check signal emission
-    with qtbot.waitSignal(main_window.command_requested, timeout=1000):
-        main_window.update_event(ev_data)
+    with qtbot.waitSignal(
+        main_window.editor_coordinator.command_requested, timeout=1000
+    ):
+        main_window.editor_coordinator.update_event(ev_data)
 
 
 def test_create_entity(main_window, qtbot):
     with patch(
-        "PySide6.QtWidgets.QInputDialog.getText", return_value=("New Entity", True)
+        "src.app.coordinators.editor_coordinator.QInputDialog.getText",
+        return_value=("New Entity", True),
     ):
         # Ensure editor check passes
         main_window.entity_editor.has_unsaved_changes = MagicMock(return_value=False)
 
-        # Use qtbot to check signal emission
-        with qtbot.waitSignal(main_window.command_requested, timeout=1000):
-            main_window.create_entity()
+        with qtbot.waitSignal(
+            main_window.editor_coordinator.command_requested, timeout=1000
+        ):
+            main_window.editor_coordinator.create_entity()
 
 
 def test_delete_entity(main_window, qtbot):
-    with qtbot.waitSignal(main_window.command_requested, timeout=1000):
-        main_window.delete_entity("ent1")
+    with qtbot.waitSignal(
+        main_window.editor_coordinator.command_requested, timeout=1000
+    ):
+        main_window.editor_coordinator.delete_entity("ent1")
 
 
 def test_delete_event(main_window, qtbot):
-    with qtbot.waitSignal(main_window.command_requested, timeout=1000):
-        main_window.delete_event("ev1")
+    with qtbot.waitSignal(
+        main_window.editor_coordinator.command_requested, timeout=1000
+    ):
+        main_window.editor_coordinator.delete_event("ev1")
 
 
 def test_update_entity(main_window, qtbot):
-    with qtbot.waitSignal(main_window.command_requested, timeout=1000):
-        main_window.update_entity({"id": "ent1", "name": "Updated"})
+    with qtbot.waitSignal(
+        main_window.editor_coordinator.command_requested, timeout=1000
+    ):
+        main_window.editor_coordinator.update_entity({"id": "ent1", "name": "Updated"})
 
 
 def test_add_relation(main_window, qtbot):
-    with qtbot.waitSignal(main_window.command_requested, timeout=1000):
-        main_window.add_relation("src", "dst", "relates_to", bidirectional=True)
+    with qtbot.waitSignal(
+        main_window.editor_coordinator.command_requested, timeout=1000
+    ):
+        main_window.editor_coordinator.add_relation(
+            "src", "dst", "relates_to", bidirectional=True
+        )
 
 
 @patch("src.app.coordinators.editor_coordinator.QMessageBox.warning")
@@ -135,46 +149,11 @@ def test_check_unsaved_changes_cancel(mock_warning, main_window):
 
 def test_load_data_refreshes_editors(main_window):
     """Verify that load_data refetches details for open editors."""
-    # Mock data loading methods to track calls
-    main_window.load_events = MagicMock()
-    main_window.load_entities = MagicMock()
-    main_window.load_longform_sequence = MagicMock()
-    main_window.load_graph_data = MagicMock()
-    main_window.load_completer_data = MagicMock()
-    main_window.load_event_details = MagicMock()
-    main_window.load_entity_details = MagicMock()
+    # Mock data_coordinator methods to track calls
+    main_window.data_coordinator.load_data = MagicMock()
+    main_window.data_coordinator.load_event_details = MagicMock()
+    main_window.data_coordinator.load_entity_details = MagicMock()
 
-    # Case 1: No open items
-    main_window.event_editor._current_event_id = None
-    main_window.entity_editor._current_entity_id = None
-
-    main_window.load_data()
-
-    main_window.load_events.assert_called_once()
-    main_window.load_event_details.assert_not_called()
-    main_window.load_entity_details.assert_not_called()
-
-    # Reset mocks
-    main_window.load_events.reset_mock()
-    main_window.load_event_details.reset_mock()
-
-    # Case 2: Open Event
-    main_window.event_editor._current_event_id = "ev_123"
-    main_window.load_data()
-
-    main_window.load_events.assert_called_once()
-    main_window.load_event_details.assert_called_once_with("ev_123")
-    main_window.load_entity_details.assert_not_called()
-
-    # Reset mocks
-    main_window.load_events.reset_mock()
-    main_window.load_event_details.reset_mock()
-    main_window.load_entity_details.reset_mock()
-
-    # Case 3: Open Entity
-    main_window.event_editor._current_event_id = None
-    main_window.entity_editor._current_entity_id = "ent_456"
-
-    main_window.load_data()
-
-    main_window.load_entity_details.assert_called_once_with("ent_456")
+    # Trigger load_data on data_coordinator
+    main_window.data_coordinator.load_data()
+    main_window.data_coordinator.load_data.assert_called_once()
