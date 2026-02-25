@@ -419,9 +419,11 @@ class TestSheetBuilderWidget:
         text_item = sheet._grid_layout.itemAt(1).layout().itemAt(0).widget()
 
         # Dropping on the top half of the text block targets row 1 (above text)
+        # Use mapToGlobal/mapFromGlobal for correct mapping between
+        # _container (inside scroll area) and the sheet widget.
         top_pos = text_item.geometry().center()
         top_pos.setY(text_item.geometry().top() + 2)
-        top_pos = sheet.mapFrom(sheet._container, top_pos)
+        top_pos = sheet.mapFromGlobal(sheet._container.mapToGlobal(top_pos))
         row, col, new_row = sheet._calc_drop_position(top_pos)
         assert row == 1
         assert new_row is True
@@ -429,7 +431,7 @@ class TestSheetBuilderWidget:
         # Dropping on the bottom half of the text block targets row 2 (below text)
         bot_pos = text_item.geometry().center()
         bot_pos.setY(text_item.geometry().bottom() - 2)
-        bot_pos = sheet.mapFrom(sheet._container, bot_pos)
+        bot_pos = sheet.mapFromGlobal(sheet._container.mapToGlobal(bot_pos))
         row, col, new_row = sheet._calc_drop_position(bot_pos)
         assert row == 2
         assert new_row is True
