@@ -76,6 +76,7 @@ class AttributePairWidget(QFrame):
 
     value_changed = Signal()
     drag_started = Signal(str)
+    drag_finished = Signal()
 
     def __init__(
         self,
@@ -239,6 +240,7 @@ class AttributePairWidget(QFrame):
             self.drag_started.emit(self._key)
             drag.exec(Qt.DropAction.MoveAction)
             self._drag_start_pos = None
+            self.drag_finished.emit()
         super().mouseMoveEvent(event)
 
     # ------------------------------------------------------------------
@@ -880,6 +882,10 @@ class SheetBuilderWidget(QWidget):
         # Reentrance-safe signal suppression counter (> 0 means suppressed)
         self._block_depth: int = 0
 
+        # Drag safety: defer destructive reloads while a QDrag.exec() is active
+        self._drag_active: bool = False
+        self._deferred_reload: Optional[tuple] = None
+
         # Apply initial theme and connect to changes
         self._theme_mgr = ThemeManager()
         self._apply_theme()
@@ -936,7 +942,23 @@ class SheetBuilderWidget(QWidget):
     # Public API
     # ------------------------------------------------------------------
 
-    def load_attributes(
+    def _defer_if_dragging(
+        self,
+        attributes: Dict[str, Any],
+        layout: Optional[List[List[Any]]] = None,
+    ) -> bool:
+        """Store the reload args if a child drag is active.
+
+        Returns:
+            True if the reload was deferred, False otherwise.
+        """
+        if self._drag_active:
+            logger.debug("Deferring load_attributes – drag is active.")
+            self._deferred_reload = (attributes, layout)
+            return True
+        return False
+
+    def load_attributes(  # noqa: C901
         self,
         attributes: Dict[str, Any],
         layout: Optional[List[List[Any]]] = None,
@@ -958,6 +980,11 @@ class SheetBuilderWidget(QWidget):
         logger.debug(
             f"Loading {len(attributes)} attributes with layout={layout is not None}"
         )
+
+        # Defer reload if a child drag is active to avoid destroying the
+        # widget that owns the running QDrag (causes C++ access violation).
+        if self._defer_if_dragging(attributes, layout):
+            return
 
         # Save focus/scroll state before clearing
         focus_state = self._save_focus_state()
@@ -1282,9 +1309,7 @@ class SheetBuilderWidget(QWidget):
         if state.focused_key is not None and state.focused_key in self._pairs:
             pair = self._pairs[state.focused_key]
             pair.value_edit.setFocus()
-            cursor_pos = min(
-                state.cursor_position, len(pair.value_edit.text())
-            )
+            cursor_pos = min(state.cursor_position, len(pair.value_edit.text()))
             pair.value_edit.setCursorPosition(cursor_pos)
             return
 
@@ -1399,6 +1424,8 @@ class SheetBuilderWidget(QWidget):
             pair = AttributePairWidget(key, str_val, vtype)
             pair.weight = weight
             pair.value_changed.connect(self._on_pair_changed)
+            pair.drag_started.connect(self._on_child_drag_started)
+            pair.drag_finished.connect(self._on_child_drag_finished)
             idx = hlayout.count()
             hlayout.addWidget(pair, stretch=weight)
             self._pairs[key] = pair
@@ -1506,8 +1533,39 @@ class SheetBuilderWidget(QWidget):
 
     def _on_pair_changed(self) -> None:
         """Forward pair value changes as attributes_changed."""
-        if self._block_depth == 0:
+        if self._block_depth == 0 and not self._drag_active:
             self.attributes_changed.emit()
+
+    # ------------------------------------------------------------------
+    # Child drag lifecycle
+    # ------------------------------------------------------------------
+
+    def _on_child_drag_started(self, key: str) -> None:
+        """Called when a child AttributePairWidget begins a QDrag.
+
+        Suppresses reloads until the drag completes to prevent the
+        dragged widget from being destroyed mid-drag (access violation).
+
+        Args:
+            key: The attribute key of the widget being dragged.
+        """
+        logger.debug(f"Child drag started for key '{key}' – suppressing reloads.")
+        self._drag_active = True
+
+    def _on_child_drag_finished(self) -> None:
+        """Called when a child QDrag completes.
+
+        Re-enables reloads and replays a deferred load if one arrived
+        during the drag.
+        """
+        logger.debug("Child drag finished – re-enabling reloads.")
+        self._drag_active = False
+
+        if self._deferred_reload is not None:
+            attrs, layout = self._deferred_reload
+            self._deferred_reload = None
+            logger.debug("Replaying deferred load_attributes.")
+            self.load_attributes(attrs, layout)
 
     def _on_builder_destroyed(self) -> None:
         """Disconnect theme signal when destroyed."""
@@ -1722,6 +1780,8 @@ class SheetBuilderWidget(QWidget):
             hlayout.setContentsMargins(0, 0, 0, 0)
             pair = AttributePairWidget(key, "", "String")
             pair.value_changed.connect(self._on_pair_changed)
+            pair.drag_started.connect(self._on_child_drag_started)
+            pair.drag_finished.connect(self._on_child_drag_finished)
             hlayout.addWidget(pair, stretch=1)
             self._pairs[key] = pair
             self._grid_layout.insertLayout(at_index, hlayout)
