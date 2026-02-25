@@ -140,8 +140,8 @@ class TestCollectKeyframeObstacles:
 
         obstacles = view._collect_keyframe_obstacles(1.0)
 
-        # 2 keyframe dots + 2 keyframe labels = 4 obstacles
-        assert len(obstacles) == 4
+        # 2 keyframe labels = 2 obstacles (dots are excluded per design)
+        assert len(obstacles) == 2
 
     def test_zero_scale_handled(self, qtbot):
         """Zero view_scale does not cause division error."""
@@ -162,7 +162,7 @@ class TestCollectKeyframeObstacles:
 
         # Should not raise ZeroDivisionError.
         obstacles = view._collect_keyframe_obstacles(0.0)
-        assert len(obstacles) == 4
+        assert len(obstacles) == 2
         # Verify dimensions are finite and non-negative.
         for rect in obstacles:
             assert rect.width() >= 0
