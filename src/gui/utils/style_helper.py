@@ -433,20 +433,22 @@ class StyleHelper:
         """
 
         theme = ThemeManager().get_theme()
+        scrollbar_bg = theme.get("scrollbar_bg", "#2B2B2B")
+        scrollbar_handle = theme.get("scrollbar_handle", "#555555")
         return (
             f"QScrollBar:vertical {{ "
-            f"background-color: {theme['scrollbar_bg']}; "
+            f"background-color: {scrollbar_bg}; "
             f"width: 10px; margin: 0px; }}"
             f"QScrollBar::handle:vertical {{ "
-            f"background-color: {theme['scrollbar_handle']}; "
+            f"background-color: {scrollbar_handle}; "
             f"min-height: 20px; border-radius: 5px; }}"
             f"QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ "
             f"height: 0px; }}"
             f"QScrollBar:horizontal {{ "
-            f"background-color: {theme['scrollbar_bg']}; "
+            f"background-color: {scrollbar_bg}; "
             f"height: 10px; margin: 0px; }}"
             f"QScrollBar::handle:horizontal {{ "
-            f"background-color: {theme['scrollbar_handle']}; "
+            f"background-color: {scrollbar_handle}; "
             f"min-width: 20px; border-radius: 5px; }}"
             f"QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{ "
             f"width: 0px; }}"
