@@ -548,6 +548,10 @@ class _ResizeHandle(QWidget):
         self._right_idx = right_idx
         self._dragging = False
         self._drag_start_x = 0
+        self._initial_left_stretch = 0
+        self._initial_right_stretch = 0
+        self._initial_left_width = 0
+        self._initial_right_width = 0
         self._weight_overlay: Optional[QLabel] = None
 
         self.setFixedWidth(6)
@@ -592,14 +596,26 @@ class _ResizeHandle(QWidget):
             self._drag_start_x = event.globalPosition().toPoint().x()
 
             try:
-                # Record initial state with high granularity multiplier
-                multiplier = 100
-                self._initial_left_stretch = (
-                    max(1, self._hlayout.stretch(self._left_idx)) * multiplier
+                # Scale all content items (stretch > 0) in the row by a
+                # high-granularity multiplier so drag deltas map to
+                # fine-grained stretch changes.  Handles (stretch == 0)
+                # are left untouched so they don't steal layout space.
+                # Prevent OverflowError by calculating a safe multiplier.
+                # If a previous release couldn't simplify via GCD, stretches
+                # could grow exponentially. We cap the target total at ~10,000.
+                current_total = sum(
+                    self._hlayout.stretch(i)
+                    for i in range(self._hlayout.count())
+                    if self._hlayout.stretch(i) > 0
                 )
-                self._initial_right_stretch = (
-                    max(1, self._hlayout.stretch(self._right_idx)) * multiplier
-                )
+                multiplier = max(1, 10000 // max(1, current_total))
+                for i in range(self._hlayout.count()):
+                    cur = self._hlayout.stretch(i)
+                    if cur > 0:
+                        self._hlayout.setStretch(i, cur * multiplier)
+
+                self._initial_left_stretch = self._hlayout.stretch(self._left_idx)
+                self._initial_right_stretch = self._hlayout.stretch(self._right_idx)
 
                 left_widget = self._hlayout.itemAt(self._left_idx).widget()
                 right_widget = self._hlayout.itemAt(self._right_idx).widget()
@@ -692,47 +708,36 @@ class _ResizeHandle(QWidget):
                 return
 
             try:
-                # Update final weight on the widgets and trigger save
                 if (
                     self._left_idx >= self._hlayout.count()
                     or self._right_idx >= self._hlayout.count()
                 ):
                     return
 
-                left_stretch = self._hlayout.stretch(self._left_idx)
-                right_stretch = self._hlayout.stretch(self._right_idx)
+                # Collect stretch values for content items only (skip handles)
+                count = self._hlayout.count()
+                content_stretches: list[tuple[int, int]] = []
+                for i in range(count):
+                    s = self._hlayout.stretch(i)
+                    if s > 0:
+                        content_stretches.append((i, s))
 
-                # Normalize to clean numbers (max scale of 20) for saved JSON output
-                total = left_stretch + right_stretch
-                if total > 0:
-                    left_pct = left_stretch / total
-                    norm_left = int(left_pct * 20 + 0.5)
-                    norm_left = max(1, min(norm_left, 19))
-                    norm_right = 20 - norm_left
+                if not content_stretches:
+                    return
 
-                    gcd = math.gcd(norm_left, norm_right)
-                    final_left = norm_left // gcd
-                    final_right = norm_right // gcd
+                # Find the GCD of all content stretch values to simplify
+                row_gcd = content_stretches[0][1]
+                for _, s in content_stretches[1:]:
+                    row_gcd = math.gcd(row_gcd, s)
 
-                    self._hlayout.setStretch(self._left_idx, final_left)
-                    self._hlayout.setStretch(self._right_idx, final_right)
+                # Apply simplified stretches to content items only
+                for i, s in content_stretches:
+                    final = s // row_gcd
+                    self._hlayout.setStretch(i, final)
+                    item = self._hlayout.itemAt(i)
+                    if item and item.widget() and hasattr(item.widget(), "weight"):
+                        item.widget().weight = final
 
-                left_item = self._hlayout.itemAt(self._left_idx)
-                right_item = self._hlayout.itemAt(self._right_idx)
-
-                # Use final_left/final_right (normalized), not pre-normalization values
-                if (
-                    left_item
-                    and left_item.widget()
-                    and hasattr(left_item.widget(), "weight")
-                ):
-                    left_item.widget().weight = final_left
-                if (
-                    right_item
-                    and right_item.widget()
-                    and hasattr(right_item.widget(), "weight")
-                ):
-                    right_item.widget().weight = final_right
             except RuntimeError:
                 return
 
