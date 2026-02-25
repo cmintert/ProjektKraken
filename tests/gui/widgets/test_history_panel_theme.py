@@ -1,26 +1,7 @@
 import pytest
 
-from src.commands.base_command import BaseCommand
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.history_panel import HistoryPanelWidget
-
-
-class MockCommand(BaseCommand):
-    def execute(self, db_service):
-        pass
-
-    def undo(self, db_service):
-        pass
-
-    def to_dict(self):
-        return {}
-
-    @classmethod
-    def from_dict(cls, data):
-        return cls()
-
-    def get_description(self):
-        return "Mock command"
 
 
 @pytest.fixture
@@ -34,9 +15,9 @@ def history_panel(qtbot):
 
 def test_history_panel_theme_refresh(history_panel, qtbot):
     """Test that history panel items update their colors when the theme changes."""
-    # Add a command to history
-    cmd = MockCommand()
-    history_panel.update_history([cmd], [])
+    # Add a command snapshot to history (dicts, not command objects)
+    snapshot = {"description": "Mock command", "timestamp": None}
+    history_panel.update_history([snapshot], [])
 
     assert history_panel.command_list.count() == 1
 

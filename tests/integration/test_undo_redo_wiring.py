@@ -123,19 +123,21 @@ def test_undo_redo_actions_state(qtbot):
         # Note: We can't easily check if the signal IS connected
         # without emitting and checking side effects.
 
-        # Simulate history change
+        # Simulate history change by emitting signal with snapshot data
         cmd_mock = MagicMock()
+        cmd_mock.get_description.return_value = "Test Command"
+        cmd_mock.timestamp = None
         coordinator.undo_stack.append(cmd_mock)
 
-        # Emit history_changed (coordinator does this internally usually)
-        coordinator.history_changed.emit()
+        # Use the coordinator's helper to build and emit snapshots
+        coordinator._emit_history_changed()
 
         # Check if UI updated
         assert ui_manager.undo_action.isEnabled()
 
         # Clear history
         coordinator.undo_stack.clear()
-        coordinator.history_changed.emit()
+        coordinator._emit_history_changed()
 
         assert not ui_manager.undo_action.isEnabled()
 

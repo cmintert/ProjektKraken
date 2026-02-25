@@ -826,32 +826,35 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """
         return self.editor_coordinator.check_unsaved_changes(editor)
 
-    @Slot()
-    def _update_history_panel(self) -> None:
-        """Update the history panel with current undo/redo stacks."""
+    @Slot(list, list)
+    def _update_history_panel(
+        self, undo_snapshots: list, redo_snapshots: list
+    ) -> None:
+        """Update the history panel with pre-built snapshot dicts.
+
+        The snapshots are created inside ``CommandCoordinator`` at the
+        moment the stacks are modified, so this method never touches
+        live command objects and is therefore safe against worker-thread
+        mutations.
+
+        Args:
+            undo_snapshots: List of ``{"description": str, "timestamp": float|None}``
+                dicts for the undo stack.
+            redo_snapshots: Same format for the redo stack.
+        """
         try:
-            if hasattr(self, "history_panel") and hasattr(self, "command_coordinator"):
-                # Create lightweight snapshots of the commands.
-                # Do NOT pass the Command objects themselves, as the worker
-                # thread mutates them during undo/redo execution, which
-                # causes C++ access violations when the UI iterates or clears them.
-                undo_snapshots = [
-                    {
-                        "description": cmd.get_description(),
-                        "timestamp": getattr(cmd, "timestamp", None),
-                    }
-                    for cmd in self.command_coordinator.undo_stack
-                ]
+            if hasattr(self, "history_panel"):
+                import shiboken6
 
-                redo_snapshots = [
-                    {
-                        "description": cmd.get_description(),
-                        "timestamp": getattr(cmd, "timestamp", None),
-                    }
-                    for cmd in self.command_coordinator.redo_stack
-                ]
-
+                if not shiboken6.isValid(self.history_panel):
+                    logger.debug(
+                        "_update_history_panel: history_panel C++ object deleted"
+                    )
+                    return
                 self.history_panel.update_history(undo_snapshots, redo_snapshots)
+        except RuntimeError:
+            # Underlying C++ object already deleted — nothing to update
+            logger.debug("_update_history_panel: RuntimeError (widget deleted)")
         except Exception as e:
             logger.error(f"Failed to update history panel: {e}")
 

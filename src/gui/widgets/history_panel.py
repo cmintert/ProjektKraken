@@ -5,8 +5,9 @@ Shows a list of executed commands with visual indicators for current position.
 """
 
 import logging
-from typing import TYPE_CHECKING, List, Optional
+from typing import Dict, List, Optional
 
+import shiboken6
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QBrush, QColor, QFont
 from PySide6.QtWidgets import (
@@ -20,9 +21,6 @@ from PySide6.QtWidgets import (
 
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
-
-if TYPE_CHECKING:
-    from src.commands.base_command import BaseCommand
 
 logger = logging.getLogger(__name__)
 
@@ -56,8 +54,9 @@ class HistoryPanelWidget(QWidget):
             parent: Parent widget (optional)
         """
         super().__init__(parent)
-        self._undo_stack: List["BaseCommand"] = []
-        self._redo_stack: List["BaseCommand"] = []
+        self._undo_stack: List[Dict[str, object]] = []
+        self._redo_stack: List[Dict[str, object]] = []
+        self._refreshing = False  # Reentrance guard
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._setup_ui()
         self._apply_theme()
@@ -173,7 +172,8 @@ class HistoryPanelWidget(QWidget):
 
     @Slot(list, list)
     def update_history(
-        self, undo_snapshots: List[dict], redo_snapshots: List[dict]
+        self, undo_snapshots: List[Dict[str, object]],
+        redo_snapshots: List[Dict[str, object]],
     ) -> None:
         """Update the history display with current stacks.
 
@@ -186,40 +186,57 @@ class HistoryPanelWidget(QWidget):
         self._refresh_display()
 
     def _refresh_display(self) -> None:
-        """Refresh the command list display."""
-        self.command_list.clear()
+        """Refresh the command list display.
 
-        total_commands = len(self._undo_stack) + len(self._redo_stack)
+        Protected by a reentrance guard and shiboken validity check
+        so that concurrent or stale calls cannot cause C++ access
+        violations.
+        """
+        if self._refreshing:
+            return
+        self._refreshing = True
+        try:
+            if not shiboken6.isValid(self.command_list):
+                logger.debug("_refresh_display: command_list C++ object deleted")
+                return
 
-        # Update status label
-        if total_commands == 0:
-            self.status_label.setText("No history")
-        else:
-            undo_count = len(self._undo_stack)
-            redo_count = len(self._redo_stack)
-            self.status_label.setText(
-                f"{total_commands} command{'s' if total_commands != 1 else ''} "
-                f"({undo_count} undo / {redo_count} redo)"
-            )
+            self.command_list.clear()
 
-        # Update button states
-        self.undo_btn.setEnabled(len(self._undo_stack) > 0)
-        self.redo_btn.setEnabled(len(self._redo_stack) > 0)
-        self.clear_btn.setEnabled(total_commands > 0)
+            total_commands = len(self._undo_stack) + len(self._redo_stack)
 
-        # Display commands - redo stack first (most recent undone at top)
-        if self._redo_stack:
-            for i, command in enumerate(reversed(self._redo_stack)):
-                self._add_command_item(command, can_redo=True, is_top=i == 0)
+            # Update status label
+            if total_commands == 0:
+                self.status_label.setText("No history")
+            else:
+                undo_count = len(self._undo_stack)
+                redo_count = len(self._redo_stack)
+                self.status_label.setText(
+                    f"{total_commands} command{'s' if total_commands != 1 else ''} "
+                    f"({undo_count} undo / {redo_count} redo)"
+                )
 
-        # Then undo stack (most recent at top)
-        if self._undo_stack:
-            for i, command in enumerate(reversed(self._undo_stack)):
-                self._add_command_item(command, can_undo=True, is_top=i == 0)
+            # Update button states
+            self.undo_btn.setEnabled(len(self._undo_stack) > 0)
+            self.redo_btn.setEnabled(len(self._redo_stack) > 0)
+            self.clear_btn.setEnabled(total_commands > 0)
+
+            # Display commands - redo stack first (most recent undone at top)
+            if self._redo_stack:
+                for i, command in enumerate(reversed(self._redo_stack)):
+                    self._add_command_item(command, can_redo=True, is_top=i == 0)
+
+            # Then undo stack (most recent at top)
+            if self._undo_stack:
+                for i, command in enumerate(reversed(self._undo_stack)):
+                    self._add_command_item(command, can_undo=True, is_top=i == 0)
+        except RuntimeError:
+            logger.debug("_refresh_display: RuntimeError (widget deleted)")
+        finally:
+            self._refreshing = False
 
     def _add_command_item(
         self,
-        command_snapshot: dict,
+        command_snapshot: Dict[str, object],
         can_undo: bool = False,
         can_redo: bool = False,
         is_top: bool = False,
@@ -228,6 +245,7 @@ class HistoryPanelWidget(QWidget):
 
         Args:
             command_snapshot: Dictionary containing command details
+                (``description``, ``timestamp``).
             can_undo: Whether this command can be undone
             can_redo: Whether this command can be redone
             is_top: Whether this is the most recent command in its stack
