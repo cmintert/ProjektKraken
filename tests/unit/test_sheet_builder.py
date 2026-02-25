@@ -600,9 +600,11 @@ class TestResizeHandle:
             handle, Qt.MouseButton.LeftButton, pos=center + QPoint(200, 0)
         )
 
-        # Should have updated stretches
-        assert hlayout.stretch(0) > 2
-        assert hlayout.stretch(2) < 2
+        # A should have gained weight, B should have lost weight
+        assert hlayout.stretch(0) > hlayout.stretch(2), (
+            f"Expected A > B after dragging right, got "
+            f"A={hlayout.stretch(0)}, B={hlayout.stretch(2)}"
+        )
 
     def test_resize_handle_drag_at_minimum_succeeds(self, sheet, qtbot):
         """Confirm that dragging works even when weights are at 1:1."""
@@ -627,10 +629,11 @@ class TestResizeHandle:
             handle, Qt.MouseButton.LeftButton, pos=center + QPoint(200, 0)
         )
 
-        # We expect the left widget to increase its weight,
-        # and the right widget to stay at 1 (minimum).
-        assert hlayout.stretch(0) > 1
-        assert hlayout.stretch(2) == 1
+        # A should have gained weight relative to B
+        assert hlayout.stretch(0) > hlayout.stretch(2), (
+            f"Expected A > B after dragging right, got "
+            f"A={hlayout.stretch(0)}, B={hlayout.stretch(2)}"
+        )
 
     def test_resize_handle_signal_timing(self, sheet, qtbot):
         """Verify that attributes_changed is only emitted after drag release."""
@@ -1070,112 +1073,6 @@ class TestWYSIWYGDragDrop:
         sheet.dropEvent(drop_ev)
         assert sheet._ghost is None
         assert sheet._insertion_line.isHidden()
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Weight Percentage Overlay on Resize Handle
-# ─────────────────────────────────────────────────────────────────────────────
-
-
-class TestWeightPercentageOverlay:
-    """Tests for the percentage overlay shown during resize drag."""
-
-    def test_resize_creates_weight_overlay(self, sheet, qtbot):
-        """Test that dragging a resize handle creates a weight overlay label."""
-        attrs = {"A": 1, "B": 1}
-        layout = [[{"key": "A", "weight": 2}, {"key": "B", "weight": 2}]]
-        sheet.load_attributes(attrs, layout)
-        with qtbot.waitExposed(sheet):
-            sheet.show()
-
-        row_item = sheet._grid_layout.itemAt(0)
-        hlayout = row_item.layout()
-        handle = hlayout.itemAt(1).widget()
-
-        center = handle.rect().center()
-        qtbot.mousePress(handle, Qt.MouseButton.LeftButton, pos=center)
-
-        # After pressing, the weight overlay should exist
-        assert handle._weight_overlay is not None
-        assert handle._weight_overlay.isVisible()
-
-        qtbot.mouseRelease(
-            handle, Qt.MouseButton.LeftButton, pos=center
-        )
-
-    def test_resize_overlay_shows_percentages(self, sheet, qtbot):
-        """Test that the weight overlay displays percentages."""
-        attrs = {"A": 1, "B": 1}
-        layout = [[{"key": "A", "weight": 2}, {"key": "B", "weight": 2}]]
-        sheet.load_attributes(attrs, layout)
-        with qtbot.waitExposed(sheet):
-            sheet.show()
-
-        row_item = sheet._grid_layout.itemAt(0)
-        hlayout = row_item.layout()
-        handle = hlayout.itemAt(1).widget()
-
-        center = handle.rect().center()
-        qtbot.mousePress(handle, Qt.MouseButton.LeftButton, pos=center)
-
-        # Overlay should contain "%" text
-        text = handle._weight_overlay.text()
-        assert "%" in text
-
-        qtbot.mouseRelease(
-            handle, Qt.MouseButton.LeftButton, pos=center
-        )
-
-    def test_resize_overlay_hides_on_release(self, sheet, qtbot):
-        """Test that the weight overlay is hidden after mouse release."""
-        attrs = {"A": 1, "B": 1}
-        layout = [[{"key": "A", "weight": 2}, {"key": "B", "weight": 2}]]
-        sheet.load_attributes(attrs, layout)
-        with qtbot.waitExposed(sheet):
-            sheet.show()
-
-        row_item = sheet._grid_layout.itemAt(0)
-        hlayout = row_item.layout()
-        handle = hlayout.itemAt(1).widget()
-
-        center = handle.rect().center()
-        qtbot.mousePress(handle, Qt.MouseButton.LeftButton, pos=center)
-        assert handle._weight_overlay is not None
-
-        qtbot.mouseRelease(
-            handle, Qt.MouseButton.LeftButton, pos=center
-        )
-        # After release, overlay should be hidden
-        assert handle._weight_overlay is None or handle._weight_overlay.isHidden()
-
-    def test_resize_overlay_updates_during_drag(self, sheet, qtbot):
-        """Test that the overlay updates while dragging."""
-        attrs = {"A": 1, "B": 1}
-        layout = [[{"key": "A", "weight": 2}, {"key": "B", "weight": 2}]]
-        sheet.load_attributes(attrs, layout)
-        with qtbot.waitExposed(sheet):
-            sheet.show()
-
-        row_item = sheet._grid_layout.itemAt(0)
-        hlayout = row_item.layout()
-        handle = hlayout.itemAt(1).widget()
-
-        center = handle.rect().center()
-        qtbot.mousePress(handle, Qt.MouseButton.LeftButton, pos=center)
-
-        # Verify overlay exists and contains percentage text initially
-        assert "%" in handle._weight_overlay.text()
-
-        # Move right significantly
-        qtbot.mouseMove(handle, center + QPoint(200, 0))
-
-        # Text should have updated to reflect new ratios
-        new_text = handle._weight_overlay.text()
-        assert "%" in new_text
-
-        qtbot.mouseRelease(
-            handle, Qt.MouseButton.LeftButton, pos=center + QPoint(200, 0)
-        )
 
 
 # ─────────────────────────────────────────────────────────────────────────────

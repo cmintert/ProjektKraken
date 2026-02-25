@@ -552,7 +552,6 @@ class _ResizeHandle(QWidget):
         self._initial_right_stretch = 0
         self._initial_left_width = 0
         self._initial_right_width = 0
-        self._weight_overlay: Optional[QLabel] = None
 
         self.setFixedWidth(6)
         self.setCursor(QCursor(Qt.CursorShape.SplitHCursor))
@@ -635,8 +634,6 @@ class _ResizeHandle(QWidget):
                 self._dragging = False
                 return
 
-            # Show weight overlay
-            self._show_weight_overlay()
             event.accept()
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
@@ -691,7 +688,6 @@ class _ResizeHandle(QWidget):
             ):
                 self._hlayout.setStretch(self._left_idx, left_stretch)
                 self._hlayout.setStretch(self._right_idx, right_stretch)
-                self._update_weight_overlay()
         except RuntimeError:
             self._dragging = False
             return
@@ -702,7 +698,6 @@ class _ResizeHandle(QWidget):
         """End resize tracking and emit completion."""
         if event.button() == Qt.MouseButton.LeftButton and self._dragging:
             self._dragging = False
-            self._hide_weight_overlay()
 
             if not shiboken6.isValid(self._hlayout):
                 return
@@ -744,66 +739,6 @@ class _ResizeHandle(QWidget):
             # Only emit the signal when the user stops dragging
             self.resize_done.emit()
             event.accept()
-
-    # ------------------------------------------------------------------
-    # Weight overlay helpers
-    # ------------------------------------------------------------------
-
-    def _show_weight_overlay(self) -> None:
-        """Create and show the weight percentage overlay above the handle."""
-        if self._weight_overlay is None:
-            self._weight_overlay = QLabel(self.parentWidget() or self)
-            self._weight_overlay.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            theme = self._theme_mgr.get_theme()
-            primary = theme.get("primary", "#5C82FF")
-            self._weight_overlay.setStyleSheet(
-                f"""
-                QLabel {{
-                    background-color: {primary};
-                    color: white;
-                    border-radius: 3px;
-                    padding: 2px 6px;
-                    font-size: 10px;
-                    font-weight: bold;
-                }}
-            """
-            )
-        self._update_weight_overlay()
-        self._weight_overlay.show()
-        self._weight_overlay.raise_()
-
-    def _update_weight_overlay(self) -> None:
-        """Update the overlay text and position to reflect current stretches."""
-        if self._weight_overlay is None:
-            return
-
-        try:
-            left_s = max(1, self._hlayout.stretch(self._left_idx))
-            right_s = max(1, self._hlayout.stretch(self._right_idx))
-        except RuntimeError:
-            return
-
-        total = left_s + right_s
-        left_pct = round(left_s / total * 100)
-        right_pct = 100 - left_pct
-        self._weight_overlay.setText(f"{left_pct}% | {right_pct}%")
-        self._weight_overlay.adjustSize()
-
-        # Position the overlay above the handle
-        handle_pos = self.mapToParent(self.rect().center())
-        overlay_w = self._weight_overlay.width()
-        overlay_h = self._weight_overlay.height()
-        self._weight_overlay.move(
-            handle_pos.x() - overlay_w // 2,
-            handle_pos.y() - overlay_h - 4,
-        )
-
-    def _hide_weight_overlay(self) -> None:
-        """Hide and clean up the weight overlay."""
-        if self._weight_overlay is not None:
-            self._weight_overlay.hide()
-            self._weight_overlay.deleteLater()
-            self._weight_overlay = None
 
 
 class SheetBuilderWidget(QWidget):
