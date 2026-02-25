@@ -352,23 +352,87 @@ class TestSheetBuilderWidget:
         item_B = row_layout.itemAt(2)
 
         # 1. Drop before 'A'
-        pos = item_A.geometry().topLeft()
-        row, col = sheet._calc_drop_position(pos)
+        pos = item_A.geometry().center()
+        pos.setX(item_A.geometry().left() + 2)
+        pos = sheet.mapFrom(sheet._container, pos)
+        row, col, new_row = sheet._calc_drop_position(pos)
         assert row == 0
         assert col == 0
+        assert not new_row
 
         # 2. Drop on the spacer (inserts before 'B' if passed center)
         # exact drop col depends on center().x(), so we test right side of spacer
-        pos = item_spacer.geometry().topRight()
-        row, col = sheet._calc_drop_position(pos)
+        pos = item_spacer.geometry().center()
+        pos.setX(item_spacer.geometry().right() - 2)
+        pos = sheet.mapFrom(sheet._container, pos)
+        row, col, new_row = sheet._calc_drop_position(pos)
         assert row == 0
         assert col == 2  # After A(0), Spacer(1)
+        assert not new_row
 
         # 3. Drop on 'B' right side
-        pos = item_B.geometry().topRight()
-        row, col = sheet._calc_drop_position(pos)
+        pos = item_B.geometry().center()
+        pos.setX(item_B.geometry().right() - 2)
+        pos = sheet.mapFrom(sheet._container, pos)
+        row, col, new_row = sheet._calc_drop_position(pos)
         assert row == 0
-        assert col == 3  # End of row
+        assert col == 3
+        assert not new_row  # End of row
+
+    def test_row_accepts_columns(self, sheet, qtbot):
+        """Test that Text and Divider rows reject new columns."""
+        sheet.load_attributes(
+            {"A": 1},
+            [
+                ["A"],
+                [{"type": "text", "text": "Test"}],
+                [{"type": "divider"}],
+            ],
+        )
+        with qtbot.waitExposed(sheet):
+            sheet.show()
+
+        layout_a = sheet._grid_layout.itemAt(0).layout()
+        layout_text = sheet._grid_layout.itemAt(1).layout()
+        layout_divider = sheet._grid_layout.itemAt(2).layout()
+
+        assert sheet._row_accepts_columns(layout_a) is True
+        assert sheet._row_accepts_columns(layout_text) is False
+        assert sheet._row_accepts_columns(layout_divider) is False
+
+    def test_calc_drop_position_forces_new_row_on_special_rows(self, sheet, qtbot):
+        """Test that dropping on a Text or Divider row forces insert_as_new_row=True."""
+        sheet.load_attributes(
+            {"A": 1},
+            [
+                ["A"],
+                [{"type": "text", "text": "Test"}],
+            ],
+        )
+        with qtbot.waitExposed(sheet):
+            sheet.show()
+
+        # Force layout update to ensure geometry is valid
+        sheet._grid_layout.invalidate()
+        sheet._grid_layout.activate()
+
+        text_item = sheet._grid_layout.itemAt(1).layout().itemAt(0).widget()
+
+        # Dropping on the top half of the text block targets row 1 (above text)
+        top_pos = text_item.geometry().center()
+        top_pos.setY(text_item.geometry().top() + 2)
+        top_pos = sheet.mapFrom(sheet._container, top_pos)
+        row, col, new_row = sheet._calc_drop_position(top_pos)
+        assert row == 1
+        assert new_row is True
+
+        # Dropping on the bottom half of the text block targets row 2 (below text)
+        bot_pos = text_item.geometry().center()
+        bot_pos.setY(text_item.geometry().bottom() - 2)
+        bot_pos = sheet.mapFrom(sheet._container, bot_pos)
+        row, col, new_row = sheet._calc_drop_position(bot_pos)
+        assert row == 2
+        assert new_row is True
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -935,16 +999,6 @@ class TestInsertionLine:
         qtbot.addWidget(parent)
         line = _InsertionLine(parent)
         assert line.parent() is parent
-
-    def test_insertion_line_has_fixed_height(self, qtbot):
-        """Test that the insertion line has a small fixed height."""
-        from PySide6.QtWidgets import QWidget
-
-        parent = QWidget()
-        qtbot.addWidget(parent)
-        line = _InsertionLine(parent)
-        # Should be a thin line (2-4px)
-        assert line.maximumHeight() <= 4
 
     def test_insertion_line_starts_hidden(self, qtbot):
         """Test that the insertion line starts hidden."""

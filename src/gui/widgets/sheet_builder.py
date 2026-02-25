@@ -483,10 +483,10 @@ class _GhostWidget(QWidget):
         self.move(global_pos.x() + 10, global_pos.y() + 10)
 
 
-class _InsertionLine(QFrame):
+class _InsertionLine(QWidget):
     """A thin colored line indicating where a dragged item will land.
 
-    Shown between rows or between items within a row during drag-move.
+    Shown horizontally between rows or vertically between items within a row.
     """
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -496,8 +496,6 @@ class _InsertionLine(QFrame):
             parent: Optional parent widget.
         """
         super().__init__(parent)
-        self.setFrameShape(QFrame.Shape.HLine)
-        self.setFixedHeight(3)
         self.hide()
 
         self._theme_mgr = ThemeManager()
@@ -511,7 +509,6 @@ class _InsertionLine(QFrame):
             f"""
             _InsertionLine {{
                 background-color: {primary};
-                border: none;
                 border-radius: 1px;
             }}
         """
@@ -1137,8 +1134,10 @@ class SheetBuilderWidget(QWidget):
             self._ghost.move_to(QCursor.pos())
 
         # Calculate drop position and show insertion line
-        drop_row, insert_col = self._calc_drop_position(event.position().toPoint())
-        self._show_insertion_indicator(drop_row, insert_col)
+        drop_row, insert_col, new_row = self._calc_drop_position(
+            event.position().toPoint()
+        )
+        self._show_insertion_indicator(drop_row, insert_col, new_row)
 
     def dragLeaveEvent(self, event: Any) -> None:
         """Hide ghost and insertion line when drag leaves the widget."""
@@ -1164,20 +1163,31 @@ class SheetBuilderWidget(QWidget):
         self._detach_pair(pair)
 
         # Calculate target position
-        drop_row, insert_col = self._calc_drop_position(event.position().toPoint())
+        drop_row, insert_col, new_row = self._calc_drop_position(
+            event.position().toPoint()
+        )
 
-        if drop_row < self._grid_layout.count():
-            # Insert into existing row
-            row_item = self._grid_layout.itemAt(drop_row)
-            if row_item and row_item.layout():
-                hlayout = row_item.layout()
-                idx = min(insert_col, hlayout.count())
-                hlayout.insertWidget(idx, pair, stretch=pair.weight)
-            else:
-                self._append_new_row(pair)
+        if new_row:
+            hlayout = QHBoxLayout()
+            hlayout.setSpacing(0)
+            hlayout.setContentsMargins(0, 0, 0, 0)
+            hlayout.addWidget(pair, stretch=pair.weight)
+            self._grid_layout.insertLayout(drop_row, hlayout)
         else:
-            # Append new row
-            self._append_new_row(pair)
+            if drop_row < self._grid_layout.count():
+                # Insert into existing row
+                row_item = self._grid_layout.itemAt(drop_row)
+                if row_item and row_item.layout():
+                    hlayout = row_item.layout()
+                    idx = min(insert_col, hlayout.count())
+                    hlayout.insertWidget(idx, pair, stretch=pair.weight)
+                    self._strip_resize_handles(hlayout)
+                    self._rebuild_resize_handles(hlayout)
+                else:
+                    self._append_new_row(pair)
+            else:
+                # Append new row
+                self._append_new_row(pair)
 
         event.acceptProposedAction()
         if self._block_depth == 0:
@@ -1450,26 +1460,55 @@ class SheetBuilderWidget(QWidget):
                 return row_idx, row_item.layout()
         return None
 
-    def _calc_drop_position(self, pos: QPoint) -> tuple:
-        """Determine the target row index and column index for a drop.
+    def _row_accepts_columns(self, hlayout: QHBoxLayout) -> bool:
+        """Return True if row can accept new attribute columns.
+
+        Rows containing TextBlockWidget or DividerWidget enforce full-width
+        and reject column insertions.
+        """
+        for i in range(hlayout.count()):
+            item = hlayout.itemAt(i)
+            if item and item.widget():
+                if isinstance(item.widget(), (TextBlockWidget, DividerWidget)):
+                    return False
+        return True
+
+    def _calc_drop_position(self, pos: QPoint) -> tuple[int, int, bool]:
+        """Determine target row, column index, and whether to insert as new row.
 
         Args:
             pos: Position in container coordinates.
 
         Returns:
-            Tuple of (row_index, col_index).
+            Tuple of (row_index, col_index, insert_as_new_row).
         """
         container_pos = self._container.mapFrom(self, pos)
         result = self._row_at_pos(container_pos)
         if result is None:
-            return self._grid_layout.count(), 0
+            return self._grid_layout.count(), 0, True
 
         target_row, hlayout = result
+        accepts_cols = self._row_accepts_columns(hlayout)
+        row_geom = hlayout.geometry()
+
+        # If the row rejects columns, drop above or below based on Y center
+        if not accepts_cols:
+            if container_pos.y() < row_geom.center().y():
+                return target_row, 0, True
+            return target_row + 1, 0, True
+
+        # Check edge proximity to allow creating new rows between valid rows
+        if container_pos.y() < row_geom.top() + 8:
+            return target_row, 0, True
+        elif container_pos.y() > row_geom.bottom() - 8:
+            return target_row + 1, 0, True
+
+        # Otherwise insert as column into current row
         for col_idx in range(hlayout.count()):
             if widget_item := hlayout.itemAt(col_idx):
                 if container_pos.x() < widget_item.geometry().center().x():
-                    return target_row, col_idx
-        return target_row, hlayout.count()
+                    return target_row, col_idx, False
+        return target_row, hlayout.count(), False
 
     def _on_pair_changed(self) -> None:
         """Forward pair value changes as attributes_changed."""
@@ -1523,33 +1562,56 @@ class SheetBuilderWidget(QWidget):
     # Drag feedback helpers
     # ------------------------------------------------------------------
 
-    def _show_insertion_indicator(self, drop_row: int, insert_col: int) -> None:
+    def _show_insertion_indicator(
+        self, drop_row: int, insert_col: int, insert_as_new_row: bool
+    ) -> None:
         """Position and show the insertion line at the given drop location.
 
         Args:
             drop_row: The target row index.
             insert_col: The target column index within the row.
+            insert_as_new_row: If True, draws a horizontal row boundary.
         """
         if self._insertion_line is None:
             self._insertion_line = _InsertionLine(self._container)
 
-        if drop_row < self._grid_layout.count():
+        if insert_as_new_row:
+            if drop_row < self._grid_layout.count():
+                row_item = self._grid_layout.itemAt(drop_row)
+                if row_item and row_item.layout():
+                    geom = row_item.layout().geometry()
+                    self._insertion_line.setGeometry(
+                        geom.x(), geom.y() - 2, geom.width(), 3
+                    )
+                    self._insertion_line.show()
+                    self._insertion_line.raise_()
+                    return
+
+            # Indicate new row at the bottom
+            y = self._container.height() - 4
+            self._insertion_line.setGeometry(4, y, self._container.width() - 8, 3)
+            self._insertion_line.show()
+            self._insertion_line.raise_()
+        else:
             row_item = self._grid_layout.itemAt(drop_row)
             if row_item and row_item.layout():
-                geom = row_item.layout().geometry()
-                # Show a thin line at the top of the target row
+                hlayout = row_item.layout()
+                row_geom = hlayout.geometry()
+                x = row_geom.x()
+                if insert_col < hlayout.count():
+                    item = hlayout.itemAt(insert_col)
+                    if item and item.geometry():
+                        x = item.geometry().x() - 2
+                else:
+                    x = row_geom.right() - 1
+
+                # Slightly shorter than the row height for column padding
+                padding = 4
                 self._insertion_line.setGeometry(
-                    geom.x(), geom.y() - 2, geom.width(), 3
+                    x, row_geom.y() + padding, 3, row_geom.height() - 2 * padding
                 )
                 self._insertion_line.show()
                 self._insertion_line.raise_()
-                return
-
-        # Indicate new row at the bottom
-        y = self._container.height() - 4
-        self._insertion_line.setGeometry(4, y, self._container.width() - 8, 3)
-        self._insertion_line.show()
-        self._insertion_line.raise_()
 
     def _cleanup_drag_feedback(self) -> None:
         """Clean up all drag feedback widgets (ghost + insertion line)."""
@@ -1669,13 +1731,14 @@ class SheetBuilderWidget(QWidget):
         act = menu.addAction("⬇ Insert Row Below")
         act.triggered.connect(lambda: self._ctx_insert_row(row_idx + 1))
 
-        menu.addSeparator()
+        if hlayout and self._row_accepts_columns(hlayout):
+            menu.addSeparator()
 
-        act = menu.addAction("\u2b1c Add Spacer to Row")
-        act.triggered.connect(lambda: self._ctx_add_spacer_to_row(row_idx))
+            act = menu.addAction("\u2b1c Add Spacer to Row")
+            act.triggered.connect(lambda: self._ctx_add_spacer_to_row(row_idx))
 
-        act = menu.addAction("\u2715 Remove Spacers from Row")
-        act.triggered.connect(lambda: self._ctx_remove_spacers_from_row(row_idx))
+            act = menu.addAction("\u2715 Remove Spacers from Row")
+            act.triggered.connect(lambda: self._ctx_remove_spacers_from_row(row_idx))
 
         menu.addSeparator()
 
