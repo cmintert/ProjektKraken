@@ -199,6 +199,14 @@ class MapLayerPanel(QWidget):
 
     def refresh_styles(self) -> None:
         """Re-apply all theme-aware styles (call on theme change)."""
+        try:
+            import shiboken6
+
+            if not shiboken6.isValid(self):
+                return
+        except ImportError:
+            pass
+
         tool_style = StyleHelper.get_tool_button_style()
         self.btn_new_group.setStyleSheet(tool_style)
 

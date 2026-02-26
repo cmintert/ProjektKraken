@@ -132,6 +132,14 @@ def test_generate_summary_calls_llm_and_updates_entity(
 
 
 def test_prompt_contains_wiki_link_instruction(summary_service, mock_llm_provider):
+    # Ensure QSettings returns the default prompt (not one set by a prior test)
+    from PySide6.QtCore import QSettings
+
+    from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+
+    settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+    settings.remove("ai_gen_summary_prompt")
+
     entity = Entity(name="Page", type="loc", description="Links to [[Another Page]].")
     summary_service.generate_summary(entity)
 

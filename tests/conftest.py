@@ -64,6 +64,8 @@ def _reset_theme_after_test():
 
     Prevents theme contamination between tests when a test calls
     set_theme() with a different theme or modifies the singleton state.
+    Resets directly without emitting signals to avoid triggering
+    callbacks on partially destroyed widgets.
     """
     yield
     try:
@@ -71,7 +73,8 @@ def _reset_theme_after_test():
 
         tm = ThemeManager()
         if tm.current_theme_name != "dark_mode":
-            tm.set_theme("dark_mode")
+            # Reset state without emitting signals (avoids C++ object crashes)
+            tm.current_theme_name = "dark_mode"
     except Exception:
         pass
 
@@ -233,7 +236,6 @@ def _mock_web_engine_view():
         return
 
     try:
-        from PySide6.QtCore import Qt
         from PySide6.QtWidgets import QWidget
     except ImportError:
         yield

@@ -41,6 +41,9 @@ def test_empty_state(widget):
 
 def test_single_event_display(widget):
     """Test display of a single event with payload."""
+    # Ensure no calendar converter is set (avoids test ordering contamination)
+    TimelineDisplayWidget._calendar_converter = None
+
     relations = [
         {
             "id": "r1",

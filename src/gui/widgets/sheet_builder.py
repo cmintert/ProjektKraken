@@ -143,6 +143,8 @@ class AttributePairWidget(QFrame):
 
     def _apply_theme(self) -> None:
         """Apply current theme colors to the widget."""
+        if not shiboken6.isValid(self):
+            return
         theme = self._theme_mgr.get_theme()
         text = theme.get("text", "#E0E0E0")
 
@@ -311,6 +313,8 @@ class TextBlockWidget(QFrame):
 
     def _apply_theme(self) -> None:
         """Apply current theme colors."""
+        if not shiboken6.isValid(self):
+            return
         self.setStyleSheet(StyleHelper.get_sheet_text_block_style())
 
     def _on_text_destroyed(self) -> None:
@@ -345,6 +349,8 @@ class DividerWidget(QFrame):
 
     def _apply_theme(self) -> None:
         """Apply current theme colors."""
+        if not shiboken6.isValid(self):
+            return
         self.setStyleSheet(StyleHelper.get_sheet_divider_style())
 
     def _on_divider_destroyed(self) -> None:
@@ -378,6 +384,8 @@ class SpacerWidget(QFrame):
 
     def _apply_theme(self) -> None:
         """Apply current theme colors."""
+        if not shiboken6.isValid(self):
+            return
         self.setStyleSheet(StyleHelper.get_sheet_spacer_style())
 
     def _on_spacer_destroyed(self) -> None:
@@ -424,6 +432,8 @@ class _GhostWidget(QWidget):
 
     def _apply_theme(self) -> None:
         """Apply current theme colors."""
+        if not shiboken6.isValid(self):
+            return
         theme = self._theme_mgr.get_theme()
         primary = theme.get("primary", "#5C82FF")
         text = theme.get("text", "#E0E0E0")
@@ -468,6 +478,8 @@ class _InsertionLine(QWidget):
 
     def _apply_theme(self) -> None:
         """Apply current theme colors."""
+        if not shiboken6.isValid(self):
+            return
         theme = self._theme_mgr.get_theme()
         primary = theme.get("primary", "#5C82FF")
         self.setStyleSheet(
@@ -526,6 +538,8 @@ class _ResizeHandle(QWidget):
 
     def _apply_theme(self) -> None:
         """Apply current theme colors."""
+        if not shiboken6.isValid(self):
+            return
         self.setStyleSheet(StyleHelper.get_sheet_resize_handle_style())
 
     def _on_destroyed(self) -> None:
@@ -785,6 +799,8 @@ class SheetBuilderWidget(QWidget):
 
     def _apply_theme(self) -> None:
         """Apply current theme colors to the widget."""
+        if not shiboken6.isValid(self):
+            return
         theme = self._theme_mgr.get_theme()
         surface = theme.get("surface", "#1A1A1A")
         surface_alt = theme.get("surface_alt", "#2A2A2A")

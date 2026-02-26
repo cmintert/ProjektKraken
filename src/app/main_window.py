@@ -355,9 +355,19 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         try:
             from src.core.theme_manager import ThemeManager
 
-            ThemeManager().theme_changed.connect(
-                lambda _: self.map_widget.layer_panel.refresh_styles()
-            )
+            def _refresh_layer_styles(_theme_data: dict) -> None:
+                """Refresh map layer panel styles on theme change."""
+                try:
+                    import shiboken6
+
+                    if shiboken6.isValid(self) and shiboken6.isValid(
+                        self.map_widget
+                    ):
+                        self.map_widget.layer_panel.refresh_styles()
+                except (RuntimeError, ImportError):
+                    pass
+
+            ThemeManager().theme_changed.connect(_refresh_layer_styles)
         except Exception as e:
             logger.warning(f"Failed to connect theme->layer panel: {e}")
 
