@@ -53,7 +53,7 @@ class TestSelectExistingItem:
     def test_create_marker_existing_entity(self, map_widget_fixture):
         """Selecting an existing entity emits marker_created."""
         with patch(
-            "src.gui.widgets.map_widget.QInputDialog"
+            "src.gui.mixins.map_dialog_mixin.QInputDialog"
         ) as MockDialog:
             MockDialog.getItem.return_value = ("Rivendell (Entity)", True)
 
@@ -71,7 +71,7 @@ class TestSelectExistingItem:
         """Selecting an existing event for a feature emits feature_created."""
         geometry = [{"x": 0.1, "y": 0.1}, {"x": 0.5, "y": 0.5}, {"x": 0.9, "y": 0.1}]
         with patch(
-            "src.gui.widgets.map_widget.QInputDialog"
+            "src.gui.mixins.map_dialog_mixin.QInputDialog"
         ) as MockDialog:
             MockDialog.getItem.return_value = (
                 "Battle of Five Armies (Event)",
@@ -97,7 +97,7 @@ class TestCreateNewInline:
     def test_create_marker_new_entity(self, map_widget_fixture):
         """Selecting '<New Entity...>' emits create_entity_requested + marker_created."""
         with patch(
-            "src.gui.widgets.map_widget.QInputDialog"
+            "src.gui.mixins.map_dialog_mixin.QInputDialog"
         ) as MockDialog:
             MockDialog.getItem.return_value = ("<New Entity...>", True)
             MockDialog.getText.return_value = ("Mount Doom", True)
@@ -115,7 +115,7 @@ class TestCreateNewInline:
     def test_create_marker_new_event(self, map_widget_fixture):
         """Selecting '<New Event...>' emits create_event_requested + marker_created."""
         with patch(
-            "src.gui.widgets.map_widget.QInputDialog"
+            "src.gui.mixins.map_dialog_mixin.QInputDialog"
         ) as MockDialog:
             MockDialog.getItem.return_value = ("<New Event...>", True)
             MockDialog.getText.return_value = ("Dragon Attack", True)
@@ -133,7 +133,7 @@ class TestCreateNewInline:
     def test_new_entity_cancel_name_emits_nothing(self, map_widget_fixture):
         """Cancelling the name dialog after choosing '<New Entity...>' emits nothing."""
         with patch(
-            "src.gui.widgets.map_widget.QInputDialog"
+            "src.gui.mixins.map_dialog_mixin.QInputDialog"
         ) as MockDialog:
             MockDialog.getItem.return_value = ("<New Entity...>", True)
             MockDialog.getText.return_value = ("", False)
@@ -148,7 +148,7 @@ class TestCreateNewInline:
     def test_cancel_selection_emits_nothing(self, map_widget_fixture):
         """Cancelling the item selection dialog emits nothing."""
         with patch(
-            "src.gui.widgets.map_widget.QInputDialog"
+            "src.gui.mixins.map_dialog_mixin.QInputDialog"
         ) as MockDialog:
             MockDialog.getItem.return_value = ("", False)
 

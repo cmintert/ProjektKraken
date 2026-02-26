@@ -58,6 +58,24 @@ def init_theme_manager():
     assert "surface" in theme, "ThemeManager failed to load valid theme"
 
 
+@pytest.fixture(autouse=True)
+def _reset_theme_after_test():
+    """Reset ThemeManager to dark_mode after each test.
+
+    Prevents theme contamination between tests when a test calls
+    set_theme() with a different theme or modifies the singleton state.
+    """
+    yield
+    try:
+        from src.core.theme_manager import ThemeManager
+
+        tm = ThemeManager()
+        if tm.current_theme_name != "dark_mode":
+            tm.set_theme("dark_mode")
+    except Exception:
+        pass
+
+
 @pytest.fixture
 def db_service():
     """
