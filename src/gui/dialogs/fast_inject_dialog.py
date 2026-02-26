@@ -291,13 +291,17 @@ class FastInjectDialog(QDialog):
             QMessageBox.critical(self, "Error", f"Failed to save: {e}")
 
     def _clear_configure_ui(self) -> None:
-        """Clear the configuration UI form."""
+        """Clear the configuration UI form and reset layout parameters."""
         self.lbl_name.setText("Select a template")
         self.lbl_desc.setText("")
         while self.form_layout.count():
-            child = self.form_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
+            item = self.form_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        # Reset all row stretches to prevent accumulation when switching templates
+        for i in range(self.form_layout.rowCount()):
+            self.form_layout.setRowStretch(i, 0)
 
     def _update_configure_ui(self, template: FastInjectTemplate) -> None:
         """Update the configuration UI with template details.
@@ -311,11 +315,10 @@ class FastInjectDialog(QDialog):
 
     def _build_form(self, template: FastInjectTemplate) -> None:
         """Build the unified attribute/tag editor form."""
-        # Clear old
-        while self.form_layout.count():
-            child = self.form_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
+        self._clear_configure_ui()
+
+        self.lbl_name.setText(template.name)
+        self.lbl_desc.setText(template.description)
 
         self._form_widgets = (
             []
