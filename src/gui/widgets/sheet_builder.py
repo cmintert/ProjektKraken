@@ -37,6 +37,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.style_helper import StyleHelper
 
 logger = logging.getLogger(__name__)
 
@@ -142,29 +143,23 @@ class AttributePairWidget(QFrame):
     def _apply_theme(self) -> None:
         """Apply current theme colors to the widget."""
         theme = self._theme_mgr.get_theme()
-        surface_alt = theme.get("surface_alt", "#2A2A2A")
-        border = theme.get("border", "#333333")
         text = theme.get("text", "#E0E0E0")
 
+        # Base input style handles border, radius, bg, text color
+        input_style = StyleHelper.get_input_field_style()
+        primary = theme.get("primary", "#5C82FF")
+
         self.setStyleSheet(
-            f"""
-            AttributePairWidget {{
-                background-color: {surface_alt};
-                border: 1px solid {border};
-                border-radius: 4px;
-            }}
+            StyleHelper.get_sheet_attribute_style()
+            + f"""
             QLabel {{
                 color: {text};
             }}
             QLineEdit, QComboBox {{
-                background-color: transparent;
-                border: 1px solid {border};
-                border-radius: 2px;
-                color: {text};
-                padding: 2px;
+                {input_style}
             }}
             QLineEdit:focus, QComboBox:focus {{
-                border: 1px solid {theme.get('primary', '#5C82FF')};
+                border: 1px solid {primary};
             }}
             QComboBox::drop-down {{
                 border: none;
@@ -282,7 +277,7 @@ class TextBlockWidget(QFrame):
         super().__init__(parent)
         self.weight = 1
 
-        self.setFrameShape(QFrame.Shape.NoFrame)
+        self.setFrameShape(QFrame.Shape.StyledPanel)
         self.setObjectName("TextBlockWidget")
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
@@ -315,23 +310,7 @@ class TextBlockWidget(QFrame):
 
     def _apply_theme(self) -> None:
         """Apply current theme colors."""
-        theme = self._theme_mgr.get_theme()
-        text_dim = theme.get("text_dim", "#808080")
-        text = theme.get("text", "#E0E0E0")
-        self.setStyleSheet(
-            f"""
-            TextBlockWidget QLineEdit {{
-                background-color: transparent;
-                border: none;
-                color: {text_dim};
-                font-style: italic;
-                padding: 4px;
-            }}
-            TextBlockWidget QLineEdit:focus {{
-                color: {text};
-            }}
-        """
-        )
+        self.setStyleSheet(StyleHelper.get_sheet_text_block_style())
 
     def _on_text_destroyed(self) -> None:
         """Disconnect theme signal when destroyed."""
@@ -365,11 +344,7 @@ class DividerWidget(QFrame):
 
     def _apply_theme(self) -> None:
         """Apply current theme colors."""
-        theme = self._theme_mgr.get_theme()
-        border = theme.get("border", "#333333")
-        self.setStyleSheet(
-            f"DividerWidget {{ color: {border}; background-color: {border}; }}"
-        )
+        self.setStyleSheet(StyleHelper.get_sheet_divider_style())
 
     def _on_divider_destroyed(self) -> None:
         """Disconnect theme signal when destroyed."""
@@ -402,18 +377,7 @@ class SpacerWidget(QFrame):
 
     def _apply_theme(self) -> None:
         """Apply current theme colors."""
-        theme = self._theme_mgr.get_theme()
-        border = theme.get("border", "#333333")
-        # Faint dashed border to give it a placeholder look
-        self.setStyleSheet(
-            f"""
-            SpacerWidget {{
-                background-color: transparent;
-                border: 1px dashed {border};
-                border-radius: 4px;
-            }}
-        """
-        )
+        self.setStyleSheet(StyleHelper.get_sheet_spacer_style())
 
     def _on_spacer_destroyed(self) -> None:
         """Disconnect theme signal when destroyed."""
@@ -561,19 +525,7 @@ class _ResizeHandle(QWidget):
 
     def _apply_theme(self) -> None:
         """Apply current theme colors."""
-        theme = self._theme_mgr.get_theme()
-        border = theme.get("border", "#333333")
-        self.setStyleSheet(
-            f"""
-            _ResizeHandle {{
-                background-color: transparent;
-            }}
-            _ResizeHandle:hover {{
-                background-color: {border};
-                border-radius: 2px;
-            }}
-        """
-        )
+        self.setStyleSheet(StyleHelper.get_sheet_resize_handle_style())
 
     def _on_destroyed(self) -> None:
         """Disconnect theme signal when destroyed."""
@@ -836,17 +788,13 @@ class SheetBuilderWidget(QWidget):
         surface = theme.get("surface", "#1A1A1A")
         surface_alt = theme.get("surface_alt", "#2A2A2A")
         border = theme.get("border", "#333333")
-        text = theme.get("text", "#E0E0E0")
-        text_dim = theme.get("text_dim", "#808080")
-        primary = theme.get("primary", "#5C82FF")
 
         # Style the scroll area and container to match the app's surface
-        self._scroll.setStyleSheet(
-            f"QScrollArea {{ background-color: {surface}; border: none; }}"
-        )
+        self._scroll.setStyleSheet(StyleHelper.get_scroll_area_style())
         self._container.setStyleSheet(f"QWidget {{ background-color: {surface}; }}")
 
         # Style the toolbar
+        tool_button_style = StyleHelper.get_flat_tool_button_style()
         self._toolbar.setStyleSheet(
             f"""
             QToolBar {{
@@ -855,23 +803,7 @@ class SheetBuilderWidget(QWidget):
                 spacing: 2px;
                 padding: 2px;
             }}
-            QToolButton {{
-                color: {text_dim};
-                background-color: transparent;
-                border: 1px solid transparent;
-                border-radius: 3px;
-                padding: 3px 8px;
-                font-size: 11px;
-            }}
-            QToolButton:hover {{
-                color: {text};
-                background-color: {border};
-                border: 1px solid {border};
-            }}
-            QToolButton:pressed {{
-                background-color: {primary};
-                color: white;
-            }}
+            {tool_button_style}
         """
         )
 

@@ -95,6 +95,129 @@ class StyleHelper:
             f"border-radius: 3px; padding: 2px; }}"
         )
 
+    # -------------------------------------------------------------------------
+    # Sheet Builder Specific Styles
+    # -------------------------------------------------------------------------
+
+    @staticmethod
+    def get_sheet_attribute_style() -> str:
+        """Returns QSS for AttributePairWidget and GhostWidget in Sheet Builder.
+
+        Returns:
+            str: QSS stylesheet string.
+        """
+        theme = ThemeManager().get_theme()
+        surface_alt = theme.get("surface_alt", "#2A2A2A")
+        border = theme.get("border", "#333333")
+        primary = theme.get("primary", "#5C82FF")
+
+        return f"""
+            AttributePairWidget {{
+                background-color: {surface_alt};
+                border: 1px solid {border};
+                border-radius: 4px;
+            }}
+            AttributePairWidget:hover {{
+                border: 1px solid {primary};
+            }}
+        """
+
+    @staticmethod
+    def get_sheet_text_block_style() -> str:
+        """Returns QSS for TextBlockWidget in Sheet Builder.
+
+        Returns:
+            str: QSS stylesheet string.
+        """
+        theme = ThemeManager().get_theme()
+        text_dim = theme.get("text_dim", "#808080")
+        text = theme.get("text", "#E0E0E0")
+        primary = theme.get("primary", "#5C82FF")
+
+        return f"""
+            TextBlockWidget {{
+                border: 1px solid transparent;
+                border-radius: 4px;
+            }}
+            TextBlockWidget:hover {{
+                border: 1px solid {primary};
+            }}
+            TextBlockWidget QLineEdit {{
+                background-color: transparent;
+                border: none;
+                color: {text_dim};
+                font-style: italic;
+                padding: 4px;
+            }}
+            TextBlockWidget QLineEdit:focus {{
+                color: {text};
+            }}
+        """
+
+    @staticmethod
+    def get_sheet_divider_style() -> str:
+        """Returns QSS for DividerWidget in Sheet Builder.
+
+        Returns:
+            str: QSS stylesheet string.
+        """
+        theme = ThemeManager().get_theme()
+        border = theme.get("border", "#333333")
+        primary = theme.get("primary", "#5C82FF")
+
+        return f"""
+            DividerWidget {{
+                color: {border};
+                background-color: {border};
+            }}
+            DividerWidget:hover {{
+                color: {primary};
+                background-color: {primary};
+            }}
+        """
+
+    @staticmethod
+    def get_sheet_spacer_style() -> str:
+        """Returns QSS for SpacerWidget in Sheet Builder.
+
+        Returns:
+            str: QSS stylesheet string.
+        """
+        theme = ThemeManager().get_theme()
+        border = theme.get("border", "#333333")
+        primary = theme.get("primary", "#5C82FF")
+
+        return f"""
+            SpacerWidget {{
+                background-color: transparent;
+                border: 1px dashed {border};
+                border-radius: 4px;
+            }}
+            SpacerWidget:hover {{
+                border: 1px dashed {primary};
+            }}
+        """
+
+    @staticmethod
+    def get_sheet_resize_handle_style() -> str:
+        """Returns QSS for _ResizeHandle in Sheet Builder.
+
+        Returns:
+            str: QSS stylesheet string.
+        """
+        theme = ThemeManager().get_theme()
+        primary = theme.get("primary", "#5C82FF")
+
+        return f"""
+            _ResizeHandle {{
+                background-color: transparent;
+            }}
+            _ResizeHandle:hover {{
+                background-color: {primary};
+                border-radius: 2px;
+            }}
+        """
+
     @staticmethod
     def get_lore_frame_style() -> str:
         """Returns QSS for lore/narrative frames.
@@ -178,9 +301,9 @@ class StyleHelper:
     def get_tool_button_style() -> str:
         """
         Style sheet for tool and secondary action buttons targeting QToolButton and QPushButton.
-        
+
         The style uses the theme's surface, text, border, primary, and app background colors and defines base, hover, pressed, and checked states.
-        
+
         Returns:
             str: QSS stylesheet string for tool and secondary action buttons.
         """
@@ -200,12 +323,34 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_flat_tool_button_style() -> str:
+        """
+        Returns QSS for flat tool buttons typically used in headers or toolbars.
+
+        These buttons are transparent by default and only show a background on hover/press.
+        """
+        theme = ThemeManager().get_theme()
+        text_dim = theme.get("text_dim", "#808080")
+        text_main = theme.get("text_main", "#E0E0E0")
+        border = theme.get("border", "#333333")
+        primary = theme.get("primary", "#5C82FF")
+
+        return (
+            f"QToolButton {{ color: {text_dim}; background-color: transparent; "
+            f"border: 1px solid transparent; border-radius: 3px; "
+            f"padding: 3px 8px; font-size: 11px; }}"
+            f"QToolButton:hover {{ color: {text_main}; "
+            f"background-color: {border}; border: 1px solid {border}; }}"
+            f"QToolButton:pressed {{ background-color: {primary}; color: white; }}"
+        )
+
+    @staticmethod
     def get_destructive_button_style() -> str:
         """
         Provide QSS for destructive action buttons using the theme's destructive color.
-        
+
         Styles normal, hover, and disabled states for QPushButton to ensure consistent destructive button appearance.
-        
+
         Returns:
             str: QSS stylesheet string for destructive action buttons.
         """
@@ -226,10 +371,10 @@ class StyleHelper:
     def get_pill_painter_data(base_color: Optional[str] = None) -> dict:
         """
         Return RGB components and hex color for painting pill widgets.
-        
+
         Parameters:
             base_color (Optional[str]): Optional hex color string in `#RRGGBB` form; when omitted the theme's `accent_secondary` color is used.
-        
+
         Returns:
             dict: Mapping with keys:
                 - "hex" (str): The hex color string used.
@@ -257,14 +402,14 @@ class StyleHelper:
     ) -> str:
         """
         Generate themed QSS for a pill-style (rounded/oblong) widget.
-        
+
         Parameters:
-        	object_name (str): The widget's objectName used as the selector.
-        	base_color (Optional[str]): Optional hex base color to derive pill RGB values; if omitted, theme accent_secondary is used.
-        	has_delete (bool): If True, include styling for an inline delete QToolButton inside the pill.
-        
+                object_name (str): The widget's objectName used as the selector.
+                base_color (Optional[str]): Optional hex base color to derive pill RGB values; if omitted, theme accent_secondary is used.
+                has_delete (bool): If True, include styling for an inline delete QToolButton inside the pill.
+
         Returns:
-        	str: QSS stylesheet string targeting the pill widget and optional delete button.
+                str: QSS stylesheet string targeting the pill widget and optional delete button.
         """
         theme = ThemeManager().get_theme()
         data = StyleHelper.get_pill_painter_data(base_color)
@@ -307,9 +452,9 @@ class StyleHelper:
     def get_icon_button_style() -> str:
         """
         QSS for square, icon-only buttons that reflect the current theme.
-        
+
         Includes base, hover, and pressed states using theme surface, border, and app background colors.
-        
+
         Returns:
             str: The QSS stylesheet string for icon buttons.
         """
@@ -537,7 +682,7 @@ class StyleHelper:
     def apply_no_margins(layout: QLayout) -> None:
         """
         Remove all margins from the given layout.
-        
+
         Parameters:
             layout (QLayout): Layout to modify; margins will be set to 0 on all sides.
         """
@@ -547,7 +692,7 @@ class StyleHelper:
     def get_checkbox_style() -> str:
         """
         QSS stylesheet for themed checkbox indicators and related view indicators.
-        
+
         Returns:
             str: Stylesheet configuring checkbox, QListWidget/QListView/QTreeView indicators (size, border, radius, background), hover border color, checked state border and embedded check icon.
         """
@@ -738,9 +883,9 @@ class StyleHelper:
     def get_spinbox_style() -> str:
         """
         Generate QSS for themed QSpinBox widgets with custom up/down buttons.
-        
+
         Prevents native arrows from being hidden when background or border styles are applied and uses bundled SVG arrow assets for the up/down controls.
-        
+
         Returns:
             str: QSS stylesheet string for QSpinBox widgets.
         """
@@ -783,7 +928,7 @@ class StyleHelper:
     def get_shortcut_key_style() -> str:
         """
         QSS for keyboard shortcut key widgets styled as monospace, bold tokens with padding and rounded borders.
-        
+
         Returns:
             str: Stylesheet string using the theme's surface, text_main, and border colors.
         """

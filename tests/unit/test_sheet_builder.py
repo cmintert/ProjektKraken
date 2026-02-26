@@ -129,6 +129,17 @@ class TestAttributePairWidget:
         # Check label has colon
         assert ":" in pair.key_label.text()
 
+    def test_hover_styling(self, pair):
+        """Test that the widget has hover styling applied with the primary color."""
+        # We want the entire AttributePairWidget to lightly border or highlight on hover
+        # Or just checking that :hover is in the stylesheet
+        theme = pair._theme_mgr.get_theme()
+        primary = theme.get("primary", "#FF9900")
+
+        stylesheet = pair.styleSheet()
+        assert "AttributePairWidget:hover" in stylesheet
+        assert primary in stylesheet
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SheetBuilderWidget
@@ -481,6 +492,22 @@ class TestTextBlockWidget:
         tb.set_text("silent")
         assert not emitted
 
+    def test_hover_styling(self, qtbot):
+        """Test that the text block widget has hover styling applied."""
+        from src.gui.widgets.sheet_builder import TextBlockWidget
+
+        tb = TextBlockWidget("")
+        qtbot.addWidget(tb)
+
+        theme = tb._theme_mgr.get_theme()
+        primary = theme.get("primary", "#FF9900")
+
+        stylesheet = tb.styleSheet()
+        # Needs StyledPanel for border, and hover state
+        assert tb.frameShape() == QFrame.Shape.StyledPanel
+        assert "TextBlockWidget:hover" in stylesheet
+        assert primary in stylesheet
+
 
 class TestDividerWidget:
     """Tests for the DividerWidget."""
@@ -493,6 +520,38 @@ class TestDividerWidget:
         qtbot.addWidget(dw)
         assert dw.frameShape() == QFrame.Shape.HLine
         assert dw.maximumHeight() == 2
+
+    def test_hover_styling(self, qtbot):
+        """Test that the divider widget has hover styling applied."""
+        from src.gui.widgets.sheet_builder import DividerWidget
+
+        dw = DividerWidget()
+        qtbot.addWidget(dw)
+
+        theme = dw._theme_mgr.get_theme()
+        primary = theme.get("primary", "#FF9900")
+
+        stylesheet = dw.styleSheet()
+        assert "DividerWidget:hover" in stylesheet
+        assert primary in stylesheet
+
+
+class TestSpacerWidget:
+    """Tests for the SpacerWidget."""
+
+    def test_hover_styling(self, qtbot):
+        """Test that the spacer widget has hover styling applied."""
+        from src.gui.widgets.sheet_builder import SpacerWidget
+
+        sw = SpacerWidget()
+        qtbot.addWidget(sw)
+
+        theme = sw._theme_mgr.get_theme()
+        primary = theme.get("primary", "#FF9900")
+
+        stylesheet = sw.styleSheet()
+        assert "SpacerWidget:hover" in stylesheet
+        assert primary in stylesheet
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -738,6 +797,28 @@ class TestResizeHandle:
 
         # Should be exactly 1 after release
         assert signal_count == 1
+
+    def test_hover_styling(self, qtbot):
+        """Test that the resize handle has hover styling with primary color."""
+        from PySide6.QtWidgets import QHBoxLayout, QWidget
+        from src.gui.widgets.sheet_builder import _ResizeHandle
+
+        parent = QWidget()
+        layout = QHBoxLayout(parent)
+        qtbot.addWidget(parent)
+
+        handle = _ResizeHandle(layout, 0, 1)
+        qtbot.addWidget(handle)
+
+        theme = handle._theme_mgr.get_theme()
+        primary = theme.get("primary", "#FF9900")
+
+        stylesheet = handle.styleSheet()
+        assert "_ResizeHandle:hover" in stylesheet
+        assert primary in stylesheet
+        # Ensure it doesn't just use border color on hover anymore
+        border = theme.get("border", "#333333")
+        assert f"background-color: {border};" not in stylesheet
 
     def test_resize_handle_disconnects_on_destroy(self, qtbot):
         """Test that destroying a handle disconnects it from ThemeManager."""
