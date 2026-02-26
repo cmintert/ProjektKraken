@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-26
-### Internal
-- Merge pull request #104 from cmintert/copilot/add-sheet-builder-v1-0
+### Documentation
+- docs: update CHANGELOG.md since v0.13.5
 
 
 *This changelog was automatically generated.*
