@@ -291,7 +291,7 @@ class DataHandler(QObject):
         self.trajectories_ready.emit(trajectories)
 
     @Slot(CommandResult)
-    def on_command_finished(self, result: CommandResult) -> None:
+    def on_command_finished(self, result: CommandResult) -> None:  # noqa: C901
         """Handles completion of async commands, emitting signals for necessary UI
         refreshes.
 

@@ -21,6 +21,8 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QGraphicsObject,
     QGraphicsPathItem,
+    QStyleOptionGraphicsItem,
+    QWidget,
 )
 
 from src.app.constants import MAP_LAYER_Z_TRAJECTORIES
@@ -49,7 +51,7 @@ KEYFRAME_LABEL_MAX_SIZE_PT = 10
 class KeyframeLabelItem(QGraphicsObject):
     """Custom graphics item for keyframe labels with a themed background pill."""
 
-    def __init__(self, text: str, parent=None):
+    def __init__(self, text: str, parent: Optional[QGraphicsObject] = None) -> None:
         super().__init__(parent)
         self._text = text
         self._font = QFont(KEYFRAME_LABEL_FONT_FAMILY, KEYFRAME_LABEL_FONT_SIZE)
@@ -60,7 +62,7 @@ class KeyframeLabelItem(QGraphicsObject):
         self._rect = QRectF()
         self._update_rect()
 
-    def _update_rect(self):
+    def _update_rect(self) -> None:
         fm = QFontMetrics(self._font)
         text_rect = fm.boundingRect(self._text)
         width = text_rect.width() + self._padding_x * 2
@@ -71,13 +73,13 @@ class KeyframeLabelItem(QGraphicsObject):
     def boundingRect(self) -> QRectF:
         return self._rect
 
-    def setText(self, text: str):
+    def setText(self, text: str) -> None:
         if self._text != text:
             self._text = text
             self._update_rect()
             self.update()
 
-    def paint(self, painter: QPainter, option, widget=None):
+    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: Optional[QWidget] = None) -> None:
         theme = ThemeManager().get_theme()
         bg_color = QColor(theme.get("surface", "#1A1A1A"))
         text_color = QColor(theme.get("text_main", "#FFFFFF"))

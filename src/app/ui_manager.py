@@ -149,7 +149,7 @@ class UIManager:
             # Store filter as attribute to prevent garbage collection
             setattr(dock, "_diag_event_filter", f)
 
-    def setup_docks(self, widgets: Dict[str, QWidget]) -> None:
+    def setup_docks(self, widgets: Dict[str, QWidget]) -> None:  # noqa: C901
         """Creates and arranges all dock widgets.
 
         Args:

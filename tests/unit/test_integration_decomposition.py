@@ -58,7 +58,7 @@ class TestTagRepositoryIntegration:
         db.insert_event(event)
 
         # Create and assign
-        tag_id = db.create_tag("lifecycle_tag")
+        db.create_tag("lifecycle_tag")
         db.assign_tag_to_event(event.id, "lifecycle_tag")
 
         # Verify assignment

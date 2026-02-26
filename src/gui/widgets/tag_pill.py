@@ -5,8 +5,16 @@ Provides a rounded rectangular component for displaying a tag with a delete butt
 
 from typing import Optional
 
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QBrush, QColor, QLinearGradient, QPainter, QPen
+from PySide6.QtCore import QEvent, Qt, Signal
+from PySide6.QtGui import (
+    QBrush,
+    QColor,
+    QEnterEvent,
+    QLinearGradient,
+    QPainter,
+    QPaintEvent,
+    QPen,
+)
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -100,12 +108,12 @@ class TagPill(QFrame):
         )
         self.setStyleSheet(style)
 
-    def enterEvent(self, event) -> None:
+    def enterEvent(self, event: QEnterEvent) -> None:
         """Trigger repaint on hover enter."""
         super().enterEvent(event)
         self.update()
 
-    def leaveEvent(self, event) -> None:
+    def leaveEvent(self, event: QEvent) -> None:
         """
         Handle the mouse leave event and request a repaint to update hover visuals.
         """
@@ -121,7 +129,7 @@ class TagPill(QFrame):
         """
         self.deleted.emit(self.text)
 
-    def paintEvent(self, event) -> None:
+    def paintEvent(self, event: QPaintEvent) -> None:
         """
         Paints the tag pill with a rounded gradient fill and a hover-aware border.
         

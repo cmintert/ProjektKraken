@@ -14,15 +14,19 @@ pytestmark = pytest.mark.skipif(
     reason="No display available for Qt tests",
 )
 
-from PySide6.QtCore import QPointF, Qt
-from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QApplication, QGraphicsPixmapItem, QGraphicsScene
+from PySide6.QtCore import QPointF, Qt  # noqa: E402
+from PySide6.QtGui import QPixmap  # noqa: E402
+from PySide6.QtWidgets import (  # noqa: E402
+    QApplication,
+    QGraphicsPixmapItem,
+    QGraphicsScene,
+)
 
-from src.core.marker import (
+from src.core.marker import (  # noqa: E402
     FEATURE_TYPE_PATH,
     MapFeature,
 )
-from src.gui.widgets.map.feature_items import PathItem, RegionItem
+from src.gui.widgets.map.feature_items import PathItem, RegionItem  # noqa: E402
 
 # --------------------------------------------------------------------------
 # Fixtures
@@ -863,7 +867,6 @@ class TestVertexManagement:
     def test_editing_applies_dash_style(self, view) -> None:
         """Vertex editing applies dashed stroke to the edited feature."""
         item = view.feature_items["p1"]
-        original_style = dict(item._style)
         view._start_vertex_editing(item)
         # Should have dash pattern applied
         assert item._style.get("dash_pattern") is not None

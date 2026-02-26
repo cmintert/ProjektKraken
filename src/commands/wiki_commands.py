@@ -43,7 +43,7 @@ class ProcessWikiLinksCommand(BaseCommand):
         self.field = field
         self._created_relations: List[str] = []
 
-    def execute(self, db_service: DatabaseService) -> CommandResult:
+    def execute(self, db_service: DatabaseService) -> CommandResult:  # noqa: C901
         """Executes the link processing.
 
         Extracts WikiLinks, resolves them to entities or events, and

@@ -193,7 +193,7 @@ class CreateTemplateDialog(QDialog):
         btn_layout.addWidget(btn_save)
         layout.addLayout(btn_layout)
 
-    def _on_save(self) -> None:
+    def _on_save(self) -> None:  # noqa: C901
         """Collect data and accept."""
         name = self.name_edit.text().strip()
         if not name:

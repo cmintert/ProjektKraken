@@ -15,11 +15,15 @@ pytestmark = pytest.mark.skipif(
     reason="No display available for Qt tests",
 )
 
-from PySide6.QtCore import QPointF, Qt
-from PySide6.QtGui import QPixmap, QTransform
-from PySide6.QtWidgets import QApplication, QGraphicsPixmapItem, QGraphicsScene
+from PySide6.QtCore import QPointF, Qt  # noqa: E402
+from PySide6.QtGui import QPixmap, QTransform  # noqa: E402
+from PySide6.QtWidgets import (  # noqa: E402
+    QApplication,
+    QGraphicsPixmapItem,
+    QGraphicsScene,
+)
 
-from src.gui.widgets.map.snapping_manager import (
+from src.gui.widgets.map.snapping_manager import (  # noqa: E402
     SnappingManager,
     SnapResult,
     SnapType,

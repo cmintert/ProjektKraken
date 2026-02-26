@@ -8,7 +8,7 @@ import json
 from typing import Any, Dict, List, Optional, Union
 
 from PySide6.QtCore import QMimeData, QSize, Qt, Signal, Slot
-from PySide6.QtGui import QDrag
+from PySide6.QtGui import QDrag, QMouseEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -50,7 +50,7 @@ class DraggableListView(QListView):
 
     drag_started = Signal()
 
-    def mousePressEvent(self, event) -> None:
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         """Override to deselect items when clicking into free space.
 
         Args:

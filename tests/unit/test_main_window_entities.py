@@ -42,7 +42,6 @@ def test_create_entity(main_window, qtbot):
         with patch(
             "src.app.coordinators.editor_coordinator.CreateEntityCommand"
         ) as MockCmd:
-            mock_cmd_instance = MockCmd.return_value
 
             with qtbot.waitSignal(
                 main_window.editor_coordinator.command_requested, timeout=1000
@@ -59,7 +58,6 @@ def test_delete_entity(main_window, qtbot):
     with patch(
         "src.app.coordinators.editor_coordinator.DeleteEntityCommand"
     ) as MockCmd:
-        mock_cmd_instance = MockCmd.return_value
 
         with qtbot.waitSignal(
             main_window.editor_coordinator.command_requested, timeout=1000
@@ -89,7 +87,6 @@ def test_entity_add_relation(main_window, qtbot):
     with patch(
         "src.app.coordinators.editor_coordinator.AddRelationCommand"
     ) as MockCmd:
-        mock_cmd_instance = MockCmd.return_value
 
         with qtbot.waitSignal(
             main_window.editor_coordinator.command_requested, timeout=1000
@@ -108,7 +105,6 @@ def test_entity_remove_relation(main_window, qtbot):
     with patch(
         "src.app.coordinators.editor_coordinator.RemoveRelationCommand"
     ) as MockCmd:
-        mock_cmd_instance = MockCmd.return_value
 
         with qtbot.waitSignal(
             main_window.editor_coordinator.command_requested, timeout=1000
@@ -123,7 +119,6 @@ def test_entity_update_relation(main_window, qtbot):
     with patch(
         "src.app.coordinators.editor_coordinator.UpdateRelationCommand"
     ) as MockCmd:
-        mock_cmd_instance = MockCmd.return_value
 
         with qtbot.waitSignal(
             main_window.editor_coordinator.command_requested, timeout=1000

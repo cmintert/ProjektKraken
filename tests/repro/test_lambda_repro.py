@@ -9,7 +9,8 @@ def test_lambda_connection():
     s = Signaller()
 
     # This lambda accepts no arguments - Python lambda signature check is disabled in PySide?
-    callback = lambda: print("called")
+    def callback() -> None:
+        print("called")
 
     # Connecting signal with 1 arg to lambda with 0 args
     s.triggered.connect(callback)

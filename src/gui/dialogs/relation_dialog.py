@@ -33,7 +33,7 @@ class RelationEditDialog(QDialog):
     Supports autocompletion for the target field.
     """
 
-    def __init__(
+    def __init__(  # noqa: C901
         self,
         parent: Optional[QWidget] = None,
         target_id: str = "",
