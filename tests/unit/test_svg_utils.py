@@ -6,13 +6,11 @@ Base64 data URI styling, and SVG file reading.
 
 import base64
 
-
 from src.gui.utils.svg_utils import (
     apply_svg_inline_styles,
     apply_svg_styling_to_data_uri,
     svg_file_to_string,
 )
-
 
 SIMPLE_SVG = '<svg xmlns="http://www.w3.org/2000/svg"><circle r="10"/></svg>'
 PHOSPHOR_SVG = (

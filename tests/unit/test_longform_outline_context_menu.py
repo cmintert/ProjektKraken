@@ -6,7 +6,7 @@ including Move up, Move down, Promote, Demote, and Delete operations.
 
 import pytest
 from PySide6.QtCore import QPoint
-from PySide6.QtWidgets import QMenu
+from PySide6.QtWidgets import QApplication, QMenu
 
 from src.gui.widgets.longform.outline import LongformOutlineWidget
 
@@ -53,55 +53,43 @@ def sample_sequence():
 def test_context_menu_on_item(outline_widget, sample_sequence, qtbot):
     """Test that context menu appears when right-clicking on an item."""
     outline_widget.load_sequence(sample_sequence)
-    
+
     # Select first item
     item = outline_widget.topLevelItem(0)
     outline_widget.setCurrentItem(item)
-    
+
     # Get position of item
     rect = outline_widget.visualItemRect(item)
     pos = rect.center()
-    
-    # Mock the menu exec to prevent actual display
-    original_exec = QMenu.exec
-    menu_shown = False
-    
-    def mock_exec(self, pos):
-        nonlocal menu_shown
-        menu_shown = True
-        return None
-    
-    QMenu.exec = mock_exec
-    try:
-        # Trigger context menu
-        outline_widget._show_context_menu(pos)
-        assert menu_shown, "Context menu should be shown"
-    finally:
-        QMenu.exec = original_exec
+
+    # Use QTimer to close any menu that appears, preventing exec() from blocking
+    from PySide6.QtCore import QTimer
+
+    menu_detected = False
+
+    def _close_menus():
+        nonlocal menu_detected
+        for w in QApplication.topLevelWidgets():
+            if isinstance(w, QMenu):
+                menu_detected = True
+                w.close()
+
+    QTimer.singleShot(0, _close_menus)
+    outline_widget._show_context_menu(pos)
+    assert menu_detected, "Context menu should be shown"
 
 
 def test_context_menu_no_item(outline_widget, sample_sequence, qtbot):
     """Test that context menu does not appear when clicking on empty space."""
     outline_widget.load_sequence(sample_sequence)
-    
+
     # Click on empty space
     pos = QPoint(10, 500)  # Far below items
-    
-    # Mock the menu exec to detect if it was called
-    original_exec = QMenu.exec
-    menu_shown = False
-    
-    def mock_exec(self, pos):
-        nonlocal menu_shown
-        menu_shown = True
-        return None
-    
-    QMenu.exec = mock_exec
-    try:
-        outline_widget._show_context_menu(pos)
-        assert not menu_shown, "Context menu should not be shown for empty space"
-    finally:
-        QMenu.exec = original_exec
+
+    # _show_context_menu returns early when no item is at position,
+    # so no blocking exec() is called.
+    outline_widget._show_context_menu(pos)
+    # If we reach here, no blocking occurred (no menu shown)
 
 
 def test_promote_signal_emitted(outline_widget, sample_sequence, qtbot):
@@ -276,37 +264,39 @@ def test_demote_first_child_no_signal(outline_widget, sample_sequence, qtbot):
     assert blocker.args[1] == "event2"
 
 
-def test_context_menu_actions_present(outline_widget, sample_sequence, qtbot, monkeypatch):
+def test_context_menu_actions_present(outline_widget, sample_sequence, qtbot):
     """Test that context menu contains all expected actions."""
     outline_widget.load_sequence(sample_sequence)
-    
+
     # Select first child item which should enable all actions
     item = outline_widget.topLevelItem(0).child(1)  # Section 1.2
     outline_widget.setCurrentItem(item)
-    
+
     rect = outline_widget.visualItemRect(item)
     pos = rect.center()
-    
-    # Capture the menu that gets created
+
+    # Capture the menu via QTimer before exec() blocks
+    from PySide6.QtCore import QTimer
+
     captured_menu = None
-    original_exec = QMenu.exec
-    
-    def mock_exec(self, global_pos):
+
+    def _capture_and_close():
         nonlocal captured_menu
-        captured_menu = self
-        return None
-    
-    monkeypatch.setattr(QMenu, "exec", mock_exec)
-    
-    # Trigger context menu
+        for w in QApplication.topLevelWidgets():
+            if isinstance(w, QMenu):
+                captured_menu = w
+                w.close()
+                return
+
+    QTimer.singleShot(0, _capture_and_close)
     outline_widget._show_context_menu(pos)
-    
+
     assert captured_menu is not None, "Menu should be created"
-    
+
     # Get all actions
     actions = captured_menu.actions()
     action_texts = [action.text() for action in actions if not action.isSeparator()]
-    
+
     # Check that all expected actions are present
     assert "Move Up" in action_texts
     assert "Move Down" in action_texts

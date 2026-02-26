@@ -23,9 +23,6 @@ from PySide6.QtCore import (
     Slot,
 )
 
-from src.gui.utils.icon_loader import load_icon
-from src.core.theme_manager import ThemeManager
-
 from src.app.constants import (
     MAP_LAYER_DEFAULT_OPACITY,
     MAP_LAYER_TYPE_GROUP,
@@ -36,6 +33,8 @@ from src.app.constants import (
     MAP_LAYER_Z_SPACING,
 )
 from src.core.map import MapLayerNode
+from src.core.theme_manager import ThemeManager
+from src.gui.utils.icon_loader import load_icon
 
 logger = logging.getLogger(__name__)
 

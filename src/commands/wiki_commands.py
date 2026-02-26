@@ -206,8 +206,8 @@ class ProcessWikiLinksCommand(BaseCommand):
                         valid_links.append(f"{target_obj.name} ({target_type_str})")
 
                         logger.info(
-                            f"Created 'mentions' relation {rel_id}: {self.source_id} -> "
-                            f"{target_obj.name}"
+                            f"Created 'mentions' relation {rel_id}: "
+                            f"{self.source_id} -> {target_obj.name}"
                         )
                     except Exception as e:
                         logger.error(f"Failed to create wiki relation: {e}")
@@ -217,7 +217,8 @@ class ProcessWikiLinksCommand(BaseCommand):
             # 5. Build result message
             link_word = "link" if created_count == 1 else "links"
             message_parts = [
-                f"Processed {len(candidates)} candidates. Created {created_count} new {link_word}."
+                f"Processed {len(candidates)} candidates. "
+                f"Created {created_count} new {link_word}."
             ]
             if skipped_ambiguous:
                 message_parts.append(
@@ -249,6 +250,9 @@ class ProcessWikiLinksCommand(BaseCommand):
 
     def undo(self, db_service: DatabaseService) -> None:
         """Undo operation: deletes the created 'mentions' relations."""
+        if not self._is_executed:
+            return
+
         for rel_id in self._created_relations:
             try:
                 db_service.delete_relation(rel_id)
@@ -256,6 +260,7 @@ class ProcessWikiLinksCommand(BaseCommand):
             except Exception as e:
                 logger.error(f"Failed to undo wiki relation {rel_id}: {e}")
         self._created_relations.clear()
+        self._is_executed = False
 
     @staticmethod
     def _extract_snippet(
@@ -311,6 +316,7 @@ class ProcessWikiLinksCommand(BaseCommand):
             "source_id": self.source_id,
             "text_content": self.text_content,
             "field": self.field,
+            "created_relations": self._created_relations,
             "is_executed": self._is_executed,
         }
 
@@ -329,5 +335,6 @@ class ProcessWikiLinksCommand(BaseCommand):
             text_content=data["text_content"],
             field=data.get("field", "description"),
         )
+        cmd._created_relations = data.get("created_relations", [])
         cmd._is_executed = data.get("is_executed", False)
         return cmd

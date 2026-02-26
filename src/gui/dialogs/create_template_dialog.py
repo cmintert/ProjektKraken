@@ -31,15 +31,17 @@ class CreateTemplateDialog(QDialog):
         source_tags: List[str],
         source_attributes: Dict[str, Any],
         source_type: Optional[str] = None,
+        source_layout: Optional[List[List[Any]]] = None,
         default_name: str = "New Template",
         parent: Optional[QWidget] = None,
     ) -> None:
         """Initialize the create template dialog.
-        
+
         Args:
             source_tags: List of tags from the source entity/event.
             source_attributes: Attributes from the source entity/event.
             source_type: Type of the source entity/event.
+            source_layout: Optional visual layout array.
             default_name: Default name for the template.
             parent: Optional parent widget.
         """
@@ -51,6 +53,7 @@ class CreateTemplateDialog(QDialog):
         self.source_attributes = {
             k: v for k, v in source_attributes.items() if not k.startswith("_")
         }
+        self.source_layout = source_layout
         self.source_type = source_type
 
         self.result_data: Dict[str, Any] = {}
@@ -59,7 +62,7 @@ class CreateTemplateDialog(QDialog):
 
     def _setup_ui(self, default_name: str) -> None:
         """Set up the user interface.
-        
+
         Args:
             default_name: Default name to populate in the name field.
         """
@@ -164,6 +167,15 @@ class CreateTemplateDialog(QDialog):
 
             self.content_layout.addWidget(group_attrs)
 
+        # Layout Section
+        if self.source_layout:
+            group_layout = QGroupBox("Layout Options")
+            vbox_layout = QVBoxLayout(group_layout)
+            self.chk_layout = QCheckBox("Include Visual Sheet Layout")
+            self.chk_layout.setChecked(True)
+            vbox_layout.addWidget(self.chk_layout)
+            self.content_layout.addWidget(group_layout)
+
         self.content_layout.addStretch()
         scroll.setWidget(content)
         layout.addWidget(scroll)
@@ -204,6 +216,28 @@ class CreateTemplateDialog(QDialog):
         type_val = None
         if hasattr(self, "chk_type") and self.chk_type.isChecked():
             type_val = self.source_type
+
+        if (
+            hasattr(self, "chk_layout")
+            and self.chk_layout.isChecked()
+            and self.source_layout
+        ):
+            pruned_layout = []
+            for row in self.source_layout:
+                new_row = []
+                for item in row:
+                    if isinstance(item, str):
+                        if item in attrs:
+                            new_row.append(item)
+                    elif isinstance(item, dict) and "key" in item:
+                        if item["key"] in attrs:
+                            new_row.append(item)
+                    else:
+                        new_row.append(item)
+                if new_row:
+                    pruned_layout.append(new_row)
+            if pruned_layout:
+                attrs["_sheet_layout"] = pruned_layout
 
         self.result_data = {
             "name": name,

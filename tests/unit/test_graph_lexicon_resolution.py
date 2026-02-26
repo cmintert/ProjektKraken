@@ -3,11 +3,7 @@ Regression test for Graph Lexicon Resolution.
 Verifies that both project icons and default bundled icons are resolved correctly.
 """
 
-import os
-from pathlib import Path
 from src.gui.widgets.graph_view.graph_builder import GraphBuilder
-from src.app.constants import DEFAULT_MARKER_ICONS_PATH
-from src.core.paths import get_resource_path
 
 
 def test_resolve_lexicon_images_finds_default_icons(tmp_path):

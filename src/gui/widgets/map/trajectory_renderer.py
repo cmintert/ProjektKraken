@@ -12,11 +12,11 @@ from PySide6.QtGui import (
     QBrush,
     QColor,
     QFont,
+    QFontMetrics,
+    QPainter,
     QPainterPath,
     QPen,
     QTransform,
-    QPainter,
-    QFontMetrics,
 )
 from PySide6.QtWidgets import (
     QGraphicsObject,
@@ -24,9 +24,8 @@ from PySide6.QtWidgets import (
 )
 
 from src.app.constants import MAP_LAYER_Z_TRAJECTORIES
-from src.core.trajectory import KEYFRAME_TIME_EPSILON
-
 from src.core.theme_manager import ThemeManager
+from src.core.trajectory import KEYFRAME_TIME_EPSILON
 
 if TYPE_CHECKING:
     from src.gui.widgets.map.map_graphics_view import KeyframeItem, MapGraphicsView

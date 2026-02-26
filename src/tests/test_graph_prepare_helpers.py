@@ -4,7 +4,6 @@ Verifies that prepare_node and prepare_edge produce identical output
 regardless of which render path uses them (full or incremental).
 """
 
-import pytest
 
 from src.gui.widgets.graph_view.graph_builder import GraphBuilder
 

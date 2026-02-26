@@ -27,8 +27,8 @@ from src.core.style_constants import (
     V_FILL,
     V_SIZE_SCALE,
 )
-from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.dialogs.icon_picker_dialog import IconPickerDialog
+from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.marker_item import MarkerItem
 
 if TYPE_CHECKING:

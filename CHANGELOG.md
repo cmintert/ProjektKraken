@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-02-23
-**Commit:** d6507e8
+**Last Updated:** 2026-02-24  
+**Commit:** 65aa100
 ---
 
 # Changelog
@@ -12,7 +12,8 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- *(2026-02-23)* **Map**: Implemented dynamic collision-aware label engine for both map marker labels and keyframe labels.
+- *(2026-02-24)* **UI**: Introduced subtle visual indicators (dashed borders) for spacers within the Sheet Builder.
+- *(2026-02-23)* **Map**: Implemented dynamic collision-aware label engine for label engine for both map marker labels and keyframe labels.
 - *(2026-02-22)* **UI**: Implemented high-fidelity, anti-aliased pill system for `TagPill` and `DragPill` components.
 - *(2026-02-22)* **Map**: Implemented themed pill backgrounds with dynamic scaling for map marker and keyframe labels.
 
@@ -21,15 +22,21 @@ All notable changes to this project will be documented in this file.
 - *(2026-02-22)* **UI**: Refined UI based on review recommendations, standardizing component behavior.
 
 ### Fixed
+- *(2026-02-24)* **Stability**: Resolved "Internal C++ object already deleted" layout crashes by removing dangerous manual item cleanup in `FlowLayout` and adding `RuntimeError` guards to editor event filters.
+- *(2026-02-24)* **Bug**: Fixed `SheetBuilderWidget` attribute synchronization bugs and corrected typo in signal blocking logic.
+- *(2026-02-24)* **Stability**: Suppressed persistent `QFont::setPointSize` terminal warnings.
+- *(2026-02-24)* **Bug**: Corrected drag-to-resize math and suppressed aggressive autosaves during resize operations in Sheet Builder.
 - *(2026-02-23)* **Bug**: Fixed ESC key not correctly cancelling Clock Mode or Draft Mode when the map view has focus.
 - *(2026-02-23)* **Bug**: Repaired keyframe label collision logic, ensuring labels smoothly dodge obstacles without geometry artifacts.
 - *(2026-02-22)* **Bug**: Fixed `DragPill` text eliding issues by calculating constraints dynamically on resize.
 - *(2026-02-22)* **Map**: Fixed Z-order overlap where keyframe dots and labels appeared above markers. Implemented dynamic Z-inheritance so trajectory components always sit exactly underneath their parent marker.
 
 ### Refactor
+- *(2026-02-24)* **Refactor**: Repaired `ProcessWikiLinksCommand` serialization to ensure undo state persistence across sessions.
 - *(2026-02-23)* **Refactor**: Hardened Gizmo hit-testing and centralized ThemeManager usage within `MapGraphicsView`.
 - *(2026-02-23)* **Refactor**: Removed high-frequency performance debug logging from `TimelineView`.
 - *(2026-02-23)* **Docs**: Added comprehensive Google-style docstrings to pill UI components for consistency.
+- *(2026-02-24)* **Testing**: Added specialized reproduction stress tests to guard against layout-related object deletion regressions.
 
 ## [0.13.5]
 

@@ -1,9 +1,9 @@
 import pytest
-from PySide6.QtGui import QColor, QPainter
-from PySide6.QtWidgets import QGraphicsPixmapItem, QStyleOptionGraphicsItem
+from PySide6.QtWidgets import QGraphicsPixmapItem
 
-from src.gui.widgets.map.marker_item import MarkerItem
 from src.core.theme_manager import ThemeManager
+from src.gui.widgets.map.marker_item import MarkerItem
+
 
 @pytest.fixture
 def mock_pixmap_item():

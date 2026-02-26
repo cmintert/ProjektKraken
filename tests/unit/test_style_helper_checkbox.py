@@ -1,6 +1,6 @@
 
-import pytest
 from src.gui.utils.style_helper import StyleHelper
+
 
 def test_checkbox_style_covers_tree_view():
     """Test that checkbox style includes QTreeView indicators."""

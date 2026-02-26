@@ -303,3 +303,196 @@ class TestObsidianExporterYamlEscape:
 
         assert exporter._escape_yaml_string("Normal") == "Normal"
         assert exporter._escape_yaml_string('Say "Hello"') == 'Say \\"Hello\\"'
+
+
+class TestObsidianExporterStatBlock:
+    """Tests for the [!stat] callout block generation from sheet layout."""
+
+    def test_no_layout_returns_none(self):
+        """Test that _build_stat_block returns None when no layout exists."""
+        db = MockDbService()
+        exporter = ObsidianExporter(db)
+
+        result = exporter._build_stat_block("Hero", {"STR": 18})
+        assert result is None
+
+    def test_single_key_row(self):
+        """Test single-key row renders as '> **Key:** Value'."""
+        db = MockDbService()
+        exporter = ObsidianExporter(db)
+
+        attrs = {"Name": "Aragorn", "_sheet_layout": [["Name"]]}
+        result = exporter._build_stat_block("Hero", attrs)
+
+        assert result is not None
+        assert "> [!stat] Hero" in result
+        assert "> **Name:** Aragorn" in result
+
+    def test_multi_key_row(self):
+        """Test multi-key row renders as pipe-separated values."""
+        db = MockDbService()
+        exporter = ObsidianExporter(db)
+
+        attrs = {
+            "STR": 18,
+            "DEX": 14,
+            "CON": 16,
+            "_sheet_layout": [["STR", "DEX", "CON"]],
+        }
+        result = exporter._build_stat_block("Fighter", attrs)
+
+        assert result is not None
+        assert "> [!stat] Fighter" in result
+        assert "> **STR:** 18 | **DEX:** 14 | **CON:** 16" in result
+
+    def test_mixed_rows(self):
+        """Test layout with single and multi-key rows."""
+        db = MockDbService()
+        exporter = ObsidianExporter(db)
+
+        attrs = {
+            "Name": "Gandalf",
+            "Class": "Wizard",
+            "STR": 10,
+            "INT": 20,
+            "_sheet_layout": [["Name"], ["Class"], ["STR", "INT"]],
+        }
+        result = exporter._build_stat_block("Gandalf", attrs)
+
+        lines = result.split("\n")
+        assert lines[0] == "> [!stat] Gandalf"
+        assert lines[1] == "> **Name:** Gandalf"
+        assert lines[2] == "> **Class:** Wizard"
+        assert lines[3] == "> **STR:** 10 | **INT:** 20"
+
+    def test_missing_key_uses_empty_value(self):
+        """Test that layout keys not in attrs use empty string."""
+        db = MockDbService()
+        exporter = ObsidianExporter(db)
+
+        attrs = {"STR": 18, "_sheet_layout": [["STR", "MISSING"]]}
+        result = exporter._build_stat_block("Hero", attrs)
+
+        assert "> **STR:** 18 | **MISSING:** " in result
+
+    def test_entity_markdown_includes_stat_block(self):
+        """Test that entity markdown includes stat block when layout exists."""
+        db = MockDbService()
+        exporter = ObsidianExporter(db)
+
+        entity = Entity(
+            id="e1",
+            name="Fighter",
+            type="character",
+            description="A brave warrior.",
+            attributes={
+                "STR": 18,
+                "DEX": 14,
+                "_sheet_layout": [["STR", "DEX"]],
+            },
+            created_at=1705320000.0,
+            modified_at=1705320000.0,
+        )
+
+        result = exporter._build_entity_markdown(entity, [])
+        assert "> [!stat] Fighter" in result
+        assert "> **STR:** 18 | **DEX:** 14" in result
+
+    def test_event_markdown_includes_stat_block(self):
+        """Test that event markdown includes stat block when layout exists."""
+        db = MockDbService()
+        exporter = ObsidianExporter(db)
+
+        event = Event(
+            id="ev1",
+            name="Battle",
+            type="combat",
+            lore_date=100.0,
+            description="An epic battle.",
+            attributes={
+                "Difficulty": "Hard",
+                "_sheet_layout": [["Difficulty"]],
+            },
+            created_at=1705320000.0,
+            modified_at=1705320000.0,
+        )
+
+        result = exporter._build_event_markdown(event, [])
+        assert "> [!stat] Battle" in result
+        assert "> **Difficulty:** Hard" in result
+
+    def test_empty_layout_no_stat_block(self):
+        """Test that empty layout list produces no stat block."""
+        db = MockDbService()
+        exporter = ObsidianExporter(db)
+
+        result = exporter._build_stat_block("Hero", {"_sheet_layout": []})
+        assert result is None
+
+    def test_invalid_layout_type_returns_none(self):
+        """Test that non-list layout value returns None."""
+        db = MockDbService()
+        exporter = ObsidianExporter(db)
+
+        result = exporter._build_stat_block("Hero", {"_sheet_layout": "invalid"})
+        assert result is None
+
+    def test_stat_block_with_text(self):
+        """Test stat block renders text blocks as italic."""
+        db = MockDbService()
+        exporter = ObsidianExporter(db)
+
+        attrs = {
+            "STR": 18,
+            "_sheet_layout": [
+                [{"type": "text", "text": "Abilities"}],
+                ["STR"],
+            ],
+        }
+        result = exporter._build_stat_block("Hero", attrs)
+        assert "> *Abilities*" in result
+        assert "> **STR:** 18" in result
+
+    def test_stat_block_with_divider(self):
+        """Test stat block renders dividers as horizontal rules."""
+        db = MockDbService()
+        exporter = ObsidianExporter(db)
+
+        attrs = {
+            "STR": 18,
+            "_sheet_layout": [
+                ["STR"],
+                [{"type": "divider"}],
+            ],
+        }
+        result = exporter._build_stat_block("Hero", attrs)
+        assert "> **STR:** 18" in result
+        assert "> ---" in result
+
+    def test_stat_block_with_weighted_keys(self):
+        """Test stat block handles dict-style keys with weights."""
+        db = MockDbService()
+        exporter = ObsidianExporter(db)
+
+        attrs = {
+            "STR": 18,
+            "DEX": 14,
+            "_sheet_layout": [[{"key": "STR", "weight": 2}, "DEX"]],
+        }
+        result = exporter._build_stat_block("Hero", attrs)
+        assert "> **STR:** 18 | **DEX:** 14" in result
+
+    def test_stat_block_spacers_ignored(self):
+        """Test that spacers in layout don't produce output."""
+        db = MockDbService()
+        exporter = ObsidianExporter(db)
+
+        attrs = {
+            "STR": 18,
+            "_sheet_layout": [
+                [{"type": "spacer", "weight": 1}, "STR"],
+            ],
+        }
+        result = exporter._build_stat_block("Hero", attrs)
+        assert "> **STR:** 18" in result
+        assert "spacer" not in result

@@ -342,6 +342,14 @@ class LongformContentWidget(QTextBrowser):
     def _apply_theme(self) -> None:
         """Apply widget-level styling (background, scrollbars)."""
         try:
+            import shiboken6
+
+            if not shiboken6.isValid(self):
+                return
+        except ImportError:
+            pass
+
+        try:
             tm = ThemeManager()
             theme = tm.get_theme()
             from src.gui.utils.style_helper import StyleHelper

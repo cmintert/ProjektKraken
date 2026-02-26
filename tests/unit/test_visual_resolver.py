@@ -8,7 +8,7 @@ Tests cover:
 - MarkerItem integration with VisualResolver
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -29,7 +29,6 @@ from src.core.style_constants import (
     V_SIZE_SCALE,
 )
 from src.services.visual_resolver import VisualResolver
-
 
 # ---------------------------------------------------------------------------
 # Style Constants

@@ -6,7 +6,7 @@ so that both editors stay consistent without code duplication.
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from PySide6.QtCore import QPoint
 from PySide6.QtGui import QDragEnterEvent, QDragLeaveEvent, QDragMoveEvent
@@ -113,6 +113,38 @@ class BaseEditorMixin:
             for k, v in self._hidden_attributes.items():
                 if k not in base_attrs:
                     base_attrs[k] = v
+
+    def _save_desc_cursor_state(self) -> Tuple[int, bool]:
+        """Save the description editor's cursor position and focus state.
+
+        Returns:
+            Tuple of (cursor_position, had_focus).
+
+        """
+        if hasattr(self, "desc_edit") and hasattr(self.desc_edit, "editor"):
+            cursor_pos = self.desc_edit.editor.textCursor().position()
+            had_focus = self.desc_edit.editor.hasFocus()
+            return cursor_pos, had_focus
+        return 0, False
+
+    def _restore_desc_cursor_state(
+        self, cursor_pos: int, had_focus: bool
+    ) -> None:
+        """Restore the description editor's cursor position and focus.
+
+        Args:
+            cursor_pos: Cursor position to restore.
+            had_focus: Whether the description editor had focus.
+
+        """
+        if not had_focus:
+            return
+        if hasattr(self, "desc_edit") and hasattr(self.desc_edit, "editor"):
+            text_len = len(self.desc_edit.editor.toPlainText())
+            cursor = self.desc_edit.editor.textCursor()
+            cursor.setPosition(min(cursor_pos, text_len))
+            self.desc_edit.editor.setTextCursor(cursor)
+            self.desc_edit.editor.setFocus()
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """Handle drag enter event to accept MIME data from Project Explorer.

@@ -203,7 +203,7 @@ class FastInjectDialog(QDialog):
         self, current: QListWidgetItem, previous: QListWidgetItem
     ) -> None:
         """Handle template selection change in the list.
-        
+
         Args:
             current: Currently selected list item.
             previous: Previously selected list item.
@@ -291,17 +291,21 @@ class FastInjectDialog(QDialog):
             QMessageBox.critical(self, "Error", f"Failed to save: {e}")
 
     def _clear_configure_ui(self) -> None:
-        """Clear the configuration UI form."""
+        """Clear the configuration UI form and reset layout parameters."""
         self.lbl_name.setText("Select a template")
         self.lbl_desc.setText("")
         while self.form_layout.count():
-            child = self.form_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
+            item = self.form_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        # Reset all row stretches to prevent accumulation when switching templates
+        for i in range(self.form_layout.rowCount()):
+            self.form_layout.setRowStretch(i, 0)
 
     def _update_configure_ui(self, template: FastInjectTemplate) -> None:
         """Update the configuration UI with template details.
-        
+
         Args:
             template: The template to display configuration for.
         """
@@ -311,11 +315,10 @@ class FastInjectDialog(QDialog):
 
     def _build_form(self, template: FastInjectTemplate) -> None:
         """Build the unified attribute/tag editor form."""
-        # Clear old
-        while self.form_layout.count():
-            child = self.form_layout.takeAt(0)
-            if child.widget():
-                child.widget().deleteLater()
+        self._clear_configure_ui()
+
+        self.lbl_name.setText(template.name)
+        self.lbl_desc.setText(template.description)
 
         self._form_widgets = (
             []
@@ -338,6 +341,9 @@ class FastInjectDialog(QDialog):
 
         # 1. Attributes
         for key, value in template.attributes.items():
+            if key == "_sheet_layout":
+                continue
+
             # Flatten complex types into individual rows
             if isinstance(value, dict):
                 for sub_key, sub_value in value.items():
@@ -458,14 +464,14 @@ class FastInjectDialog(QDialog):
                 # Connect signal to update main input
                 if isinstance(sub_inp, QComboBox):
                     sub_inp.currentTextChanged.connect(
-                        lambda _, m=input_widget, t=display_value, s=sub_vars: self._update_result_field(
-                            m, t, s
+                        lambda _, m=input_widget, t=display_value, s=sub_vars: (
+                            self._update_result_field(m, t, s)
                         )
                     )
                 else:
                     sub_inp.textChanged.connect(
-                        lambda _, m=input_widget, t=display_value, s=sub_vars: self._update_result_field(
-                            m, t, s
+                        lambda _, m=input_widget, t=display_value, s=sub_vars: (
+                            self._update_result_field(m, t, s)
                         )
                     )
 
@@ -486,10 +492,10 @@ class FastInjectDialog(QDialog):
 
         def replacer(match: re.Match[str]) -> str:
             """Replace template variable with actual value.
-            
+
             Args:
                 match: Regex match object for template variable.
-                
+
             Returns:
                 Replacement value from form widgets.
             """
@@ -505,7 +511,7 @@ class FastInjectDialog(QDialog):
         result_text = var_pattern.sub(replacer, template_str)
         result_field.setText(result_text)
 
-    def _on_apply(self) -> None:
+    def _on_apply(self) -> None:  # noqa: C901
         """Collect values and create resolved template."""
         if not self.selected_template:
             return
@@ -575,6 +581,11 @@ class FastInjectDialog(QDialog):
                 new_attrs[key] = value
 
         import copy
+
+        if "_sheet_layout" in self.selected_template.attributes:
+            new_attrs["_sheet_layout"] = copy.deepcopy(
+                self.selected_template.attributes["_sheet_layout"]
+            )
 
         resolved_template = copy.deepcopy(self.selected_template)
         resolved_template.attributes = new_attrs

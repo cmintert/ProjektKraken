@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 import pytest
-from PySide6.QtCore import Qt, QPoint
+from PySide6.QtCore import QPoint, Qt
 from PySide6.QtWidgets import QMessageBox
 
 from src.core.entities import Entity

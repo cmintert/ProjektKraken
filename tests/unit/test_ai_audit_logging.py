@@ -19,7 +19,6 @@ from src.core.logging_config import (
 )
 from src.services.llm_provider import log_ai_interaction
 
-
 # ============================================================================
 # Fixtures
 # ============================================================================

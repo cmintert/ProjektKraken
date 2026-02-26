@@ -561,10 +561,15 @@ class UIManager:
             self.undo_action.triggered.connect(self.main_window.coordinator.undo)
             self.redo_action.triggered.connect(self.main_window.coordinator.redo)
 
-    def update_undo_redo_state(self) -> None:
+    def update_undo_redo_state(self, *_args: object) -> None:
         """Updates the enabled/disabled state of undo/redo actions.
 
         Should be called when the command history changes.
+
+        Args:
+            *_args: Ignored; accepts the snapshot lists emitted by
+                ``history_changed(list, list)`` so the slot signature
+                is compatible.
         """
         if hasattr(self, "undo_action") and hasattr(self, "redo_action"):
             coordinator = self.main_window.coordinator

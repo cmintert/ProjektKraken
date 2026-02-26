@@ -211,7 +211,10 @@ def test_clear_history(coordinator):
 
     assert len(coordinator.undo_stack) == 0
     assert len(coordinator.redo_stack) == 0
+    # Signal now carries (undo_snapshots, redo_snapshots)
     signal_spy.assert_called_once()
+    args = signal_spy.call_args[0]
+    assert args == ([], [])
 
 
 def test_undo_on_empty_stack_does_nothing(coordinator):
@@ -237,7 +240,7 @@ def test_redo_on_empty_stack_does_nothing(coordinator):
 
 
 def test_history_changed_signal_on_undo(coordinator):
-    """Test that history_changed signal is emitted on undo."""
+    """Test that history_changed signal is emitted on undo with snapshots."""
     cmd = MockCommand()
     coordinator.undo_stack.append(cmd)
 
@@ -247,10 +250,15 @@ def test_history_changed_signal_on_undo(coordinator):
     coordinator.undo()
 
     signal_spy.assert_called_once()
+    # Signal emits (undo_snapshots, redo_snapshots)
+    undo_snaps, redo_snaps = signal_spy.call_args[0]
+    assert len(undo_snaps) == 0
+    assert len(redo_snaps) == 1
+    assert redo_snaps[0]["description"] == "Mock: MockCommand"
 
 
 def test_history_changed_signal_on_redo(coordinator):
-    """Test that history_changed signal is emitted on redo."""
+    """Test that history_changed signal is emitted on redo with snapshots."""
     cmd = MockCommand()
     coordinator.redo_stack.append(cmd)
 
@@ -260,6 +268,11 @@ def test_history_changed_signal_on_redo(coordinator):
     coordinator.redo()
 
     signal_spy.assert_called_once()
+    # Signal emits (undo_snapshots, redo_snapshots)
+    undo_snaps, redo_snaps = signal_spy.call_args[0]
+    assert len(undo_snaps) == 1
+    assert len(redo_snaps) == 0
+    assert undo_snaps[0]["description"] == "Mock: MockCommand"
 
 
 @patch("PySide6.QtWidgets.QMessageBox")

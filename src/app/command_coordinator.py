@@ -5,9 +5,9 @@ database worker thread.
 """
 
 import logging
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QObject, QTimer, Signal, Slot
 
 if TYPE_CHECKING:
     from src.commands.base_command import BaseCommand, CommandResult
@@ -31,6 +31,8 @@ class CommandCoordinator(QObject):
         undo_requested: Signal emitted when undo operation is requested.
         redo_requested: Signal emitted when redo operation is requested.
         history_changed: Signal emitted when undo/redo history changes.
+            Carries two lists of snapshot dicts (undo, redo) so that
+            receivers never need to touch live command objects.
 
     """
 
@@ -38,7 +40,7 @@ class CommandCoordinator(QObject):
     command_requested = Signal(object)
     undo_requested = Signal(object)  # Emits the command to undo
     redo_requested = Signal(object)  # Emits the command to redo
-    history_changed = Signal()  # For UI updates
+    history_changed = Signal(list, list)  # (undo_snapshots, redo_snapshots)
 
     def __init__(self, main_window: "MainWindowProtocol") -> None:
         """Initialize the command coordinator.
@@ -53,7 +55,54 @@ class CommandCoordinator(QObject):
         self.redo_stack: List["BaseCommand"] = []
         self.max_stack_size = 100  # Limit memory usage
         self.history_service: Optional["HistoryService"] = None
+        self._undo_redo_in_progress = False
         logger.debug("CommandCoordinator initialized with undo/redo support")
+
+    # ------------------------------------------------------------------
+    # Snapshot helpers
+    # ------------------------------------------------------------------
+
+    def _snapshot_cmd(self, cmd: "BaseCommand") -> Dict[str, object]:
+        """Create a lightweight, thread-safe snapshot dict from a command.
+
+        The snapshot is a plain dict with only serialisable values so it
+        can safely be passed across signal/slot boundaries without
+        touching the live command object again.
+
+        Args:
+            cmd: The command to snapshot.
+
+        Returns:
+            Dict with ``description`` and ``timestamp`` keys.
+        """
+        try:
+            desc = cmd.get_description()
+        except Exception:
+            desc = cmd.__class__.__name__
+        return {
+            "description": desc,
+            "timestamp": getattr(cmd, "timestamp", None),
+        }
+
+    def _build_snapshots(self) -> tuple:
+        """Build (undo_snapshots, redo_snapshots) from the current stacks.
+
+        Returns:
+            Tuple of two lists of snapshot dicts.
+        """
+        undo = [self._snapshot_cmd(c) for c in self.undo_stack]
+        redo = [self._snapshot_cmd(c) for c in self.redo_stack]
+        return undo, redo
+
+    def _emit_history_changed(self) -> None:
+        """Emit ``history_changed`` with pre-built snapshot lists.
+
+        All callers should use this helper instead of emitting the signal
+        directly so that snapshot creation and signal emission are atomic
+        from the perspective of the main-thread event loop.
+        """
+        undo, redo = self._build_snapshots()
+        self.history_changed.emit(undo, redo)
 
     def set_history_service(self, history_service: "HistoryService") -> None:
         """Set the history service for persistent command storage.
@@ -79,7 +128,7 @@ class CommandCoordinator(QObject):
             )
             self.undo_stack = commands
             self.redo_stack.clear()
-            self.history_changed.emit()
+            self._emit_history_changed()
             logger.info(f"Loaded {len(commands)} commands from history")
             self.log_stack_state()
         except Exception as e:
@@ -101,16 +150,32 @@ class CommandCoordinator(QObject):
 
         Pops a command from the undo stack, requests its undo execution,
         and pushes it to the redo stack.
+
+        Guarded: only one undo/redo can be in-flight at a time to
+        prevent overlapping UI rebuilds that crash Qt.
         """
         if not self.can_undo():
             logger.warning("Undo called with empty undo stack")
             return
 
+        if self._undo_redo_in_progress:
+            logger.debug("Undo skipped — previous operation in progress")
+            return
+
+        self._undo_redo_in_progress = True
         command = self.undo_stack.pop()
         logger.debug(f"Undoing command: {command.__class__.__name__}")
+        # Optimistically move to redo stack to keep UI responsive
+        if command.has_history:
+            self.redo_stack.append(command)
+
+        # Build and emit snapshots BEFORE dispatching to worker, so the
+        # history panel finishes reading command attributes before the
+        # worker thread starts mutating them during undo.
+        self._emit_history_changed()
+
+        # Now dispatch to the worker thread (QueuedConnection)
         self.undo_requested.emit(command)
-        self.redo_stack.append(command)
-        self.history_changed.emit()
 
     @Slot()
     def redo(self) -> None:
@@ -118,16 +183,27 @@ class CommandCoordinator(QObject):
 
         Pops a command from the redo stack, requests its re-execution,
         and pushes it to the undo stack.
+
+        Guarded: only one undo/redo can be in-flight at a time.
         """
         if not self.can_redo():
             logger.warning("Redo called with empty redo stack")
             return
 
+        if self._undo_redo_in_progress:
+            logger.debug("Redo skipped — previous operation in progress")
+            return
+
+        self._undo_redo_in_progress = True
         command = self.redo_stack.pop()
         logger.debug(f"Redoing command: {command.__class__.__name__}")
-        self.redo_requested.emit(command)
         self.undo_stack.append(command)
-        self.history_changed.emit()
+
+        # Build and emit snapshots BEFORE dispatching to worker
+        self._emit_history_changed()
+
+        # Now dispatch to the worker thread (QueuedConnection)
+        self.redo_requested.emit(command)
 
     def can_undo(self) -> bool:
         """Check if undo operation is available.
@@ -165,16 +241,33 @@ class CommandCoordinator(QObject):
             except Exception as e:
                 logger.error(f"Failed to clear persistent history: {e}")
 
-        self.history_changed.emit()
+        self._emit_history_changed()
 
     @Slot(object)
     def on_command_result(self, result: "CommandResult") -> None:
         """Handle command execution result from worker thread.
 
+        This slot runs on the **main thread** (connected via
+        ``QueuedConnection``).  It updates the in-memory undo/redo
+        stacks, builds lightweight snapshots, emits
+        ``history_changed(undo_snapshots, redo_snapshots)``, and then
+        defers database persistence to a ``QTimer.singleShot(0)`` so
+        that the UI update completes before any blocking I/O.
+
         Args:
             result: CommandResult object containing execution status.
 
         """
+        # Clear the undo/redo guard when the worker result arrives
+        is_undo_redo = result.command_name.startswith(
+            (
+                "Undo_",
+                "Redo_",
+            )
+        )
+        if is_undo_redo:
+            self._undo_redo_in_progress = False
+
         if result.success:
             logger.info(f"Command succeeded: {result.message}")
 
@@ -185,28 +278,58 @@ class CommandCoordinator(QObject):
                 self.undo_stack.append(command)
                 self.redo_stack.clear()  # Clear redo stack on new action
 
-                # Save command to database for persistence (Phase 2)
-                if self.history_service:
-                    try:
-                        self.history_service.save_command(command)
-                    except Exception as e:
-                        logger.error(f"Failed to save command to history: {e}")
-
                 # Limit stack size to prevent memory bloat
                 if len(self.undo_stack) > self.max_stack_size:
                     removed = self.undo_stack.pop(0)
                     logger.debug(
-                        f"Removed oldest command from stack: {removed.__class__.__name__}"
+                        f"Removed oldest command from stack: "
+                        f"{removed.__class__.__name__}"
                     )
 
-                self.history_changed.emit()
+                # Emit snapshots for UI (fast, no I/O)
+                self._emit_history_changed()
                 self.log_stack_state()
 
-            # Trigger data refresh based on command type
-            self._refresh_after_command(result)
+                # Defer persistent DB save so the UI can finish
+                # refreshing without blocking on SQLite I/O.
+                if self.history_service:
+                    # Capture a reference; the lambda closure is safe
+                    # because the command object is in the undo stack.
+                    svc = self.history_service
+                    QTimer.singleShot(0, lambda: self._save_command_safe(svc, command))
+
+            # Trigger data refresh based on command type.
+            # Skip for Undo/Redo results — DataHandler already handles
+            # those reloads via its own command_finished connection.
+            is_undo_redo = result.command_name.startswith(
+                (
+                    "Undo_",
+                    "Redo_",
+                )
+            )
+            if not is_undo_redo:
+                self._refresh_after_command(result)
         else:
             logger.error(f"Command failed: {result.message}")
             self._show_error(result.message)
+
+    @staticmethod
+    def _save_command_safe(
+        history_service: "HistoryService", command: "BaseCommand"
+    ) -> None:
+        """Persist *command* to the history database, swallowing errors.
+
+        Called from a deferred ``QTimer.singleShot(0)`` so that the UI
+        refresh triggered by ``history_changed`` completes first.
+
+        Args:
+            history_service: The active HistoryService instance.
+            command: The command to persist.
+        """
+        try:
+            history_service.save_command(command)
+        except Exception as e:
+            logger.error(f"Failed to save command to history: {e}")
 
     def _refresh_after_command(self, result: "CommandResult") -> None:
         """Refresh UI data after successful command execution.

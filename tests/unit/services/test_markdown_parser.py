@@ -10,12 +10,10 @@ Tests the markdown_parser module for:
 """
 
 from src.services.markdown_parser import (
-    ParsedMarkdown,
     is_entity_data,
     markdown_to_import_data,
     parse_markdown,
 )
-
 
 OPTIMAL_TEMPLATE = """\
 ---

@@ -1,7 +1,7 @@
 """Tests for AutoClosingMessageBox."""
 
 import pytest
-from PySide6.QtWidgets import QMessageBox
+
 from src.gui.widgets.auto_closing_message_box import AutoClosingMessageBox
 
 

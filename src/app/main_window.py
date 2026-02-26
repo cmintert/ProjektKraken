@@ -355,9 +355,19 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         try:
             from src.core.theme_manager import ThemeManager
 
-            ThemeManager().theme_changed.connect(
-                lambda _: self.map_widget.layer_panel.refresh_styles()
-            )
+            def _refresh_layer_styles(_theme_data: dict) -> None:
+                """Refresh map layer panel styles on theme change."""
+                try:
+                    import shiboken6
+
+                    if shiboken6.isValid(self) and shiboken6.isValid(
+                        self.map_widget
+                    ):
+                        self.map_widget.layer_panel.refresh_styles()
+                except (RuntimeError, ImportError):
+                    pass
+
+            ThemeManager().theme_changed.connect(_refresh_layer_styles)
         except Exception as e:
             logger.warning(f"Failed to connect theme->layer panel: {e}")
 
@@ -400,9 +410,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             map_widget=self.map_widget,
             worker=self.worker,
             db_path_accessor=lambda: self.db_path,
-            navigation_set_selection=(
-                self.navigation_coordinator.set_global_selection
-            ),
+            navigation_set_selection=(self.navigation_coordinator.set_global_selection),
         )
         # Forward MapHandler's command_requested to MainWindow's
         self.map_handler.command_requested.connect(self.command_requested.emit)
@@ -806,7 +814,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         logger.debug("Dock state validation passed")
         return True
 
-
     def load_longform_sequence(self) -> None:
         """Loads the longform sequence. Delegates to LongformManager."""
         self.longform_manager.load_longform_sequence()
@@ -829,16 +836,35 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """
         return self.editor_coordinator.check_unsaved_changes(editor)
 
+    @Slot(list, list)
+    def _update_history_panel(
+        self, undo_snapshots: list, redo_snapshots: list
+    ) -> None:
+        """Update the history panel with pre-built snapshot dicts.
 
-    @Slot()
-    def _update_history_panel(self) -> None:
-        """Update the history panel with current undo/redo stacks."""
+        The snapshots are created inside ``CommandCoordinator`` at the
+        moment the stacks are modified, so this method never touches
+        live command objects and is therefore safe against worker-thread
+        mutations.
+
+        Args:
+            undo_snapshots: List of ``{"description": str, "timestamp": float|None}``
+                dicts for the undo stack.
+            redo_snapshots: Same format for the redo stack.
+        """
         try:
-            if hasattr(self, "history_panel") and hasattr(self, "command_coordinator"):
-                self.history_panel.update_history(
-                    self.command_coordinator.undo_stack,
-                    self.command_coordinator.redo_stack,
-                )
+            if hasattr(self, "history_panel"):
+                import shiboken6
+
+                if not shiboken6.isValid(self.history_panel):
+                    logger.debug(
+                        "_update_history_panel: history_panel C++ object deleted"
+                    )
+                    return
+                self.history_panel.update_history(undo_snapshots, redo_snapshots)
+        except RuntimeError:
+            # Underlying C++ object already deleted — nothing to update
+            logger.debug("_update_history_panel: RuntimeError (widget deleted)")
         except Exception as e:
             logger.error(f"Failed to update history panel: {e}")
 
@@ -881,7 +907,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """
         self.worker_manager.on_db_initialized(success)
 
-
     @Slot()
     def toggle_auto_relation_setting(self) -> None:
         """Toggles the auto-creation of relations from wikilinks."""
@@ -918,7 +943,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         if settings.value("longform_auto_refresh", True, type=bool):
             logger.debug("Auto-refreshing longform editor")
             self.longform_manager.load_longform_sequence()
-
 
     def _request_grouping_config(self) -> None:
         """Requests loading of the timeline grouping configuration."""
@@ -1044,7 +1068,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             )
         return []
 
-
     # DataHandler signal handlers (loose coupling via signals)
 
     @Slot(list)
@@ -1068,16 +1091,13 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """
         self.map_handler.on_markers_ready(map_id, processed_markers)
 
-
     def load_maps(self) -> None:
         """Requests loading of all maps."""
         self.map_handler.load_maps()
 
-
     # ----------------------------------------------------------------------
     # Timeline Grouping Methods
     # ----------------------------------------------------------------------
-
 
     @Slot(list, object)
     def on_grouping_dialog_data_loaded(
@@ -1088,7 +1108,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         Delegates to GroupingManager.
         """
         self.grouping_manager.on_grouping_dialog_data_loaded(tags_data, current_config)
-
 
     # Removed: _on_tag_color_change_requested, _on_remove_from_grouping_requested
     # rewired to GroupingManager in ConnectionManager

@@ -207,6 +207,7 @@ class FastInjectManager:
         include_tags: bool = True,
         include_attributes: List[str] = None,
         include_type: bool = False,
+        include_layout: bool = True,
     ) -> FastInjectTemplate:
         """Create a new template object from an existing target.
 
@@ -242,6 +243,11 @@ class FastInjectManager:
             for k in include_attributes:
                 if k in source_attrs:
                     attrs[k] = source_attrs[k]
+
+        if include_layout and "_sheet_layout" in target.attributes:
+            import copy
+
+            attrs["_sheet_layout"] = copy.deepcopy(target.attributes["_sheet_layout"])
 
         target_type_str = "object"
         if isinstance(target, Entity):
@@ -299,7 +305,7 @@ class FastInjectManager:
 
         return sorted(list(vars_found))
 
-    def apply_template(
+    def apply_template(  # noqa: C901
         self,
         target: Union[Entity, Event],
         template: FastInjectTemplate,
@@ -349,17 +355,79 @@ class FastInjectManager:
             new_tags = set(template.tags)
             target.tags = list(current_tags | new_tags)
 
+        # Extract layout
+        template_layout = None
+        if "_sheet_layout" in template.attributes:
+            import copy
+
+            template_layout = copy.deepcopy(template.attributes["_sheet_layout"])
+
         # 2. Apply Attributes
+        skipped_keys = set()
         for key, raw_val in template.attributes.items():
+            if key == "_sheet_layout":
+                continue
+
             # Resolve variables first
             final_val = resolve_vars(raw_val)
 
             # Check existence
             if key in target.attributes and not overwrite:
                 # Conflict - skip
+                skipped_keys.add(key)
                 continue
 
             target.attributes[key] = final_val
+
+        # 3. Apply Layout Merger
+        if template_layout:
+            if "_sheet_layout" not in target.attributes:
+                # Target has no layout, just use the template's
+                target.attributes["_sheet_layout"] = template_layout
+            else:
+                import copy
+
+                target_layout = copy.deepcopy(target.attributes["_sheet_layout"])
+
+                def _remove_keys_from_layout(
+                    layout: List[List[Any]], keys_to_remove: set
+                ) -> List[List[Any]]:
+                    new_layout = []
+                    for row in layout:
+                        new_row = []
+                        for item in row:
+                            if isinstance(item, str):
+                                if item not in keys_to_remove:
+                                    new_row.append(item)
+                            elif isinstance(item, dict) and "key" in item:
+                                if item["key"] not in keys_to_remove:
+                                    new_row.append(item)
+                            else:
+                                new_row.append(item)
+                        if new_row:
+                            new_layout.append(new_row)
+                    return new_layout
+
+                if overwrite:
+                    # Remove any keys the template provides from the target's existing layout
+                    # so they only appear where the template appended them.
+                    template_keys = {
+                        k
+                        for k in template.attributes.keys()
+                        if not k.startswith("_") and k != "_sheet_layout"
+                    }
+                    target_layout = _remove_keys_from_layout(
+                        target_layout, template_keys
+                    )
+                else:
+                    # Keep the target's existing arrangement for any skipped keys,
+                    # meaning we remove them from the appended template_layout.
+                    template_layout = _remove_keys_from_layout(
+                        template_layout, skipped_keys
+                    )
+
+                target_layout.extend(template_layout)
+                target.attributes["_sheet_layout"] = target_layout
 
         # 3. Apply Type
         if template.type_value and hasattr(target, "type"):

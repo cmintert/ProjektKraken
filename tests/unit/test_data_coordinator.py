@@ -7,7 +7,7 @@ summary result routing extracted from MainWindow into a focused coordinator.
 from unittest.mock import MagicMock, patch
 
 import pytest
-from PySide6.QtCore import QObject, QTimer, Signal
+from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QApplication
 
 

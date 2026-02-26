@@ -1,5 +1,5 @@
 """
-Additional tests for MainWindow to improve coverage.
+Additional tests for MainWindow and EditorCoordinator to improve coverage.
 """
 
 from unittest.mock import patch
@@ -7,7 +7,6 @@ from unittest.mock import patch
 import pytest
 
 from src.app.main import MainWindow
-from src.core.events import Event
 
 
 @pytest.fixture
@@ -27,75 +26,70 @@ def main_window(qtbot):
 
 
 def test_delete_event_success(main_window, qtbot):
-    """Test successful event deletion."""
-    event = Event(id="del1", name="To Delete", lore_date=100.0, type="generic")
-    main_window.worker.db_service.get_event.return_value = event
-    main_window.worker.db_service.delete_event.return_value = True
-
-    # Mock command and wait for signal
+    """Test successful event deletion via editor_coordinator."""
     with patch("src.app.coordinators.editor_coordinator.DeleteEventCommand") as MockCmd:
-        with qtbot.waitSignal(main_window.command_requested, timeout=1000):
-            main_window.delete_event("del1")
+        with qtbot.waitSignal(
+            main_window.editor_coordinator.command_requested, timeout=1000
+        ):
+            main_window.editor_coordinator.delete_event("del1")
 
-        # Verify command was created
         MockCmd.assert_called_once()
 
 
 def test_delete_event_sends_command(main_window, qtbot):
-    """Test delete event sends command to worker."""
+    """Test delete event sends command via editor_coordinator."""
     with patch("src.app.coordinators.editor_coordinator.DeleteEventCommand"):
-        with qtbot.waitSignal(main_window.command_requested, timeout=1000):
-            main_window.delete_event("nonexistent")
+        with qtbot.waitSignal(
+            main_window.editor_coordinator.command_requested, timeout=1000
+        ):
+            main_window.editor_coordinator.delete_event("nonexistent")
 
 
 def test_update_event_success(main_window, qtbot):
-    """Test successful event update."""
+    """Test successful event update via editor_coordinator."""
     event_data = {"id": "up1", "name": "Updated", "lore_date": 200.0, "type": "combat"}
 
     with patch("src.app.coordinators.editor_coordinator.UpdateEventCommand") as MockCmd:
-        with qtbot.waitSignal(main_window.command_requested, timeout=1000):
-            main_window.update_event(event_data)
+        with qtbot.waitSignal(
+            main_window.editor_coordinator.command_requested, timeout=1000
+        ):
+            main_window.editor_coordinator.update_event(event_data)
 
         MockCmd.assert_called_once_with("up1", event_data)
 
 
 def test_update_event_sends_command(main_window, qtbot):
-    """Test update event sends command to worker."""
+    """Test update event sends command via editor_coordinator."""
     event_data = {"id": "up2", "name": "Failed", "lore_date": 300.0, "type": "generic"}
 
     with patch("src.app.coordinators.editor_coordinator.UpdateEventCommand") as MockCmd:
-        with qtbot.waitSignal(main_window.command_requested, timeout=1000):
-            main_window.update_event(event_data)
+        with qtbot.waitSignal(
+            main_window.editor_coordinator.command_requested, timeout=1000
+        ):
+            main_window.editor_coordinator.update_event(event_data)
 
         MockCmd.assert_called_once_with("up2", event_data)
 
 
 def test_add_relation_success(main_window, qtbot):
-    """Test adding a relation."""
+    """Test adding a relation via editor_coordinator."""
     with patch("src.app.coordinators.editor_coordinator.AddRelationCommand") as MockCmd:
-        # Mock the load_event_details to avoid errors
-        main_window.worker.db_service.get_event.return_value = Event(
-            id="src", name="Source", lore_date=100.0, type="generic"
-        )
-        main_window.worker.db_service.get_relations.return_value = []
-        main_window.worker.db_service.get_incoming_relations.return_value = []
-
-        with qtbot.waitSignal(main_window.command_requested, timeout=1000):
-            main_window.add_relation("src", "tgt", "causes", bidirectional=False)
+        with qtbot.waitSignal(
+            main_window.editor_coordinator.command_requested, timeout=1000
+        ):
+            main_window.editor_coordinator.add_relation(
+                "src", "tgt", "causes", bidirectional=False
+            )
 
         MockCmd.assert_called_once()
 
 
 def test_add_relation_bidirectional(main_window):
-    """Test adding bidirectional relation."""
+    """Test adding bidirectional relation via editor_coordinator."""
     with patch("src.app.coordinators.editor_coordinator.AddRelationCommand") as MockCmd:
-        main_window.worker.db_service.get_event.return_value = Event(
-            id="src", name="Source", lore_date=100.0, type="generic"
+        main_window.editor_coordinator.add_relation(
+            "src", "tgt", "related", bidirectional=True
         )
-        main_window.worker.db_service.get_relations.return_value = []
-        main_window.worker.db_service.get_incoming_relations.return_value = []
-
-        main_window.add_relation("src", "tgt", "related", bidirectional=True)
 
         # Check bidirectional was passed
         call_args = MockCmd.call_args
@@ -103,60 +97,47 @@ def test_add_relation_bidirectional(main_window):
 
 
 def test_remove_relation_success(main_window, qtbot):
-    """Test removing a relation."""
-    main_window.event_editor._current_event_id = "evt1"
-
+    """Test removing a relation via editor_coordinator."""
     with patch("src.app.coordinators.editor_coordinator.RemoveRelationCommand"):
-        main_window.worker.db_service.get_event.return_value = Event(
-            id="evt1", name="Event", lore_date=100.0, type="generic"
-        )
-        main_window.worker.db_service.get_relations.return_value = []
-        main_window.worker.db_service.get_incoming_relations.return_value = []
-
-        with qtbot.waitSignal(main_window.command_requested, timeout=1000):
-            main_window.remove_relation("rel1")
+        with qtbot.waitSignal(
+            main_window.editor_coordinator.command_requested, timeout=1000
+        ):
+            main_window.editor_coordinator.remove_relation("rel1")
 
 
-def test_remove_relation_no_current_event(main_window):
-    """Test removing relation when no current event."""
-    main_window.event_editor._current_event_id = None
-
-    with patch("src.app.coordinators.editor_coordinator.RemoveRelationCommand"):
-        main_window.remove_relation("rel1")
-
-        # Should not try to reload details
-        main_window.worker.db_service.get_event.assert_not_called()
+def test_remove_relation_emits_command(main_window):
+    """Test removing a relation emits command via editor_coordinator."""
+    with patch(
+        "src.app.coordinators.editor_coordinator.RemoveRelationCommand"
+    ) as MockCmd:
+        main_window.editor_coordinator.remove_relation("rel1")
+        MockCmd.assert_called_once_with("rel1")
 
 
 def test_update_relation_success(main_window, qtbot):
-    """Test updating a relation."""
-    main_window.event_editor._current_event_id = "evt1"
-
-    with patch("src.app.coordinators.editor_coordinator.UpdateRelationCommand") as MockCmd:
-        mock_cmd = MockCmd.return_value
-        mock_cmd.execute.return_value = True
-
-        main_window.worker.db_service.get_event.return_value = Event(
-            id="evt1", name="Event", lore_date=100.0, type="generic"
-        )
-        main_window.worker.db_service.get_relations.return_value = []
-        main_window.worker.db_service.get_incoming_relations.return_value = []
-
-        with qtbot.waitSignal(main_window.command_requested, timeout=1000):
-            main_window.update_relation("rel1", "new_target", "new_type")
+    """Test updating a relation via editor_coordinator."""
+    with patch(
+        "src.app.coordinators.editor_coordinator.UpdateRelationCommand"
+    ) as MockCmd:
+        with qtbot.waitSignal(
+            main_window.editor_coordinator.command_requested, timeout=1000
+        ):
+            main_window.editor_coordinator.update_relation(
+                "rel1", "new_target", "new_type"
+            )
 
         MockCmd.assert_called_once_with(
             "rel1", "new_target", "new_type", attributes=None
         )
 
 
-def test_update_relation_no_current_event(main_window, qtbot):
-    """Test updating relation when no current event."""
-    main_window.event_editor._current_event_id = None
-
-    with patch("src.app.coordinators.editor_coordinator.UpdateRelationCommand"):
-        with qtbot.waitSignal(main_window.command_requested, timeout=1000):
-            main_window.update_relation("rel1", "tgt", "type")
+def test_update_relation_emits_command(main_window):
+    """Test updating a relation emits command via editor_coordinator."""
+    with patch(
+        "src.app.coordinators.editor_coordinator.UpdateRelationCommand"
+    ) as MockCmd:
+        main_window.editor_coordinator.update_relation("rel1", "tgt", "type")
+        MockCmd.assert_called_once_with("rel1", "tgt", "type", attributes=None)
 
 
 def test_dock_options_set(main_window):
@@ -187,14 +168,3 @@ def test_all_docks_are_floatable(main_window):
         features = dock.features()
         assert features & QDockWidget.DockWidgetFloatable
         assert features & QDockWidget.DockWidgetMovable
-
-
-def test_load_event_details_no_event(main_window):
-    """Test load_event_details when event doesn't exist."""
-    main_window.worker.db_service.get_event.return_value = None
-
-    # Should not crash
-    main_window.load_event_details("nonexistent")
-
-    # Should not try to get relations
-    main_window.worker.db_service.get_relations.assert_not_called()

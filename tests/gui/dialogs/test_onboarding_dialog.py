@@ -1,8 +1,9 @@
 import pytest
 from PySide6.QtWidgets import QApplication
 
-from src.gui.widgets.map_widget import OnboardingDialog
 from src.core.theme_manager import ThemeManager
+from src.gui.widgets.map_widget import OnboardingDialog
+
 
 @pytest.fixture(scope="session")
 def qapp():

@@ -3,10 +3,13 @@
 Combines multiple commands into a single executable unit.
 """
 
+import logging
 from typing import Dict, List
 
 from src.commands.base_command import BaseCommand, CommandResult
 from src.services.db_service import DatabaseService
+
+logger = logging.getLogger(__name__)
 
 
 class CompositeCommand(BaseCommand):
@@ -89,8 +92,22 @@ class CompositeCommand(BaseCommand):
 
     def undo(self, db_service: DatabaseService) -> None:
         """Undoes all commands in reverse order."""
+        if not self._is_executed:
+            return
+
         for cmd in reversed(self.commands):
-            cmd.undo(db_service)
+            if hasattr(cmd, "is_executed") and not cmd.is_executed:
+                continue
+
+            try:
+                cmd.undo(db_service)
+            except Exception as e:
+                logger.error(
+                    f"CompositeCommand: Failed to undo sub-command "
+                    f"{cmd.__class__.__name__}: {e}"
+                )
+
+        self._is_executed = False
 
     def get_description(self) -> str:
         return self._custom_description

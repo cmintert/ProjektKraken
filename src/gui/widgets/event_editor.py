@@ -42,6 +42,7 @@ from src.gui.widgets.attribute_editor import AttributeEditorWidget
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.compact_duration_widget import CompactDurationWidget
 from src.gui.widgets.relation_item_widget import RelationItemWidget
+from src.gui.widgets.sheet_builder import SheetBuilderWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
 from src.gui.widgets.standard_buttons import (
     DestructiveButton,
@@ -325,6 +326,14 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.attribute_editor = AttributeEditorWidget()
         attr_layout.addWidget(self.attribute_editor)
         self.inspector.add_tab(self.tab_attributes, "Attributes")
+
+        # --- Tab 6: Sheet ---
+        self.tab_sheet = QWidget()
+        sheet_tab_layout = QVBoxLayout(self.tab_sheet)
+        StyleHelper.apply_no_margins(sheet_tab_layout)
+        self.sheet_builder = SheetBuilderWidget()
+        sheet_tab_layout.addWidget(self.sheet_builder)
+        self.inspector.add_tab(self.tab_sheet, "Sheet")
 
         # Buttons
         btn_layout = QHBoxLayout()
@@ -721,43 +730,37 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.btn_remove_rel.setEnabled(has_selection)
 
     def eventFilter(self, obj: QWidget, event: Any) -> bool:
-        """Event filter to handle clicks on empty space in relation lists.
-
-        Args:
-            obj: Object that received the event.
-            event: The event.
-
-        Returns:
-            True if event was handled, False otherwise.
-
-        """
+        """Event filter to handle clicks on empty space in relation lists."""
         from PySide6.QtCore import QEvent
         from PySide6.QtGui import QMouseEvent
 
-        # Check if this is a mouse press on a relation list viewport
-        if (
-            isinstance(event, QMouseEvent)
-            and event.type() == QEvent.Type.MouseButtonPress
-        ):
-            if event.button() == Qt.MouseButton.LeftButton:
-                # Find the list widget this viewport belongs to
-                parent = obj.parent()
-                if isinstance(parent, QListWidget) and parent.property(
-                    "_relation_list_widget"
-                ):
-                    # Get the item at the click position
-                    item = parent.itemAt(event.pos())
+        try:
+            # Check if this is a mouse press on a relation list viewport
+            if (
+                isinstance(event, QMouseEvent)
+                and event.type() == QEvent.Type.MouseButtonPress
+            ):
+                if event.button() == Qt.MouseButton.LeftButton:
+                    # Find the list widget this viewport belongs to
+                    parent = obj.parent()
+                    if isinstance(parent, QListWidget) and parent.property(
+                        "_relation_list_widget"
+                    ):
+                        # Get the item at the click position
+                        item = parent.itemAt(event.pos())
 
-                    if item is None:
-                        # Clicked on empty space - clear selection
-                        parent.clearSelection()
-                        parent.setCurrentItem(None)
-                        return False  # Let Qt handle the event normally
-                    elif item.isSelected():
-                        # Clicked on already-selected item - deselect it
-                        parent.clearSelection()
-                        parent.setCurrentItem(None)
-                        return True  # Consume the event to prevent re-selection
+                        if item is None:
+                            # Clicked on empty space - clear selection
+                            parent.clearSelection()
+                            parent.setCurrentItem(None)
+                            return False  # Let Qt handle the event normally
+                        elif item.isSelected():
+                            # Clicked on already-selected item - deselect it
+                            parent.clearSelection()
+                            parent.setCurrentItem(None)
+                            return True  # Prevent re-selection
+        except RuntimeError:
+            return False
 
         return super().eventFilter(obj, event)
 
@@ -771,7 +774,62 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.type_edit.currentTextChanged.connect(lambda: self.set_dirty(True))
         self.desc_edit.textChanged.connect(lambda: self.set_dirty(True))
         self.tag_editor.tags_changed.connect(lambda: self.set_dirty(True))
-        self.attribute_editor.attributes_changed.connect(lambda: self.set_dirty(True))
+
+        # Connect attribute and sheet builder changes to both dirty state AND sync
+        self.attribute_editor.attributes_changed.connect(self._on_attributes_changed)
+        self.sheet_builder.attributes_changed.connect(self._on_sheet_changed)
+
+    def _on_attributes_changed(self) -> None:
+        """Handle changes from the attribute editor table."""
+        self.set_dirty(True)
+        self._sync_attributes(source="table")
+
+    def _on_sheet_changed(self) -> None:
+        """Handle changes from the sheet builder."""
+        self.set_dirty(True)
+        self._sync_attributes(source="sheet")
+
+    def _sync_attributes(self, source: str) -> None:
+        """Synchronize values between Attribute Editor and Sheet Builder.
+
+        Args:
+            source (str): "table" if the change originated in the attribute editor,
+                or "sheet" if it originated in the sheet builder.
+        """
+        if self._is_loading:
+            return
+
+        if source == "sheet":
+            sheet_attrs = self.sheet_builder.get_attributes()
+            attr_attrs = self.attribute_editor.get_attributes()
+
+            for key, val in sheet_attrs.items():
+                if key in attr_attrs and attr_attrs[key] != val:
+                    self.attribute_editor.update_attribute_value(key, val)
+                elif key not in attr_attrs:
+                    self.attribute_editor._block_signals = True
+                    self.attribute_editor._add_row(key, val)
+                    self.attribute_editor._block_signals = False
+
+            for key in list(attr_attrs.keys()):
+                if key not in sheet_attrs and key in self.sheet_builder._pairs:
+                    pass
+        elif source == "table":
+            sheet_attrs = self.sheet_builder.get_attributes()
+            attr_attrs = self.attribute_editor.get_attributes()
+
+            for key, val in attr_attrs.items():
+                if key in sheet_attrs and sheet_attrs[key] != val:
+                    self.sheet_builder.update_attribute_value(key, val)
+                elif key not in sheet_attrs and key in self.sheet_builder._pairs:
+                    pass
+
+            # If removed from table, remove from sheet
+            for key in list(sheet_attrs.keys()):
+                if key not in attr_attrs:
+                    self.sheet_builder._block_signals = True
+                    self.sheet_builder.remove_attribute(key)
+                    self.sheet_builder._block_signals = False
 
     @Slot(float)
     def _on_start_date_changed(self, new_start: float) -> None:
@@ -865,6 +923,10 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         self._is_loading = True
         try:
+            # Preserve scroll position and description cursor across reload
+            scroll_pos = self.scroll_area.verticalScrollBar().value()
+            desc_cursor, desc_had_focus = self._save_desc_cursor_state()
+
             # Block signals to prevent dirty trigger during load
             self.name_edit.blockSignals(True)
             self.date_edit.blockSignals(True)
@@ -887,6 +949,10 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
             self.set_dirty(False)
             self.setEnabled(True)
+
+            # Restore scroll position and description cursor
+            self.scroll_area.verticalScrollBar().setValue(scroll_pos)
+            self._restore_desc_cursor_state(desc_cursor, desc_had_focus)
         finally:
             self._is_loading = False
 
@@ -933,6 +999,14 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.attribute_editor.blockSignals(True)
         self.attribute_editor.load_attributes(display_attrs)
         self.attribute_editor.blockSignals(False)
+
+        # Load sheet builder with the same display attributes + stored layout
+        sheet_layout = event.attributes.get("_sheet_layout")
+        self.sheet_builder.blockSignals(True)
+        try:
+            self.sheet_builder.load_attributes(display_attrs, sheet_layout)
+        finally:
+            self.sheet_builder.blockSignals(False)
 
         # Load Summary
         summary_data = event.attributes.get("_summary_data")
@@ -1016,11 +1090,14 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
     def _on_theme_changed(self, theme: dict) -> None:
         """
         Apply theme changes to specific UI elements.
-        
-        Updates the inject button stylesheet and the icons/styles for relation add-buttons using values from the provided theme. Expects the `theme` mapping to include a `text_main` color value used for icon tinting.
-        
+
+        Updates the inject button stylesheet and the icons/styles for relation
+        add-buttons using values from the provided theme. Expects the `theme`
+        mapping to include a `text_main` color value used for icon tinting.
+
         Parameters:
-        	theme (dict): Theme data containing color and style values (must include `text_main`).
+            theme (dict): Theme data containing color and style values
+                          (must include `text_main`).
         """
         from src.gui.utils.icon_loader import load_icon
         from src.gui.utils.style_helper import StyleHelper
@@ -1069,6 +1146,11 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             if hasattr(self, "_pending_summary_data") and self._pending_summary_data:
                 base_attrs["_summary_data"] = self._pending_summary_data
             self._merge_hidden_attributes(base_attrs)
+
+            # Persist the sheet layout arrangement
+            sheet_layout = self.sheet_builder.get_layout()
+            if sheet_layout:
+                base_attrs["_sheet_layout"] = sheet_layout
 
             event_data = {
                 "id": self._current_event_id,
@@ -1162,11 +1244,13 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         current_tags = self.tag_editor.get_tags()
         current_attrs = self.attribute_editor.get_attributes()
         current_type = self.type_edit.currentText()
+        current_layout = self.sheet_builder.get_layout()
 
         dlg = CreateTemplateDialog(
             source_tags=current_tags,
             source_attributes=current_attrs,
             source_type=current_type,
+            source_layout=current_layout,
             parent=self,
         )
 

@@ -1,7 +1,5 @@
 from unittest.mock import patch
 
-import pytest
-
 from src.app.main_window import MainWindow
 from src.core.entities import Entity
 from src.core.events import Event

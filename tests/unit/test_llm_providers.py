@@ -234,12 +234,12 @@ def test_lmstudio_generate_chat_mode_with_dict_prompt(mock_requests):
     call_args = mock_requests.post.call_args
     payload = call_args[1]["json"]
     assert "messages" in payload
-    # LMStudio combines system and user messages into one user message
-    # to avoid "system" role issues with strict templates
-    assert len(payload["messages"]) == 1
-    assert payload["messages"][0]["role"] == "user"
-    expected_content = "You are a fantasy writer.\n\nDescribe a castle."
-    assert payload["messages"][0]["content"] == expected_content
+    # LMStudio sends system and user as separate messages
+    assert len(payload["messages"]) == 2
+    assert payload["messages"][0]["role"] == "system"
+    assert payload["messages"][0]["content"] == "You are a fantasy writer."
+    assert payload["messages"][1]["role"] == "user"
+    assert payload["messages"][1]["content"] == "Describe a castle."
 
 
 def test_lmstudio_generate_chat_mode_with_string_prompt(mock_requests):
