@@ -140,6 +140,12 @@ class TestAttributePairWidget:
         assert "AttributePairWidget:hover" in stylesheet
         assert primary in stylesheet
 
+    def test_label_is_transparent_to_mouse_events(self, pair):
+        """Test that the key label ignores mouse events to allow dragging."""
+        assert pair.key_label.testAttribute(
+            Qt.WidgetAttribute.WA_TransparentForMouseEvents
+        )
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SheetBuilderWidget

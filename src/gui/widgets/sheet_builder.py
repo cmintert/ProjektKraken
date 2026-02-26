@@ -112,6 +112,7 @@ class AttributePairWidget(QFrame):
         self.key_label.setAlignment(
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
         )
+        self.key_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         layout.addWidget(self.key_label)
 
         # Value line-edit
