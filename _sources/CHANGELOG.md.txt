@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-26
-### Documentation
-- docs: update CHANGELOG.md since v0.13.5
+### Internal
+- Merge pull request #105 from cmintert/copilot/fix-ruff-linting-errors
 
 
 *This changelog was automatically generated.*
