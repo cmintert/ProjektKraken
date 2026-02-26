@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+
 from PySide6.QtCore import QSettings
 
 # Add src to path
@@ -7,9 +8,9 @@ project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
 
 from src.app.constants import (
-    WINDOW_SETTINGS_KEY,
-    WINDOW_SETTINGS_APP,
     SETTINGS_ACTIVE_DB_KEY,
+    WINDOW_SETTINGS_APP,
+    WINDOW_SETTINGS_KEY,
 )
 from src.core.paths import get_worlds_dir
 from src.services.db_service import DatabaseService

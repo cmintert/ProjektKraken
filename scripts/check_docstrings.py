@@ -1,8 +1,8 @@
 import ast
 import os
 import sys
-from typing import List, Tuple
 from pathlib import Path
+from typing import List, Tuple
 
 
 def check_file(filepath: Path, root_dir: str) -> Tuple[List[str], int, int]:
