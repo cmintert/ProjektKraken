@@ -11,7 +11,7 @@ from src.core.protocols import MainWindowProtocol, TimelineDataProvider
 class TestMainWindowProtocol:
     """Test the MainWindowProtocol interface."""
 
-    def test_valid_implementation(self):
+    def test_valid_implementation(self):  # noqa: C901
         """Test that a class implementing required methods satisfies the protocol.
 
         Note: runtime_checkable protocols only check for methods at runtime,

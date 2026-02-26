@@ -14,7 +14,7 @@ class FlowLayout(QLayout):
     Adapted from official Qt Flow Layout example for PySide6.
     """
 
-    def __init__(self, parent: QWidget = None, margin: int = -1, spacing: int = -1):
+    def __init__(self, parent: QWidget = None, margin: int = -1, spacing: int = -1) -> None:
         """Create a FlowLayout with optional parent and spacing.
 
         Parameters:
@@ -28,7 +28,7 @@ class FlowLayout(QLayout):
         self.setSpacing(spacing)
         self._items: list[QLayoutItem] = []
 
-    def addItem(self, item: QLayoutItem):
+    def addItem(self, item: QLayoutItem) -> None:
         """Adds an item to the layout."""
         self._items.append(item)
 
@@ -95,7 +95,7 @@ class FlowLayout(QLayout):
         """
         return self._do_layout(QRect(0, 0, width, 0), True)
 
-    def setGeometry(self, rect: QRect):
+    def setGeometry(self, rect: QRect) -> None:
         """
         Apply the given rectangle to the layout and arrange child items within it.
 

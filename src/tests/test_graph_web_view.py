@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 from src.gui.widgets.graph_view.graph_web_view import GraphWebView
 
 
-def test_update_graph_data_maps_properties_correctly(qapp):
+def test_update_graph_data_maps_properties_correctly(qapp: object) -> None:
     """Test that update_graph_data correctly maps Python-side properties to Vis.js ones.
 
     Specifically verifies:

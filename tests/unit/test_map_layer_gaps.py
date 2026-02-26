@@ -835,7 +835,6 @@ class TestMapWidgetLayerCRUD:
 
         widget._on_create_layer("Test Layer")
 
-        model = widget.get_layer_model()
         default = widget._default_group()
         layer_names = [c.name for c in default.children]
         assert "Test Layer" in layer_names

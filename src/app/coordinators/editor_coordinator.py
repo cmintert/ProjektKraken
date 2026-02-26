@@ -386,7 +386,7 @@ class EditorCoordinator(BaseCoordinator):
     # ------------------------------------------------------------------
 
     @Slot(object)
-    def on_command_finished_check_toast(self, result) -> None:
+    def on_command_finished_check_toast(self, result: object) -> None:
         """Check if completed command was a drag-drop relation and show toast.
 
         Args:

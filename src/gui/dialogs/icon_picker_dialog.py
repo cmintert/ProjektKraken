@@ -11,9 +11,9 @@ Used by both the Lexicon Editor and Map Editor.
 import logging
 import os
 from pathlib import Path
-from typing import List, Optional
+from typing import Callable, List, Optional
 
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import QPoint, QSize, Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QDialog,
@@ -51,8 +51,8 @@ class ProjectIconCard(QWidget):
         self,
         icon_path: str,
         relative_path: str,
-        on_select_callback,
-        on_delete_callback,
+        on_select_callback: Callable[[], None],
+        on_delete_callback: Callable[[], None],
         parent: Optional[QWidget] = None,
     ) -> None:
         """Initializes the ProjectIconCard.
@@ -116,7 +116,7 @@ class ProjectIconCard(QWidget):
         self.setStyleSheet(card_style)
         self._icon_btn.setStyleSheet(icon_btn_style)
 
-    def _show_context_menu(self, position) -> None:
+    def _show_context_menu(self, position: QPoint) -> None:
         """Shows the context menu for this icon card.
 
         Args:

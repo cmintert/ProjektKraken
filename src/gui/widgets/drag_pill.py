@@ -8,7 +8,16 @@ import logging
 from typing import Optional
 
 from PySide6.QtCore import QPoint, Qt
-from PySide6.QtGui import QBrush, QColor, QFontMetrics, QLinearGradient, QPainter, QPen
+from PySide6.QtGui import (
+    QBrush,
+    QColor,
+    QFontMetrics,
+    QLinearGradient,
+    QPainter,
+    QPaintEvent,
+    QPen,
+    QResizeEvent,
+)
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 
 from src.gui.utils.style_helper import StyleHelper
@@ -125,7 +134,7 @@ class DragPill(QFrame):
             )
             self.name_label.setText(elided)
 
-    def resizeEvent(self, event) -> None:
+    def resizeEvent(self, event: QResizeEvent) -> None:
         """
         Update the displayed item name's elision to fit the widget's new width.
         """
@@ -178,7 +187,7 @@ class DragPill(QFrame):
         offset_position = position + self.cursor_offset
         self.move(offset_position)
 
-    def paintEvent(self, event) -> None:
+    def paintEvent(self, event: QPaintEvent) -> None:
         """
         Render the drag pill background and border as a rounded, vertically graded shape.
         

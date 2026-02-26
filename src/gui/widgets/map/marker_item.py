@@ -52,7 +52,7 @@ logger = logging.getLogger(__name__)
 class MarkerLabelItem(QGraphicsObject):
     """Custom graphics item for marker labels that displays a themed background pill."""
 
-    def __init__(self, text: str, parent=None):
+    def __init__(self, text: str, parent: Optional[QGraphicsItem] = None) -> None:
         super().__init__(parent)
         self._text = text
         self._font = QFont("Segoe UI", 8)
@@ -64,7 +64,7 @@ class MarkerLabelItem(QGraphicsObject):
         self._rect = QRectF()
         self._update_rect()
 
-    def _update_rect(self):
+    def _update_rect(self) -> None:
         fm = QFontMetrics(self._font)
         text_rect = fm.boundingRect(self._text)
         width = text_rect.width() + self._padding_x * 2
@@ -75,13 +75,13 @@ class MarkerLabelItem(QGraphicsObject):
     def boundingRect(self) -> QRectF:
         return self._rect
 
-    def setText(self, text: str):
+    def setText(self, text: str) -> None:
         if self._text != text:
             self._text = text
             self._update_rect()
             self.update()
 
-    def paint(self, painter: QPainter, option, widget=None):
+    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: Optional[QWidget] = None) -> None:
         theme = ThemeManager().get_theme()
         bg_color = QColor(theme.get("surface", "#1A1A1A"))
         text_color = QColor(theme.get("text_main", "#FFFFFF"))

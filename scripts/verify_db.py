@@ -7,16 +7,16 @@ from PySide6.QtCore import QSettings
 project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
 
-from src.app.constants import (
+from src.app.constants import (  # noqa: E402
     SETTINGS_ACTIVE_DB_KEY,
     WINDOW_SETTINGS_APP,
     WINDOW_SETTINGS_KEY,
 )
-from src.core.paths import get_worlds_dir
-from src.services.db_service import DatabaseService
+from src.core.paths import get_worlds_dir  # noqa: E402
+from src.services.db_service import DatabaseService  # noqa: E402
 
 
-def verify_db():
+def verify_db() -> None:
     settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
     active_world = settings.value(SETTINGS_ACTIVE_DB_KEY, "Default World")
 

@@ -32,7 +32,9 @@ from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.marker_item import MarkerItem
 
 if TYPE_CHECKING:
-    from src.gui.widgets.map.map_graphics_view import MapGraphicsView
+    from PySide6.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent
+
+    from src.gui.widgets.map.map_graphics_view import KeyframeItem, MapGraphicsView
 
 logger = logging.getLogger(__name__)
 

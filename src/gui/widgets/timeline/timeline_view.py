@@ -499,7 +499,7 @@ class TimelineView(QGraphicsView):
         self._ruler.set_calendar_converter(converter)
         self.viewport().update()
 
-    def set_events(self, events: list) -> None:
+    def set_events(self, events: list) -> None:  # noqa: C901
         """Updates the scene with event items using smart lane packing. Reuses existing
         EventItem instances where possible for performance.
 

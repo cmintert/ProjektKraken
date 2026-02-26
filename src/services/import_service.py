@@ -231,7 +231,7 @@ class ImportService:
         parsed_data = self.parse_markdown_file(markdown_text, fallback_title=filename)
         return self.import_batch(parsed_data, options)
 
-    def import_batch(
+    def import_batch(  # noqa: C901
         self,
         data: Dict[str, Any],
         options: Optional[Dict[str, Any]] = None,
@@ -367,7 +367,7 @@ class ImportService:
 
         return result
 
-    def _import_single_entity_internal(
+    def _import_single_entity_internal(  # noqa: C901
         self,
         data: Dict[str, Any],
         result: ImportResult,
@@ -621,7 +621,7 @@ class ImportService:
         existing.modified_at = logging.time.time()
         return existing
 
-    def _import_single_event_internal(
+    def _import_single_event_internal(  # noqa: C901
         self,
         data: Dict[str, Any],
         result: ImportResult,

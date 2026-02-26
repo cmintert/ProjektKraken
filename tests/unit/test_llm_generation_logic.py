@@ -83,7 +83,7 @@ def test_custom_prompt_structure(qtbot, widget, monkeypatch):
     assert "[Task]" in prompt_text
 
 
-def test_preview_fetches_rag(qtbot, widget, monkeypatch):
+def test_preview_fetches_rag(qtbot, widget, monkeypatch):  # noqa: C901
     """Test that preview fetches real RAG context."""
 
     # Mock context
