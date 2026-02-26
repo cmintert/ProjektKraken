@@ -493,6 +493,7 @@
         <span class="n">include_tags</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">include_attributes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">include_type</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">include_layout</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FastInjectTemplate</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new template object from an existing target.</span>
 
@@ -528,6 +529,11 @@
             <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">include_attributes</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">source_attrs</span><span class="p">:</span>
                     <span class="n">attrs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">source_attrs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">include_layout</span> <span class="ow">and</span> <span class="s2">&quot;_sheet_layout&quot;</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">attributes</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+
+            <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;_sheet_layout&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;_sheet_layout&quot;</span><span class="p">])</span>
 
         <span class="n">target_type_str</span> <span class="o">=</span> <span class="s2">&quot;object&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">Entity</span><span class="p">):</span>
@@ -591,7 +597,7 @@
 
 <div class="viewcode-block" id="FastInjectManager.apply_template">
 <a class="viewcode-back" href="../../core.html#core.fast_inject.FastInjectManager.apply_template">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">apply_template</span><span class="p">(</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_template</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">target</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Entity</span><span class="p">,</span> <span class="n">Event</span><span class="p">],</span>
         <span class="n">template</span><span class="p">:</span> <span class="n">FastInjectTemplate</span><span class="p">,</span>
@@ -641,17 +647,79 @@
             <span class="n">new_tags</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">tags</span><span class="p">)</span>
             <span class="n">target</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">current_tags</span> <span class="o">|</span> <span class="n">new_tags</span><span class="p">)</span>
 
+        <span class="c1"># Extract layout</span>
+        <span class="n">template_layout</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s2">&quot;_sheet_layout&quot;</span> <span class="ow">in</span> <span class="n">template</span><span class="o">.</span><span class="n">attributes</span><span class="p">:</span>
+            <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+
+            <span class="n">template_layout</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;_sheet_layout&quot;</span><span class="p">])</span>
+
         <span class="c1"># 2. Apply Attributes</span>
+        <span class="n">skipped_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">raw_val</span> <span class="ow">in</span> <span class="n">template</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;_sheet_layout&quot;</span><span class="p">:</span>
+                <span class="k">continue</span>
+
             <span class="c1"># Resolve variables first</span>
             <span class="n">final_val</span> <span class="o">=</span> <span class="n">resolve_vars</span><span class="p">(</span><span class="n">raw_val</span><span class="p">)</span>
 
             <span class="c1"># Check existence</span>
             <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">attributes</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">overwrite</span><span class="p">:</span>
                 <span class="c1"># Conflict - skip</span>
+                <span class="n">skipped_keys</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
                 <span class="k">continue</span>
 
             <span class="n">target</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">final_val</span>
+
+        <span class="c1"># 3. Apply Layout Merger</span>
+        <span class="k">if</span> <span class="n">template_layout</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">&quot;_sheet_layout&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">target</span><span class="o">.</span><span class="n">attributes</span><span class="p">:</span>
+                <span class="c1"># Target has no layout, just use the template&#39;s</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;_sheet_layout&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">template_layout</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+
+                <span class="n">target_layout</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">target</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;_sheet_layout&quot;</span><span class="p">])</span>
+
+                <span class="k">def</span><span class="w"> </span><span class="nf">_remove_keys_from_layout</span><span class="p">(</span>
+                    <span class="n">layout</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]],</span> <span class="n">keys_to_remove</span><span class="p">:</span> <span class="nb">set</span>
+                <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]]:</span>
+                    <span class="n">new_layout</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">layout</span><span class="p">:</span>
+                        <span class="n">new_row</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">row</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                                <span class="k">if</span> <span class="n">item</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">keys_to_remove</span><span class="p">:</span>
+                                    <span class="n">new_row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;key&quot;</span> <span class="ow">in</span> <span class="n">item</span><span class="p">:</span>
+                                <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;key&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">keys_to_remove</span><span class="p">:</span>
+                                    <span class="n">new_row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">new_row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">new_row</span><span class="p">:</span>
+                            <span class="n">new_layout</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_row</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="n">new_layout</span>
+
+                <span class="k">if</span> <span class="n">overwrite</span><span class="p">:</span>
+                    <span class="c1"># Remove any keys the template provides from the target&#39;s existing layout</span>
+                    <span class="c1"># so they only appear where the template appended them.</span>
+                    <span class="n">template_keys</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="n">k</span>
+                        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">template</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;_sheet_layout&quot;</span>
+                    <span class="p">}</span>
+                    <span class="n">target_layout</span> <span class="o">=</span> <span class="n">_remove_keys_from_layout</span><span class="p">(</span>
+                        <span class="n">target_layout</span><span class="p">,</span> <span class="n">template_keys</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Keep the target&#39;s existing arrangement for any skipped keys,</span>
+                    <span class="c1"># meaning we remove them from the appended template_layout.</span>
+                    <span class="n">template_layout</span> <span class="o">=</span> <span class="n">_remove_keys_from_layout</span><span class="p">(</span>
+                        <span class="n">template_layout</span><span class="p">,</span> <span class="n">skipped_keys</span>
+                    <span class="p">)</span>
+
+                <span class="n">target_layout</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">template_layout</span><span class="p">)</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s2">&quot;_sheet_layout&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_layout</span>
 
         <span class="c1"># 3. Apply Type</span>
         <span class="k">if</span> <span class="n">template</span><span class="o">.</span><span class="n">type_value</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">):</span>
