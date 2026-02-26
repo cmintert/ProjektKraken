@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-02-24  
-**Commit:** 65aa100
+**Last Updated:** 2026-02-26  
+**Commit:** f594501
 ---
 
 # Changelog
@@ -12,16 +12,33 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-02-26)* **UI**: Implemented layout saving and merging for Fast Inject templates.
+- *(2026-02-25)* **UI**: Enhanced Sheet Builder with WYSIWYG drag-and-drop: semi-transparent ghost widgets, colored insertion lines, and live weight percentage overlays.
+- *(2026-02-25)* **UI**: Implemented focus, scroll, and cursor position preservation across autosave reloads in all major editors.
+- *(2026-02-25)* **UI**: Added drag-and-drop constraints to prevent invalid drops into Text and Divider rows in Sheet Builder.
+- *(2026-02-24)* **UI**: Implemented initial Sheet Builder widget featuring layout serialization, bi-directional dirty signaling, and [!stat] callout support for Obsidian exports.
 - *(2026-02-24)* **UI**: Introduced subtle visual indicators (dashed borders) for spacers within the Sheet Builder.
 - *(2026-02-23)* **Map**: Implemented dynamic collision-aware label engine for label engine for both map marker labels and keyframe labels.
 - *(2026-02-22)* **UI**: Implemented high-fidelity, anti-aliased pill system for `TagPill` and `DragPill` components.
 - *(2026-02-22)* **Map**: Implemented themed pill backgrounds with dynamic scaling for map marker and keyframe labels.
 
 ### Changed
+- *(2026-02-25)* **UI**: Standardized Sheet Builder styling and theme adherence using project-standard `StyleHelper` utilities.
+- *(2026-02-25)* **Refactor**: Extracted cursor state management into `BaseEditorMixin` to reduce redundancy across Entity and Event editors.
+- *(2026-02-24)* **Architecture**: Refactored `AISearchManager` to improve separation of concerns and extracted shared tag synchronization utilities.
+- *(2026-02-24)* **Docs**: Enhanced Google-style docstring coverage for `MainWindow`, `DatabaseService`, and `UIManager`.
 - *(2026-02-23)* **Map**: Standardized map z-layers to ensure markers always appear above trajectory lines, regardless of layer hierarchy.
 - *(2026-02-22)* **UI**: Refined UI based on review recommendations, standardizing component behavior.
 
 ### Fixed
+- *(2026-02-26)* **UI**: Resolved accumulating vertical space issue in Fast Inject template configuration dialog.
+- *(2026-02-26)* **Stability**: Added `shiboken6.isValid()` guards to prevent C++ object crashes during theme transitions.
+- *(2026-02-26)* **Testing**: Resolved hangs and theme contamination in unit tests.
+- *(2026-02-25)* **Stability**: Hardened History Panel with thread-safe snapshot-based signals and deferred database saves to prevent GUI crashes.
+- *(2026-02-25)* **Bug**: Fixed multi-attribute resize math and resolved `AttributeError` in Sheet Builder layout logic.
+- *(2026-02-25)* **Stability**: Prevented access violations by deferring reloads during active drag-and-drop operations.
+- *(2026-02-25)* **Testing**: Updated stale internal tests to align with new coordinator and FACADE patterns.
+- *(2026-02-24)* **Stability**: Resolved critical cross-thread segfaults during undo/redo operations and fixed `CompositeCommand` logic to prevent crashes.
 - *(2026-02-24)* **Stability**: Resolved "Internal C++ object already deleted" layout crashes by removing dangerous manual item cleanup in `FlowLayout` and adding `RuntimeError` guards to editor event filters.
 - *(2026-02-24)* **Bug**: Fixed `SheetBuilderWidget` attribute synchronization bugs and corrected typo in signal blocking logic.
 - *(2026-02-24)* **Stability**: Suppressed persistent `QFont::setPointSize` terminal warnings.
