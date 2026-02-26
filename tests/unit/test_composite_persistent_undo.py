@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock
 
-from src.commands.wiki_commands import ProcessWikiLinksCommand
-from src.commands.event_commands import UpdateEventCommand
 from src.commands.composite_command import CompositeCommand
+from src.commands.event_commands import UpdateEventCommand
+from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.core.events import Event
 
 

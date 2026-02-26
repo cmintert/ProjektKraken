@@ -807,6 +807,7 @@ class TestResizeHandle:
     def test_hover_styling(self, qtbot):
         """Test that the resize handle has hover styling with primary color."""
         from PySide6.QtWidgets import QHBoxLayout, QWidget
+
         from src.gui.widgets.sheet_builder import _ResizeHandle
 
         parent = QWidget()

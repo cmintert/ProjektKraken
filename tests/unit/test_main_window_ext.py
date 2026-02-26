@@ -2,12 +2,11 @@
 Additional tests for MainWindow and EditorCoordinator to improve coverage.
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
 from src.app.main import MainWindow
-from src.core.events import Event
 
 
 @pytest.fixture

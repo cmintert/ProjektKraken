@@ -1377,11 +1377,13 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         current_tags = self.tag_editor.get_tags()
         current_attrs = self.attribute_editor.get_attributes()
         current_type = self.type_edit.currentText()
+        current_layout = self.sheet_builder.get_layout()
 
         dlg = CreateTemplateDialog(
             source_tags=current_tags,
             source_attributes=current_attrs,
             source_type=current_type,
+            source_layout=current_layout,
             parent=self,
         )
 

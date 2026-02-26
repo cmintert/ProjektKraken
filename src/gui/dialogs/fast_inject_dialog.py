@@ -203,7 +203,7 @@ class FastInjectDialog(QDialog):
         self, current: QListWidgetItem, previous: QListWidgetItem
     ) -> None:
         """Handle template selection change in the list.
-        
+
         Args:
             current: Currently selected list item.
             previous: Previously selected list item.
@@ -301,7 +301,7 @@ class FastInjectDialog(QDialog):
 
     def _update_configure_ui(self, template: FastInjectTemplate) -> None:
         """Update the configuration UI with template details.
-        
+
         Args:
             template: The template to display configuration for.
         """
@@ -338,6 +338,9 @@ class FastInjectDialog(QDialog):
 
         # 1. Attributes
         for key, value in template.attributes.items():
+            if key == "_sheet_layout":
+                continue
+
             # Flatten complex types into individual rows
             if isinstance(value, dict):
                 for sub_key, sub_value in value.items():
@@ -458,14 +461,14 @@ class FastInjectDialog(QDialog):
                 # Connect signal to update main input
                 if isinstance(sub_inp, QComboBox):
                     sub_inp.currentTextChanged.connect(
-                        lambda _, m=input_widget, t=display_value, s=sub_vars: self._update_result_field(
-                            m, t, s
+                        lambda _, m=input_widget, t=display_value, s=sub_vars: (
+                            self._update_result_field(m, t, s)
                         )
                     )
                 else:
                     sub_inp.textChanged.connect(
-                        lambda _, m=input_widget, t=display_value, s=sub_vars: self._update_result_field(
-                            m, t, s
+                        lambda _, m=input_widget, t=display_value, s=sub_vars: (
+                            self._update_result_field(m, t, s)
                         )
                     )
 
@@ -486,10 +489,10 @@ class FastInjectDialog(QDialog):
 
         def replacer(match: re.Match[str]) -> str:
             """Replace template variable with actual value.
-            
+
             Args:
                 match: Regex match object for template variable.
-                
+
             Returns:
                 Replacement value from form widgets.
             """
@@ -505,7 +508,7 @@ class FastInjectDialog(QDialog):
         result_text = var_pattern.sub(replacer, template_str)
         result_field.setText(result_text)
 
-    def _on_apply(self) -> None:
+    def _on_apply(self) -> None:  # noqa: C901
         """Collect values and create resolved template."""
         if not self.selected_template:
             return
@@ -575,6 +578,11 @@ class FastInjectDialog(QDialog):
                 new_attrs[key] = value
 
         import copy
+
+        if "_sheet_layout" in self.selected_template.attributes:
+            new_attrs["_sheet_layout"] = copy.deepcopy(
+                self.selected_template.attributes["_sheet_layout"]
+            )
 
         resolved_template = copy.deepcopy(self.selected_template)
         resolved_template.attributes = new_attrs

@@ -1,7 +1,4 @@
-import pytest
-from PySide6.QtCore import Qt, QTimer
 from src.gui.widgets.sheet_builder import SheetBuilderWidget
-import time
 
 
 def test_rapid_edit_and_reload_crash(qtbot):

@@ -1,4 +1,5 @@
-from PySide6.QtWidgets import QWidget, QPushButton
+from PySide6.QtWidgets import QPushButton, QWidget
+
 from src.gui.widgets.flow_layout import FlowLayout
 from src.gui.widgets.tag_editor import TagEditorWidget
 
