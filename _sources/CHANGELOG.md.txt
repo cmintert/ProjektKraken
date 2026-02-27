@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-27
 ### Internal
-- style(gui): refine Project Explorer tooltips for better UX
+- ui: rename 'Attribute Key' to 'Attribute Name'
 
 
 *This changelog was automatically generated.*
