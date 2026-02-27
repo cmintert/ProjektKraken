@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-27
 ### Internal
-- style(gui): improve sort direction button UI
+- style(gui): update hashed colors toggle to use phosphor palette icon
 
 
 *This changelog was automatically generated.*
