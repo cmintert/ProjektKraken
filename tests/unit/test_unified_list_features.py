@@ -88,7 +88,7 @@ class TestUnifiedListSorting:
     def test_sort_combo_exists(self, list_widget):
         """Verify that sort combo box exists."""
         assert hasattr(list_widget, "sort_combo")
-        assert list_widget.sort_combo.count() == 3  # Name, Created, Lore Date
+        assert list_widget.sort_combo.count() == 4  # Name, Created, Lore Date, Type
 
     def test_sort_direction_button_exists(self, list_widget):
         """Verify that sort direction button exists."""
@@ -141,6 +141,42 @@ class TestUnifiedListSorting:
         assert list_widget._sort_ascending is False
         assert list_widget.btn_sort_dir.text() == "↓"
 
+    def test_sort_by_type_ascending(self, list_widget):
+        """Verify sorting by type ascending works."""
+        entity_a = Entity(id="e1", name="Apple", type="Character")
+        entity_b = Entity(id="e2", name="Banana", type="Item")
+        entity_c = Entity(id="e3", name="Cherry", type="Location")
+        list_widget.set_data([], [entity_b, entity_a, entity_c])
+
+        # Set sort to Type, ascending
+        list_widget.sort_combo.setCurrentText("Type")
+        list_widget._sort_ascending = True
+        list_widget._render_list()
+
+        # First item should be Apple (Character)
+        model = list_widget._proxy_model
+        first_index = model.index(0, 0)
+        first_text = model.data(first_index, Qt.ItemDataRole.DisplayRole)
+        assert "Apple" in first_text
+
+    def test_sort_by_type_descending(self, list_widget):
+        """Verify sorting by type descending works."""
+        entity_a = Entity(id="e1", name="Apple", type="Character")
+        entity_b = Entity(id="e2", name="Banana", type="Item")
+        entity_c = Entity(id="e3", name="Cherry", type="Location")
+        list_widget.set_data([], [entity_b, entity_a, entity_c])
+
+        # Set sort to Type, descending
+        list_widget.sort_combo.setCurrentText("Type")
+        list_widget._sort_ascending = False
+        list_widget._render_list()
+
+        # First item should be Cherry (Location)
+        model = list_widget._proxy_model
+        first_index = model.index(0, 0)
+        first_text = model.data(first_index, Qt.ItemDataRole.DisplayRole)
+        assert "Cherry" in first_text
+
 
 class TestUnifiedListDateFormatting:
     """Tests for compact date formatting."""
@@ -156,7 +192,7 @@ class TestUnifiedListDateFormatting:
         # Model handles formatting, so we test via model
         event = Event(id="e1", name="Test Event", lore_date=100.5)
         list_widget.set_data([event], [])
-        
+
         # Get display text from model
         model = list_widget._proxy_model
         index = model.index(0, 0)
@@ -176,11 +212,11 @@ class TestUnifiedListDateFormatting:
         mock_converter.from_float.return_value = mock_date
 
         list_widget.set_calendar_converter(mock_converter)
-        
+
         # Create event and check display through model
         event = Event(id="e1", name="Test Event", lore_date=100.5)
         list_widget.set_data([event], [])
-        
+
         # Get display text from model
         model = list_widget._proxy_model
         index = model.index(0, 0)
@@ -200,11 +236,11 @@ class TestUnifiedListDateFormatting:
         mock_converter.from_float.return_value = mock_date
 
         list_widget.set_calendar_converter(mock_converter)
-        
+
         # Create event and check display
         event = Event(id="e1", name="Test Event", lore_date=0.0)
         list_widget.set_data([event], [])
-        
+
         # Get display text from model
         model = list_widget._proxy_model
         index = model.index(0, 0)
