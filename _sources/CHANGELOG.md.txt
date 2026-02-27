@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-27
-### Added
-- feat(timeline): improve playhead stability and UX with ruler scrubbing
+### Documentation
+- docs: update changelog with Timeline playhead UX improvements and Ruff linting fixes.
 
 
 *This changelog was automatically generated.*
