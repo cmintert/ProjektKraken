@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-02-26
-### Internal
-- Merge pull request #105 from cmintert/copilot/fix-ruff-linting-errors
+## [Development] - 2026-02-27
+### Added
+- feat(timeline): improve playhead stability and UX with ruler scrubbing
 
 
 *This changelog was automatically generated.*
