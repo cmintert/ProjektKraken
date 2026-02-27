@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-02-26  
-**Commit:** f594501
+**Last Updated:** 2026-02-27  
+**Commit:** 214e2f7
 ---
 
 # Changelog
@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-02-27)* **Timeline**: Improved playhead stability and UX with ruler scrubbing and enhanced visual feedback.
 - *(2026-02-26)* **UI**: Implemented layout saving and merging for Fast Inject templates.
 - *(2026-02-25)* **UI**: Enhanced Sheet Builder with WYSIWYG drag-and-drop: semi-transparent ghost widgets, colored insertion lines, and live weight percentage overlays.
 - *(2026-02-25)* **UI**: Implemented focus, scroll, and cursor position preservation across autosave reloads in all major editors.
@@ -31,6 +32,7 @@ All notable changes to this project will be documented in this file.
 - *(2026-02-22)* **UI**: Refined UI based on review recommendations, standardizing component behavior.
 
 ### Fixed
+- *(2026-02-26)* **Stability**: Resolved project-wide Ruff linting errors and implemented CI lint workflow.
 - *(2026-02-26)* **UI**: Resolved accumulating vertical space issue in Fast Inject template configuration dialog.
 - *(2026-02-26)* **Stability**: Added `shiboken6.isValid()` guards to prevent C++ object crashes during theme transitions.
 - *(2026-02-26)* **Testing**: Resolved hangs and theme contamination in unit tests.
