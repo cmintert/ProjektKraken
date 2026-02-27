@@ -72,6 +72,10 @@ UI_DOCK_VALIDATE_DELAY_MS = 200  # Delay for dock size validation after restoreS
 UI_SEARCH_INDEX_REFRESH_DELAY_MS = 100  # Delay for search index status refresh
 UI_CLEANUP_DELAY_MS = 200  # Delay for cleanup operations
 
+# Tooltip Configuration
+TOOLTIP_DELAY_MS = 1500  # Time to hover before showing
+TOOLTIP_DURATION_MS = 5000  # Time to show before hiding
+
 # Provider Retry Configuration
 PROVIDER_RETRY_WAIT_TIME_S = 1.0  # Wait time between provider retries
 

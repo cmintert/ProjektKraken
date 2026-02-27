@@ -146,6 +146,54 @@ def test_scrollbar_style_contains_theme_values(theme_manager):
     assert "QScrollBar" in style
 
 
+def test_tooltip_style_contains_theme_values(theme_manager):
+    """Test that tooltip style includes theme tool tip colors."""
+    theme = theme_manager.get_theme()
+    style = StyleHelper.get_tooltip_style()
+
+    assert theme["surface"] in style  # Background
+    assert theme["text_main"] in style  # Text
+    assert theme["border"] in style  # Border
+    assert "QToolTip" in style
+
+
+def test_tooltip_proxy_style_hint():
+    """Test that TooltipProxyStyle returns the correct delay hint."""
+    from src.gui.utils.style_helper import TooltipProxyStyle
+    from src.app.constants import TOOLTIP_DELAY_MS
+    from PySide6.QtWidgets import QStyle
+
+    style = TooltipProxyStyle()
+    delay = style.styleHint(QStyle.StyleHint.SH_ToolTip_WakeUpDelay)
+    assert delay == TOOLTIP_DELAY_MS
+
+
+def test_tooltip_event_filter_shows_tooltip(qapp, qtbot):
+    """Test that TooltipEventFilter triggers QToolTip.showText."""
+    from src.gui.utils.style_helper import TooltipEventFilter
+    from PySide6.QtCore import QEvent, QPoint
+    from PySide6.QtWidgets import QWidget, QToolTip
+    from unittest.mock import patch
+
+    widget = QWidget()
+    widget.setToolTip("Test Tooltip")
+    qtbot.addWidget(widget)
+
+    filter = TooltipEventFilter()
+    event = QEvent(QEvent.Type.ToolTip)
+
+    with patch("PySide6.QtWidgets.QToolTip.showText") as mock_show:
+        # We simulate the event being sent to the widget
+        res = filter.eventFilter(widget, event)
+        assert res is True
+        mock_show.assert_called_once()
+        # Verify duration is passed
+        args, kwargs = mock_show.call_args
+        from src.app.constants import TOOLTIP_DURATION_MS
+
+        assert args[4] == TOOLTIP_DURATION_MS
+
+
 def test_wiki_link_style_valid(theme_manager):
     """Test wiki link style for valid links."""
     theme = theme_manager.get_theme()

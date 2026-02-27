@@ -113,6 +113,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         self.btn_inject = QToolButton()
         self.btn_inject.setText("Fast Inject")  # Down arrow
+        self.btn_inject.setToolTip("Quickly apply templates or snippets to this entity")
         self.btn_inject.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.btn_inject.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
         self.btn_inject.setStyleSheet(
@@ -266,7 +267,11 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         details_layout.addLayout(self.form_layout)
 
-        self.inspector.add_tab(self.tab_details, "Details")
+        self.inspector.add_tab(
+            self.tab_details,
+            "Details",
+            "Core entity details, description, and AI summary",
+        )
 
         # --- Tab 2: Tags ---
         self.tab_tags = QWidget()
@@ -274,7 +279,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         StyleHelper.apply_no_margins(tags_layout)
         self.tag_editor = TagEditorWidget()
         tags_layout.addWidget(self.tag_editor)
-        self.inspector.add_tab(self.tab_tags, "Tags")
+        self.inspector.add_tab(
+            self.tab_tags, "Tags", "Manage organizational tags and metadata"
+        )
 
         # --- Tab 3: Relations ---
         self.tab_relations = QWidget()
@@ -314,7 +321,11 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         rel_tab_layout.addWidget(self.rel_list)
 
-        self.inspector.add_tab(self.tab_relations, "Relations")
+        self.inspector.add_tab(
+            self.tab_relations,
+            "Relations",
+            "View and edit connections to other entities and events",
+        )
 
         # --- Tab 4: Gallery ---
         self.tab_gallery = QWidget()
@@ -324,7 +335,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         self.gallery = GalleryWidget(parent)
         gallery_layout.addWidget(self.gallery)
-        self.inspector.add_tab(self.tab_gallery, "Gallery")
+        self.inspector.add_tab(
+            self.tab_gallery, "Gallery", "Manage images and media attachments"
+        )
 
         # --- Tab 5: Attributes ---
         self.tab_attributes = QWidget()
@@ -332,7 +345,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         StyleHelper.apply_no_margins(attr_layout)
         self.attribute_editor = AttributeEditorWidget()
         attr_layout.addWidget(self.attribute_editor)
-        self.inspector.add_tab(self.tab_attributes, "Attributes")
+        self.inspector.add_tab(
+            self.tab_attributes, "Attributes", "Edit custom structured data fields"
+        )
 
         # --- Tab 6: Sheet ---
         self.tab_sheet = QWidget()
@@ -340,7 +355,11 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         StyleHelper.apply_no_margins(sheet_tab_layout)
         self.sheet_builder = SheetBuilderWidget()
         sheet_tab_layout.addWidget(self.sheet_builder)
-        self.inspector.add_tab(self.tab_sheet, "Sheet")
+        self.inspector.add_tab(
+            self.tab_sheet,
+            "Sheet",
+            "Configure the visual layout for the character sheet",
+        )
 
         # Buttons
         btn_layout = QHBoxLayout()

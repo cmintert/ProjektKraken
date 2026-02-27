@@ -83,6 +83,13 @@ def main() -> None:
         app.setOrganizationName(WINDOW_SETTINGS_KEY)
         app.setApplicationName(WINDOW_SETTINGS_APP)
 
+        # 1.5 Custom Tooltip Timing
+        from src.gui.utils.style_helper import TooltipProxyStyle, TooltipEventFilter
+
+        app.setStyle(TooltipProxyStyle())
+        tooltip_filter = TooltipEventFilter(app)
+        app.installEventFilter(tooltip_filter)
+
         # Set App Icon
         icon_path = get_resource_path(
             os.path.join(

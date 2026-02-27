@@ -5,11 +5,64 @@ generate consistent QSS strings. This eliminates hardcoded colors and ensures th
 switches reliably update the UI.
 """
 
-from typing import Optional
+import logging
+from typing import Any, Dict, List, Optional
 
-from PySide6.QtWidgets import QLayout
+from PySide6.QtCore import Qt, QRect, QEvent, QObject
+from PySide6.QtGui import QCursor
+from PySide6.QtWidgets import (
+    QApplication,
+    QBoxLayout,
+    QFrame,
+    QHBoxLayout,
+    QLayout,
+    QProxyStyle,
+    QPushButton,
+    QScrollBar,
+    QStyle,
+    QToolTip,
+    QVBoxLayout,
+    QWidget,
+)
 
+from src.app.constants import (
+    TOOLTIP_DELAY_MS,
+    TOOLTIP_DURATION_MS,
+)
+from src.app.ui_constants import Margins, Spacing
 from src.core.theme_manager import ThemeManager
+
+logger = logging.getLogger(__name__)
+
+
+class TooltipProxyStyle(QProxyStyle):
+    """Custom style to override tooltip delays."""
+
+    def styleHint(
+        self,
+        hint: QStyle.StyleHint,
+        option: Optional[Any] = None,
+        widget: Optional[QWidget] = None,
+        returnData: Optional[Any] = None,
+    ) -> int:
+        if hint == QStyle.StyleHint.SH_ToolTip_WakeUpDelay:
+            return TOOLTIP_DELAY_MS
+        return super().styleHint(hint, option, widget, returnData)
+
+
+class TooltipEventFilter(QObject):
+    """Event filter to override tooltip duration globally."""
+
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.ToolTip:
+            if isinstance(obj, QWidget):
+                tooltip = obj.toolTip()
+                if tooltip:
+                    QToolTip.showText(
+                        QCursor.pos(), tooltip, obj, QRect(), TOOLTIP_DURATION_MS
+                    )
+                    return True
+        return super().eventFilter(obj, event)
 
 
 class StyleHelper:
@@ -597,6 +650,25 @@ class StyleHelper:
             f"min-width: 20px; border-radius: 5px; }}"
             f"QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{ "
             f"width: 0px; }}"
+        )
+
+    @staticmethod
+    def get_tooltip_style() -> str:
+        """Returns QSS for application wide tooltips.
+
+        Provides consistent background, text, border, and padding using theme tokens.
+
+        Returns:
+            str: QSS stylesheet string for QToolTip.
+        """
+        theme = ThemeManager().get_theme()
+        return (
+            f"QToolTip {{ "
+            f"background-color: {theme['surface']}; "
+            f"color: {theme['text_main']}; "
+            f"border: 1px solid {theme['border']}; "
+            f"border-radius: 4px; "
+            f"padding: 4px; }}"
         )
 
     @staticmethod

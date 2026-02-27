@@ -142,6 +142,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         self.btn_inject = QToolButton()
         self.btn_inject.setText("Fast Inject")  # Down arrow
+        self.btn_inject.setToolTip("Quickly apply templates or snippets to this event")
         self.btn_inject.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.btn_inject.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
         self.btn_inject.setStyleSheet(
@@ -283,7 +284,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         # Set minimum height on details tab to ensure it doesn't collapse
         self.tab_details.setMinimumHeight(EDITOR_DETAILS_MIN_HEIGHT)
-        self.inspector.add_tab(self.tab_details, "Details")
+        self.inspector.add_tab(
+            self.tab_details, "Details", "Event timing, description, and AI summary"
+        )
 
         # Connect Start Date change to Duration Context
         self.date_edit.value_changed.connect(self._on_start_date_changed)
@@ -302,12 +305,18 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         StyleHelper.apply_no_margins(tags_layout)
         self.tag_editor = TagEditorWidget()
         tags_layout.addWidget(self.tag_editor)
-        self.inspector.add_tab(self.tab_tags, "Tags")
+        self.inspector.add_tab(
+            self.tab_tags, "Tags", "Manage organizational tags and metadata"
+        )
 
         # --- Tab 3: Relations ---
         self.tab_relations = QWidget()
         self._setup_relations_tab()
-        self.inspector.add_tab(self.tab_relations, "Relations")
+        self.inspector.add_tab(
+            self.tab_relations,
+            "Relations",
+            "View and edit connections to participants and locations",
+        )
 
         # --- Tab 4: Gallery ---
         self.tab_gallery = QWidget()
@@ -317,7 +326,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         self.gallery = GalleryWidget(parent)  # parent should be main_window
         gallery_layout.addWidget(self.gallery)
-        self.inspector.add_tab(self.tab_gallery, "Gallery")
+        self.inspector.add_tab(
+            self.tab_gallery, "Gallery", "Manage images and media attachments"
+        )
 
         # --- Tab 5: Attributes ---
         self.tab_attributes = QWidget()
@@ -325,7 +336,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         StyleHelper.apply_no_margins(attr_layout)
         self.attribute_editor = AttributeEditorWidget()
         attr_layout.addWidget(self.attribute_editor)
-        self.inspector.add_tab(self.tab_attributes, "Attributes")
+        self.inspector.add_tab(
+            self.tab_attributes, "Attributes", "Edit custom structured data fields"
+        )
 
         # --- Tab 6: Sheet ---
         self.tab_sheet = QWidget()
@@ -333,7 +346,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         StyleHelper.apply_no_margins(sheet_tab_layout)
         self.sheet_builder = SheetBuilderWidget()
         sheet_tab_layout.addWidget(self.sheet_builder)
-        self.inspector.add_tab(self.tab_sheet, "Sheet")
+        self.inspector.add_tab(
+            self.tab_sheet, "Sheet", "Configure the visual layout for the event sheet"
+        )
 
         # Buttons
         btn_layout = QHBoxLayout()

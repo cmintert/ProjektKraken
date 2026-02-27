@@ -314,15 +314,20 @@ class SplitterTabInspector(QWidget):
         # Track all tab widgets for cleanup
         self._tab_widgets = [self.main_tabs]
 
-    def add_tab(self, widget: QWidget, title: str) -> None:
+    def add_tab(
+        self, widget: QWidget, title: str, tooltip: Optional[str] = None
+    ) -> None:
         """Add a tab to the main tab widget.
 
         Args:
             widget (QWidget): The widget to add.
             title (str): The tab title.
+            tooltip (str, optional): The tab tooltip.
 
         """
-        self.main_tabs.addTab(widget, title)
+        index = self.main_tabs.addTab(widget, title)
+        if tooltip:
+            self.main_tabs.setTabToolTip(index, tooltip)
 
     def get_main_tabs(self) -> QTabWidget:
         """Return the main tab widget."""
