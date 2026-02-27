@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QListView,
     QMenu,
     QPushButton,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -284,9 +285,17 @@ class UnifiedListWidget(QWidget):
         filter_row.addWidget(self.sort_combo)
 
         # Sort direction toggle
-        self.btn_sort_dir = QPushButton("↑")
-        self.btn_sort_dir.setFixedWidth(30)
+        from src.core.theme_manager import ThemeManager
+        from src.gui.utils.icon_loader import load_icon
+
+        self.btn_sort_dir = QToolButton()
         self.btn_sort_dir.setToolTip("Toggle sort direction")
+        theme = ThemeManager().get_theme()
+        text_dim = theme.get("text_dim", "#808080")
+        self.btn_sort_dir.setIcon(
+            load_icon("default_assets/icons/ui_icons/arrow_up.svg", color=text_dim)
+        )
+        self.btn_sort_dir.setStyleSheet(StyleHelper.get_flat_tool_button_style())
         self.btn_sort_dir.clicked.connect(self._toggle_sort_direction)
         filter_row.addWidget(self.btn_sort_dir)
 
@@ -555,7 +564,20 @@ class UnifiedListWidget(QWidget):
     def _toggle_sort_direction(self) -> None:
         """Toggles between ascending and descending sort order."""
         self._sort_ascending = not self._sort_ascending
-        self.btn_sort_dir.setText("↑" if self._sort_ascending else "↓")
+
+        from src.core.theme_manager import ThemeManager
+        from src.gui.utils.icon_loader import load_icon
+
+        theme = ThemeManager().get_theme()
+        text_dim = theme.get("text_dim", "#808080")
+
+        icon_path = (
+            "default_assets/icons/ui_icons/arrow_up.svg"
+            if self._sort_ascending
+            else "default_assets/icons/ui_icons/arrow_down.svg"
+        )
+        self.btn_sort_dir.setIcon(load_icon(icon_path, color=text_dim))
+
         self._render_list()
 
     @Slot()
