@@ -59,7 +59,7 @@ class AttributeEditorWidget(QWidget):
         # Table
         self.table = QTableWidget()
         self.table.setColumnCount(3)
-        self.table.setHorizontalHeaderLabels(["Key", "Value", "Type"])
+        self.table.setHorizontalHeaderLabels(["Name", "Value", "Type"])
         self.table.horizontalHeader().setSectionResizeMode(
             0, QHeaderView.ResizeMode.Stretch
         )
@@ -189,7 +189,7 @@ class AttributeEditorWidget(QWidget):
         """
         suggestions = getattr(self, "_suggestion_keys", [])
         key, ok = QInputDialog.getItem(
-            self, "New Attribute", "Attribute Key:", suggestions, 0, True
+            self, "New Attribute", "Attribute Name:", suggestions, 0, True
         )
         if ok and key:
             key = key.strip()
@@ -199,12 +199,12 @@ class AttributeEditorWidget(QWidget):
                 QMessageBox.warning(
                     self,
                     "Duplicate Attribute",
-                    f"The attribute key '{key}' already exists.\n\n"
-                    "Each attribute must have a unique key name.\n\n"
+                    f"The attribute name '{key}' already exists.\n\n"
+                    "Each attribute must have a unique name.\n\n"
                     "To fix:\n"
-                    "1. Choose a different key name\n"
-                    "2. Or modify the existing attribute with this key\n"
-                    "3. Consider using a naming pattern like 'key_2', 'key_v2'",
+                    "1. Choose a different name\n"
+                    "2. Or modify the existing attribute with this name\n"
+                    "3. Consider using a naming pattern like 'name_2', 'name_v2'",
                 )
                 return
 
