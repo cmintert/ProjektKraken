@@ -232,12 +232,12 @@ class UnifiedListWidget(QWidget):
         top_bar.addWidget(self.btn_new)
 
         self.btn_refresh = QPushButton("Refresh")
-        self.btn_refresh.setToolTip("Refresh the list from the database")
+        self.btn_refresh.setToolTip("Reload the list from the project database")
         self.btn_refresh.clicked.connect(self.refresh_requested.emit)
         top_bar.addWidget(self.btn_refresh)
 
         self.btn_delete = DestructiveButton("Delete")
-        self.btn_delete.setToolTip("Delete the selected item(s)")
+        self.btn_delete.setToolTip("Permanently delete the selected item(s)")
         self.btn_delete.clicked.connect(self._on_delete_clicked)
         self.btn_delete.setEnabled(False)
         top_bar.addWidget(self.btn_delete)
@@ -246,8 +246,10 @@ class UnifiedListWidget(QWidget):
 
         # Search Bar (Live filtering)
         self.search_bar = QLineEdit()
-        self.search_bar.setPlaceholderText("Search names, descriptions, tags...")
-        self.search_bar.setToolTip("Type to instantly filter items by text")
+        self.search_bar.setPlaceholderText("Search...")
+        self.search_bar.setToolTip(
+            "Type here to instantly filter items by name or type"
+        )
         self.search_bar.setClearButtonEnabled(True)
         self.search_bar.textChanged.connect(self._on_search_text_changed)
         main_layout.addWidget(self.search_bar)
@@ -258,29 +260,29 @@ class UnifiedListWidget(QWidget):
         # Category filter (Events/Entities)
         self.filter_combo = QComboBox()
         self.filter_combo.addItems(["All Items", "Events Only", "Entities Only"])
-        self.filter_combo.setToolTip("Filter items by base category")
+        self.filter_combo.setToolTip("Filter the list by primary category type")
         self.filter_combo.currentTextChanged.connect(self._on_filter_changed)
         filter_row.addWidget(self.filter_combo)
 
         # Advanced Filter Button
         self.btn_filter = QPushButton("Filter...")
-        self.btn_filter.setToolTip("Open advanced filtering options (tags, types)")
+        self.btn_filter.setToolTip("Open advanced filtering options (tags, subtypes)")
         self.btn_filter.clicked.connect(self.show_filter_dialog_requested.emit)
         filter_row.addWidget(self.btn_filter)
 
         # Clear Filters button - keeps concept but might need to signal to clear backend
         # filter. For now, we'll keep it to clear the backend filter via signal
-        # if needed, or just reload all. Actually, "Clear Filters" usually means
-        # "Show All".
+        # Clear Filters button - keeps concept but might need to signal to clear backend
+        # filter. For no
         self.btn_clear_filters = QPushButton("Clear Filters")
-        self.btn_clear_filters.setToolTip("Clear all active filters and search terms")
+        self.btn_clear_filters.setToolTip("Reset all search terms and active filters")
         self.btn_clear_filters.clicked.connect(self._request_clear_filters)
         filter_row.addWidget(self.btn_clear_filters)
 
         # Sort dropdown
         self.sort_combo = QComboBox()
         self.sort_combo.addItems(["Name", "Created", "Lore Date", "Type"])
-        self.sort_combo.setToolTip("Select property to sort items by")
+        self.sort_combo.setToolTip("Sort list items by the selected property")
         self.sort_combo.currentTextChanged.connect(self._on_sort_changed)
         filter_row.addWidget(self.sort_combo)
 
@@ -289,7 +291,7 @@ class UnifiedListWidget(QWidget):
         from src.gui.utils.icon_loader import load_icon
 
         self.btn_sort_dir = QToolButton()
-        self.btn_sort_dir.setToolTip("Toggle sort direction")
+        self.btn_sort_dir.setToolTip("Switch between Ascending and Descending order")
         theme = ThemeManager().get_theme()
         text_dim = theme.get("text_dim", "#808080")
         self.btn_sort_dir.setIcon(
@@ -301,7 +303,9 @@ class UnifiedListWidget(QWidget):
 
         # Hashed Colors toggle
         self.btn_hashed_colors = QToolButton()
-        self.btn_hashed_colors.setToolTip("Toggle unique hashed colors for items")
+        self.btn_hashed_colors.setToolTip(
+            "Color-code items by their unique Type category"
+        )
         self.btn_hashed_colors.setCheckable(True)
         self.btn_hashed_colors.setStyleSheet(StyleHelper.get_flat_tool_button_style())
         self.btn_hashed_colors.setIcon(
