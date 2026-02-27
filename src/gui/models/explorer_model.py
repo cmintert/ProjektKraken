@@ -148,8 +148,9 @@ class ExplorerModel(QAbstractListModel):
         elif role == Qt.ItemDataRole.ForegroundRole:
             # Return color
             if self._use_hashed_colors:
-                # Use type + name to ensure Entity and Event with same name differ
-                seed = f"{item_type}:{obj.name}"
+                # Hash based on the object's type attribute to group similar items
+                obj_type = getattr(obj, "type", "")
+                seed = f"{item_type}:{obj_type}"
                 return self._get_hashed_color(seed)
 
             if item_type == "entity":

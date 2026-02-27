@@ -304,11 +304,9 @@ class UnifiedListWidget(QWidget):
         self.btn_hashed_colors.setToolTip("Toggle unique hashed colors for items")
         self.btn_hashed_colors.setCheckable(True)
         self.btn_hashed_colors.setStyleSheet(StyleHelper.get_flat_tool_button_style())
-        # The icon loader handles the theming dynamically
-        # Let's use an existing suitable icon like the map-pin-filled
-        # For a clean look, we'll just use text for now, or you can
-        # supply real icon if the user adds one later.
-        self.btn_hashed_colors.setText("🎨")
+        self.btn_hashed_colors.setIcon(
+            load_icon("default_assets/icons/ui_icons/palette.svg", color=text_dim)
+        )
         self.btn_hashed_colors.clicked.connect(self._on_hashed_colors_toggled)
         filter_row.addWidget(self.btn_hashed_colors)
 

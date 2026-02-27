@@ -41,22 +41,22 @@ class TestExplorerModelHashedColors:
 
     def test_hashed_colors_generate_stable_hues(self, model):
         """Verify _get_hashed_color produces consistent colors for the same string."""
-        brush1 = model._get_hashed_color("Character: Castro")
-        brush2 = model._get_hashed_color("Character: Castro")
+        brush1 = model._get_hashed_color("entity:Character")
+        brush2 = model._get_hashed_color("entity:Character")
 
         assert isinstance(brush1, QBrush)
         assert brush1.color().name() == brush2.color().name()
 
-    def test_hashed_colors_vary_by_name(self, model):
-        """Verify different strings generate different colors."""
-        brush1 = model._get_hashed_color("Item: Sword")
-        brush2 = model._get_hashed_color("Location: Castle")
+    def test_hashed_colors_vary_by_type(self, model):
+        """Verify different types generate different colors."""
+        brush1 = model._get_hashed_color("event:Battle")
+        brush2 = model._get_hashed_color("entity:Location")
 
         assert brush1.color().name() != brush2.color().name()
 
     def test_data_returns_hashed_color_when_enabled(self, model):
         """Verify data returns the hashed color when enabled."""
-        event1 = Event(id="e1", name="Alpha Test", lore_date=100)
+        event1 = Event(id="e1", name="Alpha Test", type="TestEvent", lore_date=100)
         model.set_items([("event", event1)])
 
         index = model.index(0, 0)
@@ -68,8 +68,8 @@ class TestExplorerModelHashedColors:
         model.set_use_hashed_colors(True)
         hashed_brush = model.data(index, Qt.ItemDataRole.ForegroundRole)
 
-        # Get expected hash (the model uses "item_type:item_name" as the seed)
-        expected_brush = model._get_hashed_color("event:Alpha Test")
+        # Get expected hash (the model uses "item_type:type" as the seed)
+        expected_brush = model._get_hashed_color("event:TestEvent")
 
         assert hashed_brush.color().name() == expected_brush.color().name()
         assert hashed_brush.color().name() != default_brush.color().name()
