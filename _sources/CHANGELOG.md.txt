@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-27
-### Added
-- feat(gui): add 'Type' sorting and tooltips to Project Explorer
+### Internal
+- style(gui): improve sort direction button UI
 
 
 *This changelog was automatically generated.*
