@@ -453,10 +453,18 @@ class TimelineView(QGraphicsView):
 
         handle_color = QColor(self.PLAYHEAD_COLOR)  # Match playhead red
 
+        # Determine if we're hovering over the handle/ruler area
+        is_hovered = False
+        if hasattr(self, "_playhead_hovered") and self._playhead_hovered:
+            is_hovered = True
+        elif hasattr(self, "_ruler_hovered") and self._ruler_hovered:
+            # Maybe slightly highlight if anywhere in ruler
+            pass
+
         # Check for hover/drag state to highlight
         if hasattr(self, "_dragging_playhead") and self._dragging_playhead:
             handle_color = handle_color.lighter(130)
-        elif self._playhead.isUnderMouse():
+        elif is_hovered or self._playhead.isUnderMouse():
             handle_color = handle_color.lighter(120)
 
         painter.setBrush(handle_color)
@@ -1336,6 +1344,26 @@ class TimelineView(QGraphicsView):
         # Check for item at click position BEFORE calling super()
         item = self.scene.itemAt(self.mapToScene(pos), self.transform())
 
+        # Handle click in ruler area (scrubbing)
+        # Even if not directly on the playhead, clicking the ruler should move it there
+        mapped_pos = self.mapToScene(pos)
+        if pos.y() <= self.RULER_HEIGHT:
+            self._dragging_playhead = True
+
+            # Move playhead to clicked position
+            # We want to use the scene X coordinate directly for the move
+            scene_x = mapped_pos.x()
+            self._playhead.setPos(scene_x, 0)
+            self._on_playhead_moved(scene_x)
+
+            # Start drag relative to this new position
+            self._drag_start_pos = pos
+            self._playhead_start_x = scene_x
+
+            self.setDragMode(QGraphicsView.DragMode.NoDrag)
+            event.accept()
+            return
+
         # Handle playhead click specially to prevent scene drag mode
         if isinstance(item, PlayheadItem):
             # Manual drag mode for playhead
@@ -1357,7 +1385,48 @@ class TimelineView(QGraphicsView):
             self.event_selected.emit(item.event.id)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        """Handles mouse movement for playhead dragging."""
+        """Handles mouse movement for playhead dragging and hover states."""
+        try:
+            pos = event.position().toPoint()
+        except AttributeError:
+            pos = event.pos()
+
+        # Handle hover states when not dragging
+        if not (hasattr(self, "_dragging_playhead") and self._dragging_playhead):
+            # Check if hovering in ruler area
+            in_ruler = pos.y() <= self.RULER_HEIGHT
+
+            # Update cursor and trigger repaint if hover state changes
+            if in_ruler:
+                self.viewport().setCursor(Qt.CursorShape.PointingHandCursor)
+            else:
+                self.viewport().unsetCursor()
+
+            # Track hover state for playhead handle highlighting
+            # Calculate playhead handle screen bounds
+            playhead_time = self._playhead.get_time(self.scale_factor)
+            playhead_scene_x = playhead_time * self.scale_factor
+            playhead_screen_pos = self.mapFromScene(playhead_scene_x, 0)
+            px = playhead_screen_pos.x()
+
+            # Create rect for the handle: width = PLAYHEAD_HANDLE_WIDTH, height = handle total height
+            hw = self.PLAYHEAD_HANDLE_WIDTH / 2
+            hh = self.PLAYHEAD_HANDLE_RECT_HEIGHT + self.PLAYHEAD_HANDLE_TRI_HEIGHT
+            handle_rect = QRectF(px - hw, 0, self.PLAYHEAD_HANDLE_WIDTH, hh)
+
+            # Increase hit area slightly for hover feeling
+            handle_rect.adjust(-5, 0, 5, 0)
+
+            was_hovered = getattr(self, "_playhead_hovered", False)
+            is_hovered = handle_rect.contains(pos)
+
+            if was_hovered != is_hovered:
+                self._playhead_hovered = is_hovered
+                # Trigger a ruler repaint
+                self.viewport().update(0, 0, self.viewport().width(), self.RULER_HEIGHT)
+
+            self._ruler_hovered = in_ruler
+
         if hasattr(self, "_dragging_playhead") and self._dragging_playhead:
             # Manual playhead drag
             try:

@@ -1,6 +1,6 @@
 import pytest
 from PySide6.QtCore import QPoint, QPointF, Qt
-from PySide6.QtGui import QWheelEvent
+from PySide6.QtGui import QMouseEvent, QWheelEvent
 from PySide6.QtWidgets import QApplication, QGraphicsView
 
 from src.core.events import Event
@@ -206,3 +206,39 @@ def test_event_drag_constrained_to_horizontal(timeline):
     assert abs(item.x() - new_x) < 0.01
 
     item._is_dragging = False
+
+
+def test_ruler_scrubbing(timeline, qtbot):
+    """Test that clicking in the ruler area moves the playhead directly."""
+    # 1. Setup scale and initial playhead position
+    timeline.view.scale_factor = 10.0
+    timeline.view._playhead.set_time(0.0, 10.0)
+
+    # 2. Simulate click in the ruler area
+    # Create a mouse press event at y=10 (within the ruler) and x=200
+    pos = QPoint(200, 10)
+
+    # We need to map this screen pos to scene pos
+    # to know where we expect the playhead to go
+    mapped_pos = timeline.view.mapToScene(pos)
+    expected_scene_x = mapped_pos.x()
+
+    event = QMouseEvent(
+        QMouseEvent.Type.MouseButtonPress,
+        pos,
+        Qt.MouseButton.LeftButton,
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+    )
+
+    # Send the event
+    timeline.view.mousePressEvent(event)
+
+    # 3. Verify the playhead moved to the exact X coordinate and is in drag mode
+    assert timeline.view._dragging_playhead is True
+    assert timeline.view._playhead.x() == expected_scene_x
+    assert timeline.view.dragMode() == QGraphicsView.DragMode.NoDrag
+
+    # 4. Clean up
+    timeline.view._dragging_playhead = False
+    timeline.view.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
