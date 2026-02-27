@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-02-27
-### Internal
-- ui: rename 'Attribute Key' to 'Attribute Name'
+### Added
+- feat: centralize tooltip styling and customize timing (1500ms delay, 5s duration)
 
 
 *This changelog was automatically generated.*
