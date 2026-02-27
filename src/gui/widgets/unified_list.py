@@ -299,6 +299,19 @@ class UnifiedListWidget(QWidget):
         self.btn_sort_dir.clicked.connect(self._toggle_sort_direction)
         filter_row.addWidget(self.btn_sort_dir)
 
+        # Hashed Colors toggle
+        self.btn_hashed_colors = QToolButton()
+        self.btn_hashed_colors.setToolTip("Toggle unique hashed colors for items")
+        self.btn_hashed_colors.setCheckable(True)
+        self.btn_hashed_colors.setStyleSheet(StyleHelper.get_flat_tool_button_style())
+        # The icon loader handles the theming dynamically
+        # Let's use an existing suitable icon like the map-pin-filled
+        # For a clean look, we'll just use text for now, or you can
+        # supply real icon if the user adds one later.
+        self.btn_hashed_colors.setText("🎨")
+        self.btn_hashed_colors.clicked.connect(self._on_hashed_colors_toggled)
+        filter_row.addWidget(self.btn_hashed_colors)
+
         main_layout.addLayout(filter_row)
 
         # Create model and proxy for virtualization
@@ -579,6 +592,15 @@ class UnifiedListWidget(QWidget):
         self.btn_sort_dir.setIcon(load_icon(icon_path, color=text_dim))
 
         self._render_list()
+
+    @Slot(bool)
+    def _on_hashed_colors_toggled(self, checked: bool) -> None:
+        """Handles toggling the hashed colors mode.
+
+        Args:
+            checked: The toggle state of the button.
+        """
+        self._model.set_use_hashed_colors(checked)
 
     @Slot()
     def _show_context_menu(self, position: Any) -> None:

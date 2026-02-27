@@ -40,6 +40,7 @@ class ExplorerModel(QAbstractListModel):
         self._items: List[tuple[str, Union[Event, Entity]]] = []
         self._calendar_converter: Optional[CalendarConverter] = None
         self._checked_ids = set()  # Set of (item_type, item_id) tuples
+        self._use_hashed_colors: bool = False
 
         # Theme colors
         from src.core.theme_manager import ThemeManager
@@ -79,6 +80,20 @@ class ExplorerModel(QAbstractListModel):
             top_left = self.index(0, 0)
             bottom_right = self.index(len(self._items) - 1, 0)
             self.dataChanged.emit(top_left, bottom_right, [Qt.ItemDataRole.DisplayRole])
+
+    def set_use_hashed_colors(self, enabled: bool) -> None:
+        """Set whether to use hashed colors for items.
+
+        Args:
+            enabled: True to use hashed colors, False for default theme colors.
+        """
+        self._use_hashed_colors = enabled
+        if self._items:
+            top_left = self.index(0, 0)
+            bottom_right = self.index(len(self._items) - 1, 0)
+            self.dataChanged.emit(
+                top_left, bottom_right, [Qt.ItemDataRole.ForegroundRole]
+            )
 
     def set_items(self, items: List[tuple[str, Union[Event, Entity]]]) -> None:
         """Set the items to display in the model.
@@ -132,6 +147,11 @@ class ExplorerModel(QAbstractListModel):
 
         elif role == Qt.ItemDataRole.ForegroundRole:
             # Return color
+            if self._use_hashed_colors:
+                # Use type + name to ensure Entity and Event with same name differ
+                seed = f"{item_type}:{obj.name}"
+                return self._get_hashed_color(seed)
+
             if item_type == "entity":
                 return QBrush(self.color_entity)
             else:
@@ -212,6 +232,26 @@ class ExplorerModel(QAbstractListModel):
             | Qt.ItemFlag.ItemIsUserCheckable
             | Qt.ItemFlag.ItemIsDragEnabled
         )
+
+    def _get_hashed_color(self, seed: str) -> QBrush:
+        """Generate a stable distinct color based on a seed string.
+
+        Args:
+            seed: String to hash to determine hue.
+
+        Returns:
+            QBrush configured with the generated color.
+        """
+        import hashlib
+
+        # Calculate a stable hue (0-359)
+        hash_val = int(hashlib.md5(seed.encode()).hexdigest(), 16)
+        hue = hash_val % 360
+
+        # Fixed saturation and lightness for dark mode readability
+        # Saturation: ~150/255 (moderate), Lightness: ~180/255 (bright)
+        color = QColor.fromHsl(hue, 150, 180)
+        return QBrush(color)
 
     def _format_compact_date(self, lore_date: float) -> str:
         """Format a lore date as dd.mm.yyyy - hh:mm.
