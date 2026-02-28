@@ -251,6 +251,49 @@ class StyleHelper:
             }}
         """
 
+    # -------------------------------------------------------------------------
+    # Editor Specific Styles
+    # -------------------------------------------------------------------------
+
+    @staticmethod
+    def get_editor_toolbar_style() -> str:
+        """Returns QSS for the WikiTextEdit toolbar.
+
+        Returns:
+            str: QSS stylesheet string.
+        """
+        theme = ThemeManager().get_theme()
+        surface = theme.get("surface", "#1A1A1A")
+        border = theme.get("border", "#333333")
+        primary = theme.get("primary", "#5C82FF")
+        text = theme.get("text", "#E0E0E0")
+        surface_alt = theme.get("surface_alt", "#2A2A2A")
+
+        return f"""
+            QToolBar {{
+                background-color: {surface};
+                border-bottom: 1px solid {border};
+                border-top: none;
+                border-left: none;
+                border-right: none;
+                spacing: 4px;
+                padding: 2px;
+            }}
+            QToolButton {{
+                background-color: transparent;
+                color: {text};
+                border: 1px solid transparent;
+                border-radius: 4px;
+                padding: 4px 8px;
+            }}
+            QToolButton:hover {{
+                background-color: {surface_alt};
+                border: 1px solid {border};
+            }}
+            QToolButton:pressed {{
+                background-color: {primary};
+        """
+
     @staticmethod
     def get_sheet_resize_handle_style() -> str:
         """Returns QSS for _ResizeHandle in Sheet Builder.

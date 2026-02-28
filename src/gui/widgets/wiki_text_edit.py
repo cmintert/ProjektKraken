@@ -7,14 +7,16 @@ import logging
 import re
 from typing import Any, List, Optional, Tuple
 
-from PySide6.QtCore import QStringListModel, Qt, Signal, Slot
+from PySide6.QtCore import QStringListModel, Qt, Signal, Slot, QTimer
 from PySide6.QtGui import (
     QAction,
     QKeyEvent,
     QMouseEvent,
-    QResizeEvent,
+    QPaintEvent,
     QTextBlock,
+    QTextBlockUserData,
     QTextCursor,
+    QTextDocument,
     QTextFragment,
 )
 from PySide6.QtWidgets import (
@@ -23,7 +25,8 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QTextEdit,
-    QToolButton,
+    QToolBar,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -31,6 +34,72 @@ from src.core.theme_manager import ThemeManager
 from src.core.wiki_ast import CursorMapper, WikiASTParser, WikiASTSerializer
 
 logger = logging.getLogger(__name__)
+
+
+class SectionData(QTextBlockUserData):
+    """Custom block user data to store section grouping information."""
+
+    def __init__(self, section_id: str, heading_level: int) -> None:
+        """Initialize section data.
+
+        Args:
+            section_id: Determinstic hash string of the parent heading text.
+            heading_level: Level of the heading that started this section (0=body).
+        """
+        super().__init__()
+        self.section_id = section_id
+        self.heading_level = heading_level
+
+
+class SectionManager:
+    """Analyzes a QTextDocument to group blocks into sections."""
+
+    def __init__(self, document: QTextDocument) -> None:
+        """Initialize the section manager.
+
+        Args:
+            document: The document to analyze.
+        """
+        self.document = document
+
+        # Debounce timer for analysis
+        self._analyze_timer = QTimer()
+        self._analyze_timer.setSingleShot(True)
+        self._analyze_timer.setInterval(300)
+        self._analyze_timer.timeout.connect(self._analyze_document)
+
+        # Connect to document changes
+        self.document.contentsChanged.connect(self.schedule_analysis)
+
+    def schedule_analysis(self) -> None:
+        """Schedule a background analysis of the document."""
+        self._analyze_timer.start()
+
+    def _analyze_document(self) -> None:
+        """Iterate over blocks and assign hashed section IDs."""
+        block = self.document.firstBlock()
+
+        current_section_id = "default"
+
+        while block.isValid():
+            fmt = block.blockFormat()
+            level = fmt.headingLevel()
+
+            if level > 0:
+                # Heading starts a new section based on its text
+                text = block.text().strip()
+                # Empty headings get a generic ID mapped to their level + block num
+                seed = text if text else f"H{level}_{block.blockNumber()}"
+
+                import hashlib
+
+                current_section_id = hashlib.md5(seed.encode()).hexdigest()[:8]
+
+            # Assign data
+            data = SectionData(current_section_id, level)
+            block.setUserData(data)
+
+            block = block.next()
 
 
 class WikiTextEditView(QTextEdit):
@@ -56,6 +125,7 @@ class WikiTextEditView(QTextEdit):
         self._completer = None
         self._completion_map = {}  # Maps display names to IDs
         self._link_resolver = None  # Will be set later
+        self._section_manager = SectionManager(self.document())
         self._current_wiki_text = ""  # Store for re-rendering on theme change
 
         # Enable mouse tracking for hover effects if desired
@@ -83,32 +153,6 @@ class WikiTextEditView(QTextEdit):
         # View Mode: 'rich' (HTML) or 'source' (Markdown)
         self._view_mode = "rich"
 
-        # Toggle Button (floating overlay)
-        self.btn_toggle_view = QToolButton(self)
-        self.btn_toggle_view.setText("MD")
-        self.btn_toggle_view.setToolTip("Toggle Source View")
-        self.btn_toggle_view.setCursor(Qt.CursorShape.ArrowCursor)
-        self.btn_toggle_view.setFixedSize(30, 24)
-        # Style: subtle, semi-transparent
-        self.btn_toggle_view.setStyleSheet(
-            """
-            QToolButton {
-                background-color: rgba(50, 50, 50, 150);
-                color: #E0E0E0;
-                border: 1px solid #555;
-                border-radius: 4px;
-                font-size: 10px;
-                font-weight: bold;
-            }
-            QToolButton:hover {
-                background-color: rgba(80, 80, 80, 200);
-                border-color: #777;
-            }
-            """
-        )
-        self.btn_toggle_view.clicked.connect(self.toggle_view_mode)
-        self.btn_toggle_view.show()
-
         # Setup Shortcuts using QActions
         self._setup_actions()
 
@@ -116,6 +160,7 @@ class WikiTextEditView(QTextEdit):
         """Setup formatting actions with shortcuts."""
         from src.gui.utils.shortcut_manager import ShortcutManager
 
+        self.document().setDocumentMargin(24)
         context = Qt.ShortcutContext.WidgetWithChildrenShortcut
 
         # Bold
@@ -157,19 +202,6 @@ class WikiTextEditView(QTextEdit):
         self.action_body.triggered.connect(lambda: self._set_heading(0))
         self.addAction(self.action_body)
 
-    def resizeEvent(self, event: QResizeEvent) -> None:
-        """Handle resize to reposition the floating button."""
-        super().resizeEvent(event)
-
-        # Position MD button top-left, to the right of the TOC button
-        padding = 5
-
-        # TOC button is 36px wide and sits at the parent's padding
-        # We'll place this button at x = 5 + 36 + 5 = 46.
-        x = 46
-        y = padding
-        self.btn_toggle_view.move(x, y)
-
     @Slot()
     def toggle_view_mode(self) -> None:
         """Toggles between Rich HTML view and Markdown Source view.
@@ -209,30 +241,22 @@ class WikiTextEditView(QTextEdit):
 
             # Restore scroll position
             self.verticalScrollBar().setValue(old_scroll)
-
-            # Update Button
-            self.btn_toggle_view.setText("HTML")
-            self.btn_toggle_view.setToolTip("Switch to Rendered View")
-
         else:
-            # Source -> Rich: Map MD cursor to HTML cursor
-            raw_text = self.toPlainText()
+            # Source -> Rich: Set view mode and force re-render via set_wiki_text
+            self._view_mode = "rich"
+            md_text = self.toPlainText()
 
+            # Map cursor position from MD to HTML (PlainText)
             # Build AST for cursor mapping
             parser = WikiASTParser()
             serializer = WikiASTSerializer()
-            ast = parser.parse(raw_text)
+            ast = parser.parse(md_text)
             _, ast = serializer.to_markdown(ast)
             _, ast = serializer.to_plaintext(ast)
             mapper = CursorMapper(ast)
-
-            # Map cursor position from MD to HTML (PlainText)
             new_cursor_pos = mapper.md_to_html(old_cursor_pos)
 
-            # Switch mode
-            self._view_mode = "rich"
-            self._current_wiki_text = None  # Force re-render
-            self.set_wiki_text(raw_text)
+            self.set_wiki_text(md_text, force=True)
 
             # Restore cursor (clamped to valid range)
             doc_length = self.document().characterCount()
@@ -244,10 +268,6 @@ class WikiTextEditView(QTextEdit):
 
             # Restore scroll position
             self.verticalScrollBar().setValue(old_scroll)
-
-            # Update Button
-            self.btn_toggle_view.setText("MD")
-            self.btn_toggle_view.setToolTip("Switch to Source View")
 
     def set_link_resolver(self, link_resolver: Any) -> None:
         """Sets the link resolver for checking broken links.
@@ -1149,6 +1169,64 @@ class WikiTextEditView(QTextEdit):
         # Fallback if completer not set
         return not hasattr(self, "_valid_targets_lower")
 
+    def paintEvent(self, event: QPaintEvent) -> None:
+        """Override paintEvent to draw section color gutters.
+
+        This queries the SectionData from each visible block and draws
+        a 4px wide vertical line along its left edge.
+        """
+        # First let the default text editor rendering happen
+        super().paintEvent(event)
+
+        # We only draw gutters in rich mode to avoid clashes with markdown hashes
+        if getattr(self, "_view_mode", "rich") == "source":
+            return
+
+        from PySide6.QtGui import QPainter
+        from PySide6.QtCore import QPoint
+        from src.gui.utils.color_utils import get_hashed_color
+
+        painter = QPainter(self.viewport())
+
+        # Iterate over visible blocks
+        cursor = self.cursorForPosition(QPoint(0, 0))
+        block = cursor.block()
+
+        # Get viewport rect for bounds checking
+        viewport_rect = self.viewport().rect()
+
+        while block.isValid():
+            block_rect = self.document().documentLayout().blockBoundingRect(block)
+            # Offset by scrollbar positions
+            v_offset = self.verticalScrollBar().value()
+            block_rect.translate(0, -v_offset)
+
+            # Check if block is visible
+            if block_rect.top() > viewport_rect.bottom():
+                break
+
+            if block_rect.bottom() >= viewport_rect.top():
+                # Block is visible, check user data
+                data = block.userData()
+                if isinstance(data, SectionData) and data.section_id:
+                    # Determine color
+                    color = get_hashed_color(data.section_id)
+
+                    # Draw rect
+                    # Width: 4px. Height: full block height minus tiny padding
+                    # X: a few pixels from the absolute left margin
+                    gutter_rect = block_rect.toRect()
+                    gutter_rect.setX(8)
+                    gutter_rect.setWidth(4)
+
+                    # Optional: slight vertical padding so blocks don't touch seamlessly
+                    gutter_rect.setTop(gutter_rect.top() + 1)
+                    gutter_rect.setBottom(gutter_rect.bottom() - 1)
+
+                    painter.fillRect(gutter_rect, color)
+
+            block = block.next()
+
     def _check_for_completion(self) -> None:
         """Checks if wiki link completion should be triggered.
 
@@ -1266,10 +1344,26 @@ class WikiTextEdit(QFrame):
         super().__init__(parent)
         self.setObjectName("WikiTextEditWrapper")  # For debugging/styling
 
-        # Layout
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(1, 1, 1, 1)  # Slight padding for the border
-        layout.setSpacing(0)
+        # Layout Hierarchy
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        # Editor View (must be created before Toolbar to link actions)
+        self.editor = WikiTextEditView(self)
+
+        # Toolbar
+        self.toolbar = QToolBar("Editor Formatting", self)
+        self.toolbar.setMovable(False)
+        self.toolbar.setFloatable(False)
+        self._setup_toolbar()
+        main_layout.addWidget(self.toolbar)
+
+        # Content Container (TOC + Editor)
+        content_container = QWidget(self)
+        content_layout = QHBoxLayout(content_container)
+        content_layout.setContentsMargins(1, 1, 1, 1)  # Padding for border
+        content_layout.setSpacing(0)
 
         # TOC Widget
         from src.gui.widgets.toc_widget import TOCWidget
@@ -1283,38 +1377,11 @@ class WikiTextEdit(QFrame):
         self.toc_widget.setStyleSheet(
             style + "\nTOCWidget { border-right: 1px solid #454545; }"
         )
-        layout.addWidget(self.toc_widget)
+        content_layout.addWidget(self.toc_widget)
+        content_layout.addWidget(self.editor, stretch=1)
 
-        # Editor View
-        self.editor = WikiTextEditView(self)
-        layout.addWidget(self.editor, stretch=1)
+        main_layout.addWidget(content_container, stretch=1)
 
-        # TOC Toggle Button (floating)
-        self.btn_toggle_toc = QToolButton(self)
-        self.btn_toggle_toc.setText("TOC")
-        self.btn_toggle_toc.setToolTip("Toggle Table of Contents")
-        self.btn_toggle_toc.setCursor(Qt.CursorShape.ArrowCursor)
-        self.btn_toggle_toc.setFixedSize(36, 24)
-
-        # Copy style from edit view toggle button
-        self.btn_toggle_toc.setStyleSheet(
-            """
-            QToolButton {
-                background-color: rgba(50, 50, 50, 150);
-                color: #E0E0E0;
-                border: 1px solid #555;
-                border-radius: 4px;
-                font-size: 10px;
-                font-weight: bold;
-            }
-            QToolButton:hover {
-                background-color: rgba(80, 80, 80, 200);
-                border-color: #777;
-            }
-            """
-        )
-        self.btn_toggle_toc.clicked.connect(self._toggle_toc)
-        self.btn_toggle_toc.show()
         # Forward signals
         self.editor.link_clicked.connect(self.link_clicked.emit)
         self.editor.link_added.connect(self.link_added.emit)
@@ -1334,17 +1401,61 @@ class WikiTextEdit(QFrame):
 
         ThemeManager().theme_changed.connect(self._on_theme_changed)
 
+    def _setup_toolbar(self) -> None:
+        """Configure the editor toolbar."""
+        # Formatting Actions
+        self.toolbar.addAction(self.editor.action_bold)
+        self.editor.action_bold.setText("Bold")
+        self.toolbar.addAction(self.editor.action_italic)
+        self.editor.action_italic.setText("Italic")
+
+        self.toolbar.addSeparator()
+
+        self.toolbar.addAction(self.editor.action_h1)
+        self.editor.action_h1.setText("H1")
+        self.toolbar.addAction(self.editor.action_h2)
+        self.editor.action_h2.setText("H2")
+        self.toolbar.addAction(self.editor.action_h3)
+        self.editor.action_h3.setText("H3")
+
+        # Spacer
+        spacer = QWidget()
+        spacer.setSizePolicy(
+            spacer.sizePolicy().Policy.Expanding, spacer.sizePolicy().Policy.Preferred
+        )
+        self.toolbar.addWidget(spacer)
+
+        # Mode Toggle
+        self.action_toggle_mode = self.toolbar.addAction("MD")
+        self.action_toggle_mode.setToolTip("Toggle Source View")
+        self.action_toggle_mode.triggered.connect(self._toggle_view_mode)
+
+        # TOC Toggle
+        self.action_toggle_toc = self.toolbar.addAction("TOC")
+        self.action_toggle_toc.setToolTip("Toggle Table of Contents")
+        self.action_toggle_toc.triggered.connect(self._toggle_toc)
+
+    def _toggle_view_mode(self) -> None:
+        """Proxy to toggle view mode and update toolbar button text."""
+        self.editor.toggle_view_mode()
+        if self.editor._view_mode == "rich":
+            self.action_toggle_mode.setText("MD")
+            self.action_toggle_mode.setToolTip("Switch to Source View")
+        else:
+            self.action_toggle_mode.setText("HTML")
+            self.action_toggle_mode.setToolTip("Switch to Rendered View")
+
     def _apply_style(self) -> None:
         """Apply the current theme styling to the widget."""
         from src.gui.utils.style_helper import StyleHelper
 
-        self.setStyleSheet(
-            f"""
-            QFrame#WikiTextEditWrapper {{
-                {StyleHelper.get_input_field_style()}
-            }}
-        """
+        style = (
+            "QFrame#WikiTextEditWrapper {\n"
+            f"    {StyleHelper.get_input_field_style()}\n"
+            "}\n"
+            f"{StyleHelper.get_editor_toolbar_style()}"
         )
+        self.setStyleSheet(style)
 
     def _on_theme_changed(self, theme: dict) -> None:
         """Handle theme change event by reapplying styles.
@@ -1353,19 +1464,6 @@ class WikiTextEdit(QFrame):
             theme: The new theme dictionary.
         """
         self._apply_style()
-
-    def resizeEvent(self, event: QResizeEvent) -> None:
-        """Handle resize to reposition the floating TOC button."""
-        super().resizeEvent(event)
-
-        # Position TOC button at the top left of the editor
-        padding = 5
-
-        # Position relative to editor X so it stays attached to the text view
-        # even if the TOC panel opens on the left
-        x = self.editor.x() + padding
-        y = padding
-        self.btn_toggle_toc.move(x, y)
 
     @Slot()
     def _toggle_toc(self) -> None:
@@ -1424,6 +1522,30 @@ class WikiTextEdit(QFrame):
             Current plain text.
         """
         return self.editor.toPlainText()
+
+    def setPlainText(self, text: str) -> None:
+        """Set the plain text content directly.
+
+        Args:
+            text: Plain text to set.
+        """
+        self.editor.setPlainText(text)
+
+    def toHtml(self) -> str:
+        """Get the HTML content.
+
+        Returns:
+            Current HTML text.
+        """
+        return self.editor.toHtml()
+
+    def setHtml(self, text: str) -> None:
+        """Set the HTML content directly.
+
+        Args:
+            text: HTML text to set.
+        """
+        self.editor.setHtml(text)
 
     def setReadOnly(self, ro: bool) -> None:
         """Set whether the editor is read-only.

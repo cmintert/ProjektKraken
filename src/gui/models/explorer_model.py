@@ -12,6 +12,7 @@ from PySide6.QtGui import QBrush, QColor
 from src.core.calendar import CalendarConverter
 from src.core.entities import Entity
 from src.core.events import Event
+from src.gui.utils.color_utils import get_hashed_color
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +152,8 @@ class ExplorerModel(QAbstractListModel):
                 # Hash based on the object's type attribute to group similar items
                 obj_type = getattr(obj, "type", "")
                 seed = f"{item_type}:{obj_type}"
-                return self._get_hashed_color(seed)
+                color = get_hashed_color(seed)
+                return QBrush(color)
 
             if item_type == "entity":
                 return QBrush(self.color_entity)
@@ -233,26 +235,6 @@ class ExplorerModel(QAbstractListModel):
             | Qt.ItemFlag.ItemIsUserCheckable
             | Qt.ItemFlag.ItemIsDragEnabled
         )
-
-    def _get_hashed_color(self, seed: str) -> QBrush:
-        """Generate a stable distinct color based on a seed string.
-
-        Args:
-            seed: String to hash to determine hue.
-
-        Returns:
-            QBrush configured with the generated color.
-        """
-        import hashlib
-
-        # Calculate a stable hue (0-359)
-        hash_val = int(hashlib.md5(seed.encode()).hexdigest(), 16)
-        hue = hash_val % 360
-
-        # Fixed saturation and lightness for dark mode readability
-        # Saturation: ~150/255 (moderate), Lightness: ~180/255 (bright)
-        color = QColor.fromHsl(hue, 150, 180)
-        return QBrush(color)
 
     def _format_compact_date(self, lore_date: float) -> str:
         """Format a lore date as dd.mm.yyyy - hh:mm.
