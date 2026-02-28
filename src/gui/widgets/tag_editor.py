@@ -97,15 +97,25 @@ class TagEditorWidget(QWidget):
         Parameters:
             tags: List of tag strings to display.
         """
+        import shiboken6
+
         # Clear existing pills (everything except the input)
         for i in reversed(range(self.flow_layout.count())):
             item = self.flow_layout.itemAt(i)
             if not item:
                 continue
-            widget = item.widget()
-            if widget and widget != self.tag_input:
-                self.flow_layout.takeAt(i)
-                widget.deleteLater()
+
+            # Safely check if widget exists and isn't deleted
+            if not shiboken6.isValid(item):
+                continue
+
+            try:
+                widget = item.widget()
+                if widget and shiboken6.isValid(widget) and widget != self.tag_input:
+                    self.flow_layout.takeAt(i)
+                    widget.deleteLater()
+            except RuntimeError:
+                pass
 
         for tag in tags:
             self._add_pill(tag)
@@ -122,12 +132,19 @@ class TagEditorWidget(QWidget):
 
     def get_tags(self) -> List[str]:
         """Get current tag texts in display order."""
+        import shiboken6
+
         tags = []
         for i in range(self.flow_layout.count()):
             item = self.flow_layout.itemAt(i)
-            widget = item.widget()
-            if isinstance(widget, TagPill):
-                tags.append(widget.text)
+            if not item or not shiboken6.isValid(item):
+                continue
+            try:
+                widget = item.widget()
+                if widget and shiboken6.isValid(widget) and isinstance(widget, TagPill):
+                    tags.append(widget.text)
+            except RuntimeError:
+                pass
         return tags
 
     def update_suggestions(self, tags: List[str]) -> None:
@@ -156,13 +173,23 @@ class TagEditorWidget(QWidget):
     @Slot(str)
     def _on_pill_deleted(self, tag: str) -> None:
         """Remove matching tag pill and emit tags_changed."""
+        import shiboken6
+
         for i in range(self.flow_layout.count()):
             item = self.flow_layout.itemAt(i)
-            if not item:
+            if not item or not shiboken6.isValid(item):
                 continue
-            widget = item.widget()
-            if isinstance(widget, TagPill) and widget.text == tag:
-                self.flow_layout.takeAt(i)
-                widget.deleteLater()
-                self.tags_changed.emit()
-                break
+            try:
+                widget = item.widget()
+                if (
+                    widget
+                    and shiboken6.isValid(widget)
+                    and isinstance(widget, TagPill)
+                    and widget.text == tag
+                ):
+                    self.flow_layout.takeAt(i)
+                    widget.deleteLater()
+                    self.tags_changed.emit()
+                    break
+            except RuntimeError:
+                pass

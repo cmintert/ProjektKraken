@@ -1,0 +1,87 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0 -- C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+PySide6 6.10.1 -- Qt runtime 6.10.1 -- Qt compiled 6.10.1
+rootdir: C:\Users\chris\Antigravity Projects\ProjektKraken
+configfile: pytest.ini
+plugins: anyio-4.12.0, cov-7.0.0, qt-4.5.0
+collecting ... collected 2565 items
+
+tests/unit/app/coordinators/test_delayed_navigation.py::test_delayed_selection PASSED [  0%]
+tests/unit/app/coordinators/test_delayed_navigation.py::test_selection_cancelled_by_drag PASSED [  0%]
+tests/unit/core/test_date_parser.py::TestDateParserIntegration::test_init PASSED [  0%]
+tests/unit/core/test_date_parser.py::TestDateParserIntegration::test_parse_simple_date PASSED [  0%]
+tests/unit/core/test_date_parser.py::TestDateParserIntegration::test_calculate_timestamp_integration PASSED [  0%]
+tests/unit/core/test_date_parser.py::TestDateParserIntegration::test_negative_year_integration PASSED [  0%]
+tests/unit/core/test_date_parser.py::TestDateParserIntegration::test_iso_parsing_integration PASSED [  0%]
+Windows fatal exception: access violation
+
+Current thread 0x000079c0 (most recent call first):
+  File "c:\Users\chris\Antigravity Projects\ProjektKraken\tests\conftest.py", line 208 in _shutdown_web_engines
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\fixtures.py", line 924 in _teardown_yield_fixture
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\fixtures.py", line 1042 in finish
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\runner.py", line 555 in teardown_exact
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\runner.py", line 194 in pytest_runtest_teardown
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\runner.py", line 245 in <lambda>
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\runner.py", line 353 in from_call
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\runner.py", line 244 in call_and_report
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\runner.py", line 142 in runtestprotocol
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\runner.py", line 118 in pytest_runtest_protocol
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\main.py", line 396 in pytest_runtestloop
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\main.py", line 372 in _main
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\main.py", line 318 in wrap_session
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\main.py", line 365 in pytest_cmdline_main
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\config\__init__.py", line 199 in main
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\config\__init__.py", line 223 in console_main
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pytest\__main__.py", line 9 in <module>
+  File "<frozen runpy>", line 88 in _run_code
+  File "<frozen runpy>", line 198 in _run_module_as_main
+Fatal Python error: Aborted
+
+Current thread 0x000079c0 (most recent call first):
+  File "c:\Users\chris\Antigravity Projects\ProjektKraken\tests\conftest.py", line 208 in _shutdown_web_engines
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\fixtures.py", line 924 in _teardown_yield_fixture
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\fixtures.py", line 1042 in finish
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\runner.py", line 555 in teardown_exact
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\runner.py", line 194 in pytest_runtest_teardown
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\runner.py", line 245 in <lambda>
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\runner.py", line 353 in from_call
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\runner.py", line 244 in call_and_report
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\runner.py", line 142 in runtestprotocol
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\runner.py", line 118 in pytest_runtest_protocol
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\main.py", line 396 in pytest_runtestloop
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\main.py", line 372 in _main
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\main.py", line 318 in wrap_session
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\main.py", line 365 in pytest_cmdline_main
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_callers.py", line 121 in _multicall
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_manager.py", line 120 in _hookexec
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pluggy\_hooks.py", line 512 in __call__
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\config\__init__.py", line 199 in main
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\_pytest\config\__init__.py", line 223 in console_main
+  File "C:\Users\chris\Antigravity Projects\ProjektKraken\.venv\Lib\site-packages\pytest\__main__.py", line 9 in <module>
+  File "<frozen runpy>", line 88 in _run_code
+  File "<frozen runpy>", line 198 in _run_module_as_main
+
+Extension modules: shiboken6.Shiboken, PySide6.QtCore, PySide6.QtGui, PySide6.QtWidgets, PySide6.QtTest, PySide6.QtSvg, yaml._yaml, numpy._core._multiarray_umath, numpy.linalg._umath_linalg, PIL._imaging, markupsafe._speedups, PySide6.QtWebChannel, PySide6.QtNetwork, PySide6.QtPrintSupport, PySide6.QtWebEngineCore, PySide6.QtWebEngineWidgets, PySide6.QtOpenGL, PySide6.QtQml, PySide6.QtQuick, charset_normalizer.md, requests.packages.charset_normalizer.md, requests.packages.chardet.md (total: 22)
+tests/unit/gui/test_gallery_path_resolution.py::test_gallery_path_resolution_logic PASSED [  0%]

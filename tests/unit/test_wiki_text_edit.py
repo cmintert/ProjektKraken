@@ -682,7 +682,8 @@ def test_empty_lines_preserved(qtbot):
     # But mainly verify get_wiki_text returns it back
     output_text = widget.get_wiki_text()
 
-    # Note: Markdown conversion standardizes multiple blank lines into a single paragraph break
+    # Note: Markdown conversion standardizes multiple blank lines
+    # into a single paragraph break
     # So "Line 2\n\n\nLine 3" becomes "Line 2\n\nLine 3"
     expected_normalized = "Line 1\n\nLine 2\n\nLine 3"
     assert output_text == expected_normalized
@@ -706,3 +707,96 @@ def test_empty_lines_manual_entry(qtbot):
 
     expected = "Line 1\n\nLine 2"
     assert widget.get_wiki_text() == expected
+
+
+def test_get_headings_rich_mode(qtbot):
+    """Test that get_headings extracts headers and positions in rich mode."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    # Note: Using Markdown parsing to generate the rich HTML format
+    widget.set_wiki_text("# H1\n\nSome text\n\n## H2\n\nMore text")
+
+    headings = widget.get_headings()
+
+    assert len(headings) == 2
+
+    h1_level, h1_text, h1_pos = headings[0]
+    assert h1_level == 1
+    assert h1_text == "H1"
+    assert h1_pos >= 0
+
+    h2_level, h2_text, h2_pos = headings[1]
+    assert h2_level == 2
+    assert h2_text == "H2"
+    assert h2_pos > h1_pos
+
+
+def test_get_headings_source_mode(qtbot):
+    """Test that get_headings extracts headers in source mode."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    # Start in source mode and set raw text
+    widget.toggle_view_mode()
+    widget.setPlainText("# Header 1\nSome text\n### Header 3")
+
+    headings = widget.get_headings()
+
+    assert len(headings) == 2
+
+    h1_level, h1_text, h1_pos = headings[0]
+    assert h1_level == 1
+    assert h1_text == "Header 1"
+
+    h3_level, h3_text, h3_pos = headings[1]
+    assert h3_level == 3
+    assert h3_text == "Header 3"
+    assert h3_pos > h1_pos
+
+
+def test_toc_integration_toggle(qtbot):
+    """Test that the TOC can be toggled via a button."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    # TOC should be instantiated but hidden by default
+    assert hasattr(widget, "toc_widget")
+    assert widget.toc_widget.isHidden()
+
+    # Click the toggle button
+    qtbot.mouseClick(widget.btn_toggle_toc, Qt.MouseButton.LeftButton)
+    assert not widget.toc_widget.isHidden()
+
+    # Click again to hide
+    qtbot.mouseClick(widget.btn_toggle_toc, Qt.MouseButton.LeftButton)
+    assert widget.toc_widget.isHidden()
+
+
+def test_toc_integration_navigation(qtbot):
+    """Test that clicking a TOC item navigates the editor to the header."""
+    from PySide6.QtWidgets import QListWidget
+
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    widget.set_wiki_text(
+        "# First Header\n\nSome text here\n\n## Second Header\n\nMore text"
+    )
+
+    # Show TOC to trigger update or ensure it updates automatically
+    widget.btn_toggle_toc.click()
+
+    # Check that TOC has 2 items
+    list_widget = widget.toc_widget.findChild(QListWidget)
+    assert list_widget.count() == 2
+
+    item = list_widget.item(1)
+    target_pos = item.data(Qt.ItemDataRole.UserRole)
+
+    # Trigger the navigation signal manually to simulate a click
+    widget.toc_widget.header_clicked.emit(target_pos)
+
+    # Verify the cursor in the editor moved
+    cursor = widget.textCursor()
+    assert cursor.position() == target_pos

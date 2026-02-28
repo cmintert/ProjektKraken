@@ -5,7 +5,7 @@ A specialized QTextEdit that supports WikiLink navigation via Ctrl+Click.
 
 import logging
 import re
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple
 
 from PySide6.QtCore import QStringListModel, Qt, Signal, Slot
 from PySide6.QtGui import (
@@ -21,9 +21,9 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
     QCompleter,
     QFrame,
+    QHBoxLayout,
     QTextEdit,
     QToolButton,
-    QVBoxLayout,
     QWidget,
 )
 
@@ -160,17 +160,13 @@ class WikiTextEditView(QTextEdit):
     def resizeEvent(self, event: QResizeEvent) -> None:
         """Handle resize to reposition the floating button."""
         super().resizeEvent(event)
-        # Top-Right corner with padding
+
+        # Position MD button top-left, to the right of the TOC button
         padding = 5
-        btn_width = self.btn_toggle_view.width()
-        # btn_height = self.btn_toggle_view.height()
 
-        # Adjust for scrollbar if visible?
-        # Typically scrollbar is part of the widget or overlaid.
-        # QTextEdit scrollbar is inside the frame usually.
-        # We'll just place it top-right relative to widget width.
-
-        x = self.width() - btn_width - padding - 15  # extra padding for scrollbar
+        # TOC button is 36px wide and sits at the parent's padding
+        # We'll place this button at x = 5 + 36 + 5 = 46.
+        x = 46
         y = padding
         self.btn_toggle_view.move(x, y)
 
@@ -581,6 +577,72 @@ class WikiTextEditView(QTextEdit):
 
         return output
 
+    def get_headings(self) -> List[Tuple[int, str, int]]:
+        """Extracts headings from the document.
+
+        Returns:
+            A list of tuples: (heading_level, text, block_position)
+        """
+        headings = []
+        is_source = hasattr(self, "_view_mode") and self._view_mode == "source"
+
+        if is_source:
+            # Parse raw text for headings
+            text = self.toPlainText()
+            lines = text.split("\n")
+            pos = 0
+            for line in lines:
+                if line.startswith("#"):
+                    stripped = line.lstrip("#")
+                    level = len(line) - len(stripped)
+                    if 1 <= level <= 3 and stripped.startswith(" "):
+                        headings.append((level, stripped.strip(), pos))
+                pos += len(line) + 1  # +1 for newline character
+            return headings
+
+        # Rich mode: Iterate blocks
+        block = self.document().begin()
+        while block.isValid():
+            heading_level = block.blockFormat().headingLevel()
+
+            # Fallback to font size heuristic (same as _process_block)
+            if heading_level == 0 and block.length() > 1:
+                from PySide6.QtGui import QTextCursor
+                from src.core.theme_manager import ThemeManager
+
+                cursor = QTextCursor(block)
+                cursor.movePosition(QTextCursor.MoveOperation.Right)
+                font_size = cursor.charFormat().fontPointSize()
+
+                theme_data = ThemeManager().get_theme()
+
+                def _parse_size(val: str | int | float) -> float:
+                    if isinstance(val, (int, float)):
+                        return float(val)
+                    return (
+                        float(val.replace("pt", "").strip())
+                        if isinstance(val, str)
+                        else 10.0
+                    )
+
+                h1_size = _parse_size(theme_data.get("font_size_h1", 16))
+                h2_size = _parse_size(theme_data.get("font_size_h2", 14))
+                h3_size = _parse_size(theme_data.get("font_size_h3", 12))
+
+                if font_size >= h1_size - 0.5:
+                    heading_level = 1
+                elif font_size >= h2_size - 0.5:
+                    heading_level = 2
+                elif font_size >= h3_size - 0.5:
+                    heading_level = 3
+
+            if heading_level > 0:
+                headings.append((heading_level, block.text().strip(), block.position()))
+
+            block = block.next()
+
+        return headings
+
     def _process_block(self, block: QTextBlock) -> str:
         """Process a text block to recover block-level formatting (Headings).
 
@@ -609,10 +671,10 @@ class WikiTextEditView(QTextEdit):
 
             def _parse_size(val: str | int | float) -> float:
                 """Parse a size value to float.
-                
+
                 Args:
                     val: Size value as string, int, or float.
-                    
+
                 Returns:
                     Parsed size as float.
                 """
@@ -1197,7 +1259,7 @@ class WikiTextEdit(QFrame):
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the wiki text edit wrapper widget.
-        
+
         Args:
             parent: Optional parent widget.
         """
@@ -1205,20 +1267,64 @@ class WikiTextEdit(QFrame):
         self.setObjectName("WikiTextEditWrapper")  # For debugging/styling
 
         # Layout
-        layout = QVBoxLayout(self)
+        layout = QHBoxLayout(self)
         layout.setContentsMargins(1, 1, 1, 1)  # Slight padding for the border
         layout.setSpacing(0)
 
+        # TOC Widget
+        from src.gui.widgets.toc_widget import TOCWidget
+
+        self.toc_widget = TOCWidget(self)
+        self.toc_widget.setFixedWidth(200)
+        self.toc_widget.hide()
+
+        # Subtle right border for TOC since it's on the left
+        style = self.toc_widget.styleSheet()
+        self.toc_widget.setStyleSheet(
+            style + "\nTOCWidget { border-right: 1px solid #454545; }"
+        )
+        layout.addWidget(self.toc_widget)
+
         # Editor View
         self.editor = WikiTextEditView(self)
-        layout.addWidget(self.editor)
+        layout.addWidget(self.editor, stretch=1)
 
+        # TOC Toggle Button (floating)
+        self.btn_toggle_toc = QToolButton(self)
+        self.btn_toggle_toc.setText("TOC")
+        self.btn_toggle_toc.setToolTip("Toggle Table of Contents")
+        self.btn_toggle_toc.setCursor(Qt.CursorShape.ArrowCursor)
+        self.btn_toggle_toc.setFixedSize(36, 24)
+
+        # Copy style from edit view toggle button
+        self.btn_toggle_toc.setStyleSheet(
+            """
+            QToolButton {
+                background-color: rgba(50, 50, 50, 150);
+                color: #E0E0E0;
+                border: 1px solid #555;
+                border-radius: 4px;
+                font-size: 10px;
+                font-weight: bold;
+            }
+            QToolButton:hover {
+                background-color: rgba(80, 80, 80, 200);
+                border-color: #777;
+            }
+            """
+        )
+        self.btn_toggle_toc.clicked.connect(self._toggle_toc)
+        self.btn_toggle_toc.show()
         # Forward signals
         self.editor.link_clicked.connect(self.link_clicked.emit)
         self.editor.link_added.connect(self.link_added.emit)
 
         # Expose textChanged signal directly from editor
         self.textChanged = self.editor.textChanged
+
+        # Connect TOC signals
+        self.textChanged.connect(self._update_toc)
+        self.toc_widget.header_clicked.connect(self._scroll_to_header)
 
         # Apply Style
         self._apply_style()
@@ -1242,17 +1348,54 @@ class WikiTextEdit(QFrame):
 
     def _on_theme_changed(self, theme: dict) -> None:
         """Handle theme change event by reapplying styles.
-        
+
         Args:
             theme: The new theme dictionary.
         """
         self._apply_style()
 
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        """Handle resize to reposition the floating TOC button."""
+        super().resizeEvent(event)
+
+        # Position TOC button at the top left of the editor
+        padding = 5
+
+        # Position relative to editor X so it stays attached to the text view
+        # even if the TOC panel opens on the left
+        x = self.editor.x() + padding
+        y = padding
+        self.btn_toggle_toc.move(x, y)
+
+    @Slot()
+    def _toggle_toc(self) -> None:
+        """Toggles the visibility of the TOC."""
+        if self.toc_widget.isHidden():
+            self.toc_widget.show()
+            self._update_toc()
+        else:
+            self.toc_widget.hide()
+
+    @Slot()
+    def _update_toc(self) -> None:
+        """Updates the TOC with the current headings if visible."""
+        if not self.toc_widget.isHidden():
+            headings = self.editor.get_headings()
+            self.toc_widget.update_headings(headings)
+
+    @Slot(int)
+    def _scroll_to_header(self, pos: int) -> None:
+        """Scrolls the editor to the given block position."""
+        cursor = self.editor.textCursor()
+        cursor.setPosition(pos)
+        self.editor.setTextCursor(cursor)
+        self.editor.ensureCursorVisible()
+
     # --- Proxy Methods ---
 
     def set_wiki_text(self, text: str) -> None:
         """Set the wiki-formatted text content.
-        
+
         Args:
             text: Wiki-formatted text to set.
         """
@@ -1260,7 +1403,7 @@ class WikiTextEdit(QFrame):
 
     def get_wiki_text(self) -> str:
         """Get the wiki-formatted text content.
-        
+
         Returns:
             Current wiki-formatted text.
         """
@@ -1268,7 +1411,7 @@ class WikiTextEdit(QFrame):
 
     def setText(self, text: str) -> None:
         """Set the plain text content.
-        
+
         Args:
             text: Plain text to set.
         """
@@ -1276,7 +1419,7 @@ class WikiTextEdit(QFrame):
 
     def toPlainText(self) -> str:
         """Get the plain text content.
-        
+
         Returns:
             Current plain text.
         """
@@ -1284,7 +1427,7 @@ class WikiTextEdit(QFrame):
 
     def setReadOnly(self, ro: bool) -> None:
         """Set whether the editor is read-only.
-        
+
         Args:
             ro: True to make read-only, False to make editable.
         """
@@ -1292,7 +1435,7 @@ class WikiTextEdit(QFrame):
 
     def setPlaceholderText(self, text: str) -> None:
         """Set the placeholder text shown when editor is empty.
-        
+
         Args:
             text: Placeholder text to display.
         """
@@ -1300,7 +1443,7 @@ class WikiTextEdit(QFrame):
 
     def document(self) -> Any:
         """Get the underlying QTextDocument.
-        
+
         Returns:
             The text document.
         """
@@ -1308,7 +1451,7 @@ class WikiTextEdit(QFrame):
 
     def textCursor(self) -> Any:
         """Get the current text cursor.
-        
+
         Returns:
             The current QTextCursor.
         """
@@ -1316,7 +1459,7 @@ class WikiTextEdit(QFrame):
 
     def setTextCursor(self, cursor: Any) -> None:
         """Set the text cursor position.
-        
+
         Args:
             cursor: The QTextCursor to set.
         """
@@ -1330,7 +1473,7 @@ class WikiTextEdit(QFrame):
         names: Optional[list] = None,
     ) -> None:
         """Set the autocompleter for wiki links.
-        
+
         Args:
             items_or_names: Legacy parameter for items or names list.
             items: List of item objects for completion.
@@ -1340,7 +1483,7 @@ class WikiTextEdit(QFrame):
 
     def set_link_resolver(self, resolver: Any) -> None:
         """Set the link resolver for wiki links.
-        
+
         Args:
             resolver: The link resolver callable.
         """
