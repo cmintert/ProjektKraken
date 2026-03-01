@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-02-28  
-**Commit:** 2542505
+**Last Updated:** 2026-03-01  
+**Commit:** 6ab5fc8
 ---
 
 # Changelog
@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-03-01)* **UI**: Added "Clear Formatting" (Body) button to the editor toolbar to reset block and character styles.
+- *(2026-03-01)* **UI**: Added descriptive, dynamic tooltips to the Markdown (MD) and TOC editor buttons.
 - *(2026-02-28)* **UI**: Implemented editor toolbar in `WikiTextEdit` with formatting actions and view toggles.
 - *(2026-02-28)* **UI**: Implemented deterministic hashed section coloring in `WikiTextEdit` to visually differentiate document sections.
 - *(2026-02-28)* **UI**: Added Table of Contents (TOC) parsing and navigation to the longform editor.
@@ -29,6 +31,8 @@ All notable changes to this project will be documented in this file.
 - *(2026-02-22)* **Map**: Implemented themed pill backgrounds with dynamic scaling for map marker and keyframe labels.
 
 ### Changed
+- *(2026-03-01)* **UI**: Improved TOC navigation to align selected headers at the top of the editor window.
+- *(2026-03-01)* **UI**: Increased editor left margin and gutter spacing for improved readability.
 - *(2026-02-27)* **UI**: Centralized and customized tooltip timings (1500ms delay, 5s duration) using a global `QProxyStyle`.
 - *(2026-02-27)* **UI**: Renamed 'Attribute Key' to 'Attribute Name' for improved user clarity.
 - *(2026-02-27)* **UI**: Refined Project Explorer tooltips and updated sort direction buttons with Phosphor icons.
@@ -40,6 +44,7 @@ All notable changes to this project will be documented in this file.
 - *(2026-02-22)* **UI**: Refined UI based on review recommendations, standardizing component behavior.
 
 ### Fixed
+- *(2026-03-01)* **Bug**: Implemented automatic wiki link validation refresh that updates link colors (red/blue) immediately upon loading entity data.
 - *(2026-02-28)* **Stability**: Fixed "deleted C++ object" crash in Tag Editor.
 - *(2026-02-26)* **Stability**: Resolved project-wide Ruff linting errors and implemented CI lint workflow.
 - *(2026-02-26)* **UI**: Resolved accumulating vertical space issue in Fast Inject template configuration dialog.
