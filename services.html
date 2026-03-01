@@ -449,6 +449,20 @@ Defaults to :memory: for testing.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.delete_relations_for_item">
+<span class="sig-name descname"><span class="pre">delete_relations_for_item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.delete_relations_for_item"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.delete_relations_for_item" title="Link to this definition">¶</a></dt>
+<dd><p>Deletes all relations where the item is either source or target.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>item_id</strong> – The ID of the item.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sqlite3.Error</strong> – If DB fails.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.delete_tag">
 <span class="sig-name descname"><span class="pre">delete_tag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.delete_tag"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.delete_tag" title="Link to this definition">¶</a></dt>
 <dd><p>Deletes a tag and all its associations.</p>
@@ -865,6 +879,20 @@ table the object lives in.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>List[Dict[str, Any]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_relations_for_item">
+<span class="sig-name descname"><span class="pre">get_relations_for_item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_relations_for_item"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_relations_for_item" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves all relations where the item is either source or target.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>item_id</strong> – The ID of the item (event or entity).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of relation dictionaries.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2314,6 +2342,7 @@ background workers.</p>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.delete_map"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_map()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.delete_marker"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_marker()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.delete_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_relation()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.delete_relations_for_item"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_relations_for_item()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.delete_tag"><code class="docutils literal notranslate"><span class="pre">DatabaseService.delete_tag()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.ensure_fresh_view"><code class="docutils literal notranslate"><span class="pre">DatabaseService.ensure_fresh_view()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.filter_ids_by_tags"><code class="docutils literal notranslate"><span class="pre">DatabaseService.filter_ids_by_tags()</span></code></a></li>
@@ -2351,6 +2380,7 @@ background workers.</p>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_objects_by_ids"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_objects_by_ids()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_relation()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_relations"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_relations()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_relations_for_item"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_relations_for_item()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_tag_by_name"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_tag_by_name()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_tag_color"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_tag_color()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_tags_for_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_tags_for_entity()</span></code></a></li>

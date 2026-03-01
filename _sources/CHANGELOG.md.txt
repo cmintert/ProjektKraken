@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-03-01
-### Internal
-- Merge pull request #106 from cmintert/editor-updates
+### Added
+- feat: implement cascading relation deletion for events and entities
 
 
 *This changelog was automatically generated.*
