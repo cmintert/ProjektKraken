@@ -342,6 +342,28 @@ class WikiTextEditView(QTextEdit):
             model = QStringListModel(display_names, self._completer)
             self._completer.setModel(model)
 
+        # Trigger re-render to update link colors if we already have text
+        if (
+            hasattr(self, "_view_mode")
+            and self._view_mode == "rich"
+            and hasattr(self, "_current_wiki_text")
+            and self._current_wiki_text
+        ):
+            # Save state
+            cursor = self.textCursor()
+            old_pos = cursor.position()
+            old_scroll = self.verticalScrollBar().value()
+
+            # Re-render (this applies the new valid_targets list)
+            self.set_wiki_text(self._current_wiki_text, force=True)
+
+            # Restore state
+            new_cursor = self.textCursor()
+            doc_len = self.document().characterCount()
+            new_cursor.setPosition(min(old_pos, doc_len - 1 if doc_len > 0 else 0))
+            self.setTextCursor(new_cursor)
+            self.verticalScrollBar().setValue(old_scroll)
+
     def _get_theme_css(self) -> str:
         """Build CSS stylesheet based on current theme settings.
 
