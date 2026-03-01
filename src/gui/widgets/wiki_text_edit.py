@@ -1532,12 +1532,14 @@ class WikiTextEdit(QFrame):
 
         # Mode Toggle
         self.action_toggle_mode = self.toolbar.addAction("MD")
-        self.action_toggle_mode.setToolTip("Toggle Source View")
+        self.action_toggle_mode.setToolTip(
+            "Toggle between Rendered HTML and Markdown Source"
+        )
         self.action_toggle_mode.triggered.connect(self._toggle_view_mode)
 
         # TOC Toggle
         self.action_toggle_toc = self.toolbar.addAction("TOC")
-        self.action_toggle_toc.setToolTip("Toggle Table of Contents")
+        self.action_toggle_toc.setToolTip("Toggle Table of Contents sidebar")
         self.action_toggle_toc.triggered.connect(self._toggle_toc)
 
     def _toggle_view_mode(self) -> None:
@@ -1545,10 +1547,10 @@ class WikiTextEdit(QFrame):
         self.editor.toggle_view_mode()
         if self.editor._view_mode == "rich":
             self.action_toggle_mode.setText("MD")
-            self.action_toggle_mode.setToolTip("Switch to Source View")
+            self.action_toggle_mode.setToolTip("Switch to Markdown Source View")
         else:
             self.action_toggle_mode.setText("HTML")
-            self.action_toggle_mode.setToolTip("Switch to Rendered View")
+            self.action_toggle_mode.setToolTip("Switch to Rendered HTML View")
 
     def _apply_style(self) -> None:
         """Apply the current theme styling to the widget."""
@@ -1588,11 +1590,16 @@ class WikiTextEdit(QFrame):
 
     @Slot(int)
     def _scroll_to_header(self, pos: int) -> None:
-        """Scrolls the editor to the given block position."""
+        """Scrolls the editor to the given block position and aligns it to the top."""
         cursor = self.editor.textCursor()
         cursor.setPosition(pos)
         self.editor.setTextCursor(cursor)
-        self.editor.ensureCursorVisible()
+
+        # To align the header at the top, we calculate the Y offset of the cursor
+        # relative to the viewport and add it to the current scrollbar value.
+        rect = self.editor.cursorRect(cursor)
+        scrollbar = self.editor.verticalScrollBar()
+        scrollbar.setValue(scrollbar.value() + rect.top())
 
     # --- Proxy Methods ---
 
