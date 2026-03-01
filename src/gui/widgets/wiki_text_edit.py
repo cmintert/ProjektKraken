@@ -199,7 +199,7 @@ class WikiTextEditView(QTextEdit):
         self.action_body = QAction(self)
         self.action_body.setShortcut(ShortcutManager.FORMAT_BODY.key_sequence)
         self.action_body.setShortcutContext(context)
-        self.action_body.triggered.connect(lambda: self._set_heading(0))
+        self.action_body.triggered.connect(self._clear_formatting)
         self.addAction(self.action_body)
 
     @Slot()
@@ -879,6 +879,86 @@ class WikiTextEditView(QTextEdit):
         else:
             self._toggle_rich_format("italic")
 
+    def _clear_formatting(self) -> None:
+        """Removes all formatting (headings, bold, italic) from selection."""
+        if self._view_mode == "source":
+            self._clear_source_formatting()
+        else:
+            self._clear_rich_formatting()
+
+    def _clear_source_formatting(self) -> None:
+        """Removes markdown formatting markers from selection."""
+        cursor = self.textCursor()
+        sel_start = cursor.selectionStart()
+        sel_end = cursor.selectionEnd()
+        has_sel = cursor.hasSelection()
+
+        # 1. Handle Headings (current line if no selection, or all lines in selection)
+        # For simplicity, we clear heading on the current line first if it's
+        # a simple toggle, but if there's a selection, we should probably
+        # iterate lines or just do the current line.
+        # Following existing _set_heading pattern: current line.
+        cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
+        cursor.movePosition(
+            QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor
+        )
+        line_text = cursor.selectedText()
+        stripped_line = line_text.lstrip("#").lstrip()
+        cursor.insertText(stripped_line)
+
+        # 2. Handle Inline Formatting (Selection only)
+        if not has_sel:
+            return
+
+        # Re-select the area (adjust for heading shift if necessary)
+        # If we removed '#' from the start of the line, sel_start/end might shift.
+        # But we'll just use the same coordinates for now.
+        cursor.setPosition(sel_start)
+        cursor.setPosition(sel_end, QTextCursor.MoveMode.KeepAnchor)
+
+        text = cursor.selectedText()
+        # Remove bold/italic markers while keeping content
+        # Matches: **text**, __text__, *text*, _text_
+        # We use a loop to handle nested markers like ***text***
+        clean_text = text
+        while True:
+            temp = re.sub(r"(\*\*|__|\*|_)(.*?)\1", r"\2", clean_text)
+            if temp == clean_text:
+                break
+            clean_text = temp
+
+        cursor.insertText(clean_text)
+        self.setTextCursor(cursor)
+
+    def _clear_rich_formatting(self) -> None:
+        """Resets block and character formatting in Rich mode."""
+        cursor = self.textCursor()
+
+        # 1. Reset Block Level (Heading -> Paragraph)
+        self._set_rich_heading(0)
+
+        # 2. Reset Character Formatting (Bold/Italic/Size)
+        from PySide6.QtGui import QTextCharFormat, QFont
+
+        # Get theme body size
+        theme = ThemeManager()
+        fs_body = float(
+            str(theme.get_theme().get("font_size_body", "10")).replace("pt", "")
+        )
+
+        fmt = QTextCharFormat()
+        fmt.setFontWeight(QFont.Weight.Normal)
+        fmt.setFontItalic(False)
+        fmt.setFontPointSize(fs_body)
+
+        if cursor.hasSelection():
+            cursor.setCharFormat(fmt)
+        else:
+            # If no selection, set for future typing
+            self.setCurrentCharFormat(fmt)
+
+        self.setTextCursor(cursor)
+
     def _set_heading(self, level: int) -> None:
         """Set heading level on the current line.
 
@@ -1417,6 +1497,9 @@ class WikiTextEdit(QFrame):
         self.editor.action_h2.setText("H2")
         self.toolbar.addAction(self.editor.action_h3)
         self.editor.action_h3.setText("H3")
+
+        self.toolbar.addAction(self.editor.action_body)
+        self.editor.action_body.setText("Body")
 
         # Spacer
         spacer = QWidget()
