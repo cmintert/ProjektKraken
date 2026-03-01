@@ -665,14 +665,6 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         """
         self.desc_edit.set_completer(items=items, names=names)
 
-        # Re-render wiki text if already loaded to apply new validation
-        if self.desc_edit._current_wiki_text:
-            self.desc_edit.blockSignals(True)
-            try:
-                self.desc_edit.set_wiki_text(self.desc_edit._current_wiki_text)
-            finally:
-                self.desc_edit.blockSignals(False)
-
         # Store for RelationEditDialog
         self._suggestion_items = items or []
 
