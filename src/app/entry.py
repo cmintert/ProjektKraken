@@ -84,7 +84,7 @@ def main() -> None:
         app.setApplicationName(WINDOW_SETTINGS_APP)
 
         # 1.5 Custom Tooltip Timing
-        from src.gui.utils.style_helper import TooltipProxyStyle, TooltipEventFilter
+        from src.gui.utils.style_helper import TooltipEventFilter, TooltipProxyStyle
 
         app.setStyle(TooltipProxyStyle())
         tooltip_filter = TooltipEventFilter(app)

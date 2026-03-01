@@ -1,5 +1,5 @@
 import pytest
-from PySide6.QtGui import QTextCursor
+
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
 

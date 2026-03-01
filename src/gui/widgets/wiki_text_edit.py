@@ -7,7 +7,7 @@ import logging
 import re
 from typing import Any, List, Optional, Tuple
 
-from PySide6.QtCore import QStringListModel, Qt, Signal, Slot, QTimer
+from PySide6.QtCore import QStringListModel, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import (
     QAction,
     QKeyEvent,
@@ -650,6 +650,7 @@ class WikiTextEditView(QTextEdit):
             # Fallback to font size heuristic (same as _process_block)
             if heading_level == 0 and block.length() > 1:
                 from PySide6.QtGui import QTextCursor
+
                 from src.core.theme_manager import ThemeManager
 
                 cursor = QTextCursor(block)
@@ -960,7 +961,7 @@ class WikiTextEditView(QTextEdit):
         self._set_rich_heading(0)
 
         # 2. Reset Character Formatting (Bold/Italic/Size)
-        from PySide6.QtGui import QTextCharFormat, QFont
+        from PySide6.QtGui import QFont, QTextCharFormat
 
         # Get theme body size
         theme = ThemeManager()
@@ -1284,8 +1285,9 @@ class WikiTextEditView(QTextEdit):
         if getattr(self, "_view_mode", "rich") == "source":
             return
 
-        from PySide6.QtGui import QPainter
         from PySide6.QtCore import QPoint
+        from PySide6.QtGui import QPainter
+
         from src.gui.utils.color_utils import get_hashed_color
 
         painter = QPainter(self.viewport())

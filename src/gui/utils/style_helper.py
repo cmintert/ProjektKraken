@@ -6,22 +6,15 @@ switches reliably update the UI.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
-from PySide6.QtCore import Qt, QRect, QEvent, QObject
+from PySide6.QtCore import QEvent, QObject, QRect
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import (
-    QApplication,
-    QBoxLayout,
-    QFrame,
-    QHBoxLayout,
     QLayout,
     QProxyStyle,
-    QPushButton,
-    QScrollBar,
     QStyle,
     QToolTip,
-    QVBoxLayout,
     QWidget,
 )
 
@@ -29,7 +22,6 @@ from src.app.constants import (
     TOOLTIP_DELAY_MS,
     TOOLTIP_DURATION_MS,
 )
-from src.app.ui_constants import Margins, Spacing
 from src.core.theme_manager import ThemeManager
 
 logger = logging.getLogger(__name__)

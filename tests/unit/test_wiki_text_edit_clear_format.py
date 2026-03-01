@@ -1,5 +1,6 @@
 import pytest
-from PySide6.QtGui import QTextCursor, QFont
+from PySide6.QtGui import QFont, QTextCursor
+
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
 

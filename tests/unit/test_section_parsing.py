@@ -1,8 +1,5 @@
 """Tests for section parsing and coloring logic in WikiTextEdit."""
 
-import pytest
-from PySide6.QtGui import QTextBlockUserData
-from PySide6.QtWidgets import QApplication
 
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 

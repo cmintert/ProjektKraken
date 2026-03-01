@@ -2,12 +2,11 @@
 Tests for the paintEvent overide in WikiTextEditView.
 """
 
-from unittest.mock import MagicMock, patch
 
-from PySide6.QtGui import QPaintEvent
 from PySide6.QtCore import QRect
+from PySide6.QtGui import QPaintEvent
 
-from src.gui.widgets.wiki_text_edit import WikiTextEdit, SectionData
+from src.gui.widgets.wiki_text_edit import SectionData, WikiTextEdit
 
 
 def test_wiki_text_edit_paint_event_does_not_crash(qtbot):

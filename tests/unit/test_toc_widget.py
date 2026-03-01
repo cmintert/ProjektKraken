@@ -2,7 +2,6 @@
 Unit tests for TOCWidget.
 """
 
-import pytest
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QListWidget
 
