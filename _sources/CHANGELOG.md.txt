@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-02-27
-### Added
-- feat: centralize tooltip styling and customize timing (1500ms delay, 5s duration)
+## [Development] - 2026-03-01
+### Internal
+- Merge pull request #106 from cmintert/editor-updates
 
 
 *This changelog was automatically generated.*
