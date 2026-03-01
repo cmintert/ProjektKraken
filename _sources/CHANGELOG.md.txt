@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-03-01
-### Internal
-- update changelog
+### Fixed
+- fix: prevent faulthandler crash when sys.stderr is None in built executable
 
 
 *This changelog was automatically generated.*

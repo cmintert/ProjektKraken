@@ -1,6 +1,6 @@
 # Architecture Documentation
 
-**Version:** 0.11.0 (Beta)  
+**Version:** 0.14.0 (Beta)  
 **Last Updated:** February 2026
 
 Technical architecture and design patterns in ProjektKraken.
