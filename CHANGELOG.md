@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-03-01  
-**Commit:** 6ab5fc8
+**Commit:** a013e51
 ---
 
 # Changelog
@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 - *(2026-03-01)* **UI**: Added "Clear Formatting" (Body) button to the editor toolbar to reset block and character styles.
+- *(2026-03-01)* **Architecture**: Implemented Command-Mediated Cascading Delete to prevent orphaned relations when events or entities are deleted.
 - *(2026-03-01)* **UI**: Added descriptive, dynamic tooltips to the Markdown (MD) and TOC editor buttons.
 - *(2026-02-28)* **UI**: Implemented editor toolbar in `WikiTextEdit` with formatting actions and view toggles.
 - *(2026-02-28)* **UI**: Implemented deterministic hashed section coloring in `WikiTextEdit` to visually differentiate document sections.
@@ -44,6 +45,7 @@ All notable changes to this project will be documented in this file.
 - *(2026-02-22)* **UI**: Refined UI based on review recommendations, standardizing component behavior.
 
 ### Fixed
+- *(2026-03-01)* **Bug**: Fixed tag restoration in delete commands during undo operations.
 - *(2026-03-01)* **Bug**: Implemented automatic wiki link validation refresh that updates link colors (red/blue) immediately upon loading entity data.
 - *(2026-02-28)* **Stability**: Fixed "deleted C++ object" crash in Tag Editor.
 - *(2026-02-26)* **Stability**: Resolved project-wide Ruff linting errors and implemented CI lint workflow.
