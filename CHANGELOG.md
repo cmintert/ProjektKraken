@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-03-01  
-**Commit:** a013e51
+**Commit:** 0.14.0
 ---
 
 # Changelog
@@ -10,6 +10,10 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Added
+
+## [0.14.0]
 
 ### Added
 - *(2026-03-01)* **UI**: Added "Clear Formatting" (Body) button to the editor toolbar to reset block and character styles.
