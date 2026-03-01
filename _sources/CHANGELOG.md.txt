@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-03-01
-### Added
-- feat: implement cascading relation deletion for events and entities
+### Internal
+- update changelog
 
 
 *This changelog was automatically generated.*
