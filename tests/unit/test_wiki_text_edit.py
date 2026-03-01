@@ -129,18 +129,18 @@ def test_toggle_view_mode(qtbot):
     assert "[[" not in widget.toPlainText()  # Should be rendered
 
     # 2. Toggle to Source
-    widget.btn_toggle_view.click()
+    widget.action_toggle_mode.trigger()
 
-    assert widget._view_mode == "source"
+    assert widget.editor._view_mode == "source"
     assert widget.toPlainText() == "[[Link|Label]]"
 
     # 3. Edit in Source Mode
     widget.setPlainText("[[NewLink]]")
 
     # 4. Toggle back to Rich
-    widget.btn_toggle_view.click()
+    widget.action_toggle_mode.trigger()
 
-    assert widget._view_mode == "rich"
+    assert widget.editor._view_mode == "rich"
     # Should now be rendered
     assert "href" in widget.toHtml()
     # get_wiki_text should return the new link
@@ -155,7 +155,7 @@ def test_get_wiki_text_in_source_mode(qtbot):
     widget.set_wiki_text("Initial")
 
     # Toggle to Source
-    widget.toggle_view_mode()  # Programmatic toggle
+    widget.action_toggle_mode.trigger()  # Programmatic toggle
 
     widget.setPlainText("Updated Source")
 
@@ -169,14 +169,14 @@ def test_set_wiki_text_in_source_mode(qtbot):
     qtbot.addWidget(widget)
 
     # Toggle to Source
-    widget.toggle_view_mode()
+    widget.action_toggle_mode.trigger()
 
     widget.set_wiki_text("[[RawLink]]")
 
     # Should be set as plain text, not rendered HTML
     assert widget.toPlainText() == "[[RawLink]]"
     # Switch back to verify it renders
-    widget.toggle_view_mode()
+    widget.action_toggle_mode.trigger()
     assert "href" in widget.toHtml()
 
 
@@ -279,13 +279,13 @@ def test_cursor_position_preserved_on_toggle(qtbot):
     assert widget.textCursor().position() == 6
 
     # Toggle to source mode
-    widget.toggle_view_mode()
+    widget.action_toggle_mode.trigger()
 
     # Cursor should NOT be at 0 (completely reset)
     assert widget.textCursor().position() > 0
 
     # Toggle back to rich mode
-    widget.toggle_view_mode()
+    widget.action_toggle_mode.trigger()
 
     # Again, should not reset to 0
     assert widget.textCursor().position() > 0
@@ -305,7 +305,7 @@ def test_cursor_mapping_with_formatting(qtbot):
     widget.setTextCursor(cursor)
 
     # Toggle to source
-    widget.toggle_view_mode()
+    widget.action_toggle_mode.trigger()
 
     # Cursor should be preserved (not at 0)
     pos = widget.textCursor().position()
@@ -324,7 +324,7 @@ def test_ctrl_b_bold_in_source_mode(qtbot):
     qtbot.addWidget(widget)
 
     # Switch to source mode
-    widget.toggle_view_mode()
+    widget.action_toggle_mode.trigger()
     widget.setPlainText("Hello World")
 
     # Select "World"
@@ -348,7 +348,7 @@ def test_ctrl_i_italic_in_source_mode(qtbot):
     qtbot.addWidget(widget)
 
     # Switch to source mode
-    widget.toggle_view_mode()
+    widget.action_toggle_mode.trigger()
     widget.setPlainText("Hello World")
 
     # Select "World"
@@ -372,7 +372,7 @@ def test_bold_toggle_removes_markers(qtbot):
     qtbot.addWidget(widget)
 
     # Switch to source mode
-    widget.toggle_view_mode()
+    widget.action_toggle_mode.trigger()
     widget.setPlainText("Hello **World**")
 
     # Select "**World**"
@@ -395,7 +395,7 @@ def test_bold_no_selection_inserts_markers(qtbot):
     qtbot.addWidget(widget)
 
     # Switch to source mode
-    widget.toggle_view_mode()
+    widget.action_toggle_mode.trigger()
     widget.setPlainText("Hello")
 
     # Position cursor at end
@@ -418,7 +418,7 @@ def test_heading_1_in_source_mode(qtbot):
     qtbot.addWidget(widget)
 
     # Switch to source mode
-    widget.toggle_view_mode()
+    widget.action_toggle_mode.trigger()
     widget.setPlainText("Hello World")
 
     # Position cursor in line
@@ -437,7 +437,7 @@ def test_heading_2_in_source_mode(qtbot):
     widget = WikiTextEdit()
     qtbot.addWidget(widget)
 
-    widget.toggle_view_mode()
+    widget.action_toggle_mode.trigger()
     widget.setPlainText("Title")
 
     widget._set_heading(2)
@@ -450,7 +450,7 @@ def test_heading_toggle_replaces_level(qtbot):
     widget = WikiTextEdit()
     qtbot.addWidget(widget)
 
-    widget.toggle_view_mode()
+    widget.action_toggle_mode.trigger()
     widget.setPlainText("# Old Heading")
 
     widget._set_heading(2)
@@ -463,7 +463,7 @@ def test_heading_0_removes_heading(qtbot):
     widget = WikiTextEdit()
     qtbot.addWidget(widget)
 
-    widget.toggle_view_mode()
+    widget.action_toggle_mode.trigger()
     widget.setPlainText("## Heading Text")
 
     widget._set_heading(0)
@@ -478,7 +478,7 @@ def test_ctrl_0_reverts_formatting(qtbot):
     widget.show()
     widget.editor.setFocus()
 
-    widget.toggle_view_mode()
+    widget.action_toggle_mode.trigger()
     widget.setPlainText("## Heading Text")
 
     # Trigger action manually since key shortcut is flaky in test env
@@ -682,7 +682,8 @@ def test_empty_lines_preserved(qtbot):
     # But mainly verify get_wiki_text returns it back
     output_text = widget.get_wiki_text()
 
-    # Note: Markdown conversion standardizes multiple blank lines into a single paragraph break
+    # Note: Markdown conversion standardizes multiple blank lines
+    # into a single paragraph break
     # So "Line 2\n\n\nLine 3" becomes "Line 2\n\nLine 3"
     expected_normalized = "Line 1\n\nLine 2\n\nLine 3"
     assert output_text == expected_normalized
@@ -706,3 +707,150 @@ def test_empty_lines_manual_entry(qtbot):
 
     expected = "Line 1\n\nLine 2"
     assert widget.get_wiki_text() == expected
+
+
+def test_get_headings_rich_mode(qtbot):
+    """Test that get_headings extracts headers and positions in rich mode."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    # Note: Using Markdown parsing to generate the rich HTML format
+    widget.set_wiki_text("# H1\n\nSome text\n\n## H2\n\nMore text")
+
+    headings = widget.get_headings()
+
+    assert len(headings) == 2
+
+    h1_level, h1_text, h1_pos = headings[0]
+    assert h1_level == 1
+    assert h1_text == "H1"
+    assert h1_pos >= 0
+
+    h2_level, h2_text, h2_pos = headings[1]
+    assert h2_level == 2
+    assert h2_text == "H2"
+    assert h2_pos > h1_pos
+
+
+def test_get_headings_source_mode(qtbot):
+    """Test that get_headings extracts headers in source mode."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    # Start in source mode and set raw text
+    widget.action_toggle_mode.trigger()
+    widget.setPlainText("# Header 1\nSome text\n### Header 3")
+
+    headings = widget.get_headings()
+
+    assert len(headings) == 2
+
+    h1_level, h1_text, h1_pos = headings[0]
+    assert h1_level == 1
+    assert h1_text == "Header 1"
+
+    h3_level, h3_text, h3_pos = headings[1]
+    assert h3_level == 3
+    assert h3_text == "Header 3"
+    assert h3_pos > h1_pos
+
+
+def test_toc_integration_toggle(qtbot):
+    """Test that the TOC can be toggled via a button."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    # TOC should be instantiated but hidden by default
+    assert hasattr(widget, "toc_widget")
+    assert widget.toc_widget.isHidden()
+
+    # Click the toggle button via action
+    widget.action_toggle_toc.trigger()
+    assert not widget.toc_widget.isHidden()
+
+    # Click again to hide
+    widget.action_toggle_toc.trigger()
+    assert widget.toc_widget.isHidden()
+
+
+def test_toc_integration_navigation(qtbot):
+    """Test that clicking a TOC item navigates the editor to the header."""
+    from PySide6.QtWidgets import QListWidget
+
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    widget.set_wiki_text(
+        "# First Header\n\nSome text here\n\n## Second Header\n\nMore text"
+    )
+
+    # Show TOC to trigger update or ensure it updates automatically
+    widget.action_toggle_toc.trigger()
+
+    # Check that TOC has 2 items
+    list_widget = widget.toc_widget.findChild(QListWidget)
+    assert list_widget.count() == 2
+
+    item = list_widget.item(1)
+    target_pos = item.data(Qt.ItemDataRole.UserRole)
+
+    # Trigger the navigation signal manually to simulate a click
+    widget.toc_widget.header_clicked.emit(target_pos)
+
+    # Verify the cursor in the editor moved
+    cursor = widget.textCursor()
+    assert cursor.position() == target_pos
+
+
+def test_toolbar_exists_and_contains_formatting_actions(qtbot):
+    """Test that WikiTextEdit has a toolbar with standard formatting actions."""
+    from PySide6.QtWidgets import QToolBar
+
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    # 1. Verify Toolbar exists
+    toolbar = widget.findChild(QToolBar)
+    assert toolbar is not None, "Toolbar should be instantiated in WikiTextEdit"
+
+    # 2. Verify Actions exist on the toolbar
+    actions = toolbar.actions()
+    action_texts = [a.text() for a in actions]
+
+    assert "Bold" in action_texts
+    assert "Italic" in action_texts
+    assert "H1" in action_texts
+    assert "H2" in action_texts
+    assert "H3" in action_texts
+
+
+def test_toolbar_toggles_mode_and_toc(qtbot):
+    """Test that TOC and View Mode toggles are accessible via the toolbar."""
+    from PySide6.QtWidgets import QToolBar
+
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+
+    toolbar = widget.findChild(QToolBar)
+    assert toolbar is not None
+
+    actions = toolbar.actions()
+    action_texts = [a.text() for a in actions]
+
+    # Verify buttons/actions are present
+    assert "TOC" in action_texts
+    assert "MD" in action_texts
+
+    # Find the specific actions to trigger
+    toc_action = next(a for a in actions if a.text() == "TOC")
+    md_action = next(a for a in actions if a.text() == "MD")
+
+    # Verify TOC Toggle
+    assert widget.toc_widget.isHidden()
+    toc_action.trigger()
+    assert not widget.toc_widget.isHidden()
+
+    # Verify Mode Toggle
+    assert widget.editor._view_mode == "rich"
+    md_action.trigger()
+    assert widget.editor._view_mode == "source"

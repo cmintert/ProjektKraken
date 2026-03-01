@@ -5,24 +5,27 @@ A specialized QTextEdit that supports WikiLink navigation via Ctrl+Click.
 
 import logging
 import re
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple
 
-from PySide6.QtCore import QStringListModel, Qt, Signal, Slot
+from PySide6.QtCore import QStringListModel, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import (
     QAction,
     QKeyEvent,
     QMouseEvent,
-    QResizeEvent,
+    QPaintEvent,
     QTextBlock,
+    QTextBlockUserData,
     QTextCursor,
+    QTextDocument,
     QTextFragment,
 )
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QCompleter,
     QFrame,
+    QHBoxLayout,
     QTextEdit,
-    QToolButton,
+    QToolBar,
     QVBoxLayout,
     QWidget,
 )
@@ -31,6 +34,72 @@ from src.core.theme_manager import ThemeManager
 from src.core.wiki_ast import CursorMapper, WikiASTParser, WikiASTSerializer
 
 logger = logging.getLogger(__name__)
+
+
+class SectionData(QTextBlockUserData):
+    """Custom block user data to store section grouping information."""
+
+    def __init__(self, section_id: str, heading_level: int) -> None:
+        """Initialize section data.
+
+        Args:
+            section_id: Determinstic hash string of the parent heading text.
+            heading_level: Level of the heading that started this section (0=body).
+        """
+        super().__init__()
+        self.section_id = section_id
+        self.heading_level = heading_level
+
+
+class SectionManager:
+    """Analyzes a QTextDocument to group blocks into sections."""
+
+    def __init__(self, document: QTextDocument) -> None:
+        """Initialize the section manager.
+
+        Args:
+            document: The document to analyze.
+        """
+        self.document = document
+
+        # Debounce timer for analysis
+        self._analyze_timer = QTimer()
+        self._analyze_timer.setSingleShot(True)
+        self._analyze_timer.setInterval(300)
+        self._analyze_timer.timeout.connect(self._analyze_document)
+
+        # Connect to document changes
+        self.document.contentsChanged.connect(self.schedule_analysis)
+
+    def schedule_analysis(self) -> None:
+        """Schedule a background analysis of the document."""
+        self._analyze_timer.start()
+
+    def _analyze_document(self) -> None:
+        """Iterate over blocks and assign hashed section IDs."""
+        block = self.document.firstBlock()
+
+        current_section_id = "default"
+
+        while block.isValid():
+            fmt = block.blockFormat()
+            level = fmt.headingLevel()
+
+            if level > 0:
+                # Heading starts a new section based on its text
+                text = block.text().strip()
+                # Empty headings get a generic ID mapped to their level + block num
+                seed = text if text else f"H{level}_{block.blockNumber()}"
+
+                import hashlib
+
+                current_section_id = hashlib.md5(seed.encode()).hexdigest()[:8]
+
+            # Assign data
+            data = SectionData(current_section_id, level)
+            block.setUserData(data)
+
+            block = block.next()
 
 
 class WikiTextEditView(QTextEdit):
@@ -56,6 +125,7 @@ class WikiTextEditView(QTextEdit):
         self._completer = None
         self._completion_map = {}  # Maps display names to IDs
         self._link_resolver = None  # Will be set later
+        self._section_manager = SectionManager(self.document())
         self._current_wiki_text = ""  # Store for re-rendering on theme change
 
         # Enable mouse tracking for hover effects if desired
@@ -83,32 +153,6 @@ class WikiTextEditView(QTextEdit):
         # View Mode: 'rich' (HTML) or 'source' (Markdown)
         self._view_mode = "rich"
 
-        # Toggle Button (floating overlay)
-        self.btn_toggle_view = QToolButton(self)
-        self.btn_toggle_view.setText("MD")
-        self.btn_toggle_view.setToolTip("Toggle Source View")
-        self.btn_toggle_view.setCursor(Qt.CursorShape.ArrowCursor)
-        self.btn_toggle_view.setFixedSize(30, 24)
-        # Style: subtle, semi-transparent
-        self.btn_toggle_view.setStyleSheet(
-            """
-            QToolButton {
-                background-color: rgba(50, 50, 50, 150);
-                color: #E0E0E0;
-                border: 1px solid #555;
-                border-radius: 4px;
-                font-size: 10px;
-                font-weight: bold;
-            }
-            QToolButton:hover {
-                background-color: rgba(80, 80, 80, 200);
-                border-color: #777;
-            }
-            """
-        )
-        self.btn_toggle_view.clicked.connect(self.toggle_view_mode)
-        self.btn_toggle_view.show()
-
         # Setup Shortcuts using QActions
         self._setup_actions()
 
@@ -116,6 +160,7 @@ class WikiTextEditView(QTextEdit):
         """Setup formatting actions with shortcuts."""
         from src.gui.utils.shortcut_manager import ShortcutManager
 
+        self.document().setDocumentMargin(24)
         context = Qt.ShortcutContext.WidgetWithChildrenShortcut
 
         # Bold
@@ -154,25 +199,8 @@ class WikiTextEditView(QTextEdit):
         self.action_body = QAction(self)
         self.action_body.setShortcut(ShortcutManager.FORMAT_BODY.key_sequence)
         self.action_body.setShortcutContext(context)
-        self.action_body.triggered.connect(lambda: self._set_heading(0))
+        self.action_body.triggered.connect(self._clear_formatting)
         self.addAction(self.action_body)
-
-    def resizeEvent(self, event: QResizeEvent) -> None:
-        """Handle resize to reposition the floating button."""
-        super().resizeEvent(event)
-        # Top-Right corner with padding
-        padding = 5
-        btn_width = self.btn_toggle_view.width()
-        # btn_height = self.btn_toggle_view.height()
-
-        # Adjust for scrollbar if visible?
-        # Typically scrollbar is part of the widget or overlaid.
-        # QTextEdit scrollbar is inside the frame usually.
-        # We'll just place it top-right relative to widget width.
-
-        x = self.width() - btn_width - padding - 15  # extra padding for scrollbar
-        y = padding
-        self.btn_toggle_view.move(x, y)
 
     @Slot()
     def toggle_view_mode(self) -> None:
@@ -213,30 +241,22 @@ class WikiTextEditView(QTextEdit):
 
             # Restore scroll position
             self.verticalScrollBar().setValue(old_scroll)
-
-            # Update Button
-            self.btn_toggle_view.setText("HTML")
-            self.btn_toggle_view.setToolTip("Switch to Rendered View")
-
         else:
-            # Source -> Rich: Map MD cursor to HTML cursor
-            raw_text = self.toPlainText()
+            # Source -> Rich: Set view mode and force re-render via set_wiki_text
+            self._view_mode = "rich"
+            md_text = self.toPlainText()
 
+            # Map cursor position from MD to HTML (PlainText)
             # Build AST for cursor mapping
             parser = WikiASTParser()
             serializer = WikiASTSerializer()
-            ast = parser.parse(raw_text)
+            ast = parser.parse(md_text)
             _, ast = serializer.to_markdown(ast)
             _, ast = serializer.to_plaintext(ast)
             mapper = CursorMapper(ast)
-
-            # Map cursor position from MD to HTML (PlainText)
             new_cursor_pos = mapper.md_to_html(old_cursor_pos)
 
-            # Switch mode
-            self._view_mode = "rich"
-            self._current_wiki_text = None  # Force re-render
-            self.set_wiki_text(raw_text)
+            self.set_wiki_text(md_text, force=True)
 
             # Restore cursor (clamped to valid range)
             doc_length = self.document().characterCount()
@@ -248,10 +268,6 @@ class WikiTextEditView(QTextEdit):
 
             # Restore scroll position
             self.verticalScrollBar().setValue(old_scroll)
-
-            # Update Button
-            self.btn_toggle_view.setText("MD")
-            self.btn_toggle_view.setToolTip("Switch to Source View")
 
     def set_link_resolver(self, link_resolver: Any) -> None:
         """Sets the link resolver for checking broken links.
@@ -325,6 +341,28 @@ class WikiTextEditView(QTextEdit):
         else:
             model = QStringListModel(display_names, self._completer)
             self._completer.setModel(model)
+
+        # Trigger re-render to update link colors if we already have text
+        if (
+            hasattr(self, "_view_mode")
+            and self._view_mode == "rich"
+            and hasattr(self, "_current_wiki_text")
+            and self._current_wiki_text
+        ):
+            # Save state
+            cursor = self.textCursor()
+            old_pos = cursor.position()
+            old_scroll = self.verticalScrollBar().value()
+
+            # Re-render (this applies the new valid_targets list)
+            self.set_wiki_text(self._current_wiki_text, force=True)
+
+            # Restore state
+            new_cursor = self.textCursor()
+            doc_len = self.document().characterCount()
+            new_cursor.setPosition(min(old_pos, doc_len - 1 if doc_len > 0 else 0))
+            self.setTextCursor(new_cursor)
+            self.verticalScrollBar().setValue(old_scroll)
 
     def _get_theme_css(self) -> str:
         """Build CSS stylesheet based on current theme settings.
@@ -581,6 +619,73 @@ class WikiTextEditView(QTextEdit):
 
         return output
 
+    def get_headings(self) -> List[Tuple[int, str, int]]:
+        """Extracts headings from the document.
+
+        Returns:
+            A list of tuples: (heading_level, text, block_position)
+        """
+        headings = []
+        is_source = hasattr(self, "_view_mode") and self._view_mode == "source"
+
+        if is_source:
+            # Parse raw text for headings
+            text = self.toPlainText()
+            lines = text.split("\n")
+            pos = 0
+            for line in lines:
+                if line.startswith("#"):
+                    stripped = line.lstrip("#")
+                    level = len(line) - len(stripped)
+                    if 1 <= level <= 3 and stripped.startswith(" "):
+                        headings.append((level, stripped.strip(), pos))
+                pos += len(line) + 1  # +1 for newline character
+            return headings
+
+        # Rich mode: Iterate blocks
+        block = self.document().begin()
+        while block.isValid():
+            heading_level = block.blockFormat().headingLevel()
+
+            # Fallback to font size heuristic (same as _process_block)
+            if heading_level == 0 and block.length() > 1:
+                from PySide6.QtGui import QTextCursor
+
+                from src.core.theme_manager import ThemeManager
+
+                cursor = QTextCursor(block)
+                cursor.movePosition(QTextCursor.MoveOperation.Right)
+                font_size = cursor.charFormat().fontPointSize()
+
+                theme_data = ThemeManager().get_theme()
+
+                def _parse_size(val: str | int | float) -> float:
+                    if isinstance(val, (int, float)):
+                        return float(val)
+                    return (
+                        float(val.replace("pt", "").strip())
+                        if isinstance(val, str)
+                        else 10.0
+                    )
+
+                h1_size = _parse_size(theme_data.get("font_size_h1", 16))
+                h2_size = _parse_size(theme_data.get("font_size_h2", 14))
+                h3_size = _parse_size(theme_data.get("font_size_h3", 12))
+
+                if font_size >= h1_size - 0.5:
+                    heading_level = 1
+                elif font_size >= h2_size - 0.5:
+                    heading_level = 2
+                elif font_size >= h3_size - 0.5:
+                    heading_level = 3
+
+            if heading_level > 0:
+                headings.append((heading_level, block.text().strip(), block.position()))
+
+            block = block.next()
+
+        return headings
+
     def _process_block(self, block: QTextBlock) -> str:
         """Process a text block to recover block-level formatting (Headings).
 
@@ -609,10 +714,10 @@ class WikiTextEditView(QTextEdit):
 
             def _parse_size(val: str | int | float) -> float:
                 """Parse a size value to float.
-                
+
                 Args:
                     val: Size value as string, int, or float.
-                    
+
                 Returns:
                     Parsed size as float.
                 """
@@ -796,6 +901,86 @@ class WikiTextEditView(QTextEdit):
             self._toggle_markdown_format("*")
         else:
             self._toggle_rich_format("italic")
+
+    def _clear_formatting(self) -> None:
+        """Removes all formatting (headings, bold, italic) from selection."""
+        if self._view_mode == "source":
+            self._clear_source_formatting()
+        else:
+            self._clear_rich_formatting()
+
+    def _clear_source_formatting(self) -> None:
+        """Removes markdown formatting markers from selection."""
+        cursor = self.textCursor()
+        sel_start = cursor.selectionStart()
+        sel_end = cursor.selectionEnd()
+        has_sel = cursor.hasSelection()
+
+        # 1. Handle Headings (current line if no selection, or all lines in selection)
+        # For simplicity, we clear heading on the current line first if it's
+        # a simple toggle, but if there's a selection, we should probably
+        # iterate lines or just do the current line.
+        # Following existing _set_heading pattern: current line.
+        cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
+        cursor.movePosition(
+            QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor
+        )
+        line_text = cursor.selectedText()
+        stripped_line = line_text.lstrip("#").lstrip()
+        cursor.insertText(stripped_line)
+
+        # 2. Handle Inline Formatting (Selection only)
+        if not has_sel:
+            return
+
+        # Re-select the area (adjust for heading shift if necessary)
+        # If we removed '#' from the start of the line, sel_start/end might shift.
+        # But we'll just use the same coordinates for now.
+        cursor.setPosition(sel_start)
+        cursor.setPosition(sel_end, QTextCursor.MoveMode.KeepAnchor)
+
+        text = cursor.selectedText()
+        # Remove bold/italic markers while keeping content
+        # Matches: **text**, __text__, *text*, _text_
+        # We use a loop to handle nested markers like ***text***
+        clean_text = text
+        while True:
+            temp = re.sub(r"(\*\*|__|\*|_)(.*?)\1", r"\2", clean_text)
+            if temp == clean_text:
+                break
+            clean_text = temp
+
+        cursor.insertText(clean_text)
+        self.setTextCursor(cursor)
+
+    def _clear_rich_formatting(self) -> None:
+        """Resets block and character formatting in Rich mode."""
+        cursor = self.textCursor()
+
+        # 1. Reset Block Level (Heading -> Paragraph)
+        self._set_rich_heading(0)
+
+        # 2. Reset Character Formatting (Bold/Italic/Size)
+        from PySide6.QtGui import QFont, QTextCharFormat
+
+        # Get theme body size
+        theme = ThemeManager()
+        fs_body = float(
+            str(theme.get_theme().get("font_size_body", "10")).replace("pt", "")
+        )
+
+        fmt = QTextCharFormat()
+        fmt.setFontWeight(QFont.Weight.Normal)
+        fmt.setFontItalic(False)
+        fmt.setFontPointSize(fs_body)
+
+        if cursor.hasSelection():
+            cursor.setCharFormat(fmt)
+        else:
+            # If no selection, set for future typing
+            self.setCurrentCharFormat(fmt)
+
+        self.setTextCursor(cursor)
 
     def _set_heading(self, level: int) -> None:
         """Set heading level on the current line.
@@ -1087,6 +1272,65 @@ class WikiTextEditView(QTextEdit):
         # Fallback if completer not set
         return not hasattr(self, "_valid_targets_lower")
 
+    def paintEvent(self, event: QPaintEvent) -> None:
+        """Override paintEvent to draw section color gutters.
+
+        This queries the SectionData from each visible block and draws
+        a 4px wide vertical line along its left edge.
+        """
+        # First let the default text editor rendering happen
+        super().paintEvent(event)
+
+        # We only draw gutters in rich mode to avoid clashes with markdown hashes
+        if getattr(self, "_view_mode", "rich") == "source":
+            return
+
+        from PySide6.QtCore import QPoint
+        from PySide6.QtGui import QPainter
+
+        from src.gui.utils.color_utils import get_hashed_color
+
+        painter = QPainter(self.viewport())
+
+        # Iterate over visible blocks
+        cursor = self.cursorForPosition(QPoint(0, 0))
+        block = cursor.block()
+
+        # Get viewport rect for bounds checking
+        viewport_rect = self.viewport().rect()
+
+        while block.isValid():
+            block_rect = self.document().documentLayout().blockBoundingRect(block)
+            # Offset by scrollbar positions
+            v_offset = self.verticalScrollBar().value()
+            block_rect.translate(0, -v_offset)
+
+            # Check if block is visible
+            if block_rect.top() > viewport_rect.bottom():
+                break
+
+            if block_rect.bottom() >= viewport_rect.top():
+                # Block is visible, check user data
+                data = block.userData()
+                if isinstance(data, SectionData) and data.section_id:
+                    # Determine color
+                    color = get_hashed_color(data.section_id)
+
+                    # Draw rect
+                    # Width: 4px. Height: full block height minus tiny padding
+                    # X: a few pixels from the absolute left margin
+                    gutter_rect = block_rect.toRect()
+                    gutter_rect.setX(8)
+                    gutter_rect.setWidth(4)
+
+                    # Optional: slight vertical padding so blocks don't touch seamlessly
+                    gutter_rect.setTop(gutter_rect.top() + 1)
+                    gutter_rect.setBottom(gutter_rect.bottom() - 1)
+
+                    painter.fillRect(gutter_rect, color)
+
+            block = block.next()
+
     def _check_for_completion(self) -> None:
         """Checks if wiki link completion should be triggered.
 
@@ -1197,21 +1441,50 @@ class WikiTextEdit(QFrame):
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the wiki text edit wrapper widget.
-        
+
         Args:
             parent: Optional parent widget.
         """
         super().__init__(parent)
         self.setObjectName("WikiTextEditWrapper")  # For debugging/styling
 
-        # Layout
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(1, 1, 1, 1)  # Slight padding for the border
-        layout.setSpacing(0)
+        # Layout Hierarchy
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
 
-        # Editor View
+        # Editor View (must be created before Toolbar to link actions)
         self.editor = WikiTextEditView(self)
-        layout.addWidget(self.editor)
+
+        # Toolbar
+        self.toolbar = QToolBar("Editor Formatting", self)
+        self.toolbar.setMovable(False)
+        self.toolbar.setFloatable(False)
+        self._setup_toolbar()
+        main_layout.addWidget(self.toolbar)
+
+        # Content Container (TOC + Editor)
+        content_container = QWidget(self)
+        content_layout = QHBoxLayout(content_container)
+        content_layout.setContentsMargins(1, 1, 1, 1)  # Padding for border
+        content_layout.setSpacing(0)
+
+        # TOC Widget
+        from src.gui.widgets.toc_widget import TOCWidget
+
+        self.toc_widget = TOCWidget(self)
+        self.toc_widget.setFixedWidth(200)
+        self.toc_widget.hide()
+
+        # Subtle right border for TOC since it's on the left
+        style = self.toc_widget.styleSheet()
+        self.toc_widget.setStyleSheet(
+            style + "\nTOCWidget { border-right: 1px solid #454545; }"
+        )
+        content_layout.addWidget(self.toc_widget)
+        content_layout.addWidget(self.editor, stretch=1)
+
+        main_layout.addWidget(content_container, stretch=1)
 
         # Forward signals
         self.editor.link_clicked.connect(self.link_clicked.emit)
@@ -1219,6 +1492,10 @@ class WikiTextEdit(QFrame):
 
         # Expose textChanged signal directly from editor
         self.textChanged = self.editor.textChanged
+
+        # Connect TOC signals
+        self.textChanged.connect(self._update_toc)
+        self.toc_widget.header_clicked.connect(self._scroll_to_header)
 
         # Apply Style
         self._apply_style()
@@ -1228,31 +1505,109 @@ class WikiTextEdit(QFrame):
 
         ThemeManager().theme_changed.connect(self._on_theme_changed)
 
+    def _setup_toolbar(self) -> None:
+        """Configure the editor toolbar."""
+        # Formatting Actions
+        self.toolbar.addAction(self.editor.action_bold)
+        self.editor.action_bold.setText("Bold")
+        self.toolbar.addAction(self.editor.action_italic)
+        self.editor.action_italic.setText("Italic")
+
+        self.toolbar.addSeparator()
+
+        self.toolbar.addAction(self.editor.action_h1)
+        self.editor.action_h1.setText("H1")
+        self.toolbar.addAction(self.editor.action_h2)
+        self.editor.action_h2.setText("H2")
+        self.toolbar.addAction(self.editor.action_h3)
+        self.editor.action_h3.setText("H3")
+
+        self.toolbar.addAction(self.editor.action_body)
+        self.editor.action_body.setText("Body")
+
+        # Spacer
+        spacer = QWidget()
+        spacer.setSizePolicy(
+            spacer.sizePolicy().Policy.Expanding, spacer.sizePolicy().Policy.Preferred
+        )
+        self.toolbar.addWidget(spacer)
+
+        # Mode Toggle
+        self.action_toggle_mode = self.toolbar.addAction("MD")
+        self.action_toggle_mode.setToolTip(
+            "Toggle between Rendered HTML and Markdown Source"
+        )
+        self.action_toggle_mode.triggered.connect(self._toggle_view_mode)
+
+        # TOC Toggle
+        self.action_toggle_toc = self.toolbar.addAction("TOC")
+        self.action_toggle_toc.setToolTip("Toggle Table of Contents sidebar")
+        self.action_toggle_toc.triggered.connect(self._toggle_toc)
+
+    def _toggle_view_mode(self) -> None:
+        """Proxy to toggle view mode and update toolbar button text."""
+        self.editor.toggle_view_mode()
+        if self.editor._view_mode == "rich":
+            self.action_toggle_mode.setText("MD")
+            self.action_toggle_mode.setToolTip("Switch to Markdown Source View")
+        else:
+            self.action_toggle_mode.setText("HTML")
+            self.action_toggle_mode.setToolTip("Switch to Rendered HTML View")
+
     def _apply_style(self) -> None:
         """Apply the current theme styling to the widget."""
         from src.gui.utils.style_helper import StyleHelper
 
-        self.setStyleSheet(
-            f"""
-            QFrame#WikiTextEditWrapper {{
-                {StyleHelper.get_input_field_style()}
-            }}
-        """
+        style = (
+            "QFrame#WikiTextEditWrapper {\n"
+            f"    {StyleHelper.get_input_field_style()}\n"
+            "}\n"
+            f"{StyleHelper.get_editor_toolbar_style()}"
         )
+        self.setStyleSheet(style)
 
     def _on_theme_changed(self, theme: dict) -> None:
         """Handle theme change event by reapplying styles.
-        
+
         Args:
             theme: The new theme dictionary.
         """
         self._apply_style()
 
+    @Slot()
+    def _toggle_toc(self) -> None:
+        """Toggles the visibility of the TOC."""
+        if self.toc_widget.isHidden():
+            self.toc_widget.show()
+            self._update_toc()
+        else:
+            self.toc_widget.hide()
+
+    @Slot()
+    def _update_toc(self) -> None:
+        """Updates the TOC with the current headings if visible."""
+        if not self.toc_widget.isHidden():
+            headings = self.editor.get_headings()
+            self.toc_widget.update_headings(headings)
+
+    @Slot(int)
+    def _scroll_to_header(self, pos: int) -> None:
+        """Scrolls the editor to the given block position and aligns it to the top."""
+        cursor = self.editor.textCursor()
+        cursor.setPosition(pos)
+        self.editor.setTextCursor(cursor)
+
+        # To align the header at the top, we calculate the Y offset of the cursor
+        # relative to the viewport and add it to the current scrollbar value.
+        rect = self.editor.cursorRect(cursor)
+        scrollbar = self.editor.verticalScrollBar()
+        scrollbar.setValue(scrollbar.value() + rect.top())
+
     # --- Proxy Methods ---
 
     def set_wiki_text(self, text: str) -> None:
         """Set the wiki-formatted text content.
-        
+
         Args:
             text: Wiki-formatted text to set.
         """
@@ -1260,7 +1615,7 @@ class WikiTextEdit(QFrame):
 
     def get_wiki_text(self) -> str:
         """Get the wiki-formatted text content.
-        
+
         Returns:
             Current wiki-formatted text.
         """
@@ -1268,7 +1623,7 @@ class WikiTextEdit(QFrame):
 
     def setText(self, text: str) -> None:
         """Set the plain text content.
-        
+
         Args:
             text: Plain text to set.
         """
@@ -1276,15 +1631,39 @@ class WikiTextEdit(QFrame):
 
     def toPlainText(self) -> str:
         """Get the plain text content.
-        
+
         Returns:
             Current plain text.
         """
         return self.editor.toPlainText()
 
+    def setPlainText(self, text: str) -> None:
+        """Set the plain text content directly.
+
+        Args:
+            text: Plain text to set.
+        """
+        self.editor.setPlainText(text)
+
+    def toHtml(self) -> str:
+        """Get the HTML content.
+
+        Returns:
+            Current HTML text.
+        """
+        return self.editor.toHtml()
+
+    def setHtml(self, text: str) -> None:
+        """Set the HTML content directly.
+
+        Args:
+            text: HTML text to set.
+        """
+        self.editor.setHtml(text)
+
     def setReadOnly(self, ro: bool) -> None:
         """Set whether the editor is read-only.
-        
+
         Args:
             ro: True to make read-only, False to make editable.
         """
@@ -1292,7 +1671,7 @@ class WikiTextEdit(QFrame):
 
     def setPlaceholderText(self, text: str) -> None:
         """Set the placeholder text shown when editor is empty.
-        
+
         Args:
             text: Placeholder text to display.
         """
@@ -1300,7 +1679,7 @@ class WikiTextEdit(QFrame):
 
     def document(self) -> Any:
         """Get the underlying QTextDocument.
-        
+
         Returns:
             The text document.
         """
@@ -1308,7 +1687,7 @@ class WikiTextEdit(QFrame):
 
     def textCursor(self) -> Any:
         """Get the current text cursor.
-        
+
         Returns:
             The current QTextCursor.
         """
@@ -1316,7 +1695,7 @@ class WikiTextEdit(QFrame):
 
     def setTextCursor(self, cursor: Any) -> None:
         """Set the text cursor position.
-        
+
         Args:
             cursor: The QTextCursor to set.
         """
@@ -1330,7 +1709,7 @@ class WikiTextEdit(QFrame):
         names: Optional[list] = None,
     ) -> None:
         """Set the autocompleter for wiki links.
-        
+
         Args:
             items_or_names: Legacy parameter for items or names list.
             items: List of item objects for completion.
@@ -1340,7 +1719,7 @@ class WikiTextEdit(QFrame):
 
     def set_link_resolver(self, resolver: Any) -> None:
         """Set the link resolver for wiki links.
-        
+
         Args:
             resolver: The link resolver callable.
         """
