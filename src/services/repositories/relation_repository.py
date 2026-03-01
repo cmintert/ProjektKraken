@@ -181,6 +181,46 @@ class RelationRepository(BaseRepository):
         with self.transaction() as conn:
             conn.execute("DELETE FROM relations WHERE id = ?", (relation_id,))
 
+    def get_for_item(self, item_id: str) -> List[Dict[str, Any]]:
+        """Retrieve all relations where the item is either source or target.
+
+        Args:
+            item_id: The ID of the item (event or entity).
+
+        Returns:
+            List of relation dictionaries.
+
+        """
+        sql = "SELECT * FROM relations WHERE source_id = ? OR target_id = ?"
+
+        if not self._connection:
+            raise RuntimeError("Database connection not initialized")
+
+        cursor = self._connection.execute(sql, (item_id, item_id))
+        relations = []
+        for row in cursor.fetchall():
+            data = dict(row)
+            if data.get("attributes"):
+                data["attributes"] = self._deserialize_json(data["attributes"])
+            relations.append(data)
+        return relations
+
+    def delete_for_item(self, item_id: str) -> None:
+        """Delete all relations where the item is either source or target.
+
+        Args:
+            item_id: The ID of the item.
+
+        Raises:
+            sqlite3.Error: If the database operation fails.
+
+        """
+        with self.transaction() as conn:
+            conn.execute(
+                "DELETE FROM relations WHERE source_id = ? OR target_id = ?",
+                (item_id, item_id),
+            )
+
     def get_by_id(self, relation_id: str) -> Dict[str, Any] | None:
         """Retrieve a single relation by its ID.
 

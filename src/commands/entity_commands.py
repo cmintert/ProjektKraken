@@ -234,8 +234,9 @@ class DeleteEntityCommand(BaseCommand):
 
         """
         super().__init__()
-        self._entity_id = entity_id
+        self.entity_id = entity_id
         self._backup_entity: Optional[Entity] = None
+        self._backup_relations: list[dict] = []
 
     def get_description(self) -> str:
         """Get a human-readable description of this command.
@@ -260,18 +261,21 @@ class DeleteEntityCommand(BaseCommand):
         """
         try:
             # Fetch before delete for undo
-            self._backup_entity = db_service.get_entity(self._entity_id)
+            self._backup_entity = db_service.get_entity(self.entity_id)
             if not self._backup_entity:
-                logger.error(f"Entity not found for deletion: {self._entity_id}")
+                logger.error(f"Entity not found for deletion: {self.entity_id}")
                 return CommandResult(
                     success=False,
-                    message=f"Entity not found: {self._entity_id}",
+                    message=f"Entity not found: {self.entity_id}",
                     command_name="DeleteEntityCommand",
                 )
 
-            db_service.delete_entity(self._entity_id)
+            self._backup_relations = db_service.get_relations_for_item(self.entity_id)
+
+            db_service.delete_relations_for_item(self.entity_id)
+            db_service.delete_entity(self.entity_id)
             self._is_executed = True
-            logger.info(f"Deleted entity: {self._entity_id}")
+            logger.info(f"Deleted entity: {self.entity_id}")
             return CommandResult(
                 success=True,
                 message="Entity deleted.",
@@ -293,9 +297,31 @@ class DeleteEntityCommand(BaseCommand):
 
         """
         if self._is_executed and self._backup_entity:
+            logger.info(f"Undoing DeleteEntity: Restoring {self._backup_entity.name}")
             db_service.insert_entity(self._backup_entity)
+
+            # Restore tags explicitly
+            if self._backup_entity.tags:
+                self._assign_tags(
+                    db_service,
+                    self._backup_entity.id,
+                    self._backup_entity.tags,
+                    "entity",
+                )
+
+            # Restore relations exactly as they were
+            for rel in self._backup_relations:
+                db_service._relation_repo.insert(
+                    relation_id=rel["id"],
+                    source_id=rel["source_id"],
+                    target_id=rel["target_id"],
+                    rel_type=rel["rel_type"],
+                    attributes=rel["attributes"],
+                    created_at=rel.get("created_at", __import__("time").time()),
+                )
+
             self._is_executed = False
-            logger.info(f"Undid deletion of entity: {self._entity_id}")
+            logger.info(f"Undid deletion of entity: {self.entity_id}")
 
     def to_dict(self) -> dict:
         """Serialize command to dictionary.
@@ -304,10 +330,11 @@ class DeleteEntityCommand(BaseCommand):
             dict: Command data for persistence
         """
         return {
-            "entity_id": self._entity_id,
+            "entity_id": self.entity_id,
             "backup_entity": (
                 self._backup_entity.to_dict() if self._backup_entity else None
             ),
+            "backup_relations": self._backup_relations,
             "is_executed": self._is_executed,
         }
 
@@ -324,5 +351,6 @@ class DeleteEntityCommand(BaseCommand):
         cmd = cls(data["entity_id"])
         if data.get("backup_entity"):
             cmd._backup_entity = Entity.from_dict(data["backup_entity"])
+        cmd._backup_relations = data.get("backup_relations", [])
         cmd._is_executed = data.get("is_executed", False)
         return cmd

@@ -116,3 +116,52 @@ def test_delete_entity_undo(mock_db, sample_entity):
 
     mock_db.insert_entity.assert_called_once_with(sample_entity)
     assert cmd._is_executed is False
+
+
+def test_delete_entity_with_relations(mock_db, sample_entity):
+    """Test entity deletion cascades to its relations."""
+    mock_db.get_entity.return_value = sample_entity
+    # Mock relations existing for this entity
+    mock_db.get_relations_for_item.return_value = [{"id": "rel1"}]
+
+    cmd = DeleteEntityCommand(sample_entity.id)
+    result = cmd.execute(mock_db)
+
+    assert result.success is True
+    # Should delete the relation and the entity
+    mock_db.delete_relations_for_item.assert_called_once_with(sample_entity.id)
+    mock_db.delete_entity.assert_called_once_with(sample_entity.id)
+    assert cmd._backup_relations == [{"id": "rel1"}]
+
+
+def test_delete_entity_undo_with_relations(mock_db, sample_entity):
+    """Test undoing entity deletion restores its relations."""
+    mock_db.get_entity.return_value = sample_entity
+
+    # Needs a complete relation dict since the code extracts specific keys
+    rel_data = {
+        "id": "rel1",
+        "source_id": "source1",
+        "target_id": "target1",
+        "rel_type": "some_type",
+        "attributes": {"attr": "val"},
+        "created_at": 1000.0,
+    }
+    mock_db.get_relations_for_item.return_value = [rel_data]
+
+    cmd = DeleteEntityCommand(sample_entity.id)
+    cmd.execute(mock_db)
+    mock_db.insert_entity.reset_mock()
+
+    cmd.undo(mock_db)
+
+    mock_db.insert_entity.assert_called_once_with(sample_entity)
+    mock_db._relation_repo.insert.assert_called_once_with(
+        relation_id="rel1",
+        source_id="source1",
+        target_id="target1",
+        rel_type="some_type",
+        attributes={"attr": "val"},
+        created_at=1000.0,
+    )
+    assert cmd._is_executed is False

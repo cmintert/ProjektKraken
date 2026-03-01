@@ -66,9 +66,7 @@ class CreateEventCommand(BaseCommand):
 
             # Sync tags to normalized tables
             if self.event.tags:
-                self._assign_tags(
-                    db_service, self.event.id, self.event.tags, "event"
-                )
+                self._assign_tags(db_service, self.event.id, self.event.tags, "event")
 
             self._is_executed = True
             return CommandResult(
@@ -283,6 +281,7 @@ class DeleteEventCommand(BaseCommand):
         super().__init__()
         self.event_id = event_id
         self._backup_event: Optional[Event] = None
+        self._backup_relations: list[dict] = []
 
     def get_description(self) -> str:
         """Get a human-readable description of this command.
@@ -315,7 +314,10 @@ class DeleteEventCommand(BaseCommand):
                 command_name="DeleteEventCommand",
             )
 
+        self._backup_relations = db_service.get_relations_for_item(self.event_id)
+
         try:
+            db_service.delete_relations_for_item(self.event_id)
             db_service.delete_event(self.event_id)
             self._is_executed = True
             return CommandResult(
@@ -341,6 +343,24 @@ class DeleteEventCommand(BaseCommand):
         if self._is_executed and self._backup_event:
             logger.info(f"Undoing DeleteEvent: Restoring {self._backup_event.name}")
             db_service.insert_event(self._backup_event)
+
+            # Restore tags explicitly
+            if self._backup_event.tags:
+                self._assign_tags(
+                    db_service, self._backup_event.id, self._backup_event.tags, "event"
+                )
+
+            # Restore relations exactly as they were
+            for rel in self._backup_relations:
+                db_service._relation_repo.insert(
+                    relation_id=rel["id"],
+                    source_id=rel["source_id"],
+                    target_id=rel["target_id"],
+                    rel_type=rel["rel_type"],
+                    attributes=rel["attributes"],
+                    created_at=rel.get("created_at", __import__("time").time()),
+                )
+
             self._is_executed = False
 
     def to_dict(self) -> dict:
@@ -354,6 +374,7 @@ class DeleteEventCommand(BaseCommand):
             "backup_event": (
                 self._backup_event.to_dict() if self._backup_event else None
             ),
+            "backup_relations": self._backup_relations,
             "is_executed": self._is_executed,
         }
 
@@ -370,5 +391,6 @@ class DeleteEventCommand(BaseCommand):
         cmd = cls(data["event_id"])
         if data.get("backup_event"):
             cmd._backup_event = Event.from_dict(data["backup_event"])
+        cmd._backup_relations = data.get("backup_relations", [])
         cmd._is_executed = data.get("is_executed", False)
         return cmd

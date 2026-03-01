@@ -810,6 +810,34 @@ class DatabaseService:
         )
         return rel_id
 
+    def get_relations_for_item(self, item_id: str) -> List[Dict[str, Any]]:
+        """Retrieves all relations where the item is either source or target.
+
+        Args:
+            item_id: The ID of the item (event or entity).
+
+        Returns:
+            List of relation dictionaries.
+
+        """
+        if not self._connection:
+            self.connect()
+        return self._relation_repo.get_for_item(item_id)
+
+    def delete_relations_for_item(self, item_id: str) -> None:
+        """Deletes all relations where the item is either source or target.
+
+        Args:
+            item_id: The ID of the item.
+
+        Raises:
+            sqlite3.Error: If DB fails.
+
+        """
+        if not self._connection:
+            self.connect()
+        self._relation_repo.delete_for_item(item_id)
+
     def get_relations(self, source_id: str) -> List[Dict[str, Any]]:
         """Retrieves all outgoing relations for a given source object.
 
@@ -1453,8 +1481,7 @@ class DatabaseService:
 
         try:
             row = self._connection.execute(
-                "SELECT COUNT(*) AS cnt, MAX(created_at) AS latest "
-                "FROM embeddings"
+                "SELECT COUNT(*) AS cnt, MAX(created_at) AS latest " "FROM embeddings"
             ).fetchone()
             return {
                 "count": row["cnt"] if row else 0,

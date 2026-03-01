@@ -221,3 +221,52 @@ def test_delete_event_undo_not_executed(mock_db):
     cmd.undo(mock_db)
 
     mock_db.insert_event.assert_not_called()
+
+
+def test_delete_event_with_relations(mock_db, sample_event):
+    """Test event deletion cascades to its relations."""
+    mock_db.get_event.return_value = sample_event
+    # Mock relations existing for this event
+    mock_db.get_relations_for_item.return_value = [{"id": "rel1"}]
+
+    cmd = DeleteEventCommand(sample_event.id)
+    result = cmd.execute(mock_db)
+
+    assert result.success is True
+    # Should delete the relation and the event
+    mock_db.delete_relations_for_item.assert_called_once_with(sample_event.id)
+    mock_db.delete_event.assert_called_once_with(sample_event.id)
+    assert cmd._backup_relations == [{"id": "rel1"}]
+
+
+def test_delete_event_undo_with_relations(mock_db, sample_event):
+    """Test undoing event deletion restores its relations."""
+    mock_db.get_event.return_value = sample_event
+
+    # Complete relation dict
+    rel_data = {
+        "id": "rel1",
+        "source_id": "source1",
+        "target_id": "target1",
+        "rel_type": "some_type",
+        "attributes": {"attr": "val"},
+        "created_at": 1000.0,
+    }
+    mock_db.get_relations_for_item.return_value = [rel_data]
+
+    cmd = DeleteEventCommand(sample_event.id)
+    cmd.execute(mock_db)
+    mock_db.insert_event.reset_mock()
+
+    cmd.undo(mock_db)
+
+    mock_db.insert_event.assert_called_once_with(sample_event)
+    mock_db._relation_repo.insert.assert_called_once_with(
+        relation_id="rel1",
+        source_id="source1",
+        target_id="target1",
+        rel_type="some_type",
+        attributes={"attr": "val"},
+        created_at=1000.0,
+    )
+    assert cmd._is_executed is False
