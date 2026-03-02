@@ -229,6 +229,16 @@ class WikiTextEditView(QTextEdit):
 
             # Switch mode
             self._view_mode = "source"
+
+            # Apply monospace font for source editing
+            from PySide6.QtGui import QFont
+
+            mono_font = QFont("Consolas")
+            if not mono_font.exactMatch():
+                mono_font = QFont("Courier New")
+            mono_font.setPointSize(10)
+            self.setFont(mono_font)
+
             self.setPlainText(md_text)
 
             # Restore cursor (clamped to valid range)
@@ -244,6 +254,12 @@ class WikiTextEditView(QTextEdit):
         else:
             # Source -> Rich: Set view mode and force re-render via set_wiki_text
             self._view_mode = "rich"
+
+            # Reset to standard theme font
+            from PySide6.QtGui import QFont
+
+            self.setFont(QFont("Segoe UI", 10))  # Will be further refined by stylesheet
+
             md_text = self.toPlainText()
 
             # Map cursor position from MD to HTML (PlainText)
@@ -416,13 +432,16 @@ class WikiTextEditView(QTextEdit):
         text_color = theme.get("text_main", "#E0E0E0")
 
         # Font Sizes (fallback to hardcoded if missing in old theme files)
-        fs_h1 = theme.get("font_size_h1", "18pt")
-        fs_h2 = theme.get("font_size_h2", "16pt")
-        fs_h3 = theme.get("font_size_h3", "14pt")
+        fs_h1 = theme.get("font_size_h1", "14pt")
+        fs_h2 = theme.get("font_size_h2", "12pt")
+        fs_h3 = theme.get("font_size_h3", "11pt")
         fs_body = theme.get("font_size_body", "10pt")
 
         # Build CSS stylesheet for the document
+        font_family = "Segoe UI, Roboto, Helvetica Neue, Helvetica, Arial, sans-serif"
         css = (
+            f"body {{ font-family: {font_family}; color: {text_color}; "
+            f"font-size: {fs_body}; }} "
             f"a {{ color: {link_color}; "
             "text-decoration: none; } "
             f"h1 {{ font-size: {fs_h1}; font-weight: 600; "
@@ -436,7 +455,6 @@ class WikiTextEditView(QTextEdit):
             "margin-top: 6px; margin-bottom: 3px; } "
             f"p {{ margin-bottom: 2px; color: {text_color}; "
             f"font-size: {fs_body}; }} "
-            f"body {{ color: {text_color}; font-size: {fs_body}; }}"
         )
         return css
 
