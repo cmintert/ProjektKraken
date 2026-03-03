@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-03-03  
-**Commit:** ce9ea5d
+**Commit:** 0.14.1
 ---
 
 # Changelog
@@ -12,6 +12,14 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+### Fixed
+
+### Changed
+
+### Deprecated
+
+## [0.14.1]
 - *(2026-03-03)* **Architecture**: Implemented per-world theme persistence and GUI database initialization logic.
 - *(2026-03-03)* **Architecture**: Implemented `SummaryService` injection into Event and Entity editors for status management.
 
