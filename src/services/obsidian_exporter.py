@@ -494,7 +494,8 @@ class ObsidianExporter:
             for item in row_items:
                 if isinstance(item, str):
                     value = user_attrs.get(item, "")
-                    parts.append(f"**{item}:** {value}")
+                    value_str = str(value).replace("\n", " ")
+                    parts.append(f"**{item}:** {value_str}")
                 elif isinstance(item, dict):
                     item_type = item.get("type", "")
                     if item_type == "text":
@@ -511,7 +512,8 @@ class ObsidianExporter:
                         key = item.get("key", "")
                         if key:
                             value = user_attrs.get(key, "")
-                            parts.append(f"**{key}:** {value}")
+                            value_str = str(value).replace("\n", " ")
+                            parts.append(f"**{key}:** {value_str}")
             if parts:
                 lines.append("> " + " | ".join(parts))
 

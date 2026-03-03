@@ -165,6 +165,10 @@ class StyleHelper:
             AttributePairWidget:hover {{
                 border: 1px solid {primary};
             }}
+            AttributePairWidget QTextEdit {{
+                background-color: transparent;
+                border: none;
+            }}
         """
 
     @staticmethod

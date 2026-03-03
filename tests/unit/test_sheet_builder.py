@@ -108,7 +108,7 @@ class TestAttributePairWidget:
     def test_value_changed_signal(self, pair, qtbot):
         """Test that editing the value emits value_changed."""
         with qtbot.waitSignal(pair.value_changed):
-            pair.value_edit.setText("20")
+            pair.value_edit.setPlainText("20")
 
     def test_universal_string_default(self, qtbot):
         """Test that new attributes default to String type."""
@@ -145,6 +145,59 @@ class TestAttributePairWidget:
         assert pair.key_label.testAttribute(
             Qt.WidgetAttribute.WA_TransparentForMouseEvents
         )
+
+    def test_multiline_value_stored(self, qtbot):
+        """Test that multiline values are stored and retrieved correctly."""
+        widget = AttributePairWidget("Lore", "Line one\nLine two", "String")
+        qtbot.addWidget(widget)
+        assert widget.get_value() == "Line one\nLine two"
+
+    def test_multiline_value_set_without_signal(self, qtbot):
+        """Test that set_value with newlines does not emit value_changed."""
+        widget = AttributePairWidget("Bio", "", "String")
+        qtbot.addWidget(widget)
+        emitted = []
+        widget.value_changed.connect(lambda: emitted.append(True))
+        widget.set_value("First\nSecond\nThird")
+        assert widget.get_value() == "First\nSecond\nThird"
+        assert not emitted
+
+    def test_multiline_uses_qtextedit(self, pair):
+        """Test that value_edit is a QTextEdit (not QLineEdit)."""
+        from PySide6.QtWidgets import QTextEdit
+        assert isinstance(pair.value_edit, QTextEdit)
+
+    def test_multiline_no_rich_text(self, pair):
+        """Test that value_edit rejects rich text."""
+        assert not pair.value_edit.acceptRichText()
+
+    def test_multiline_height_increases_with_content(self, qtbot):
+        """Test that the value_edit grows taller as lines are added."""
+        widget = AttributePairWidget("Notes", "", "String")
+        qtbot.addWidget(widget)
+        widget.show()
+        qtbot.waitExposed(widget)
+        from PySide6.QtWidgets import QApplication
+        single_line_h = widget.value_edit.height()
+        widget.value_edit.setPlainText("Line 1\nLine 2\nLine 3")
+        QApplication.processEvents()
+        assert widget.value_edit.height() > single_line_h
+
+    def test_multiline_height_capped_at_max_lines(self, qtbot):
+        """Test that height does not grow beyond SHEET_VALUE_MAX_LINES."""
+        from src.app.constants import SHEET_VALUE_MAX_LINES
+        widget = AttributePairWidget("Notes", "", "String")
+        qtbot.addWidget(widget)
+        widget.show()
+        qtbot.waitExposed(widget)
+        from PySide6.QtWidgets import QApplication
+        # Set text with more lines than the cap
+        lines = "\n".join(f"Line {i}" for i in range(SHEET_VALUE_MAX_LINES + 5))
+        widget.value_edit.setPlainText(lines)
+        QApplication.processEvents()
+        fm = widget.value_edit.fontMetrics()
+        max_h = SHEET_VALUE_MAX_LINES * fm.lineSpacing() + 20  # generous margin
+        assert widget.value_edit.height() <= max_h
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -331,7 +384,7 @@ class TestSheetBuilderWidget:
         with qtbot.waitSignal(sheet.attributes_changed):
             # Directly modify the pair's value edit
             pair = sheet._pairs["STR"]
-            pair.value_edit.setText("20")
+            pair.value_edit.setPlainText("20")
 
     def test_load_clears_previous_state(self, sheet):
         """Test that loading new attributes clears the previous state."""
@@ -1241,7 +1294,9 @@ class TestFocusPreservation:
         # Focus the value edit of key 'B'
         pair_b = sheet._pairs["B"]
         pair_b.value_edit.setFocus()
-        pair_b.value_edit.setCursorPosition(1)
+        cursor = pair_b.value_edit.textCursor()
+        cursor.setPosition(1)
+        pair_b.value_edit.setTextCursor(cursor)
         QApplication.processEvents()
 
         # Reload with same data (simulates autosave reload)
@@ -1264,7 +1319,9 @@ class TestFocusPreservation:
 
         pair = sheet._pairs["Name"]
         pair.value_edit.setFocus()
-        pair.value_edit.setCursorPosition(5)  # After "Hello"
+        cursor = pair.value_edit.textCursor()
+        cursor.setPosition(5)  # After "Hello"
+        pair.value_edit.setTextCursor(cursor)
         QApplication.processEvents()
 
         sheet.load_attributes(attrs)
@@ -1272,7 +1329,7 @@ class TestFocusPreservation:
 
         new_pair = sheet._pairs["Name"]
         assert new_pair.value_edit.hasFocus()
-        assert new_pair.value_edit.cursorPosition() == 5
+        assert new_pair.value_edit.textCursor().position() == 5
 
     def test_load_preserves_scroll_position(self, sheet, qtbot):
         """Scroll position of the sheet is preserved after reload."""
