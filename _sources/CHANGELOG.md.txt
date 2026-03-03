@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-03-03
 ### Internal
-- Merge pull request #107 from cmintert/newlinefix
+- release: bump version to 0.14.1
 
 
 *This changelog was automatically generated.*
