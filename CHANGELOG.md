@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+### Fixed
+- *(2026-03-03)* **UI**: Fixed wiki editor not rerendering on undo when the selected entity or event remains the same.
+
 ## [0.14.0]
 
 ### Added

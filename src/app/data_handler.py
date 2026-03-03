@@ -257,9 +257,8 @@ class DataHandler(QObject):
 
             # Create marker data dict
             # Prefer ``_v_fill`` over the legacy ``color`` key
-            fill_color = (
-                marker.attributes.get("_v_fill")
-                or marker.attributes.get("color")
+            fill_color = marker.attributes.get("_v_fill") or marker.attributes.get(
+                "color"
             )
             processed_markers.append(
                 {
@@ -277,9 +276,7 @@ class DataHandler(QObject):
                     "geometry": getattr(marker, "geometry", None),
                     "style": getattr(marker, "style", None),
                     "attributes": marker.attributes,
-                    "connection_count": getattr(
-                        marker, "connection_count", 0
-                    ),
+                    "connection_count": getattr(marker, "connection_count", 0),
                 }
             )
 
@@ -355,6 +352,7 @@ class DataHandler(QObject):
                 logger.debug("[DataHandler] UNDO detected - full reload")
                 self.reload_events.emit()
                 self.reload_entities.emit()
+                self.reload_active_editor_relations.emit()
                 self.reload_markers_for_current_map.emit()
                 self.reload_maps.emit()
                 return  # Skip normal per-command logic for undo
