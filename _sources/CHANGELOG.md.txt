@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-03-01
-### Fixed
-- fix: prevent faulthandler crash when sys.stderr is None in built executable
+## [Development] - 2026-03-03
+### Internal
+- Merge pull request #107 from cmintert/newlinefix
 
 
 *This changelog was automatically generated.*

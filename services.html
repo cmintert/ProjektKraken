@@ -962,6 +962,12 @@ table the object lives in.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.get_world_theme">
+<span class="sig-name descname"><span class="pre">get_world_theme</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.get_world_theme"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.get_world_theme" title="Link to this definition">¶</a></dt>
+<dd><p>Retrieves the saved theme name for this world from system_meta.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.insert_calendar_config">
 <span class="sig-name descname"><span class="pre">insert_calendar_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">CalendarConfig</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.insert_calendar_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.insert_calendar_config" title="Link to this definition">¶</a></dt>
 <dd><p>Inserts a new calendar config or updates an existing one (Upsert).</p>
@@ -1193,6 +1199,12 @@ for large datasets by reducing transaction overhead.</p>
 <dt class="sig sig-object py" id="services.db_service.DatabaseService.set_timeline_grouping_config">
 <span class="sig-name descname"><span class="pre">set_timeline_grouping_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tag_order</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'DUPLICATE'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.set_timeline_grouping_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.set_timeline_grouping_config" title="Link to this definition">¶</a></dt>
 <dd><p>Stores timeline grouping configuration.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="services.db_service.DatabaseService.set_world_theme">
+<span class="sig-name descname"><span class="pre">set_world_theme</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theme_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/services/db_service.html#DatabaseService.set_world_theme"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#services.db_service.DatabaseService.set_world_theme" title="Link to this definition">¶</a></dt>
+<dd><p>Persists the active theme name for this world in system_meta.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -2389,6 +2401,7 @@ background workers.</p>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_timeline_grouping_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_timeline_grouping_config()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_trajectories_by_map"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_trajectories_by_map()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.get_trajectories_by_marker"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_trajectories_by_marker()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.get_world_theme"><code class="docutils literal notranslate"><span class="pre">DatabaseService.get_world_theme()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_calendar_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_calendar_config()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_entities_bulk"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_entities_bulk()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.insert_entity"><code class="docutils literal notranslate"><span class="pre">DatabaseService.insert_entity()</span></code></a></li>
@@ -2408,6 +2421,7 @@ background workers.</p>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.set_graph_lexicon"><code class="docutils literal notranslate"><span class="pre">DatabaseService.set_graph_lexicon()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.set_tag_color"><code class="docutils literal notranslate"><span class="pre">DatabaseService.set_tag_color()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.set_timeline_grouping_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.set_timeline_grouping_config()</span></code></a></li>
+<li><a class="reference internal" href="#services.db_service.DatabaseService.set_world_theme"><code class="docutils literal notranslate"><span class="pre">DatabaseService.set_world_theme()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.transaction"><code class="docutils literal notranslate"><span class="pre">DatabaseService.transaction()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.update_keyframe_time"><code class="docutils literal notranslate"><span class="pre">DatabaseService.update_keyframe_time()</span></code></a></li>
 <li><a class="reference internal" href="#services.db_service.DatabaseService.update_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.update_relation()</span></code></a></li>

@@ -1437,6 +1437,20 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_meta_repo</span><span class="o">.</span><span class="n">set_current_time</span><span class="p">(</span><span class="n">current_time</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="DatabaseService.get_world_theme">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.get_world_theme">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_world_theme</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieves the saved theme name for this world from system_meta.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_meta_repo</span><span class="o">.</span><span class="n">get_world_theme</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="DatabaseService.set_world_theme">
+<a class="viewcode-back" href="../../services.html#services.db_service.DatabaseService.set_world_theme">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_world_theme</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theme_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Persists the active theme name for this world in system_meta.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_meta_repo</span><span class="o">.</span><span class="n">set_world_theme</span><span class="p">(</span><span class="n">theme_name</span><span class="p">)</span></div>
+
+
     <span class="c1"># --------------------------------------------------------------------------</span>
     <span class="c1"># Map CRUD - Delegates to MapRepository</span>
     <span class="c1"># --------------------------------------------------------------------------</span>
