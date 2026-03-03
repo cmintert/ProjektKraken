@@ -900,10 +900,6 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         """
         self.desc_edit.set_completer(items=items, names=names)
 
-        # Re-render wiki text if already loaded to apply new validation
-        if self.desc_edit._current_wiki_text:
-            self.desc_edit.set_wiki_text(self.desc_edit._current_wiki_text)
-
         # Store for RelationEditDialog
         if items:
             self._suggestion_items = items

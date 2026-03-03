@@ -2,323 +2,196 @@
 
 ## Project Overview
 
-ProjektKraken is a desktop worldbuilding environment designed for the "Architect" persona. It treats history as the primary axis of the world, offering a timeline-first approach to lore creation.
+ProjektKraken is a desktop worldbuilding environment with a timeline-first workflow. It uses a "Trinity" view system (Editor, Timeline, Relations), a hybrid SQL+JSON data model, and a dark-mode dockable-panel UI.
 
-**Key Characteristics:**
-- Desktop application for worldbuilding with timeline-first workflow
-- Context-aware UI with "Trinity" view system (Editor, Timeline, Relations)
-- Hybrid data model: strict SQL schema with flexible JSON attributes
-- Modern dark-mode UI with dockable panels
+**Stack:** Python 3.13+, PySide6, SQLite 3.35+, pytest/pytest-qt, ruff, mypy
 
-## Technology Stack
+---
 
-- **Language:** Python 3.10+
-- **GUI Framework:** PySide6 (Qt for Python)
-- **Database:** SQLite 3.35+
-- **Testing:** pytest, pytest-qt
-- **Documentation:** Sphinx (Google Style docstrings)
-- **Linting:** flake8, mypy, black
-- **Type Hints:** Mandatory throughout codebase
-
-## Architecture
-
-### Service-Oriented Architecture (SOA)
-
-The project follows strict separation of concerns:
-
-1. **Core Layer** (`src/core/`) - Business logic, data models, utilities
-   - Event and Entity dataclasses
-   - ThemeManager for UI theming
-   - No UI dependencies
-
-2. **Services Layer** (`src/services/`) - Data access and background processing
-   - `DatabaseService`: SQLite interactions
-   - `Worker`: Background thread operations
-   - `TextParser`: Wiki link parsing
-
-3. **Commands Layer** (`src/commands/`) - Command pattern for undo/redo
-   - All user actions as standalone classes
-   - Inherit from `BaseCommand`
-   - Must implement `execute()` and `undo()` methods
-
-4. **GUI Layer** (`src/gui/`) - PySide6 widgets
-   - "Dumb UI" principle: zero business logic
-   - Only display data and emit signals
-   - Timeline, EventEditor, EntityEditor, UnifiedList widgets
-
-5. **App Layer** (`src/app/`) - Application entry point
-   - MainWindow orchestrates components
-   - Signal/slot communication between layers
-
-### Communication Pattern
-
-```
-UI → Signal → Command → Service → Database
-                ↓
-            Signal → UI Update
-```
-
-## Coding Standards
-
-### Python Style
-
-- **Line Length:** 88 characters maximum (Black default)
-- **Imports:** No wildcards, organize by stdlib/third-party/local
-- **Type Hints:** Required for all function parameters and return types
-- **Docstrings:** Google Style, required for all public methods and classes
-- **No print():** Use the `logging` module instead
-- **Naming Conventions:**
-  - Classes: `PascalCase`
-  - Functions/methods: `snake_case`
-  - Constants: `UPPER_SNAKE_CASE`
-  - Private members: `_leading_underscore`
-
-### Documentation Requirements
-
-- **Module-level docstrings:** Required for all Python modules
-- **Class docstrings:** Must describe purpose and key responsibilities
-- **Method docstrings:** Must include:
-  - Brief description
-  - Args section with types
-  - Returns section with type
-  - Raises section if applicable
-
-Example:
-```python
-def create_event(name: str, lore_date: float) -> Event:
-    """
-    Creates a new Event instance with the given parameters.
-
-    Args:
-        name: The display name of the event.
-        lore_date: The timeline date as a float (1.0 = 1 day).
-
-    Returns:
-        Event: A new Event instance with generated ID and timestamps.
-
-    Raises:
-        ValueError: If name is empty or lore_date is invalid.
-    """
-```
-
-### Data Models
-
-- Use `@dataclass` for data models (Event, Entity)
-- Include `to_dict()` and `from_dict()` class methods for serialization
-- Use `field(default_factory=...)` for mutable defaults
-- Auto-generate IDs using `uuid.uuid4()`
-- Track metadata: `created_at`, `modified_at` timestamps
-
-### Database Conventions
-
-- **Storage Format:** SQLite single-file (`.kraken` extension)
-- **Time Storage:** Float values where 1.0 = 1 day
-- **Hybrid Schema:** SQL columns for searchable/sortable data, JSON for flexible attributes
-- **Testing:** Always use in-memory database (`:memory:`) in tests
-- **Transactions:** Use context managers for database operations
-
-### Command Pattern
-
-All user actions must be implemented as commands:
-
-```python
-class MyCommand(BaseCommand):
-    """Brief description of what this command does."""
-
-    def __init__(self, service: DatabaseService, param1: str):
-        super().__init__(service)
-        self.param1 = param1
-        # Store state needed for undo
-
-    def execute(self) -> None:
-        """Execute the command."""
-        # Perform the action
-        # Store any state needed for undo
-
-    def undo(self) -> None:
-        """Undo the command."""
-        # Reverse the action using stored state
-```
-
-### Qt/PySide6 Guidelines
-
-- **Signals:** Use `pyqtSignal` for custom signals
-- **Slots:** Connect using `signal.connect(slot)`
-- **Threading:** Use `QThread` and `Worker` pattern, never block the UI thread
-- **Stylesheets:** Apply via `ThemeManager`, use QSS tokens
-- **High DPI:** Already enabled, ensure scalable layouts
-- **Widgets:** Prefer composition over inheritance
-
-## Testing Standards
-
-### Test Organization
-
-- **Location:** `tests/` directory
-- **Structure:**
-  - `tests/unit/` - Fast unit tests, no external dependencies
-  - `tests/integration/` - Integration tests with database
-- **Naming:** `test_*.py` files, `test_*` functions, `Test*` classes
-
-### Test Patterns
-
-- **Fixtures:** Use pytest fixtures in `conftest.py`
-- **Database Testing:** Use in-memory SQLite via `db_service` fixture
-- **Qt Testing:** Use `qtbot` fixture from pytest-qt
-- **Markers:**
-  - `@pytest.mark.unit` - Fast unit tests
-  - `@pytest.mark.integration` - Integration tests
-  - `@pytest.mark.slow` - Tests that take >1 second
-
-### Coverage Requirements
-
-- **Minimum:** 95% code coverage
-- **Run tests:** `pytest --cov=src --cov-report=term-missing`
-- **Focus:** Core business logic must be 100% covered
-
-Example test:
-```python
-import pytest
-from src.core.events import Event
-
-def test_event_creation():
-    """Test that Event instances are created correctly."""
-    event = Event(name="Test Event", lore_date=100.0)
-    assert event.name == "Test Event"
-    assert event.lore_date == 100.0
-    assert event.id is not None
-    assert event.type == "generic"
-```
-
-## Build and Run
-
-### Setup Development Environment
+## Build, Test, and Lint
 
 ```bash
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### Run Application
-
-```bash
+# Run the application
 python -m src.app.main
-```
 
-### Run Tests
+# Run all unit tests (GUI tests require offscreen platform)
+QT_QPA_PLATFORM=offscreen python -m pytest tests/unit/
 
-```bash
-# All tests with coverage
+# Run a single test
+QT_QPA_PLATFORM=offscreen python -m pytest tests/unit/test_foo.py::test_bar
+
+# Run integration tests
+python -m pytest tests/integration/
+
+# With coverage
 pytest --cov=src --cov-report=term-missing
 
-# Unit tests only
-pytest tests/unit/
-
-# Specific test file
-pytest tests/unit/test_events.py
-```
-
-### Code Quality Checks
-
-```bash
-# Format code
-black src/ tests/
-
-# Lint code
-flake8 src/ tests/
+# Lint and auto-fix
+python -m ruff check src/ tests/ --fix
 
 # Type checking
 mypy src/
-
-# Check docstring coverage
-python check_docstrings.py
 ```
 
-## Common Patterns and Anti-Patterns
+> **Note:** On Windows, set `$env:QT_QPA_PLATFORM = "offscreen"` in PowerShell before running GUI tests.
 
-### ✅ DO
+---
 
-- Use dataclasses for data models
-- Implement undo/redo via command pattern
-- Use type hints everywhere
-- Write comprehensive docstrings
-- Use logging instead of print
-- Keep UI logic out of core/services
-- Use signals for cross-component communication
-- Write tests for new features
-- Use in-memory database for tests
+## Architecture
 
-### ❌ DON'T
-
-- Don't put business logic in GUI widgets
-- Don't use wildcard imports
-- Don't use bare `except:` clauses
-- Don't use `print()` statements
-- Don't bypass the command pattern for user actions
-- Don't create "God Objects" - keep classes focused
-- Don't skip type hints or docstrings
-- Don't commit without running tests
-- Don't use magic numbers - define constants
-
-## File Structure
+Five layers with strict one-way dependency:
 
 ```
-ProjektKraken/
-├── src/
-│   ├── app/           # Application entry point and MainWindow
-│   ├── commands/      # Command pattern implementations
-│   ├── core/          # Business logic and data models
-│   ├── gui/           # PySide6 widgets and UI components
-│   ├── services/      # Data access and background workers
-│   └── resources/     # UI resources (icons, themes, etc.)
-├── tests/
-│   ├── unit/          # Unit tests
-│   └── integration/   # Integration tests
-├── docs/              # Sphinx documentation
-├── .flake8           # Flake8 configuration
-├── pytest.ini        # Pytest configuration
-├── requirements.txt  # Python dependencies
-└── themes.json       # UI theme definitions
+App (src/app/)          ← orchestration, MainWindow, Coordinators
+GUI (src/gui/)          ← "dumb UI": display + emit signals only
+Commands (src/commands/)← undo/redo: all user actions as command objects
+Services (src/services/)← data access (DatabaseService, Repositories, Workers)
+Core (src/core/)        ← domain models, ThemeManager — zero UI deps
 ```
 
-## Development Workflow
+### MainWindow is split into Coordinators
 
-1. **Before coding:** Understand the architecture layer you're working in
-2. **Write tests first:** TDD approach preferred for core logic
-3. **Follow patterns:** Use existing code as a reference
-4. **Check quality:** Run linters and tests before committing
-5. **Document:** Add/update docstrings and comments as needed
-6. **Small commits:** Make focused, atomic commits
+`MainWindow` delegates responsibility to coordinators in `src/app/coordinators/`:
 
-## Special Considerations
+- **`EditorCoordinator`** — `create_entity`, `delete_entity`, `update_entity`, `add_relation`, `remove_relation`, `update_relation`, `delete_event`, `update_event`
+- **`DataCoordinator`** — `load_event_details`, `load_entity_details`
+- **`CommandCoordinator`** — undo/redo stack, `history_changed` signal, `execute(cmd)`
+- **`NavigationCoordinator`**, **`BackupCoordinator`**, **`TimeCoordinator`**, etc.
 
-### Timeline System
+Access via `main_window.editor_coordinator`, `main_window.data_coordinator`, etc.
 
-- Time is stored as float (1.0 = 1 day)
-- Supports cosmic scales (millions of years) to second precision
-- Calendar presentation is separate from storage
-- Use `lore_date` for event timestamps
+### Communication flow
 
-### Theme System
+```
+Widget emits signal → MainWindow/Coordinator slot
+→ constructs Command → CommandCoordinator.execute(cmd)
+→ DatabaseWorker thread runs cmd.execute(db_service)
+→ Worker emits signal → main thread updates UI
+```
 
-- Centralized via `ThemeManager` in `src/core/theme_manager.py`
-- Themes defined in `themes.json`
-- Use semantic color tokens (primary, surface, border, etc.)
-- Apply styles via QSS (Qt Style Sheets)
+---
 
-### Wiki Links
+## Command Pattern
+
+The **actual** `BaseCommand` signature (different from older docs):
+
+```python
+class BaseCommand(ABC):
+    def __init__(self) -> None:                          # NO service in __init__
+        self._is_executed = False
+        self.timestamp: float = time.time()
+
+    @abstractmethod
+    def execute(self, db_service: DatabaseService) -> CommandResult: ...
+
+    @abstractmethod
+    def undo(self, db_service: DatabaseService) -> None: ...
+
+    @abstractmethod
+    def to_dict(self) -> Dict: ...
+
+    @classmethod
+    @abstractmethod
+    def from_dict(cls, data: Dict) -> "BaseCommand": ...
+
+    @property
+    def has_history(self) -> bool:
+        return True  # Override to False for silent background commands
+```
+
+Tag helpers on `BaseCommand` — use these instead of inline loops:
+- `BaseCommand._assign_tags(db_service, object_id, tags, object_type)` — initial assignment
+- `BaseCommand._sync_tags(db_service, object_id, new_tags, object_type)` — diff-based sync on update
+
+---
+
+## Coding Standards
+
+- **Linter:** `ruff` (not flake8). Run `python -m ruff check src/ tests/ --fix`.
+- **Line length:** 88 characters.
+- **Type hints:** required everywhere — parameters, return types, class attributes.
+- **Docstrings:** Google Style, required for all public classes and methods.
+- **Logging:** `logging` module only — never `print()`.
+- **Imports:** stdlib → third-party → local; no wildcards.
+- **Signals:** PySide6 uses `Signal` from `PySide6.QtCore`, **not** `pyqtSignal`.
+- **Constants:** All magic numbers go in `src/app/constants.py`. Layout spacing/margins use `src/app/ui_constants.py` (`Spacing`, `Margins` classes — 8-point grid).
+
+---
+
+## Styling Rules
+
+**Never hardcode colors in widget code.** All QSS must use theme tokens via `StyleHelper`:
+
+```python
+from src.gui.utils.style_helper import StyleHelper
+# Add a new static method to StyleHelper (e.g. get_my_widget_style())
+# that reads ThemeManager().get_theme() for color tokens.
+```
+
+- `StyleHelper.get_tool_button_style()` — standard action buttons
+- `StyleHelper.get_flat_tool_button_style()` — buttons inside toolbars/header rows
+- Icons: Phosphor SVGs, recolored at runtime — use `src/gui/utils/icon_loader.py`
+- Themes defined in `themes.json`; access tokens via `ThemeManager().get_theme()`
+
+---
+
+## Qt/PySide6 Patterns
+
+### Object destruction safety
+
+PySide6 C++ objects can be deleted while Python wrappers still exist. Before accessing any `QObject`/`QWidget`/`QTextDocument` in a timer or deferred callback:
+
+```python
+import shiboken6
+if not shiboken6.isValid(self.my_qt_object):
+    return
+```
+
+Also wrap in `try/except RuntimeError` when even `isValid` may not catch partial teardown.
+
+### Thread safety
+
+- `DatabaseService` is owned by the worker thread — **never** access from the main thread.
+- Cross-thread: pass **immutable snapshots (dicts)**, not live command objects.
+- `HistoryPanel` receives `(list[dict], list[dict])` snapshots, not raw `BaseCommand` lists.
+- `history_changed.emit()` fires **before** `undo_requested.emit()` to prevent concurrent mutation.
+
+### QTextEdit focus
+
+`QApplication.focusWidget()` returns `text_edit.viewport()` when a `QTextEdit` has focus. Check both when saving focus state:
+
+```python
+focus = QApplication.focusWidget()
+if widget.value_edit is focus or widget.value_edit.viewport() is focus:
+    ...
+```
+
+---
+
+## Testing Conventions
+
+- **GUI tests** require `QT_QPA_PLATFORM=offscreen` (set in `tests/conftest.py` but must also be set in the shell for subprocess runs).
+- **In-memory DB:** use the `db_service` fixture from `tests/conftest.py` — it provides a fresh `DatabaseService(":memory:")` per test.
+- **`MockQSettings._storage`** is a **class-level dict** (shared across all tests in the session). Tests that write to it contaminate later tests. Clear specific keys in teardown or use `monkeypatch.setattr` to override `PySide6.QtCore.QSettings` per-test.
+- **Minimum coverage:** 85% overall; core logic/commands 100%.
+- **Test naming:** `test_<method>_<scenario>` or `test_<method>_<scenario>_<expected>`.
+
+---
+
+## Data Model Conventions
+
+- `@dataclass` with `to_dict()` / `from_dict()` for all domain models.
+- IDs: `str(uuid.uuid4())`.
+- Timestamps: `float` (Unix epoch).
+- **Time storage:** `lore_date: float` where `1.0 = 1 day`. Calendar display is separate from storage.
+- **Hybrid schema:** SQL columns for searchable fields; JSON `attributes` column for flexible key-value pairs.
+- **File format:** `.kraken` (SQLite). WAL mode, foreign keys on.
+
+---
+
+## Wiki Links
 
 - Format: `[[Entity Name]]`
-- Parsed by `TextParser` service
-- Clickable in editors
-- Auto-linked to entities in database
-
-## Getting Help
-
-- **Design Docs:** See `Design.md` for architecture details
-- **Code Quality:** Review `CODE_QUALITY_ASSESSMENT.md` for standards
-- **Examples:** Browse existing code in each layer for patterns
-- **Tests:** Check test files for usage examples
+- Rendered/parsed by `WikiTextEditView` (`src/gui/widgets/wiki_text_edit.py`)
+- `SectionManager` inside it uses a 300ms debounce timer — always guard `_analyze_document` with `shiboken6.isValid(self.document)`.
+- Auto-relation creation on wiki link insertion is toggled by `SETTINGS_AUTO_RELATION_KEY`.

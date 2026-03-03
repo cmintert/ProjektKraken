@@ -85,6 +85,9 @@ TEMPORAL_FUTURE_OPACITY = 0.7  # Opacity for future events (0.0-1.0)
 TEMPORAL_FUTURE_SATURATION_FACTOR = 0.8  # Saturation multiplier for future events
 TEMPORAL_FUTURE_LIGHTNESS_BOOST = 0.1  # Lightness increase for future events
 
+# Sheet Builder Constants
+SHEET_VALUE_MAX_LINES = 4  # Max visible lines for multiline attribute values
+
 # Editor Layout Constants
 EDITOR_FORM_VERTICAL_SPACING = 12
 EDITOR_SECTION_SPACING = 4

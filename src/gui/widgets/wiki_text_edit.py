@@ -7,6 +7,7 @@ import logging
 import re
 from typing import Any, List, Optional, Tuple
 
+import shiboken6
 from PySide6.QtCore import QStringListModel, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import (
     QAction,
@@ -77,6 +78,9 @@ class SectionManager:
 
     def _analyze_document(self) -> None:
         """Iterate over blocks and assign hashed section IDs."""
+        if not shiboken6.isValid(self.document):
+            self._analyze_timer.stop()
+            return
         block = self.document.firstBlock()
 
         current_section_id = "default"
@@ -229,6 +233,16 @@ class WikiTextEditView(QTextEdit):
 
             # Switch mode
             self._view_mode = "source"
+
+            # Apply monospace font for source editing
+            from PySide6.QtGui import QFont
+
+            mono_font = QFont("Consolas")
+            if not mono_font.exactMatch():
+                mono_font = QFont("Courier New")
+            mono_font.setPointSize(10)
+            self.setFont(mono_font)
+
             self.setPlainText(md_text)
 
             # Restore cursor (clamped to valid range)
@@ -244,6 +258,12 @@ class WikiTextEditView(QTextEdit):
         else:
             # Source -> Rich: Set view mode and force re-render via set_wiki_text
             self._view_mode = "rich"
+
+            # Reset to standard theme font
+            from PySide6.QtGui import QFont
+
+            self.setFont(QFont("Segoe UI", 10))  # Will be further refined by stylesheet
+
             md_text = self.toPlainText()
 
             # Map cursor position from MD to HTML (PlainText)
@@ -342,27 +362,62 @@ class WikiTextEditView(QTextEdit):
             model = QStringListModel(display_names, self._completer)
             self._completer.setModel(model)
 
-        # Trigger re-render to update link colors if we already have text
-        if (
-            hasattr(self, "_view_mode")
-            and self._view_mode == "rich"
-            and hasattr(self, "_current_wiki_text")
-            and self._current_wiki_text
-        ):
-            # Save state
-            cursor = self.textCursor()
-            old_pos = cursor.position()
-            old_scroll = self.verticalScrollBar().value()
+        # Update link colors in-place to reflect new valid-target set.
+        # Using _update_link_colors() avoids a full setHtml() re-render which
+        # would collapse empty blocks and reset the cursor position.
+        if hasattr(self, "_view_mode") and self._view_mode == "rich":
+            self._update_link_colors()
 
-            # Re-render (this applies the new valid_targets list)
-            self.set_wiki_text(self._current_wiki_text, force=True)
+    def _update_link_colors(self) -> None:
+        """Update anchor link colors in-place without replacing the document.
 
-            # Restore state
-            new_cursor = self.textCursor()
-            doc_len = self.document().characterCount()
-            new_cursor.setPosition(min(old_pos, doc_len - 1 if doc_len > 0 else 0))
-            self.setTextCursor(new_cursor)
-            self.verticalScrollBar().setValue(old_scroll)
+        Walks every fragment in the document and updates the foreground color of
+        anchor (WikiLink) fragments based on whether their href matches a known
+        valid target.  This avoids calling setHtml() which would destroy empty
+        blocks and reset the cursor position.
+        """
+        from PySide6.QtGui import QColor, QTextCharFormat, QTextCursor
+
+        tm = ThemeManager()
+        theme = tm.get_theme()
+        link_color = theme.get("accent_secondary", "#2980b9")
+
+        doc = self.document()
+        edit_cursor = QTextCursor(doc)
+        was_blocked = self.blockSignals(True)
+        try:
+            edit_cursor.beginEditBlock()
+            block = doc.begin()
+            while block.isValid():
+                it = block.begin()
+                while not it.atEnd():
+                    fragment = it.fragment()
+                    if fragment.isValid():
+                        fmt = fragment.charFormat()
+                        if fmt.isAnchor():
+                            href = fmt.anchorHref()
+                            check = href[3:] if href.startswith("id:") else href
+                            if not hasattr(self, "_valid_targets_lower"):
+                                is_valid = True
+                            else:
+                                is_valid = (
+                                    check.lower() in self._valid_targets_lower
+                                    or check in self._valid_ids
+                                )
+                            color = QColor(link_color if is_valid else "red")
+                            new_fmt = QTextCharFormat(fmt)
+                            new_fmt.setForeground(color)
+                            edit_cursor.setPosition(fragment.position())
+                            edit_cursor.setPosition(
+                                fragment.position() + fragment.length(),
+                                QTextCursor.MoveMode.KeepAnchor,
+                            )
+                            edit_cursor.setCharFormat(new_fmt)
+                    it += 1
+                block = block.next()
+            edit_cursor.endEditBlock()
+        finally:
+            self.blockSignals(was_blocked)
 
     def _get_theme_css(self) -> str:
         """Build CSS stylesheet based on current theme settings.
@@ -381,13 +436,16 @@ class WikiTextEditView(QTextEdit):
         text_color = theme.get("text_main", "#E0E0E0")
 
         # Font Sizes (fallback to hardcoded if missing in old theme files)
-        fs_h1 = theme.get("font_size_h1", "18pt")
-        fs_h2 = theme.get("font_size_h2", "16pt")
-        fs_h3 = theme.get("font_size_h3", "14pt")
+        fs_h1 = theme.get("font_size_h1", "14pt")
+        fs_h2 = theme.get("font_size_h2", "12pt")
+        fs_h3 = theme.get("font_size_h3", "11pt")
         fs_body = theme.get("font_size_body", "10pt")
 
         # Build CSS stylesheet for the document
+        font_family = "Segoe UI, Roboto, Helvetica Neue, Helvetica, Arial, sans-serif"
         css = (
+            f"body {{ font-family: {font_family}; color: {text_color}; "
+            f"font-size: {fs_body}; }} "
             f"a {{ color: {link_color}; "
             "text-decoration: none; } "
             f"h1 {{ font-size: {fs_h1}; font-weight: 600; "
@@ -401,7 +459,6 @@ class WikiTextEditView(QTextEdit):
             "margin-top: 6px; margin-bottom: 3px; } "
             f"p {{ margin-bottom: 2px; color: {text_color}; "
             f"font-size: {fs_body}; }} "
-            f"body {{ color: {text_color}; font-size: {fs_body}; }}"
         )
         return css
 
@@ -517,8 +574,8 @@ class WikiTextEditView(QTextEdit):
             self._current_wiki_text = text
             return
 
-        # Store text for re-rendering on theme change
-        self._current_wiki_text = text
+        # Do not store the raw incoming text here; canonicalize after rendering
+        # The canonical form will be set after setHtml() to preserve linebreaks and ensure reliable equality checks
 
         # 1. Pre-process WikiLinks [[Target|Label]] -> Markdown [Label](Target)
         # Markdown library processes standard links [Label](URL) naturally.
@@ -587,6 +644,10 @@ class WikiTextEditView(QTextEdit):
         finally:
             self.blockSignals(was_blocked)
 
+        # Update internal canonical wiki text after rendering so comparisons and
+        # cursor mapping respect linebreaks and rendered output
+        self._current_wiki_text = self.get_wiki_text()
+
     def get_wiki_text(self) -> str:
         """Converts the editor content back to WikiLink syntax.
 
@@ -616,6 +677,17 @@ class WikiTextEditView(QTextEdit):
                 else:
                     # One or both empty: simple line break
                     output += "\n"
+
+        # Preserve trailing blank lines: count trailing empty blocks and append
+        trailing_empty_count = 0
+        for t in reversed(result):
+            if not t.strip():
+                trailing_empty_count += 1
+            else:
+                break
+
+        if trailing_empty_count > 0:
+            output += "\n" * trailing_empty_count
 
         return output
 
@@ -764,6 +836,9 @@ class WikiTextEditView(QTextEdit):
         Links).
         """
         text = fragment.text()
+        # Qt stores <br> as \u2028 (line separator) within a block.
+        # Normalise back to \n so callers always receive standard newlines.
+        text = text.replace("\u2028", "\n")
         fmt = fragment.charFormat()
 
         # 1. WikiLinks (Anchor)
@@ -1422,7 +1497,7 @@ class WikiTextEditView(QTextEdit):
         try:
             # Re-render with stored text to apply new stylesheet
             if self._current_wiki_text:
-                self.set_wiki_text(self._current_wiki_text, force=True)
+                self.set_wiki_text(self.get_wiki_text(), force=True)
             else:
                 # Just update stylesheet for empty or non-wiki content
                 self._apply_theme_stylesheet()

@@ -31,11 +31,13 @@ from PySide6.QtWidgets import (
     QMenu,
     QScrollArea,
     QSizePolicy,
+    QTextEdit,
     QToolBar,
     QVBoxLayout,
     QWidget,
 )
 
+from src.app.constants import SHEET_VALUE_MAX_LINES
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 
@@ -107,18 +109,31 @@ class AttributePairWidget(QFrame):
         layout.setContentsMargins(8, 4, 8, 4)
         layout.setSpacing(8)
 
-        # Bold key label
+        # Bold key label — aligned to top for multiline value support
         self.key_label = QLabel(f"<b>{key}:</b>")
         self.key_label.setAlignment(
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
         )
         self.key_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         layout.addWidget(self.key_label)
 
-        # Value line-edit
-        self.value_edit = QLineEdit(value)
+        # Value editor — multiline plain-text, autosizes up to SHEET_VALUE_MAX_LINES
+        self.value_edit = QTextEdit()
+        self.value_edit.setAcceptRichText(False)
         self.value_edit.setPlaceholderText("Value…")
+        self.value_edit.setPlainText(value)
+        self.value_edit.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.value_edit.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.value_edit.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
+        self.value_edit.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         self.value_edit.textChanged.connect(self._on_value_changed)
+        self.value_edit.textChanged.connect(self._adjust_height)
         layout.addWidget(self.value_edit)
 
         # Type toggle (compact combo) - Hidden by default
@@ -130,16 +145,12 @@ class AttributePairWidget(QFrame):
         self.type_combo.setVisible(False)
         layout.addWidget(self.type_combo)
 
-        # Ensure value edit expands
-        self.value_edit.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
-        )
-
         # Apply initial theme and connect to changes
         self._theme_mgr = ThemeManager()
         self._apply_theme()
         self._theme_mgr.theme_changed.connect(self._apply_theme)
         self.destroyed.connect(self._on_destroyed)
+        self._adjust_height()
 
     def _apply_theme(self) -> None:
         """Apply current theme colors to the widget."""
@@ -158,10 +169,10 @@ class AttributePairWidget(QFrame):
             QLabel {{
                 color: {text};
             }}
-            QLineEdit, QComboBox {{
+            QTextEdit, QComboBox {{
                 {input_style}
             }}
-            QLineEdit:focus, QComboBox:focus {{
+            QTextEdit:focus, QComboBox:focus {{
                 border: 1px solid {primary};
             }}
             QComboBox::drop-down {{
@@ -184,13 +195,14 @@ class AttributePairWidget(QFrame):
 
     def get_value(self) -> str:
         """Return the raw string value."""
-        return self.value_edit.text()
+        return self.value_edit.toPlainText()
 
     def set_value(self, value: str) -> None:
         """Set the value without emitting value_changed."""
         self.value_edit.blockSignals(True)
-        self.value_edit.setText(value)
+        self.value_edit.setPlainText(value)
         self.value_edit.blockSignals(False)
+        self._adjust_height()
 
     def get_type(self) -> str:
         """Return the selected type string."""
@@ -204,15 +216,16 @@ class AttributePairWidget(QFrame):
 
     def get_parsed_value(self) -> Union[str, int, float, bool]:
         """Return the value parsed according to the selected type."""
-        raw = self.value_edit.text()
+        raw = self.value_edit.toPlainText()
         vtype = self.type_combo.currentText()
         if vtype == "Number":
             try:
-                return float(raw) if "." in raw else int(raw)
+                stripped = raw.strip()
+                return float(stripped) if "." in stripped else int(stripped)
             except ValueError:
                 return 0
         if vtype == "Boolean":
-            return raw.lower() in {"true", "1", "yes", "on"}
+            return raw.strip().lower() in {"true", "1", "yes", "on"}
         return raw
 
     # ------------------------------------------------------------------
@@ -244,6 +257,37 @@ class AttributePairWidget(QFrame):
     # ------------------------------------------------------------------
     # Internal
     # ------------------------------------------------------------------
+
+    def _adjust_height(self) -> None:
+        """Resize value_edit to fit content, capped at SHEET_VALUE_MAX_LINES."""
+        try:
+            if not shiboken6.isValid(self) or not shiboken6.isValid(self.value_edit):
+                return
+            doc = self.value_edit.document()
+            if doc is None or not shiboken6.isValid(doc):
+                return
+            fm = self.value_edit.fontMetrics()
+            line_h = fm.lineSpacing()
+            margins = self.value_edit.contentsMargins()
+            frame_w = self.value_edit.frameWidth()
+            padding = margins.top() + margins.bottom() + 2 * frame_w + 4
+
+            min_h = line_h + padding
+            max_h = SHEET_VALUE_MAX_LINES * line_h + padding
+
+            doc_h = doc.size().height()
+            desired_h = int(doc_h) + padding if doc_h > 0 else min_h
+            clamped_h = max(min_h, min(desired_h, max_h))
+
+            over_max = desired_h > max_h
+            self.value_edit.setVerticalScrollBarPolicy(
+                Qt.ScrollBarPolicy.ScrollBarAsNeeded
+                if over_max
+                else Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+            )
+            self.value_edit.setFixedHeight(clamped_h)
+        except RuntimeError:
+            pass
 
     def _on_value_changed(self) -> None:
         """Emit value_changed signal."""
@@ -1163,11 +1207,15 @@ class SheetBuilderWidget(QWidget):
             return state
 
         # Check if focus is inside one of our AttributePairWidgets
+        # QTextEdit delegates focus to its internal viewport, so check both.
         for key, pair in self._pairs.items():
-            if pair.value_edit is focus_widget:
+            if (
+                pair.value_edit is focus_widget
+                or pair.value_edit.viewport() is focus_widget
+            ):
                 state.had_focus = True
                 state.focused_key = key
-                state.cursor_position = pair.value_edit.cursorPosition()
+                state.cursor_position = pair.value_edit.textCursor().position()
                 return state
 
         # Check if focus is inside a TextBlockWidget
@@ -1208,8 +1256,12 @@ class SheetBuilderWidget(QWidget):
         if state.focused_key is not None and state.focused_key in self._pairs:
             pair = self._pairs[state.focused_key]
             pair.value_edit.setFocus()
-            cursor_pos = min(state.cursor_position, len(pair.value_edit.text()))
-            pair.value_edit.setCursorPosition(cursor_pos)
+            cursor_pos = min(
+                state.cursor_position, len(pair.value_edit.toPlainText())
+            )
+            tc = pair.value_edit.textCursor()
+            tc.setPosition(cursor_pos)
+            pair.value_edit.setTextCursor(tc)
             return
 
         # Restore focus to a TextBlockWidget by index

@@ -265,6 +265,17 @@ class WorkerManager(QObject):
             except Exception as e:
                 logger.error(f"Failed to initialize GUI database service: {e}")
 
+            # Restore per-world theme preference
+            try:
+                from src.core.theme_manager import ThemeManager
+
+                world_theme = self.window.gui_db_service.get_world_theme()
+                if world_theme:
+                    ThemeManager().set_theme(world_theme)
+                    logger.info(f"Restored world theme: {world_theme}")
+            except Exception as e:
+                logger.warning(f"Failed to restore world theme: {e}")
+
             # Inject SummaryService into editors for staleness checks
             try:
                 from src.services.summary_service import SummaryService

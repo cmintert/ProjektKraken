@@ -57,3 +57,24 @@ def test_on_command_finished_other_map_command_emits_maps_only(data_handler):
     data_handler.reload_maps.emit.assert_called_once()
     data_handler.reload_entities.emit.assert_not_called()
     data_handler.reload_events.emit.assert_not_called()
+
+
+def test_on_command_finished_undo_emits_all_reloads(data_handler):
+    """Verify undo commands trigger a full suite of reloads."""
+    data_handler.reload_maps = MagicMock()
+    data_handler.reload_markers_for_current_map = MagicMock()
+    data_handler.reload_entities = MagicMock()
+    data_handler.reload_events = MagicMock()
+    data_handler.reload_active_editor_relations = MagicMock()
+
+    result = CommandResult(
+        success=True, command_name="Undo_EventCommand", message="Undone", data={}
+    )
+
+    data_handler.on_command_finished(result)
+
+    data_handler.reload_maps.emit.assert_called_once()
+    data_handler.reload_entities.emit.assert_called_once()
+    data_handler.reload_events.emit.assert_called_once()
+    data_handler.reload_markers_for_current_map.emit.assert_called_once()
+    data_handler.reload_active_editor_relations.emit.assert_called_once()

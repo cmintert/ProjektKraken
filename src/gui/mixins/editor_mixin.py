@@ -127,24 +127,26 @@ class BaseEditorMixin:
             return cursor_pos, had_focus
         return 0, False
 
-    def _restore_desc_cursor_state(
-        self, cursor_pos: int, had_focus: bool
-    ) -> None:
+    def _restore_desc_cursor_state(self, cursor_pos: int, had_focus: bool) -> None:
         """Restore the description editor's cursor position and focus.
+
+        The cursor position is always restored so that a setHtml call inside
+        the reload path (which resets the cursor to 0) never silently discards
+        the user's previous caret location.  Focus is only stolen back when
+        the editor actually had keyboard focus before the reload.
 
         Args:
             cursor_pos: Cursor position to restore.
-            had_focus: Whether the description editor had focus.
+            had_focus: Whether the description editor had focus before reload.
 
         """
-        if not had_focus:
-            return
         if hasattr(self, "desc_edit") and hasattr(self.desc_edit, "editor"):
             text_len = len(self.desc_edit.editor.toPlainText())
             cursor = self.desc_edit.editor.textCursor()
             cursor.setPosition(min(cursor_pos, text_len))
             self.desc_edit.editor.setTextCursor(cursor)
-            self.desc_edit.editor.setFocus()
+            if had_focus:
+                self.desc_edit.editor.setFocus()
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """Handle drag enter event to accept MIME data from Project Explorer.
