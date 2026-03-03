@@ -7,6 +7,7 @@ import logging
 import re
 from typing import Any, List, Optional, Tuple
 
+import shiboken6
 from PySide6.QtCore import QStringListModel, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import (
     QAction,
@@ -77,6 +78,9 @@ class SectionManager:
 
     def _analyze_document(self) -> None:
         """Iterate over blocks and assign hashed section IDs."""
+        if not shiboken6.isValid(self.document):
+            self._analyze_timer.stop()
+            return
         block = self.document.firstBlock()
 
         current_section_id = "default"

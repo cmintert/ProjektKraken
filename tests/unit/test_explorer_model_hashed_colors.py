@@ -8,6 +8,7 @@ from PySide6.QtGui import QBrush
 
 from src.core.events import Event
 from src.gui.models.explorer_model import ExplorerModel
+from src.gui.utils.color_utils import get_hashed_color
 
 
 class TestExplorerModelHashedColors:
@@ -40,17 +41,17 @@ class TestExplorerModelHashedColors:
         assert args[2] == [Qt.ItemDataRole.ForegroundRole]
 
     def test_hashed_colors_generate_stable_hues(self, model):
-        """Verify _get_hashed_color produces consistent colors for the same string."""
-        brush1 = model._get_hashed_color("entity:Character")
-        brush2 = model._get_hashed_color("entity:Character")
+        """Verify get_hashed_color produces consistent colors for the same string."""
+        brush1 = QBrush(get_hashed_color("entity:Character"))
+        brush2 = QBrush(get_hashed_color("entity:Character"))
 
         assert isinstance(brush1, QBrush)
         assert brush1.color().name() == brush2.color().name()
 
     def test_hashed_colors_vary_by_type(self, model):
         """Verify different types generate different colors."""
-        brush1 = model._get_hashed_color("event:Battle")
-        brush2 = model._get_hashed_color("entity:Location")
+        brush1 = QBrush(get_hashed_color("event:Battle"))
+        brush2 = QBrush(get_hashed_color("entity:Location"))
 
         assert brush1.color().name() != brush2.color().name()
 
@@ -69,7 +70,7 @@ class TestExplorerModelHashedColors:
         hashed_brush = model.data(index, Qt.ItemDataRole.ForegroundRole)
 
         # Get expected hash (the model uses "item_type:type" as the seed)
-        expected_brush = model._get_hashed_color("event:TestEvent")
+        expected_brush = QBrush(get_hashed_color("event:TestEvent"))
 
         assert hashed_brush.color().name() == expected_brush.color().name()
         assert hashed_brush.color().name() != default_brush.color().name()

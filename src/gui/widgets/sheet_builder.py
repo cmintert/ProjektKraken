@@ -133,9 +133,7 @@ class AttributePairWidget(QFrame):
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
         self.value_edit.textChanged.connect(self._on_value_changed)
-        self.value_edit.document().documentLayout().documentSizeChanged.connect(
-            lambda _: self._adjust_height()
-        )
+        self.value_edit.textChanged.connect(self._adjust_height)
         layout.addWidget(self.value_edit)
 
         # Type toggle (compact combo) - Hidden by default
@@ -262,29 +260,34 @@ class AttributePairWidget(QFrame):
 
     def _adjust_height(self) -> None:
         """Resize value_edit to fit content, capped at SHEET_VALUE_MAX_LINES."""
-        if not shiboken6.isValid(self):
-            return
-        fm = self.value_edit.fontMetrics()
-        line_h = fm.lineSpacing()
-        margins = self.value_edit.contentsMargins()
-        frame_w = self.value_edit.frameWidth()
-        padding = margins.top() + margins.bottom() + 2 * frame_w + 4
+        try:
+            if not shiboken6.isValid(self) or not shiboken6.isValid(self.value_edit):
+                return
+            doc = self.value_edit.document()
+            if doc is None or not shiboken6.isValid(doc):
+                return
+            fm = self.value_edit.fontMetrics()
+            line_h = fm.lineSpacing()
+            margins = self.value_edit.contentsMargins()
+            frame_w = self.value_edit.frameWidth()
+            padding = margins.top() + margins.bottom() + 2 * frame_w + 4
 
-        min_h = line_h + padding
-        max_h = SHEET_VALUE_MAX_LINES * line_h + padding
+            min_h = line_h + padding
+            max_h = SHEET_VALUE_MAX_LINES * line_h + padding
 
-        doc_h = self.value_edit.document().size().height()
-        desired_h = int(doc_h) + padding if doc_h > 0 else min_h
-        clamped_h = max(min_h, min(desired_h, max_h))
+            doc_h = doc.size().height()
+            desired_h = int(doc_h) + padding if doc_h > 0 else min_h
+            clamped_h = max(min_h, min(desired_h, max_h))
 
-        over_max = desired_h > max_h
-        self.value_edit.setVerticalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAsNeeded
-            if over_max
-            else Qt.ScrollBarPolicy.ScrollBarAlwaysOff
-        )
-        self.value_edit.setFixedHeight(clamped_h)
-        self.updateGeometry()
+            over_max = desired_h > max_h
+            self.value_edit.setVerticalScrollBarPolicy(
+                Qt.ScrollBarPolicy.ScrollBarAsNeeded
+                if over_max
+                else Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+            )
+            self.value_edit.setFixedHeight(clamped_h)
+        except RuntimeError:
+            pass
 
     def _on_value_changed(self) -> None:
         """Emit value_changed signal."""
