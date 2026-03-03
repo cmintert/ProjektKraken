@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-03-01  
-**Commit:** 0.14.0
+**Last Updated:** 2026-03-03  
+**Commit:** ce9ea5d
 ---
 
 # Changelog
@@ -12,9 +12,16 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- *(2026-03-03)* **Architecture**: Implemented per-world theme persistence and GUI database initialization logic.
+- *(2026-03-03)* **Architecture**: Implemented `SummaryService` injection into Event and Entity editors for status management.
 
 ### Fixed
+- *(2026-03-03)* **Stability**: Hardened `SheetBuilder` with `RuntimeError` guards for height adjustments during layout reloads.
+- *(2026-03-03)* **Stability**: Integrated `shiboken6.isValid` checks in `WikiTextEdit` to prevent C++ destruction crashes.
 - *(2026-03-03)* **UI**: Fixed wiki editor not rerendering on undo when the selected entity or event remains the same.
+
+### Documentation
+- *(2026-03-03)* **Docs**: Updated Copilot instructions with destruction safety patterns and Wiki Link relation settings.
 
 ## [0.14.0]
 
