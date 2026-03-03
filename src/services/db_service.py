@@ -1069,6 +1069,14 @@ class DatabaseService:
         """Sets the current time in the world and persists it to system_meta."""
         self._meta_repo.set_current_time(current_time)
 
+    def get_world_theme(self) -> Optional[str]:
+        """Retrieves the saved theme name for this world from system_meta."""
+        return self._meta_repo.get_world_theme()
+
+    def set_world_theme(self, theme_name: str) -> None:
+        """Persists the active theme name for this world in system_meta."""
+        self._meta_repo.set_world_theme(theme_name)
+
     # --------------------------------------------------------------------------
     # Map CRUD - Delegates to MapRepository
     # --------------------------------------------------------------------------

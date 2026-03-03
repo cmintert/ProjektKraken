@@ -177,6 +177,42 @@ class MetaRepository(BaseRepository):
 
         logger.debug(f"Saved graph lexicon config: {len(config_json)} bytes")
 
+    def get_world_theme(self) -> Optional[str]:
+        """Retrieves the saved theme name for this world from system_meta.
+
+        Returns:
+            Optional[str]: The theme name string, or None if not set.
+
+        """
+        cursor = self._connection.execute(
+            "SELECT value FROM system_meta WHERE key = 'world_theme'"
+        )
+        row = cursor.fetchone()
+        if row and row["value"]:
+            return str(row["value"])
+        return None
+
+    def set_world_theme(self, theme_name: str) -> None:
+        """Persists the active theme name for this world in system_meta.
+
+        Args:
+            theme_name: The theme key to store (e.g. 'dark_mode').
+
+        Raises:
+            sqlite3.Error: If the database operation fails.
+
+        """
+        with self.transaction() as conn:
+            conn.execute(
+                """
+                INSERT INTO system_meta (key, value)
+                VALUES ('world_theme', ?)
+                ON CONFLICT(key) DO UPDATE SET value=excluded.value
+                """,
+                (theme_name,),
+            )
+        logger.debug(f"Saved world_theme: {theme_name}")
+
     def get_name(self, object_id: str) -> Optional[str]:
         """Retrieves the name of an entity or event by its ID.
 
