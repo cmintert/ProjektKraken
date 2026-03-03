@@ -268,6 +268,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
             tm = ThemeManager()
             tm.theme_changed.connect(self._update_window_style)
+            tm.theme_changed.connect(self._on_theme_changed_save_to_world)
         except Exception as e:
             logger.warning(f"Failed to connect theme signal: {e}")
 
@@ -956,6 +957,23 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         """
         self.grouping_manager.on_grouping_config_loaded(config)
+
+    def _on_theme_changed_save_to_world(self, _theme_dict: dict) -> None:
+        """Save the active theme to the current world's system_meta when it changes.
+
+        Args:
+            _theme_dict: The new theme dictionary from ThemeManager (unused).
+
+        """
+        try:
+            if not hasattr(self, "gui_db_service") or self.gui_db_service is None:
+                return
+            from src.core.theme_manager import ThemeManager
+
+            theme_name = ThemeManager().current_theme_name
+            self.gui_db_service.set_world_theme(theme_name)
+        except Exception as e:
+            logger.warning(f"Failed to save world theme: {e}")
 
     def _on_theme_changed_for_titlebar(self, theme_dict: dict) -> None:
         """Update Windows title bar style when theme changes.
