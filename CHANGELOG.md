@@ -18,6 +18,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - *(2026-03-03)* **Stability**: Hardened `SheetBuilder` with `RuntimeError` guards for height adjustments during layout reloads.
 - *(2026-03-03)* **Stability**: Integrated `shiboken6.isValid` checks in `WikiTextEdit` to prevent C++ destruction crashes.
+- *(2026-03-01)* **Bug**: Resolved cursor jumping issues in WikiTextEdit and inspectors by normalizing newline handling and suppressing redundant change signals.
 - *(2026-03-03)* **UI**: Fixed wiki editor not rerendering on undo when the selected entity or event remains the same.
 
 ### Documentation
