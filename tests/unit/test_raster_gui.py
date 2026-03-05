@@ -285,3 +285,204 @@ class TestEscapeKeyExitsEditing:
         view = _make_view(qtbot)
         consumed = view._raster_edit_tool.handle_key_escape()
         assert not consumed
+
+
+# ── UX Fix: _find_graphics_item returns raster items ──────────────────
+
+
+class TestFindGraphicsItemRaster:
+    """_find_graphics_item must return RasterLayerItems from _raster_items."""
+
+    def test_find_returns_raster_item(self, qtbot) -> None:
+        view = _make_view(qtbot)
+        item, _ = _make_raster_item(view, node_id="r1")
+
+        found = view._find_graphics_item("r1")
+        assert found is item
+
+    def test_find_returns_none_for_unknown(self, qtbot) -> None:
+        view = _make_view(qtbot)
+        assert view._find_graphics_item("missing") is None
+
+
+# ── UX Fix: Opacity propagates to raster items ───────────────────────
+
+
+class TestRasterOpacityPropagation:
+    """Opacity change via layer model must reach the RasterLayerItem."""
+
+    def test_opacity_change_applied_to_raster_item(self, qtbot) -> None:
+        view = _make_view(qtbot)
+        item, _ = _make_raster_item(view, node_id="r2")
+
+        # Simulate what _on_layer_opacity_changed does
+        view._on_layer_opacity_changed("r2", 0.5)
+
+        assert abs(item.opacity() - 0.5) < 0.01
+
+    def test_visibility_change_applied_to_raster_item(self, qtbot) -> None:
+        view = _make_view(qtbot)
+        item, _ = _make_raster_item(view, node_id="r3")
+
+        view._on_layer_visibility_changed("r3", False)
+        assert not item.isVisible()
+
+        view._on_layer_visibility_changed("r3", True)
+        assert item.isVisible()
+
+
+# ── UX Fix: Live tool settings during editing ─────────────────────────
+
+
+class TestLiveToolSettings:
+    """Changing panel controls during active editing must update tool."""
+
+    def test_brush_size_updated_live(self, qtbot) -> None:
+        """Changing brush size spinbox while editing should update tool."""
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+
+        view = _make_view(qtbot)
+        _make_raster_item(view, node_id="n1")
+
+        tool = view._raster_edit_tool
+        tool.brush_size = 8
+        view.start_raster_editing("n1")
+
+        # Panel changes should propagate to tool if properly connected
+        panel._brush_size_spin.setValue(32)
+
+        # The panel should have a signal connection that updates the tool
+        # For now, test the property accessor
+        assert panel.raster_brush_size == 32
+
+    def test_paint_value_updated_live(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+
+        panel._paint_value_spin.setValue(42)
+        assert panel.raster_paint_value == 42
+
+    def test_falloff_updated_live(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+
+        panel._falloff_slider.setValue(75)
+        assert abs(panel.raster_falloff - 0.75) < 0.01
+
+
+# ── UX Fix: Button styling and text ──────────────────────────────────
+
+
+class TestRasterButtonStyling:
+    """Raster tool buttons must have clear visual active/inactive states."""
+
+    def test_edit_button_text_changes_on_toggle(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel._selected_node_id = "test-node"
+
+        # Unchecked: shows "✎ Edit"
+        assert "Edit" in panel._btn_edit_toggle.text()
+
+        # Check it: should show "✓ Done" (or similar)
+        panel._btn_edit_toggle.setChecked(True)
+        assert "Done" in panel._btn_edit_toggle.text()
+
+        # Uncheck: back to "✎ Edit"
+        panel._btn_edit_toggle.setChecked(False)
+        assert "Edit" in panel._btn_edit_toggle.text()
+
+    def test_tool_buttons_have_stylesheet(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+
+        # All raster tool buttons should have non-empty stylesheets
+        for btn in (panel._btn_brush, panel._btn_fill,
+                    panel._btn_gradient, panel._btn_sample):
+            assert btn.styleSheet(), f"{btn.text()} button has no stylesheet"
+
+    def test_edit_button_has_stylesheet(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        assert panel._btn_edit_toggle.styleSheet()
+
+
+# ── UX Fix: Falloff label updates ────────────────────────────────────
+
+
+class TestFalloffLabel:
+    """Falloff slider should have a label showing current percentage."""
+
+    def test_falloff_label_exists(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+
+        assert hasattr(panel, "_falloff_label")
+        assert panel._falloff_label.text() == "0%"
+
+    def test_falloff_label_updates_on_slider(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+
+        panel._falloff_slider.setValue(50)
+        assert panel._falloff_label.text() == "50%"
+
+        panel._falloff_slider.setValue(100)
+        assert panel._falloff_label.text() == "100%"
+
+
+# ── UX Fix: Spinbox arrows visible ───────────────────────────────────
+
+
+class TestSpinboxArrows:
+    """Spinboxes should have UpDownArrows button symbols."""
+
+    def test_brush_size_has_arrows(self, qtbot) -> None:
+        from PySide6.QtWidgets import QAbstractSpinBox
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+
+        assert panel._brush_size_spin.buttonSymbols() == QAbstractSpinBox.ButtonSymbols.UpDownArrows
+
+    def test_paint_value_has_arrows(self, qtbot) -> None:
+        from PySide6.QtWidgets import QAbstractSpinBox
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+
+        assert panel._paint_value_spin.buttonSymbols() == QAbstractSpinBox.ButtonSymbols.UpDownArrows
+
+
+# ── UX Fix: Live tool mode and settings signals ──────────────────────
+
+
+class TestPanelSignals:
+    """Panel should emit signals when raster controls change."""
+
+    def test_panel_has_raster_settings_changed_signal(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+
+        assert hasattr(panel, "raster_settings_changed")

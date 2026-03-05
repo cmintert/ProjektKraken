@@ -427,6 +427,40 @@ class MapLayerMixin:
             logger.warning("_on_raster_edit_stopped: no view available")
         self.raster_edit_stopped.emit()
 
+    @Slot()
+    def _on_raster_settings_changed(self) -> None:
+        """Push updated tool settings from the panel to the active tool."""
+        from src.gui.widgets.map.raster_edit_tool import RasterEditMode
+
+        view = getattr(self, "view", None)
+        panel = getattr(self, "layer_panel", None)
+        if view is None or panel is None:
+            return
+
+        tool = view._raster_edit_tool
+        if not tool.is_active:
+            return
+
+        mode_map = {
+            "brush": RasterEditMode.BRUSH,
+            "fill": RasterEditMode.FILL,
+            "gradient": RasterEditMode.GRADIENT,
+            "sample": RasterEditMode.SAMPLE,
+        }
+        tool.mode = mode_map.get(panel.raster_tool_mode, RasterEditMode.BRUSH)
+        tool.brush_size = panel.raster_brush_size
+        tool.paint_value = panel.raster_paint_value
+        tool.falloff = panel.raster_falloff
+
+        logger.debug(
+            "_on_raster_settings_changed: mode=%s brush_size=%d "
+            "paint_value=%d falloff=%.2f",
+            tool.mode.name,
+            tool.brush_size,
+            tool.paint_value,
+            tool.falloff,
+        )
+
     def get_layer_model(self) -> Optional[MapLayerModel]:
         """Return the current layer model (if any).
 

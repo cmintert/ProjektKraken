@@ -415,6 +415,34 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_raster_tool_button_style() -> str:
+        """Style for raster editing tool buttons with prominent checked state.
+
+        Uses a highlighted primary background and contrasting border when
+        checked so the active tool/mode is immediately obvious.
+
+        Returns:
+            str: QSS stylesheet string for raster tool buttons.
+        """
+        theme = ThemeManager().get_theme()
+        primary = theme.get("primary", "#5C82FF")
+        surface = theme.get("surface", "#1E1E1E")
+        text_main = theme.get("text_main", "#E0E0E0")
+        border = theme.get("border", "#333333")
+        app_bg = theme.get("app_bg", "#121212")
+
+        return (
+            f"QPushButton {{ background-color: {surface}; "
+            f"color: {text_main}; border: 1px solid {border}; "
+            f"border-radius: 4px; padding: 4px 8px; font-size: 11px; }}"
+            f"QPushButton:hover {{ background-color: {border}; }}"
+            f"QPushButton:pressed {{ background-color: {app_bg}; }}"
+            f"QPushButton:checked {{ "
+            f"background-color: {primary}; color: white; "
+            f"border: 2px solid {primary}; font-weight: bold; }}"
+        )
+
+    @staticmethod
     def get_flat_tool_button_style() -> str:
         """
         Returns QSS for flat tool buttons typically used in headers or toolbars.

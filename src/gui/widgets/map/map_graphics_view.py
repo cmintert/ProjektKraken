@@ -1315,12 +1315,19 @@ class MapGraphicsView(QGraphicsView):
     def _find_graphics_item(self, node_id: str) -> Optional[QGraphicsItem]:
         """Look up a graphics item by layer node ID.
 
+        Checks both the marker manager (for markers/polygons/connections)
+        and the raster item registry.
+
         Args:
             node_id: ID of the layer node.
 
         Returns:
             The matching QGraphicsItem, or None.
         """
+        # Check raster items first (fast dict lookup)
+        raster_item = self._raster_items.get(node_id)
+        if raster_item is not None:
+            return raster_item
         return self._marker_manager.find_item(node_id)
 
     # ------------------------------------------------------------------

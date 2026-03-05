@@ -424,6 +424,9 @@ class MapWidget(
         self.layer_panel.raster_palette_edit_requested.connect(
             self.raster_palette_edit_requested.emit
         )
+        self.layer_panel.raster_settings_changed.connect(
+            self._on_raster_settings_changed
+        )
 
         # Forward raster signals from the graphics view
         self.view.raster_stroke_completed.connect(self.raster_stroke_completed.emit)

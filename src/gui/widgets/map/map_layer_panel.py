@@ -71,6 +71,7 @@ class MapLayerPanel(QWidget):
     raster_edit_requested = Signal(str)  # node_id — start editing
     raster_edit_stopped = Signal()  # stop editing
     raster_palette_edit_requested = Signal(str)  # node_id
+    raster_settings_changed = Signal()  # tool settings changed during editing
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialise the panel.
@@ -178,6 +179,7 @@ class MapLayerPanel(QWidget):
         self._btn_sample.setCheckable(True)
         for b in (self._btn_brush, self._btn_fill, self._btn_gradient, self._btn_sample):
             b.setAutoExclusive(True)
+            b.toggled.connect(self._on_tool_mode_changed)
             tool_row.addWidget(b)
         rt_layout.addLayout(tool_row)
 
@@ -188,24 +190,39 @@ class MapLayerPanel(QWidget):
         self._brush_size_spin = QSpinBox()
         self._brush_size_spin.setRange(1, 128)
         self._brush_size_spin.setValue(8)
+        self._brush_size_spin.setButtonSymbols(
+            QSpinBox.ButtonSymbols.UpDownArrows
+        )
+        self._brush_size_spin.valueChanged.connect(self._on_raster_setting_changed)
         settings_row.addWidget(self._brush_size_spin)
         settings_row.addWidget(QLabel("Value:"))
         self._paint_value_spin = QSpinBox()
         self._paint_value_spin.setRange(0, 65535)
         self._paint_value_spin.setValue(1)
+        self._paint_value_spin.setButtonSymbols(
+            QSpinBox.ButtonSymbols.UpDownArrows
+        )
+        self._paint_value_spin.valueChanged.connect(self._on_raster_setting_changed)
         settings_row.addWidget(self._paint_value_spin)
         settings_row.addWidget(QLabel("Falloff:"))
         self._falloff_slider = QSlider(Qt.Orientation.Horizontal)
         self._falloff_slider.setRange(0, 100)
         self._falloff_slider.setValue(0)
         self._falloff_slider.setToolTip("Brush falloff (0=hard, 100=soft)")
+        self._falloff_slider.valueChanged.connect(self._on_falloff_changed)
         settings_row.addWidget(self._falloff_slider)
+        self._falloff_label = QLabel("0%")
+        self._falloff_label.setMinimumWidth(32)
+        self._falloff_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
+        settings_row.addWidget(self._falloff_label)
         rt_layout.addLayout(settings_row)
 
         # Edit / Done toggle + Palette button
         action_row = QHBoxLayout()
         action_row.setSpacing(4)
-        self._btn_edit_toggle = QPushButton("Edit")
+        self._btn_edit_toggle = QPushButton("✎ Edit")
         self._btn_edit_toggle.setCheckable(True)
         self._btn_edit_toggle.toggled.connect(self._on_edit_toggled)
         action_row.addWidget(self._btn_edit_toggle)
@@ -294,6 +311,17 @@ class MapLayerPanel(QWidget):
             f"color: {self._theme_token('text_main')}; font-size: 9pt;"
         )
         self._apply_tree_style()
+
+        # Raster tool buttons — prominent checked state
+        raster_style = StyleHelper.get_raster_tool_button_style()
+        for btn in (
+            self._btn_brush,
+            self._btn_fill,
+            self._btn_gradient,
+            self._btn_sample,
+            self._btn_edit_toggle,
+        ):
+            btn.setStyleSheet(raster_style)
 
     # ------------------------------------------------------------------
     # Private — style helpers
@@ -537,15 +565,35 @@ class MapLayerPanel(QWidget):
 
     def _on_edit_toggled(self, checked: bool) -> None:
         """Handle the Edit / Done toggle button."""
-        if checked and self._selected_node_id:
-            self.raster_edit_requested.emit(self._selected_node_id)
+        if checked:
+            self._btn_edit_toggle.setText("✓ Done")
+            if self._selected_node_id:
+                self.raster_edit_requested.emit(self._selected_node_id)
         else:
+            self._btn_edit_toggle.setText("✎ Edit")
             self.raster_edit_stopped.emit()
 
     def _on_palette_clicked(self) -> None:
         """Open the palette editor for the selected raster layer."""
         if self._selected_node_id:
             self.raster_palette_edit_requested.emit(self._selected_node_id)
+
+    @Slot()
+    def _on_falloff_changed(self) -> None:
+        """Update falloff label and emit settings changed."""
+        value = self._falloff_slider.value()
+        self._falloff_label.setText(f"{value}%")
+        self._on_raster_setting_changed()
+
+    @Slot()
+    def _on_raster_setting_changed(self) -> None:
+        """Emit raster_settings_changed when any tool setting changes."""
+        self.raster_settings_changed.emit()
+
+    @Slot(bool)
+    def _on_tool_mode_changed(self, _checked: bool) -> None:
+        """Emit settings changed when tool mode button is toggled."""
+        self.raster_settings_changed.emit()
 
     @property
     def raster_tool_mode(self) -> str:
