@@ -538,3 +538,187 @@ class PaintRasterCommand(BaseCommand):
             value=data["value"],
             falloff=data.get("falloff", 0.0),
         )
+
+
+class StrokeRasterCommand(BaseCommand):
+    """Undoable region-snapshot command for completed raster strokes.
+
+    Stores compressed before/after snapshots of the dirty region so
+    that an entire brush drag, flood fill, or gradient operation can
+    be undone in a single step.
+
+    Args:
+        map_id: Parent map ID.
+        node_id: Raster layer node ID.
+        dirty_region: ``(min_col, min_row, max_col, max_row)``.
+        before_bytes: Raw ``uint16`` bytes of the region before the edit.
+        after_bytes: Raw ``uint16`` bytes of the region after the edit.
+    """
+
+    def __init__(
+        self,
+        map_id: str,
+        node_id: str,
+        dirty_region: tuple[int, int, int, int],
+        before_bytes: bytes,
+        after_bytes: bytes,
+    ) -> None:
+        super().__init__()
+        self.map_id = map_id
+        self.node_id = node_id
+        self.dirty_region = dirty_region
+        self._before_bytes = before_bytes
+        self._after_bytes = after_bytes
+
+        # Injected at execution time by the caller
+        self.buffer: Optional[MapDataBuffer] = None
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Apply the after-snapshot to the buffer.
+
+        The buffer is typically already in the "after" state (the tool
+        already painted live).  This command exists for the undo stack.
+        If the buffer has been reverted we re-apply ``after_bytes``.
+        """
+        if self.buffer is None:
+            return CommandResult(
+                success=False,
+                message="No buffer attached.",
+                command_name="StrokeRasterCommand",
+            )
+        try:
+            self._apply_snapshot(self._after_bytes)
+            self._is_executed = True
+            return CommandResult(
+                success=True,
+                message="Stroke applied.",
+                command_name="StrokeRasterCommand",
+            )
+        except Exception as e:
+            logger.error("StrokeRasterCommand.execute failed: %s", e)
+            return CommandResult(
+                success=False, message=str(e), command_name="StrokeRasterCommand"
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Restore the before-snapshot."""
+        if self._is_executed and self.buffer is not None:
+            self._apply_snapshot(self._before_bytes)
+            self._is_executed = False
+
+    def _apply_snapshot(self, raw: bytes) -> None:
+        """Write raw uint16 bytes back into the buffer's dirty region."""
+        if self.buffer is None:
+            return
+        d = self.dirty_region
+        w = d[2] - d[0] + 1
+        h = d[3] - d[1] + 1
+        arr = np.frombuffer(raw, dtype=np.uint16).reshape((h, w))
+        self.buffer.set_region(d[0], d[1], arr)
+
+    @property
+    def has_history(self) -> bool:
+        """Stroke commands are session-only (not persisted to file)."""
+        return False
+
+    def to_dict(self) -> Dict:
+        """Minimal serialization."""
+        return {
+            "map_id": self.map_id,
+            "node_id": self.node_id,
+            "dirty_region": list(self.dirty_region),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "StrokeRasterCommand":
+        """Deserialize (lossy — byte data not persisted)."""
+        return cls(
+            map_id=data["map_id"],
+            node_id=data["node_id"],
+            dirty_region=tuple(data["dirty_region"]),
+            before_bytes=b"",
+            after_bytes=b"",
+        )
+
+
+class SetRasterMappingCommand(BaseCommand):
+    """Undoable command to update a raster layer's value→entity mapping.
+
+    Persists the mapping to ``maps.attributes`` in the database.
+
+    Args:
+        map_id: Parent map ID.
+        node_id: Raster layer node ID.
+        new_mapping: New ``value_entity_map`` dict.
+        old_mapping: Previous ``value_entity_map`` dict (for undo).
+    """
+
+    def __init__(
+        self,
+        map_id: str,
+        node_id: str,
+        new_mapping: Dict[str, Any],
+        old_mapping: Dict[str, Any],
+    ) -> None:
+        super().__init__()
+        self.map_id = map_id
+        self.node_id = node_id
+        self.new_mapping = new_mapping
+        self.old_mapping = old_mapping
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Apply the new mapping to the map's attributes."""
+        try:
+            self._set_mapping(db_service, self.new_mapping)
+            self._is_executed = True
+            return CommandResult(
+                success=True,
+                message="Mapping updated.",
+                command_name="SetRasterMappingCommand",
+            )
+        except Exception as e:
+            logger.error("SetRasterMappingCommand failed: %s", e)
+            return CommandResult(
+                success=False, message=str(e), command_name="SetRasterMappingCommand"
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Restore the old mapping."""
+        if self._is_executed:
+            self._set_mapping(db_service, self.old_mapping)
+            self._is_executed = False
+
+    def _set_mapping(
+        self, db_service: DatabaseService, mapping: Dict[str, Any]
+    ) -> None:
+        """Write mapping dict into the raster layer's metadata."""
+        repo = db_service.map_repository
+        map_obj = repo.get_map(self.map_id)
+        if map_obj is None:
+            raise ValueError(f"Map not found: {self.map_id}")
+        raster_layers = _get_raster_layers(map_obj)
+        for rl in raster_layers:
+            if rl.get("node_id") == self.node_id:
+                rl["value_entity_map"] = mapping
+                break
+        _set_raster_layers(map_obj, raster_layers)
+        repo.insert_map(map_obj)
+
+    def to_dict(self) -> Dict:
+        """Serialize command."""
+        return {
+            "map_id": self.map_id,
+            "node_id": self.node_id,
+            "new_mapping": self.new_mapping,
+            "old_mapping": self.old_mapping,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "SetRasterMappingCommand":
+        """Deserialize command."""
+        return cls(
+            map_id=data["map_id"],
+            node_id=data["node_id"],
+            new_mapping=data.get("new_mapping", {}),
+            old_mapping=data.get("old_mapping", {}),
+        )

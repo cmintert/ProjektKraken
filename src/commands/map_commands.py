@@ -46,6 +46,8 @@ from src.commands.raster_commands import (  # noqa: F401
     CreateRasterLayerCommand,
     DeleteRasterLayerCommand,
     PaintRasterCommand,
+    SetRasterMappingCommand,
+    StrokeRasterCommand,
 )
 
 __all__ = [
@@ -72,4 +74,6 @@ __all__ = [
     "CreateRasterLayerCommand",
     "DeleteRasterLayerCommand",
     "PaintRasterCommand",
+    "StrokeRasterCommand",
+    "SetRasterMappingCommand",
 ]

@@ -362,6 +362,41 @@ class MapLayerMixin:
                 data["default_value"],
             )
 
+    @Slot(str)
+    def _on_raster_edit_requested(self, node_id: str) -> None:
+        """Start raster editing mode in the graphics view."""
+        from src.gui.widgets.map.raster_edit_tool import RasterEditMode
+
+        view = getattr(self, "view", None)
+        panel = getattr(self, "layer_panel", None)
+        if view is None or panel is None:
+            return
+
+        # Apply current tool settings
+        tool = view._raster_edit_tool
+        mode_name = panel.raster_tool_mode
+        mode_map = {
+            "brush": RasterEditMode.BRUSH,
+            "fill": RasterEditMode.FILL,
+            "gradient": RasterEditMode.GRADIENT,
+            "sample": RasterEditMode.SAMPLE,
+        }
+        tool.mode = mode_map.get(mode_name, RasterEditMode.BRUSH)
+        tool.brush_size = panel.raster_brush_size
+        tool.paint_value = panel.raster_paint_value
+        tool.falloff = panel.raster_falloff
+
+        view.start_raster_editing(node_id)
+        self.raster_edit_requested.emit(node_id)
+
+    @Slot()
+    def _on_raster_edit_stopped(self) -> None:
+        """Stop raster editing mode in the graphics view."""
+        view = getattr(self, "view", None)
+        if view is not None:
+            view.stop_raster_editing()
+        self.raster_edit_stopped.emit()
+
     def get_layer_model(self) -> Optional[MapLayerModel]:
         """Return the current layer model (if any).
 

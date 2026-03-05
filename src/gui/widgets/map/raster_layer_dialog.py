@@ -107,7 +107,7 @@ class RasterLayerDialog(QDialog):
         layout.addWidget(buttons)
 
         # Apply theme
-        StyleHelper.apply_dialog_style(self)
+        self.setStyleSheet(StyleHelper.get_dialog_base_style())
 
     # ------------------------------------------------------------------
     # Public API

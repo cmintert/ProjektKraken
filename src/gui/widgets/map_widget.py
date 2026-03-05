@@ -208,6 +208,11 @@ class MapWidget(
     layer_rename_requested = Signal(str, str)  # node_id, new_name
     layer_delete_feature_requested = Signal(str)  # object_id of deleted leaf
     create_raster_layer_requested = Signal(str, int, int, str, int)  # name,w,h,mode,def
+    raster_edit_requested = Signal(str)  # node_id — start raster editing
+    raster_edit_stopped = Signal()  # stop raster editing
+    raster_stroke_completed = Signal(str, tuple, bytes, bytes)  # node_id, dirty, before, after
+    raster_value_probed = Signal(str, int, float, float)  # node_id, value, x, y
+    raster_palette_edit_requested = Signal(str)  # node_id
 
     # Emitted when inline entity/event creation is requested from the map.
     create_entity_requested = Signal(str, str)  # new_id, name
@@ -414,6 +419,15 @@ class MapWidget(
         self.layer_panel.create_raster_layer_requested.connect(
             self._on_create_raster_layer
         )
+        self.layer_panel.raster_edit_requested.connect(self._on_raster_edit_requested)
+        self.layer_panel.raster_edit_stopped.connect(self._on_raster_edit_stopped)
+        self.layer_panel.raster_palette_edit_requested.connect(
+            self.raster_palette_edit_requested.emit
+        )
+
+        # Forward raster signals from the graphics view
+        self.view.raster_stroke_completed.connect(self.raster_stroke_completed.emit)
+        self.view.raster_value_probed.connect(self.raster_value_probed.emit)
 
         self._maps_data = []  # List of maps for selector
         self._playhead_time: float = 0.0  # Current playhead time from Timeline

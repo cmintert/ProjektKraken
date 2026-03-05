@@ -394,6 +394,59 @@ class MapDataBuffer:
         return buf
 
     # ------------------------------------------------------------------
+    # Partial colorisation
+    # ------------------------------------------------------------------
+
+    def colorize_region(
+        self,
+        color_map: ColorMap,
+        min_col: int,
+        min_row: int,
+        max_col: int,
+        max_row: int,
+    ) -> QImage:
+        """Colourize a rectangular sub-region of the buffer.
+
+        Args:
+            color_map: Colour mapping to apply.
+            min_col: Left column (inclusive).
+            min_row: Top row (inclusive).
+            max_col: Right column (inclusive).
+            max_row: Bottom row (inclusive).
+
+        Returns:
+            QImage (RGBA8888) covering the requested region.
+
+        """
+        min_col = max(0, min_col)
+        min_row = max(0, min_row)
+        max_col = min(self._width - 1, max_col)
+        max_row = min(self._height - 1, max_row)
+
+        region = self._data[min_row : max_row + 1, min_col : max_col + 1]
+        rh, rw = region.shape
+        rgba = np.zeros((rh, rw, 4), dtype=np.uint8)
+
+        if color_map.type == "palette":
+            for entry in color_map.entries:
+                r, g, b, a = _hex_to_rgba(entry.color)
+                mask = region == entry.value
+                rgba[mask] = [r, g, b, a]
+        else:
+            sr, sg, sb, sa = _hex_to_rgba(color_map.gradient_start)
+            er, eg, eb, ea = _hex_to_rgba(color_map.gradient_end)
+            t = region.astype(np.float32) / 65535.0
+            rgba[:, :, 0] = (sr + (er - sr) * t).astype(np.uint8)
+            rgba[:, :, 1] = (sg + (eg - sg) * t).astype(np.uint8)
+            rgba[:, :, 2] = (sb + (eb - sb) * t).astype(np.uint8)
+            rgba[:, :, 3] = (sa + (ea - sa) * t).astype(np.uint8)
+
+        image = QImage(
+            rgba.data, rw, rh, rw * 4, QImage.Format.Format_RGBA8888
+        )
+        return image.copy()
+
+    # ------------------------------------------------------------------
     # Bucket fill
     # ------------------------------------------------------------------
 
@@ -405,3 +458,130 @@ class MapDataBuffer:
 
         """
         self._data[:] = np.uint16(max(0, min(value, 65535)))
+
+    # ------------------------------------------------------------------
+    # Flood fill
+    # ------------------------------------------------------------------
+
+    def flood_fill(
+        self, x_norm: float, y_norm: float, value: int
+    ) -> Tuple[int, int, int, int]:
+        """Queue-based flood fill from a seed point.
+
+        Replaces all connected pixels sharing the seed's value with
+        *value*.  Uses 4-connectivity (no diagonals).
+
+        Args:
+            x_norm: Normalised X of seed [0, 1].
+            y_norm: Normalised Y of seed [0, 1].
+            value: Replacement value (0–65535).
+
+        Returns:
+            Dirty region ``(min_col, min_row, max_col, max_row)``.
+
+        """
+        col, row = self._norm_to_pixel(x_norm, y_norm)
+        target = int(self._data[row, col])
+        fill_val = np.uint16(max(0, min(value, 65535)))
+
+        if target == fill_val:
+            return (col, row, col, row)
+
+        min_c, max_c = col, col
+        min_r, max_r = row, row
+
+        visited = np.zeros((self._height, self._width), dtype=np.bool_)
+        queue: list[Tuple[int, int]] = [(col, row)]
+        visited[row, col] = True
+
+        while queue:
+            c, r = queue.pop()
+            self._data[r, c] = fill_val
+            min_c = min(min_c, c)
+            max_c = max(max_c, c)
+            min_r = min(min_r, r)
+            max_r = max(max_r, r)
+
+            for dc, dr in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nc, nr = c + dc, r + dr
+                if (
+                    0 <= nc < self._width
+                    and 0 <= nr < self._height
+                    and not visited[nr, nc]
+                    and int(self._data[nr, nc]) == target
+                ):
+                    visited[nr, nc] = True
+                    queue.append((nc, nr))
+
+        return (min_c, min_r, max_c, max_r)
+
+    # ------------------------------------------------------------------
+    # Gradient paint
+    # ------------------------------------------------------------------
+
+    def paint_gradient(
+        self,
+        x0_norm: float,
+        y0_norm: float,
+        x1_norm: float,
+        y1_norm: float,
+        value_start: int,
+        value_end: int,
+        width_px: int = 0,
+    ) -> Tuple[int, int, int, int]:
+        """Paint a linear gradient between two normalised points.
+
+        Args:
+            x0_norm: Start X [0, 1].
+            y0_norm: Start Y [0, 1].
+            x1_norm: End X [0, 1].
+            y1_norm: End Y [0, 1].
+            value_start: Value at start point.
+            value_end: Value at end point.
+            width_px: Perpendicular half-width in pixels.  0 means the
+                gradient covers the entire buffer projection (no width
+                constraint).
+
+        Returns:
+            Dirty region ``(min_col, min_row, max_col, max_row)``.
+
+        """
+        c0, r0 = self._norm_to_pixel(x0_norm, y0_norm)
+        c1, r1 = self._norm_to_pixel(x1_norm, y1_norm)
+
+        dx = float(c1 - c0)
+        dy = float(r1 - r0)
+        length = max(1.0, np.sqrt(dx * dx + dy * dy))
+
+        # Determine affected region
+        if width_px > 0:
+            min_col = max(0, min(c0, c1) - width_px)
+            max_col = min(self._width - 1, max(c0, c1) + width_px)
+            min_row = max(0, min(r0, r1) - width_px)
+            max_row = min(self._height - 1, max(r0, r1) + width_px)
+        else:
+            min_col, max_col = 0, self._width - 1
+            min_row, max_row = 0, self._height - 1
+
+        rows = np.arange(min_row, max_row + 1)
+        cols = np.arange(min_col, max_col + 1)
+        cc, rr = np.meshgrid(cols, rows)
+
+        # Project onto gradient axis: t ∈ [0, 1]
+        t = ((cc - c0) * dx + (rr - r0) * dy) / (length * length)
+        t = np.clip(t, 0.0, 1.0)
+
+        # Perpendicular distance
+        if width_px > 0:
+            perp = np.abs((cc - c0) * (-dy) + (rr - r0) * dx) / length
+            mask = perp <= width_px
+        else:
+            mask = np.ones_like(t, dtype=bool)
+
+        vals = (value_start + (value_end - value_start) * t).astype(np.uint16)
+        region = self._data[min_row : max_row + 1, min_col : max_col + 1]
+        self._data[min_row : max_row + 1, min_col : max_col + 1] = np.where(
+            mask, vals, region
+        )
+
+        return (min_col, min_row, max_col, max_row)

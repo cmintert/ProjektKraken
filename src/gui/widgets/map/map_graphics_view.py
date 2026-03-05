@@ -577,6 +577,10 @@ class MapGraphicsView(QGraphicsView):
     # -- Visual styling signal (marker_id, style_overrides_dict) --
     marker_visual_style_changed = Signal(str, dict)
 
+    # -- Raster editing signals --
+    raster_stroke_completed = Signal(str, tuple, bytes, bytes)  # node_id, dirty, before, after
+    raster_value_probed = Signal(str, int, float, float)  # node_id, value, x, y
+
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the MapGraphicsView.
 
@@ -672,6 +676,10 @@ class MapGraphicsView(QGraphicsView):
         self._marker_manager = MarkerManager(self)
         self._trajectory = TrajectoryRenderer(self)
         self._interaction = InteractionHandler(self)
+
+        from src.gui.widgets.map.raster_edit_tool import RasterEditTool
+
+        self._raster_edit_tool = RasterEditTool(self)
 
         # Label layout engine (Greedy PAL-Lite)
         self.label_manager = LabelManager()
@@ -858,6 +866,22 @@ class MapGraphicsView(QGraphicsView):
     def _show_color_picker(self, marker_item: MarkerItem) -> None:
         """Backward-compatible alias for InteractionHandler."""
         self._interaction.show_color_picker(marker_item)
+
+    # ------------------------------------------------------------------
+    # Raster editing public API
+    # ------------------------------------------------------------------
+
+    def start_raster_editing(self, node_id: str) -> None:
+        """Enter raster editing mode for a layer.
+
+        Args:
+            node_id: Raster layer node ID to edit.
+        """
+        self._raster_edit_tool.start_editing(node_id)
+
+    def stop_raster_editing(self) -> None:
+        """Exit raster editing mode."""
+        self._raster_edit_tool.stop_editing()
 
     # ------------------------------------------------------------------
     # Size hints & lifecycle
@@ -1402,7 +1426,14 @@ class MapGraphicsView(QGraphicsView):
     # ------------------------------------------------------------------
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        """Handle mouse press: drawing, calibration, or normal."""
+        """Handle mouse press: raster edit, drawing, calibration, or normal."""
+        # Raster editing mode (highest priority)
+        if self._raster_edit_tool.is_active and self.pixmap_item:
+            if event.button() == Qt.MouseButton.LeftButton:
+                scene_pos = self.mapToScene(event.position().toPoint())
+                if self._raster_edit_tool.handle_mouse_press(scene_pos):
+                    return
+
         # Drawing mode
         if self._drawing_tool.is_drawing and self.pixmap_item:
             if event.button() == Qt.MouseButton.LeftButton:
@@ -1451,15 +1482,26 @@ class MapGraphicsView(QGraphicsView):
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Reset drag mode on release."""
+        # Raster editing
+        if self._raster_edit_tool.is_active and self.pixmap_item:
+            if event.button() == Qt.MouseButton.LeftButton:
+                scene_pos = self.mapToScene(event.position().toPoint())
+                if self._raster_edit_tool.handle_mouse_release(scene_pos):
+                    return
+
         super().mouseReleaseEvent(event)
-        if not self.calibration_mode:
+        if not self.calibration_mode and not self._raster_edit_tool.is_active:
             self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        """Handle mouse move: drawing preview, vertex editing, coordinates."""
-        super().mouseMoveEvent(event)
-
+        """Handle mouse move: raster edit, drawing preview, vertex editing, coordinates."""
         scene_pos = self.mapToScene(event.position().toPoint())
+
+        # Raster editing (before super to avoid ScrollHandDrag panning)
+        if self._raster_edit_tool.is_active:
+            self._raster_edit_tool.handle_mouse_move(scene_pos)
+        else:
+            super().mouseMoveEvent(event)
 
         # Drawing mode
         if self._drawing_tool.handle_mouse_move(scene_pos):
@@ -1521,6 +1563,8 @@ class MapGraphicsView(QGraphicsView):
                 return
 
         if event.key() == Qt.Key.Key_Escape:
+            if self._raster_edit_tool.handle_key_escape():
+                return
             if self._drawing_tool.handle_key_escape():
                 return
             if self._vertex_editor.handle_key_escape():

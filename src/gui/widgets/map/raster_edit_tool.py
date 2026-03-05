@@ -1,0 +1,461 @@
+"""Raster Edit Tool for the Map Graphics View.
+
+Manages interactive raster editing: brush painting, flood fill,
+gradient painting, and value sampling.  Follows the same delegation
+pattern as :class:`DrawingTool` — the parent
+:class:`MapGraphicsView` calls ``handle_mouse_*`` and the tool
+returns ``True`` when it consumes the event.
+"""
+
+import logging
+from enum import Enum, auto
+from typing import TYPE_CHECKING, Optional
+
+import numpy as np
+from PySide6.QtCore import QPointF, QRectF, Qt
+from PySide6.QtGui import QBrush, QColor, QPen
+from PySide6.QtWidgets import (
+    QGraphicsEllipseItem,
+    QGraphicsView,
+)
+
+from src.app.constants import MAP_LAYER_Z_UI_OVERLAY
+from src.gui.widgets.map.raster_layer_item import RasterLayerItem
+
+if TYPE_CHECKING:
+    from src.gui.widgets.map.map_graphics_view import MapGraphicsView
+
+logger = logging.getLogger(__name__)
+
+
+class RasterEditMode(Enum):
+    """Sub-modes for the raster editing tool."""
+
+    BRUSH = auto()
+    FILL = auto()
+    GRADIENT = auto()
+    SAMPLE = auto()
+
+
+class RasterEditTool:
+    """Interactive raster editing delegated from MapGraphicsView.
+
+    Args:
+        view: The parent MapGraphicsView.
+    """
+
+    def __init__(self, view: "MapGraphicsView") -> None:
+        self._view = view
+
+        # State
+        self._active: bool = False
+        self._mode: RasterEditMode = RasterEditMode.BRUSH
+        self._active_node_id: Optional[str] = None
+
+        # Tool settings
+        self._brush_size: int = 8
+        self._paint_value: int = 1
+        self._falloff: float = 0.0
+
+        # Brush stroke accumulation
+        self._stroke_active: bool = False
+        self._stroke_before: Optional[np.ndarray] = None
+        self._stroke_dirty: Optional[tuple[int, int, int, int]] = None
+
+        # Gradient state
+        self._gradient_start: Optional[QPointF] = None
+
+        # Cursor overlay
+        self._cursor_item: Optional[QGraphicsEllipseItem] = None
+
+    # ------------------------------------------------------------------
+    # Properties
+    # ------------------------------------------------------------------
+
+    @property
+    def is_active(self) -> bool:
+        """True when raster editing mode is on."""
+        return self._active
+
+    @property
+    def mode(self) -> RasterEditMode:
+        """Current editing sub-mode."""
+        return self._mode
+
+    @mode.setter
+    def mode(self, value: RasterEditMode) -> None:
+        self._mode = value
+
+    @property
+    def brush_size(self) -> int:
+        """Brush radius in buffer pixels."""
+        return self._brush_size
+
+    @brush_size.setter
+    def brush_size(self, value: int) -> None:
+        self._brush_size = max(1, min(value, 128))
+
+    @property
+    def paint_value(self) -> int:
+        """Value to paint (0–65535)."""
+        return self._paint_value
+
+    @paint_value.setter
+    def paint_value(self, value: int) -> None:
+        self._paint_value = max(0, min(value, 65535))
+
+    @property
+    def falloff(self) -> float:
+        """Brush falloff (0.0 = hard, 1.0 = full linear)."""
+        return self._falloff
+
+    @falloff.setter
+    def falloff(self, value: float) -> None:
+        self._falloff = max(0.0, min(value, 1.0))
+
+    @property
+    def active_node_id(self) -> Optional[str]:
+        """Node ID of the raster layer being edited."""
+        return self._active_node_id
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    def start_editing(self, node_id: str) -> None:
+        """Enter raster editing mode for a specific layer.
+
+        Args:
+            node_id: The raster layer node ID to edit.
+        """
+        self._active = True
+        self._active_node_id = node_id
+        self._view.setDragMode(QGraphicsView.DragMode.NoDrag)
+        self._view.setCursor(Qt.CursorShape.CrossCursor)
+        logger.info("Raster edit started: %s (mode=%s)", node_id, self._mode.name)
+
+    def stop_editing(self) -> None:
+        """Exit raster editing mode."""
+        if self._stroke_active:
+            self._finish_stroke()
+        self._active = False
+        self._active_node_id = None
+        self._gradient_start = None
+        self._remove_cursor()
+        self._view.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+        self._view.setCursor(Qt.CursorShape.ArrowCursor)
+        logger.info("Raster edit stopped")
+
+    # ------------------------------------------------------------------
+    # Mouse event handlers (return True if consumed)
+    # ------------------------------------------------------------------
+
+    def handle_mouse_press(self, scene_pos: QPointF) -> bool:
+        """Handle a left-click in raster edit mode.
+
+        Args:
+            scene_pos: Click position in scene coordinates.
+
+        Returns:
+            True if the event was consumed.
+        """
+        if not self._active:
+            return False
+
+        item = self._get_active_item()
+        if item is None:
+            return False
+
+        norm = self._scene_to_norm(scene_pos)
+        if norm is None:
+            return False
+
+        if self._mode == RasterEditMode.BRUSH:
+            self._begin_stroke(item)
+            self._apply_brush(item, norm[0], norm[1])
+            return True
+
+        if self._mode == RasterEditMode.FILL:
+            self._apply_fill(item, norm[0], norm[1])
+            return True
+
+        if self._mode == RasterEditMode.GRADIENT:
+            self._gradient_start = scene_pos
+            return True
+
+        if self._mode == RasterEditMode.SAMPLE:
+            self._apply_sample(item, norm[0], norm[1])
+            return True
+
+        return False
+
+    def handle_mouse_move(self, scene_pos: QPointF) -> bool:
+        """Handle mouse movement in raster edit mode.
+
+        Args:
+            scene_pos: Current mouse position in scene coordinates.
+
+        Returns:
+            True if the event was consumed.
+        """
+        if not self._active:
+            return False
+
+        self._update_cursor(scene_pos)
+
+        if self._mode == RasterEditMode.BRUSH and self._stroke_active:
+            item = self._get_active_item()
+            if item is None:
+                return True
+            norm = self._scene_to_norm(scene_pos)
+            if norm is not None:
+                self._apply_brush(item, norm[0], norm[1])
+            return True
+
+        return True  # consume to prevent panning
+
+    def handle_mouse_release(self, scene_pos: QPointF) -> bool:
+        """Handle mouse release in raster edit mode.
+
+        Args:
+            scene_pos: Release position in scene coordinates.
+
+        Returns:
+            True if the event was consumed.
+        """
+        if not self._active:
+            return False
+
+        if self._mode == RasterEditMode.BRUSH and self._stroke_active:
+            self._finish_stroke()
+            return True
+
+        if self._mode == RasterEditMode.GRADIENT and self._gradient_start is not None:
+            item = self._get_active_item()
+            if item is not None:
+                self._apply_gradient(item, self._gradient_start, scene_pos)
+            self._gradient_start = None
+            return True
+
+        return False
+
+    def handle_key_escape(self) -> bool:
+        """Handle Escape key — exit editing mode.
+
+        Returns:
+            True if the event was consumed.
+        """
+        if self._active:
+            self.stop_editing()
+            return True
+        return False
+
+    # ------------------------------------------------------------------
+    # Brush stroke accumulation
+    # ------------------------------------------------------------------
+
+    def _begin_stroke(self, item: RasterLayerItem) -> None:
+        """Snapshot the full buffer before a stroke begins."""
+        buf = item.buffer
+        self._stroke_active = True
+        self._stroke_before = buf.data.copy()
+        self._stroke_dirty = None
+
+    def _apply_brush(self, item: RasterLayerItem, x_norm: float, y_norm: float) -> None:
+        """Paint a single brush dab and update display."""
+        buf = item.buffer
+        dirty = buf.paint_brush(
+            x_norm, y_norm, self._brush_size, self._paint_value, self._falloff
+        )
+
+        # Expand accumulated dirty region
+        if self._stroke_dirty is None:
+            self._stroke_dirty = dirty
+        else:
+            self._stroke_dirty = (
+                min(self._stroke_dirty[0], dirty[0]),
+                min(self._stroke_dirty[1], dirty[1]),
+                max(self._stroke_dirty[2], dirty[2]),
+                max(self._stroke_dirty[3], dirty[3]),
+            )
+
+        # Partial display update for responsiveness
+        item.update_region(dirty)
+
+    def _finish_stroke(self) -> None:
+        """Emit a paint command for the completed stroke."""
+        item = self._get_active_item()
+        self._stroke_active = False
+
+        if (
+            item is None
+            or self._stroke_before is None
+            or self._stroke_dirty is None
+        ):
+            self._stroke_before = None
+            self._stroke_dirty = None
+            return
+
+        d = self._stroke_dirty
+        before_region = self._stroke_before[d[1] : d[3] + 1, d[0] : d[2] + 1].copy()
+        after_region = item.buffer.get_region(d[0], d[1], d[2], d[3])
+
+        # Emit signal for command creation
+        self._view.raster_stroke_completed.emit(
+            self._active_node_id or "",
+            d,
+            before_region.tobytes(),
+            after_region.tobytes(),
+        )
+
+        self._stroke_before = None
+        self._stroke_dirty = None
+
+    # ------------------------------------------------------------------
+    # Fill
+    # ------------------------------------------------------------------
+
+    def _apply_fill(self, item: RasterLayerItem, x_norm: float, y_norm: float) -> None:
+        """Flood fill at the clicked position."""
+        buf = item.buffer
+        before = buf.data.copy()
+
+        dirty = buf.flood_fill(x_norm, y_norm, self._paint_value)
+
+        before_region = before[
+            dirty[1] : dirty[3] + 1, dirty[0] : dirty[2] + 1
+        ].copy()
+        after_region = buf.get_region(dirty[0], dirty[1], dirty[2], dirty[3])
+
+        item.update_region(dirty)
+
+        self._view.raster_stroke_completed.emit(
+            self._active_node_id or "",
+            dirty,
+            before_region.tobytes(),
+            after_region.tobytes(),
+        )
+
+    # ------------------------------------------------------------------
+    # Gradient
+    # ------------------------------------------------------------------
+
+    def _apply_gradient(
+        self, item: RasterLayerItem, start: QPointF, end: QPointF
+    ) -> None:
+        """Paint a linear gradient between two scene points."""
+        n0 = self._scene_to_norm(start)
+        n1 = self._scene_to_norm(end)
+        if n0 is None or n1 is None:
+            return
+
+        buf = item.buffer
+        before = buf.data.copy()
+
+        dirty = buf.paint_gradient(
+            n0[0], n0[1], n1[0], n1[1],
+            0, self._paint_value,
+            self._brush_size,
+        )
+
+        before_region = before[
+            dirty[1] : dirty[3] + 1, dirty[0] : dirty[2] + 1
+        ].copy()
+        after_region = buf.get_region(dirty[0], dirty[1], dirty[2], dirty[3])
+
+        item.update_region(dirty)
+
+        self._view.raster_stroke_completed.emit(
+            self._active_node_id or "",
+            dirty,
+            before_region.tobytes(),
+            after_region.tobytes(),
+        )
+
+    # ------------------------------------------------------------------
+    # Sample / probe
+    # ------------------------------------------------------------------
+
+    def _apply_sample(
+        self, item: RasterLayerItem, x_norm: float, y_norm: float
+    ) -> None:
+        """Read the value at the given position and emit a probe signal."""
+        value = item.buffer.get_value_at(x_norm, y_norm)
+        self._view.raster_value_probed.emit(
+            self._active_node_id or "", value, x_norm, y_norm
+        )
+
+    # ------------------------------------------------------------------
+    # Cursor overlay
+    # ------------------------------------------------------------------
+
+    def _update_cursor(self, scene_pos: QPointF) -> None:
+        """Update the visual brush circle at the cursor position."""
+        if self._mode not in (RasterEditMode.BRUSH, RasterEditMode.GRADIENT):
+            self._remove_cursor()
+            return
+
+        item = self._get_active_item()
+        if item is None:
+            self._remove_cursor()
+            return
+
+        # Convert brush radius from buffer pixels to scene pixels
+        scene_rect = item._scene_rect
+        buf_w = max(1, item.buffer.width)
+        px_per_scene = scene_rect.width() / buf_w
+        radius_scene = self._brush_size * px_per_scene
+
+        if self._cursor_item is None:
+            pen = QPen(QColor(255, 255, 255, 180), 1.5)
+            brush = QBrush(QColor(255, 255, 255, 30))
+            self._cursor_item = QGraphicsEllipseItem()
+            self._cursor_item.setPen(pen)
+            self._cursor_item.setBrush(brush)
+            self._cursor_item.setZValue(MAP_LAYER_Z_UI_OVERLAY + 2)
+            self._view.scene().addItem(self._cursor_item)
+
+        self._cursor_item.setRect(QRectF(
+            scene_pos.x() - radius_scene,
+            scene_pos.y() - radius_scene,
+            radius_scene * 2,
+            radius_scene * 2,
+        ))
+        self._cursor_item.setVisible(True)
+
+    def _remove_cursor(self) -> None:
+        """Remove the brush cursor overlay from the scene."""
+        if self._cursor_item is not None:
+            scene = self._view.scene()
+            if scene is not None:
+                scene.removeItem(self._cursor_item)
+            self._cursor_item = None
+
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
+
+    def _get_active_item(self) -> Optional[RasterLayerItem]:
+        """Look up the active RasterLayerItem from the view's registry."""
+        if self._active_node_id is None:
+            return None
+        return self._view._raster_items.get(self._active_node_id)
+
+    def _scene_to_norm(
+        self, scene_pos: QPointF
+    ) -> Optional[tuple[float, float]]:
+        """Convert scene coordinates to normalised [0, 1] coordinates.
+
+        Returns:
+            (x_norm, y_norm) or None if not over the map pixmap.
+        """
+        if not self._view.pixmap_item:
+            return None
+        try:
+            norm = self._view.coord_system.to_normalized(scene_pos)
+            x, y = norm[0], norm[1]
+            if 0.0 <= x <= 1.0 and 0.0 <= y <= 1.0:
+                return (x, y)
+        except Exception:
+            pass
+        return None

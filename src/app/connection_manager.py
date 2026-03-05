@@ -695,6 +695,18 @@ class ConnectionManager:
                 ),
                 (
                     map_widget,
+                    "raster_stroke_completed",
+                    map_handler.on_raster_stroke_completed,
+                    "MapWidget",
+                ),
+                (
+                    map_widget,
+                    "raster_palette_edit_requested",
+                    map_handler.on_raster_palette_edit,
+                    "MapWidget",
+                ),
+                (
+                    map_widget,
                     "create_entity_requested",
                     self.window.editor_coordinator.on_map_create_entity,
                     "MapWidget",

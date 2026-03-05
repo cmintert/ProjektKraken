@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QPushButton,
     QSlider,
+    QSpinBox,
     QTreeView,
     QVBoxLayout,
     QWidget,
@@ -65,6 +66,11 @@ class MapLayerPanel(QWidget):
     delete_layer_requested = Signal(str)
     layer_opacity_changed = Signal(str, float, float)  # id, new, old
     layer_renamed = Signal(str, str)
+
+    # Raster editing signals
+    raster_edit_requested = Signal(str)  # node_id — start editing
+    raster_edit_stopped = Signal()  # stop editing
+    raster_palette_edit_requested = Signal(str)  # node_id
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialise the panel.
@@ -147,6 +153,69 @@ class MapLayerPanel(QWidget):
         opacity_layout.addWidget(self._opacity_value_label)
 
         main_layout.addLayout(opacity_layout)
+
+        # ── Raster Edit Toolbar ──────────────────────────────────────
+        self._raster_toolbar = QWidget(self)
+        self._raster_toolbar.setVisible(False)
+        rt_layout = QVBoxLayout(self._raster_toolbar)
+        rt_layout.setContentsMargins(4, 4, 4, 4)
+        rt_layout.setSpacing(4)
+
+        rt_label = QLabel("Raster Tools")
+        rt_layout.addWidget(rt_label)
+
+        # Tool buttons row
+        tool_row = QHBoxLayout()
+        tool_row.setSpacing(2)
+        self._btn_brush = QPushButton("Brush")
+        self._btn_brush.setCheckable(True)
+        self._btn_brush.setChecked(True)
+        self._btn_fill = QPushButton("Fill")
+        self._btn_fill.setCheckable(True)
+        self._btn_gradient = QPushButton("Gradient")
+        self._btn_gradient.setCheckable(True)
+        self._btn_sample = QPushButton("Sample")
+        self._btn_sample.setCheckable(True)
+        for b in (self._btn_brush, self._btn_fill, self._btn_gradient, self._btn_sample):
+            b.setAutoExclusive(True)
+            tool_row.addWidget(b)
+        rt_layout.addLayout(tool_row)
+
+        # Brush settings row
+        settings_row = QHBoxLayout()
+        settings_row.setSpacing(4)
+        settings_row.addWidget(QLabel("Size:"))
+        self._brush_size_spin = QSpinBox()
+        self._brush_size_spin.setRange(1, 128)
+        self._brush_size_spin.setValue(8)
+        settings_row.addWidget(self._brush_size_spin)
+        settings_row.addWidget(QLabel("Value:"))
+        self._paint_value_spin = QSpinBox()
+        self._paint_value_spin.setRange(0, 65535)
+        self._paint_value_spin.setValue(1)
+        settings_row.addWidget(self._paint_value_spin)
+        settings_row.addWidget(QLabel("Falloff:"))
+        self._falloff_slider = QSlider(Qt.Orientation.Horizontal)
+        self._falloff_slider.setRange(0, 100)
+        self._falloff_slider.setValue(0)
+        self._falloff_slider.setToolTip("Brush falloff (0=hard, 100=soft)")
+        settings_row.addWidget(self._falloff_slider)
+        rt_layout.addLayout(settings_row)
+
+        # Edit / Done toggle + Palette button
+        action_row = QHBoxLayout()
+        action_row.setSpacing(4)
+        self._btn_edit_toggle = QPushButton("Edit")
+        self._btn_edit_toggle.setCheckable(True)
+        self._btn_edit_toggle.toggled.connect(self._on_edit_toggled)
+        action_row.addWidget(self._btn_edit_toggle)
+        self._btn_palette = QPushButton("Palette…")
+        self._btn_palette.clicked.connect(self._on_palette_clicked)
+        action_row.addWidget(self._btn_palette)
+        action_row.addStretch()
+        rt_layout.addLayout(action_row)
+
+        main_layout.addWidget(self._raster_toolbar)
 
         # ── Internal State ────────────────────────────────────────────
         self._model: Optional["MapLayerModel"] = None
@@ -293,6 +362,7 @@ class MapLayerPanel(QWidget):
         self._selected_node_id = node.id
         self._sync_opacity_slider(node)
         self._update_button_state()
+        self._update_raster_toolbar(node)
         self.layer_selected.emit(node.id)
 
     @Slot(QModelIndex)
@@ -445,3 +515,60 @@ class MapLayerPanel(QWidget):
         """Enable/disable the Delete button based on selection."""
         has_selection = self._selected_node_id is not None
         self.btn_delete.setEnabled(has_selection)
+
+    # ------------------------------------------------------------------
+    # Private — raster editing toolbar
+    # ------------------------------------------------------------------
+
+    def _update_raster_toolbar(self, node: "MapLayerNode") -> None:
+        """Show or hide the raster editing toolbar.
+
+        Args:
+            node: The newly selected layer node.
+        """
+        from src.app.constants import MAP_LAYER_TYPE_RASTER
+
+        is_raster = node.layer_type == MAP_LAYER_TYPE_RASTER
+        self._raster_toolbar.setVisible(is_raster)
+
+        # Reset edit toggle when switching layers
+        if not is_raster and self._btn_edit_toggle.isChecked():
+            self._btn_edit_toggle.setChecked(False)
+
+    def _on_edit_toggled(self, checked: bool) -> None:
+        """Handle the Edit / Done toggle button."""
+        if checked and self._selected_node_id:
+            self.raster_edit_requested.emit(self._selected_node_id)
+        else:
+            self.raster_edit_stopped.emit()
+
+    def _on_palette_clicked(self) -> None:
+        """Open the palette editor for the selected raster layer."""
+        if self._selected_node_id:
+            self.raster_palette_edit_requested.emit(self._selected_node_id)
+
+    @property
+    def raster_tool_mode(self) -> str:
+        """Currently selected raster tool mode name."""
+        if self._btn_fill.isChecked():
+            return "fill"
+        if self._btn_gradient.isChecked():
+            return "gradient"
+        if self._btn_sample.isChecked():
+            return "sample"
+        return "brush"
+
+    @property
+    def raster_brush_size(self) -> int:
+        """Current brush size from the spin box."""
+        return self._brush_size_spin.value()
+
+    @property
+    def raster_paint_value(self) -> int:
+        """Current paint value from the spin box."""
+        return self._paint_value_spin.value()
+
+    @property
+    def raster_falloff(self) -> float:
+        """Current falloff (0.0–1.0) from the slider."""
+        return self._falloff_slider.value() / 100.0

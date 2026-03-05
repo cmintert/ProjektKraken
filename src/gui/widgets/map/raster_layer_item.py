@@ -8,7 +8,7 @@ import logging
 from typing import Optional
 
 from PySide6.QtCore import QRectF
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QPainter, QPixmap
 from PySide6.QtWidgets import QGraphicsPixmapItem
 
 from src.app.constants import MAP_LAYER_Z_RASTER
@@ -112,3 +112,52 @@ class RasterLayerItem(QGraphicsPixmapItem):
         self._scene_rect = rect
         self.setPos(rect.topLeft())
         self.update_display()
+
+    def update_region(
+        self,
+        dirty_region: tuple[int, int, int, int],
+        color_map: Optional[ColorMap] = None,
+    ) -> None:
+        """Re-colourize only the dirty region and blit onto the existing pixmap.
+
+        This avoids a full-buffer re-render after small edits such as
+        brush strokes.
+
+        Args:
+            dirty_region: ``(min_col, min_row, max_col, max_row)`` in
+                buffer pixel coordinates.
+            color_map: Optional new colour map.  Uses existing if *None*.
+
+        """
+        if color_map is not None:
+            self._color_map = color_map
+
+        cmap = self._color_map
+        min_col, min_row, max_col, max_row = dirty_region
+        tile_img = self._buffer.colorize_region(
+            cmap, min_col, min_row, max_col, max_row
+        )
+
+        current = self.pixmap()
+        if current.isNull():
+            self.update_display()
+            return
+
+        # Map buffer pixel coords → pixmap pixel coords (may differ if scaled)
+        sx = current.width() / max(1, self._buffer.width)
+        sy = current.height() / max(1, self._buffer.height)
+
+        dest_x = int(min_col * sx)
+        dest_y = int(min_row * sy)
+        dest_w = int((max_col - min_col + 1) * sx)
+        dest_h = int((max_row - min_row + 1) * sy)
+
+        scaled_tile = QPixmap.fromImage(tile_img).scaled(dest_w, dest_h)
+
+        painter = QPainter(current)
+        # Erase the region first (compositing over old pixels)
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+        painter.drawPixmap(dest_x, dest_y, scaled_tile)
+        painter.end()
+
+        self.setPixmap(current)

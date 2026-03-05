@@ -844,3 +844,119 @@ class MapHandler(QObject):
             view.scene.addItem(item)
 
             logger.info("Loaded raster layer: %s (%s)", node_id, file_path)
+
+    # ------------------------------------------------------------------
+    # Raster editing handlers
+    # ------------------------------------------------------------------
+
+    @Slot(str, tuple, bytes, bytes)
+    def on_raster_stroke_completed(
+        self,
+        node_id: str,
+        dirty_region: tuple,
+        before_bytes: bytes,
+        after_bytes: bytes,
+    ) -> None:
+        """Handle a completed raster brush stroke.
+
+        Creates a :class:`StrokeRasterCommand` and emits it for
+        the command coordinator.
+
+        Args:
+            node_id: Raster layer node ID.
+            dirty_region: ``(min_col, min_row, max_col, max_row)``.
+            before_bytes: Raw buffer bytes before the stroke.
+            after_bytes: Raw buffer bytes after the stroke.
+        """
+        from src.commands.raster_commands import StrokeRasterCommand
+
+        if self._map_widget is None:
+            return
+        map_id = getattr(self._map_widget, "_current_map_id", None)
+        if not map_id:
+            return
+
+        cmd = StrokeRasterCommand(
+            map_id=map_id,
+            node_id=node_id,
+            dirty_region=dirty_region,
+            before_bytes=before_bytes,
+            after_bytes=after_bytes,
+        )
+
+        # Inject the live buffer reference
+        view = self._map_widget.view
+        item = view._raster_items.get(node_id)
+        if item is not None:
+            cmd.buffer = item.buffer
+
+        # Also save the raster file to disk
+        self._save_raster_to_disk(node_id)
+
+        self.command_requested.emit(cmd)
+
+    @Slot(str)
+    def on_raster_palette_edit(self, node_id: str) -> None:
+        """Open the palette editor for a raster layer.
+
+        Args:
+            node_id: Raster layer node ID.
+        """
+        if self._map_widget is None:
+            return
+        view = self._map_widget.view
+        item = view._raster_items.get(node_id)
+        if item is None:
+            return
+
+        from src.gui.widgets.map.raster_palette_editor import RasterPaletteEditor
+
+        # Determine mode from metadata
+        mode = "discrete"
+        maps = self._map_widget.maps_data
+        map_id = getattr(self._map_widget, "_current_map_id", None)
+        selected_map = next((m for m in maps if m.id == map_id), None) if map_id else None
+        if selected_map:
+            for rl in (selected_map.attributes or {}).get("raster_layers", []):
+                if rl.get("node_id") == node_id:
+                    mode = rl.get("mode", "discrete")
+                    break
+
+        dialog = RasterPaletteEditor(
+            color_map=item.color_map,
+            mode=mode,
+            parent=self._map_widget,
+        )
+        if dialog.exec():
+            new_cmap = dialog.result_color_map()
+            item.update_display(new_cmap)
+
+    def _save_raster_to_disk(self, node_id: str) -> None:
+        """Persist the raster buffer to its PNG file on disk."""
+        if self._map_widget is None:
+            return
+        view = self._map_widget.view
+        item = view._raster_items.get(node_id)
+        if item is None:
+            return
+
+        map_id = getattr(self._map_widget, "_current_map_id", None)
+        if not map_id:
+            return
+
+        maps = self._map_widget.maps_data
+        selected_map = next((m for m in maps if m.id == map_id), None)
+        if not selected_map:
+            return
+
+        try:
+            world_root = str(Path(self._db_path_accessor()).parent)
+            for rl in (selected_map.attributes or {}).get("raster_layers", []):
+                if rl.get("node_id") == node_id:
+                    file_path = rl.get("file_path", "")
+                    if file_path:
+                        full_path = str(Path(world_root) / file_path)
+                        item.buffer.save(full_path)
+                    break
+        except Exception as e:
+            logger.error("Failed to save raster to disk: %s", e)
