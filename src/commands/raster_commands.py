@@ -131,7 +131,11 @@ class CreateRasterLayerCommand(BaseCommand):
                 "mode": self.mode,
                 "default_value": self.default_value,
                 "value_entity_map": {},
-                "color_map": ColorMap().to_dict(),
+                "color_map": ColorMap(
+                    type="gradient",
+                    gradient_start="#00000000",
+                    gradient_end="#FF000080",
+                ).to_dict(),
                 "created_at": now,
                 "modified_at": now,
             }
@@ -692,7 +696,7 @@ class SetRasterMappingCommand(BaseCommand):
         self, db_service: DatabaseService, mapping: Dict[str, Any]
     ) -> None:
         """Write mapping dict into the raster layer's metadata."""
-        repo = db_service.map_repository
+        repo = db_service.map_repo
         map_obj = repo.get_map(self.map_id)
         if map_obj is None:
             raise ValueError(f"Map not found: {self.map_id}")

@@ -71,6 +71,11 @@ class RasterLayerItem(QGraphicsPixmapItem):
         self._color_map = value
 
     @property
+    def scene_rect(self) -> QRectF:
+        """The target bounding rect in scene coordinates."""
+        return self._scene_rect
+
+    @property
     def node_id(self) -> str:
         """Layer node ID."""
         return self._node_id

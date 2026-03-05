@@ -287,11 +287,7 @@ class RasterEditTool:
         item = self._get_active_item()
         self._stroke_active = False
 
-        if (
-            item is None
-            or self._stroke_before is None
-            or self._stroke_dirty is None
-        ):
+        if item is None or self._stroke_before is None or self._stroke_dirty is None:
             self._stroke_before = None
             self._stroke_dirty = None
             return
@@ -322,9 +318,7 @@ class RasterEditTool:
 
         dirty = buf.flood_fill(x_norm, y_norm, self._paint_value)
 
-        before_region = before[
-            dirty[1] : dirty[3] + 1, dirty[0] : dirty[2] + 1
-        ].copy()
+        before_region = before[dirty[1] : dirty[3] + 1, dirty[0] : dirty[2] + 1].copy()
         after_region = buf.get_region(dirty[0], dirty[1], dirty[2], dirty[3])
 
         item.update_region(dirty)
@@ -353,14 +347,16 @@ class RasterEditTool:
         before = buf.data.copy()
 
         dirty = buf.paint_gradient(
-            n0[0], n0[1], n1[0], n1[1],
-            0, self._paint_value,
+            n0[0],
+            n0[1],
+            n1[0],
+            n1[1],
+            0,
+            self._paint_value,
             self._brush_size,
         )
 
-        before_region = before[
-            dirty[1] : dirty[3] + 1, dirty[0] : dirty[2] + 1
-        ].copy()
+        before_region = before[dirty[1] : dirty[3] + 1, dirty[0] : dirty[2] + 1].copy()
         after_region = buf.get_region(dirty[0], dirty[1], dirty[2], dirty[3])
 
         item.update_region(dirty)
@@ -401,7 +397,7 @@ class RasterEditTool:
             return
 
         # Convert brush radius from buffer pixels to scene pixels
-        scene_rect = item._scene_rect
+        scene_rect = item.scene_rect
         buf_w = max(1, item.buffer.width)
         px_per_scene = scene_rect.width() / buf_w
         radius_scene = self._brush_size * px_per_scene
@@ -413,20 +409,22 @@ class RasterEditTool:
             self._cursor_item.setPen(pen)
             self._cursor_item.setBrush(brush)
             self._cursor_item.setZValue(MAP_LAYER_Z_UI_OVERLAY + 2)
-            self._view.scene().addItem(self._cursor_item)
+            self._view.scene.addItem(self._cursor_item)
 
-        self._cursor_item.setRect(QRectF(
-            scene_pos.x() - radius_scene,
-            scene_pos.y() - radius_scene,
-            radius_scene * 2,
-            radius_scene * 2,
-        ))
+        self._cursor_item.setRect(
+            QRectF(
+                scene_pos.x() - radius_scene,
+                scene_pos.y() - radius_scene,
+                radius_scene * 2,
+                radius_scene * 2,
+            )
+        )
         self._cursor_item.setVisible(True)
 
     def _remove_cursor(self) -> None:
         """Remove the brush cursor overlay from the scene."""
         if self._cursor_item is not None:
-            scene = self._view.scene()
+            scene = self._view.scene
             if scene is not None:
                 scene.removeItem(self._cursor_item)
             self._cursor_item = None
@@ -441,9 +439,7 @@ class RasterEditTool:
             return None
         return self._view._raster_items.get(self._active_node_id)
 
-    def _scene_to_norm(
-        self, scene_pos: QPointF
-    ) -> Optional[tuple[float, float]]:
+    def _scene_to_norm(self, scene_pos: QPointF) -> Optional[tuple[float, float]]:
         """Convert scene coordinates to normalised [0, 1] coordinates.
 
         Returns:

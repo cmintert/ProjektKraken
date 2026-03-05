@@ -801,11 +801,17 @@ class MapHandler(QObject):
             return
 
         raster_metas = (selected_map.attributes or {}).get("raster_layers", [])
-        if not raster_metas:
-            return
 
         world_root = str(Path(self._db_path_accessor()).parent)
         view = self._map_widget.view
+
+        # Always clear old raster items first to avoid stale duplicates on reload
+        for old_item in list(view._raster_items.values()):
+            view.scene.removeItem(old_item)
+        view._raster_items.clear()
+
+        if not raster_metas:
+            return
 
         if not view.pixmap_item:
             logger.debug("load_raster_layers: no map pixmap loaded yet")
