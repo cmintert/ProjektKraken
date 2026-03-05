@@ -207,6 +207,7 @@ class MapWidget(
     )  # node_id, opacity, old_opacity
     layer_rename_requested = Signal(str, str)  # node_id, new_name
     layer_delete_feature_requested = Signal(str)  # object_id of deleted leaf
+    create_raster_layer_requested = Signal(str, int, int, str, int)  # name,w,h,mode,def
 
     # Emitted when inline entity/event creation is requested from the map.
     create_entity_requested = Signal(str, str)  # new_id, name
@@ -410,6 +411,9 @@ class MapWidget(
         self.layer_panel.delete_layer_requested.connect(self._on_delete_layer)
         self.layer_panel.layer_renamed.connect(self._on_layer_renamed)
         self.layer_panel.layer_opacity_changed.connect(self._on_layer_opacity_changed)
+        self.layer_panel.create_raster_layer_requested.connect(
+            self._on_create_raster_layer
+        )
 
         self._maps_data = []  # List of maps for selector
         self._playhead_time: float = 0.0  # Current playhead time from Timeline

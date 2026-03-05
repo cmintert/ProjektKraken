@@ -613,7 +613,7 @@ class MapGraphicsView(QGraphicsView):
 
             except ImportError:
                 logger.warning(
-                    "QtOpenGLWidgets not available. " "Requesting software rendering."
+                    "QtOpenGLWidgets not available. Requesting software rendering."
                 )
             except Exception as e:
                 logger.warning(
@@ -622,7 +622,7 @@ class MapGraphicsView(QGraphicsView):
                 )
         else:
             logger.info(
-                "OpenGL disabled via KRAKEN_NO_OPENGL. " "Using software rendering."
+                "OpenGL disabled via KRAKEN_NO_OPENGL. Using software rendering."
             )
 
         self.scene = QGraphicsScene(self)
@@ -682,6 +682,9 @@ class MapGraphicsView(QGraphicsView):
 
         # Hierarchical Layer Model
         self._layer_model: Optional["MapLayerModel"] = None
+
+        # Raster overlay items (node_id → RasterLayerItem)
+        self._raster_items: dict[str, Any] = {}
 
         # Track loaded map image
         self.current_image_path: Optional[str] = None
@@ -1505,9 +1508,7 @@ class MapGraphicsView(QGraphicsView):
         map_widget = self._find_map_widget()
         if map_widget is not None:
             in_clock = getattr(map_widget, "_pinned_marker_id", None) is not None
-            in_draft = bool(
-                getattr(map_widget, "_transient_marker_ids", None)
-            )
+            in_draft = bool(getattr(map_widget, "_transient_marker_ids", None))
             if in_clock and event.key() in (
                 Qt.Key.Key_Escape,
                 Qt.Key.Key_Return,

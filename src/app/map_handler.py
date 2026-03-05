@@ -447,9 +447,7 @@ class MapHandler(QObject):
         self.command_requested.emit(cmd)
 
     @Slot(str, dict)
-    def on_marker_visual_style_changed(
-        self, marker_id: str, updates: dict
-    ) -> None:
+    def on_marker_visual_style_changed(self, marker_id: str, updates: dict) -> None:
         """Persists visual style changes via UpdateMarkerAttributeCommand.
 
         Args:
@@ -459,9 +457,7 @@ class MapHandler(QObject):
         """
         actual_marker_id = self._marker_object_to_id.get(marker_id)
         if not actual_marker_id:
-            logger.warning(
-                f"No marker mapping for visual style update: {marker_id}"
-            )
+            logger.warning(f"No marker mapping for visual style update: {marker_id}")
             return
 
         cmd = UpdateMarkerAttributeCommand(actual_marker_id, updates)
@@ -601,6 +597,9 @@ class MapHandler(QObject):
         if selected_layer_id:
             self._map_widget.layer_panel.select_node(selected_layer_id)
 
+        # Load raster layers for this map
+        self.load_raster_layers(map_id)
+
     @Slot(list)
     def on_trajectories_ready(self, trajectories: list) -> None:
         """Handle trajectories ready signal from DataHandler.
@@ -713,3 +712,135 @@ class MapHandler(QObject):
         del self._marker_object_to_id[object_id]
         cmd = DeleteMarkerCommand(actual_marker_id)
         self.command_requested.emit(cmd)
+
+    # ------------------------------------------------------------------
+    # Raster layer operations
+    # ------------------------------------------------------------------
+
+    def create_raster_layer(
+        self,
+        name: str,
+        width: int,
+        height: int,
+        mode: str = "discrete",
+        default_value: int = 0,
+    ) -> None:
+        """Create a new raster (heatmap) layer on the current map.
+
+        Args:
+            name: Display name for the raster layer.
+            width: Buffer width in pixels.
+            height: Buffer height in pixels.
+            mode: ``"discrete"`` or ``"continuous"``.
+            default_value: Initial fill value (0–65535).
+
+        """
+        map_id = self._map_widget.get_selected_map_id()
+        if not map_id:
+            logger.warning("create_raster_layer: no map selected")
+            return
+
+        world_root = str(Path(self._db_path_accessor()).parent)
+
+        from src.commands.raster_commands import CreateRasterLayerCommand
+
+        cmd = CreateRasterLayerCommand(
+            map_id=map_id,
+            name=name,
+            width=width,
+            height=height,
+            mode=mode,
+            default_value=default_value,
+            world_root=world_root,
+        )
+        self.command_requested.emit(cmd)
+        logger.info(
+            "Requested raster layer creation: '%s' %dx%d (%s)",
+            name,
+            width,
+            height,
+            mode,
+        )
+
+    def delete_raster_layer(self, node_id: str) -> None:
+        """Delete a raster layer by its layer node ID.
+
+        Args:
+            node_id: The layer node UUID for the raster to delete.
+
+        """
+        map_id = self._map_widget.get_selected_map_id()
+        if not map_id:
+            return
+
+        world_root = str(Path(self._db_path_accessor()).parent)
+
+        from src.commands.raster_commands import DeleteRasterLayerCommand
+
+        cmd = DeleteRasterLayerCommand(
+            map_id=map_id,
+            node_id=node_id,
+            world_root=world_root,
+        )
+        self.command_requested.emit(cmd)
+        logger.info("Requested raster layer deletion: %s", node_id)
+
+    def load_raster_layers(self, map_id: str) -> None:
+        """Load and display raster layers for the given map.
+
+        Reads ``maps.attributes["raster_layers"]`` metadata and creates
+        :class:`RasterLayerItem` instances in the scene.
+
+        Args:
+            map_id: The map to load rasters for.
+
+        """
+        maps = self._map_widget.maps_data
+        selected_map = next((m for m in maps if m.id == map_id), None)
+        if not selected_map:
+            return
+
+        raster_metas = (selected_map.attributes or {}).get("raster_layers", [])
+        if not raster_metas:
+            return
+
+        world_root = str(Path(self._db_path_accessor()).parent)
+        view = self._map_widget.view
+
+        if not view.pixmap_item:
+            logger.debug("load_raster_layers: no map pixmap loaded yet")
+            return
+
+        scene_rect = view.pixmap_item.boundingRect()
+
+        from src.gui.widgets.map.map_data_buffer import ColorMap, MapDataBuffer
+        from src.gui.widgets.map.raster_layer_item import RasterLayerItem
+
+        for meta in raster_metas:
+            node_id = meta.get("node_id", "")
+            file_path = meta.get("file_path", "")
+            abs_path = str(Path(world_root) / file_path)
+
+            try:
+                buf = MapDataBuffer.from_file(abs_path)
+            except Exception as e:
+                logger.error("Failed to load raster %s: %s", file_path, e)
+                continue
+
+            color_map_data = meta.get("color_map", {})
+            color_map = ColorMap.from_dict(color_map_data)
+
+            item = RasterLayerItem(
+                buffer=buf,
+                color_map=color_map,
+                scene_rect=scene_rect,
+                node_id=node_id,
+            )
+
+            # Store raster items on the view for later access
+            if not hasattr(view, "_raster_items"):
+                view._raster_items = {}
+            view._raster_items[node_id] = item
+            view.scene.addItem(item)
+
+            logger.info("Loaded raster layer: %s (%s)", node_id, file_path)

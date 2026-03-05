@@ -191,6 +191,7 @@ MAP_ZOOM_IN_FACTOR = 1.25
 # Static Z-values for layer ordering in the graphics scene
 MAP_LAYER_Z_MAP_BG = 0
 MAP_LAYER_Z_TRAJECTORIES = 0.5
+MAP_LAYER_Z_RASTER = 4  # raster / heatmap overlays
 MAP_LAYER_Z_FEATURES = 8  # paths / regions
 MAP_LAYER_Z_MARKERS = 10
 MAP_LAYER_Z_UI_OVERLAY = 100
@@ -211,6 +212,7 @@ MAP_LAYER_TYPE_GROUP = "group"
 MAP_LAYER_TYPE_MARKER = "marker"
 MAP_LAYER_TYPE_PATH = "path"
 MAP_LAYER_TYPE_REGION = "region"
+MAP_LAYER_TYPE_RASTER = "raster"
 
 # Default group name for auto-registered features
 MAP_LAYER_DEFAULT_GROUP_NAME = "Default"

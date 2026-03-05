@@ -28,6 +28,7 @@ from src.app.constants import (
     MAP_LAYER_TYPE_GROUP,
     MAP_LAYER_TYPE_MARKER,
     MAP_LAYER_TYPE_PATH,
+    MAP_LAYER_TYPE_RASTER,
     MAP_LAYER_TYPE_REGION,
     MAP_LAYER_Z_BASE,
     MAP_LAYER_Z_SPACING,
@@ -41,7 +42,7 @@ logger = logging.getLogger(__name__)
 # Internal MIME type for drag-and-drop reordering
 _LAYER_MIME_TYPE = "application/x-kraken-layer-node-id"
 
- # Icons are now handled via DecorationRole with themes (LOW-11)
+# Icons are now handled via DecorationRole with themes (LOW-11)
 
 
 class MapLayerModel(QAbstractItemModel):
@@ -742,6 +743,11 @@ class MapLayerModel(QAbstractItemModel):
         elif layer_type == MAP_LAYER_TYPE_REGION:
             icon = load_icon(
                 "default_assets/icons/markers/polygon.svg",
+                theme.get("accent_secondary"),
+            )
+        elif layer_type == MAP_LAYER_TYPE_RASTER:
+            icon = load_icon(
+                "default_assets/icons/markers/grid-raster.svg",
                 theme.get("accent_secondary"),
             )
 

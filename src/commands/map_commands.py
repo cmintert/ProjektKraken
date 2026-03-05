@@ -41,6 +41,13 @@ from src.commands.marker_commands import (  # noqa: F401
     UpdateMarkerIconCommand,
 )
 
+# Raster layers
+from src.commands.raster_commands import (  # noqa: F401
+    CreateRasterLayerCommand,
+    DeleteRasterLayerCommand,
+    PaintRasterCommand,
+)
+
 __all__ = [
     # Map CRUD
     "CreateMapCommand",
@@ -61,4 +68,8 @@ __all__ = [
     "SetLayerOpacityCommand",
     "RenameLayerCommand",
     "_find_layer_node",
+    # Raster layers
+    "CreateRasterLayerCommand",
+    "DeleteRasterLayerCommand",
+    "PaintRasterCommand",
 ]

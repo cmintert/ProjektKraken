@@ -265,6 +265,45 @@ CREATE TABLE maps (
 
 **Purpose**: Store map metadata and calibration.
 
+**`maps.attributes` — Raster Layers**
+
+The `attributes` JSON column may contain a `raster_layers` key storing an array
+of raster layer metadata objects. Each raster layer provides a 16-bit data
+buffer aligned to the map's coordinate system.
+
+```json
+{
+  "raster_layers": [
+    {
+      "node_id": "uuid-123",
+      "file_path": "rasters/biome_1024x512.png",
+      "resolution": [1024, 512],
+      "mode": "discrete",
+      "default_value": 0,
+      "value_entity_map": {"1": "entity-uuid-tundra", "2": "entity-uuid-forest"},
+      "color_map": {
+        "type": "palette",
+        "entries": [{"value": 1, "color": "#88C070"}, {"value": 2, "color": "#2D6A4F"}]
+      },
+      "created_at": 1670000000.0
+    }
+  ]
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `node_id` | string | UUID linking to a `MapLayerNode` in the layer tree |
+| `file_path` | string | Relative path to 16-bit PNG raster file |
+| `resolution` | [int, int] | Pixel width and height of the raster |
+| `mode` | string | `"discrete"` (class map) or `"continuous"` (scalar) |
+| `default_value` | int | Default cell value (0–65535) |
+| `value_entity_map` | object | Maps pixel values → entity UUIDs (discrete mode) |
+| `color_map` | object | Palette or gradient definition for colorization |
+| `created_at` | float | Unix timestamp of creation |
+
+If `raster_layers` is absent the map has no raster data (backwards compatible).
+
 ---
 
 ### Markers Table

@@ -346,6 +346,22 @@ class MapLayerMixin:
         """
         self.layer_opacity_change_requested.emit(node_id, opacity, old_opacity)
 
+    @Slot()
+    def _on_create_raster_layer(self) -> None:
+        """Open the raster layer dialog and emit the creation signal."""
+        from src.gui.widgets.map.raster_layer_dialog import RasterLayerDialog
+
+        dialog = RasterLayerDialog(parent=getattr(self, "window", lambda: None)())
+        if dialog.exec():
+            data = dialog.result_data()
+            self.create_raster_layer_requested.emit(
+                data["name"],
+                data["width"],
+                data["height"],
+                data["mode"],
+                data["default_value"],
+            )
+
     def get_layer_model(self) -> Optional[MapLayerModel]:
         """Return the current layer model (if any).
 

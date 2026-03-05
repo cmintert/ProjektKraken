@@ -61,6 +61,7 @@ class MapLayerPanel(QWidget):
     layer_selected = Signal(str)
     create_group_requested = Signal(str)
     create_layer_requested = Signal(str)
+    create_raster_layer_requested = Signal()
     delete_layer_requested = Signal(str)
     layer_opacity_changed = Signal(str, float, float)  # id, new, old
     layer_renamed = Signal(str, str)
@@ -90,6 +91,11 @@ class MapLayerPanel(QWidget):
         self.btn_new_group.setToolTip("Create a new layer (container)")
         self.btn_new_group.clicked.connect(self._on_new_group)
         header_layout.addWidget(self.btn_new_group)
+
+        self.btn_new_raster = QPushButton("+ Raster")
+        self.btn_new_raster.setToolTip("Create a new raster / heatmap layer")
+        self.btn_new_raster.clicked.connect(self._on_new_raster)
+        header_layout.addWidget(self.btn_new_raster)
 
         self.btn_delete = QPushButton("Delete")
         self.btn_delete.setToolTip("Delete the selected layer or feature")
@@ -257,6 +263,11 @@ class MapLayerPanel(QWidget):
             self.create_group_requested.emit(name.strip())
 
     @Slot()
+    def _on_new_raster(self) -> None:
+        """Emit create_raster_layer_requested to open the raster dialog."""
+        self.create_raster_layer_requested.emit()
+
+    @Slot()
     def _on_delete(self) -> None:
         """Emit delete_layer_requested for the current selection."""
         if self._selected_node_id:
@@ -343,6 +354,8 @@ class MapLayerPanel(QWidget):
             # Click on empty area — offer to create
             action_group = menu.addAction("New Group…")
             action_group.triggered.connect(self._on_new_group)
+            action_raster = menu.addAction("New Raster Layer…")
+            action_raster.triggered.connect(self._on_new_raster)
 
         menu.exec(self._tree.viewport().mapToGlobal(pos))
 
