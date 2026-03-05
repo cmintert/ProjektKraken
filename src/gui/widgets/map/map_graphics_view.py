@@ -578,7 +578,9 @@ class MapGraphicsView(QGraphicsView):
     marker_visual_style_changed = Signal(str, dict)
 
     # -- Raster editing signals --
-    raster_stroke_completed = Signal(str, tuple, bytes, bytes)  # node_id, dirty, before, after
+    raster_stroke_completed = Signal(
+        str, tuple, bytes, bytes
+    )  # node_id, dirty, before, after
     raster_value_probed = Signal(str, int, float, float)  # node_id, value, x, y
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -877,10 +879,16 @@ class MapGraphicsView(QGraphicsView):
         Args:
             node_id: Raster layer node ID to edit.
         """
+        logger.debug(
+            "start_raster_editing: node_id=%s raster_items=%s",
+            node_id,
+            list(self._raster_items.keys()),
+        )
         self._raster_edit_tool.start_editing(node_id)
 
     def stop_raster_editing(self) -> None:
         """Exit raster editing mode."""
+        logger.debug("stop_raster_editing called")
         self._raster_edit_tool.stop_editing()
 
     # ------------------------------------------------------------------
@@ -1431,6 +1439,11 @@ class MapGraphicsView(QGraphicsView):
         if self._raster_edit_tool.is_active and self.pixmap_item:
             if event.button() == Qt.MouseButton.LeftButton:
                 scene_pos = self.mapToScene(event.position().toPoint())
+                logger.debug(
+                    "mousePressEvent: raster active — scene_pos=(%.1f,%.1f)",
+                    scene_pos.x(),
+                    scene_pos.y(),
+                )
                 if self._raster_edit_tool.handle_mouse_press(scene_pos):
                     return
 
@@ -1486,6 +1499,11 @@ class MapGraphicsView(QGraphicsView):
         if self._raster_edit_tool.is_active and self.pixmap_item:
             if event.button() == Qt.MouseButton.LeftButton:
                 scene_pos = self.mapToScene(event.position().toPoint())
+                logger.debug(
+                    "mouseReleaseEvent: raster active — scene_pos=(%.1f,%.1f)",
+                    scene_pos.x(),
+                    scene_pos.y(),
+                )
                 if self._raster_edit_tool.handle_mouse_release(scene_pos):
                     return
 

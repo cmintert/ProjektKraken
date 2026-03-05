@@ -351,9 +351,18 @@ class MapLayerMixin:
         """Open the raster layer dialog and emit the creation signal."""
         from src.gui.widgets.map.raster_layer_dialog import RasterLayerDialog
 
+        logger.debug("_on_create_raster_layer: opening dialog")
         dialog = RasterLayerDialog(parent=getattr(self, "window", lambda: None)())
         if dialog.exec():
             data = dialog.result_data()
+            logger.debug(
+                "_on_create_raster_layer: accepted — name=%r size=%dx%d mode=%s default=%d",
+                data["name"],
+                data["width"],
+                data["height"],
+                data["mode"],
+                data["default_value"],
+            )
             self.create_raster_layer_requested.emit(
                 data["name"],
                 data["width"],
@@ -361,6 +370,8 @@ class MapLayerMixin:
                 data["mode"],
                 data["default_value"],
             )
+        else:
+            logger.debug("_on_create_raster_layer: dialog cancelled")
 
     @Slot(str)
     def _on_raster_edit_requested(self, node_id: str) -> None:
@@ -372,7 +383,8 @@ class MapLayerMixin:
         if view is None or panel is None:
             logger.warning(
                 "_on_raster_edit_requested: view=%s panel=%s — cannot start editing",
-                view, panel,
+                view,
+                panel,
             )
             return
 
@@ -393,8 +405,12 @@ class MapLayerMixin:
         logger.debug(
             "_on_raster_edit_requested: node_id=%s mode=%s brush_size=%d "
             "paint_value=%d falloff=%.2f registered_items=%s",
-            node_id, tool.mode.name, tool.brush_size, tool.paint_value,
-            tool.falloff, list(view._raster_items.keys()),
+            node_id,
+            tool.mode.name,
+            tool.brush_size,
+            tool.paint_value,
+            tool.falloff,
+            list(view._raster_items.keys()),
         )
 
         view.start_raster_editing(node_id)
@@ -403,9 +419,12 @@ class MapLayerMixin:
     @Slot()
     def _on_raster_edit_stopped(self) -> None:
         """Stop raster editing mode in the graphics view."""
+        logger.debug("_on_raster_edit_stopped: stopping raster edit")
         view = getattr(self, "view", None)
         if view is not None:
             view.stop_raster_editing()
+        else:
+            logger.warning("_on_raster_edit_stopped: no view available")
         self.raster_edit_stopped.emit()
 
     def get_layer_model(self) -> Optional[MapLayerModel]:

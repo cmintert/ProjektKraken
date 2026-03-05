@@ -240,6 +240,20 @@ class MapDataBuffer:
         min_row = max(0, cy - r)
         max_row = min(self._height - 1, cy + r)
 
+        logger.debug(
+            "paint_brush: center_px=(%d,%d) radius=%d value=%d falloff=%.2f "
+            "dirty=(%d,%d,%d,%d)",
+            cx,
+            cy,
+            r,
+            value,
+            falloff,
+            min_col,
+            min_row,
+            max_col,
+            max_row,
+        )
+
         # Build pixel coordinate grids for the affected region
         rows = np.arange(min_row, max_row + 1)
         cols = np.arange(min_col, max_col + 1)
@@ -319,6 +333,13 @@ class MapDataBuffer:
         """
         rgba = np.zeros((self._height, self._width, 4), dtype=np.uint8)
 
+        logger.debug(
+            "colorize: buffer=%dx%d color_map_type=%s entries=%d",
+            self._width,
+            self._height,
+            color_map.type,
+            len(color_map.entries) if color_map.type == "palette" else 0,
+        )
         if color_map.type == "palette":
             for entry in color_map.entries:
                 r, g, b, a = _hex_to_rgba(entry.color)
@@ -427,6 +448,17 @@ class MapDataBuffer:
         rh, rw = region.shape
         rgba = np.zeros((rh, rw, 4), dtype=np.uint8)
 
+        logger.debug(
+            "colorize_region: region=(%d,%d,%d,%d) size=%dx%d color_map_type=%s",
+            min_col,
+            min_row,
+            max_col,
+            max_row,
+            rw,
+            rh,
+            color_map.type,
+        )
+
         if color_map.type == "palette":
             for entry in color_map.entries:
                 r, g, b, a = _hex_to_rgba(entry.color)
@@ -441,9 +473,7 @@ class MapDataBuffer:
             rgba[:, :, 2] = (sb + (eb - sb) * t).astype(np.uint8)
             rgba[:, :, 3] = (sa + (ea - sa) * t).astype(np.uint8)
 
-        image = QImage(
-            rgba.data, rw, rh, rw * 4, QImage.Format.Format_RGBA8888
-        )
+        image = QImage(rgba.data, rw, rh, rw * 4, QImage.Format.Format_RGBA8888)
         return image.copy()
 
     # ------------------------------------------------------------------
@@ -484,7 +514,17 @@ class MapDataBuffer:
         target = int(self._data[row, col])
         fill_val = np.uint16(max(0, min(value, 65535)))
 
+        logger.debug(
+            "flood_fill: seed=(%d,%d) target=%d fill_val=%d buffer=%dx%d",
+            col,
+            row,
+            target,
+            fill_val,
+            self._width,
+            self._height,
+        )
         if target == fill_val:
+            logger.debug("flood_fill: target==fill_val — no-op")
             return (col, row, col, row)
 
         min_c, max_c = col, col
@@ -513,11 +553,15 @@ class MapDataBuffer:
                     visited[nr, nc] = True
                     queue.append((nc, nr))
 
+        logger.debug(
+            "flood_fill: dirty=(%d,%d,%d,%d) pixels_changed=%d",
+            min_c,
+            min_r,
+            max_c,
+            max_r,
+            int(np.sum(self._data[min_r : max_r + 1, min_c : max_c + 1] == fill_val)),
+        )
         return (min_c, min_r, max_c, max_r)
-
-    # ------------------------------------------------------------------
-    # Gradient paint
-    # ------------------------------------------------------------------
 
     def paint_gradient(
         self,
@@ -548,6 +592,17 @@ class MapDataBuffer:
         """
         c0, r0 = self._norm_to_pixel(x0_norm, y0_norm)
         c1, r1 = self._norm_to_pixel(x1_norm, y1_norm)
+
+        logger.debug(
+            "paint_gradient: px0=(%d,%d) px1=(%d,%d) values=%d→%d width_px=%d",
+            c0,
+            r0,
+            c1,
+            r1,
+            value_start,
+            value_end,
+            width_px,
+        )
 
         dx = float(c1 - c0)
         dy = float(r1 - r0)
@@ -584,4 +639,11 @@ class MapDataBuffer:
             mask, vals, region
         )
 
+        logger.debug(
+            "paint_gradient: dirty=(%d,%d,%d,%d)",
+            min_col,
+            min_row,
+            max_col,
+            max_row,
+        )
         return (min_col, min_row, max_col, max_row)
