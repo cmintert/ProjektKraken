@@ -128,6 +128,17 @@ class RasterEditTool:
         Args:
             node_id: The raster layer node ID to edit.
         """
+        logger.debug(
+            "start_editing: node_id=%s mode=%s brush_size=%d paint_value=%d falloff=%.2f",
+            node_id, self._mode.name, self._brush_size, self._paint_value, self._falloff,
+        )
+        item = self._view._raster_items.get(node_id)
+        if item is None:
+            logger.warning("start_editing: node_id=%s not found in _raster_items (keys=%s)",
+                           node_id, list(self._view._raster_items.keys()))
+        else:
+            logger.debug("start_editing: item found buffer=%dx%d",
+                         item.buffer.width, item.buffer.height)
         self._active = True
         self._active_node_id = node_id
         self._view.setDragMode(QGraphicsView.DragMode.NoDrag)
@@ -164,11 +175,27 @@ class RasterEditTool:
 
         item = self._get_active_item()
         if item is None:
+            logger.warning(
+                "handle_mouse_press: no active item for node_id=%s (registered=%s)",
+                self._active_node_id, list(self._view._raster_items.keys()),
+            )
             return False
 
         norm = self._scene_to_norm(scene_pos)
         if norm is None:
+            logger.debug(
+                "handle_mouse_press: scene_pos=(%.1f,%.1f) outside map bounds "
+                "(pixmap_item=%s)",
+                scene_pos.x(), scene_pos.y(), bool(self._view.pixmap_item),
+            )
             return False
+
+        logger.debug(
+            "handle_mouse_press: mode=%s pos=(%.1f,%.1f) norm=(%.3f,%.3f) "
+            "value=%d brush_size=%d",
+            self._mode.name, scene_pos.x(), scene_pos.y(),
+            norm[0], norm[1], self._paint_value, self._brush_size,
+        )
 
         if self._mode == RasterEditMode.BRUSH:
             self._begin_stroke(item)
@@ -181,6 +208,8 @@ class RasterEditTool:
 
         if self._mode == RasterEditMode.GRADIENT:
             self._gradient_start = scene_pos
+            logger.debug("handle_mouse_press: GRADIENT start set to (%.1f,%.1f)",
+                         scene_pos.x(), scene_pos.y())
             return True
 
         if self._mode == RasterEditMode.SAMPLE:
@@ -209,7 +238,16 @@ class RasterEditTool:
                 return True
             norm = self._scene_to_norm(scene_pos)
             if norm is not None:
+                logger.debug(
+                    "handle_mouse_move: BRUSH stroke paint at norm=(%.3f,%.3f)",
+                    norm[0], norm[1],
+                )
                 self._apply_brush(item, norm[0], norm[1])
+            else:
+                logger.debug(
+                    "handle_mouse_move: out-of-bounds at (%.1f,%.1f), skipping paint",
+                    scene_pos.x(), scene_pos.y(),
+                )
             return True
 
         return True  # consume to prevent panning
@@ -260,12 +298,20 @@ class RasterEditTool:
         self._stroke_active = True
         self._stroke_before = buf.data.copy()
         self._stroke_dirty = None
+        logger.debug(
+            "_begin_stroke: node_id=%s buffer=%dx%d",
+            self._active_node_id, buf.width, buf.height,
+        )
 
     def _apply_brush(self, item: RasterLayerItem, x_norm: float, y_norm: float) -> None:
         """Paint a single brush dab and update display."""
         buf = item.buffer
         dirty = buf.paint_brush(
             x_norm, y_norm, self._brush_size, self._paint_value, self._falloff
+        )
+        logger.debug(
+            "_apply_brush: pos=(%.3f,%.3f) radius=%d value=%d dirty=%s",
+            x_norm, y_norm, self._brush_size, self._paint_value, dirty,
         )
 
         # Expand accumulated dirty region
@@ -288,6 +334,10 @@ class RasterEditTool:
         self._stroke_active = False
 
         if item is None or self._stroke_before is None or self._stroke_dirty is None:
+            logger.debug(
+                "_finish_stroke: nothing to commit (item=%s before=%s dirty=%s)",
+                item is not None, self._stroke_before is not None, self._stroke_dirty,
+            )
             self._stroke_before = None
             self._stroke_dirty = None
             return
@@ -295,6 +345,10 @@ class RasterEditTool:
         d = self._stroke_dirty
         before_region = self._stroke_before[d[1] : d[3] + 1, d[0] : d[2] + 1].copy()
         after_region = item.buffer.get_region(d[0], d[1], d[2], d[3])
+        logger.debug(
+            "_finish_stroke: node_id=%s dirty=%s before_bytes=%d after_bytes=%d",
+            self._active_node_id, d, len(before_region.tobytes()), len(after_region.tobytes()),
+        )
 
         # Emit signal for command creation
         self._view.raster_stroke_completed.emit(
@@ -314,9 +368,15 @@ class RasterEditTool:
     def _apply_fill(self, item: RasterLayerItem, x_norm: float, y_norm: float) -> None:
         """Flood fill at the clicked position."""
         buf = item.buffer
+        seed_val = buf.get_value_at(x_norm, y_norm)
+        logger.debug(
+            "_apply_fill: pos=(%.3f,%.3f) seed_value=%d fill_value=%d buffer=%dx%d",
+            x_norm, y_norm, seed_val, self._paint_value, buf.width, buf.height,
+        )
         before = buf.data.copy()
 
         dirty = buf.flood_fill(x_norm, y_norm, self._paint_value)
+        logger.debug("_apply_fill: dirty_region=%s", dirty)
 
         before_region = before[dirty[1] : dirty[3] + 1, dirty[0] : dirty[2] + 1].copy()
         after_region = buf.get_region(dirty[0], dirty[1], dirty[2], dirty[3])
@@ -341,8 +401,16 @@ class RasterEditTool:
         n0 = self._scene_to_norm(start)
         n1 = self._scene_to_norm(end)
         if n0 is None or n1 is None:
+            logger.warning(
+                "_apply_gradient: could not normalize points start=%s n0=%s end=%s n1=%s",
+                start, n0, end, n1,
+            )
             return
 
+        logger.debug(
+            "_apply_gradient: n0=(%.3f,%.3f) n1=(%.3f,%.3f) value_end=%d width_px=%d",
+            n0[0], n0[1], n1[0], n1[1], self._paint_value, self._brush_size,
+        )
         buf = item.buffer
         before = buf.data.copy()
 
@@ -355,6 +423,7 @@ class RasterEditTool:
             self._paint_value,
             self._brush_size,
         )
+        logger.debug("_apply_gradient: dirty_region=%s", dirty)
 
         before_region = before[dirty[1] : dirty[3] + 1, dirty[0] : dirty[2] + 1].copy()
         after_region = buf.get_region(dirty[0], dirty[1], dirty[2], dirty[3])
@@ -377,6 +446,10 @@ class RasterEditTool:
     ) -> None:
         """Read the value at the given position and emit a probe signal."""
         value = item.buffer.get_value_at(x_norm, y_norm)
+        logger.debug(
+            "_apply_sample: pos=(%.3f,%.3f) value=%d node_id=%s",
+            x_norm, y_norm, value, self._active_node_id,
+        )
         self._view.raster_value_probed.emit(
             self._active_node_id or "", value, x_norm, y_norm
         )
@@ -436,8 +509,15 @@ class RasterEditTool:
     def _get_active_item(self) -> Optional[RasterLayerItem]:
         """Look up the active RasterLayerItem from the view's registry."""
         if self._active_node_id is None:
+            logger.debug("_get_active_item: no active_node_id set")
             return None
-        return self._view._raster_items.get(self._active_node_id)
+        item = self._view._raster_items.get(self._active_node_id)
+        if item is None:
+            logger.warning(
+                "_get_active_item: node_id=%s not in _raster_items (registered=%s)",
+                self._active_node_id, list(self._view._raster_items.keys()),
+            )
+        return item
 
     def _scene_to_norm(self, scene_pos: QPointF) -> Optional[tuple[float, float]]:
         """Convert scene coordinates to normalised [0, 1] coordinates.
@@ -446,12 +526,18 @@ class RasterEditTool:
             (x_norm, y_norm) or None if not over the map pixmap.
         """
         if not self._view.pixmap_item:
+            logger.debug("_scene_to_norm: pixmap_item is None — coordinate system not set up")
             return None
         try:
             norm = self._view.coord_system.to_normalized(scene_pos)
             x, y = norm[0], norm[1]
             if 0.0 <= x <= 1.0 and 0.0 <= y <= 1.0:
                 return (x, y)
-        except Exception:
-            pass
+            logger.debug(
+                "_scene_to_norm: (%.1f,%.1f) → norm=(%.3f,%.3f) out of [0,1] range",
+                scene_pos.x(), scene_pos.y(), x, y,
+            )
+        except Exception as exc:
+            logger.debug("_scene_to_norm: exception converting (%.1f,%.1f): %s",
+                         scene_pos.x(), scene_pos.y(), exc)
         return None

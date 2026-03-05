@@ -93,9 +93,22 @@ class RasterLayerItem(QGraphicsPixmapItem):
 
         """
         if color_map is not None:
+            logger.debug(
+                "update_display: node_id=%s new color_map type=%s",
+                self._node_id, color_map.type,
+            )
             self._color_map = color_map
+        else:
+            logger.debug(
+                "update_display: node_id=%s using existing color_map type=%s",
+                self._node_id, self._color_map.type,
+            )
 
         qimage = self._buffer.colorize(self._color_map)
+        logger.debug(
+            "update_display: colorized buffer %dx%d → QImage %dx%d",
+            self._buffer.width, self._buffer.height, qimage.width(), qimage.height(),
+        )
         pixmap = QPixmap.fromImage(qimage)
 
         # Scale pixmap to fill the scene rect
@@ -104,8 +117,16 @@ class RasterLayerItem(QGraphicsPixmapItem):
                 int(self._scene_rect.width()),
                 int(self._scene_rect.height()),
             )
+            logger.debug(
+                "update_display: scaled pixmap to %dx%d (scene_rect=%s)",
+                pixmap.width(), pixmap.height(), self._scene_rect,
+            )
 
         self.setPixmap(pixmap)
+        logger.debug(
+            "update_display: pixmap set — isNull=%s size=%dx%d",
+            pixmap.isNull(), pixmap.width(), pixmap.height(),
+        )
 
     def set_scene_rect(self, rect: QRectF) -> None:
         """Update the target scene rectangle and re-render.
@@ -139,12 +160,17 @@ class RasterLayerItem(QGraphicsPixmapItem):
 
         cmap = self._color_map
         min_col, min_row, max_col, max_row = dirty_region
+        logger.debug(
+            "update_region: node_id=%s dirty=%s",
+            self._node_id, dirty_region,
+        )
         tile_img = self._buffer.colorize_region(
             cmap, min_col, min_row, max_col, max_row
         )
 
         current = self.pixmap()
         if current.isNull():
+            logger.debug("update_region: current pixmap is null — falling back to full update_display")
             self.update_display()
             return
 
@@ -157,6 +183,10 @@ class RasterLayerItem(QGraphicsPixmapItem):
         dest_w = int((max_col - min_col + 1) * sx)
         dest_h = int((max_row - min_row + 1) * sy)
 
+        logger.debug(
+            "update_region: blitting tile %dx%d → dest (%d,%d) %dx%d (scale=%.2f,%.2f)",
+            tile_img.width(), tile_img.height(), dest_x, dest_y, dest_w, dest_h, sx, sy,
+        )
         scaled_tile = QPixmap.fromImage(tile_img).scaled(dest_w, dest_h)
 
         painter = QPainter(current)

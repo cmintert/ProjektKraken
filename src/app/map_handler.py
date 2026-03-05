@@ -795,29 +795,40 @@ class MapHandler(QObject):
             map_id: The map to load rasters for.
 
         """
+        logger.debug("load_raster_layers: map_id=%s", map_id)
         maps = self._map_widget.maps_data
         selected_map = next((m for m in maps if m.id == map_id), None)
         if not selected_map:
+            logger.warning("load_raster_layers: map_id=%s not found in maps_data", map_id)
             return
 
         raster_metas = (selected_map.attributes or {}).get("raster_layers", [])
 
         world_root = str(Path(self._db_path_accessor()).parent)
+        logger.debug("load_raster_layers: world_root=%s raster_count=%d", world_root, len(raster_metas))
         view = self._map_widget.view
 
         # Always clear old raster items first to avoid stale duplicates on reload
+        old_count = len(view._raster_items)
         for old_item in list(view._raster_items.values()):
             view.scene.removeItem(old_item)
         view._raster_items.clear()
+        if old_count:
+            logger.debug("load_raster_layers: cleared %d existing raster items", old_count)
 
         if not raster_metas:
+            logger.debug("load_raster_layers: no raster_layers metadata — nothing to load")
             return
 
         if not view.pixmap_item:
-            logger.debug("load_raster_layers: no map pixmap loaded yet")
+            logger.warning(
+                "load_raster_layers: pixmap_item is None — map image not loaded yet, "
+                "raster layers will not be shown (map_id=%s)", map_id
+            )
             return
 
         scene_rect = view.pixmap_item.boundingRect()
+        logger.debug("load_raster_layers: scene_rect=%s", scene_rect)
 
         from src.gui.widgets.map.map_data_buffer import ColorMap, MapDataBuffer
         from src.gui.widgets.map.raster_layer_item import RasterLayerItem
@@ -826,15 +837,28 @@ class MapHandler(QObject):
             node_id = meta.get("node_id", "")
             file_path = meta.get("file_path", "")
             abs_path = str(Path(world_root) / file_path)
+            logger.debug(
+                "load_raster_layers: loading node_id=%s file=%s abs=%s",
+                node_id, file_path, abs_path,
+            )
 
             try:
                 buf = MapDataBuffer.from_file(abs_path)
+                logger.debug(
+                    "load_raster_layers: loaded buffer %dx%d for node_id=%s",
+                    buf.width, buf.height, node_id,
+                )
             except Exception as e:
                 logger.error("Failed to load raster %s: %s", file_path, e)
                 continue
 
             color_map_data = meta.get("color_map", {})
             color_map = ColorMap.from_dict(color_map_data)
+            logger.debug(
+                "load_raster_layers: color_map type=%s entries=%d",
+                color_map.type,
+                len(color_map.entries) if color_map.type == "palette" else -1,
+            )
 
             item = RasterLayerItem(
                 buffer=buf,
@@ -849,7 +873,7 @@ class MapHandler(QObject):
             view._raster_items[node_id] = item
             view.scene.addItem(item)
 
-            logger.info("Loaded raster layer: %s (%s)", node_id, file_path)
+            logger.info("Loaded raster layer: %s (%s) — scene item added", node_id, file_path)
 
     # ------------------------------------------------------------------
     # Raster editing handlers
@@ -877,10 +901,21 @@ class MapHandler(QObject):
         from src.commands.raster_commands import StrokeRasterCommand
 
         if self._map_widget is None:
+            logger.warning("on_raster_stroke_completed: _map_widget is None")
             return
         map_id = getattr(self._map_widget, "_current_map_id", None)
         if not map_id:
+            logger.warning(
+                "on_raster_stroke_completed: no current_map_id on map_widget "
+                "(node_id=%s dirty=%s)", node_id, dirty_region,
+            )
             return
+
+        logger.debug(
+            "on_raster_stroke_completed: node_id=%s map_id=%s dirty=%s "
+            "before_bytes=%d after_bytes=%d",
+            node_id, map_id, dirty_region, len(before_bytes), len(after_bytes),
+        )
 
         cmd = StrokeRasterCommand(
             map_id=map_id,
@@ -895,10 +930,17 @@ class MapHandler(QObject):
         item = view._raster_items.get(node_id)
         if item is not None:
             cmd.buffer = item.buffer
+            logger.debug("on_raster_stroke_completed: buffer injected into command")
+        else:
+            logger.warning(
+                "on_raster_stroke_completed: no raster item for node_id=%s "
+                "(registered=%s)", node_id, list(view._raster_items.keys()),
+            )
 
         # Also save the raster file to disk
         self._save_raster_to_disk(node_id)
 
+        logger.debug("on_raster_stroke_completed: emitting command_requested")
         self.command_requested.emit(cmd)
 
     @Slot(str)
@@ -908,11 +950,17 @@ class MapHandler(QObject):
         Args:
             node_id: Raster layer node ID.
         """
+        logger.debug("on_raster_palette_edit: node_id=%s", node_id)
         if self._map_widget is None:
+            logger.warning("on_raster_palette_edit: _map_widget is None")
             return
         view = self._map_widget.view
         item = view._raster_items.get(node_id)
         if item is None:
+            logger.warning(
+                "on_raster_palette_edit: no item for node_id=%s (registered=%s)",
+                node_id, list(view._raster_items.keys()),
+            )
             return
 
         from src.gui.widgets.map.raster_palette_editor import RasterPaletteEditor
@@ -927,6 +975,7 @@ class MapHandler(QObject):
                 if rl.get("node_id") == node_id:
                     mode = rl.get("mode", "discrete")
                     break
+        logger.debug("on_raster_palette_edit: mode=%s color_map_type=%s", mode, item.color_map.type)
 
         dialog = RasterPaletteEditor(
             color_map=item.color_map,
@@ -935,24 +984,33 @@ class MapHandler(QObject):
         )
         if dialog.exec():
             new_cmap = dialog.result_color_map()
+            logger.debug("on_raster_palette_edit: applying new color_map type=%s", new_cmap.type)
             item.update_display(new_cmap)
+            logger.debug("on_raster_palette_edit: display updated")
 
     def _save_raster_to_disk(self, node_id: str) -> None:
         """Persist the raster buffer to its PNG file on disk."""
         if self._map_widget is None:
+            logger.warning("_save_raster_to_disk: _map_widget is None")
             return
         view = self._map_widget.view
         item = view._raster_items.get(node_id)
         if item is None:
+            logger.warning(
+                "_save_raster_to_disk: no item for node_id=%s (registered=%s)",
+                node_id, list(view._raster_items.keys()),
+            )
             return
 
         map_id = getattr(self._map_widget, "_current_map_id", None)
         if not map_id:
+            logger.warning("_save_raster_to_disk: no current_map_id")
             return
 
         maps = self._map_widget.maps_data
         selected_map = next((m for m in maps if m.id == map_id), None)
         if not selected_map:
+            logger.warning("_save_raster_to_disk: map_id=%s not found in maps_data", map_id)
             return
 
         try:
@@ -962,7 +1020,19 @@ class MapHandler(QObject):
                     file_path = rl.get("file_path", "")
                     if file_path:
                         full_path = str(Path(world_root) / file_path)
+                        logger.debug(
+                            "_save_raster_to_disk: saving node_id=%s → %s",
+                            node_id, full_path,
+                        )
                         item.buffer.save(full_path)
+                        logger.info("Raster saved to disk: %s", full_path)
+                    else:
+                        logger.warning("_save_raster_to_disk: empty file_path for node_id=%s", node_id)
                     break
+            else:
+                logger.warning(
+                    "_save_raster_to_disk: node_id=%s not found in raster_layers metadata",
+                    node_id,
+                )
         except Exception as e:
             logger.error("Failed to save raster to disk: %s", e)

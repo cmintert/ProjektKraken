@@ -370,6 +370,10 @@ class MapLayerMixin:
         view = getattr(self, "view", None)
         panel = getattr(self, "layer_panel", None)
         if view is None or panel is None:
+            logger.warning(
+                "_on_raster_edit_requested: view=%s panel=%s — cannot start editing",
+                view, panel,
+            )
             return
 
         # Apply current tool settings
@@ -385,6 +389,13 @@ class MapLayerMixin:
         tool.brush_size = panel.raster_brush_size
         tool.paint_value = panel.raster_paint_value
         tool.falloff = panel.raster_falloff
+
+        logger.debug(
+            "_on_raster_edit_requested: node_id=%s mode=%s brush_size=%d "
+            "paint_value=%d falloff=%.2f registered_items=%s",
+            node_id, tool.mode.name, tool.brush_size, tool.paint_value,
+            tool.falloff, list(view._raster_items.keys()),
+        )
 
         view.start_raster_editing(node_id)
         self.raster_edit_requested.emit(node_id)

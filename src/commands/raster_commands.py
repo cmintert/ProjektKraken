@@ -87,14 +87,28 @@ class CreateRasterLayerCommand(BaseCommand):
             CommandResult with ``data["node_id"]`` and ``data["file_path"]``.
 
         """
+        logger.debug(
+            "CreateRasterLayerCommand.execute: map_id=%s name=%r size=%dx%d "
+            "mode=%s default_value=%d world_root=%r",
+            self.map_id,
+            self.name,
+            self.width,
+            self.height,
+            self.mode,
+            self.default_value,
+            self.world_root,
+        )
         try:
             map_obj = db_service.map_repo.get_map(self.map_id)
             if not map_obj:
+                logger.error("CreateRasterLayerCommand: map not found: %s", self.map_id)
                 return CommandResult(
                     success=False,
                     message="Map not found.",
                     command_name="CreateRasterLayerCommand",
                 )
+            logger.debug("CreateRasterLayerCommand: got map %r (attrs keys=%s)",
+                         map_obj.name, list((map_obj.attributes or {}).keys()))
 
             # 1. Create blank buffer and save to disk
             buf = MapDataBuffer(self.width, self.height, self.default_value)
@@ -102,7 +116,10 @@ class CreateRasterLayerCommand(BaseCommand):
             raster_dir.mkdir(parents=True, exist_ok=True)
             filename = f"{self.name.replace(' ', '_')}_{self._node_id[:8]}.png"
             abs_path = raster_dir / filename
+            logger.debug("CreateRasterLayerCommand: saving PNG → %s", abs_path)
             buf.save(str(abs_path))
+            logger.debug("CreateRasterLayerCommand: PNG saved OK (%d bytes)",
+                         abs_path.stat().st_size if abs_path.exists() else -1)
 
             # Store relative path from world root
             self._file_path = f"rasters/{filename}"
@@ -113,16 +130,22 @@ class CreateRasterLayerCommand(BaseCommand):
                 layer_type=MAP_LAYER_TYPE_RASTER,
                 id=self._node_id,
             )
+            logger.debug("CreateRasterLayerCommand: new layer node id=%s", self._node_id)
             if map_obj.layers is None:
                 from src.app.constants import MAP_LAYER_TYPE_GROUP
 
                 map_obj.layers = MapLayerNode(
                     name="Root", layer_type=MAP_LAYER_TYPE_GROUP
                 )
+                logger.debug("CreateRasterLayerCommand: created new root layer node")
             map_obj.layers.children.append(node)
+            logger.debug("CreateRasterLayerCommand: layer tree now has %d children",
+                         len(map_obj.layers.children))
 
             # 3. Update raster metadata
             raster_layers = _get_raster_layers(map_obj)
+            logger.debug("CreateRasterLayerCommand: existing raster_layers count=%d",
+                         len(raster_layers))
             now = time.time()
             raster_meta: Dict[str, Any] = {
                 "node_id": self._node_id,
@@ -141,12 +164,16 @@ class CreateRasterLayerCommand(BaseCommand):
             }
             raster_layers.append(raster_meta)
             _set_raster_layers(map_obj, raster_layers)
+            logger.debug("CreateRasterLayerCommand: raster_layers now has %d entries",
+                         len(raster_layers))
 
             # 4. Persist layer tree
             attrs = dict(map_obj.attributes) if map_obj.attributes else {}
             attrs["layers"] = map_obj.layers.to_dict()
             map_obj.attributes = attrs
+            logger.debug("CreateRasterLayerCommand: persisting map to DB")
             db_service.map_repo.insert_map(map_obj)
+            logger.debug("CreateRasterLayerCommand: DB persist OK")
 
             self._is_executed = True
             logger.info(
@@ -165,7 +192,7 @@ class CreateRasterLayerCommand(BaseCommand):
                 },
             )
         except Exception as e:
-            logger.error("CreateRasterLayerCommand failed: %s", e)
+            logger.error("CreateRasterLayerCommand failed: %s", e, exc_info=True)
             return CommandResult(
                 success=False,
                 message=str(e),
@@ -279,9 +306,14 @@ class DeleteRasterLayerCommand(BaseCommand):
             CommandResult.
 
         """
+        logger.debug(
+            "DeleteRasterLayerCommand.execute: map_id=%s node_id=%s world_root=%r",
+            self.map_id, self.node_id, self.world_root,
+        )
         try:
             map_obj = db_service.map_repo.get_map(self.map_id)
             if not map_obj:
+                logger.error("DeleteRasterLayerCommand: map not found: %s", self.map_id)
                 return CommandResult(
                     success=False,
                     message="Map not found.",
@@ -290,11 +322,13 @@ class DeleteRasterLayerCommand(BaseCommand):
 
             # Find and remove the raster metadata
             raster_layers = _get_raster_layers(map_obj)
+            logger.debug("DeleteRasterLayerCommand: raster_layers before=%d", len(raster_layers))
             self._deleted_meta = None
             new_raster_layers = []
             for r in raster_layers:
                 if r.get("node_id") == self.node_id:
                     self._deleted_meta = r
+                    logger.debug("DeleteRasterLayerCommand: found meta for node_id=%s", self.node_id)
                 else:
                     new_raster_layers.append(r)
             _set_raster_layers(map_obj, new_raster_layers)
@@ -305,6 +339,7 @@ class DeleteRasterLayerCommand(BaseCommand):
                     if c.id == self.node_id:
                         self._deleted_node_dict = c.to_dict()
                         map_obj.layers.children.pop(i)
+                        logger.debug("DeleteRasterLayerCommand: removed layer node at index %d", i)
                         break
 
             # Backup and delete file
@@ -314,6 +349,10 @@ class DeleteRasterLayerCommand(BaseCommand):
                 if abs_path.exists():
                     self._file_backup = abs_path.read_bytes()
                     abs_path.unlink()
+                    logger.debug("DeleteRasterLayerCommand: deleted file %s (%d bytes backed up)",
+                                 abs_path, len(self._file_backup))
+                else:
+                    logger.warning("DeleteRasterLayerCommand: file not found: %s", abs_path)
 
             # Persist
             attrs = dict(map_obj.attributes) if map_obj.attributes else {}
@@ -321,6 +360,7 @@ class DeleteRasterLayerCommand(BaseCommand):
                 attrs["layers"] = map_obj.layers.to_dict()
             map_obj.attributes = attrs
             db_service.map_repo.insert_map(map_obj)
+            logger.debug("DeleteRasterLayerCommand: DB persist OK")
 
             self._is_executed = True
             return CommandResult(
@@ -329,7 +369,7 @@ class DeleteRasterLayerCommand(BaseCommand):
                 command_name="DeleteRasterLayerCommand",
             )
         except Exception as e:
-            logger.error("DeleteRasterLayerCommand failed: %s", e)
+            logger.error("DeleteRasterLayerCommand failed: %s", e, exc_info=True)
             return CommandResult(
                 success=False,
                 message=str(e),
@@ -584,7 +624,12 @@ class StrokeRasterCommand(BaseCommand):
         already painted live).  This command exists for the undo stack.
         If the buffer has been reverted we re-apply ``after_bytes``.
         """
+        logger.debug(
+            "StrokeRasterCommand.execute: node_id=%s dirty=%s before=%d bytes after=%d bytes",
+            self.node_id, self.dirty_region, len(self._before_bytes), len(self._after_bytes),
+        )
         if self.buffer is None:
+            logger.error("StrokeRasterCommand.execute: no buffer attached for node_id=%s", self.node_id)
             return CommandResult(
                 success=False,
                 message="No buffer attached.",
@@ -593,22 +638,32 @@ class StrokeRasterCommand(BaseCommand):
         try:
             self._apply_snapshot(self._after_bytes)
             self._is_executed = True
+            logger.debug("StrokeRasterCommand.execute: applied after-snapshot OK")
             return CommandResult(
                 success=True,
                 message="Stroke applied.",
                 command_name="StrokeRasterCommand",
             )
         except Exception as e:
-            logger.error("StrokeRasterCommand.execute failed: %s", e)
+            logger.error("StrokeRasterCommand.execute failed: %s", e, exc_info=True)
             return CommandResult(
                 success=False, message=str(e), command_name="StrokeRasterCommand"
             )
 
     def undo(self, db_service: DatabaseService) -> None:
         """Restore the before-snapshot."""
+        logger.debug(
+            "StrokeRasterCommand.undo: node_id=%s dirty=%s", self.node_id, self.dirty_region
+        )
         if self._is_executed and self.buffer is not None:
             self._apply_snapshot(self._before_bytes)
             self._is_executed = False
+            logger.debug("StrokeRasterCommand.undo: before-snapshot applied OK")
+        else:
+            logger.warning(
+                "StrokeRasterCommand.undo: skipped (is_executed=%s, buffer=%s)",
+                self._is_executed, self.buffer is not None,
+            )
 
     def _apply_snapshot(self, raw: bytes) -> None:
         """Write raw uint16 bytes back into the buffer's dirty region."""
@@ -672,25 +727,37 @@ class SetRasterMappingCommand(BaseCommand):
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Apply the new mapping to the map's attributes."""
+        logger.debug(
+            "SetRasterMappingCommand.execute: map_id=%s node_id=%s new_mapping_mode=%s",
+            self.map_id, self.node_id,
+            self.new_mapping.get("mode") if isinstance(self.new_mapping, dict) else type(self.new_mapping),
+        )
         try:
             self._set_mapping(db_service, self.new_mapping)
             self._is_executed = True
+            logger.debug("SetRasterMappingCommand.execute: mapping persisted OK")
             return CommandResult(
                 success=True,
                 message="Mapping updated.",
                 command_name="SetRasterMappingCommand",
             )
         except Exception as e:
-            logger.error("SetRasterMappingCommand failed: %s", e)
+            logger.error("SetRasterMappingCommand failed: %s", e, exc_info=True)
             return CommandResult(
                 success=False, message=str(e), command_name="SetRasterMappingCommand"
             )
 
     def undo(self, db_service: DatabaseService) -> None:
         """Restore the old mapping."""
+        logger.debug(
+            "SetRasterMappingCommand.undo: map_id=%s node_id=%s", self.map_id, self.node_id
+        )
         if self._is_executed:
             self._set_mapping(db_service, self.old_mapping)
             self._is_executed = False
+            logger.debug("SetRasterMappingCommand.undo: old mapping restored")
+        else:
+            logger.warning("SetRasterMappingCommand.undo: skipped (not executed)")
 
     def _set_mapping(
         self, db_service: DatabaseService, mapping: Dict[str, Any]
@@ -701,10 +768,22 @@ class SetRasterMappingCommand(BaseCommand):
         if map_obj is None:
             raise ValueError(f"Map not found: {self.map_id}")
         raster_layers = _get_raster_layers(map_obj)
+        logger.debug(
+            "SetRasterMappingCommand._set_mapping: found %d raster layers, looking for node_id=%s",
+            len(raster_layers), self.node_id,
+        )
+        found = False
         for rl in raster_layers:
             if rl.get("node_id") == self.node_id:
                 rl["value_entity_map"] = mapping
+                found = True
+                logger.debug("SetRasterMappingCommand._set_mapping: mapping set on node_id=%s", self.node_id)
                 break
+        if not found:
+            logger.warning(
+                "SetRasterMappingCommand._set_mapping: node_id=%s not found in raster_layers",
+                self.node_id,
+            )
         _set_raster_layers(map_obj, raster_layers)
         repo.insert_map(map_obj)
 
