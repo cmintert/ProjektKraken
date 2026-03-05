@@ -8,7 +8,7 @@ palette-based colorisation, and 16-bit PNG persistence via Pillow.
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from PySide6.QtGui import QImage
@@ -23,20 +23,29 @@ class ColorEntry:
     Attributes:
         value: The 16-bit raster value.
         color: Hex colour string, e.g. ``"#88C070"``.
+        entity_id: Optional entity UUID linked to this palette entry.
 
     """
 
     value: int
     color: str
+    entity_id: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialise to JSON-friendly dict."""
-        return {"value": self.value, "color": self.color}
+        d: Dict[str, Any] = {"value": self.value, "color": self.color}
+        if self.entity_id is not None:
+            d["entity_id"] = self.entity_id
+        return d
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ColorEntry":
         """Deserialise from dict."""
-        return cls(value=int(data["value"]), color=str(data["color"]))
+        return cls(
+            value=int(data["value"]),
+            color=str(data["color"]),
+            entity_id=data.get("entity_id"),
+        )
 
 
 @dataclass

@@ -707,6 +707,12 @@ class ConnectionManager:
                 ),
                 (
                     map_widget,
+                    "raster_value_probed",
+                    map_handler.on_raster_value_probed,
+                    "MapWidget",
+                ),
+                (
+                    map_widget,
                     "create_entity_requested",
                     self.window.editor_coordinator.on_map_create_entity,
                     "MapWidget",

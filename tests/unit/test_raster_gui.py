@@ -47,7 +47,9 @@ def _make_raster_item(
         gradient_end="#FF000080",
     )
     scene_rect = QRectF(0, 0, 200, 200)
-    item = RasterLayerItem(buffer=buf, color_map=cmap, scene_rect=scene_rect, node_id=node_id)
+    item = RasterLayerItem(
+        buffer=buf, color_map=cmap, scene_rect=scene_rect, node_id=node_id
+    )
     view.scene.addItem(item)
     view._raster_items[node_id] = item
     return item, buf
@@ -85,6 +87,7 @@ class TestRasterEditModeActivation:
         view.start_raster_editing("n1")
 
         from PySide6.QtWidgets import QGraphicsView
+
         assert view.dragMode() == QGraphicsView.DragMode.NoDrag
 
     def test_stop_restores_scroll_drag(self, qtbot) -> None:
@@ -95,6 +98,7 @@ class TestRasterEditModeActivation:
         view.stop_raster_editing()
 
         from PySide6.QtWidgets import QGraphicsView
+
         assert view.dragMode() == QGraphicsView.DragMode.ScrollHandDrag
 
 
@@ -165,6 +169,7 @@ class TestFillToolUpdatesBuffer:
         tool.handle_mouse_press(QPointF(100.0, 100.0))
 
         import numpy as np
+
         assert np.all(buf.data == 55)
 
 
@@ -205,6 +210,7 @@ class TestRasterLayerItemDisplay:
 
     def test_update_display_gradient_not_null(self, qtbot) -> None:
         from PySide6.QtWidgets import QApplication
+
         QApplication.processEvents()
 
         buf = MapDataBuffer(width=32, height=32, default_value=32768)
@@ -223,6 +229,7 @@ class TestRasterLayerItemDisplay:
 
     def test_update_display_palette_colors_pixels(self, qtbot) -> None:
         from PySide6.QtWidgets import QApplication
+
         QApplication.processEvents()
 
         buf = MapDataBuffer(width=4, height=4, default_value=1)
@@ -249,6 +256,7 @@ class TestRasterLayerItemDisplay:
 
     def test_update_region_does_not_crash(self, qtbot) -> None:
         from PySide6.QtWidgets import QApplication
+
         buf = MapDataBuffer(width=32, height=32, default_value=0)
         cmap = ColorMap(
             type="gradient",
@@ -408,8 +416,12 @@ class TestRasterButtonStyling:
         qtbot.addWidget(panel)
 
         # All raster tool buttons should have non-empty stylesheets
-        for btn in (panel._btn_brush, panel._btn_fill,
-                    panel._btn_gradient, panel._btn_sample):
+        for btn in (
+            panel._btn_brush,
+            panel._btn_fill,
+            panel._btn_gradient,
+            panel._btn_sample,
+        ):
             assert btn.styleSheet(), f"{btn.text()} button has no stylesheet"
 
     def test_edit_button_has_stylesheet(self, qtbot) -> None:
@@ -456,21 +468,29 @@ class TestSpinboxArrows:
 
     def test_brush_size_has_arrows(self, qtbot) -> None:
         from PySide6.QtWidgets import QAbstractSpinBox
+
         from src.gui.widgets.map.map_layer_panel import MapLayerPanel
 
         panel = MapLayerPanel()
         qtbot.addWidget(panel)
 
-        assert panel._brush_size_spin.buttonSymbols() == QAbstractSpinBox.ButtonSymbols.UpDownArrows
+        assert (
+            panel._brush_size_spin.buttonSymbols()
+            == QAbstractSpinBox.ButtonSymbols.UpDownArrows
+        )
 
     def test_paint_value_has_arrows(self, qtbot) -> None:
         from PySide6.QtWidgets import QAbstractSpinBox
+
         from src.gui.widgets.map.map_layer_panel import MapLayerPanel
 
         panel = MapLayerPanel()
         qtbot.addWidget(panel)
 
-        assert panel._paint_value_spin.buttonSymbols() == QAbstractSpinBox.ButtonSymbols.UpDownArrows
+        assert (
+            panel._paint_value_spin.buttonSymbols()
+            == QAbstractSpinBox.ButtonSymbols.UpDownArrows
+        )
 
 
 # ── UX Fix: Live tool mode and settings signals ──────────────────────
@@ -486,3 +506,148 @@ class TestPanelSignals:
         qtbot.addWidget(panel)
 
         assert hasattr(panel, "raster_settings_changed")
+
+
+# ── Probe feedback ────────────────────────────────────────────────────
+
+
+class TestProbeResultPopup:
+    """Probe popup should show value and resolved entity label."""
+
+    def test_probe_popup_shows_value(self, qtbot) -> None:
+        from src.gui.widgets.map.raster_probe_popup import RasterProbePopup
+
+        view = _make_view(qtbot)
+        popup = RasterProbePopup(view)
+        popup.show_result(node_id="n1", value=42, entity_name=None, label=None)
+
+        assert "42" in popup.text()
+
+    def test_probe_popup_shows_entity_name(self, qtbot) -> None:
+        from src.gui.widgets.map.raster_probe_popup import RasterProbePopup
+
+        view = _make_view(qtbot)
+        popup = RasterProbePopup(view)
+        popup.show_result(
+            node_id="n1", value=5, entity_name="Tundra", label="Cold steppe"
+        )
+
+        assert "Tundra" in popup.text()
+
+    def test_probe_popup_hides_on_clear(self, qtbot) -> None:
+        from src.gui.widgets.map.raster_probe_popup import RasterProbePopup
+
+        view = _make_view(qtbot)
+        popup = RasterProbePopup(view)
+        popup.show_result(node_id="n1", value=1, entity_name=None, label=None)
+        popup.hide_result()
+
+        assert not popup.isVisible()
+
+
+# ── Palette editor enhancements ───────────────────────────────────────
+
+
+class TestPaletteEditorEntityColumn:
+    """Discrete palette editor must have an entity column."""
+
+    def test_discrete_table_has_entity_column(self, qtbot) -> None:
+        from src.gui.widgets.map.map_data_buffer import ColorMap
+        from src.gui.widgets.map.raster_palette_editor import RasterPaletteEditor
+
+        cmap = ColorMap(type="palette", entries=[])
+        dlg = RasterPaletteEditor(color_map=cmap, mode="discrete")
+        qtbot.addWidget(dlg)
+
+        # Should have at least 4 columns: Value, Colour, Entity, Remove
+        assert dlg._table.columnCount() >= 4
+
+    def test_discrete_table_stores_entity_id(self, qtbot) -> None:
+        from src.gui.widgets.map.map_data_buffer import ColorEntry, ColorMap
+        from src.gui.widgets.map.raster_palette_editor import RasterPaletteEditor
+
+        entry = ColorEntry(value=1, color="#FF0000", entity_id="entity-abc")
+        cmap = ColorMap(type="palette", entries=[entry])
+        dlg = RasterPaletteEditor(color_map=cmap, mode="discrete")
+        qtbot.addWidget(dlg)
+
+        result = dlg.result_color_map()
+        assert result.entries[0].entity_id == "entity-abc"
+
+    def test_result_map_includes_entity_ids(self, qtbot) -> None:
+        from src.gui.widgets.map.map_data_buffer import ColorMap
+        from src.gui.widgets.map.raster_palette_editor import RasterPaletteEditor
+
+        cmap = ColorMap(type="palette", entries=[])
+        dlg = RasterPaletteEditor(color_map=cmap, mode="discrete")
+        qtbot.addWidget(dlg)
+
+        dlg._add_entry_row(value=10, color="#00FF00", entity_id="ent-1")
+        result = dlg.result_color_map()
+        assert result.entries[0].entity_id == "ent-1"
+
+
+class TestPaletteEditorGradientPreview:
+    """Continuous palette editor must show a gradient preview strip."""
+
+    def test_continuous_has_gradient_preview(self, qtbot) -> None:
+        from src.gui.widgets.map.map_data_buffer import ColorMap
+        from src.gui.widgets.map.raster_palette_editor import RasterPaletteEditor
+
+        cmap = ColorMap(
+            type="gradient", gradient_start="#000000", gradient_end="#FFFFFF"
+        )
+        dlg = RasterPaletteEditor(color_map=cmap, mode="continuous")
+        qtbot.addWidget(dlg)
+
+        assert hasattr(dlg, "_gradient_preview")
+
+    def test_gradient_preview_updates_on_color_change(self, qtbot) -> None:
+        from src.gui.widgets.map.map_data_buffer import ColorMap
+        from src.gui.widgets.map.raster_palette_editor import RasterPaletteEditor
+
+        cmap = ColorMap(
+            type="gradient", gradient_start="#000000", gradient_end="#FFFFFF"
+        )
+        dlg = RasterPaletteEditor(color_map=cmap, mode="continuous")
+        qtbot.addWidget(dlg)
+
+        # Changing a color should trigger a preview refresh without error
+        dlg._start_btn.color_hex = "#FF0000"
+        dlg._refresh_gradient_preview()  # must not raise
+
+
+# ── ColorEntry entity_id field ────────────────────────────────────────
+
+
+class TestColorEntryEntityId:
+    """ColorEntry must support an optional entity_id field."""
+
+    def test_color_entry_has_entity_id(self) -> None:
+        from src.gui.widgets.map.map_data_buffer import ColorEntry
+
+        entry = ColorEntry(value=1, color="#AABBCC", entity_id="eid-xyz")
+        assert entry.entity_id == "eid-xyz"
+
+    def test_color_entry_entity_id_defaults_none(self) -> None:
+        from src.gui.widgets.map.map_data_buffer import ColorEntry
+
+        entry = ColorEntry(value=1, color="#AABBCC")
+        assert entry.entity_id is None
+
+    def test_color_entry_roundtrips_entity_id(self) -> None:
+        from src.gui.widgets.map.map_data_buffer import ColorEntry
+
+        entry = ColorEntry(value=5, color="#112233", entity_id="ent-999")
+        d = entry.to_dict()
+        assert d["entity_id"] == "ent-999"
+        restored = ColorEntry.from_dict(d)
+        assert restored.entity_id == "ent-999"
+
+    def test_color_entry_roundtrip_no_entity_id(self) -> None:
+        from src.gui.widgets.map.map_data_buffer import ColorEntry
+
+        entry = ColorEntry(value=3, color="#FFFFFF")
+        d = entry.to_dict()
+        restored = ColorEntry.from_dict(d)
+        assert restored.entity_id is None
