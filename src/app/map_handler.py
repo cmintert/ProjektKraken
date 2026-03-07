@@ -12,7 +12,7 @@ received through signals.
 import shutil
 import uuid
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Optional
 
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt, Signal, Slot
 
@@ -693,18 +693,29 @@ class MapHandler(QObject):
         cmd = RenameLayerCommand(map_id, node_id, new_name, tree_dict, actual_marker_id)
         self.command_requested.emit(cmd)
 
-    @Slot(str)
-    def on_layer_feature_deleted(self, object_id: str) -> None:
-        """Delete a marker from the database after layer panel removal.
+    @Slot(str, str)
+    def on_layer_feature_deleted(self, object_id: str, layer_type: str) -> None:
+        """Delete a feature from the database after layer panel removal.
 
         The graphics item and layer node have already been cleaned up by
-        ``MapWidget._on_delete_layer``.  This handler only fires the
-        ``DeleteMarkerCommand`` to persist the deletion.
+        ``MapWidget._on_delete_layer``.  This handler dispatches to the
+        correct delete command based on *layer_type*:
+
+        - ``MAP_LAYER_TYPE_RASTER`` → :class:`DeleteRasterLayerCommand`.
+        - All other leaf types → :class:`DeleteMarkerCommand`.
 
         Args:
-            object_id: The entity/event UUID used as the UI marker key.
+            object_id: For markers, the entity/event UUID used as the UI
+                marker key.  For raster layers, the layer node UUID.
+            layer_type: One of the ``MAP_LAYER_TYPE_*`` constants.
 
         """
+        from src.app.constants import MAP_LAYER_TYPE_RASTER
+
+        if layer_type == MAP_LAYER_TYPE_RASTER:
+            self.delete_raster_layer(object_id)
+            return
+
         actual_marker_id = self._marker_object_to_id.get(object_id)
         if not actual_marker_id:
             logger.warning("on_layer_feature_deleted: no mapping for %s", object_id)
@@ -920,7 +931,7 @@ class MapHandler(QObject):
         if self._map_widget is None:
             logger.warning("on_raster_stroke_completed: _map_widget is None")
             return
-        map_id = getattr(self._map_widget, "_current_map_id", None)
+        map_id = self._map_widget.get_selected_map_id()
         if not map_id:
             logger.warning(
                 "on_raster_stroke_completed: no current_map_id on map_widget "
@@ -991,10 +1002,12 @@ class MapHandler(QObject):
 
         from src.gui.widgets.map.raster_palette_editor import RasterPaletteEditor
 
-        # Determine mode from metadata
+        # Determine mode and retrieve existing value_entity_map and color_map from metadata
         mode = "discrete"
+        existing_vem: dict = {}
+        existing_color_map_dict: Optional[dict] = None
         maps = self._map_widget.maps_data
-        map_id = getattr(self._map_widget, "_current_map_id", None)
+        map_id = self._map_widget.get_selected_map_id()
         selected_map = (
             next((m for m in maps if m.id == map_id), None) if map_id else None
         )
@@ -1002,6 +1015,8 @@ class MapHandler(QObject):
             for rl in (selected_map.attributes or {}).get("raster_layers", []):
                 if rl.get("node_id") == node_id:
                     mode = rl.get("mode", "discrete")
+                    existing_vem = dict(rl.get("value_entity_map") or {})
+                    existing_color_map_dict = rl.get("color_map")
                     break
         logger.debug(
             "on_raster_palette_edit: mode=%s color_map_type=%s",
@@ -1012,6 +1027,7 @@ class MapHandler(QObject):
         dialog = RasterPaletteEditor(
             color_map=item.color_map,
             mode=mode,
+            value_entity_map=existing_vem,
             parent=self._map_widget,
         )
         if dialog.exec():
@@ -1021,6 +1037,26 @@ class MapHandler(QObject):
             )
             item.update_display(new_cmap)
             logger.debug("on_raster_palette_edit: display updated")
+
+            # Persist the colour map and semantic value→item mapping together
+            if map_id:
+                from src.commands.raster_commands import SetRasterMappingCommand
+                from src.gui.widgets.map.raster_mapping import (
+                    normalize_value_entity_map,
+                )
+
+                new_vem = dialog.result_value_entity_map()
+                old_vem = normalize_value_entity_map(existing_vem)
+                cmd = SetRasterMappingCommand(
+                    map_id=map_id,
+                    node_id=node_id,
+                    new_mapping=new_vem,
+                    old_mapping=old_vem,
+                    new_color_map=new_cmap.to_dict(),
+                    old_color_map=existing_color_map_dict,
+                )
+                self.command_requested.emit(cmd)
+                logger.debug("on_raster_palette_edit: SetRasterMappingCommand emitted")
 
     @Slot(str, int, float, float)
     def on_raster_value_probed(
@@ -1050,7 +1086,7 @@ class MapHandler(QObject):
         from src.gui.widgets.map.raster_mapping import probe_all_layers
 
         view = self._map_widget.view
-        map_id = getattr(self._map_widget, "_current_map_id", None)
+        map_id = self._map_widget.get_selected_map_id()
         maps = self._map_widget.maps_data
         selected_map = (
             next((m for m in maps if m.id == map_id), None) if map_id else None
@@ -1116,6 +1152,7 @@ class MapHandler(QObject):
             label=label,
         )
 
+    def _save_raster_to_disk(self, node_id: str) -> None:
         """Persist the raster buffer to its PNG file on disk."""
         if self._map_widget is None:
             logger.warning("_save_raster_to_disk: _map_widget is None")
@@ -1130,7 +1167,7 @@ class MapHandler(QObject):
             )
             return
 
-        map_id = getattr(self._map_widget, "_current_map_id", None)
+        map_id = self._map_widget.get_selected_map_id()
         if not map_id:
             logger.warning("_save_raster_to_disk: no current_map_id")
             return

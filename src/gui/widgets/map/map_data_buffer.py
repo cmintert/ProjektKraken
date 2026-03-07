@@ -230,12 +230,22 @@ class MapDataBuffer:
     ) -> Tuple[int, int, int, int]:
         """Paint a circular brush stroke onto the buffer.
 
+        Feathering model
+        ----------------
+        - ``falloff = 0.0`` — Hard circle: uniform *value* inside the
+          radius, untouched outside.
+        - ``falloff = 1.0`` — Full linear ramp: full *value* at the
+          centre, linearly decreasing to zero at the outer edge.
+        - ``0 < falloff < 1`` — Hard inner core of radius
+          ``r * (1 - falloff)`` (full value), then a linear ramp from
+          the core boundary down to zero at the outer radius.
+
         Args:
             center_x: Normalised X centre [0, 1].
             center_y: Normalised Y centre [0, 1].
             radius_px: Brush radius in **buffer pixels**.
             value: Value to paint.
-            falloff: 0.0 = hard brush (no falloff), 1.0 = full linear falloff.
+            falloff: 0.0 = hard brush, 1.0 = full linear falloff.
 
         Returns:
             Dirty region as ``(min_col, min_row, max_col, max_row)``.
@@ -250,8 +260,8 @@ class MapDataBuffer:
         max_row = min(self._height - 1, cy + r)
 
         logger.debug(
-            "paint_brush: center_px=(%d,%d) radius=%d value=%d falloff=%.2f "
-            "dirty=(%d,%d,%d,%d)",
+            "paint_brush: center_px=(%d,%d) radius=%d value=%d "
+            "falloff=%.2f dirty=(%d,%d,%d,%d)",
             cx,
             cy,
             r,
@@ -272,15 +282,28 @@ class MapDataBuffer:
         mask = dist <= r
 
         if falloff > 0.0:
-            # Linear falloff: full value at centre, 0 at radius edge
-            strength = np.clip(1.0 - (dist / r) * falloff, 0.0, 1.0)
-            blended = (
-                self._data[min_row : max_row + 1, min_col : max_col + 1].astype(
-                    np.float32
-                )
-                * (1.0 - strength * mask)
-                + value * strength * mask
+            # Hard-core + linear-ramp feathering
+            core_r = r * (1.0 - falloff)
+            ramp_width = r - core_r  # == r * falloff
+
+            # strength = 1.0 inside the core, linear ramp in the
+            # feather zone, 0.0 outside the outer radius.
+            strength = np.where(
+                dist <= core_r,
+                1.0,
+                np.clip(
+                    (r - dist) / max(ramp_width, 1e-6),
+                    0.0,
+                    1.0,
+                ),
             )
+            # Zero out anything outside the circle
+            strength = strength * mask
+
+            region = self._data[min_row : max_row + 1, min_col : max_col + 1].astype(
+                np.float32
+            )
+            blended = region * (1.0 - strength) + value * strength
             self._data[min_row : max_row + 1, min_col : max_col + 1] = np.clip(
                 blended, 0, 65535
             ).astype(np.uint16)

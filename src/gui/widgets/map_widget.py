@@ -206,11 +206,15 @@ class MapWidget(
         str, float, float
     )  # node_id, opacity, old_opacity
     layer_rename_requested = Signal(str, str)  # node_id, new_name
-    layer_delete_feature_requested = Signal(str)  # object_id of deleted leaf
+    layer_delete_feature_requested = Signal(
+        str, str
+    )  # object_id, layer_type of deleted leaf
     create_raster_layer_requested = Signal(str, int, int, str, int)  # name,w,h,mode,def
     raster_edit_requested = Signal(str)  # node_id — start raster editing
     raster_edit_stopped = Signal()  # stop raster editing
-    raster_stroke_completed = Signal(str, tuple, bytes, bytes)  # node_id, dirty, before, after
+    raster_stroke_completed = Signal(
+        str, tuple, bytes, bytes
+    )  # node_id, dirty, before, after
     raster_value_probed = Signal(str, int, float, float)  # node_id, value, x, y
     raster_palette_edit_requested = Signal(str)  # node_id
 

@@ -5,7 +5,7 @@ for the MapWidget.
 """
 
 import logging
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from PySide6.QtCore import Qt, Slot
 
@@ -33,7 +33,7 @@ class MapLayerMixin:
         - self.layer_panel: MapLayerPanel
         - self._layer_model: Optional[MapLayerModel]
         - self.layer_tree_changed: Signal
-        - self.layer_delete_feature_requested: Signal(str)
+        - self.layer_delete_feature_requested: Signal(str, str)
         - self.layer_rename_requested: Signal(str, str)
         - self.layer_opacity_change_requested: Signal(str, float, float)
     """
@@ -273,22 +273,22 @@ class MapLayerMixin:
         logger.info(f"Deleted layer: {node.name} ({node_id})")
 
         # Request DB deletion for every leaf feature
-        for leaf_id in leaf_ids:
-            self.layer_delete_feature_requested.emit(leaf_id)
+        for leaf_id, leaf_type in leaf_ids:
+            self.layer_delete_feature_requested.emit(leaf_id, leaf_type)
 
-    def _collect_leaf_ids(self, node: MapLayerNode) -> List[str]:
-        """Recursively collect IDs of all leaf (non-group) nodes.
+    def _collect_leaf_ids(self, node: MapLayerNode) -> List[Tuple[str, str]]:
+        """Recursively collect IDs and types of all leaf (non-group) nodes.
 
         Args:
             node: The root node to search.
 
         Returns:
-            List of leaf node IDs.
+            List of (node_id, layer_type) tuples for all leaf nodes.
 
         """
-        ids: List[str] = []
+        ids: List[Tuple[str, str]] = []
         if node.layer_type != MAP_LAYER_TYPE_GROUP:
-            ids.append(node.id)
+            ids.append((node.id, node.layer_type))
         for child in node.children:
             ids.extend(self._collect_leaf_ids(child))
         return ids

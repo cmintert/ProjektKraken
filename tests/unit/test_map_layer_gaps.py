@@ -1070,15 +1070,19 @@ class TestDeleteLayerEmitsDBSignal:
     """Verify _on_delete_layer emits layer_delete_feature_requested for DB cleanup."""
 
     def test_delete_leaf_emits_feature_delete(self, qtbot) -> None:
-        """Deleting a leaf node emits layer_delete_feature_requested."""
+        """Deleting a leaf node emits layer_delete_feature_requested with (id, type)."""
         widget = _make_map_widget(qtbot)
         widget.add_marker("del-db-1", "entity", "To Delete", 0.5, 0.5)
 
-        received: list[str] = []
-        widget.layer_delete_feature_requested.connect(received.append)
+        received: list[tuple] = []
+        widget.layer_delete_feature_requested.connect(
+            lambda nid, lt: received.append((nid, lt))
+        )
 
         widget._on_delete_layer("del-db-1")
-        assert received == ["del-db-1"]
+        assert len(received) == 1
+        assert received[0][0] == "del-db-1"
+        assert received[0][1] == MAP_LAYER_TYPE_MARKER
 
     def test_delete_group_emits_for_all_children(self, qtbot) -> None:
         """Deleting a group emits layer_delete_feature_requested for each child."""
@@ -1086,12 +1090,15 @@ class TestDeleteLayerEmitsDBSignal:
         widget.add_marker("g-child-1", "entity", "Child 1", 0.2, 0.2)
         widget.add_marker("g-child-2", "entity", "Child 2", 0.7, 0.7)
 
-        received: list[str] = []
-        widget.layer_delete_feature_requested.connect(received.append)
+        received: list[tuple] = []
+        widget.layer_delete_feature_requested.connect(
+            lambda nid, lt: received.append((nid, lt))
+        )
 
         default = widget._default_group()
         widget._on_delete_layer(default.id)
-        assert set(received) == {"g-child-1", "g-child-2"}
+        emitted_ids = {t[0] for t in received}
+        assert emitted_ids == {"g-child-1", "g-child-2"}
 
     def test_delete_group_type_not_emitted(self, qtbot) -> None:
         """Deleting an empty group does NOT emit layer_delete_feature_requested."""
@@ -1105,14 +1112,16 @@ class TestDeleteLayerEmitsDBSignal:
         parent_idx = model.index_from_node(model.root)
         model.add_layer(parent_idx, group)
 
-        received: list[str] = []
-        widget.layer_delete_feature_requested.connect(received.append)
+        received: list[tuple] = []
+        widget.layer_delete_feature_requested.connect(
+            lambda nid, lt: received.append((nid, lt))
+        )
 
         widget._on_delete_layer("empty-grp")
         assert received == []
 
     def test_collect_leaf_ids_nested_groups(self, qtbot) -> None:
-        """_collect_leaf_ids recurses through nested groups."""
+        """_collect_leaf_ids recurses through nested groups, returning (id, type) tuples."""
         widget = _make_map_widget(qtbot)
         # Build a nested tree: root → group → sub-group → leaf
         leaf = MapLayerNode(
@@ -1131,7 +1140,7 @@ class TestDeleteLayerEmitsDBSignal:
             children=[sub],
         )
         ids = widget._collect_leaf_ids(top)
-        assert ids == ["deep-leaf"]
+        assert ids == [("deep-leaf", MAP_LAYER_TYPE_MARKER)]
 
 
 class TestRenameLayerCommandMarkerIdFix:

@@ -105,7 +105,7 @@ class TestPointAccess:
 
 
 class TestBrushPaint:
-    """Tests for paint_brush."""
+    """Tests for paint_brush hard-edge behaviour."""
 
     def test_brush_paints_center(self) -> None:
         """A brush at (0.5, 0.5) should paint the centre pixel."""
@@ -125,16 +125,144 @@ class TestBrushPaint:
         """Pixels far from the brush centre should remain unchanged."""
         buf = MapDataBuffer(256, 256, default_value=0)
         buf.paint_brush(0.1, 0.1, radius_px=3, value=500)
-        # Far corner should still be 0
         assert buf.get_value_at(0.9, 0.9) == 0
 
-    def test_brush_with_falloff(self) -> None:
-        """Falloff > 0 should produce a gradient from centre to edge."""
-        buf = MapDataBuffer(128, 128)
-        buf.paint_brush(0.5, 0.5, radius_px=20, value=10000, falloff=1.0)
-        centre_val = buf.get_value_at(0.5, 0.5)
-        edge_val = buf.get_value_at(0.5, 0.35)  # Near the edge of brush
-        assert centre_val >= edge_val
+    def test_hard_brush_uniform_inside(self) -> None:
+        """falloff=0: every pixel inside the radius gets the full value."""
+        buf = MapDataBuffer(256, 256)
+        buf.paint_brush(0.5, 0.5, radius_px=30, value=5000, falloff=0.0)
+        # Centre
+        assert buf.get_value_at(0.5, 0.5) == 5000
+        # ~15 px away (inside radius 30)
+        assert buf.get_value_at(0.5, 0.5 + 15 / 255) == 5000
+        # ~29 px away (still inside)
+        assert buf.get_value_at(0.5, 0.5 + 29 / 255) == 5000
+
+    def test_hard_brush_zero_outside(self) -> None:
+        """falloff=0: pixels outside the radius are untouched."""
+        buf = MapDataBuffer(256, 256, default_value=0)
+        buf.paint_brush(0.5, 0.5, radius_px=30, value=5000, falloff=0.0)
+        # ~35 px away (outside)
+        assert buf.get_value_at(0.5, 0.5 + 35 / 255) == 0
+
+
+# ------------------------------------------------------------------
+# Brush feathering (falloff)
+# ------------------------------------------------------------------
+
+
+class TestBrushFeathering:
+    """Tests for brush feathering (falloff) behaviour.
+
+    Feathering model
+    ----------------
+    - ``falloff = 0.0``: Hard circle — uniform value everywhere inside
+      the radius, zero outside.
+    - ``falloff = 1.0``: Full linear ramp — full value at the centre,
+      linearly decreasing to zero at the outer edge of the radius.
+    - ``0 < falloff < 1``: Hard inner core of radius
+      ``r * (1 - falloff)`` (full value), then a linear ramp from the
+      core boundary down to zero at the outer radius.
+    """
+
+    # -- Full falloff (1.0) -----------------------------------------
+
+    def test_full_falloff_center_is_target(self) -> None:
+        """falloff=1.0: the centre pixel must be the target value."""
+        buf = MapDataBuffer(256, 256)
+        buf.paint_brush(0.5, 0.5, radius_px=40, value=10000, falloff=1.0)
+        assert buf.get_value_at(0.5, 0.5) == 10000
+
+    def test_full_falloff_half_radius(self) -> None:
+        """falloff=1.0: at half the radius, value ≈ 50% of target."""
+        buf = MapDataBuffer(256, 256)
+        buf.paint_brush(0.5, 0.5, radius_px=40, value=10000, falloff=1.0)
+        # 20 px away = half radius → strength ≈ 0.5
+        val = buf.get_value_at(0.5, 0.5 + 20 / 255)
+        assert 4000 < val < 6000
+
+    def test_full_falloff_near_edge(self) -> None:
+        """falloff=1.0: near the radius edge the value is close to 0."""
+        buf = MapDataBuffer(256, 256)
+        buf.paint_brush(0.5, 0.5, radius_px=40, value=10000, falloff=1.0)
+        # 38 px away → strength ≈ 0.05
+        val = buf.get_value_at(0.5, 0.5 + 38 / 255)
+        assert val < 1500
+
+    def test_full_falloff_outside_is_zero(self) -> None:
+        """falloff=1.0: pixels beyond the radius are untouched."""
+        buf = MapDataBuffer(256, 256, default_value=0)
+        buf.paint_brush(0.5, 0.5, radius_px=40, value=10000, falloff=1.0)
+        assert buf.get_value_at(0.5, 0.5 + 45 / 255) == 0
+
+    def test_full_falloff_monotonic_decrease(self) -> None:
+        """falloff=1.0: values must decrease monotonically from centre."""
+        buf = MapDataBuffer(256, 256)
+        buf.paint_brush(0.5, 0.5, radius_px=40, value=10000, falloff=1.0)
+        prev = buf.get_value_at(0.5, 0.5)
+        for px_away in (5, 10, 15, 20, 25, 30, 35):
+            cur = buf.get_value_at(0.5, 0.5 + px_away / 255)
+            assert cur <= prev, (
+                f"Value at {px_away}px ({cur}) > value at " f"previous ({prev})"
+            )
+            prev = cur
+
+    # -- Partial falloff (0.5) --------------------------------------
+
+    def test_partial_falloff_core_is_full(self) -> None:
+        """falloff=0.5: hard core at r*(1-0.5)=20px has full value."""
+        buf = MapDataBuffer(256, 256)
+        buf.paint_brush(0.5, 0.5, radius_px=40, value=10000, falloff=0.5)
+        # 15 px from centre (inside 20px core) must be full value
+        val = buf.get_value_at(0.5, 0.5 + 15 / 255)
+        assert val == 10000
+
+    def test_partial_falloff_ramp_zone(self) -> None:
+        """falloff=0.5: between core edge and outer edge values ramp."""
+        buf = MapDataBuffer(256, 256)
+        buf.paint_brush(0.5, 0.5, radius_px=40, value=10000, falloff=0.5)
+        # core_r = 20, outer_r = 40, sample at 30px → midpoint of ramp
+        val = buf.get_value_at(0.5, 0.5 + 30 / 255)
+        assert 3500 < val < 6500
+
+    def test_partial_falloff_outside_is_zero(self) -> None:
+        """falloff=0.5: beyond the outer radius, value is zero."""
+        buf = MapDataBuffer(256, 256, default_value=0)
+        buf.paint_brush(0.5, 0.5, radius_px=40, value=10000, falloff=0.5)
+        assert buf.get_value_at(0.5, 0.5 + 45 / 255) == 0
+
+    # -- Small falloff (0.14, user's real setting) ------------------
+
+    def test_small_falloff_core_is_full(self) -> None:
+        """falloff=0.14: large hard core, thin soft edge."""
+        buf = MapDataBuffer(256, 256)
+        # core_r = 40 * (1 - 0.14) = 34.4 px
+        buf.paint_brush(0.5, 0.5, radius_px=40, value=10000, falloff=0.14)
+        # 30 px (inside core)
+        val = buf.get_value_at(0.5, 0.5 + 30 / 255)
+        assert val == 10000
+
+    def test_small_falloff_ramp_zone(self) -> None:
+        """falloff=0.14: the thin ramp zone produces intermediate vals."""
+        buf = MapDataBuffer(256, 256)
+        buf.paint_brush(0.5, 0.5, radius_px=40, value=10000, falloff=0.14)
+        # core_r ≈ 34.4, outer_r = 40, sample at 37px → in ramp
+        val = buf.get_value_at(0.5, 0.5 + 37 / 255)
+        # Should be noticeably less than 10000
+        assert val < 9000
+        assert val > 0
+
+    # -- Painting over existing values ------------------------------
+
+    def test_feathered_blends_with_existing(self) -> None:
+        """Feathered brush blends towards target from existing values."""
+        buf = MapDataBuffer(256, 256, default_value=5000)
+        buf.paint_brush(0.5, 0.5, radius_px=40, value=10000, falloff=1.0)
+        # Centre should be fully painted to target
+        assert buf.get_value_at(0.5, 0.5) == 10000
+        # 20 px away: strength ≈ 0.5 → blended ≈ 5000*(1-0.5)+10000*0.5 = 7500
+        mid = buf.get_value_at(0.5, 0.5 + 20 / 255)
+        assert 6500 < mid < 8500
 
 
 # ------------------------------------------------------------------

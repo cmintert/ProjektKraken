@@ -177,47 +177,56 @@ class MapLayerPanel(QWidget):
         self._btn_gradient.setCheckable(True)
         self._btn_sample = QPushButton("Sample")
         self._btn_sample.setCheckable(True)
-        for b in (self._btn_brush, self._btn_fill, self._btn_gradient, self._btn_sample):
+        for b in (
+            self._btn_brush,
+            self._btn_fill,
+            self._btn_gradient,
+            self._btn_sample,
+        ):
             b.setAutoExclusive(True)
             b.toggled.connect(self._on_tool_mode_changed)
             tool_row.addWidget(b)
         rt_layout.addLayout(tool_row)
 
-        # Brush settings row
-        settings_row = QHBoxLayout()
-        settings_row.setSpacing(4)
-        settings_row.addWidget(QLabel("Size:"))
+        # Brush settings row 1: Size and Value
+        settings_row_1 = QHBoxLayout()
+        settings_row_1.setSpacing(4)
+        settings_row_1.addWidget(QLabel("Size:"))
         self._brush_size_spin = QSpinBox()
         self._brush_size_spin.setRange(1, 128)
         self._brush_size_spin.setValue(8)
-        self._brush_size_spin.setButtonSymbols(
-            QSpinBox.ButtonSymbols.UpDownArrows
-        )
+        self._brush_size_spin.setButtonSymbols(QSpinBox.ButtonSymbols.UpDownArrows)
         self._brush_size_spin.valueChanged.connect(self._on_raster_setting_changed)
-        settings_row.addWidget(self._brush_size_spin)
-        settings_row.addWidget(QLabel("Value:"))
+        settings_row_1.addWidget(self._brush_size_spin)
+
+        settings_row_1.addWidget(QLabel("Value:"))
         self._paint_value_spin = QSpinBox()
         self._paint_value_spin.setRange(0, 65535)
         self._paint_value_spin.setValue(1)
-        self._paint_value_spin.setButtonSymbols(
-            QSpinBox.ButtonSymbols.UpDownArrows
-        )
+        self._paint_value_spin.setButtonSymbols(QSpinBox.ButtonSymbols.UpDownArrows)
         self._paint_value_spin.valueChanged.connect(self._on_raster_setting_changed)
-        settings_row.addWidget(self._paint_value_spin)
-        settings_row.addWidget(QLabel("Falloff:"))
+        settings_row_1.addWidget(self._paint_value_spin)
+        settings_row_1.addStretch()
+        rt_layout.addLayout(settings_row_1)
+
+        # Brush settings row 2: Falloff
+        settings_row_2 = QHBoxLayout()
+        settings_row_2.setSpacing(4)
+        settings_row_2.addWidget(QLabel("Falloff:"))
         self._falloff_slider = QSlider(Qt.Orientation.Horizontal)
         self._falloff_slider.setRange(0, 100)
         self._falloff_slider.setValue(0)
         self._falloff_slider.setToolTip("Brush falloff (0=hard, 100=soft)")
         self._falloff_slider.valueChanged.connect(self._on_falloff_changed)
-        settings_row.addWidget(self._falloff_slider)
+        settings_row_2.addWidget(self._falloff_slider, 1)  # Give slider stretch
+
         self._falloff_label = QLabel("0%")
         self._falloff_label.setMinimumWidth(32)
         self._falloff_label.setAlignment(
             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
         )
-        settings_row.addWidget(self._falloff_label)
-        rt_layout.addLayout(settings_row)
+        settings_row_2.addWidget(self._falloff_label)
+        rt_layout.addLayout(settings_row_2)
 
         # Edit / Done toggle + Palette button
         action_row = QHBoxLayout()
@@ -291,13 +300,13 @@ class MapLayerPanel(QWidget):
 
     def refresh_styles(self) -> None:
         """Re-apply all theme-aware styles (call on theme change)."""
-        try:
+        import contextlib
+
+        with contextlib.suppress(ImportError):
             import shiboken6
 
             if not shiboken6.isValid(self):
                 return
-        except ImportError:
-            pass
 
         tool_style = StyleHelper.get_tool_button_style()
         self.btn_new_group.setStyleSheet(tool_style)
@@ -305,6 +314,7 @@ class MapLayerPanel(QWidget):
         self.btn_delete.setStyleSheet(StyleHelper.get_destructive_button_style())
         self._title_label.setStyleSheet(StyleHelper.get_panel_header_style())
         self._opacity_slider.setStyleSheet(StyleHelper.get_slider_style())
+        self._falloff_slider.setStyleSheet(StyleHelper.get_slider_style())
         dim_style = f"color: {self._theme_token('text_dim')}; font-size: 9pt;"
         self._opacity_label.setStyleSheet(dim_style)
         self._opacity_value_label.setStyleSheet(
@@ -497,8 +507,7 @@ class MapLayerPanel(QWidget):
         """Handle slider press to capture initial opacity."""
         if self._model is None or not self._selected_node_id:
             return
-        node = self._model.find_node_by_id(self._selected_node_id)
-        if node:
+        if node := self._model.find_node_by_id(self._selected_node_id):
             self._start_opacity = node.opacity
 
     @Slot()
@@ -510,10 +519,10 @@ class MapLayerPanel(QWidget):
         if self._slider_updating or self._model is None or not self._selected_node_id:
             return
 
-        node = self._model.find_node_by_id(self._selected_node_id)
-        if node:
+        if node := self._model.find_node_by_id(self._selected_node_id):
             # Emit signal to create undo command, passing both new and old opacity
-            # If _start_opacity is None (e.g. key press instead of drag), try to use current (less ideal)
+            # If _start_opacity is None (e.g. key press instead of drag),
+            # try to use current (less ideal)
             old_opacity = (
                 self._start_opacity if self._start_opacity is not None else node.opacity
             )
@@ -600,11 +609,11 @@ class MapLayerPanel(QWidget):
         """Currently selected raster tool mode name."""
         if self._btn_fill.isChecked():
             return "fill"
-        if self._btn_gradient.isChecked():
-            return "gradient"
-        if self._btn_sample.isChecked():
-            return "sample"
-        return "brush"
+        return (
+            "gradient"
+            if self._btn_gradient.isChecked()
+            else "sample" if self._btn_sample.isChecked() else "brush"
+        )
 
     @property
     def raster_brush_size(self) -> int:

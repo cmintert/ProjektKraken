@@ -228,7 +228,11 @@ class DataCoordinator(BaseCoordinator):
             incoming: List of incoming relations.
 
         """
-        self.main_window.event_editor.load_event(event, relations, incoming)
+        map_widget = getattr(self.main_window, "map_widget", None)
+        maps_data = map_widget.maps_data if map_widget is not None else []
+        self.main_window.event_editor.load_event(
+            event, relations, incoming, maps_data=maps_data
+        )
 
     @Slot(object, list, list)
     def on_entity_details_ready(
@@ -242,7 +246,11 @@ class DataCoordinator(BaseCoordinator):
             incoming: List of incoming relations.
 
         """
-        self.main_window.entity_editor.load_entity(entity, relations, incoming)
+        map_widget = getattr(self.main_window, "map_widget", None)
+        maps_data = map_widget.maps_data if map_widget is not None else []
+        self.main_window.entity_editor.load_entity(
+            entity, relations, incoming, maps_data=maps_data
+        )
 
     @Slot(list, list)
     def on_graph_data_ready(self, nodes: list, edges: list) -> None:

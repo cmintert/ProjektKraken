@@ -78,3 +78,68 @@ def test_on_command_finished_undo_emits_all_reloads(data_handler):
     data_handler.reload_events.emit.assert_called_once()
     data_handler.reload_markers_for_current_map.emit.assert_called_once()
     data_handler.reload_active_editor_relations.emit.assert_called_once()
+
+
+def test_set_raster_mapping_command_emits_reload_maps(data_handler):
+    """SetRasterMappingCommand must trigger reload_maps so maps_data stays fresh.
+
+    Without this, the in-memory maps_data remains stale after a palette edit.
+    When reload_markers_for_current_map later fires (e.g. on entity creation),
+    load_raster_layers() reads the stale maps_data and reverts the palette.
+    """
+    data_handler.reload_maps = MagicMock()
+    data_handler.reload_entities = MagicMock()
+    data_handler.reload_events = MagicMock()
+
+    result = CommandResult(
+        success=True,
+        command_name="SetRasterMappingCommand",
+        message="Mapping updated.",
+        data={},
+    )
+
+    data_handler.on_command_finished(result)
+
+    data_handler.reload_maps.emit.assert_called_once()
+    # Lore signals must NOT be emitted — this is map-only metadata
+    data_handler.reload_entities.emit.assert_not_called()
+    data_handler.reload_events.emit.assert_not_called()
+
+
+def test_stroke_raster_command_does_not_emit_reload_maps(data_handler):
+    """StrokeRasterCommand and PaintRasterCommand must NOT trigger reload_maps.
+
+    These are high-frequency in-session-only commands (called on every brush
+    stroke) that never touch the DB.  Triggering a full maps reload on each
+    stroke would cause noticeable UI disruption.
+    """
+    data_handler.reload_maps = MagicMock()
+
+    for cmd_name in ("StrokeRasterCommand", "PaintRasterCommand"):
+        data_handler.reload_maps.reset_mock()
+        result = CommandResult(
+            success=True,
+            command_name=cmd_name,
+            message="Stroke applied.",
+            data={},
+        )
+        data_handler.on_command_finished(result)
+        data_handler.reload_maps.emit.assert_not_called(), (
+            f"{cmd_name} should not emit reload_maps"
+        )
+
+
+def test_create_raster_layer_command_emits_reload_maps(data_handler):
+    """CreateRasterLayerCommand contains 'Layer', so it must trigger reload_maps."""
+    data_handler.reload_maps = MagicMock()
+
+    result = CommandResult(
+        success=True,
+        command_name="CreateRasterLayerCommand",
+        message="Created.",
+        data={},
+    )
+
+    data_handler.on_command_finished(result)
+
+    data_handler.reload_maps.emit.assert_called_once()

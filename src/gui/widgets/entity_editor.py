@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
@@ -264,6 +265,26 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self.llm_checkbox.toggled.connect(self.llm_generator.setVisible)
 
         self.form_layout.addRow("LLM Generation:", self.llm_container)
+
+        # Raster Appearances — read-only collapsible section
+        self.raster_appearances_container = QWidget()
+        raster_outer_layout = QVBoxLayout(self.raster_appearances_container)
+        raster_outer_layout.setContentsMargins(0, 0, 0, 0)
+        raster_outer_layout.setSpacing(EDITOR_SECTION_SPACING)
+
+        self.raster_appearances_checkbox = StandardCheckbox("")
+        raster_outer_layout.addWidget(self.raster_appearances_checkbox)
+
+        self.raster_appearances_label = QLabel("Not linked to any raster map.")
+        self.raster_appearances_label.setWordWrap(True)
+        self.raster_appearances_label.setVisible(False)
+        raster_outer_layout.addWidget(self.raster_appearances_label)
+
+        self.raster_appearances_checkbox.toggled.connect(
+            self.raster_appearances_label.setVisible
+        )
+
+        self.form_layout.addRow("Raster Maps:", self.raster_appearances_container)
 
         details_layout.addLayout(self.form_layout)
 
@@ -718,7 +739,11 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self.type_edit.blockSignals(False)
 
     def load_entity(
-        self, entity: Entity, relations: list = None, incoming_relations: list = None
+        self,
+        entity: Entity,
+        relations: list = None,
+        incoming_relations: list = None,
+        maps_data: list = None,
     ) -> None:
         """Populate the editor UI with data from the given entity and its relations.
 
@@ -735,6 +760,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             incoming_relations: Incoming relation dicts to display; each dict
                 must contain at least ``"source_id"``, ``"rel_type"``, and
                 ``"id"``.  Pass ``None`` to display no incoming relations.
+            maps_data: List of :class:`~src.core.map.Map` objects used to
+                populate the read-only Raster Maps section.  Pass ``None``
+                to leave the section unchanged.
 
         """
         self._is_loading = True
@@ -777,6 +805,52 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self._restore_desc_cursor_state(desc_cursor, desc_had_focus)
         finally:
             self._is_loading = False
+
+        self._update_raster_appearances(maps_data or [])
+
+    def _update_raster_appearances(self, maps_data: list) -> None:
+        """Refresh the Raster Maps panel for the current entity.
+
+        Args:
+            maps_data: List of :class:`~src.core.map.Map` objects from the
+                current project.  Pass an empty list to clear the panel.
+        """
+        if not getattr(self, "_current_entity_id", None):
+            return
+
+        from src.gui.widgets.map.raster_mapping import (
+            build_item_raster_index,
+            resolve_node_name,
+        )
+
+        maps_dicts = [
+            {"id": m.id, "attributes": getattr(m, "attributes", None) or {}}
+            for m in maps_data
+        ]
+        index = build_item_raster_index(maps_dicts)
+        refs = index.get(self._current_entity_id, [])
+
+        if not refs:
+            self.raster_appearances_label.setText("Not linked to any raster map.")
+            return
+
+        map_by_id = {m.id: m for m in maps_data}
+        lines = []
+        for ref in refs:
+            map_obj = map_by_id.get(ref.map_id)
+            map_name = getattr(map_obj, "name", ref.map_id) if map_obj else ref.map_id
+            layer_name = (
+                resolve_node_name(getattr(map_obj, "layers", None), ref.node_id)
+                if map_obj
+                else None
+            ) or ref.node_id
+            value_str = (
+                f"value {ref.value}" if ref.mode == "exact" else f"range {ref.min}–{ref.max}"
+            )
+            label = ref.label.strip() if ref.label else "(unlabelled)"
+            lines.append(f"• {label}  ·  {map_name} / {layer_name}  ({value_str})")
+
+        self.raster_appearances_label.setText("\n".join(lines))
 
     def _load_entity_fields(self, entity: Entity) -> None:
         """Loads core form fields from the entity, skipping redundant updates.

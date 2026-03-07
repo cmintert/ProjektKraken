@@ -17,6 +17,7 @@ from src.app.constants import MAP_LAYER_TYPE_RASTER
 from src.commands.base_command import BaseCommand, CommandResult
 from src.core.map import MapLayerNode
 from src.gui.widgets.map.map_data_buffer import ColorMap, MapDataBuffer
+from src.gui.widgets.map.raster_mapping import make_empty_vem, validate_no_overlaps
 from src.services.db_service import DatabaseService
 
 logger = logging.getLogger(__name__)
@@ -153,7 +154,7 @@ class CreateRasterLayerCommand(BaseCommand):
                 "resolution": [self.width, self.height],
                 "mode": self.mode,
                 "default_value": self.default_value,
-                "value_entity_map": {},
+                "value_entity_map": make_empty_vem(self.mode),
                 "color_map": ColorMap(
                     type="gradient",
                     gradient_start="#00000000",
@@ -701,15 +702,20 @@ class StrokeRasterCommand(BaseCommand):
 
 
 class SetRasterMappingCommand(BaseCommand):
-    """Undoable command to update a raster layer's value→entity mapping.
+    """Undoable command to update a raster layer's value→entity mapping and colour map.
 
-    Persists the mapping to ``maps.attributes`` in the database.
+    Persists both the semantic ``value_entity_map`` and the display
+    ``color_map`` to ``maps.attributes`` in the database.
 
     Args:
         map_id: Parent map ID.
         node_id: Raster layer node ID.
         new_mapping: New ``value_entity_map`` dict.
         old_mapping: Previous ``value_entity_map`` dict (for undo).
+        new_color_map: New colour-map dict (``ColorMap.to_dict()``); pass
+            ``None`` to leave the colour map unchanged.
+        old_color_map: Previous colour-map dict (for undo); ignored when
+            ``new_color_map`` is ``None``.
     """
 
     def __init__(
@@ -718,22 +724,40 @@ class SetRasterMappingCommand(BaseCommand):
         node_id: str,
         new_mapping: Dict[str, Any],
         old_mapping: Dict[str, Any],
+        new_color_map: Optional[Dict[str, Any]] = None,
+        old_color_map: Optional[Dict[str, Any]] = None,
     ) -> None:
         super().__init__()
         self.map_id = map_id
         self.node_id = node_id
         self.new_mapping = new_mapping
         self.old_mapping = old_mapping
+        self.new_color_map = new_color_map
+        self.old_color_map = old_color_map
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """Apply the new mapping to the map's attributes."""
+        """Apply the new mapping to the map's attributes.
+
+        Validates that mappings are mutually exclusive (no overlaps)
+        before persisting.  Returns a failed result without writing if
+        the mapping is invalid.
+        """
         logger.debug(
             "SetRasterMappingCommand.execute: map_id=%s node_id=%s new_mapping_mode=%s",
             self.map_id, self.node_id,
             self.new_mapping.get("mode") if isinstance(self.new_mapping, dict) else type(self.new_mapping),
         )
         try:
-            self._set_mapping(db_service, self.new_mapping)
+            overlap_errors = validate_no_overlaps(self.new_mapping)
+            if overlap_errors:
+                msg = "Mapping rejected — overlapping entries: " + "; ".join(overlap_errors)
+                logger.warning("SetRasterMappingCommand.execute: %s", msg)
+                return CommandResult(
+                    success=False,
+                    message=msg,
+                    command_name="SetRasterMappingCommand",
+                )
+            self._set_mapping(db_service, self.new_mapping, self.new_color_map)
             self._is_executed = True
             logger.debug("SetRasterMappingCommand.execute: mapping persisted OK")
             return CommandResult(
@@ -753,16 +777,19 @@ class SetRasterMappingCommand(BaseCommand):
             "SetRasterMappingCommand.undo: map_id=%s node_id=%s", self.map_id, self.node_id
         )
         if self._is_executed:
-            self._set_mapping(db_service, self.old_mapping)
+            self._set_mapping(db_service, self.old_mapping, self.old_color_map)
             self._is_executed = False
             logger.debug("SetRasterMappingCommand.undo: old mapping restored")
         else:
             logger.warning("SetRasterMappingCommand.undo: skipped (not executed)")
 
     def _set_mapping(
-        self, db_service: DatabaseService, mapping: Dict[str, Any]
+        self,
+        db_service: DatabaseService,
+        mapping: Dict[str, Any],
+        color_map: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """Write mapping dict into the raster layer's metadata."""
+        """Write mapping dict (and optionally colour map) into the raster layer metadata."""
         repo = db_service.map_repo
         map_obj = repo.get_map(self.map_id)
         if map_obj is None:
@@ -776,8 +803,15 @@ class SetRasterMappingCommand(BaseCommand):
         for rl in raster_layers:
             if rl.get("node_id") == self.node_id:
                 rl["value_entity_map"] = mapping
+                if color_map is not None:
+                    rl["color_map"] = color_map
                 found = True
-                logger.debug("SetRasterMappingCommand._set_mapping: mapping set on node_id=%s", self.node_id)
+                logger.debug(
+                    "SetRasterMappingCommand._set_mapping: mapping set on node_id=%s "
+                    "(color_map=%s)",
+                    self.node_id,
+                    "updated" if color_map is not None else "unchanged",
+                )
                 break
         if not found:
             logger.warning(
@@ -794,6 +828,8 @@ class SetRasterMappingCommand(BaseCommand):
             "node_id": self.node_id,
             "new_mapping": self.new_mapping,
             "old_mapping": self.old_mapping,
+            "new_color_map": self.new_color_map,
+            "old_color_map": self.old_color_map,
         }
 
     @classmethod
@@ -804,4 +840,6 @@ class SetRasterMappingCommand(BaseCommand):
             node_id=data["node_id"],
             new_mapping=data.get("new_mapping", {}),
             old_mapping=data.get("old_mapping", {}),
+            new_color_map=data.get("new_color_map"),
+            old_color_map=data.get("old_color_map"),
         )

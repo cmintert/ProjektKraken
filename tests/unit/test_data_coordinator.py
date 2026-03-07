@@ -189,7 +189,7 @@ class TestSignalHandlers:
         incoming = [MagicMock()]
         coordinator.on_event_details_ready(event, relations, incoming)
         fake_window.event_editor.load_event.assert_called_once_with(
-            event, relations, incoming
+            event, relations, incoming, maps_data=fake_window.map_widget.maps_data
         )
 
     def test_on_entity_details_ready_loads_editor(
@@ -201,7 +201,7 @@ class TestSignalHandlers:
         incoming = [MagicMock()]
         coordinator.on_entity_details_ready(entity, relations, incoming)
         fake_window.entity_editor.load_entity.assert_called_once_with(
-            entity, relations, incoming
+            entity, relations, incoming, maps_data=fake_window.map_widget.maps_data
         )
 
     def test_on_suggestions_update(self, coordinator, fake_window):
