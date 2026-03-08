@@ -903,6 +903,14 @@ class MapHandler(QObject):
                 "Loaded raster layer: %s (%s) — scene item added", node_id, file_path
             )
 
+        # Update the layer panel's mode badge metadata
+        mode_by_id = {
+            m.get("node_id", ""): m.get("mode", "discrete")
+            for m in raster_metas
+            if m.get("node_id")
+        }
+        self._map_widget.layer_panel.set_raster_mode_metadata(mode_by_id)
+
     # ------------------------------------------------------------------
     # Raster editing handlers
     # ------------------------------------------------------------------
@@ -1099,9 +1107,14 @@ class MapHandler(QObject):
 
         results = probe_all_layers(view._raster_items, raster_meta, x_norm, y_norm)
 
-        # Resolve entity name for the probed layer
+        # Resolve entity name and mode for the probed layer
         entity_name: str | None = None
         label: str | None = None
+        layer_mode: str = ""
+        for meta in raster_meta:
+            if meta.get("node_id") == node_id:
+                layer_mode = meta.get("mode", "discrete")
+                break
         for r in results:
             if r.node_id == node_id:
                 label = r.label
@@ -1119,7 +1132,7 @@ class MapHandler(QObject):
                 break
 
         # Show the probe popup overlay
-        self._show_probe_popup(node_id, value, entity_name, label)
+        self._show_probe_popup(node_id, value, entity_name, label, layer_mode)
 
     def _show_probe_popup(
         self,
@@ -1127,6 +1140,7 @@ class MapHandler(QObject):
         value: int,
         entity_name: str | None,
         label: str | None,
+        mode: str = "",
     ) -> None:
         """Display or update the probe popup inside the map view.
 
@@ -1135,6 +1149,7 @@ class MapHandler(QObject):
             value: Cell value.
             entity_name: Resolved entity name.
             label: Palette label.
+            mode: Layer mode (``"discrete"`` or ``"continuous"``).
         """
         if self._map_widget is None:
             return
@@ -1150,6 +1165,7 @@ class MapHandler(QObject):
             value=value,
             entity_name=entity_name,
             label=label,
+            mode=mode,
         )
 
     def _save_raster_to_disk(self, node_id: str) -> None:

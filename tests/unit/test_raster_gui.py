@@ -651,3 +651,190 @@ class TestColorEntryEntityId:
         d = entry.to_dict()
         restored = ColorEntry.from_dict(d)
         assert restored.entity_id is None
+
+
+# ── UX: Mode clarity — probe popup mode hint ─────────────────────────
+
+
+class TestProbePopupModeHint:
+    """Probe popup must display a mode hint when mode is provided."""
+
+    def test_probe_shows_discrete_hint(self, qtbot) -> None:
+        from src.gui.widgets.map.raster_probe_popup import RasterProbePopup
+
+        view = _make_view(qtbot)
+        popup = RasterProbePopup(view)
+        popup.show_result(node_id="n1", value=5, entity_name=None, label=None, mode="discrete")
+
+        assert "Discrete" in popup.text()
+
+    def test_probe_shows_continuous_hint(self, qtbot) -> None:
+        from src.gui.widgets.map.raster_probe_popup import RasterProbePopup
+
+        view = _make_view(qtbot)
+        popup = RasterProbePopup(view)
+        popup.show_result(node_id="n1", value=128, entity_name=None, label=None, mode="continuous")
+
+        assert "Continuous" in popup.text()
+
+    def test_probe_no_mode_shows_only_value(self, qtbot) -> None:
+        from src.gui.widgets.map.raster_probe_popup import RasterProbePopup
+
+        view = _make_view(qtbot)
+        popup = RasterProbePopup(view)
+        popup.show_result(node_id="n1", value=7, entity_name=None, label=None)
+
+        text = popup.text()
+        assert "7" in text
+        assert "Discrete" not in text
+        assert "Continuous" not in text
+
+    def test_probe_still_shows_entity_with_mode(self, qtbot) -> None:
+        from src.gui.widgets.map.raster_probe_popup import RasterProbePopup
+
+        view = _make_view(qtbot)
+        popup = RasterProbePopup(view)
+        popup.show_result(
+            node_id="n1", value=3, entity_name="Wolf", label="Territory", mode="discrete"
+        )
+
+        text = popup.text()
+        assert "Wolf" in text
+        assert "Territory" in text
+        assert "Discrete" in text
+
+
+# ── UX: Mode clarity — palette editor title and banner ───────────────
+
+
+class TestPaletteEditorModeBanner:
+    """Palette editor must show the mode in its title and as an info banner."""
+
+    def test_discrete_title_contains_discrete(self, qtbot) -> None:
+        from src.gui.widgets.map.map_data_buffer import ColorMap
+        from src.gui.widgets.map.raster_palette_editor import RasterPaletteEditor
+
+        cmap = ColorMap(type="palette", entries=[])
+        dlg = RasterPaletteEditor(color_map=cmap, mode="discrete")
+        qtbot.addWidget(dlg)
+
+        assert "Discrete" in dlg.windowTitle()
+
+    def test_continuous_title_contains_continuous(self, qtbot) -> None:
+        from src.gui.widgets.map.map_data_buffer import ColorMap
+        from src.gui.widgets.map.raster_palette_editor import RasterPaletteEditor
+
+        cmap = ColorMap(type="gradient", gradient_start="#000000", gradient_end="#FFFFFF")
+        dlg = RasterPaletteEditor(color_map=cmap, mode="continuous")
+        qtbot.addWidget(dlg)
+
+        assert "Continuous" in dlg.windowTitle()
+
+
+# ── UX: Mode clarity — layer creation dialog ─────────────────────────
+
+
+class TestLayerDialogModeHint:
+    """RasterLayerDialog must show a live mode hint that updates on selection."""
+
+    def test_dialog_has_mode_hint_label(self, qtbot) -> None:
+        from src.gui.widgets.map.raster_layer_dialog import RasterLayerDialog
+
+        dlg = RasterLayerDialog()
+        qtbot.addWidget(dlg)
+
+        assert hasattr(dlg, "_mode_hint")
+
+    def test_hint_matches_discrete(self, qtbot) -> None:
+        from src.gui.widgets.map.raster_layer_dialog import RasterLayerDialog
+
+        dlg = RasterLayerDialog()
+        qtbot.addWidget(dlg)
+
+        idx = dlg._mode_combo.findText("discrete")
+        dlg._mode_combo.setCurrentIndex(idx)
+
+        hint = dlg._mode_hint.text()
+        assert hint  # not empty
+        assert any(w in hint.lower() for w in ("categor", "biome", "class", "value"))
+
+    def test_hint_matches_continuous(self, qtbot) -> None:
+        from src.gui.widgets.map.raster_layer_dialog import RasterLayerDialog
+
+        dlg = RasterLayerDialog()
+        qtbot.addWidget(dlg)
+
+        idx = dlg._mode_combo.findText("continuous")
+        dlg._mode_combo.setCurrentIndex(idx)
+
+        hint = dlg._mode_hint.text()
+        assert hint  # not empty
+        assert any(w in hint.lower() for w in ("gradient", "scalar", "elevation", "temperature", "colour ramp"))
+
+    def test_mode_cannot_be_changed_warning_in_tooltip(self, qtbot) -> None:
+        from src.gui.widgets.map.raster_layer_dialog import RasterLayerDialog
+
+        dlg = RasterLayerDialog()
+        qtbot.addWidget(dlg)
+
+        tooltip = dlg._mode_combo.toolTip()
+        assert "cannot" in tooltip.lower() or "⚠" in tooltip
+
+
+# ── UX: Mode clarity — layer panel mode badge ────────────────────────
+
+
+class TestLayerPanelModeBadge:
+    """Layer panel must show a mode badge when a raster layer is selected."""
+
+    def test_panel_has_mode_label(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+
+        assert hasattr(panel, "_raster_mode_label")
+
+    def test_mode_badge_hidden_initially(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+
+        assert not panel._raster_mode_label.isVisible()
+
+    def test_set_raster_mode_metadata_stores_data(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+
+        panel.set_raster_mode_metadata({"node-1": "discrete", "node-2": "continuous"})
+        assert panel._raster_mode_by_id["node-1"] == "discrete"
+        assert panel._raster_mode_by_id["node-2"] == "continuous"
+
+    def test_show_mode_badge_discrete(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel.show()
+
+        panel._raster_toolbar.setVisible(True)
+        panel._show_mode_badge("discrete")
+
+        assert panel._raster_mode_label.isVisible()
+        assert "Discrete" in panel._raster_mode_label.text()
+
+    def test_show_mode_badge_continuous(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel.show()
+
+        panel._raster_toolbar.setVisible(True)
+        panel._show_mode_badge("continuous")
+
+        assert panel._raster_mode_label.isVisible()
+        assert "Continuous" in panel._raster_mode_label.text()

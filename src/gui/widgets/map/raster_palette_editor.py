@@ -148,7 +148,8 @@ class RasterPaletteEditor(QDialog):
         parent: Optional[QWidget] = None,
     ) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Edit Palette")
+        mode_label = "Discrete" if mode == "discrete" else "Continuous"
+        self.setWindowTitle(f"Edit Palette — {mode_label} Mode")
         self.setMinimumWidth(640)
         self._mode = mode
         self._color_map = color_map
@@ -162,6 +163,23 @@ class RasterPaletteEditor(QDialog):
 
     def _build_ui(self) -> None:
         layout = QVBoxLayout(self)
+
+        # Mode info banner
+        if self._mode == "discrete":
+            banner_text = (
+                "📊  <b>Discrete mode</b> — each pixel value maps to a named class. "
+                "Assign colours, labels, and optionally link each value to a world item."
+            )
+        else:
+            banner_text = (
+                "📈  <b>Continuous mode</b> — pixel values form a smooth scalar gradient. "
+                "Choose start and end colours for the colour ramp."
+            )
+        banner = QLabel(banner_text)
+        banner.setTextFormat(Qt.TextFormat.RichText)
+        banner.setWordWrap(True)
+        banner.setStyleSheet(StyleHelper.get_preview_label_style())
+        layout.addWidget(banner)
 
         if self._mode == "discrete":
             self._build_discrete_ui(layout)

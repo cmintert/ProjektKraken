@@ -165,6 +165,15 @@ class MapLayerPanel(QWidget):
         rt_label = QLabel("Raster Tools")
         rt_layout.addWidget(rt_label)
 
+        # Mode badge — shows "Discrete" or "Continuous" for the active raster layer
+        self._raster_mode_label = QLabel()
+        self._raster_mode_label.setObjectName("RasterModeBadge")
+        self._raster_mode_label.setVisible(False)
+        rt_layout.addWidget(self._raster_mode_label)
+
+        # Internal lookup: node_id → mode string (populated by MapHandler)
+        self._raster_mode_by_id: dict[str, str] = {}
+
         # Tool buttons row
         tool_row = QHBoxLayout()
         tool_row.setSpacing(2)
@@ -568,6 +577,13 @@ class MapLayerPanel(QWidget):
         is_raster = node.layer_type == MAP_LAYER_TYPE_RASTER
         self._raster_toolbar.setVisible(is_raster)
 
+        # Update mode badge when a raster layer is selected
+        if is_raster:
+            mode = self._raster_mode_by_id.get(node.id, "discrete")
+            self._show_mode_badge(mode)
+        else:
+            self._raster_mode_label.setVisible(False)
+
         # Reset edit toggle when switching layers
         if not is_raster and self._btn_edit_toggle.isChecked():
             self._btn_edit_toggle.setChecked(False)
@@ -586,6 +602,55 @@ class MapLayerPanel(QWidget):
         """Open the palette editor for the selected raster layer."""
         if self._selected_node_id:
             self.raster_palette_edit_requested.emit(self._selected_node_id)
+
+    def set_raster_mode_metadata(self, mode_by_id: "dict[str, str]") -> None:
+        """Update the cached raster mode lookup used by the mode badge.
+
+        Should be called by :class:`MapHandler` after loading raster layers.
+
+        Args:
+            mode_by_id: Mapping of ``node_id`` → ``"discrete"`` or ``"continuous"``.
+        """
+        self._raster_mode_by_id = mode_by_id
+        # Refresh badge if a raster layer is already selected
+        if self._selected_node_id and self._model is not None:
+            node = self._model.find_node_by_id(self._selected_node_id)
+            if node is not None:
+                from src.app.constants import MAP_LAYER_TYPE_RASTER
+                if node.layer_type == MAP_LAYER_TYPE_RASTER:
+                    mode = self._raster_mode_by_id.get(self._selected_node_id, "discrete")
+                    self._show_mode_badge(mode)
+
+    def _show_mode_badge(self, mode: str) -> None:
+        """Render the mode badge label with the correct text and style.
+
+        Args:
+            mode: ``"discrete"`` or ``"continuous"``.
+        """
+        from src.core.theme_manager import ThemeManager
+        theme = ThemeManager().get_theme()
+
+        if mode == "discrete":
+            icon = "📊"
+            text = "Discrete — categories / classes"
+            bg = theme.get("accent_secondary", "#4A90D9")
+        else:
+            icon = "📈"
+            text = "Continuous — scalar gradient"
+            bg = theme.get("primary", "#5C82FF")
+
+        self._raster_mode_label.setText(f"{icon}  {text}")
+        self._raster_mode_label.setStyleSheet(
+            f"QLabel#RasterModeBadge {{"
+            f"  background-color: {bg};"
+            f"  color: #FFFFFF;"
+            f"  border-radius: 4px;"
+            f"  padding: 2px 8px;"
+            f"  font-size: 8pt;"
+            f"  font-weight: bold;"
+            f"}}"
+        )
+        self._raster_mode_label.setVisible(True)
 
     @Slot()
     def _on_falloff_changed(self) -> None:

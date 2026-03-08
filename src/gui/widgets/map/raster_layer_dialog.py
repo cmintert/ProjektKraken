@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QFormLayout,
+    QFrame,
     QLabel,
     QLineEdit,
     QSpinBox,
@@ -70,9 +71,21 @@ class RasterLayerDialog(QDialog):
         self._mode_combo = QComboBox()
         self._mode_combo.addItems(["discrete", "continuous"])
         self._mode_combo.setToolTip(
-            "discrete: category / biome map\ncontinuous: height / temperature gradient"
+            "<b>Discrete</b>: Each pixel value maps to a named class (e.g. biome, terrain type).\n"
+            "Use for categorical data — colours, labels, and linked world items per value.\n\n"
+            "<b>Continuous</b>: Pixel values form a smooth scalar gradient (e.g. elevation, temperature).\n"
+            "Use for quantitative data — rendered with a start-to-end colour ramp.\n\n"
+            "⚠ Mode cannot be changed after the layer is created."
         )
         form.addRow("Mode:", self._mode_combo)
+
+        # Dynamic mode hint — updates when the user changes mode
+        self._mode_hint = QLabel()
+        self._mode_hint.setWordWrap(True)
+        self._mode_hint.setStyleSheet(StyleHelper.get_preview_label_style())
+        form.addRow("", self._mode_hint)
+        self._mode_combo.currentTextChanged.connect(self._on_mode_changed)
+        self._on_mode_changed(self._mode_combo.currentText())
 
         # Resolution preset
         self._res_combo = QComboBox()
@@ -91,6 +104,12 @@ class RasterLayerDialog(QDialog):
 
         layout.addLayout(form)
 
+        # Separator line
+        sep = QFrame()
+        sep.setFrameShape(QFrame.Shape.HLine)
+        sep.setFrameShadow(QFrame.Shadow.Sunken)
+        layout.addWidget(sep)
+
         # Info label
         info = QLabel(
             "Raster layers are stored as 16-bit PNG files alongside your project."
@@ -108,6 +127,27 @@ class RasterLayerDialog(QDialog):
 
         # Apply theme
         self.setStyleSheet(StyleHelper.get_dialog_base_style())
+
+    # ------------------------------------------------------------------
+    # Private helpers
+    # ------------------------------------------------------------------
+
+    def _on_mode_changed(self, mode: str) -> None:
+        """Update the hint label when the mode selection changes.
+
+        Args:
+            mode: The newly selected mode string.
+        """
+        if mode == "discrete":
+            self._mode_hint.setText(
+                "Categories (biomes, terrain types, land use…). "
+                "Paint with integer values; each value can have a label and a linked world item."
+            )
+        else:
+            self._mode_hint.setText(
+                "Scalar gradient (elevation, temperature, rainfall…). "
+                "Rendered as a smooth colour ramp from start to end colour."
+            )
 
     # ------------------------------------------------------------------
     # Public API
