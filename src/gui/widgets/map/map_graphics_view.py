@@ -1018,6 +1018,31 @@ class MapGraphicsView(QGraphicsView):
         if self.pixmap_item:
             self.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
 
+    def ensure_software_rendering(self) -> None:
+        """Switch the viewport to software rendering if not already set.
+
+        ``QPainter.setCompositionMode`` is silently ignored by Qt's OpenGL
+        paint engine for most modes beyond ``SourceOver`` (Multiply, Screen,
+        Difference, etc.).  Raster layers that use non-default blend modes
+        must therefore be rendered with the software rasteriser so that
+        composition modes are applied correctly.
+
+        This method replaces the ``QOpenGLWidget`` viewport with a plain
+        ``QWidget``, transparently preserving all render hints.  Calling it
+        when already in software mode is a no-op.
+        """
+        from PySide6.QtOpenGLWidgets import QOpenGLWidget
+
+        if isinstance(self.viewport(), QOpenGLWidget):
+            logger.info(
+                "ensure_software_rendering: switching to software "
+                "rendering for correct blend-mode compositing."
+            )
+            self.setViewport(None)  # None → default QWidget (software)
+            # Re-apply render hints; setViewport() resets the viewport widget
+            self.setRenderHint(QPainter.Antialiasing)
+            self.setRenderHint(QPainter.SmoothPixmapTransform)
+
     # ------------------------------------------------------------------
     # Label layout (delegated to LabelManager)
     # ------------------------------------------------------------------

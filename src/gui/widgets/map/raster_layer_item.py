@@ -194,7 +194,8 @@ class RasterLayerItem(QGraphicsPixmapItem):
         current = self.pixmap()
         if current.isNull():
             logger.debug(
-                "update_region: current pixmap is null — falling back to full update_display"
+                "update_region: current pixmap is null — "
+                "falling back to full update_display"
             )
             self.update_display()
             return
@@ -261,6 +262,18 @@ class RasterLayerItem(QGraphicsPixmapItem):
         widget: Optional[Any] = None,
     ) -> None:
         """Paint with scene-level blend mode applied.
+
+        Sets the composition mode on the scene painter *before* delegating to
+        the default ``QGraphicsPixmapItem.paint`` so that this layer blends
+        with the pixels already written to the painter's device by underlying
+        layers.
+
+        This relies on the scene using a *software* paint device.  When the
+        view uses a ``QOpenGLWidget`` viewport, Qt's OpenGL paint engine
+        silently ignores most composition modes beyond ``SourceOver``.  Callers
+        should therefore ensure the view is set to software rendering whenever
+        any raster layer has a non-default blend mode – see
+        :meth:`~src.gui.widgets.map.map_graphics_view.MapGraphicsView.ensure_software_rendering`.
 
         Args:
             painter: The QPainter provided by the scene.

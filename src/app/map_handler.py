@@ -935,6 +935,9 @@ class MapHandler(QObject):
             # Apply persisted blend mode if non-default
             blend_mode = meta.get("blend_mode", "Normal")
             if blend_mode != "Normal":
+                # Composition modes beyond SourceOver are only honoured by the
+                # software rasteriser — switch the viewport before rendering.
+                view.ensure_software_rendering()
                 item.set_blend_mode(blend_mode)
 
             # Store raster items on the view for later access
@@ -1466,6 +1469,9 @@ class MapHandler(QObject):
         view = self._map_widget.view
         item = view._raster_items.get(node_id)
         if item is not None:
+            if new_mode != "Normal":
+                # Ensure composition modes work correctly (OpenGL ignores them).
+                view.ensure_software_rendering()
             item.set_blend_mode(new_mode)
             view.scene.update()
 
@@ -1543,9 +1549,7 @@ class MapHandler(QObject):
         )
         self.command_requested.emit(cmd)
 
-        self._map_widget.layer_panel.set_raster_layer_notes(
-            node_id, bool(new_notes)
-        )
+        self._map_widget.layer_panel.set_raster_layer_notes(node_id, bool(new_notes))
 
     # ------------------------------------------------------------------
     # Temporal rasters
