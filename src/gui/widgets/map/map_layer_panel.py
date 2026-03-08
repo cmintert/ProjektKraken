@@ -276,6 +276,23 @@ class MapLayerPanel(QWidget):
         settings_row_2.addWidget(self._falloff_label)
         rt_layout.addLayout(settings_row_2)
 
+        # Gradient sub-mode row — only applies when Gradient tool is active
+        gradient_row = QHBoxLayout()
+        gradient_row.setSpacing(Spacing.COMPACT)
+        grad_lbl = QLabel("Style:")
+        grad_lbl.setFixedWidth(48)
+        gradient_row.addWidget(grad_lbl)
+        self._gradient_sub_combo = QComboBox()
+        self._gradient_sub_combo.addItems(["Linear", "Radial", "Reflected"])
+        self._gradient_sub_combo.setToolTip(
+            "Select gradient style (only applies when Gradient tool is active)"
+        )
+        self._gradient_sub_combo.currentTextChanged.connect(
+            lambda t: self.raster_gradient_sub_mode_changed.emit(t.lower())
+        )
+        gradient_row.addWidget(self._gradient_sub_combo, 1)
+        rt_layout.addLayout(gradient_row)
+
         rt_layout.addWidget(self._make_section_separator("ACTIONS"))
 
         # Primary edit actions row
@@ -326,22 +343,6 @@ class MapLayerPanel(QWidget):
         blend_row.addWidget(self._blend_combo)
         blend_row.addStretch()
         rt_layout.addLayout(blend_row)
-
-        # Gradient sub-mode row
-        gradient_row = QHBoxLayout()
-        gradient_row.setSpacing(4)
-        gradient_row.addWidget(QLabel("Gradient mode:"))
-        self._gradient_sub_combo = QComboBox()
-        self._gradient_sub_combo.addItems(["Linear", "Radial", "Reflected"])
-        self._gradient_sub_combo.setToolTip(
-            "Select gradient style (only applies when Gradient tool is active)"
-        )
-        self._gradient_sub_combo.currentTextChanged.connect(
-            lambda t: self.raster_gradient_sub_mode_changed.emit(t.lower())
-        )
-        gradient_row.addWidget(self._gradient_sub_combo)
-        gradient_row.addStretch()
-        rt_layout.addLayout(gradient_row)
 
         # Notes row
         notes_row = QHBoxLayout()
@@ -522,9 +523,7 @@ class MapLayerPanel(QWidget):
 
         if label:
             lbl = QLabel(label)
-            lbl.setStyleSheet(
-                f"color: {dim_color}; font-size: 8pt; font-weight: bold;"
-            )
+            lbl.setStyleSheet(f"color: {dim_color}; font-size: 8pt; font-weight: bold;")
             layout.addWidget(lbl)
 
         line = QFrame()
@@ -984,9 +983,7 @@ class MapLayerPanel(QWidget):
         return (
             "gradient"
             if self._btn_gradient.isChecked()
-            else "sample"
-            if self._btn_sample.isChecked()
-            else "brush"
+            else "sample" if self._btn_sample.isChecked() else "brush"
         )
 
     @property
