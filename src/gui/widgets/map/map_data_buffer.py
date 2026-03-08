@@ -744,6 +744,140 @@ class MapDataBuffer:
         )
         return (min_col, min_row, max_col, max_row)
 
+    def paint_radial_gradient(
+        self,
+        cx_norm: float,
+        cy_norm: float,
+        radius_norm: float,
+        value_center: int,
+        value_edge: int,
+    ) -> Tuple[int, int, int, int]:
+        """Paint a radial gradient from center outward.
+
+        Args:
+            cx_norm: Centre X [0, 1].
+            cy_norm: Centre Y [0, 1].
+            radius_norm: Radius as fraction of min(width, height).
+            value_center: Value at the centre.
+            value_edge: Value at the edge (and beyond).
+
+        Returns:
+            Dirty region ``(min_col, min_row, max_col, max_row)``.
+        """
+        cx, cy = self._norm_to_pixel(cx_norm, cy_norm)
+        radius_px = int(radius_norm * min(self._width, self._height))
+        if radius_px < 1:
+            radius_px = 1
+
+        min_col = max(0, cx - radius_px)
+        max_col = min(self._width - 1, cx + radius_px)
+        min_row = max(0, cy - radius_px)
+        max_row = min(self._height - 1, cy + radius_px)
+
+        rows = np.arange(min_row, max_row + 1)
+        cols = np.arange(min_col, max_col + 1)
+        cc, rr = np.meshgrid(cols, rows)
+
+        dist = np.sqrt((cc - cx) ** 2 + (rr - cy) ** 2) / float(radius_px)
+        t = np.clip(dist, 0.0, 1.0)
+
+        mask = dist <= 1.0
+        vals = (value_center + (value_edge - value_center) * t).astype(np.uint16)
+        region = self._data[min_row : max_row + 1, min_col : max_col + 1]
+        self._data[min_row : max_row + 1, min_col : max_col + 1] = np.where(
+            mask, vals, region
+        )
+
+        logger.debug(
+            "paint_radial_gradient: center_px=(%d,%d) radius=%d dirty=(%d,%d,%d,%d)",
+            cx,
+            cy,
+            radius_px,
+            min_col,
+            min_row,
+            max_col,
+            max_row,
+        )
+        return (min_col, min_row, max_col, max_row)
+
+    def paint_reflected_gradient(
+        self,
+        x0_norm: float,
+        y0_norm: float,
+        x1_norm: float,
+        y1_norm: float,
+        value_center: int,
+        value_edge: int,
+        width_px: int = 0,
+    ) -> Tuple[int, int, int, int]:
+        """Paint a reflected (symmetric) gradient centred on the drag axis.
+
+        The gradient goes *value_center* at the drag axis and *value_edge*
+        at both perpendicular edges.
+
+        Args:
+            x0_norm: Start X [0, 1].
+            y0_norm: Start Y [0, 1].
+            x1_norm: End X [0, 1].
+            y1_norm: End Y [0, 1].
+            value_center: Value at the gradient axis.
+            value_edge: Value at the perpendicular edges.
+            width_px: Half-width in pixels (perpendicular).  0 = full buffer.
+
+        Returns:
+            Dirty region ``(min_col, min_row, max_col, max_row)``.
+        """
+        c0, r0 = self._norm_to_pixel(x0_norm, y0_norm)
+        c1, r1 = self._norm_to_pixel(x1_norm, y1_norm)
+
+        dx = float(c1 - c0)
+        dy = float(r1 - r0)
+        length = max(1.0, np.sqrt(dx * dx + dy * dy))
+        half_width = length / 2.0 if width_px <= 0 else float(width_px)
+        half_width = max(1.0, half_width)
+
+        if width_px > 0:
+            min_col = max(0, min(c0, c1) - width_px)
+            max_col = min(self._width - 1, max(c0, c1) + width_px)
+            min_row = max(0, min(r0, r1) - width_px)
+            max_row = min(self._height - 1, max(r0, r1) + width_px)
+        else:
+            min_col, max_col = 0, self._width - 1
+            min_row, max_row = 0, self._height - 1
+
+        rows = np.arange(min_row, max_row + 1)
+        cols = np.arange(min_col, max_col + 1)
+        cc, rr = np.meshgrid(cols, rows)
+
+        perp = np.abs((cc - c0) * (-dy) + (rr - r0) * dx) / length
+        t = np.clip(perp / half_width, 0.0, 1.0)
+
+        if width_px > 0:
+            mask: np.ndarray = perp <= half_width
+        else:
+            mask = np.ones_like(t, dtype=bool)
+
+        vals = (value_center + (value_edge - value_center) * t).astype(np.uint16)
+        region = self._data[min_row : max_row + 1, min_col : max_col + 1]
+        self._data[min_row : max_row + 1, min_col : max_col + 1] = np.where(
+            mask, vals, region
+        )
+
+        logger.debug(
+            "paint_reflected_gradient: p0=(%d,%d) p1=(%d,%d) half_w=%.1f "
+            "dirty=(%d,%d,%d,%d)",
+            c0,
+            r0,
+            c1,
+            r1,
+            half_width,
+            min_col,
+            min_row,
+            max_col,
+            max_row,
+        )
+        return (min_col, min_row, max_col, max_row)
+
     # ------------------------------------------------------------------
     # Statistics
     # ------------------------------------------------------------------

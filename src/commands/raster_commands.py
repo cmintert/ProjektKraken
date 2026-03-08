@@ -1141,3 +1141,126 @@ class SetRasterSnapshotCommand(BaseCommand):
             rel_file_path=data["rel_file_path"],
             old_snapshots=data.get("old_snapshots", {}),
         )
+
+
+class SetRasterNotesCommand(BaseCommand):
+    """Store text notes on a raster layer (persisted in raster metadata).
+
+    Notes are undoable: undo restores the previous text.
+
+    Args:
+        map_id: Parent map ID.
+        node_id: Raster layer node ID.
+        notes: New notes text to persist.
+        old_notes: Previous notes text (for undo).
+    """
+
+    def __init__(
+        self,
+        map_id: str,
+        node_id: str,
+        notes: str,
+        old_notes: str = "",
+    ) -> None:
+        super().__init__()
+        self.map_id = map_id
+        self.node_id = node_id
+        self.notes = notes
+        self.old_notes = old_notes
+
+    @property
+    def has_history(self) -> bool:
+        """Notes edits are undoable."""
+        return True
+
+    def _set_notes(self, db_service: DatabaseService, notes: str) -> None:
+        """Write *notes* into the raster layer metadata.
+
+        Args:
+            db_service: Database service.
+            notes: Notes text to persist.
+        """
+        repo = db_service.map_repo
+        map_obj = repo.get_map(self.map_id)
+        if map_obj is None:
+            raise ValueError(f"Map not found: {self.map_id}")
+        raster_layers = _get_raster_layers(map_obj)
+        for rl in raster_layers:
+            if rl.get("node_id") == self.node_id:
+                rl["notes"] = notes
+                break
+        _set_raster_layers(map_obj, raster_layers)
+        repo.insert_map(map_obj)
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Persist the new notes text.
+
+        Args:
+            db_service: Database service.
+
+        Returns:
+            CommandResult indicating success or failure.
+        """
+        try:
+            self._set_notes(db_service, self.notes)
+            self._is_executed = True
+            logger.debug(
+                "SetRasterNotesCommand.execute: node_id=%s notes=%r",
+                self.node_id,
+                self.notes[:40],
+            )
+            return CommandResult(
+                success=True,
+                data={"node_id": self.node_id, "notes": self.notes},
+                message="Notes updated.",
+                command_name="SetRasterNotesCommand",
+            )
+        except Exception as e:
+            logger.error("SetRasterNotesCommand failed: %s", e, exc_info=True)
+            return CommandResult(
+                success=False,
+                message=str(e),
+                command_name="SetRasterNotesCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Restore the previous notes text.
+
+        Args:
+            db_service: Database service.
+        """
+        if self._is_executed:
+            self._set_notes(db_service, self.old_notes)
+            self._is_executed = False
+            logger.debug(
+                "SetRasterNotesCommand.undo: node_id=%s restored notes=%r",
+                self.node_id,
+                self.old_notes[:40],
+            )
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialise to a JSON-friendly dict."""
+        return {
+            "type": "SetRasterNotesCommand",
+            "map_id": self.map_id,
+            "node_id": self.node_id,
+            "notes": self.notes,
+            "old_notes": self.old_notes,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "SetRasterNotesCommand":
+        """Deserialise from a dict.
+
+        Args:
+            data: Dict produced by :meth:`to_dict`.
+
+        Returns:
+            New :class:`SetRasterNotesCommand` instance.
+        """
+        return cls(
+            map_id=data["map_id"],
+            node_id=data["node_id"],
+            notes=data["notes"],
+            old_notes=data.get("old_notes", ""),
+        )

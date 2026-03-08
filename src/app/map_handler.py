@@ -1481,6 +1481,72 @@ class MapHandler(QObject):
             )
             self.command_requested.emit(cmd)
 
+    @Slot(str)
+    def on_raster_gradient_sub_mode_changed(self, sub_mode: str) -> None:
+        """Update the gradient sub-mode on the active raster edit tool.
+
+        Args:
+            sub_mode: One of ``"linear"``, ``"radial"``, or ``"reflected"``.
+        """
+        logger.debug("on_raster_gradient_sub_mode_changed: sub_mode=%s", sub_mode)
+        view = self._map_widget.view
+        view._raster_edit_tool.set_gradient_sub_mode(sub_mode)
+
+    @Slot(str)
+    def on_raster_notes_requested(self, node_id: str) -> None:
+        """Open the notes editor dialog for the given raster layer.
+
+        Loads existing notes from layer metadata, shows the dialog, and
+        persists changes via :class:`~src.commands.raster_commands.SetRasterNotesCommand`.
+
+        Args:
+            node_id: Raster layer node ID.
+        """
+        logger.debug("on_raster_notes_requested: node_id=%s", node_id)
+
+        maps = self._map_widget.maps_data
+        layer_name = node_id
+        current_notes = ""
+        for map_obj in maps:
+            for rl in (map_obj.attributes or {}).get("raster_layers", []):
+                if rl.get("node_id") == node_id:
+                    layer_name = rl.get("name", node_id)
+                    current_notes = rl.get("notes", "")
+                    break
+
+        from src.gui.dialogs.raster_notes_dialog import RasterNotesDialog
+
+        dlg = RasterNotesDialog(
+            layer_name=layer_name,
+            current_notes=current_notes,
+            parent=self._map_widget,
+        )
+        if dlg.exec() != RasterNotesDialog.DialogCode.Accepted:
+            return
+
+        new_notes = dlg.get_notes()
+        if new_notes == current_notes:
+            return
+
+        map_id = self._find_map_id_for_node(node_id)
+        if not map_id:
+            logger.warning("on_raster_notes_requested: no map_id for %s", node_id)
+            return
+
+        from src.commands.raster_commands import SetRasterNotesCommand
+
+        cmd = SetRasterNotesCommand(
+            map_id=map_id,
+            node_id=node_id,
+            notes=new_notes,
+            old_notes=current_notes,
+        )
+        self.command_requested.emit(cmd)
+
+        self._map_widget.layer_panel.set_raster_layer_notes(
+            node_id, bool(new_notes)
+        )
+
     # ------------------------------------------------------------------
     # Temporal rasters
     # ------------------------------------------------------------------

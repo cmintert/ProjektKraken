@@ -1978,3 +1978,367 @@ class TestSpatialQuery:
 
         view.clear_query_overlay()
         assert view._query_overlay_item is None
+
+
+# ── Feature T4-A: Advanced gradient methods ───────────────────────────────
+
+
+class TestPaintRadialGradient:
+    """paint_radial_gradient on MapDataBuffer."""
+
+    def test_radial_gradient_center_value(self) -> None:
+        """Centre pixel receives value_center."""
+        buf = MapDataBuffer(100, 100)
+        buf.paint_radial_gradient(0.5, 0.5, 0.2, 500, 0)
+        cx, cy = 50, 50
+        assert buf.data[cy, cx] == 500
+
+    def test_radial_gradient_edge_value(self) -> None:
+        """Pixels far from centre (beyond radius) are untouched."""
+        buf = MapDataBuffer(100, 100)
+        buf.paint_radial_gradient(0.5, 0.5, 0.2, 500, 0)
+        assert buf.data[0, 0] == 0
+
+    def test_radial_gradient_dirty_region(self) -> None:
+        """Returns a 4-tuple dirty region within buffer bounds."""
+        buf = MapDataBuffer(100, 100)
+        dirty = buf.paint_radial_gradient(0.5, 0.5, 0.1, 1000, 0)
+        assert len(dirty) == 4
+        min_c, min_r, max_c, max_r = dirty
+        assert min_c >= 0 and min_r >= 0
+        assert max_c <= 99 and max_r <= 99
+
+    def test_radial_gradient_clips_to_buffer(self) -> None:
+        """Centre near edge does not go out of buffer bounds."""
+        buf = MapDataBuffer(50, 50)
+        dirty = buf.paint_radial_gradient(0.0, 0.0, 0.5, 1000, 0)
+        assert dirty[0] >= 0 and dirty[1] >= 0
+
+    def test_radial_gradient_small_radius(self) -> None:
+        """Radius < 1 pixel is clamped to 1 without error."""
+        buf = MapDataBuffer(100, 100)
+        dirty = buf.paint_radial_gradient(0.5, 0.5, 0.0001, 999, 0)
+        assert len(dirty) == 4
+
+
+class TestPaintReflectedGradient:
+    """paint_reflected_gradient on MapDataBuffer."""
+
+    def test_reflected_gradient_axis_value(self) -> None:
+        """Pixels on the drag axis (middle row) get value_center."""
+        buf = MapDataBuffer(100, 100)
+        buf.paint_reflected_gradient(0.2, 0.5, 0.8, 0.5, 1000, 0)
+        mid_row = 50
+        assert buf.data[mid_row, 50] == 1000
+
+    def test_reflected_gradient_returns_dirty(self) -> None:
+        """Returns a 4-tuple dirty region."""
+        buf = MapDataBuffer(100, 100)
+        dirty = buf.paint_reflected_gradient(0.2, 0.5, 0.8, 0.5, 1000, 0)
+        assert len(dirty) == 4
+
+    def test_reflected_gradient_full_buffer_when_no_width(self) -> None:
+        """width_px=0 paints over the entire buffer."""
+        buf = MapDataBuffer(50, 50)
+        dirty = buf.paint_reflected_gradient(0.2, 0.5, 0.8, 0.5, 500, 0, 0)
+        min_c, min_r, max_c, max_r = dirty
+        assert min_c == 0 and min_r == 0
+        assert max_c == 49 and max_r == 49
+
+    def test_reflected_gradient_with_width_px(self) -> None:
+        """width_px > 0 constrains the painted region."""
+        buf = MapDataBuffer(100, 100)
+        dirty = buf.paint_reflected_gradient(0.2, 0.5, 0.8, 0.5, 800, 0, 5)
+        assert len(dirty) == 4
+
+
+# ── Feature T4-A: Gradient sub-mode in RasterEditTool ────────────────────
+
+
+class TestGradientSubMode:
+    """RasterEditTool gradient sub-mode support."""
+
+    def test_default_sub_mode_is_linear(self) -> None:
+        from src.gui.widgets.map.raster_edit_tool import (
+            GRADIENT_SUB_LINEAR,
+            RasterEditTool,
+        )
+
+        class _FakeView:
+            _raster_items: dict = {}
+            pixmap_item = None
+            coord_system = None
+            scene = None
+
+        tool = RasterEditTool(_FakeView())  # type: ignore[arg-type]
+        assert tool._gradient_sub_mode == GRADIENT_SUB_LINEAR
+
+    def test_set_gradient_sub_mode_radial(self) -> None:
+        from src.gui.widgets.map.raster_edit_tool import (
+            GRADIENT_SUB_RADIAL,
+            RasterEditTool,
+        )
+
+        class _FakeView:
+            _raster_items: dict = {}
+            pixmap_item = None
+            coord_system = None
+            scene = None
+
+        tool = RasterEditTool(_FakeView())  # type: ignore[arg-type]
+        tool.set_gradient_sub_mode(GRADIENT_SUB_RADIAL)
+        assert tool._gradient_sub_mode == GRADIENT_SUB_RADIAL
+
+    def test_panel_has_gradient_sub_combo(self, qtbot) -> None:
+        from PySide6.QtWidgets import QComboBox
+
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        assert hasattr(panel, "_gradient_sub_combo")
+        assert isinstance(panel._gradient_sub_combo, QComboBox)
+
+    def test_panel_gradient_sub_mode_property(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        assert panel.raster_gradient_sub_mode in ("linear", "radial", "reflected")
+
+    def test_panel_gradient_sub_mode_changed_signal(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        received: list = []
+        panel.raster_gradient_sub_mode_changed.connect(received.append)
+        panel._gradient_sub_combo.setCurrentText("Radial")
+        assert received == ["radial"]
+
+
+# ── Feature T4-B: Palette import / export ────────────────────────────────
+
+
+class TestPaletteImportExport:
+    """RasterPaletteEditor export/import buttons."""
+
+    def test_editor_has_export_button(self, qtbot) -> None:
+        from src.gui.widgets.map.map_data_buffer import ColorMap
+
+        cmap = ColorMap(type="palette", entries=[])
+        from src.gui.widgets.map.raster_palette_editor import RasterPaletteEditor
+
+        dlg = RasterPaletteEditor(cmap, mode="discrete")
+        qtbot.addWidget(dlg)
+        assert hasattr(dlg, "_on_export_palette")
+
+    def test_editor_has_import_button(self, qtbot) -> None:
+        from src.gui.widgets.map.map_data_buffer import ColorMap
+        from src.gui.widgets.map.raster_palette_editor import RasterPaletteEditor
+
+        cmap = ColorMap(type="palette", entries=[])
+        dlg = RasterPaletteEditor(cmap, mode="discrete")
+        qtbot.addWidget(dlg)
+        assert hasattr(dlg, "_on_import_palette")
+
+    def test_export_creates_json(self, tmp_path: object) -> None:
+        import json
+        from pathlib import Path
+
+        from src.gui.widgets.map.map_data_buffer import ColorEntry, ColorMap
+        from src.gui.widgets.map.raster_palette_editor import RasterPaletteEditor
+
+        color_map = ColorMap(
+            type="palette",
+            entries=[
+                ColorEntry(value=1, color="#ff0000"),
+                ColorEntry(value=2, color="#00ff00"),
+            ],
+        )
+        editor = RasterPaletteEditor(color_map, mode="discrete")
+        result = editor.result_color_map()
+        json_path = Path(str(tmp_path)) / "palette.json"
+        data = [{"value": e.value, "color": e.color, "label": ""} for e in result.entries]
+        with open(json_path, "w") as f:
+            json.dump(data, f)
+
+        assert json_path.exists()
+        loaded = json.loads(json_path.read_text())
+        assert len(loaded) == 2
+        assert loaded[0]["value"] == 1
+
+    def test_import_populates_rows(self, tmp_path: object, qtbot) -> None:
+        import json
+        from pathlib import Path
+
+        from src.gui.widgets.map.map_data_buffer import ColorMap
+        from src.gui.widgets.map.raster_palette_editor import RasterPaletteEditor
+
+        color_map = ColorMap(type="palette", entries=[])
+        editor = RasterPaletteEditor(color_map, mode="discrete")
+        qtbot.addWidget(editor)
+
+        json_path = Path(str(tmp_path)) / "import.json"
+        json_path.write_text(
+            json.dumps(
+                [
+                    {"value": 5, "color": "#aabbcc", "label": "Forest"},
+                    {"value": 10, "color": "#112233", "label": "Ocean"},
+                ]
+            )
+        )
+
+        editor._table.setRowCount(0)
+        with open(json_path) as f:
+            data = json.load(f)
+        for entry in data:
+            editor._add_entry_row(
+                value=int(entry.get("value", 0)),
+                color=str(entry.get("color", "#808080")),
+                label=str(entry.get("label", "")),
+            )
+
+        assert editor._table.rowCount() == 2
+
+
+# ── Feature T4-C: Layer annotations ──────────────────────────────────────
+
+
+class TestSetRasterNotesCommand:
+    """SetRasterNotesCommand persists and reverts notes."""
+
+    def _make_db_with_raster(self) -> tuple:
+        import uuid
+
+        from src.core.map import Map
+        from src.services.db_service import DatabaseService
+
+        db = DatabaseService(":memory:")
+        db.connect()
+        map_id = str(uuid.uuid4())
+        node_id = str(uuid.uuid4())
+        m = Map(
+            id=map_id,
+            name="TestMap",
+            image_path="",
+            attributes={
+                "raster_layers": [{"node_id": node_id, "mode": "discrete", "notes": ""}]
+            },
+        )
+        db.map_repo.insert_map(m)
+        return db, map_id, node_id
+
+    def test_execute_persists_notes(self) -> None:
+        from src.commands.raster_commands import SetRasterNotesCommand
+
+        db, map_id, node_id = self._make_db_with_raster()
+        cmd = SetRasterNotesCommand(map_id=map_id, node_id=node_id, notes="Hello")
+        result = cmd.execute(db)
+        assert result.success
+
+        stored = db.map_repo.get_map(map_id)
+        layers = (stored.attributes or {}).get("raster_layers", [])
+        layer = next(la for la in layers if la["node_id"] == node_id)
+        assert layer["notes"] == "Hello"
+
+    def test_undo_restores_notes(self) -> None:
+        from src.commands.raster_commands import SetRasterNotesCommand
+
+        db, map_id, node_id = self._make_db_with_raster()
+        cmd = SetRasterNotesCommand(
+            map_id=map_id, node_id=node_id, notes="New notes", old_notes="Old notes"
+        )
+        cmd.execute(db)
+        cmd.undo(db)
+
+        stored = db.map_repo.get_map(map_id)
+        layers = (stored.attributes or {}).get("raster_layers", [])
+        layer = next(la for la in layers if la["node_id"] == node_id)
+        assert layer["notes"] == "Old notes"
+
+    def test_has_history_is_true(self) -> None:
+        from src.commands.raster_commands import SetRasterNotesCommand
+
+        cmd = SetRasterNotesCommand(map_id="m", node_id="n", notes="x")
+        assert cmd.has_history is True
+
+    def test_roundtrip_serialisation(self) -> None:
+        from src.commands.raster_commands import SetRasterNotesCommand
+
+        cmd = SetRasterNotesCommand(
+            map_id="map1", node_id="node1", notes="abc", old_notes="def"
+        )
+        d = cmd.to_dict()
+        cmd2 = SetRasterNotesCommand.from_dict(d)
+        assert cmd2.map_id == "map1"
+        assert cmd2.node_id == "node1"
+        assert cmd2.notes == "abc"
+        assert cmd2.old_notes == "def"
+
+
+class TestRasterNotesDialog:
+    """RasterNotesDialog widget behaviour."""
+
+    def test_dialog_returns_text(self, qtbot) -> None:
+        from src.gui.dialogs.raster_notes_dialog import RasterNotesDialog
+
+        dlg = RasterNotesDialog("Test Layer", "Existing notes")
+        qtbot.addWidget(dlg)
+        assert dlg.get_notes() == "Existing notes"
+
+    def test_dialog_empty_notes(self, qtbot) -> None:
+        from src.gui.dialogs.raster_notes_dialog import RasterNotesDialog
+
+        dlg = RasterNotesDialog("Layer", "")
+        qtbot.addWidget(dlg)
+        assert dlg.get_notes() == ""
+
+    def test_dialog_window_title(self, qtbot) -> None:
+        from src.gui.dialogs.raster_notes_dialog import RasterNotesDialog
+
+        dlg = RasterNotesDialog("My Raster", "some notes")
+        qtbot.addWidget(dlg)
+        assert "My Raster" in dlg.windowTitle()
+
+    def test_dialog_strips_whitespace(self, qtbot) -> None:
+        from src.gui.dialogs.raster_notes_dialog import RasterNotesDialog
+
+        dlg = RasterNotesDialog("Layer", "  leading and trailing  ")
+        qtbot.addWidget(dlg)
+        assert dlg.get_notes() == "leading and trailing"
+
+
+class TestPanelNotesButton:
+    """MapLayerPanel notes button and indicator."""
+
+    def test_panel_has_notes_button(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        assert hasattr(panel, "_btn_notes")
+
+    def test_panel_has_raster_notes_signal(self) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        assert hasattr(MapLayerPanel, "raster_notes_requested")
+
+    def test_set_raster_layer_notes_shows_indicator(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel._current_node_id = "n1"
+        panel.set_raster_layer_notes("n1", True)
+        assert panel._notes_indicator_label.text() != ""
+
+    def test_set_raster_layer_notes_clears_indicator(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel._current_node_id = "n1"
+        panel.set_raster_layer_notes("n1", True)
+        panel.set_raster_layer_notes("n1", False)
+        assert panel._notes_indicator_label.text() == ""

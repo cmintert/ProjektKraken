@@ -76,6 +76,8 @@ class MapLayerPanel(QWidget):
     raster_stats_requested = Signal(str)  # node_id — open stats dialog
     raster_blend_mode_changed = Signal(str, str, str)  # (node_id, new_mode, old_mode)
     raster_snapshot_requested = Signal(str)  # node_id — save snapshot at current date
+    raster_gradient_sub_mode_changed = Signal(str)  # gradient sub-mode name
+    raster_notes_requested = Signal(str)  # node_id — open notes dialog
     raster_preset_loaded = Signal(
         str, int, float, int
     )  # (tool_mode, size, falloff, value)
@@ -304,6 +306,35 @@ class MapLayerPanel(QWidget):
         blend_row.addWidget(self._blend_combo)
         blend_row.addStretch()
         rt_layout.addLayout(blend_row)
+
+        # Gradient sub-mode row
+        gradient_row = QHBoxLayout()
+        gradient_row.setSpacing(4)
+        gradient_row.addWidget(QLabel("Gradient mode:"))
+        self._gradient_sub_combo = QComboBox()
+        self._gradient_sub_combo.addItems(["Linear", "Radial", "Reflected"])
+        self._gradient_sub_combo.setToolTip(
+            "Select gradient style (only applies when Gradient tool is active)"
+        )
+        self._gradient_sub_combo.currentTextChanged.connect(
+            lambda t: self.raster_gradient_sub_mode_changed.emit(t.lower())
+        )
+        gradient_row.addWidget(self._gradient_sub_combo)
+        gradient_row.addStretch()
+        rt_layout.addLayout(gradient_row)
+
+        # Notes row
+        notes_row = QHBoxLayout()
+        notes_row.setSpacing(4)
+        self._btn_notes = QPushButton("📝 Notes")
+        self._btn_notes.setToolTip("Add or edit text notes for this raster layer")
+        self._btn_notes.clicked.connect(self._on_notes_clicked)
+        notes_row.addWidget(self._btn_notes)
+        self._notes_indicator_label = QLabel("")
+        self._notes_indicator_label.setToolTip("This layer has saved notes")
+        notes_row.addWidget(self._notes_indicator_label)
+        notes_row.addStretch()
+        rt_layout.addLayout(notes_row)
 
         # Preset toolbar row (hidden until raster layer selected)
         self._preset_toolbar_row = QWidget()
@@ -917,6 +948,29 @@ class MapLayerPanel(QWidget):
     def raster_falloff(self) -> float:
         """Current falloff (0.0–1.0) from the slider."""
         return self._falloff_slider.value() / 100.0
+
+    @property
+    def raster_gradient_sub_mode(self) -> str:
+        """Current gradient sub-mode (lowercase) from the combo box."""
+        return self._gradient_sub_combo.currentText().lower()
+
+    def set_raster_layer_notes(self, node_id: str, has_notes: bool) -> None:
+        """Update the notes indicator for a raster layer.
+
+        Shows a visual indicator when the layer has non-empty notes.
+
+        Args:
+            node_id: Raster layer node ID.
+            has_notes: ``True`` if the layer has non-empty notes.
+        """
+        if node_id == self._current_node_id:
+            self._notes_indicator_label.setText("📝" if has_notes else "")
+
+    @Slot()
+    def _on_notes_clicked(self) -> None:
+        """Emit raster_notes_requested for the currently selected raster layer."""
+        if self._current_node_id:
+            self.raster_notes_requested.emit(self._current_node_id)
 
     @Slot()
     def _on_stats_clicked(self) -> None:

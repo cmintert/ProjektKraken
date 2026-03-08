@@ -227,6 +227,17 @@ class RasterPaletteEditor(QDialog):
         )
         btn_auto_color.clicked.connect(self._on_auto_color)
         auto_row.addWidget(btn_auto_color)
+
+        btn_export = QPushButton("⬆ Export…")
+        btn_export.setToolTip("Export palette to JSON")
+        btn_export.clicked.connect(self._on_export_palette)
+        auto_row.addWidget(btn_export)
+
+        btn_import = QPushButton("⬇ Import…")
+        btn_import.setToolTip("Import palette from JSON")
+        btn_import.clicked.connect(self._on_import_palette)
+        auto_row.addWidget(btn_import)
+
         auto_row.addStretch()
         layout.addLayout(auto_row)
 
@@ -448,6 +459,95 @@ class RasterPaletteEditor(QDialog):
             btn = self._table.cellWidget(row, _COL_COLOR)
             if isinstance(btn, _ColorButton):
                 btn.color_hex = _AUTO_COLORS[row % len(_AUTO_COLORS)]
+
+    def _on_export_palette(self) -> None:
+        """Export the current discrete palette entries to a JSON file."""
+        import json
+
+        from PySide6.QtWidgets import QFileDialog
+
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Export Palette", "palette.json", "JSON Files (*.json)"
+        )
+        if not path:
+            return
+
+        entries: List[Dict[str, Any]] = []
+        for r in range(self._table.rowCount()):
+            spin = self._table.cellWidget(r, _COL_VALUE)
+            btn = self._table.cellWidget(r, _COL_COLOR)
+            label_edit = self._table.cellWidget(r, _COL_LABEL)
+            entity_edit = self._table.cellWidget(r, _COL_ENTITY_ID)
+            type_combo = self._table.cellWidget(r, _COL_TYPE)
+            if not isinstance(spin, QSpinBox) or not isinstance(btn, _ColorButton):
+                continue
+            entry: Dict[str, Any] = {
+                "value": spin.value(),
+                "color": btn.color_hex,
+                "label": label_edit.text().strip()
+                if isinstance(label_edit, QLineEdit)
+                else "",
+            }
+            eid = (
+                entity_edit.text().strip()
+                if isinstance(entity_edit, QLineEdit)
+                else ""
+            )
+            if eid:
+                entry["entity_id"] = eid
+            itype = (
+                type_combo.currentText() if isinstance(type_combo, QComboBox) else "None"
+            )
+            if itype != "None":
+                entry["item_type"] = itype.lower()
+            entries.append(entry)
+
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(entries, f, indent=2)
+        except OSError as exc:
+            from PySide6.QtWidgets import QMessageBox
+
+            QMessageBox.warning(self, "Export Failed", str(exc))
+
+    def _on_import_palette(self) -> None:
+        """Import palette entries from a JSON file, replacing current entries."""
+        import json
+
+        from PySide6.QtWidgets import QFileDialog, QMessageBox
+
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Import Palette", "", "JSON Files (*.json)"
+        )
+        if not path:
+            return
+
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except (OSError, json.JSONDecodeError) as exc:
+            QMessageBox.warning(self, "Import Failed", str(exc))
+            return
+
+        if not isinstance(data, list):
+            QMessageBox.warning(
+                self,
+                "Import Failed",
+                "Expected a JSON array of palette entries.",
+            )
+            return
+
+        self._table.setRowCount(0)
+        for entry in data:
+            if not isinstance(entry, dict):
+                continue
+            self._add_entry_row(
+                value=int(entry.get("value", 0)),
+                color=str(entry.get("color", "#808080")),
+                label=str(entry.get("label", "")),
+                entity_id=str(entry.get("entity_id", "")),
+                item_type=str(entry.get("item_type", "")),
+            )
 
     # ------------------------------------------------------------------
     # Validation

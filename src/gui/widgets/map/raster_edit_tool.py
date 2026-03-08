@@ -37,6 +37,11 @@ class RasterEditMode(Enum):
     SAMPLE = auto()
 
 
+GRADIENT_SUB_LINEAR = "linear"
+GRADIENT_SUB_RADIAL = "radial"
+GRADIENT_SUB_REFLECTED = "reflected"
+
+
 class RasterEditTool:
     """Interactive raster editing delegated from MapGraphicsView.
 
@@ -56,6 +61,9 @@ class RasterEditTool:
         self._brush_size: int = 8
         self._paint_value: int = 1
         self._falloff: float = 0.0
+
+        # Gradient sub-mode
+        self._gradient_sub_mode: str = GRADIENT_SUB_LINEAR
 
         # Brush stroke accumulation
         self._stroke_active: bool = False
@@ -117,6 +125,16 @@ class RasterEditTool:
     def active_node_id(self) -> Optional[str]:
         """Node ID of the raster layer being edited."""
         return self._active_node_id
+
+    def set_gradient_sub_mode(self, sub_mode: str) -> None:
+        """Set the gradient sub-mode (linear, radial, or reflected).
+
+        Args:
+            sub_mode: One of ``GRADIENT_SUB_LINEAR``, ``GRADIENT_SUB_RADIAL``,
+                or ``GRADIENT_SUB_REFLECTED``.
+        """
+        self._gradient_sub_mode = sub_mode
+        logger.debug("set_gradient_sub_mode: sub_mode=%s", sub_mode)
 
     # ------------------------------------------------------------------
     # Public API
@@ -436,7 +454,11 @@ class RasterEditTool:
     def _apply_gradient(
         self, item: RasterLayerItem, start: QPointF, end: QPointF
     ) -> None:
-        """Paint a linear gradient between two scene points."""
+        """Paint a gradient between two scene points.
+
+        Dispatches to linear, radial, or reflected sub-mode based on
+        ``_gradient_sub_mode``.
+        """
         n0 = self._scene_to_norm(start)
         n1 = self._scene_to_norm(end)
         if n0 is None or n1 is None:
@@ -450,7 +472,9 @@ class RasterEditTool:
             return
 
         logger.debug(
-            "_apply_gradient: n0=(%.3f,%.3f) n1=(%.3f,%.3f) value_end=%d width_px=%d",
+            "_apply_gradient: sub_mode=%s n0=(%.3f,%.3f) n1=(%.3f,%.3f) "
+            "value_end=%d width_px=%d",
+            self._gradient_sub_mode,
             n0[0],
             n0[1],
             n1[0],
@@ -461,15 +485,34 @@ class RasterEditTool:
         buf = item.buffer
         before = buf.data.copy()
 
-        dirty = buf.paint_gradient(
-            n0[0],
-            n0[1],
-            n1[0],
-            n1[1],
-            0,
-            self._paint_value,
-            self._brush_size,
-        )
+        if self._gradient_sub_mode == GRADIENT_SUB_RADIAL:
+            dx = n1[0] - n0[0]
+            dy = n1[1] - n0[1]
+            radius_norm = float(np.sqrt(dx * dx + dy * dy))
+            dirty = buf.paint_radial_gradient(
+                n0[0], n0[1], radius_norm, self._paint_value, 0
+            )
+        elif self._gradient_sub_mode == GRADIENT_SUB_REFLECTED:
+            dirty = buf.paint_reflected_gradient(
+                n0[0],
+                n0[1],
+                n1[0],
+                n1[1],
+                self._paint_value,
+                0,
+                self._brush_size,
+            )
+        else:
+            dirty = buf.paint_gradient(
+                n0[0],
+                n0[1],
+                n1[0],
+                n1[1],
+                0,
+                self._paint_value,
+                self._brush_size,
+            )
+
         logger.debug("_apply_gradient: dirty_region=%s", dirty)
 
         before_region = before[dirty[1] : dirty[3] + 1, dirty[0] : dirty[2] + 1].copy()
