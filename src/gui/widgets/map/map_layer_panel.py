@@ -7,11 +7,12 @@ and reordering via drag-and-drop.  Integrates with the application's
 """
 
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from PySide6.QtCore import QModelIndex, QPoint, Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QComboBox,
     QHBoxLayout,
     QInputDialog,
     QLabel,
@@ -218,6 +219,24 @@ class MapLayerPanel(QWidget):
         settings_row_1.addStretch()
         rt_layout.addLayout(settings_row_1)
 
+        # Entity / class picker — "Paint as: [Class Name ▾]" (discrete only)
+        self._entity_picker_row = QWidget()
+        ep_layout = QHBoxLayout(self._entity_picker_row)
+        ep_layout.setContentsMargins(0, 0, 0, 0)
+        ep_layout.setSpacing(4)
+        ep_layout.addWidget(QLabel("Paint as:"))
+        self._entity_picker_combo = QComboBox()
+        self._entity_picker_combo.setToolTip(
+            "Select a mapped class to automatically set the paint value"
+        )
+        self._entity_picker_combo.setSizeAdjustPolicy(
+            QComboBox.SizeAdjustPolicy.AdjustToContents
+        )
+        self._entity_picker_combo.currentIndexChanged.connect(self._on_entity_picked)
+        ep_layout.addWidget(self._entity_picker_combo, 1)
+        ep_layout.addStretch()
+        rt_layout.addWidget(self._entity_picker_row)
+
         # Brush settings row 2: Falloff
         settings_row_2 = QHBoxLayout()
         settings_row_2.setSpacing(4)
@@ -252,11 +271,20 @@ class MapLayerPanel(QWidget):
 
         main_layout.addWidget(self._raster_toolbar)
 
+        # ── Raster Legend ─────────────────────────────────────────────
+        from src.gui.widgets.map.raster_legend_widget import RasterLegendWidget
+
+        self._legend = RasterLegendWidget(self)
+        self._legend.setVisible(False)
+        main_layout.addWidget(self._legend)
+
         # ── Internal State ────────────────────────────────────────────
         self._model: Optional["MapLayerModel"] = None
         self._selected_node_id: Optional[str] = None
         self._slider_updating = False  # guard against feedback loops
         self._start_opacity: Optional[float] = None  # Opacity at drag start
+        # Full raster layer metadata keyed by node_id (set by MapHandler)
+        self._raster_meta_by_id: Dict[str, Dict[str, Any]] = {}
 
         # Apply all theme-aware styles
         self.refresh_styles()
@@ -569,6 +597,8 @@ class MapLayerPanel(QWidget):
     def _update_raster_toolbar(self, node: "MapLayerNode") -> None:
         """Show or hide the raster editing toolbar.
 
+        Also refreshes the legend and class picker when a raster is selected.
+
         Args:
             node: The newly selected layer node.
         """
@@ -576,11 +606,16 @@ class MapLayerPanel(QWidget):
 
         is_raster = node.layer_type == MAP_LAYER_TYPE_RASTER
         self._raster_toolbar.setVisible(is_raster)
+        self._legend.setVisible(is_raster)
 
         # Update mode badge when a raster layer is selected
         if is_raster:
             mode = self._raster_mode_by_id.get(node.id, "discrete")
             self._show_mode_badge(mode)
+            # Refresh legend and entity picker from stored metadata
+            layer_meta = self._raster_meta_by_id.get(node.id)
+            self._legend.set_layer(layer_meta)
+            self._refresh_entity_picker(layer_meta, mode)
         else:
             self._raster_mode_label.setVisible(False)
 
@@ -603,6 +638,52 @@ class MapLayerPanel(QWidget):
         if self._selected_node_id:
             self.raster_palette_edit_requested.emit(self._selected_node_id)
 
+    def _refresh_entity_picker(
+        self,
+        layer_meta: Optional[Dict[str, Any]],
+        mode: str,
+    ) -> None:
+        """Repopulate the *Paint as:* class picker from *layer_meta*.
+
+        The picker is only visible for discrete layers with at least one
+        defined class.  For continuous layers it is always hidden.
+
+        Args:
+            layer_meta: Raster layer metadata dict, or ``None``.
+            mode: ``"discrete"`` or ``"continuous"``.
+
+        """
+        from src.gui.widgets.map.raster_mapping import get_discrete_class_choices
+
+        is_discrete = mode != "continuous"
+        choices: List[Tuple[str, int]] = []
+
+        if is_discrete and layer_meta:
+            choices = get_discrete_class_choices(layer_meta)
+
+        # Block signals while repopulating to avoid spurious value changes
+        self._entity_picker_combo.blockSignals(True)
+        self._entity_picker_combo.clear()
+        if choices:
+            self._entity_picker_combo.addItem("— manual —", -1)
+            for label, value in choices:
+                self._entity_picker_combo.addItem(f"{label}  ({value})", value)
+
+        self._entity_picker_combo.blockSignals(False)
+        self._entity_picker_row.setVisible(is_discrete and bool(choices))
+
+    @Slot(int)
+    def _on_entity_picked(self, index: int) -> None:
+        """Set paint value to the value of the selected class.
+
+        Args:
+            index: Combo box index of the selected item.
+
+        """
+        value = self._entity_picker_combo.itemData(index)
+        if value is not None and value >= 0:
+            self._paint_value_spin.setValue(int(value))
+
     def set_raster_mode_metadata(self, mode_by_id: "dict[str, str]") -> None:
         """Update the cached raster mode lookup used by the mode badge.
 
@@ -617,9 +698,41 @@ class MapLayerPanel(QWidget):
             node = self._model.find_node_by_id(self._selected_node_id)
             if node is not None:
                 from src.app.constants import MAP_LAYER_TYPE_RASTER
+
                 if node.layer_type == MAP_LAYER_TYPE_RASTER:
-                    mode = self._raster_mode_by_id.get(self._selected_node_id, "discrete")
+                    mode = self._raster_mode_by_id.get(
+                        self._selected_node_id, "discrete"
+                    )
                     self._show_mode_badge(mode)
+
+    def set_raster_layer_metadata(
+        self, meta_by_id: "Dict[str, Dict[str, Any]]"
+    ) -> None:
+        """Store full raster layer metadata for legend and class picker.
+
+        Should be called by :class:`MapHandler` after loading raster layers,
+        immediately after :meth:`set_raster_mode_metadata`.
+
+        Args:
+            meta_by_id: Mapping of ``node_id`` → full raster layer metadata
+                dict (the same dicts stored in
+                ``maps.attributes["raster_layers"]``).
+
+        """
+        self._raster_meta_by_id = meta_by_id
+        # Refresh legend and picker if a raster is already selected
+        if self._selected_node_id and self._model is not None:
+            node = self._model.find_node_by_id(self._selected_node_id)
+            if node is not None:
+                from src.app.constants import MAP_LAYER_TYPE_RASTER
+
+                if node.layer_type == MAP_LAYER_TYPE_RASTER:
+                    mode = self._raster_mode_by_id.get(
+                        self._selected_node_id, "discrete"
+                    )
+                    layer_meta = self._raster_meta_by_id.get(self._selected_node_id)
+                    self._legend.set_layer(layer_meta)
+                    self._refresh_entity_picker(layer_meta, mode)
 
     def _show_mode_badge(self, mode: str) -> None:
         """Render the mode badge label with the correct text and style.
@@ -628,6 +741,7 @@ class MapLayerPanel(QWidget):
             mode: ``"discrete"`` or ``"continuous"``.
         """
         from src.core.theme_manager import ThemeManager
+
         theme = ThemeManager().get_theme()
 
         if mode == "discrete":

@@ -45,7 +45,7 @@ Legacy formats are normalised transparently via
 import logging
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -515,3 +515,37 @@ def resolve_node_name(layers: Any, target_id: str) -> Optional[str]:
         if result is not None:
             return result
     return None
+
+
+# ---------------------------------------------------------------------------
+# UI helper — discrete class picker choices
+# ---------------------------------------------------------------------------
+
+
+def get_discrete_class_choices(
+    layer_meta: Dict[str, Any],
+) -> List[Tuple[str, int]]:
+    """Return ``(display_label, value)`` pairs for a discrete class picker.
+
+    Suitable for populating a *Paint as:* combo box.  Only returns entries
+    that have an explicit ``value`` (i.e. ``mode == "exact"`` entries).
+
+    Args:
+        layer_meta: Raster layer metadata dict containing
+            ``value_entity_map``.
+
+    Returns:
+        List of ``(display_label, value)`` tuples sorted ascending by
+        value.  Empty if the layer has no defined classes.
+
+    """
+    vem_raw = layer_meta.get("value_entity_map", {})
+    vem = normalize_value_entity_map(vem_raw)
+    choices: List[Tuple[str, int]] = []
+    for entry in vem.get("mappings", []):
+        v = entry.get("value")
+        if v is None:
+            continue
+        label = entry.get("label") or f"Value {v}"
+        choices.append((label, int(v)))
+    return sorted(choices, key=lambda x: x[1])

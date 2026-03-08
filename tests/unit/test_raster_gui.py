@@ -664,7 +664,9 @@ class TestProbePopupModeHint:
 
         view = _make_view(qtbot)
         popup = RasterProbePopup(view)
-        popup.show_result(node_id="n1", value=5, entity_name=None, label=None, mode="discrete")
+        popup.show_result(
+            node_id="n1", value=5, entity_name=None, label=None, mode="discrete"
+        )
 
         assert "Discrete" in popup.text()
 
@@ -673,7 +675,9 @@ class TestProbePopupModeHint:
 
         view = _make_view(qtbot)
         popup = RasterProbePopup(view)
-        popup.show_result(node_id="n1", value=128, entity_name=None, label=None, mode="continuous")
+        popup.show_result(
+            node_id="n1", value=128, entity_name=None, label=None, mode="continuous"
+        )
 
         assert "Continuous" in popup.text()
 
@@ -695,7 +699,11 @@ class TestProbePopupModeHint:
         view = _make_view(qtbot)
         popup = RasterProbePopup(view)
         popup.show_result(
-            node_id="n1", value=3, entity_name="Wolf", label="Territory", mode="discrete"
+            node_id="n1",
+            value=3,
+            entity_name="Wolf",
+            label="Territory",
+            mode="discrete",
         )
 
         text = popup.text()
@@ -724,7 +732,9 @@ class TestPaletteEditorModeBanner:
         from src.gui.widgets.map.map_data_buffer import ColorMap
         from src.gui.widgets.map.raster_palette_editor import RasterPaletteEditor
 
-        cmap = ColorMap(type="gradient", gradient_start="#000000", gradient_end="#FFFFFF")
+        cmap = ColorMap(
+            type="gradient", gradient_start="#000000", gradient_end="#FFFFFF"
+        )
         dlg = RasterPaletteEditor(color_map=cmap, mode="continuous")
         qtbot.addWidget(dlg)
 
@@ -769,7 +779,10 @@ class TestLayerDialogModeHint:
 
         hint = dlg._mode_hint.text()
         assert hint  # not empty
-        assert any(w in hint.lower() for w in ("gradient", "scalar", "elevation", "temperature", "colour ramp"))
+        assert any(
+            w in hint.lower()
+            for w in ("gradient", "scalar", "elevation", "temperature", "colour ramp")
+        )
 
     def test_mode_cannot_be_changed_warning_in_tooltip(self, qtbot) -> None:
         from src.gui.widgets.map.raster_layer_dialog import RasterLayerDialog
@@ -838,3 +851,274 @@ class TestLayerPanelModeBadge:
 
         assert panel._raster_mode_label.isVisible()
         assert "Continuous" in panel._raster_mode_label.text()
+
+
+# ── New: MapLayerNode.attributes ─────────────────────────────────────
+
+
+class TestMapLayerNodeAttributes:
+    """MapLayerNode must persist an arbitrary attributes dict."""
+
+    def test_attributes_default_empty(self) -> None:
+        from src.core.map import MapLayerNode
+
+        n = MapLayerNode(name="x")
+        assert n.attributes == {}
+
+    def test_attributes_round_trip(self) -> None:
+        from src.core.map import MapLayerNode
+
+        n = MapLayerNode(name="x", attributes={"blend_mode": "multiply", "notes": "hi"})
+        d = n.to_dict()
+        n2 = MapLayerNode.from_dict(d)
+        assert n2.attributes == {"blend_mode": "multiply", "notes": "hi"}
+
+    def test_attributes_missing_key_backwards_compat(self) -> None:
+        """Older serialised dicts without 'attributes' must load cleanly."""
+        from src.core.map import MapLayerNode
+
+        n = MapLayerNode.from_dict({"name": "old", "layer_type": "group"})
+        assert n.attributes == {}
+
+
+# ── New: Raster legend widget ─────────────────────────────────────────
+
+
+class TestRasterLegendWidget:
+    """RasterLegendWidget must show swatches for discrete and gradient for continuous."""
+
+    def _make_discrete_meta(self) -> dict:
+        return {
+            "color_map": {
+                "type": "palette",
+                "entries": [
+                    {"value": 42, "color": "#3A7D44"},
+                    {"value": 7, "color": "#A0C8E0"},
+                ],
+            },
+            "value_entity_map": {
+                "mode": "exact",
+                "mappings": [
+                    {"id": "a1", "label": "Temperate Forest", "value": 42},
+                    {"id": "b2", "label": "Tundra", "value": 7},
+                ],
+            },
+        }
+
+    def _make_continuous_meta(self) -> dict:
+        return {
+            "color_map": {
+                "type": "gradient",
+                "gradient_start": "#000000",
+                "gradient_end": "#FFFFFF",
+            },
+            "value_entity_map": {},
+        }
+
+    def test_legend_widget_creates(self, qtbot) -> None:
+        from src.gui.widgets.map.raster_legend_widget import RasterLegendWidget
+
+        w = RasterLegendWidget()
+        qtbot.addWidget(w)
+        assert w is not None
+
+    def test_legend_has_toggle_button(self, qtbot) -> None:
+        from src.gui.widgets.map.raster_legend_widget import RasterLegendWidget
+
+        w = RasterLegendWidget()
+        qtbot.addWidget(w)
+        assert hasattr(w, "_toggle_btn")
+        assert "Legend" in w._toggle_btn.text()
+
+    def test_discrete_legend_populates_entries(self, qtbot) -> None:
+        from src.gui.widgets.map.raster_legend_widget import RasterLegendWidget
+
+        w = RasterLegendWidget()
+        qtbot.addWidget(w)
+        w.set_layer(self._make_discrete_meta())
+        # content_layout should have swatch rows + no-data row + stretch
+        # at least: no-data + 2 class rows + 1 stretch = 4 items
+        assert w._content_layout.count() >= 4
+
+    def test_continuous_legend_builds_gradient_bar(self, qtbot) -> None:
+        from src.gui.widgets.map.raster_legend_widget import RasterLegendWidget
+
+        w = RasterLegendWidget()
+        qtbot.addWidget(w)
+        w.set_layer(self._make_continuous_meta())
+        # Should have at least the gradient bar + stretch
+        assert w._content_layout.count() >= 2
+
+    def test_set_none_clears_legend(self, qtbot) -> None:
+        from src.gui.widgets.map.raster_legend_widget import RasterLegendWidget
+
+        w = RasterLegendWidget()
+        qtbot.addWidget(w)
+        w.set_layer(self._make_discrete_meta())
+        w.set_layer(None)
+        # Only stretch left
+        assert w._content_layout.count() == 1
+
+    def test_toggle_collapses_scroll(self, qtbot) -> None:
+        from src.gui.widgets.map.raster_legend_widget import RasterLegendWidget
+
+        w = RasterLegendWidget()
+        qtbot.addWidget(w)
+        w.show()
+        # Click toggle to collapse
+        w._toggle_btn.setChecked(False)
+        assert not w._scroll.isVisible()
+        assert "▶" in w._toggle_btn.text()
+
+    def test_toggle_expands_scroll(self, qtbot) -> None:
+        from src.gui.widgets.map.raster_legend_widget import RasterLegendWidget
+
+        w = RasterLegendWidget()
+        qtbot.addWidget(w)
+        w.show()
+        w._toggle_btn.setChecked(False)
+        w._toggle_btn.setChecked(True)
+        assert w._scroll.isVisible()
+        assert "▼" in w._toggle_btn.text()
+
+
+# ── New: Panel legend and entity picker ──────────────────────────────
+
+
+class TestPanelLegendAndEntityPicker:
+    """MapLayerPanel must expose legend widget and entity picker combo."""
+
+    def test_panel_has_legend_widget(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        assert hasattr(panel, "_legend")
+
+    def test_legend_hidden_by_default(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        assert not panel._legend.isVisible()
+
+    def test_panel_has_entity_picker_combo(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        assert hasattr(panel, "_entity_picker_combo")
+
+    def test_entity_picker_row_hidden_by_default(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        assert not panel._entity_picker_row.isVisible()
+
+    def test_set_raster_layer_metadata_stores_data(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        meta = {"n1": {"mode": "discrete", "value_entity_map": {}, "color_map": {}}}
+        panel.set_raster_layer_metadata(meta)
+        assert panel._raster_meta_by_id == meta
+
+    def test_refresh_entity_picker_populates_combo(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        layer_meta = {
+            "value_entity_map": {
+                "mode": "exact",
+                "mappings": [
+                    {"id": "a", "label": "Forest", "value": 42},
+                    {"id": "b", "label": "Tundra", "value": 7},
+                ],
+            },
+            "color_map": {},
+        }
+        panel._refresh_entity_picker(layer_meta, "discrete")
+        # "— manual —" + 2 entries = 3 items
+        assert panel._entity_picker_combo.count() == 3
+
+    def test_refresh_entity_picker_hidden_for_continuous(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel._refresh_entity_picker({"value_entity_map": {}}, "continuous")
+        assert not panel._entity_picker_row.isVisible()
+
+    def test_entity_picked_sets_paint_value(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        layer_meta = {
+            "value_entity_map": {
+                "mode": "exact",
+                "mappings": [{"id": "a", "label": "Forest", "value": 42}],
+            },
+            "color_map": {},
+        }
+        panel._refresh_entity_picker(layer_meta, "discrete")
+        # Select index 1 (first real class — index 0 is "manual")
+        panel._entity_picker_combo.setCurrentIndex(1)
+        assert panel._paint_value_spin.value() == 42
+
+
+# ── New: get_discrete_class_choices helper ────────────────────────────
+
+
+class TestGetDiscreteClassChoices:
+    """get_discrete_class_choices must return sorted (label, value) pairs."""
+
+    def test_returns_sorted_choices(self) -> None:
+        from src.gui.widgets.map.raster_mapping import get_discrete_class_choices
+
+        meta = {
+            "value_entity_map": {
+                "mode": "exact",
+                "mappings": [
+                    {"id": "a", "label": "Forest", "value": 42},
+                    {"id": "b", "label": "Tundra", "value": 7},
+                ],
+            }
+        }
+        choices = get_discrete_class_choices(meta)
+        assert choices == [("Tundra", 7), ("Forest", 42)]
+
+    def test_empty_vem_returns_empty(self) -> None:
+        from src.gui.widgets.map.raster_mapping import get_discrete_class_choices
+
+        assert get_discrete_class_choices({}) == []
+        assert get_discrete_class_choices({"value_entity_map": {}}) == []
+
+    def test_no_value_entries_skipped(self) -> None:
+        from src.gui.widgets.map.raster_mapping import get_discrete_class_choices
+
+        meta = {
+            "value_entity_map": {
+                "mode": "range",
+                "mappings": [
+                    {"id": "a", "label": "Cold", "min": 0, "max": 100},
+                ],
+            }
+        }
+        # Range entries have no "value" key — should be excluded
+        assert get_discrete_class_choices(meta) == []
+
+    def test_label_fallback_when_empty(self) -> None:
+        from src.gui.widgets.map.raster_mapping import get_discrete_class_choices
+
+        meta = {
+            "value_entity_map": {
+                "mode": "exact",
+                "mappings": [{"id": "a", "label": "", "value": 5}],
+            }
+        }
+        choices = get_discrete_class_choices(meta)
+        assert choices == [("Value 5", 5)]

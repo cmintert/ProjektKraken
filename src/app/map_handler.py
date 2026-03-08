@@ -911,6 +911,10 @@ class MapHandler(QObject):
         }
         self._map_widget.layer_panel.set_raster_mode_metadata(mode_by_id)
 
+        # Pass full metadata so the legend and class picker can populate
+        meta_by_id = {m["node_id"]: m for m in raster_metas if m.get("node_id")}
+        self._map_widget.layer_panel.set_raster_layer_metadata(meta_by_id)
+
     # ------------------------------------------------------------------
     # Raster editing handlers
     # ------------------------------------------------------------------

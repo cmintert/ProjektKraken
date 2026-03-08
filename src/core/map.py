@@ -39,6 +39,8 @@ class MapLayerNode:
             may be visible at a time (radio-button behaviour).
         start_date: Optional lore date when this layer becomes visible.
         end_date: Optional lore date when this layer stops being visible.
+        attributes: Flexible key-value store for layer-type-specific metadata
+            (e.g. ``blend_mode``, ``notes``, ``raster_snapshots``).
 
     """
 
@@ -54,6 +56,7 @@ class MapLayerNode:
     mutually_exclusive: bool = False
     start_date: Optional[float] = None
     end_date: Optional[float] = None
+    attributes: Dict[str, Any] = field(default_factory=dict)
 
     # --- helpers -----------------------------------------------------------
 
@@ -104,6 +107,7 @@ class MapLayerNode:
             "mutually_exclusive": self.mutually_exclusive,
             "start_date": self.start_date,
             "end_date": self.end_date,
+            "attributes": self.attributes,
         }
 
     @classmethod
@@ -118,11 +122,7 @@ class MapLayerNode:
 
         """
         max_zoom_raw = data.get("max_zoom")
-        max_zoom = (
-            float("inf")
-            if max_zoom_raw is None
-            else float(max_zoom_raw)
-        )
+        max_zoom = float("inf") if max_zoom_raw is None else float(max_zoom_raw)
         return cls(
             id=data.get("id", str(uuid.uuid4())),
             name=data["name"],
@@ -130,14 +130,13 @@ class MapLayerNode:
             visible=data.get("visible", True),
             opacity=float(data.get("opacity", MAP_LAYER_DEFAULT_OPACITY)),
             expanded=data.get("expanded", True),
-            children=[
-                cls.from_dict(c) for c in data.get("children", [])
-            ],
+            children=[cls.from_dict(c) for c in data.get("children", [])],
             min_zoom=float(data.get("min_zoom", MAP_LAYER_DEFAULT_MIN_ZOOM)),
             max_zoom=max_zoom,
             mutually_exclusive=data.get("mutually_exclusive", False),
             start_date=data.get("start_date"),
             end_date=data.get("end_date"),
+            attributes=dict(data.get("attributes", {})),
         )
 
 
