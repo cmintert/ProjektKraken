@@ -1281,19 +1281,22 @@ class TestBlendMode:
     def test_blend_mode_default_is_source_over(self, qtbot) -> None:
         from PySide6.QtGui import QPainter
 
-
         view = _make_view(qtbot)
         item, _ = _make_raster_item(view, node_id="blend_test")
-        assert item._scene_blend_mode == QPainter.CompositionMode.CompositionMode_SourceOver
+        assert (
+            item._scene_blend_mode
+            == QPainter.CompositionMode.CompositionMode_SourceOver
+        )
 
     def test_set_blend_mode_multiply(self, qtbot) -> None:
         from PySide6.QtGui import QPainter
 
-
         view = _make_view(qtbot)
         item, _ = _make_raster_item(view, node_id="blend_mult")
         item.set_blend_mode("Multiply")
-        assert item._scene_blend_mode == QPainter.CompositionMode.CompositionMode_Multiply
+        assert (
+            item._scene_blend_mode == QPainter.CompositionMode.CompositionMode_Multiply
+        )
 
     def test_set_blend_mode_unknown_falls_back(self, qtbot) -> None:
         from PySide6.QtGui import QPainter
@@ -1301,7 +1304,10 @@ class TestBlendMode:
         view = _make_view(qtbot)
         item, _ = _make_raster_item(view, node_id="blend_unk")
         item.set_blend_mode("NonExistentMode")
-        assert item._scene_blend_mode == QPainter.CompositionMode.CompositionMode_SourceOver
+        assert (
+            item._scene_blend_mode
+            == QPainter.CompositionMode.CompositionMode_SourceOver
+        )
 
     def test_panel_has_blend_combo(self, qtbot) -> None:
         from PySide6.QtWidgets import QComboBox
@@ -1451,3 +1457,209 @@ class TestOrphanDetection:
         qtbot.addWidget(dlg)
         buttons = dlg.findChildren(QPushButton)
         assert len(buttons) >= 3
+
+
+# ── Feature: Temporal Rasters ─────────────────────────────────────────────
+
+
+class TestTemporalRasters:
+    """Tests for temporal raster snapshot feature."""
+
+    def test_swap_buffer_updates_data(self, qtbot) -> None:
+        """swap_buffer replaces the item's internal buffer."""
+        view = _make_view(qtbot)
+        item, original_buf = _make_raster_item(view, node_id="swap_test")
+
+        new_buf = MapDataBuffer(width=64, height=64, default_value=9999)
+        item.swap_buffer(new_buf)
+
+        assert item.buffer is new_buf
+        assert item.buffer._data[0, 0] == 9999
+
+    def test_swap_buffer_triggers_redisplay(self, qtbot) -> None:
+        """swap_buffer calls update_display so the pixmap is refreshed."""
+        view = _make_view(qtbot)
+        item, _ = _make_raster_item(view, node_id="swap_redraw")
+
+        new_buf = MapDataBuffer(width=64, height=64, default_value=65535)
+        item.swap_buffer(new_buf)
+
+        # Pixmap must have been re-rendered (not identical to old one)
+        assert not item.pixmap().isNull()
+
+    def test_find_best_snapshot_no_snapshots(self, qtbot) -> None:
+        """_find_best_snapshot_path returns base path when no snapshots."""
+        from src.app.map_handler import MapHandler
+
+        meta = {"file_path": "rasters/base.png", "snapshots": {}}
+        handler = MapHandler.__new__(MapHandler)
+        result = handler._find_best_snapshot_path(meta, 10.0)
+        assert result == "rasters/base.png"
+
+    def test_find_best_snapshot_exact_match(self, qtbot) -> None:
+        """_find_best_snapshot_path returns snapshot at exact lore_date."""
+        from src.app.map_handler import MapHandler
+
+        meta = {
+            "file_path": "rasters/base.png",
+            "snapshots": {
+                "5.0": "rasters/snap_5.png",
+                "10.0": "rasters/snap_10.png",
+            },
+        }
+        handler = MapHandler.__new__(MapHandler)
+        result = handler._find_best_snapshot_path(meta, 10.0)
+        assert result == "rasters/snap_10.png"
+
+    def test_find_best_snapshot_nearest_past(self, qtbot) -> None:
+        """_find_best_snapshot_path returns most recent past snapshot."""
+        from src.app.map_handler import MapHandler
+
+        meta = {
+            "file_path": "rasters/base.png",
+            "snapshots": {
+                "1.0": "rasters/snap_1.png",
+                "5.0": "rasters/snap_5.png",
+                "20.0": "rasters/snap_20.png",
+            },
+        }
+        handler = MapHandler.__new__(MapHandler)
+        # playhead at 12.0 → snap at 5.0 is the nearest past
+        result = handler._find_best_snapshot_path(meta, 12.0)
+        assert result == "rasters/snap_5.png"
+
+    def test_find_best_snapshot_before_all(self, qtbot) -> None:
+        """_find_best_snapshot_path returns base when playhead is before all snapshots."""
+        from src.app.map_handler import MapHandler
+
+        meta = {
+            "file_path": "rasters/base.png",
+            "snapshots": {
+                "10.0": "rasters/snap_10.png",
+                "20.0": "rasters/snap_20.png",
+            },
+        }
+        handler = MapHandler.__new__(MapHandler)
+        # playhead at 5.0 → before all snapshots → return base
+        result = handler._find_best_snapshot_path(meta, 5.0)
+        assert result == "rasters/base.png"
+
+    def test_set_raster_snapshot_command_execute(self) -> None:
+        """SetRasterSnapshotCommand persists snapshot path to DB."""
+        import uuid
+
+        from src.commands.raster_commands import SetRasterSnapshotCommand
+        from src.core.map import Map
+        from src.services.db_service import DatabaseService
+
+        db = DatabaseService(":memory:")
+        db.connect()
+        map_id = str(uuid.uuid4())
+        node_id = str(uuid.uuid4())
+        m = Map(
+            id=map_id,
+            name="TestMap",
+            image_path="",
+            attributes={
+                "raster_layers": [
+                    {
+                        "node_id": node_id,
+                        "mode": "discrete",
+                        "file_path": "rasters/base.png",
+                    }
+                ]
+            },
+        )
+        db.map_repo.insert_map(m)
+
+        cmd = SetRasterSnapshotCommand(
+            map_id=map_id,
+            node_id=node_id,
+            lore_date=5.0,
+            rel_file_path="rasters/base_snap_5.00.png",
+            old_snapshots={},
+        )
+        result = cmd.execute(db)
+        assert result.success
+
+        stored = db.map_repo.get_map(map_id)
+        layers = (stored.attributes or {}).get("raster_layers", [])
+        layer = next(la for la in layers if la["node_id"] == node_id)
+        assert layer.get("snapshots", {}).get("5.0") == "rasters/base_snap_5.00.png"
+
+    def test_set_raster_snapshot_command_undo(self) -> None:
+        """SetRasterSnapshotCommand undo restores old snapshots."""
+        import uuid
+
+        from src.commands.raster_commands import SetRasterSnapshotCommand
+        from src.core.map import Map
+        from src.services.db_service import DatabaseService
+
+        db = DatabaseService(":memory:")
+        db.connect()
+        map_id = str(uuid.uuid4())
+        node_id = str(uuid.uuid4())
+        existing_snaps = {"1.0": "rasters/snap_1.png"}
+        m = Map(
+            id=map_id,
+            name="TestMap",
+            image_path="",
+            attributes={
+                "raster_layers": [
+                    {
+                        "node_id": node_id,
+                        "mode": "discrete",
+                        "file_path": "rasters/base.png",
+                        "snapshots": dict(existing_snaps),
+                    }
+                ]
+            },
+        )
+        db.map_repo.insert_map(m)
+
+        cmd = SetRasterSnapshotCommand(
+            map_id=map_id,
+            node_id=node_id,
+            lore_date=5.0,
+            rel_file_path="rasters/base_snap_5.00.png",
+            old_snapshots=existing_snaps,
+        )
+        cmd.execute(db)
+        cmd.undo(db)
+
+        stored = db.map_repo.get_map(map_id)
+        layers = (stored.attributes or {}).get("raster_layers", [])
+        layer = next(la for la in layers if la["node_id"] == node_id)
+        snaps = layer.get("snapshots", {})
+        assert "5.0" not in snaps
+        assert snaps.get("1.0") == "rasters/snap_1.png"
+
+    def test_panel_has_snapshot_button(self, qtbot) -> None:
+        """MapLayerPanel has a snapshot button."""
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        assert hasattr(panel, "_btn_snapshot")
+
+    def test_panel_has_snapshot_count_label(self, qtbot) -> None:
+        """MapLayerPanel has a snapshot count label."""
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        assert hasattr(panel, "_snapshot_count_label")
+
+    def test_panel_emits_snapshot_requested(self, qtbot) -> None:
+        """Clicking the snapshot button emits raster_snapshot_requested."""
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel._current_node_id = "test-node"
+
+        emitted: list = []
+        panel.raster_snapshot_requested.connect(emitted.append)
+        panel._btn_snapshot.click()
+
+        assert emitted == ["test-node"]

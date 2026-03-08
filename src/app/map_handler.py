@@ -12,9 +12,9 @@ received through signals.
 import shutil
 import uuid
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt, Signal, Slot
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt, QTimer, Signal, Slot
 
 from src.commands.map_commands import (
     CreateMapCommand,
@@ -36,6 +36,21 @@ if TYPE_CHECKING:
     from src.gui.widgets.map_widget import MapWidget
 
 logger = get_logger(__name__)
+
+
+def _safe_float(value: Any) -> Optional[float]:
+    """Safely convert a value to float, returning None on error.
+
+    Args:
+        value: Value to convert.
+
+    Returns:
+        float if conversion succeeds, ``None`` otherwise.
+    """
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 class MapHandler(QObject):
@@ -83,6 +98,17 @@ class MapHandler(QObject):
         self._marker_object_to_id: dict[str, str] = {}
         # Track the most recently loaded map ID for raster operations
         self._current_map_id: Optional[str] = None
+
+        # ── Temporal rasters ──────────────────────────────────────────
+        self._current_lore_date: float = 0.0
+        # abs_path → MapDataBuffer (avoids re-reading same snapshot file)
+        self._snapshot_cache: Dict[str, Any] = {}
+        # node_id → abs_path currently shown in scene
+        self._current_snapshot_by_node: Dict[str, str] = {}
+        self._temporal_debounce_timer = QTimer()
+        self._temporal_debounce_timer.setSingleShot(True)
+        self._temporal_debounce_timer.setInterval(300)
+        self._temporal_debounce_timer.timeout.connect(self._apply_temporal_rasters)
 
     def load_maps(self) -> None:
         """Requests loading of all maps from the worker thread."""
@@ -809,6 +835,10 @@ class MapHandler(QObject):
 
         """
         logger.debug("load_raster_layers: map_id=%s", map_id)
+        # Clear temporal state when map changes; always clear node tracking
+        if map_id != self._current_map_id:
+            self._snapshot_cache.clear()
+        self._current_snapshot_by_node.clear()
         self._current_map_id = map_id
         maps = self._map_widget.maps_data
         selected_map = next((m for m in maps if m.id == map_id), None)
@@ -907,6 +937,9 @@ class MapHandler(QObject):
             view._raster_items[node_id] = item
             view.scene.addItem(item)
 
+            # Record base file as the currently displayed snapshot
+            self._current_snapshot_by_node[node_id] = abs_path
+
             logger.info(
                 "Loaded raster layer: %s (%s) — scene item added", node_id, file_path
             )
@@ -926,7 +959,9 @@ class MapHandler(QObject):
         # Connect layer panel signals (guard against duplicate connections)
         layer_panel = self._map_widget.layer_panel
         try:
-            layer_panel.raster_stats_requested.disconnect(self.on_raster_stats_requested)
+            layer_panel.raster_stats_requested.disconnect(
+                self.on_raster_stats_requested
+            )
         except RuntimeError:
             pass
         layer_panel.raster_stats_requested.connect(self.on_raster_stats_requested)
@@ -1286,9 +1321,7 @@ class MapHandler(QObject):
         view = self._map_widget.view
         item = view._raster_items.get(node_id)
         if item is None:
-            logger.warning(
-                "on_raster_stats_requested: no item for node_id=%s", node_id
-            )
+            logger.warning("on_raster_stats_requested: no item for node_id=%s", node_id)
             return
 
         # Find metadata for this layer
@@ -1349,3 +1382,185 @@ class MapHandler(QObject):
                 old_mode=old_mode,
             )
             self.command_requested.emit(cmd)
+
+    # ------------------------------------------------------------------
+    # Temporal rasters
+    # ------------------------------------------------------------------
+
+    @Slot(float)
+    def on_playhead_changed(self, lore_date: float) -> None:
+        """Handle timeline playhead change — debounced raster swap.
+
+        Args:
+            lore_date: New playhead position in lore time (float days).
+        """
+        self._current_lore_date = lore_date
+        if self._current_map_id:
+            self._temporal_debounce_timer.start()
+
+    def _apply_temporal_rasters(self) -> None:
+        """Load the appropriate snapshot for each raster layer at current lore date.
+
+        Called after the debounce timer fires.
+        """
+        if not self._current_map_id:
+            return
+
+        maps = self._map_widget.maps_data
+        selected_map = next((m for m in maps if m.id == self._current_map_id), None)
+        if not selected_map:
+            return
+
+        raster_metas = (selected_map.attributes or {}).get("raster_layers", [])
+        if not raster_metas:
+            return
+
+        world_root = str(Path(self._db_path_accessor()).parent)
+        view = self._map_widget.view
+
+        for meta in raster_metas:
+            node_id = meta.get("node_id", "")
+            if not node_id:
+                continue
+            item = view._raster_items.get(node_id)
+            if item is None:
+                continue
+
+            best_rel_path = self._find_best_snapshot_path(meta, self._current_lore_date)
+            if not best_rel_path:
+                continue
+            best_abs_path = str(Path(world_root) / best_rel_path)
+
+            current = self._current_snapshot_by_node.get(node_id)
+            if current == best_abs_path:
+                continue  # Already showing this snapshot
+
+            buf = self._snapshot_cache.get(best_abs_path)
+            if buf is None:
+                try:
+                    from src.gui.widgets.map.map_data_buffer import MapDataBuffer
+
+                    buf = MapDataBuffer.from_file(best_abs_path)
+                    self._snapshot_cache[best_abs_path] = buf
+                except Exception as e:
+                    logger.warning("Failed to load snapshot %s: %s", best_abs_path, e)
+                    continue
+
+            item.swap_buffer(buf)
+            self._current_snapshot_by_node[node_id] = best_abs_path
+            logger.debug(
+                "Temporal raster: node=%s loaded snapshot=%s at lore_date=%.2f",
+                node_id,
+                best_rel_path,
+                self._current_lore_date,
+            )
+
+    def _find_best_snapshot_path(self, meta: Dict[str, Any], lore_date: float) -> str:
+        """Find the best (nearest past) snapshot file path for a given lore date.
+
+        Args:
+            meta: Raster layer metadata dict with optional ``snapshots`` key.
+            lore_date: Current playhead time.
+
+        Returns:
+            Relative file path to display.  Falls back to
+            ``meta['file_path']`` if no snapshot at or before *lore_date*
+            exists.
+        """
+        snapshots: Dict[str, str] = meta.get("snapshots", {})
+        base_path: str = meta.get("file_path", "")
+        if not snapshots:
+            return base_path
+        valid = [
+            (float(k), v)
+            for k, v in snapshots.items()
+            if _safe_float(k) is not None and _safe_float(k) <= lore_date
+        ]
+        if not valid:
+            return base_path
+        _, path = max(valid, key=lambda x: x[0])
+        return path
+
+    @Slot(str)
+    def on_raster_snapshot_requested(self, node_id: str) -> None:
+        """Save a snapshot of the current raster buffer at the current lore date.
+
+        Writes the buffer to a PNG file and persists the metadata via
+        :class:`~src.commands.raster_commands.SetRasterSnapshotCommand`.
+
+        Args:
+            node_id: The raster layer node to snapshot.
+        """
+        if not self._current_map_id:
+            logger.warning("on_raster_snapshot_requested: no current map")
+            return
+
+        view = self._map_widget.view
+        item = view._raster_items.get(node_id)
+        if item is None:
+            logger.warning(
+                "on_raster_snapshot_requested: no raster item for %s", node_id
+            )
+            return
+
+        maps = self._map_widget.maps_data
+        selected_map = next((m for m in maps if m.id == self._current_map_id), None)
+        if not selected_map:
+            return
+
+        raster_metas = (selected_map.attributes or {}).get("raster_layers", [])
+        meta = next((m for m in raster_metas if m.get("node_id") == node_id), None)
+        if meta is None:
+            return
+
+        world_root = Path(self._db_path_accessor()).parent
+        lore_date = self._current_lore_date
+
+        base_path = meta.get("file_path", f"rasters/{node_id[:8]}.png")
+        base_stem = Path(base_path).stem
+        snap_filename = f"{base_stem}_snap_{lore_date:.2f}.png"
+        snap_rel_path = f"rasters/{snap_filename}"
+        snap_abs_path = str(world_root / snap_rel_path)
+
+        try:
+            Path(snap_abs_path).parent.mkdir(parents=True, exist_ok=True)
+            item.buffer.save(snap_abs_path)
+        except Exception as e:
+            logger.error("Failed to save snapshot: %s", e)
+            from PySide6.QtWidgets import QMessageBox
+
+            QMessageBox.warning(
+                self._map_widget,
+                "Snapshot Failed",
+                f"Could not save snapshot:\n{e}",
+            )
+            return
+
+        old_snapshots = dict(meta.get("snapshots", {}))
+        meta.setdefault("snapshots", {})[str(lore_date)] = snap_rel_path
+
+        self._snapshot_cache[snap_abs_path] = item.buffer
+        self._current_snapshot_by_node[node_id] = snap_abs_path
+
+        from src.commands.raster_commands import SetRasterSnapshotCommand
+
+        cmd = SetRasterSnapshotCommand(
+            map_id=self._current_map_id,
+            node_id=node_id,
+            lore_date=lore_date,
+            rel_file_path=snap_rel_path,
+            old_snapshots=old_snapshots,
+        )
+        self.command_requested.emit(cmd)
+
+        # Refresh panel snapshot count
+        meta_by_id = {m.get("node_id", ""): m for m in raster_metas if m.get("node_id")}
+        self._map_widget.layer_panel.set_raster_layer_metadata(meta_by_id)
+
+        snap_count = len(meta.get("snapshots", {}))
+        logger.info(
+            "Saved snapshot for node=%s at lore_date=%.2f (%d total)",
+            node_id,
+            lore_date,
+            snap_count,
+        )

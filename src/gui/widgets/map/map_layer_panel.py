@@ -75,6 +75,7 @@ class MapLayerPanel(QWidget):
     raster_settings_changed = Signal()  # tool settings changed during editing
     raster_stats_requested = Signal(str)  # node_id — open stats dialog
     raster_blend_mode_changed = Signal(str, str, str)  # (node_id, new_mode, old_mode)
+    raster_snapshot_requested = Signal(str)  # node_id — save snapshot at current date
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialise the panel.
@@ -272,6 +273,17 @@ class MapLayerPanel(QWidget):
         self._btn_stats.setToolTip("Show coverage statistics for this raster layer")
         self._btn_stats.clicked.connect(self._on_stats_clicked)
         action_row.addWidget(self._btn_stats)
+        self._btn_snapshot = QPushButton("📸 Snapshot")
+        self._btn_snapshot.setToolTip(
+            "Save snapshot of this raster layer at the current timeline date"
+        )
+        self._btn_snapshot.clicked.connect(self._on_snapshot_clicked)
+        action_row.addWidget(self._btn_snapshot)
+        self._snapshot_count_label = QLabel("")
+        self._snapshot_count_label.setToolTip(
+            "Number of saved temporal snapshots for this layer"
+        )
+        action_row.addWidget(self._snapshot_count_label)
         action_row.addStretch()
         rt_layout.addLayout(action_row)
 
@@ -643,9 +655,18 @@ class MapLayerPanel(QWidget):
             if idx >= 0:
                 self._blend_combo.setCurrentIndex(idx)
             self._blend_combo.blockSignals(False)
+            # Refresh snapshot count label
+            snap_count = len((layer_meta or {}).get("snapshots", {}))
+            if snap_count:
+                self._snapshot_count_label.setText(
+                    f"{snap_count} snapshot{'s' if snap_count != 1 else ''}"
+                )
+            else:
+                self._snapshot_count_label.setText("")
         else:
             self._current_node_id = ""
             self._raster_mode_label.setVisible(False)
+            self._snapshot_count_label.setText("")
 
         # Reset edit toggle when switching layers
         if not is_raster and self._btn_edit_toggle.isChecked():
@@ -855,6 +876,12 @@ class MapLayerPanel(QWidget):
         """Emit raster_stats_requested for the currently selected raster layer."""
         if self._current_node_id:
             self.raster_stats_requested.emit(self._current_node_id)
+
+    @Slot()
+    def _on_snapshot_clicked(self) -> None:
+        """Emit snapshot request for the currently selected raster layer."""
+        if self._current_node_id:
+            self.raster_snapshot_requested.emit(self._current_node_id)
 
     @Slot(str)
     def _on_blend_mode_changed(self, new_mode: str) -> None:

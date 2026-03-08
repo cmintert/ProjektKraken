@@ -1012,3 +1012,132 @@ class SetRasterBlendModeCommand(BaseCommand):
             new_mode=data.get("new_mode", "Normal"),
             old_mode=data.get("old_mode", "Normal"),
         )
+
+
+class SetRasterSnapshotCommand(BaseCommand):
+    """Record a snapshot file path at a specific lore date in raster metadata.
+
+    The actual PNG file is written by MapHandler before this command is
+    emitted.  This command only persists the metadata mapping
+    ``{str(lore_date): rel_path}`` inside
+    ``maps.attributes["raster_layers"][n]["snapshots"]``.
+
+    Args:
+        map_id: Parent map ID.
+        node_id: Raster layer node ID.
+        lore_date: The lore timeline date at which this snapshot was taken.
+        rel_file_path: Relative path from world root to the snapshot PNG.
+        old_snapshots: The ``snapshots`` dict *before* this change (for undo).
+    """
+
+    def __init__(
+        self,
+        map_id: str,
+        node_id: str,
+        lore_date: float,
+        rel_file_path: str,
+        old_snapshots: Dict[str, str],
+    ) -> None:
+        super().__init__()
+        self.map_id = map_id
+        self.node_id = node_id
+        self.lore_date = lore_date
+        self.rel_file_path = rel_file_path
+        self.old_snapshots = old_snapshots
+
+    def _apply_snapshots(
+        self, db_service: DatabaseService, snapshots: Dict[str, str]
+    ) -> None:
+        """Write *snapshots* dict into the raster layer metadata.
+
+        Args:
+            db_service: Database service.
+            snapshots: Snapshot dict to persist (``{str_lore_date: rel_path}``).
+        """
+        repo = db_service.map_repo
+        map_obj = repo.get_map(self.map_id)
+        if map_obj is None:
+            raise ValueError(f"Map not found: {self.map_id}")
+        raster_layers = _get_raster_layers(map_obj)
+        for rl in raster_layers:
+            if rl.get("node_id") == self.node_id:
+                rl["snapshots"] = snapshots
+                break
+        _set_raster_layers(map_obj, raster_layers)
+        repo.insert_map(map_obj)
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Persist the new snapshot path to the raster layer metadata.
+
+        Args:
+            db_service: Database service.
+
+        Returns:
+            CommandResult indicating success or failure.
+        """
+        try:
+            new_snapshots = dict(self.old_snapshots)
+            new_snapshots[str(self.lore_date)] = self.rel_file_path
+            self._apply_snapshots(db_service, new_snapshots)
+            self._is_executed = True
+            logger.debug(
+                "SetRasterSnapshotCommand.execute: node_id=%s lore_date=%.2f path=%s",
+                self.node_id,
+                self.lore_date,
+                self.rel_file_path,
+            )
+            return CommandResult(
+                success=True,
+                message="Snapshot recorded.",
+                command_name="SetRasterSnapshotCommand",
+            )
+        except Exception as e:
+            logger.error("SetRasterSnapshotCommand failed: %s", e, exc_info=True)
+            return CommandResult(
+                success=False,
+                message=str(e),
+                command_name="SetRasterSnapshotCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Restore the snapshot dict to its previous state.
+
+        Args:
+            db_service: Database service.
+        """
+        if self._is_executed:
+            self._apply_snapshots(db_service, dict(self.old_snapshots))
+            self._is_executed = False
+            logger.debug(
+                "SetRasterSnapshotCommand.undo: node_id=%s restored %d snapshots",
+                self.node_id,
+                len(self.old_snapshots),
+            )
+
+    def to_dict(self) -> Dict:
+        """Serialise to a JSON-friendly dict."""
+        return {
+            "map_id": self.map_id,
+            "node_id": self.node_id,
+            "lore_date": self.lore_date,
+            "rel_file_path": self.rel_file_path,
+            "old_snapshots": self.old_snapshots,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "SetRasterSnapshotCommand":
+        """Deserialise from a dict.
+
+        Args:
+            data: Dict produced by :meth:`to_dict`.
+
+        Returns:
+            New :class:`SetRasterSnapshotCommand` instance.
+        """
+        return cls(
+            map_id=data["map_id"],
+            node_id=data["node_id"],
+            lore_date=data["lore_date"],
+            rel_file_path=data["rel_file_path"],
+            old_snapshots=data.get("old_snapshots", {}),
+        )

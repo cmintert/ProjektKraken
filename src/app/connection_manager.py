@@ -439,6 +439,12 @@ class ConnectionManager:
             ),
             (
                 timeline,
+                "playhead_time_changed",
+                self.window.map_handler.on_playhead_changed,
+                "Timeline",
+            ),
+            (
+                timeline,
                 "event_date_changed",
                 self.window.editor_coordinator.on_event_date_changed,
                 "Timeline",
@@ -710,6 +716,12 @@ class ConnectionManager:
                     "raster_value_probed",
                     map_handler.on_raster_value_probed,
                     "MapWidget",
+                ),
+                (
+                    map_widget.layer_panel,
+                    "raster_snapshot_requested",
+                    map_handler.on_raster_snapshot_requested,
+                    "MapLayerPanel",
                 ),
                 (
                     map_widget,
