@@ -45,6 +45,6 @@ def test_sheet_builder_data_loss(editor, qtbot):
 
     saved_data = blocker.args[0]
     # This assertion is expected to FAIL currently
-    assert (
-        saved_data["attributes"]["Strength"] == 15
-    ), "Sheet builder changes were lost on save!"
+    assert saved_data["attributes"]["Strength"] == 15, (
+        "Sheet builder changes were lost on save!"
+    )

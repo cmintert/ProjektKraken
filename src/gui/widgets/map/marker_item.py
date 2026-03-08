@@ -49,6 +49,7 @@ MARKER_ICONS_PATH = os.path.join(
 
 logger = logging.getLogger(__name__)
 
+
 class MarkerLabelItem(QGraphicsObject):
     """Custom graphics item for marker labels that displays a themed background pill."""
 
@@ -58,7 +59,7 @@ class MarkerLabelItem(QGraphicsObject):
         self._font = QFont("Segoe UI", 8)
         self._font.setBold(True)
         self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIgnoresTransformations)
-        
+
         self._padding_x = 6
         self._padding_y = 2
         self._rect = QRectF()
@@ -81,7 +82,12 @@ class MarkerLabelItem(QGraphicsObject):
             self._update_rect()
             self.update()
 
-    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: Optional[QWidget] = None) -> None:
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionGraphicsItem,
+        widget: Optional[QWidget] = None,
+    ) -> None:
         theme = ThemeManager().get_theme()
         bg_color = QColor(theme.get("surface", "#1A1A1A"))
         text_color = QColor(theme.get("text_main", "#FFFFFF"))
@@ -92,10 +98,10 @@ class MarkerLabelItem(QGraphicsObject):
         # Draw the pill background
         painter.setBrush(QBrush(bg_color))
         painter.setPen(QPen(border_color, 1))
-        
+
         radius = self._rect.height() / 2.0
         painter.drawRoundedRect(self._rect, radius, radius)
-        
+
         # Draw the text
         painter.setFont(self._font)
         painter.setPen(QPen(text_color))

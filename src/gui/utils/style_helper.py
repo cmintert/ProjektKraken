@@ -1115,29 +1115,29 @@ class StyleHelper:
                 padding: 8px 10px;
                 margin: 6px 2px;
                 border-radius: 3px;
-                border: 1px solid {theme['border']};
+                border: 1px solid {theme["border"]};
             }}
             .timeline-entry.active {{
-                border-color: {theme['primary']};
+                border-color: {theme["primary"]};
                 border-width: 2px;
             }}
             .timeline-entry.future {{
                 opacity: 0.5;
-                border-color: {theme['border']};
+                border-color: {theme["border"]};
             }}
             .event-header {{ margin-bottom: 4px; }}
             .event-date {{
-                color: {theme['text_dim']};
+                color: {theme["text_dim"]};
                 font-size: 11px;
                 font-weight: 500;
             }}
             .event-name {{
-                color: {theme['text_main']};
+                color: {theme["text_main"]};
                 font-weight: 600;
                 font-size: 13px;
             }}
             .event-type {{
-                color: {theme['text_dim']};
+                color: {theme["text_dim"]};
                 font-size: 10px;
                 font-style: italic;
             }}
@@ -1146,17 +1146,17 @@ class StyleHelper:
                 padding: 0;
             }}
             .payload-item {{
-                color: {theme['text_dim']};
+                color: {theme["text_dim"]};
                 font-size: 11px;
                 line-height: 1.4;
             }}
-            .payload-key {{ color: {theme['accent_secondary']}; }}
-            .payload-value {{ color: {theme['primary']}; }}
+            .payload-key {{ color: {theme["accent_secondary"]}; }}
+            .payload-value {{ color: {theme["primary"]}; }}
             .now-separator {{
                 display: flex;
                 align-items: center;
                 margin: 12px 0;
-                color: {theme['primary']};
+                color: {theme["primary"]};
                 font-size: 10px;
                 font-weight: 600;
                 text-transform: uppercase;
@@ -1168,7 +1168,7 @@ class StyleHelper:
                 flex: 1;
                 height: 1px;
                 background: linear-gradient(
-                    to right, transparent, {theme['primary']}, transparent
+                    to right, transparent, {theme["primary"]}, transparent
                 );
             }}
             .now-separator span {{
@@ -1178,7 +1178,7 @@ class StyleHelper:
                 display: flex;
                 align-items: center;
                 margin: 12px 0;
-                color: {theme['accent_secondary']};
+                color: {theme["accent_secondary"]};
                 font-size: 10px;
                 font-weight: 600;
                 text-transform: uppercase;
@@ -1189,7 +1189,7 @@ class StyleHelper:
                 content: '';
                 flex: 1;
                 height: 2px;
-                background: {theme['accent_secondary']};
+                background: {theme["accent_secondary"]};
             }}
             .now-line span {{
                 padding: 0 10px;

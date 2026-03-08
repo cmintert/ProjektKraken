@@ -378,7 +378,9 @@ class TimelineRuler:
             else:
                 return str(date.year)
         except Exception as e:
-            logger.warning(f"Calendar label formatting failed at position {position}: {e}")
+            logger.warning(
+                f"Calendar label formatting failed at position {position}: {e}"
+            )
             return self._format_numeric_label(position, level)
 
     def _format_numeric_label(self, position: float, level: TickLevel) -> str:

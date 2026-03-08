@@ -333,7 +333,13 @@ class TestConnectBatch:
         cm = ConnectionManager(mock_window)
 
         specs = [
-            (source, "cross_thread", lambda: None, "Source", Qt.ConnectionType.QueuedConnection),
+            (
+                source,
+                "cross_thread",
+                lambda: None,
+                "Source",
+                Qt.ConnectionType.QueuedConnection,
+            ),
         ]
 
         failed = cm._connect_batch(specs, "CrossThread")

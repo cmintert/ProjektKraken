@@ -19,7 +19,7 @@ class AutoSaveSource(Protocol):
 
     def has_unsaved_changes(self) -> bool:
         """Check if there are unsaved changes.
-        
+
         Returns:
             True if there are unsaved changes, False otherwise.
         """

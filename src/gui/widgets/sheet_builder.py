@@ -1256,9 +1256,7 @@ class SheetBuilderWidget(QWidget):
         if state.focused_key is not None and state.focused_key in self._pairs:
             pair = self._pairs[state.focused_key]
             pair.value_edit.setFocus()
-            cursor_pos = min(
-                state.cursor_position, len(pair.value_edit.toPlainText())
-            )
+            cursor_pos = min(state.cursor_position, len(pair.value_edit.toPlainText()))
             tc = pair.value_edit.textCursor()
             tc.setPosition(cursor_pos)
             pair.value_edit.setTextCursor(tc)

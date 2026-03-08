@@ -113,6 +113,8 @@ class ColorMap:
     entries: List[ColorEntry] = field(default_factory=list)
     gradient_start: str = "#000000"
     gradient_end: str = "#FFFFFF"
+    stretch_min: Optional[int] = None  # If set, gradient maps this value → start color
+    stretch_max: Optional[int] = None  # If set, gradient maps this value → end color
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialise to JSON-friendly dict."""
@@ -122,6 +124,10 @@ class ColorMap:
         else:
             d["gradient_start"] = self.gradient_start
             d["gradient_end"] = self.gradient_end
+        if self.stretch_min is not None:
+            d["stretch_min"] = self.stretch_min
+        if self.stretch_max is not None:
+            d["stretch_max"] = self.stretch_max
         return d
 
     @classmethod
@@ -129,11 +135,15 @@ class ColorMap:
         """Deserialise from dict."""
         ctype = data.get("type", "palette")
         entries = [ColorEntry.from_dict(e) for e in data.get("entries", [])]
+        stretch_min_raw = data.get("stretch_min")
+        stretch_max_raw = data.get("stretch_max")
         return cls(
             type=ctype,
             entries=entries,
             gradient_start=data.get("gradient_start", "#000000"),
             gradient_end=data.get("gradient_end", "#FFFFFF"),
+            stretch_min=int(stretch_min_raw) if stretch_min_raw is not None else None,
+            stretch_max=int(stretch_max_raw) if stretch_max_raw is not None else None,
         )
 
 
@@ -422,10 +432,15 @@ class MapDataBuffer:
                 mask = self._data == entry.value
                 rgba[mask] = [r, g, b, a]
         else:
-            # Gradient mode: linear interpolation across 0–65535
+            # Gradient mode: linear interpolation with optional stretch range
             sr, sg, sb, sa = _hex_to_rgba(color_map.gradient_start)
             er, eg, eb, ea = _hex_to_rgba(color_map.gradient_end)
-            t = self._data.astype(np.float32) / 65535.0
+            s_min = color_map.stretch_min if color_map.stretch_min is not None else 0
+            s_max = (
+                color_map.stretch_max if color_map.stretch_max is not None else 65535
+            )
+            span = max(s_max - s_min, 1)
+            t = np.clip((self._data.astype(np.float32) - s_min) / span, 0.0, 1.0)
             rgba[:, :, 0] = (sr + (er - sr) * t).astype(np.uint8)
             rgba[:, :, 1] = (sg + (eg - sg) * t).astype(np.uint8)
             rgba[:, :, 2] = (sb + (eb - sb) * t).astype(np.uint8)
@@ -543,7 +558,12 @@ class MapDataBuffer:
         else:
             sr, sg, sb, sa = _hex_to_rgba(color_map.gradient_start)
             er, eg, eb, ea = _hex_to_rgba(color_map.gradient_end)
-            t = region.astype(np.float32) / 65535.0
+            s_min = color_map.stretch_min if color_map.stretch_min is not None else 0
+            s_max = (
+                color_map.stretch_max if color_map.stretch_max is not None else 65535
+            )
+            span = max(s_max - s_min, 1)
+            t = np.clip((region.astype(np.float32) - s_min) / span, 0.0, 1.0)
             rgba[:, :, 0] = (sr + (er - sr) * t).astype(np.uint8)
             rgba[:, :, 1] = (sg + (eg - sg) * t).astype(np.uint8)
             rgba[:, :, 2] = (sb + (eb - sb) * t).astype(np.uint8)
@@ -815,3 +835,80 @@ class MapDataBuffer:
                 mean_val=mean_val,
                 median_val=median_val,
             )
+
+
+# ---------------------------------------------------------------------------
+# Module-level spatial query helper (Feature D)
+# ---------------------------------------------------------------------------
+
+
+def compute_spatial_query(
+    arrays: List[np.ndarray],
+    conditions: List[Dict[str, Any]],
+) -> np.ndarray:
+    """Compute a boolean mask from multi-layer conditions.
+
+    Args:
+        arrays: List of 2-D uint16 arrays (all same shape), indexed by
+            condition order.
+        conditions: List of dicts, each with:
+
+            - ``"index"`` (int) — which array in *arrays* to use (0-based).
+            - ``"op"`` (str) — one of ``"eq"``, ``"neq"``, ``"gt"``,
+              ``"lt"``, ``"gte"``, ``"lte"``, ``"between"``.
+            - ``"value"`` (int) — threshold (for all ops except ``"between"``).
+            - ``"min"`` / ``"max"`` (int) — range bounds for ``"between"``.
+
+    Returns:
+        Boolean numpy array of the same shape as the input arrays; ``True``
+        means *all* conditions are satisfied for that pixel.
+
+    Raises:
+        ValueError: If arrays have different shapes, are not 2-D, or if a
+            condition references an invalid index.
+    """
+    if not arrays:
+        raise ValueError("arrays must not be empty")
+
+    ref_shape = arrays[0].shape
+    for i, arr in enumerate(arrays):
+        if arr.ndim != 2:
+            raise ValueError(f"arrays[{i}] is not 2-D (shape={arr.shape})")
+        if arr.shape != ref_shape:
+            raise ValueError(
+                f"Shape mismatch: arrays[0] is {ref_shape} "
+                f"but arrays[{i}] is {arr.shape}"
+            )
+
+    mask = np.ones(ref_shape, dtype=np.bool_)
+
+    for cond in conditions:
+        idx = int(cond["index"])
+        if idx < 0 or idx >= len(arrays):
+            raise ValueError(
+                f"Condition references index {idx} but only {len(arrays)} "
+                "arrays provided"
+            )
+        arr = arrays[idx].astype(np.int32)
+        op = str(cond["op"])
+
+        if op == "eq":
+            mask &= arr == int(cond["value"])
+        elif op == "neq":
+            mask &= arr != int(cond["value"])
+        elif op == "gt":
+            mask &= arr > int(cond["value"])
+        elif op == "lt":
+            mask &= arr < int(cond["value"])
+        elif op == "gte":
+            mask &= arr >= int(cond["value"])
+        elif op == "lte":
+            mask &= arr <= int(cond["value"])
+        elif op == "between":
+            lo = int(cond["min"])
+            hi = int(cond["max"])
+            mask &= (arr >= lo) & (arr <= hi)
+        else:
+            raise ValueError(f"Unknown operator: {op!r}")
+
+    return mask

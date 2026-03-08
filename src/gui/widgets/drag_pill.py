@@ -48,7 +48,7 @@ class DragPill(QFrame):
     ) -> None:
         """
         Create a floating drag pill that represents the dragged item and follows the cursor.
-        
+
         Parameters:
             item_name: The display name shown in the pill.
             item_type: Item category used for icon and type label (e.g., "event", "entity", "map").
@@ -78,7 +78,7 @@ class DragPill(QFrame):
     def _setup_ui(self) -> None:
         """
         Initialize window flags, widget attributes, and child controls, and arrange them in a horizontal layout.
-        
+
         Sets the widget as a frameless, top-most tool window that is transparent to mouse events and uses a styled background. Builds a horizontal layout with refined margins and spacing, constrains its maximum size, and adds:
         - an icon label using a type-to-icon fallback,
         - a name label that stores the full name for later elision and uses an expanding size policy,
@@ -123,7 +123,7 @@ class DragPill(QFrame):
     def _elide_name_text(self) -> None:
         """
         Update the name label to an elided version of the full name so it fits the label's current width.
-        
+
         Uses the label's font metrics and a right-side ellipsis; if the label has zero width, the text is not modified.
         """
         metrics = QFontMetrics(self.name_label.font())
@@ -144,7 +144,7 @@ class DragPill(QFrame):
     def _apply_theme(self) -> None:
         """
         Apply the pill stylesheet from StyleHelper and attach a drop shadow effect.
-        
+
         Retrieves the pill style for this widget via StyleHelper.get_pill_style and sets it as the widget stylesheet, then creates and installs a QGraphicsDropShadowEffect with a 12px blur, RGBA(0,0,0,76) color, and vertical offset of 4px.
         """
         style = StyleHelper.get_pill_style(object_name="DragPill", has_delete=False)
@@ -163,7 +163,7 @@ class DragPill(QFrame):
     def show_at_position(self, position: QPoint) -> None:
         """
         Display the drag pill at a specified base position, applying the widget's cursor offset.
-        
+
         Parameters:
             position (QPoint): Base position (typically the cursor); the widget is moved to position + cursor_offset, shown, and raised above other windows.
         """
@@ -180,7 +180,7 @@ class DragPill(QFrame):
     def update_position(self, position: QPoint) -> None:
         """
         Reposition the drag pill so it follows the cursor, applying the configured cursor offset.
-        
+
         Parameters:
             position (QPoint): Current cursor position; the widget is moved to position + self.cursor_offset.
         """
@@ -190,7 +190,7 @@ class DragPill(QFrame):
     def paintEvent(self, event: QPaintEvent) -> None:
         """
         Render the drag pill background and border as a rounded, vertically graded shape.
-        
+
         Paints a rounded rectangle inside the widget's content area using cached painter colors; applies antialiasing, fills with a semi-transparent vertical gradient, and draws a semi-transparent border stroke.
         """
         p = QPainter(self)

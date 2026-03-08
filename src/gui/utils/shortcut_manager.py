@@ -2,6 +2,7 @@
 
 Provides keyboard shortcut management and metadata.
 """
+
 from dataclasses import dataclass
 from typing import Any
 

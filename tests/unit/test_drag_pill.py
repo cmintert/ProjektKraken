@@ -25,7 +25,7 @@ def test_drag_pill_shows_at_position(drag_pill, qtbot):
     """Test that drag pill can be shown at a specific position."""
     position = QPoint(100, 100)
     drag_pill.show_at_position(position)
-    
+
     assert drag_pill.isVisible()
     # Check that position is offset from cursor
     actual_pos = drag_pill.pos()
@@ -36,10 +36,10 @@ def test_drag_pill_shows_at_position(drag_pill, qtbot):
 def test_drag_pill_updates_position(drag_pill, qtbot):
     """Test that drag pill can update its position during drag."""
     drag_pill.show_at_position(QPoint(100, 100))
-    
+
     new_position = QPoint(150, 150)
     drag_pill.update_position(new_position)
-    
+
     actual_pos = drag_pill.pos()
     assert actual_pos.x() == new_position.x() + 10
     assert actual_pos.y() == new_position.y() + 10
@@ -49,7 +49,7 @@ def test_drag_pill_hides(drag_pill, qtbot):
     """Test that drag pill can be hidden."""
     drag_pill.show_at_position(QPoint(100, 100))
     assert drag_pill.isVisible()
-    
+
     drag_pill.hide()
     assert not drag_pill.isVisible()
 
@@ -72,7 +72,7 @@ def test_drag_pill_has_max_width(drag_pill):
     """Test that drag pill respects maximum width constraint."""
     # Create pill with very long name
     long_pill = DragPill(item_name="A" * 100, item_type="entity")
-    
+
     # Width should be constrained
     assert long_pill.width() <= 200  # Max width from spec
 
@@ -94,6 +94,7 @@ def test_drag_pill_stays_on_top():
     pill = DragPill(item_name="Test", item_type="event")
     # Check window flags
     from PySide6.QtCore import Qt
+
     assert pill.windowFlags() & Qt.WindowType.WindowStaysOnTopHint
 
 
@@ -101,6 +102,7 @@ def test_drag_pill_is_frameless():
     """Test that drag pill has no window frame."""
     pill = DragPill(item_name="Test", item_type="event")
     from PySide6.QtCore import Qt
+
     assert pill.windowFlags() & Qt.WindowType.FramelessWindowHint
 
 
@@ -109,7 +111,7 @@ def test_drag_pill_custom_offset():
     pill = DragPill(item_name="Test", item_type="event", cursor_offset=QPoint(20, 30))
     position = QPoint(100, 100)
     pill.show_at_position(position)
-    
+
     actual_pos = pill.pos()
     assert actual_pos.x() == position.x() + 20
     assert actual_pos.y() == position.y() + 30

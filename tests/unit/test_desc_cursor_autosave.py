@@ -280,9 +280,7 @@ def test_entity_cursor_preserved_after_completer_update_then_reload(
     assert inner.textCursor().position() == 11
 
 
-def test_event_cursor_preserved_after_completer_update_then_reload(
-    qtbot, event_editor
-):
+def test_event_cursor_preserved_after_completer_update_then_reload(qtbot, event_editor):
     """Full autosave cycle for EventEditorWidget: completer then reload."""
     from PySide6.QtGui import QTextCursor
 

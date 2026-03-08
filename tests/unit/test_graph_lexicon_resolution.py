@@ -24,9 +24,9 @@ def test_resolve_lexicon_images_finds_default_icons(tmp_path):
     # 4. Verify
     person_style = resolved["nodes"]["Person"]
     assert "image" in person_style, "Image data URI should be present"
-    assert person_style["image"].startswith(
-        "data:image/svg+xml;base64,"
-    ), "Should be a proper SVG data URI"
+    assert person_style["image"].startswith("data:image/svg+xml;base64,"), (
+        "Should be a proper SVG data URI"
+    )
 
 
 def test_resolve_lexicon_images_finds_project_icons(tmp_path):

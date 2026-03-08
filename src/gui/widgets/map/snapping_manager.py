@@ -223,9 +223,7 @@ class SnappingManager:
                 best_vertex = vertex_result
 
             # Check edge snap (priority 2)
-            edge_result = self._check_edges(
-                query_pos, scene_points, scene_radius, item
-            )
+            edge_result = self._check_edges(query_pos, scene_points, scene_radius, item)
             if edge_result.snapped and edge_result.distance < best_edge.distance:
                 best_edge = edge_result
 

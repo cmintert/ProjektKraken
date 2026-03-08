@@ -19,7 +19,7 @@ class CalibrationDistanceDialog(QDialog):
 
     def __init__(self, parent: QWidget = None) -> None:
         """Initialize the calibration distance dialog.
-        
+
         Args:
             parent: Optional parent widget.
         """

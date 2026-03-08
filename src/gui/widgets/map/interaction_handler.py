@@ -364,7 +364,7 @@ class InteractionHandler:
         )
         stroke_btn = QPushButton(stroke_init)
         stroke_btn.setStyleSheet(
-            f"background-color: {stroke_init}; color: white; " f"padding: 4px 12px;"
+            f"background-color: {stroke_init}; color: white; padding: 4px 12px;"
         )
         _stroke_color = [stroke_init]
 
@@ -375,7 +375,7 @@ class InteractionHandler:
                 _stroke_color[0] = safe
                 stroke_btn.setText(safe)
                 stroke_btn.setStyleSheet(
-                    f"background-color: {safe}; color: white; " f"padding: 4px 12px;"
+                    f"background-color: {safe}; color: white; padding: 4px 12px;"
                 )
 
         stroke_btn.clicked.connect(_pick_stroke)
@@ -397,7 +397,7 @@ class InteractionHandler:
             )
             fill_btn = QPushButton(fill_init)
             fill_btn.setStyleSheet(
-                f"background-color: {fill_init}; color: white; " f"padding: 4px 12px;"
+                f"background-color: {fill_init}; color: white; padding: 4px 12px;"
             )
             _fill_color = [fill_init]
 
@@ -644,8 +644,7 @@ class InteractionHandler:
                 )
                 event.acceptProposedAction()
                 logger.info(
-                    f"Dropped {item_type} '{item_name}' "
-                    f"at ({norm_x:.3f}, {norm_y:.3f})"
+                    f"Dropped {item_type} '{item_name}' at ({norm_x:.3f}, {norm_y:.3f})"
                 )
                 return True
         except Exception as e:

@@ -62,9 +62,7 @@ def coordinator(fake_window):
 class TestCalendarConfigLoading:
     """Tests for calendar config loaded handler."""
 
-    def test_on_calendar_config_loaded_with_config(
-        self, coordinator, fake_window
-    ):
+    def test_on_calendar_config_loaded_with_config(self, coordinator, fake_window):
         """Should create converter from provided config."""
         from src.core.calendar import CalendarConfig
 
@@ -77,9 +75,7 @@ class TestCalendarConfigLoading:
         fake_window.map_widget.set_calendar_converter.assert_called_once()
         fake_window.unified_list.set_calendar_converter.assert_called_once()
 
-    def test_on_calendar_config_loaded_without_config(
-        self, coordinator, fake_window
-    ):
+    def test_on_calendar_config_loaded_without_config(self, coordinator, fake_window):
         """Should create default converter when no config provided."""
         coordinator.on_calendar_config_loaded(None)
 
@@ -87,9 +83,7 @@ class TestCalendarConfigLoading:
         fake_window.event_editor.set_calendar_converter.assert_called_once()
         fake_window.timeline.set_calendar_converter.assert_called_once()
 
-    def test_on_calendar_config_loaded_stores_converter(
-        self, coordinator, fake_window
-    ):
+    def test_on_calendar_config_loaded_stores_converter(self, coordinator, fake_window):
         """Should store calendar converter on main window."""
         coordinator.on_calendar_config_loaded(None)
         assert fake_window.calendar_converter is not None
@@ -109,9 +103,7 @@ class TestRequestMethods:
 
     def test_request_calendar_config(self, coordinator, fake_window):
         """Should invoke worker.load_calendar_config."""
-        with patch(
-            "src.app.coordinators.time_coordinator.QMetaObject"
-        ) as mock_meta:
+        with patch("src.app.coordinators.time_coordinator.QMetaObject") as mock_meta:
             coordinator.request_calendar_config()
             mock_meta.invokeMethod.assert_called_once()
             args = mock_meta.invokeMethod.call_args
@@ -119,9 +111,7 @@ class TestRequestMethods:
 
     def test_request_current_time(self, coordinator, fake_window):
         """Should invoke worker.load_current_time."""
-        with patch(
-            "src.app.coordinators.time_coordinator.QMetaObject"
-        ) as mock_meta:
+        with patch("src.app.coordinators.time_coordinator.QMetaObject") as mock_meta:
             coordinator.request_current_time()
             mock_meta.invokeMethod.assert_called_once()
             args = mock_meta.invokeMethod.call_args

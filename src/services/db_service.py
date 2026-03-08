@@ -1489,7 +1489,7 @@ class DatabaseService:
 
         try:
             row = self._connection.execute(
-                "SELECT COUNT(*) AS cnt, MAX(created_at) AS latest " "FROM embeddings"
+                "SELECT COUNT(*) AS cnt, MAX(created_at) AS latest FROM embeddings"
             ).fetchone()
             return {
                 "count": row["cnt"] if row else 0,

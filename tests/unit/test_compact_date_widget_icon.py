@@ -41,14 +41,16 @@ def test_icon_updates_on_theme_change(qtbot):
         mock_load.reset_mock()
 
         # Trigger theme change - include all required keys
-        tm.theme_changed.emit({
-            "text_main": "#FF0000",
-            "destructive": "#ff4444",
-            "app_bg": "#000000",
-            "surface": "#000000",
-            "border": "#333333",
-            "text_dim": "#888888"
-        })
+        tm.theme_changed.emit(
+            {
+                "text_main": "#FF0000",
+                "destructive": "#ff4444",
+                "app_bg": "#000000",
+                "surface": "#000000",
+                "border": "#333333",
+                "text_dim": "#888888",
+            }
+        )
 
         # Verify load_icon was called
         assert mock_load.called

@@ -57,9 +57,7 @@ class GraphWidget(QWidget):
         super().__init__(parent)
 
         # Expanding policy prevents dock collapse during resize.
-        self.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
-        )
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         # Initialize logger
         self._logger = get_logger(__name__)

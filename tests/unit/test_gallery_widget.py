@@ -79,7 +79,7 @@ def test_on_attachments_loaded(gallery_widget):
             gallery_widget.list_widget.item(i)
             for i in range(gallery_widget.list_widget.count())
         ]
-        
+
         # Items may initially show "Loading..." while async loading
         # Or show caption if loading is instant (mocked)
         # Let's just check there are 2 items

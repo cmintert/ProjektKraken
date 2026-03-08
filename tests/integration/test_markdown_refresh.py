@@ -51,9 +51,7 @@ def coordinator(fake_window):
 class TestMarkdownImportRefresh:
     """Verify that the full GUI refresh is triggered after import."""
 
-    def test_successful_import_calls_load_data(
-        self, coordinator, fake_window
-    ):
+    def test_successful_import_calls_load_data(self, coordinator, fake_window):
         """DataCoordinator.load_data() must be called on success."""
         result = MagicMock()
         result.success = True
@@ -64,16 +62,12 @@ class TestMarkdownImportRefresh:
 
         coordinator._import_progress_dialog = MagicMock()
 
-        with patch(
-            "src.app.coordinators.import_coordinator.QMessageBox"
-        ):
+        with patch("src.app.coordinators.import_coordinator.QMessageBox"):
             coordinator.on_import_finished(result)
 
         fake_window.data_coordinator.load_data.assert_called_once()
 
-    def test_failed_import_does_not_refresh(
-        self, coordinator, fake_window
-    ):
+    def test_failed_import_does_not_refresh(self, coordinator, fake_window):
         """DataCoordinator.load_data() must NOT be called on failure."""
         result = MagicMock()
         result.success = False
@@ -81,9 +75,7 @@ class TestMarkdownImportRefresh:
 
         coordinator._import_progress_dialog = MagicMock()
 
-        with patch(
-            "src.app.coordinators.import_coordinator.QMessageBox"
-        ):
+        with patch("src.app.coordinators.import_coordinator.QMessageBox"):
             coordinator.on_import_finished(result)
 
         fake_window.data_coordinator.load_data.assert_not_called()

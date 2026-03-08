@@ -150,14 +150,10 @@ class EditorCoordinator(BaseCoordinator):
                     if ref.node_id in processed_nodes:
                         continue
                     processed_nodes.add(ref.node_id)
-                    map_obj = next(
-                        (m for m in maps_data if m.id == ref.map_id), None
-                    )
+                    map_obj = next((m for m in maps_data if m.id == ref.map_id), None)
                     if map_obj is None:
                         continue
-                    raster_layers = (map_obj.attributes or {}).get(
-                        "raster_layers", []
-                    )
+                    raster_layers = (map_obj.attributes or {}).get("raster_layers", [])
                     layer = next(
                         (
                             la
@@ -170,10 +166,16 @@ class EditorCoordinator(BaseCoordinator):
                         continue
                     old_vem = layer.get("value_entity_map", {})
                     new_vem = {
-                        "mode": old_vem.get("mode", "exact") if isinstance(old_vem, dict) else "exact",
+                        "mode": old_vem.get("mode", "exact")
+                        if isinstance(old_vem, dict)
+                        else "exact",
                         "mappings": [
                             m
-                            for m in (old_vem.get("mappings", []) if isinstance(old_vem, dict) else [])
+                            for m in (
+                                old_vem.get("mappings", [])
+                                if isinstance(old_vem, dict)
+                                else []
+                            )
                             if m.get("entity_id") != entity_id
                         ],
                     }
@@ -238,9 +240,7 @@ class EditorCoordinator(BaseCoordinator):
             logger.debug("[EditorCoordinator] Emitting CompositeCommand (Update+Wiki)")
         else:
             cmd = cmds[0]
-            logger.debug(
-                f"[EditorCoordinator] Emitting {cmd.__class__.__name__}"
-            )
+            logger.debug(f"[EditorCoordinator] Emitting {cmd.__class__.__name__}")
 
         self.command_requested.emit(cmd)
 
@@ -273,14 +273,10 @@ class EditorCoordinator(BaseCoordinator):
         if len(cmds) > 1:
             desc = f"Update Entity '{entity_data.get('name', '?')}'"
             cmd = CompositeCommand(cmds, description=desc)
-            logger.debug(
-                "[EditorCoordinator] Emitting CompositeCommand (Update+Wiki)"
-            )
+            logger.debug("[EditorCoordinator] Emitting CompositeCommand (Update+Wiki)")
         else:
             cmd = cmds[0]
-            logger.debug(
-                f"[EditorCoordinator] Emitting {cmd.__class__.__name__}"
-            )
+            logger.debug(f"[EditorCoordinator] Emitting {cmd.__class__.__name__}")
 
         self.command_requested.emit(cmd)
 

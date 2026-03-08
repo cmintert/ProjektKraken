@@ -24,7 +24,7 @@ class MapScaleDialog(QDialog):
         self, current_width: float, parent: QWidget = None, map_name: str = "Map"
     ) -> None:
         """Initialize the map scale dialog.
-        
+
         Args:
             current_width: Current width value for the map.
             parent: Optional parent widget.

@@ -58,9 +58,7 @@ class TestMapHandlerVisualStyle:
         spy = MagicMock()
         map_handler.command_requested.connect(spy)
 
-        map_handler.on_marker_visual_style_changed(
-            "unknown_obj", {V_FILL: "#FF0000"}
-        )
+        map_handler.on_marker_visual_style_changed("unknown_obj", {V_FILL: "#FF0000"})
 
         spy.assert_not_called()
 
@@ -69,9 +67,7 @@ class TestMapHandlerVisualStyle:
         spy = MagicMock()
         map_handler.command_requested.connect(spy)
 
-        map_handler.on_marker_visual_style_changed(
-            "obj_2", {V_BORDER_WIDTH: 4}
-        )
+        map_handler.on_marker_visual_style_changed("obj_2", {V_BORDER_WIDTH: 4})
 
         cmd = spy.call_args[0][0]
         assert cmd.updates == {V_BORDER_WIDTH: 4}
@@ -214,9 +210,7 @@ class TestMarkerManagerVisualAttributes:
 
         test_attrs = {V_FILL: "#E02A2A", V_SIZE_SCALE: 1.5}
 
-        with patch(
-            "src.gui.widgets.map.marker_manager.MarkerItem"
-        ) as MockMarker:
+        with patch("src.gui.widgets.map.marker_manager.MarkerItem") as MockMarker:
             mock_instance = MagicMock()
             mock_instance.clicked = MagicMock()
             mock_instance.clicked.connect = MagicMock()

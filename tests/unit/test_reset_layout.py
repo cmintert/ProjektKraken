@@ -129,25 +129,19 @@ class TestResetLayoutPositionsAllDocks:
         assert area == Qt.DockWidgetArea.RightDockWidgetArea
 
     @patch(_LAYOUT_PATH_PATCH, return_value="/nonexistent/path.json")
-    def test_all_docks_not_hidden_after_reset(
-        self, mock_path, ui_manager_with_docks
-    ):
+    def test_all_docks_not_hidden_after_reset(self, mock_path, ui_manager_with_docks):
         """No dock should be explicitly hidden after reset_layout."""
         ui_manager_with_docks.reset_layout()
 
         for key, dock in ui_manager_with_docks.docks.items():
-            assert not dock.isHidden(), (
-                f"Dock '{key}' should not be hidden after reset"
-            )
+            assert not dock.isHidden(), f"Dock '{key}' should not be hidden after reset"
 
 
 class TestEnsureBottomDockHeight:
     """Verify _ensure_bottom_dock_height calls resizeDocks."""
 
     @patch(_LAYOUT_PATH_PATCH, return_value="/nonexistent/path.json")
-    def test_resize_docks_called(
-        self, mock_path, ui_manager_with_docks, main_window
-    ):
+    def test_resize_docks_called(self, mock_path, ui_manager_with_docks, main_window):
         """resizeDocks must be called to allocate bottom area height."""
         with patch.object(main_window, "resizeDocks") as mock_resize:
             ui_manager_with_docks.reset_layout()

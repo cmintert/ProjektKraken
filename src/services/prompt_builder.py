@@ -69,7 +69,11 @@ class PromptBuilder:
 
         # Add any additional context fields not already handled
         known_keys = {
-            "name", "type", "lore_date", "existing_description", "description"
+            "name",
+            "type",
+            "lore_date",
+            "existing_description",
+            "description",
         }
         context_lines.extend(
             f"{k.replace('_', ' ').title()}: {v}"
@@ -79,9 +83,7 @@ class PromptBuilder:
 
         return "\n".join(context_lines)
 
-    def substitute_variables(
-        self, user_prompt: str, context: Dict[str, Any]
-    ) -> str:
+    def substitute_variables(self, user_prompt: str, context: Dict[str, Any]) -> str:
         """Substitute variables like {name} in the user prompt.
 
         Args:

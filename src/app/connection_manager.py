@@ -724,6 +724,18 @@ class ConnectionManager:
                     "MapLayerPanel",
                 ),
                 (
+                    map_widget.layer_panel,
+                    "raster_query_requested",
+                    map_handler.on_raster_query_requested,
+                    "MapLayerPanel",
+                ),
+                (
+                    map_widget.layer_panel,
+                    "raster_query_cleared",
+                    map_handler.on_raster_query_cleared,
+                    "MapLayerPanel",
+                ),
+                (
                     map_widget,
                     "create_entity_requested",
                     self.window.editor_coordinator.on_map_create_entity,

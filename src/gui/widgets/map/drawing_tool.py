@@ -135,9 +135,7 @@ class DrawingTool:
             )
 
         feature_type = self._drawing_mode
-        logger.info(
-            f"Drawing finished: {feature_type} with {len(geometry)} vertices"
-        )
+        logger.info(f"Drawing finished: {feature_type} with {len(geometry)} vertices")
 
         # Clean up drawing state
         self._drawing_mode = None

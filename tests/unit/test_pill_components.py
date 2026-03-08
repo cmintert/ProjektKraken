@@ -11,7 +11,7 @@ from PySide6.QtWidgets import QWidget
 def tag_pill(qtbot):
     """
     Create a TagPill widget with text "test-tag" and register it with qtbot.
-    
+
     Returns:
         TagPill: The created TagPill instance.
     """
@@ -33,7 +33,7 @@ class TestTagPill:
     def test_delete_signal(self, tag_pill, qtbot):
         """
         Verify that clicking the pill's delete button emits the `deleted` signal carrying the pill's text.
-        
+
         The test clicks the pill's delete button and asserts the emitted signal's argument equals "test-tag".
         """
         with qtbot.waitSignal(tag_pill.deleted) as blocker:
@@ -48,7 +48,7 @@ class TestFlowLayout:
     def container(self, qtbot):
         """
         Create and register a QWidget to serve as a test container.
-        
+
         Returns:
             widget (QWidget): The created QWidget registered with the provided qtbot fixture.
         """

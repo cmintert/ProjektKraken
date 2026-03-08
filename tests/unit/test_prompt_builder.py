@@ -4,7 +4,6 @@ Tests prompt construction, variable substitution, context formatting,
 and the data-before-task ordering that reduces recency bias.
 """
 
-
 from src.services.prompt_builder import DEFAULT_SYSTEM_PROMPT, PromptBuilder
 
 
@@ -79,9 +78,7 @@ class TestPromptBuilder:
         then receives the creative task as the final instruction.
         """
         builder = PromptBuilder()
-        result = builder.construct_prompt(
-            "Name: Eldrath", "Write a backstory"
-        )
+        result = builder.construct_prompt("Name: Eldrath", "Write a backstory")
         user_msg = result["user"]
 
         entity_pos = user_msg.index("[Entity]")
@@ -94,7 +91,8 @@ class TestPromptBuilder:
         """Test that RAG placeholder is included when requested."""
         builder = PromptBuilder()
         result = builder.construct_prompt(
-            "Name: Foo", "Describe this",
+            "Name: Foo",
+            "Describe this",
             include_rag_placeholder=True,
         )
         assert "{{RAG_CONTEXT}}" in result["user"]
@@ -103,7 +101,8 @@ class TestPromptBuilder:
         """Test that RAG placeholder is excluded when not requested."""
         builder = PromptBuilder()
         result = builder.construct_prompt(
-            "Name: Foo", "Describe this",
+            "Name: Foo",
+            "Describe this",
             include_rag_placeholder=False,
         )
         assert "{{RAG_CONTEXT}}" not in result["user"]
@@ -129,4 +128,6 @@ class TestPromptBuilder:
             or "natural" in DEFAULT_SYSTEM_PROMPT.lower()
         )
         # Should NOT contain the old robotic instruction
-        assert "IMPORTANT: Time in this world is represented" not in DEFAULT_SYSTEM_PROMPT
+        assert (
+            "IMPORTANT: Time in this world is represented" not in DEFAULT_SYSTEM_PROMPT
+        )

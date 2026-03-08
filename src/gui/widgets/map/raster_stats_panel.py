@@ -132,9 +132,7 @@ class RasterStatsPanel(QDialog):
     # Private — builders
     # ------------------------------------------------------------------
 
-    def _build_discrete_view(
-        self, layout: QVBoxLayout, stats: CoverageStats
-    ) -> None:
+    def _build_discrete_view(self, layout: QVBoxLayout, stats: CoverageStats) -> None:
         """Build the table view for discrete layers.
 
         Args:
@@ -185,9 +183,7 @@ class RasterStatsPanel(QDialog):
         self._table = table
         layout.addWidget(table)
 
-    def _build_continuous_view(
-        self, layout: QVBoxLayout, stats: CoverageStats
-    ) -> None:
+    def _build_continuous_view(self, layout: QVBoxLayout, stats: CoverageStats) -> None:
         """Build the stats + histogram view for continuous layers.
 
         Args:

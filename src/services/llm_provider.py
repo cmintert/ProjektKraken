@@ -51,8 +51,7 @@ def log_ai_interaction(
         # Format prompt for logging
         if isinstance(prompt, dict):
             prompt_str = (
-                f"[system] {prompt.get('system', '')}\n"
-                f"[user] {prompt.get('user', '')}"
+                f"[system] {prompt.get('system', '')}\n[user] {prompt.get('user', '')}"
             )
         else:
             prompt_str = str(prompt)

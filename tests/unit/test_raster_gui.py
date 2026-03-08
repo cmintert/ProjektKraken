@@ -1663,3 +1663,318 @@ class TestTemporalRasters:
         panel._btn_snapshot.click()
 
         assert emitted == ["test-node"]
+
+
+# ── Feature A: Brush Preset Library ──────────────────────────────────────
+
+
+class TestBrushPresets:
+    """Brush preset round-trip and panel integration."""
+
+    def test_brush_preset_roundtrip(self) -> None:
+        """BrushPreset.to_dict() / from_dict() preserves all fields."""
+        from src.core.raster_presets import BrushPreset
+
+        p = BrushPreset(
+            name="TestPreset",
+            tool_mode="gradient",
+            size=42,
+            falloff=0.75,
+            paint_value=512,
+        )
+        p2 = BrushPreset.from_dict(p.to_dict())
+        assert p2.name == p.name
+        assert p2.tool_mode == p.tool_mode
+        assert p2.size == p.size
+        assert abs(p2.falloff - p.falloff) < 1e-9
+        assert p2.paint_value == p.paint_value
+        assert p2.id == p.id
+
+    def test_preset_store_save_load(self, monkeypatch) -> None:
+        """PresetStore.save() / load() round-trips via QSettings."""
+        from typing import Any, Dict
+
+        stored: Dict[str, Any] = {}
+
+        from PySide6.QtCore import QSettings
+
+        from src.core.raster_presets import BrushPreset, PresetStore
+
+        def mock_value(self: QSettings, key: str, default: Any = None) -> Any:
+            return stored.get(key, default)
+
+        def mock_set_value(self: QSettings, key: str, val: Any) -> None:
+            stored[key] = val
+
+        monkeypatch.setattr(QSettings, "value", mock_value)
+        monkeypatch.setattr(QSettings, "setValue", mock_set_value)
+
+        preset = BrushPreset(
+            name="Test", tool_mode="fill", size=10, falloff=0.5, paint_value=7
+        )
+        PresetStore.save([preset])
+        loaded = PresetStore.load()
+
+        assert len(loaded) == 1
+        assert loaded[0].name == "Test"
+        assert loaded[0].tool_mode == "fill"
+        assert loaded[0].size == 10
+
+    def test_panel_has_preset_combo(self, qtbot) -> None:
+        """MapLayerPanel has a _preset_combo attribute."""
+        from PySide6.QtWidgets import QComboBox
+
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        assert hasattr(panel, "_preset_combo")
+        assert isinstance(panel._preset_combo, QComboBox)
+
+
+# ── Feature B: Histogram Stretch ─────────────────────────────────────────
+
+
+class TestHistogramStretch:
+    """ColorMap stretch fields and colorize() behaviour."""
+
+    def test_colormap_stretch_roundtrip(self) -> None:
+        """stretch_min/max survive to_dict() / from_dict()."""
+        from src.gui.widgets.map.map_data_buffer import ColorMap
+
+        cm = ColorMap(
+            type="gradient",
+            gradient_start="#000000",
+            gradient_end="#FFFFFF",
+            stretch_min=1000,
+            stretch_max=50000,
+        )
+        cm2 = ColorMap.from_dict(cm.to_dict())
+        assert cm2.stretch_min == 1000
+        assert cm2.stretch_max == 50000
+
+    def test_colormap_stretch_defaults_none(self) -> None:
+        """ColorMap from_dict without stretch fields defaults to None."""
+        from src.gui.widgets.map.map_data_buffer import ColorMap
+
+        cm = ColorMap.from_dict({"type": "gradient"})
+        assert cm.stretch_min is None
+        assert cm.stretch_max is None
+
+    def test_colorize_with_stretch(self, qtbot) -> None:
+        """colorize() maps stretch_min to start color when stretch is set."""
+
+        from src.gui.widgets.map.map_data_buffer import ColorMap, MapDataBuffer
+
+        buf = MapDataBuffer(width=1, height=1, default_value=32768)
+
+        # No stretch: 32768/65535 ≈ 0.5 → midpoint gray
+        cm_no_stretch = ColorMap(
+            type="gradient",
+            gradient_start="#000000",
+            gradient_end="#FFFFFF",
+        )
+        img_mid = buf.colorize(cm_no_stretch)
+        pixel_mid = img_mid.pixel(0, 0)
+        mid_r = (pixel_mid >> 16) & 0xFF
+
+        # stretch_min=32768, stretch_max=65535 → value 32768 = start → black
+        cm_stretch = ColorMap(
+            type="gradient",
+            gradient_start="#000000",
+            gradient_end="#FFFFFF",
+            stretch_min=32768,
+            stretch_max=65535,
+        )
+        img_start = buf.colorize(cm_stretch)
+        pixel_start = img_start.pixel(0, 0)
+        start_r = (pixel_start >> 16) & 0xFF
+
+        # With stretch, value 32768 maps to start color (R=0)
+        assert start_r == 0
+        # Without stretch, value 32768 maps to roughly midpoint (R ≈ 128)
+        assert mid_r > 100
+
+    def test_palette_editor_has_stretch_controls(self, qtbot) -> None:
+        """RasterPaletteEditor in continuous mode has _stretch_min_spin."""
+        from src.gui.widgets.map.map_data_buffer import ColorMap
+        from src.gui.widgets.map.raster_palette_editor import RasterPaletteEditor
+
+        cm = ColorMap(type="gradient", gradient_start="#000000", gradient_end="#FFFFFF")
+        dlg = RasterPaletteEditor(color_map=cm, mode="continuous")
+        qtbot.addWidget(dlg)
+        assert hasattr(dlg, "_stretch_min_spin")
+        assert hasattr(dlg, "_stretch_max_spin")
+
+
+# ── Feature C: Auto-color ─────────────────────────────────────────────────
+
+
+class TestAutoColor:
+    """Discrete palette auto-color button."""
+
+    def test_palette_editor_has_auto_color_button(self, qtbot) -> None:
+        """RasterPaletteEditor in discrete mode has an auto-color button."""
+        from PySide6.QtWidgets import QPushButton
+
+        from src.gui.widgets.map.map_data_buffer import ColorEntry, ColorMap
+        from src.gui.widgets.map.raster_palette_editor import RasterPaletteEditor
+
+        cm = ColorMap(
+            type="palette",
+            entries=[ColorEntry(value=1, color="#AAAAAA")],
+        )
+        dlg = RasterPaletteEditor(color_map=cm, mode="discrete")
+        qtbot.addWidget(dlg)
+        buttons = [
+            b for b in dlg.findChildren(QPushButton) if "auto" in b.text().lower()
+        ]
+        assert len(buttons) >= 1
+
+    def test_auto_color_assigns_colors(self, qtbot) -> None:
+        """Clicking auto-color assigns distinct colors to table rows."""
+        from PySide6.QtWidgets import QPushButton
+
+        from src.gui.widgets.map.map_data_buffer import ColorEntry, ColorMap
+        from src.gui.widgets.map.raster_palette_editor import (
+            _AUTO_COLORS,
+            RasterPaletteEditor,
+        )
+
+        entries = [ColorEntry(value=i, color="#808080") for i in range(3)]
+        cm = ColorMap(type="palette", entries=entries)
+        dlg = RasterPaletteEditor(color_map=cm, mode="discrete")
+        qtbot.addWidget(dlg)
+
+        # Click the auto-color button
+        buttons = [
+            b for b in dlg.findChildren(QPushButton) if "auto" in b.text().lower()
+        ]
+        assert buttons
+        buttons[0].click()
+
+        # The first three row colors should now match _AUTO_COLORS
+        for row in range(3):
+            from src.gui.widgets.map.raster_palette_editor import (
+                _COL_COLOR,
+                _ColorButton,
+            )
+
+            btn = dlg._table.cellWidget(row, _COL_COLOR)
+            assert isinstance(btn, _ColorButton)
+            assert btn.color_hex == _AUTO_COLORS[row % len(_AUTO_COLORS)]
+
+
+# ── Feature D: Cross-Layer Spatial Queries ────────────────────────────────
+
+
+class TestSpatialQuery:
+    """compute_spatial_query and RasterQueryDialog."""
+
+    def test_compute_spatial_query_eq(self) -> None:
+        """Equality condition returns correct boolean mask."""
+        import numpy as np
+
+        from src.gui.widgets.map.map_data_buffer import compute_spatial_query
+
+        arr = np.array([[1, 2], [3, 4]], dtype=np.uint16)
+        mask = compute_spatial_query([arr], [{"index": 0, "op": "eq", "value": 2}])
+        expected = np.array([[False, True], [False, False]])
+        np.testing.assert_array_equal(mask, expected)
+
+    def test_compute_spatial_query_between(self) -> None:
+        """Between condition includes both endpoints."""
+        import numpy as np
+
+        from src.gui.widgets.map.map_data_buffer import compute_spatial_query
+
+        arr = np.array([[0, 5, 10, 15]], dtype=np.uint16)
+        mask = compute_spatial_query(
+            [arr], [{"index": 0, "op": "between", "min": 5, "max": 10}]
+        )
+        expected = np.array([[False, True, True, False]])
+        np.testing.assert_array_equal(mask, expected)
+
+    def test_compute_spatial_query_multi_condition(self) -> None:
+        """AND of two conditions on two layers."""
+        import numpy as np
+
+        from src.gui.widgets.map.map_data_buffer import compute_spatial_query
+
+        a = np.array([[1, 1, 2, 2]], dtype=np.uint16)
+        b = np.array([[10, 20, 10, 20]], dtype=np.uint16)
+        # a == 1 AND b == 20 → only position [0,1]
+        mask = compute_spatial_query(
+            [a, b],
+            [
+                {"index": 0, "op": "eq", "value": 1},
+                {"index": 1, "op": "eq", "value": 20},
+            ],
+        )
+        expected = np.array([[False, True, False, False]])
+        np.testing.assert_array_equal(mask, expected)
+
+    def test_compute_spatial_query_no_match(self) -> None:
+        """All-false mask when no cells match."""
+        import numpy as np
+
+        from src.gui.widgets.map.map_data_buffer import compute_spatial_query
+
+        arr = np.zeros((4, 4), dtype=np.uint16)
+        mask = compute_spatial_query([arr], [{"index": 0, "op": "eq", "value": 99}])
+        assert not mask.any()
+
+    def test_compute_spatial_query_shape_mismatch_raises(self) -> None:
+        """ValueError raised when arrays have different shapes."""
+        import numpy as np
+        import pytest
+
+        from src.gui.widgets.map.map_data_buffer import compute_spatial_query
+
+        a = np.zeros((2, 2), dtype=np.uint16)
+        b = np.zeros((3, 3), dtype=np.uint16)
+        with pytest.raises(ValueError, match="Shape mismatch"):
+            compute_spatial_query([a, b], [{"index": 0, "op": "eq", "value": 0}])
+
+    def test_query_dialog_creates(self, qtbot) -> None:
+        """RasterQueryDialog creates without error for a layer list."""
+        from src.gui.dialogs.raster_query_dialog import RasterQueryDialog
+
+        layers = [
+            {"node_id": "n1", "name": "Forest Layer", "mode": "discrete"},
+            {"node_id": "n2", "name": "Elevation", "mode": "continuous"},
+        ]
+        dlg = RasterQueryDialog(layers=layers)
+        qtbot.addWidget(dlg)
+        assert dlg is not None
+
+    def test_query_dialog_conditions_property(self, qtbot) -> None:
+        """conditions returns one condition per row added."""
+        from src.gui.dialogs.raster_query_dialog import RasterQueryDialog
+
+        layers = [{"node_id": "n1", "name": "L1", "mode": "discrete"}]
+        dlg = RasterQueryDialog(layers=layers)
+        qtbot.addWidget(dlg)
+        # One row is added by default when layers is non-empty
+        assert len(dlg.conditions) == 1
+        cond = dlg.conditions[0]
+        assert "node_id" in cond
+        assert "op" in cond
+
+    def test_map_graphics_view_query_overlay(self, qtbot) -> None:
+        """set_query_overlay adds item; clear_query_overlay removes it."""
+        import numpy as np
+
+        view = _make_view(qtbot)
+        mask = np.zeros((64, 64), dtype=bool)
+        mask[10:20, 10:20] = True
+
+        from PySide6.QtCore import QRectF
+
+        scene_rect = QRectF(0, 0, 200, 200)
+        view.set_query_overlay(mask, scene_rect)
+        assert view._query_overlay_item is not None
+        assert view._query_overlay_item.scene() is view.scene
+
+        view.clear_query_overlay()
+        assert view._query_overlay_item is None

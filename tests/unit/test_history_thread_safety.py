@@ -196,16 +196,12 @@ def test_panel_undo_redo_buttons_state(history_panel):
     assert not history_panel.clear_btn.isEnabled()
 
     # Undo has items
-    history_panel.update_history(
-        [{"description": "Cmd1", "timestamp": None}], []
-    )
+    history_panel.update_history([{"description": "Cmd1", "timestamp": None}], [])
     assert history_panel.undo_btn.isEnabled()
     assert not history_panel.redo_btn.isEnabled()
     assert history_panel.clear_btn.isEnabled()
 
     # Redo has items
-    history_panel.update_history(
-        [], [{"description": "Cmd2", "timestamp": None}]
-    )
+    history_panel.update_history([], [{"description": "Cmd2", "timestamp": None}])
     assert not history_panel.undo_btn.isEnabled()
     assert history_panel.redo_btn.isEnabled()

@@ -50,7 +50,7 @@ class AboutDialog(QDialog):
 
         # Description
         desc = QLabel(
-            "A desktop worldbuilding environment\n" "with timeline-first workflow."
+            "A desktop worldbuilding environment\nwith timeline-first workflow."
         )
         desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
         desc.setWordWrap(True)

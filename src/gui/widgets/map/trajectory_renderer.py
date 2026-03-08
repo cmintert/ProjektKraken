@@ -79,7 +79,12 @@ class KeyframeLabelItem(QGraphicsObject):
             self._update_rect()
             self.update()
 
-    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: Optional[QWidget] = None) -> None:
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionGraphicsItem,
+        widget: Optional[QWidget] = None,
+    ) -> None:
         theme = ThemeManager().get_theme()
         bg_color = QColor(theme.get("surface", "#1A1A1A"))
         text_color = QColor(theme.get("text_main", "#FFFFFF"))
@@ -192,8 +197,7 @@ class TrajectoryRenderer:
 
         if self.trigger_first_use_animation:
             logger.debug(
-                f"Triggering pulsing animation for "
-                f"{len(self.keyframe_items)} keyframes"
+                f"Triggering pulsing animation for {len(self.keyframe_items)} keyframes"
             )
             self.trigger_first_use_animation = False
             for dot in self.keyframe_items:
@@ -286,8 +290,7 @@ class TrajectoryRenderer:
                             text = self._calendar_converter.format_date(new_time)
                         except Exception as e:
                             logger.warning(
-                                f"Calendar formatting failed for "
-                                f"time {new_time}: {e}"
+                                f"Calendar formatting failed for time {new_time}: {e}"
                             )
                             text = f"{new_time:.0f}"
                     else:
@@ -376,7 +379,6 @@ class TrajectoryRenderer:
         x, y = norm_pos
 
         logger.info(
-            f"Keyframe dropped for {item.marker_id} "
-            f"at t={item.t}: ({x:.3f}, {y:.3f})"
+            f"Keyframe dropped for {item.marker_id} at t={item.t}: ({x:.3f}, {y:.3f})"
         )
         self._view.keyframe_moved.emit(item.marker_id, item.t, x, y)

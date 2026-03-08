@@ -76,6 +76,11 @@ class MapLayerPanel(QWidget):
     raster_stats_requested = Signal(str)  # node_id — open stats dialog
     raster_blend_mode_changed = Signal(str, str, str)  # (node_id, new_mode, old_mode)
     raster_snapshot_requested = Signal(str)  # node_id — save snapshot at current date
+    raster_preset_loaded = Signal(
+        str, int, float, int
+    )  # (tool_mode, size, falloff, value)
+    raster_query_requested = Signal()  # open cross-layer query dialog
+    raster_query_cleared = Signal()  # clear query overlay
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialise the panel.
@@ -300,6 +305,40 @@ class MapLayerPanel(QWidget):
         blend_row.addStretch()
         rt_layout.addLayout(blend_row)
 
+        # Preset toolbar row (hidden until raster layer selected)
+        self._preset_toolbar_row = QWidget()
+        preset_layout = QHBoxLayout(self._preset_toolbar_row)
+        preset_layout.setContentsMargins(0, 0, 0, 0)
+        preset_layout.setSpacing(4)
+        preset_layout.addWidget(QLabel("Preset:"))
+        self._preset_combo = QComboBox()
+        self._preset_combo.setSizeAdjustPolicy(
+            QComboBox.SizeAdjustPolicy.AdjustToContents
+        )
+        self._preset_combo.currentIndexChanged.connect(self._on_preset_selected)
+        preset_layout.addWidget(self._preset_combo, 1)
+        preset_layout.addStretch()
+        self._preset_toolbar_row.setVisible(False)
+        rt_layout.addWidget(self._preset_toolbar_row)
+
+        # Query row (hidden until raster layer selected)
+        self._query_row = QWidget()
+        query_layout = QHBoxLayout(self._query_row)
+        query_layout.setContentsMargins(0, 0, 0, 0)
+        query_layout.setSpacing(4)
+        self._btn_query = QPushButton("🔍 Query")
+        self._btn_query.setToolTip("Build a cross-layer spatial query")
+        self._btn_query.clicked.connect(lambda: self.raster_query_requested.emit())
+        query_layout.addWidget(self._btn_query)
+        self._btn_clear_query = QPushButton("✕ Clear Query")
+        self._btn_clear_query.setToolTip("Remove the spatial query overlay")
+        self._btn_clear_query.setVisible(False)
+        self._btn_clear_query.clicked.connect(lambda: self.raster_query_cleared.emit())
+        query_layout.addWidget(self._btn_clear_query)
+        query_layout.addStretch()
+        self._query_row.setVisible(False)
+        rt_layout.addWidget(self._query_row)
+
         main_layout.addWidget(self._raster_toolbar)
 
         # ── Raster Legend ─────────────────────────────────────────────
@@ -320,6 +359,9 @@ class MapLayerPanel(QWidget):
 
         # Apply all theme-aware styles
         self.refresh_styles()
+
+        # Populate preset combo from saved presets
+        self._refresh_preset_combo()
 
     # ------------------------------------------------------------------
     # Public API
@@ -663,10 +705,15 @@ class MapLayerPanel(QWidget):
                 )
             else:
                 self._snapshot_count_label.setText("")
+            # Show preset and query rows
+            self._preset_toolbar_row.setVisible(True)
+            self._query_row.setVisible(True)
         else:
             self._current_node_id = ""
             self._raster_mode_label.setVisible(False)
             self._snapshot_count_label.setText("")
+            self._preset_toolbar_row.setVisible(False)
+            self._query_row.setVisible(False)
 
         # Reset edit toggle when switching layers
         if not is_raster and self._btn_edit_toggle.isChecked():
@@ -898,3 +945,107 @@ class MapLayerPanel(QWidget):
         if old_mode == new_mode:
             return
         self.raster_blend_mode_changed.emit(node_id, new_mode, old_mode)
+
+    # ------------------------------------------------------------------
+    # Brush preset helpers (Feature A)
+    # ------------------------------------------------------------------
+
+    def _refresh_preset_combo(self) -> None:
+        """Reload presets from QSettings and repopulate the combo box."""
+        from src.core.raster_presets import PresetStore
+
+        self._preset_combo.blockSignals(True)
+        self._preset_combo.clear()
+        self._preset_combo.addItem("— select preset —", None)
+        for preset in PresetStore.load():
+            self._preset_combo.addItem(preset.name, preset)
+        self._preset_combo.addItem("💾 Save current…", "save")
+        self._preset_combo.setCurrentIndex(0)
+        self._preset_combo.blockSignals(False)
+
+    @Slot(int)
+    def _on_preset_selected(self, index: int) -> None:
+        """Handle preset combo selection.
+
+        Args:
+            index: Selected combo index.
+        """
+        from src.core.raster_presets import BrushPreset
+
+        data = self._preset_combo.itemData(index)
+        if data is None:
+            return
+        if data == "save":
+            self._on_save_preset()
+            # Reset back to placeholder
+            self._preset_combo.blockSignals(True)
+            self._preset_combo.setCurrentIndex(0)
+            self._preset_combo.blockSignals(False)
+            return
+
+        if not isinstance(data, BrushPreset):
+            return
+
+        preset: BrushPreset = data
+        # Apply preset values to controls
+        self._brush_size_spin.setValue(preset.size)
+        self._falloff_slider.setValue(int(preset.falloff * 100))
+        self._paint_value_spin.setValue(preset.paint_value)
+
+        # Select the matching tool mode button
+        mode_map = {
+            "brush": self._btn_brush,
+            "fill": self._btn_fill,
+            "gradient": self._btn_gradient,
+            "sample": self._btn_sample,
+        }
+        btn = mode_map.get(preset.tool_mode, self._btn_brush)
+        btn.setChecked(True)
+
+        # Emit so MapHandler picks up the new settings
+        self.raster_settings_changed.emit()
+        self.raster_preset_loaded.emit(
+            preset.tool_mode,
+            preset.size,
+            preset.falloff,
+            preset.paint_value,
+        )
+
+        # Reset combo to placeholder
+        self._preset_combo.blockSignals(True)
+        self._preset_combo.setCurrentIndex(0)
+        self._preset_combo.blockSignals(False)
+
+    def _on_save_preset(self) -> None:
+        """Prompt user for a name and save the current settings as a preset."""
+        from src.core.raster_presets import BrushPreset, PresetStore
+
+        name, ok = QInputDialog.getText(
+            self, "Save Preset", "Preset name:", text="My Preset"
+        )
+        if not ok or not name.strip():
+            return
+
+        preset = BrushPreset(
+            name=name.strip(),
+            tool_mode=self.raster_tool_mode,
+            size=self.raster_brush_size,
+            falloff=self.raster_falloff,
+            paint_value=self.raster_paint_value,
+        )
+        presets = PresetStore.load()
+        presets.append(preset)
+        PresetStore.save(presets)
+        self._refresh_preset_combo()
+
+    # ------------------------------------------------------------------
+    # Query overlay helpers (Feature D)
+    # ------------------------------------------------------------------
+
+    def set_query_active(self, active: bool) -> None:
+        """Show or hide the 'Clear Query' button depending on query state.
+
+        Args:
+            active: ``True`` when a query overlay is visible.
+        """
+        self._btn_clear_query.setVisible(active)

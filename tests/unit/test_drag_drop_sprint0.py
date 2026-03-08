@@ -61,11 +61,7 @@ def test_entity_editor_drop_creates_relation_signal(entity_editor, qtbot):
 
     # Create MIME data simulating a drag from Project Explorer
     mime_data = QMimeData()
-    drag_data = {
-        "id": "event-456",
-        "type": "event",
-        "name": "The Great War"
-    }
+    drag_data = {"id": "event-456", "type": "event", "name": "The Great War"}
     mime_data.setData(KRAKEN_ITEM_MIME_TYPE, json.dumps(drag_data).encode("utf-8"))
 
     # Create a mock drop event
@@ -77,11 +73,13 @@ def test_entity_editor_drop_creates_relation_signal(entity_editor, qtbot):
         Qt.DropAction.CopyAction,  # actions
         mime_data,  # mime data
         Qt.MouseButton.LeftButton,  # buttons
-        Qt.KeyboardModifier.NoModifier  # modifiers
+        Qt.KeyboardModifier.NoModifier,  # modifiers
     )
 
     # Wait for the signal
-    with qtbot.waitSignal(entity_editor.add_relation_requested, timeout=1000) as blocker:
+    with qtbot.waitSignal(
+        entity_editor.add_relation_requested, timeout=1000
+    ) as blocker:
         entity_editor.dropEvent(drop_event)
 
     # Verify signal was emitted with correct parameters
@@ -102,11 +100,7 @@ def test_event_editor_drop_creates_relation_signal(event_editor, qtbot):
 
     # Create MIME data simulating a drag from Project Explorer
     mime_data = QMimeData()
-    drag_data = {
-        "id": "entity-456",
-        "type": "entity",
-        "name": "John Smith"
-    }
+    drag_data = {"id": "entity-456", "type": "entity", "name": "John Smith"}
     mime_data.setData(KRAKEN_ITEM_MIME_TYPE, json.dumps(drag_data).encode("utf-8"))
 
     # Create a mock drop event
@@ -118,7 +112,7 @@ def test_event_editor_drop_creates_relation_signal(event_editor, qtbot):
         Qt.DropAction.CopyAction,
         mime_data,
         Qt.MouseButton.LeftButton,
-        Qt.KeyboardModifier.NoModifier
+        Qt.KeyboardModifier.NoModifier,
     )
 
     # Wait for the signal
@@ -140,11 +134,7 @@ def test_entity_editor_rejects_drop_when_no_entity_loaded(entity_editor, qtbot):
 
     # Create MIME data
     mime_data = QMimeData()
-    drag_data = {
-        "id": "event-456",
-        "type": "event",
-        "name": "The Great War"
-    }
+    drag_data = {"id": "event-456", "type": "event", "name": "The Great War"}
     mime_data.setData(KRAKEN_ITEM_MIME_TYPE, json.dumps(drag_data).encode("utf-8"))
 
     # Create a mock drop event
@@ -156,7 +146,7 @@ def test_entity_editor_rejects_drop_when_no_entity_loaded(entity_editor, qtbot):
         Qt.DropAction.CopyAction,
         mime_data,
         Qt.MouseButton.LeftButton,
-        Qt.KeyboardModifier.NoModifier
+        Qt.KeyboardModifier.NoModifier,
     )
 
     # Drop should be ignored (no signal emitted)
@@ -184,7 +174,7 @@ def test_entity_editor_rejects_invalid_mime_data(entity_editor, qtbot):
         Qt.DropAction.CopyAction,
         mime_data,
         Qt.MouseButton.LeftButton,
-        Qt.KeyboardModifier.NoModifier
+        Qt.KeyboardModifier.NoModifier,
     )
 
     # Drop should be ignored (no signal emitted)

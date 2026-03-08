@@ -55,6 +55,22 @@ _COL_DELETE = 5
 _MAPPING_ID_ROLE = Qt.ItemDataRole.UserRole
 
 
+_AUTO_COLORS = [
+    "#e41a1c",
+    "#377eb8",
+    "#4daf4a",
+    "#984ea3",
+    "#ff7f00",
+    "#a65628",
+    "#f781bf",
+    "#999999",
+    "#66c2a5",
+    "#fc8d62",
+    "#8da0cb",
+    "#e78ac3",
+]
+
+
 class _ColorButton(QPushButton):
     """Small push-button that displays and lets the user pick a colour."""
 
@@ -137,6 +153,8 @@ class RasterPaletteEditor(QDialog):
         mode: ``"discrete"`` or ``"continuous"``.
         value_entity_map: Existing canonical VEM dict for this layer.
             Used to pre-populate label, entity ID, and item type columns.
+        buffer_min: Minimum non-zero data value in the buffer (continuous only).
+        buffer_max: Maximum data value in the buffer (continuous only).
         parent: Parent widget.
     """
 
@@ -145,6 +163,8 @@ class RasterPaletteEditor(QDialog):
         color_map: ColorMap,
         mode: str = "discrete",
         value_entity_map: Optional[Dict[str, Any]] = None,
+        buffer_min: Optional[float] = None,
+        buffer_max: Optional[float] = None,
         parent: Optional[QWidget] = None,
     ) -> None:
         super().__init__(parent)
@@ -154,6 +174,8 @@ class RasterPaletteEditor(QDialog):
         self._mode = mode
         self._color_map = color_map
         self._vem = normalize_value_entity_map(value_entity_map or {})
+        self._buffer_min = buffer_min
+        self._buffer_max = buffer_max
         self.setStyleSheet(StyleHelper.get_dialog_base_style())
         self._build_ui()
 
@@ -195,6 +217,18 @@ class RasterPaletteEditor(QDialog):
 
     def _build_discrete_ui(self, layout: QVBoxLayout) -> None:
         layout.addWidget(QLabel("Value → Colour → Linked Item entries:"))
+
+        # Auto-color toolbar
+        auto_row = QHBoxLayout()
+        auto_row.setSpacing(4)
+        btn_auto_color = QPushButton("🎨 Auto-color")
+        btn_auto_color.setToolTip(
+            "Assign a qualitative colour palette to each row in sequence"
+        )
+        btn_auto_color.clicked.connect(self._on_auto_color)
+        auto_row.addWidget(btn_auto_color)
+        auto_row.addStretch()
+        layout.addLayout(auto_row)
 
         self._table = QTableWidget(0, 6)
         self._table.setHorizontalHeaderLabels(
@@ -279,6 +313,50 @@ class RasterPaletteEditor(QDialog):
         )
         layout.addWidget(self._gradient_preview)
 
+        # Data range info + stretch controls
+        if self._buffer_min is not None and self._buffer_max is not None:
+            data_range_label = QLabel(
+                f"Data range: {self._buffer_min:.0f} – {self._buffer_max:.0f}"
+            )
+            data_range_label.setStyleSheet(StyleHelper.get_preview_label_style())
+            layout.addWidget(data_range_label)
+
+        stretch_row = QHBoxLayout()
+        stretch_row.setSpacing(4)
+        stretch_row.addWidget(QLabel("Stretch range:"))
+        self._stretch_min_spin = QSpinBox()
+        self._stretch_min_spin.setRange(0, 65535)
+        self._stretch_min_spin.setValue(
+            self._color_map.stretch_min
+            if self._color_map.stretch_min is not None
+            else 0
+        )
+        self._stretch_min_spin.setToolTip("Minimum value mapped to the start colour")
+        stretch_row.addWidget(self._stretch_min_spin)
+        stretch_row.addWidget(QLabel("–"))
+        self._stretch_max_spin = QSpinBox()
+        self._stretch_max_spin.setRange(0, 65535)
+        self._stretch_max_spin.setValue(
+            self._color_map.stretch_max
+            if self._color_map.stretch_max is not None
+            else 65535
+        )
+        self._stretch_max_spin.setToolTip("Maximum value mapped to the end colour")
+        stretch_row.addWidget(self._stretch_max_spin)
+
+        btn_auto_stretch = QPushButton("Auto-stretch")
+        btn_auto_stretch.setToolTip("Set stretch range from actual data range")
+        btn_auto_stretch.clicked.connect(self._on_auto_stretch)
+        stretch_row.addWidget(btn_auto_stretch)
+
+        btn_reset_stretch = QPushButton("Reset")
+        btn_reset_stretch.setToolTip("Reset stretch to full 0–65535 range")
+        btn_reset_stretch.clicked.connect(self._on_reset_stretch)
+        stretch_row.addWidget(btn_reset_stretch)
+
+        stretch_row.addStretch()
+        layout.addLayout(stretch_row)
+
     def _refresh_gradient_preview(self, *_args: object) -> None:
         if (
             hasattr(self, "_gradient_preview")
@@ -288,6 +366,18 @@ class RasterPaletteEditor(QDialog):
             self._gradient_preview.set_colors(
                 self._start_btn.color_hex, self._end_btn.color_hex
             )
+
+    def _on_auto_stretch(self) -> None:
+        """Set stretch spinboxes to the actual buffer data range."""
+        lo = int(self._buffer_min) if self._buffer_min is not None else 0
+        hi = int(self._buffer_max) if self._buffer_max is not None else 65535
+        self._stretch_min_spin.setValue(lo)
+        self._stretch_max_spin.setValue(hi)
+
+    def _on_reset_stretch(self) -> None:
+        """Reset stretch spinboxes to the full 0–65535 range."""
+        self._stretch_min_spin.setValue(0)
+        self._stretch_max_spin.setValue(65535)
 
     # ------------------------------------------------------------------
     # Discrete table helpers
@@ -352,6 +442,13 @@ class RasterPaletteEditor(QDialog):
                 self._table.removeRow(r)
                 return
 
+    def _on_auto_color(self) -> None:
+        """Assign auto-colors from _AUTO_COLORS to each table row in sequence."""
+        for row in range(self._table.rowCount()):
+            btn = self._table.cellWidget(row, _COL_COLOR)
+            if isinstance(btn, _ColorButton):
+                btn.color_hex = _AUTO_COLORS[row % len(_AUTO_COLORS)]
+
     # ------------------------------------------------------------------
     # Validation
     # ------------------------------------------------------------------
@@ -400,10 +497,19 @@ class RasterPaletteEditor(QDialog):
                     )
             return ColorMap(type="palette", entries=entries)
         else:
+            stretch_min: Optional[int] = None
+            stretch_max: Optional[int] = None
+            if hasattr(self, "_stretch_min_spin") and hasattr(
+                self, "_stretch_max_spin"
+            ):
+                stretch_min = self._stretch_min_spin.value()
+                stretch_max = self._stretch_max_spin.value()
             return ColorMap(
                 type="gradient",
                 gradient_start=self._start_btn.color_hex,
                 gradient_end=self._end_btn.color_hex,
+                stretch_min=stretch_min,
+                stretch_max=stretch_max,
             )
 
     def result_value_entity_map(self) -> Dict[str, Any]:

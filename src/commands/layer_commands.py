@@ -769,7 +769,7 @@ class RenameLayerCommand(BaseCommand):
                 if not node:
                     return CommandResult(
                         success=False,
-                        message=(f"Layer node {self.node_id} " "not found."),
+                        message=(f"Layer node {self.node_id} not found."),
                         command_name="RenameLayerCommand",
                     )
 

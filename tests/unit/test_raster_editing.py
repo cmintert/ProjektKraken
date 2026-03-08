@@ -130,7 +130,9 @@ class TestColorizeRegion:
     def test_colorize_region_gradient_mode(self) -> None:
         buf = MapDataBuffer(width=32, height=32, default_value=0)
         buf._data[5, 5] = 32768  # midpoint
-        cmap = ColorMap(type="gradient", gradient_start="#000000", gradient_end="#FFFFFF")
+        cmap = ColorMap(
+            type="gradient", gradient_start="#000000", gradient_end="#FFFFFF"
+        )
         img = buf.colorize_region(cmap, 0, 0, 31, 31)
         assert img.width() == 32
 
@@ -195,8 +197,12 @@ class TestSetRasterMappingCommand:
         from src.commands.raster_commands import SetRasterMappingCommand
 
         cmd = SetRasterMappingCommand(
-            "m1", "n1",
-            new_mapping={"mode": "exact", "mappings": [{"value": 1, "entity_id": "e1"}]},
+            "m1",
+            "n1",
+            new_mapping={
+                "mode": "exact",
+                "mappings": [{"value": 1, "entity_id": "e1"}],
+            },
             old_mapping={"mode": "exact", "mappings": []},
         )
         d = cmd.to_dict()

@@ -583,9 +583,9 @@ def test_no_double_bold_in_headings(qtbot):
     md = widget.get_wiki_text()
 
     # Should be "# Bold Heading", NOT "# **Bold Heading**"
-    assert (
-        md == "# Bold Heading"
-    ), f"Heading should not have ** markers, got: {repr(md)}"
+    assert md == "# Bold Heading", (
+        f"Heading should not have ** markers, got: {repr(md)}"
+    )
     assert "**" not in md, "Headings should not contain bold markers"
 
 
@@ -616,9 +616,9 @@ def test_enter_resets_heading_format(qtbot):
 
     # Should be body text (heading level 0, body font size ~10pt)
     assert block_fmt.headingLevel() == 0, "New line should not be a heading"
-    assert (
-        char_fmt.fontPointSize() == 10.0
-    ), f"New line should be body size (10pt), got {char_fmt.fontPointSize()}"
+    assert char_fmt.fontPointSize() == 10.0, (
+        f"New line should be body size (10pt), got {char_fmt.fontPointSize()}"
+    )
 
 
 def test_cursor_preserved_during_heading_rerender(qtbot):
@@ -664,9 +664,9 @@ def test_heading_level_detection_uses_semantic_property(qtbot):
 
     # Verify markdown conversion uses this property
     md = widget.get_wiki_text()
-    assert md.startswith(
-        "# "
-    ), f"Should detect heading via headingLevel, got: {repr(md)}"
+    assert md.startswith("# "), (
+        f"Should detect heading via headingLevel, got: {repr(md)}"
+    )
 
 
 def test_empty_lines_preserved(qtbot):

@@ -838,6 +838,12 @@ class MapHandler(QObject):
         # Clear temporal state when map changes; always clear node tracking
         if map_id != self._current_map_id:
             self._snapshot_cache.clear()
+            # Clear query overlay when switching maps
+            try:
+                self._map_widget.view.clear_query_overlay()
+                self._map_widget.layer_panel.set_query_active(False)
+            except Exception:
+                pass
         self._current_snapshot_by_node.clear()
         self._current_map_id = map_id
         maps = self._map_widget.maps_data
@@ -1101,8 +1107,23 @@ class MapHandler(QObject):
             color_map=item.color_map,
             mode=mode,
             value_entity_map=existing_vem,
+            buffer_min=None,
+            buffer_max=None,
             parent=self._map_widget,
         )
+        if mode == "continuous":
+            try:
+                stats = item.buffer.compute_coverage_stats(item.color_map)
+                dialog = RasterPaletteEditor(
+                    color_map=item.color_map,
+                    mode=mode,
+                    value_entity_map=existing_vem,
+                    buffer_min=stats.min_val,
+                    buffer_max=stats.max_val,
+                    parent=self._map_widget,
+                )
+            except Exception as _exc:
+                logger.debug("Could not compute buffer stats: %s", _exc)
         if dialog.exec():
             new_cmap = dialog.result_color_map()
             logger.debug(
@@ -1130,6 +1151,83 @@ class MapHandler(QObject):
                 )
                 self.command_requested.emit(cmd)
                 logger.debug("on_raster_palette_edit: SetRasterMappingCommand emitted")
+
+    @Slot()
+    def on_raster_query_requested(self) -> None:
+        """Open the cross-layer spatial query dialog and display the result overlay."""
+        if not self._current_map_id:
+            return
+        view = self._map_widget.view
+        if not view._raster_items:
+            return
+
+        maps = self._map_widget.maps_data
+        selected_map = next((m for m in maps if m.id == self._current_map_id), None)
+        if not selected_map:
+            return
+
+        raster_metas = (selected_map.attributes or {}).get("raster_layers", [])
+        layers = [
+            {
+                "node_id": m["node_id"],
+                "name": m.get("name", m["node_id"][:8]),
+                "mode": m.get("mode", "discrete"),
+            }
+            for m in raster_metas
+            if m.get("node_id") in view._raster_items
+        ]
+        if not layers:
+            return
+
+        from src.gui.dialogs.raster_query_dialog import RasterQueryDialog
+
+        dlg = RasterQueryDialog(layers=layers, parent=self._map_widget)
+        if not dlg.exec():
+            return
+
+        conditions = dlg.conditions
+        if not conditions:
+            return
+
+        # Resolve node_ids to arrays
+        unique_nodes = list(dict.fromkeys(c["node_id"] for c in conditions))
+        arrays_by_node: Dict[str, Any] = {
+            nid: view._raster_items[nid].buffer.data
+            for nid in unique_nodes
+            if nid in view._raster_items
+        }
+
+        arrays = [arrays_by_node[n] for n in unique_nodes if n in arrays_by_node]
+        normalized = [
+            {**c, "index": unique_nodes.index(c["node_id"])}
+            for c in conditions
+            if c["node_id"] in arrays_by_node
+        ]
+
+        if not arrays or not normalized:
+            return
+
+        from PySide6.QtCore import QRectF
+
+        from src.gui.widgets.map.map_data_buffer import compute_spatial_query
+
+        try:
+            mask = compute_spatial_query(arrays, normalized)
+        except Exception as exc:
+            logger.warning("Spatial query failed: %s", exc)
+            return
+
+        scene_rect: QRectF = (
+            view.pixmap_item.boundingRect() if view.pixmap_item else QRectF()
+        )
+        view.set_query_overlay(mask, scene_rect)
+        self._map_widget.layer_panel.set_query_active(True)
+
+    @Slot()
+    def on_raster_query_cleared(self) -> None:
+        """Remove the spatial query overlay from the map view."""
+        self._map_widget.view.clear_query_overlay()
+        self._map_widget.layer_panel.set_query_active(False)
 
     @Slot(str, int, float, float)
     def on_raster_value_probed(

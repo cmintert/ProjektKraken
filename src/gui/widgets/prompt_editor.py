@@ -2,6 +2,7 @@
 
 Provides a widget for editing AI prompts with syntax highlighting and variable insertion.
 """
+
 from typing import List, Optional
 
 from PySide6.QtCore import Signal, Slot
@@ -28,7 +29,7 @@ class PromptEditorWidget(QWidget):
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the prompt editor widget.
-        
+
         Args:
             parent: Optional parent widget.
         """
@@ -97,7 +98,7 @@ class PromptEditorWidget(QWidget):
 
     def setPlainText(self, text: str) -> None:
         """Set the editor text content.
-        
+
         Args:
             text: Text to set in the editor.
         """
@@ -105,7 +106,7 @@ class PromptEditorWidget(QWidget):
 
     def setPlaceholderText(self, text: str) -> None:
         """Set the editor placeholder text.
-        
+
         Args:
             text: Placeholder text to display when editor is empty.
         """
@@ -113,7 +114,7 @@ class PromptEditorWidget(QWidget):
 
     def toPlainText(self) -> str:
         """Get the current editor text content.
-        
+
         Returns:
             The current text in the editor.
         """
@@ -140,7 +141,7 @@ class PromptEditorWidget(QWidget):
 
     def set_default_text(self, text: str) -> None:
         """Set the default prompt text for restoration.
-        
+
         Args:
             text: Default text to restore to when restore_default is called.
         """
@@ -148,7 +149,7 @@ class PromptEditorWidget(QWidget):
 
     def insert_variable(self, variable: str) -> None:
         """Insert a variable at the current cursor position.
-        
+
         Args:
             variable: Variable text to insert.
         """
@@ -158,7 +159,7 @@ class PromptEditorWidget(QWidget):
     @Slot(int)
     def _on_variable_selected(self, index: int) -> None:
         """Handle variable selection from dropdown.
-        
+
         Args:
             index: Index of selected variable in combo box.
         """

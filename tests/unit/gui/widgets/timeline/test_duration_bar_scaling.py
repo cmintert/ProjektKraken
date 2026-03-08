@@ -106,6 +106,5 @@ class TestDurationBarScaling:
         actual_2x = event.lore_duration * item.scale_factor * 2.0
 
         assert actual_2x >= actual_1x * 1.9, (
-            f"Calculated width should scale with zoom. "
-            f"1x: {actual_1x}, 2x: {actual_2x}"
+            f"Calculated width should scale with zoom. 1x: {actual_1x}, 2x: {actual_2x}"
         )

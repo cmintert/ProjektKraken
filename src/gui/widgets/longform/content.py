@@ -153,10 +153,10 @@ class LongformContentWidget(QTextBrowser):
 
         def replace_link(match: re.Match) -> str:
             """Replace wiki link with markdown link.
-            
+
             Args:
                 match: Regex match object for wiki link.
-                
+
             Returns:
                 Markdown-formatted link string.
             """

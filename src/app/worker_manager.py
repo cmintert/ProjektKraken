@@ -360,7 +360,9 @@ class WorkerManager(QObject):
             self.window.load_maps()
 
             # Refresh AI search index status
-            QTimer.singleShot(100, self.window.ai_search_manager.refresh_search_index_status)
+            QTimer.singleShot(
+                100, self.window.ai_search_manager.refresh_search_index_status
+            )
 
             # Restore filter configuration
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)

@@ -143,9 +143,7 @@ class MarkerManager:
         self.markers[marker_id] = marker
         marker.clicked.connect(self._view.marker_clicked.emit)
 
-    def update_marker_position(
-        self, marker_id: str, x: float, y: float
-    ) -> None:
+    def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
         """Update a marker's position to new normalized coordinates.
 
         Args:
@@ -194,9 +192,7 @@ class MarkerManager:
             playhead_time: The current playhead position.
             current_time: The current lore time.
         """
-        all_items = list(self.markers.values()) + list(
-            self.feature_items.values()
-        )
+        all_items = list(self.markers.values()) + list(self.feature_items.values())
         for item in all_items:
             if item.lore_date is None:
                 item.set_temporal_state(is_future=False, is_past=False)

@@ -361,9 +361,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
                 try:
                     import shiboken6
 
-                    if shiboken6.isValid(self) and shiboken6.isValid(
-                        self.map_widget
-                    ):
+                    if shiboken6.isValid(self) and shiboken6.isValid(self.map_widget):
                         self.map_widget.layer_panel.refresh_styles()
                 except (RuntimeError, ImportError):
                     pass
@@ -838,9 +836,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         return self.editor_coordinator.check_unsaved_changes(editor)
 
     @Slot(list, list)
-    def _update_history_panel(
-        self, undo_snapshots: list, redo_snapshots: list
-    ) -> None:
+    def _update_history_panel(self, undo_snapshots: list, redo_snapshots: list) -> None:
         """Update the history panel with pre-built snapshot dicts.
 
         The snapshots are created inside ``CommandCoordinator`` at the

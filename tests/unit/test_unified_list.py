@@ -39,7 +39,7 @@ def test_set_data(unified_list):
     index0 = model.index(0, 0)
     text0 = model.data(index0, Qt.ItemDataRole.DisplayRole)
     assert "Entity 1" in text0
-    
+
     # Map to source for custom roles
     source_index0 = model.mapToSource(index0)
     source_model = model.sourceModel()
@@ -49,7 +49,7 @@ def test_set_data(unified_list):
     index1 = model.index(1, 0)
     text1 = model.data(index1, Qt.ItemDataRole.DisplayRole)
     assert "Event 1" in text1
-    
+
     source_index1 = model.mapToSource(index1)
     assert source_model.data(source_index1, source_model.ItemIdRole) == "e1"
     assert source_model.data(source_index1, source_model.ItemTypeRole) == "event"
@@ -94,7 +94,7 @@ def test_selection_signal(unified_list, qtbot):
 def test_delete_signal(unified_list, qtbot):
     events = [Event(id="e1", name="Event 1", lore_date=10.0)]
     unified_list.set_data(events, [])
-    
+
     model = unified_list._proxy_model
     unified_list.list_widget.setCurrentIndex(model.index(0, 0))
 

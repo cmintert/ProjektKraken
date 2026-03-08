@@ -469,12 +469,16 @@ class UIManager:
 
         # Open Database
         db_action = file_menu.addAction("Manage Databases...")
-        db_action.triggered.connect(self.main_window.import_coordinator.show_database_manager)
+        db_action.triggered.connect(
+            self.main_window.import_coordinator.show_database_manager
+        )
 
         # Import Item
         import_action = file_menu.addAction("Import Item...")
         if hasattr(self.main_window, "import_coordinator"):
-            import_action.triggered.connect(self.main_window.import_coordinator.import_item_requested)
+            import_action.triggered.connect(
+                self.main_window.import_coordinator.import_item_requested
+            )
 
         file_menu.addSeparator()
 

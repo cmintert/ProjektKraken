@@ -32,9 +32,7 @@ def gizmo(keyframe_item, qapp):
 def test_gizmo_mouse_press_clock_icon(gizmo):
     """Test clicking the clock icon on the gizmo."""
     # Use the clock icon's actual scene position for a valid hit
-    clock_center = gizmo.clock_icon.mapToScene(
-        gizmo.clock_icon.rect().center()
-    )
+    clock_center = gizmo.clock_icon.mapToScene(gizmo.clock_icon.rect().center())
     event = MagicMock(spec=QGraphicsSceneMouseEvent)
     event.scenePos.return_value = clock_center
     event.button.return_value = Qt.MouseButton.LeftButton
@@ -49,9 +47,7 @@ def test_gizmo_mouse_press_clock_icon(gizmo):
 def test_gizmo_mouse_press_delete_icon(gizmo):
     """Test clicking the delete icon on the gizmo."""
     # Use the delete icon's actual scene position for a valid hit
-    delete_center = gizmo.delete_icon.mapToScene(
-        gizmo.delete_icon.rect().center()
-    )
+    delete_center = gizmo.delete_icon.mapToScene(gizmo.delete_icon.rect().center())
     event = MagicMock(spec=QGraphicsSceneMouseEvent)
     event.scenePos.return_value = delete_center
     event.button.return_value = Qt.MouseButton.LeftButton

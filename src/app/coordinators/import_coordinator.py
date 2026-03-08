@@ -169,7 +169,7 @@ class ImportCoordinator(BaseCoordinator):
         from src.gui.dialogs.progress_dialog import ProgressDialog
 
         self._import_progress_dialog = ProgressDialog(
-            "Importing data...\n\n" "This may take a moment for large files.",
+            "Importing data...\n\nThis may take a moment for large files.",
             parent=self.main_window,
             cancelable=False,
             title="Import in Progress",

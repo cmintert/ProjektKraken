@@ -247,9 +247,7 @@ class MapRepository(BaseRepository):
             return Marker.from_dict(data)
         return None
 
-    def get_markers_for_object(
-        self, object_id: str, object_type: str
-    ) -> List[Marker]:
+    def get_markers_for_object(self, object_id: str, object_type: str) -> List[Marker]:
         """Retrieve all markers for a specific entity or event.
 
         Args:

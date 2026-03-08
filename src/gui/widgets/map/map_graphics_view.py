@@ -696,6 +696,9 @@ class MapGraphicsView(QGraphicsView):
         # Raster overlay items (node_id → RasterLayerItem)
         self._raster_items: dict[str, Any] = {}
 
+        # Spatial query overlay item (Feature D)
+        self._query_overlay_item: Optional[QGraphicsPixmapItem] = None
+
         # Track loaded map image
         self.current_image_path: Optional[str] = None
 
@@ -890,6 +893,49 @@ class MapGraphicsView(QGraphicsView):
         """Exit raster editing mode."""
         logger.debug("stop_raster_editing called")
         self._raster_edit_tool.stop_editing()
+
+    # ------------------------------------------------------------------
+    # Spatial query overlay (Feature D)
+    # ------------------------------------------------------------------
+
+    def set_query_overlay(self, mask: Any, scene_rect: "QRectF") -> None:
+        """Display a red semi-transparent overlay for pixels matching a query mask.
+
+        Args:
+            mask: 2-D boolean numpy array (True = matches query).
+            scene_rect: Scene-coordinate rectangle that the mask covers.
+        """
+        import numpy as np
+
+        self.clear_query_overlay()
+
+        h, w = mask.shape
+        rgba = np.zeros((h, w, 4), dtype=np.uint8)
+        rgba[mask, 0] = 220  # red channel
+        rgba[mask, 3] = 128  # 50 % alpha for matching cells
+
+        from PySide6.QtGui import QImage
+
+        img = QImage(rgba.tobytes(), w, h, w * 4, QImage.Format.Format_RGBA8888)
+        pm = QPixmap.fromImage(img)
+        if not scene_rect.isEmpty():
+            pm = pm.scaled(
+                int(scene_rect.width()),
+                int(scene_rect.height()),
+            )
+
+        from src.app.constants import MAP_LAYER_Z_RASTER
+
+        self._query_overlay_item = QGraphicsPixmapItem(pm)
+        self._query_overlay_item.setPos(scene_rect.topLeft())
+        self._query_overlay_item.setZValue(MAP_LAYER_Z_RASTER + 1)
+        self.scene.addItem(self._query_overlay_item)
+
+    def clear_query_overlay(self) -> None:
+        """Remove the spatial query overlay from the scene."""
+        if self._query_overlay_item is not None:
+            self.scene.removeItem(self._query_overlay_item)
+            self._query_overlay_item = None
 
     # ------------------------------------------------------------------
     # Size hints & lifecycle

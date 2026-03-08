@@ -2,6 +2,7 @@
 
 Provides syntax highlighting for prompt template variables in braces.
 """
+
 import re
 
 from PySide6.QtGui import (
@@ -18,7 +19,7 @@ class PromptSyntaxHighlighter(QSyntaxHighlighter):
 
     def __init__(self, parent: QTextDocument) -> None:
         """Initialize the syntax highlighter.
-        
+
         Args:
             parent: The QTextDocument to highlight.
         """

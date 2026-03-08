@@ -316,7 +316,9 @@ class LexiconEditorDialog(QDialog):
         border_color_btn.setFixedSize(28, 28)
         border_color_btn.color_changed.connect(self._emit_config_changed)
         grid.addWidget(
-            border_color_btn, row, col,
+            border_color_btn,
+            row,
+            col,
             Qt.AlignmentFlag.AlignCenter,
         )
         col += 1
@@ -359,9 +361,10 @@ class LexiconEditorDialog(QDialog):
         icon_btn.setStyleSheet(StyleHelper.get_tool_button_style())
         icon_btn.setToolTip(icon_path or "Import an SVG/PNG icon")
         icon_btn.clicked.connect(
-            lambda checked, tn=type_name, ib=icon_btn, sc=shape_combo: self._select_icon(
-                tn, ib, sc
-            )
+            lambda checked,
+            tn=type_name,
+            ib=icon_btn,
+            sc=shape_combo: self._select_icon(tn, ib, sc)
         )
         grid.addWidget(icon_btn, row, col)
         col += 1

@@ -45,9 +45,9 @@ class TagPill(QFrame):
     ) -> None:
         """
         Create a TagPill widget that displays a tag label with an optional color and a delete control.
-        
+
         Sets the widget's fixed height to 32, enables styled-background support, applies the pill stylesheet, and caches painter data used for custom painting.
-        
+
         Parameters:
             text: The tag text to display.
             base_color: Optional hex color string defining the pill's base theme; when omitted the theme's secondary accent is used.
@@ -73,7 +73,7 @@ class TagPill(QFrame):
     def _setup_ui(self) -> None:
         """
         Create and arrange the tag label and delete button in a horizontal layout.
-        
+
         Creates a QLabel showing self.text and a QToolButton (object name "TagPillDeleteButton") displaying "✕"; the button uses a pointing-hand cursor, has a tooltip "Remove tag: {self.text}", its clicked signal is connected to _on_delete_clicked, and both widgets are added to the layout.
         """
         layout = QHBoxLayout(self)
@@ -98,7 +98,7 @@ class TagPill(QFrame):
     def _apply_style(self) -> None:
         """
         Apply the TagPill stylesheet from StyleHelper to this widget.
-        
+
         Retrieves the pill style using the widget's object name, configured base color, and delete-button presence, and sets it as the widget's stylesheet.
         """
         style = StyleHelper.get_pill_style(
@@ -123,7 +123,7 @@ class TagPill(QFrame):
     def _on_delete_clicked(self) -> None:
         """
         Emit the TagPill's deleted signal carrying its current text.
-        
+
         Emits:
             deleted (str): The tag text of this pill.
         """
@@ -132,7 +132,7 @@ class TagPill(QFrame):
     def paintEvent(self, event: QPaintEvent) -> None:
         """
         Paints the tag pill with a rounded gradient fill and a hover-aware border.
-        
+
         Uses cached color data and antialiasing to render a vertically graded rounded rectangle for the pill background; when hovered, increases gradient intensity and uses a stronger border color, otherwise draws a subtler border with reduced opacity.
         """
         p = QPainter(self)
