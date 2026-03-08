@@ -639,6 +639,17 @@ class MapLayerPanel(QWidget):
             text = "Continuous — scalar gradient"
             bg = theme.get("primary", "#5C82FF")
 
+        # If continuous mode, and the user still has the tiny default paint
+        # value (1), bump it to a reasonable middle value so brush/gradient
+        # painting is visible by default. This avoids the common confusion
+        # where continuous ramps painted with value=1 are visually null.
+        try:
+            if mode == "continuous" and self._paint_value_spin.value() < 256:
+                self._paint_value_spin.setValue(32768)
+        except Exception:
+            # In some test contexts _paint_value_spin may not yet exist; ignore
+            pass
+
         self._raster_mode_label.setText(f"{icon}  {text}")
         self._raster_mode_label.setStyleSheet(
             f"QLabel#RasterModeBadge {{"
