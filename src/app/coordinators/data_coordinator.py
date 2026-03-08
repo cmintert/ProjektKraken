@@ -452,8 +452,7 @@ class DataCoordinator(BaseCoordinator):
             return
 
         logger.warning(
-            f"Summary generated for {item_id}, but item is no longer "
-            f"active in editor."
+            f"Summary generated for {item_id}, but item is no longer active in editor."
         )
 
     # ------------------------------------------------------------------

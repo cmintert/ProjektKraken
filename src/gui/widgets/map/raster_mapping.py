@@ -131,8 +131,7 @@ class RasterValueEntityMap:
         return cls(
             mode=data.get("mode", "exact"),
             mappings=[
-                RasterMappingEntry.from_dict(m)
-                for m in data.get("mappings", [])
+                RasterMappingEntry.from_dict(m) for m in data.get("mappings", [])
             ],
         )
 
@@ -286,9 +285,7 @@ class ProbeResult:
 # ---------------------------------------------------------------------------
 
 
-def _find_matching_entry(
-    vem: Dict[str, Any], value: int
-) -> Optional[Dict[str, Any]]:
+def _find_matching_entry(vem: Dict[str, Any], value: int) -> Optional[Dict[str, Any]]:
     """Return the first mapping entry that matches *value*, or ``None``.
 
     Args:
@@ -319,9 +316,7 @@ def _find_matching_entry(
 # ---------------------------------------------------------------------------
 
 
-def lookup_entity_for_value(
-    layer_meta: Dict[str, Any], value: int
-) -> Optional[str]:
+def lookup_entity_for_value(layer_meta: Dict[str, Any], value: int) -> Optional[str]:
     """Resolve a raster value to a linked entity or event ID.
 
     Supports legacy flat-dict format and the canonical structured format
@@ -342,9 +337,7 @@ def lookup_entity_for_value(
     return entry.get("entity_id") if entry else None
 
 
-def lookup_item_type_for_value(
-    layer_meta: Dict[str, Any], value: int
-) -> Optional[str]:
+def lookup_item_type_for_value(layer_meta: Dict[str, Any], value: int) -> Optional[str]:
     """Resolve a raster value to the linked item type.
 
     Args:
@@ -361,9 +354,7 @@ def lookup_item_type_for_value(
     return entry.get("item_type") if entry else None
 
 
-def lookup_label_for_value(
-    layer_meta: Dict[str, Any], value: int
-) -> Optional[str]:
+def lookup_label_for_value(layer_meta: Dict[str, Any], value: int) -> Optional[str]:
     """Resolve a raster value to a human-readable label.
 
     Args:
@@ -481,9 +472,7 @@ def build_item_raster_index(
 
     for map_entry in maps_data:
         map_id = map_entry.get("id", "")
-        raster_layers = (map_entry.get("attributes") or {}).get(
-            "raster_layers", []
-        )
+        raster_layers = (map_entry.get("attributes") or {}).get("raster_layers", [])
         for rl in raster_layers:
             node_id = rl.get("node_id", "")
             vem = normalize_value_entity_map(rl.get("value_entity_map") or {})

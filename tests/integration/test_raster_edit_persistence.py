@@ -234,7 +234,9 @@ class TestMappingPersistence:
         saved = db_service.map_repo.get_map(map_obj.id)
         meta = (saved.attributes or {}).get("raster_layers", [])[0]
         cmap = ColorMap.from_dict(meta["color_map"])
-        assert cmap.type == "gradient", "Default color_map must be gradient, not empty palette"
+        assert cmap.type == "gradient", (
+            "Default color_map must be gradient, not empty palette"
+        )
 
     def test_color_map_persisted_by_command(self, db_service, map_obj, world_dir):
         """SetRasterMappingCommand should persist the colour map alongside the mapping."""
@@ -281,7 +283,9 @@ class TestMappingPersistence:
         assert cmap.type == "palette"
         assert cmap.entries[0].color == "#FF0000"
 
-    def test_color_map_undo_restores_old_color_map(self, db_service, map_obj, world_dir):
+    def test_color_map_undo_restores_old_color_map(
+        self, db_service, map_obj, world_dir
+    ):
         """Undoing SetRasterMappingCommand restores the previous colour map."""
         create_cmd = CreateRasterLayerCommand(
             map_id=map_obj.id,
@@ -296,21 +300,31 @@ class TestMappingPersistence:
         assert result.success
         node_id = result.data["node_id"]
 
-        old_cmap_dict = ColorMap(type="gradient", gradient_start="#000000", gradient_end="#FFFFFF").to_dict()
-        new_cmap_dict = ColorMap(type="palette", entries=[ColorEntry(value=1, color="#AABBCC")]).to_dict()
+        old_cmap_dict = ColorMap(
+            type="gradient", gradient_start="#000000", gradient_end="#FFFFFF"
+        ).to_dict()
+        new_cmap_dict = ColorMap(
+            type="palette", entries=[ColorEntry(value=1, color="#AABBCC")]
+        ).to_dict()
 
         # First set old color map
         SetRasterMappingCommand(
-            map_id=map_obj.id, node_id=node_id,
-            new_mapping={}, old_mapping={},
-            new_color_map=old_cmap_dict, old_color_map=None,
+            map_id=map_obj.id,
+            node_id=node_id,
+            new_mapping={},
+            old_mapping={},
+            new_color_map=old_cmap_dict,
+            old_color_map=None,
         ).execute(db_service)
 
         # Now set the new color map
         cmd = SetRasterMappingCommand(
-            map_id=map_obj.id, node_id=node_id,
-            new_mapping={"mode": "exact", "mappings": []}, old_mapping={},
-            new_color_map=new_cmap_dict, old_color_map=old_cmap_dict,
+            map_id=map_obj.id,
+            node_id=node_id,
+            new_mapping={"mode": "exact", "mappings": []},
+            old_mapping={},
+            new_color_map=new_cmap_dict,
+            old_color_map=old_cmap_dict,
         )
         cmd.execute(db_service)
 

@@ -124,8 +124,9 @@ def test_stroke_raster_command_does_not_emit_reload_maps(data_handler):
             data={},
         )
         data_handler.on_command_finished(result)
-        data_handler.reload_maps.emit.assert_not_called(), (
-            f"{cmd_name} should not emit reload_maps"
+        (
+            data_handler.reload_maps.emit.assert_not_called(),
+            (f"{cmd_name} should not emit reload_maps"),
         )
 
 

@@ -6,7 +6,6 @@ RasterMappingEntry, RasterValueEntityMap, RasterItemRef, ProbeResult,
 build_item_raster_index, and SetRasterMappingCommand overlap rejection.
 """
 
-
 from src.gui.widgets.map.raster_mapping import (
     ProbeResult,
     RasterItemRef,
@@ -217,10 +216,22 @@ def _meta(mappings, mode="exact"):
 
 
 def test_lookup_entity_exact_match():
-    meta = _meta([
-        {"value": 1, "entity_id": "wolf-id", "item_type": "entity", "label": "Wolf"},
-        {"value": 2, "entity_id": "bear-id", "item_type": "entity", "label": "Bear"},
-    ])
+    meta = _meta(
+        [
+            {
+                "value": 1,
+                "entity_id": "wolf-id",
+                "item_type": "entity",
+                "label": "Wolf",
+            },
+            {
+                "value": 2,
+                "entity_id": "bear-id",
+                "item_type": "entity",
+                "label": "Bear",
+            },
+        ]
+    )
     assert lookup_entity_for_value(meta, 1) == "wolf-id"
     assert lookup_entity_for_value(meta, 2) == "bear-id"
 
@@ -280,12 +291,16 @@ def test_lookup_label_range():
 
 
 def test_lookup_item_type_entity():
-    meta = _meta([{"value": 5, "entity_id": "e-id", "item_type": "entity", "label": "Wolf"}])
+    meta = _meta(
+        [{"value": 5, "entity_id": "e-id", "item_type": "entity", "label": "Wolf"}]
+    )
     assert lookup_item_type_for_value(meta, 5) == "entity"
 
 
 def test_lookup_item_type_event():
-    meta = _meta([{"value": 8, "entity_id": "ev-id", "item_type": "event", "label": "Battle"}])
+    meta = _meta(
+        [{"value": 8, "entity_id": "ev-id", "item_type": "event", "label": "Battle"}]
+    )
     assert lookup_item_type_for_value(meta, 8) == "event"
 
 
@@ -523,7 +538,12 @@ def test_build_item_raster_index_multiple_maps():
                         "value_entity_map": {
                             "mode": "exact",
                             "mappings": [
-                                {"id": "m1", "value": 1, "entity_id": "eid-1", "label": "A"},
+                                {
+                                    "id": "m1",
+                                    "value": 1,
+                                    "entity_id": "eid-1",
+                                    "label": "A",
+                                },
                             ],
                         },
                     }
@@ -539,7 +559,12 @@ def test_build_item_raster_index_multiple_maps():
                         "value_entity_map": {
                             "mode": "exact",
                             "mappings": [
-                                {"id": "m2", "value": 3, "entity_id": "eid-1", "label": "A again"},
+                                {
+                                    "id": "m2",
+                                    "value": 3,
+                                    "entity_id": "eid-1",
+                                    "label": "A again",
+                                },
                             ],
                         },
                     }
@@ -598,6 +623,7 @@ def test_set_raster_mapping_command_rejects_overlapping_exact(db_service):
         CreateRasterLayerCommand,
         SetRasterMappingCommand,
     )
+
     world_root = tempfile.mkdtemp()
     map_cmd = CreateMapCommand({"name": "Test Map", "image_path": ""})
     result = map_cmd.execute(db_service)
@@ -636,6 +662,7 @@ def test_set_raster_mapping_command_rejects_overlapping_exact(db_service):
 
     # Clean up
     import shutil
+
     shutil.rmtree(world_root, ignore_errors=True)
 
 
@@ -684,4 +711,5 @@ def test_set_raster_mapping_command_accepts_valid_mapping(db_service):
     assert cmd_result.success
 
     import shutil
+
     shutil.rmtree(world_root, ignore_errors=True)

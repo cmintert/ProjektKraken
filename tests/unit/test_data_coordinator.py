@@ -71,9 +71,7 @@ class TestDataLoading:
 
     def test_load_events_invokes_worker(self, coordinator, fake_window):
         """load_events should invoke worker.load_events via QMetaObject."""
-        with patch(
-            "src.app.coordinators.data_coordinator.QMetaObject"
-        ) as mock_meta:
+        with patch("src.app.coordinators.data_coordinator.QMetaObject") as mock_meta:
             coordinator.load_events()
             mock_meta.invokeMethod.assert_called_once()
             args = mock_meta.invokeMethod.call_args
@@ -81,9 +79,7 @@ class TestDataLoading:
 
     def test_load_entities_invokes_worker(self, coordinator, fake_window):
         """load_entities should invoke worker.load_entities via QMetaObject."""
-        with patch(
-            "src.app.coordinators.data_coordinator.QMetaObject"
-        ) as mock_meta:
+        with patch("src.app.coordinators.data_coordinator.QMetaObject") as mock_meta:
             coordinator.load_entities()
             mock_meta.invokeMethod.assert_called_once()
             args = mock_meta.invokeMethod.call_args
@@ -91,9 +87,7 @@ class TestDataLoading:
 
     def test_load_event_details_invokes_worker(self, coordinator, fake_window):
         """load_event_details should invoke worker with event_id."""
-        with patch(
-            "src.app.coordinators.data_coordinator.QMetaObject"
-        ) as mock_meta:
+        with patch("src.app.coordinators.data_coordinator.QMetaObject") as mock_meta:
             coordinator.load_event_details("evt-123")
             mock_meta.invokeMethod.assert_called_once()
             args = mock_meta.invokeMethod.call_args
@@ -101,9 +95,7 @@ class TestDataLoading:
 
     def test_load_entity_details_invokes_worker(self, coordinator, fake_window):
         """load_entity_details should invoke worker with entity_id."""
-        with patch(
-            "src.app.coordinators.data_coordinator.QMetaObject"
-        ) as mock_meta:
+        with patch("src.app.coordinators.data_coordinator.QMetaObject") as mock_meta:
             coordinator.load_entity_details("ent-456")
             mock_meta.invokeMethod.assert_called_once()
             args = mock_meta.invokeMethod.call_args
@@ -111,9 +103,7 @@ class TestDataLoading:
 
     def test_load_completer_data_invokes_worker(self, coordinator, fake_window):
         """load_completer_data should invoke worker.load_completer_data."""
-        with patch(
-            "src.app.coordinators.data_coordinator.QMetaObject"
-        ) as mock_meta:
+        with patch("src.app.coordinators.data_coordinator.QMetaObject") as mock_meta:
             coordinator.load_completer_data()
             mock_meta.invokeMethod.assert_called_once()
             args = mock_meta.invokeMethod.call_args
@@ -121,39 +111,41 @@ class TestDataLoading:
 
     def test_load_data_calls_all_loaders(self, coordinator, fake_window):
         """load_data should refresh all data and reload active editors."""
-        with patch.object(coordinator, "load_events") as m_events, \
-             patch.object(coordinator, "load_entities") as m_entities, \
-             patch.object(coordinator, "load_completer_data") as m_completer, \
-             patch.object(coordinator, "load_graph_data") as m_graph:
+        with (
+            patch.object(coordinator, "load_events") as m_events,
+            patch.object(coordinator, "load_entities") as m_entities,
+            patch.object(coordinator, "load_completer_data") as m_completer,
+            patch.object(coordinator, "load_graph_data") as m_graph,
+        ):
             coordinator.load_data()
             m_events.assert_called_once()
             m_entities.assert_called_once()
             m_completer.assert_called_once()
             m_graph.assert_called_once()
 
-    def test_load_data_reloads_active_event_editor(
-        self, coordinator, fake_window
-    ):
+    def test_load_data_reloads_active_event_editor(self, coordinator, fake_window):
         """load_data should reload the active event editor."""
         fake_window.event_editor._current_event_id = "evt-123"
-        with patch.object(coordinator, "load_events"), \
-             patch.object(coordinator, "load_entities"), \
-             patch.object(coordinator, "load_completer_data"), \
-             patch.object(coordinator, "load_graph_data"), \
-             patch.object(coordinator, "load_event_details") as m_details:
+        with (
+            patch.object(coordinator, "load_events"),
+            patch.object(coordinator, "load_entities"),
+            patch.object(coordinator, "load_completer_data"),
+            patch.object(coordinator, "load_graph_data"),
+            patch.object(coordinator, "load_event_details") as m_details,
+        ):
             coordinator.load_data()
             m_details.assert_called_once_with("evt-123")
 
-    def test_load_data_reloads_active_entity_editor(
-        self, coordinator, fake_window
-    ):
+    def test_load_data_reloads_active_entity_editor(self, coordinator, fake_window):
         """load_data should reload the active entity editor."""
         fake_window.entity_editor._current_entity_id = "ent-456"
-        with patch.object(coordinator, "load_events"), \
-             patch.object(coordinator, "load_entities"), \
-             patch.object(coordinator, "load_completer_data"), \
-             patch.object(coordinator, "load_graph_data"), \
-             patch.object(coordinator, "load_entity_details") as m_details:
+        with (
+            patch.object(coordinator, "load_events"),
+            patch.object(coordinator, "load_entities"),
+            patch.object(coordinator, "load_completer_data"),
+            patch.object(coordinator, "load_graph_data"),
+            patch.object(coordinator, "load_entity_details") as m_details,
+        ):
             coordinator.load_data()
             m_details.assert_called_once_with("ent-456")
 
@@ -180,9 +172,7 @@ class TestSignalHandlers:
         fake_window.unified_list.set_data.assert_called_once()
         fake_window.map_widget.set_cached_items.assert_called_once()
 
-    def test_on_event_details_ready_loads_editor(
-        self, coordinator, fake_window
-    ):
+    def test_on_event_details_ready_loads_editor(self, coordinator, fake_window):
         """on_event_details_ready should load event into editor."""
         event = MagicMock()
         relations = [MagicMock()]
@@ -192,9 +182,7 @@ class TestSignalHandlers:
             event, relations, incoming, maps_data=fake_window.map_widget.maps_data
         )
 
-    def test_on_entity_details_ready_loads_editor(
-        self, coordinator, fake_window
-    ):
+    def test_on_entity_details_ready_loads_editor(self, coordinator, fake_window):
         """on_entity_details_ready should load entity into editor."""
         entity = MagicMock()
         relations = [MagicMock()]
@@ -208,9 +196,7 @@ class TestSignalHandlers:
         """on_suggestions_update should update both editors."""
         items = [("id1", "Name1", "entity")]
         coordinator.on_suggestions_update(items)
-        fake_window.event_editor.update_suggestions.assert_called_once_with(
-            items=items
-        )
+        fake_window.event_editor.update_suggestions.assert_called_once_with(items=items)
         fake_window.entity_editor.update_suggestions.assert_called_once_with(
             items=items
         )
@@ -220,9 +206,7 @@ class TestSignalHandlers:
         coordinator.on_dock_raise_requested("event")
         fake_window.ui_manager.docks["event"].raise_.assert_called_once()
 
-    def test_on_dock_raise_requested_unknown_dock(
-        self, coordinator, fake_window
-    ):
+    def test_on_dock_raise_requested_unknown_dock(self, coordinator, fake_window):
         """on_dock_raise_requested should handle unknown dock names safely."""
         # Should not raise
         coordinator.on_dock_raise_requested("unknown_dock")
@@ -230,15 +214,11 @@ class TestSignalHandlers:
     def test_on_selection_requested(self, coordinator, fake_window):
         """on_selection_requested should select item in unified list."""
         coordinator.on_selection_requested("event", "evt-123")
-        fake_window.unified_list.select_item.assert_called_once_with(
-            "event", "evt-123"
-        )
+        fake_window.unified_list.select_item.assert_called_once_with("event", "evt-123")
 
     def test_on_command_failed_shows_warning(self, coordinator, fake_window):
         """on_command_failed should show a warning message box."""
-        with patch(
-            "src.app.coordinators.data_coordinator.QMessageBox"
-        ) as mock_box:
+        with patch("src.app.coordinators.data_coordinator.QMessageBox") as mock_box:
             coordinator.on_command_failed("Something failed")
             mock_box.warning.assert_called_once()
 
@@ -247,34 +227,26 @@ class TestSignalHandlers:
         events = [MagicMock()]
         entities = [MagicMock(), MagicMock()]
         coordinator.on_filter_results_ready(events, entities)
-        fake_window.unified_list.set_data.assert_called_once_with(
-            events, entities
-        )
+        fake_window.unified_list.set_data.assert_called_once_with(events, entities)
         fake_window.status_bar.showMessage.assert_called_once()
 
 
 class TestGraphData:
     """Tests for graph data loading and refresh."""
 
-    def test_on_graph_data_ready_updates_widget(
-        self, coordinator, fake_window
-    ):
+    def test_on_graph_data_ready_updates_widget(self, coordinator, fake_window):
         """on_graph_data_ready should display graph data."""
         nodes = [{"id": "n1"}]
         edges = [{"source": "n1", "target": "n2"}]
         coordinator.on_graph_data_ready(nodes, edges)
         fake_window.graph_widget.display_graph.assert_called_once()
 
-    def test_on_graph_metadata_ready_updates_widget(
-        self, coordinator, fake_window
-    ):
+    def test_on_graph_metadata_ready_updates_widget(self, coordinator, fake_window):
         """on_graph_metadata_ready should set available tags and types."""
         tags = ["tag1", "tag2"]
         rel_types = ["relates_to"]
         coordinator.on_graph_metadata_ready(tags, rel_types)
-        fake_window.graph_widget.set_available_tags.assert_called_once_with(
-            tags
-        )
+        fake_window.graph_widget.set_available_tags.assert_called_once_with(tags)
         fake_window.graph_widget.set_available_relation_types.assert_called_once_with(
             rel_types
         )
@@ -315,8 +287,10 @@ class TestReloadActiveEditorRelations:
     def test_no_reload_when_no_active_editor(self, coordinator, fake_window):
         """Should not crash when no editor is active."""
         fake_window.navigation_coordinator.selected_type = None
-        with patch.object(coordinator, "load_event_details") as m_evt, \
-             patch.object(coordinator, "load_entity_details") as m_ent:
+        with (
+            patch.object(coordinator, "load_event_details") as m_evt,
+            patch.object(coordinator, "load_entity_details") as m_ent,
+        ):
             coordinator.on_reload_active_editor_relations()
             m_evt.assert_not_called()
             m_ent.assert_not_called()

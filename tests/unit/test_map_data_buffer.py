@@ -203,7 +203,7 @@ class TestBrushFeathering:
         for px_away in (5, 10, 15, 20, 25, 30, 35):
             cur = buf.get_value_at(0.5, 0.5 + px_away / 255)
             assert cur <= prev, (
-                f"Value at {px_away}px ({cur}) > value at " f"previous ({prev})"
+                f"Value at {px_away}px ({cur}) > value at previous ({prev})"
             )
             prev = cur
 

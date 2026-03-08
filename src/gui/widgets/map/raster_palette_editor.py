@@ -189,9 +189,7 @@ class RasterPaletteEditor(QDialog):
             )
             header.setSectionResizeMode(_COL_COLOR, QHeaderView.ResizeMode.Fixed)
             header.setSectionResizeMode(_COL_LABEL, QHeaderView.ResizeMode.Stretch)
-            header.setSectionResizeMode(
-                _COL_ENTITY_ID, QHeaderView.ResizeMode.Stretch
-            )
+            header.setSectionResizeMode(_COL_ENTITY_ID, QHeaderView.ResizeMode.Stretch)
             header.setSectionResizeMode(
                 _COL_TYPE, QHeaderView.ResizeMode.ResizeToContents
             )
@@ -372,7 +370,10 @@ class RasterPaletteEditor(QDialog):
                 entity_edit = self._table.cellWidget(r, _COL_ENTITY_ID)
                 if isinstance(spin, QSpinBox) and isinstance(btn, _ColorButton):
                     eid: Optional[str] = None
-                    if isinstance(entity_edit, QLineEdit) and entity_edit.text().strip():
+                    if (
+                        isinstance(entity_edit, QLineEdit)
+                        and entity_edit.text().strip()
+                    ):
                         eid = entity_edit.text().strip()
                     entries.append(
                         ColorEntry(
@@ -407,10 +408,16 @@ class RasterPaletteEditor(QDialog):
                 continue
 
             mapping_id = spin.property("mapping_id") or str(uuid.uuid4())
-            label = label_edit.text().strip() if isinstance(label_edit, QLineEdit) else ""
-            eid = entity_edit.text().strip() if isinstance(entity_edit, QLineEdit) else ""
+            label = (
+                label_edit.text().strip() if isinstance(label_edit, QLineEdit) else ""
+            )
+            eid = (
+                entity_edit.text().strip() if isinstance(entity_edit, QLineEdit) else ""
+            )
             itype_str = (
-                type_combo.currentText() if isinstance(type_combo, QComboBox) else "None"
+                type_combo.currentText()
+                if isinstance(type_combo, QComboBox)
+                else "None"
             )
             item_type: Optional[str] = (
                 None if itype_str == "None" else itype_str.lower()

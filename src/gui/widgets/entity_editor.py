@@ -845,7 +845,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
                 else None
             ) or ref.node_id
             value_str = (
-                f"value {ref.value}" if ref.mode == "exact" else f"range {ref.min}–{ref.max}"
+                f"value {ref.value}"
+                if ref.mode == "exact"
+                else f"range {ref.min}–{ref.max}"
             )
             label = ref.label.strip() if ref.label else "(unlabelled)"
             lines.append(f"• {label}  ·  {map_name} / {layer_name}  ({value_str})")

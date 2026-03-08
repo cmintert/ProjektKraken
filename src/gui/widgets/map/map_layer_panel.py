@@ -612,7 +612,9 @@ class MapLayerPanel(QWidget):
         return (
             "gradient"
             if self._btn_gradient.isChecked()
-            else "sample" if self._btn_sample.isChecked() else "brush"
+            else "sample"
+            if self._btn_sample.isChecked()
+            else "brush"
         )
 
     @property

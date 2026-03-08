@@ -108,8 +108,11 @@ class CreateRasterLayerCommand(BaseCommand):
                     message="Map not found.",
                     command_name="CreateRasterLayerCommand",
                 )
-            logger.debug("CreateRasterLayerCommand: got map %r (attrs keys=%s)",
-                         map_obj.name, list((map_obj.attributes or {}).keys()))
+            logger.debug(
+                "CreateRasterLayerCommand: got map %r (attrs keys=%s)",
+                map_obj.name,
+                list((map_obj.attributes or {}).keys()),
+            )
 
             # 1. Create blank buffer and save to disk
             buf = MapDataBuffer(self.width, self.height, self.default_value)
@@ -119,8 +122,10 @@ class CreateRasterLayerCommand(BaseCommand):
             abs_path = raster_dir / filename
             logger.debug("CreateRasterLayerCommand: saving PNG → %s", abs_path)
             buf.save(str(abs_path))
-            logger.debug("CreateRasterLayerCommand: PNG saved OK (%d bytes)",
-                         abs_path.stat().st_size if abs_path.exists() else -1)
+            logger.debug(
+                "CreateRasterLayerCommand: PNG saved OK (%d bytes)",
+                abs_path.stat().st_size if abs_path.exists() else -1,
+            )
 
             # Store relative path from world root
             self._file_path = f"rasters/{filename}"
@@ -131,7 +136,9 @@ class CreateRasterLayerCommand(BaseCommand):
                 layer_type=MAP_LAYER_TYPE_RASTER,
                 id=self._node_id,
             )
-            logger.debug("CreateRasterLayerCommand: new layer node id=%s", self._node_id)
+            logger.debug(
+                "CreateRasterLayerCommand: new layer node id=%s", self._node_id
+            )
             if map_obj.layers is None:
                 from src.app.constants import MAP_LAYER_TYPE_GROUP
 
@@ -140,13 +147,17 @@ class CreateRasterLayerCommand(BaseCommand):
                 )
                 logger.debug("CreateRasterLayerCommand: created new root layer node")
             map_obj.layers.children.append(node)
-            logger.debug("CreateRasterLayerCommand: layer tree now has %d children",
-                         len(map_obj.layers.children))
+            logger.debug(
+                "CreateRasterLayerCommand: layer tree now has %d children",
+                len(map_obj.layers.children),
+            )
 
             # 3. Update raster metadata
             raster_layers = _get_raster_layers(map_obj)
-            logger.debug("CreateRasterLayerCommand: existing raster_layers count=%d",
-                         len(raster_layers))
+            logger.debug(
+                "CreateRasterLayerCommand: existing raster_layers count=%d",
+                len(raster_layers),
+            )
             now = time.time()
             raster_meta: Dict[str, Any] = {
                 "node_id": self._node_id,
@@ -165,8 +176,10 @@ class CreateRasterLayerCommand(BaseCommand):
             }
             raster_layers.append(raster_meta)
             _set_raster_layers(map_obj, raster_layers)
-            logger.debug("CreateRasterLayerCommand: raster_layers now has %d entries",
-                         len(raster_layers))
+            logger.debug(
+                "CreateRasterLayerCommand: raster_layers now has %d entries",
+                len(raster_layers),
+            )
 
             # 4. Persist layer tree
             attrs = dict(map_obj.attributes) if map_obj.attributes else {}
@@ -309,7 +322,9 @@ class DeleteRasterLayerCommand(BaseCommand):
         """
         logger.debug(
             "DeleteRasterLayerCommand.execute: map_id=%s node_id=%s world_root=%r",
-            self.map_id, self.node_id, self.world_root,
+            self.map_id,
+            self.node_id,
+            self.world_root,
         )
         try:
             map_obj = db_service.map_repo.get_map(self.map_id)
@@ -323,13 +338,18 @@ class DeleteRasterLayerCommand(BaseCommand):
 
             # Find and remove the raster metadata
             raster_layers = _get_raster_layers(map_obj)
-            logger.debug("DeleteRasterLayerCommand: raster_layers before=%d", len(raster_layers))
+            logger.debug(
+                "DeleteRasterLayerCommand: raster_layers before=%d", len(raster_layers)
+            )
             self._deleted_meta = None
             new_raster_layers = []
             for r in raster_layers:
                 if r.get("node_id") == self.node_id:
                     self._deleted_meta = r
-                    logger.debug("DeleteRasterLayerCommand: found meta for node_id=%s", self.node_id)
+                    logger.debug(
+                        "DeleteRasterLayerCommand: found meta for node_id=%s",
+                        self.node_id,
+                    )
                 else:
                     new_raster_layers.append(r)
             _set_raster_layers(map_obj, new_raster_layers)
@@ -340,7 +360,10 @@ class DeleteRasterLayerCommand(BaseCommand):
                     if c.id == self.node_id:
                         self._deleted_node_dict = c.to_dict()
                         map_obj.layers.children.pop(i)
-                        logger.debug("DeleteRasterLayerCommand: removed layer node at index %d", i)
+                        logger.debug(
+                            "DeleteRasterLayerCommand: removed layer node at index %d",
+                            i,
+                        )
                         break
 
             # Backup and delete file
@@ -350,10 +373,15 @@ class DeleteRasterLayerCommand(BaseCommand):
                 if abs_path.exists():
                     self._file_backup = abs_path.read_bytes()
                     abs_path.unlink()
-                    logger.debug("DeleteRasterLayerCommand: deleted file %s (%d bytes backed up)",
-                                 abs_path, len(self._file_backup))
+                    logger.debug(
+                        "DeleteRasterLayerCommand: deleted file %s (%d bytes backed up)",
+                        abs_path,
+                        len(self._file_backup),
+                    )
                 else:
-                    logger.warning("DeleteRasterLayerCommand: file not found: %s", abs_path)
+                    logger.warning(
+                        "DeleteRasterLayerCommand: file not found: %s", abs_path
+                    )
 
             # Persist
             attrs = dict(map_obj.attributes) if map_obj.attributes else {}
@@ -627,10 +655,16 @@ class StrokeRasterCommand(BaseCommand):
         """
         logger.debug(
             "StrokeRasterCommand.execute: node_id=%s dirty=%s before=%d bytes after=%d bytes",
-            self.node_id, self.dirty_region, len(self._before_bytes), len(self._after_bytes),
+            self.node_id,
+            self.dirty_region,
+            len(self._before_bytes),
+            len(self._after_bytes),
         )
         if self.buffer is None:
-            logger.error("StrokeRasterCommand.execute: no buffer attached for node_id=%s", self.node_id)
+            logger.error(
+                "StrokeRasterCommand.execute: no buffer attached for node_id=%s",
+                self.node_id,
+            )
             return CommandResult(
                 success=False,
                 message="No buffer attached.",
@@ -654,7 +688,9 @@ class StrokeRasterCommand(BaseCommand):
     def undo(self, db_service: DatabaseService) -> None:
         """Restore the before-snapshot."""
         logger.debug(
-            "StrokeRasterCommand.undo: node_id=%s dirty=%s", self.node_id, self.dirty_region
+            "StrokeRasterCommand.undo: node_id=%s dirty=%s",
+            self.node_id,
+            self.dirty_region,
         )
         if self._is_executed and self.buffer is not None:
             self._apply_snapshot(self._before_bytes)
@@ -663,7 +699,8 @@ class StrokeRasterCommand(BaseCommand):
         else:
             logger.warning(
                 "StrokeRasterCommand.undo: skipped (is_executed=%s, buffer=%s)",
-                self._is_executed, self.buffer is not None,
+                self._is_executed,
+                self.buffer is not None,
             )
 
     def _apply_snapshot(self, raw: bytes) -> None:
@@ -744,13 +781,18 @@ class SetRasterMappingCommand(BaseCommand):
         """
         logger.debug(
             "SetRasterMappingCommand.execute: map_id=%s node_id=%s new_mapping_mode=%s",
-            self.map_id, self.node_id,
-            self.new_mapping.get("mode") if isinstance(self.new_mapping, dict) else type(self.new_mapping),
+            self.map_id,
+            self.node_id,
+            self.new_mapping.get("mode")
+            if isinstance(self.new_mapping, dict)
+            else type(self.new_mapping),
         )
         try:
             overlap_errors = validate_no_overlaps(self.new_mapping)
             if overlap_errors:
-                msg = "Mapping rejected — overlapping entries: " + "; ".join(overlap_errors)
+                msg = "Mapping rejected — overlapping entries: " + "; ".join(
+                    overlap_errors
+                )
                 logger.warning("SetRasterMappingCommand.execute: %s", msg)
                 return CommandResult(
                     success=False,
@@ -774,7 +816,9 @@ class SetRasterMappingCommand(BaseCommand):
     def undo(self, db_service: DatabaseService) -> None:
         """Restore the old mapping."""
         logger.debug(
-            "SetRasterMappingCommand.undo: map_id=%s node_id=%s", self.map_id, self.node_id
+            "SetRasterMappingCommand.undo: map_id=%s node_id=%s",
+            self.map_id,
+            self.node_id,
         )
         if self._is_executed:
             self._set_mapping(db_service, self.old_mapping, self.old_color_map)
@@ -797,7 +841,8 @@ class SetRasterMappingCommand(BaseCommand):
         raster_layers = _get_raster_layers(map_obj)
         logger.debug(
             "SetRasterMappingCommand._set_mapping: found %d raster layers, looking for node_id=%s",
-            len(raster_layers), self.node_id,
+            len(raster_layers),
+            self.node_id,
         )
         found = False
         for rl in raster_layers:
