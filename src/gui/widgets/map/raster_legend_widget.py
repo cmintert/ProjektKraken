@@ -21,12 +21,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.theme_manager import ThemeManager
 from src.gui.widgets.map.raster_mapping import normalize_value_entity_map
 
 logger = logging.getLogger(__name__)
 
-_SWATCH_SIZE = 14  # pixels
-_GRADIENT_BAR_WIDTH = 20  # pixels
+_SWATCH_SIZE = 16  # pixels
+_GRADIENT_BAR_WIDTH = 24  # pixels
 
 
 class RasterLegendWidget(QWidget):
@@ -58,7 +59,7 @@ class RasterLegendWidget(QWidget):
 
         # Header row with collapse toggle
         header = QHBoxLayout()
-        header.setContentsMargins(0, 2, 0, 2)
+        header.setContentsMargins(0, 4, 0, 2)
         self._toggle_btn = QToolButton()
         self._toggle_btn.setText("▼ Legend")
         self._toggle_btn.setCheckable(True)
@@ -67,7 +68,12 @@ class RasterLegendWidget(QWidget):
         self._toggle_btn.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
-        self._toggle_btn.setStyleSheet("text-align: left; padding: 2px 4px;")
+        theme = ThemeManager().get_theme()
+        self._toggle_btn.setStyleSheet(
+            f"QToolButton {{ text-align: left; padding: 3px 6px; "
+            f"color: {theme.get('text_main', '#E8E8E8')}; "
+            f"font-weight: bold; font-size: 9pt; }}"
+        )
         self._toggle_btn.toggled.connect(self._on_toggle)
         header.addWidget(self._toggle_btn)
         outer.addLayout(header)
@@ -76,13 +82,13 @@ class RasterLegendWidget(QWidget):
         self._scroll = QScrollArea()
         self._scroll.setWidgetResizable(True)
         self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self._scroll.setMaximumHeight(180)
+        self._scroll.setMaximumHeight(240)
         self._scroll.setFrameShape(QScrollArea.Shape.NoFrame)
 
         self._content = QWidget()
         self._content_layout = QVBoxLayout(self._content)
-        self._content_layout.setContentsMargins(4, 2, 4, 2)
-        self._content_layout.setSpacing(2)
+        self._content_layout.setContentsMargins(4, 4, 4, 4)
+        self._content_layout.setSpacing(4)
         self._content_layout.addStretch()
 
         self._scroll.setWidget(self._content)
@@ -176,14 +182,16 @@ class RasterLegendWidget(QWidget):
     def _build_continuous_legend(self, color_map: Dict[str, Any]) -> None:
         gradient_start = color_map.get("gradient_start", "#000000")
         gradient_end = color_map.get("gradient_end", "#FFFFFF")
-        bar = _GradientBarWidget(gradient_start, gradient_end)
+        stretch_min = color_map.get("stretch_min")
+        stretch_max = color_map.get("stretch_max")
+        bar = _GradientBarWidget(gradient_start, gradient_end, stretch_min, stretch_max)
         self._content_layout.insertWidget(0, bar)
 
     def _make_swatch_row(self, color_hex: str, value_str: str, label: str) -> QWidget:
         row = QWidget()
         layout = QHBoxLayout(row)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
+        layout.setContentsMargins(0, 1, 0, 1)
+        layout.setSpacing(6)
 
         swatch = QLabel()
         swatch.setFixedSize(_SWATCH_SIZE, _SWATCH_SIZE)
@@ -192,59 +200,59 @@ class RasterLegendWidget(QWidget):
             pixmap.fill(QColor(color_hex))
         except Exception:
             pixmap.fill(QColor("#888888"))
+        p = QPainter(pixmap)
+        p.setPen(QColor(0, 0, 0, 60))
+        p.drawRect(0, 0, _SWATCH_SIZE - 1, _SWATCH_SIZE - 1)
+        p.end()
         swatch.setPixmap(pixmap)
 
-        val_lbl = QLabel(value_str)
-        val_lbl.setFixedWidth(36)
-        val_lbl.setAlignment(
-            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        # Merge label and value: "Forest  (3)" or just "Value 3" as fallback
+        display = (
+            f"{label}  ({value_str})"
+            if label and not label.startswith("Value ")
+            else label
         )
-        val_lbl.setStyleSheet("color: #888; font-size: 10px;")
-
-        label_lbl = QLabel(label)
-        label_lbl.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        theme = ThemeManager().get_theme()
+        combined_lbl = QLabel(display)
+        combined_lbl.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        combined_lbl.setStyleSheet(f"color: {theme.get('text_main', '#E8E8E8')};")
 
         layout.addWidget(swatch)
-        layout.addWidget(val_lbl)
-        layout.addWidget(label_lbl)
+        layout.addWidget(combined_lbl)
         return row
 
     def _make_no_data_row(self) -> QWidget:
         row = QWidget()
         layout = QHBoxLayout(row)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
+        layout.setContentsMargins(0, 1, 0, 1)
+        layout.setSpacing(6)
 
         swatch = QLabel()
         swatch.setFixedSize(_SWATCH_SIZE, _SWATCH_SIZE)
         pixmap = QPixmap(_SWATCH_SIZE, _SWATCH_SIZE)
         pixmap.fill(Qt.GlobalColor.transparent)
+        theme = ThemeManager().get_theme()
+        border_color = QColor(theme.get("text_dim", "#666666"))
         p = QPainter(pixmap)
-        p.setPen(QColor("#666"))
+        p.setPen(border_color)
         p.drawRect(0, 0, _SWATCH_SIZE - 1, _SWATCH_SIZE - 1)
         p.drawLine(0, 0, _SWATCH_SIZE - 1, _SWATCH_SIZE - 1)
         p.drawLine(0, _SWATCH_SIZE - 1, _SWATCH_SIZE - 1, 0)
         p.end()
         swatch.setPixmap(pixmap)
 
-        val_lbl = QLabel("0")
-        val_lbl.setFixedWidth(36)
-        val_lbl.setAlignment(
-            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-        )
-        val_lbl.setStyleSheet("color: #888; font-size: 10px;")
-
-        label_lbl = QLabel("No data")
-        label_lbl.setStyleSheet("color: #888; font-style: italic;")
+        dim_color = theme.get("text_dim", "#888888")
+        label_lbl = QLabel("No data  (0)")
+        label_lbl.setStyleSheet(f"color: {dim_color}; font-style: italic;")
 
         layout.addWidget(swatch)
-        layout.addWidget(val_lbl)
         layout.addWidget(label_lbl)
         return row
 
     def _add_placeholder(self, text: str) -> None:
         lbl = QLabel(text)
-        lbl.setStyleSheet("color: #888; font-style: italic;")
+        dim_color = ThemeManager().get_theme().get("text_dim", "#888888")
+        lbl.setStyleSheet(f"color: {dim_color}; font-style: italic;")
         self._content_layout.insertWidget(0, lbl)
 
     def _on_toggle(self, checked: bool) -> None:
@@ -263,6 +271,8 @@ class _GradientBarWidget(QWidget):
         self,
         gradient_start: str = "#000000",
         gradient_end: str = "#FFFFFF",
+        stretch_min: Optional[int] = None,
+        stretch_max: Optional[int] = None,
         parent: Optional[QWidget] = None,
     ) -> None:
         super().__init__(parent)
@@ -272,19 +282,24 @@ class _GradientBarWidget(QWidget):
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(4, 4, 4, 4)
-        layout.setSpacing(6)
+        layout.setSpacing(8)
 
         self._bar_label = QLabel()
         self._bar_label.setMinimumWidth(_GRADIENT_BAR_WIDTH)
         self._bar_label.setMaximumWidth(_GRADIENT_BAR_WIDTH)
         layout.addWidget(self._bar_label)
 
+        theme = ThemeManager().get_theme()
+        dim_style = f"font-size: 9pt; color: {theme.get('text_dim', '#aaaaaa')};"
         labels_layout = QVBoxLayout()
         labels_layout.setContentsMargins(0, 0, 0, 0)
-        top_label = QLabel("65535")
-        top_label.setStyleSheet("font-size: 10px; color: #aaa;")
-        bottom_label = QLabel("0")
-        bottom_label.setStyleSheet("font-size: 10px; color: #aaa;")
+        labels_layout.setSpacing(2)
+        top_val = str(stretch_max) if stretch_max is not None else "max"
+        bottom_val = str(stretch_min) if stretch_min is not None else "0"
+        top_label = QLabel(top_val)
+        top_label.setStyleSheet(dim_style)
+        bottom_label = QLabel(bottom_val)
+        bottom_label.setStyleSheet(dim_style)
         labels_layout.addWidget(top_label)
         labels_layout.addStretch()
         labels_layout.addWidget(bottom_label)
@@ -311,7 +326,8 @@ class _GradientBarWidget(QWidget):
             gradient.setColorAt(0.0, QColor("#FFFFFF"))
             gradient.setColorAt(1.0, QColor("#000000"))
         p.fillRect(0, 0, w, h, gradient)
-        p.setPen(QColor("#444"))
+        theme = ThemeManager().get_theme()
+        p.setPen(QColor(theme.get("border", "#444444")))
         p.drawRect(0, 0, w - 1, h - 1)
         p.end()
         self._bar_label.setPixmap(pixmap)

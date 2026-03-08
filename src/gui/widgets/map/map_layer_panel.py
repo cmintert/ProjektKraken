@@ -13,6 +13,7 @@ from PySide6.QtCore import QModelIndex, QPoint, Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
+    QFrame,
     QHBoxLayout,
     QInputDialog,
     QLabel,
@@ -25,6 +26,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.app.ui_constants import Spacing
 from src.core.map import MapLayerNode
 from src.gui.utils.style_helper import StyleHelper
 
@@ -208,26 +210,34 @@ class MapLayerPanel(QWidget):
             tool_row.addWidget(b)
         rt_layout.addLayout(tool_row)
 
-        # Brush settings row 1: Size and Value
-        settings_row_1 = QHBoxLayout()
-        settings_row_1.setSpacing(4)
-        settings_row_1.addWidget(QLabel("Size:"))
+        rt_layout.addWidget(self._make_section_separator("PAINT"))
+
+        # Paint settings — each parameter on its own row for clarity
+        size_row = QHBoxLayout()
+        size_row.setSpacing(Spacing.COMPACT)
+        size_lbl = QLabel("Size:")
+        size_lbl.setFixedWidth(48)
+        size_row.addWidget(size_lbl)
         self._brush_size_spin = QSpinBox()
         self._brush_size_spin.setRange(1, 128)
         self._brush_size_spin.setValue(8)
         self._brush_size_spin.setButtonSymbols(QSpinBox.ButtonSymbols.UpDownArrows)
         self._brush_size_spin.valueChanged.connect(self._on_raster_setting_changed)
-        settings_row_1.addWidget(self._brush_size_spin)
+        size_row.addWidget(self._brush_size_spin, 1)
+        rt_layout.addLayout(size_row)
 
-        settings_row_1.addWidget(QLabel("Value:"))
+        value_row = QHBoxLayout()
+        value_row.setSpacing(Spacing.COMPACT)
+        value_lbl = QLabel("Value:")
+        value_lbl.setFixedWidth(48)
+        value_row.addWidget(value_lbl)
         self._paint_value_spin = QSpinBox()
         self._paint_value_spin.setRange(0, 65535)
         self._paint_value_spin.setValue(1)
         self._paint_value_spin.setButtonSymbols(QSpinBox.ButtonSymbols.UpDownArrows)
         self._paint_value_spin.valueChanged.connect(self._on_raster_setting_changed)
-        settings_row_1.addWidget(self._paint_value_spin)
-        settings_row_1.addStretch()
-        rt_layout.addLayout(settings_row_1)
+        value_row.addWidget(self._paint_value_spin, 1)
+        rt_layout.addLayout(value_row)
 
         # Entity / class picker — "Paint as: [Class Name ▾]" (discrete only)
         self._entity_picker_row = QWidget()
@@ -266,9 +276,11 @@ class MapLayerPanel(QWidget):
         settings_row_2.addWidget(self._falloff_label)
         rt_layout.addLayout(settings_row_2)
 
-        # Edit / Done toggle + Palette button + Stats button
+        rt_layout.addWidget(self._make_section_separator("ACTIONS"))
+
+        # Primary edit actions row
         action_row = QHBoxLayout()
-        action_row.setSpacing(4)
+        action_row.setSpacing(Spacing.COMPACT)
         self._btn_edit_toggle = QPushButton("✎ Edit")
         self._btn_edit_toggle.setCheckable(True)
         self._btn_edit_toggle.toggled.connect(self._on_edit_toggled)
@@ -280,19 +292,27 @@ class MapLayerPanel(QWidget):
         self._btn_stats.setToolTip("Show coverage statistics for this raster layer")
         self._btn_stats.clicked.connect(self._on_stats_clicked)
         action_row.addWidget(self._btn_stats)
+        action_row.addStretch()
+        rt_layout.addLayout(action_row)
+
+        # Snapshot row (temporal)
+        snapshot_row = QHBoxLayout()
+        snapshot_row.setSpacing(Spacing.COMPACT)
         self._btn_snapshot = QPushButton("📸 Snapshot")
         self._btn_snapshot.setToolTip(
             "Save snapshot of this raster layer at the current timeline date"
         )
         self._btn_snapshot.clicked.connect(self._on_snapshot_clicked)
-        action_row.addWidget(self._btn_snapshot)
+        snapshot_row.addWidget(self._btn_snapshot)
         self._snapshot_count_label = QLabel("")
         self._snapshot_count_label.setToolTip(
             "Number of saved temporal snapshots for this layer"
         )
-        action_row.addWidget(self._snapshot_count_label)
-        action_row.addStretch()
-        rt_layout.addLayout(action_row)
+        snapshot_row.addWidget(self._snapshot_count_label)
+        snapshot_row.addStretch()
+        rt_layout.addLayout(snapshot_row)
+
+        rt_layout.addWidget(self._make_section_separator("LAYER"))
 
         # Blend mode row
         blend_row = QHBoxLayout()
@@ -478,6 +498,41 @@ class MapLayerPanel(QWidget):
     # ------------------------------------------------------------------
     # Private — style helpers
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def _make_section_separator(label: str = "") -> QWidget:
+        """Create a thin horizontal separator with an optional dim section label.
+
+        Args:
+            label: Optional short section name shown to the left of the line.
+
+        Returns:
+            A widget containing the label and separator line.
+        """
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+        dim_color = theme.get("text_dim", "#888888")
+        border_color = theme.get("border", "#333344")
+
+        widget = QWidget()
+        layout = QHBoxLayout(widget)
+        layout.setContentsMargins(0, Spacing.COMPACT, 0, 2)
+        layout.setSpacing(Spacing.COMPACT)
+
+        if label:
+            lbl = QLabel(label)
+            lbl.setStyleSheet(
+                f"color: {dim_color}; font-size: 8pt; font-weight: bold;"
+            )
+            layout.addWidget(lbl)
+
+        line = QFrame()
+        line.setFrameShape(QFrame.Shape.HLine)
+        line.setFrameShadow(QFrame.Shadow.Plain)
+        line.setStyleSheet(f"color: {border_color}; background: {border_color};")
+        layout.addWidget(line, 1)
+        return widget
 
     def _apply_tree_style(self) -> None:
         """Apply the theme-aware stylesheet to the tree view."""
