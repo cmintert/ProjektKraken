@@ -888,3 +888,127 @@ class SetRasterMappingCommand(BaseCommand):
             new_color_map=data.get("new_color_map"),
             old_color_map=data.get("old_color_map"),
         )
+
+
+class SetRasterBlendModeCommand(BaseCommand):
+    """Set the blend mode for a raster layer.
+
+    Blend mode is a visual preference and is not added to the undo
+    history (``has_history`` returns ``False``).  Undo is still
+    implemented to satisfy the :class:`BaseCommand` interface.
+
+    Args:
+        map_id: Parent map ID.
+        node_id: Raster layer node ID.
+        new_mode: New blend mode name (must be a key of
+            :data:`~src.gui.widgets.map.raster_layer_item._BLEND_MODE_MAP`).
+        old_mode: Previous blend mode name (for undo).
+    """
+
+    def __init__(
+        self,
+        map_id: str,
+        node_id: str,
+        new_mode: str,
+        old_mode: str,
+    ) -> None:
+        super().__init__()
+        self.map_id = map_id
+        self.node_id = node_id
+        self.new_mode = new_mode
+        self.old_mode = old_mode
+
+    @property
+    def has_history(self) -> bool:
+        """Blend mode is a cosmetic preference — not added to undo history."""
+        return False
+
+    def _apply_mode(self, db_service: DatabaseService, mode: str) -> None:
+        """Write *mode* into the raster layer metadata.
+
+        Args:
+            db_service: Database service.
+            mode: Blend mode name to persist.
+        """
+        repo = db_service.map_repo
+        map_obj = repo.get_map(self.map_id)
+        if map_obj is None:
+            raise ValueError(f"Map not found: {self.map_id}")
+        raster_layers = _get_raster_layers(map_obj)
+        for rl in raster_layers:
+            if rl.get("node_id") == self.node_id:
+                rl["blend_mode"] = mode
+                break
+        _set_raster_layers(map_obj, raster_layers)
+        repo.insert_map(map_obj)
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Persist the new blend mode.
+
+        Args:
+            db_service: Database service.
+
+        Returns:
+            CommandResult indicating success or failure.
+        """
+        try:
+            self._apply_mode(db_service, self.new_mode)
+            self._is_executed = True
+            logger.debug(
+                "SetRasterBlendModeCommand.execute: node_id=%s mode=%s",
+                self.node_id,
+                self.new_mode,
+            )
+            return CommandResult(
+                success=True,
+                message="Blend mode updated.",
+                command_name="SetRasterBlendModeCommand",
+            )
+        except Exception as e:
+            logger.error("SetRasterBlendModeCommand failed: %s", e, exc_info=True)
+            return CommandResult(
+                success=False,
+                message=str(e),
+                command_name="SetRasterBlendModeCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Restore the previous blend mode.
+
+        Args:
+            db_service: Database service.
+        """
+        if self._is_executed:
+            self._apply_mode(db_service, self.old_mode)
+            self._is_executed = False
+            logger.debug(
+                "SetRasterBlendModeCommand.undo: node_id=%s restored mode=%s",
+                self.node_id,
+                self.old_mode,
+            )
+
+    def to_dict(self) -> Dict:
+        """Serialise to a JSON-friendly dict."""
+        return {
+            "map_id": self.map_id,
+            "node_id": self.node_id,
+            "new_mode": self.new_mode,
+            "old_mode": self.old_mode,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "SetRasterBlendModeCommand":
+        """Deserialise from a dict.
+
+        Args:
+            data: Dict produced by :meth:`to_dict`.
+
+        Returns:
+            New :class:`SetRasterBlendModeCommand` instance.
+        """
+        return cls(
+            map_id=data["map_id"],
+            node_id=data["node_id"],
+            new_mode=data.get("new_mode", "Normal"),
+            old_mode=data.get("old_mode", "Normal"),
+        )

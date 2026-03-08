@@ -549,3 +549,46 @@ def get_discrete_class_choices(
         label = entry.get("label") or f"Value {v}"
         choices.append((label, int(v)))
     return sorted(choices, key=lambda x: x[1])
+
+
+def check_entity_raster_refs(
+    entity_id: str,
+    maps_data: List[Any],
+) -> List[RasterItemRef]:
+    """Find all raster layer mappings that reference the given entity.
+
+    Scans the in-memory ``maps_data`` list (Map domain objects) for
+    ``value_entity_map`` entries whose ``entity_id`` matches the
+    supplied argument.
+
+    Args:
+        entity_id: The entity UUID to check.
+        maps_data: List of Map domain objects with ``.id`` and
+            ``.attributes`` attributes.
+
+    Returns:
+        List of :class:`RasterItemRef` instances referencing the entity.
+        An empty list means no raster mappings reference this entity.
+    """
+    refs: List[RasterItemRef] = []
+    for map_obj in maps_data:
+        attrs = map_obj.attributes or {}
+        raster_layers = attrs.get("raster_layers", [])
+        for layer in raster_layers:
+            node_id = layer.get("node_id", "")
+            vem = normalize_value_entity_map(layer.get("value_entity_map") or {})
+            mode = vem.get("mode", "exact")
+            for m in vem.get("mappings", []):
+                if m.get("entity_id") == entity_id:
+                    ref = RasterItemRef(
+                        map_id=map_obj.id,
+                        node_id=node_id,
+                        mapping_id=m.get("id", ""),
+                        label=m.get("label", ""),
+                        mode=mode,
+                        value=m.get("value") if mode == "exact" else None,
+                        min=m.get("min") if mode == "range" else None,
+                        max=m.get("max") if mode == "range" else None,
+                    )
+                    refs.append(ref)
+    return refs

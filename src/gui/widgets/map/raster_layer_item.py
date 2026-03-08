@@ -5,7 +5,7 @@ renders it as a colourised RGBA pixmap in the map's graphics scene.
 """
 
 import logging
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from PySide6.QtCore import QRectF
 from PySide6.QtGui import QPainter, QPixmap
@@ -15,6 +15,16 @@ from src.app.constants import MAP_LAYER_Z_RASTER
 from src.gui.widgets.map.map_data_buffer import ColorMap, MapDataBuffer
 
 logger = logging.getLogger(__name__)
+
+_BLEND_MODE_MAP: Dict[str, QPainter.CompositionMode] = {
+    "Normal": QPainter.CompositionMode.CompositionMode_SourceOver,
+    "Multiply": QPainter.CompositionMode.CompositionMode_Multiply,
+    "Screen": QPainter.CompositionMode.CompositionMode_Screen,
+    "Overlay": QPainter.CompositionMode.CompositionMode_Overlay,
+    "Soft Light": QPainter.CompositionMode.CompositionMode_SoftLight,
+    "Difference": QPainter.CompositionMode.CompositionMode_Difference,
+}
+BLEND_MODE_NAMES: list = list(_BLEND_MODE_MAP.keys())
 
 
 class RasterLayerItem(QGraphicsPixmapItem):
@@ -48,6 +58,9 @@ class RasterLayerItem(QGraphicsPixmapItem):
 
         self.setZValue(MAP_LAYER_Z_RASTER)
         self.setPos(scene_rect.topLeft())
+        self._scene_blend_mode: QPainter.CompositionMode = (
+            QPainter.CompositionMode.CompositionMode_SourceOver
+        )
 
         # Initial render
         self.update_display()
@@ -196,3 +209,32 @@ class RasterLayerItem(QGraphicsPixmapItem):
         painter.end()
 
         self.setPixmap(current)
+
+    def set_blend_mode(self, mode_name: str) -> None:
+        """Set the scene-level blend/composition mode for this raster layer.
+
+        Args:
+            mode_name: One of the keys in :data:`_BLEND_MODE_MAP`, e.g.
+                ``"Multiply"``.  Unknown names fall back to ``"Normal"``.
+        """
+        self._scene_blend_mode = _BLEND_MODE_MAP.get(
+            mode_name,
+            QPainter.CompositionMode.CompositionMode_SourceOver,
+        )
+        self.update()
+
+    def paint(
+        self,
+        painter: QPainter,
+        option: Any,
+        widget: Optional[Any] = None,
+    ) -> None:
+        """Paint with scene-level blend mode applied.
+
+        Args:
+            painter: The QPainter provided by the scene.
+            option: Style option (passed through to super).
+            widget: Optional widget (passed through to super).
+        """
+        painter.setCompositionMode(self._scene_blend_mode)
+        super().paint(painter, option, widget)

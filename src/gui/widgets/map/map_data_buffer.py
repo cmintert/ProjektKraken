@@ -17,6 +17,50 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
+class ClassStat:
+    """Statistics for a single discrete class in a raster buffer.
+
+    Attributes:
+        value: The 16-bit raster value for this class.
+        label: Human-readable label.
+        pixel_count: Number of pixels with this value.
+        percentage: Fraction of total pixels (0–100).
+    """
+
+    value: int
+    label: str
+    pixel_count: int
+    percentage: float
+
+
+@dataclass
+class CoverageStats:
+    """Aggregated coverage statistics for a raster buffer.
+
+    Attributes:
+        mode: ``"discrete"`` or ``"continuous"``.
+        total_pixels: Total pixel count (width × height).
+        classes: Per-class stats list (discrete mode only).
+        histogram_counts: 32-bucket histogram counts (continuous mode).
+        histogram_edges: 33 bucket edges (continuous mode).
+        min_val: Minimum non-zero value (continuous mode).
+        max_val: Maximum non-zero value (continuous mode).
+        mean_val: Mean of non-zero values (continuous mode).
+        median_val: Median of non-zero values (continuous mode).
+    """
+
+    mode: str
+    total_pixels: int
+    classes: List[ClassStat] = field(default_factory=list)
+    histogram_counts: Optional[List[int]] = None
+    histogram_edges: Optional[List[float]] = None
+    min_val: Optional[float] = None
+    max_val: Optional[float] = None
+    mean_val: Optional[float] = None
+    median_val: Optional[float] = None
+
+
+@dataclass
 class ColorEntry:
     """A single value → colour mapping for discrete palettes.
 
@@ -679,3 +723,95 @@ class MapDataBuffer:
             max_row,
         )
         return (min_col, min_row, max_col, max_row)
+
+    # ------------------------------------------------------------------
+    # Statistics
+    # ------------------------------------------------------------------
+
+    def compute_coverage_stats(
+        self,
+        color_map: "ColorMap",
+        value_entity_map: Optional[Dict[str, Any]] = None,
+    ) -> "CoverageStats":
+        """Compute pixel coverage statistics for this raster buffer.
+
+        For discrete (palette) colour maps, returns per-class pixel counts
+        and percentages.  For continuous (gradient) colour maps, returns a
+        32-bucket histogram and basic descriptive statistics (min, max,
+        mean, median) computed over non-zero pixels.
+
+        Args:
+            color_map: The colour map that describes this layer's type and
+                palette entries.
+            value_entity_map: Optional value→entity mapping dict.  Currently
+                unused in computation but reserved for future label lookup.
+
+        Returns:
+            A :class:`CoverageStats` instance populated with statistics
+            appropriate for the colour map type.
+        """
+        total = self._width * self._height
+        flat = self._data.flatten()
+
+        if color_map.type == "palette":
+            counts = np.bincount(flat.astype(np.int64), minlength=65536)
+            classes: List[ClassStat] = []
+            covered_values: set = set()
+
+            for entry in color_map.entries:
+                v = entry.value
+                covered_values.add(v)
+                px = int(counts[v]) if v < len(counts) else 0
+                pct = (px / total * 100.0) if total > 0 else 0.0
+                classes.append(
+                    ClassStat(
+                        value=v,
+                        label=entry.entity_id or f"Value {v}",
+                        pixel_count=px,
+                        percentage=round(pct, 2),
+                    )
+                )
+
+            # Add "No data" entry for value=0 if it has pixels and isn't covered
+            if 0 not in covered_values:
+                zero_px = int(counts[0]) if len(counts) > 0 else 0
+                if zero_px > 0:
+                    pct = zero_px / total * 100.0 if total > 0 else 0.0
+                    classes.append(
+                        ClassStat(
+                            value=0,
+                            label="No data",
+                            pixel_count=zero_px,
+                            percentage=round(pct, 2),
+                        )
+                    )
+
+            classes.sort(key=lambda s: s.pixel_count, reverse=True)
+            return CoverageStats(
+                mode="discrete",
+                total_pixels=total,
+                classes=classes,
+            )
+        else:
+            # Continuous / gradient
+            hist_counts, edges = np.histogram(
+                flat.astype(np.float64), bins=32, range=(0, 65535)
+            )
+            non_zero = flat[flat > 0].astype(np.float64)
+            if len(non_zero) > 0:
+                min_val: Optional[float] = float(non_zero.min())
+                max_val: Optional[float] = float(non_zero.max())
+                mean_val: Optional[float] = float(non_zero.mean())
+                median_val: Optional[float] = float(np.median(non_zero))
+            else:
+                min_val = max_val = mean_val = median_val = None
+            return CoverageStats(
+                mode="continuous",
+                total_pixels=total,
+                histogram_counts=[int(c) for c in hist_counts],
+                histogram_edges=[float(e) for e in edges],
+                min_val=min_val,
+                max_val=max_val,
+                mean_val=mean_val,
+                median_val=median_val,
+            )

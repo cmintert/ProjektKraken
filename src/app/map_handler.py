@@ -81,6 +81,8 @@ class MapHandler(QObject):
         self._navigation_set_selection = navigation_set_selection
         # Mapping from object_id to actual marker.id for position updates
         self._marker_object_to_id: dict[str, str] = {}
+        # Track the most recently loaded map ID for raster operations
+        self._current_map_id: Optional[str] = None
 
     def load_maps(self) -> None:
         """Requests loading of all maps from the worker thread."""
@@ -807,6 +809,7 @@ class MapHandler(QObject):
 
         """
         logger.debug("load_raster_layers: map_id=%s", map_id)
+        self._current_map_id = map_id
         maps = self._map_widget.maps_data
         selected_map = next((m for m in maps if m.id == map_id), None)
         if not selected_map:
@@ -893,6 +896,11 @@ class MapHandler(QObject):
                 node_id=node_id,
             )
 
+            # Apply persisted blend mode if non-default
+            blend_mode = meta.get("blend_mode", "Normal")
+            if blend_mode != "Normal":
+                item.set_blend_mode(blend_mode)
+
             # Store raster items on the view for later access
             if not hasattr(view, "_raster_items"):
                 view._raster_items = {}
@@ -914,6 +922,24 @@ class MapHandler(QObject):
         # Pass full metadata so the legend and class picker can populate
         meta_by_id = {m["node_id"]: m for m in raster_metas if m.get("node_id")}
         self._map_widget.layer_panel.set_raster_layer_metadata(meta_by_id)
+
+        # Connect layer panel signals (guard against duplicate connections)
+        layer_panel = self._map_widget.layer_panel
+        try:
+            layer_panel.raster_stats_requested.disconnect(self.on_raster_stats_requested)
+        except RuntimeError:
+            pass
+        layer_panel.raster_stats_requested.connect(self.on_raster_stats_requested)
+
+        try:
+            layer_panel.raster_blend_mode_changed.disconnect(
+                self._on_raster_blend_mode_changed
+            )
+        except RuntimeError:
+            pass
+        layer_panel.raster_blend_mode_changed.connect(
+            self._on_raster_blend_mode_changed
+        )
 
     # ------------------------------------------------------------------
     # Raster editing handlers
@@ -1227,3 +1253,99 @@ class MapHandler(QObject):
                 )
         except Exception as e:
             logger.error("Failed to save raster to disk: %s", e)
+
+    def _find_map_id_for_node(self, node_id: str) -> Optional[str]:
+        """Find which map owns the given raster layer node.
+
+        Searches the in-memory ``maps_data`` to locate the map whose
+        ``raster_layers`` metadata contains *node_id*.
+
+        Args:
+            node_id: Raster layer node ID to look up.
+
+        Returns:
+            Map ID string, or ``None`` if not found.
+        """
+        maps = self._map_widget.maps_data
+        for map_obj in maps:
+            for rl in (map_obj.attributes or {}).get("raster_layers", []):
+                if rl.get("node_id") == node_id:
+                    return map_obj.id
+        return None
+
+    @Slot(str)
+    def on_raster_stats_requested(self, node_id: str) -> None:
+        """Open the coverage statistics dialog for the given raster layer.
+
+        Args:
+            node_id: Raster layer node ID.
+        """
+        logger.debug("on_raster_stats_requested: node_id=%s", node_id)
+        if self._map_widget is None:
+            return
+        view = self._map_widget.view
+        item = view._raster_items.get(node_id)
+        if item is None:
+            logger.warning(
+                "on_raster_stats_requested: no item for node_id=%s", node_id
+            )
+            return
+
+        # Find metadata for this layer
+        map_id = self._find_map_id_for_node(node_id)
+        meta: dict = {}
+        if map_id:
+            maps = self._map_widget.maps_data
+            selected_map = next((m for m in maps if m.id == map_id), None)
+            if selected_map:
+                for rl in (selected_map.attributes or {}).get("raster_layers", []):
+                    if rl.get("node_id") == node_id:
+                        meta = rl
+                        break
+
+        from src.gui.widgets.map.map_data_buffer import ColorMap
+
+        color_map = ColorMap.from_dict(meta.get("color_map", {}))
+        vem = meta.get("value_entity_map", {})
+        stats = item.buffer.compute_coverage_stats(color_map, vem)
+
+        from src.gui.widgets.map.raster_stats_panel import RasterStatsPanel
+
+        layer_name = meta.get("name", node_id)
+        dlg = RasterStatsPanel(stats, layer_name=layer_name, parent=self._map_widget)
+        dlg.exec()
+
+    @Slot(str, str, str)
+    def _on_raster_blend_mode_changed(
+        self, node_id: str, new_mode: str, old_mode: str
+    ) -> None:
+        """Apply blend mode change immediately and persist via command.
+
+        Args:
+            node_id: Raster layer node ID.
+            new_mode: New blend mode name.
+            old_mode: Previous blend mode name (for undo).
+        """
+        logger.debug(
+            "_on_raster_blend_mode_changed: node_id=%s %s→%s",
+            node_id,
+            old_mode,
+            new_mode,
+        )
+        view = self._map_widget.view
+        item = view._raster_items.get(node_id)
+        if item is not None:
+            item.set_blend_mode(new_mode)
+            view.scene.update()
+
+        map_id = self._find_map_id_for_node(node_id)
+        if map_id:
+            from src.commands.raster_commands import SetRasterBlendModeCommand
+
+            cmd = SetRasterBlendModeCommand(
+                map_id=map_id,
+                node_id=node_id,
+                new_mode=new_mode,
+                old_mode=old_mode,
+            )
+            self.command_requested.emit(cmd)

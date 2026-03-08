@@ -73,6 +73,8 @@ class MapLayerPanel(QWidget):
     raster_edit_stopped = Signal()  # stop editing
     raster_palette_edit_requested = Signal(str)  # node_id
     raster_settings_changed = Signal()  # tool settings changed during editing
+    raster_stats_requested = Signal(str)  # node_id — open stats dialog
+    raster_blend_mode_changed = Signal(str, str, str)  # (node_id, new_mode, old_mode)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialise the panel.
@@ -256,7 +258,7 @@ class MapLayerPanel(QWidget):
         settings_row_2.addWidget(self._falloff_label)
         rt_layout.addLayout(settings_row_2)
 
-        # Edit / Done toggle + Palette button
+        # Edit / Done toggle + Palette button + Stats button
         action_row = QHBoxLayout()
         action_row.setSpacing(4)
         self._btn_edit_toggle = QPushButton("✎ Edit")
@@ -266,8 +268,25 @@ class MapLayerPanel(QWidget):
         self._btn_palette = QPushButton("Palette…")
         self._btn_palette.clicked.connect(self._on_palette_clicked)
         action_row.addWidget(self._btn_palette)
+        self._btn_stats = QPushButton("Stats…")
+        self._btn_stats.setToolTip("Show coverage statistics for this raster layer")
+        self._btn_stats.clicked.connect(self._on_stats_clicked)
+        action_row.addWidget(self._btn_stats)
         action_row.addStretch()
         rt_layout.addLayout(action_row)
+
+        # Blend mode row
+        blend_row = QHBoxLayout()
+        blend_row.setSpacing(4)
+        blend_row.addWidget(QLabel("Blend:"))
+        self._blend_combo = QComboBox()
+        from src.gui.widgets.map.raster_layer_item import BLEND_MODE_NAMES
+
+        self._blend_combo.addItems(BLEND_MODE_NAMES)
+        self._blend_combo.currentTextChanged.connect(self._on_blend_mode_changed)
+        blend_row.addWidget(self._blend_combo)
+        blend_row.addStretch()
+        rt_layout.addLayout(blend_row)
 
         main_layout.addWidget(self._raster_toolbar)
 
@@ -281,6 +300,7 @@ class MapLayerPanel(QWidget):
         # ── Internal State ────────────────────────────────────────────
         self._model: Optional["MapLayerModel"] = None
         self._selected_node_id: Optional[str] = None
+        self._current_node_id: str = ""
         self._slider_updating = False  # guard against feedback loops
         self._start_opacity: Optional[float] = None  # Opacity at drag start
         # Full raster layer metadata keyed by node_id (set by MapHandler)
@@ -608,15 +628,23 @@ class MapLayerPanel(QWidget):
         self._raster_toolbar.setVisible(is_raster)
         self._legend.setVisible(is_raster)
 
-        # Update mode badge when a raster layer is selected
         if is_raster:
+            self._current_node_id = node.id
             mode = self._raster_mode_by_id.get(node.id, "discrete")
             self._show_mode_badge(mode)
             # Refresh legend and entity picker from stored metadata
             layer_meta = self._raster_meta_by_id.get(node.id)
             self._legend.set_layer(layer_meta)
             self._refresh_entity_picker(layer_meta, mode)
+            # Refresh blend mode combo without triggering signals
+            blend_mode = (layer_meta or {}).get("blend_mode", "Normal")
+            self._blend_combo.blockSignals(True)
+            idx = self._blend_combo.findText(blend_mode)
+            if idx >= 0:
+                self._blend_combo.setCurrentIndex(idx)
+            self._blend_combo.blockSignals(False)
         else:
+            self._current_node_id = ""
             self._raster_mode_label.setVisible(False)
 
         # Reset edit toggle when switching layers
@@ -821,3 +849,25 @@ class MapLayerPanel(QWidget):
     def raster_falloff(self) -> float:
         """Current falloff (0.0–1.0) from the slider."""
         return self._falloff_slider.value() / 100.0
+
+    @Slot()
+    def _on_stats_clicked(self) -> None:
+        """Emit raster_stats_requested for the currently selected raster layer."""
+        if self._current_node_id:
+            self.raster_stats_requested.emit(self._current_node_id)
+
+    @Slot(str)
+    def _on_blend_mode_changed(self, new_mode: str) -> None:
+        """Emit raster_blend_mode_changed when the blend combo selection changes.
+
+        Args:
+            new_mode: The newly selected blend mode name.
+        """
+        node_id = self._current_node_id
+        if not node_id:
+            return
+        meta = self._raster_meta_by_id.get(node_id, {})
+        old_mode = meta.get("blend_mode", "Normal")
+        if old_mode == new_mode:
+            return
+        self.raster_blend_mode_changed.emit(node_id, new_mode, old_mode)

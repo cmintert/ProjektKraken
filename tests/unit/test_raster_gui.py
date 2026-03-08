@@ -1122,3 +1122,332 @@ class TestGetDiscreteClassChoices:
         }
         choices = get_discrete_class_choices(meta)
         assert choices == [("Value 5", 5)]
+
+
+# ── Feature: Coverage / Area Statistics ──────────────────────────────────
+
+
+class TestComputeCoverageStats:
+    """MapDataBuffer.compute_coverage_stats must compute correct statistics."""
+
+    def _make_palette_cmap(self) -> "ColorMap":
+        from src.gui.widgets.map.map_data_buffer import ColorEntry, ColorMap
+
+        return ColorMap(
+            type="palette",
+            entries=[
+                ColorEntry(value=1, color="#FF0000"),
+                ColorEntry(value=2, color="#00FF00"),
+            ],
+        )
+
+    def test_discrete_stats_counts_per_class(self) -> None:
+        from src.gui.widgets.map.map_data_buffer import MapDataBuffer
+
+        buf = MapDataBuffer(4, 4, default_value=0)
+        # Paint 6 pixels with value=1, 4 with value=2, rest stay 0
+        buf._data[0, :] = 1  # 4 pixels
+        buf._data[1, :2] = 1  # 2 more → total 6
+        buf._data[2, :] = 2  # 4 pixels
+        cmap = self._make_palette_cmap()
+        stats = buf.compute_coverage_stats(cmap)
+        assert stats.mode == "discrete"
+        by_val = {cs.value: cs.pixel_count for cs in stats.classes}
+        assert by_val[1] == 6
+        assert by_val[2] == 4
+
+    def test_discrete_stats_percentage(self) -> None:
+        from src.gui.widgets.map.map_data_buffer import (
+            ColorEntry,
+            ColorMap,
+            MapDataBuffer,
+        )
+
+        buf = MapDataBuffer(10, 10, default_value=1)  # 100 pixels, all value=1
+        cmap = ColorMap(type="palette", entries=[ColorEntry(value=1, color="#FF0000")])
+        stats = buf.compute_coverage_stats(cmap)
+        total_pct = sum(cs.percentage for cs in stats.classes)
+        assert abs(total_pct - 100.0) < 0.5  # at most 0.5% rounding error
+
+    def test_continuous_stats_histogram(self) -> None:
+        from src.gui.widgets.map.map_data_buffer import ColorMap, MapDataBuffer
+
+        buf = MapDataBuffer(8, 8, default_value=32768)
+        cmap = ColorMap(type="gradient")
+        stats = buf.compute_coverage_stats(cmap)
+        assert stats.mode == "continuous"
+        assert stats.histogram_counts is not None
+        assert len(stats.histogram_counts) == 32
+        assert stats.histogram_edges is not None
+        assert len(stats.histogram_edges) == 33
+
+    def test_continuous_stats_minmax(self) -> None:
+        from src.gui.widgets.map.map_data_buffer import ColorMap, MapDataBuffer
+
+        buf = MapDataBuffer(4, 4, default_value=0)
+        buf._data[0, 0] = 100
+        buf._data[3, 3] = 60000
+        cmap = ColorMap(type="gradient")
+        stats = buf.compute_coverage_stats(cmap)
+        assert stats.min_val == 100.0
+        assert stats.max_val == 60000.0
+
+    def test_empty_vem_returns_empty_classes(self) -> None:
+        from src.gui.widgets.map.map_data_buffer import ColorMap, MapDataBuffer
+
+        buf = MapDataBuffer(4, 4, default_value=0)
+        # Palette with no entries
+        cmap = ColorMap(type="palette", entries=[])
+        stats = buf.compute_coverage_stats(cmap)
+        # No class entries from empty palette — only possible "No data" entry
+        assert all(cs.value in (0,) for cs in stats.classes)
+
+
+# ── Feature: RasterStatsPanel dialog ─────────────────────────────────────
+
+
+class TestRasterStatsPanel:
+    """RasterStatsPanel must create without error for both modes."""
+
+    def _discrete_stats(self) -> object:
+        from src.gui.widgets.map.map_data_buffer import ClassStat, CoverageStats
+
+        return CoverageStats(
+            mode="discrete",
+            total_pixels=100,
+            classes=[
+                ClassStat(value=1, label="Forest", pixel_count=60, percentage=60.0),
+                ClassStat(value=2, label="Desert", pixel_count=30, percentage=30.0),
+                ClassStat(value=0, label="No data", pixel_count=10, percentage=10.0),
+            ],
+        )
+
+    def _continuous_stats(self) -> object:
+        from src.gui.widgets.map.map_data_buffer import CoverageStats
+
+        return CoverageStats(
+            mode="continuous",
+            total_pixels=256,
+            histogram_counts=list(range(32)),
+            histogram_edges=[float(i * 2048) for i in range(33)],
+            min_val=100.0,
+            max_val=65000.0,
+            mean_val=32768.0,
+            median_val=30000.0,
+        )
+
+    def test_stats_panel_creates_for_discrete(self, qtbot) -> None:
+        from src.gui.widgets.map.raster_stats_panel import RasterStatsPanel
+
+        panel = RasterStatsPanel(self._discrete_stats(), layer_name="Test Layer")
+        qtbot.addWidget(panel)
+        assert panel is not None
+
+    def test_stats_panel_creates_for_continuous(self, qtbot) -> None:
+        from src.gui.widgets.map.raster_stats_panel import RasterStatsPanel
+
+        panel = RasterStatsPanel(self._continuous_stats(), layer_name="Continuous")
+        qtbot.addWidget(panel)
+        assert panel is not None
+
+    def test_stats_panel_has_table_for_discrete(self, qtbot) -> None:
+        from PySide6.QtWidgets import QTableWidget
+
+        from src.gui.widgets.map.raster_stats_panel import RasterStatsPanel
+
+        panel = RasterStatsPanel(self._discrete_stats(), layer_name="Discrete")
+        qtbot.addWidget(panel)
+        tables = panel.findChildren(QTableWidget)
+        assert len(tables) >= 1
+
+    def test_discrete_table_row_count(self, qtbot) -> None:
+        from src.gui.widgets.map.raster_stats_panel import RasterStatsPanel
+
+        stats = self._discrete_stats()
+        panel = RasterStatsPanel(stats, layer_name="Discrete")
+        qtbot.addWidget(panel)
+        tbl = panel.table
+        assert tbl is not None
+        # Row count = number of class stats + 1 total row
+        assert tbl.rowCount() == len(stats.classes) + 1
+
+
+# ── Feature: Layer Blending Modes ────────────────────────────────────────
+
+
+class TestBlendMode:
+    """RasterLayerItem blend mode support."""
+
+    def test_blend_mode_default_is_source_over(self, qtbot) -> None:
+        from PySide6.QtGui import QPainter
+
+
+        view = _make_view(qtbot)
+        item, _ = _make_raster_item(view, node_id="blend_test")
+        assert item._scene_blend_mode == QPainter.CompositionMode.CompositionMode_SourceOver
+
+    def test_set_blend_mode_multiply(self, qtbot) -> None:
+        from PySide6.QtGui import QPainter
+
+
+        view = _make_view(qtbot)
+        item, _ = _make_raster_item(view, node_id="blend_mult")
+        item.set_blend_mode("Multiply")
+        assert item._scene_blend_mode == QPainter.CompositionMode.CompositionMode_Multiply
+
+    def test_set_blend_mode_unknown_falls_back(self, qtbot) -> None:
+        from PySide6.QtGui import QPainter
+
+        view = _make_view(qtbot)
+        item, _ = _make_raster_item(view, node_id="blend_unk")
+        item.set_blend_mode("NonExistentMode")
+        assert item._scene_blend_mode == QPainter.CompositionMode.CompositionMode_SourceOver
+
+    def test_panel_has_blend_combo(self, qtbot) -> None:
+        from PySide6.QtWidgets import QComboBox
+
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        assert hasattr(panel, "_blend_combo")
+        assert isinstance(panel._blend_combo, QComboBox)
+
+    def test_set_raster_blend_mode_command_execute(self) -> None:
+        """SetRasterBlendModeCommand persists blend_mode into raster layer metadata."""
+        import uuid
+
+        from src.commands.raster_commands import SetRasterBlendModeCommand
+        from src.core.map import Map
+        from src.services.db_service import DatabaseService
+
+        db = DatabaseService(":memory:")
+        db.connect()
+        map_id = str(uuid.uuid4())
+        node_id = str(uuid.uuid4())
+        m = Map(
+            id=map_id,
+            name="TestMap",
+            image_path="",
+            attributes={
+                "raster_layers": [
+                    {"node_id": node_id, "mode": "discrete", "blend_mode": "Normal"}
+                ]
+            },
+        )
+        db.map_repo.insert_map(m)
+
+        cmd = SetRasterBlendModeCommand(
+            map_id=map_id, node_id=node_id, new_mode="Multiply", old_mode="Normal"
+        )
+        result = cmd.execute(db)
+        assert result.success
+
+        stored = db.map_repo.get_map(map_id)
+        layers = (stored.attributes or {}).get("raster_layers", [])
+        layer = next(la for la in layers if la["node_id"] == node_id)
+        assert layer["blend_mode"] == "Multiply"
+
+
+# ── Feature: Entity Orphan Detection ─────────────────────────────────────
+
+
+class TestOrphanDetection:
+    """check_entity_raster_refs and RasterOrphanWarningDialog."""
+
+    def _make_mock_map(self, map_id: str, node_id: str, entity_id: str) -> object:
+        """Create a minimal mock Map-like object."""
+
+        class _MockMap:
+            def __init__(self) -> None:
+                self.id = map_id
+                self.name = "TestMap"
+                self.attributes = {
+                    "raster_layers": [
+                        {
+                            "node_id": node_id,
+                            "mode": "discrete",
+                            "value_entity_map": {
+                                "mode": "exact",
+                                "mappings": [
+                                    {
+                                        "id": "m1",
+                                        "label": "Forest",
+                                        "entity_id": entity_id,
+                                        "value": 42,
+                                    }
+                                ],
+                            },
+                        }
+                    ]
+                }
+
+        return _MockMap()
+
+    def test_check_entity_raster_refs_finds_ref(self) -> None:
+        from src.gui.widgets.map.raster_mapping import check_entity_raster_refs
+
+        entity_id = "ent-001"
+        node_id = "node-001"
+        map_id = "map-001"
+        mock_map = self._make_mock_map(map_id, node_id, entity_id)
+        refs = check_entity_raster_refs(entity_id, [mock_map])
+        assert len(refs) == 1
+        assert refs[0].map_id == map_id
+        assert refs[0].node_id == node_id
+        assert refs[0].value == 42
+
+    def test_check_entity_raster_refs_no_refs(self) -> None:
+        from src.gui.widgets.map.raster_mapping import check_entity_raster_refs
+
+        mock_map = self._make_mock_map("map-002", "node-002", "ent-002")
+        refs = check_entity_raster_refs("other-entity", [mock_map])
+        assert refs == []
+
+    def test_orphan_dialog_creates(self, qtbot) -> None:
+        from src.gui.dialogs.raster_orphan_warning_dialog import (
+            RasterOrphanWarningDialog,
+        )
+        from src.gui.widgets.map.raster_mapping import RasterItemRef
+
+        ref = RasterItemRef(
+            map_id="map-001",
+            node_id="node-001",
+            mapping_id="m1",
+            label="Forest",
+            mode="exact",
+            value=42,
+        )
+        dlg = RasterOrphanWarningDialog(
+            entity_name="Test Entity",
+            refs=[ref],
+            map_names={"map-001": "World Map"},
+        )
+        qtbot.addWidget(dlg)
+        assert dlg is not None
+        assert dlg.result_action == "cancel"
+
+    def test_orphan_dialog_has_three_buttons(self, qtbot) -> None:
+        from PySide6.QtWidgets import QPushButton
+
+        from src.gui.dialogs.raster_orphan_warning_dialog import (
+            RasterOrphanWarningDialog,
+        )
+        from src.gui.widgets.map.raster_mapping import RasterItemRef
+
+        ref = RasterItemRef(
+            map_id="map-001",
+            node_id="node-001",
+            mapping_id="m1",
+            label="Forest",
+            mode="exact",
+            value=1,
+        )
+        dlg = RasterOrphanWarningDialog(
+            entity_name="Ent",
+            refs=[ref],
+            map_names={"map-001": "Map"},
+        )
+        qtbot.addWidget(dlg)
+        buttons = dlg.findChildren(QPushButton)
+        assert len(buttons) >= 3
