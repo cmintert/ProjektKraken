@@ -82,7 +82,6 @@ class RasterLegendWidget(QWidget):
         self._scroll = QScrollArea()
         self._scroll.setWidgetResizable(True)
         self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self._scroll.setMaximumHeight(240)
         self._scroll.setFrameShape(QScrollArea.Shape.NoFrame)
 
         self._content = QWidget()
@@ -184,7 +183,22 @@ class RasterLegendWidget(QWidget):
         gradient_end = color_map.get("gradient_end", "#FFFFFF")
         stretch_min = color_map.get("stretch_min")
         stretch_max = color_map.get("stretch_max")
-        bar = _GradientBarWidget(gradient_start, gradient_end, stretch_min, stretch_max)
+        display_min = color_map.get("display_min")
+        display_max = color_map.get("display_max")
+        unit = color_map.get("unit", "")
+        format_str = color_map.get("format_str", "{:.2f}")
+        scale = color_map.get("scale", "linear")
+        bar = _GradientBarWidget(
+            gradient_start,
+            gradient_end,
+            stretch_min,
+            stretch_max,
+            display_min=display_min,
+            display_max=display_max,
+            unit=unit,
+            format_str=format_str,
+            scale=scale,
+        )
         self._content_layout.insertWidget(0, bar)
 
     def _make_swatch_row(self, color_hex: str, value_str: str, label: str) -> QWidget:
@@ -214,7 +228,9 @@ class RasterLegendWidget(QWidget):
         )
         theme = ThemeManager().get_theme()
         combined_lbl = QLabel(display)
-        combined_lbl.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        combined_lbl.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
         combined_lbl.setStyleSheet(f"color: {theme.get('text_main', '#E8E8E8')};")
 
         layout.addWidget(swatch)
@@ -259,12 +275,36 @@ class RasterLegendWidget(QWidget):
         self._scroll.setVisible(checked)
         self._toggle_btn.setText("▼ Legend" if checked else "▶ Legend")
 
+        # Delegate sizing/positioning to the hosting MapWidget so the
+        # collapsed-aware logic in _position_legend_overlay() runs.
+        try:
+            view = self.parent()
+            if view is not None:
+                map_widget = view.parent()
+                if map_widget is not None and hasattr(
+                    map_widget, "_position_legend_overlay"
+                ):
+                    map_widget._position_legend_overlay(animated=True)
+                    return
+            # Fallback: anchor to top-left of the viewport.
+            if view is not None and hasattr(view, "viewport"):
+                vp_rect = view.viewport().geometry()
+                _MARGIN = 12
+                self.move(
+                    vp_rect.x() + _MARGIN,
+                    vp_rect.y() + _MARGIN,
+                )
+        except Exception:
+            pass
+
 
 class _GradientBarWidget(QWidget):
     """Vertical gradient bar for continuous raster legend.
 
     Renders a colour ramp from *gradient_start* (bottom, value 0) to
     *gradient_end* (top, value 65535) with min/max labels alongside.
+    When display mapping is provided, the labels show real-world values
+    (e.g. ``"-10 °C"`` / ``"40 °C"``) instead of raw integers.
     """
 
     def __init__(
@@ -273,6 +313,11 @@ class _GradientBarWidget(QWidget):
         gradient_end: str = "#FFFFFF",
         stretch_min: Optional[int] = None,
         stretch_max: Optional[int] = None,
+        display_min: Optional[float] = None,
+        display_max: Optional[float] = None,
+        unit: str = "",
+        format_str: str = "{:.2f}",
+        scale: str = "linear",
         parent: Optional[QWidget] = None,
     ) -> None:
         super().__init__(parent)
@@ -294,8 +339,34 @@ class _GradientBarWidget(QWidget):
         labels_layout = QVBoxLayout()
         labels_layout.setContentsMargins(0, 0, 0, 0)
         labels_layout.setSpacing(2)
-        top_val = str(stretch_max) if stretch_max is not None else "max"
-        bottom_val = str(stretch_min) if stretch_min is not None else "0"
+
+        # Compute display labels using real-world mapping when available
+        if display_min is not None and display_max is not None:
+            from src.gui.widgets.map.map_data_buffer import (
+                ColorMap,
+                format_display_value,
+            )
+
+            temp_cmap = ColorMap(
+                type="gradient",
+                display_min=display_min,
+                display_max=display_max,
+                unit=unit,
+                format_str=format_str,
+                scale=scale,
+                stretch_min=stretch_min if stretch_min is not None else 0,
+                stretch_max=stretch_max if stretch_max is not None else 65535,
+            )
+            top_val = format_display_value(
+                temp_cmap, stretch_max if stretch_max is not None else 65535
+            )
+            bottom_val = format_display_value(
+                temp_cmap, stretch_min if stretch_min is not None else 0
+            )
+        else:
+            top_val = str(stretch_max) if stretch_max is not None else "max"
+            bottom_val = str(stretch_min) if stretch_min is not None else "0"
+
         top_label = QLabel(top_val)
         top_label.setStyleSheet(dim_style)
         bottom_label = QLabel(bottom_val)
