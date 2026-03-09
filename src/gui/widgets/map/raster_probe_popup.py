@@ -59,6 +59,7 @@ class RasterProbePopup(QLabel):
         entity_name: Optional[str],
         label: Optional[str],
         mode: str = "",
+        display_value: Optional[str] = None,
     ) -> None:
         """Display a probe result and start the auto-hide timer.
 
@@ -68,13 +69,18 @@ class RasterProbePopup(QLabel):
             entity_name: Entity name resolved from mapping, or ``None``.
             label: Human-readable palette label, or ``None``.
             mode: Layer mode — ``"discrete"`` or ``"continuous"`` (shown as hint).
+            display_value: Formatted real-world value string (e.g. ``"23.5 °C"``),
+                or ``None`` when no display mapping is defined.
         """
         lines = []
         if mode:
             icon = "📊" if mode == "discrete" else "📈"
             mode_label = "Discrete" if mode == "discrete" else "Continuous"
             lines.append(f"{icon} {mode_label}")
-        lines.append(f"Value: {value}")
+        if display_value:
+            lines.append(f"Value: {value}  ({display_value})")
+        else:
+            lines.append(f"Value: {value}")
         if label:
             lines.append(f"Label: {label}")
         if entity_name:

@@ -56,6 +56,9 @@ class RasterEditTool:
         self._active: bool = False
         self._mode: RasterEditMode = RasterEditMode.BRUSH
         self._active_node_id: Optional[str] = None
+        # Tracks the currently selected raster node even outside edit mode,
+        # so that the SAMPLE tool can probe without requiring edit activation.
+        self._preview_node_id: Optional[str] = None
 
         # Tool settings
         self._brush_size: int = 8
@@ -136,6 +139,17 @@ class RasterEditTool:
         self._gradient_sub_mode = sub_mode
         logger.debug("set_gradient_sub_mode: sub_mode=%s", sub_mode)
 
+    def set_preview_node_id(self, node_id: Optional[str]) -> None:
+        """Update the selected raster node for passive SAMPLE probing.
+
+        Call this whenever the selected raster layer changes so that
+        the SAMPLE tool can probe without requiring active edit mode.
+
+        Args:
+            node_id: Node ID of the selected raster layer, or ``None``.
+        """
+        self._preview_node_id = node_id
+
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
@@ -169,6 +183,7 @@ class RasterEditTool:
             )
         self._active = True
         self._active_node_id = node_id
+        self._preview_node_id = node_id  # keep for passive probing after stop
         self._view.setDragMode(QGraphicsView.DragMode.NoDrag)
         self._view.setCursor(Qt.CursorShape.CrossCursor)
         logger.info("Raster edit started: %s (mode=%s)", node_id, self._mode.name)
@@ -199,6 +214,8 @@ class RasterEditTool:
             True if the event was consumed.
         """
         if not self._active:
+            if self._mode == RasterEditMode.SAMPLE:
+                return self._try_sample_passively(scene_pos)
             return False
 
         item = self._get_active_item()
@@ -530,6 +547,44 @@ class RasterEditTool:
     # ------------------------------------------------------------------
     # Sample / probe
     # ------------------------------------------------------------------
+
+    def _try_sample_passively(self, scene_pos: QPointF) -> bool:
+        """Probe a raster layer value without being in active edit mode.
+
+        Uses *_preview_node_id* (set when a raster layer is selected) to
+        identify which layer to probe.  Falls back to the first available
+        raster item if no preview node is known.
+
+        Args:
+            scene_pos: Click position in scene coordinates.
+
+        Returns:
+            True if a value was probed and the signal emitted.
+        """
+        node_id = self._preview_node_id
+        if not node_id:
+            if not self._view._raster_items:
+                return False
+            node_id = next(iter(self._view._raster_items))
+
+        item = self._view._raster_items.get(node_id)
+        if item is None:
+            return False
+
+        norm = self._scene_to_norm(scene_pos)
+        if norm is None:
+            return False
+
+        value = item.buffer.get_value_at(norm[0], norm[1])
+        logger.debug(
+            "_try_sample_passively: pos=(%.3f,%.3f) value=%d node_id=%s",
+            norm[0],
+            norm[1],
+            value,
+            node_id,
+        )
+        self._view.raster_value_probed.emit(node_id, value, norm[0], norm[1])
+        return True
 
     def _apply_sample(
         self, item: RasterLayerItem, x_norm: float, y_norm: float

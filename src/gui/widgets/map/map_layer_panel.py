@@ -85,6 +85,9 @@ class MapLayerPanel(QWidget):
     )  # (tool_mode, size, falloff, value)
     raster_query_requested = Signal()  # open cross-layer query dialog
     raster_query_cleared = Signal()  # clear query overlay
+    # Carries (node_id, layer_meta_or_None) when a raster layer is selected;
+    # also emitted with (None, None) when a non-raster layer is selected.
+    raster_layer_selected = Signal(object, object)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialise the panel.
@@ -235,7 +238,7 @@ class MapLayerPanel(QWidget):
         self._paint_value_spin.setRange(0, 65535)
         self._paint_value_spin.setValue(1)
         self._paint_value_spin.setButtonSymbols(QSpinBox.ButtonSymbols.UpDownArrows)
-        self._paint_value_spin.valueChanged.connect(self._on_raster_setting_changed)
+        self._paint_value_spin.valueChanged.connect(self._on_paint_value_spin_changed)
         value_row.addWidget(self._paint_value_spin, 1)
         rt_layout.addLayout(value_row)
 
@@ -247,7 +250,9 @@ class MapLayerPanel(QWidget):
         ep_layout.addWidget(QLabel("Paint as:"))
         self._entity_picker_combo = QComboBox()
         self._entity_picker_combo.setToolTip(
-            "Select a mapped class to automatically set the paint value"
+            "Shows the mapped class for the current paint value.  "
+            "Select a class here to jump to its value, or type a value above to "
+            "auto-highlight the matching class."
         )
         self._entity_picker_combo.setSizeAdjustPolicy(
             QComboBox.SizeAdjustPolicy.AdjustToContents
@@ -394,13 +399,6 @@ class MapLayerPanel(QWidget):
         rt_layout.addWidget(self._query_row)
 
         main_layout.addWidget(self._raster_toolbar)
-
-        # ── Raster Legend ─────────────────────────────────────────────
-        from src.gui.widgets.map.raster_legend_widget import RasterLegendWidget
-
-        self._legend = RasterLegendWidget(self)
-        self._legend.setVisible(False)
-        main_layout.addWidget(self._legend)
 
         # ── Internal State ────────────────────────────────────────────
         self._model: Optional["MapLayerModel"] = None
@@ -767,7 +765,6 @@ class MapLayerPanel(QWidget):
 
         is_raster = node.layer_type == MAP_LAYER_TYPE_RASTER
         self._raster_toolbar.setVisible(is_raster)
-        self._legend.setVisible(is_raster)
 
         if is_raster:
             self._current_node_id = node.id
@@ -775,8 +772,9 @@ class MapLayerPanel(QWidget):
             self._show_mode_badge(mode)
             # Refresh legend and entity picker from stored metadata
             layer_meta = self._raster_meta_by_id.get(node.id)
-            self._legend.set_layer(layer_meta)
             self._refresh_entity_picker(layer_meta, mode)
+            # Notify consumers (e.g. MapWidget) to update the floating legend
+            self.raster_layer_selected.emit(node.id, layer_meta)
             # Refresh blend mode combo without triggering signals
             blend_mode = (layer_meta or {}).get("blend_mode", "Normal")
             self._blend_combo.blockSignals(True)
@@ -801,6 +799,8 @@ class MapLayerPanel(QWidget):
             self._snapshot_count_label.setText("")
             self._preset_toolbar_row.setVisible(False)
             self._query_row.setVisible(False)
+            # Notify consumers that no raster is selected
+            self.raster_layer_selected.emit(None, None)
 
         # Reset edit toggle when switching layers
         if not is_raster and self._btn_edit_toggle.isChecked():
@@ -867,6 +867,35 @@ class MapLayerPanel(QWidget):
         if value is not None and value >= 0:
             self._paint_value_spin.setValue(int(value))
 
+    @Slot(int)
+    def _on_paint_value_spin_changed(self, value: int) -> None:
+        """Sync the class picker combo to reflect the typed paint value.
+
+        When the user manually enters a value that matches a mapped class the
+        combo automatically selects that class, giving instant feedback via
+        "Paint as: <ClassName>".  When there is no match the combo falls back
+        to "— manual —" (index 0) so it never shows a stale class name.
+
+        Args:
+            value: New paint value from the spin box.
+        """
+        self._on_raster_setting_changed()
+
+        if not self._entity_picker_row.isVisible():
+            return
+
+        self._entity_picker_combo.blockSignals(True)
+        try:
+            for i in range(self._entity_picker_combo.count()):
+                if self._entity_picker_combo.itemData(i) == value:
+                    self._entity_picker_combo.setCurrentIndex(i)
+                    return
+            # No exact match — reset to the "— manual —" placeholder
+            if self._entity_picker_combo.count() > 0:
+                self._entity_picker_combo.setCurrentIndex(0)
+        finally:
+            self._entity_picker_combo.blockSignals(False)
+
     def set_raster_mode_metadata(self, mode_by_id: "dict[str, str]") -> None:
         """Update the cached raster mode lookup used by the mode badge.
 
@@ -914,8 +943,9 @@ class MapLayerPanel(QWidget):
                         self._selected_node_id, "discrete"
                     )
                     layer_meta = self._raster_meta_by_id.get(self._selected_node_id)
-                    self._legend.set_layer(layer_meta)
                     self._refresh_entity_picker(layer_meta, mode)
+                    # Notify consumers to refresh the floating legend
+                    self.raster_layer_selected.emit(self._selected_node_id, layer_meta)
 
     def _show_mode_badge(self, mode: str) -> None:
         """Render the mode badge label with the correct text and style.
@@ -985,7 +1015,9 @@ class MapLayerPanel(QWidget):
         return (
             "gradient"
             if self._btn_gradient.isChecked()
-            else "sample" if self._btn_sample.isChecked() else "brush"
+            else "sample"
+            if self._btn_sample.isChecked()
+            else "brush"
         )
 
     @property

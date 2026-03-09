@@ -1112,6 +1112,8 @@ class MapHandler(QObject):
             value_entity_map=existing_vem,
             buffer_min=None,
             buffer_max=None,
+            entities=list(getattr(self._map_widget, "_cached_entities", [])),
+            events=list(getattr(self._map_widget, "_cached_events", [])),
             parent=self._map_widget,
         )
         if mode == "continuous":
@@ -1123,6 +1125,8 @@ class MapHandler(QObject):
                     value_entity_map=existing_vem,
                     buffer_min=stats.min_val,
                     buffer_max=stats.max_val,
+                    entities=list(getattr(self._map_widget, "_cached_entities", [])),
+                    events=list(getattr(self._map_widget, "_cached_events", [])),
                     parent=self._map_widget,
                 )
             except Exception as _exc:
@@ -1273,13 +1277,26 @@ class MapHandler(QObject):
 
         results = probe_all_layers(view._raster_items, raster_meta, x_norm, y_norm)
 
-        # Resolve entity name and mode for the probed layer
+        # Resolve entity name, mode, and display value for the probed layer
         entity_name: str | None = None
         label: str | None = None
         layer_mode: str = ""
+        display_value: str | None = None
         for meta in raster_meta:
             if meta.get("node_id") == node_id:
                 layer_mode = meta.get("mode", "discrete")
+                cmap_dict = meta.get("color_map") or {}
+                if cmap_dict.get("display_min") is not None:
+                    try:
+                        from src.gui.widgets.map.map_data_buffer import (
+                            ColorMap,
+                            format_display_value,
+                        )
+
+                        cmap = ColorMap.from_dict(cmap_dict)
+                        display_value = format_display_value(cmap, value)
+                    except Exception as exc:
+                        logger.debug("Could not format display value: %s", exc)
                 break
         for r in results:
             if r.node_id == node_id:
@@ -1298,7 +1315,9 @@ class MapHandler(QObject):
                 break
 
         # Show the probe popup overlay
-        self._show_probe_popup(node_id, value, entity_name, label, layer_mode)
+        self._show_probe_popup(
+            node_id, value, entity_name, label, layer_mode, display_value
+        )
 
     def _show_probe_popup(
         self,
@@ -1307,6 +1326,7 @@ class MapHandler(QObject):
         entity_name: str | None,
         label: str | None,
         mode: str = "",
+        display_value: str | None = None,
     ) -> None:
         """Display or update the probe popup inside the map view.
 
@@ -1316,6 +1336,7 @@ class MapHandler(QObject):
             entity_name: Resolved entity name.
             label: Palette label.
             mode: Layer mode (``"discrete"`` or ``"continuous"``).
+            display_value: Formatted real-world value string, or ``None``.
         """
         if self._map_widget is None:
             return
@@ -1332,6 +1353,7 @@ class MapHandler(QObject):
             entity_name=entity_name,
             label=label,
             mode=mode,
+            display_value=display_value,
         )
 
     def _save_raster_to_disk(self, node_id: str) -> None:

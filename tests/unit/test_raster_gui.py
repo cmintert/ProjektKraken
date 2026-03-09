@@ -989,18 +989,22 @@ class TestPanelLegendAndEntityPicker:
     """MapLayerPanel must expose legend widget and entity picker combo."""
 
     def test_panel_has_legend_widget(self, qtbot) -> None:
+        """After the refactor, the panel must NOT own a `_legend` widget;
+        the legend now lives as a floating overlay on MapWidget."""
         from src.gui.widgets.map.map_layer_panel import MapLayerPanel
 
         panel = MapLayerPanel()
         qtbot.addWidget(panel)
-        assert hasattr(panel, "_legend")
+        assert not hasattr(panel, "_legend")
 
     def test_legend_hidden_by_default(self, qtbot) -> None:
         from src.gui.widgets.map.map_layer_panel import MapLayerPanel
 
         panel = MapLayerPanel()
         qtbot.addWidget(panel)
-        assert not panel._legend.isVisible()
+        # After the legend-overlay refactor, the panel no longer owns the
+        # legend widget.  It must NOT have a `_legend` attribute.
+        assert not hasattr(panel, "_legend")
 
     def test_panel_has_entity_picker_combo(self, qtbot) -> None:
         from src.gui.widgets.map.map_layer_panel import MapLayerPanel
@@ -2159,7 +2163,9 @@ class TestPaletteImportExport:
         editor = RasterPaletteEditor(color_map, mode="discrete")
         result = editor.result_color_map()
         json_path = Path(str(tmp_path)) / "palette.json"
-        data = [{"value": e.value, "color": e.color, "label": ""} for e in result.entries]
+        data = [
+            {"value": e.value, "color": e.color, "label": ""} for e in result.entries
+        ]
         with open(json_path, "w") as f:
             json.dump(data, f)
 
@@ -2342,3 +2348,86 @@ class TestPanelNotesButton:
         panel.set_raster_layer_notes("n1", True)
         panel.set_raster_layer_notes("n1", False)
         assert panel._notes_indicator_label.text() == ""
+
+
+# ── Legend overlay on MapWidget ───────────────────────────────────────────────
+
+
+class TestLegendOverlayOnMapWidget:
+    """RasterLegendWidget must live as a floating overlay on MapWidget.view,
+    NOT inside MapLayerPanel."""
+
+    def test_map_widget_has_legend_overlay(self, qtbot) -> None:
+        """MapWidget must own a `legend_overlay` attribute."""
+        from src.gui.widgets.map_widget import MapWidget
+
+        w = MapWidget()
+        qtbot.addWidget(w)
+        assert hasattr(w, "legend_overlay")
+
+    def test_legend_overlay_hidden_by_default(self, qtbot) -> None:
+        """Legend overlay must be hidden before any raster layer is
+        selected."""
+        from src.gui.widgets.map_widget import MapWidget
+
+        w = MapWidget()
+        qtbot.addWidget(w)
+        assert not w.legend_overlay.isVisible()
+
+    def test_legend_overlay_is_child_of_view(self, qtbot) -> None:
+        """Legend overlay must be a child widget of the map view, not the viewport,
+        so it isn't destroyed when OpenGL viewports are swapped."""
+        from src.gui.widgets.map_widget import MapWidget
+
+        w = MapWidget()
+        qtbot.addWidget(w)
+        assert w.legend_overlay.parent() is w.view
+
+    def test_legend_overlay_has_floating_style(self, qtbot) -> None:
+        """Legend overlay must have a semi-transparent background
+        stylesheet."""
+        from src.gui.widgets.map_widget import MapWidget
+
+        w = MapWidget()
+        qtbot.addWidget(w)
+        ss = w.legend_overlay.styleSheet()
+        assert "rgba" in ss or "background" in ss
+
+    def test_legend_overlay_positioned_bottom_left(self, qtbot) -> None:
+        """After _position_legend_overlay(), legend x must be near the
+        left margin of the view."""
+        from PySide6.QtWidgets import QApplication
+
+        from src.gui.widgets.map_widget import MapWidget
+
+        w = MapWidget()
+        qtbot.addWidget(w)
+        w.resize(800, 600)
+        w.show()
+        QApplication.processEvents()
+
+        w._position_legend_overlay()
+
+        # x should be near the left margin (≤ 12 + tolerance)
+        assert w.legend_overlay.x() <= 20
+        # y should be reasonably positioned within the viewport's reported size
+        viewport_h = w.view.viewport().height()
+        assert w.legend_overlay.y() > 0
+        assert w.legend_overlay.y() <= viewport_h
+
+    def test_map_layer_panel_no_legend_attr(self, qtbot) -> None:
+        """MapLayerPanel must NOT own a _legend widget after refactor."""
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        assert not hasattr(panel, "_legend")
+
+    def test_legend_overlay_max_width(self, qtbot) -> None:
+        """The legend_overlay on MapWidget must have a maximum width set
+        so it does not obscure the full map canvas."""
+        from src.gui.widgets.map_widget import MapWidget
+
+        w = MapWidget()
+        qtbot.addWidget(w)
+        assert w.legend_overlay.maximumWidth() <= 400

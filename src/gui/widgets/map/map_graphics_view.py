@@ -583,6 +583,9 @@ class MapGraphicsView(QGraphicsView):
     )  # node_id, dirty, before, after
     raster_value_probed = Signal(str, int, float, float)  # node_id, value, x, y
 
+    # Emitted when the viewport resizes, useful for positioning overlays
+    viewport_resized = Signal(QResizeEvent)
+
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the MapGraphicsView.
 
@@ -1001,7 +1004,14 @@ class MapGraphicsView(QGraphicsView):
     def resizeEvent(self, event: QResizeEvent) -> None:
         """Handle resize events."""
         super().resizeEvent(event)
-        if hasattr(self, "_drop_hint_overlay") and self._drop_hint_overlay:
+        self.viewport_resized.emit(event)
+        import shiboken6
+
+        if (
+            hasattr(self, "_drop_hint_overlay")
+            and self._drop_hint_overlay
+            and shiboken6.isValid(self._drop_hint_overlay)
+        ):
             self._drop_hint_overlay.setGeometry(self.viewport().rect())
         self._schedule_label_layout()
 
@@ -1513,8 +1523,14 @@ class MapGraphicsView(QGraphicsView):
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Handle mouse press: raster edit, drawing, calibration, or normal."""
-        # Raster editing mode (highest priority)
-        if self._raster_edit_tool.is_active and self.pixmap_item:
+        # Raster editing mode (highest priority).
+        # Also handle SAMPLE mode even when edit is not active, so users can
+        # probe values without pressing "Edit".
+        raster_should_handle = (
+            self._raster_edit_tool.is_active
+            or self._raster_edit_tool.mode.name == "SAMPLE"
+        ) and self.pixmap_item
+        if raster_should_handle:
             if event.button() == Qt.MouseButton.LeftButton:
                 scene_pos = self.mapToScene(event.position().toPoint())
                 logger.debug(

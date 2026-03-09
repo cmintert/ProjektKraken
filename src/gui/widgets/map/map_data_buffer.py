@@ -106,6 +106,17 @@ class ColorMap:
         entries: Colour entries (used when *type* is ``"palette"``).
         gradient_start: Hex colour for value 0 (gradient mode).
         gradient_end: Hex colour for value 65535 (gradient mode).
+        stretch_min: Raw value mapped to the start colour (gradient mode).
+        stretch_max: Raw value mapped to the end colour (gradient mode).
+        display_min: Real-world value corresponding to *stretch_min*
+            (e.g. ``-10.0`` for −10 °C).  ``None`` means no display mapping.
+        display_max: Real-world value corresponding to *stretch_max*.
+        unit: Unit label appended to formatted values (e.g. ``"°C"``).
+        format_str: Python format string for display values (e.g. ``"{:.1f}"``).
+        scale: Interpolation scale — ``"linear"`` or ``"log"``.
+        linked_entity_id: UUID of a world entity/event that this colour map
+            represents (gradient mode).  ``None`` means not linked.
+        linked_entity_type: ``"entity"``, ``"event"``, or ``""`` when not set.
 
     """
 
@@ -113,8 +124,15 @@ class ColorMap:
     entries: List[ColorEntry] = field(default_factory=list)
     gradient_start: str = "#000000"
     gradient_end: str = "#FFFFFF"
-    stretch_min: Optional[int] = None  # If set, gradient maps this value → start color
-    stretch_max: Optional[int] = None  # If set, gradient maps this value → end color
+    stretch_min: Optional[int] = None
+    stretch_max: Optional[int] = None
+    display_min: Optional[float] = None
+    display_max: Optional[float] = None
+    unit: str = ""
+    format_str: str = "{:.2f}"
+    scale: str = "linear"
+    linked_entity_id: Optional[str] = None
+    linked_entity_type: str = ""
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialise to JSON-friendly dict."""
@@ -128,6 +146,20 @@ class ColorMap:
             d["stretch_min"] = self.stretch_min
         if self.stretch_max is not None:
             d["stretch_max"] = self.stretch_max
+        if self.display_min is not None:
+            d["display_min"] = self.display_min
+        if self.display_max is not None:
+            d["display_max"] = self.display_max
+        if self.unit:
+            d["unit"] = self.unit
+        if self.format_str and self.format_str != "{:.2f}":
+            d["format_str"] = self.format_str
+        if self.scale and self.scale != "linear":
+            d["scale"] = self.scale
+        if self.linked_entity_id:
+            d["linked_entity_id"] = self.linked_entity_id
+        if self.linked_entity_type:
+            d["linked_entity_type"] = self.linked_entity_type
         return d
 
     @classmethod
@@ -137,6 +169,8 @@ class ColorMap:
         entries = [ColorEntry.from_dict(e) for e in data.get("entries", [])]
         stretch_min_raw = data.get("stretch_min")
         stretch_max_raw = data.get("stretch_max")
+        display_min_raw = data.get("display_min")
+        display_max_raw = data.get("display_max")
         return cls(
             type=ctype,
             entries=entries,
@@ -144,7 +178,61 @@ class ColorMap:
             gradient_end=data.get("gradient_end", "#FFFFFF"),
             stretch_min=int(stretch_min_raw) if stretch_min_raw is not None else None,
             stretch_max=int(stretch_max_raw) if stretch_max_raw is not None else None,
+            display_min=float(display_min_raw) if display_min_raw is not None else None,
+            display_max=float(display_max_raw) if display_max_raw is not None else None,
+            unit=str(data.get("unit", "")),
+            format_str=str(data.get("format_str", "{:.2f}")),
+            scale=str(data.get("scale", "linear")),
+            linked_entity_id=data.get("linked_entity_id") or None,
+            linked_entity_type=str(data.get("linked_entity_type", "")),
         )
+
+
+def format_display_value(color_map: "ColorMap", raw_value: int) -> str:
+    """Map a raw 16-bit raster value to a human-readable display string.
+
+    Uses the *display_min* / *display_max* fields of *color_map* to linearly
+    (or logarithmically) interpolate the raw value into the real-world range,
+    then formats it with *format_str* and appends *unit*.
+
+    Falls back to the plain integer string when no display mapping is defined.
+
+    Args:
+        color_map: The :class:`ColorMap` carrying display mapping metadata.
+        raw_value: 16-bit cell value to format.
+
+    Returns:
+        Formatted string such as ``"23.5 °C"`` or just ``"32767"``.
+    """
+    if color_map.display_min is None or color_map.display_max is None:
+        return str(raw_value)
+
+    s_min = color_map.stretch_min if color_map.stretch_min is not None else 0
+    s_max = color_map.stretch_max if color_map.stretch_max is not None else 65535
+
+    if s_max == s_min:
+        t = 0.0
+    else:
+        t = max(0.0, min(1.0, (raw_value - s_min) / (s_max - s_min)))
+
+    d_min = color_map.display_min
+    d_max = color_map.display_max
+
+    if color_map.scale == "log" and d_min > 0 and d_max > 0:
+        import math
+
+        display_val = math.exp(
+            math.log(d_min) + t * (math.log(d_max) - math.log(d_min))
+        )
+    else:
+        display_val = d_min + t * (d_max - d_min)
+
+    try:
+        formatted = color_map.format_str.format(display_val)
+    except (ValueError, KeyError):
+        formatted = f"{display_val:.2f}"
+
+    return f"{formatted} {color_map.unit}".rstrip() if color_map.unit else formatted
 
 
 def _hex_to_rgba(hex_color: str, alpha: int = 255) -> Tuple[int, int, int, int]:
