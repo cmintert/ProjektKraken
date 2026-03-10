@@ -220,3 +220,211 @@ def test_keyframe_gizmo_interaction(qtbot):
     keyframe.set_pinned(False)
     assert keyframe.is_pinned is False
     assert keyframe.pen().color().name() != KEYFRAME_COLOR_SELECTED
+
+
+# ---------------------------------------------------------------------------
+# Space held-to-pan tests
+# ---------------------------------------------------------------------------
+
+
+class TestSpacePanning:
+    """Tests for Space+left-drag hold-to-pan behavior (normal mode)."""
+
+    def test_space_pressed_flag_starts_false(self, qtbot):
+        """_space_pressed is False by default."""
+        view = MapGraphicsView()
+        qtbot.addWidget(view)
+        assert view._space_pressed is False
+
+    def test_space_key_press_sets_flag(self, qtbot):
+        """Pressing Space sets _space_pressed to True."""
+        from PySide6.QtCore import Qt
+        from PySide6.QtTest import QTest
+
+        view = MapGraphicsView()
+        qtbot.addWidget(view)
+        view.show()
+        QTest.keyPress(view, Qt.Key.Key_Space)
+        assert view._space_pressed is True
+
+    def test_space_key_release_clears_flag(self, qtbot):
+        """Releasing Space clears _space_pressed."""
+        from PySide6.QtCore import Qt
+        from PySide6.QtTest import QTest
+
+        view = MapGraphicsView()
+        qtbot.addWidget(view)
+        view.show()
+        QTest.keyPress(view, Qt.Key.Key_Space)
+        QTest.keyRelease(view, Qt.Key.Key_Space)
+        assert view._space_pressed is False
+
+    def test_space_press_forces_scroll_hand_drag(self, qtbot):
+        """Pressing Space switches drag mode to ScrollHandDrag even when NoDrag was set."""
+        from PySide6.QtCore import Qt
+        from PySide6.QtTest import QTest
+        from PySide6.QtWidgets import QGraphicsView
+
+        view = MapGraphicsView()
+        qtbot.addWidget(view)
+        view.show()
+        view.setDragMode(QGraphicsView.DragMode.NoDrag)
+        QTest.keyPress(view, Qt.Key.Key_Space)
+        assert view.dragMode() == QGraphicsView.DragMode.ScrollHandDrag
+
+    def test_space_release_restores_scroll_hand_drag_in_normal_mode(self, qtbot):
+        """Releasing Space in normal mode keeps ScrollHandDrag."""
+        from PySide6.QtCore import Qt
+        from PySide6.QtTest import QTest
+        from PySide6.QtWidgets import QGraphicsView
+
+        view = MapGraphicsView()
+        qtbot.addWidget(view)
+        view.show()
+        QTest.keyPress(view, Qt.Key.Key_Space)
+        QTest.keyRelease(view, Qt.Key.Key_Space)
+        assert view.dragMode() == QGraphicsView.DragMode.ScrollHandDrag
+
+    def test_space_held_overrides_marker_drag_suppression(self, qtbot):
+        """When Space is held, left-click over a MarkerItem keeps ScrollHandDrag."""
+        from unittest.mock import MagicMock, patch
+
+        from PySide6.QtCore import QPoint, Qt
+        from PySide6.QtGui import QMouseEvent
+        from PySide6.QtWidgets import QGraphicsView
+
+        from src.gui.widgets.map.marker_item import MarkerItem
+
+        view = MapGraphicsView()
+        qtbot.addWidget(view)
+        view.show()
+        view._space_pressed = True
+
+        mock_marker = MagicMock(spec=MarkerItem)
+        with patch.object(view, "itemAt", return_value=mock_marker):
+            event = QMouseEvent(
+                QMouseEvent.Type.MouseButtonPress,
+                QPoint(50, 50).toPointF(),
+                QPoint(50, 50).toPointF(),
+                QPoint(50, 50).toPointF(),
+                Qt.MouseButton.LeftButton,
+                Qt.MouseButton.LeftButton,
+                Qt.KeyboardModifier.NoModifier,
+            )
+            view.mousePressEvent(event)
+
+        assert view.dragMode() == QGraphicsView.DragMode.ScrollHandDrag
+
+
+class TestSpacePanningRasterMode:
+    """Tests for Space+drag panning while the raster/brush edit tool is active."""
+
+    def _view_with_active_raster(self, qtbot):
+        """Build a view with raster edit mode active (flags only, no real layer)."""
+        from PySide6.QtWidgets import QGraphicsView
+
+        view = MapGraphicsView()
+        qtbot.addWidget(view)
+        view.show()
+        view._raster_edit_tool._active = True
+        view.setDragMode(QGraphicsView.DragMode.NoDrag)
+        return view
+
+    def test_space_press_in_raster_mode_forces_scroll_hand_drag(self, qtbot):
+        """Pressing Space while raster-edit is active switches to ScrollHandDrag."""
+        from PySide6.QtCore import Qt
+        from PySide6.QtTest import QTest
+        from PySide6.QtWidgets import QGraphicsView
+
+        view = self._view_with_active_raster(qtbot)
+        assert view.dragMode() == QGraphicsView.DragMode.NoDrag
+        QTest.keyPress(view, Qt.Key.Key_Space)
+        assert view.dragMode() == QGraphicsView.DragMode.ScrollHandDrag
+
+    def test_space_release_in_raster_mode_restores_no_drag(self, qtbot):
+        """Releasing Space while raster-edit is active restores NoDrag (not ScrollHandDrag)."""
+        from PySide6.QtCore import Qt
+        from PySide6.QtTest import QTest
+        from PySide6.QtWidgets import QGraphicsView
+
+        view = self._view_with_active_raster(qtbot)
+        QTest.keyPress(view, Qt.Key.Key_Space)
+        QTest.keyRelease(view, Qt.Key.Key_Space)
+        assert view.dragMode() == QGraphicsView.DragMode.NoDrag
+
+    def test_space_held_press_in_raster_mode_bypasses_raster_handle(self, qtbot):
+        """Left-click while Space held must NOT be forwarded to the raster tool."""
+        from unittest.mock import patch
+
+        from PySide6.QtCore import QPoint, Qt
+        from PySide6.QtGui import QMouseEvent
+
+        view = self._view_with_active_raster(qtbot)
+        view._space_pressed = True
+        view.setDragMode(__import__("PySide6.QtWidgets", fromlist=["QGraphicsView"]).QGraphicsView.DragMode.ScrollHandDrag)
+
+        with patch.object(
+            view._raster_edit_tool, "handle_mouse_press", return_value=True
+        ) as mock_press:
+            event = QMouseEvent(
+                QMouseEvent.Type.MouseButtonPress,
+                QPoint(50, 50).toPointF(),
+                QPoint(50, 50).toPointF(),
+                QPoint(50, 50).toPointF(),
+                Qt.MouseButton.LeftButton,
+                Qt.MouseButton.LeftButton,
+                Qt.KeyboardModifier.NoModifier,
+            )
+            view.mousePressEvent(event)
+
+        mock_press.assert_not_called()
+
+    def test_space_held_move_in_raster_mode_bypasses_raster_move(self, qtbot):
+        """Mouse move while Space held must NOT call raster handle_mouse_move."""
+        from unittest.mock import patch
+
+        from PySide6.QtCore import QPoint, Qt
+        from PySide6.QtGui import QMouseEvent
+
+        view = self._view_with_active_raster(qtbot)
+        view._space_pressed = True
+
+        with patch.object(view._raster_edit_tool, "handle_mouse_move") as mock_move:
+            event = QMouseEvent(
+                QMouseEvent.Type.MouseMove,
+                QPoint(50, 50).toPointF(),
+                QPoint(50, 50).toPointF(),
+                QPoint(50, 50).toPointF(),
+                Qt.MouseButton.NoButton,
+                Qt.MouseButton.NoButton,
+                Qt.KeyboardModifier.NoModifier,
+            )
+            view.mouseMoveEvent(event)
+
+        mock_move.assert_not_called()
+
+    def test_space_held_release_in_raster_mode_bypasses_raster_handle(self, qtbot):
+        """Mouse release while Space held must NOT be consumed by the raster tool."""
+        from unittest.mock import patch
+
+        from PySide6.QtCore import QPoint, Qt
+        from PySide6.QtGui import QMouseEvent
+
+        view = self._view_with_active_raster(qtbot)
+        view._space_pressed = True
+
+        with patch.object(
+            view._raster_edit_tool, "handle_mouse_release", return_value=True
+        ) as mock_release:
+            event = QMouseEvent(
+                QMouseEvent.Type.MouseButtonRelease,
+                QPoint(50, 50).toPointF(),
+                QPoint(50, 50).toPointF(),
+                QPoint(50, 50).toPointF(),
+                Qt.MouseButton.LeftButton,
+                Qt.MouseButton.NoButton,
+                Qt.KeyboardModifier.NoModifier,
+            )
+            view.mouseReleaseEvent(event)
+
+        mock_release.assert_not_called()

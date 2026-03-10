@@ -708,6 +708,9 @@ class MapGraphicsView(QGraphicsView):
         # World root (set when a world is opened)
         self._world_root: Optional[str] = None
 
+        # Space held-to-pan state (industry-standard painting-app shortcut)
+        self._space_pressed: bool = False
+
     # ------------------------------------------------------------------
     # Backward-compatible property aliases for sub-component state
     # ------------------------------------------------------------------
@@ -1523,6 +1526,12 @@ class MapGraphicsView(QGraphicsView):
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Handle mouse press: raster edit, drawing, calibration, or normal."""
+        # Space held-to-pan takes absolute priority over every sub-system.
+        if self._space_pressed and event.button() == Qt.MouseButton.LeftButton:
+            self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+            super().mousePressEvent(event)
+            return
+
         # Raster editing mode (highest priority).
         # Also handle SAMPLE mode even when edit is not active, so users can
         # probe values without pressing "Edit".
@@ -1589,6 +1598,11 @@ class MapGraphicsView(QGraphicsView):
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Reset drag mode on release."""
+        # Space panning takes priority — Qt needs the release to end scroll-pan correctly.
+        if self._space_pressed and event.button() == Qt.MouseButton.LeftButton:
+            super().mouseReleaseEvent(event)
+            return
+
         # Raster editing
         if self._raster_edit_tool.is_active and self.pixmap_item:
             if event.button() == Qt.MouseButton.LeftButton:
@@ -1609,9 +1623,13 @@ class MapGraphicsView(QGraphicsView):
         """Handle mouse move: raster edit, drawing preview, vertex editing, coordinates."""
         scene_pos = self.mapToScene(event.position().toPoint())
 
-        # Raster editing (before super to avoid ScrollHandDrag panning)
+        # Raster editing (before super to avoid ScrollHandDrag panning).
+        # When Space is held, yield to super() so Qt's pan gesture gets the move.
         if self._raster_edit_tool.is_active:
-            self._raster_edit_tool.handle_mouse_move(scene_pos)
+            if self._space_pressed:
+                super().mouseMoveEvent(event)
+            else:
+                self._raster_edit_tool.handle_mouse_move(scene_pos)
         else:
             super().mouseMoveEvent(event)
 
@@ -1686,7 +1704,35 @@ class MapGraphicsView(QGraphicsView):
                 self.scene.clearSelection()
                 event.accept()
                 return
+
+        # Space held-to-pan (industry-standard painting-app shortcut).
+        if event.key() == Qt.Key.Key_Space and not event.isAutoRepeat():
+            self._space_pressed = True
+            self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+            self.viewport().setCursor(Qt.CursorShape.OpenHandCursor)
+            event.accept()
+            return
+
         super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event: "QKeyEvent") -> None:
+        """Restore drag mode and cursor when Space is released.
+
+        Args:
+            event: The key release event.
+        """
+        if event.key() == Qt.Key.Key_Space and not event.isAutoRepeat():
+            self._space_pressed = False
+            if self._raster_edit_tool.is_active:
+                # Return to brush mode: NoDrag + crosshair cursor
+                self.setDragMode(QGraphicsView.DragMode.NoDrag)
+                self.viewport().setCursor(Qt.CursorShape.CrossCursor)
+            elif not self.calibration_mode:
+                self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+                self.viewport().unsetCursor()
+            event.accept()
+            return
+        super().keyReleaseEvent(event)
 
     def _find_map_widget(self) -> "Optional[QWidget]":
         """Walks up the parent chain to find the owning MapWidget.

@@ -1,0 +1,9 @@
+feat(map): Space+left-drag hold-to-pan (hold Space to pan)
+
+- Add MAP_PAN shortcut to src/gui/utils/shortcut_manager.py.
+- Add _space_pressed state to MapGraphicsView.
+- Implement Space key handling (keyPressEvent/keyReleaseEvent) to enable hold-to-pan.
+- Make Space override raster brush mode (mouse press/move/release) so panning works while editing.
+- Add "Map" category to keyboard_shortcuts_dialog.py.
+- Add unit tests: TestSpacePanning and TestSpacePanningRasterMode in tests/unit/test_map_graphics_view.py.
+- All tests pass: 17 passed.
