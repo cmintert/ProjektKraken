@@ -13,6 +13,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 from PySide6.QtGui import QImage
 
+from src.gui.widgets.map.raster_mapping import normalize_value_entity_map
+
 logger = logging.getLogger(__name__)
 
 
@@ -74,12 +76,15 @@ class ColorEntry:
     value: int
     color: str
     entity_id: Optional[str] = None
+    label: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialise to JSON-friendly dict."""
         d: Dict[str, Any] = {"value": self.value, "color": self.color}
         if self.entity_id is not None:
             d["entity_id"] = self.entity_id
+        if self.label is not None:
+            d["label"] = self.label
         return d
 
     @classmethod
@@ -89,6 +94,7 @@ class ColorEntry:
             value=int(data["value"]),
             color=str(data["color"]),
             entity_id=data.get("entity_id"),
+            label=data.get("label"),
         )
 
 
@@ -322,8 +328,18 @@ class MapDataBuffer:
             (col, row) clamped to buffer bounds.
 
         """
-        col = int(round(x_norm * (self._width - 1)))
-        row = int(round(y_norm * (self._height - 1)))
+        # Map normalized coordinates [0,1] to pixel indices 0..width-1.
+        # Use truncation after scaling by the full width/height so that
+        # fractions like c/width map to column c (e.g. 3/4 -> col 3).
+        # Clamp to bounds to handle the x_norm==1.0 case.
+        try:
+            col = int(x_norm * self._width)
+        except Exception:
+            col = 0
+        try:
+            row = int(y_norm * self._height)
+        except Exception:
+            row = 0
         col = max(0, min(col, self._width - 1))
         row = max(0, min(row, self._height - 1))
         return col, row
@@ -1008,10 +1024,26 @@ class MapDataBuffer:
                 px = int(counts[v]) if v < len(counts) else 0
                 pct = (px / total * 100.0) if total > 0 else 0.0
 
-                # Precedence: Entity/Event Name > Label > UUID > Value Fallback
+                # Precedence: Entity/Event Name > VEM Label > Palette Label > UUID > Value Fallback
+                # Build VEM label lookup once (value_entity_map may be a dict or None)
+                vm = normalize_value_entity_map(value_entity_map or {})
+                label_by_value: Dict[int, str] = {}
+                for m in vm.get("mappings", []):
+                    val = m.get("value")
+                    if val is None:
+                        continue
+                    lbl = m.get("label")
+                    if lbl:
+                        try:
+                            label_by_value[int(val)] = lbl
+                        except (ValueError, TypeError):
+                            pass
+
                 entity_id = entry.entity_id
                 if entity_id and name_map and entity_id in name_map:
                     label = name_map[entity_id]
+                elif v in label_by_value:
+                    label = label_by_value[v]
                 elif entry.label:
                     label = entry.label
                 elif entity_id:

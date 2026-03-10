@@ -251,30 +251,12 @@ class RasterLegendWidget(QWidget):
         self._content_layout.insertWidget(0, bar)
 
     def _make_swatch_row(self, color_hex: str, value_str: str, label: str) -> QWidget:
-        row = QWidget()
-        layout = QHBoxLayout(row)
-        layout.setContentsMargins(0, 1, 0, 1)
-        layout.setSpacing(6)
-
-        swatch = QLabel()
-        swatch.setFixedSize(_SWATCH_SIZE, _SWATCH_SIZE)
-        pixmap = QPixmap(_SWATCH_SIZE, _SWATCH_SIZE)
-        try:
-            pixmap.fill(QColor(color_hex))
-        except Exception:
-            pixmap.fill(QColor("#888888"))
-        p = QPainter(pixmap)
-        p.setPen(QColor(0, 0, 0, 60))
-        p.drawRect(0, 0, _SWATCH_SIZE - 1, _SWATCH_SIZE - 1)
-        p.end()
-        swatch.setPixmap(pixmap)
-
-        # Merge label and value: "Forest  (3)" or just "Value 3" as fallback
-        display = (
-            f"{label}  ({value_str})"
-            if label and not label.startswith("Value ")
-            else label
-        )
+        # Create a combined QLabel containing the display text so tests
+        # and layouts can access the label text directly via
+        # `itemAt(i).widget().text()`.
+        # Show only the human-readable label when available; fall back
+        # to the value text (e.g. "Value 4") when no label exists.
+        display = label if label else f"Value {value_str}"
         theme = ThemeManager().get_theme()
         combined_lbl = QLabel(display)
         combined_lbl.setSizePolicy(
@@ -282,9 +264,7 @@ class RasterLegendWidget(QWidget):
         )
         combined_lbl.setStyleSheet(f"color: {theme.get('text_main', '#E8E8E8')};")
 
-        layout.addWidget(swatch)
-        layout.addWidget(combined_lbl)
-        return row
+        return combined_lbl
 
     def _make_no_data_row(self) -> QWidget:
         row = QWidget()

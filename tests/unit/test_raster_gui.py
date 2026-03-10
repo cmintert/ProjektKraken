@@ -1150,9 +1150,12 @@ class TestComputeCoverageStats:
 
         buf = MapDataBuffer(4, 4, default_value=0)
         # Paint 6 pixels with value=1, 4 with value=2, rest stay 0
-        buf._data[0, :] = 1  # 4 pixels
-        buf._data[1, :2] = 1  # 2 more → total 6
-        buf._data[2, :] = 2  # 4 pixels
+        for c in range(4):
+            buf.set_value_at(c / 4.0, 0.125, 1)  # row 0
+        for c in range(2):
+            buf.set_value_at(c / 4.0, 0.375, 1)  # row 1
+        for c in range(4):
+            buf.set_value_at(c / 4.0, 0.625, 2)  # row 2
         cmap = self._make_palette_cmap()
         stats = buf.compute_coverage_stats(cmap)
         assert stats.mode == "discrete"

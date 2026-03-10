@@ -50,28 +50,54 @@ ProjektKraken is a PySide6 desktop worldbuilding app organized into strict layer
 ### Layer Stack (top to bottom)
 
 **Application Layer** (`src/app/`)
-`main.py` → `MainWindow` coordinates all panels. Specialized coordinators handle focused concerns: `BackupCoordinator`, `NavigationCoordinator`, `TimeCoordinator`, `CommandCoordinator`. `WorkerManager` manages the background database thread lifecycle.
+Entry point is `src/app/entry.py`; `main.py` is a backward-compatibility shim. `MainWindow` lives in `main_window.py` and coordinates panels via specialized objects:
+- `coordinators/` — `AppCoordinator` (top-level), plus `BackupCoordinator`, `DataCoordinator`, `EditorCoordinator`, `FastInjectCoordinator`, `ImportCoordinator`, `NavigationCoordinator`, `TimeCoordinator`
+- `CommandCoordinator` — routes commands to the worker queue
+- `ConnectionManager` — wires Qt signals between components
+- `DataHandler` / `MapHandler` / `LongformManager` / `AISearchManager` / `TimelineGroupingManager` — domain-specific app-layer managers
+- `UIManager` / `WidgetRegistry` — dock/panel lifecycle and widget lookup
+- `WorkerManager` — background database thread lifecycle
 
 **Commands Layer** (`src/commands/`)
-All user mutations are encapsulated as `BaseCommand` subclasses with `execute()` and `undo()` methods. Commands are serialized to the `command_history` DB table for persistent undo/redo across sessions. Existing command modules: `event_commands.py`, `entity_commands.py`, `relation_commands.py`, `wiki_commands.py`, `map_commands.py`, `calendar_commands.py`.
+All user mutations are `BaseCommand` subclasses with `execute()` / `undo()`. Commands are serialized to `command_history` for persistent undo/redo. A `registry.py` maps command type strings to classes for deserialization. `CompositeCommand` bundles multiple commands atomically. Key modules: `event_commands`, `entity_commands`, `relation_commands`, `wiki_commands`, `map_commands`, `map_crud_commands`, `marker_commands`, `layer_commands`, `raster_commands`, `image_commands`, `longform_commands`, `calendar_commands`, `timeline_grouping_commands`, `inject_commands`.
 
 **Services Layer** (`src/services/`)
 - `DatabaseService` (`db_service.py`): Raw SQLite interface, owns WAL-mode connection
-- `repositories/`: One repository per domain object (EventRepository, EntityRepository, RelationRepository, MapRepository, CalendarRepository, etc.) — all take `DatabaseService` via constructor injection
+- `repositories/`: One repository per domain object — `EventRepository`, `EntityRepository`, `RelationRepository`, `MapRepository`, `CalendarRepository`, `AttachmentRepository`, `TagRepository`, `TrajectoryRepository`, `MetaRepository` — all injected with `DatabaseService`
 - `HistoryService`: Persists command history
 - `BackupService`: Automated + manual backup with retention policy
 - `AssetStore`: Image/icon import (WebP conversion), trash/restore for undo support
-- `RAGService`: Hybrid lexical + semantic search via LM Studio embeddings
+- `RAGService` (`rag_service.py`): Hybrid lexical + semantic search
+- `EmbeddingService`: Vector embeddings via configurable backend
+- `LLMProvider` (`llm_provider.py`) + `providers/`: Multi-backend AI (Anthropic, Google, OpenAI, LMStudio); `PromptBuilder`, `PromptLoader`, `ReasoningFilter`, `SummaryService`
+- `SearchService`: Unified text search across domain objects
+- `ImportService` / `ImportNormalization`: Data import pipeline
+- `ObsidianExporter`: Export worlds to Obsidian vaults
+- `GraphDataService`: Builds relation graph data for the graph view
+- `WebServiceManager`: Manages the embedded FastAPI/uvicorn preview server (for longform)
+- `AttachmentService`: File attachment management
 
 **Core Layer** (`src/core/`)
-Dataclass domain models: `Event`, `Entity`, `Relation`, `Calendar`, `Map`, `World`. Each has `to_dict()` / `from_dict()`. Utilities: `ThemeManager` (singleton, loads `themes.json`), `CalendarConverter`, `LinkResolver`.
+Dataclass domain models: `Event`, `Entity`, `Relation`, `Calendar`, `Map`, `Marker`, `World`, `Trajectory`, `ImageAttachment`. Each has `to_dict()` / `from_dict()`. Key utilities:
+- `ThemeManager` (singleton, loads `themes.json`), `StyleConstants`
+- `CalendarConverter`, `TemporalManager`, `TemporalResolver`, `DateParser`, `ParsedDate`
+- `LinkResolver` (moved to `src/services/link_resolver.py`)
+- `RasterPresets`: Built-in color palette presets for raster layers
+- `FastInject`: AI-assisted quick-fill data model
+- `WikiAST`: Parsed representation of `[[wiki link]]` syntax
+- `Protocols`: Shared structural typing interfaces
+- `Paths`: Centralized path resolution for worlds/assets
 
 **GUI Layer** (`src/gui/`)
-Widgets in `src/gui/widgets/`. Key subdirectories:
-- `timeline/` — lane-based and ruler timeline visualization
-- `map/` — `MapGraphicsView`, GIS feature editing (paths, regions, markers), raster layer support with legend overlay
-- `longform/` — hierarchical document editor with live FastAPI/uvicorn preview server
-- Top-level widgets: `entity_editor.py`, `event_editor.py`, `unified_list.py`, `wiki_text_edit.py` (supports `[[wiki links]]`), `gallery_widget.py`, `sheet_builder.py`
+- `widgets/` — all interactive panels and editors
+  - `map/` — `MapGraphicsView`, GIS feature editing (paths, regions, markers), raster layer pipeline (`raster_layer_item`, `raster_edit_tool`, `raster_legend_widget`, `raster_mapping`, `raster_palette_editor`, `raster_probe_popup`, `raster_stats_panel`)
+  - `timeline/` — `TimelineScene`, `TimelineView`, group band visualization
+  - `longform/` — hierarchical document `editor.py` with outline/content split
+  - `graph_view/` — force-directed relation graph (`GraphWidget`, `GraphBuilder`, `GraphWebView`)
+- `dialogs/` — standalone modal dialogs (AI settings, import preview, raster queries, etc.)
+- `mixins/` — reusable widget behaviors (`AutosaveMixin`, `EditorMixin`, `LayoutGuard`, map mixins)
+- `models/` — Qt item models (`ExplorerModel`, `ExplorerFilterProxy`)
+- `utils/` — helpers (`color_utils`, `geometry_utils`, `svg_utils`, `icon_loader`, `style_helper`, `shortcut_manager`)
 
 ### Threading Model
 
@@ -92,6 +118,7 @@ All worlds live in a `worlds/` directory next to the executable (or project root
 - **Double quotes** for strings; line length 88 (Black-compatible)
 - **Imports order**: stdlib → third-party → local (`src.*`)
 - No wildcard imports from Qt or anywhere else
+- Use fully qualified PySide6 enum paths (e.g. `Qt.AlignmentFlag.AlignLeft`, not `Qt.AlignLeft`) — see `docs/PYSIDE6_ENUM_SOLUTION.md`
 - Commit messages use conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`, `style:`, `test:`
 - Tests use `pytest-qt` with offscreen Qt platform (`QT_QPA_PLATFORM=offscreen` set in `conftest.py`)
 - `ThemeManager` is a singleton initialized in `conftest.py`; tests requiring it should use the `init_theme_manager` session fixture
