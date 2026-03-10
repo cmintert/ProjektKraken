@@ -6,11 +6,9 @@ Covers the precedence order: Entity/Event Name > Label > Value/UUID fallback.
 from __future__ import annotations
 
 import numpy as np
-from PySide6.QtWidgets import QApplication, QWidget
 
 from src.gui.widgets.map.map_data_buffer import ColorMap, MapDataBuffer
 from src.gui.widgets.map.raster_legend_widget import RasterLegendWidget
-
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 
