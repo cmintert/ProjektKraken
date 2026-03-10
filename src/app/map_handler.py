@@ -11,6 +11,7 @@ received through signals.
 
 import shutil
 import uuid
+from collections import OrderedDict
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 
@@ -102,7 +103,8 @@ class MapHandler(QObject):
         # ── Temporal rasters ──────────────────────────────────────────
         self._current_lore_date: float = 0.0
         # abs_path → MapDataBuffer (avoids re-reading same snapshot file)
-        self._snapshot_cache: Dict[str, Any] = {}
+        self._snapshot_cache: OrderedDict[str, Any] = OrderedDict()
+        self._snapshot_cache_max: int = 20
         # node_id → abs_path currently shown in scene
         self._current_snapshot_by_node: Dict[str, str] = {}
         self._temporal_debounce_timer = QTimer()
@@ -1619,14 +1621,26 @@ class MapHandler(QObject):
 
     @Slot(float)
     def on_playhead_changed(self, lore_date: float) -> None:
-        """Handle timeline playhead change — debounced raster swap.
+        """Handle timeline playhead change — immediate apply with debounce.
+
+        Applies temporal rasters immediately when the debounce timer is
+        idle (single-step or slow scrubbing).  During rapid scrubbing the
+        timer is already active, so we skip the immediate apply and let
+        the debounce coalesce into a single update when scrubbing stops.
 
         Args:
             lore_date: New playhead position in lore time (float days).
         """
         self._current_lore_date = lore_date
-        if self._current_map_id:
-            self._temporal_debounce_timer.start()
+        if not self._current_map_id:
+            return
+
+        # Apply immediately when no debounce is pending
+        if not self._temporal_debounce_timer.isActive():
+            self._apply_temporal_rasters()
+
+        # Start/restart debounce to coalesce rapid scrubbing
+        self._temporal_debounce_timer.start()
 
     def _apply_temporal_rasters(self) -> None:
         """Load the appropriate snapshot for each raster layer at current lore date.
@@ -1675,6 +1689,9 @@ class MapHandler(QObject):
                 except Exception as e:
                     logger.warning("Failed to load snapshot %s: %s", best_abs_path, e)
                     continue
+            else:
+                # Move to end so recently-used entries survive eviction
+                self._snapshot_cache.move_to_end(best_abs_path)
 
             item.swap_buffer(buf)
             self._current_snapshot_by_node[node_id] = best_abs_path
@@ -1684,6 +1701,20 @@ class MapHandler(QObject):
                 best_rel_path,
                 self._current_lore_date,
             )
+
+        self._evict_snapshot_cache()
+
+    def _evict_snapshot_cache(self) -> None:
+        """Remove the oldest entries from ``_snapshot_cache`` when it exceeds the limit.
+
+        Uses FIFO order of the underlying :class:`OrderedDict` so that
+        the least-recently-inserted (or least-recently-accessed, since
+        ``_apply_temporal_rasters`` calls ``move_to_end`` on hits) entries
+        are evicted first.
+        """
+        while len(self._snapshot_cache) > self._snapshot_cache_max:
+            evicted_key, _ = self._snapshot_cache.popitem(last=False)
+            logger.debug("Evicted snapshot cache entry: %s", evicted_key)
 
     def _find_best_snapshot_path(self, meta: Dict[str, Any], lore_date: float) -> str:
         """Find the best (nearest past) snapshot file path for a given lore date.
