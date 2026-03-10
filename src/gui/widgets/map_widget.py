@@ -21,7 +21,7 @@ import logging
 import os
 from typing import List, Optional
 
-from PySide6.QtCore import QSize, Qt, Signal, Slot
+from PySide6.QtCore import QSize, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QKeyEvent, QPaintEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QComboBox,
@@ -313,6 +313,15 @@ class MapWidget(
         self.btn_snap.clicked.connect(self._on_snap_toggled)
         self.toolbar.addWidget(self.btn_snap)
 
+        # Legend visibility toggle
+        self.btn_legend_toggle = QPushButton("Legend")
+        self.btn_legend_toggle.setToolTip("Show / hide the raster layer legend overlay")
+        self.btn_legend_toggle.setCheckable(True)
+        self.btn_legend_toggle.setChecked(False)
+        self.btn_legend_toggle.setStyleSheet(tool_style)
+        self.btn_legend_toggle.toggled.connect(self._on_legend_toggle)
+        self.toolbar.addWidget(self.btn_legend_toggle)
+
         # Mode Indicator (right side)
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
@@ -421,7 +430,7 @@ class MapWidget(
         )
         self.view.marker_drop_requested.connect(self.marker_drop_requested.emit)
         self.view.mouse_coordinates_changed.connect(self._on_mouse_coordinates_changed)
-        self.view.viewport_resized.connect(self._position_legend_overlay)
+        self.view.viewport_resized.connect(lambda _: self._position_legend_overlay())
 
         # Focus proxy to ensure view gets keyboard events when widget is clicked
         self.setFocusProxy(self.view)
@@ -500,7 +509,7 @@ class MapWidget(
             animated: When ``True``, smoothly animate the height change
                 instead of snapping instantly (used by the toggle button).
         """
-        from PySide6.QtCore import QPropertyAnimation, QEasingCurve
+        from PySide6.QtCore import QEasingCurve, QPropertyAnimation
 
         _MARGIN = 12
         legend = self.legend_overlay
@@ -517,19 +526,22 @@ class MapWidget(
         legend.setMaximumHeight(available_h)
 
         header_h = legend._toggle_btn.sizeHint().height() + 10
+        title_h = (
+            legend._title_label.sizeHint().height()
+            if legend._title_label.isVisible()
+            else 0
+        )
         w = max_w
 
         if not legend._scroll.isVisible():
             # Collapsed: only the header button is visible — keep it tight.
-            h = header_h
+            h = header_h + title_h
         else:
             # Compute ideal height from content widget so every row is shown.
+            # Include the title label (in outer layout, not inside _content).
             content_h = legend._content.sizeHint().height()
-            ideal_h = content_h + header_h + 16  # padding
-            # Use a reasonable default height (30% of the viewport) to reduce
-            # vertical clipping for long legends while still keeping the
-            # overlay compact; always cap to available_h.
-            h = min(max(ideal_h, int(available_h * 0.3)), available_h)
+            ideal_h = content_h + header_h + title_h + 16  # padding
+            h = min(ideal_h, available_h)
 
         # Anchor to top-left of the viewport.
         x = vp_rect.x() + _MARGIN
@@ -570,10 +582,41 @@ class MapWidget(
             )
         if not node_id or not layer_meta:
             overlay.hide()
+            self.btn_legend_toggle.blockSignals(True)
+            self.btn_legend_toggle.setChecked(False)
+            self.btn_legend_toggle.blockSignals(False)
         else:
-            overlay.set_layer(layer_meta)
+            name_map = {}
+            for e in self._cached_entities:
+                if getattr(e, "id", None) and getattr(e, "name", None):
+                    name_map[e.id] = e.name
+            for ev in self._cached_events:
+                if getattr(ev, "id", None) and getattr(ev, "name", None):
+                    name_map[ev.id] = ev.name
+
+            overlay.set_layer(layer_meta, name_map=name_map)
             overlay.show()
             self._position_legend_overlay()
+            # Deferred re-position: layout geometry may not be settled yet on
+            # first show (e.g. during world-file load before viewport is sized).
+            QTimer.singleShot(0, self._position_legend_overlay)
+            self.btn_legend_toggle.blockSignals(True)
+            self.btn_legend_toggle.setChecked(True)
+            self.btn_legend_toggle.blockSignals(False)
+
+    @Slot(bool)
+    def _on_legend_toggle(self, checked: bool) -> None:
+        """Show or hide the legend overlay from the toolbar button.
+
+        Args:
+            checked: ``True`` to show; ``False`` to hide.
+        """
+        if checked:
+            self.legend_overlay.show()
+            self._position_legend_overlay()
+            QTimer.singleShot(0, self._position_legend_overlay)
+        else:
+            self.legend_overlay.hide()
 
     def _on_selection_changed(self) -> None:
         """Updates UI state based on selection."""

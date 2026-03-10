@@ -963,7 +963,47 @@ class MapHandler(QObject):
 
         # Pass full metadata so the legend and class picker can populate
         meta_by_id = {m["node_id"]: m for m in raster_metas if m.get("node_id")}
-        self._map_widget.layer_panel.set_raster_layer_metadata(meta_by_id)
+
+        # We need to construct name_map_by_id from the DB for entity/event names
+        name_map_by_id: Dict[str, Dict[str, str]] = {}
+        db = None
+        for meta in raster_metas:
+            node_id_meta = meta.get("node_id", "")
+            if not node_id_meta:
+                continue
+
+            from src.gui.widgets.map.raster_mapping import normalize_value_entity_map
+
+            vem = normalize_value_entity_map(meta.get("value_entity_map", {}))
+            entity_ids = {
+                m.get("entity_id")
+                for m in vem.get("mappings", [])
+                if m.get("entity_id")
+            }
+            if entity_ids:
+                if db is None:
+                    db_path = self._db_path_accessor()
+                    if db_path:
+                        from src.services.db_service import DatabaseService
+
+                        db = DatabaseService(db_path)
+                        db.connect()
+
+                if db:
+                    layer_name_map = {}
+                    for eid in entity_ids:
+                        try:
+                            name = db.get_name(eid)
+                            if name:
+                                layer_name_map[eid] = name
+                        except Exception:
+                            pass
+                    if layer_name_map:
+                        name_map_by_id[node_id_meta] = layer_name_map
+
+        self._map_widget.layer_panel.set_raster_layer_metadata(
+            meta_by_id, name_map_by_id
+        )
 
         # Connect layer panel signals (guard against duplicate connections)
         layer_panel = self._map_widget.layer_panel

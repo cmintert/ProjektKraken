@@ -524,6 +524,7 @@ def resolve_node_name(layers: Any, target_id: str) -> Optional[str]:
 
 def get_discrete_class_choices(
     layer_meta: Dict[str, Any],
+    name_map: Optional[Dict[str, str]] = None,
 ) -> List[Tuple[str, int]]:
     """Return ``(display_label, value)`` pairs for a discrete class picker.
 
@@ -533,6 +534,7 @@ def get_discrete_class_choices(
     Args:
         layer_meta: Raster layer metadata dict containing
             ``value_entity_map``.
+        name_map: Optional dict mapping entity/event UUIDs to names.
 
     Returns:
         List of ``(display_label, value)`` tuples sorted ascending by
@@ -546,8 +548,21 @@ def get_discrete_class_choices(
         v = entry.get("value")
         if v is None:
             continue
-        label = entry.get("label") or f"Value {v}"
-        choices.append((label, int(v)))
+
+        entity_id = entry.get("entity_id")
+
+        # Precedence: Entity/Event Name > Label > UUID
+        lbl = ""
+        if entity_id and name_map and entity_id in name_map:
+            lbl = name_map[entity_id]
+        elif entry.get("label"):
+            lbl = entry["label"]
+        elif entity_id:
+            lbl = entity_id
+        else:
+            lbl = f"Value {v}"
+
+        choices.append((lbl, int(v)))
     return sorted(choices, key=lambda x: x[1])
 
 

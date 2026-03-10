@@ -9,8 +9,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QLinearGradient, QPainter, QPixmap
+from PySide6.QtCore import QPoint, Qt
+from PySide6.QtGui import QColor, QLinearGradient, QMouseEvent, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -46,6 +46,7 @@ class RasterLegendWidget(QWidget):
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
+        self._drag_last_global: Optional[QPoint] = None
         self._setup_ui()
 
     # ------------------------------------------------------------------
@@ -78,6 +79,15 @@ class RasterLegendWidget(QWidget):
         header.addWidget(self._toggle_btn)
         outer.addLayout(header)
 
+        # Layer name title (bold, visible only when a named layer is active)
+        self._title_label = QLabel()
+        self._title_label.setStyleSheet(
+            f"QLabel {{ color: {theme.get('text_dim', '#aaaaaa')}; "
+            f"font-size: 8pt; padding: 0px 6px 2px 6px; }}"
+        )
+        self._title_label.setVisible(False)
+        outer.addWidget(self._title_label)
+
         # Scrollable content area
         self._scroll = QScrollArea()
         self._scroll.setWidgetResizable(True)
@@ -97,16 +107,28 @@ class RasterLegendWidget(QWidget):
     # Public API
     # ------------------------------------------------------------------
 
-    def set_layer(self, layer_meta: Optional[Dict[str, Any]]) -> None:
+    def set_layer(
+        self,
+        layer_meta: Optional[Dict[str, Any]],
+        name_map: Optional[Dict[str, str]] = None,
+    ) -> None:
         """Populate the legend from *layer_meta*.
 
         Args:
             layer_meta: The raster layer metadata dict, or ``None`` to clear.
-
+            name_map: Optional dict mapping entity/event UUIDs to names.
         """
         self._clear_content()
         if not layer_meta:
+            self._title_label.setVisible(False)
             return
+
+        name = layer_meta.get("name", "")
+        if name:
+            self._title_label.setText(name)
+            self._title_label.setVisible(True)
+        else:
+            self._title_label.setVisible(False)
 
         color_map = layer_meta.get("color_map", {})
         cm_type = (
@@ -119,7 +141,7 @@ class RasterLegendWidget(QWidget):
             self._build_continuous_legend(color_map)
         else:
             self._build_discrete_legend(
-                color_map, layer_meta.get("value_entity_map", {})
+                color_map, layer_meta.get("value_entity_map", {}), name_map
             )
 
     # ------------------------------------------------------------------
@@ -136,33 +158,60 @@ class RasterLegendWidget(QWidget):
         self,
         color_map: Dict[str, Any],
         vem_raw: Any,
+        name_map: Optional[Dict[str, str]] = None,
     ) -> None:
         # Build value → label dict from value_entity_map
         label_by_value: Dict[int, str] = {}
+        entity_by_value: Dict[int, str] = {}
         vem = normalize_value_entity_map(vem_raw)
         for entry in vem.get("mappings", []):
             v = entry.get("value")
-            if v is not None and entry.get("label"):
-                label_by_value[int(v)] = entry["label"]
+            if v is not None:
+                v = int(v)
+                if entry.get("label"):
+                    label_by_value[v] = entry["label"]
+                if entry.get("entity_id"):
+                    entity_by_value[v] = entry["entity_id"]
 
         # Build (value, color, label) triples from palette entries
         entries: List[Tuple[int, str, str]] = []
         for ce in color_map.get("entries", []):
-            v = ce.get("value")
-            if v is None:
+            v = int(ce.get("value", 0))
+            if v == 0:
                 continue
-            color = ce.get("color", "#888888")
-            label = label_by_value.get(int(v), f"Value {v}")
-            entries.append((int(v), color, label))
+
+            # Prioritize layer metadata, then default colors
+            color_hex = ce.get("color", "#808080")
+
+            # Precedence: Entity/Event Name > Label > UUID
+            entity_id = entity_by_value.get(v)
+            if entity_id and name_map and entity_id in name_map:
+                lbl = name_map[entity_id]
+            elif v in label_by_value:
+                lbl = label_by_value[v]
+            elif entity_id:
+                lbl = entity_id
+            else:
+                lbl = ce.get("label", f"Value {v}")
+
+            entries.append((v, color_hex, lbl))
 
         # Fallback: if no color_map entries, use vem labels only
         if not entries:
-            for entry in vem.get("mappings", []):
-                v = entry.get("value")
-                if v is not None:
-                    entries.append(
-                        (int(v), "#888888", entry.get("label") or f"Value {v}")
-                    )
+            for v, entity_id in entity_by_value.items():
+                lbl = ""
+                if name_map and entity_id in name_map:
+                    lbl = name_map[entity_id]
+                elif v in label_by_value:
+                    lbl = label_by_value[v]
+                else:
+                    lbl = entity_id
+                entries.append((v, "#808080", lbl))
+
+            # For values that only have labels, not entities
+            for v, label in label_by_value.items():
+                if v not in entity_by_value:
+                    entries.append((v, "#808080", label))
 
         if not entries:
             self._add_placeholder("No classes defined")
@@ -297,6 +346,36 @@ class RasterLegendWidget(QWidget):
         except Exception:
             pass
 
+    # ------------------------------------------------------------------
+    # Drag-to-reposition
+    # ------------------------------------------------------------------
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:  # type: ignore[override]
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._drag_last_global = event.globalPosition().toPoint()
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:  # type: ignore[override]
+        if (
+            event.buttons() & Qt.MouseButton.LeftButton
+            and self._drag_last_global is not None
+        ):
+            current_global = event.globalPosition().toPoint()
+            delta = current_global - self._drag_last_global
+            self._drag_last_global = current_global
+            new_pos = self.pos() + delta
+            if self.parent():
+                pw = self.parent().width()
+                ph = self.parent().height()
+                new_pos.setX(max(0, min(new_pos.x(), pw - self.width())))
+                new_pos.setY(max(0, min(new_pos.y(), ph - self.height())))
+            self.move(new_pos)
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:  # type: ignore[override]
+        self._drag_last_global = None
+        super().mouseReleaseEvent(event)
+
 
 class _GradientBarWidget(QWidget):
     """Vertical gradient bar for continuous raster legend.
@@ -305,6 +384,9 @@ class _GradientBarWidget(QWidget):
     *gradient_end* (top, value 65535) with min/max labels alongside.
     When display mapping is provided, the labels show real-world values
     (e.g. ``"-10 °C"`` / ``"40 °C"``) instead of raw integers.
+
+    Three intermediate tick marks at 25 %, 50 %, and 75 % are drawn on
+    the gradient bar and labelled to the right.
     """
 
     def __init__(
@@ -347,6 +429,8 @@ class _GradientBarWidget(QWidget):
                 format_display_value,
             )
 
+            _smin = stretch_min if stretch_min is not None else 0
+            _smax = stretch_max if stretch_max is not None else 65535
             temp_cmap = ColorMap(
                 type="gradient",
                 display_min=display_min,
@@ -354,25 +438,48 @@ class _GradientBarWidget(QWidget):
                 unit=unit,
                 format_str=format_str,
                 scale=scale,
-                stretch_min=stretch_min if stretch_min is not None else 0,
-                stretch_max=stretch_max if stretch_max is not None else 65535,
+                stretch_min=_smin,
+                stretch_max=_smax,
             )
-            top_val = format_display_value(
-                temp_cmap, stretch_max if stretch_max is not None else 65535
-            )
-            bottom_val = format_display_value(
-                temp_cmap, stretch_min if stretch_min is not None else 0
-            )
+
+            def _fmt(raw: int) -> str:
+                return format_display_value(temp_cmap, raw)
+
         else:
-            top_val = str(stretch_max) if stretch_max is not None else "max"
-            bottom_val = str(stretch_min) if stretch_min is not None else "0"
+            _smin = stretch_min if stretch_min is not None else 0
+            _smax = stretch_max if stretch_max is not None else 65535
+
+            def _fmt(raw: int) -> str:
+                return str(raw)
+
+        top_val = _fmt(_smax)
+        pct75_val = _fmt(int(_smin + 0.75 * (_smax - _smin)))
+        pct50_val = _fmt(int(_smin + 0.50 * (_smax - _smin)))
+        pct25_val = _fmt(int(_smin + 0.25 * (_smax - _smin)))
+        bottom_val = _fmt(_smin)
 
         top_label = QLabel(top_val)
         top_label.setStyleSheet(dim_style)
+        tick75_label = QLabel(pct75_val)
+        tick75_label.setStyleSheet(dim_style)
+        tick50_label = QLabel(pct50_val)
+        tick50_label.setStyleSheet(dim_style)
+        tick25_label = QLabel(pct25_val)
+        tick25_label.setStyleSheet(dim_style)
         bottom_label = QLabel(bottom_val)
         bottom_label.setStyleSheet(dim_style)
+
+        # Store for test inspection (ordered 75 → 50 → 25, top to bottom)
+        self._tick_labels: List[QLabel] = [tick75_label, tick50_label, tick25_label]
+
         labels_layout.addWidget(top_label)
-        labels_layout.addStretch()
+        labels_layout.addStretch(1)
+        labels_layout.addWidget(tick75_label)
+        labels_layout.addStretch(1)
+        labels_layout.addWidget(tick50_label)
+        labels_layout.addStretch(1)
+        labels_layout.addWidget(tick25_label)
+        labels_layout.addStretch(1)
         labels_layout.addWidget(bottom_label)
         layout.addLayout(labels_layout)
 
@@ -397,6 +504,14 @@ class _GradientBarWidget(QWidget):
             gradient.setColorAt(0.0, QColor("#FFFFFF"))
             gradient.setColorAt(1.0, QColor("#000000"))
         p.fillRect(0, 0, w, h, gradient)
+
+        # Draw tick marks at 25 %, 50 %, 75 % (top = 0 %, bottom = 100 %)
+        tick_color = QColor(255, 255, 255, 160)
+        p.setPen(tick_color)
+        for frac in (0.25, 0.50, 0.75):
+            y = int(frac * (h - 1))
+            p.drawLine(0, y, w - 1, y)
+
         theme = ThemeManager().get_theme()
         p.setPen(QColor(theme.get("border", "#444444")))
         p.drawRect(0, 0, w - 1, h - 1)

@@ -772,7 +772,8 @@ class MapLayerPanel(QWidget):
             self._show_mode_badge(mode)
             # Refresh legend and entity picker from stored metadata
             layer_meta = self._raster_meta_by_id.get(node.id)
-            self._refresh_entity_picker(layer_meta, mode)
+            name_map = getattr(self, "_raster_name_map_by_id", {}).get(node.id)
+            self._refresh_entity_picker(layer_meta, mode, name_map)
             # Notify consumers (e.g. MapWidget) to update the floating legend
             self.raster_layer_selected.emit(node.id, layer_meta)
             # Refresh blend mode combo without triggering signals
@@ -825,6 +826,7 @@ class MapLayerPanel(QWidget):
         self,
         layer_meta: Optional[Dict[str, Any]],
         mode: str,
+        name_map: Optional[Dict[str, str]] = None,
     ) -> None:
         """Repopulate the *Paint as:* class picker from *layer_meta*.
 
@@ -834,6 +836,7 @@ class MapLayerPanel(QWidget):
         Args:
             layer_meta: Raster layer metadata dict, or ``None``.
             mode: ``"discrete"`` or ``"continuous"``.
+            name_map: Optional dict mapping entity/event UUIDs to names.
 
         """
         from src.gui.widgets.map.raster_mapping import get_discrete_class_choices
@@ -842,7 +845,7 @@ class MapLayerPanel(QWidget):
         choices: List[Tuple[str, int]] = []
 
         if is_discrete and layer_meta:
-            choices = get_discrete_class_choices(layer_meta)
+            choices = get_discrete_class_choices(layer_meta, name_map)
 
         # Block signals while repopulating to avoid spurious value changes
         self._entity_picker_combo.blockSignals(True)
@@ -918,7 +921,9 @@ class MapLayerPanel(QWidget):
                     self._show_mode_badge(mode)
 
     def set_raster_layer_metadata(
-        self, meta_by_id: "Dict[str, Dict[str, Any]]"
+        self,
+        meta_by_id: "Dict[str, Dict[str, Any]]",
+        name_map_by_id: Optional[Dict[str, Dict[str, str]]] = None,
     ) -> None:
         """Store full raster layer metadata for legend and class picker.
 
@@ -929,9 +934,11 @@ class MapLayerPanel(QWidget):
             meta_by_id: Mapping of ``node_id`` → full raster layer metadata
                 dict (the same dicts stored in
                 ``maps.attributes["raster_layers"]``).
-
+            name_map_by_id: Optional mapping of ``node_id`` → ``name_map`` dict
+                for resolving entity/event names in the class picker.
         """
         self._raster_meta_by_id = meta_by_id
+        self._raster_name_map_by_id = name_map_by_id or {}
         # Refresh legend and picker if a raster is already selected
         if self._selected_node_id and self._model is not None:
             node = self._model.find_node_by_id(self._selected_node_id)
@@ -943,7 +950,8 @@ class MapLayerPanel(QWidget):
                         self._selected_node_id, "discrete"
                     )
                     layer_meta = self._raster_meta_by_id.get(self._selected_node_id)
-                    self._refresh_entity_picker(layer_meta, mode)
+                    name_map = self._raster_name_map_by_id.get(self._selected_node_id)
+                    self._refresh_entity_picker(layer_meta, mode, name_map)
                     # Notify consumers to refresh the floating legend
                     self.raster_layer_selected.emit(self._selected_node_id, layer_meta)
 
@@ -1015,9 +1023,7 @@ class MapLayerPanel(QWidget):
         return (
             "gradient"
             if self._btn_gradient.isChecked()
-            else "sample"
-            if self._btn_sample.isChecked()
-            else "brush"
+            else "sample" if self._btn_sample.isChecked() else "brush"
         )
 
     @property

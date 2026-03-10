@@ -974,6 +974,7 @@ class MapDataBuffer:
         self,
         color_map: "ColorMap",
         value_entity_map: Optional[Dict[str, Any]] = None,
+        name_map: Optional[Dict[str, str]] = None,
     ) -> "CoverageStats":
         """Compute pixel coverage statistics for this raster buffer.
 
@@ -987,6 +988,7 @@ class MapDataBuffer:
                 palette entries.
             value_entity_map: Optional value→entity mapping dict.  Currently
                 unused in computation but reserved for future label lookup.
+            name_map: Optional cache of resolved entity/event names keyed by ID.
 
         Returns:
             A :class:`CoverageStats` instance populated with statistics
@@ -1005,10 +1007,22 @@ class MapDataBuffer:
                 covered_values.add(v)
                 px = int(counts[v]) if v < len(counts) else 0
                 pct = (px / total * 100.0) if total > 0 else 0.0
+
+                # Precedence: Entity/Event Name > Label > UUID > Value Fallback
+                entity_id = entry.entity_id
+                if entity_id and name_map and entity_id in name_map:
+                    label = name_map[entity_id]
+                elif entry.label:
+                    label = entry.label
+                elif entity_id:
+                    label = entity_id
+                else:
+                    label = f"Value {v}"
+
                 classes.append(
                     ClassStat(
                         value=v,
-                        label=entry.entity_id or f"Value {v}",
+                        label=label,
                         pixel_count=px,
                         percentage=round(pct, 2),
                     )
