@@ -461,6 +461,9 @@ class MapWidget(
             self._on_raster_settings_changed
         )
         self.layer_panel.raster_layer_selected.connect(self._on_raster_layer_selected)
+        self.layer_panel.raster_snapshot_selected.connect(
+            self._on_raster_snapshot_selected
+        )
 
         # Forward raster signals from the graphics view
         self.view.raster_stroke_completed.connect(self.raster_stroke_completed.emit)
@@ -617,6 +620,11 @@ class MapWidget(
             QTimer.singleShot(0, self._position_legend_overlay)
         else:
             self.legend_overlay.hide()
+
+    @Slot(str, float)
+    def _on_raster_snapshot_selected(self, _node_id: str, lore_date: float) -> None:
+        """Forward snapshot selection to timeline playhead jump."""
+        self.jump_to_time_requested.emit(lore_date)
 
     def _on_selection_changed(self) -> None:
         """Updates UI state based on selection."""
@@ -1066,6 +1074,7 @@ class MapWidget(
     def set_calendar_converter(self, converter: object) -> None:
         """Sets the calendar converter for formatting keyframe date labels."""
         self.view.set_calendar_converter(converter)
+        self.layer_panel.set_calendar_converter(converter)
 
     # -- Keyframe delete provided by MapTrajectoryMixin ----------------
 

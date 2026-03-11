@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
 
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt, QTimer, Signal, Slot
+from PySide6.QtWidgets import QMessageBox
 
 from src.commands.map_commands import (
     CreateMapCommand,
@@ -31,6 +32,7 @@ from src.commands.map_commands import (
     UpdateMarkerCommand,
     UpdateMarkerIconCommand,
 )
+from src.app.constants import TEMPORAL_SNAPSHOT_CACHE_MAX
 from src.core.logging_config import get_logger
 
 if TYPE_CHECKING:
@@ -104,7 +106,7 @@ class MapHandler(QObject):
         self._current_lore_date: float = 0.0
         # abs_path → MapDataBuffer (avoids re-reading same snapshot file)
         self._snapshot_cache: OrderedDict[str, Any] = OrderedDict()
-        self._snapshot_cache_max: int = 20
+        self._snapshot_cache_max: int = TEMPORAL_SNAPSHOT_CACHE_MAX
         # node_id → abs_path currently shown in scene
         self._current_snapshot_by_node: Dict[str, str] = {}
         self._temporal_debounce_timer = QTimer()
@@ -1027,6 +1029,16 @@ class MapHandler(QObject):
             self._on_raster_blend_mode_changed
         )
 
+        try:
+            layer_panel.raster_snapshot_delete_requested.disconnect(
+                self.on_raster_snapshot_delete_requested
+            )
+        except RuntimeError:
+            pass
+        layer_panel.raster_snapshot_delete_requested.connect(
+            self.on_raster_snapshot_delete_requested
+        )
+
     # ------------------------------------------------------------------
     # Raster editing handlers
     # ------------------------------------------------------------------
@@ -1825,3 +1837,80 @@ class MapHandler(QObject):
             lore_date,
             snap_count,
         )
+
+    @Slot(str, float)
+    def on_raster_snapshot_selected(self, node_id: str, lore_date: float) -> None:
+        """Handle selecting a snapshot row by jumping the timeline playhead."""
+        _ = node_id
+        self._map_widget.jump_to_time_requested.emit(lore_date)
+
+    @Slot(str, float)
+    def on_raster_snapshot_delete_requested(self, node_id: str, lore_date: float) -> None:
+        """Delete a snapshot at a lore date for a given raster layer."""
+        if not self._current_map_id:
+            return
+
+        maps = self._map_widget.maps_data
+        selected_map = next((m for m in maps if m.id == self._current_map_id), None)
+        if not selected_map:
+            return
+
+        raster_metas = (selected_map.attributes or {}).get("raster_layers", [])
+        meta = next((m for m in raster_metas if m.get("node_id") == node_id), None)
+        if meta is None:
+            return
+
+        snapshots: Dict[str, str] = dict(meta.get("snapshots", {}))
+        target_key: Optional[str] = None
+        for key in snapshots:
+            val = _safe_float(key)
+            if val is not None and abs(val - lore_date) < 1e-9:
+                target_key = key
+                break
+        if target_key is None:
+            return
+
+        answer = QMessageBox.question(
+            self._map_widget,
+            "Delete Snapshot",
+            (
+                f"Delete snapshot at lore day {lore_date:.2f}?\n"
+                "This removes the snapshot file from disk."
+            ),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Cancel,
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+
+        rel_path = snapshots.get(target_key, "")
+        if not rel_path:
+            return
+
+        old_snapshots = dict(snapshots)
+        snapshots.pop(target_key, None)
+        meta["snapshots"] = snapshots
+
+        world_root = Path(self._db_path_accessor()).parent
+        abs_path = str(world_root / rel_path)
+
+        self._snapshot_cache.pop(abs_path, None)
+        current = self._current_snapshot_by_node.get(node_id)
+        if current == abs_path:
+            self._current_snapshot_by_node.pop(node_id, None)
+
+        from src.commands.raster_commands import RemoveRasterSnapshotCommand
+
+        cmd = RemoveRasterSnapshotCommand(
+            map_id=self._current_map_id,
+            node_id=node_id,
+            lore_date=lore_date,
+            rel_file_path=rel_path,
+            world_root=str(world_root),
+            old_snapshots=old_snapshots,
+        )
+        self.command_requested.emit(cmd)
+
+        meta_by_id = {m.get("node_id", ""): m for m in raster_metas if m.get("node_id")}
+        self._map_widget.layer_panel.set_raster_layer_metadata(meta_by_id)
+        self._apply_temporal_rasters()

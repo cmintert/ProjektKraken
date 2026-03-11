@@ -78,6 +78,12 @@ class MapLayerPanel(QWidget):
     raster_stats_requested = Signal(str)  # node_id — open stats dialog
     raster_blend_mode_changed = Signal(str, str, str)  # (node_id, new_mode, old_mode)
     raster_snapshot_requested = Signal(str)  # node_id — save snapshot at current date
+    raster_snapshot_selected = Signal(
+        str, float
+    )  # node_id, lore_date — jump playhead
+    raster_snapshot_delete_requested = Signal(
+        str, float
+    )  # node_id, lore_date — delete snapshot
     raster_gradient_sub_mode_changed = Signal(str)  # gradient sub-mode name
     raster_notes_requested = Signal(str)  # node_id — open notes dialog
     raster_preset_loaded = Signal(
@@ -408,6 +414,7 @@ class MapLayerPanel(QWidget):
         self._start_opacity: Optional[float] = None  # Opacity at drag start
         # Full raster layer metadata keyed by node_id (set by MapHandler)
         self._raster_meta_by_id: Dict[str, Dict[str, Any]] = {}
+        self._calendar_converter: Optional[Any] = None
 
         # Apply all theme-aware styles
         self.refresh_styles()
@@ -440,6 +447,22 @@ class MapLayerPanel(QWidget):
         self._tree.setModel(model)
         self._tree.expandAll()
         self._update_button_state()
+
+    def set_calendar_converter(self, converter: object) -> None:
+        """Set the calendar converter used for snapshot date labels.
+
+        Args:
+            converter: Object exposing ``format_date(float) -> str``.
+        """
+        self._calendar_converter = converter
+        if self._selected_node_id and self._model is not None:
+            node = self._model.find_node_by_id(self._selected_node_id)
+            if node is not None:
+                from src.app.constants import MAP_LAYER_TYPE_RASTER
+
+                if node.layer_type == MAP_LAYER_TYPE_RASTER:
+                    layer_meta = self._raster_meta_by_id.get(self._selected_node_id)
+                    self._refresh_snapshot_list(self._selected_node_id, layer_meta)
 
     def select_node(self, node_id: str) -> None:
         """Highlight and scroll to the node with the given ID.
@@ -593,6 +616,23 @@ class MapLayerPanel(QWidget):
         if self._model is None or not index.isValid():
             return
         node = self._model.node_from_index(index)
+
+        from src.app.constants import MAP_LAYER_TYPE_SNAPSHOT
+
+        if node.layer_type == MAP_LAYER_TYPE_SNAPSHOT:
+            # Jump playhead but keep parent raster toolbar active.
+            lore_date = float(node.attributes.get("lore_date", 0.0))
+            parent_id = str(node.attributes.get("parent_node_id", ""))
+            self.raster_snapshot_selected.emit(parent_id, lore_date)
+            # Restore tree selection to the parent raster.
+            if self._selected_node_id:
+                parent_node = self._model.find_node_by_id(self._selected_node_id)
+                if parent_node is not None:
+                    parent_idx = self._model.index_from_node(parent_node)
+                    if parent_idx.isValid():
+                        self._tree.setCurrentIndex(parent_idx)
+            return
+
         self._selected_node_id = node.id
         self._sync_opacity_slider(node)
         self._update_button_state()
@@ -636,6 +676,24 @@ class MapLayerPanel(QWidget):
 
         if index.isValid():
             node = self._model.node_from_index(index)
+
+            from src.app.constants import MAP_LAYER_TYPE_SNAPSHOT
+
+            if node.layer_type == MAP_LAYER_TYPE_SNAPSHOT:
+                lore_date = float(node.attributes.get("lore_date", 0.0))
+                parent_id = str(node.attributes.get("parent_node_id", ""))
+                action_jump = menu.addAction("↰ Jump Playhead Here")
+                action_jump.triggered.connect(
+                    lambda _=False, pid=parent_id, ld=lore_date: self.raster_snapshot_selected.emit(pid, ld)
+                )
+                menu.addSeparator()
+                action_del = menu.addAction("🗑 Delete Snapshot")
+                action_del.triggered.connect(
+                    lambda _=False, pid=parent_id, ld=lore_date: self.raster_snapshot_delete_requested.emit(pid, ld)
+                )
+                menu.exec(self._tree.viewport().mapToGlobal(pos))
+                return
+
             self._selected_node_id = node.id
             self._sync_opacity_slider(node)
             self._update_button_state()
@@ -762,6 +820,11 @@ class MapLayerPanel(QWidget):
             node: The newly selected layer node.
         """
         from src.app.constants import MAP_LAYER_TYPE_RASTER
+        from src.app.constants import MAP_LAYER_TYPE_SNAPSHOT
+
+        # Snapshot virtual rows: toolbar is already shown for the raster parent.
+        if node.layer_type == MAP_LAYER_TYPE_SNAPSHOT:
+            return
 
         is_raster = node.layer_type == MAP_LAYER_TYPE_RASTER
         self._raster_toolbar.setVisible(is_raster)
@@ -783,21 +846,17 @@ class MapLayerPanel(QWidget):
             if idx >= 0:
                 self._blend_combo.setCurrentIndex(idx)
             self._blend_combo.blockSignals(False)
-            # Refresh snapshot count label
-            snap_count = len((layer_meta or {}).get("snapshots", {}))
-            if snap_count:
-                self._snapshot_count_label.setText(
-                    f"{snap_count} snapshot{'s' if snap_count != 1 else ''}"
-                )
-            else:
-                self._snapshot_count_label.setText("")
+            self._update_snapshot_count_label(layer_meta)
+            self._refresh_snapshot_list(node.id, layer_meta)
             # Show preset and query rows
             self._preset_toolbar_row.setVisible(True)
             self._query_row.setVisible(True)
         else:
+            old_node_id = self._current_node_id
             self._current_node_id = ""
             self._raster_mode_label.setVisible(False)
             self._snapshot_count_label.setText("")
+            self._clear_snapshot_list(old_node_id)
             self._preset_toolbar_row.setVisible(False)
             self._query_row.setVisible(False)
             # Notify consumers that no raster is selected
@@ -952,8 +1011,20 @@ class MapLayerPanel(QWidget):
                     layer_meta = self._raster_meta_by_id.get(self._selected_node_id)
                     name_map = self._raster_name_map_by_id.get(self._selected_node_id)
                     self._refresh_entity_picker(layer_meta, mode, name_map)
+                    self._update_snapshot_count_label(layer_meta)
+                    self._refresh_snapshot_list(self._selected_node_id, layer_meta)
                     # Notify consumers to refresh the floating legend
                     self.raster_layer_selected.emit(self._selected_node_id, layer_meta)
+
+    def _update_snapshot_count_label(self, layer_meta: Optional[Dict[str, Any]]) -> None:
+        """Refresh the snapshot count label for the selected raster layer."""
+        snap_count = len((layer_meta or {}).get("snapshots", {}))
+        if snap_count:
+            self._snapshot_count_label.setText(
+                f"{snap_count} snapshot{'s' if snap_count != 1 else ''}"
+            )
+        else:
+            self._snapshot_count_label.setText("")
 
     def _show_mode_badge(self, mode: str) -> None:
         """Render the mode badge label with the correct text and style.
@@ -1075,6 +1146,71 @@ class MapLayerPanel(QWidget):
         """Emit snapshot request for the currently selected raster layer."""
         if self._current_node_id:
             self.raster_snapshot_requested.emit(self._current_node_id)
+
+    def _clear_snapshot_list(self, node_id: str = "") -> None:
+        """Remove virtual snapshot children for the given raster node from the model."""
+        target = node_id or self._current_node_id
+        if self._model is not None and target:
+            self._model.set_virtual_snapshot_children(target, [])
+
+    @staticmethod
+    def _format_snapshot_label_with_converter(
+        converter: Optional[Any], lore_date: float
+    ) -> str:
+        """Format a snapshot lore date for display using calendar text when possible."""
+        if converter is not None and hasattr(converter, "format_date"):
+            try:
+                text = converter.format_date(lore_date)
+                if isinstance(text, str) and text.strip():
+                    return text
+            except Exception:
+                pass
+        return f"Lore day {lore_date:.2f}"
+
+    def _refresh_snapshot_list(
+        self, node_id: str, layer_meta: Optional[Dict[str, Any]]
+    ) -> None:
+        """Inject virtual snapshot nodes as direct children of the raster node."""
+        if self._model is None:
+            return
+
+        from src.app.constants import MAP_LAYER_TYPE_SNAPSHOT
+
+        snapshots = (layer_meta or {}).get("snapshots", {})
+        if not snapshots:
+            self._model.set_virtual_snapshot_children(node_id, [])
+            return
+
+        parsed: List[Tuple[str, float]] = []
+        for key in snapshots:
+            try:
+                parsed.append((str(key), float(key)))
+            except (TypeError, ValueError):
+                continue
+
+        parsed.sort(key=lambda s: s[1], reverse=True)
+
+        virtual_nodes: List[MapLayerNode] = []
+        for _key, lore_date in parsed:
+            label = self._format_snapshot_label_with_converter(
+                self._calendar_converter, lore_date
+            )
+            vnode = MapLayerNode(
+                name=label,
+                layer_type=MAP_LAYER_TYPE_SNAPSHOT,
+                id=f"snap_{node_id}_{_key}",
+            )
+            vnode.virtual = True
+            vnode.attributes = {"lore_date": lore_date, "parent_node_id": node_id}
+            virtual_nodes.append(vnode)
+
+        self._model.set_virtual_snapshot_children(node_id, virtual_nodes)
+
+        raster_node = self._model.find_node_by_id(node_id)
+        if raster_node is not None:
+            raster_index = self._model.index_from_node(raster_node)
+            if raster_index.isValid():
+                self._tree.setExpanded(raster_index, True)
 
     @Slot(str)
     def _on_blend_mode_changed(self, new_mode: str) -> None:

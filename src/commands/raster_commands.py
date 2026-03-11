@@ -1143,6 +1143,150 @@ class SetRasterSnapshotCommand(BaseCommand):
         )
 
 
+class RemoveRasterSnapshotCommand(BaseCommand):
+    """Remove a temporal raster snapshot entry and its PNG file.
+
+    Restores metadata and file bytes on undo.
+    """
+
+    def __init__(
+        self,
+        map_id: str,
+        node_id: str,
+        lore_date: float,
+        world_root: str,
+        old_snapshots: Dict[str, str],
+        rel_file_path: str = "",
+    ) -> None:
+        super().__init__()
+        self.map_id = map_id
+        self.node_id = node_id
+        self.lore_date = lore_date
+        self.rel_file_path = rel_file_path
+        self.world_root = world_root
+        self.old_snapshots = old_snapshots
+
+        self._deleted_key: str = ""
+        self._file_backup: Optional[bytes] = None
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Remove the snapshot metadata entry and delete the snapshot file."""
+        try:
+            map_obj = db_service.map_repo.get_map(self.map_id)
+            if map_obj is None:
+                return CommandResult(
+                    success=False,
+                    message=f"Map not found: {self.map_id}",
+                    command_name="RemoveRasterSnapshotCommand",
+                )
+
+            raster_layers = _get_raster_layers(map_obj)
+            target_meta = next(
+                (rl for rl in raster_layers if rl.get("node_id") == self.node_id),
+                None,
+            )
+            if target_meta is None:
+                return CommandResult(
+                    success=False,
+                    message=f"Raster layer not found: {self.node_id}",
+                    command_name="RemoveRasterSnapshotCommand",
+                )
+
+            snapshots: Dict[str, str] = dict(target_meta.get("snapshots", {}))
+            self._deleted_key = ""
+            for key in snapshots:
+                try:
+                    if abs(float(key) - self.lore_date) < 1e-9:
+                        self._deleted_key = str(key)
+                        break
+                except (TypeError, ValueError):
+                    continue
+
+            if not self._deleted_key:
+                self._deleted_key = str(self.lore_date)
+
+            if not self.rel_file_path:
+                self.rel_file_path = self.old_snapshots.get(self._deleted_key, "")
+
+            snapshots.pop(self._deleted_key, None)
+            target_meta["snapshots"] = snapshots
+            _set_raster_layers(map_obj, raster_layers)
+            db_service.map_repo.insert_map(map_obj)
+
+            abs_path = Path(self.world_root) / self.rel_file_path
+            if abs_path.exists():
+                self._file_backup = abs_path.read_bytes()
+                abs_path.unlink()
+
+            self._is_executed = True
+            return CommandResult(
+                success=True,
+                message="Snapshot deleted.",
+                command_name="RemoveRasterSnapshotCommand",
+            )
+        except Exception as e:
+            logger.error("RemoveRasterSnapshotCommand failed: %s", e, exc_info=True)
+            return CommandResult(
+                success=False,
+                message=str(e),
+                command_name="RemoveRasterSnapshotCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Restore the snapshot metadata and file bytes."""
+        if not self._is_executed:
+            return
+
+        try:
+            map_obj = db_service.map_repo.get_map(self.map_id)
+            if map_obj is None:
+                return
+
+            raster_layers = _get_raster_layers(map_obj)
+            target_meta = next(
+                (rl for rl in raster_layers if rl.get("node_id") == self.node_id),
+                None,
+            )
+            if target_meta is None:
+                return
+
+            target_meta["snapshots"] = dict(self.old_snapshots)
+            _set_raster_layers(map_obj, raster_layers)
+            db_service.map_repo.insert_map(map_obj)
+
+            if self._file_backup is not None:
+                abs_path = Path(self.world_root) / self.rel_file_path
+                abs_path.parent.mkdir(parents=True, exist_ok=True)
+                abs_path.write_bytes(self._file_backup)
+
+            self._is_executed = False
+        except Exception as e:
+            logger.error("Undo RemoveRasterSnapshotCommand failed: %s", e)
+
+    def to_dict(self) -> Dict:
+        """Serialize command to dictionary."""
+        return {
+            "map_id": self.map_id,
+            "node_id": self.node_id,
+            "lore_date": self.lore_date,
+            "rel_file_path": self.rel_file_path,
+            "world_root": self.world_root,
+            "old_snapshots": self.old_snapshots,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "RemoveRasterSnapshotCommand":
+        """Deserialize command from dictionary."""
+        return cls(
+            map_id=data["map_id"],
+            node_id=data["node_id"],
+            lore_date=data["lore_date"],
+            rel_file_path=data.get("rel_file_path", ""),
+            world_root=data.get("world_root", ""),
+            old_snapshots=data.get("old_snapshots", {}),
+        )
+
+
 class SetRasterNotesCommand(BaseCommand):
     """Store text notes on a raster layer (persisted in raster metadata).
 

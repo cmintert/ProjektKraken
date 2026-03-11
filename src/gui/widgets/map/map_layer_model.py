@@ -30,6 +30,7 @@ from src.app.constants import (
     MAP_LAYER_TYPE_PATH,
     MAP_LAYER_TYPE_RASTER,
     MAP_LAYER_TYPE_REGION,
+    MAP_LAYER_TYPE_SNAPSHOT,
     MAP_LAYER_Z_BASE,
     MAP_LAYER_Z_SPACING,
 )
@@ -241,6 +242,14 @@ class MapLayerModel(QAbstractItemModel):
         if not index.isValid():
             return None
         node = self.node_from_index(index)
+        if node.layer_type == MAP_LAYER_TYPE_SNAPSHOT:
+            if role == Qt.ItemDataRole.DisplayRole:
+                return node.name
+            if role == self.LayerTypeRole:
+                return node.layer_type
+            if role == self.NodeIdRole:
+                return node.id
+            return None
         if role == Qt.ItemDataRole.DisplayRole:
             return node.name
         if role == Qt.ItemDataRole.DecorationRole:
@@ -267,6 +276,9 @@ class MapLayerModel(QAbstractItemModel):
         """
         if not index.isValid():
             return Qt.ItemFlag.ItemIsDropEnabled
+        node = self.node_from_index(index)
+        if node.layer_type == MAP_LAYER_TYPE_SNAPSHOT:
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         base = (
             Qt.ItemFlag.ItemIsEnabled
             | Qt.ItemFlag.ItemIsSelectable
@@ -564,6 +576,44 @@ class MapLayerModel(QAbstractItemModel):
         self.layer_order_changed.emit()
         self.layer_tree_changed.emit()
         return True
+
+    def set_virtual_snapshot_children(
+        self,
+        parent_node_id: str,
+        virtual_nodes: List[MapLayerNode],
+    ) -> None:
+        """Replace virtual snapshot children for a raster node.
+
+        Does NOT emit ``layer_tree_changed`` — these are ephemeral
+        display-only nodes that must not be persisted.
+
+        Args:
+            parent_node_id: ID of the raster node to update.
+            virtual_nodes: Replacement list (pass ``[]`` to clear).
+        """
+        parent = self.find_node_by_id(parent_node_id)
+        if parent is None:
+            return
+        parent_index = self.index_from_node(parent)
+
+        old_virtual_rows = [
+            i for i, c in enumerate(parent.children) if getattr(c, "virtual", False)
+        ]
+        if old_virtual_rows:
+            first = old_virtual_rows[0]
+            last = old_virtual_rows[-1]
+            self.beginRemoveRows(parent_index, first, last)
+            parent.children = [
+                c for c in parent.children if not getattr(c, "virtual", False)
+            ]
+            self.endRemoveRows()
+
+        if virtual_nodes:
+            first_row = len(parent.children)
+            last_row = first_row + len(virtual_nodes) - 1
+            self.beginInsertRows(parent_index, first_row, last_row)
+            parent.children.extend(virtual_nodes)
+            self.endInsertRows()
 
     # ------------------------------------------------------------------
     # Z-order computation

@@ -85,6 +85,7 @@ PROVIDER_RETRY_WAIT_TIME_S = 1.0  # Wait time between provider retries
 TEMPORAL_FUTURE_OPACITY = 0.7  # Opacity for future events (0.0-1.0)
 TEMPORAL_FUTURE_SATURATION_FACTOR = 0.8  # Saturation multiplier for future events
 TEMPORAL_FUTURE_LIGHTNESS_BOOST = 0.1  # Lightness increase for future events
+TEMPORAL_SNAPSHOT_CACHE_MAX = 20  # Max entries in the raster snapshot LRU cache
 
 # Sheet Builder Constants
 SHEET_VALUE_MAX_LINES = 4  # Max visible lines for multiline attribute values
@@ -211,6 +212,7 @@ MAP_LAYER_DEFAULT_MAX_ZOOM = float("inf")  # visible at all zoom-in levels
 # Layer node type discriminators
 MAP_LAYER_TYPE_GROUP = "group"
 MAP_LAYER_TYPE_MARKER = "marker"
+MAP_LAYER_TYPE_SNAPSHOT = "raster_snapshot"  # Virtual display-only snapshot rows
 MAP_LAYER_TYPE_PATH = "path"
 MAP_LAYER_TYPE_REGION = "region"
 MAP_LAYER_TYPE_RASTER = "raster"

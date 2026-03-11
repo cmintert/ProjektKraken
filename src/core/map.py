@@ -57,6 +57,8 @@ class MapLayerNode:
     start_date: Optional[float] = None
     end_date: Optional[float] = None
     attributes: Dict[str, Any] = field(default_factory=dict)
+    # In-memory flag: virtual nodes (e.g. snapshot rows) are never persisted.
+    virtual: bool = False
 
     # --- helpers -----------------------------------------------------------
 
@@ -101,7 +103,7 @@ class MapLayerNode:
             "visible": self.visible,
             "opacity": self.opacity,
             "expanded": self.expanded,
-            "children": [c.to_dict() for c in self.children],
+            "children": [c.to_dict() for c in self.children if not c.virtual],
             "min_zoom": self.min_zoom,
             "max_zoom": self.max_zoom if self.max_zoom != float("inf") else None,
             "mutually_exclusive": self.mutually_exclusive,

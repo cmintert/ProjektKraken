@@ -47,6 +47,7 @@ def _init_registry() -> None:
         DeleteMapCommand,
         UpdateMapCommand,
     )
+    from src.commands.raster_commands import RemoveRasterSnapshotCommand
     from src.commands.relation_commands import (
         AddRelationCommand,
         RemoveRelationCommand,
@@ -70,6 +71,7 @@ def _init_registry() -> None:
             "CreateMapCommand": CreateMapCommand,
             "UpdateMapCommand": UpdateMapCommand,
             "DeleteMapCommand": DeleteMapCommand,
+            "RemoveRasterSnapshotCommand": RemoveRasterSnapshotCommand,
             "UpdateCalendarConfigCommand": UpdateCalendarConfigCommand,
         }
     )

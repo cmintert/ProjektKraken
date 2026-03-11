@@ -216,3 +216,45 @@ class TestSnapshotCacheLRU:
             handler.on_playhead_changed(5.0)
 
         assert len(handler._snapshot_cache) <= handler._snapshot_cache_max
+
+
+class TestSnapshotSelectionAndDeletion:
+    """Selection jumps playhead, deletion emits a persistence command."""
+
+    def test_snapshot_selected_emits_playhead_jump(self, qapp):
+        """MapHandler should route snapshot selection to playhead jump signal."""
+        handler, widget, _item = _make_temporal_handler()
+        handler.on_raster_snapshot_selected("node-A", 15.0)
+        widget.jump_to_time_requested.emit.assert_called_once_with(15.0)
+
+    def test_snapshot_delete_emits_command_and_removes_meta(self, qapp, tmp_path):
+        """Deleting a snapshot should emit RemoveRasterSnapshotCommand and update metadata."""
+        snapshots = {
+            "2.0": "rasters/snap_2.png",
+            "5.0": "rasters/snap_5.png",
+        }
+        handler, widget, _item = _make_temporal_handler(
+            world_dir=str(tmp_path),
+            snapshots=snapshots,
+        )
+
+        # Create snapshot file that is about to be removed.
+        snap_abs = tmp_path / "rasters" / "snap_5.png"
+        snap_abs.parent.mkdir(parents=True, exist_ok=True)
+        snap_abs.write_bytes(b"snapshot-bytes")
+
+        emitted: list = []
+        handler.command_requested.connect(emitted.append)
+
+        with patch("src.app.map_handler.QMessageBox.question", return_value=0x4000):
+            handler.on_raster_snapshot_delete_requested("node-A", 5.0)
+
+        from src.commands.raster_commands import RemoveRasterSnapshotCommand
+
+        assert len(emitted) == 1
+        assert isinstance(emitted[0], RemoveRasterSnapshotCommand)
+        assert emitted[0].node_id == "node-A"
+        assert emitted[0].lore_date == 5.0
+
+        meta = widget.maps_data[0].attributes["raster_layers"][0]
+        assert "5.0" not in meta.get("snapshots", {})
