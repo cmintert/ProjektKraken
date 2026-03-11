@@ -1210,3 +1210,89 @@ class TestViewTransformPreservation:
 
         assert abs(widget.view.transform().m11() - 3.0) < 0.01
         assert abs(widget.view.transform().m22() - 3.0) < 0.01
+
+
+# =========================================================================
+# MapLayerPanel Builder / Factory Method Tests
+# =========================================================================
+
+
+class TestMapLayerPanelBuilderMethods:
+    """Tests for the extracted builder methods and widget factories."""
+
+    def test_make_button_returns_push_button(self, qtbot) -> None:
+        """_make_button creates a QPushButton with label and tooltip."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        btn = panel._make_button("Test", "A tooltip", lambda: None)
+        assert btn.text() == "Test"
+        assert btn.toolTip() == "A tooltip"
+        assert btn.isEnabled()
+
+    def test_make_button_disabled(self, qtbot) -> None:
+        """_make_button supports enabled=False."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        btn = panel._make_button("X", "tip", lambda: None, enabled=False)
+        assert not btn.isEnabled()
+
+    def test_make_button_hidden(self, qtbot) -> None:
+        """_make_button supports visible=False."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        btn = panel._make_button("X", "tip", lambda: None, visible=False)
+        assert not btn.isVisible()
+
+    def test_make_labeled_spinbox_returns_spinbox(self, qtbot) -> None:
+        """_make_labeled_spinbox creates a QSpinBox with correct range."""
+        from PySide6.QtWidgets import QVBoxLayout
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        layout = QVBoxLayout()
+        spin = panel._make_labeled_spinbox(layout, "Test:", 5, 50, 25, lambda v: None)
+        assert spin.minimum() == 5
+        assert spin.maximum() == 50
+        assert spin.value() == 25
+        assert layout.count() == 1  # one row added
+
+    def test_make_labeled_slider_returns_slider_and_label(self, qtbot) -> None:
+        """_make_labeled_slider creates a slider and value readout label."""
+        from PySide6.QtWidgets import QVBoxLayout
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        layout = QVBoxLayout()
+        slider, lbl = panel._make_labeled_slider(
+            layout, "Volume:", 0, 100, 50, "Adjust volume", lambda v: None
+        )
+        assert slider.minimum() == 0
+        assert slider.maximum() == 100
+        assert slider.value() == 50
+        assert slider.toolTip() == "Adjust volume"
+        assert "50" in lbl.text()
+
+    def test_panel_raster_toolbar_hidden_by_default(self, qtbot) -> None:
+        """Raster toolbar starts hidden after construction."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        assert not panel._raster_toolbar.isVisible()
+
+    def test_panel_tool_mode_buttons_created(self, qtbot) -> None:
+        """All four raster tool mode buttons are created."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        assert panel._btn_brush.isCheckable()
+        assert panel._btn_fill.isCheckable()
+        assert panel._btn_gradient.isCheckable()
+        assert panel._btn_sample.isCheckable()
+        assert panel._btn_brush.isChecked()  # default
+
+    def test_panel_blend_combo_populated(self, qtbot) -> None:
+        """Blend mode combo is populated from BLEND_MODE_NAMES."""
+        from src.gui.widgets.map.raster_layer_item import BLEND_MODE_NAMES
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        items = [panel._blend_combo.itemText(i) for i in range(panel._blend_combo.count())]
+        assert items == list(BLEND_MODE_NAMES)
