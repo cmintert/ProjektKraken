@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest tests/unit/test_raster_legend.py -x -v)",
+      "Bash(python -m pytest tests/unit/test_raster_legend.py -v)"
+    ]
+  }
+}

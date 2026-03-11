@@ -563,9 +563,7 @@ class RasterEditTool:
         """
         node_id = self._preview_node_id
         if not node_id:
-            if not self._view._raster_items:
-                return False
-            node_id = next(iter(self._view._raster_items))
+            return False
 
         item = self._view._raster_items.get(node_id)
         if item is None:

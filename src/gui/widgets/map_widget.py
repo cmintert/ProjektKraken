@@ -524,6 +524,17 @@ class MapWidget(
         if available_w <= 0 or available_h <= 0:
             return
 
+        # Force layout recalculation so sizeHint() reflects current content.
+        # Without this, sizeHint() is stale on the first show after set_layer()
+        # adds new widgets, causing the overlay to render too small until the
+        # next event-loop pass.
+        outer_layout = legend.layout()
+        if outer_layout is not None:
+            outer_layout.activate()
+        content_layout = legend._content.layout()
+        if content_layout is not None:
+            content_layout.activate()
+
         max_w = min(360, available_w)
         legend.setMaximumWidth(max_w)
         legend.setMaximumHeight(available_h)
@@ -536,8 +547,10 @@ class MapWidget(
         )
         w = max_w
 
-        if not legend._scroll.isVisible():
-            # Collapsed: only the header button is visible — keep it tight.
+        if not legend._toggle_btn.isChecked():
+            # Collapsed state (toggle button unchecked) — keep it tight.
+            # Using the toggle-button checked state rather than _scroll.isVisible()
+            # so this works correctly when the overlay is not yet shown.
             h = header_h + title_h
         else:
             # Compute ideal height from content widget so every row is shown.
@@ -598,14 +611,12 @@ class MapWidget(
                     name_map[ev.id] = ev.name
 
             overlay.set_layer(layer_meta, name_map=name_map)
-            overlay.show()
-            self._position_legend_overlay()
-            # Deferred re-position: layout geometry may not be settled yet on
-            # first show (e.g. during world-file load before viewport is sized).
-            QTimer.singleShot(0, self._position_legend_overlay)
-            self.btn_legend_toggle.blockSignals(True)
-            self.btn_legend_toggle.setChecked(True)
-            self.btn_legend_toggle.blockSignals(False)
+            # Do NOT auto-show or force the toggle — the user controls
+            # legend visibility via btn_legend_toggle.  Just reposition if
+            # the overlay is already visible so new content fits correctly.
+            if overlay.isVisible():
+                self._position_legend_overlay()
+                QTimer.singleShot(0, self._position_legend_overlay)
 
     @Slot(bool)
     def _on_legend_toggle(self, checked: bool) -> None:
@@ -615,9 +626,12 @@ class MapWidget(
             checked: ``True`` to show; ``False`` to hide.
         """
         if checked:
-            self.legend_overlay.show()
+            # Position BEFORE show() so the first paint is at the correct
+            # size.  _position_legend_overlay activates layouts and reads
+            # sizeHints from the toggle-button checked state (not isVisible),
+            # so it works correctly while the overlay is still hidden.
             self._position_legend_overlay()
-            QTimer.singleShot(0, self._position_legend_overlay)
+            self.legend_overlay.show()
         else:
             self.legend_overlay.hide()
 

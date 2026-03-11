@@ -144,6 +144,15 @@ class RasterLegendWidget(QWidget):
                 color_map, layer_meta.get("value_entity_map", {}), name_map
             )
 
+        # Activate layouts immediately so sizeHint() is accurate for any
+        # sizing calls that follow (e.g. _position_legend_overlay).
+        content_layout = self._content.layout()
+        if content_layout is not None:
+            content_layout.activate()
+        outer_layout = self.layout()
+        if outer_layout is not None:
+            outer_layout.activate()
+
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------

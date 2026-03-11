@@ -36,6 +36,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.map.map_data_buffer import (
     ColorEntry,
@@ -101,8 +102,13 @@ class _ColorButton(QPushButton):
         self._apply_color()
 
     def _apply_color(self) -> None:
+        theme = ThemeManager().get_theme()
+        border = theme.get("border", "#555555")
+        primary = theme.get("primary", "#5C82FF")
         self.setStyleSheet(
-            f"background-color: {self._color}; border: 1px solid #888; border-radius: 3px;"
+            f"QPushButton {{ background-color: {self._color}; "
+            f"border: 1px solid {border}; border-radius: 3px; }}"
+            f"QPushButton:hover {{ border: 1px solid {primary}; }}"
         )
 
     def _pick(self) -> None:
@@ -188,7 +194,10 @@ class RasterPaletteEditor(QDialog):
         self._vem = normalize_value_entity_map(value_entity_map or {})
         self._buffer_min = buffer_min
         self._buffer_max = buffer_max
-        self.setStyleSheet(StyleHelper.get_dialog_base_style())
+        self.setStyleSheet(
+            StyleHelper.get_dialog_base_style()
+            + StyleHelper.get_secondary_button_style()
+        )
 
         # Build name↔ID lookup tables from the provided entity/event lists.
         self._name_to_id: Dict[str, str] = {}

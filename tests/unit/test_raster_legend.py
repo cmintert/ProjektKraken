@@ -259,7 +259,12 @@ class TestLegendInitialSizing:
     """Legend must be correctly sized on first show, not just after toggling."""
 
     def test_height_consistent_after_toggle(self, qtbot) -> None:
-        """Height on first show must equal height after a hide/show cycle."""
+        """First Legend-button click must produce same height as a second click.
+
+        The legend is NOT auto-shown when a layer is selected.  The user
+        controls visibility via the toolbar toggle.  On first click the
+        layout must already be settled so the displayed height is correct.
+        """
         from src.gui.widgets.map_widget import MapWidget
 
         widget = MapWidget()
@@ -268,22 +273,32 @@ class TestLegendInitialSizing:
         widget.resize(800, 600)
         QApplication.processEvents()
 
+        # Populate legend data; legend must NOT auto-show.
         widget._on_raster_layer_selected("n1", _discrete_meta("Test", n_classes=4))
         QApplication.processEvents()
+        assert not widget.legend_overlay.isVisible(), (
+            "Legend must not auto-show when a raster layer is selected."
+        )
 
+        # --- FIRST CLICK: user reveals the legend for the first time ---
+        widget.btn_legend_toggle.click()
+        QApplication.processEvents()
+        assert widget.legend_overlay.isVisible(), "Legend must be visible after first click"
         h_first = widget.legend_overlay.height()
 
-        # Toggle off then on
+        # Hide and re-show.
         widget.btn_legend_toggle.click()
         QApplication.processEvents()
         widget.btn_legend_toggle.click()
         QApplication.processEvents()
+        h_second = widget.legend_overlay.height()
 
-        h_after_toggle = widget.legend_overlay.height()
-
-        assert h_first == h_after_toggle, (
-            f"Legend height changed after toggle: {h_first}px → {h_after_toggle}px. "
-            "Indicates initial layout was not settled when first positioned."
+        assert h_first == h_second, (
+            f"Legend height differs: first click={h_first}px, second click={h_second}px. "
+            "Sizing was not settled on the first Legend-toggle activation."
+        )
+        assert h_first > 50, (
+            f"Legend height {h_first}px is suspiciously small — content not included."
         )
 
     def test_title_label_height_included_in_sizing(self, qtbot) -> None:
@@ -296,13 +311,14 @@ class TestLegendInitialSizing:
         widget.resize(800, 600)
         QApplication.processEvents()
 
-        # Named layer: title label is visible and adds height
+        # Named layer: title label is visible and adds height.
+        # Legend is NOT auto-shown; user must toggle it.
         widget._on_raster_layer_selected("n1", _discrete_meta("My Named Layer", n_classes=2))
+        QApplication.processEvents()
+        widget.btn_legend_toggle.click()
         QApplication.processEvents()
 
         legend = widget.legend_overlay
-        # The title label must fit — legend height must be at least
-        # toggle_btn height + title_label height + some content
         min_expected = (
             legend._toggle_btn.sizeHint().height()
             + legend._title_label.sizeHint().height()
@@ -362,13 +378,16 @@ class TestLegendInitialSizing:
         widget.resize(800, 600)
         QApplication.processEvents()
 
-        # 1-class discrete layer → very small ideal height (< 100 px)
+        # 1-class discrete layer → very small ideal height (< 100 px).
+        # Legend is NOT auto-shown; user must toggle it.
         layer_meta = _discrete_meta("Single Class", n_classes=1)
         widget._on_raster_layer_selected("n1", layer_meta)
         QApplication.processEvents()
+        widget.btn_legend_toggle.click()
+        QApplication.processEvents()
 
         legend = widget.legend_overlay
-        assert legend.isVisible(), "Legend should be visible after layer selected"
+        assert legend.isVisible(), "Legend should be visible after toggle click"
 
         thirty_pct = int(widget.view.viewport().height() * 0.30)
         assert legend.height() < thirty_pct, (
@@ -405,16 +424,16 @@ class TestLegendToggleButton:
         widget.resize(800, 600)
         QApplication.processEvents()
 
-        # Show the legend by selecting a raster layer
+        # Populate data then manually show the legend via the toggle button.
         widget._on_raster_layer_selected("n1", _discrete_meta("Test"))
         QApplication.processEvents()
-        assert widget.legend_overlay.isVisible()
+        widget.btn_legend_toggle.click()  # show
+        QApplication.processEvents()
+        assert widget.legend_overlay.isVisible(), "Legend must be visible after first click"
 
-        # Button is checked = visible; click to uncheck = hide
-        assert widget.btn_legend_toggle.isChecked(), "Button should be checked when legend visible"
+        # Second click hides it.
         widget.btn_legend_toggle.click()
         QApplication.processEvents()
-
         assert not widget.legend_overlay.isVisible()
 
     def test_toggle_button_reshows_hidden_legend(self, qtbot) -> None:
@@ -429,40 +448,56 @@ class TestLegendToggleButton:
         widget._on_raster_layer_selected("n1", _discrete_meta("Test"))
         QApplication.processEvents()
 
-        # Hide via button
-        widget.btn_legend_toggle.click()
-        QApplication.processEvents()
-        assert not widget.legend_overlay.isVisible()
-
-        # Show again via button
-        widget.btn_legend_toggle.click()
+        # Show, hide, show again.
+        widget.btn_legend_toggle.click()  # show
         QApplication.processEvents()
         assert widget.legend_overlay.isVisible()
 
-    def test_toggle_button_checked_state_follows_legend(self, qtbot) -> None:
-        """When a new raster layer is selected, button should become checked."""
+        widget.btn_legend_toggle.click()  # hide
+        QApplication.processEvents()
+        assert not widget.legend_overlay.isVisible()
+
+        widget.btn_legend_toggle.click()  # re-show
+        QApplication.processEvents()
+        assert widget.legend_overlay.isVisible()
+
+    def test_toggle_button_not_auto_checked_on_layer_select(self, qtbot) -> None:
+        """Selecting a raster layer must NOT auto-check the toggle button.
+
+        The user controls legend visibility; it should never be forced on.
+        """
         from src.gui.widgets.map_widget import MapWidget
 
         widget = MapWidget()
         qtbot.addWidget(widget)
 
-        # No layer: button unchecked
         assert not widget.btn_legend_toggle.isChecked()
 
         widget._on_raster_layer_selected("n1", _discrete_meta("Test"))
         QApplication.processEvents()
-        assert widget.btn_legend_toggle.isChecked()
+        assert not widget.btn_legend_toggle.isChecked(), (
+            "btn_legend_toggle must NOT be auto-checked when a raster layer is selected."
+        )
 
     def test_toggle_button_unchecked_when_layer_deselected(self, qtbot) -> None:
+        """Deselecting a layer hides the legend and unchecks the button."""
         from src.gui.widgets.map_widget import MapWidget
 
         widget = MapWidget()
         qtbot.addWidget(widget)
+        widget.show()
+        widget.resize(800, 600)
+        QApplication.processEvents()
 
         widget._on_raster_layer_selected("n1", _discrete_meta("Test"))
         QApplication.processEvents()
+        # Manually show the legend first.
+        widget.btn_legend_toggle.click()
+        QApplication.processEvents()
         assert widget.btn_legend_toggle.isChecked()
 
+        # Deselecting the layer should hide the overlay and uncheck the button.
         widget._on_raster_layer_selected(None, None)
         QApplication.processEvents()
+        assert not widget.legend_overlay.isVisible()
         assert not widget.btn_legend_toggle.isChecked()
