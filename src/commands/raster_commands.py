@@ -54,14 +54,17 @@ class CreateRasterLayerCommand(BaseCommand):
         name: Human-readable layer name.
         width: Buffer width in pixels.
         height: Buffer height in pixels.
-        mode: ``"discrete"`` or ``"continuous"``.
-        default_value: Initial fill value (0–65535); ignored when *import_path* is set.
+        mode: ``"discrete"``, ``"continuous"``, or ``"color"``.
+        default_value: Initial fill value (0–65535); ignored for *color* mode
+            and when *import_path* is set.
         world_root: Absolute path to the world directory (for file storage).
         import_path: Optional filesystem path to an image to import as layer data.
-            When set, the image is converted to uint16 and scaled to ``width × height``.
+            When set, the image is scaled to ``width × height``.
             Discrete mode: colour images with ≤ 256 unique colours get an auto-palette;
             images with more colours are quantized to 256 via PIL.
             Continuous mode: image is converted to grayscale uint16.
+            Color mode: image is stored as-is (8-bit RGBA PNG); original colours
+            are preserved exactly.
 
     """
 
@@ -129,6 +132,67 @@ class CreateRasterLayerCommand(BaseCommand):
 
             # 1. Create buffer (blank or from imported image) and save to disk
             auto_palette_entries: list = []
+            if self.mode == "color":
+                # Color mode: preserve original RGB pixels as 8-bit RGBA PNG.
+                from PIL import Image as PilImage
+
+                if self.import_path:
+                    img_c = PilImage.open(self.import_path).convert("RGBA")
+                    img_c = img_c.resize(
+                        (self.width, self.height), PilImage.Resampling.LANCZOS
+                    )
+                else:
+                    # Blank transparent image
+                    img_c = PilImage.new("RGBA", (self.width, self.height), (0, 0, 0, 0))
+                rgba_arr = np.array(img_c, dtype=np.uint8)
+                buf = MapDataBuffer(self.width, self.height, 0)
+                buf._rgba_data = rgba_arr
+                raster_dir = Path(self.world_root) / "rasters"
+                raster_dir.mkdir(parents=True, exist_ok=True)
+                filename = f"{self.name.replace(' ', '_')}_{self._node_id[:8]}.png"
+                abs_path = raster_dir / filename
+                logger.debug("CreateRasterLayerCommand (color): saving PNG → %s", abs_path)
+                buf.save(str(abs_path))
+                self._file_path = f"rasters/{filename}"
+
+                # Add layer node
+                node = MapLayerNode(
+                    name=self.name,
+                    layer_type=MAP_LAYER_TYPE_RASTER,
+                    id=self._node_id,
+                )
+                if map_obj.layers is None:
+                    from src.app.constants import MAP_LAYER_TYPE_GROUP
+                    map_obj.layers = MapLayerNode(
+                        name="Root", layer_type=MAP_LAYER_TYPE_GROUP
+                    )
+                map_obj.layers.children.append(node)
+
+                # Raster metadata for color mode
+                now = time.time()
+                raster_layers = _get_raster_layers(map_obj)
+                raster_layers.append({
+                    "node_id": self._node_id,
+                    "file_path": self._file_path,
+                    "resolution": [self.width, self.height],
+                    "mode": "color",
+                    "color_map": {"type": "passthrough"},
+                    "created_at": now,
+                    "modified_at": now,
+                })
+                _set_raster_layers(map_obj, raster_layers)
+                attrs = dict(map_obj.attributes) if map_obj.attributes else {}
+                attrs["layers"] = map_obj.layers.to_dict()
+                map_obj.attributes = attrs
+                db_service.map_repo.insert_map(map_obj)
+
+                return CommandResult(
+                    success=True,
+                    message=f"Color raster layer '{self.name}' created.",
+                    command_name="CreateRasterLayerCommand",
+                    data={"node_id": self._node_id, "file_path": self._file_path},
+                )
+
             if self.import_path:
                 from PIL import Image as PilImage
 

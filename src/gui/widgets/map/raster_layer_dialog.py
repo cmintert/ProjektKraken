@@ -80,12 +80,15 @@ class RasterLayerDialog(QDialog):
 
         # Mode
         self._mode_combo = QComboBox()
-        self._mode_combo.addItems(["discrete", "continuous"])
+        self._mode_combo.addItems(["discrete", "continuous", "color"])
         self._mode_combo.setToolTip(
             "<b>Discrete</b>: Each pixel value maps to a named class (e.g. biome, terrain type).\n"
             "Use for categorical data — colours, labels, and linked world items per value.\n\n"
             "<b>Continuous</b>: Pixel values form a smooth scalar gradient (e.g. elevation, temperature).\n"
             "Use for quantitative data — rendered with a start-to-end colour ramp.\n\n"
+            "<b>Color</b>: Displays an imported RGB image with its original colours.\n"
+            "Use for pre-coloured overlays such as illustrated terrain or satellite imagery.\n"
+            "Painting and value mapping are not supported in this mode.\n\n"
             "⚠ Mode cannot be changed after the layer is created."
         )
         form.addRow("Mode:", self._mode_combo)
@@ -178,7 +181,8 @@ class RasterLayerDialog(QDialog):
 
         # Info label
         info = QLabel(
-            "Raster layers are stored as 16-bit PNG files alongside your project."
+            "Raster layers are stored as PNG files alongside your project "
+            "(16-bit greyscale for discrete/continuous; 8-bit RGBA for color)."
         )
         info.setWordWrap(True)
         layout.addWidget(info)
@@ -236,7 +240,10 @@ class RasterLayerDialog(QDialog):
                     _is_content_grey = _drg <= 2 and _drb <= 2
 
                 # Auto-select mode
-                suggested_mode = "continuous" if _is_content_grey else "discrete"
+                if _is_content_grey:
+                    suggested_mode = "continuous"
+                else:
+                    suggested_mode = "color"
                 idx = self._mode_combo.findText(suggested_mode)
                 if idx >= 0:
                     self._mode_combo.setCurrentIndex(idx)
@@ -250,7 +257,7 @@ class RasterLayerDialog(QDialog):
                 elif _is_content_grey:
                     hint = "Greyscale — Continuous recommended"
                 else:
-                    hint = "Colour — Discrete recommended"
+                    hint = "Colour — Color recommended (RGB preserved as-is)"
                 self._detect_hint_label.setText(hint)
                 self._detect_hint_label.setVisible(True)
 
@@ -299,7 +306,7 @@ class RasterLayerDialog(QDialog):
         self._preview_label.setVisible(False)
         self._clear_btn.setVisible(False)
         self._res_combo.setEnabled(True)
-        self._default_spin.setEnabled(True)
+        self._default_spin.setEnabled(self._mode_combo.currentText() != "color")
 
     def _on_mode_changed(self, mode: str) -> None:
         """Update the hint label when the mode selection changes.
@@ -312,11 +319,19 @@ class RasterLayerDialog(QDialog):
                 "Categories (biomes, terrain types, land use…). "
                 "Paint with integer values; each value can have a label and a linked world item."
             )
-        else:
+        elif mode == "continuous":
             self._mode_hint.setText(
                 "Scalar gradient (elevation, temperature, rainfall…). "
                 "Rendered as a smooth colour ramp from start to end colour."
             )
+        else:  # color
+            self._mode_hint.setText(
+                "RGB image overlay — original colours are preserved as-is. "
+                "No painting or value mapping. Ideal for illustrated maps or satellite imagery."
+            )
+        # Default value only makes sense for discrete/continuous
+        if hasattr(self, "_default_spin"):
+            self._default_spin.setEnabled(mode != "color")
 
     # ------------------------------------------------------------------
     # Public API

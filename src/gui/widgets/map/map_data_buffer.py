@@ -418,6 +418,12 @@ class MapDataBuffer:
     giving a range of 0–65 535.  Coordinates are **normalised** [0.0, 1.0]
     mapping to the underlying map image extent.
 
+    For *color* mode layers an additional ``_rgba_data`` array of shape
+    ``(H, W, 4)`` with dtype ``uint8`` holds the original RGBA pixels.
+    When ``_rgba_data`` is present the uint16 ``_data`` array is an unused
+    placeholder and :meth:`colorize` with ``color_map.type == "passthrough"``
+    returns the RGBA data directly.
+
     Args:
         width: Buffer width in pixels.
         height: Buffer height in pixels.
@@ -439,6 +445,7 @@ class MapDataBuffer:
         self._data: np.ndarray = np.full(
             (height, width), default_value, dtype=np.uint16
         )
+        self._rgba_data: Optional[np.ndarray] = None
 
     # ------------------------------------------------------------------
     # Properties
@@ -672,8 +679,6 @@ class MapDataBuffer:
             QImage in ARGB32 format, same dimensions as buffer.
 
         """
-        rgba = np.zeros((self._height, self._width, 4), dtype=np.uint8)
-
         logger.debug(
             "colorize: buffer=%dx%d color_map_type=%s entries=%d",
             self._width,
@@ -681,6 +686,29 @@ class MapDataBuffer:
             color_map.type,
             len(color_map.entries) if color_map.type == "palette" else 0,
         )
+        if color_map.type == "passthrough":
+            if self._rgba_data is None:
+                logger.warning("colorize: passthrough requested but no RGBA data; returning blank")
+                blank = np.zeros((self._height, self._width, 4), dtype=np.uint8)
+                image = QImage(
+                    blank.data,
+                    self._width,
+                    self._height,
+                    self._width * 4,
+                    QImage.Format.Format_RGBA8888,
+                )
+                return image.copy()
+            image = QImage(
+                self._rgba_data.data,
+                self._width,
+                self._height,
+                self._width * 4,
+                QImage.Format.Format_RGBA8888,
+            )
+            return image.copy()
+
+        rgba = np.zeros((self._height, self._width, 4), dtype=np.uint8)
+
         if color_map.type == "palette":
             for entry in color_map.entries:
                 r, g, b, a = _hex_to_rgba(entry.color)
@@ -724,7 +752,10 @@ class MapDataBuffer:
     # ------------------------------------------------------------------
 
     def save(self, path: str) -> None:
-        """Save the buffer as a 16-bit grayscale PNG.
+        """Save the buffer as a PNG.
+
+        For color mode buffers (``_rgba_data`` is set) the file is written as
+        an 8-bit RGBA PNG.  All other buffers are written as 16-bit grayscale.
 
         Args:
             path: File system path for the output PNG.
@@ -732,24 +763,32 @@ class MapDataBuffer:
         """
         from PIL import Image
 
-        img = Image.fromarray(self._data)
         Path(path).parent.mkdir(parents=True, exist_ok=True)
+        if self._rgba_data is not None:
+            img = Image.fromarray(self._rgba_data, mode="RGBA")
+        else:
+            img = Image.fromarray(self._data)
         img.save(path)
         logger.info("Saved raster buffer %dx%d → %s", self._width, self._height, path)
 
     @classmethod
     def from_file(cls, path: str) -> "MapDataBuffer":
-        """Load a 16-bit PNG into a new buffer.
+        """Load a PNG into a new buffer.
+
+        For 8-bit RGB/RGBA images (color mode layers) the pixel data is stored
+        in ``_rgba_data`` and ``colorize`` handles them via the ``"passthrough"``
+        ColorMap type.  All other images (grayscale / 16-bit) are loaded as the
+        standard uint16 ``_data`` array.
 
         Args:
-            path: Path to a 16-bit grayscale PNG.
+            path: Path to a PNG (16-bit grayscale **or** 8-bit RGB/RGBA).
 
         Returns:
             MapDataBuffer populated with the file's pixel data.
 
         Raises:
             FileNotFoundError: If *path* does not exist.
-            ValueError: If the image cannot be read as 16-bit.
+            ValueError: If the image cannot be read.
 
         """
         from PIL import Image
@@ -758,6 +797,16 @@ class MapDataBuffer:
             raise FileNotFoundError(f"Raster file not found: {path}")
 
         img = Image.open(path)
+
+        # Color mode: 8-bit RGB or RGBA image → store as RGBA uint8
+        if img.mode in ("RGB", "RGBA", "P"):
+            rgba_img = img.convert("RGBA")
+            rgba_arr = np.array(rgba_img, dtype=np.uint8)
+            buf = cls(width=rgba_arr.shape[1], height=rgba_arr.shape[0], default_value=0)
+            buf._rgba_data = rgba_arr
+            return buf
+
+        # Grayscale / 16-bit path (discrete / continuous modes)
         arr = np.array(img, dtype=np.uint16)
         if arr.ndim != 2:
             raise ValueError(f"Expected 2-D grayscale image, got shape {arr.shape}")
@@ -796,20 +845,31 @@ class MapDataBuffer:
         max_col = min(self._width - 1, max_col)
         max_row = min(self._height - 1, max_row)
 
-        region = self._data[min_row : max_row + 1, min_col : max_col + 1]
-        rh, rw = region.shape
-        rgba = np.zeros((rh, rw, 4), dtype=np.uint8)
-
         logger.debug(
-            "colorize_region: region=(%d,%d,%d,%d) size=%dx%d color_map_type=%s",
+            "colorize_region: region=(%d,%d,%d,%d) color_map_type=%s",
             min_col,
             min_row,
             max_col,
             max_row,
-            rw,
-            rh,
             color_map.type,
         )
+
+        if color_map.type == "passthrough":
+            if self._rgba_data is not None:
+                region_rgba = self._rgba_data[
+                    min_row : max_row + 1, min_col : max_col + 1
+                ].copy()
+            else:
+                rh = max_row - min_row + 1
+                rw = max_col - min_col + 1
+                region_rgba = np.zeros((rh, rw, 4), dtype=np.uint8)
+            rh, rw = region_rgba.shape[:2]
+            image = QImage(region_rgba.data, rw, rh, rw * 4, QImage.Format.Format_RGBA8888)
+            return image.copy()
+
+        region = self._data[min_row : max_row + 1, min_col : max_col + 1]
+        rh, rw = region.shape
+        rgba = np.zeros((rh, rw, 4), dtype=np.uint8)
 
         if color_map.type == "palette":
             for entry in color_map.entries:
