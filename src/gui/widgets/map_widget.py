@@ -931,6 +931,11 @@ class MapWidget(
         self._unregister_layer_node(marker_id)
         self.view.remove_marker(marker_id)
 
+    def exit_editing_modes(self) -> None:
+        """Exit active map and layer editing modes without committing edits."""
+        self.view.exit_all_editing(commit_feature_edits=False)
+        self._update_mode_indicator()
+
     def clear_markers(self) -> None:
         """Removes all markers from the map and resets the layer model."""
         self.view.clear_markers()

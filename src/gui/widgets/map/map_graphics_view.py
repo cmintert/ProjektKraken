@@ -1191,11 +1191,14 @@ class MapGraphicsView(QGraphicsView):
         Args:
             marker_id: Unique identifier for the marker to remove.
         """
+        if self._vertex_editor.editing_feature_id == marker_id:
+            self._vertex_editor.finish_vertex_editing(emit_geometry_change=False)
         self._marker_manager.remove_marker(marker_id)
         self._schedule_label_layout()
 
     def clear_markers(self) -> None:
         """Remove all markers and features from the map."""
+        self.exit_all_editing(commit_feature_edits=False)
         self._marker_manager.clear_markers()
 
     def update_markers_temporal_state(
@@ -1266,6 +1269,22 @@ class MapGraphicsView(QGraphicsView):
         """Public API: completes any active vertex editing session."""
         if self._vertex_editor.is_editing_vertices:
             self._vertex_editor.finish_vertex_editing()
+
+    def exit_all_editing(self, commit_feature_edits: bool = False) -> None:
+        """Exit drawing, vertex, and raster editing modes.
+
+        Args:
+            commit_feature_edits: Whether active vertex edits should emit a
+                geometry change before teardown.
+        """
+        if self.is_drawing:
+            self.cancel_drawing()
+        if self._vertex_editor.is_editing_vertices:
+            self._vertex_editor.finish_vertex_editing(
+                emit_geometry_change=commit_feature_edits
+            )
+        if self._raster_edit_tool.is_active:
+            self.stop_raster_editing()
 
     # ------------------------------------------------------------------
     # Trajectory (delegated to TrajectoryRenderer)

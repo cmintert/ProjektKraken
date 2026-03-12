@@ -233,12 +233,18 @@ class VertexEditor:
             f"Vertex editing started for {item.marker_id} ({len(geometry)} vertices)"
         )
 
-    def finish_vertex_editing(self) -> None:
+    def finish_vertex_editing(self, emit_geometry_change: bool = True) -> None:
         """Commits vertex edits and removes handles.
 
         Restores the original feature style and emits
         ``feature_geometry_changed`` with the updated normalized
         coordinates so the command layer can persist the change.
+
+        Args:
+            emit_geometry_change: Whether to emit the geometry-changed
+                signal for the edited feature. Use ``False`` when the
+                feature is being deleted and edit handles only need to be
+                torn down.
         """
         finished_id: Optional[str] = None
         finished_geometry: Optional[list] = None
@@ -251,7 +257,7 @@ class VertexEditor:
                     item._style = self._editing_original_style
                     self._editing_original_style = None
                     item.update()
-                if item._geometry:
+                if emit_geometry_change and item._geometry:
                     finished_id = self._editing_feature_id
                     finished_geometry = list(item._geometry)
 

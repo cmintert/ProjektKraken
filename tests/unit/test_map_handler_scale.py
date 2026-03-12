@@ -69,3 +69,15 @@ def test_on_map_selected_loads_scale(map_handler, mock_map_widget):
     map_handler.on_map_selected("map_2")
 
     mock_map_widget.view.set_map_width_meters.assert_called_with(1_000_000.0)
+
+
+def test_delete_map_exits_editing_before_emitting_command(map_handler, mock_map_widget):
+    """Map deletion must shut down active edit modes before dispatching the command."""
+    order: list[str] = []
+    mock_map_widget.exit_editing_modes.side_effect = lambda: order.append("exit")
+    map_handler.command_requested.connect(lambda _cmd: order.append("emit"))
+
+    map_handler.delete_map("map_1")
+
+    mock_map_widget.exit_editing_modes.assert_called_once_with()
+    assert order == ["exit", "emit"]

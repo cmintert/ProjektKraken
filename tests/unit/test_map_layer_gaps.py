@@ -1120,6 +1120,33 @@ class TestDeleteLayerEmitsDBSignal:
         widget._on_delete_layer("empty-grp")
         assert received == []
 
+    def test_delete_layer_exits_vertex_editing_first(self, qtbot) -> None:
+        """Deleting a layer while editing its path must remove edit handles first."""
+        widget = _make_map_widget(qtbot)
+        widget.add_marker(
+            "edit-path-1",
+            "entity",
+            "Editable Path",
+            0.5,
+            0.5,
+            feature_type="path",
+            geometry=[
+                {"x": 0.1, "y": 0.1},
+                {"x": 0.5, "y": 0.5},
+                {"x": 0.9, "y": 0.9},
+            ],
+        )
+
+        item = widget.view.feature_items["edit-path-1"]
+        widget.view._start_vertex_editing(item)
+
+        widget._on_delete_layer("edit-path-1")
+
+        assert widget.view.is_editing_vertices is False
+        assert len(widget.view._vertex_handles) == 0
+        assert len(widget.view._midpoint_handles) == 0
+        assert "edit-path-1" not in widget.view.feature_items
+
     def test_collect_leaf_ids_nested_groups(self, qtbot) -> None:
         """_collect_leaf_ids recurses through nested groups, returning (id, type) tuples."""
         widget = _make_map_widget(qtbot)

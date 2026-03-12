@@ -252,6 +252,10 @@ class MapLayerMixin:
         if node is None:
             return
 
+        exit_editing_modes = getattr(self, "exit_editing_modes", None)
+        if callable(exit_editing_modes):
+            exit_editing_modes()
+
         # Don't delete the root
         if node is self._layer_model.root:
             logger.warning("Cannot delete the root node")

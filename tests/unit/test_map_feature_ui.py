@@ -932,6 +932,18 @@ class TestVertexManagement:
         view._finish_vertex_editing()
         assert len(view._midpoint_handles) == 0
 
+    def test_removing_edited_feature_exits_vertex_editing(self, view) -> None:
+        """Removing the active feature must clear vertex-edit handles immediately."""
+        item = view.feature_items["p1"]
+        view._start_vertex_editing(item)
+
+        view.remove_marker("p1")
+
+        assert view.is_editing_vertices is False
+        assert len(view._vertex_handles) == 0
+        assert len(view._midpoint_handles) == 0
+        assert "p1" not in view.feature_items
+
 
 # --------------------------------------------------------------------------
 # Hover tooltip tests

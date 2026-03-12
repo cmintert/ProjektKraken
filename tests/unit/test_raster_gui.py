@@ -6,14 +6,18 @@ mouse events and that RasterLayerItem / MapGraphicsView respond as expected.
 Requires QT_QPA_PLATFORM=offscreen.
 """
 
+from unittest.mock import MagicMock
+
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import QGraphicsPixmapItem
 
+from src.app.map_handler import MapHandler
 from src.gui.widgets.map.map_data_buffer import ColorEntry, ColorMap, GradientStop, MapDataBuffer
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 from src.gui.widgets.map.raster_edit_tool import RasterEditMode
 from src.gui.widgets.map.raster_layer_item import RasterLayerItem
+from src.gui.widgets.map_widget import MapWidget
 
 # ── Helpers ────────────────────────────────────────────────────────────
 
@@ -290,6 +294,51 @@ class TestEscapeKeyExitsEditing:
         view = _make_view(qtbot)
         consumed = view._raster_edit_tool.handle_key_escape()
         assert not consumed
+
+
+class TestMapDeleteStopsRasterEditing:
+    """Deleting a map must stop active raster editing before command dispatch."""
+
+    def test_delete_map_exits_active_raster_editing(self, qtbot) -> None:
+        widget = MapWidget()
+        qtbot.addWidget(widget)
+
+        img = QImage(200, 200, QImage.Format.Format_RGB32)
+        img.fill(Qt.GlobalColor.white)
+        pixmap = QPixmap.fromImage(img)
+
+        widget.view.pixmap_item = QGraphicsPixmapItem(pixmap)
+        widget.view.scene.addItem(widget.view.pixmap_item)
+        widget.view.coord_system.set_scene_rect(QRectF(0, 0, 200, 200))
+        _make_raster_item(widget.view, node_id="delete-map-raster")
+
+        handler = MapHandler(
+            map_widget=widget,
+            worker=MagicMock(),
+            db_path_accessor=lambda: "/tmp/test.kraken",
+            navigation_set_selection=MagicMock(),
+        )
+
+        order: list[str] = []
+        original_exit = widget.exit_editing_modes
+
+        def wrapped_exit() -> None:
+            order.append("exit")
+            original_exit()
+
+        widget.exit_editing_modes = wrapped_exit
+        emitted: list[object] = []
+        handler.command_requested.connect(lambda cmd: (order.append("emit"), emitted.append(cmd)))
+
+        widget.view.start_raster_editing("delete-map-raster")
+        assert widget.view._raster_edit_tool.is_active
+
+        handler.delete_map("map-delete-raster")
+
+        assert not widget.view._raster_edit_tool.is_active
+        assert len(emitted) == 1
+        assert emitted[0].__class__.__name__ == "DeleteMapCommand"
+        assert order == ["exit", "emit"]
 
 
 # ── UX Fix: _find_graphics_item returns raster items ──────────────────

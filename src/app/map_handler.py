@@ -246,6 +246,7 @@ class MapHandler(QObject):
             map_id: ID of the map to delete.
 
         """
+        self._map_widget.exit_editing_modes()
         cmd = DeleteMapCommand(map_id)
         self.command_requested.emit(cmd)
 
