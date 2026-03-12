@@ -29,11 +29,15 @@ from PySide6.QtWidgets import (
 from src.app.ui_constants import Spacing
 from src.core.map import MapLayerNode
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.map.raster_layer_item import BLEND_MODE_NAMES
 
 if TYPE_CHECKING:
     from src.gui.widgets.map.map_layer_model import MapLayerModel
 
 logger = logging.getLogger(__name__)
+
+# Label width used for consistent alignment across raster tool rows.
+_LABEL_WIDTH = 92
 
 
 class MapLayerPanel(QWidget):
@@ -104,37 +108,79 @@ class MapLayerPanel(QWidget):
         """
         super().__init__(parent)
 
+        # ── Internal State ────────────────────────────────────────────
+        self._model: Optional["MapLayerModel"] = None
+        self._selected_node_id: Optional[str] = None
+        self._current_node_id: str = ""
+        self._slider_updating = False  # guard against feedback loops
+        self._start_opacity: Optional[float] = None  # Opacity at drag start
+        # Full raster layer metadata keyed by node_id (set by MapHandler)
+        self._raster_meta_by_id: Dict[str, Dict[str, Any]] = {}
+        self._calendar_converter: Optional[Any] = None
+        # Internal lookup: node_id → mode string (populated by MapHandler)
+        self._raster_mode_by_id: dict[str, str] = {}
+
+        # ── Build UI ─────────────────────────────────────────────────
         main_layout = QVBoxLayout(self)
         StyleHelper.apply_compact_spacing(main_layout)
-        main_layout.setContentsMargins(4, 4, 4, 4)
+        main_layout.setContentsMargins(
+            Spacing.COMPACT, Spacing.COMPACT, Spacing.COMPACT, Spacing.COMPACT
+        )
 
-        # ── Header ────────────────────────────────────────────────────
+        self._build_header(main_layout)
+        self._build_tree_view(main_layout)
+        self._build_opacity_bar(main_layout)
+        self._build_raster_toolbar(main_layout)
+
+        # Apply all theme-aware styles
+        self.refresh_styles()
+
+        # Populate preset combo from saved presets
+        self._refresh_preset_combo()
+
+    # ------------------------------------------------------------------
+    # Private — UI construction helpers
+    # ------------------------------------------------------------------
+
+    def _build_header(self, parent_layout: QVBoxLayout) -> None:
+        """Build the header row with title and action buttons.
+
+        Args:
+            parent_layout: Layout to append the header into.
+        """
         header_layout = QHBoxLayout()
-        header_layout.setSpacing(4)
+        header_layout.setSpacing(Spacing.COMPACT)
 
         self._title_label = QLabel("Map Hierarchy")
         header_layout.addWidget(self._title_label)
         header_layout.addStretch()
 
-        self.btn_new_group = QPushButton("+ Group")
-        self.btn_new_group.setToolTip("Create a new layer (container)")
-        self.btn_new_group.clicked.connect(self._on_new_group)
+        self.btn_new_group = self._make_button(
+            "+ Group", "Create a new layer (container)", self._on_new_group
+        )
         header_layout.addWidget(self.btn_new_group)
 
-        self.btn_new_raster = QPushButton("+ Raster")
-        self.btn_new_raster.setToolTip("Create a new raster / heatmap layer")
-        self.btn_new_raster.clicked.connect(self._on_new_raster)
+        self.btn_new_raster = self._make_button(
+            "+ Raster", "Create a new raster / heatmap layer", self._on_new_raster
+        )
         header_layout.addWidget(self.btn_new_raster)
 
-        self.btn_delete = QPushButton("Delete")
-        self.btn_delete.setToolTip("Delete the selected layer or feature")
-        self.btn_delete.setEnabled(False)
-        self.btn_delete.clicked.connect(self._on_delete)
+        self.btn_delete = self._make_button(
+            "Delete",
+            "Delete the selected layer or feature",
+            self._on_delete,
+            enabled=False,
+        )
         header_layout.addWidget(self.btn_delete)
 
-        main_layout.addLayout(header_layout)
+        parent_layout.addLayout(header_layout)
 
-        # ── Tree View ─────────────────────────────────────────────────
+    def _build_tree_view(self, parent_layout: QVBoxLayout) -> None:
+        """Build the layer tree view with drag-and-drop.
+
+        Args:
+            parent_layout: Layout to append the tree into.
+        """
         self._tree = QTreeView(self)
         self._tree.setHeaderHidden(True)
         self._tree.setDragEnabled(True)
@@ -150,14 +196,20 @@ class MapLayerPanel(QWidget):
         self._tree.clicked.connect(self._on_item_clicked)
         self._tree.doubleClicked.connect(self._on_item_double_clicked)
 
-        main_layout.addWidget(self._tree, 1)  # stretch=1 to fill space
+        parent_layout.addWidget(self._tree, 1)
 
-        # ── Opacity Bar ───────────────────────────────────────────────
-        opacity_layout = QHBoxLayout()
-        opacity_layout.setSpacing(4)
+    def _build_opacity_bar(self, parent_layout: QVBoxLayout) -> None:
+        """Build the opacity slider row.
 
+        Args:
+            parent_layout: Layout to append the opacity controls into.
+        """
         self._opacity_label = QLabel("Opacity:")
-        opacity_layout.addWidget(self._opacity_label)
+        self._opacity_value_label = QLabel("100 %")
+        self._opacity_value_label.setMinimumWidth(40)
+        self._opacity_value_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
 
         self._opacity_slider = QSlider(Qt.Orientation.Horizontal)
         self._opacity_slider.setRange(0, 100)
@@ -166,93 +218,111 @@ class MapLayerPanel(QWidget):
         self._opacity_slider.sliderPressed.connect(self._on_slider_pressed)
         self._opacity_slider.valueChanged.connect(self._on_opacity_preview)
         self._opacity_slider.sliderReleased.connect(self._on_opacity_committed)
+
+        opacity_layout = QHBoxLayout()
+        opacity_layout.setSpacing(Spacing.COMPACT)
+        opacity_layout.addWidget(self._opacity_label)
         opacity_layout.addWidget(self._opacity_slider, 1)
-
-        self._opacity_value_label = QLabel("100 %")
-        self._opacity_value_label.setMinimumWidth(40)
-        self._opacity_value_label.setAlignment(
-            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-        )
         opacity_layout.addWidget(self._opacity_value_label)
+        parent_layout.addLayout(opacity_layout)
 
-        main_layout.addLayout(opacity_layout)
+    def _build_raster_toolbar(self, parent_layout: QVBoxLayout) -> None:
+        """Build the raster editing toolbar (hidden by default).
 
-        # ── Raster Edit Toolbar ──────────────────────────────────────
+        Args:
+            parent_layout: Layout to append the toolbar into.
+        """
         self._raster_toolbar = QWidget(self)
         self._raster_toolbar.setVisible(False)
-        rt_layout = QVBoxLayout(self._raster_toolbar)
-        rt_layout.setContentsMargins(4, 4, 4, 4)
-        rt_layout.setSpacing(4)
+        rt = QVBoxLayout(self._raster_toolbar)
+        rt.setContentsMargins(
+            Spacing.COMPACT, Spacing.COMPACT, Spacing.COMPACT, Spacing.COMPACT
+        )
+        rt.setSpacing(Spacing.COMPACT)
 
-        rt_label = QLabel("Raster Tools")
-        rt_layout.addWidget(rt_label)
+        rt.addWidget(QLabel("Raster Tools"))
 
-        # Mode badge — shows "Discrete" or "Continuous" for the active raster layer
+        # Mode badge — shows "Discrete" or "Continuous"
         self._raster_mode_label = QLabel()
         self._raster_mode_label.setObjectName("RasterModeBadge")
         self._raster_mode_label.setVisible(False)
-        rt_layout.addWidget(self._raster_mode_label)
+        rt.addWidget(self._raster_mode_label)
 
-        # Internal lookup: node_id → mode string (populated by MapHandler)
-        self._raster_mode_by_id: dict[str, str] = {}
+        self._build_tool_mode_buttons(rt)
 
-        # Tool buttons row
+        rt.addWidget(self._make_section_separator("PAINT"))
+        self._build_paint_settings(rt)
+
+        rt.addWidget(self._make_section_separator("ACTIONS"))
+        self._build_action_rows(rt)
+
+        rt.addWidget(self._make_section_separator("LAYER"))
+        self._build_layer_settings(rt)
+
+        parent_layout.addWidget(self._raster_toolbar)
+
+    def _build_tool_mode_buttons(self, rt: QVBoxLayout) -> None:
+        """Build the mutually exclusive raster tool mode buttons.
+
+        Args:
+            rt: Raster toolbar layout to append into.
+        """
         tool_row = QHBoxLayout()
         tool_row.setSpacing(2)
-        self._btn_brush = QPushButton("Brush")
-        self._btn_brush.setCheckable(True)
-        self._btn_brush.setChecked(True)
-        self._btn_fill = QPushButton("Fill")
-        self._btn_fill.setCheckable(True)
-        self._btn_gradient = QPushButton("Gradient")
-        self._btn_gradient.setCheckable(True)
-        self._btn_sample = QPushButton("Sample")
-        self._btn_sample.setCheckable(True)
-        for b in (
-            self._btn_brush,
-            self._btn_fill,
-            self._btn_gradient,
-            self._btn_sample,
-        ):
-            b.setAutoExclusive(True)
-            b.toggled.connect(self._on_tool_mode_changed)
-            tool_row.addWidget(b)
-        rt_layout.addLayout(tool_row)
 
-        rt_layout.addWidget(self._make_section_separator("PAINT"))
+        tool_defs: list[tuple[str, str, bool]] = [
+            ("_btn_brush", "Brush", True),
+            ("_btn_fill", "Fill", False),
+            ("_btn_gradient", "Gradient", False),
+            ("_btn_sample", "Sample", False),
+        ]
+        for attr, label, checked in tool_defs:
+            btn = QPushButton(label)
+            btn.setCheckable(True)
+            btn.setChecked(checked)
+            btn.setAutoExclusive(True)
+            btn.toggled.connect(self._on_tool_mode_changed)
+            setattr(self, attr, btn)
+            tool_row.addWidget(btn)
 
-        # Paint settings — each parameter on its own row for clarity
-        size_row = QHBoxLayout()
-        size_row.setSpacing(Spacing.COMPACT)
-        size_lbl = QLabel("Size:")
-        size_lbl.setFixedWidth(92)
-        size_row.addWidget(size_lbl)
-        self._brush_size_spin = QSpinBox()
-        self._brush_size_spin.setRange(1, 128)
-        self._brush_size_spin.setValue(8)
-        self._brush_size_spin.setButtonSymbols(QSpinBox.ButtonSymbols.UpDownArrows)
-        self._brush_size_spin.valueChanged.connect(self._on_raster_setting_changed)
-        size_row.addWidget(self._brush_size_spin, 1)
-        rt_layout.addLayout(size_row)
+        rt.addLayout(tool_row)
 
-        value_row = QHBoxLayout()
-        value_row.setSpacing(Spacing.COMPACT)
-        value_lbl = QLabel("Value:")
-        value_lbl.setFixedWidth(92)
-        value_row.addWidget(value_lbl)
-        self._paint_value_spin = QSpinBox()
-        self._paint_value_spin.setRange(0, 65535)
-        self._paint_value_spin.setValue(1)
-        self._paint_value_spin.setButtonSymbols(QSpinBox.ButtonSymbols.UpDownArrows)
-        self._paint_value_spin.valueChanged.connect(self._on_paint_value_spin_changed)
-        value_row.addWidget(self._paint_value_spin, 1)
-        rt_layout.addLayout(value_row)
+    def _build_paint_settings(self, rt: QVBoxLayout) -> None:
+        """Build paint parameter controls (size, value, entity picker, falloff, gradient).
 
-        # Entity / class picker — "Paint as: [Class Name ▾]" (discrete only)
+        Args:
+            rt: Raster toolbar layout to append into.
+        """
+        self._brush_size_spin = self._make_labeled_spinbox(
+            rt, "Size:", 1, 128, 8, self._on_raster_setting_changed
+        )
+        self._paint_value_spin = self._make_labeled_spinbox(
+            rt, "Value:", 0, 65535, 1, self._on_paint_value_spin_changed
+        )
+        self._build_entity_picker(rt)
+
+        self._falloff_slider, self._falloff_label = self._make_labeled_slider(
+            rt,
+            "Falloff:",
+            0,
+            100,
+            0,
+            "Brush falloff (0=hard, 100=soft)",
+            self._on_falloff_changed,
+        )
+
+        self._build_gradient_sub_combo(rt)
+
+    def _build_entity_picker(self, rt: QVBoxLayout) -> None:
+        """Build the entity/class picker combo row (discrete rasters only).
+
+        Args:
+            rt: Raster toolbar layout to append into.
+        """
         self._entity_picker_row = QWidget()
         ep_layout = QHBoxLayout(self._entity_picker_row)
         ep_layout.setContentsMargins(0, 0, 0, 0)
-        ep_layout.setSpacing(4)
+        ep_layout.setSpacing(Spacing.COMPACT)
         ep_layout.addWidget(QLabel("Paint as:"))
         self._entity_picker_combo = QComboBox()
         self._entity_picker_combo.setToolTip(
@@ -266,34 +336,18 @@ class MapLayerPanel(QWidget):
         self._entity_picker_combo.currentIndexChanged.connect(self._on_entity_picked)
         ep_layout.addWidget(self._entity_picker_combo, 1)
         ep_layout.addStretch()
-        rt_layout.addWidget(self._entity_picker_row)
+        rt.addWidget(self._entity_picker_row)
 
-        # Brush settings row 2: Falloff
-        settings_row_2 = QHBoxLayout()
-        settings_row_2.setSpacing(4)
-        falloff_lbl = QLabel("Falloff:")
-        falloff_lbl.setFixedWidth(92)
-        settings_row_2.addWidget(falloff_lbl)
-        self._falloff_slider = QSlider(Qt.Orientation.Horizontal)
-        self._falloff_slider.setRange(0, 100)
-        self._falloff_slider.setValue(0)
-        self._falloff_slider.setToolTip("Brush falloff (0=hard, 100=soft)")
-        self._falloff_slider.valueChanged.connect(self._on_falloff_changed)
-        settings_row_2.addWidget(self._falloff_slider, 1)  # Give slider stretch
+    def _build_gradient_sub_combo(self, rt: QVBoxLayout) -> None:
+        """Build the gradient sub-mode combo row.
 
-        self._falloff_label = QLabel("0%")
-        self._falloff_label.setMinimumWidth(32)
-        self._falloff_label.setAlignment(
-            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-        )
-        settings_row_2.addWidget(self._falloff_label)
-        rt_layout.addLayout(settings_row_2)
-
-        # Gradient sub-mode row — only applies when Gradient tool is active
+        Args:
+            rt: Raster toolbar layout to append into.
+        """
         gradient_row = QHBoxLayout()
         gradient_row.setSpacing(Spacing.COMPACT)
         grad_lbl = QLabel("Gradient Style:")
-        grad_lbl.setFixedWidth(92)
+        grad_lbl.setFixedWidth(_LABEL_WIDTH)
         gradient_row.addWidget(grad_lbl)
         self._gradient_sub_combo = QComboBox()
         self._gradient_sub_combo.addItems(["Linear", "Radial", "Reflected"])
@@ -304,35 +358,38 @@ class MapLayerPanel(QWidget):
             lambda t: self.raster_gradient_sub_mode_changed.emit(t.lower())
         )
         gradient_row.addWidget(self._gradient_sub_combo, 1)
-        rt_layout.addLayout(gradient_row)
+        rt.addLayout(gradient_row)
 
-        rt_layout.addWidget(self._make_section_separator("ACTIONS"))
+    def _build_action_rows(self, rt: QVBoxLayout) -> None:
+        """Build the action button rows (edit, palette, stats, snapshot).
 
-        # Primary edit actions row
+        Args:
+            rt: Raster toolbar layout to append into.
+        """
         action_row = QHBoxLayout()
         action_row.setSpacing(Spacing.COMPACT)
         self._btn_edit_toggle = QPushButton("✎ Edit")
         self._btn_edit_toggle.setCheckable(True)
         self._btn_edit_toggle.toggled.connect(self._on_edit_toggled)
         action_row.addWidget(self._btn_edit_toggle)
-        self._btn_palette = QPushButton("Palette…")
-        self._btn_palette.clicked.connect(self._on_palette_clicked)
+        self._btn_palette = self._make_button("Palette…", "", self._on_palette_clicked)
         action_row.addWidget(self._btn_palette)
-        self._btn_stats = QPushButton("Stats…")
-        self._btn_stats.setToolTip("Show coverage statistics for this raster layer")
-        self._btn_stats.clicked.connect(self._on_stats_clicked)
+        self._btn_stats = self._make_button(
+            "Stats…",
+            "Show coverage statistics for this raster layer",
+            self._on_stats_clicked,
+        )
         action_row.addWidget(self._btn_stats)
         action_row.addStretch()
-        rt_layout.addLayout(action_row)
+        rt.addLayout(action_row)
 
-        # Snapshot row (temporal)
         snapshot_row = QHBoxLayout()
         snapshot_row.setSpacing(Spacing.COMPACT)
-        self._btn_snapshot = QPushButton("📸 Snapshot")
-        self._btn_snapshot.setToolTip(
-            "Save snapshot of this raster layer at the current timeline date"
+        self._btn_snapshot = self._make_button(
+            "📸 Snapshot",
+            "Save snapshot of this raster layer at the current timeline date",
+            self._on_snapshot_clicked,
         )
-        self._btn_snapshot.clicked.connect(self._on_snapshot_clicked)
         snapshot_row.addWidget(self._btn_snapshot)
         self._snapshot_count_label = QLabel("")
         self._snapshot_count_label.setToolTip(
@@ -340,41 +397,45 @@ class MapLayerPanel(QWidget):
         )
         snapshot_row.addWidget(self._snapshot_count_label)
         snapshot_row.addStretch()
-        rt_layout.addLayout(snapshot_row)
+        rt.addLayout(snapshot_row)
 
-        rt_layout.addWidget(self._make_section_separator("LAYER"))
+    def _build_layer_settings(self, rt: QVBoxLayout) -> None:
+        """Build layer-level controls (blend, notes, presets, query).
 
-        # Blend mode row
+        Args:
+            rt: Raster toolbar layout to append into.
+        """
+        # Blend mode
         blend_row = QHBoxLayout()
-        blend_row.setSpacing(4)
+        blend_row.setSpacing(Spacing.COMPACT)
         blend_row.addWidget(QLabel("Blend:"))
         self._blend_combo = QComboBox()
-        from src.gui.widgets.map.raster_layer_item import BLEND_MODE_NAMES
-
         self._blend_combo.addItems(BLEND_MODE_NAMES)
         self._blend_combo.currentTextChanged.connect(self._on_blend_mode_changed)
         blend_row.addWidget(self._blend_combo)
         blend_row.addStretch()
-        rt_layout.addLayout(blend_row)
+        rt.addLayout(blend_row)
 
-        # Notes row
+        # Notes
         notes_row = QHBoxLayout()
-        notes_row.setSpacing(4)
-        self._btn_notes = QPushButton("📝 Notes")
-        self._btn_notes.setToolTip("Add or edit text notes for this raster layer")
-        self._btn_notes.clicked.connect(self._on_notes_clicked)
+        notes_row.setSpacing(Spacing.COMPACT)
+        self._btn_notes = self._make_button(
+            "📝 Notes",
+            "Add or edit text notes for this raster layer",
+            self._on_notes_clicked,
+        )
         notes_row.addWidget(self._btn_notes)
         self._notes_indicator_label = QLabel("")
         self._notes_indicator_label.setToolTip("This layer has saved notes")
         notes_row.addWidget(self._notes_indicator_label)
         notes_row.addStretch()
-        rt_layout.addLayout(notes_row)
+        rt.addLayout(notes_row)
 
         # Preset toolbar row (hidden until raster layer selected)
         self._preset_toolbar_row = QWidget()
         preset_layout = QHBoxLayout(self._preset_toolbar_row)
         preset_layout.setContentsMargins(0, 0, 0, 0)
-        preset_layout.setSpacing(4)
+        preset_layout.setSpacing(Spacing.COMPACT)
         preset_layout.addWidget(QLabel("Preset:"))
         self._preset_combo = QComboBox()
         self._preset_combo.setSizeAdjustPolicy(
@@ -384,43 +445,146 @@ class MapLayerPanel(QWidget):
         preset_layout.addWidget(self._preset_combo, 1)
         preset_layout.addStretch()
         self._preset_toolbar_row.setVisible(False)
-        rt_layout.addWidget(self._preset_toolbar_row)
+        rt.addWidget(self._preset_toolbar_row)
 
         # Query row (hidden until raster layer selected)
         self._query_row = QWidget()
         query_layout = QHBoxLayout(self._query_row)
         query_layout.setContentsMargins(0, 0, 0, 0)
-        query_layout.setSpacing(4)
-        self._btn_query = QPushButton("🔍 Query")
-        self._btn_query.setToolTip("Build a cross-layer spatial query")
-        self._btn_query.clicked.connect(lambda: self.raster_query_requested.emit())
+        query_layout.setSpacing(Spacing.COMPACT)
+        self._btn_query = self._make_button(
+            "🔍 Query",
+            "Build a cross-layer spatial query",
+            lambda: self.raster_query_requested.emit(),
+        )
         query_layout.addWidget(self._btn_query)
-        self._btn_clear_query = QPushButton("✕ Clear Query")
-        self._btn_clear_query.setToolTip("Remove the spatial query overlay")
-        self._btn_clear_query.setVisible(False)
-        self._btn_clear_query.clicked.connect(lambda: self.raster_query_cleared.emit())
+        self._btn_clear_query = self._make_button(
+            "✕ Clear Query",
+            "Remove the spatial query overlay",
+            lambda: self.raster_query_cleared.emit(),
+            visible=False,
+        )
         query_layout.addWidget(self._btn_clear_query)
         query_layout.addStretch()
         self._query_row.setVisible(False)
-        rt_layout.addWidget(self._query_row)
+        rt.addWidget(self._query_row)
 
-        main_layout.addWidget(self._raster_toolbar)
+    # ------------------------------------------------------------------
+    # Private — widget factory helpers (DRY)
+    # ------------------------------------------------------------------
 
-        # ── Internal State ────────────────────────────────────────────
-        self._model: Optional["MapLayerModel"] = None
-        self._selected_node_id: Optional[str] = None
-        self._current_node_id: str = ""
-        self._slider_updating = False  # guard against feedback loops
-        self._start_opacity: Optional[float] = None  # Opacity at drag start
-        # Full raster layer metadata keyed by node_id (set by MapHandler)
-        self._raster_meta_by_id: Dict[str, Dict[str, Any]] = {}
-        self._calendar_converter: Optional[Any] = None
+    @staticmethod
+    def _make_button(
+        text: str,
+        tooltip: str,
+        on_click: Any,
+        *,
+        enabled: bool = True,
+        visible: bool = True,
+    ) -> QPushButton:
+        """Create a push button with consistent setup.
 
-        # Apply all theme-aware styles
-        self.refresh_styles()
+        Args:
+            text: Button label.
+            tooltip: Tooltip text (empty string to skip).
+            on_click: Slot to connect to ``clicked``.
+            enabled: Initial enabled state.
+            visible: Initial visibility.
 
-        # Populate preset combo from saved presets
-        self._refresh_preset_combo()
+        Returns:
+            The configured ``QPushButton``.
+        """
+        btn = QPushButton(text)
+        if tooltip:
+            btn.setToolTip(tooltip)
+        btn.clicked.connect(on_click)
+        if not enabled:
+            btn.setEnabled(False)
+        if not visible:
+            btn.setVisible(False)
+        return btn
+
+    @staticmethod
+    def _make_labeled_spinbox(
+        parent_layout: QVBoxLayout,
+        label: str,
+        min_val: int,
+        max_val: int,
+        default: int,
+        on_changed: Any,
+    ) -> QSpinBox:
+        """Create a labeled spin box row and append it to *parent_layout*.
+
+        Args:
+            parent_layout: Layout to add the row into.
+            label: Row label text.
+            min_val: Minimum spin box value.
+            max_val: Maximum spin box value.
+            default: Initial spin box value.
+            on_changed: Slot connected to ``valueChanged``.
+
+        Returns:
+            The configured ``QSpinBox``.
+        """
+        row = QHBoxLayout()
+        row.setSpacing(Spacing.COMPACT)
+        lbl = QLabel(label)
+        lbl.setFixedWidth(_LABEL_WIDTH)
+        row.addWidget(lbl)
+        spin = QSpinBox()
+        spin.setRange(min_val, max_val)
+        spin.setValue(default)
+        spin.setButtonSymbols(QSpinBox.ButtonSymbols.UpDownArrows)
+        spin.valueChanged.connect(on_changed)
+        row.addWidget(spin, 1)
+        parent_layout.addLayout(row)
+        return spin
+
+    @staticmethod
+    def _make_labeled_slider(
+        parent_layout: QVBoxLayout,
+        label: str,
+        min_val: int,
+        max_val: int,
+        default: int,
+        tooltip: str,
+        on_changed: Any,
+    ) -> Tuple[QSlider, QLabel]:
+        """Create a labeled slider row with a value readout label.
+
+        Args:
+            parent_layout: Layout to add the row into.
+            label: Row label text.
+            min_val: Minimum slider value.
+            max_val: Maximum slider value.
+            default: Initial slider value.
+            tooltip: Slider tooltip text.
+            on_changed: Slot connected to ``valueChanged``.
+
+        Returns:
+            A ``(slider, value_label)`` tuple.
+        """
+        row = QHBoxLayout()
+        row.setSpacing(Spacing.COMPACT)
+        lbl = QLabel(label)
+        lbl.setFixedWidth(_LABEL_WIDTH)
+        row.addWidget(lbl)
+
+        slider = QSlider(Qt.Orientation.Horizontal)
+        slider.setRange(min_val, max_val)
+        slider.setValue(default)
+        slider.setToolTip(tooltip)
+        slider.valueChanged.connect(on_changed)
+        row.addWidget(slider, 1)
+
+        value_label = QLabel(f"{default}%")
+        value_label.setMinimumWidth(32)
+        value_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
+        row.addWidget(value_label)
+        parent_layout.addLayout(row)
+        return slider, value_label
 
     # ------------------------------------------------------------------
     # Public API
@@ -533,11 +697,7 @@ class MapLayerPanel(QWidget):
         Returns:
             A widget containing the label and separator line.
         """
-        from src.core.theme_manager import ThemeManager
-
-        theme = ThemeManager().get_theme()
-        dim_color = theme.get("text_dim", "#888888")
-        border_color = theme.get("border", "#333344")
+        label_style, line_style = StyleHelper.get_section_separator_style()
 
         widget = QWidget()
         layout = QHBoxLayout(widget)
@@ -546,13 +706,13 @@ class MapLayerPanel(QWidget):
 
         if label:
             lbl = QLabel(label)
-            lbl.setStyleSheet(f"color: {dim_color}; font-size: 8pt; font-weight: bold;")
+            lbl.setStyleSheet(label_style)
             layout.addWidget(lbl)
 
         line = QFrame()
         line.setFrameShape(QFrame.Shape.HLine)
         line.setFrameShadow(QFrame.Shadow.Plain)
-        line.setStyleSheet(f"color: {border_color}; background: {border_color};")
+        line.setStyleSheet(line_style)
         layout.addWidget(line, 1)
         return widget
 
@@ -819,8 +979,7 @@ class MapLayerPanel(QWidget):
         Args:
             node: The newly selected layer node.
         """
-        from src.app.constants import MAP_LAYER_TYPE_RASTER
-        from src.app.constants import MAP_LAYER_TYPE_SNAPSHOT
+        from src.app.constants import MAP_LAYER_TYPE_RASTER, MAP_LAYER_TYPE_SNAPSHOT
 
         # Snapshot virtual rows: toolbar is already shown for the raster parent.
         if node.layer_type == MAP_LAYER_TYPE_SNAPSHOT:
@@ -1058,14 +1217,7 @@ class MapLayerPanel(QWidget):
 
         self._raster_mode_label.setText(f"{icon}  {text}")
         self._raster_mode_label.setStyleSheet(
-            f"QLabel#RasterModeBadge {{"
-            f"  background-color: {bg};"
-            f"  color: #FFFFFF;"
-            f"  border-radius: 4px;"
-            f"  padding: 2px 8px;"
-            f"  font-size: 8pt;"
-            f"  font-weight: bold;"
-            f"}}"
+            StyleHelper.get_raster_mode_badge_style(bg)
         )
         self._raster_mode_label.setVisible(True)
 

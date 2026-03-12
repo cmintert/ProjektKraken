@@ -747,6 +747,7 @@ class MapGraphicsView(QGraphicsView):
 
     @trigger_first_use_animation.setter
     def trigger_first_use_animation(self, value: bool) -> None:
+        """Set whether to trigger pulsing animation on first trajectory."""
         self._trajectory.trigger_first_use_animation = value
 
     def set_world_root(self, world_root: Optional[str]) -> None:
@@ -1195,7 +1196,12 @@ class MapGraphicsView(QGraphicsView):
     def update_markers_temporal_state(
         self, playhead_time: float, current_time: float
     ) -> None:
-        """Updates the temporal visual state of all markers and features."""
+        """Updates the temporal visual state of all markers and features.
+
+        Args:
+            playhead_time: Current playhead position in lore time.
+            current_time: Current absolute time for animation.
+        """
         self._marker_manager.update_markers_temporal_state(playhead_time, current_time)
 
     # ------------------------------------------------------------------

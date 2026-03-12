@@ -6,7 +6,7 @@ switches reliably update the UI.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 
 from PySide6.QtCore import QEvent, QObject, QRect
 from PySide6.QtGui import QCursor
@@ -1216,3 +1216,120 @@ class StyleHelper:
                 padding: 12px;
             }
         """
+
+    @staticmethod
+    def get_overlay_banner_style() -> str:
+        """Returns QSS for the semi-transparent overlay banner on the map view.
+
+        Returns:
+            str: QSS stylesheet string for overlay banners.
+        """
+        theme = ThemeManager().get_theme()
+        bg = theme.get("surface_alt", "rgba(0, 0, 0, 180)")
+        return (
+            "QLabel {"
+            f"  background-color: {bg};"
+            "  color: white;"
+            "  padding: 12px;"
+            "  border-bottom-left-radius: 8px;"
+            "  border-bottom-right-radius: 8px;"
+            "  font-size: 13px;"
+            "  font-weight: 500;"
+            "}"
+        )
+
+    @staticmethod
+    def get_legend_overlay_style() -> str:
+        """Returns QSS for the floating raster legend overlay.
+
+        Returns:
+            str: QSS stylesheet string for legend overlays.
+        """
+        return (
+            "QWidget {"
+            "  background-color: rgba(20, 20, 20, 200);"
+            "  border: 1px solid rgba(255,255,255,40);"
+            "  border-radius: 6px;"
+            "}"
+        )
+
+    @staticmethod
+    def get_mode_indicator_style(bg_color: str) -> str:
+        """Returns QSS for the toolbar mode-indicator label.
+
+        Args:
+            bg_color: Background hex colour for the current mode.
+
+        Returns:
+            str: QSS stylesheet string for mode indicator labels.
+        """
+        return (
+            "QLabel {"
+            f"  background: {bg_color};"
+            "  color: white;"
+            "  padding: 5px 12px;"
+            "  border-radius: 4px;"
+            "  font-weight: bold;"
+            "  font-size: 11px;"
+            "}"
+        )
+
+    @staticmethod
+    def get_toolbar_spacing_style() -> str:
+        """Returns QSS for map toolbar spacing.
+
+        Returns:
+            str: QSS stylesheet string for toolbar spacing.
+        """
+        return "QToolBar { spacing: 4px; padding: 4px; }"
+
+    @staticmethod
+    def get_raster_mode_badge_style(bg_color: str) -> str:
+        """Returns QSS for the raster mode badge label.
+
+        Args:
+            bg_color: Background hex colour for the badge.
+
+        Returns:
+            str: QSS stylesheet string for raster mode badges.
+        """
+        return (
+            "QLabel#RasterModeBadge {"
+            f"  background-color: {bg_color};"
+            "  color: #FFFFFF;"
+            "  border-radius: 4px;"
+            "  padding: 2px 8px;"
+            "  font-size: 8pt;"
+            "  font-weight: bold;"
+            "}"
+        )
+
+    @staticmethod
+    def get_section_separator_style() -> Tuple[str, str]:
+        """Returns QSS for the section separator label and line.
+
+        Returns:
+            A ``(label_style, line_style)`` tuple where *label_style* is
+            the QSS for the section heading text and *line_style* is the
+            QSS for the horizontal rule.
+        """
+        theme = ThemeManager().get_theme()
+        dim_color = theme.get("text_dim", "#888888")
+        border_color = theme.get("border", "#333344")
+        label_style = (
+            f"color: {dim_color}; font-size: 8pt; font-weight: bold;"
+        )
+        line_style = (
+            f"color: {border_color}; background: {border_color};"
+        )
+        return label_style, line_style
+
+    @staticmethod
+    def get_dim_text_color() -> str:
+        """Returns the theme-aware dim text colour hex string.
+
+        Returns:
+            str: Hex colour suitable for subdued/secondary text.
+        """
+        theme = ThemeManager().get_theme()
+        return theme.get("text_dim", "#888888")
