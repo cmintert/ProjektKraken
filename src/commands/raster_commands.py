@@ -320,6 +320,28 @@ class CreateRasterLayerCommand(BaseCommand):
                         for e in auto_palette_entries
                     ],
                 ).to_dict()
+            elif self.import_path and self.mode != "discrete":
+                # Build a multicolor gradient from the original RGB image so
+                # the greyscale buffer renders close to the original colours.
+                try:
+                    from PIL import Image as _PILImage
+
+                    _orig = _PILImage.open(self.import_path)
+                    initial_color_map = ColorMap.from_rgb_image(
+                        _orig, n_stops=12
+                    ).to_dict()
+                except Exception:
+                    logger.debug(
+                        "from_rgb_image failed; falling back to B/W gradient",
+                        exc_info=True,
+                    )
+                    initial_color_map = ColorMap(
+                        type="gradient",
+                        gradient_stops=[
+                            GradientStop(0.0, "#000000FF"),
+                            GradientStop(1.0, "#FFFFFFFF"),
+                        ],
+                    ).to_dict()
             else:
                 initial_color_map = ColorMap(
                     type="gradient",

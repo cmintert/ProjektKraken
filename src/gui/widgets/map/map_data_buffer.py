@@ -190,6 +190,128 @@ class ColorMap:
         return d
 
     @classmethod
+    def from_rgb_image(
+        cls,
+        img: Any,
+        n_stops: int = 8,
+        max_iter: int = 20,
+    ) -> "ColorMap":
+        """Build a gradient ColorMap that reconstructs an RGB image's colours.
+
+        Pixels are clustered in weighted (luminance, R, G, B) space using
+        k-means so that perceptually distinct hues each get their own
+        gradient stop.  Stops are ordered by perceived luminance so the
+        resulting gradient maps the greyscale buffer back to the original
+        colours with high fidelity.
+
+        Args:
+            img: PIL ``Image`` (any mode) **or** a numpy array (H×W×3/4).
+            n_stops: Number of gradient stops (≥ 2, default 8).
+            max_iter: Maximum k-means iterations (default 20).
+
+        Returns:
+            ``ColorMap`` of type ``"gradient"`` with *n_stops* stops spanning
+            0.0 → 1.0 and ``stretch_min=0, stretch_max=65535``.
+
+        Raises:
+            ValueError: If *n_stops* < 2.
+        """
+        from PIL import Image as _PILImage
+
+        if n_stops < 2:
+            raise ValueError("n_stops must be >= 2")
+
+        # --- Normalise input to (H, W, 3) uint8 array -------------------
+        if isinstance(img, _PILImage.Image):
+            rgb_arr = np.array(img.convert("RGB"), dtype=np.uint8)
+        else:
+            rgb_arr = np.asarray(img, dtype=np.uint8)
+            if rgb_arr.ndim == 2:
+                rgb_arr = np.stack([rgb_arr] * 3, axis=-1)
+            elif rgb_arr.shape[2] == 4:
+                rgb_arr = rgb_arr[:, :, :3]
+
+        flat = rgb_arr.reshape(-1, 3).astype(np.float32)  # (N, 3)
+
+        # Perceived luminance (Rec. 709)
+        lum = 0.2126 * flat[:, 0] + 0.7152 * flat[:, 1] + 0.0722 * flat[:, 2]
+
+        # Feature vector: (lum_weighted, R, G, B).
+        # Luminance is weighted 2× so that brightness has the strongest
+        # influence on cluster ordering.
+        features = np.column_stack([lum * 2.0, flat])  # (N, 4)
+
+        # --- Simple k-means (no scipy dependency) -----------------------
+        rng = np.random.RandomState(42)
+        n_pixels = features.shape[0]
+        k = min(n_stops, n_pixels)
+
+        # Initialise centroids via k-means++ seeding
+        indices = np.empty(k, dtype=np.intp)
+        indices[0] = rng.randint(n_pixels)
+        for ci in range(1, k):
+            dists = np.min(
+                np.sum((features[indices[:ci], np.newaxis] - features[np.newaxis, :]) ** 2, axis=2),
+                axis=0,
+            )
+            probs = dists / dists.sum()
+            indices[ci] = rng.choice(n_pixels, p=probs)
+        centroids = features[indices].copy()
+
+        labels = np.zeros(n_pixels, dtype=np.intp)
+        for _ in range(max_iter):
+            # Assign each pixel to the nearest centroid
+            dists = np.sum(
+                (features[:, np.newaxis, :] - centroids[np.newaxis, :, :]) ** 2,
+                axis=2,
+            )
+            new_labels = np.argmin(dists, axis=1)
+            if np.array_equal(new_labels, labels):
+                break
+            labels = new_labels
+            # Recompute centroids
+            for ci in range(k):
+                members = features[labels == ci]
+                if len(members) > 0:
+                    centroids[ci] = members.mean(axis=0)
+
+        # --- Build gradient stops from clusters -------------------------
+        cluster_rgb: List[Tuple[int, int, int]] = []
+        cluster_lum: List[float] = []
+        for ci in range(k):
+            members = flat[labels == ci]
+            if len(members) == 0:
+                continue
+            mean_col = members.mean(axis=0)
+            r, g, b = (int(max(0, min(255, c))) for c in mean_col)
+            cluster_rgb.append((r, g, b))
+            cluster_lum.append(
+                0.2126 * r + 0.7152 * g + 0.0722 * b,
+            )
+
+        # Sort clusters from darkest to lightest
+        order = np.argsort(cluster_lum)
+        cluster_rgb = [cluster_rgb[i] for i in order]
+
+        n_actual = len(cluster_rgb)
+        stops: List["GradientStop"] = []
+        for idx, (r, g, b) in enumerate(cluster_rgb):
+            # Spread stops evenly across 0→1
+            pos = idx / max(n_actual - 1, 1)
+            stops.append(GradientStop(position=round(pos, 6), color=f"#{r:02X}{g:02X}{b:02X}FF"))
+
+        # Guarantee endpoints
+        stops[0] = GradientStop(position=0.0, color=stops[0].color)
+        stops[-1] = GradientStop(position=1.0, color=stops[-1].color)
+
+        return cls(
+            type="gradient",
+            gradient_stops=stops,
+            stretch_min=0,
+            stretch_max=65535,
+        )
+
+    @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ColorMap":
         """Deserialise from dict."""
         ctype = data.get("type", "palette")
