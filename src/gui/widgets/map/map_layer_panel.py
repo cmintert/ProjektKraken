@@ -697,11 +697,7 @@ class MapLayerPanel(QWidget):
         Returns:
             A widget containing the label and separator line.
         """
-        from src.core.theme_manager import ThemeManager
-
-        theme = ThemeManager().get_theme()
-        dim_color = theme.get("text_dim", "#888888")
-        border_color = theme.get("border", "#333344")
+        label_style, line_style = StyleHelper.get_section_separator_style()
 
         widget = QWidget()
         layout = QHBoxLayout(widget)
@@ -710,13 +706,13 @@ class MapLayerPanel(QWidget):
 
         if label:
             lbl = QLabel(label)
-            lbl.setStyleSheet(f"color: {dim_color}; font-size: 8pt; font-weight: bold;")
+            lbl.setStyleSheet(label_style)
             layout.addWidget(lbl)
 
         line = QFrame()
         line.setFrameShape(QFrame.Shape.HLine)
         line.setFrameShadow(QFrame.Shadow.Plain)
-        line.setStyleSheet(f"color: {border_color}; background: {border_color};")
+        line.setStyleSheet(line_style)
         layout.addWidget(line, 1)
         return widget
 
@@ -1221,14 +1217,7 @@ class MapLayerPanel(QWidget):
 
         self._raster_mode_label.setText(f"{icon}  {text}")
         self._raster_mode_label.setStyleSheet(
-            f"QLabel#RasterModeBadge {{"
-            f"  background-color: {bg};"
-            f"  color: #FFFFFF;"
-            f"  border-radius: 4px;"
-            f"  padding: 2px 8px;"
-            f"  font-size: 8pt;"
-            f"  font-weight: bold;"
-            f"}}"
+            StyleHelper.get_raster_mode_badge_style(bg)
         )
         self._raster_mode_label.setVisible(True)
 

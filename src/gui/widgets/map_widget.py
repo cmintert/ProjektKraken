@@ -137,12 +137,9 @@ class NoLayoutLabel(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        # Draw text aligned right
-        painter.setPen(QColor("#888888"))
-
-        # Basic font setup - can be enhanced if needed
-        # We assume styling is minimal
-        # Since we bypass stylesheet drawing, we must draw manually
+        # Use theme-aware dim text colour
+        dim_color = StyleHelper.get_dim_text_color()
+        painter.setPen(QColor(dim_color))
 
         rect = self.rect().adjusted(0, 0, -5, 0)  # Padding right
         painter.drawText(
@@ -246,7 +243,7 @@ class MapWidget(
         layout.setContentsMargins(0, 0, 0, 0)
         # Toolbar
         self.toolbar = QToolBar(self)
-        self.toolbar.setStyleSheet("QToolBar { spacing: 4px; padding: 4px; }")
+        self.toolbar.setStyleSheet(StyleHelper.get_toolbar_spacing_style())
         layout.addWidget(self.toolbar)
 
         # Map Selector
@@ -364,19 +361,7 @@ class MapWidget(
         # Overlay Banner (Child of view, positioned at top)
         self.overlay_banner = QLabel(self.view)
         self.overlay_banner.setAlignment(Qt.AlignCenter)
-        self.overlay_banner.setStyleSheet(
-            """
-            QLabel {
-                background-color: rgba(0, 0, 0, 180);
-                color: white;
-                padding: 12px;
-                border-bottom-left-radius: 8px;
-                border-bottom-right-radius: 8px;
-                font-size: 13px;
-                font-weight: 500;
-            }
-        """
-        )
+        self.overlay_banner.setStyleSheet(StyleHelper.get_overlay_banner_style())
         self.overlay_banner.hide()
 
         # ── Raster Legend Overlay (bottom-left, floating over the map) ──
@@ -385,13 +370,7 @@ class MapWidget(
         # mathematically relative to the viewport's geometry to avoid scrollbars.
         self.legend_overlay = RasterLegendWidget(self.view)
         self.legend_overlay.setMaximumWidth(360)  # wide enough for class labels
-        self.legend_overlay.setStyleSheet(
-            "QWidget { "
-            "background-color: rgba(20, 20, 20, 200); "
-            "border: 1px solid rgba(255,255,255,40); "
-            "border-radius: 6px; "
-            "}"
-        )
+        self.legend_overlay.setStyleSheet(StyleHelper.get_legend_overlay_style())
         self.legend_overlay.hide()
 
         # Finish Sketch button (shown during drawing/vertex editing)
@@ -978,18 +957,7 @@ class MapWidget(
             "normal": "#2ecc71",
         }
         bg = color_map.get(mode, "#2ecc71")
-        self.mode_indicator.setStyleSheet(
-            f"""
-            QLabel {{
-                background: {bg};
-                color: white;
-                padding: 5px 12px;
-                border-radius: 4px;
-                font-weight: bold;
-                font-size: 11px;
-            }}
-            """
-        )
+        self.mode_indicator.setStyleSheet(StyleHelper.get_mode_indicator_style(bg))
 
     def _update_mode_indicator(self) -> None:
         """Updates the toolbar status, map overlay, and Finish Sketch button."""
