@@ -237,8 +237,15 @@ class RasterLegendWidget(QWidget):
             insert_pos += 1
 
     def _build_continuous_legend(self, color_map: Dict[str, Any]) -> None:
-        gradient_start = color_map.get("gradient_start", "#000000")
-        gradient_end = color_map.get("gradient_end", "#FFFFFF")
+        # Support both new gradient_stops format and legacy gradient_start/gradient_end
+        raw_stops = color_map.get("gradient_stops")
+        if raw_stops:
+            gradient_stops = raw_stops
+        else:
+            gradient_stops = [
+                {"position": 0.0, "color": color_map.get("gradient_start", "#000000")},
+                {"position": 1.0, "color": color_map.get("gradient_end", "#FFFFFF")},
+            ]
         stretch_min = color_map.get("stretch_min")
         stretch_max = color_map.get("stretch_max")
         display_min = color_map.get("display_min")
@@ -247,8 +254,7 @@ class RasterLegendWidget(QWidget):
         format_str = color_map.get("format_str", "{:.2f}")
         scale = color_map.get("scale", "linear")
         bar = _GradientBarWidget(
-            gradient_start,
-            gradient_end,
+            gradient_stops,
             stretch_min,
             stretch_max,
             display_min=display_min,
@@ -369,19 +375,22 @@ class RasterLegendWidget(QWidget):
 class _GradientBarWidget(QWidget):
     """Vertical gradient bar for continuous raster legend.
 
-    Renders a colour ramp from *gradient_start* (bottom, value 0) to
-    *gradient_end* (top, value 65535) with min/max labels alongside.
+    Renders a multi-stop colour ramp from the first stop (bottom, position 0.0)
+    to the last stop (top, position 1.0) with min/max labels alongside.
     When display mapping is provided, the labels show real-world values
     (e.g. ``"-10 °C"`` / ``"40 °C"``) instead of raw integers.
 
     Three intermediate tick marks at 25 %, 50 %, and 75 % are drawn on
     the gradient bar and labelled to the right.
+
+    Args:
+        gradient_stops: List of ``{"position": float, "color": str}`` dicts,
+            ordered by position from 0.0 to 1.0.
     """
 
     def __init__(
         self,
-        gradient_start: str = "#000000",
-        gradient_end: str = "#FFFFFF",
+        gradient_stops: Optional[List[Dict[str, Any]]] = None,
         stretch_min: Optional[int] = None,
         stretch_max: Optional[int] = None,
         display_min: Optional[float] = None,
@@ -392,8 +401,10 @@ class _GradientBarWidget(QWidget):
         parent: Optional[QWidget] = None,
     ) -> None:
         super().__init__(parent)
-        self._gradient_start = gradient_start
-        self._gradient_end = gradient_end
+        self._gradient_stops: List[Dict[str, Any]] = gradient_stops or [
+            {"position": 0.0, "color": "#000000"},
+            {"position": 1.0, "color": "#FFFFFF"},
+        ]
         self.setMinimumHeight(80)
 
         layout = QHBoxLayout(self)
@@ -487,8 +498,9 @@ class _GradientBarWidget(QWidget):
         p = QPainter(pixmap)
         gradient = QLinearGradient(0, 0, 0, h)
         try:
-            gradient.setColorAt(0.0, QColor(self._gradient_end))
-            gradient.setColorAt(1.0, QColor(self._gradient_start))
+            # Vertical bar: y=0 (top) = position 1.0, y=h (bottom) = position 0.0
+            for stop in self._gradient_stops:
+                gradient.setColorAt(1.0 - float(stop["position"]), QColor(stop["color"]))
         except Exception:
             gradient.setColorAt(0.0, QColor("#FFFFFF"))
             gradient.setColorAt(1.0, QColor("#000000"))

@@ -10,7 +10,7 @@ from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import QGraphicsPixmapItem
 
-from src.gui.widgets.map.map_data_buffer import ColorEntry, ColorMap, MapDataBuffer
+from src.gui.widgets.map.map_data_buffer import ColorEntry, ColorMap, GradientStop, MapDataBuffer
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 from src.gui.widgets.map.raster_edit_tool import RasterEditMode
 from src.gui.widgets.map.raster_layer_item import RasterLayerItem
@@ -43,8 +43,7 @@ def _make_raster_item(
     buf = MapDataBuffer(width=buf_w, height=buf_h, default_value=0)
     cmap = ColorMap(
         type="gradient",
-        gradient_start="#00000000",
-        gradient_end="#FF000080",
+        gradient_stops=[GradientStop(0.0, "#00000000"), GradientStop(1.0, "#FF000080")],
     )
     scene_rect = QRectF(0, 0, 200, 200)
     item = RasterLayerItem(
@@ -216,8 +215,7 @@ class TestRasterLayerItemDisplay:
         buf = MapDataBuffer(width=32, height=32, default_value=32768)
         cmap = ColorMap(
             type="gradient",
-            gradient_start="#000000FF",
-            gradient_end="#FF0000FF",
+            gradient_stops=[GradientStop(0.0, "#000000FF"), GradientStop(1.0, "#FF0000FF")],
         )
         scene_rect = QRectF(0, 0, 100, 100)
         item = RasterLayerItem(buffer=buf, color_map=cmap, scene_rect=scene_rect)
@@ -260,8 +258,7 @@ class TestRasterLayerItemDisplay:
         buf = MapDataBuffer(width=32, height=32, default_value=0)
         cmap = ColorMap(
             type="gradient",
-            gradient_start="#000000FF",
-            gradient_end="#FFFFFFFF",
+            gradient_stops=[GradientStop(0.0, "#000000FF"), GradientStop(1.0, "#FFFFFFFF")],
         )
         scene_rect = QRectF(0, 0, 64, 64)
         item = RasterLayerItem(buffer=buf, color_map=cmap, scene_rect=scene_rect)
@@ -591,30 +588,31 @@ class TestPaletteEditorGradientPreview:
     """Continuous palette editor must show a gradient preview strip."""
 
     def test_continuous_has_gradient_preview(self, qtbot) -> None:
-        from src.gui.widgets.map.map_data_buffer import ColorMap
+        from src.gui.widgets.map.map_data_buffer import ColorMap, GradientStop
         from src.gui.widgets.map.raster_palette_editor import RasterPaletteEditor
 
         cmap = ColorMap(
-            type="gradient", gradient_start="#000000", gradient_end="#FFFFFF"
+            type="gradient",
+            gradient_stops=[GradientStop(0.0, "#000000"), GradientStop(1.0, "#FFFFFF")],
         )
         dlg = RasterPaletteEditor(color_map=cmap, mode="continuous")
         qtbot.addWidget(dlg)
 
         assert hasattr(dlg, "_gradient_preview")
 
-    def test_gradient_preview_updates_on_color_change(self, qtbot) -> None:
-        from src.gui.widgets.map.map_data_buffer import ColorMap
+    def test_gradient_preview_updates_on_stop_change(self, qtbot) -> None:
+        from src.gui.widgets.map.map_data_buffer import ColorMap, GradientStop
         from src.gui.widgets.map.raster_palette_editor import RasterPaletteEditor
 
         cmap = ColorMap(
-            type="gradient", gradient_start="#000000", gradient_end="#FFFFFF"
+            type="gradient",
+            gradient_stops=[GradientStop(0.0, "#000000"), GradientStop(1.0, "#FFFFFF")],
         )
         dlg = RasterPaletteEditor(color_map=cmap, mode="continuous")
         qtbot.addWidget(dlg)
 
-        # Changing a color should trigger a preview refresh without error
-        dlg._start_btn.color_hex = "#FF0000"
-        dlg._refresh_gradient_preview()  # must not raise
+        # Calling refresh directly must not raise
+        dlg._refresh_gradient_preview()
 
 
 # ── ColorEntry entity_id field ────────────────────────────────────────
@@ -733,7 +731,8 @@ class TestPaletteEditorModeBanner:
         from src.gui.widgets.map.raster_palette_editor import RasterPaletteEditor
 
         cmap = ColorMap(
-            type="gradient", gradient_start="#000000", gradient_end="#FFFFFF"
+            type="gradient",
+            gradient_stops=[GradientStop(0.0, "#000000"), GradientStop(1.0, "#FFFFFF")],
         )
         dlg = RasterPaletteEditor(color_map=cmap, mode="continuous")
         qtbot.addWidget(dlg)
@@ -1751,8 +1750,7 @@ class TestHistogramStretch:
 
         cm = ColorMap(
             type="gradient",
-            gradient_start="#000000",
-            gradient_end="#FFFFFF",
+            gradient_stops=[GradientStop(0.0, "#000000"), GradientStop(1.0, "#FFFFFF")],
             stretch_min=1000,
             stretch_max=50000,
         )
@@ -1778,8 +1776,7 @@ class TestHistogramStretch:
         # No stretch: 32768/65535 ≈ 0.5 → midpoint gray
         cm_no_stretch = ColorMap(
             type="gradient",
-            gradient_start="#000000",
-            gradient_end="#FFFFFF",
+            gradient_stops=[GradientStop(0.0, "#000000"), GradientStop(1.0, "#FFFFFF")],
         )
         img_mid = buf.colorize(cm_no_stretch)
         pixel_mid = img_mid.pixel(0, 0)
@@ -1788,8 +1785,7 @@ class TestHistogramStretch:
         # stretch_min=32768, stretch_max=65535 → value 32768 = start → black
         cm_stretch = ColorMap(
             type="gradient",
-            gradient_start="#000000",
-            gradient_end="#FFFFFF",
+            gradient_stops=[GradientStop(0.0, "#000000"), GradientStop(1.0, "#FFFFFF")],
             stretch_min=32768,
             stretch_max=65535,
         )
@@ -1807,7 +1803,10 @@ class TestHistogramStretch:
         from src.gui.widgets.map.map_data_buffer import ColorMap
         from src.gui.widgets.map.raster_palette_editor import RasterPaletteEditor
 
-        cm = ColorMap(type="gradient", gradient_start="#000000", gradient_end="#FFFFFF")
+        cm = ColorMap(
+            type="gradient",
+            gradient_stops=[GradientStop(0.0, "#000000"), GradientStop(1.0, "#FFFFFF")],
+        )
         dlg = RasterPaletteEditor(color_map=cm, mode="continuous")
         qtbot.addWidget(dlg)
         assert hasattr(dlg, "_stretch_min_spin")

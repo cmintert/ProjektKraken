@@ -352,16 +352,30 @@ class MapLayerMixin:
         from src.gui.widgets.map.raster_layer_dialog import RasterLayerDialog
 
         logger.debug("_on_create_raster_layer: opening dialog")
-        dialog = RasterLayerDialog(parent=getattr(self, "window", lambda: None)())
+        map_aspect = 1.0
+        view = getattr(self, "view", None)
+        if view is not None:
+            pixmap_item = getattr(view, "pixmap_item", None)
+            if pixmap_item is not None:
+                r = pixmap_item.boundingRect()
+                if r.width() > 0 and r.height() > 0:
+                    map_aspect = r.width() / r.height()
+        dialog = RasterLayerDialog(
+            parent=getattr(self, "window", lambda: None)(),
+            map_aspect=map_aspect,
+        )
         if dialog.exec():
             data = dialog.result_data()
+            import_path = data.get("import_path", "")
             logger.debug(
-                "_on_create_raster_layer: accepted — name=%r size=%dx%d mode=%s default=%d",
+                "_on_create_raster_layer: accepted — name=%r size=%dx%d mode=%s "
+                "default=%d import_path=%r",
                 data["name"],
                 data["width"],
                 data["height"],
                 data["mode"],
                 data["default_value"],
+                import_path,
             )
             self.create_raster_layer_requested.emit(
                 data["name"],
@@ -369,6 +383,7 @@ class MapLayerMixin:
                 data["height"],
                 data["mode"],
                 data["default_value"],
+                import_path,
             )
         else:
             logger.debug("_on_create_raster_layer: dialog cancelled")

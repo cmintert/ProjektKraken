@@ -767,6 +767,7 @@ class MapHandler(QObject):
         height: int,
         mode: str = "discrete",
         default_value: int = 0,
+        import_path: str = "",
     ) -> None:
         """Create a new raster (heatmap) layer on the current map.
 
@@ -776,6 +777,9 @@ class MapHandler(QObject):
             height: Buffer height in pixels.
             mode: ``"discrete"`` or ``"continuous"``.
             default_value: Initial fill value (0–65535).
+            import_path: Optional filesystem path to an image file to import as
+                the layer's initial pixel data.  When non-empty, the image is
+                converted to uint16 and scaled to ``width × height``.
 
         """
         map_id = self._map_widget.get_selected_map_id()
@@ -795,14 +799,16 @@ class MapHandler(QObject):
             mode=mode,
             default_value=default_value,
             world_root=world_root,
+            import_path=import_path,
         )
         self.command_requested.emit(cmd)
         logger.info(
-            "Requested raster layer creation: '%s' %dx%d (%s)",
+            "Requested raster layer creation: '%s' %dx%d (%s) import=%r",
             name,
             width,
             height,
             mode,
+            import_path or None,
         )
 
     def delete_raster_layer(self, node_id: str) -> None:

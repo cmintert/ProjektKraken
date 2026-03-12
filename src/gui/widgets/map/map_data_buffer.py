@@ -99,21 +99,44 @@ class ColorEntry:
 
 
 @dataclass
+class GradientStop:
+    """A single position→colour stop for multi-stop gradient colour maps.
+
+    Attributes:
+        position: Normalised position in [0.0, 1.0] along the gradient.
+        color: Hex colour string, e.g. ``"#88C070"`` or ``"#88C07080"`` (with alpha).
+
+    """
+
+    position: float
+    color: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialise to JSON-friendly dict."""
+        return {"position": self.position, "color": self.color}
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> "GradientStop":
+        """Deserialise from dict."""
+        return cls(position=float(d["position"]), color=str(d["color"]))
+
+
+@dataclass
 class ColorMap:
     """Colour look-up table for raster visualisation.
 
     Supports two modes:
 
     * **palette** — explicit value→colour list (discrete layers).
-    * **gradient** — two-colour linear ramp across the full 0–65535 range.
+    * **gradient** — multi-stop colour ramp across the full 0–65535 range.
 
     Attributes:
         type: ``"palette"`` or ``"gradient"``.
         entries: Colour entries (used when *type* is ``"palette"``).
-        gradient_start: Hex colour for value 0 (gradient mode).
-        gradient_end: Hex colour for value 65535 (gradient mode).
-        stretch_min: Raw value mapped to the start colour (gradient mode).
-        stretch_max: Raw value mapped to the end colour (gradient mode).
+        gradient_stops: Ordered list of colour stops (gradient mode).
+            Must contain at least two stops with positions 0.0 and 1.0.
+        stretch_min: Raw value mapped to position 0.0 (gradient mode).
+        stretch_max: Raw value mapped to position 1.0 (gradient mode).
         display_min: Real-world value corresponding to *stretch_min*
             (e.g. ``-10.0`` for −10 °C).  ``None`` means no display mapping.
         display_max: Real-world value corresponding to *stretch_max*.
@@ -128,8 +151,7 @@ class ColorMap:
 
     type: str = "palette"
     entries: List[ColorEntry] = field(default_factory=list)
-    gradient_start: str = "#000000"
-    gradient_end: str = "#FFFFFF"
+    gradient_stops: List[GradientStop] = field(default_factory=list)
     stretch_min: Optional[int] = None
     stretch_max: Optional[int] = None
     display_min: Optional[float] = None
@@ -146,8 +168,7 @@ class ColorMap:
         if self.type == "palette":
             d["entries"] = [e.to_dict() for e in self.entries]
         else:
-            d["gradient_start"] = self.gradient_start
-            d["gradient_end"] = self.gradient_end
+            d["gradient_stops"] = [s.to_dict() for s in self.gradient_stops]
         if self.stretch_min is not None:
             d["stretch_min"] = self.stretch_min
         if self.stretch_max is not None:
@@ -173,6 +194,15 @@ class ColorMap:
         """Deserialise from dict."""
         ctype = data.get("type", "palette")
         entries = [ColorEntry.from_dict(e) for e in data.get("entries", [])]
+        # Load gradient stops; fall back from legacy gradient_start/gradient_end if absent
+        raw_stops = data.get("gradient_stops")
+        if raw_stops is not None:
+            gradient_stops = [GradientStop.from_dict(s) for s in raw_stops]
+        else:
+            gradient_stops = [
+                GradientStop(0.0, data.get("gradient_start", "#000000")),
+                GradientStop(1.0, data.get("gradient_end", "#FFFFFF")),
+            ]
         stretch_min_raw = data.get("stretch_min")
         stretch_max_raw = data.get("stretch_max")
         display_min_raw = data.get("display_min")
@@ -180,8 +210,7 @@ class ColorMap:
         return cls(
             type=ctype,
             entries=entries,
-            gradient_start=data.get("gradient_start", "#000000"),
-            gradient_end=data.get("gradient_end", "#FFFFFF"),
+            gradient_stops=gradient_stops,
             stretch_min=int(stretch_min_raw) if stretch_min_raw is not None else None,
             stretch_max=int(stretch_max_raw) if stretch_max_raw is not None else None,
             display_min=float(display_min_raw) if display_min_raw is not None else None,
@@ -536,19 +565,25 @@ class MapDataBuffer:
                 mask = self._data == entry.value
                 rgba[mask] = [r, g, b, a]
         else:
-            # Gradient mode: linear interpolation with optional stretch range
-            sr, sg, sb, sa = _hex_to_rgba(color_map.gradient_start)
-            er, eg, eb, ea = _hex_to_rgba(color_map.gradient_end)
+            # Gradient mode: multi-stop interpolation with optional stretch range
+            stops = sorted(color_map.gradient_stops, key=lambda s: s.position)
+            positions = np.array([s.position for s in stops], dtype=np.float32)
+            rgba_stops = np.array(
+                [_hex_to_rgba(s.color) for s in stops], dtype=np.float32
+            )
             s_min = color_map.stretch_min if color_map.stretch_min is not None else 0
             s_max = (
                 color_map.stretch_max if color_map.stretch_max is not None else 65535
             )
-            span = max(s_max - s_min, 1)
-            t = np.clip((self._data.astype(np.float32) - s_min) / span, 0.0, 1.0)
-            rgba[:, :, 0] = (sr + (er - sr) * t).astype(np.uint8)
-            rgba[:, :, 1] = (sg + (eg - sg) * t).astype(np.uint8)
-            rgba[:, :, 2] = (sb + (eb - sb) * t).astype(np.uint8)
-            rgba[:, :, 3] = (sa + (ea - sa) * t).astype(np.uint8)
+            t = np.clip(
+                (self._data.astype(np.float32) - s_min) / max(s_max - s_min, 1),
+                0.0,
+                1.0,
+            )
+            for ch in range(4):
+                rgba[:, :, ch] = np.interp(t, positions, rgba_stops[:, ch]).astype(
+                    np.uint8
+                )
 
         # QImage expects ARGB32 (B, G, R, A in memory on little-endian)
         # but Format_RGBA8888 reads R, G, B, A which matches our array
@@ -660,18 +695,24 @@ class MapDataBuffer:
                 mask = region == entry.value
                 rgba[mask] = [r, g, b, a]
         else:
-            sr, sg, sb, sa = _hex_to_rgba(color_map.gradient_start)
-            er, eg, eb, ea = _hex_to_rgba(color_map.gradient_end)
+            stops = sorted(color_map.gradient_stops, key=lambda s: s.position)
+            positions = np.array([s.position for s in stops], dtype=np.float32)
+            rgba_stops = np.array(
+                [_hex_to_rgba(s.color) for s in stops], dtype=np.float32
+            )
             s_min = color_map.stretch_min if color_map.stretch_min is not None else 0
             s_max = (
                 color_map.stretch_max if color_map.stretch_max is not None else 65535
             )
-            span = max(s_max - s_min, 1)
-            t = np.clip((region.astype(np.float32) - s_min) / span, 0.0, 1.0)
-            rgba[:, :, 0] = (sr + (er - sr) * t).astype(np.uint8)
-            rgba[:, :, 1] = (sg + (eg - sg) * t).astype(np.uint8)
-            rgba[:, :, 2] = (sb + (eb - sb) * t).astype(np.uint8)
-            rgba[:, :, 3] = (sa + (ea - sa) * t).astype(np.uint8)
+            t = np.clip(
+                (region.astype(np.float32) - s_min) / max(s_max - s_min, 1),
+                0.0,
+                1.0,
+            )
+            for ch in range(4):
+                rgba[:, :, ch] = np.interp(t, positions, rgba_stops[:, ch]).astype(
+                    np.uint8
+                )
 
         image = QImage(rgba.data, rw, rh, rw * 4, QImage.Format.Format_RGBA8888)
         return image.copy()

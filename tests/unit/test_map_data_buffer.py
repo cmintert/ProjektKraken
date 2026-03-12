@@ -19,6 +19,7 @@ from PySide6.QtGui import QImage
 from src.gui.widgets.map.map_data_buffer import (
     ColorEntry,
     ColorMap,
+    GradientStop,
     MapDataBuffer,
     _hex_to_rgba,
 )
@@ -327,8 +328,7 @@ class TestColorize:
         buf = MapDataBuffer(32, 32)
         cm = ColorMap(
             type="gradient",
-            gradient_start="#000000",
-            gradient_end="#FFFFFF",
+            gradient_stops=[GradientStop(0.0, "#000000"), GradientStop(1.0, "#FFFFFF")],
         )
         img = buf.colorize(cm)
         assert img.width() == 32
@@ -435,11 +435,11 @@ class TestColorMapSerialization:
         """Gradient colour map should serialise and deserialise."""
         cm = ColorMap(
             type="gradient",
-            gradient_start="#000000",
-            gradient_end="#FFFFFF",
+            gradient_stops=[GradientStop(0.0, "#000000"), GradientStop(1.0, "#FFFFFF")],
         )
         d = cm.to_dict()
         cm2 = ColorMap.from_dict(d)
         assert cm2.type == "gradient"
-        assert cm2.gradient_start == "#000000"
-        assert cm2.gradient_end == "#FFFFFF"
+        assert len(cm2.gradient_stops) == 2
+        assert cm2.gradient_stops[0].color == "#000000"
+        assert cm2.gradient_stops[1].color == "#FFFFFF"

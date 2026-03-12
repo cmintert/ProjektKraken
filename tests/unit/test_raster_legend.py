@@ -204,8 +204,10 @@ class TestGradientBarTicks:
 
     def _make_bar(self, qtbot) -> _GradientBarWidget:
         bar = _GradientBarWidget(
-            gradient_start="#0000FF",
-            gradient_end="#FF0000",
+            gradient_stops=[
+                {"position": 0.0, "color": "#0000FF"},
+                {"position": 1.0, "color": "#FF0000"},
+            ],
             stretch_min=0,
             stretch_max=1000,
             display_min=0.0,
@@ -242,8 +244,10 @@ class TestGradientBarTicks:
     def test_tick_labels_exist_without_display_mapping(self, qtbot) -> None:
         """Tick labels should render even without real-world display mapping."""
         bar = _GradientBarWidget(
-            gradient_start="#000000",
-            gradient_end="#FFFFFF",
+            gradient_stops=[
+                {"position": 0.0, "color": "#000000"},
+                {"position": 1.0, "color": "#FFFFFF"},
+            ],
             stretch_min=0,
             stretch_max=65535,
         )

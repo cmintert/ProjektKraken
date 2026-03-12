@@ -41,6 +41,7 @@ from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.map.map_data_buffer import (
     ColorEntry,
     ColorMap,
+    GradientStop,
     format_display_value,
 )
 from src.gui.widgets.map.raster_mapping import (
@@ -60,6 +61,38 @@ _COL_TYPE = 4
 _COL_DELETE = 5
 
 _MAPPING_ID_ROLE = Qt.ItemDataRole.UserRole
+
+
+_GRADIENT_PRESETS: Dict[str, List[GradientStop]] = {
+    "Black → White": [
+        GradientStop(0.0, "#000000"),
+        GradientStop(1.0, "#FFFFFF"),
+    ],
+    "Transparent → Red": [
+        GradientStop(0.0, "#00000000"),
+        GradientStop(1.0, "#FF000080"),
+    ],
+    "Cold to Hot": [
+        GradientStop(0.0, "#0000FF"),
+        GradientStop(0.33, "#00FFFF"),
+        GradientStop(0.67, "#FFFF00"),
+        GradientStop(1.0, "#FF0000"),
+    ],
+    "Terrain": [
+        GradientStop(0.0, "#2060B0"),
+        GradientStop(0.25, "#4DAF4A"),
+        GradientStop(0.5, "#DAA520"),
+        GradientStop(0.75, "#8B4513"),
+        GradientStop(1.0, "#FFFFFF"),
+    ],
+    "Spectral": [
+        GradientStop(0.0, "#9E0142"),
+        GradientStop(0.25, "#F46D43"),
+        GradientStop(0.5, "#FFFFBF"),
+        GradientStop(0.75, "#66C2A5"),
+        GradientStop(1.0, "#5E4FA2"),
+    ],
+}
 
 
 _AUTO_COLORS = [
@@ -120,32 +153,32 @@ class _ColorButton(QPushButton):
 
 
 class _GradientPreview(QFrame):
-    """A horizontal strip showing the current gradient from start to end colour."""
+    """A horizontal strip showing the current multi-stop gradient."""
 
     def __init__(
         self,
-        start_color: str = "#000000",
-        end_color: str = "#FFFFFF",
+        stops: Optional[List[GradientStop]] = None,
         parent: Optional[QWidget] = None,
     ) -> None:
         super().__init__(parent)
         self.setFixedHeight(28)
         self.setMinimumWidth(120)
-        self._start = start_color
-        self._end = end_color
+        self._stops: List[GradientStop] = stops or [
+            GradientStop(0.0, "#000000"),
+            GradientStop(1.0, "#FFFFFF"),
+        ]
         self.setFrameShape(QFrame.Shape.StyledPanel)
 
-    def set_colors(self, start: str, end: str) -> None:
-        """Update the gradient colours and repaint."""
-        self._start = start
-        self._end = end
+    def set_stops(self, stops: List[GradientStop]) -> None:
+        """Update the gradient stops and repaint."""
+        self._stops = stops
         self.update()
 
     def paintEvent(self, event: object) -> None:  # type: ignore[override]
         painter = QPainter(self)
         grad = QLinearGradient(0, 0, self.width(), 0)
-        grad.setColorAt(0.0, QColor(self._start))
-        grad.setColorAt(1.0, QColor(self._end))
+        for stop in self._stops:
+            grad.setColorAt(stop.position, QColor(stop.color))
         painter.fillRect(self.rect(), grad)
         painter.end()
 
@@ -347,25 +380,42 @@ class RasterPaletteEditor(QDialog):
             )
 
     def _build_gradient_ui(self, layout: QVBoxLayout) -> None:
-        layout.addWidget(QLabel("Gradient start / end colours:"))
+        # Presets row
+        preset_row = QHBoxLayout()
+        preset_row.addWidget(QLabel("Preset:"))
+        self._preset_combo = QComboBox()
+        self._preset_combo.addItem("— custom —")
+        for name in _GRADIENT_PRESETS:
+            self._preset_combo.addItem(name)
+        self._preset_combo.currentIndexChanged.connect(self._on_preset_selected)
+        preset_row.addWidget(self._preset_combo)
+        preset_row.addStretch()
+        layout.addLayout(preset_row)
 
-        row = QHBoxLayout()
-        row.addWidget(QLabel("Start:"))
-        self._start_btn = _ColorButton(self._color_map.gradient_start or "#000000")
-        self._start_btn.color_changed.connect(self._refresh_gradient_preview)
-        row.addWidget(self._start_btn)
-        row.addWidget(QLabel("End:"))
-        self._end_btn = _ColorButton(self._color_map.gradient_end or "#FFFFFF")
-        self._end_btn.color_changed.connect(self._refresh_gradient_preview)
-        row.addWidget(self._end_btn)
-        row.addStretch()
-        layout.addLayout(row)
-
-        self._gradient_preview = _GradientPreview(
-            start_color=self._color_map.gradient_start or "#000000",
-            end_color=self._color_map.gradient_end or "#FFFFFF",
-        )
+        # Multi-stop gradient preview
+        initial_stops = self._color_map.gradient_stops or [
+            GradientStop(0.0, "#000000"),
+            GradientStop(1.0, "#FFFFFF"),
+        ]
+        self._gradient_preview = _GradientPreview(initial_stops)
         layout.addWidget(self._gradient_preview)
+
+        # Stop editor
+        layout.addWidget(QLabel("Colour stops:"))
+        self._stops_container = QWidget()
+        self._stops_layout = QVBoxLayout(self._stops_container)
+        self._stops_layout.setContentsMargins(0, 0, 0, 0)
+        self._stops_layout.setSpacing(4)
+        layout.addWidget(self._stops_container)
+
+        for stop in sorted(initial_stops, key=lambda s: s.position):
+            self._add_stop_row(stop.position, stop.color)
+
+        self._add_stop_btn = QPushButton("+ Add stop")
+        self._add_stop_btn.clicked.connect(self._on_add_stop)
+        layout.addWidget(self._add_stop_btn)
+
+        self._update_stop_delete_buttons()
 
         # Data range info + stretch controls
         if self._buffer_min is not None and self._buffer_max is not None:
@@ -550,14 +600,100 @@ class RasterPaletteEditor(QDialog):
                 self._linked_type_combo.setCurrentText("Event")
 
     def _refresh_gradient_preview(self, *_args: object) -> None:
-        if (
-            hasattr(self, "_gradient_preview")
-            and hasattr(self, "_start_btn")
-            and hasattr(self, "_end_btn")
-        ):
-            self._gradient_preview.set_colors(
-                self._start_btn.color_hex, self._end_btn.color_hex
-            )
+        if hasattr(self, "_gradient_preview") and hasattr(self, "_stops_layout"):
+            self._gradient_preview.set_stops(self._collect_gradient_stops())
+
+    def _add_stop_row(self, position: float, color: str) -> None:
+        """Append a new stop row to the stop editor."""
+        row_widget = QWidget()
+        row_layout = QHBoxLayout(row_widget)
+        row_layout.setContentsMargins(0, 0, 0, 0)
+        row_layout.setSpacing(4)
+
+        pos_spin = QSpinBox()
+        pos_spin.setObjectName("pos_spin")
+        pos_spin.setRange(0, 100)
+        pos_spin.setValue(round(position * 100))
+        pos_spin.setSuffix("%")
+        pos_spin.setFixedWidth(68)
+        pos_spin.setToolTip("Stop position along the gradient (0 = start, 100 = end)")
+        pos_spin.valueChanged.connect(self._refresh_gradient_preview)
+
+        color_btn = _ColorButton(color)
+        color_btn.setObjectName("color_btn")
+        color_btn.color_changed.connect(self._refresh_gradient_preview)
+
+        del_btn = QPushButton("✕")
+        del_btn.setObjectName("del_btn")
+        del_btn.setFixedSize(24, 24)
+        del_btn.setToolTip("Remove this stop")
+        del_btn.clicked.connect(lambda _checked=False, rw=row_widget: self._on_remove_stop(rw))
+
+        row_layout.addWidget(pos_spin)
+        row_layout.addWidget(color_btn)
+        row_layout.addWidget(del_btn)
+        row_layout.addStretch()
+
+        self._stops_layout.addWidget(row_widget)
+
+    def _on_add_stop(self) -> None:
+        """Insert a new stop at 50% with a neutral colour."""
+        self._add_stop_row(0.5, "#808080")
+        self._update_stop_delete_buttons()
+        self._refresh_gradient_preview()
+
+    def _on_remove_stop(self, row_widget: QWidget) -> None:
+        """Remove a stop row from the editor."""
+        self._stops_layout.removeWidget(row_widget)
+        row_widget.deleteLater()
+        self._update_stop_delete_buttons()
+        self._refresh_gradient_preview()
+
+    def _update_stop_delete_buttons(self) -> None:
+        """Enable/disable delete buttons — require at least 2 stops."""
+        count = self._stops_layout.count()
+        for i in range(count):
+            item = self._stops_layout.itemAt(i)
+            if item and item.widget():
+                del_btn = item.widget().findChild(QPushButton, "del_btn")
+                if del_btn:
+                    del_btn.setEnabled(count > 2)
+
+    def _collect_gradient_stops(self) -> List[GradientStop]:
+        """Read all stop rows and return a sorted list of GradientStop objects."""
+        stops: List[GradientStop] = []
+        for i in range(self._stops_layout.count()):
+            item = self._stops_layout.itemAt(i)
+            if not item or not item.widget():
+                continue
+            row = item.widget()
+            pos_spin = row.findChild(QSpinBox, "pos_spin")
+            color_btn = row.findChild(_ColorButton, "color_btn")
+            if pos_spin and color_btn:
+                stops.append(GradientStop(pos_spin.value() / 100.0, color_btn.color_hex))
+        return sorted(stops, key=lambda s: s.position)
+
+    def _on_preset_selected(self, index: int) -> None:
+        """Apply a built-in gradient preset to the stop editor."""
+        if index == 0:
+            return
+        preset_name = self._preset_combo.itemText(index)
+        preset_stops = _GRADIENT_PRESETS.get(preset_name)
+        if not preset_stops:
+            return
+        # Clear existing rows
+        while self._stops_layout.count():
+            item = self._stops_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        for stop in preset_stops:
+            self._add_stop_row(stop.position, stop.color)
+        self._update_stop_delete_buttons()
+        self._refresh_gradient_preview()
+        # Reset combo to "— custom —" so re-selecting same preset works
+        self._preset_combo.blockSignals(True)
+        self._preset_combo.setCurrentIndex(0)
+        self._preset_combo.blockSignals(False)
 
     def _on_auto_stretch(self) -> None:
         """Set stretch spinboxes to the actual buffer data range."""
@@ -987,8 +1123,7 @@ class RasterPaletteEditor(QDialog):
                         linked_entity_type = "event"
             return ColorMap(
                 type="gradient",
-                gradient_start=self._start_btn.color_hex,
-                gradient_end=self._end_btn.color_hex,
+                gradient_stops=self._collect_gradient_stops(),
                 stretch_min=stretch_min,
                 stretch_max=stretch_max,
                 display_min=display_min,

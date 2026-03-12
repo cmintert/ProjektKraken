@@ -6,16 +6,22 @@ preset, and default fill value.
 """
 
 import logging
+import os
 from typing import Any, Dict, Optional, Tuple
 
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QDialogButtonBox,
+    QFileDialog,
     QFormLayout,
     QFrame,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
+    QPushButton,
     QSpinBox,
     QVBoxLayout,
     QWidget,
@@ -56,7 +62,12 @@ class RasterLayerDialog(QDialog):
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle("New Raster Layer")
-        self.setMinimumWidth(360)
+        self.setMinimumWidth(380)
+
+        self._map_aspect = map_aspect
+        self._import_path: str = ""
+        self._import_width: int = 0
+        self._import_height: int = 0
 
         layout = QVBoxLayout(self)
         form = QFormLayout()
@@ -110,6 +121,61 @@ class RasterLayerDialog(QDialog):
         sep.setFrameShadow(QFrame.Shadow.Sunken)
         layout.addWidget(sep)
 
+        # Import from file section
+        import_form = QFormLayout()
+
+        browse_row = QHBoxLayout()
+        self._browse_btn = QPushButton("Browse…")
+        self._browse_btn.setToolTip("Import an existing image as the raster layer data")
+        self._browse_btn.clicked.connect(self._on_browse_clicked)
+        browse_row.addWidget(self._browse_btn)
+        self._clear_btn = QPushButton("✕")
+        self._clear_btn.setFixedSize(24, 24)
+        self._clear_btn.setToolTip("Clear selected file")
+        self._clear_btn.clicked.connect(self._on_clear_import)
+        self._clear_btn.setVisible(False)
+        browse_row.addWidget(self._clear_btn)
+        browse_row.addStretch()
+        import_form.addRow("Import image:", browse_row)
+
+        self._import_file_label = QLabel("No file selected")
+        import_form.addRow("", self._import_file_label)
+
+        self._import_dims_label = QLabel("")
+        self._import_dims_label.setVisible(False)
+        import_form.addRow("Detected size:", self._import_dims_label)
+
+        self._aspect_warn_label = QLabel("⚠ Aspect ratio mismatch — image will be stretched")
+        self._aspect_warn_label.setWordWrap(True)
+        self._aspect_warn_label.setStyleSheet(StyleHelper.get_preview_label_style())
+        self._aspect_warn_label.setVisible(False)
+        import_form.addRow("", self._aspect_warn_label)
+        # JPEG/lossy format warning
+        self._lossy_warn_label = QLabel(
+            "\u26a0 JPEG is lossy \u2014 compression artefacts will reduce precision"
+        )
+        self._lossy_warn_label.setWordWrap(True)
+        self._lossy_warn_label.setStyleSheet(StyleHelper.get_preview_label_style())
+        self._lossy_warn_label.setVisible(False)
+        import_form.addRow("", self._lossy_warn_label)
+
+        # Auto-detected content type hint
+        self._detect_hint_label = QLabel("")
+        self._detect_hint_label.setWordWrap(True)
+        self._detect_hint_label.setVisible(False)
+        import_form.addRow("Detected:", self._detect_hint_label)
+
+        # Thumbnail preview
+        self._preview_label = QLabel()
+        self._preview_label.setFixedSize(128, 128)
+        self._preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._preview_label.setStyleSheet(
+            "border: 1px solid gray; background-color: #222222;"
+        )
+        self._preview_label.setVisible(False)
+        import_form.addRow("Preview:", self._preview_label)
+        layout.addLayout(import_form)
+
         # Info label
         info = QLabel(
             "Raster layers are stored as 16-bit PNG files alongside your project."
@@ -131,6 +197,109 @@ class RasterLayerDialog(QDialog):
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
+
+    def _on_browse_clicked(self) -> None:
+        """Open a file dialog and populate the import fields."""
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Import Image as Raster Layer",
+            "",
+            "Supported images (*.png *.tif *.tiff *.jpg *.jpeg)"
+            ";;PNG — lossless (*.png)"
+            ";;TIFF — lossless / float (*.tif *.tiff)"
+            ";;JPEG — lossy (*.jpg *.jpeg)",
+        )
+        if not path:
+            return
+
+        import numpy as _np
+
+        try:
+            from PIL import Image as PilImage
+
+            with PilImage.open(path) as im:
+                w, h = im.size
+                mode = im.mode
+
+                # Detect greyscale content (also covers RGB files where R==G==B)
+                _is_native_grey = mode in ("L", "LA", "I", "I;16", "F")
+                _is_float = mode == "F"
+                _is_content_grey = _is_native_grey
+                if not _is_native_grey and mode in ("RGB", "RGBA"):
+                    _arr = _np.array(im.convert("RGB"))
+                    _drg = int(_np.max(_np.abs(
+                        _arr[:, :, 0].astype(_np.int32) - _arr[:, :, 1].astype(_np.int32)
+                    )))
+                    _drb = int(_np.max(_np.abs(
+                        _arr[:, :, 0].astype(_np.int32) - _arr[:, :, 2].astype(_np.int32)
+                    )))
+                    _is_content_grey = _drg <= 2 and _drb <= 2
+
+                # Auto-select mode
+                suggested_mode = "continuous" if _is_content_grey else "discrete"
+                idx = self._mode_combo.findText(suggested_mode)
+                if idx >= 0:
+                    self._mode_combo.setCurrentIndex(idx)
+
+                # Detection hint label
+                if _is_float:
+                    hint = (
+                        "Greyscale float (elevation/GIS) — Continuous recommended; "
+                        "values will be normalised to 0–65535"
+                    )
+                elif _is_content_grey:
+                    hint = "Greyscale — Continuous recommended"
+                else:
+                    hint = "Colour — Discrete recommended"
+                self._detect_hint_label.setText(hint)
+                self._detect_hint_label.setVisible(True)
+
+                # Thumbnail (convert to RGB for safe display across all modes)
+                thumb = im.copy()
+                thumb.thumbnail((128, 128), PilImage.Resampling.LANCZOS)
+                thumb_rgb = thumb.convert("RGB")
+                thumb_arr = _np.array(thumb_rgb, dtype=_np.uint8)
+                th, tw = thumb_arr.shape[:2]
+                qimg = QImage(
+                    thumb_arr.data, tw, th, tw * 3, QImage.Format.Format_RGB888
+                )
+                self._preview_label.setPixmap(QPixmap.fromImage(qimg.copy()))
+                self._preview_label.setVisible(True)
+
+        except Exception as exc:
+            logger.warning("RasterLayerDialog: cannot open %r: %s", path, exc)
+            return
+
+        # Show warning for lossy formats
+        self._lossy_warn_label.setVisible(path.lower().endswith((".jpg", ".jpeg")))
+
+        self._import_path = path
+        self._import_width = w
+        self._import_height = h
+        self._import_file_label.setText(os.path.basename(path))
+        self._import_dims_label.setText(f"{w} × {h}")
+        self._import_dims_label.setVisible(True)
+        self._clear_btn.setVisible(True)
+        if h > 0 and self._map_aspect > 0:
+            mismatch = abs(w / h - self._map_aspect) / self._map_aspect > 0.05
+            self._aspect_warn_label.setVisible(mismatch)
+        self._res_combo.setEnabled(False)
+        self._default_spin.setEnabled(False)
+
+    def _on_clear_import(self) -> None:
+        """Clear the selected import file and re-enable resolution controls."""
+        self._import_path = ""
+        self._import_width = 0
+        self._import_height = 0
+        self._import_file_label.setText("No file selected")
+        self._import_dims_label.setVisible(False)
+        self._aspect_warn_label.setVisible(False)
+        self._lossy_warn_label.setVisible(False)
+        self._detect_hint_label.setVisible(False)
+        self._preview_label.setVisible(False)
+        self._clear_btn.setVisible(False)
+        self._res_combo.setEnabled(True)
+        self._default_spin.setEnabled(True)
 
     def _on_mode_changed(self, mode: str) -> None:
         """Update the hint label when the mode selection changes.
@@ -156,15 +325,21 @@ class RasterLayerDialog(QDialog):
     def result_data(self) -> Dict[str, Any]:
         """Return the user's choices as a dict.
 
-        Keys: ``name``, ``mode``, ``width``, ``height``, ``default_value``.
+        Keys: ``name``, ``mode``, ``width``, ``height``, ``default_value``,
+        ``import_path``.  When *import_path* is non-empty the width/height
+        come from the detected image dimensions.
 
         """
-        idx = self._res_combo.currentIndex()
-        _label, w, h = _RESOLUTION_PRESETS[idx]
+        if self._import_path:
+            w, h = self._import_width, self._import_height
+        else:
+            idx = self._res_combo.currentIndex()
+            _label, w, h = _RESOLUTION_PRESETS[idx]
         return {
             "name": self._name_edit.text().strip() or "Raster Layer",
             "mode": self._mode_combo.currentText(),
             "width": w,
             "height": h,
             "default_value": self._default_spin.value(),
+            "import_path": self._import_path,
         }

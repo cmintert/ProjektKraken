@@ -6,7 +6,7 @@ SetRasterMappingCommand, and value→entity mapping helpers.
 
 import numpy as np
 
-from src.gui.widgets.map.map_data_buffer import ColorEntry, ColorMap, MapDataBuffer
+from src.gui.widgets.map.map_data_buffer import ColorEntry, ColorMap, GradientStop, MapDataBuffer
 from src.gui.widgets.map.raster_mapping import (
     lookup_entity_for_value,
     lookup_label_for_value,
@@ -131,7 +131,8 @@ class TestColorizeRegion:
         buf = MapDataBuffer(width=32, height=32, default_value=0)
         buf._data[5, 5] = 32768  # midpoint
         cmap = ColorMap(
-            type="gradient", gradient_start="#000000", gradient_end="#FFFFFF"
+            type="gradient",
+            gradient_stops=[GradientStop(0.0, "#000000"), GradientStop(1.0, "#FFFFFF")],
         )
         img = buf.colorize_region(cmap, 0, 0, 31, 31)
         assert img.width() == 32

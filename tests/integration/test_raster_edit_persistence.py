@@ -300,8 +300,11 @@ class TestMappingPersistence:
         assert result.success
         node_id = result.data["node_id"]
 
+        from src.gui.widgets.map.map_data_buffer import GradientStop
+
         old_cmap_dict = ColorMap(
-            type="gradient", gradient_start="#000000", gradient_end="#FFFFFF"
+            type="gradient",
+            gradient_stops=[GradientStop(0.0, "#000000"), GradientStop(1.0, "#FFFFFF")],
         ).to_dict()
         new_cmap_dict = ColorMap(
             type="palette", entries=[ColorEntry(value=1, color="#AABBCC")]
