@@ -98,12 +98,9 @@ LAYER_TRAJECTORIES = MAP_LAYER_Z_TRAJECTORIES
 LAYER_MARKERS = MAP_LAYER_Z_MARKERS
 LAYER_UI_OVERLAY = MAP_LAYER_Z_UI_OVERLAY
 
-# Colors
-KEYFRAME_COLOR_DEFAULT = "#f1c40f"  # Yellow
-KEYFRAME_COLOR_SELECTED = "#e74c3c"  # Red
-KEYFRAME_LABEL_COLOR = "#000000"  # Black
-TRAJECTORY_PATH_COLOR = "#3498db"  # Blue
-GIZMO_TEXT_COLOR = "#ffffff"  # White
+# Colors — resolved from ThemeManager at runtime; these are fallback defaults only
+KEYFRAME_COLOR_DEFAULT = "#f1c40f"  # Yellow (fallback)
+KEYFRAME_COLOR_SELECTED = "#e74c3c"  # Red (fallback)
 
 # Layout Constants
 GIZMO_SIZE = 6
@@ -130,12 +127,16 @@ class KeyframeGizmo(QGraphicsItemGroup):
         self.setZValue(LAYER_UI_OVERLAY)
         self.setAcceptHoverEvents(True)
 
+        _theme = ThemeManager().get_theme()
+        _gizmo_text_color = _theme.get("text_main", "#ffffff")
+        _delete_color = _theme.get("error", "#e74c3c")
+
         # Create Clock icon (left)
-        self.clock_icon = self._create_icon("🕐", 0, GIZMO_TEXT_COLOR)
+        self.clock_icon = self._create_icon("🕐", 0, _gizmo_text_color)
         self.addToGroup(self.clock_icon)
 
         # Create Delete icon (right) - red X
-        self.delete_icon = self._create_icon("✕", GIZMO_SIZE + 4, "#FF4444")
+        self.delete_icon = self._create_icon("✕", GIZMO_SIZE + 4, _delete_color)
         self.addToGroup(self.delete_icon)
 
         # Position gizmo to Northeast of keyframe (Right and Up)
@@ -293,8 +294,10 @@ class KeyframeItem(QGraphicsObject):
         self.mode: str = "transform"  # "transform" or "clock"
         self.is_pinned: bool = False
 
-        # Visuals
-        self._brush = QBrush(QColor(KEYFRAME_COLOR_DEFAULT))
+        # Visuals — resolve color from theme at creation time
+        _theme = ThemeManager().get_theme()
+        _default_color = _theme.get("accent_secondary", KEYFRAME_COLOR_DEFAULT)
+        self._brush = QBrush(QColor(_default_color))
         self._pen = QPen(Qt.PenStyle.NoPen)
 
         # Gizmo (mode selector)
@@ -408,7 +411,12 @@ class KeyframeItem(QGraphicsObject):
             pinned: True if keyframe is pinned in Clock Mode.
         """
         self.is_pinned = pinned
-        color = KEYFRAME_COLOR_SELECTED if pinned else KEYFRAME_COLOR_DEFAULT
+        _theme = ThemeManager().get_theme()
+        color = (
+            _theme.get("error", KEYFRAME_COLOR_SELECTED)
+            if pinned
+            else _theme.get("accent_secondary", KEYFRAME_COLOR_DEFAULT)
+        )
         pen_width = 3 if pinned else 1
 
         self.setPen(QPen(QColor(color), pen_width))

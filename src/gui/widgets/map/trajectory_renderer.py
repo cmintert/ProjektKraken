@@ -34,10 +34,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Colors
-KEYFRAME_COLOR_DEFAULT = "#f1c40f"  # Yellow
-KEYFRAME_LABEL_COLOR = "#000000"  # Black
-TRAJECTORY_PATH_COLOR = "#3498db"  # Blue
+# Colors — fallback defaults; resolved from ThemeManager at runtime
+KEYFRAME_COLOR_DEFAULT = "#f1c40f"  # Yellow (fallback)
+TRAJECTORY_PATH_COLOR = "#3498db"  # Blue (fallback)
 
 # Layout Constants
 KEYFRAME_LABEL_FONT_FAMILY = "Segoe UI"
@@ -165,7 +164,8 @@ class TrajectoryRenderer:
                 self._update_trajectory_path,
             )
             dot.setPos(pos)
-            dot.setBrush(QBrush(QColor(KEYFRAME_COLOR_DEFAULT)))
+            _theme = ThemeManager().get_theme()
+            dot.setBrush(QBrush(QColor(_theme.get("accent_secondary", KEYFRAME_COLOR_DEFAULT))))
             dot.setPen(QPen(Qt.PenStyle.NoPen))
             dot.setZValue(base_z - 0.2)
             self._view.scene.addItem(dot)
@@ -366,7 +366,8 @@ class TrajectoryRenderer:
     ) -> QGraphicsPathItem:
         """Creates and configures the trajectory path item."""
         item = QGraphicsPathItem(path)
-        pen = QPen(QColor(TRAJECTORY_PATH_COLOR), 1)
+        _theme = ThemeManager().get_theme()
+        pen = QPen(QColor(_theme.get("primary", TRAJECTORY_PATH_COLOR)), 1)
         pen.setStyle(Qt.PenStyle.DashLine)
         item.setPen(pen)
         item.setZValue(base_z - 0.3)

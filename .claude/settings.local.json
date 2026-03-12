@@ -8,7 +8,8 @@
       "Bash(python -m pytest tests/unit/test_raster_gui.py -x -q)",
       "Bash(python -m pytest tests/integration/test_raster_edit_persistence.py -x -q)",
       "Bash(python -m pytest -x -q --tb=short)",
-      "Bash(python -m pytest -q --tb=short -m \"not slow\")"
+      "Bash(python -m pytest -q --tb=short -m \"not slow\")",
+      "Bash(python -m pytest tests/unit/test_map_feature_ui.py tests/unit/test_raster_gui.py tests/unit/test_map_handler_scale.py tests/unit/test_map_layer_gaps.py -x -q)"
     ]
   }
 }

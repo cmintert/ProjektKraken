@@ -1254,6 +1254,28 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_probe_popup_style() -> str:
+        """Returns QSS for the raster probe popup overlay label.
+
+        Returns:
+            str: QSS stylesheet string for the probe popup.
+        """
+        theme = ThemeManager().get_theme()
+        bg = theme.get("surface_alt", "#2A2A2A")
+        text = theme.get("text_main", "#E8E8E8")
+        border = theme.get("border", "#444444")
+        return (
+            "QLabel#RasterProbePopup {"
+            f"  background-color: {bg};"
+            f"  color: {text};"
+            f"  border: 1px solid {border};"
+            "  border-radius: 6px;"
+            "  padding: 6px 10px;"
+            "  font-size: 12px;"
+            "}"
+        )
+
+    @staticmethod
     def get_mode_indicator_style(bg_color: str) -> str:
         """Returns QSS for the toolbar mode-indicator label.
 

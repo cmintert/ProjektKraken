@@ -384,6 +384,7 @@ class RasterPaletteEditor(QDialog):
         preset_row = QHBoxLayout()
         preset_row.addWidget(QLabel("Preset:"))
         self._preset_combo = QComboBox()
+        self._preset_combo.setToolTip("Load a built-in gradient preset")
         self._preset_combo.addItem("— custom —")
         for name in _GRADIENT_PRESETS:
             self._preset_combo.addItem(name)
@@ -412,6 +413,7 @@ class RasterPaletteEditor(QDialog):
             self._add_stop_row(stop.position, stop.color)
 
         self._add_stop_btn = QPushButton("+ Add stop")
+        self._add_stop_btn.setToolTip("Add a new colour stop to the gradient")
         self._add_stop_btn.clicked.connect(self._on_add_stop)
         layout.addWidget(self._add_stop_btn)
 

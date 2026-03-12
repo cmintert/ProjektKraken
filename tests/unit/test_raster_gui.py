@@ -447,9 +447,9 @@ class TestRasterButtonStyling:
         # Unchecked: shows "✎ Edit"
         assert "Edit" in panel._btn_edit_toggle.text()
 
-        # Check it: should show "✓ Done" (or similar)
+        # Check it: should show "✎ Editing…" to indicate active state
         panel._btn_edit_toggle.setChecked(True)
-        assert "Done" in panel._btn_edit_toggle.text()
+        assert "Editing" in panel._btn_edit_toggle.text()
 
         # Uncheck: back to "✎ Edit"
         panel._btn_edit_toggle.setChecked(False)

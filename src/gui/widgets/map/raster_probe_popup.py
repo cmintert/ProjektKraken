@@ -11,6 +11,8 @@ from typing import Optional
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import QLabel, QWidget
 
+from src.gui.utils.style_helper import StyleHelper
+
 logger = logging.getLogger(__name__)
 
 _AUTO_HIDE_MS = 3000  # milliseconds before auto-hide
@@ -32,16 +34,7 @@ class RasterProbePopup(QLabel):
         self.setObjectName("RasterProbePopup")
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
         self.setWordWrap(False)
-        self.setStyleSheet(
-            "QLabel#RasterProbePopup {"
-            "  background: rgba(20, 20, 20, 210);"
-            "  color: #E8E8E8;"
-            "  border: 1px solid rgba(255,255,255,60);"
-            "  border-radius: 6px;"
-            "  padding: 6px 10px;"
-            "  font-size: 12px;"
-            "}"
-        )
+        self.setStyleSheet(StyleHelper.get_probe_popup_style())
         self.hide()
 
         self._timer = QTimer(self)

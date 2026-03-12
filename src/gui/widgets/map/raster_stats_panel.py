@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.theme_manager import ThemeManager
 from src.gui.widgets.map.map_data_buffer import CoverageStats
 
 
@@ -60,10 +61,11 @@ class _HistogramWidget(QWidget):
         max_count = max(self._counts) if self._counts else 1
         n = len(self._counts)
         bar_w = max(1, (w - padding * 2) // n)
-        bar_color = QColor("#5C82FF")
-        border_color = QColor("#3A5ACC")
+        theme = ThemeManager().get_theme()
+        bar_color = QColor(theme.get("primary", "#5C82FF"))
+        border_color = QColor(theme.get("primary_dark", "#3A5ACC"))
 
-        painter.fillRect(0, 0, w, h, QColor("#1E1E2E"))
+        painter.fillRect(0, 0, w, h, QColor(theme.get("app_bg", "#1E1E2E")))
         painter.setPen(QPen(border_color, 1))
 
         for i, count in enumerate(self._counts):
@@ -124,6 +126,7 @@ class RasterStatsPanel(QDialog):
 
         close_btn = QPushButton("Close")
         close_btn.setDefault(True)
+        close_btn.setToolTip("Close the statistics panel")
         close_btn.clicked.connect(self.accept)
         btn_row.addWidget(close_btn)
         layout.addLayout(btn_row)
@@ -193,14 +196,15 @@ class RasterStatsPanel(QDialog):
         # Descriptive stats row
         stats_row = QHBoxLayout()
         stat_labels = [
-            ("Min", stats.min_val),
-            ("Max", stats.max_val),
-            ("Mean", stats.mean_val),
-            ("Median", stats.median_val),
+            ("Min", stats.min_val, "Lowest raw pixel value in this layer"),
+            ("Max", stats.max_val, "Highest raw pixel value in this layer"),
+            ("Mean", stats.mean_val, "Average raw pixel value across all non-zero pixels"),
+            ("Median", stats.median_val, "Median raw pixel value (50th percentile)"),
         ]
-        for name, val in stat_labels:
+        for name, val, tip in stat_labels:
             val_str = f"{val:.1f}" if val is not None else "—"
             lbl = QLabel(f"<b>{name}:</b> {val_str}")
+            lbl.setToolTip(tip)
             stats_row.addWidget(lbl)
         stats_row.addStretch()
         layout.addLayout(stats_row)

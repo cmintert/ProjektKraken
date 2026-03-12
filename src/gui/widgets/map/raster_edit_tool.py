@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.app.constants import MAP_LAYER_Z_UI_OVERLAY
+from src.core.theme_manager import ThemeManager
 from src.gui.widgets.map.raster_layer_item import RasterLayerItem
 
 if TYPE_CHECKING:
@@ -622,8 +623,14 @@ class RasterEditTool:
         radius_scene = self._brush_size * px_per_scene
 
         if self._cursor_item is None:
-            pen = QPen(QColor(255, 255, 255, 180), 1.5)
-            brush = QBrush(QColor(255, 255, 255, 30))
+            _theme = ThemeManager().get_theme()
+            _cursor_hex = _theme.get("text_main", "#E8E8E8")
+            _cursor_color = QColor(_cursor_hex)
+            _cursor_color.setAlpha(180)
+            _fill_color = QColor(_cursor_hex)
+            _fill_color.setAlpha(30)
+            pen = QPen(_cursor_color, 1.5)
+            brush = QBrush(_fill_color)
             self._cursor_item = QGraphicsEllipseItem()
             self._cursor_item.setPen(pen)
             self._cursor_item.setBrush(brush)

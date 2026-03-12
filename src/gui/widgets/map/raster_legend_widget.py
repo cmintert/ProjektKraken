@@ -75,6 +75,7 @@ class RasterLegendWidget(QWidget):
             f"color: {theme.get('text_main', '#E8E8E8')}; "
             f"font-weight: bold; font-size: 9pt; }}"
         )
+        self._toggle_btn.setToolTip("Expand or collapse the raster legend panel")
         self._toggle_btn.toggled.connect(self._on_toggle)
         header.addWidget(self._toggle_btn)
         outer.addLayout(header)
@@ -507,13 +508,14 @@ class _GradientBarWidget(QWidget):
         p.fillRect(0, 0, w, h, gradient)
 
         # Draw tick marks at 25 %, 50 %, 75 % (top = 0 %, bottom = 100 %)
-        tick_color = QColor(255, 255, 255, 160)
+        theme = ThemeManager().get_theme()
+        tick_color = QColor(theme.get("text_dim", "#aaaaaa"))
+        tick_color.setAlpha(160)
         p.setPen(tick_color)
         for frac in (0.25, 0.50, 0.75):
             y = int(frac * (h - 1))
             p.drawLine(0, y, w - 1, y)
 
-        theme = ThemeManager().get_theme()
         p.setPen(QColor(theme.get("border", "#444444")))
         p.drawRect(0, 0, w - 1, h - 1)
         p.end()

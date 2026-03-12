@@ -253,10 +253,10 @@ class MapLayerPanel(QWidget):
         rt.addWidget(self._make_section_separator("PAINT"))
         self._build_paint_settings(rt)
 
-        rt.addWidget(self._make_section_separator("ACTIONS"))
+        rt.addWidget(self._make_section_separator("SNAPSHOTS"))
         self._build_action_rows(rt)
 
-        rt.addWidget(self._make_section_separator("LAYER"))
+        rt.addWidget(self._make_section_separator("DISPLAY"))
         self._build_layer_settings(rt)
 
         parent_layout.addWidget(self._raster_toolbar)
@@ -270,17 +270,18 @@ class MapLayerPanel(QWidget):
         tool_row = QHBoxLayout()
         tool_row.setSpacing(2)
 
-        tool_defs: list[tuple[str, str, bool]] = [
-            ("_btn_brush", "Brush", True),
-            ("_btn_fill", "Fill", False),
-            ("_btn_gradient", "Gradient", False),
-            ("_btn_sample", "Sample", False),
+        tool_defs: list[tuple[str, str, bool, str]] = [
+            ("_btn_brush", "Brush", True, "Paint individual pixels with the selected value"),
+            ("_btn_fill", "Fill", False, "Flood-fill a contiguous region with the selected value"),
+            ("_btn_gradient", "Gradient", False, "Paint a smooth gradient from center to edge of brush"),
+            ("_btn_sample", "Sample", False, "Sample the value under the cursor (eye-dropper)"),
         ]
-        for attr, label, checked in tool_defs:
+        for attr, label, checked, tooltip in tool_defs:
             btn = QPushButton(label)
             btn.setCheckable(True)
             btn.setChecked(checked)
             btn.setAutoExclusive(True)
+            btn.setToolTip(tooltip)
             btn.toggled.connect(self._on_tool_mode_changed)
             setattr(self, attr, btn)
             tool_row.addWidget(btn)
@@ -296,9 +297,11 @@ class MapLayerPanel(QWidget):
         self._brush_size_spin = self._make_labeled_spinbox(
             rt, "Size:", 1, 128, 8, self._on_raster_setting_changed
         )
+        self._brush_size_spin.setToolTip("Brush radius in pixels (1–128)")
         self._paint_value_spin = self._make_labeled_spinbox(
             rt, "Value:", 0, 65535, 1, self._on_paint_value_spin_changed
         )
+        self._paint_value_spin.setToolTip("Raw raster value to paint (0–65535)")
         self._build_entity_picker(rt)
 
         self._falloff_slider, self._falloff_label = self._make_labeled_slider(
@@ -370,9 +373,14 @@ class MapLayerPanel(QWidget):
         action_row.setSpacing(Spacing.COMPACT)
         self._btn_edit_toggle = QPushButton("✎ Edit")
         self._btn_edit_toggle.setCheckable(True)
+        self._btn_edit_toggle.setToolTip("Enter/exit raster edit mode — changes are applied to the active layer")
         self._btn_edit_toggle.toggled.connect(self._on_edit_toggled)
         action_row.addWidget(self._btn_edit_toggle)
-        self._btn_palette = self._make_button("Palette…", "", self._on_palette_clicked)
+        self._btn_palette = self._make_button(
+            "Edit Palette…",
+            "Open the colour map / class palette editor",
+            self._on_palette_clicked,
+        )
         action_row.addWidget(self._btn_palette)
         self._btn_stats = self._make_button(
             "Stats…",
@@ -411,6 +419,7 @@ class MapLayerPanel(QWidget):
         blend_row.addWidget(QLabel("Blend:"))
         self._blend_combo = QComboBox()
         self._blend_combo.addItems(BLEND_MODE_NAMES)
+        self._blend_combo.setToolTip("How this layer blends with layers below it")
         self._blend_combo.currentTextChanged.connect(self._on_blend_mode_changed)
         blend_row.addWidget(self._blend_combo)
         blend_row.addStretch()
@@ -441,6 +450,7 @@ class MapLayerPanel(QWidget):
         self._preset_combo.setSizeAdjustPolicy(
             QComboBox.SizeAdjustPolicy.AdjustToContents
         )
+        self._preset_combo.setToolTip("Apply a saved brush preset to the current layer")
         self._preset_combo.currentIndexChanged.connect(self._on_preset_selected)
         preset_layout.addWidget(self._preset_combo, 1)
         preset_layout.addStretch()
@@ -1028,7 +1038,7 @@ class MapLayerPanel(QWidget):
     def _on_edit_toggled(self, checked: bool) -> None:
         """Handle the Edit / Done toggle button."""
         if checked:
-            self._btn_edit_toggle.setText("✓ Done")
+            self._btn_edit_toggle.setText("✎ Editing…")
             if self._selected_node_id:
                 self.raster_edit_requested.emit(self._selected_node_id)
         else:

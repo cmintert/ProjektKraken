@@ -249,23 +249,31 @@ class MapWidget(
         # Map Selector
         self.map_selector = QComboBox()
         self.map_selector.setMinimumWidth(200)
+        self.map_selector.setToolTip("Switch between maps in this world")
         self.map_selector.currentIndexChanged.connect(self._on_map_selected)
         self.toolbar.addWidget(self.map_selector)
 
         # Buttons (themed via StyleHelper)
         tool_style = StyleHelper.get_tool_button_style()
 
+        # Group 1: Map management
         self.btn_new_map = QPushButton("New Map")
+        self.btn_new_map.setToolTip("Create a new map in this world")
         self.btn_new_map.setStyleSheet(tool_style)
         self.btn_new_map.clicked.connect(self._on_create_map_clicked)
         self.toolbar.addWidget(self.btn_new_map)
 
         self.btn_delete_map = QPushButton("Delete Map")
+        self.btn_delete_map.setToolTip("Delete the currently selected map (cannot be undone)")
         self.btn_delete_map.setStyleSheet(StyleHelper.get_destructive_button_style())
         self.btn_delete_map.clicked.connect(self._on_delete_map_clicked)
         self.toolbar.addWidget(self.btn_delete_map)
 
+        self.toolbar.addSeparator()
+
+        # Group 2: Viewport
         self.btn_fit_view = QPushButton("Fit to View")
+        self.btn_fit_view.setToolTip("Zoom and pan to fit all content in view")
         self.btn_fit_view.setStyleSheet(tool_style)
         self.btn_fit_view.clicked.connect(self.view.fit_to_view)
         self.toolbar.addWidget(self.btn_fit_view)
@@ -276,6 +284,9 @@ class MapWidget(
         self.btn_settings.clicked.connect(self._configure_map_width)
         self.toolbar.addWidget(self.btn_settings)
 
+        self.toolbar.addSeparator()
+
+        # Group 3: Drawing tools
         self.btn_add_keyframe = QPushButton("Add Keyframe")
         self.btn_add_keyframe.setToolTip("Save current marker position at current time")
         self.btn_add_keyframe.setStyleSheet(tool_style)
@@ -645,6 +656,10 @@ class MapWidget(
                 and isinstance(selected_items[0], MarkerItem)
             ):
                 self.btn_add_keyframe.setToolTip("Events cannot have trajectories")
+            elif not should_enable:
+                self.btn_add_keyframe.setToolTip(
+                    "Select a marker in the map to enable keyframe recording"
+                )
             else:
                 self.btn_add_keyframe.setToolTip(
                     "Save current marker position at current time"
@@ -959,9 +974,9 @@ class MapWidget(
             "draft": theme.get("primary", "#f39c12"),
             "drawing": theme.get("accent_secondary", "#3498db"),
             "vertex": theme.get("primary", "#e67e22"),
-            "normal": "#2ecc71",
+            "normal": theme.get("success", "#2ecc71"),
         }
-        bg = color_map.get(mode, "#2ecc71")
+        bg = color_map.get(mode, theme.get("text_dim", "#aaaaaa"))
         self.mode_indicator.setStyleSheet(StyleHelper.get_mode_indicator_style(bg))
 
     def _update_mode_indicator(self) -> None:
