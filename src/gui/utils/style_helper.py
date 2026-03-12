@@ -6,7 +6,7 @@ switches reliably update the UI.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 
 from PySide6.QtCore import QEvent, QObject, QRect
 from PySide6.QtGui import QCursor
@@ -1305,13 +1305,13 @@ class StyleHelper:
         )
 
     @staticmethod
-    def get_section_separator_style() -> str:
+    def get_section_separator_style() -> Tuple[str, str]:
         """Returns QSS for the section separator label and line.
 
         Returns:
-            str: A two-element tuple-like string is NOT returned; instead
-            call :meth:`get_section_separator_label_style` and
-            :meth:`get_section_separator_line_style` individually.
+            A ``(label_style, line_style)`` tuple where *label_style* is
+            the QSS for the section heading text and *line_style* is the
+            QSS for the horizontal rule.
         """
         theme = ThemeManager().get_theme()
         dim_color = theme.get("text_dim", "#888888")
@@ -1322,7 +1322,7 @@ class StyleHelper:
         line_style = (
             f"color: {border_color}; background: {border_color};"
         )
-        return label_style, line_style  # type: ignore[return-value]
+        return label_style, line_style
 
     @staticmethod
     def get_dim_text_color() -> str:
