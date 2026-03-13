@@ -717,6 +717,11 @@ class MapDataBuffer:
         else:
             # Gradient mode: multi-stop interpolation with optional stretch range
             stops = sorted(color_map.gradient_stops, key=lambda s: s.position)
+            if len(stops) < 2:
+                # Degenerate gradient — return transparent image rather than crashing
+                return QImage(
+                    self._width, self._height, QImage.Format.Format_RGBA8888
+                )
             positions = np.array([s.position for s in stops], dtype=np.float32)
             rgba_stops = np.array(
                 [_hex_to_rgba(s.color) for s in stops], dtype=np.float32

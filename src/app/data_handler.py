@@ -325,12 +325,19 @@ class DataHandler(QObject):
                 self._pending_select_type = "entity"
                 self._pending_select_id = result.data["id"]
 
-            # These layer commands only persist the in-memory tree
-            # to the DB — no new data is created, so no reload needed.
+            # These layer/map commands only update metadata that is already
+            # applied optimistically in the UI — a full map+marker+raster
+            # teardown-and-reload would cause a visible blank flash with no
+            # benefit, so we skip the reload_maps trigger for them.
             _NO_RELOAD_LAYER_CMDS = {
                 "SetLayerOpacityCommand",
                 "SaveLayerTreeCommand",
                 "SetLayerVisibilityCommand",
+                # Raster metadata: visual already updated via update_display /
+                # set_blend_mode before the command is emitted.
+                "SetRasterMappingCommand",
+                "SetRasterBlendModeCommand",
+                "SetRasterNotesCommand",
             }
             if (
                 "Map" in command_name or "Layer" in command_name

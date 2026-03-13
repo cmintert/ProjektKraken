@@ -286,6 +286,12 @@ class MapLayerPanel(QWidget):
             setattr(self, attr, btn)
             tool_row.addWidget(btn)
 
+        self._sample_tool_enabled_tooltip = self._btn_sample.toolTip()
+        self._sample_tool_disabled_tooltip = (
+            "Sample is unavailable for color rasters because they preserve RGBA pixels, "
+            "not paintable scalar values"
+        )
+
         rt.addLayout(tool_row)
 
     def _build_paint_settings(self, rt: QVBoxLayout) -> None:
@@ -1001,6 +1007,7 @@ class MapLayerPanel(QWidget):
         if is_raster:
             self._current_node_id = node.id
             mode = self._raster_mode_by_id.get(node.id, "discrete")
+            self._update_sample_tool_availability(mode)
             self._show_mode_badge(mode)
             # Refresh legend and entity picker from stored metadata
             layer_meta = self._raster_meta_by_id.get(node.id)
@@ -1023,6 +1030,7 @@ class MapLayerPanel(QWidget):
         else:
             old_node_id = self._current_node_id
             self._current_node_id = ""
+            self._update_sample_tool_availability("discrete")
             self._raster_mode_label.setVisible(False)
             self._snapshot_count_label.setText("")
             self._clear_snapshot_list(old_node_id)
@@ -1059,17 +1067,17 @@ class MapLayerPanel(QWidget):
         """Repopulate the *Paint as:* class picker from *layer_meta*.
 
         The picker is only visible for discrete layers with at least one
-        defined class.  For continuous layers it is always hidden.
+        defined class. For continuous and color layers it is hidden.
 
         Args:
             layer_meta: Raster layer metadata dict, or ``None``.
-            mode: ``"discrete"`` or ``"continuous"``.
+            mode: ``"discrete"``, ``"continuous"``, or ``"color"``.
             name_map: Optional dict mapping entity/event UUIDs to names.
 
         """
         from src.gui.widgets.map.raster_mapping import get_discrete_class_choices
 
-        is_discrete = mode != "continuous"
+        is_discrete = mode == "discrete"
         choices: List[Tuple[str, int]] = []
 
         if is_discrete and layer_meta:
@@ -1146,6 +1154,7 @@ class MapLayerPanel(QWidget):
                     mode = self._raster_mode_by_id.get(
                         self._selected_node_id, "discrete"
                     )
+                    self._update_sample_tool_availability(mode)
                     self._show_mode_badge(mode)
 
     def set_raster_layer_metadata(
@@ -1177,6 +1186,7 @@ class MapLayerPanel(QWidget):
                     mode = self._raster_mode_by_id.get(
                         self._selected_node_id, "discrete"
                     )
+                    self._update_sample_tool_availability(mode)
                     layer_meta = self._raster_meta_by_id.get(self._selected_node_id)
                     name_map = self._raster_name_map_by_id.get(self._selected_node_id)
                     self._refresh_entity_picker(layer_meta, mode, name_map)
@@ -1199,7 +1209,7 @@ class MapLayerPanel(QWidget):
         """Render the mode badge label with the correct text and style.
 
         Args:
-            mode: ``"discrete"`` or ``"continuous"``.
+            mode: ``"discrete"``, ``"continuous"``, or ``"color"``.
         """
         from src.core.theme_manager import ThemeManager
 
@@ -1209,6 +1219,10 @@ class MapLayerPanel(QWidget):
             icon = "📊"
             text = "Discrete — categories / classes"
             bg = theme.get("accent_secondary", "#4A90D9")
+        elif mode == "color":
+            icon = "🖼"
+            text = "Color — original RGBA image"
+            bg = theme.get("accent_primary", theme.get("primary", "#5C82FF"))
         else:
             icon = "📈"
             text = "Continuous — scalar gradient"
@@ -1230,6 +1244,22 @@ class MapLayerPanel(QWidget):
             StyleHelper.get_raster_mode_badge_style(bg)
         )
         self._raster_mode_label.setVisible(True)
+
+    def _update_sample_tool_availability(self, mode: str) -> None:
+        """Enable or disable the Sample tool for the active raster mode.
+
+        Args:
+            mode: Active raster mode string.
+        """
+        sample_enabled = mode != "color"
+        self._btn_sample.setEnabled(sample_enabled)
+        self._btn_sample.setToolTip(
+            self._sample_tool_enabled_tooltip
+            if sample_enabled
+            else self._sample_tool_disabled_tooltip
+        )
+        if not sample_enabled and self._btn_sample.isChecked():
+            self._btn_brush.setChecked(True)
 
     @Slot()
     def _on_falloff_changed(self) -> None:

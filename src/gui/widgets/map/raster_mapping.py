@@ -454,8 +454,9 @@ def build_item_raster_index(
 ) -> Dict[str, List[RasterItemRef]]:
     """Build a reverse index from item IDs to their raster layer appearances.
 
-    Scans all raster layer ``value_entity_map`` entries across all maps and
-    returns a dict keyed by ``entity_id``.
+    Scans all raster layer ``value_entity_map`` entries (discrete layers) and
+    ``color_map.linked_entity_id`` fields (continuous layers) across all maps
+    and returns a dict keyed by ``entity_id``.
 
     This enables item-centric queries such as "on which maps does entity X
     appear as a raster classification class?"
@@ -475,6 +476,8 @@ def build_item_raster_index(
         raster_layers = (map_entry.get("attributes") or {}).get("raster_layers", [])
         for rl in raster_layers:
             node_id = rl.get("node_id", "")
+
+            # Discrete layers: each VEM mapping entry links a pixel value to an entity
             vem = normalize_value_entity_map(rl.get("value_entity_map") or {})
             mode = vem.get("mode", "exact")
             for m in vem.get("mappings", []):
@@ -492,6 +495,19 @@ def build_item_raster_index(
                     max=m.get("max") if mode == "range" else None,
                 )
                 index.setdefault(eid, []).append(ref)
+
+            # Continuous layers: the whole layer is linked to one entity/event
+            color_map_data = rl.get("color_map") or {}
+            linked_eid = color_map_data.get("linked_entity_id")
+            if linked_eid:
+                ref = RasterItemRef(
+                    map_id=map_id,
+                    node_id=node_id,
+                    mapping_id="",
+                    label="",
+                    mode="linked",
+                )
+                index.setdefault(linked_eid, []).append(ref)
 
     return index
 
@@ -591,6 +607,8 @@ def check_entity_raster_refs(
         raster_layers = attrs.get("raster_layers", [])
         for layer in raster_layers:
             node_id = layer.get("node_id", "")
+
+            # Discrete: check per-value mappings
             vem = normalize_value_entity_map(layer.get("value_entity_map") or {})
             mode = vem.get("mode", "exact")
             for m in vem.get("mappings", []):
@@ -606,4 +624,16 @@ def check_entity_raster_refs(
                         max=m.get("max") if mode == "range" else None,
                     )
                     refs.append(ref)
+
+            # Continuous: check whole-layer link
+            color_map_data = layer.get("color_map") or {}
+            if color_map_data.get("linked_entity_id") == entity_id:
+                refs.append(RasterItemRef(
+                    map_id=map_obj.id,
+                    node_id=node_id,
+                    mapping_id="",
+                    label="",
+                    mode="linked",
+                ))
+
     return refs

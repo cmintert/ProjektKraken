@@ -1030,13 +1030,16 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
                 if map_obj
                 else None
             ) or ref.node_id
-            value_str = (
-                f"value {ref.value}"
-                if ref.mode == "exact"
-                else f"range {ref.min}–{ref.max}"
-            )
-            label = ref.label.strip() if ref.label else "(unlabelled)"
-            lines.append(f"• {label}  ·  {map_name} / {layer_name}  ({value_str})")
+            if ref.mode == "linked":
+                lines.append(f"• {map_name} / {layer_name}  (continuous layer)")
+            else:
+                value_str = (
+                    f"value {ref.value}"
+                    if ref.mode == "exact"
+                    else f"range {ref.min}–{ref.max}"
+                )
+                label = ref.label.strip() if ref.label else "(unlabelled)"
+                lines.append(f"• {label}  ·  {map_name} / {layer_name}  ({value_str})")
 
         self.raster_appearances_label.setText("\n".join(lines))
 

@@ -406,6 +406,13 @@ class CreateRasterLayerCommand(BaseCommand):
                             GradientStop(1.0, "#FFFFFFFF"),
                         ],
                     ).to_dict()
+            elif self.mode == "discrete":
+                # Discrete layers start with an empty palette; the user
+                # populates it via the palette editor.  A gradient here would
+                # cause the editor to show an empty table and save back an
+                # empty palette (making the layer invisible) when the user
+                # just wants to add entity links.
+                initial_color_map = ColorMap(type="palette", entries=[]).to_dict()
             else:
                 initial_color_map = ColorMap(
                     type="gradient",

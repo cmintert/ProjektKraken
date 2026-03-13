@@ -663,6 +663,23 @@ class TestPaletteEditorGradientPreview:
         # Calling refresh directly must not raise
         dlg._refresh_gradient_preview()
 
+    def test_color_mode_result_preserves_passthrough(self, qtbot) -> None:
+        from src.gui.widgets.map.map_data_buffer import ColorMap
+        from src.gui.widgets.map.raster_palette_editor import RasterPaletteEditor
+
+        cmap = ColorMap(type="passthrough")
+        dlg = RasterPaletteEditor(color_map=cmap, mode="color")
+        qtbot.addWidget(dlg)
+
+        dlg._linked_type_combo.setCurrentText("Entity")
+        dlg._linked_name_edit.setProperty("linked_id", "entity-123")
+
+        result = dlg.result_color_map()
+
+        assert result.type == "passthrough"
+        assert result.linked_entity_id == "entity-123"
+        assert result.linked_entity_type == "entity"
+
 
 # ── ColorEntry entity_id field ────────────────────────────────────────
 
@@ -900,6 +917,19 @@ class TestLayerPanelModeBadge:
         assert panel._raster_mode_label.isVisible()
         assert "Continuous" in panel._raster_mode_label.text()
 
+    def test_show_mode_badge_color(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel.show()
+
+        panel._raster_toolbar.setVisible(True)
+        panel._show_mode_badge("color")
+
+        assert panel._raster_mode_label.isVisible()
+        assert "Color" in panel._raster_mode_label.text()
+
 
 # ── New: MapLayerNode.attributes ─────────────────────────────────────
 
@@ -1103,6 +1133,27 @@ class TestPanelLegendAndEntityPicker:
         qtbot.addWidget(panel)
         panel._refresh_entity_picker({"value_entity_map": {}}, "continuous")
         assert not panel._entity_picker_row.isVisible()
+
+    def test_refresh_entity_picker_hidden_for_color(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel._refresh_entity_picker({"value_entity_map": {}}, "color")
+        assert not panel._entity_picker_row.isVisible()
+
+    def test_color_mode_disables_sample_tool(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel._btn_sample.setChecked(True)
+
+        panel._update_sample_tool_availability("color")
+
+        assert not panel._btn_sample.isEnabled()
+        assert panel._btn_brush.isChecked()
+        assert "unavailable for color rasters" in panel._btn_sample.toolTip()
 
     def test_entity_picked_sets_paint_value(self, qtbot) -> None:
         from src.gui.widgets.map.map_layer_panel import MapLayerPanel

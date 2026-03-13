@@ -14,11 +14,13 @@ nothing persists across restarts.
 """
 
 import tempfile
+from types import SimpleNamespace
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from src.app.map_handler import MapHandler
 from src.gui.widgets.map.map_data_buffer import ColorMap, MapDataBuffer
+from src.gui.widgets.map.raster_mapping import ProbeResult
 
 # ── helpers ───────────────────────────────────────────────────────────
 
@@ -26,6 +28,7 @@ from src.gui.widgets.map.map_data_buffer import ColorMap, MapDataBuffer
 def _make_handler(
     map_id: str | None = "map-123",
     node_id: str = "node-456",
+    mode: str = "discrete",
     world_dir: str = "/tmp/world",
 ) -> tuple[MapHandler, MagicMock, MagicMock]:
     """Build a MapHandler with a mocked map_widget and worker.
@@ -35,6 +38,8 @@ def _make_handler(
     """
     mock_widget = MagicMock()
     mock_widget.get_selected_map_id.return_value = map_id
+    mock_widget._cached_entities = []
+    mock_widget._cached_events = []
 
     # Provide a mock map in maps_data
     mock_map = MagicMock()
@@ -43,7 +48,7 @@ def _make_handler(
         "raster_layers": [
             {
                 "node_id": node_id,
-                "mode": "discrete",
+                "mode": mode,
                 "file_path": "rasters/test.png",
                 "value_entity_map": {},
                 "color_map": None,
@@ -54,7 +59,11 @@ def _make_handler(
 
     # Provide a mock raster item on the view
     mock_item = MagicMock()
-    mock_item.color_map = ColorMap(type="gradient")
+    mock_item.color_map = (
+        ColorMap(type="passthrough")
+        if mode == "color"
+        else ColorMap(type="gradient")
+    )
     mock_item.buffer = MagicMock()
     mock_widget.view._raster_items = {node_id: mock_item}
 
@@ -143,6 +152,36 @@ class TestPaletteEditEmitsCommand:
 
         assert len(emitted) == 0, "No command should be emitted on cancel"
 
+    def test_color_layers_preserve_passthrough_mapping(self, qapp):
+        """Color-layer palette edits must not replace passthrough rendering."""
+        handler, mock_widget, _ = _make_handler(mode="color")
+        mock_widget.maps_data[0].attributes["raster_layers"][0]["color_map"] = {
+            "type": "passthrough"
+        }
+
+        emitted: list = []
+        handler.command_requested.connect(emitted.append)
+
+        new_cmap = ColorMap(type="gradient")
+        new_cmap.linked_entity_id = "event-123"
+        new_cmap.linked_entity_type = "event"
+        with patch(
+            "src.gui.widgets.map.raster_palette_editor.RasterPaletteEditor"
+        ) as MockEditor:
+            inst = MockEditor.return_value
+            inst.exec.return_value = True
+            inst.result_color_map.return_value = new_cmap
+            inst.result_value_entity_map.return_value = {}
+
+            handler.on_raster_palette_edit("node-456")
+
+        assert len(emitted) == 1
+        applied_cmap = mock_widget.view._raster_items["node-456"].update_display.call_args[0][0]
+        assert applied_cmap.type == "passthrough"
+        assert applied_cmap.linked_entity_id == "event-123"
+        assert emitted[0].new_color_map["type"] == "passthrough"
+        assert emitted[0].new_color_map["linked_entity_id"] == "event-123"
+
 
 # ── Tests: save raster to disk ─────────────────────────────────────────
 
@@ -203,6 +242,31 @@ class TestStrokeCompleted:
             assert len(emitted) == 1, "StrokeRasterCommand must be emitted"
             assert isinstance(emitted[0], StrokeRasterCommand)
             assert emitted[0].map_id == "map-123"
+
+
+class TestRasterProbeResolution:
+    """Probe popup name resolution should use cached entity/event data."""
+
+    def test_probe_uses_cached_event_name_for_continuous_link(self, qapp):
+        handler, mock_widget, _ = _make_handler(mode="color")
+        mock_widget.maps_data[0].attributes["raster_layers"][0]["color_map"] = {
+            "type": "passthrough",
+            "linked_entity_id": "event-123",
+        }
+        mock_widget._cached_events = [SimpleNamespace(id="event-123", name="Ashfall")]
+
+        with patch(
+            "src.gui.widgets.map.raster_mapping.probe_all_layers",
+            return_value=[ProbeResult(node_id="node-456", value=17)],
+        ), patch(
+            "src.services.db_service.DatabaseService"
+        ) as MockDbService, patch.object(handler, "_show_probe_popup") as show_popup:
+            handler.on_raster_value_probed("node-456", 17, 0.5, 0.5)
+
+        MockDbService.assert_not_called()
+        show_popup.assert_called_once_with(
+            "node-456", 17, "Ashfall", None, "color", None
+        )
 
     def test_returns_early_when_no_map_selected(self, qapp):
         """No command is emitted when no map is selected."""

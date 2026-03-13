@@ -217,8 +217,10 @@ class TestMappingPersistence:
         # Should be restored to empty mapping
         assert meta["value_entity_map"] == {}
 
-    def test_default_color_map_is_gradient(self, db_service, map_obj, world_dir):
-        """New raster layer should have gradient color_map (not empty palette)."""
+    def test_default_discrete_color_map_is_empty_palette(
+        self, db_service, map_obj, world_dir
+    ):
+        """New discrete raster layers should start with an empty palette."""
         cmd = CreateRasterLayerCommand(
             map_id=map_obj.id,
             name="Test",
@@ -234,9 +236,8 @@ class TestMappingPersistence:
         saved = db_service.map_repo.get_map(map_obj.id)
         meta = (saved.attributes or {}).get("raster_layers", [])[0]
         cmap = ColorMap.from_dict(meta["color_map"])
-        assert cmap.type == "gradient", (
-            "Default color_map must be gradient, not empty palette"
-        )
+        assert cmap.type == "palette"
+        assert cmap.entries == []
 
     def test_color_map_persisted_by_command(self, db_service, map_obj, world_dir):
         """SetRasterMappingCommand should persist the colour map alongside the mapping."""

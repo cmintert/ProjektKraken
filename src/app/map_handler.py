@@ -114,6 +114,28 @@ class MapHandler(QObject):
         self._temporal_debounce_timer.setInterval(300)
         self._temporal_debounce_timer.timeout.connect(self._apply_temporal_rasters)
 
+    def _lookup_cached_world_item_name(self, item_id: str | None) -> str | None:
+        """Resolve an entity/event name from the widget's cached data.
+
+        Args:
+            item_id: Entity or event ID to resolve.
+
+        Returns:
+            The cached display name, or ``None`` if not found.
+        """
+        if not item_id or self._map_widget is None:
+            return None
+
+        for entity in getattr(self._map_widget, "_cached_entities", []):
+            if getattr(entity, "id", None) == item_id:
+                return getattr(entity, "name", None)
+
+        for event in getattr(self._map_widget, "_cached_events", []):
+            if getattr(event, "id", None) == item_id:
+                return getattr(event, "name", None)
+
+        return None
+
     def load_maps(self) -> None:
         """Requests loading of all maps from the worker thread."""
         QMetaObject.invokeMethod(
@@ -1167,8 +1189,32 @@ class MapHandler(QObject):
             item.color_map.type,
         )
 
+        # For discrete layers that still carry a gradient color_map (created by
+        # older code before the palette initialisation fix), synthesise a proper
+        # palette ColorMap from the VEM so the editor table is populated correctly.
+        # Without this, the palette block in _populate_discrete_rows is skipped,
+        # the table appears empty, and saving produces an empty palette → black layer.
+        if mode == "discrete" and item.color_map.type != "palette":
+            from src.gui.widgets.map.map_data_buffer import ColorEntry, ColorMap as _CM
+            from src.gui.widgets.map.raster_mapping import normalize_value_entity_map
+
+            vem_norm = normalize_value_entity_map(existing_vem)
+            synthetic_entries = [
+                ColorEntry(
+                    value=int(m["value"]),
+                    color="#808080",
+                    entity_id=m.get("entity_id"),
+                    label=m.get("label"),
+                )
+                for m in vem_norm.get("mappings", [])
+                if m.get("value") is not None
+            ]
+            effective_color_map = _CM(type="palette", entries=synthetic_entries)
+        else:
+            effective_color_map = item.color_map
+
         dialog = RasterPaletteEditor(
-            color_map=item.color_map,
+            color_map=effective_color_map,
             mode=mode,
             value_entity_map=existing_vem,
             buffer_min=None,
@@ -1181,7 +1227,7 @@ class MapHandler(QObject):
             try:
                 stats = item.buffer.compute_coverage_stats(item.color_map)
                 dialog = RasterPaletteEditor(
-                    color_map=item.color_map,
+                    color_map=effective_color_map,
                     mode=mode,
                     value_entity_map=existing_vem,
                     buffer_min=stats.min_val,
@@ -1194,6 +1240,20 @@ class MapHandler(QObject):
                 logger.debug("Could not compute buffer stats: %s", _exc)
         if dialog.exec():
             new_cmap = dialog.result_color_map()
+            if mode == "color" and new_cmap.type != "passthrough":
+                logger.warning(
+                    "on_raster_palette_edit: coercing color layer %s back to passthrough "
+                    "from incompatible color_map type=%s",
+                    node_id,
+                    new_cmap.type,
+                )
+                from src.gui.widgets.map.map_data_buffer import ColorMap as _CM
+
+                new_cmap = _CM(
+                    type="passthrough",
+                    linked_entity_id=new_cmap.linked_entity_id,
+                    linked_entity_type=new_cmap.linked_entity_type,
+                )
             logger.debug(
                 "on_raster_palette_edit: applying new color_map type=%s", new_cmap.type
             )
@@ -1209,12 +1269,25 @@ class MapHandler(QObject):
 
                 new_vem = dialog.result_value_entity_map()
                 old_vem = normalize_value_entity_map(existing_vem)
+                new_cmap_dict = new_cmap.to_dict()
+
+                # Update maps_data in-memory immediately so the entity/event
+                # editor reflects the new link without waiting for the DB
+                # round-trip (SetRasterMappingCommand no longer triggers a
+                # full reload, so we must keep the in-memory state in sync).
+                if selected_map:
+                    for rl in (selected_map.attributes or {}).get("raster_layers", []):
+                        if rl.get("node_id") == node_id:
+                            rl["color_map"] = new_cmap_dict
+                            rl["value_entity_map"] = new_vem
+                            break
+
                 cmd = SetRasterMappingCommand(
                     map_id=map_id,
                     node_id=node_id,
                     new_mapping=new_vem,
                     old_mapping=old_vem,
-                    new_color_map=new_cmap.to_dict(),
+                    new_color_map=new_cmap_dict,
                     old_color_map=existing_color_map_dict,
                 )
                 self.command_requested.emit(cmd)
@@ -1343,6 +1416,7 @@ class MapHandler(QObject):
         label: str | None = None
         layer_mode: str = ""
         display_value: str | None = None
+        continuous_linked_id: str | None = None
         for meta in raster_meta:
             if meta.get("node_id") == node_id:
                 layer_mode = meta.get("mode", "discrete")
@@ -1358,22 +1432,19 @@ class MapHandler(QObject):
                         display_value = format_display_value(cmap, value)
                     except Exception as exc:
                         logger.debug("Could not format display value: %s", exc)
+                # Continuous layers link the whole layer to one entity/event
+                continuous_linked_id = cmap_dict.get("linked_entity_id") or None
                 break
         for r in results:
             if r.node_id == node_id:
                 label = r.label
                 if r.entity_id:
-                    try:
-                        from src.services.db_service import DatabaseService
-
-                        db_path = self._db_path_accessor()
-                        db = DatabaseService(db_path)
-                        entity = db.entity_repository.get(r.entity_id)
-                        if entity:
-                            entity_name = entity.name
-                    except Exception as exc:
-                        logger.debug("Could not resolve entity name: %s", exc)
+                    entity_name = self._lookup_cached_world_item_name(r.entity_id)
                 break
+        # For continuous linked layers, resolve the whole-layer entity name
+        # (the VEM is empty for these, so probe_all_layers won't find it)
+        if entity_name is None and continuous_linked_id:
+            entity_name = self._lookup_cached_world_item_name(continuous_linked_id)
 
         # Show the probe popup overlay
         self._show_probe_popup(

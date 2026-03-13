@@ -219,7 +219,12 @@ class RasterPaletteEditor(QDialog):
         parent: Optional[QWidget] = None,
     ) -> None:
         super().__init__(parent)
-        mode_label = "Discrete" if mode == "discrete" else "Continuous"
+        if mode == "discrete":
+            mode_label = "Discrete"
+        elif mode == "color":
+            mode_label = "Color"
+        else:
+            mode_label = "Continuous"
         self.setWindowTitle(f"Edit Palette — {mode_label} Mode")
         self.setMinimumWidth(680)
         self._mode = mode
@@ -267,6 +272,11 @@ class RasterPaletteEditor(QDialog):
             banner_text = (
                 "📊  <b>Discrete mode</b> — each pixel value maps to a named class. "
                 "Assign colours, labels, and optionally link each value to a world item."
+            )
+        elif self._mode == "color":
+            banner_text = (
+                "🖼  <b>Color mode</b> — preserve the raster's original colours while "
+                "optionally linking the layer to a world item."
             )
         else:
             banner_text = (
@@ -1123,6 +1133,13 @@ class RasterPaletteEditor(QDialog):
                         linked_entity_type = "entity"
                     elif ltype_text == "Event":
                         linked_entity_type = "event"
+            if self._mode == "color":
+                return ColorMap(
+                    type="passthrough",
+                    linked_entity_id=linked_entity_id,
+                    linked_entity_type=linked_entity_type,
+                )
+
             return ColorMap(
                 type="gradient",
                 gradient_stops=self._collect_gradient_stops(),
