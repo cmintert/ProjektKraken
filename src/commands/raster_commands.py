@@ -1204,6 +1204,10 @@ class SetRasterBlendModeCommand(BaseCommand):
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Persist the new blend mode.
 
+        Fetches the actual current blend mode from the DB before writing,
+        so that ``undo()`` always restores the correct previous state
+        regardless of what ``old_mode`` was passed to the constructor.
+
         Args:
             db_service: Database service.
 
@@ -1211,12 +1215,25 @@ class SetRasterBlendModeCommand(BaseCommand):
             CommandResult indicating success or failure.
         """
         try:
+            # Capture the actual current mode from DB before writing.
+            repo = db_service.map_repo
+            map_obj = repo.get_map(self.map_id)
+            if map_obj is not None:
+                raster_layers = _get_raster_layers(map_obj)
+                for rl in raster_layers:
+                    if rl.get("node_id") == self.node_id:
+                        self.old_mode = rl.get("blend_mode", "Normal")
+                        break
+                else:
+                    self.old_mode = "Normal"
+
             self._apply_mode(db_service, self.new_mode)
             self._is_executed = True
             logger.debug(
-                "SetRasterBlendModeCommand.execute: node_id=%s mode=%s",
+                "SetRasterBlendModeCommand.execute: node_id=%s mode=%s old_mode=%s",
                 self.node_id,
                 self.new_mode,
+                self.old_mode,
             )
             return CommandResult(
                 success=True,

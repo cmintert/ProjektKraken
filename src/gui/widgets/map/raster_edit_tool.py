@@ -80,6 +80,24 @@ class RasterEditTool:
         # Cursor overlay
         self._cursor_item: Optional[QGraphicsEllipseItem] = None
 
+        # Cached theme colors — refreshed once at construction and on theme change
+        self._cursor_hex: str = "#E8E8E8"
+        self._refresh_theme_colors()
+        ThemeManager().theme_changed.connect(lambda _: self._refresh_theme_colors())
+
+    def _refresh_theme_colors(self) -> None:
+        """Update cached cursor color from the current theme.
+
+        Called once at construction and whenever ``ThemeManager.theme_changed``
+        fires.  Keeps ``_update_cursor()`` free of per-call ``get_theme()``
+        lookups.
+        """
+        theme = ThemeManager().get_theme()
+        self._cursor_hex = theme.get("text_main", "#E8E8E8")
+        # Invalidate the existing cursor item so colors are refreshed on next move
+        if self._cursor_item is not None:
+            self._remove_cursor()
+
     # ------------------------------------------------------------------
     # Properties
     # ------------------------------------------------------------------
@@ -421,7 +439,7 @@ class RasterEditTool:
         )
 
         # Emit signal for command creation
-        self._view.raster_stroke_completed.emit(
+        self._emit_stroke_completed(
             self._active_node_id or "",
             d,
             before_region.tobytes(),
@@ -458,7 +476,7 @@ class RasterEditTool:
 
         item.update_region(dirty)
 
-        self._view.raster_stroke_completed.emit(
+        self._emit_stroke_completed(
             self._active_node_id or "",
             dirty,
             before_region.tobytes(),
@@ -538,7 +556,7 @@ class RasterEditTool:
 
         item.update_region(dirty)
 
-        self._view.raster_stroke_completed.emit(
+        self._emit_stroke_completed(
             self._active_node_id or "",
             dirty,
             before_region.tobytes(),
@@ -623,11 +641,9 @@ class RasterEditTool:
         radius_scene = self._brush_size * px_per_scene
 
         if self._cursor_item is None:
-            _theme = ThemeManager().get_theme()
-            _cursor_hex = _theme.get("text_main", "#E8E8E8")
-            _cursor_color = QColor(_cursor_hex)
+            _cursor_color = QColor(self._cursor_hex)
             _cursor_color.setAlpha(180)
-            _fill_color = QColor(_cursor_hex)
+            _fill_color = QColor(self._cursor_hex)
             _fill_color.setAlpha(30)
             pen = QPen(_cursor_color, 1.5)
             brush = QBrush(_fill_color)
@@ -658,6 +674,36 @@ class RasterEditTool:
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    def _emit_stroke_completed(
+        self,
+        node_id: str,
+        dirty: tuple,
+        before_bytes: bytes,
+        after_bytes: bytes,
+    ) -> None:
+        """Emit ``raster_stroke_completed`` only when the view is still valid.
+
+        Guards against RuntimeError when the C++ view object has already been
+        deleted during teardown.
+
+        Args:
+            node_id: Raster layer node ID.
+            dirty: ``(min_col, min_row, max_col, max_row)`` dirty rectangle.
+            before_bytes: Buffer region bytes before the operation.
+            after_bytes: Buffer region bytes after the operation.
+        """
+        import shiboken6
+
+        if not shiboken6.isValid(self._view):
+            logger.debug("_emit_stroke_completed: view already deleted, skipping emit")
+            return
+        try:
+            self._view.raster_stroke_completed.emit(
+                node_id, dirty, before_bytes, after_bytes
+            )
+        except RuntimeError:
+            logger.debug("_emit_stroke_completed: RuntimeError during emit, skipping")
 
     def _get_active_item(self) -> Optional[RasterLayerItem]:
         """Look up the active RasterLayerItem from the view's registry."""

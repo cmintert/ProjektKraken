@@ -1520,9 +1520,16 @@ class MapGraphicsView(QGraphicsView):
             node_id: ID of the layer node.
             visible: Whether the layer should be visible.
         """
+        import shiboken6
+
         item = self._find_graphics_item(node_id)
-        if item is not None:
-            item.setVisible(visible)
+        if item is not None and shiboken6.isValid(item):
+            try:
+                item.setVisible(visible)
+            except RuntimeError:
+                logger.debug(
+                    "_on_layer_visibility_changed: item %s already deleted", node_id
+                )
 
     def _on_layer_opacity_changed(self, node_id: str, opacity: float) -> None:
         """Respond to a layer opacity change.
@@ -1531,9 +1538,16 @@ class MapGraphicsView(QGraphicsView):
             node_id: ID of the layer node.
             opacity: Effective opacity.
         """
+        import shiboken6
+
         item = self._find_graphics_item(node_id)
-        if item is not None:
-            item.setOpacity(opacity)
+        if item is not None and shiboken6.isValid(item):
+            try:
+                item.setOpacity(opacity)
+            except RuntimeError:
+                logger.debug(
+                    "_on_layer_opacity_changed: item %s already deleted", node_id
+                )
 
     def _on_layer_order_changed(self) -> None:
         """Respond to a layer order change by recomputing Z-values."""
