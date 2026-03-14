@@ -84,7 +84,10 @@ class CreateMarkerCommand(BaseCommand):
         Returns:
             Dictionary representation of the command.
         """
-        return {"marker_data": self._marker.to_dict()}
+        return {
+            "marker_data": self._marker.to_dict(),
+            "actual_marker_id": self._actual_marker_id,
+        }
 
     @classmethod
     def from_dict(cls, data: dict) -> "CreateMarkerCommand":
@@ -96,7 +99,9 @@ class CreateMarkerCommand(BaseCommand):
         Returns:
             CreateMarkerCommand instance.
         """
-        return cls(data["marker_data"])
+        instance = cls(data["marker_data"])
+        instance._actual_marker_id = data.get("actual_marker_id")
+        return instance
 
 
 class UpdateMarkerCommand(BaseCommand):

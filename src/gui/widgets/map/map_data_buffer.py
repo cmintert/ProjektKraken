@@ -6,6 +6,7 @@ palette-based colorisation, and 16-bit PNG persistence via Pillow.
 """
 
 import logging
+from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -968,11 +969,11 @@ class MapDataBuffer:
         min_r, max_r = row, row
 
         visited = np.zeros((self._height, self._width), dtype=np.bool_)
-        queue: list[Tuple[int, int]] = [(col, row)]
+        queue: deque[Tuple[int, int]] = deque([(col, row)])
         visited[row, col] = True
 
         while queue:
-            c, r = queue.pop()
+            c, r = queue.popleft()
             self._data[r, c] = fill_val
             min_c = min(min_c, c)
             max_c = max(max_c, c)
