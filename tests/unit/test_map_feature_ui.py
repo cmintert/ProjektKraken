@@ -87,9 +87,7 @@ def sample_region_geometry():
 class TestPathItem:
     """Tests for the PathItem rendering class."""
 
-    def test_path_item_creation(
-        self, pixmap_item, sample_path_geometry
-    ) -> None:
+    def test_path_item_creation(self, pixmap_item, sample_path_geometry) -> None:
         """PathItem can be created with geometry."""
         item = PathItem(
             marker_id="path-1",
@@ -141,9 +139,7 @@ class TestPathItem:
         shape_rect = shape.boundingRect()
         assert shape_rect.width() > 0
 
-    def test_path_item_custom_style(
-        self, pixmap_item, sample_path_geometry
-    ) -> None:
+    def test_path_item_custom_style(self, pixmap_item, sample_path_geometry) -> None:
         """PathItem respects custom style properties."""
         style = {
             "stroke_color": "#FF0000",
@@ -163,9 +159,7 @@ class TestPathItem:
         assert item._stroke_width() == 5.0
         assert item._dash_pattern() == [4, 2]
 
-    def test_path_item_clicked_signal(
-        self, pixmap_item, sample_path_geometry
-    ) -> None:
+    def test_path_item_clicked_signal(self, pixmap_item, sample_path_geometry) -> None:
         """PathItem has a clicked signal."""
         item = PathItem(
             marker_id="p1",
@@ -179,9 +173,7 @@ class TestPathItem:
         # Verify signal exists
         assert hasattr(item, "clicked")
 
-    def test_path_item_temporal_state(
-        self, pixmap_item, sample_path_geometry
-    ) -> None:
+    def test_path_item_temporal_state(self, pixmap_item, sample_path_geometry) -> None:
         """PathItem supports temporal state (future/past)."""
         item = PathItem(
             marker_id="p1",
@@ -207,9 +199,7 @@ class TestPathItem:
 class TestRegionItem:
     """Tests for the RegionItem rendering class."""
 
-    def test_region_item_creation(
-        self, pixmap_item, sample_region_geometry
-    ) -> None:
+    def test_region_item_creation(self, pixmap_item, sample_region_geometry) -> None:
         """RegionItem can be created with geometry."""
         item = RegionItem(
             marker_id="region-1",
@@ -258,9 +248,7 @@ class TestRegionItem:
         center = QPointF(50, 50)  # Center of 100x100 pixmap, region is 0.2-0.8
         assert shape.contains(center)
 
-    def test_region_item_custom_fill(
-        self, pixmap_item, sample_region_geometry
-    ) -> None:
+    def test_region_item_custom_fill(self, pixmap_item, sample_region_geometry) -> None:
         """RegionItem respects custom fill_color from style."""
         style = {"fill_color": "#8000FF00", "stroke_color": "#000000"}
         item = RegionItem(
@@ -314,8 +302,13 @@ class TestMapGraphicsViewFactory:
         """feature_type='path' with geometry creates a PathItem."""
         geom = [{"x": 0.1, "y": 0.2}, {"x": 0.9, "y": 0.8}]
         view.add_marker(
-            "p1", "entity", "River", 0.5, 0.5,
-            feature_type="path", geometry=geom,
+            "p1",
+            "entity",
+            "River",
+            0.5,
+            0.5,
+            feature_type="path",
+            geometry=geom,
         )
         assert "p1" not in view.markers  # Not a point marker
         assert "p1" in view.feature_items
@@ -330,8 +323,13 @@ class TestMapGraphicsViewFactory:
             {"x": 0.0, "y": 1.0},
         ]
         view.add_marker(
-            "r1", "entity", "Kingdom", 0.5, 0.5,
-            feature_type="region", geometry=geom,
+            "r1",
+            "entity",
+            "Kingdom",
+            0.5,
+            0.5,
+            feature_type="region",
+            geometry=geom,
         )
         assert "r1" not in view.markers
         assert "r1" in view.feature_items
@@ -342,8 +340,13 @@ class TestMapGraphicsViewFactory:
         from src.gui.widgets.map.marker_item import MarkerItem
 
         view.add_marker(
-            "p2", "entity", "Empty Path", 0.5, 0.5,
-            feature_type="path", geometry=None,
+            "p2",
+            "entity",
+            "Empty Path",
+            0.5,
+            0.5,
+            feature_type="path",
+            geometry=None,
         )
         assert "p2" in view.markers
         assert isinstance(view.markers["p2"], MarkerItem)
@@ -352,8 +355,13 @@ class TestMapGraphicsViewFactory:
         """remove_marker works for both markers and features."""
         geom = [{"x": 0.1, "y": 0.2}, {"x": 0.9, "y": 0.8}]
         view.add_marker(
-            "p1", "entity", "River", 0.5, 0.5,
-            feature_type="path", geometry=geom,
+            "p1",
+            "entity",
+            "River",
+            0.5,
+            0.5,
+            feature_type="path",
+            geometry=geom,
         )
         assert "p1" in view.feature_items
         view.remove_marker("p1")
@@ -364,8 +372,13 @@ class TestMapGraphicsViewFactory:
         view.add_marker("m1", "entity", "Castle", 0.5, 0.5)
         geom = [{"x": 0.1, "y": 0.2}, {"x": 0.9, "y": 0.8}]
         view.add_marker(
-            "p1", "entity", "River", 0.5, 0.5,
-            feature_type="path", geometry=geom,
+            "p1",
+            "entity",
+            "River",
+            0.5,
+            0.5,
+            feature_type="path",
+            geometry=geom,
         )
         assert len(view.markers) == 1
         assert len(view.feature_items) == 1
@@ -378,12 +391,22 @@ class TestMapGraphicsViewFactory:
         geom1 = [{"x": 0.1, "y": 0.2}, {"x": 0.9, "y": 0.8}]
         geom2 = [{"x": 0.2, "y": 0.3}, {"x": 0.8, "y": 0.7}]
         view.add_marker(
-            "p1", "entity", "River v1", 0.5, 0.5,
-            feature_type="path", geometry=geom1,
+            "p1",
+            "entity",
+            "River v1",
+            0.5,
+            0.5,
+            feature_type="path",
+            geometry=geom1,
         )
         view.add_marker(
-            "p1", "entity", "River v2", 0.5, 0.5,
-            feature_type="path", geometry=geom2,
+            "p1",
+            "entity",
+            "River v2",
+            0.5,
+            0.5,
+            feature_type="path",
+            geometry=geom2,
         )
         assert len(view.feature_items) == 1
         assert view.feature_items["p1"].label == "River v2"
@@ -625,8 +648,13 @@ class TestVertexEditing:
         # Add a path feature
         geom = [{"x": 0.1, "y": 0.2}, {"x": 0.5, "y": 0.5}, {"x": 0.9, "y": 0.8}]
         view.add_marker(
-            "p1", "entity", "River", 0.5, 0.5,
-            feature_type="path", geometry=geom,
+            "p1",
+            "entity",
+            "River",
+            0.5,
+            0.5,
+            feature_type="path",
+            geometry=geom,
         )
         return view
 
@@ -716,8 +744,13 @@ class TestFeatureItemStyle:
             {"x": 0.2, "y": 0.8},
         ]
         view.add_marker(
-            "r1", "entity", "Kingdom", 0.5, 0.5,
-            feature_type="region", geometry=geom,
+            "r1",
+            "entity",
+            "Kingdom",
+            0.5,
+            0.5,
+            feature_type="region",
+            geometry=geom,
             style={"stroke_color": "#000000", "fill_color": "#FF000040"},
         )
         return view
@@ -771,8 +804,13 @@ class TestVertexManagement:
             {"x": 0.9, "y": 0.8},
         ]
         view.add_marker(
-            "p1", "entity", "River", 0.5, 0.5,
-            feature_type="path", geometry=geom,
+            "p1",
+            "entity",
+            "River",
+            0.5,
+            0.5,
+            feature_type="path",
+            geometry=geom,
         )
         return view
 
@@ -797,8 +835,13 @@ class TestVertexManagement:
             {"x": 0.2, "y": 0.8},
         ]
         view.add_marker(
-            "r1", "entity", "Kingdom", 0.5, 0.5,
-            feature_type="region", geometry=geom,
+            "r1",
+            "entity",
+            "Kingdom",
+            0.5,
+            0.5,
+            feature_type="region",
+            geometry=geom,
         )
         return view
 
@@ -889,6 +932,18 @@ class TestVertexManagement:
         view._finish_vertex_editing()
         assert len(view._midpoint_handles) == 0
 
+    def test_removing_edited_feature_exits_vertex_editing(self, view) -> None:
+        """Removing the active feature must clear vertex-edit handles immediately."""
+        item = view.feature_items["p1"]
+        view._start_vertex_editing(item)
+
+        view.remove_marker("p1")
+
+        assert view.is_editing_vertices is False
+        assert len(view._vertex_handles) == 0
+        assert len(view._midpoint_handles) == 0
+        assert "p1" not in view.feature_items
+
 
 # --------------------------------------------------------------------------
 # Hover tooltip tests
@@ -915,7 +970,9 @@ class TestFeatureHoverTooltip:
         assert props["segment_count"] == 2
         assert props["length"] > 0
 
-    def test_region_spatial_properties(self, pixmap_item, sample_region_geometry) -> None:
+    def test_region_spatial_properties(
+        self, pixmap_item, sample_region_geometry
+    ) -> None:
         """RegionItem computes spatial properties for tooltip."""
         item = RegionItem(
             marker_id="r1",
@@ -946,9 +1003,12 @@ class TestFeatureHoverTooltip:
         )
         assert hasattr(item, "_hover_timer")
         from src.app.constants import MAP_FEATURE_HOVER_DEBOUNCE_MS
+
         assert item._hover_timer.interval() == MAP_FEATURE_HOVER_DEBOUNCE_MS
 
-    def test_tooltip_includes_description(self, pixmap_item, sample_path_geometry) -> None:
+    def test_tooltip_includes_description(
+        self, pixmap_item, sample_path_geometry
+    ) -> None:
         """Tooltip includes description when provided."""
         item = PathItem(
             marker_id="p1",
@@ -1107,6 +1167,7 @@ class TestConstantsImport:
             MAP_VERTEX_HANDLE_RADIUS,
             MAP_ZOOM_IN_FACTOR,
         )
+
         assert MAP_DEFAULT_WIDTH_METERS == 1_000_000.0
         assert MAP_VERTEX_HANDLE_RADIUS == 5
         assert MAP_MIDPOINT_HANDLE_RADIUS == 4
@@ -1122,6 +1183,7 @@ class TestConstantsImport:
             LABEL_FONT_SIZE,
             SELECTION_PEN_WIDTH,
         )
+
         assert DEFAULT_STROKE_COLOR == "#3498DB"
         assert DEFAULT_STROKE_WIDTH == 2.0
         assert HIT_AREA_MARGIN == 6
@@ -1148,8 +1210,13 @@ class TestVertexHandleScaling:
 
         geom = [{"x": 0.1, "y": 0.2}, {"x": 0.5, "y": 0.5}, {"x": 0.9, "y": 0.8}]
         view.add_marker(
-            "p1", "entity", "River", 0.5, 0.5,
-            feature_type="path", geometry=geom,
+            "p1",
+            "entity",
+            "River",
+            0.5,
+            0.5,
+            feature_type="path",
+            geometry=geom,
         )
         return view
 
@@ -1193,8 +1260,13 @@ class TestMidpointPositionUpdate:
 
         geom = [{"x": 0.0, "y": 0.0}, {"x": 1.0, "y": 0.0}, {"x": 1.0, "y": 1.0}]
         view.add_marker(
-            "p1", "entity", "Path", 0.5, 0.5,
-            feature_type="path", geometry=geom,
+            "p1",
+            "entity",
+            "Path",
+            0.5,
+            0.5,
+            feature_type="path",
+            geometry=geom,
         )
         return view
 
@@ -1242,8 +1314,13 @@ class TestVertexEditingEscFix:
 
         geom = [{"x": 0.1, "y": 0.2}, {"x": 0.5, "y": 0.5}, {"x": 0.9, "y": 0.8}]
         view.add_marker(
-            "p1", "entity", "River", 0.5, 0.5,
-            feature_type="path", geometry=geom,
+            "p1",
+            "entity",
+            "River",
+            0.5,
+            0.5,
+            feature_type="path",
+            geometry=geom,
         )
         return view
 
@@ -1306,8 +1383,13 @@ class TestEditStrokeWidth:
 
         geom = [{"x": 0.1, "y": 0.2}, {"x": 0.5, "y": 0.5}, {"x": 0.9, "y": 0.8}]
         view.add_marker(
-            "p1", "entity", "River", 0.5, 0.5,
-            feature_type="path", geometry=geom,
+            "p1",
+            "entity",
+            "River",
+            0.5,
+            0.5,
+            feature_type="path",
+            geometry=geom,
         )
         return view
 

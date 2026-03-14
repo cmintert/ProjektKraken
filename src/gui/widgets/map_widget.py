@@ -21,7 +21,7 @@ import logging
 import os
 from typing import List, Optional
 
-from PySide6.QtCore import QSize, Qt, Signal, Slot
+from PySide6.QtCore import QSize, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QKeyEvent, QPaintEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QComboBox,
@@ -49,6 +49,7 @@ from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 from src.gui.widgets.map.map_layer_model import MapLayerModel
 from src.gui.widgets.map.map_layer_panel import MapLayerPanel
 from src.gui.widgets.map.marker_item import MarkerItem
+from src.gui.widgets.map.raster_legend_widget import RasterLegendWidget
 
 logger = logging.getLogger(__name__)
 
@@ -136,12 +137,9 @@ class NoLayoutLabel(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        # Draw text aligned right
-        painter.setPen(QColor("#888888"))
-
-        # Basic font setup - can be enhanced if needed
-        # We assume styling is minimal
-        # Since we bypass stylesheet drawing, we must draw manually
+        # Use theme-aware dim text colour
+        dim_color = StyleHelper.get_dim_text_color()
+        painter.setPen(QColor(dim_color))
 
         rect = self.rect().adjusted(0, 0, -5, 0)  # Padding right
         painter.drawText(
@@ -206,7 +204,17 @@ class MapWidget(
         str, float, float
     )  # node_id, opacity, old_opacity
     layer_rename_requested = Signal(str, str)  # node_id, new_name
-    layer_delete_feature_requested = Signal(str)  # object_id of deleted leaf
+    layer_delete_feature_requested = Signal(
+        str, str
+    )  # object_id, layer_type of deleted leaf
+    create_raster_layer_requested = Signal(str, int, int, str, int, str)  # name,w,h,mode,def,import_path
+    raster_edit_requested = Signal(str)  # node_id — start raster editing
+    raster_edit_stopped = Signal()  # stop raster editing
+    raster_stroke_completed = Signal(
+        str, tuple, bytes, bytes
+    )  # node_id, dirty, before, after
+    raster_value_probed = Signal(str, int, float, float)  # node_id, value, x, y
+    raster_palette_edit_requested = Signal(str)  # node_id
 
     # Emitted when inline entity/event creation is requested from the map.
     create_entity_requested = Signal(str, str)  # new_id, name
@@ -235,29 +243,37 @@ class MapWidget(
         layout.setContentsMargins(0, 0, 0, 0)
         # Toolbar
         self.toolbar = QToolBar(self)
-        self.toolbar.setStyleSheet("QToolBar { spacing: 4px; padding: 4px; }")
+        self.toolbar.setStyleSheet(StyleHelper.get_toolbar_spacing_style())
         layout.addWidget(self.toolbar)
 
         # Map Selector
         self.map_selector = QComboBox()
         self.map_selector.setMinimumWidth(200)
+        self.map_selector.setToolTip("Switch between maps in this world")
         self.map_selector.currentIndexChanged.connect(self._on_map_selected)
         self.toolbar.addWidget(self.map_selector)
 
         # Buttons (themed via StyleHelper)
         tool_style = StyleHelper.get_tool_button_style()
 
+        # Group 1: Map management
         self.btn_new_map = QPushButton("New Map")
+        self.btn_new_map.setToolTip("Create a new map in this world")
         self.btn_new_map.setStyleSheet(tool_style)
         self.btn_new_map.clicked.connect(self._on_create_map_clicked)
         self.toolbar.addWidget(self.btn_new_map)
 
         self.btn_delete_map = QPushButton("Delete Map")
+        self.btn_delete_map.setToolTip("Delete the currently selected map (cannot be undone)")
         self.btn_delete_map.setStyleSheet(StyleHelper.get_destructive_button_style())
         self.btn_delete_map.clicked.connect(self._on_delete_map_clicked)
         self.toolbar.addWidget(self.btn_delete_map)
 
+        self.toolbar.addSeparator()
+
+        # Group 2: Viewport
         self.btn_fit_view = QPushButton("Fit to View")
+        self.btn_fit_view.setToolTip("Zoom and pan to fit all content in view")
         self.btn_fit_view.setStyleSheet(tool_style)
         self.btn_fit_view.clicked.connect(self.view.fit_to_view)
         self.toolbar.addWidget(self.btn_fit_view)
@@ -268,6 +284,9 @@ class MapWidget(
         self.btn_settings.clicked.connect(self._configure_map_width)
         self.toolbar.addWidget(self.btn_settings)
 
+        self.toolbar.addSeparator()
+
+        # Group 3: Drawing tools
         self.btn_add_keyframe = QPushButton("Add Keyframe")
         self.btn_add_keyframe.setToolTip("Save current marker position at current time")
         self.btn_add_keyframe.setStyleSheet(tool_style)
@@ -301,6 +320,15 @@ class MapWidget(
         self.btn_snap.setStyleSheet(tool_style)
         self.btn_snap.clicked.connect(self._on_snap_toggled)
         self.toolbar.addWidget(self.btn_snap)
+
+        # Legend visibility toggle
+        self.btn_legend_toggle = QPushButton("Legend")
+        self.btn_legend_toggle.setToolTip("Show / hide the raster layer legend overlay")
+        self.btn_legend_toggle.setCheckable(True)
+        self.btn_legend_toggle.setChecked(False)
+        self.btn_legend_toggle.setStyleSheet(tool_style)
+        self.btn_legend_toggle.toggled.connect(self._on_legend_toggle)
+        self.toolbar.addWidget(self.btn_legend_toggle)
 
         # Mode Indicator (right side)
         spacer = QWidget()
@@ -344,20 +372,17 @@ class MapWidget(
         # Overlay Banner (Child of view, positioned at top)
         self.overlay_banner = QLabel(self.view)
         self.overlay_banner.setAlignment(Qt.AlignCenter)
-        self.overlay_banner.setStyleSheet(
-            """
-            QLabel {
-                background-color: rgba(0, 0, 0, 180);
-                color: white;
-                padding: 12px;
-                border-bottom-left-radius: 8px;
-                border-bottom-right-radius: 8px;
-                font-size: 13px;
-                font-weight: 500;
-            }
-        """
-        )
+        self.overlay_banner.setStyleSheet(StyleHelper.get_overlay_banner_style())
         self.overlay_banner.hide()
+
+        # ── Raster Legend Overlay (bottom-left, floating over the map) ──
+        # Parented to the view (not viewport) so it survives OpenGL viewport
+        # recreation during map switches (`setViewport()`), but positioned
+        # mathematically relative to the viewport's geometry to avoid scrollbars.
+        self.legend_overlay = RasterLegendWidget(self.view)
+        self.legend_overlay.setMaximumWidth(360)  # wide enough for class labels
+        self.legend_overlay.setStyleSheet(StyleHelper.get_legend_overlay_style())
+        self.legend_overlay.hide()
 
         # Finish Sketch button (shown during drawing/vertex editing)
         self.btn_finish_sketch = QPushButton("✔ Finish Sketch", self.view)
@@ -395,6 +420,10 @@ class MapWidget(
         )
         self.view.marker_drop_requested.connect(self.marker_drop_requested.emit)
         self.view.mouse_coordinates_changed.connect(self._on_mouse_coordinates_changed)
+        self.view.viewport_resized.connect(lambda _: self._position_legend_overlay())
+
+        # Focus proxy to ensure view gets keyboard events when widget is clicked
+        self.setFocusProxy(self.view)
         self.view.drawing_finished.connect(self._on_drawing_finished)
         self.view.drawing_cancelled.connect(self._on_drawing_cancelled)
         self.view.feature_style_changed.connect(self.feature_style_changed.emit)
@@ -410,6 +439,25 @@ class MapWidget(
         self.layer_panel.delete_layer_requested.connect(self._on_delete_layer)
         self.layer_panel.layer_renamed.connect(self._on_layer_renamed)
         self.layer_panel.layer_opacity_changed.connect(self._on_layer_opacity_changed)
+        self.layer_panel.create_raster_layer_requested.connect(
+            self._on_create_raster_layer
+        )
+        self.layer_panel.raster_edit_requested.connect(self._on_raster_edit_requested)
+        self.layer_panel.raster_edit_stopped.connect(self._on_raster_edit_stopped)
+        self.layer_panel.raster_palette_edit_requested.connect(
+            self.raster_palette_edit_requested.emit
+        )
+        self.layer_panel.raster_settings_changed.connect(
+            self._on_raster_settings_changed
+        )
+        self.layer_panel.raster_layer_selected.connect(self._on_raster_layer_selected)
+        self.layer_panel.raster_snapshot_selected.connect(
+            self._on_raster_snapshot_selected
+        )
+
+        # Forward raster signals from the graphics view
+        self.view.raster_stroke_completed.connect(self.raster_stroke_completed.emit)
+        self.view.raster_value_probed.connect(self.raster_value_probed.emit)
 
         self._maps_data = []  # List of maps for selector
         self._playhead_time: float = 0.0  # Current playhead time from Timeline
@@ -426,8 +474,6 @@ class MapWidget(
         # Update all markers with active trajectories
         self._update_trajectory_positions()
 
-    # -- Size hints ----------------------------------------------------------
-
     def minimumSizeHint(self) -> QSize:
         """Allow the widget to shrink inside its dock.
 
@@ -443,6 +489,146 @@ class MapWidget(
             QSize: Comfortable working size for map interaction.
         """
         return QSize(600, 400)
+
+    def _position_legend_overlay(self, animated: bool = False) -> None:
+        """Position the legend overlay fully within the map view viewport.
+
+        Always anchors to the top-left corner so long class lists expand
+        downward and are never clipped.  Width is capped at 360 px and height
+        is capped to the available viewport height so the overlay never
+        extends outside the map area.
+
+        Args:
+            animated: When ``True``, smoothly animate the height change
+                instead of snapping instantly (used by the toggle button).
+        """
+        from PySide6.QtCore import QEasingCurve, QPropertyAnimation
+
+        _MARGIN = 12
+        legend = self.legend_overlay
+        vp_rect = self.view.viewport().geometry()
+
+        available_w = vp_rect.width() - 2 * _MARGIN
+        available_h = vp_rect.height() - 2 * _MARGIN
+
+        if available_w <= 0 or available_h <= 0:
+            return
+
+        # Force layout recalculation so sizeHint() reflects current content.
+        # Without this, sizeHint() is stale on the first show after set_layer()
+        # adds new widgets, causing the overlay to render too small until the
+        # next event-loop pass.
+        outer_layout = legend.layout()
+        if outer_layout is not None:
+            outer_layout.activate()
+        content_layout = legend._content.layout()
+        if content_layout is not None:
+            content_layout.activate()
+
+        max_w = min(360, available_w)
+        legend.setMaximumWidth(max_w)
+        legend.setMaximumHeight(available_h)
+
+        header_h = legend._toggle_btn.sizeHint().height() + 10
+        title_h = (
+            legend._title_label.sizeHint().height()
+            if legend._title_label.isVisible()
+            else 0
+        )
+        w = max_w
+
+        if not legend._toggle_btn.isChecked():
+            # Collapsed state (toggle button unchecked) — keep it tight.
+            # Using the toggle-button checked state rather than _scroll.isVisible()
+            # so this works correctly when the overlay is not yet shown.
+            h = header_h + title_h
+        else:
+            # Compute ideal height from content widget so every row is shown.
+            # Include the title label (in outer layout, not inside _content).
+            content_h = legend._content.sizeHint().height()
+            ideal_h = content_h + header_h + title_h + 16  # padding
+            h = min(ideal_h, available_h)
+
+        # Anchor to top-left of the viewport.
+        x = vp_rect.x() + _MARGIN
+        y = vp_rect.y() + _MARGIN
+        legend.move(x, y)
+        legend.raise_()  # Ensure it floats above the QGraphicsView viewport
+
+        if animated and legend.isVisible():
+            # Smooth height transition to avoid jarring jump on toggle.
+            anim = QPropertyAnimation(legend, b"maximumHeight", legend)
+            anim.setDuration(180)
+            anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
+            anim.setStartValue(legend.height())
+            anim.setEndValue(h)
+            # Also keep fixed-height in sync so the widget actually shrinks.
+            anim.valueChanged.connect(lambda val: legend.resize(w, val))
+            anim.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
+        else:
+            legend.resize(w, h)
+
+    @Slot(object, object)
+    def _on_raster_layer_selected(self, node_id: object, layer_meta: object) -> None:
+        """Show/hide and populate the floating legend overlay.
+
+        Connected to :attr:`MapLayerPanel.raster_layer_selected`.  When
+        *node_id* is ``None`` the overlay is hidden; otherwise it is updated
+        with *layer_meta* and shown.
+
+        Args:
+            node_id: The selected raster layer's ID, or ``None``.
+            layer_meta: The raster layer metadata dict, or ``None``.
+        """
+        overlay = self.legend_overlay
+        # Notify the edit tool so SAMPLE can probe without requiring edit mode.
+        if hasattr(self.view, "_raster_edit_tool"):
+            self.view._raster_edit_tool.set_preview_node_id(
+                str(node_id) if node_id else None
+            )
+        if not node_id or not layer_meta:
+            overlay.hide()
+            self.btn_legend_toggle.blockSignals(True)
+            self.btn_legend_toggle.setChecked(False)
+            self.btn_legend_toggle.blockSignals(False)
+        else:
+            name_map = {}
+            for e in self._cached_entities:
+                if getattr(e, "id", None) and getattr(e, "name", None):
+                    name_map[e.id] = e.name
+            for ev in self._cached_events:
+                if getattr(ev, "id", None) and getattr(ev, "name", None):
+                    name_map[ev.id] = ev.name
+
+            overlay.set_layer(layer_meta, name_map=name_map)
+            # Do NOT auto-show or force the toggle — the user controls
+            # legend visibility via btn_legend_toggle.  Just reposition if
+            # the overlay is already visible so new content fits correctly.
+            if overlay.isVisible():
+                self._position_legend_overlay()
+                QTimer.singleShot(0, self._position_legend_overlay)
+
+    @Slot(bool)
+    def _on_legend_toggle(self, checked: bool) -> None:
+        """Show or hide the legend overlay from the toolbar button.
+
+        Args:
+            checked: ``True`` to show; ``False`` to hide.
+        """
+        if checked:
+            # Position BEFORE show() so the first paint is at the correct
+            # size.  _position_legend_overlay activates layouts and reads
+            # sizeHints from the toggle-button checked state (not isVisible),
+            # so it works correctly while the overlay is still hidden.
+            self._position_legend_overlay()
+            self.legend_overlay.show()
+        else:
+            self.legend_overlay.hide()
+
+    @Slot(str, float)
+    def _on_raster_snapshot_selected(self, _node_id: str, lore_date: float) -> None:
+        """Forward snapshot selection to timeline playhead jump."""
+        self.jump_to_time_requested.emit(lore_date)
 
     def _on_selection_changed(self) -> None:
         """Updates UI state based on selection."""
@@ -470,6 +656,10 @@ class MapWidget(
                 and isinstance(selected_items[0], MarkerItem)
             ):
                 self.btn_add_keyframe.setToolTip("Events cannot have trajectories")
+            elif not should_enable:
+                self.btn_add_keyframe.setToolTip(
+                    "Select a marker in the map to enable keyframe recording"
+                )
             else:
                 self.btn_add_keyframe.setToolTip(
                     "Save current marker position at current time"
@@ -756,6 +946,11 @@ class MapWidget(
         self._unregister_layer_node(marker_id)
         self.view.remove_marker(marker_id)
 
+    def exit_editing_modes(self) -> None:
+        """Exit active map and layer editing modes without committing edits."""
+        self.view.exit_all_editing(commit_feature_edits=False)
+        self._update_mode_indicator()
+
     def clear_markers(self) -> None:
         """Removes all markers from the map and resets the layer model."""
         self.view.clear_markers()
@@ -779,21 +974,10 @@ class MapWidget(
             "draft": theme.get("primary", "#f39c12"),
             "drawing": theme.get("accent_secondary", "#3498db"),
             "vertex": theme.get("primary", "#e67e22"),
-            "normal": "#2ecc71",
+            "normal": theme.get("success", "#2ecc71"),
         }
-        bg = color_map.get(mode, "#2ecc71")
-        self.mode_indicator.setStyleSheet(
-            f"""
-            QLabel {{
-                background: {bg};
-                color: white;
-                padding: 5px 12px;
-                border-radius: 4px;
-                font-weight: bold;
-                font-size: 11px;
-            }}
-            """
-        )
+        bg = color_map.get(mode, theme.get("text_dim", "#aaaaaa"))
+        self.mode_indicator.setStyleSheet(StyleHelper.get_mode_indicator_style(bg))
 
     def _update_mode_indicator(self) -> None:
         """Updates the toolbar status, map overlay, and Finish Sketch button."""
@@ -892,6 +1076,7 @@ class MapWidget(
     def set_calendar_converter(self, converter: object) -> None:
         """Sets the calendar converter for formatting keyframe date labels."""
         self.view.set_calendar_converter(converter)
+        self.layer_panel.set_calendar_converter(converter)
 
     # -- Keyframe delete provided by MapTrajectoryMixin ----------------
 
@@ -945,10 +1130,11 @@ class MapWidget(
             self.btn_finish_sketch.move(x, y)
 
     def resizeEvent(self, event: QResizeEvent) -> None:
-        """Handle resize to keep overlay and Finish Sketch button centered."""
+        """Handle resize to keep overlays and Finish Sketch button positioned."""
         super().resizeEvent(event)
         self._update_overlay_position()
         self._update_finish_sketch_position()
+        self._position_legend_overlay()
         logger.debug(
             f"MapWidget Resized: {event.size().width()}x{event.size().height()} (Old: {event.oldSize().width()}x{event.oldSize().height()})"
         )

@@ -42,10 +42,33 @@ def _init_registry() -> None:
         DeleteEventCommand,
         UpdateEventCommand,
     )
+    from src.commands.layer_commands import (
+        MoveLayerCommand,
+        RenameLayerCommand,
+        SaveLayerTreeCommand,
+        SetLayerOpacityCommand,
+        SetLayerVisibilityCommand,
+    )
     from src.commands.map_commands import (
         CreateMapCommand,
         DeleteMapCommand,
         UpdateMapCommand,
+    )
+    from src.commands.marker_commands import (
+        CreateMarkerCommand,
+        DeleteKeyframeCommand,
+        DeleteMarkerCommand,
+        UpdateMarkerAttributeCommand,
+        UpdateMarkerColorCommand,
+        UpdateMarkerCommand,
+        UpdateMarkerIconCommand,
+    )
+    from src.commands.raster_commands import (
+        CreateRasterLayerCommand,
+        DeleteRasterLayerCommand,
+        RemoveRasterSnapshotCommand,
+        SetRasterBlendModeCommand,
+        SetRasterMappingCommand,
     )
     from src.commands.relation_commands import (
         AddRelationCommand,
@@ -70,7 +93,27 @@ def _init_registry() -> None:
             "CreateMapCommand": CreateMapCommand,
             "UpdateMapCommand": UpdateMapCommand,
             "DeleteMapCommand": DeleteMapCommand,
+            "RemoveRasterSnapshotCommand": RemoveRasterSnapshotCommand,
             "UpdateCalendarConfigCommand": UpdateCalendarConfigCommand,
+            # Marker commands
+            "CreateMarkerCommand": CreateMarkerCommand,
+            "UpdateMarkerCommand": UpdateMarkerCommand,
+            "DeleteMarkerCommand": DeleteMarkerCommand,
+            "UpdateMarkerIconCommand": UpdateMarkerIconCommand,
+            "UpdateMarkerColorCommand": UpdateMarkerColorCommand,
+            "UpdateMarkerAttributeCommand": UpdateMarkerAttributeCommand,
+            "DeleteKeyframeCommand": DeleteKeyframeCommand,
+            # Layer commands
+            "SetLayerVisibilityCommand": SetLayerVisibilityCommand,
+            "MoveLayerCommand": MoveLayerCommand,
+            "SaveLayerTreeCommand": SaveLayerTreeCommand,
+            "SetLayerOpacityCommand": SetLayerOpacityCommand,
+            "RenameLayerCommand": RenameLayerCommand,
+            # Raster commands
+            "CreateRasterLayerCommand": CreateRasterLayerCommand,
+            "DeleteRasterLayerCommand": DeleteRasterLayerCommand,
+            "SetRasterMappingCommand": SetRasterMappingCommand,
+            "SetRasterBlendModeCommand": SetRasterBlendModeCommand,
         }
     )
 

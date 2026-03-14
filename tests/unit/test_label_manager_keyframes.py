@@ -23,9 +23,7 @@ def mock_pixmap_item(qapp):
     return QGraphicsPixmapItem()
 
 
-def _make_marker(
-    pixmap_item, marker_id="m1", label="Test", connection_count=0
-):
+def _make_marker(pixmap_item, marker_id="m1", label="Test", connection_count=0):
     """Helper to create a MarkerItem with a given connection_count."""
     marker = MarkerItem(
         marker_id=marker_id,
@@ -83,9 +81,7 @@ class TestExtraObstacles:
 
         # Now place large obstacles covering all 8 candidate slots.
         big_obstacle = QRectF(50, 50, 200, 200)
-        label_manager.run_layout_pass(
-            [marker], 1.0, extra_obstacles=[big_obstacle]
-        )
+        label_manager.run_layout_pass([marker], 1.0, extra_obstacles=[big_obstacle])
         # The label should be hidden since the obstacle covers the area.
         assert marker._label_item.isVisible() is False
 

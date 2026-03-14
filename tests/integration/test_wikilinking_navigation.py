@@ -48,7 +48,9 @@ def test_navigate_to_entity_case_insensitive(qtbot):
     ):
         window = MainWindow()
         window.worker = MagicMock()
-        window.data_coordinator._cached_entities = [Entity(id="ent-1", name="Gandalf", type="Character")]
+        window.data_coordinator._cached_entities = [
+            Entity(id="ent-1", name="Gandalf", type="Character")
+        ]
         window.data_coordinator.load_entity_details = MagicMock()
 
         window.navigation_coordinator.navigate_to_entity("gAnDaLf")

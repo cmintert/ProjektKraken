@@ -132,6 +132,15 @@ class KeyboardShortcutsDialog(QDialog):
             ],
         )
 
+        # Map
+        self._add_category(
+            content_layout,
+            "Map",
+            [
+                ShortcutManager.MAP_PAN,
+            ],
+        )
+
         content_layout.addStretch()
         scroll.setWidget(content)
         layout.addWidget(scroll)

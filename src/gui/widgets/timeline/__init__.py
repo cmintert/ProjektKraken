@@ -50,9 +50,7 @@ class TimelineWidget(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         # Expanding size policy prevents dock collapse during resize.
-        self.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
-        )
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         main_layout = QVBoxLayout(self)
         main_layout.setSpacing(0)

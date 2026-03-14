@@ -1,0 +1,284 @@
+"""Raster Layer Item — QGraphicsPixmapItem for data-raster overlays.
+
+Holds a :class:`~src.gui.widgets.map.map_data_buffer.MapDataBuffer` and
+renders it as a colourised RGBA pixmap in the map's graphics scene.
+"""
+
+import logging
+from typing import Any, Dict, Optional
+
+from PySide6.QtCore import QRectF
+from PySide6.QtGui import QPainter, QPixmap
+from PySide6.QtWidgets import QGraphicsPixmapItem
+
+from src.app.constants import MAP_LAYER_Z_RASTER
+from src.gui.widgets.map.map_data_buffer import ColorMap, MapDataBuffer
+
+logger = logging.getLogger(__name__)
+
+_BLEND_MODE_MAP: Dict[str, QPainter.CompositionMode] = {
+    "Normal": QPainter.CompositionMode.CompositionMode_SourceOver,
+    "Multiply": QPainter.CompositionMode.CompositionMode_Multiply,
+    "Screen": QPainter.CompositionMode.CompositionMode_Screen,
+    "Overlay": QPainter.CompositionMode.CompositionMode_Overlay,
+    "Soft Light": QPainter.CompositionMode.CompositionMode_SoftLight,
+    "Difference": QPainter.CompositionMode.CompositionMode_Difference,
+}
+BLEND_MODE_NAMES: list = list(_BLEND_MODE_MAP.keys())
+
+
+class RasterLayerItem(QGraphicsPixmapItem):
+    """Scene item that renders a 16-bit raster buffer as a colourised overlay.
+
+    The item is positioned and scaled to match the map background image
+    bounding rect (scene coordinates).
+
+    Args:
+        buffer: The data buffer to visualise.
+        color_map: Colour mapping for visualisation.
+        scene_rect: The bounding rect of the map background pixmap
+            in scene coordinates.  The raster will be stretched to
+            fill this rect.
+        node_id: Layer node ID for cross-referencing with the layer model.
+
+    """
+
+    def __init__(
+        self,
+        buffer: MapDataBuffer,
+        color_map: ColorMap,
+        scene_rect: QRectF,
+        node_id: str = "",
+    ) -> None:
+        super().__init__()
+        self._buffer = buffer
+        self._color_map = color_map
+        self._scene_rect = scene_rect
+        self._node_id = node_id
+
+        self.setZValue(MAP_LAYER_Z_RASTER)
+        self.setPos(scene_rect.topLeft())
+        self._scene_blend_mode: QPainter.CompositionMode = (
+            QPainter.CompositionMode.CompositionMode_SourceOver
+        )
+
+        # Initial render
+        self.update_display()
+
+    # ------------------------------------------------------------------
+    # Properties
+    # ------------------------------------------------------------------
+
+    @property
+    def buffer(self) -> MapDataBuffer:
+        """The underlying data buffer."""
+        return self._buffer
+
+    @property
+    def color_map(self) -> ColorMap:
+        """Current colour map."""
+        return self._color_map
+
+    @color_map.setter
+    def color_map(self, value: ColorMap) -> None:
+        self._color_map = value
+
+    @property
+    def scene_rect(self) -> QRectF:
+        """The target bounding rect in scene coordinates."""
+        return self._scene_rect
+
+    @property
+    def node_id(self) -> str:
+        """Layer node ID."""
+        return self._node_id
+
+    # ------------------------------------------------------------------
+    # Display
+    # ------------------------------------------------------------------
+
+    def update_display(self, color_map: Optional[ColorMap] = None) -> None:
+        """Re-colourize the buffer and update the displayed pixmap.
+
+        Args:
+            color_map: Optional new colour map.  If ``None``, uses the
+                existing one.
+
+        """
+        if color_map is not None:
+            logger.debug(
+                "update_display: node_id=%s new color_map type=%s",
+                self._node_id,
+                color_map.type,
+            )
+            self._color_map = color_map
+        else:
+            logger.debug(
+                "update_display: node_id=%s using existing color_map type=%s",
+                self._node_id,
+                self._color_map.type,
+            )
+
+        qimage = self._buffer.colorize(self._color_map)
+        logger.debug(
+            "update_display: colorized buffer %dx%d → QImage %dx%d",
+            self._buffer.width,
+            self._buffer.height,
+            qimage.width(),
+            qimage.height(),
+        )
+        pixmap = QPixmap.fromImage(qimage)
+
+        # Scale pixmap to fill the scene rect
+        if not self._scene_rect.isEmpty():
+            pixmap = pixmap.scaled(
+                int(self._scene_rect.width()),
+                int(self._scene_rect.height()),
+            )
+            logger.debug(
+                "update_display: scaled pixmap to %dx%d (scene_rect=%s)",
+                pixmap.width(),
+                pixmap.height(),
+                self._scene_rect,
+            )
+
+        self.setPixmap(pixmap)
+        logger.debug(
+            "update_display: pixmap set — isNull=%s size=%dx%d",
+            pixmap.isNull(),
+            pixmap.width(),
+            pixmap.height(),
+        )
+
+    def set_scene_rect(self, rect: QRectF) -> None:
+        """Update the target scene rectangle and re-render.
+
+        Args:
+            rect: New bounding rect from the map background.
+
+        """
+        self._scene_rect = rect
+        self.setPos(rect.topLeft())
+        self.update_display()
+
+    def update_region(
+        self,
+        dirty_region: tuple[int, int, int, int],
+        color_map: Optional[ColorMap] = None,
+    ) -> None:
+        """Re-colourize only the dirty region and blit onto the existing pixmap.
+
+        This avoids a full-buffer re-render after small edits such as
+        brush strokes.
+
+        Args:
+            dirty_region: ``(min_col, min_row, max_col, max_row)`` in
+                buffer pixel coordinates.
+            color_map: Optional new colour map.  Uses existing if *None*.
+
+        """
+        if color_map is not None:
+            self._color_map = color_map
+
+        cmap = self._color_map
+        min_col, min_row, max_col, max_row = dirty_region
+        logger.debug(
+            "update_region: node_id=%s dirty=%s",
+            self._node_id,
+            dirty_region,
+        )
+        tile_img = self._buffer.colorize_region(
+            cmap, min_col, min_row, max_col, max_row
+        )
+
+        current = self.pixmap()
+        if current.isNull():
+            logger.debug(
+                "update_region: current pixmap is null — "
+                "falling back to full update_display"
+            )
+            self.update_display()
+            return
+
+        # Map buffer pixel coords → pixmap pixel coords (may differ if scaled)
+        sx = current.width() / max(1, self._buffer.width)
+        sy = current.height() / max(1, self._buffer.height)
+
+        dest_x = int(min_col * sx)
+        dest_y = int(min_row * sy)
+        dest_w = int((max_col - min_col + 1) * sx)
+        dest_h = int((max_row - min_row + 1) * sy)
+
+        logger.debug(
+            "update_region: blitting tile %dx%d → dest (%d,%d) %dx%d (scale=%.2f,%.2f)",
+            tile_img.width(),
+            tile_img.height(),
+            dest_x,
+            dest_y,
+            dest_w,
+            dest_h,
+            sx,
+            sy,
+        )
+        scaled_tile = QPixmap.fromImage(tile_img).scaled(dest_w, dest_h)
+
+        painter = QPainter(current)
+        # Erase the region first (compositing over old pixels)
+        painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+        painter.drawPixmap(dest_x, dest_y, scaled_tile)
+        painter.end()
+
+        self.setPixmap(current)
+
+    def swap_buffer(self, new_buffer: "MapDataBuffer") -> None:
+        """Replace the buffer data and redraw the display.
+
+        Used by temporal rasters to swap in a snapshot without recreating
+        the item.
+
+        Args:
+            new_buffer: The new buffer to display.
+        """
+        self._buffer = new_buffer
+        self.update_display()
+
+    def set_blend_mode(self, mode_name: str) -> None:
+        """Set the scene-level blend/composition mode for this raster layer.
+
+        Args:
+            mode_name: One of the keys in :data:`_BLEND_MODE_MAP`, e.g.
+                ``"Multiply"``.  Unknown names fall back to ``"Normal"``.
+        """
+        self._scene_blend_mode = _BLEND_MODE_MAP.get(
+            mode_name,
+            QPainter.CompositionMode.CompositionMode_SourceOver,
+        )
+        self.update()
+
+    def paint(
+        self,
+        painter: QPainter,
+        option: Any,
+        widget: Optional[Any] = None,
+    ) -> None:
+        """Paint with scene-level blend mode applied.
+
+        Sets the composition mode on the scene painter *before* delegating to
+        the default ``QGraphicsPixmapItem.paint`` so that this layer blends
+        with the pixels already written to the painter's device by underlying
+        layers.
+
+        This relies on the scene using a *software* paint device.  When the
+        view uses a ``QOpenGLWidget`` viewport, Qt's OpenGL paint engine
+        silently ignores most composition modes beyond ``SourceOver``.  Callers
+        should therefore ensure the view is set to software rendering whenever
+        any raster layer has a non-default blend mode – see
+        :meth:`~src.gui.widgets.map.map_graphics_view.MapGraphicsView.ensure_software_rendering`.
+
+        Args:
+            painter: The QPainter provided by the scene.
+            option: Style option (passed through to super).
+            widget: Optional widget (passed through to super).
+        """
+        painter.setCompositionMode(self._scene_blend_mode)
+        super().paint(painter, option, widget)

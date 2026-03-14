@@ -165,6 +165,7 @@ class TestAttributePairWidget:
     def test_multiline_uses_qtextedit(self, pair):
         """Test that value_edit is a QTextEdit (not QLineEdit)."""
         from PySide6.QtWidgets import QTextEdit
+
         assert isinstance(pair.value_edit, QTextEdit)
 
     def test_multiline_no_rich_text(self, pair):
@@ -178,6 +179,7 @@ class TestAttributePairWidget:
         widget.show()
         qtbot.waitExposed(widget)
         from PySide6.QtWidgets import QApplication
+
         single_line_h = widget.value_edit.height()
         widget.value_edit.setPlainText("Line 1\nLine 2\nLine 3")
         QApplication.processEvents()
@@ -186,11 +188,13 @@ class TestAttributePairWidget:
     def test_multiline_height_capped_at_max_lines(self, qtbot):
         """Test that height does not grow beyond SHEET_VALUE_MAX_LINES."""
         from src.app.constants import SHEET_VALUE_MAX_LINES
+
         widget = AttributePairWidget("Notes", "", "String")
         qtbot.addWidget(widget)
         widget.show()
         qtbot.waitExposed(widget)
         from PySide6.QtWidgets import QApplication
+
         # Set text with more lines than the cap
         lines = "\n".join(f"Line {i}" for i in range(SHEET_VALUE_MAX_LINES + 5))
         widget.value_edit.setPlainText(lines)
@@ -990,9 +994,9 @@ class TestBugFixes:
         widget_types = [
             type(hlayout.itemAt(i).widget()) for i in range(hlayout.count())
         ]
-        assert (
-            _ResizeHandle in widget_types
-        ), "No _ResizeHandle found after toolbar spacer add"
+        assert _ResizeHandle in widget_types, (
+            "No _ResizeHandle found after toolbar spacer add"
+        )
         assert SpacerWidget in widget_types
 
     # ── Fix #3: ctx-menu spacer injects resize handle ─────────────────────
@@ -1009,9 +1013,9 @@ class TestBugFixes:
         widget_types = [
             type(hlayout.itemAt(i).widget()) for i in range(hlayout.count())
         ]
-        assert (
-            _ResizeHandle in widget_types
-        ), "No _ResizeHandle found after ctx-menu spacer add"
+        assert _ResizeHandle in widget_types, (
+            "No _ResizeHandle found after ctx-menu spacer add"
+        )
         assert SpacerWidget in widget_types
 
     # ── Fix #8: stale handles cleaned up on remove_attribute ─────────────
@@ -1031,9 +1035,9 @@ class TestBugFixes:
         if sheet._grid_layout.count() > 0:
             hlayout = sheet._grid_layout.itemAt(0).layout()
             for i in range(hlayout.count()):
-                assert not isinstance(
-                    hlayout.itemAt(i).widget(), _ResizeHandle
-                ), "Stale _ResizeHandle found after remove_attribute"
+                assert not isinstance(hlayout.itemAt(i).widget(), _ResizeHandle), (
+                    "Stale _ResizeHandle found after remove_attribute"
+                )
 
     # ── Fix #10: type_combo toggles back to hidden ────────────────────────
 
@@ -1056,9 +1060,9 @@ class TestBugFixes:
         assert not pair.type_combo.isHidden()
 
         sheet._ctx_toggle_type(pair)  # Boolean -> String (back to default)
-        assert (
-            pair.type_combo.isHidden()
-        ), "type_combo should be hidden when type returns to String"
+        assert pair.type_combo.isHidden(), (
+            "type_combo should be hidden when type returns to String"
+        )
 
     # ── Fix: dropEvent raises AttributeError ──────────────────────────────
 

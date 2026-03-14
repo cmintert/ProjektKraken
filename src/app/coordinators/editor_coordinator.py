@@ -8,7 +8,7 @@ Manages all editor-related operations extracted from MainWindow:
 """
 
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Dict, Optional
 
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import QInputDialog, QMessageBox, QWidget
@@ -105,12 +105,88 @@ class EditorCoordinator(BaseCoordinator):
         self.command_requested.emit(cmd)
 
     def delete_entity(self, entity_id: str) -> None:
-        """Deletes an entity by emitting a delete command.
+        """Delete an entity, warning if it has raster layer references.
+
+        Checks the in-memory ``maps_data`` for any raster layer mappings
+        that reference *entity_id*.  If found, shows a warning dialog with
+        three options: remove references and delete, delete anyway, or cancel.
 
         Args:
             entity_id: The ID of the entity to delete.
 
         """
+        from src.commands.raster_commands import SetRasterMappingCommand
+        from src.gui.dialogs.raster_orphan_warning_dialog import (
+            RasterOrphanWarningDialog,
+        )
+        from src.gui.widgets.map.raster_mapping import check_entity_raster_refs
+
+        maps_data = []
+        try:
+            maps_data = self.main_window.map_handler._map_widget.maps_data or []
+        except AttributeError:
+            pass
+
+        refs = check_entity_raster_refs(entity_id, maps_data)
+
+        if refs:
+            map_names: Dict[str, str] = {
+                m.id: getattr(m, "name", m.id) for m in maps_data
+            }
+            dlg = RasterOrphanWarningDialog(
+                entity_name=entity_id,
+                refs=refs,
+                map_names=map_names,
+                parent=self.main_window,
+            )
+            dlg.exec()
+
+            if dlg.result_action == "cancel":
+                return
+
+            if dlg.result_action == "remove_and_delete":
+                processed_nodes: set = set()
+                for ref in refs:
+                    if ref.node_id in processed_nodes:
+                        continue
+                    processed_nodes.add(ref.node_id)
+                    map_obj = next((m for m in maps_data if m.id == ref.map_id), None)
+                    if map_obj is None:
+                        continue
+                    raster_layers = (map_obj.attributes or {}).get("raster_layers", [])
+                    layer = next(
+                        (
+                            la
+                            for la in raster_layers
+                            if la.get("node_id") == ref.node_id
+                        ),
+                        None,
+                    )
+                    if layer is None:
+                        continue
+                    old_vem = layer.get("value_entity_map", {})
+                    new_vem = {
+                        "mode": old_vem.get("mode", "exact")
+                        if isinstance(old_vem, dict)
+                        else "exact",
+                        "mappings": [
+                            m
+                            for m in (
+                                old_vem.get("mappings", [])
+                                if isinstance(old_vem, dict)
+                                else []
+                            )
+                            if m.get("entity_id") != entity_id
+                        ],
+                    }
+                    cmd = SetRasterMappingCommand(
+                        map_id=ref.map_id,
+                        node_id=ref.node_id,
+                        new_mapping=new_vem,
+                        old_mapping=old_vem if isinstance(old_vem, dict) else {},
+                    )
+                    self.command_requested.emit(cmd)
+
         cmd = DeleteEntityCommand(entity_id)
         self.command_requested.emit(cmd)
 
@@ -164,9 +240,7 @@ class EditorCoordinator(BaseCoordinator):
             logger.debug("[EditorCoordinator] Emitting CompositeCommand (Update+Wiki)")
         else:
             cmd = cmds[0]
-            logger.debug(
-                f"[EditorCoordinator] Emitting {cmd.__class__.__name__}"
-            )
+            logger.debug(f"[EditorCoordinator] Emitting {cmd.__class__.__name__}")
 
         self.command_requested.emit(cmd)
 
@@ -199,14 +273,10 @@ class EditorCoordinator(BaseCoordinator):
         if len(cmds) > 1:
             desc = f"Update Entity '{entity_data.get('name', '?')}'"
             cmd = CompositeCommand(cmds, description=desc)
-            logger.debug(
-                "[EditorCoordinator] Emitting CompositeCommand (Update+Wiki)"
-            )
+            logger.debug("[EditorCoordinator] Emitting CompositeCommand (Update+Wiki)")
         else:
             cmd = cmds[0]
-            logger.debug(
-                f"[EditorCoordinator] Emitting {cmd.__class__.__name__}"
-            )
+            logger.debug(f"[EditorCoordinator] Emitting {cmd.__class__.__name__}")
 
         self.command_requested.emit(cmd)
 

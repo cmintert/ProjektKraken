@@ -20,9 +20,7 @@ def mock_pixmap_item(qapp):
     return QGraphicsPixmapItem()
 
 
-def _make_marker(
-    pixmap_item, marker_id="m1", label="Test", connection_count=0
-):
+def _make_marker(pixmap_item, marker_id="m1", label="Test", connection_count=0):
     """Helper to create a MarkerItem with a given connection_count."""
     marker = MarkerItem(
         marker_id=marker_id,
@@ -69,9 +67,7 @@ class TestRunLayoutPass:
         label_manager.run_layout_pass([], 1.0)
         assert label_manager._occupied_rects == []
 
-    def test_single_marker_gets_visible_label(
-        self, label_manager, mock_pixmap_item
-    ):
+    def test_single_marker_gets_visible_label(self, label_manager, mock_pixmap_item):
         """A single marker with no competitors should get a visible label."""
         marker = _make_marker(mock_pixmap_item)
         label_manager.run_layout_pass([marker], 1.0)
@@ -87,16 +83,10 @@ class TestRunLayoutPass:
         # At least one coordinate should be non-zero (placed at a candidate)
         assert pos.x() != 0.0 or pos.y() != 0.0
 
-    def test_priority_sorting_high_count_first(
-        self, label_manager, mock_pixmap_item
-    ):
+    def test_priority_sorting_high_count_first(self, label_manager, mock_pixmap_item):
         """Higher connection_count markers should be laid out first."""
-        m_low = _make_marker(
-            mock_pixmap_item, "low", "Low", connection_count=1
-        )
-        m_high = _make_marker(
-            mock_pixmap_item, "high", "High", connection_count=10
-        )
+        m_low = _make_marker(mock_pixmap_item, "low", "Low", connection_count=1)
+        m_high = _make_marker(mock_pixmap_item, "high", "High", connection_count=10)
 
         # Place them at the same spot to force competition
         m_low.setPos(100, 100)
@@ -107,9 +97,7 @@ class TestRunLayoutPass:
         # The high-priority marker should always get a visible label
         assert m_high._label_item.isVisible() is True
 
-    def test_clears_previous_rects(
-        self, label_manager, mock_pixmap_item
-    ):
+    def test_clears_previous_rects(self, label_manager, mock_pixmap_item):
         """Each layout pass starts fresh (no stale rects)."""
         marker = _make_marker(mock_pixmap_item)
         label_manager.run_layout_pass([marker], 1.0)
@@ -121,9 +109,7 @@ class TestRunLayoutPass:
 
         assert occupied_count_second == occupied_count_first
 
-    def test_zero_view_scale_handled(
-        self, label_manager, mock_pixmap_item
-    ):
+    def test_zero_view_scale_handled(self, label_manager, mock_pixmap_item):
         """A view_scale of 0 should not cause ZeroDivisionError."""
         marker = _make_marker(mock_pixmap_item)
         # Should not raise
@@ -135,26 +121,20 @@ class TestRunLayoutPass:
         """Markers placed far apart should all get visible labels."""
         markers = []
         for i in range(5):
-            m = _make_marker(
-                mock_pixmap_item, f"m{i}", f"Label {i}"
-            )
+            m = _make_marker(mock_pixmap_item, f"m{i}", f"Label {i}")
             m.setPos(i * 200, 0)  # Far apart
             markers.append(m)
 
         label_manager.run_layout_pass(markers, 1.0)
 
-        visible_count = sum(
-            1 for m in markers if m._label_item.isVisible()
-        )
+        visible_count = sum(1 for m in markers if m._label_item.isVisible())
         assert visible_count == 5
 
 
 class TestKeyframeObstacles:
     """Tests that keyframe labels are registered as static obstacles."""
 
-    def test_extra_obstacles_block_marker_labels(
-        self, label_manager, mock_pixmap_item
-    ):
+    def test_extra_obstacles_block_marker_labels(self, label_manager, mock_pixmap_item):
         """Marker labels should avoid extra obstacle rects."""
         marker = _make_marker(mock_pixmap_item, "m1", "City")
         marker.setPos(0, 0)
@@ -162,9 +142,7 @@ class TestKeyframeObstacles:
         # Register a large obstacle covering the bottom slot
         obstacles = [QRectF(-50, 14, 100, 30)]
 
-        label_manager.run_layout_pass(
-            [marker], 1.0, extra_obstacles=obstacles
-        )
+        label_manager.run_layout_pass([marker], 1.0, extra_obstacles=obstacles)
 
         # The marker label should still be visible (placed elsewhere)
         assert marker._label_item.isVisible() is True

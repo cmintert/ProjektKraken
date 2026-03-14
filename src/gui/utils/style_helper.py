@@ -6,7 +6,7 @@ switches reliably update the UI.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 
 from PySide6.QtCore import QEvent, QObject, QRect
 from PySide6.QtGui import QCursor
@@ -412,6 +412,34 @@ class StyleHelper:
             f"QToolButton:checked, QPushButton:checked {{ "
             f"background-color: {theme['border']}; "
             f"border: 1px solid {theme['primary']}; }}"
+        )
+
+    @staticmethod
+    def get_raster_tool_button_style() -> str:
+        """Style for raster editing tool buttons with prominent checked state.
+
+        Uses a highlighted primary background and contrasting border when
+        checked so the active tool/mode is immediately obvious.
+
+        Returns:
+            str: QSS stylesheet string for raster tool buttons.
+        """
+        theme = ThemeManager().get_theme()
+        primary = theme.get("primary", "#5C82FF")
+        surface = theme.get("surface", "#1E1E1E")
+        text_main = theme.get("text_main", "#E0E0E0")
+        border = theme.get("border", "#333333")
+        app_bg = theme.get("app_bg", "#121212")
+
+        return (
+            f"QPushButton {{ background-color: {surface}; "
+            f"color: {text_main}; border: 1px solid {border}; "
+            f"border-radius: 4px; padding: 4px 8px; font-size: 11px; }}"
+            f"QPushButton:hover {{ background-color: {border}; }}"
+            f"QPushButton:pressed {{ background-color: {app_bg}; }}"
+            f"QPushButton:checked {{ "
+            f"background-color: {primary}; color: {theme.get('text_on_primary', '#FFFFFF')}; "
+            f"border: 2px solid {primary}; font-weight: bold; }}"
         )
 
     @staticmethod
@@ -1087,29 +1115,29 @@ class StyleHelper:
                 padding: 8px 10px;
                 margin: 6px 2px;
                 border-radius: 3px;
-                border: 1px solid {theme['border']};
+                border: 1px solid {theme["border"]};
             }}
             .timeline-entry.active {{
-                border-color: {theme['primary']};
+                border-color: {theme["primary"]};
                 border-width: 2px;
             }}
             .timeline-entry.future {{
                 opacity: 0.5;
-                border-color: {theme['border']};
+                border-color: {theme["border"]};
             }}
             .event-header {{ margin-bottom: 4px; }}
             .event-date {{
-                color: {theme['text_dim']};
+                color: {theme["text_dim"]};
                 font-size: 11px;
                 font-weight: 500;
             }}
             .event-name {{
-                color: {theme['text_main']};
+                color: {theme["text_main"]};
                 font-weight: 600;
                 font-size: 13px;
             }}
             .event-type {{
-                color: {theme['text_dim']};
+                color: {theme["text_dim"]};
                 font-size: 10px;
                 font-style: italic;
             }}
@@ -1118,17 +1146,17 @@ class StyleHelper:
                 padding: 0;
             }}
             .payload-item {{
-                color: {theme['text_dim']};
+                color: {theme["text_dim"]};
                 font-size: 11px;
                 line-height: 1.4;
             }}
-            .payload-key {{ color: {theme['accent_secondary']}; }}
-            .payload-value {{ color: {theme['primary']}; }}
+            .payload-key {{ color: {theme["accent_secondary"]}; }}
+            .payload-value {{ color: {theme["primary"]}; }}
             .now-separator {{
                 display: flex;
                 align-items: center;
                 margin: 12px 0;
-                color: {theme['primary']};
+                color: {theme["primary"]};
                 font-size: 10px;
                 font-weight: 600;
                 text-transform: uppercase;
@@ -1140,7 +1168,7 @@ class StyleHelper:
                 flex: 1;
                 height: 1px;
                 background: linear-gradient(
-                    to right, transparent, {theme['primary']}, transparent
+                    to right, transparent, {theme["primary"]}, transparent
                 );
             }}
             .now-separator span {{
@@ -1150,7 +1178,7 @@ class StyleHelper:
                 display: flex;
                 align-items: center;
                 margin: 12px 0;
-                color: {theme['accent_secondary']};
+                color: {theme["accent_secondary"]};
                 font-size: 10px;
                 font-weight: 600;
                 text-transform: uppercase;
@@ -1161,7 +1189,7 @@ class StyleHelper:
                 content: '';
                 flex: 1;
                 height: 2px;
-                background: {theme['accent_secondary']};
+                background: {theme["accent_secondary"]};
             }}
             .now-line span {{
                 padding: 0 10px;
@@ -1188,3 +1216,142 @@ class StyleHelper:
                 padding: 12px;
             }
         """
+
+    @staticmethod
+    def get_overlay_banner_style() -> str:
+        """Returns QSS for the semi-transparent overlay banner on the map view.
+
+        Returns:
+            str: QSS stylesheet string for overlay banners.
+        """
+        theme = ThemeManager().get_theme()
+        bg = theme.get("surface_alt", "rgba(0, 0, 0, 180)")
+        return (
+            "QLabel {"
+            f"  background-color: {bg};"
+            "  color: white;"
+            "  padding: 12px;"
+            "  border-bottom-left-radius: 8px;"
+            "  border-bottom-right-radius: 8px;"
+            "  font-size: 13px;"
+            "  font-weight: 500;"
+            "}"
+        )
+
+    @staticmethod
+    def get_legend_overlay_style() -> str:
+        """Returns QSS for the floating raster legend overlay.
+
+        Returns:
+            str: QSS stylesheet string for legend overlays.
+        """
+        return (
+            "QWidget {"
+            "  background-color: rgba(20, 20, 20, 200);"
+            "  border: 1px solid rgba(255,255,255,40);"
+            "  border-radius: 6px;"
+            "}"
+        )
+
+    @staticmethod
+    def get_probe_popup_style() -> str:
+        """Returns QSS for the raster probe popup overlay label.
+
+        Returns:
+            str: QSS stylesheet string for the probe popup.
+        """
+        theme = ThemeManager().get_theme()
+        bg = theme.get("surface_alt", "#2A2A2A")
+        text = theme.get("text_main", "#E8E8E8")
+        border = theme.get("border", "#444444")
+        return (
+            "QLabel#RasterProbePopup {"
+            f"  background-color: {bg};"
+            f"  color: {text};"
+            f"  border: 1px solid {border};"
+            "  border-radius: 6px;"
+            "  padding: 6px 10px;"
+            "  font-size: 12px;"
+            "}"
+        )
+
+    @staticmethod
+    def get_mode_indicator_style(bg_color: str) -> str:
+        """Returns QSS for the toolbar mode-indicator label.
+
+        Args:
+            bg_color: Background hex colour for the current mode.
+
+        Returns:
+            str: QSS stylesheet string for mode indicator labels.
+        """
+        return (
+            "QLabel {"
+            f"  background: {bg_color};"
+            "  color: white;"
+            "  padding: 5px 12px;"
+            "  border-radius: 4px;"
+            "  font-weight: bold;"
+            "  font-size: 11px;"
+            "}"
+        )
+
+    @staticmethod
+    def get_toolbar_spacing_style() -> str:
+        """Returns QSS for map toolbar spacing.
+
+        Returns:
+            str: QSS stylesheet string for toolbar spacing.
+        """
+        return "QToolBar { spacing: 4px; padding: 4px; }"
+
+    @staticmethod
+    def get_raster_mode_badge_style(bg_color: str) -> str:
+        """Returns QSS for the raster mode badge label.
+
+        Args:
+            bg_color: Background hex colour for the badge.
+
+        Returns:
+            str: QSS stylesheet string for raster mode badges.
+        """
+        return (
+            "QLabel#RasterModeBadge {"
+            f"  background-color: {bg_color};"
+            "  color: #FFFFFF;"
+            "  border-radius: 4px;"
+            "  padding: 2px 8px;"
+            "  font-size: 8pt;"
+            "  font-weight: bold;"
+            "}"
+        )
+
+    @staticmethod
+    def get_section_separator_style() -> Tuple[str, str]:
+        """Returns QSS for the section separator label and line.
+
+        Returns:
+            A ``(label_style, line_style)`` tuple where *label_style* is
+            the QSS for the section heading text and *line_style* is the
+            QSS for the horizontal rule.
+        """
+        theme = ThemeManager().get_theme()
+        dim_color = theme.get("text_dim", "#888888")
+        border_color = theme.get("border", "#333344")
+        label_style = (
+            f"color: {dim_color}; font-size: 8pt; font-weight: bold;"
+        )
+        line_style = (
+            f"color: {border_color}; background: {border_color};"
+        )
+        return label_style, line_style
+
+    @staticmethod
+    def get_dim_text_color() -> str:
+        """Returns the theme-aware dim text colour hex string.
+
+        Returns:
+            str: Hex colour suitable for subdued/secondary text.
+        """
+        theme = ThemeManager().get_theme()
+        return theme.get("text_dim", "#888888")

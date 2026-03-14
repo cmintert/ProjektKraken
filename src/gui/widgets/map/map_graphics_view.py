@@ -82,6 +82,7 @@ from src.gui.widgets.map.interaction_handler import InteractionHandler
 from src.gui.widgets.map.label_manager import LabelManager
 from src.gui.widgets.map.marker_item import MarkerItem
 from src.gui.widgets.map.marker_manager import MarkerManager
+from src.gui.widgets.map.scale_bar_overlay import ScaleBarOverlay
 from src.gui.widgets.map.scale_bar_painter import ScaleBarPainter
 from src.gui.widgets.map.snapping_manager import SnappingManager, SnapType
 from src.gui.widgets.map.trajectory_renderer import TrajectoryRenderer
@@ -98,12 +99,9 @@ LAYER_TRAJECTORIES = MAP_LAYER_Z_TRAJECTORIES
 LAYER_MARKERS = MAP_LAYER_Z_MARKERS
 LAYER_UI_OVERLAY = MAP_LAYER_Z_UI_OVERLAY
 
-# Colors
-KEYFRAME_COLOR_DEFAULT = "#f1c40f"  # Yellow
-KEYFRAME_COLOR_SELECTED = "#e74c3c"  # Red
-KEYFRAME_LABEL_COLOR = "#000000"  # Black
-TRAJECTORY_PATH_COLOR = "#3498db"  # Blue
-GIZMO_TEXT_COLOR = "#ffffff"  # White
+# Colors — resolved from ThemeManager at runtime; these are fallback defaults only
+KEYFRAME_COLOR_DEFAULT = "#f1c40f"  # Yellow (fallback)
+KEYFRAME_COLOR_SELECTED = "#e74c3c"  # Red (fallback)
 
 # Layout Constants
 GIZMO_SIZE = 6
@@ -130,12 +128,16 @@ class KeyframeGizmo(QGraphicsItemGroup):
         self.setZValue(LAYER_UI_OVERLAY)
         self.setAcceptHoverEvents(True)
 
+        _theme = ThemeManager().get_theme()
+        _gizmo_text_color = _theme.get("text_main", "#ffffff")
+        _delete_color = _theme.get("error", "#e74c3c")
+
         # Create Clock icon (left)
-        self.clock_icon = self._create_icon("🕐", 0, GIZMO_TEXT_COLOR)
+        self.clock_icon = self._create_icon("🕐", 0, _gizmo_text_color)
         self.addToGroup(self.clock_icon)
 
         # Create Delete icon (right) - red X
-        self.delete_icon = self._create_icon("✕", GIZMO_SIZE + 4, "#FF4444")
+        self.delete_icon = self._create_icon("✕", GIZMO_SIZE + 4, _delete_color)
         self.addToGroup(self.delete_icon)
 
         # Position gizmo to Northeast of keyframe (Right and Up)
@@ -293,8 +295,10 @@ class KeyframeItem(QGraphicsObject):
         self.mode: str = "transform"  # "transform" or "clock"
         self.is_pinned: bool = False
 
-        # Visuals
-        self._brush = QBrush(QColor(KEYFRAME_COLOR_DEFAULT))
+        # Visuals — resolve color from theme at creation time
+        _theme = ThemeManager().get_theme()
+        _default_color = _theme.get("accent_secondary", KEYFRAME_COLOR_DEFAULT)
+        self._brush = QBrush(QColor(_default_color))
         self._pen = QPen(Qt.PenStyle.NoPen)
 
         # Gizmo (mode selector)
@@ -408,7 +412,12 @@ class KeyframeItem(QGraphicsObject):
             pinned: True if keyframe is pinned in Clock Mode.
         """
         self.is_pinned = pinned
-        color = KEYFRAME_COLOR_SELECTED if pinned else KEYFRAME_COLOR_DEFAULT
+        _theme = ThemeManager().get_theme()
+        color = (
+            _theme.get("error", KEYFRAME_COLOR_SELECTED)
+            if pinned
+            else _theme.get("accent_secondary", KEYFRAME_COLOR_DEFAULT)
+        )
         pen_width = 3 if pinned else 1
 
         self.setPen(QPen(QColor(color), pen_width))
@@ -577,6 +586,15 @@ class MapGraphicsView(QGraphicsView):
     # -- Visual styling signal (marker_id, style_overrides_dict) --
     marker_visual_style_changed = Signal(str, dict)
 
+    # -- Raster editing signals --
+    raster_stroke_completed = Signal(
+        str, tuple, bytes, bytes
+    )  # node_id, dirty, before, after
+    raster_value_probed = Signal(str, int, float, float)  # node_id, value, x, y
+
+    # Emitted when the viewport resizes, useful for positioning overlays
+    viewport_resized = Signal(QResizeEvent)
+
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the MapGraphicsView.
 
@@ -613,7 +631,7 @@ class MapGraphicsView(QGraphicsView):
 
             except ImportError:
                 logger.warning(
-                    "QtOpenGLWidgets not available. " "Requesting software rendering."
+                    "QtOpenGLWidgets not available. Requesting software rendering."
                 )
             except Exception as e:
                 logger.warning(
@@ -622,7 +640,7 @@ class MapGraphicsView(QGraphicsView):
                 )
         else:
             logger.info(
-                "OpenGL disabled via KRAKEN_NO_OPENGL. " "Using software rendering."
+                "OpenGL disabled via KRAKEN_NO_OPENGL. Using software rendering."
             )
 
         self.scene = QGraphicsScene(self)
@@ -635,6 +653,11 @@ class MapGraphicsView(QGraphicsView):
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setMouseTracking(True)
+        # Scale bar is now a viewport overlay widget, so MinimalViewportUpdate
+        # is safe — no more device-space painting in drawForeground().
+        self.setViewportUpdateMode(
+            QGraphicsView.ViewportUpdateMode.MinimalViewportUpdate
+        )
 
         # Disable scrollbars for infinite canvas feel
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -660,6 +683,9 @@ class MapGraphicsView(QGraphicsView):
         self._drop_hint_overlay.setText("Drop to Place Marker")
         self._drop_hint_overlay.hide()
 
+        # Scale bar overlay (viewport-space widget, avoids FullViewportUpdate)
+        self._scale_bar_overlay = ScaleBarOverlay(self.viewport())
+
         # Temporal state
         self._current_time: float = 0.0
 
@@ -673,6 +699,10 @@ class MapGraphicsView(QGraphicsView):
         self._trajectory = TrajectoryRenderer(self)
         self._interaction = InteractionHandler(self)
 
+        from src.gui.widgets.map.raster_edit_tool import RasterEditTool
+
+        self._raster_edit_tool = RasterEditTool(self)
+
         # Label layout engine (Greedy PAL-Lite)
         self.label_manager = LabelManager()
         self._layout_debounce_timer = QTimer(self)
@@ -683,11 +713,20 @@ class MapGraphicsView(QGraphicsView):
         # Hierarchical Layer Model
         self._layer_model: Optional["MapLayerModel"] = None
 
+        # Raster overlay items (node_id → RasterLayerItem)
+        self._raster_items: dict[str, Any] = {}
+
+        # Spatial query overlay item (Feature D)
+        self._query_overlay_item: Optional[QGraphicsPixmapItem] = None
+
         # Track loaded map image
         self.current_image_path: Optional[str] = None
 
         # World root (set when a world is opened)
         self._world_root: Optional[str] = None
+
+        # Space held-to-pan state (industry-standard painting-app shortcut)
+        self._space_pressed: bool = False
 
     # ------------------------------------------------------------------
     # Backward-compatible property aliases for sub-component state
@@ -725,6 +764,7 @@ class MapGraphicsView(QGraphicsView):
 
     @trigger_first_use_animation.setter
     def trigger_first_use_animation(self, value: bool) -> None:
+        """Set whether to trigger pulsing animation on first trajectory."""
         self._trajectory.trigger_first_use_animation = value
 
     def set_world_root(self, world_root: Optional[str]) -> None:
@@ -857,6 +897,71 @@ class MapGraphicsView(QGraphicsView):
         self._interaction.show_color_picker(marker_item)
 
     # ------------------------------------------------------------------
+    # Raster editing public API
+    # ------------------------------------------------------------------
+
+    def start_raster_editing(self, node_id: str) -> None:
+        """Enter raster editing mode for a layer.
+
+        Args:
+            node_id: Raster layer node ID to edit.
+        """
+        logger.debug(
+            "start_raster_editing: node_id=%s raster_items=%s",
+            node_id,
+            list(self._raster_items.keys()),
+        )
+        self._raster_edit_tool.start_editing(node_id)
+
+    def stop_raster_editing(self) -> None:
+        """Exit raster editing mode."""
+        logger.debug("stop_raster_editing called")
+        self._raster_edit_tool.stop_editing()
+
+    # ------------------------------------------------------------------
+    # Spatial query overlay (Feature D)
+    # ------------------------------------------------------------------
+
+    def set_query_overlay(self, mask: Any, scene_rect: "QRectF") -> None:
+        """Display a red semi-transparent overlay for pixels matching a query mask.
+
+        Args:
+            mask: 2-D boolean numpy array (True = matches query).
+            scene_rect: Scene-coordinate rectangle that the mask covers.
+        """
+        import numpy as np
+
+        self.clear_query_overlay()
+
+        h, w = mask.shape
+        rgba = np.zeros((h, w, 4), dtype=np.uint8)
+        rgba[mask, 0] = 220  # red channel
+        rgba[mask, 3] = 128  # 50 % alpha for matching cells
+
+        from PySide6.QtGui import QImage
+
+        img = QImage(rgba.tobytes(), w, h, w * 4, QImage.Format.Format_RGBA8888)
+        pm = QPixmap.fromImage(img)
+        if not scene_rect.isEmpty():
+            pm = pm.scaled(
+                int(scene_rect.width()),
+                int(scene_rect.height()),
+            )
+
+        from src.app.constants import MAP_LAYER_Z_RASTER
+
+        self._query_overlay_item = QGraphicsPixmapItem(pm)
+        self._query_overlay_item.setPos(scene_rect.topLeft())
+        self._query_overlay_item.setZValue(MAP_LAYER_Z_RASTER + 1)
+        self.scene.addItem(self._query_overlay_item)
+
+    def clear_query_overlay(self) -> None:
+        """Remove the spatial query overlay from the scene."""
+        if self._query_overlay_item is not None:
+            self.scene.removeItem(self._query_overlay_item)
+            self._query_overlay_item = None
+
+    # ------------------------------------------------------------------
     # Size hints & lifecycle
     # ------------------------------------------------------------------
 
@@ -879,6 +984,17 @@ class MapGraphicsView(QGraphicsView):
         # Calibration State
         self.calibration_mode = False
         self.calibration_points: list[QPointF] = []
+
+    def cleanup(self) -> None:
+        """Stop all owned timers and release sub-component resources.
+
+        Safe to call multiple times.  Must be called before the widget is
+        closed so that pending Qt callbacks cannot fire on a partially-torn-
+        down object.
+        """
+        self._layout_debounce_timer.stop()
+        if hasattr(self, "_trajectory"):
+            self._trajectory.cleanup()
 
     def load_map(self, image_path: str) -> bool:
         """Loads a map image into the view.
@@ -920,8 +1036,19 @@ class MapGraphicsView(QGraphicsView):
     def resizeEvent(self, event: QResizeEvent) -> None:
         """Handle resize events."""
         super().resizeEvent(event)
-        if hasattr(self, "_drop_hint_overlay") and self._drop_hint_overlay:
+        self.viewport_resized.emit(event)
+        import shiboken6
+
+        if (
+            hasattr(self, "_drop_hint_overlay")
+            and self._drop_hint_overlay
+            and shiboken6.isValid(self._drop_hint_overlay)
+        ):
             self._drop_hint_overlay.setGeometry(self.viewport().rect())
+        if hasattr(self, "_scale_bar_overlay") and shiboken6.isValid(
+            self._scale_bar_overlay
+        ):
+            self._scale_bar_overlay.reposition(self.viewport().size())
         self._schedule_label_layout()
 
     def sizeHint(self) -> QSize:
@@ -936,6 +1063,31 @@ class MapGraphicsView(QGraphicsView):
         """Fits the map to the current view size."""
         if self.pixmap_item:
             self.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
+
+    def ensure_software_rendering(self) -> None:
+        """Switch the viewport to software rendering if not already set.
+
+        ``QPainter.setCompositionMode`` is silently ignored by Qt's OpenGL
+        paint engine for most modes beyond ``SourceOver`` (Multiply, Screen,
+        Difference, etc.).  Raster layers that use non-default blend modes
+        must therefore be rendered with the software rasteriser so that
+        composition modes are applied correctly.
+
+        This method replaces the ``QOpenGLWidget`` viewport with a plain
+        ``QWidget``, transparently preserving all render hints.  Calling it
+        when already in software mode is a no-op.
+        """
+        from PySide6.QtOpenGLWidgets import QOpenGLWidget
+
+        if isinstance(self.viewport(), QOpenGLWidget):
+            logger.info(
+                "ensure_software_rendering: switching to software "
+                "rendering for correct blend-mode compositing."
+            )
+            self.setViewport(None)  # None → default QWidget (software)
+            # Re-apply render hints; setViewport() resets the viewport widget
+            self.setRenderHint(QPainter.Antialiasing)
+            self.setRenderHint(QPainter.SmoothPixmapTransform)
 
     # ------------------------------------------------------------------
     # Label layout (delegated to LabelManager)
@@ -1066,17 +1218,25 @@ class MapGraphicsView(QGraphicsView):
         Args:
             marker_id: Unique identifier for the marker to remove.
         """
+        if self._vertex_editor.editing_feature_id == marker_id:
+            self._vertex_editor.finish_vertex_editing(emit_geometry_change=False)
         self._marker_manager.remove_marker(marker_id)
         self._schedule_label_layout()
 
     def clear_markers(self) -> None:
         """Remove all markers and features from the map."""
+        self.exit_all_editing(commit_feature_edits=False)
         self._marker_manager.clear_markers()
 
     def update_markers_temporal_state(
         self, playhead_time: float, current_time: float
     ) -> None:
-        """Updates the temporal visual state of all markers and features."""
+        """Updates the temporal visual state of all markers and features.
+
+        Args:
+            playhead_time: Current playhead position in lore time.
+            current_time: Current absolute time for animation.
+        """
         self._marker_manager.update_markers_temporal_state(playhead_time, current_time)
 
     # ------------------------------------------------------------------
@@ -1136,6 +1296,22 @@ class MapGraphicsView(QGraphicsView):
         """Public API: completes any active vertex editing session."""
         if self._vertex_editor.is_editing_vertices:
             self._vertex_editor.finish_vertex_editing()
+
+    def exit_all_editing(self, commit_feature_edits: bool = False) -> None:
+        """Exit drawing, vertex, and raster editing modes.
+
+        Args:
+            commit_feature_edits: Whether active vertex edits should emit a
+                geometry change before teardown.
+        """
+        if self.is_drawing:
+            self.cancel_drawing()
+        if self._vertex_editor.is_editing_vertices:
+            self._vertex_editor.finish_vertex_editing(
+                emit_geometry_change=commit_feature_edits
+            )
+        if self._raster_edit_tool.is_active:
+            self.stop_raster_editing()
 
     # ------------------------------------------------------------------
     # Trajectory (delegated to TrajectoryRenderer)
@@ -1260,7 +1436,21 @@ class MapGraphicsView(QGraphicsView):
             return
 
         self.map_width_meters = width_meters
-        self.viewport().update()
+        self._update_scale_bar_overlay()
+
+    def _update_scale_bar_overlay(self) -> None:
+        """Recompute and push the current resolution to the scale bar overlay."""
+        if not self.pixmap_item or self.map_width_meters <= 0:
+            return
+        image_width_px = self.pixmap_item.boundingRect().width()
+        if image_width_px <= 0:
+            return
+        view_scale = self.transform().m11()
+        if view_scale <= 0:
+            return
+        base_resolution = self.map_width_meters / image_width_px
+        current_resolution = base_resolution / view_scale
+        self._scale_bar_overlay.update_scale(current_resolution)
 
     # ------------------------------------------------------------------
     # Item lookup
@@ -1280,12 +1470,19 @@ class MapGraphicsView(QGraphicsView):
     def _find_graphics_item(self, node_id: str) -> Optional[QGraphicsItem]:
         """Look up a graphics item by layer node ID.
 
+        Checks both the marker manager (for markers/polygons/connections)
+        and the raster item registry.
+
         Args:
             node_id: ID of the layer node.
 
         Returns:
             The matching QGraphicsItem, or None.
         """
+        # Check raster items first (fast dict lookup)
+        raster_item = self._raster_items.get(node_id)
+        if raster_item is not None:
+            return raster_item
         return self._marker_manager.find_item(node_id)
 
     # ------------------------------------------------------------------
@@ -1334,9 +1531,16 @@ class MapGraphicsView(QGraphicsView):
             node_id: ID of the layer node.
             visible: Whether the layer should be visible.
         """
+        import shiboken6
+
         item = self._find_graphics_item(node_id)
-        if item is not None:
-            item.setVisible(visible)
+        if item is not None and shiboken6.isValid(item):
+            try:
+                item.setVisible(visible)
+            except RuntimeError:
+                logger.debug(
+                    "_on_layer_visibility_changed: item %s already deleted", node_id
+                )
 
     def _on_layer_opacity_changed(self, node_id: str, opacity: float) -> None:
         """Respond to a layer opacity change.
@@ -1345,9 +1549,16 @@ class MapGraphicsView(QGraphicsView):
             node_id: ID of the layer node.
             opacity: Effective opacity.
         """
+        import shiboken6
+
         item = self._find_graphics_item(node_id)
-        if item is not None:
-            item.setOpacity(opacity)
+        if item is not None and shiboken6.isValid(item):
+            try:
+                item.setOpacity(opacity)
+            except RuntimeError:
+                logger.debug(
+                    "_on_layer_opacity_changed: item %s already deleted", node_id
+                )
 
     def _on_layer_order_changed(self) -> None:
         """Respond to a layer order change by recomputing Z-values."""
@@ -1399,7 +1610,31 @@ class MapGraphicsView(QGraphicsView):
     # ------------------------------------------------------------------
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        """Handle mouse press: drawing, calibration, or normal."""
+        """Handle mouse press: raster edit, drawing, calibration, or normal."""
+        # Space held-to-pan takes absolute priority over every sub-system.
+        if self._space_pressed and event.button() == Qt.MouseButton.LeftButton:
+            self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+            super().mousePressEvent(event)
+            return
+
+        # Raster editing mode (highest priority).
+        # Also handle SAMPLE mode even when edit is not active, so users can
+        # probe values without pressing "Edit".
+        raster_should_handle = (
+            self._raster_edit_tool.is_active
+            or self._raster_edit_tool.mode.name == "SAMPLE"
+        ) and self.pixmap_item
+        if raster_should_handle:
+            if event.button() == Qt.MouseButton.LeftButton:
+                scene_pos = self.mapToScene(event.position().toPoint())
+                logger.debug(
+                    "mousePressEvent: raster active — scene_pos=(%.1f,%.1f)",
+                    scene_pos.x(),
+                    scene_pos.y(),
+                )
+                if self._raster_edit_tool.handle_mouse_press(scene_pos):
+                    return
+
         # Drawing mode
         if self._drawing_tool.is_drawing and self.pixmap_item:
             if event.button() == Qt.MouseButton.LeftButton:
@@ -1448,15 +1683,40 @@ class MapGraphicsView(QGraphicsView):
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Reset drag mode on release."""
+        # Space panning takes priority — Qt needs the release to end scroll-pan correctly.
+        if self._space_pressed and event.button() == Qt.MouseButton.LeftButton:
+            super().mouseReleaseEvent(event)
+            return
+
+        # Raster editing
+        if self._raster_edit_tool.is_active and self.pixmap_item:
+            if event.button() == Qt.MouseButton.LeftButton:
+                scene_pos = self.mapToScene(event.position().toPoint())
+                logger.debug(
+                    "mouseReleaseEvent: raster active — scene_pos=(%.1f,%.1f)",
+                    scene_pos.x(),
+                    scene_pos.y(),
+                )
+                if self._raster_edit_tool.handle_mouse_release(scene_pos):
+                    return
+
         super().mouseReleaseEvent(event)
-        if not self.calibration_mode:
+        if not self.calibration_mode and not self._raster_edit_tool.is_active:
             self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        """Handle mouse move: drawing preview, vertex editing, coordinates."""
-        super().mouseMoveEvent(event)
-
+        """Handle mouse move: raster edit, drawing preview, vertex editing, coordinates."""
         scene_pos = self.mapToScene(event.position().toPoint())
+
+        # Raster editing (before super to avoid ScrollHandDrag panning).
+        # When Space is held, yield to super() so Qt's pan gesture gets the move.
+        if self._raster_edit_tool.is_active:
+            if self._space_pressed:
+                super().mouseMoveEvent(event)
+            else:
+                self._raster_edit_tool.handle_mouse_move(scene_pos)
+        else:
+            super().mouseMoveEvent(event)
 
         # Drawing mode
         if self._drawing_tool.handle_mouse_move(scene_pos):
@@ -1505,9 +1765,7 @@ class MapGraphicsView(QGraphicsView):
         map_widget = self._find_map_widget()
         if map_widget is not None:
             in_clock = getattr(map_widget, "_pinned_marker_id", None) is not None
-            in_draft = bool(
-                getattr(map_widget, "_transient_marker_ids", None)
-            )
+            in_draft = bool(getattr(map_widget, "_transient_marker_ids", None))
             if in_clock and event.key() in (
                 Qt.Key.Key_Escape,
                 Qt.Key.Key_Return,
@@ -1520,6 +1778,8 @@ class MapGraphicsView(QGraphicsView):
                 return
 
         if event.key() == Qt.Key.Key_Escape:
+            if self._raster_edit_tool.handle_key_escape():
+                return
             if self._drawing_tool.handle_key_escape():
                 return
             if self._vertex_editor.handle_key_escape():
@@ -1529,7 +1789,35 @@ class MapGraphicsView(QGraphicsView):
                 self.scene.clearSelection()
                 event.accept()
                 return
+
+        # Space held-to-pan (industry-standard painting-app shortcut).
+        if event.key() == Qt.Key.Key_Space and not event.isAutoRepeat():
+            self._space_pressed = True
+            self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+            self.viewport().setCursor(Qt.CursorShape.OpenHandCursor)
+            event.accept()
+            return
+
         super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event: "QKeyEvent") -> None:
+        """Restore drag mode and cursor when Space is released.
+
+        Args:
+            event: The key release event.
+        """
+        if event.key() == Qt.Key.Key_Space and not event.isAutoRepeat():
+            self._space_pressed = False
+            if self._raster_edit_tool.is_active:
+                # Return to brush mode: NoDrag + crosshair cursor
+                self.setDragMode(QGraphicsView.DragMode.NoDrag)
+                self.viewport().setCursor(Qt.CursorShape.CrossCursor)
+            elif not self.calibration_mode:
+                self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+                self.viewport().unsetCursor()
+            event.accept()
+            return
+        super().keyReleaseEvent(event)
 
     def _find_map_widget(self) -> "Optional[QWidget]":
         """Walks up the parent chain to find the owning MapWidget.
@@ -1654,24 +1942,6 @@ class MapGraphicsView(QGraphicsView):
 
             painter.restore()
 
-        # Draw Scale Bar Overlay
-        if self.pixmap_item and self.map_width_meters > 0:
-            image_width_px = self.pixmap_item.boundingRect().width()
-            if image_width_px > 0:
-                base_resolution = self.map_width_meters / image_width_px
-
-                view_scale = self.transform().m11()
-
-                if view_scale > 0:
-                    current_resolution = base_resolution / view_scale
-
-                    painter.save()
-                    painter.resetTransform()
-
-                    self.scale_bar_painter.paint(
-                        painter,
-                        QRectF(self.viewport().rect()),
-                        current_resolution,
-                    )
-
-                    painter.restore()
+        # Scale bar is rendered by _scale_bar_overlay (viewport widget).
+        # Update its resolution from the current transform.
+        self._update_scale_bar_overlay()

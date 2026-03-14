@@ -17,7 +17,9 @@ def widget(qtbot):
     return widget
 
 
-@pytest.mark.skip(reason="Test hangs in headless environment - dialog exec() blocks despite mock")
+@pytest.mark.skip(
+    reason="Test hangs in headless environment - dialog exec() blocks despite mock"
+)
 @patch("src.gui.widgets.llm_generation_widget.RAGService")
 def test_preview_rag_success(mock_rag_cls, widget, qtbot):
     """Verify preview works correctly with RAGService."""

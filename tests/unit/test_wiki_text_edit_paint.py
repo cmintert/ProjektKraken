@@ -2,7 +2,6 @@
 Tests for the paintEvent overide in WikiTextEditView.
 """
 
-
 from PySide6.QtCore import QRect
 from PySide6.QtGui import QPaintEvent
 

@@ -260,12 +260,14 @@ class TestDataHandlerSignals:
         reload_events_signal = []
         reload_entities_signal = []
         reload_maps_signal = []
-        
+
         data_handler.reload_markers_for_current_map.connect(
             lambda: reload_markers_signal.append(True)
         )
         data_handler.reload_events.connect(lambda: reload_events_signal.append(True))
-        data_handler.reload_entities.connect(lambda: reload_entities_signal.append(True))
+        data_handler.reload_entities.connect(
+            lambda: reload_entities_signal.append(True)
+        )
         data_handler.reload_maps.connect(lambda: reload_maps_signal.append(True))
 
         # Create a successful Undo_UpdateMarkerCommand result
@@ -289,12 +291,14 @@ class TestDataHandlerSignals:
         reload_markers_signal = []
         reload_events_signal = []
         reload_entities_signal = []
-        
+
         data_handler.reload_markers_for_current_map.connect(
             lambda: reload_markers_signal.append(True)
         )
         data_handler.reload_events.connect(lambda: reload_events_signal.append(True))
-        data_handler.reload_entities.connect(lambda: reload_entities_signal.append(True))
+        data_handler.reload_entities.connect(
+            lambda: reload_entities_signal.append(True)
+        )
 
         # Create a successful Undo_UpdateMarkerIconCommand result
         result = CommandResult(
@@ -316,12 +320,14 @@ class TestDataHandlerSignals:
         reload_markers_signal = []
         reload_events_signal = []
         reload_entities_signal = []
-        
+
         data_handler.reload_markers_for_current_map.connect(
             lambda: reload_markers_signal.append(True)
         )
         data_handler.reload_events.connect(lambda: reload_events_signal.append(True))
-        data_handler.reload_entities.connect(lambda: reload_entities_signal.append(True))
+        data_handler.reload_entities.connect(
+            lambda: reload_entities_signal.append(True)
+        )
 
         # Test with Undo_CreateEventCommand
         result = CommandResult(

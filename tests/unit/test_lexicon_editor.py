@@ -306,9 +306,9 @@ def test_resolve_lexicon_images_respects_existing_shape():
         hero_style = resolved["nodes"]["hero"]
 
         # This is what previously failed: it got overridden to 'image'
-        assert (
-            hero_style["shape"] == "dot"
-        ), "Shape should remain 'dot' even if icon exists"
+        assert hero_style["shape"] == "dot", (
+            "Shape should remain 'dot' even if icon exists"
+        )
         assert "image" in hero_style, "Image data should still be resolved"
 
 
@@ -326,9 +326,9 @@ def test_prepare_node_ignores_image_if_shape_not_image():
     prepared = GraphBuilder.prepare_node(node, "#CCC", "#EEE", lexicon)
 
     assert prepared["shape"] == "dot"
-    assert (
-        "image" not in prepared
-    ), "Image property should be omitted if shape is not 'image'"
+    assert "image" not in prepared, (
+        "Image property should be omitted if shape is not 'image'"
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -34,10 +34,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Colors
-KEYFRAME_COLOR_DEFAULT = "#f1c40f"  # Yellow
-KEYFRAME_LABEL_COLOR = "#000000"  # Black
-TRAJECTORY_PATH_COLOR = "#3498db"  # Blue
+# Colors — fallback defaults; resolved from ThemeManager at runtime
+KEYFRAME_COLOR_DEFAULT = "#f1c40f"  # Yellow (fallback)
+TRAJECTORY_PATH_COLOR = "#3498db"  # Blue (fallback)
 
 # Layout Constants
 KEYFRAME_LABEL_FONT_FAMILY = "Segoe UI"
@@ -79,7 +78,12 @@ class KeyframeLabelItem(QGraphicsObject):
             self._update_rect()
             self.update()
 
-    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: Optional[QWidget] = None) -> None:
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionGraphicsItem,
+        widget: Optional[QWidget] = None,
+    ) -> None:
         theme = ThemeManager().get_theme()
         bg_color = QColor(theme.get("surface", "#1A1A1A"))
         text_color = QColor(theme.get("text_main", "#FFFFFF"))
@@ -160,7 +164,8 @@ class TrajectoryRenderer:
                 self._update_trajectory_path,
             )
             dot.setPos(pos)
-            dot.setBrush(QBrush(QColor(KEYFRAME_COLOR_DEFAULT)))
+            _theme = ThemeManager().get_theme()
+            dot.setBrush(QBrush(QColor(_theme.get("accent_secondary", KEYFRAME_COLOR_DEFAULT))))
             dot.setPen(QPen(Qt.PenStyle.NoPen))
             dot.setZValue(base_z - 0.2)
             self._view.scene.addItem(dot)
@@ -192,8 +197,7 @@ class TrajectoryRenderer:
 
         if self.trigger_first_use_animation:
             logger.debug(
-                f"Triggering pulsing animation for "
-                f"{len(self.keyframe_items)} keyframes"
+                f"Triggering pulsing animation for {len(self.keyframe_items)} keyframes"
             )
             self.trigger_first_use_animation = False
             for dot in self.keyframe_items:
@@ -286,8 +290,7 @@ class TrajectoryRenderer:
                             text = self._calendar_converter.format_date(new_time)
                         except Exception as e:
                             logger.warning(
-                                f"Calendar formatting failed for "
-                                f"time {new_time}: {e}"
+                                f"Calendar formatting failed for time {new_time}: {e}"
                             )
                             text = f"{new_time:.0f}"
                     else:
@@ -331,7 +334,7 @@ class TrajectoryRenderer:
         animation.setLoopCount(3)
 
         self._animations.append(animation)
-        animation.finished.connect(lambda: self._animations.remove(animation))
+        animation.finished.connect(lambda a=animation: self._on_animation_finished(a))
 
         animation.start()
 
@@ -363,11 +366,34 @@ class TrajectoryRenderer:
     ) -> QGraphicsPathItem:
         """Creates and configures the trajectory path item."""
         item = QGraphicsPathItem(path)
-        pen = QPen(QColor(TRAJECTORY_PATH_COLOR), 1)
+        _theme = ThemeManager().get_theme()
+        pen = QPen(QColor(_theme.get("primary", TRAJECTORY_PATH_COLOR)), 1)
         pen.setStyle(Qt.PenStyle.DashLine)
         item.setPen(pen)
         item.setZValue(base_z - 0.3)
         return item
+
+    def cleanup(self) -> None:
+        """Stop all running animations and release resources.
+
+        Safe to call multiple times.  Must be called before the renderer's
+        parent view is torn down so that pending ``finished`` callbacks cannot
+        fire on a partially-destroyed object.
+        """
+        for anim in list(self._animations):
+            anim.stop()
+        self._animations.clear()
+
+    def _on_animation_finished(self, animation: QPropertyAnimation) -> None:
+        """Remove a completed animation from the tracking list.
+
+        Args:
+            animation: The animation that just finished.
+        """
+        try:
+            self._animations.remove(animation)
+        except ValueError:
+            pass  # already removed by cleanup()
 
     def _on_keyframe_dropped(self, item: "KeyframeItem") -> None:
         """Callback when a keyframe dot is released after dragging."""
@@ -376,7 +402,6 @@ class TrajectoryRenderer:
         x, y = norm_pos
 
         logger.info(
-            f"Keyframe dropped for {item.marker_id} "
-            f"at t={item.t}: ({x:.3f}, {y:.3f})"
+            f"Keyframe dropped for {item.marker_id} at t={item.t}: ({x:.3f}, {y:.3f})"
         )
         self._view.keyframe_moved.emit(item.marker_id, item.t, x, y)

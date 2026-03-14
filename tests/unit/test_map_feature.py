@@ -81,9 +81,7 @@ class TestPropertyAccessors:
     """Verify .is_point, .is_path, .is_region, .is_multipoint."""
 
     def test_is_point_default(self) -> None:
-        f = MapFeature(
-            map_id="m", object_id="o", object_type="entity", x=0.5, y=0.5
-        )
+        f = MapFeature(map_id="m", object_id="o", object_type="entity", x=0.5, y=0.5)
         assert f.is_point is True
         assert f.is_path is False
         assert f.is_region is False
@@ -136,9 +134,7 @@ class TestPointsProperty:
 
     def test_points_fallback_to_anchor(self) -> None:
         """When geometry is None, .points returns [(x, y)]."""
-        f = MapFeature(
-            map_id="m", object_id="o", object_type="entity", x=0.3, y=0.7
-        )
+        f = MapFeature(map_id="m", object_id="o", object_type="entity", x=0.3, y=0.7)
         assert f.points == [(0.3, 0.7)]
 
     def test_points_from_geometry(self) -> None:
@@ -177,9 +173,7 @@ class TestSetGeometry:
     """Verify that set_geometry updates geometry and recalculates the anchor."""
 
     def test_set_geometry_recalculates_anchor(self) -> None:
-        f = MapFeature(
-            map_id="m", object_id="o", object_type="entity", x=0.0, y=0.0
-        )
+        f = MapFeature(map_id="m", object_id="o", object_type="entity", x=0.0, y=0.0)
         coords = [{"x": 0.2, "y": 0.4}, {"x": 0.6, "y": 0.8}]
         f.set_geometry(coords)
 
@@ -244,9 +238,7 @@ class TestBoundingBox:
 
     def test_bbox_point_feature(self) -> None:
         """Point feature bbox is a zero-area box at the anchor."""
-        f = MapFeature(
-            map_id="m", object_id="o", object_type="entity", x=0.3, y=0.7
-        )
+        f = MapFeature(map_id="m", object_id="o", object_type="entity", x=0.3, y=0.7)
         assert f.get_bounding_box() == (0.3, 0.7, 0.3, 0.7)
 
     def test_bbox_path_feature(self) -> None:

@@ -33,19 +33,17 @@ from src.gui.widgets.map.map_layer_model import MapLayerModel
 def simple_tree() -> MapLayerNode:
     """A small hierarchy::
 
-        Root (group)
-        ├── Group A (group)
-        │   ├── Markers (marker layer)
-        │   └── Paths   (path layer)
-        └── Group B (group)
-            └── Regions (region layer)
+    Root (group)
+    ├── Group A (group)
+    │   ├── Markers (marker layer)
+    │   └── Paths   (path layer)
+    └── Group B (group)
+        └── Regions (region layer)
     """
     markers = MapLayerNode(
         name="Markers", layer_type=MAP_LAYER_TYPE_MARKER, id="markers-1"
     )
-    paths = MapLayerNode(
-        name="Paths", layer_type=MAP_LAYER_TYPE_PATH, id="paths-1"
-    )
+    paths = MapLayerNode(name="Paths", layer_type=MAP_LAYER_TYPE_PATH, id="paths-1")
     regions = MapLayerNode(
         name="Regions", layer_type=MAP_LAYER_TYPE_REGION, id="regions-1"
     )
@@ -91,9 +89,7 @@ class TestVisibilityInheritance:
             assert node is not None
             assert node.visible is True
 
-    def test_hide_parent_hides_children_signals(
-        self, model: MapLayerModel
-    ) -> None:
+    def test_hide_parent_hides_children_signals(self, model: MapLayerModel) -> None:
         """Hiding Group A emits visibility=False for its children."""
         received: list[tuple[str, bool]] = []
         model.layer_visibility_changed.connect(
@@ -110,9 +106,7 @@ class TestVisibilityInheritance:
         assert "markers-1" in ids_hidden
         assert "paths-1" in ids_hidden
 
-    def test_effective_visible_respects_parent(
-        self, model: MapLayerModel
-    ) -> None:
+    def test_effective_visible_respects_parent(self, model: MapLayerModel) -> None:
         """A child that is locally visible but with a hidden parent is
         effectively invisible."""
         group_a = model.find_node_by_id("group-a")
@@ -126,9 +120,7 @@ class TestVisibilityInheritance:
         # but effectively hidden
         assert markers.effective_visible(parent_visible=False) is False
 
-    def test_show_parent_restores_children(
-        self, model: MapLayerModel
-    ) -> None:
+    def test_show_parent_restores_children(self, model: MapLayerModel) -> None:
         """Re-showing a parent re-emits visibility for descendants."""
         group_a = model.find_node_by_id("group-a")
         assert group_a is not None
@@ -181,9 +173,7 @@ class TestMutuallyExclusiveGroups:
         )
         return MapLayerModel(root=root)
 
-    def test_enabling_one_disables_others(
-        self, era_model: MapLayerModel
-    ) -> None:
+    def test_enabling_one_disables_others(self, era_model: MapLayerModel) -> None:
         """Enabling Era 2 should disable Era 1."""
         era1 = era_model.find_node_by_id("era-1")
         era2 = era_model.find_node_by_id("era-2")
@@ -197,9 +187,7 @@ class TestMutuallyExclusiveGroups:
         assert era2.visible is True
         assert era1.visible is False
 
-    def test_enabling_third_disables_second(
-        self, era_model: MapLayerModel
-    ) -> None:
+    def test_enabling_third_disables_second(self, era_model: MapLayerModel) -> None:
         """Switching from Era 2 → Era 3."""
         era2 = era_model.find_node_by_id("era-2")
         era3 = era_model.find_node_by_id("era-3")
@@ -226,9 +214,7 @@ class TestMutuallyExclusiveGroups:
             assert node is not None
             assert node.visible is False
 
-    def test_signals_emitted_for_siblings(
-        self, era_model: MapLayerModel
-    ) -> None:
+    def test_signals_emitted_for_siblings(self, era_model: MapLayerModel) -> None:
         """Verify visibility signals are emitted for disabled siblings."""
         received: list[tuple[str, bool]] = []
         era_model.layer_visibility_changed.connect(
@@ -264,9 +250,7 @@ class TestZSorting:
         """Z values should increase by MAP_LAYER_Z_SPACING."""
         z = model.compute_z_order()
         assert z["group-a"] == pytest.approx(MAP_LAYER_Z_BASE)
-        assert z["markers-1"] == pytest.approx(
-            MAP_LAYER_Z_BASE + MAP_LAYER_Z_SPACING
-        )
+        assert z["markers-1"] == pytest.approx(MAP_LAYER_Z_BASE + MAP_LAYER_Z_SPACING)
 
     def test_z_order_after_move(self, model: MapLayerModel) -> None:
         """After moving Group B before Group A, the Z order reflects the
@@ -289,9 +273,7 @@ class TestZSorting:
         assert z["regions-1"] < z["group-a"]
         assert z["group-a"] < z["markers-1"]
 
-    def test_layer_order_signal_emitted_on_move(
-        self, model: MapLayerModel
-    ) -> None:
+    def test_layer_order_signal_emitted_on_move(self, model: MapLayerModel) -> None:
         """The layer_order_changed signal fires after a move."""
         received: list[bool] = []
         model.layer_order_changed.connect(lambda: received.append(True))
@@ -329,9 +311,7 @@ class TestOpacityInheritance:
         markers.opacity = 0.8
 
         received: list[tuple[str, float]] = []
-        model.layer_opacity_changed.connect(
-            lambda nid, op: received.append((nid, op))
-        )
+        model.layer_opacity_changed.connect(lambda nid, op: received.append((nid, op)))
         model.set_node_opacity(markers, 0.8)
 
         marker_op = [op for nid, op in received if nid == "markers-1"]
@@ -341,9 +321,7 @@ class TestOpacityInheritance:
     def test_opacity_signal_propagates(self, model: MapLayerModel) -> None:
         """Changing parent opacity emits signals for children."""
         received: list[tuple[str, float]] = []
-        model.layer_opacity_changed.connect(
-            lambda nid, op: received.append((nid, op))
-        )
+        model.layer_opacity_changed.connect(lambda nid, op: received.append((nid, op)))
 
         group_a = model.find_node_by_id("group-a")
         assert group_a is not None
@@ -383,9 +361,7 @@ class TestScaleDependentVisibility:
         markers.max_zoom = 5.0
         assert not model.visible_at_zoom(markers, 10.0)
 
-    def test_parent_visibility_overrides_zoom(
-        self, model: MapLayerModel
-    ) -> None:
+    def test_parent_visibility_overrides_zoom(self, model: MapLayerModel) -> None:
         """A hidden parent makes children invisible regardless of zoom."""
         group_a = model.find_node_by_id("group-a")
         markers = model.find_node_by_id("markers-1")
@@ -448,9 +424,7 @@ class TestSerialisation:
         """Map.to_dict / from_dict preserves the layer tree."""
         layers = MapLayerNode(
             name="Root",
-            children=[
-                MapLayerNode(name="Markers", layer_type=MAP_LAYER_TYPE_MARKER)
-            ],
+            children=[MapLayerNode(name="Markers", layer_type=MAP_LAYER_TYPE_MARKER)],
         )
         m = Map(name="Test Map", image_path="/fake.png", layers=layers)
         data = m.to_dict()
@@ -498,9 +472,7 @@ class TestVisibilityPresets:
         assert group_a.visible is False
         assert group_a.opacity == pytest.approx(0.3)
 
-    def test_preset_contains_all_nodes(
-        self, model: MapLayerModel
-    ) -> None:
+    def test_preset_contains_all_nodes(self, model: MapLayerModel) -> None:
         """Preset snapshot includes every node."""
         preset = model.save_preset()
         for nid in (
@@ -532,9 +504,7 @@ class TestModelAPI:
 
     def test_add_layer(self, model: MapLayerModel) -> None:
         """Adding a layer increases row count."""
-        new_node = MapLayerNode(
-            name="New Layer", layer_type=MAP_LAYER_TYPE_MARKER
-        )
+        new_node = MapLayerNode(name="New Layer", layer_type=MAP_LAYER_TYPE_MARKER)
         root_idx = model.index_from_node(model.root)
         model.add_layer(root_idx, new_node)
         assert model.rowCount() == 3

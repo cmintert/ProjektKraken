@@ -240,14 +240,15 @@ class TestSingleItemExport:
 
     def test_export_single_with_relations(self):
         """Test single-item export includes relations."""
-        relations = {
-            "ent-rel": [
-                {"target_id": "ent-target", "rel_type": "ally"}
-            ]
-        }
+        relations = {"ent-rel": [{"target_id": "ent-target", "rel_type": "ally"}]}
         entities = [
-            Entity(id="ent-target", name="Ally Entity", type="character",
-                   created_at=1705320000.0, modified_at=1705320000.0),
+            Entity(
+                id="ent-target",
+                name="Ally Entity",
+                type="character",
+                created_at=1705320000.0,
+                modified_at=1705320000.0,
+            ),
         ]
         db = MockDbService(entities=entities, relations=relations)
         exporter = ObsidianExporter(db)

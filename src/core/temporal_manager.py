@@ -19,7 +19,7 @@ class TemporalManager(QObject):
 
     def __init__(self, db_service: Any) -> None:
         """Args:
-            db_service: Reference to DatabaseService to fetch entities/relations.
+        db_service: Reference to DatabaseService to fetch entities/relations.
 
         """
         super().__init__()

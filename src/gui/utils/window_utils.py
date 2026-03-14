@@ -2,6 +2,7 @@
 
 Provides platform-specific window styling utilities, particularly for Windows title bars.
 """
+
 import ctypes
 import logging
 from ctypes import byref, c_int, sizeof

@@ -53,7 +53,12 @@ class FastInjectCoordinator(BaseCoordinator):
         # Accessing _cached_entities from MainWindow.
         # Note: In future, this should be via a DataService/Store.
         target_entity = next(
-            (e for e in self.main_window.data_coordinator.cached_entities if e.id == entity_id), None
+            (
+                e
+                for e in self.main_window.data_coordinator.cached_entities
+                if e.id == entity_id
+            ),
+            None,
         )
 
         if not target_entity:
@@ -73,7 +78,12 @@ class FastInjectCoordinator(BaseCoordinator):
 
         # 2. Fetch Target
         target_event = next(
-            (e for e in self.main_window.data_coordinator.cached_events if e.id == event_id), None
+            (
+                e
+                for e in self.main_window.data_coordinator.cached_events
+                if e.id == event_id
+            ),
+            None,
         )
 
         if not target_event:

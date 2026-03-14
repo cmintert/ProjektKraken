@@ -1070,15 +1070,19 @@ class TestDeleteLayerEmitsDBSignal:
     """Verify _on_delete_layer emits layer_delete_feature_requested for DB cleanup."""
 
     def test_delete_leaf_emits_feature_delete(self, qtbot) -> None:
-        """Deleting a leaf node emits layer_delete_feature_requested."""
+        """Deleting a leaf node emits layer_delete_feature_requested with (id, type)."""
         widget = _make_map_widget(qtbot)
         widget.add_marker("del-db-1", "entity", "To Delete", 0.5, 0.5)
 
-        received: list[str] = []
-        widget.layer_delete_feature_requested.connect(received.append)
+        received: list[tuple] = []
+        widget.layer_delete_feature_requested.connect(
+            lambda nid, lt: received.append((nid, lt))
+        )
 
         widget._on_delete_layer("del-db-1")
-        assert received == ["del-db-1"]
+        assert len(received) == 1
+        assert received[0][0] == "del-db-1"
+        assert received[0][1] == MAP_LAYER_TYPE_MARKER
 
     def test_delete_group_emits_for_all_children(self, qtbot) -> None:
         """Deleting a group emits layer_delete_feature_requested for each child."""
@@ -1086,12 +1090,15 @@ class TestDeleteLayerEmitsDBSignal:
         widget.add_marker("g-child-1", "entity", "Child 1", 0.2, 0.2)
         widget.add_marker("g-child-2", "entity", "Child 2", 0.7, 0.7)
 
-        received: list[str] = []
-        widget.layer_delete_feature_requested.connect(received.append)
+        received: list[tuple] = []
+        widget.layer_delete_feature_requested.connect(
+            lambda nid, lt: received.append((nid, lt))
+        )
 
         default = widget._default_group()
         widget._on_delete_layer(default.id)
-        assert set(received) == {"g-child-1", "g-child-2"}
+        emitted_ids = {t[0] for t in received}
+        assert emitted_ids == {"g-child-1", "g-child-2"}
 
     def test_delete_group_type_not_emitted(self, qtbot) -> None:
         """Deleting an empty group does NOT emit layer_delete_feature_requested."""
@@ -1105,14 +1112,43 @@ class TestDeleteLayerEmitsDBSignal:
         parent_idx = model.index_from_node(model.root)
         model.add_layer(parent_idx, group)
 
-        received: list[str] = []
-        widget.layer_delete_feature_requested.connect(received.append)
+        received: list[tuple] = []
+        widget.layer_delete_feature_requested.connect(
+            lambda nid, lt: received.append((nid, lt))
+        )
 
         widget._on_delete_layer("empty-grp")
         assert received == []
 
+    def test_delete_layer_exits_vertex_editing_first(self, qtbot) -> None:
+        """Deleting a layer while editing its path must remove edit handles first."""
+        widget = _make_map_widget(qtbot)
+        widget.add_marker(
+            "edit-path-1",
+            "entity",
+            "Editable Path",
+            0.5,
+            0.5,
+            feature_type="path",
+            geometry=[
+                {"x": 0.1, "y": 0.1},
+                {"x": 0.5, "y": 0.5},
+                {"x": 0.9, "y": 0.9},
+            ],
+        )
+
+        item = widget.view.feature_items["edit-path-1"]
+        widget.view._start_vertex_editing(item)
+
+        widget._on_delete_layer("edit-path-1")
+
+        assert widget.view.is_editing_vertices is False
+        assert len(widget.view._vertex_handles) == 0
+        assert len(widget.view._midpoint_handles) == 0
+        assert "edit-path-1" not in widget.view.feature_items
+
     def test_collect_leaf_ids_nested_groups(self, qtbot) -> None:
-        """_collect_leaf_ids recurses through nested groups."""
+        """_collect_leaf_ids recurses through nested groups, returning (id, type) tuples."""
         widget = _make_map_widget(qtbot)
         # Build a nested tree: root → group → sub-group → leaf
         leaf = MapLayerNode(
@@ -1131,7 +1167,7 @@ class TestDeleteLayerEmitsDBSignal:
             children=[sub],
         )
         ids = widget._collect_leaf_ids(top)
-        assert ids == ["deep-leaf"]
+        assert ids == [("deep-leaf", MAP_LAYER_TYPE_MARKER)]
 
 
 class TestRenameLayerCommandMarkerIdFix:
@@ -1201,3 +1237,89 @@ class TestViewTransformPreservation:
 
         assert abs(widget.view.transform().m11() - 3.0) < 0.01
         assert abs(widget.view.transform().m22() - 3.0) < 0.01
+
+
+# =========================================================================
+# MapLayerPanel Builder / Factory Method Tests
+# =========================================================================
+
+
+class TestMapLayerPanelBuilderMethods:
+    """Tests for the extracted builder methods and widget factories."""
+
+    def test_make_button_returns_push_button(self, qtbot) -> None:
+        """_make_button creates a QPushButton with label and tooltip."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        btn = panel._make_button("Test", "A tooltip", lambda: None)
+        assert btn.text() == "Test"
+        assert btn.toolTip() == "A tooltip"
+        assert btn.isEnabled()
+
+    def test_make_button_disabled(self, qtbot) -> None:
+        """_make_button supports enabled=False."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        btn = panel._make_button("X", "tip", lambda: None, enabled=False)
+        assert not btn.isEnabled()
+
+    def test_make_button_hidden(self, qtbot) -> None:
+        """_make_button supports visible=False."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        btn = panel._make_button("X", "tip", lambda: None, visible=False)
+        assert not btn.isVisible()
+
+    def test_make_labeled_spinbox_returns_spinbox(self, qtbot) -> None:
+        """_make_labeled_spinbox creates a QSpinBox with correct range."""
+        from PySide6.QtWidgets import QVBoxLayout
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        layout = QVBoxLayout()
+        spin = panel._make_labeled_spinbox(layout, "Test:", 5, 50, 25, lambda v: None)
+        assert spin.minimum() == 5
+        assert spin.maximum() == 50
+        assert spin.value() == 25
+        assert layout.count() == 1  # one row added
+
+    def test_make_labeled_slider_returns_slider_and_label(self, qtbot) -> None:
+        """_make_labeled_slider creates a slider and value readout label."""
+        from PySide6.QtWidgets import QVBoxLayout
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        layout = QVBoxLayout()
+        slider, lbl = panel._make_labeled_slider(
+            layout, "Volume:", 0, 100, 50, "Adjust volume", lambda v: None
+        )
+        assert slider.minimum() == 0
+        assert slider.maximum() == 100
+        assert slider.value() == 50
+        assert slider.toolTip() == "Adjust volume"
+        assert "50" in lbl.text()
+
+    def test_panel_raster_toolbar_hidden_by_default(self, qtbot) -> None:
+        """Raster toolbar starts hidden after construction."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        assert not panel._raster_toolbar.isVisible()
+
+    def test_panel_tool_mode_buttons_created(self, qtbot) -> None:
+        """All four raster tool mode buttons are created."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        assert panel._btn_brush.isCheckable()
+        assert panel._btn_fill.isCheckable()
+        assert panel._btn_gradient.isCheckable()
+        assert panel._btn_sample.isCheckable()
+        assert panel._btn_brush.isChecked()  # default
+
+    def test_panel_blend_combo_populated(self, qtbot) -> None:
+        """Blend mode combo is populated from BLEND_MODE_NAMES."""
+        from src.gui.widgets.map.raster_layer_item import BLEND_MODE_NAMES
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        items = [panel._blend_combo.itemText(i) for i in range(panel._blend_combo.count())]
+        assert items == list(BLEND_MODE_NAMES)

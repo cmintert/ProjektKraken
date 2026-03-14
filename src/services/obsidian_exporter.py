@@ -275,9 +275,7 @@ class ObsidianExporter:
         filepath.write_text(content, encoding="utf-8")
         return filepath
 
-    def _get_user_attributes_yaml(
-        self, attributes: Dict[str, Any]
-    ) -> List[str]:
+    def _get_user_attributes_yaml(self, attributes: Dict[str, Any]) -> List[str]:
         """Build YAML lines for user-defined attributes.
 
         Excludes internal attributes (keys starting with '_').
@@ -303,9 +301,7 @@ class ObsidianExporter:
                 lines.append(f"{key}: {value}")
         return lines
 
-    def _get_summary_blockquote(
-        self, attributes: Dict[str, Any]
-    ) -> Optional[str]:
+    def _get_summary_blockquote(self, attributes: Dict[str, Any]) -> Optional[str]:
         """Extract summary text from _summary_data and format as blockquote.
 
         Args:
@@ -456,9 +452,7 @@ class ObsidianExporter:
         """Escape quotes in YAML string values."""
         return value.replace('"', '\\"')
 
-    def _build_stat_block(
-        self, name: str, attributes: Dict[str, Any]
-    ) -> Optional[str]:
+    def _build_stat_block(self, name: str, attributes: Dict[str, Any]) -> Optional[str]:
         """Build an Obsidian callout stat block from a sheet layout.
 
         Reads the ``_sheet_layout`` metadata (a 2D list) and formats it as an

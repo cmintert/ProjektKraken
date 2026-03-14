@@ -77,9 +77,7 @@ def import_asset_file(source_path: str, assets_dir: Path) -> Optional[str]:
     # Validate extension (security: prevent importing executables)
     ext = source.suffix.lower()
     if ext not in ALLOWED_IMAGE_EXTENSIONS:
-        logger.warning(
-            f"Blocked import of disallowed file type: {ext} ({source_path})"
-        )
+        logger.warning(f"Blocked import of disallowed file type: {ext} ({source_path})")
         return None
 
     # Ensure target directory exists

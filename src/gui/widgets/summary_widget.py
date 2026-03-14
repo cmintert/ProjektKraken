@@ -2,6 +2,7 @@
 
 Provides a widget for displaying and managing AI-generated item summaries.
 """
+
 from datetime import datetime
 
 from PySide6.QtCore import Signal
@@ -33,7 +34,7 @@ class SummaryWidget(QWidget):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the summary widget.
-        
+
         Args:
             parent: Optional parent widget.
         """

@@ -4,7 +4,6 @@ Verifies that the centralized command registry correctly loads and provides
 all known command types for history service registration.
 """
 
-
 from src.commands.registry import get_command_types, register_command_type
 
 # Expected command names that must always be present
@@ -24,6 +23,25 @@ EXPECTED_COMMANDS = [
     "UpdateMapCommand",
     "DeleteMapCommand",
     "UpdateCalendarConfigCommand",
+    # Marker commands
+    "CreateMarkerCommand",
+    "UpdateMarkerCommand",
+    "DeleteMarkerCommand",
+    "UpdateMarkerIconCommand",
+    "UpdateMarkerColorCommand",
+    "UpdateMarkerAttributeCommand",
+    "DeleteKeyframeCommand",
+    # Layer commands
+    "SetLayerVisibilityCommand",
+    "MoveLayerCommand",
+    "SaveLayerTreeCommand",
+    "SetLayerOpacityCommand",
+    "RenameLayerCommand",
+    # Raster commands
+    "CreateRasterLayerCommand",
+    "DeleteRasterLayerCommand",
+    "SetRasterMappingCommand",
+    "SetRasterBlendModeCommand",
 ]
 
 

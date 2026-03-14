@@ -95,15 +95,15 @@ def test_context_menu_no_item(outline_widget, sample_sequence, qtbot):
 def test_promote_signal_emitted(outline_widget, sample_sequence, qtbot):
     """Test that promote action emits the correct signal."""
     outline_widget.load_sequence(sample_sequence)
-    
+
     # Select a child item (Section 1.1)
     item = outline_widget.topLevelItem(0).child(0)
     outline_widget.setCurrentItem(item)
-    
+
     # Use signal spy
     with qtbot.waitSignal(outline_widget.item_promoted, timeout=1000) as blocker:
         outline_widget._promote_selected()
-    
+
     # Check signal data
     assert blocker.args[0] == "events"
     assert blocker.args[1] == "event2"
@@ -113,15 +113,15 @@ def test_promote_signal_emitted(outline_widget, sample_sequence, qtbot):
 def test_demote_signal_emitted(outline_widget, sample_sequence, qtbot):
     """Test that demote action emits the correct signal."""
     outline_widget.load_sequence(sample_sequence)
-    
+
     # Select the second child item (Section 1.2) which can be demoted
     item = outline_widget.topLevelItem(0).child(1)
     outline_widget.setCurrentItem(item)
-    
+
     # Use signal spy
     with qtbot.waitSignal(outline_widget.item_demoted, timeout=1000) as blocker:
         outline_widget._demote_selected()
-    
+
     # Check signal data
     assert blocker.args[0] == "events"
     assert blocker.args[1] == "event3"
@@ -131,15 +131,15 @@ def test_demote_signal_emitted(outline_widget, sample_sequence, qtbot):
 def test_remove_signal_emitted(outline_widget, sample_sequence, qtbot):
     """Test that delete action emits the correct signal."""
     outline_widget.load_sequence(sample_sequence)
-    
+
     # Select first item
     item = outline_widget.topLevelItem(0)
     outline_widget.setCurrentItem(item)
-    
+
     # Use signal spy
     with qtbot.waitSignal(outline_widget.item_deleted, timeout=1000) as blocker:
         outline_widget._delete_selected()
-    
+
     # Check signal data
     assert blocker.args[0] == "events"
     assert blocker.args[1] == "event1"
@@ -148,15 +148,15 @@ def test_remove_signal_emitted(outline_widget, sample_sequence, qtbot):
 def test_move_up_signal_emitted(outline_widget, sample_sequence, qtbot):
     """Test that move up action emits the correct signal."""
     outline_widget.load_sequence(sample_sequence)
-    
+
     # Select the second child item (Section 1.2)
     item = outline_widget.topLevelItem(0).child(1)
     outline_widget.setCurrentItem(item)
-    
+
     # Use signal spy
     with qtbot.waitSignal(outline_widget.item_move_up, timeout=1000) as blocker:
         outline_widget._move_up_selected()
-    
+
     # Check signal data
     assert blocker.args[0] == "events"
     assert blocker.args[1] == "event3"
@@ -166,15 +166,15 @@ def test_move_up_signal_emitted(outline_widget, sample_sequence, qtbot):
 def test_move_down_signal_emitted(outline_widget, sample_sequence, qtbot):
     """Test that move down action emits the correct signal."""
     outline_widget.load_sequence(sample_sequence)
-    
+
     # Select the first child item (Section 1.1)
     item = outline_widget.topLevelItem(0).child(0)
     outline_widget.setCurrentItem(item)
-    
+
     # Use signal spy
     with qtbot.waitSignal(outline_widget.item_move_down, timeout=1000) as blocker:
         outline_widget._move_down_selected()
-    
+
     # Check signal data
     assert blocker.args[0] == "events"
     assert blocker.args[1] == "event2"
@@ -184,21 +184,21 @@ def test_move_down_signal_emitted(outline_widget, sample_sequence, qtbot):
 def test_move_up_at_top_no_signal(outline_widget, sample_sequence, qtbot):
     """Test that move up does nothing when item is already at top."""
     outline_widget.load_sequence(sample_sequence)
-    
+
     # Select the first top-level item
     item = outline_widget.topLevelItem(0)
     outline_widget.setCurrentItem(item)
-    
+
     # Try to move up - should not emit signal
     signal_emitted = False
-    
+
     def on_signal(*args):
         nonlocal signal_emitted
         signal_emitted = True
-    
+
     outline_widget.item_move_up.connect(on_signal)
     outline_widget._move_up_selected()
-    
+
     # Give it a moment
     qtbot.wait(100)
     assert not signal_emitted, "Move up should not emit signal when at top"
@@ -207,21 +207,21 @@ def test_move_up_at_top_no_signal(outline_widget, sample_sequence, qtbot):
 def test_move_down_at_bottom_no_signal(outline_widget, sample_sequence, qtbot):
     """Test that move down does nothing when item is already at bottom."""
     outline_widget.load_sequence(sample_sequence)
-    
+
     # Select the last child item (Section 1.2)
     item = outline_widget.topLevelItem(0).child(1)
     outline_widget.setCurrentItem(item)
-    
+
     # Try to move down - should not emit signal
     signal_emitted = False
-    
+
     def on_signal(*args):
         nonlocal signal_emitted
         signal_emitted = True
-    
+
     outline_widget.item_move_down.connect(on_signal)
     outline_widget._move_down_selected()
-    
+
     # Give it a moment
     qtbot.wait(100)
     assert not signal_emitted, "Move down should not emit signal when at bottom"
@@ -229,20 +229,20 @@ def test_move_down_at_bottom_no_signal(outline_widget, sample_sequence, qtbot):
 
 def test_promote_top_level_no_signal(outline_widget, sample_sequence, qtbot):
     """Test that promote signal is emitted even for top-level items.
-    
+
     The widget emits the signal; the command layer validates and handles
     items already at maximum promotion (depth 0).
     """
     outline_widget.load_sequence(sample_sequence)
-    
+
     # Select first top-level item (depth 0)
     item = outline_widget.topLevelItem(0)
     outline_widget.setCurrentItem(item)
-    
+
     # Widget emits signal, command will validate
     with qtbot.waitSignal(outline_widget.item_promoted, timeout=1000) as blocker:
         outline_widget._promote_selected()
-    
+
     # Signal is emitted, command will handle validation
     assert blocker.args[0] == "events"
     assert blocker.args[1] == "event1"
@@ -251,15 +251,15 @@ def test_promote_top_level_no_signal(outline_widget, sample_sequence, qtbot):
 def test_demote_first_child_no_signal(outline_widget, sample_sequence, qtbot):
     """Test that demote works for first child (makes it child of parent)."""
     outline_widget.load_sequence(sample_sequence)
-    
+
     # Select first child item (Section 1.1)
     item = outline_widget.topLevelItem(0).child(0)
     outline_widget.setCurrentItem(item)
-    
+
     # Try to demote - should emit signal (command handles logic)
     with qtbot.waitSignal(outline_widget.item_demoted, timeout=1000) as blocker:
         outline_widget._demote_selected()
-    
+
     assert blocker.args[0] == "events"
     assert blocker.args[1] == "event2"
 

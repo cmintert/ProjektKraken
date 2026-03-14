@@ -1,7 +1,7 @@
-from src.core.events import Event
-from src.core.entities import Entity
-from src.commands.event_commands import DeleteEventCommand
 from src.commands.entity_commands import DeleteEntityCommand
+from src.commands.event_commands import DeleteEventCommand
+from src.core.entities import Entity
+from src.core.events import Event
 
 
 def test_relation_integrity_on_delete_event(db_service):

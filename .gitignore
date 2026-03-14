@@ -71,3 +71,5 @@ worlds/
 
 # Temporary test logs
 failed_tests*.log
+pytest_no_qt.ini
+tests_conftest_qt_mock.py

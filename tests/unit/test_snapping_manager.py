@@ -406,8 +406,13 @@ class TestSnapIndicator:
         # Add a feature to edit
         geom = [{"x": 0.1, "y": 0.2}, {"x": 0.5, "y": 0.5}, {"x": 0.9, "y": 0.8}]
         view.add_marker(
-            "p1", "entity", "River", 0.5, 0.5,
-            feature_type="path", geometry=geom,
+            "p1",
+            "entity",
+            "River",
+            0.5,
+            0.5,
+            feature_type="path",
+            geometry=geom,
         )
         item = view.feature_items["p1"]
         view._start_vertex_editing(item)

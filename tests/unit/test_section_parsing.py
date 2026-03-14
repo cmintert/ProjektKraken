@@ -1,6 +1,5 @@
 """Tests for section parsing and coloring logic in WikiTextEdit."""
 
-
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
 
@@ -21,11 +20,7 @@ def test_section_parsing_assigns_user_data(qtbot):
 
     # Set some initial text with headings
     markdown_text = (
-        "# Chapter 1\n"
-        "Some text for chapter 1.\n"
-        "\n"
-        "## Sub-section\n"
-        "Text in sub-section."
+        "# Chapter 1\nSome text for chapter 1.\n\n## Sub-section\nText in sub-section."
     )
     widget.set_wiki_text(markdown_text)
 

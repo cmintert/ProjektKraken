@@ -179,7 +179,9 @@ def test_empty_block_preserved_after_completer_update(rich_editor):
     rich_editor.setTextCursor(cursor)
 
     block_count_before = rich_editor.document().blockCount()
-    assert block_count_before == 3, f"Setup error: expected 3 blocks, got {block_count_before}"
+    assert block_count_before == 3, (
+        f"Setup error: expected 3 blocks, got {block_count_before}"
+    )
 
     # Simulate an autosave completer update
     items = [("id1", "Alice", "Character"), ("id2", "Bob", "Location")]
@@ -187,8 +189,7 @@ def test_empty_block_preserved_after_completer_update(rich_editor):
 
     block_count_after = rich_editor.document().blockCount()
     assert block_count_after == block_count_before, (
-        f"set_completer() collapsed {block_count_before} blocks to "
-        f"{block_count_after}"
+        f"set_completer() collapsed {block_count_before} blocks to {block_count_after}"
     )
 
 

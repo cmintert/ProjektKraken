@@ -2,6 +2,7 @@
 
 Provides utilities for loading and recoloring SVG icons.
 """
+
 import os
 
 from PySide6.QtCore import QByteArray

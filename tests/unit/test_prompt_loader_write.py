@@ -1,4 +1,3 @@
-
 import pytest
 
 from src.services.prompt_loader import PromptLoader

@@ -84,7 +84,10 @@ class CreateMarkerCommand(BaseCommand):
         Returns:
             Dictionary representation of the command.
         """
-        return {"marker_data": self._marker.to_dict()}
+        return {
+            "marker_data": self._marker.to_dict(),
+            "actual_marker_id": self._actual_marker_id,
+        }
 
     @classmethod
     def from_dict(cls, data: dict) -> "CreateMarkerCommand":
@@ -96,7 +99,9 @@ class CreateMarkerCommand(BaseCommand):
         Returns:
             CreateMarkerCommand instance.
         """
-        return cls(data["marker_data"])
+        instance = cls(data["marker_data"])
+        instance._actual_marker_id = data.get("actual_marker_id")
+        return instance
 
 
 class UpdateMarkerCommand(BaseCommand):
@@ -230,7 +235,13 @@ class DeleteMarkerCommand(BaseCommand):
                     command_name="DeleteMarkerCommand",
                 )
 
-            db_service.delete_marker(self.marker_id)
+            rows_deleted = db_service.delete_marker(self.marker_id)
+            if rows_deleted == 0:
+                return CommandResult(
+                    success=False,
+                    message=f"Marker delete confirmed 0 rows: {self.marker_id}",
+                    command_name="DeleteMarkerCommand",
+                )
             self._is_executed = True
             logger.info(f"Deleted marker: {self.marker_id}")
             return CommandResult(

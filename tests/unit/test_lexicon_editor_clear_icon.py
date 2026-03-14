@@ -50,9 +50,7 @@ class TestClearIconButtonExists:
             },
             "edges": {},
         }
-        dialog = LexiconEditorDialog(
-            entity_types=["deity"], current_config=config
-        )
+        dialog = LexiconEditorDialog(entity_types=["deity"], current_config=config)
         assert dialog._node_rows["deity"]["clear_btn"].isEnabled()
 
 
@@ -76,9 +74,7 @@ class TestClearIconBehaviour:
             },
             "edges": {},
         }
-        dialog = LexiconEditorDialog(
-            entity_types=["deity"], current_config=config
-        )
+        dialog = LexiconEditorDialog(entity_types=["deity"], current_config=config)
         dialog._clear_icon("deity")
         assert dialog._node_rows["deity"]["icon_path"] == ""
 
@@ -94,9 +90,7 @@ class TestClearIconBehaviour:
             },
             "edges": {},
         }
-        dialog = LexiconEditorDialog(
-            entity_types=["deity"], current_config=config
-        )
+        dialog = LexiconEditorDialog(entity_types=["deity"], current_config=config)
         dialog._clear_icon("deity")
         assert "Import" in dialog._node_rows["deity"]["icon_btn"].text()
 
@@ -112,9 +106,7 @@ class TestClearIconBehaviour:
             },
             "edges": {},
         }
-        dialog = LexiconEditorDialog(
-            entity_types=["deity"], current_config=config
-        )
+        dialog = LexiconEditorDialog(entity_types=["deity"], current_config=config)
         dialog._clear_icon("deity")
         assert not dialog._node_rows["deity"]["clear_btn"].isEnabled()
 
@@ -130,9 +122,7 @@ class TestClearIconBehaviour:
             },
             "edges": {},
         }
-        dialog = LexiconEditorDialog(
-            entity_types=["deity"], current_config=config
-        )
+        dialog = LexiconEditorDialog(entity_types=["deity"], current_config=config)
         dialog._clear_icon("deity")
         assert dialog._node_rows["deity"]["shape"].currentText() == "dot"
 
@@ -148,9 +138,7 @@ class TestClearIconBehaviour:
             },
             "edges": {},
         }
-        dialog = LexiconEditorDialog(
-            entity_types=["deity"], current_config=config
-        )
+        dialog = LexiconEditorDialog(entity_types=["deity"], current_config=config)
         dialog._clear_icon("deity")
         assert dialog._node_rows["deity"]["shape"].currentText() == "star"
 
@@ -166,9 +154,7 @@ class TestClearIconBehaviour:
             },
             "edges": {},
         }
-        dialog = LexiconEditorDialog(
-            entity_types=["deity"], current_config=config
-        )
+        dialog = LexiconEditorDialog(entity_types=["deity"], current_config=config)
         dialog._clear_icon("deity")
         result = dialog.get_lexicon_config()
         assert "icon" not in result["nodes"]["deity"]

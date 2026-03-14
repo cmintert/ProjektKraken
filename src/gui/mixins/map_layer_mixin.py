@@ -5,7 +5,7 @@ for the MapWidget.
 """
 
 import logging
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from PySide6.QtCore import Qt, Slot
 
@@ -33,7 +33,7 @@ class MapLayerMixin:
         - self.layer_panel: MapLayerPanel
         - self._layer_model: Optional[MapLayerModel]
         - self.layer_tree_changed: Signal
-        - self.layer_delete_feature_requested: Signal(str)
+        - self.layer_delete_feature_requested: Signal(str, str)
         - self.layer_rename_requested: Signal(str, str)
         - self.layer_opacity_change_requested: Signal(str, float, float)
     """
@@ -252,6 +252,10 @@ class MapLayerMixin:
         if node is None:
             return
 
+        exit_editing_modes = getattr(self, "exit_editing_modes", None)
+        if callable(exit_editing_modes):
+            exit_editing_modes()
+
         # Don't delete the root
         if node is self._layer_model.root:
             logger.warning("Cannot delete the root node")
@@ -273,22 +277,22 @@ class MapLayerMixin:
         logger.info(f"Deleted layer: {node.name} ({node_id})")
 
         # Request DB deletion for every leaf feature
-        for leaf_id in leaf_ids:
-            self.layer_delete_feature_requested.emit(leaf_id)
+        for leaf_id, leaf_type in leaf_ids:
+            self.layer_delete_feature_requested.emit(leaf_id, leaf_type)
 
-    def _collect_leaf_ids(self, node: MapLayerNode) -> List[str]:
-        """Recursively collect IDs of all leaf (non-group) nodes.
+    def _collect_leaf_ids(self, node: MapLayerNode) -> List[Tuple[str, str]]:
+        """Recursively collect IDs and types of all leaf (non-group) nodes.
 
         Args:
             node: The root node to search.
 
         Returns:
-            List of leaf node IDs.
+            List of (node_id, layer_type) tuples for all leaf nodes.
 
         """
-        ids: List[str] = []
+        ids: List[Tuple[str, str]] = []
         if node.layer_type != MAP_LAYER_TYPE_GROUP:
-            ids.append(node.id)
+            ids.append((node.id, node.layer_type))
         for child in node.children:
             ids.extend(self._collect_leaf_ids(child))
         return ids
@@ -345,6 +349,136 @@ class MapLayerMixin:
 
         """
         self.layer_opacity_change_requested.emit(node_id, opacity, old_opacity)
+
+    @Slot()
+    def _on_create_raster_layer(self) -> None:
+        """Open the raster layer dialog and emit the creation signal."""
+        from src.gui.widgets.map.raster_layer_dialog import RasterLayerDialog
+
+        logger.debug("_on_create_raster_layer: opening dialog")
+        map_aspect = 1.0
+        view = getattr(self, "view", None)
+        if view is not None:
+            pixmap_item = getattr(view, "pixmap_item", None)
+            if pixmap_item is not None:
+                r = pixmap_item.boundingRect()
+                if r.width() > 0 and r.height() > 0:
+                    map_aspect = r.width() / r.height()
+        dialog = RasterLayerDialog(
+            parent=getattr(self, "window", lambda: None)(),
+            map_aspect=map_aspect,
+        )
+        if dialog.exec():
+            data = dialog.result_data()
+            import_path = data.get("import_path", "")
+            logger.debug(
+                "_on_create_raster_layer: accepted — name=%r size=%dx%d mode=%s "
+                "default=%d import_path=%r",
+                data["name"],
+                data["width"],
+                data["height"],
+                data["mode"],
+                data["default_value"],
+                import_path,
+            )
+            self.create_raster_layer_requested.emit(
+                data["name"],
+                data["width"],
+                data["height"],
+                data["mode"],
+                data["default_value"],
+                import_path,
+            )
+        else:
+            logger.debug("_on_create_raster_layer: dialog cancelled")
+
+    @Slot(str)
+    def _on_raster_edit_requested(self, node_id: str) -> None:
+        """Start raster editing mode in the graphics view."""
+        from src.gui.widgets.map.raster_edit_tool import RasterEditMode
+
+        view = getattr(self, "view", None)
+        panel = getattr(self, "layer_panel", None)
+        if view is None or panel is None:
+            logger.warning(
+                "_on_raster_edit_requested: view=%s panel=%s — cannot start editing",
+                view,
+                panel,
+            )
+            return
+
+        # Apply current tool settings
+        tool = view._raster_edit_tool
+        mode_name = panel.raster_tool_mode
+        mode_map = {
+            "brush": RasterEditMode.BRUSH,
+            "fill": RasterEditMode.FILL,
+            "gradient": RasterEditMode.GRADIENT,
+            "sample": RasterEditMode.SAMPLE,
+        }
+        tool.mode = mode_map.get(mode_name, RasterEditMode.BRUSH)
+        tool.brush_size = panel.raster_brush_size
+        tool.paint_value = panel.raster_paint_value
+        tool.falloff = panel.raster_falloff
+
+        logger.debug(
+            "_on_raster_edit_requested: node_id=%s mode=%s brush_size=%d "
+            "paint_value=%d falloff=%.2f registered_items=%s",
+            node_id,
+            tool.mode.name,
+            tool.brush_size,
+            tool.paint_value,
+            tool.falloff,
+            list(view._raster_items.keys()),
+        )
+
+        view.start_raster_editing(node_id)
+        self.raster_edit_requested.emit(node_id)
+
+    @Slot()
+    def _on_raster_edit_stopped(self) -> None:
+        """Stop raster editing mode in the graphics view."""
+        logger.debug("_on_raster_edit_stopped: stopping raster edit")
+        view = getattr(self, "view", None)
+        if view is not None:
+            view.stop_raster_editing()
+        else:
+            logger.warning("_on_raster_edit_stopped: no view available")
+        self.raster_edit_stopped.emit()
+
+    @Slot()
+    def _on_raster_settings_changed(self) -> None:
+        """Push updated tool settings from the panel to the active tool."""
+        from src.gui.widgets.map.raster_edit_tool import RasterEditMode
+
+        view = getattr(self, "view", None)
+        panel = getattr(self, "layer_panel", None)
+        if view is None or panel is None:
+            return
+
+        tool = view._raster_edit_tool
+        if not tool.is_active:
+            return
+
+        mode_map = {
+            "brush": RasterEditMode.BRUSH,
+            "fill": RasterEditMode.FILL,
+            "gradient": RasterEditMode.GRADIENT,
+            "sample": RasterEditMode.SAMPLE,
+        }
+        tool.mode = mode_map.get(panel.raster_tool_mode, RasterEditMode.BRUSH)
+        tool.brush_size = panel.raster_brush_size
+        tool.paint_value = panel.raster_paint_value
+        tool.falloff = panel.raster_falloff
+
+        logger.debug(
+            "_on_raster_settings_changed: mode=%s brush_size=%d "
+            "paint_value=%d falloff=%.2f",
+            tool.mode.name,
+            tool.brush_size,
+            tool.paint_value,
+            tool.falloff,
+        )
 
     def get_layer_model(self) -> Optional[MapLayerModel]:
         """Return the current layer model (if any).

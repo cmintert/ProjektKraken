@@ -177,12 +177,18 @@ class TestEditorSaveMergesAttributes:
         hidden = {
             "_tags": ["old_tag"],
             "_summary_data": {
-                "text": "old", "hash": "x", "timestamp": 1.0, "model": "m",
+                "text": "old",
+                "hash": "x",
+                "timestamp": 1.0,
+                "model": "m",
             },
             "_custom_hidden": "preserve_me",
         }
         pending = {
-            "text": "new", "hash": "y", "timestamp": 2.0, "model": "m2",
+            "text": "new",
+            "hash": "y",
+            "timestamp": 2.0,
+            "model": "m2",
         }
 
         result = self._simulate_entity_editor_save(
@@ -227,12 +233,18 @@ class TestEditorSaveMergesAttributes:
         hidden = {
             "_tags": ["old"],
             "_summary_data": {
-                "text": "old", "hash": "x", "timestamp": 1.0, "model": "m",
+                "text": "old",
+                "hash": "x",
+                "timestamp": 1.0,
+                "model": "m",
             },
             "_event_meta": "important",
         }
         pending = {
-            "text": "new", "hash": "y", "timestamp": 2.0, "model": "m2",
+            "text": "new",
+            "hash": "y",
+            "timestamp": 2.0,
+            "model": "m2",
         }
 
         result = self._simulate_event_editor_save(
@@ -269,12 +281,8 @@ class TestEditorSaveMergesAttributes:
         pending = summary.to_dict()
 
         # Step 3: Simulate editor save (as the fixed entity_editor._on_save does)
-        hidden = {
-            k: v for k, v in entity.attributes.items() if k.startswith("_")
-        }
-        visible = {
-            k: v for k, v in entity.attributes.items() if not k.startswith("_")
-        }
+        hidden = {k: v for k, v in entity.attributes.items() if k.startswith("_")}
+        visible = {k: v for k, v in entity.attributes.items() if not k.startswith("_")}
         merged = self._simulate_entity_editor_save(
             hidden_attributes=hidden,
             pending_summary_data=pending,
@@ -312,12 +320,8 @@ class TestEditorSaveMergesAttributes:
         summary = summary_service.generate_summary(event)
         pending = summary.to_dict()
 
-        hidden = {
-            k: v for k, v in event.attributes.items() if k.startswith("_")
-        }
-        visible = {
-            k: v for k, v in event.attributes.items() if not k.startswith("_")
-        }
+        hidden = {k: v for k, v in event.attributes.items() if k.startswith("_")}
+        visible = {k: v for k, v in event.attributes.items() if not k.startswith("_")}
         merged = self._simulate_event_editor_save(
             hidden_attributes=hidden,
             pending_summary_data=pending,
@@ -375,9 +379,7 @@ class TestSummaryLoadedOnEditorOpen:
         displayed = editor.summary_widget.text_display.toPlainText()
         assert "A heroic knight." in displayed
 
-    def test_event_editor_loads_summary_without_summary_service(
-        self, qapp, db_service
-    ):
+    def test_event_editor_loads_summary_without_summary_service(self, qapp, db_service):
         """Event editor must display summary even when summary_service is None."""
         from src.gui.widgets.event_editor import EventEditorWidget
 
@@ -410,9 +412,7 @@ class TestSummaryLoadedOnEditorOpen:
         displayed = editor.summary_widget.text_display.toPlainText()
         assert "A decisive battle." in displayed
 
-    def test_entity_editor_shows_staleness_with_summary_service(
-        self, qapp, db_service
-    ):
+    def test_entity_editor_shows_staleness_with_summary_service(self, qapp, db_service):
         """When summary_service is injected, staleness should be checked."""
         from src.gui.widgets.entity_editor import EntityEditorWidget
 

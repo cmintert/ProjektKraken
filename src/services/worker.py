@@ -671,9 +671,7 @@ class DatabaseWorker(QObject):
             # Reload graph data so the new lexicon takes effect
             self.load_graph_data()
         except Exception:
-            logger.error(
-                f"Failed to save graph lexicon: {traceback.format_exc()}"
-            )
+            logger.error(f"Failed to save graph lexicon: {traceback.format_exc()}")
             self.error_occurred.emit("Failed to save graph lexicon.")
 
     @Slot()
@@ -875,9 +873,7 @@ class DatabaseWorker(QObject):
                 "edges": {},
             }
             project_root = Path(self.db_service.db_path).parent
-            resolved = GraphBuilder.resolve_lexicon_images(
-                raw_lexicon, project_root
-            )
+            resolved = GraphBuilder.resolve_lexicon_images(raw_lexicon, project_root)
             self.graph_lexicon_loaded.emit(raw_lexicon, resolved)
 
             self.operation_finished.emit(
@@ -968,9 +964,7 @@ class DatabaseWorker(QObject):
             self.import_finished.emit(result)
 
     @Slot(str, str)
-    def run_markdown_import(
-        self, markdown_text: str, options_json: str
-    ) -> None:
+    def run_markdown_import(self, markdown_text: str, options_json: str) -> None:
         """Import a Markdown file using worker's db_service.
 
         Parses Markdown content and imports the item into the database
@@ -1027,9 +1021,7 @@ class DatabaseWorker(QObject):
             self.import_finished.emit(result)
 
     @Slot(str, str)
-    def run_markdown_batch_import(
-        self, contents_json: str, options_json: str
-    ) -> None:
+    def run_markdown_batch_import(self, contents_json: str, options_json: str) -> None:
         """Import multiple Markdown files in a single batch operation.
 
         Parses each Markdown content string and imports all items,
@@ -1094,9 +1086,7 @@ class DatabaseWorker(QObject):
                 self.operation_finished.emit("Markdown batch import failed.")
 
         except Exception as e:
-            logger.error(
-                f"Markdown batch import failed: {traceback.format_exc()}"
-            )
+            logger.error(f"Markdown batch import failed: {traceback.format_exc()}")
             result = ImportResult(
                 success=False,
                 created_entities=[],

@@ -33,7 +33,7 @@ class ExplorerFilterProxyModel(QSortFilterProxyModel):
         self._search_term = ""
         self._filter_mode = "All Items"  # "All Items", "Events Only", "Entities Only"
         self._advanced_filter_config: dict = {}
-        
+
         # Enable dynamic sorting
         self.setDynamicSortFilter(True)
 
@@ -80,7 +80,7 @@ class ExplorerFilterProxyModel(QSortFilterProxyModel):
 
         index = source_model.index(source_row, 0, source_parent)
         item = source_model.get_item(index)
-        
+
         if not item:
             return False
 
@@ -132,18 +132,20 @@ class ExplorerFilterProxyModel(QSortFilterProxyModel):
         # Sort by name (default)
         if role == Qt.ItemDataRole.DisplayRole:
             return left_obj.name.lower() < right_obj.name.lower()
-        
+
         # Sort by created timestamp
         elif role == Qt.ItemDataRole.UserRole + 10:  # Custom "created" role
             left_created = getattr(left_obj, "created_at", 0) or 0
             right_created = getattr(right_obj, "created_at", 0) or 0
             return left_created < right_created
-        
+
         # Sort by lore date
         elif role == Qt.ItemDataRole.UserRole + 11:  # Custom "lore_date" role
             if left_type == "event" and right_type == "event":
                 left_date = getattr(left_obj, "lore_date", float("inf")) or float("inf")
-                right_date = getattr(right_obj, "lore_date", float("inf")) or float("inf")
+                right_date = getattr(right_obj, "lore_date", float("inf")) or float(
+                    "inf"
+                )
                 return left_date < right_date
             # Events before entities when sorting by date
             elif left_type == "event":

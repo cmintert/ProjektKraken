@@ -17,6 +17,7 @@ SETTINGS_LAST_ITEM_TYPE_KEY = "last_selected_item_type"
 SETTINGS_AUTO_RELATION_KEY = "wiki/auto_create_relations"
 SETTINGS_FILTER_CONFIG_KEY = "tag_filter_config"
 SETTINGS_LAYOUT_VERSION_KEY = "layout_version"
+SETTINGS_RASTER_BRUSH_PRESETS_KEY = "raster/brush_presets"
 
 # Layout Version (increment when layout structure changes incompatibly)
 LAYOUT_VERSION = "1.0.0"
@@ -84,6 +85,7 @@ PROVIDER_RETRY_WAIT_TIME_S = 1.0  # Wait time between provider retries
 TEMPORAL_FUTURE_OPACITY = 0.7  # Opacity for future events (0.0-1.0)
 TEMPORAL_FUTURE_SATURATION_FACTOR = 0.8  # Saturation multiplier for future events
 TEMPORAL_FUTURE_LIGHTNESS_BOOST = 0.1  # Lightness increase for future events
+TEMPORAL_SNAPSHOT_CACHE_MAX = 20  # Max entries in the raster snapshot LRU cache
 
 # Sheet Builder Constants
 SHEET_VALUE_MAX_LINES = 4  # Max visible lines for multiline attribute values
@@ -191,6 +193,7 @@ MAP_ZOOM_IN_FACTOR = 1.25
 # Static Z-values for layer ordering in the graphics scene
 MAP_LAYER_Z_MAP_BG = 0
 MAP_LAYER_Z_TRAJECTORIES = 0.5
+MAP_LAYER_Z_RASTER = 4  # raster / heatmap overlays
 MAP_LAYER_Z_FEATURES = 8  # paths / regions
 MAP_LAYER_Z_MARKERS = 10
 MAP_LAYER_Z_UI_OVERLAY = 100
@@ -209,8 +212,10 @@ MAP_LAYER_DEFAULT_MAX_ZOOM = float("inf")  # visible at all zoom-in levels
 # Layer node type discriminators
 MAP_LAYER_TYPE_GROUP = "group"
 MAP_LAYER_TYPE_MARKER = "marker"
+MAP_LAYER_TYPE_SNAPSHOT = "raster_snapshot"  # Virtual display-only snapshot rows
 MAP_LAYER_TYPE_PATH = "path"
 MAP_LAYER_TYPE_REGION = "region"
+MAP_LAYER_TYPE_RASTER = "raster"
 
 # Default group name for auto-registered features
 MAP_LAYER_DEFAULT_GROUP_NAME = "Default"

@@ -51,7 +51,7 @@ class ThumbnailLoader(QRunnable):
             # Check if already in cache
             cache_key = f"thumb_{self.attachment_id}"
             cached_pixmap = QPixmapCache.find(cache_key)
-            
+
             if cached_pixmap:
                 # Use cached version
                 icon = QIcon(cached_pixmap)
@@ -61,27 +61,26 @@ class ThumbnailLoader(QRunnable):
             # Load from disk
             if not self.image_path.exists():
                 self.signals.error.emit(
-                    self.attachment_id,
-                    f"Image not found: {self.image_path}"
+                    self.attachment_id, f"Image not found: {self.image_path}"
                 )
                 return
 
             # Load pixmap
             pixmap = QPixmap(str(self.image_path))
-            
+
             if pixmap.isNull():
                 self.signals.error.emit(
-                    self.attachment_id,
-                    f"Failed to load image: {self.image_path}"
+                    self.attachment_id, f"Failed to load image: {self.image_path}"
                 )
                 return
 
             # Scale to thumbnail size if needed (max 128x128)
             if pixmap.width() > 128 or pixmap.height() > 128:
                 pixmap = pixmap.scaled(
-                    128, 128,
+                    128,
+                    128,
                     Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation
+                    Qt.TransformationMode.SmoothTransformation,
                 )
 
             # Cache the pixmap
@@ -93,7 +92,6 @@ class ThumbnailLoader(QRunnable):
 
         except Exception as e:
             logger.error(
-                f"Thumbnail loader error for {self.attachment_id}: {e}",
-                exc_info=True
+                f"Thumbnail loader error for {self.attachment_id}: {e}", exc_info=True
             )
             self.signals.error.emit(self.attachment_id, str(e))

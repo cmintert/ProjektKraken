@@ -172,7 +172,8 @@ class HistoryPanelWidget(QWidget):
 
     @Slot(list, list)
     def update_history(
-        self, undo_snapshots: List[Dict[str, object]],
+        self,
+        undo_snapshots: List[Dict[str, object]],
         redo_snapshots: List[Dict[str, object]],
     ) -> None:
         """Update the history display with current stacks.

@@ -77,7 +77,7 @@ class TestUnifiedListAdvancedFiltering:
         e1 = Event(name="A", lore_date=1, attributes={"_tags": ["A"]})
         list_widget.set_data([e1], [])
         list_widget.set_advanced_filter({"include": ["B"]})
-        
+
         model = list_widget._proxy_model
         assert model.rowCount() == 0
 

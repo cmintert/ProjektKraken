@@ -24,9 +24,7 @@ class RAGService:
     # irrelevant context from being injected into the prompt.
     DEFAULT_MIN_SCORE: float = 0.25
 
-    def __init__(
-        self, db_path: str, min_score: Optional[float] = None
-    ) -> None:
+    def __init__(self, db_path: str, min_score: Optional[float] = None) -> None:
         """Initialize RAG Service.
 
         Args:
@@ -37,9 +35,7 @@ class RAGService:
 
         """
         self.db_path = db_path
-        self.min_score = (
-            min_score if min_score is not None else self.DEFAULT_MIN_SCORE
-        )
+        self.min_score = min_score if min_score is not None else self.DEFAULT_MIN_SCORE
 
     def search(
         self, query: str, top_k: int = 3, object_type: Optional[str] = None
@@ -220,9 +216,9 @@ class RAGService:
             if text_content:
                 for line in text_content.split("\n\n"):
                     if line.startswith("Description: "):
-                        description = line[len("Description: "):].strip()
+                        description = line[len("Description: ") :].strip()
                     elif line.startswith("Tags: "):
-                        tags_line = line[len("Tags: "):].strip()
+                        tags_line = line[len("Tags: ") :].strip()
                     elif line.startswith(("Name:", "Type:", "Date:", "Duration:")):
                         continue
                     elif len(line) < 100:

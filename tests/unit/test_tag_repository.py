@@ -1,6 +1,5 @@
 """Tests for TagRepository."""
 
-
 import pytest
 
 from src.services.db_service import DatabaseService

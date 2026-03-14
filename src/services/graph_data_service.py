@@ -139,9 +139,7 @@ class GraphDataService:
         types = {getattr(e, "type", "entity") for e in db_service.get_all_entities()}
         return sorted(types)
 
-    def get_lexicon_schema(
-        self, db_service: "DatabaseService"
-    ) -> Dict[str, list[str]]:
+    def get_lexicon_schema(self, db_service: "DatabaseService") -> Dict[str, list[str]]:
         """Returns the schema of types available for visual lexicon mapping.
 
         Dynamically discovers all distinct entity types and relation types

@@ -21,7 +21,9 @@ class LayoutWorkerSignals(QObject):
     Qt signals must be defined in a QObject subclass.
     """
 
-    finished = Signal(dict, list, float)  # (lane_assignments, lane_heights, elapsed_time)
+    finished = Signal(
+        dict, list, float
+    )  # (lane_assignments, lane_heights, elapsed_time)
     error = Signal(str)  # error message
 
 

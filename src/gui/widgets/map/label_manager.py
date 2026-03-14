@@ -30,14 +30,14 @@ class LabelManager:
     # Candidate offsets as (dx_factor, dy_factor) relative to anchor size.
     # Order defines priority: Bottom, Top, Right, Left, then diagonals.
     _CANDIDATE_OFFSETS = [
-        (0.0, 1.0),    # Bottom (centered below)
-        (0.0, -1.0),   # Top (centered above)
-        (1.0, 0.0),    # Right
-        (-1.0, 0.0),   # Left
-        (0.5, 1.0),    # Bottom-Right
+        (0.0, 1.0),  # Bottom (centered below)
+        (0.0, -1.0),  # Top (centered above)
+        (1.0, 0.0),  # Right
+        (-1.0, 0.0),  # Left
+        (0.5, 1.0),  # Bottom-Right
         (-0.5, -1.0),  # Top-Left
-        (0.5, -1.0),   # Top-Right
-        (-0.5, 1.0),   # Bottom-Left
+        (0.5, -1.0),  # Top-Right
+        (-0.5, 1.0),  # Bottom-Left
     ]
 
     # Small gap (pixels) between anchor and label.
@@ -113,9 +113,7 @@ class LabelManager:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _place_label(
-        self, marker: "MarkerItem", inv_scale: float
-    ) -> None:
+    def _place_label(self, marker: "MarkerItem", inv_scale: float) -> None:
         """Tries to place a single marker's label at the best candidate.
 
         Args:

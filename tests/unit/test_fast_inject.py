@@ -80,7 +80,10 @@ def test_create_from_target():
 
     manager = FastInjectManager(Path("."))
     template = manager.create_template_from_target(
-        entity, name="Hero Template", include_tags=True, include_attributes=None  # All
+        entity,
+        name="Hero Template",
+        include_tags=True,
+        include_attributes=None,  # All
     )
 
     assert template.name == "Hero Template"

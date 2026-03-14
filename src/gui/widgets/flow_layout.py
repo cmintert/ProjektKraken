@@ -14,7 +14,9 @@ class FlowLayout(QLayout):
     Adapted from official Qt Flow Layout example for PySide6.
     """
 
-    def __init__(self, parent: QWidget = None, margin: int = -1, spacing: int = -1) -> None:
+    def __init__(
+        self, parent: QWidget = None, margin: int = -1, spacing: int = -1
+    ) -> None:
         """Create a FlowLayout with optional parent and spacing.
 
         Parameters:

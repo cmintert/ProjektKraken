@@ -72,8 +72,7 @@ class EntityListWidget(QWidget):
         self.empty_state = EmptyStateWidget(
             title="No Entities Found",
             description=(
-                "Entities are the characters, locations, and artifacts"
-                " of your world."
+                "Entities are the characters, locations, and artifacts of your world."
             ),
             parent=self,
         )

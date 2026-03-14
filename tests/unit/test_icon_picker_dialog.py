@@ -132,9 +132,7 @@ class TestRemoveProjectIcon:
 
     def test_returns_false_for_missing_icon(self, tmp_path):
         """Returns False when the icon file does not exist."""
-        assert not remove_project_icon(
-            str(tmp_path), "assets/images/icon_missing.svg"
-        )
+        assert not remove_project_icon(str(tmp_path), "assets/images/icon_missing.svg")
 
     def test_icon_gone_from_project_list(self, tmp_path):
         """After removal the icon is no longer in get_project_icons."""

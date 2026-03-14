@@ -152,9 +152,7 @@ class TestDataHandlerMarkerVisualReload:
 
         spy.assert_called()
 
-    def test_update_marker_color_triggers_reload(
-        self, data_handler, success_result
-    ):
+    def test_update_marker_color_triggers_reload(self, data_handler, success_result):
         """UpdateMarkerColorCommand should trigger reload_markers."""
         spy = MagicMock()
         data_handler.reload_markers_for_current_map.connect(spy)
@@ -168,9 +166,7 @@ class TestDataHandlerMarkerVisualReload:
 
         spy.assert_called()
 
-    def test_update_marker_icon_triggers_reload(
-        self, data_handler, success_result
-    ):
+    def test_update_marker_icon_triggers_reload(self, data_handler, success_result):
         """UpdateMarkerIconCommand should trigger reload_markers."""
         spy = MagicMock()
         data_handler.reload_markers_for_current_map.connect(spy)

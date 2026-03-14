@@ -1160,9 +1160,13 @@ class DatabaseService:
         """Retrieves a marker by its composite key (map_id, object_id, object_type)."""
         return self._map_repo.get_marker_by_composite(map_id, object_id, object_type)
 
-    def delete_marker(self, marker_id: str) -> None:
-        """Deletes a marker from the database."""
-        self._map_repo.delete_marker(marker_id)
+    def delete_marker(self, marker_id: str) -> int:
+        """Deletes a marker from the database.
+
+        Returns:
+            int: Number of rows deleted (1 if found, 0 if not found).
+        """
+        return self._map_repo.delete_marker(marker_id)
 
     # --------------------------------------------------------------------------
     # Tag Management - Delegates to TagRepository
@@ -1489,7 +1493,7 @@ class DatabaseService:
 
         try:
             row = self._connection.execute(
-                "SELECT COUNT(*) AS cnt, MAX(created_at) AS latest " "FROM embeddings"
+                "SELECT COUNT(*) AS cnt, MAX(created_at) AS latest FROM embeddings"
             ).fetchone()
             return {
                 "count": row["cnt"] if row else 0,

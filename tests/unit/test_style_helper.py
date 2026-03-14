@@ -381,3 +381,60 @@ def test_empty_state_widget_set_message(qapp):
     widget = EmptyStateWidget("Initial")
     widget.set_message("Updated")
     assert widget._title_label.text() == "Updated"
+
+
+# =========================================================================
+# New map-related StyleHelper methods
+# =========================================================================
+
+
+def test_overlay_banner_style_returns_qss():
+    """get_overlay_banner_style returns valid QSS with expected properties."""
+    style = StyleHelper.get_overlay_banner_style()
+    assert "QLabel" in style
+    assert "border-bottom-left-radius" in style
+    assert "font-size" in style
+
+
+def test_legend_overlay_style_returns_qss():
+    """get_legend_overlay_style returns valid QSS for floating legend."""
+    style = StyleHelper.get_legend_overlay_style()
+    assert "QWidget" in style
+    assert "border-radius" in style
+
+
+def test_mode_indicator_style_includes_bg_color():
+    """get_mode_indicator_style embeds the given background colour."""
+    style = StyleHelper.get_mode_indicator_style("#e74c3c")
+    assert "#e74c3c" in style
+    assert "QLabel" in style
+    assert "border-radius" in style
+
+
+def test_toolbar_spacing_style_returns_qss():
+    """get_toolbar_spacing_style returns valid toolbar QSS."""
+    style = StyleHelper.get_toolbar_spacing_style()
+    assert "QToolBar" in style
+    assert "spacing" in style
+
+
+def test_raster_mode_badge_style_includes_bg_color():
+    """get_raster_mode_badge_style embeds the given background colour."""
+    style = StyleHelper.get_raster_mode_badge_style("#4A90D9")
+    assert "#4A90D9" in style
+    assert "RasterModeBadge" in style
+
+
+def test_section_separator_style_returns_tuple():
+    """get_section_separator_style returns label and line style strings."""
+    label_style, line_style = StyleHelper.get_section_separator_style()
+    assert "font-size" in label_style
+    assert "font-weight" in label_style
+    assert "background" in line_style
+
+
+def test_dim_text_color_returns_hex(theme_manager):
+    """get_dim_text_color returns the theme's text_dim token."""
+    theme = theme_manager.get_theme()
+    color = StyleHelper.get_dim_text_color()
+    assert color == theme.get("text_dim", "#888888")

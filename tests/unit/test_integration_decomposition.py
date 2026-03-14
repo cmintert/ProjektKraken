@@ -4,7 +4,6 @@ Validates the full delegation chain: DatabaseService → Repository → SQLite
 for all domain areas, ensuring the refactoring maintains backward compatibility.
 """
 
-
 import pytest
 
 from src.core.entities import Entity
@@ -207,10 +206,18 @@ class TestAppCoordinatorIntegration:
         from src.app.coordinators.app_coordinator import AppCoordinator
 
         # Verify the class defines __init__ that sets the expected attrs
-        expected_attrs = ["data", "time", "editor", "navigation",
-                          "backup", "fast_inject", "import_coord"]
+        expected_attrs = [
+            "data",
+            "time",
+            "editor",
+            "navigation",
+            "backup",
+            "fast_inject",
+            "import_coord",
+        ]
         init_code = AppCoordinator.__init__.__code__
         # All expected attrs should be referenced in the init bytecode
         for attr in expected_attrs:
-            assert attr in init_code.co_names or attr in str(init_code.co_consts), \
+            assert attr in init_code.co_names or attr in str(init_code.co_consts), (
                 f"AppCoordinator missing expected attribute: {attr}"
+            )

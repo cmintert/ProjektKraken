@@ -227,9 +227,7 @@ class TestUpdateMarkerAttributeCommand:
         from src.commands.marker_commands import UpdateMarkerAttributeCommand
 
         mock_db.get_marker.return_value = sample_marker
-        cmd = UpdateMarkerAttributeCommand(
-            "marker1", {V_SIZE_SCALE: 2.0}
-        )
+        cmd = UpdateMarkerAttributeCommand("marker1", {V_SIZE_SCALE: 2.0})
         cmd.execute(mock_db)
         cmd.undo(mock_db)
 

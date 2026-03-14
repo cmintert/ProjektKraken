@@ -31,7 +31,6 @@ def test_rag_deduplication(mock_search_service):
         ),
         patch("sqlite3.connect"),
     ):
-
         service = RAGService(":memory:")
 
         # Act 1: Without exclusion
@@ -59,7 +58,6 @@ def test_rag_case_insensitive_deduplication(mock_search_service):
         ),
         patch("sqlite3.connect"),
     ):
-
         service = RAGService(":memory:")
         context = service.get_context("prompt", exclude_names=["green box 224"])
 

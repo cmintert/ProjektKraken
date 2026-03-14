@@ -4,12 +4,12 @@ Tests cover complete tag pairs, unclosed/truncated tags, pipe-delimited tags,
 tags with attributes, edge cases, and whitespace normalisation.
 """
 
-
 from src.services.reasoning_filter import filter_reasoning_tags
 
 # ---------------------------------------------------------------------------
 # Complete standard tag pairs
 # ---------------------------------------------------------------------------
+
 
 class TestCompleteStandardTags:
     """Tests for complete XML-style tag pairs like <think>...</think>."""
@@ -57,10 +57,7 @@ class TestCompleteStandardTags:
     def test_multiple_tag_blocks(self) -> None:
         """Multiple separate reasoning blocks should all be removed."""
         text = (
-            "<think>first block</think>"
-            "Part one. "
-            "<think>second block</think>"
-            "Part two."
+            "<think>first block</think>Part one. <think>second block</think>Part two."
         )
         assert filter_reasoning_tags(text) == "Part one. Part two."
 
@@ -86,6 +83,7 @@ class TestCompleteStandardTags:
 # ---------------------------------------------------------------------------
 # Pipe-delimited tag pairs (Qwen-3 style)
 # ---------------------------------------------------------------------------
+
 
 class TestPipeDelimitedTags:
     """Tests for pipe-delimited tags like <|think|>...<|/think|>."""
@@ -115,6 +113,7 @@ class TestPipeDelimitedTags:
 # ---------------------------------------------------------------------------
 # Unclosed / truncated tags (THE critical fix)
 # ---------------------------------------------------------------------------
+
 
 class TestUnclosedTags:
     """Tests for unclosed/truncated reasoning tags — the main bug fix."""
@@ -198,6 +197,7 @@ class TestUnclosedTags:
 # Edge cases
 # ---------------------------------------------------------------------------
 
+
 class TestEdgeCases:
     """Edge cases and boundary conditions."""
 
@@ -222,13 +222,15 @@ class TestEdgeCases:
 
     def test_nested_angle_brackets(self) -> None:
         """Angle brackets in reasoning content (e.g. code snippets)."""
-        text = '<think>if x > 0 and y < 10: do_thing()</think>Result.'
+        text = "<think>if x > 0 and y < 10: do_thing()</think>Result."
         assert filter_reasoning_tags(text) == "Result."
 
     def test_html_like_content_preserved(self) -> None:
         """Non-reasoning HTML-like tags should NOT be removed."""
         text = "<b>Bold text</b> and <i>italic</i> content."
-        assert filter_reasoning_tags(text) == "<b>Bold text</b> and <i>italic</i> content."
+        assert (
+            filter_reasoning_tags(text) == "<b>Bold text</b> and <i>italic</i> content."
+        )
 
     def test_whitespace_normalisation(self) -> None:
         """Excessive blank lines left after removal should be collapsed."""

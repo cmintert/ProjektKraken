@@ -33,10 +33,14 @@ def main_window(qtbot):
 
 def test_create_cancel_does_nothing(main_window):
     """Test cancelling creation."""
-    with patch("src.app.coordinators.editor_coordinator.QInputDialog.getText") as mock_input:
+    with patch(
+        "src.app.coordinators.editor_coordinator.QInputDialog.getText"
+    ) as mock_input:
         mock_input.return_value = ("", False)
 
-        with patch("src.app.coordinators.editor_coordinator.CreateEntityCommand") as MockCmd:
+        with patch(
+            "src.app.coordinators.editor_coordinator.CreateEntityCommand"
+        ) as MockCmd:
             main_window.editor_coordinator.create_entity()
             MockCmd.assert_not_called()
             main_window.worker.run_command.assert_not_called()
@@ -54,7 +58,8 @@ def test_select_item_switches_filter_if_needed(main_window):
 
     # Set data on unified_list
     main_window.unified_list.set_data(
-        main_window.data_coordinator.cached_events, main_window.data_coordinator.cached_entities
+        main_window.data_coordinator.cached_events,
+        main_window.data_coordinator.cached_entities,
     )
 
     # 1. Set filter to "Entities Only"

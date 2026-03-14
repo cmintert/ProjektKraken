@@ -320,9 +320,7 @@ class FastInjectDialog(QDialog):
         self.lbl_name.setText(template.name)
         self.lbl_desc.setText(template.description)
 
-        self._form_widgets = (
-            []
-        )  # List of (Type, Key, Checkbox, InputWidget, OriginalType)
+        self._form_widgets = []  # List of (Type, Key, Checkbox, InputWidget, OriginalType)
 
         row = 0
 

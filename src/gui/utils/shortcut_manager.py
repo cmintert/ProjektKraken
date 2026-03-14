@@ -2,6 +2,7 @@
 
 Provides keyboard shortcut management and metadata.
 """
+
 from dataclasses import dataclass
 from typing import Any
 
@@ -67,6 +68,11 @@ class ShortcutManager:
 
     # General
     DESELECT = KeyboardShortcut("Deselect/Cancel", "Esc", "Deselect items or cancel")
+
+    # Map
+    MAP_PAN = KeyboardShortcut(
+        "Pan Map", "Space", "Hold Space + drag to pan the map"
+    )
 
     @classmethod
     def get_tooltip(cls, shortcut: KeyboardShortcut) -> str:

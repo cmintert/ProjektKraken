@@ -71,21 +71,15 @@ class _VertexHandle(QGraphicsEllipseItem):
         self.setBrush(QBrush(QColor(MAP_VERTEX_HANDLE_COLOR)))
         self.setPen(QPen(QColor(MAP_VERTEX_HANDLE_BORDER_COLOR), 1))
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
-        self.setFlag(
-            QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True
-        )
-        self.setFlag(
-            QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True
-        )
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True)
         self.setCursor(Qt.CursorShape.SizeAllCursor)
         self.setAcceptedMouseButtons(
             Qt.MouseButton.LeftButton | Qt.MouseButton.RightButton
         )
         self.setZValue(MAP_LAYER_Z_UI_OVERLAY + 1)
 
-    def itemChange(
-        self, change: QGraphicsItem.GraphicsItemChange, value: Any
-    ) -> Any:
+    def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
         """Notify parent when the handle is dragged."""
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
             self._move_callback(self.index, self.pos())
@@ -123,9 +117,7 @@ class _MidpointHandle(QGraphicsEllipseItem):
         self.setPen(QPen(QColor(MAP_MIDPOINT_HANDLE_BORDER_COLOR), 1))
         self.setOpacity(MAP_MIDPOINT_GHOST_OPACITY)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
-        self.setFlag(
-            QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True
-        )
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True)
         self.setAcceptHoverEvents(True)
         self.setCursor(Qt.CursorShape.CrossCursor)
         self.setZValue(MAP_LAYER_Z_UI_OVERLAY)
@@ -229,9 +221,7 @@ class VertexEditor:
         for i, pt in enumerate(geometry):
             sx = rect.left() + pt["x"] * rect.width()
             sy = rect.top() + pt["y"] * rect.height()
-            handle = _VertexHandle(
-                i, self._on_vertex_moved, self._on_vertex_deleted
-            )
+            handle = _VertexHandle(i, self._on_vertex_moved, self._on_vertex_deleted)
             handle.setPos(sx, sy)
             handle.setZValue(MAP_LAYER_Z_UI_OVERLAY + 1)
             self._view.scene.addItem(handle)
@@ -240,16 +230,21 @@ class VertexEditor:
         self._rebuild_midpoint_handles()
         self._view.setDragMode(QGraphicsView.DragMode.NoDrag)
         logger.info(
-            f"Vertex editing started for {item.marker_id} "
-            f"({len(geometry)} vertices)"
+            f"Vertex editing started for {item.marker_id} ({len(geometry)} vertices)"
         )
 
-    def finish_vertex_editing(self) -> None:
+    def finish_vertex_editing(self, emit_geometry_change: bool = True) -> None:
         """Commits vertex edits and removes handles.
 
         Restores the original feature style and emits
         ``feature_geometry_changed`` with the updated normalized
         coordinates so the command layer can persist the change.
+
+        Args:
+            emit_geometry_change: Whether to emit the geometry-changed
+                signal for the edited feature. Use ``False`` when the
+                feature is being deleted and edit handles only need to be
+                torn down.
         """
         finished_id: Optional[str] = None
         finished_geometry: Optional[list] = None
@@ -262,7 +257,7 @@ class VertexEditor:
                     item._style = self._editing_original_style
                     self._editing_original_style = None
                     item.update()
-                if item._geometry:
+                if emit_geometry_change and item._geometry:
                     finished_id = self._editing_feature_id
                     finished_geometry = list(item._geometry)
 
@@ -282,9 +277,7 @@ class VertexEditor:
 
         # Emit after state is fully cleared
         if finished_id and finished_geometry:
-            self._view.feature_geometry_changed.emit(
-                finished_id, finished_geometry
-            )
+            self._view.feature_geometry_changed.emit(finished_id, finished_geometry)
             logger.info(f"Vertex editing finished for {finished_id}")
 
     def handle_mouse_move(self, pos: Any) -> bool:
@@ -398,9 +391,7 @@ class VertexEditor:
 
             self._update_midpoint_positions()
 
-    def _snap_to_nearby_vertex(
-        self, moving_index: int, scene_pos: QPointF
-    ) -> QPointF:
+    def _snap_to_nearby_vertex(self, moving_index: int, scene_pos: QPointF) -> QPointF:
         """Snaps a position to the nearest existing vertex within snap radius.
 
         Args:
@@ -411,9 +402,7 @@ class VertexEditor:
             Snapped scene position, or the original if no snap.
         """
         view_scale = (
-            self._view.transform().m11()
-            if self._view.transform().m11() > 0
-            else 1.0
+            self._view.transform().m11() if self._view.transform().m11() > 0 else 1.0
         )
         snap_radius_scene = MAP_SNAP_RADIUS_PX / view_scale
 
@@ -462,13 +451,9 @@ class VertexEditor:
 
         self._rebuild_vertex_handles(item)
         self._rebuild_midpoint_handles()
-        logger.info(
-            f"Deleted vertex {index}, {len(item._geometry)} remaining"
-        )
+        logger.info(f"Deleted vertex {index}, {len(item._geometry)} remaining")
 
-    def _on_midpoint_insert(
-        self, segment_index: int, scene_pos: QPointF
-    ) -> None:
+    def _on_midpoint_insert(self, segment_index: int, scene_pos: QPointF) -> None:
         """Inserts a new vertex at the midpoint of a segment.
 
         Args:
@@ -503,8 +488,7 @@ class VertexEditor:
         self._rebuild_vertex_handles(item)
         self._rebuild_midpoint_handles()
         logger.info(
-            f"Inserted vertex after index {segment_index}, "
-            f"{len(item._geometry)} total"
+            f"Inserted vertex after index {segment_index}, {len(item._geometry)} total"
         )
 
     # ------------------------------------------------------------------
@@ -565,9 +549,7 @@ class VertexEditor:
             sy = rect.top() + my * rect.height()
             mh.setPos(sx, sy)
 
-    def _rebuild_vertex_handles(
-        self, item: "PathItem | RegionItem"
-    ) -> None:
+    def _rebuild_vertex_handles(self, item: "PathItem | RegionItem") -> None:
         """Removes and recreates all vertex handles for the current feature.
 
         Args:
@@ -584,9 +566,7 @@ class VertexEditor:
         for i, pt in enumerate(item._geometry):
             sx = rect.left() + pt["x"] * rect.width()
             sy = rect.top() + pt["y"] * rect.height()
-            handle = _VertexHandle(
-                i, self._on_vertex_moved, self._on_vertex_deleted
-            )
+            handle = _VertexHandle(i, self._on_vertex_moved, self._on_vertex_deleted)
             handle.setPos(sx, sy)
             handle.setZValue(MAP_LAYER_Z_UI_OVERLAY + 1)
             self._view.scene.addItem(handle)
