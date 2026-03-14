@@ -1308,10 +1308,25 @@ class MapHandler(QObject):
             return
 
         raster_metas = (selected_map.attributes or {}).get("raster_layers", [])
+
+        # raster_metas never store names; names live in the layer tree.
+        # Flatten the tree into {node_id: display_name} so we can show
+        # human-readable names in the dialog and resolve them back afterwards.
+        def _collect_node_names(
+            node: Any, acc: Dict[str, str]
+        ) -> None:
+            acc[node.id] = node.name
+            for child in node.children:
+                _collect_node_names(child, acc)
+
+        node_id_to_name: Dict[str, str] = {}
+        if selected_map.layers:
+            _collect_node_names(selected_map.layers, node_id_to_name)
+
         layers = [
             {
                 "node_id": m["node_id"],
-                "name": m.get("name", m["node_id"][:8]),
+                "name": node_id_to_name.get(m["node_id"], m["node_id"][:8]),
                 "mode": m.get("mode", "discrete"),
             }
             for m in raster_metas
@@ -1330,8 +1345,24 @@ class MapHandler(QObject):
         if not conditions:
             return
 
-        # Resolve node_ids to arrays
-        unique_nodes = list(dict.fromkeys(c["node_id"] for c in conditions))
+        # Build name → node_id lookup using the layer-tree names.
+        # Conditions carry "name" (new) or "node_id" (legacy), both supported.
+        name_to_node: Dict[str, str] = {
+            node_id_to_name.get(m["node_id"], m["node_id"]): m["node_id"]
+            for m in raster_metas
+        }
+
+        def _resolve_node(c: Dict[str, Any]) -> Optional[str]:
+            nid = c.get("node_id")
+            if nid:
+                return nid
+            return name_to_node.get(c.get("name", ""))
+
+        unique_nodes: list[str] = list(
+            dict.fromkeys(
+                n for c in conditions if (n := _resolve_node(c)) is not None
+            )
+        )
         arrays_by_node: Dict[str, Any] = {
             nid: view._raster_items[nid].buffer.data
             for nid in unique_nodes
@@ -1339,11 +1370,11 @@ class MapHandler(QObject):
         }
 
         arrays = [arrays_by_node[n] for n in unique_nodes if n in arrays_by_node]
-        normalized = [
-            {**c, "index": unique_nodes.index(c["node_id"])}
-            for c in conditions
-            if c["node_id"] in arrays_by_node
-        ]
+        normalized: list[Dict[str, Any]] = []
+        for c in conditions:
+            nid = _resolve_node(c)
+            if nid is not None and nid in arrays_by_node:
+                normalized.append({**c, "index": unique_nodes.index(nid)})
 
         if not arrays or not normalized:
             return

@@ -2064,7 +2064,8 @@ class TestSpatialQuery:
         # One row is added by default when layers is non-empty
         assert len(dlg.conditions) == 1
         cond = dlg.conditions[0]
-        assert "node_id" in cond
+        assert "name" in cond  # dialog now uses display name; MapHandler resolves to node_id
+        assert cond["name"] == "L1"
         assert "op" in cond
 
     def test_map_graphics_view_query_overlay(self, qtbot) -> None:
