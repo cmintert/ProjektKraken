@@ -993,9 +993,7 @@
             <span class="c1"># Reload graph data so the new lexicon takes effect</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">load_graph_data</span><span class="p">()</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Failed to save graph lexicon: </span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to save graph lexicon: </span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">&quot;Failed to save graph lexicon.&quot;</span><span class="p">)</span></div>
 
 
@@ -1212,9 +1210,7 @@
                 <span class="s2">&quot;edges&quot;</span><span class="p">:</span> <span class="p">{},</span>
             <span class="p">}</span>
             <span class="n">project_root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">db_path</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span>
-            <span class="n">resolved</span> <span class="o">=</span> <span class="n">GraphBuilder</span><span class="o">.</span><span class="n">resolve_lexicon_images</span><span class="p">(</span>
-                <span class="n">raw_lexicon</span><span class="p">,</span> <span class="n">project_root</span>
-            <span class="p">)</span>
+            <span class="n">resolved</span> <span class="o">=</span> <span class="n">GraphBuilder</span><span class="o">.</span><span class="n">resolve_lexicon_images</span><span class="p">(</span><span class="n">raw_lexicon</span><span class="p">,</span> <span class="n">project_root</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">graph_lexicon_loaded</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">raw_lexicon</span><span class="p">,</span> <span class="n">resolved</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">operation_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span>
@@ -1314,9 +1310,7 @@
 <div class="viewcode-block" id="DatabaseWorker.run_markdown_import">
 <a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.run_markdown_import">[docs]</a>
     <span class="nd">@Slot</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">run_markdown_import</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">markdown_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">options_json</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_markdown_import</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">markdown_text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">options_json</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Import a Markdown file using worker&#39;s db_service.</span>
 
 <span class="sd">        Parses Markdown content and imports the item into the database</span>
@@ -1376,9 +1370,7 @@
 <div class="viewcode-block" id="DatabaseWorker.run_markdown_batch_import">
 <a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.run_markdown_batch_import">[docs]</a>
     <span class="nd">@Slot</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">run_markdown_batch_import</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">contents_json</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">options_json</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_markdown_batch_import</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">contents_json</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">options_json</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Import multiple Markdown files in a single batch operation.</span>
 
 <span class="sd">        Parses each Markdown content string and imports all items,</span>
@@ -1443,9 +1435,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">operation_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">&quot;Markdown batch import failed.&quot;</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Markdown batch import failed: </span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Markdown batch import failed: </span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">result</span> <span class="o">=</span> <span class="n">ImportResult</span><span class="p">(</span>
                 <span class="n">success</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                 <span class="n">created_entities</span><span class="o">=</span><span class="p">[],</span>
@@ -1977,6 +1967,7 @@ mermaid.initialize(
     }
 );
 
-window.addEventListener("load", load);</script>
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script>
     </body>
 </html>
