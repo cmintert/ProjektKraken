@@ -334,7 +334,7 @@ class TrajectoryRenderer:
         animation.setLoopCount(3)
 
         self._animations.append(animation)
-        animation.finished.connect(lambda: self._animations.remove(animation))
+        animation.finished.connect(lambda a=animation: self._on_animation_finished(a))
 
         animation.start()
 
@@ -372,6 +372,28 @@ class TrajectoryRenderer:
         item.setPen(pen)
         item.setZValue(base_z - 0.3)
         return item
+
+    def cleanup(self) -> None:
+        """Stop all running animations and release resources.
+
+        Safe to call multiple times.  Must be called before the renderer's
+        parent view is torn down so that pending ``finished`` callbacks cannot
+        fire on a partially-destroyed object.
+        """
+        for anim in list(self._animations):
+            anim.stop()
+        self._animations.clear()
+
+    def _on_animation_finished(self, animation: QPropertyAnimation) -> None:
+        """Remove a completed animation from the tracking list.
+
+        Args:
+            animation: The animation that just finished.
+        """
+        try:
+            self._animations.remove(animation)
+        except ValueError:
+            pass  # already removed by cleanup()
 
     def _on_keyframe_dropped(self, item: "KeyframeItem") -> None:
         """Callback when a keyframe dot is released after dragging."""

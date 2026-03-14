@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.app.constants import MAP_LAYER_Z_UI_OVERLAY
+from src.core.theme_manager import ThemeManager
 from src.gui.widgets.map.snapping_manager import SnappingManager
 
 if TYPE_CHECKING:
@@ -234,8 +235,9 @@ class DrawingTool:
         # Add visible dot
         dot = QGraphicsEllipseItem(-3, -3, 6, 6)
         dot.setPos(scene_pos)
-        dot.setBrush(QBrush(QColor("#e74c3c")))
-        dot.setPen(QPen(QColor("#FFFFFF"), 1))
+        _t = ThemeManager().get_theme()
+        dot.setBrush(QBrush(QColor(_t.get("error", "#e74c3c"))))
+        dot.setPen(QPen(QColor(_t.get("surface", "#1A1A1A")), 1))
         dot.setZValue(MAP_LAYER_Z_UI_OVERLAY)
         self._view.scene.addItem(dot)
         self._drawing_dots.append(dot)
@@ -267,12 +269,16 @@ class DrawingTool:
             path.lineTo(self._drawing_vertices[0])
 
         self._drawing_preview_item = QGraphicsPathItem(path)
-        pen = QPen(QColor("#e74c3c"), 2)
+        _t = ThemeManager().get_theme()
+        _err = QColor(_t.get("error", "#e74c3c"))
+        pen = QPen(_err, 2)
         pen.setCosmetic(True)
         pen.setStyle(Qt.PenStyle.DashLine)
         self._drawing_preview_item.setPen(pen)
         if self._drawing_mode == "region":
-            self._drawing_preview_item.setBrush(QBrush(QColor(231, 76, 60, 40)))
+            _fill = QColor(_err)
+            _fill.setAlpha(40)
+            self._drawing_preview_item.setBrush(QBrush(_fill))
         self._drawing_preview_item.setZValue(MAP_LAYER_Z_UI_OVERLAY)
         self._view.scene.addItem(self._drawing_preview_item)
 

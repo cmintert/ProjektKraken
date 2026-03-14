@@ -27,6 +27,7 @@ from src.core.style_constants import (
     V_FILL,
     V_SIZE_SCALE,
 )
+from src.core.theme_manager import ThemeManager
 from src.gui.dialogs.icon_picker_dialog import IconPickerDialog
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.marker_item import MarkerItem
@@ -665,4 +666,4 @@ def _safe_color_css(color_str: str) -> str:
     c = QColor(color_str)
     if c.isValid():
         return c.name()
-    return "#808080"
+    return ThemeManager().get_theme().get("text_dim", "#808080").lower()

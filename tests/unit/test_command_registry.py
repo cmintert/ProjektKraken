@@ -23,6 +23,25 @@ EXPECTED_COMMANDS = [
     "UpdateMapCommand",
     "DeleteMapCommand",
     "UpdateCalendarConfigCommand",
+    # Marker commands
+    "CreateMarkerCommand",
+    "UpdateMarkerCommand",
+    "DeleteMarkerCommand",
+    "UpdateMarkerIconCommand",
+    "UpdateMarkerColorCommand",
+    "UpdateMarkerAttributeCommand",
+    "DeleteKeyframeCommand",
+    # Layer commands
+    "SetLayerVisibilityCommand",
+    "MoveLayerCommand",
+    "SaveLayerTreeCommand",
+    "SetLayerOpacityCommand",
+    "RenameLayerCommand",
+    # Raster commands
+    "CreateRasterLayerCommand",
+    "DeleteRasterLayerCommand",
+    "SetRasterMappingCommand",
+    "SetRasterBlendModeCommand",
 ]
 
 

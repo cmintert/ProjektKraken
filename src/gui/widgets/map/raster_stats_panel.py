@@ -45,6 +45,26 @@ class _HistogramWidget(QWidget):
         self.setMinimumHeight(120)
         self.setMinimumWidth(300)
 
+        # Cache theme colors at construction; refresh on theme change.
+        self._bar_color: QColor = QColor("#5C82FF")
+        self._border_color: QColor = QColor("#3A5ACC")
+        self._bg_color: QColor = QColor("#1E1E2E")
+        self._refresh_theme_colors()
+        ThemeManager().theme_changed.connect(lambda _: self._refresh_theme_colors())
+
+    def _refresh_theme_colors(self) -> None:
+        """Update cached bar/border/background colors from the active theme.
+
+        Retrieves the full theme dict via ``ThemeManager().get_theme()`` and
+        caches the resolved QColor values so ``paintEvent()`` stays free of
+        per-frame theme lookups.
+        """
+        theme = ThemeManager().get_theme()
+        self._bar_color = QColor(theme.get("primary", "#5C82FF"))
+        self._border_color = QColor(theme.get("primary_dark", "#3A5ACC"))
+        self._bg_color = QColor(theme.get("app_bg", "#1E1E2E"))
+        self.update()
+
     def paintEvent(self, event: object) -> None:  # type: ignore[override]
         """Draw proportional vertical bars for each histogram bucket."""
         painter = QPainter(self)
@@ -61,18 +81,15 @@ class _HistogramWidget(QWidget):
         max_count = max(self._counts) if self._counts else 1
         n = len(self._counts)
         bar_w = max(1, (w - padding * 2) // n)
-        theme = ThemeManager().get_theme()
-        bar_color = QColor(theme.get("primary", "#5C82FF"))
-        border_color = QColor(theme.get("primary_dark", "#3A5ACC"))
 
-        painter.fillRect(0, 0, w, h, QColor(theme.get("app_bg", "#1E1E2E")))
-        painter.setPen(QPen(border_color, 1))
+        painter.fillRect(0, 0, w, h, self._bg_color)
+        painter.setPen(QPen(self._border_color, 1))
 
         for i, count in enumerate(self._counts):
             bar_h = int((count / max_count) * (h - padding * 2)) if max_count > 0 else 0
             x = padding + i * bar_w
             y = h - padding - bar_h
-            painter.fillRect(x, y, bar_w - 1, bar_h, bar_color)
+            painter.fillRect(x, y, bar_w - 1, bar_h, self._bar_color)
             painter.drawRect(x, y, bar_w - 1, bar_h)
 
         painter.end()

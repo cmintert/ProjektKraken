@@ -998,6 +998,7 @@ class MapLayerModel(QAbstractItemModel):
         zoom_level: float,
         current_time: Optional[float],
         result: Dict[str, bool],
+        parent_visible: bool = True,
     ) -> None:
         """Walk the tree and collect visibility for each node.
 
@@ -1006,12 +1007,22 @@ class MapLayerModel(QAbstractItemModel):
             zoom_level: Current view zoom level.
             current_time: Current playhead time (or ``None``).
             result: Accumulator dict.
+            parent_visible: Whether the parent node was visible.  When
+                ``False`` all descendants are immediately marked invisible
+                without calling :meth:`visible_at_zoom`, avoiding the
+                O(n×depth) ancestor re-walk.
 
         """
         if node is not self._root:
-            vis = self.visible_at_zoom(node, zoom_level)
-            if vis and current_time is not None:
-                vis = self.visible_at_time(node, current_time)
+            if not parent_visible:
+                vis = False
+            else:
+                vis = self.visible_at_zoom(node, zoom_level)
+                if vis and current_time is not None:
+                    vis = self.visible_at_time(node, current_time)
             result[node.id] = vis
+            node_vis = vis
+        else:
+            node_vis = True  # root container is always the visible anchor
         for child in node.children:
-            self._compute_vis_recursive(child, zoom_level, current_time, result)
+            self._compute_vis_recursive(child, zoom_level, current_time, result, node_vis)

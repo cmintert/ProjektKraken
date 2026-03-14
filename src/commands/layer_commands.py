@@ -6,6 +6,7 @@ All commands persist the layer tree to the map's ``attributes["layers"]``
 JSON column.
 """
 
+import copy
 import logging
 from typing import Any, Dict, Optional
 
@@ -69,6 +70,10 @@ class SetLayerVisibilityCommand(BaseCommand):
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Execute the visibility change and persist.
 
+        Always reads the layer tree from the DB. If ``layer_tree_dict`` was
+        provided it is ignored for tree sourcing to prevent a stale snapshot
+        from overwriting newer DB data.
+
         Args:
             db_service: The database service.
 
@@ -85,23 +90,7 @@ class SetLayerVisibilityCommand(BaseCommand):
                     command_name="SetLayerVisibilityCommand",
                 )
 
-            # Use snapshot if provided, else fallback to DB tree
-            if self.layer_tree_dict:
-                from src.core.map import MapLayerNode
-
-                # Reconstruct tree from snapshot
-                # Note: We trust the snapshot structure but we must ensure
-                # we're working with MapLayerNodes for logic consistency
-                # or just manipulate the dict directly.
-                # Here we'll convert to objects to reuse _find_layer_node logic
-                # which is safer but slightly slower, or just use `map_obj.layers`
-                # if we were to trust it.
-                # BETTER: Just save the snapshot with the modification.
-                # But we need to find the node to modify it inside the snapshot.
-                # So let's parse the snapshot into a temporary tree.
-                temp_root = MapLayerNode.from_dict(self.layer_tree_dict)
-                map_obj.layers = temp_root
-            elif not map_obj.layers:
+            if not map_obj.layers:
                 return CommandResult(
                     success=False,
                     message="Map layers not found.",
@@ -247,28 +236,46 @@ class MoveLayerCommand(BaseCommand):
             self._old_parent_id = old_parent.id
             self._old_row = old_parent.children.index(node)
 
-            # Remove from old parent
-            old_parent.children.remove(node)
+            # Clone the tree before mutating so that a persist failure
+            # does not leave the original map_obj in an inconsistent state.
+            cloned_map = copy.deepcopy(map_obj)
+            cloned_node = _find_layer_node(cloned_map.layers, self.node_id)
+            if cloned_node is None:
+                # Should never happen since we already found the node above,
+                # but guard against deepcopy edge cases.
+                return CommandResult(
+                    success=False,
+                    message=f"Layer node {self.node_id} not found in clone.",
+                    command_name="MoveLayerCommand",
+                )
+            cloned_old_parent = self._find_parent(cloned_map.layers, cloned_node)
+            if cloned_old_parent is None:
+                return CommandResult(
+                    success=False,
+                    message="Cannot find current parent in clone.",
+                    command_name="MoveLayerCommand",
+                )
 
-            # Find new parent and insert
-            new_parent = _find_layer_node(map_obj.layers, self.new_parent_id)
-            if not new_parent:
-                # Rollback
-                old_parent.children.insert(self._old_row, node)
+            # Remove from old parent in the clone
+            cloned_old_parent.children.remove(cloned_node)
+
+            # Find new parent and insert in the clone
+            cloned_new_parent = _find_layer_node(cloned_map.layers, self.new_parent_id)
+            if not cloned_new_parent:
                 return CommandResult(
                     success=False,
                     message=f"New parent {self.new_parent_id} not found.",
                     command_name="MoveLayerCommand",
                 )
 
-            insert_row = min(self.new_row, len(new_parent.children))
-            new_parent.children.insert(insert_row, node)
+            insert_row = min(self.new_row, len(cloned_new_parent.children))
+            cloned_new_parent.children.insert(insert_row, cloned_node)
 
-            # Persist
-            attrs = dict(map_obj.attributes) if map_obj.attributes else {}
-            attrs["layers"] = map_obj.layers.to_dict()
-            map_obj.attributes = attrs
-            db_service.map_repo.insert_map(map_obj)
+            # Persist the clone — original map_obj is untouched until this succeeds
+            attrs = dict(cloned_map.attributes) if cloned_map.attributes else {}
+            attrs["layers"] = cloned_map.layers.to_dict()
+            cloned_map.attributes = attrs
+            db_service.map_repo.insert_map(cloned_map)
 
             self._is_executed = True
             return CommandResult(
@@ -487,6 +494,10 @@ class SetLayerOpacityCommand(BaseCommand):
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Execute the opacity change and persist.
 
+        Always reads the layer tree from the DB. If ``layer_tree_dict`` was
+        provided it is ignored for tree sourcing to prevent a stale snapshot
+        from overwriting newer DB data.
+
         Args:
             db_service: The database service.
 
@@ -503,13 +514,7 @@ class SetLayerOpacityCommand(BaseCommand):
                     command_name="SetLayerOpacityCommand",
                 )
 
-            # Use snapshot if provided
-            if self.layer_tree_dict:
-                from src.core.map import MapLayerNode
-
-                temp_root = MapLayerNode.from_dict(self.layer_tree_dict)
-                map_obj.layers = temp_root
-            elif not map_obj.layers:
+            if not map_obj.layers:
                 return CommandResult(
                     success=False,
                     message="Map layers not found.",
@@ -781,7 +786,22 @@ class RenameLayerCommand(BaseCommand):
 
             # -- Sync feature label + lore item name --
             self._sync_feature_label(db_service)
-            self._sync_lore_item(db_service)
+            try:
+                self._sync_lore_item(db_service)
+            except Exception as lore_exc:
+                # _sync_lore_item failed after _sync_feature_label already ran.
+                # Roll back the marker label so the DB stays consistent.
+                logger.error(
+                    "RenameLayerCommand: _sync_lore_item failed (%s); "
+                    "rolling back feature label",
+                    lore_exc,
+                )
+                self._undo_feature_label(db_service)
+                return CommandResult(
+                    success=False,
+                    message=str(lore_exc),
+                    command_name="RenameLayerCommand",
+                )
 
             self._is_executed = True
             return CommandResult(

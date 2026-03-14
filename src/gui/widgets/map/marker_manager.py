@@ -7,6 +7,7 @@ factory routing, temporal state updates, and item tracking.
 import logging
 from typing import TYPE_CHECKING, Dict, Optional
 
+import shiboken6
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsObject
 
 from src.app.constants import MAP_LAYER_Z_MARKERS
@@ -166,21 +167,44 @@ class MarkerManager:
             marker_id: Unique identifier for the marker to remove.
         """
         if marker_id in self.markers:
-            self._view.scene.removeItem(self.markers[marker_id])
+            item = self.markers[marker_id]
+            if shiboken6.isValid(item):
+                try:
+                    self._view.scene.removeItem(item)
+                except RuntimeError:
+                    logger.debug(
+                        "remove_marker: C++ object already deleted for %s", marker_id
+                    )
             del self.markers[marker_id]
             logger.debug(f"Removed marker {marker_id}")
         if marker_id in self.feature_items:
-            self._view.scene.removeItem(self.feature_items[marker_id])
+            item = self.feature_items[marker_id]
+            if shiboken6.isValid(item):
+                try:
+                    self._view.scene.removeItem(item)
+                except RuntimeError:
+                    logger.debug(
+                        "remove_marker: feature C++ object already deleted for %s",
+                        marker_id,
+                    )
             del self.feature_items[marker_id]
             logger.debug(f"Removed feature {marker_id}")
 
     def clear_markers(self) -> None:
         """Remove all markers and features from the map."""
         for marker in list(self.markers.values()):
-            self._view.scene.removeItem(marker)
+            if shiboken6.isValid(marker):
+                try:
+                    self._view.scene.removeItem(marker)
+                except RuntimeError:
+                    pass
         self.markers.clear()
         for item in list(self.feature_items.values()):
-            self._view.scene.removeItem(item)
+            if shiboken6.isValid(item):
+                try:
+                    self._view.scene.removeItem(item)
+                except RuntimeError:
+                    pass
         self.feature_items.clear()
 
     def update_markers_temporal_state(
