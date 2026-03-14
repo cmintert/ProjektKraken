@@ -173,6 +173,7 @@ def test_keyframe_gizmo_interaction(qtbot):
 
     from PySide6.QtWidgets import QGraphicsScene, QGraphicsView
 
+    from src.core.theme_manager import ThemeManager
     from src.gui.widgets.map.map_graphics_view import (
         KEYFRAME_COLOR_SELECTED,
         KeyframeItem,
@@ -213,13 +214,14 @@ def test_keyframe_gizmo_interaction(qtbot):
     # 3. Pin Keyframe
     keyframe.set_pinned(True)
     assert keyframe.is_pinned is True
-    # Initial highlight color check
+    # Initial highlight color check: should be the theme's error color
+    _expected_pinned = ThemeManager().get_theme().get("error", KEYFRAME_COLOR_SELECTED)
     pen = keyframe.pen()
-    assert pen.color().name() == KEYFRAME_COLOR_SELECTED
+    assert pen.color().name() == _expected_pinned.lower()
 
     keyframe.set_pinned(False)
     assert keyframe.is_pinned is False
-    assert keyframe.pen().color().name() != KEYFRAME_COLOR_SELECTED
+    assert keyframe.pen().color().name() != _expected_pinned.lower()
 
 
 # ---------------------------------------------------------------------------

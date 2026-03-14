@@ -985,6 +985,17 @@ class MapGraphicsView(QGraphicsView):
         self.calibration_mode = False
         self.calibration_points: list[QPointF] = []
 
+    def cleanup(self) -> None:
+        """Stop all owned timers and release sub-component resources.
+
+        Safe to call multiple times.  Must be called before the widget is
+        closed so that pending Qt callbacks cannot fire on a partially-torn-
+        down object.
+        """
+        self._layout_debounce_timer.stop()
+        if hasattr(self, "_trajectory"):
+            self._trajectory.cleanup()
+
     def load_map(self, image_path: str) -> bool:
         """Loads a map image into the view.
 

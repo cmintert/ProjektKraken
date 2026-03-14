@@ -16,6 +16,12 @@ import numpy as np
 from src.app.constants import MAP_LAYER_TYPE_RASTER
 from src.commands.base_command import BaseCommand, CommandResult
 from src.core.map import MapLayerNode
+from src.services.raster_import_helpers import (
+    choose_resample,
+    detect_greyscale,
+    normalize_to_uint16,
+    quantize_discrete_rgb,
+)
 from src.gui.widgets.map.map_data_buffer import (
     ColorEntry,
     ColorMap,
@@ -202,127 +208,18 @@ class CreateRasterLayerCommand(BaseCommand):
                 if img.mode == "I;16":
                     img = img.convert("I")
 
-                # Detect greyscale-content images that are stored as RGB
-                # (R==G==B, common from GIS and rendering tools).
-                _is_grey_mode = img.mode in ("L", "LA", "I", "F")
-                if not _is_grey_mode and img.mode in ("RGB", "RGBA"):
-                    _rgb_arr = np.array(img.convert("RGB"))
-                    _diff_rg = int(np.max(np.abs(
-                        _rgb_arr[:, :, 0].astype(np.int32) - _rgb_arr[:, :, 1].astype(np.int32)
-                    )))
-                    _diff_rb = int(np.max(np.abs(
-                        _rgb_arr[:, :, 0].astype(np.int32) - _rgb_arr[:, :, 2].astype(np.int32)
-                    )))
-                    _is_grey_mode = _diff_rg <= 2 and _diff_rb <= 2
+                _is_grey_mode = detect_greyscale(img)
 
-                # Discrete colour maps need NEAREST to preserve sharp class
-                # boundaries. Continuous/greyscale data uses LANCZOS for
-                # gradient smoothness.
-                _resample = (
-                    PilImage.Resampling.NEAREST
-                    if self.mode == "discrete" and not _is_grey_mode
-                    else PilImage.Resampling.LANCZOS
+                _resample = choose_resample(
+                    mode=self.mode, is_greyscale=_is_grey_mode
                 )
                 img_resized = img.resize((self.width, self.height), _resample)
                 is_greyscale = _is_grey_mode or img_resized.mode in ("L", "LA", "I")
 
                 if self.mode == "discrete" and not is_greyscale:
-                    rgb = img_resized.convert("RGB")
-                    pixels = np.array(rgb).reshape(-1, 3)
-                    unique_colours = np.unique(pixels, axis=0)
-                    if len(unique_colours) <= 256:
-                        colour_to_val = {
-                            tuple(c): i + 1 for i, c in enumerate(unique_colours)
-                        }
-                        arr16 = np.array(
-                            [colour_to_val[tuple(p)] for p in pixels], dtype=np.uint16
-                        ).reshape(self.height, self.width)
-                        for i, c in enumerate(unique_colours):
-                            r, g, b = int(c[0]), int(c[1]), int(c[2])
-                            auto_palette_entries.append({
-                                "value": i + 1,
-                                "color": f"#{r:02X}{g:02X}{b:02X}",
-                                "label": f"Color {i + 1}",
-                            })
-                    else:
-                        # Too many colours — quantize to 256
-                        quantized = rgb.quantize(colors=256)
-                        palette_data = quantized.getpalette() or []
-                        arr8 = np.array(quantized, dtype=np.uint8)
-                        arr16 = arr8.astype(np.uint16)
-                        for val in np.unique(arr8):
-                            idx = int(val)
-                            r = palette_data[idx * 3] if len(palette_data) > idx * 3 else 128
-                            g = palette_data[idx * 3 + 1] if len(palette_data) > idx * 3 + 1 else 128
-                            b = palette_data[idx * 3 + 2] if len(palette_data) > idx * 3 + 2 else 128
-                            auto_palette_entries.append({
-                                "value": idx,
-                                "color": f"#{r:02X}{g:02X}{b:02X}",
-                                "label": f"Color {idx + 1}",
-                            })
+                    arr16, auto_palette_entries = quantize_discrete_rgb(img_resized)
                 else:
-                    # Continuous or greyscale — convert to uint16.
-                    if img_resized.mode == "F":
-                        # Float TIFF (e.g. GIS elevation): normalise the full
-                        # dynamic range into 0–65535 so no precision is lost.
-                        arr_f = np.array(img_resized, dtype=np.float32)
-                        arr_min = float(arr_f.min())
-                        arr_max = float(arr_f.max())
-                        if arr_max > arr_min:
-                            arr16 = (
-                                (arr_f - arr_min) / (arr_max - arr_min) * 65535
-                            ).astype(np.uint16)
-                        else:
-                            arr16 = np.zeros(
-                                (self.height, self.width), dtype=np.uint16
-                            )
-                    elif img_resized.mode == "I":
-                        # 16-bit signed or unsigned integer (e.g. 16-bit PNG, some TIFFs).
-                        # Normalise the actual data range to 0–65535 so the gradient
-                        # colormap always renders with full contrast, regardless of
-                        # whether the source uses the full 16-bit range.
-                        arr_i = np.array(img_resized, dtype=np.float32)
-                        arr_min = float(arr_i.min())
-                        arr_max = float(arr_i.max())
-                        if arr_max > arr_min:
-                            arr16 = (
-                                (arr_i - arr_min) / (arr_max - arr_min) * 65535
-                            ).astype(np.uint16)
-                        else:
-                            arr16 = np.zeros(
-                                (self.height, self.width), dtype=np.uint16
-                            )
-                    elif img_resized.mode == "L":
-                        # 8-bit greyscale.  Normalise min→max to fill 0–65535 so
-                        # sources that don't use the full 0–255 range are still
-                        # displayed with correct contrast.
-                        arr_l = np.array(img_resized, dtype=np.float32)
-                        arr_min = float(arr_l.min())
-                        arr_max = float(arr_l.max())
-                        if arr_max > arr_min:
-                            arr16 = (
-                                (arr_l - arr_min) / (arr_max - arr_min) * 65535
-                            ).astype(np.uint16)
-                        else:
-                            arr16 = np.zeros(
-                                (self.height, self.width), dtype=np.uint16
-                            )
-                    else:
-                        # Anything else (LA, RGB in continuous mode, P, etc.) —
-                        # convert to greyscale then normalise.
-                        arr_other = np.array(
-                            img_resized.convert("L"), dtype=np.float32
-                        )
-                        arr_min = float(arr_other.min())
-                        arr_max = float(arr_other.max())
-                        if arr_max > arr_min:
-                            arr16 = (
-                                (arr_other - arr_min) / (arr_max - arr_min) * 65535
-                            ).astype(np.uint16)
-                        else:
-                            arr16 = np.zeros(
-                                (self.height, self.width), dtype=np.uint16
-                            )
+                    arr16 = normalize_to_uint16(img_resized)
 
                 buf = MapDataBuffer(self.width, self.height, 0)
                 buf._data = arr16

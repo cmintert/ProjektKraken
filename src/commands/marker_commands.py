@@ -235,7 +235,13 @@ class DeleteMarkerCommand(BaseCommand):
                     command_name="DeleteMarkerCommand",
                 )
 
-            db_service.delete_marker(self.marker_id)
+            rows_deleted = db_service.delete_marker(self.marker_id)
+            if rows_deleted == 0:
+                return CommandResult(
+                    success=False,
+                    message=f"Marker delete confirmed 0 rows: {self.marker_id}",
+                    command_name="DeleteMarkerCommand",
+                )
             self._is_executed = True
             logger.info(f"Deleted marker: {self.marker_id}")
             return CommandResult(

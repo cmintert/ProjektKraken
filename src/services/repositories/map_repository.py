@@ -304,15 +304,20 @@ class MapRepository(BaseRepository):
             return Marker.from_dict(data)
         return None
 
-    def delete_marker(self, marker_id: str) -> None:
+    def delete_marker(self, marker_id: str) -> int:
         """Delete a marker permanently.
 
         Args:
             marker_id: The unique identifier of the marker to delete.
+
+        Returns:
+            int: Number of rows deleted (1 if found, 0 if not found).
 
         Raises:
             sqlite3.Error: If the database operation fails.
 
         """
         with self.transaction() as conn:
-            conn.execute("DELETE FROM markers WHERE id = ?", (marker_id,))
+            cursor = conn.execute("DELETE FROM markers WHERE id = ?", (marker_id,))
+            rowcount = cursor.rowcount
+        return rowcount

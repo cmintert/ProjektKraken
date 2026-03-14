@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.gui.utils.style_helper import StyleHelper
+from src.services.raster_image_analysis import ImageAnalysisResult, analyse_image
 
 logger = logging.getLogger(__name__)
 
@@ -203,7 +204,7 @@ class RasterLayerDialog(QDialog):
     # ------------------------------------------------------------------
 
     def _on_browse_clicked(self) -> None:
-        """Open a file dialog and populate the import fields."""
+        """Open a file dialog, analyse the chosen image, and populate fields."""
         path, _ = QFileDialog.getOpenFileName(
             self,
             "Import Image as Raster Layer",
@@ -216,66 +217,29 @@ class RasterLayerDialog(QDialog):
         if not path:
             return
 
-        import numpy as _np
-
         try:
-            from PIL import Image as PilImage
-
-            with PilImage.open(path) as im:
-                w, h = im.size
-                mode = im.mode
-
-                # Detect greyscale content (also covers RGB files where R==G==B)
-                _is_native_grey = mode in ("L", "LA", "I", "I;16", "F")
-                _is_float = mode == "F"
-                _is_content_grey = _is_native_grey
-                if not _is_native_grey and mode in ("RGB", "RGBA"):
-                    _arr = _np.array(im.convert("RGB"))
-                    _drg = int(_np.max(_np.abs(
-                        _arr[:, :, 0].astype(_np.int32) - _arr[:, :, 1].astype(_np.int32)
-                    )))
-                    _drb = int(_np.max(_np.abs(
-                        _arr[:, :, 0].astype(_np.int32) - _arr[:, :, 2].astype(_np.int32)
-                    )))
-                    _is_content_grey = _drg <= 2 and _drb <= 2
-
-                # Auto-select mode
-                if _is_content_grey:
-                    suggested_mode = "continuous"
-                else:
-                    suggested_mode = "color"
-                idx = self._mode_combo.findText(suggested_mode)
-                if idx >= 0:
-                    self._mode_combo.setCurrentIndex(idx)
-
-                # Detection hint label
-                if _is_float:
-                    hint = (
-                        "Greyscale float (elevation/GIS) — Continuous recommended; "
-                        "values will be normalised to 0–65535"
-                    )
-                elif _is_content_grey:
-                    hint = "Greyscale — Continuous recommended"
-                else:
-                    hint = "Colour — Color recommended (RGB preserved as-is)"
-                self._detect_hint_label.setText(hint)
-                self._detect_hint_label.setVisible(True)
-
-                # Thumbnail (convert to RGB for safe display across all modes)
-                thumb = im.copy()
-                thumb.thumbnail((128, 128), PilImage.Resampling.LANCZOS)
-                thumb_rgb = thumb.convert("RGB")
-                thumb_arr = _np.array(thumb_rgb, dtype=_np.uint8)
-                th, tw = thumb_arr.shape[:2]
-                qimg = QImage(
-                    thumb_arr.data, tw, th, tw * 3, QImage.Format.Format_RGB888
-                )
-                self._preview_label.setPixmap(QPixmap.fromImage(qimg.copy()))
-                self._preview_label.setVisible(True)
-
+            result: ImageAnalysisResult = analyse_image(path)
         except Exception as exc:
             logger.warning("RasterLayerDialog: cannot open %r: %s", path, exc)
             return
+
+        w, h = result.width, result.height
+
+        # Auto-select mode
+        idx = self._mode_combo.findText(result.suggested_mode)
+        if idx >= 0:
+            self._mode_combo.setCurrentIndex(idx)
+
+        # Detection hint label
+        self._detect_hint_label.setText(result.hint)
+        self._detect_hint_label.setVisible(True)
+
+        # Thumbnail preview
+        arr = result.thumbnail_arr
+        th, tw = arr.shape[:2]
+        qimg = QImage(arr.data, tw, th, tw * 3, QImage.Format.Format_RGB888)
+        self._preview_label.setPixmap(QPixmap.fromImage(qimg.copy()))
+        self._preview_label.setVisible(True)
 
         # Show warning for lossy formats
         self._lossy_warn_label.setVisible(path.lower().endswith((".jpg", ".jpeg")))
