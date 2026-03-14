@@ -13,9 +13,28 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- **Raster / Map**: Added foundational raster layer support (Phase 1) including 16-bit PNG storage, `MapDataBuffer`, and map-layer node persistence.
+- **Raster / Map**: Phase 2 raster editing tools: brush/gradient edits, stroke/paint commands with undo/redo, and a palette editor for discrete layers.
+- **Raster / UX**: Probe feedback (floating probe popup), entity palette column, gradient preview, and paint-from-entity picker in the legend.
+- **Raster / Features**: Coverage statistics, layer blending, orphan snapshot detection, and playhead-driven temporal snapshot system (temporal rasters).
+- **Raster / Analysis**: Cross-layer spatial queries, histogram stretch, auto-colour, and brush presets.
+- **Raster / Import**: K-means RGB→gradient recolour and improved import wiring; palette import/export and layer annotations (advanced gradients).
+
 ### Fixed
 
+- **Raster / Display**: Preserve passthrough for colour (RGBA) rasters to avoid black tiles and ensure original colours are shown.
+- **Raster / UX**: Make brush defaults usable for continuous mode (bump default paint value) and fix visibility/opacity/falloff issues.
+- **Raster / Blend**: Resolve broken raster layer blending modes and ensure correct blend-mode persistence and undo handling.
+- **Raster / Import**: Fix resampling, colour-map handling, and import-related dialog issues; add integration and GUI tests to prevent regressions.
+- **Map**: Behavioral fixes for map widget and raster import, including flood-fill BFS correctness and related test coverage.
+- **Raster / Labels**: Correct label precedence and pixel mapping for accurate legend and probe displays.
+- **IO**: Restore raster save-to-disk path handling and correct map ID accessor for persisted layers.
+
 ### Changed
+
+- **GUI**: Refactor raster legend into a floating overlay with smooth collapse and proper height management; improve legend and layer-panel UX.
+- **Map / Query**: Use layer display names in the cross-layer spatial query UI and normalize value→entity mapping handling.
+- **Code**: Move inline QSS into `StyleHelper` helpers and refactor `MapLayerPanel` construction to reduce duplication.
 
 ### Deprecated
 
