@@ -82,6 +82,7 @@ from src.gui.widgets.map.interaction_handler import InteractionHandler
 from src.gui.widgets.map.label_manager import LabelManager
 from src.gui.widgets.map.marker_item import MarkerItem
 from src.gui.widgets.map.marker_manager import MarkerManager
+from src.gui.widgets.map.scale_bar_overlay import ScaleBarOverlay
 from src.gui.widgets.map.scale_bar_painter import ScaleBarPainter
 from src.gui.widgets.map.snapping_manager import SnappingManager, SnapType
 from src.gui.widgets.map.trajectory_renderer import TrajectoryRenderer
@@ -652,10 +653,10 @@ class MapGraphicsView(QGraphicsView):
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setMouseTracking(True)
-        # Ensure full-viewport repaint so device-space overlays (scale bar)
-        # are cleared correctly during interactive pans. Prevents smear.
+        # Scale bar is now a viewport overlay widget, so MinimalViewportUpdate
+        # is safe — no more device-space painting in drawForeground().
         self.setViewportUpdateMode(
-            QGraphicsView.ViewportUpdateMode.FullViewportUpdate
+            QGraphicsView.ViewportUpdateMode.MinimalViewportUpdate
         )
 
         # Disable scrollbars for infinite canvas feel
@@ -681,6 +682,9 @@ class MapGraphicsView(QGraphicsView):
         self._drop_hint_overlay.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._drop_hint_overlay.setText("Drop to Place Marker")
         self._drop_hint_overlay.hide()
+
+        # Scale bar overlay (viewport-space widget, avoids FullViewportUpdate)
+        self._scale_bar_overlay = ScaleBarOverlay(self.viewport())
 
         # Temporal state
         self._current_time: float = 0.0
@@ -1030,6 +1034,10 @@ class MapGraphicsView(QGraphicsView):
             and shiboken6.isValid(self._drop_hint_overlay)
         ):
             self._drop_hint_overlay.setGeometry(self.viewport().rect())
+        if hasattr(self, "_scale_bar_overlay") and shiboken6.isValid(
+            self._scale_bar_overlay
+        ):
+            self._scale_bar_overlay.reposition(self.viewport().size())
         self._schedule_label_layout()
 
     def sizeHint(self) -> QSize:
@@ -1417,7 +1425,21 @@ class MapGraphicsView(QGraphicsView):
             return
 
         self.map_width_meters = width_meters
-        self.viewport().update()
+        self._update_scale_bar_overlay()
+
+    def _update_scale_bar_overlay(self) -> None:
+        """Recompute and push the current resolution to the scale bar overlay."""
+        if not self.pixmap_item or self.map_width_meters <= 0:
+            return
+        image_width_px = self.pixmap_item.boundingRect().width()
+        if image_width_px <= 0:
+            return
+        view_scale = self.transform().m11()
+        if view_scale <= 0:
+            return
+        base_resolution = self.map_width_meters / image_width_px
+        current_resolution = base_resolution / view_scale
+        self._scale_bar_overlay.update_scale(current_resolution)
 
     # ------------------------------------------------------------------
     # Item lookup
@@ -1895,24 +1917,6 @@ class MapGraphicsView(QGraphicsView):
 
             painter.restore()
 
-        # Draw Scale Bar Overlay
-        if self.pixmap_item and self.map_width_meters > 0:
-            image_width_px = self.pixmap_item.boundingRect().width()
-            if image_width_px > 0:
-                base_resolution = self.map_width_meters / image_width_px
-
-                view_scale = self.transform().m11()
-
-                if view_scale > 0:
-                    current_resolution = base_resolution / view_scale
-
-                    painter.save()
-                    painter.resetTransform()
-
-                    self.scale_bar_painter.paint(
-                        painter,
-                        QRectF(self.viewport().rect()),
-                        current_resolution,
-                    )
-
-                    painter.restore()
+        # Scale bar is rendered by _scale_bar_overlay (viewport widget).
+        # Update its resolution from the current transform.
+        self._update_scale_bar_overlay()

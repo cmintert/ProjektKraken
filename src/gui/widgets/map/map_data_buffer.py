@@ -669,6 +669,20 @@ class MapDataBuffer:
     # Colorisation
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _build_palette_lut(color_map: ColorMap) -> np.ndarray:
+        """Build a uint16 → RGBA lookup table from palette entries.
+
+        Returns:
+            Array of shape ``(65536, 4)`` with dtype ``uint8``.
+            Unmapped values default to ``(0, 0, 0, 0)`` (transparent).
+        """
+        lut = np.zeros((65536, 4), dtype=np.uint8)
+        for entry in color_map.entries:
+            r, g, b, a = _hex_to_rgba(entry.color)
+            lut[entry.value] = [r, g, b, a]
+        return lut
+
     def colorize(self, color_map: ColorMap) -> QImage:
         """Produce an RGBA ``QImage`` from the buffer using a colour map.
 
@@ -707,14 +721,11 @@ class MapDataBuffer:
             )
             return image.copy()
 
-        rgba = np.zeros((self._height, self._width, 4), dtype=np.uint8)
-
         if color_map.type == "palette":
-            for entry in color_map.entries:
-                r, g, b, a = _hex_to_rgba(entry.color)
-                mask = self._data == entry.value
-                rgba[mask] = [r, g, b, a]
+            lut = self._build_palette_lut(color_map)
+            rgba = lut[self._data]
         else:
+            rgba = np.zeros((self._height, self._width, 4), dtype=np.uint8)
             # Gradient mode: multi-stop interpolation with optional stretch range
             stops = sorted(color_map.gradient_stops, key=lambda s: s.position)
             if len(stops) < 2:
@@ -874,14 +885,12 @@ class MapDataBuffer:
 
         region = self._data[min_row : max_row + 1, min_col : max_col + 1]
         rh, rw = region.shape
-        rgba = np.zeros((rh, rw, 4), dtype=np.uint8)
 
         if color_map.type == "palette":
-            for entry in color_map.entries:
-                r, g, b, a = _hex_to_rgba(entry.color)
-                mask = region == entry.value
-                rgba[mask] = [r, g, b, a]
+            lut = self._build_palette_lut(color_map)
+            rgba = lut[region]
         else:
+            rgba = np.zeros((rh, rw, 4), dtype=np.uint8)
             stops = sorted(color_map.gradient_stops, key=lambda s: s.position)
             positions = np.array([s.position for s in stops], dtype=np.float32)
             rgba_stops = np.array(

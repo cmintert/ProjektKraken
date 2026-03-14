@@ -428,3 +428,58 @@ class TestSpacePanningRasterMode:
             view.mouseReleaseEvent(event)
 
         mock_release.assert_not_called()
+
+
+# ------------------------------------------------------------------
+# Scale bar overlay performance tests
+# ------------------------------------------------------------------
+
+
+class TestScaleBarOverlay:
+    """Tests for scale bar extracted to viewport overlay widget."""
+
+    def test_viewport_update_mode_is_minimal(self, qtbot) -> None:
+        """View should use MinimalViewportUpdate for performance."""
+        from PySide6.QtWidgets import QGraphicsView
+
+        view = MapGraphicsView()
+        qtbot.addWidget(view)
+        assert (
+            view.viewportUpdateMode()
+            == QGraphicsView.ViewportUpdateMode.MinimalViewportUpdate
+        )
+
+    def test_scale_bar_overlay_is_viewport_child(self, qtbot) -> None:
+        """A ScaleBarOverlay widget must exist as child of the viewport."""
+        from src.gui.widgets.map.scale_bar_overlay import ScaleBarOverlay
+
+        view = MapGraphicsView()
+        qtbot.addWidget(view)
+        overlay = view.viewport().findChild(ScaleBarOverlay)
+        assert overlay is not None
+
+    def test_scale_bar_not_in_drawForeground(self, qtbot) -> None:
+        """drawForeground() must not reference scale_bar_painter."""
+        import inspect
+
+        view = MapGraphicsView()
+        qtbot.addWidget(view)
+        source = inspect.getsource(view.drawForeground)
+        assert "scale_bar_painter" not in source
+
+    def test_scale_bar_repositions_on_resize(self, qtbot) -> None:
+        """After resize the overlay should be anchored to bottom-right."""
+        from src.gui.widgets.map.scale_bar_overlay import ScaleBarOverlay
+
+        view = MapGraphicsView()
+        qtbot.addWidget(view)
+        view.resize(800, 600)
+        view.show()
+        qtbot.waitExposed(view)
+
+        overlay = view.viewport().findChild(ScaleBarOverlay)
+        assert overlay is not None
+        # The overlay's right edge should be near the viewport's right edge
+        vp_width = view.viewport().width()
+        overlay_right = overlay.x() + overlay.width()
+        assert abs(overlay_right - vp_width) < 30  # within 30px margin

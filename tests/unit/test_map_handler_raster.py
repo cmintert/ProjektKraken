@@ -280,3 +280,80 @@ class TestRasterProbeResolution:
         )
 
         assert len(emitted) == 0, "No command when no map selected"
+
+
+# ── Tests: no main-thread DB access in raster loading ─────────────
+
+
+class TestNoMainThreadDbAccess:
+    """load_raster_layers must not instantiate DatabaseService."""
+
+    def test_load_raster_layers_no_db_instantiation(self, qapp):
+        """Patching DatabaseService to raise should not break raster loading."""
+        handler, mock_widget, _ = _make_handler(
+            map_id="map-123",
+            node_id="node-456",
+        )
+        # Add value_entity_map to force the name resolution path
+        mock_map = mock_widget.maps_data[0]
+        mock_map.attributes["raster_layers"][0]["value_entity_map"] = {
+            "mode": "exact",
+            "mappings": [{"value": 1, "entity_id": "ent-1"}],
+        }
+        # Put a cached entity so name resolution can succeed
+        ent = SimpleNamespace(id="ent-1", name="Forest")
+        mock_widget._cached_entities = [ent]
+
+        with patch(
+            "src.services.db_service.DatabaseService.__init__",
+            side_effect=RuntimeError("DB must not be created on main thread"),
+        ):
+            # Should NOT raise — should use cached data instead of DB
+            handler.load_raster_layers("map-123")
+
+    def test_entity_names_resolved_from_cache(self, qapp):
+        """Entity names in value_entity_map are resolved from cached data."""
+        handler, mock_widget, _ = _make_handler(
+            map_id="map-123",
+            node_id="node-456",
+        )
+        mock_map = mock_widget.maps_data[0]
+        mock_map.attributes["raster_layers"][0]["value_entity_map"] = {
+            "mode": "exact",
+            "mappings": [
+                {"value": 1, "entity_id": "ent-1"},
+                {"value": 2, "entity_id": "ent-2"},
+            ],
+        }
+        ent1 = SimpleNamespace(id="ent-1", name="Forest")
+        ent2 = SimpleNamespace(id="ent-2", name="Mountain")
+        mock_widget._cached_entities = [ent1, ent2]
+
+        handler.load_raster_layers("map-123")
+
+        # Check set_raster_layer_metadata was called with correct name_map
+        call_args = mock_widget.layer_panel.set_raster_layer_metadata.call_args
+        _, name_map_by_id = call_args[0]
+        assert "node-456" in name_map_by_id
+        assert name_map_by_id["node-456"]["ent-1"] == "Forest"
+        assert name_map_by_id["node-456"]["ent-2"] == "Mountain"
+
+
+# ── Tests: signal connection state tracking ───────────────────────
+
+
+class TestSignalConnectionTracking:
+    """Raster layer panel signals should be connected exactly once."""
+
+    def test_raster_signals_connected_once(self, qapp):
+        """Calling load_raster_layers twice should connect signals once."""
+        handler, mock_widget, _ = _make_handler()
+        layer_panel = mock_widget.layer_panel
+
+        handler.load_raster_layers("map-123")
+        handler.load_raster_layers("map-123")
+
+        # Each signal's connect should be called exactly once
+        assert layer_panel.raster_stats_requested.connect.call_count == 1
+        assert layer_panel.raster_blend_mode_changed.connect.call_count == 1
+        assert layer_panel.raster_snapshot_delete_requested.connect.call_count == 1

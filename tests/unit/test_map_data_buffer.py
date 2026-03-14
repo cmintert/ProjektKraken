@@ -443,3 +443,125 @@ class TestColorMapSerialization:
         assert len(cm2.gradient_stops) == 2
         assert cm2.gradient_stops[0].color == "#000000"
         assert cm2.gradient_stops[1].color == "#FFFFFF"
+
+
+# ------------------------------------------------------------------
+# LUT-based palette colorisation
+# ------------------------------------------------------------------
+
+
+class TestColorizeLUT:
+    """Tests for LUT-based palette colorisation.
+
+    These tests ensure the LUT optimisation produces pixel-exact results
+    compared to the naive per-entry masking approach, and that edge cases
+    (unmapped values, high value indices, sub-region colorisation) are
+    handled correctly.
+    """
+
+    def test_colorize_palette_pixel_exact_multi_value(self) -> None:
+        """Palette with multiple entries produces correct RGBA per pixel."""
+        import numpy as np
+
+        buf = MapDataBuffer(8, 8)
+        # Paint distinct values into known pixel positions
+        arr = buf._data
+        arr[0, 0] = 0
+        arr[0, 1] = 1
+        arr[1, 0] = 5
+        arr[1, 1] = 100
+        arr[2, 0] = 65535
+
+        cm = ColorMap(
+            type="palette",
+            entries=[
+                ColorEntry(value=0, color="#FF0000"),      # red
+                ColorEntry(value=1, color="#00FF00"),      # green
+                ColorEntry(value=5, color="#0000FF"),      # blue
+                ColorEntry(value=100, color="#FFFF00"),    # yellow
+                ColorEntry(value=65535, color="#FF00FF"),  # magenta
+            ],
+        )
+        img = buf.colorize(cm)
+
+        # Pixel (col, row) — QImage.pixelColor(x, y)
+        p00 = img.pixelColor(0, 0)
+        assert (p00.red(), p00.green(), p00.blue(), p00.alpha()) == (255, 0, 0, 255)
+
+        p10 = img.pixelColor(1, 0)
+        assert (p10.red(), p10.green(), p10.blue(), p10.alpha()) == (0, 255, 0, 255)
+
+        p01 = img.pixelColor(0, 1)
+        assert (p01.red(), p01.green(), p01.blue(), p01.alpha()) == (0, 0, 255, 255)
+
+        p11 = img.pixelColor(1, 1)
+        assert (p11.red(), p11.green(), p11.blue(), p11.alpha()) == (255, 255, 0, 255)
+
+        p02 = img.pixelColor(0, 2)
+        assert (p02.red(), p02.green(), p02.blue(), p02.alpha()) == (255, 0, 255, 255)
+
+    def test_colorize_region_matches_full_colorize(self) -> None:
+        """Colorize sub-region must be pixel-exact vs full colorize crop."""
+        import numpy as np
+
+        buf = MapDataBuffer(16, 16)
+        # Fill with a pattern of values
+        for row in range(16):
+            for col in range(16):
+                buf._data[row, col] = (row * 16 + col) % 5
+
+        cm = ColorMap(
+            type="palette",
+            entries=[
+                ColorEntry(value=0, color="#FF0000"),
+                ColorEntry(value=1, color="#00FF00"),
+                ColorEntry(value=2, color="#0000FF"),
+                ColorEntry(value=3, color="#FFFF00"),
+                ColorEntry(value=4, color="#FF00FF"),
+            ],
+        )
+
+        # Full colorize then crop
+        full_img = buf.colorize(cm)
+
+        # Region colorize (cols 2-6, rows 3-7)
+        region_img = buf.colorize_region(cm, 2, 3, 6, 7)
+
+        assert region_img.width() == 5   # 6-2+1
+        assert region_img.height() == 5  # 7-3+1
+
+        for ry in range(5):
+            for rx in range(5):
+                expected = full_img.pixelColor(rx + 2, ry + 3)
+                actual = region_img.pixelColor(rx, ry)
+                assert (actual.red(), actual.green(), actual.blue(), actual.alpha()) == (
+                    expected.red(),
+                    expected.green(),
+                    expected.blue(),
+                    expected.alpha(),
+                ), f"Mismatch at region ({rx},{ry}) / full ({rx+2},{ry+3})"
+
+    def test_colorize_palette_unmapped_multi_value_transparent(self) -> None:
+        """Values absent from the palette must remain fully transparent."""
+        buf = MapDataBuffer(4, 4)
+        buf._data[0, 0] = 10   # mapped
+        buf._data[0, 1] = 20   # unmapped
+        buf._data[1, 0] = 30   # unmapped
+        buf._data[1, 1] = 40   # mapped
+
+        cm = ColorMap(
+            type="palette",
+            entries=[
+                ColorEntry(value=10, color="#FF0000"),
+                ColorEntry(value=40, color="#00FF00"),
+            ],
+        )
+        img = buf.colorize(cm)
+
+        # Mapped values have full alpha
+        assert img.pixelColor(0, 0).alpha() == 255
+        assert img.pixelColor(1, 1).alpha() == 255
+
+        # Unmapped values are transparent
+        assert img.pixelColor(1, 0).alpha() == 0
+        assert img.pixelColor(0, 1).alpha() == 0

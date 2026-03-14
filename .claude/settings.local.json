@@ -9,7 +9,28 @@
       "Bash(python -m pytest tests/integration/test_raster_edit_persistence.py -x -q)",
       "Bash(python -m pytest -x -q --tb=short)",
       "Bash(python -m pytest -q --tb=short -m \"not slow\")",
-      "Bash(python -m pytest tests/unit/test_map_feature_ui.py tests/unit/test_raster_gui.py tests/unit/test_map_handler_scale.py tests/unit/test_map_layer_gaps.py -x -q)"
+      "Bash(python -m pytest tests/unit/test_map_feature_ui.py tests/unit/test_raster_gui.py tests/unit/test_map_handler_scale.py tests/unit/test_map_layer_gaps.py -x -q)",
+      "Bash(wc -l /c/Users/chris/VSCodeProjects/ProjektKraken/ProjektKraken/src/gui/widgets/map/*.py)",
+      "Bash(wc -l /c/Users/chris/VSCodeProjects/ProjektKraken/ProjektKraken/tests/unit/test_map*.py)",
+      "Bash(wc -l /c/Users/chris/VSCodeProjects/ProjektKraken/ProjektKraken/tests/unit/test_raster*.py)",
+      "Bash(python -m pytest tests/unit/test_map_data_buffer.py::TestColorizeLUT -v)",
+      "Bash(python -m pytest tests/unit/test_map_data_buffer.py -v)",
+      "Bash(python -m pytest tests/unit/test_map_graphics_view.py::TestScaleBarOverlay -v)",
+      "Bash(python -m pytest tests/unit/test_map_graphics_view.py -v)",
+      "Bash(git stash:*)",
+      "Bash(python -m pytest tests/unit/test_map_graphics_view.py::test_keyframe_gizmo_interaction -v)",
+      "Bash(python -m pytest tests/unit/test_map_handler_marker_diff.py -v)",
+      "Bash(python -m pytest tests/unit/test_map_handler_create.py tests/unit/test_map_handler_raster.py tests/unit/test_map_handler_scale.py -v)",
+      "Bash(python -m pytest tests/unit/test_map_handler_raster.py::TestNoMainThreadDbAccess tests/unit/test_map_handler_raster.py::TestSignalConnectionTracking -v)",
+      "Bash(python -m pytest tests/unit/test_map_handler_raster.py -v)",
+      "Bash(python -m pytest)",
+      "Bash(ruff check:*)",
+      "Bash(python -m pytest --tb=line)",
+      "Bash(python -m pytest --tb=line -q)",
+      "Bash(python -m pytest tests/unit/test_map_data_buffer.py tests/unit/test_map_graphics_view.py tests/unit/test_map_handler_create.py tests/unit/test_map_handler_raster.py tests/unit/test_map_handler_scale.py tests/unit/test_map_handler_marker_diff.py tests/unit/test_map_widget.py tests/unit/test_map_temporal_rasters.py tests/unit/test_raster_gui.py tests/unit/test_raster_editing.py -v --tb=short)",
+      "Bash(python -m pytest --ignore=tests/integration --tb=line -q)",
+      "Bash(python -m pytest -m \"not slow\" --tb=line -q)",
+      "Bash(timeout 60 python -m pytest tests/unit/ --tb=line -q)"
     ]
   }
 }

@@ -101,6 +101,12 @@ class MapHandler(QObject):
         self._marker_object_to_id: dict[str, str] = {}
         # Track the most recently loaded map ID for raster operations
         self._current_map_id: Optional[str] = None
+        # Track the map ID whose markers are currently loaded (for incremental diff)
+        self._loaded_markers_map_id: Optional[str] = None
+        # Snapshot of last-loaded marker data keyed by object_id (for diff)
+        self._loaded_marker_data: dict[str, dict] = {}
+        # Whether raster layer panel signals have been connected
+        self._raster_signals_connected: bool = False
 
         # ── Temporal rasters ──────────────────────────────────────────
         self._current_lore_date: float = 0.0
@@ -566,9 +572,10 @@ class MapHandler(QObject):
     def on_markers_ready(self, map_id: str, processed_markers: list) -> None:
         """Handle markers ready signal from DataHandler.
 
-        Restores the persisted layer tree (if any) and auto-registers
-        new markers into the hierarchy.  The view transform (pan/zoom)
-        is preserved across the clear-and-rebuild cycle.
+        When reloading the same map, performs an incremental diff to
+        avoid a full clear-and-rebuild.  Only adds/removes/updates
+        markers that actually changed.  Falls back to full rebuild
+        on map switch.
 
         Args:
             map_id: The map ID these markers belong to.
@@ -580,8 +587,68 @@ class MapHandler(QObject):
         if current_map_id != map_id:
             return
 
-        # Preserve the current view transform so the user's pan/zoom
-        # position is maintained after the clear-and-rebuild cycle.
+        if map_id == self._loaded_markers_map_id:
+            self._incremental_marker_update(map_id, processed_markers)
+        else:
+            self._full_marker_rebuild(map_id, processed_markers)
+
+        # Load raster layers for this map
+        self.load_raster_layers(map_id)
+
+    # -- Marker diff helpers -------------------------------------------
+
+    @staticmethod
+    def _marker_diff_keys(marker_data: dict) -> dict:
+        """Extract the properties relevant for diff comparison."""
+        return {
+            "x": marker_data["x"],
+            "y": marker_data["y"],
+            "label": marker_data["label"],
+            "icon": marker_data["icon"],
+            "color": marker_data["color"],
+            "description": marker_data.get("description", ""),
+            "feature_type": marker_data.get("feature_type", "point"),
+            "connection_count": marker_data.get("connection_count", 0),
+        }
+
+    def _incremental_marker_update(
+        self, map_id: str, processed_markers: list
+    ) -> None:
+        """Update markers incrementally — only add/remove/update changed."""
+        view = self._map_widget.view
+        incoming = {m["object_id"]: m for m in processed_markers}
+        incoming_ids = set(incoming.keys())
+        existing_ids = set(self._loaded_marker_data.keys())
+
+        to_remove = existing_ids - incoming_ids
+        to_add = incoming_ids - existing_ids
+        to_check = existing_ids & incoming_ids
+
+        # Remove departed markers
+        for mid in to_remove:
+            self._map_widget.view.remove_marker(mid)
+            self._marker_object_to_id.pop(mid, None)
+
+        # Add newcomers
+        for mid in to_add:
+            self._add_single_marker(view, incoming[mid])
+
+        # Update changed markers (position, label, etc.)
+        for mid in to_check:
+            old = self._marker_diff_keys(self._loaded_marker_data[mid])
+            new = self._marker_diff_keys(incoming[mid])
+            if old != new:
+                # Re-add (handles icon/label/feature_type changes cleanly)
+                self._map_widget.view.remove_marker(mid)
+                self._add_single_marker(view, incoming[mid])
+
+        # Update snapshot
+        self._loaded_marker_data = {m["object_id"]: m for m in processed_markers}
+
+    def _full_marker_rebuild(
+        self, map_id: str, processed_markers: list
+    ) -> None:
+        """Full clear-and-rebuild — used on map switch."""
         view = self._map_widget.view
         saved_transform = view.transform()
         h_scroll = view.horizontalScrollBar().value()
@@ -600,7 +667,7 @@ class MapHandler(QObject):
         selected_layer_id: str | None = self._map_widget.layer_panel.selected_node_id
 
         self._map_widget.clear_markers()
-        self._marker_object_to_id.clear()  # Reset mapping
+        self._marker_object_to_id.clear()
 
         # Restore persisted layer tree from the selected map object
         maps = self._map_widget.maps_data
@@ -611,32 +678,7 @@ class MapHandler(QObject):
             self._map_widget._build_layer_model()
 
         for marker_data in processed_markers:
-            # Add marker to map (also auto-registers a layer node)
-            self._map_widget.add_marker(
-                marker_id=marker_data["object_id"],
-                object_type=marker_data["object_type"],
-                label=marker_data["label"],
-                x=marker_data["x"],
-                y=marker_data["y"],
-                icon=marker_data["icon"],
-                color=marker_data["color"],
-                description=marker_data.get("description", ""),
-                lore_date=marker_data.get("lore_date"),
-                feature_type=marker_data.get("feature_type", "point"),
-                geometry=marker_data.get("geometry"),
-                style=marker_data.get("style"),
-                visual_attributes=marker_data.get("attributes"),
-            )
-
-            # Set lore priority (connection_count) on the MarkerItem
-            obj_id = marker_data["object_id"]
-            if obj_id in view.markers:
-                view.markers[obj_id].connection_count = marker_data.get(
-                    "connection_count", 0
-                )
-
-            # Store mapping for later updates (object_id -> marker.id)
-            self._marker_object_to_id[marker_data["object_id"]] = marker_data["id"]
+            self._add_single_marker(view, marker_data)
 
         # Restore the view transform after rebuilding
         view.setTransform(saved_transform)
@@ -652,8 +694,33 @@ class MapHandler(QObject):
         if selected_layer_id:
             self._map_widget.layer_panel.select_node(selected_layer_id)
 
-        # Load raster layers for this map
-        self.load_raster_layers(map_id)
+        self._loaded_markers_map_id = map_id
+        self._loaded_marker_data = {m["object_id"]: m for m in processed_markers}
+
+    def _add_single_marker(self, view: object, marker_data: dict) -> None:
+        """Add one marker and update bookkeeping."""
+        self._map_widget.add_marker(
+            marker_id=marker_data["object_id"],
+            object_type=marker_data["object_type"],
+            label=marker_data["label"],
+            x=marker_data["x"],
+            y=marker_data["y"],
+            icon=marker_data["icon"],
+            color=marker_data["color"],
+            description=marker_data.get("description", ""),
+            lore_date=marker_data.get("lore_date"),
+            feature_type=marker_data.get("feature_type", "point"),
+            geometry=marker_data.get("geometry"),
+            style=marker_data.get("style"),
+            visual_attributes=marker_data.get("attributes"),
+        )
+
+        obj_id = marker_data["object_id"]
+        if obj_id in view.markers:
+            view.markers[obj_id].connection_count = marker_data.get(
+                "connection_count", 0
+            )
+        self._marker_object_to_id[marker_data["object_id"]] = marker_data["id"]
 
     @Slot(list)
     def on_trajectories_ready(self, trajectories: list) -> None:
@@ -986,87 +1053,59 @@ class MapHandler(QObject):
                 "Loaded raster layer: %s (%s) — scene item added", node_id, file_path
             )
 
-        # Update the layer panel's mode badge metadata
-        mode_by_id = {
-            m.get("node_id", ""): m.get("mode", "discrete")
-            for m in raster_metas
-            if m.get("node_id")
-        }
+        # Build mode + metadata dicts in a single pass
+        mode_by_id: Dict[str, str] = {}
+        meta_by_id: Dict[str, dict] = {}
+        for m in raster_metas:
+            nid = m.get("node_id", "")
+            if nid:
+                mode_by_id[nid] = m.get("mode", "discrete")
+                meta_by_id[nid] = m
         self._map_widget.layer_panel.set_raster_mode_metadata(mode_by_id)
 
-        # Pass full metadata so the legend and class picker can populate
-        meta_by_id = {m["node_id"]: m for m in raster_metas if m.get("node_id")}
+        # Build name map from cached entities/events (no main-thread DB access)
+        cached_names: Dict[str, str] = {}
+        for entity in getattr(self._map_widget, "_cached_entities", []):
+            cached_names[getattr(entity, "id", "")] = getattr(entity, "name", "")
+        for event in getattr(self._map_widget, "_cached_events", []):
+            cached_names[getattr(event, "id", "")] = getattr(event, "name", "")
 
-        # We need to construct name_map_by_id from the DB for entity/event names
+        from src.gui.widgets.map.raster_mapping import normalize_value_entity_map
+
         name_map_by_id: Dict[str, Dict[str, str]] = {}
-        db = None
         for meta in raster_metas:
             node_id_meta = meta.get("node_id", "")
             if not node_id_meta:
                 continue
-
-            from src.gui.widgets.map.raster_mapping import normalize_value_entity_map
-
             vem = normalize_value_entity_map(meta.get("value_entity_map", {}))
             entity_ids = {
                 m.get("entity_id")
                 for m in vem.get("mappings", [])
                 if m.get("entity_id")
             }
-            if entity_ids:
-                if db is None:
-                    db_path = self._db_path_accessor()
-                    if db_path:
-                        from src.services.db_service import DatabaseService
-
-                        db = DatabaseService(db_path)
-                        db.connect()
-
-                if db:
-                    layer_name_map = {}
-                    for eid in entity_ids:
-                        try:
-                            name = db.get_name(eid)
-                            if name:
-                                layer_name_map[eid] = name
-                        except Exception:
-                            pass
-                    if layer_name_map:
-                        name_map_by_id[node_id_meta] = layer_name_map
+            layer_name_map = {
+                eid: cached_names[eid] for eid in entity_ids if eid in cached_names
+            }
+            if layer_name_map:
+                name_map_by_id[node_id_meta] = layer_name_map
 
         self._map_widget.layer_panel.set_raster_layer_metadata(
             meta_by_id, name_map_by_id
         )
 
-        # Connect layer panel signals (guard against duplicate connections)
-        layer_panel = self._map_widget.layer_panel
-        try:
-            layer_panel.raster_stats_requested.disconnect(
+        # Connect layer panel signals (once only)
+        if not self._raster_signals_connected:
+            layer_panel = self._map_widget.layer_panel
+            layer_panel.raster_stats_requested.connect(
                 self.on_raster_stats_requested
             )
-        except RuntimeError:
-            pass
-        layer_panel.raster_stats_requested.connect(self.on_raster_stats_requested)
-
-        try:
-            layer_panel.raster_blend_mode_changed.disconnect(
+            layer_panel.raster_blend_mode_changed.connect(
                 self._on_raster_blend_mode_changed
             )
-        except RuntimeError:
-            pass
-        layer_panel.raster_blend_mode_changed.connect(
-            self._on_raster_blend_mode_changed
-        )
-
-        try:
-            layer_panel.raster_snapshot_delete_requested.disconnect(
+            layer_panel.raster_snapshot_delete_requested.connect(
                 self.on_raster_snapshot_delete_requested
             )
-        except RuntimeError:
-            pass
-        layer_panel.raster_snapshot_delete_requested.connect(
-            self.on_raster_snapshot_delete_requested
-        )
+            self._raster_signals_connected = True
 
     # ------------------------------------------------------------------
     # Raster editing handlers
