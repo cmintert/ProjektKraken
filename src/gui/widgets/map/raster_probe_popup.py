@@ -8,6 +8,7 @@ after a short timeout.
 import logging
 from typing import Optional
 
+import shiboken6
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import QLabel, QWidget
 
@@ -94,7 +95,10 @@ class RasterProbePopup(QLabel):
 
     def hide_result(self) -> None:
         """Hide the popup immediately."""
-        self._timer.stop()
+        if not shiboken6.isValid(self):
+            return
+        if self._timer is not None and shiboken6.isValid(self._timer):
+            self._timer.stop()
         self.hide()
 
     # ------------------------------------------------------------------

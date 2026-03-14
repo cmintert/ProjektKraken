@@ -438,7 +438,7 @@ class StyleHelper:
             f"QPushButton:hover {{ background-color: {border}; }}"
             f"QPushButton:pressed {{ background-color: {app_bg}; }}"
             f"QPushButton:checked {{ "
-            f"background-color: {primary}; color: white; "
+            f"background-color: {primary}; color: {theme.get('text_on_primary', '#FFFFFF')}; "
             f"border: 2px solid {primary}; font-weight: bold; }}"
         )
 

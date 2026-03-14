@@ -6,6 +6,7 @@ and the pixel data lives in 16-bit PNG files on disk.
 """
 
 import logging
+import re
 import time
 import uuid
 from pathlib import Path
@@ -16,12 +17,6 @@ import numpy as np
 from src.app.constants import MAP_LAYER_TYPE_RASTER
 from src.commands.base_command import BaseCommand, CommandResult
 from src.core.map import MapLayerNode
-from src.services.raster_import_helpers import (
-    choose_resample,
-    detect_greyscale,
-    normalize_to_uint16,
-    quantize_discrete_rgb,
-)
 from src.gui.widgets.map.map_data_buffer import (
     ColorEntry,
     ColorMap,
@@ -30,8 +25,28 @@ from src.gui.widgets.map.map_data_buffer import (
 )
 from src.gui.widgets.map.raster_mapping import make_empty_vem, validate_no_overlaps
 from src.services.db_service import DatabaseService
+from src.services.raster_import_helpers import (
+    choose_resample,
+    detect_greyscale,
+    normalize_to_uint16,
+    quantize_discrete_rgb,
+)
 
 logger = logging.getLogger(__name__)
+
+
+def _sanitize_filename(name: str, fallback: str) -> str:
+    """Produce a safe filename base from *name*.
+
+    Strips path components, replaces unsafe characters, and falls back
+    to *fallback* if the result is empty or a reserved name.
+    """
+    base = Path(name).name  # strip directory components
+    base = re.sub(r"[^\w.\-]", "_", base)  # keep alnum, underscore, hyphen, dot
+    base = re.sub(r"_+", "_", base).strip("_")  # collapse runs
+    if not base or base in {".", ".."}:
+        base = fallback
+    return base
 
 
 def _get_raster_layers(map_obj: Any) -> List[Dict[str, Any]]:
@@ -155,8 +170,11 @@ class CreateRasterLayerCommand(BaseCommand):
                 buf._rgba_data = rgba_arr
                 raster_dir = Path(self.world_root) / "rasters"
                 raster_dir.mkdir(parents=True, exist_ok=True)
-                filename = f"{self.name.replace(' ', '_')}_{self._node_id[:8]}.png"
+                safe_base = _sanitize_filename(self.name, self._node_id[:8])
+                filename = f"{safe_base}_{self._node_id[:8]}.png"
                 abs_path = raster_dir / filename
+                if not abs_path.resolve().is_relative_to(raster_dir.resolve()):
+                    raise ValueError(f"Path traversal detected: {abs_path}")
                 logger.debug("CreateRasterLayerCommand (color): saving PNG → %s", abs_path)
                 buf.save(str(abs_path))
                 self._file_path = f"rasters/{filename}"
@@ -227,8 +245,11 @@ class CreateRasterLayerCommand(BaseCommand):
                 buf = MapDataBuffer(self.width, self.height, self.default_value)
             raster_dir = Path(self.world_root) / "rasters"
             raster_dir.mkdir(parents=True, exist_ok=True)
-            filename = f"{self.name.replace(' ', '_')}_{self._node_id[:8]}.png"
+            safe_base = _sanitize_filename(self.name, self._node_id[:8])
+            filename = f"{safe_base}_{self._node_id[:8]}.png"
             abs_path = raster_dir / filename
+            if not abs_path.resolve().is_relative_to(raster_dir.resolve()):
+                raise ValueError(f"Path traversal detected: {abs_path}")
             logger.debug("CreateRasterLayerCommand: saving PNG → %s", abs_path)
             buf.save(str(abs_path))
             logger.debug(
@@ -1015,9 +1036,9 @@ class SetRasterMappingCommand(BaseCommand):
                 )
                 break
         if not found:
-            logger.warning(
-                "SetRasterMappingCommand._set_mapping: node_id=%s not found in raster_layers",
-                self.node_id,
+            raise ValueError(
+                f"SetRasterMappingCommand._set_mapping: node_id={self.node_id} "
+                f"not found in raster_layers"
             )
         _set_raster_layers(map_obj, raster_layers)
         repo.insert_map(map_obj)

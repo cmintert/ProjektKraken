@@ -1274,8 +1274,10 @@ class MapLayerPanel(QWidget):
         self.raster_settings_changed.emit()
 
     @Slot(bool)
-    def _on_tool_mode_changed(self, _checked: bool) -> None:
-        """Emit settings changed when tool mode button is toggled."""
+    def _on_tool_mode_changed(self, checked: bool) -> None:
+        """Emit settings changed only when a tool button becomes active."""
+        if not checked:
+            return
         self.raster_settings_changed.emit()
 
     @property

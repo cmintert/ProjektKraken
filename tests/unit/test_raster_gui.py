@@ -11,9 +11,15 @@ from unittest.mock import MagicMock
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import QGraphicsPixmapItem
+from pytestqt.qtbot import QtBot
 
 from src.app.map_handler import MapHandler
-from src.gui.widgets.map.map_data_buffer import ColorEntry, ColorMap, GradientStop, MapDataBuffer
+from src.gui.widgets.map.map_data_buffer import (
+    ColorEntry,
+    ColorMap,
+    GradientStop,
+    MapDataBuffer,
+)
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 from src.gui.widgets.map.raster_edit_tool import RasterEditMode
 from src.gui.widgets.map.raster_layer_item import RasterLayerItem
@@ -22,7 +28,7 @@ from src.gui.widgets.map_widget import MapWidget
 # ── Helpers ────────────────────────────────────────────────────────────
 
 
-def _make_view(qtbot, width: int = 200, height: int = 200) -> MapGraphicsView:
+def _make_view(qtbot: QtBot, width: int = 200, height: int = 200) -> MapGraphicsView:
     """Create a MapGraphicsView with a synthetic pixmap loaded."""
     view = MapGraphicsView()
     qtbot.addWidget(view)

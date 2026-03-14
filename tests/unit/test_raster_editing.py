@@ -6,7 +6,12 @@ SetRasterMappingCommand, and value→entity mapping helpers.
 
 import numpy as np
 
-from src.gui.widgets.map.map_data_buffer import ColorEntry, ColorMap, GradientStop, MapDataBuffer
+from src.gui.widgets.map.map_data_buffer import (
+    ColorEntry,
+    ColorMap,
+    GradientStop,
+    MapDataBuffer,
+)
 from src.gui.widgets.map.raster_mapping import (
     lookup_entity_for_value,
     lookup_label_for_value,
@@ -36,9 +41,11 @@ class TestFloodFill:
 
     def test_flood_fill_noop_when_same_value(self) -> None:
         buf = MapDataBuffer(width=8, height=8, default_value=42)
-        buf.flood_fill(0.5, 0.5, 42)
+        dirty = buf.flood_fill(0.5, 0.5, 42)
         # No change, dirty region is the seed pixel
         assert np.all(buf._data == 42)
+        # Dirty region should be a single pixel (the seed)
+        assert dirty[0] == dirty[2] and dirty[1] == dirty[3]
 
     def test_flood_fill_fills_entire_uniform_buffer(self) -> None:
         buf = MapDataBuffer(width=32, height=32, default_value=0)

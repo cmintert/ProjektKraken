@@ -30,7 +30,11 @@
       "Bash(python -m pytest tests/unit/test_map_data_buffer.py tests/unit/test_map_graphics_view.py tests/unit/test_map_handler_create.py tests/unit/test_map_handler_raster.py tests/unit/test_map_handler_scale.py tests/unit/test_map_handler_marker_diff.py tests/unit/test_map_widget.py tests/unit/test_map_temporal_rasters.py tests/unit/test_raster_gui.py tests/unit/test_raster_editing.py -v --tb=short)",
       "Bash(python -m pytest --ignore=tests/integration --tb=line -q)",
       "Bash(python -m pytest -m \"not slow\" --tb=line -q)",
-      "Bash(timeout 60 python -m pytest tests/unit/ --tb=line -q)"
+      "Bash(timeout 60 python -m pytest tests/unit/ --tb=line -q)",
+      "Bash(python -m pytest tests/unit/test_raster_editing.py tests/unit/test_raster_gui.py tests/unit/test_raster_persistence.py tests/integration/test_raster_edit_persistence.py -x --timeout=30 -q)",
+      "Bash(python -m pytest tests/unit/test_raster_editing.py tests/unit/test_raster_gui.py tests/unit/test_raster_persistence.py tests/integration/test_raster_edit_persistence.py -x -q)",
+      "Bash(python -m ruff check src/app/connection_manager.py src/app/map_handler.py src/commands/raster_commands.py src/gui/widgets/map/map_data_buffer.py src/gui/widgets/map/map_layer_panel.py src/gui/widgets/map/raster_edit_tool.py src/gui/widgets/map/raster_mapping.py src/gui/widgets/map/raster_probe_popup.py src/gui/widgets/map/raster_palette_editor.py src/gui/utils/style_helper.py tests/unit/test_raster_editing.py tests/unit/test_raster_gui.py tests/unit/test_raster_persistence.py tests/integration/test_raster_edit_persistence.py)",
+      "Bash(python -m ruff check --fix src/commands/raster_commands.py tests/unit/test_raster_editing.py tests/unit/test_raster_gui.py)"
     ]
   }
 }

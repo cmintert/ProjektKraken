@@ -295,19 +295,34 @@ def _find_matching_entry(vem: Dict[str, Any], value: int) -> Optional[Dict[str, 
     Returns:
         Matching entry dict, or ``None``.
     """
+    if not isinstance(vem, dict):
+        return None
     mode = vem.get("mode", "exact")
-    for m in vem.get("mappings", []):
+    if not isinstance(mode, str):
+        mode = "exact"
+    mappings = vem.get("mappings", [])
+    if not isinstance(mappings, list):
+        return None
+    for m in mappings:
         if mode == "exact":
             v = m.get("value")
-            if v is not None and int(v) == value:
-                return m
+            if v is None:
+                continue
+            try:
+                if int(v) == value:
+                    return m
+            except (ValueError, TypeError):
+                continue
         else:
             lo_v = m.get("min")
             hi_v = m.get("max")
             if lo_v is None or hi_v is None:
                 continue
-            if int(lo_v) <= value <= int(hi_v):
-                return m
+            try:
+                if int(lo_v) <= value <= int(hi_v):
+                    return m
+            except (ValueError, TypeError):
+                continue
     return None
 
 

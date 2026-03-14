@@ -19,15 +19,7 @@ from src.gui.widgets.map.map_data_buffer import ColorEntry, ColorMap, MapDataBuf
 from src.services.db_service import DatabaseService
 
 # ── Fixtures ──────────────────────────────────────────────────────────
-
-
-@pytest.fixture
-def db_service():
-    """In-memory database service."""
-    svc = DatabaseService(":memory:")
-    svc.connect()
-    yield svc
-    svc.close()
+# db_service fixture is provided by conftest.py
 
 
 @pytest.fixture

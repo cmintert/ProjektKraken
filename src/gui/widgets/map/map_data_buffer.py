@@ -440,6 +440,10 @@ class MapDataBuffer:
     ) -> None:
         if width <= 0 or height <= 0:
             raise ValueError(f"Invalid buffer dimensions: {width}×{height}")
+        if not isinstance(default_value, int) or not (0 <= default_value <= 0xFFFF):
+            raise ValueError(
+                f"default_value must be an int in 0–65535, got {default_value!r}"
+            )
         self._width = width
         self._height = height
         self._default_value = default_value
@@ -824,7 +828,14 @@ class MapDataBuffer:
             return buf
 
         # Grayscale / 16-bit path (discrete / continuous modes)
-        arr = np.array(img, dtype=np.uint16)
+        _16BIT_MODES = {"I;16", "I;16B", "I;16L", "I;16N"}
+        arr = np.array(img)
+        if img.mode not in _16BIT_MODES and arr.dtype != np.uint16:
+            raise ValueError(
+                f"Expected 16-bit grayscale image, got mode={img.mode!r} "
+                f"dtype={arr.dtype}"
+            )
+        arr = arr.astype(np.uint16)
         if arr.ndim != 2:
             raise ValueError(f"Expected 2-D grayscale image, got shape {arr.shape}")
 
@@ -1071,7 +1082,9 @@ class MapDataBuffer:
         else:
             mask = np.ones_like(t, dtype=bool)
 
-        vals = (value_start + (value_end - value_start) * t).astype(np.uint16)
+        vals = np.clip(
+            value_start + (value_end - value_start) * t, 0, 65535
+        ).astype(np.uint16)
         region = self._data[min_row : max_row + 1, min_col : max_col + 1]
         self._data[min_row : max_row + 1, min_col : max_col + 1] = np.where(
             mask, vals, region
@@ -1124,7 +1137,9 @@ class MapDataBuffer:
         t = np.clip(dist, 0.0, 1.0)
 
         mask = dist <= 1.0
-        vals = (value_center + (value_edge - value_center) * t).astype(np.uint16)
+        vals = np.clip(
+            value_center + (value_edge - value_center) * t, 0, 65535
+        ).astype(np.uint16)
         region = self._data[min_row : max_row + 1, min_col : max_col + 1]
         self._data[min_row : max_row + 1, min_col : max_col + 1] = np.where(
             mask, vals, region
@@ -1199,7 +1214,9 @@ class MapDataBuffer:
         else:
             mask = np.ones_like(t, dtype=bool)
 
-        vals = (value_center + (value_edge - value_center) * t).astype(np.uint16)
+        vals = np.clip(
+            value_center + (value_edge - value_center) * t, 0, 65535
+        ).astype(np.uint16)
         region = self._data[min_row : max_row + 1, min_col : max_col + 1]
         self._data[min_row : max_row + 1, min_col : max_col + 1] = np.where(
             mask, vals, region

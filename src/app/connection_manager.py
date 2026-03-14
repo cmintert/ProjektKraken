@@ -8,7 +8,7 @@ boilerplate and making it easier to add or remove signal wiring.
 """
 
 import logging
-from typing import TYPE_CHECKING, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Callable, Sequence, Tuple, Union
 
 from PySide6.QtCore import Qt
 
@@ -17,8 +17,8 @@ if TYPE_CHECKING:
 
 # Connection spec: (source_obj, signal_name, slot, description[, connection_type])
 ConnectionSpec = Union[
-    Tuple[object, str, callable, str],
-    Tuple[object, str, callable, str, Qt.ConnectionType],
+    Tuple[object, str, Callable, str],
+    Tuple[object, str, Callable, str, Qt.ConnectionType],
 ]
 
 logger = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ class ConnectionManager:
         self,
         obj: object,
         signal_name: str,
-        slot: callable,
+        slot: Callable,
         obj_description: str = "",
         connection_type: Qt.ConnectionType = Qt.ConnectionType.AutoConnection,
     ) -> bool:
@@ -813,6 +813,7 @@ class ConnectionManager:
                     "lexicon_save_requested",
                     self.window.worker.save_graph_lexicon,
                     "GraphWidget",
+                    Qt.ConnectionType.QueuedConnection,
                 ),
             ],
             "GraphWidget",

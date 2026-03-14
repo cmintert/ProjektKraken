@@ -7,6 +7,7 @@ and manage the 16-bit PNG file on disk.
 
 import os
 import tempfile
+from typing import Generator
 
 import pytest
 
@@ -15,17 +16,18 @@ from src.commands.raster_commands import (
     DeleteRasterLayerCommand,
 )
 from src.core.map import Map, MapLayerNode
+from src.services.db_service import DatabaseService
 
 
 @pytest.fixture
-def world_dir():
+def world_dir() -> Generator[str, None, None]:
     """Provide a temporary directory as the world root."""
     with tempfile.TemporaryDirectory() as tmpdir:
         yield tmpdir
 
 
 @pytest.fixture
-def map_with_layers(db_service):
+def map_with_layers(db_service: DatabaseService) -> Map:
     """Insert a map with a basic layer tree into the DB."""
     root = MapLayerNode(name="Root", layer_type="group")
     map_obj = Map(
@@ -176,7 +178,9 @@ class TestDeleteRasterLayerCommand:
         assert len(raster_layers) == 0
         assert not os.path.exists(os.path.join(world_dir, file_path))
 
-    def test_undo_delete_restores_raster(self, db_service, map_with_layers, world_dir):
+    def test_undo_delete_restores_raster(
+        self, db_service: DatabaseService, map_with_layers: Map, world_dir: str
+    ) -> None:
         """Undo of delete should restore file, node, and metadata."""
         create_cmd = CreateRasterLayerCommand(
             map_id=map_with_layers.id,
@@ -186,6 +190,7 @@ class TestDeleteRasterLayerCommand:
             world_root=world_dir,
         )
         create_result = create_cmd.execute(db_service)
+        assert create_result.success, f"Create failed: {create_result.message}"
         node_id = create_result.data["node_id"]
         file_path = create_result.data["file_path"]
 

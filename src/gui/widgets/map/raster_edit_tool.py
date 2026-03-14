@@ -194,12 +194,12 @@ class RasterEditTool:
                 node_id,
                 list(self._view._raster_items.keys()),
             )
-        else:
-            logger.debug(
-                "start_editing: item found buffer=%dx%d",
-                item.buffer.width,
-                item.buffer.height,
-            )
+            return
+        logger.debug(
+            "start_editing: item found buffer=%dx%d",
+            item.buffer.width,
+            item.buffer.height,
+        )
         self._active = True
         self._active_node_id = node_id
         self._preview_node_id = node_id  # keep for passive probing after stop
