@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-03-14
+## [Development] - 2026-03-27
 ### Internal
-- Merge pull request #108 from cmintert/raster-maps
+- chore: record workspace changes
 
 
 *This changelog was automatically generated.*
