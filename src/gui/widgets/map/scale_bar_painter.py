@@ -10,6 +10,12 @@ from PySide6.QtGui import QBrush, QColor, QFont, QFontMetrics, QPainter, QPen
 class ScaleBarPainter:
     """Helper class to render a map scale bar."""
 
+    # Geometry constants
+    PADDING_PX = 5  # Padding around background rect
+    MARGIN_PX = 20  # Distance from viewport edge to scale bar
+    MIN_BAR_WIDTH = 60  # Minimum scale bar display width in pixels
+    MAX_RECT_WIDTH = 240  # Max width for background rect in 250px overlay (250 - 2*5)
+
     def __init__(self) -> None:
         """Initialize the scale bar painter."""
         self.font = QFont("Sans Serif", 9)
@@ -49,16 +55,23 @@ class ScaleBarPainter:
         label = self._format_distance(display_meters)
 
         # Layout
-        margin = 20
         bar_height = 6
         text_height = 20
 
         # Position: Bottom Right
-        rect_width = max(display_pixels, 60) + 10
+        # rect_width includes padding: display_pixels + 10 (5px padding each side in draw call)
+        rect_width = max(display_pixels, self.MIN_BAR_WIDTH) + 10
         rect_height = bar_height + text_height + 5
 
-        x = viewport_rect.width() - rect_width - margin
-        y = viewport_rect.height() - rect_height - margin
+        # Cap rect_width to fit within the overlay bounds.
+        # The background rect is drawn at (x-5, …, rect_width+10, …),
+        # so with x >= 5, the right edge is at x + rect_width + 5.
+        # To stay within viewport_width, we need rect_width <= MAX_RECT_WIDTH.
+        rect_width = min(rect_width, self.MAX_RECT_WIDTH)
+        display_pixels = min(display_pixels, rect_width - 10)
+
+        x = max(self.PADDING_PX, viewport_rect.width() - rect_width - self.MARGIN_PX)
+        y = viewport_rect.height() - rect_height - self.MARGIN_PX
 
         # Draw background container
         painter.setPen(Qt.PenStyle.NoPen)
