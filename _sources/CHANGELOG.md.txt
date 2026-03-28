@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-03-28
-### Changed
-- refactor: simplify temporal date widget and fix code quality
+### Internal
+- chore: remove outdated commit message file and clean up test documentation
 
 
 *This changelog was automatically generated.*
