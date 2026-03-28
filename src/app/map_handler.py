@@ -13,7 +13,7 @@ import shutil
 import uuid
 from collections import OrderedDict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Set
 
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt, QTimer, Signal, Slot
 from PySide6.QtWidgets import QMessageBox
@@ -34,6 +34,7 @@ from src.commands.map_commands import (
 )
 from src.app.constants import TEMPORAL_SNAPSHOT_CACHE_MAX
 from src.core.logging_config import get_logger
+from src.core.map import MapLayerNode
 
 if TYPE_CHECKING:
     from src.gui.widgets.map_widget import MapWidget
@@ -595,6 +596,19 @@ class MapHandler(QObject):
         # Load raster layers for this map
         self.load_raster_layers(map_id)
 
+    # -- Layer tree helpers --------------------------------------------
+
+    @staticmethod
+    def _collect_node_ids(node: Optional[MapLayerNode]) -> Set[str]:
+        """Recursively collect all node IDs from a MapLayerNode tree."""
+        ids: Set[str] = set()
+        if node is None:
+            return ids
+        ids.add(node.id)
+        for child in node.children:
+            ids.update(MapHandler._collect_node_ids(child))
+        return ids
+
     # -- Marker diff helpers -------------------------------------------
 
     @staticmethod
@@ -673,9 +687,9 @@ class MapHandler(QObject):
         maps = self._map_widget.maps_data
         selected_map = next((m for m in maps if m.id == map_id), None)
         if selected_map and selected_map.layers is not None:
-            self._map_widget._build_layer_model(selected_map.layers)
+            self._map_widget.rebuild_layer_model(selected_map.layers)
         else:
-            self._map_widget._build_layer_model()
+            self._map_widget.rebuild_layer_model()
 
         for marker_data in processed_markers:
             self._add_single_marker(view, marker_data)
@@ -755,9 +769,12 @@ class MapHandler(QObject):
 
     @Slot()
     def on_layer_tree_changed(self) -> None:
-        """Persist the current layer tree to the database.
+        """Persist the current layer tree and resync the layer model if needed.
 
-        Called whenever the in-memory layer model is mutated.
+        Persists the in-memory tree whenever it is mutated.  Also detects the
+        case where a command (e.g. ``CreateRasterLayerCommand``) updated
+        ``maps_data`` directly, causing the persisted tree to diverge from the
+        model — and triggers a rebuild so the new nodes appear in the panel.
         """
         map_id = self._map_widget.get_selected_map_id()
         model = self._map_widget.get_layer_model()
@@ -766,6 +783,22 @@ class MapHandler(QObject):
         tree_dict = model.root.to_dict()
         cmd = SaveLayerTreeCommand(map_id, tree_dict)
         self.command_requested.emit(cmd)
+
+        # If the persisted tree diverged from the in-memory model
+        # (e.g. raster create/delete), rebuild the layer model.
+        maps = self._map_widget.maps_data
+        selected_map = next((m for m in maps if m.id == map_id), None)
+        if selected_map and selected_map.layers:
+            db_ids = self._collect_node_ids(selected_map.layers)
+            mem_ids = self._collect_node_ids(model.root)
+            if db_ids != mem_ids:
+                logger.debug(
+                    "on_layer_tree_changed: tree diverged "
+                    "(db=%d nodes, mem=%d nodes) — rebuilding layer model",
+                    len(db_ids),
+                    len(mem_ids),
+                )
+                self._map_widget.rebuild_layer_model(selected_map.layers)
 
     @Slot(str, float, float)
     def on_layer_opacity_changed(

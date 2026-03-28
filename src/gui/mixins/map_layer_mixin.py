@@ -38,7 +38,7 @@ class MapLayerMixin:
         - self.layer_opacity_change_requested: Signal(str, float, float)
     """
 
-    def _build_layer_model(self, root: Optional[MapLayerNode] = None) -> MapLayerModel:
+    def rebuild_layer_model(self, root: Optional[MapLayerNode] = None) -> MapLayerModel:
         """Create (or replace) the layer model and wire it to the view.
 
         Args:
@@ -76,7 +76,7 @@ class MapLayerMixin:
 
         """
         if self._layer_model is None:
-            return self._build_layer_model()
+            return self.rebuild_layer_model()
         return self._layer_model
 
     def _default_group(self) -> MapLayerNode:
