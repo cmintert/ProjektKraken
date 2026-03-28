@@ -1558,6 +1558,25 @@ using the current log file instead of crashing.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="core.logging_config.get_audit_logger_for_path">
+<span class="sig-prename descclassname"><span class="pre">core.logging_config.</span></span><span class="sig-name descname"><span class="pre">get_audit_logger_for_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">audit_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Logger</span></span></span><a class="reference internal" href="_modules/core/logging_config.html#get_audit_logger_for_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.logging_config.get_audit_logger_for_path" title="Link to this definition">¶</a></dt>
+<dd><p>Return a per-world AI audit logger writing to <code class="docutils literal notranslate"><span class="pre">audit_path</span></code>.</p>
+<p>Creates a <code class="docutils literal notranslate"><span class="pre">SafeRotatingFileHandler</span></code> for the given path on first call
+and reuses the same logger on subsequent calls (identified by path).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>audit_path</strong> – Absolute path to the world-local audit log file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Logger that writes exclusively to <code class="docutils literal notranslate"><span class="pre">audit_path</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>logging.Logger</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="core.logging_config.get_logger">
 <span class="sig-prename descclassname"><span class="pre">core.logging_config.</span></span><span class="sig-name descname"><span class="pre">get_logger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Logger</span></span></span><a class="reference internal" href="_modules/core/logging_config.html#get_logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.logging_config.get_logger" title="Link to this definition">¶</a></dt>
 <dd><p>Convenience function to get a logger with the given name.</p>
@@ -1570,6 +1589,26 @@ using the current log file instead of crashing.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>logging.Logger</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="core.logging_config.get_world_audit_log_path">
+<span class="sig-prename descclassname"><span class="pre">core.logging_config.</span></span><span class="sig-name descname"><span class="pre">get_world_audit_log_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/core/logging_config.html#get_world_audit_log_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#core.logging_config.get_world_audit_log_path" title="Link to this definition">¶</a></dt>
+<dd><p>Return the per-world audit log path derived from a world database path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>db_path</strong> – Absolute path to the world <code class="docutils literal notranslate"><span class="pre">.kraken</span></code> database file, or
+<code class="docutils literal notranslate"><span class="pre">None</span></code> / <code class="docutils literal notranslate"><span class="pre">&quot;:memory:&quot;</span></code> for in-memory databases.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Absolute path to <code class="docutils literal notranslate"><span class="pre">ai_audit_log.txt</span></code> in the same
+directory as the database, or <code class="docutils literal notranslate"><span class="pre">None</span></code> when no persistent path is
+available.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Optional[str]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1842,7 +1881,9 @@ configuration, and theme management.</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#core.logging_config.get_audit_logger"><code class="docutils literal notranslate"><span class="pre">get_audit_logger()</span></code></a></li>
+<li><a class="reference internal" href="#core.logging_config.get_audit_logger_for_path"><code class="docutils literal notranslate"><span class="pre">get_audit_logger_for_path()</span></code></a></li>
 <li><a class="reference internal" href="#core.logging_config.get_logger"><code class="docutils literal notranslate"><span class="pre">get_logger()</span></code></a></li>
+<li><a class="reference internal" href="#core.logging_config.get_world_audit_log_path"><code class="docutils literal notranslate"><span class="pre">get_world_audit_log_path()</span></code></a></li>
 <li><a class="reference internal" href="#core.logging_config.setup_audit_logging"><code class="docutils literal notranslate"><span class="pre">setup_audit_logging()</span></code></a></li>
 <li><a class="reference internal" href="#core.logging_config.setup_logging"><code class="docutils literal notranslate"><span class="pre">setup_logging()</span></code></a></li>
 <li><a class="reference internal" href="#core.logging_config.shutdown_logging"><code class="docutils literal notranslate"><span class="pre">shutdown_logging()</span></code></a></li>
