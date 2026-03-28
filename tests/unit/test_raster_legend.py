@@ -324,51 +324,13 @@ class TestLegendInitialSizing:
 
         legend = widget.legend_overlay
         min_expected = (
-            legend._toggle_btn.sizeHint().height()
+            legend._header_label.sizeHint().height()
             + legend._title_label.sizeHint().height()
             + 20  # at least a sliver of content
         )
         assert legend.height() >= min_expected, (
             f"Legend height {legend.height()}px does not include title label "
             f"(expected >= {min_expected}px)"
-        )
-
-    def test_viewport_resize_does_not_trigger_animation(self, qtbot) -> None:
-        """viewport_resized must NOT pass QResizeEvent as animated=True.
-
-        Signal(QResizeEvent) connected to (self, animated=False) would pass the
-        event object as animated (truthy), causing spurious animation on every
-        viewport resize.
-        """
-        from unittest.mock import patch
-
-        from src.gui.widgets.map_widget import MapWidget
-
-        widget = MapWidget()
-        qtbot.addWidget(widget)
-        widget.show()
-        widget.resize(800, 600)
-        QApplication.processEvents()
-
-        widget._on_raster_layer_selected("n1", _discrete_meta("Test"))
-        QApplication.processEvents()
-
-        animated_values: list = []
-        original = widget._position_legend_overlay
-
-        def recording_position(animated: bool = False) -> None:
-            animated_values.append(animated)
-            original(animated=animated)
-
-        with patch.object(widget, "_position_legend_overlay", side_effect=recording_position):
-            widget.resize(900, 700)
-            QApplication.processEvents()
-
-        # All calls from viewport_resized must carry animated=False, not a QResizeEvent
-        non_bool_types = [type(v).__name__ for v in animated_values if not isinstance(v, bool)]
-        assert not non_bool_types, (
-            f"viewport_resized passed non-bool type(s) as animated: {non_bool_types}. "
-            "QResizeEvent object is leaking as animated arg."
         )
 
     """_position_legend_overlay must not inflate small legends to 30 % of viewport."""

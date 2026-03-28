@@ -1,6 +1,6 @@
 """Raster layer legend widget.
 
-Displays a collapsible legend panel showing class colour swatches (discrete)
+Displays a legend panel showing class colour swatches (discrete)
 or a gradient bar (continuous) for the currently selected raster layer.
 """
 
@@ -16,7 +16,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QScrollArea,
     QSizePolicy,
-    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -31,11 +30,10 @@ _GRADIENT_BAR_WIDTH = 24  # pixels
 
 
 class RasterLegendWidget(QWidget):
-    """Collapsible legend panel for a raster layer.
+    """Legend panel for a raster layer.
 
     Shows colour swatches and labels for discrete layers, or a gradient bar
-    with min/max labels for continuous layers.  Collapses/expands via a
-    toggle button.
+    with min/max labels for continuous layers.
 
     Usage::
 
@@ -47,6 +45,7 @@ class RasterLegendWidget(QWidget):
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self._drag_last_global: Optional[QPoint] = None
+        self._theme = ThemeManager().get_theme()
         self._setup_ui()
 
     # ------------------------------------------------------------------
@@ -58,32 +57,25 @@ class RasterLegendWidget(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
 
-        # Header row with collapse toggle
+        # Header row
         header = QHBoxLayout()
         header.setContentsMargins(0, 4, 0, 2)
-        self._toggle_btn = QToolButton()
-        self._toggle_btn.setText("▼ Legend")
-        self._toggle_btn.setCheckable(True)
-        self._toggle_btn.setChecked(True)
-        self._toggle_btn.setAutoRaise(True)
-        self._toggle_btn.setSizePolicy(
+        self._header_label = QLabel("Legend")
+        self._header_label.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
-        theme = ThemeManager().get_theme()
-        self._toggle_btn.setStyleSheet(
-            f"QToolButton {{ text-align: left; padding: 3px 6px; "
-            f"color: {theme.get('text_main', '#E8E8E8')}; "
+        self._header_label.setStyleSheet(
+            f"QLabel {{ text-align: left; padding: 3px 6px; "
+            f"color: {self._theme.get('text_main', '#E8E8E8')}; "
             f"font-weight: bold; font-size: 9pt; }}"
         )
-        self._toggle_btn.setToolTip("Expand or collapse the raster legend panel")
-        self._toggle_btn.toggled.connect(self._on_toggle)
-        header.addWidget(self._toggle_btn)
+        header.addWidget(self._header_label)
         outer.addLayout(header)
 
         # Layer name title (bold, visible only when a named layer is active)
         self._title_label = QLabel()
         self._title_label.setStyleSheet(
-            f"QLabel {{ color: {theme.get('text_dim', '#aaaaaa')}; "
+            f"QLabel {{ color: {self._theme.get('text_dim', '#aaaaaa')}; "
             f"font-size: 8pt; padding: 0px 6px 2px 6px; }}"
         )
         self._title_label.setVisible(False)
@@ -273,12 +265,11 @@ class RasterLegendWidget(QWidget):
         # Show only the human-readable label when available; fall back
         # to the value text (e.g. "Value 4") when no label exists.
         display = label if label else f"Value {value_str}"
-        theme = ThemeManager().get_theme()
         combined_lbl = QLabel(display)
         combined_lbl.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
-        combined_lbl.setStyleSheet(f"color: {theme.get('text_main', '#E8E8E8')};")
+        combined_lbl.setStyleSheet(f"color: {self._theme.get('text_main', '#E8E8E8')};")
 
         return combined_lbl
 
@@ -292,8 +283,7 @@ class RasterLegendWidget(QWidget):
         swatch.setFixedSize(_SWATCH_SIZE, _SWATCH_SIZE)
         pixmap = QPixmap(_SWATCH_SIZE, _SWATCH_SIZE)
         pixmap.fill(Qt.GlobalColor.transparent)
-        theme = ThemeManager().get_theme()
-        border_color = QColor(theme.get("text_dim", "#666666"))
+        border_color = QColor(self._theme.get("text_dim", "#666666"))
         p = QPainter(pixmap)
         p.setPen(border_color)
         p.drawRect(0, 0, _SWATCH_SIZE - 1, _SWATCH_SIZE - 1)
@@ -302,7 +292,7 @@ class RasterLegendWidget(QWidget):
         p.end()
         swatch.setPixmap(pixmap)
 
-        dim_color = theme.get("text_dim", "#888888")
+        dim_color = self._theme.get("text_dim", "#888888")
         label_lbl = QLabel("No data  (0)")
         label_lbl.setStyleSheet(f"color: {dim_color}; font-style: italic;")
 
@@ -312,35 +302,9 @@ class RasterLegendWidget(QWidget):
 
     def _add_placeholder(self, text: str) -> None:
         lbl = QLabel(text)
-        dim_color = ThemeManager().get_theme().get("text_dim", "#888888")
+        dim_color = self._theme.get("text_dim", "#888888")
         lbl.setStyleSheet(f"color: {dim_color}; font-style: italic;")
         self._content_layout.insertWidget(0, lbl)
-
-    def _on_toggle(self, checked: bool) -> None:
-        self._scroll.setVisible(checked)
-        self._toggle_btn.setText("▼ Legend" if checked else "▶ Legend")
-
-        # Delegate sizing/positioning to the hosting MapWidget so the
-        # collapsed-aware logic in _position_legend_overlay() runs.
-        try:
-            view = self.parent()
-            if view is not None:
-                map_widget = view.parent()
-                if map_widget is not None and hasattr(
-                    map_widget, "_position_legend_overlay"
-                ):
-                    map_widget._position_legend_overlay(animated=True)
-                    return
-            # Fallback: anchor to top-left of the viewport.
-            if view is not None and hasattr(view, "viewport"):
-                vp_rect = view.viewport().geometry()
-                _MARGIN = 12
-                self.move(
-                    vp_rect.x() + _MARGIN,
-                    vp_rect.y() + _MARGIN,
-                )
-        except Exception:
-            pass
 
     # ------------------------------------------------------------------
     # Drag-to-reposition
@@ -402,6 +366,7 @@ class _GradientBarWidget(QWidget):
         parent: Optional[QWidget] = None,
     ) -> None:
         super().__init__(parent)
+        self._theme = ThemeManager().get_theme()
         self._gradient_stops: List[Dict[str, Any]] = gradient_stops or [
             {"position": 0.0, "color": "#000000"},
             {"position": 1.0, "color": "#FFFFFF"},
@@ -417,8 +382,7 @@ class _GradientBarWidget(QWidget):
         self._bar_label.setMaximumWidth(_GRADIENT_BAR_WIDTH)
         layout.addWidget(self._bar_label)
 
-        theme = ThemeManager().get_theme()
-        dim_style = f"font-size: 9pt; color: {theme.get('text_dim', '#aaaaaa')};"
+        dim_style = f"font-size: 9pt; color: {self._theme.get('text_dim', '#aaaaaa')};"
         labels_layout = QVBoxLayout()
         labels_layout.setContentsMargins(0, 0, 0, 0)
         labels_layout.setSpacing(2)
@@ -508,15 +472,14 @@ class _GradientBarWidget(QWidget):
         p.fillRect(0, 0, w, h, gradient)
 
         # Draw tick marks at 25 %, 50 %, 75 % (top = 0 %, bottom = 100 %)
-        theme = ThemeManager().get_theme()
-        tick_color = QColor(theme.get("text_dim", "#aaaaaa"))
+        tick_color = QColor(self._theme.get("text_dim", "#aaaaaa"))
         tick_color.setAlpha(160)
         p.setPen(tick_color)
         for frac in (0.25, 0.50, 0.75):
             y = int(frac * (h - 1))
             p.drawLine(0, y, w - 1, y)
 
-        p.setPen(QColor(theme.get("border", "#444444")))
+        p.setPen(QColor(self._theme.get("border", "#444444")))
         p.drawRect(0, 0, w - 1, h - 1)
         p.end()
         self._bar_label.setPixmap(pixmap)

@@ -500,20 +500,14 @@ class MapWidget(
         """
         return QSize(600, 400)
 
-    def _position_legend_overlay(self, animated: bool = False) -> None:
+    def _position_legend_overlay(self) -> None:
         """Position the legend overlay fully within the map view viewport.
 
         Always anchors to the top-left corner so long class lists expand
         downward and are never clipped.  Width is capped at 360 px and height
         is capped to the available viewport height so the overlay never
         extends outside the map area.
-
-        Args:
-            animated: When ``True``, smoothly animate the height change
-                instead of snapping instantly (used by the toggle button).
         """
-        from PySide6.QtCore import QEasingCurve, QPropertyAnimation
-
         _MARGIN = 12
         legend = self.legend_overlay
         vp_rect = self.view.viewport().geometry()
@@ -539,7 +533,7 @@ class MapWidget(
         legend.setMaximumWidth(max_w)
         legend.setMaximumHeight(available_h)
 
-        header_h = legend._toggle_btn.sizeHint().height() + 10
+        header_h = legend._header_label.sizeHint().height() + 10
         title_h = (
             legend._title_label.sizeHint().height()
             if legend._title_label.isVisible()
@@ -547,36 +541,18 @@ class MapWidget(
         )
         w = max_w
 
-        if not legend._toggle_btn.isChecked():
-            # Collapsed state (toggle button unchecked) — keep it tight.
-            # Using the toggle-button checked state rather than _scroll.isVisible()
-            # so this works correctly when the overlay is not yet shown.
-            h = header_h + title_h
-        else:
-            # Compute ideal height from content widget so every row is shown.
-            # Include the title label (in outer layout, not inside _content).
-            content_h = legend._content.sizeHint().height()
-            ideal_h = content_h + header_h + title_h + 16  # padding
-            h = min(ideal_h, available_h)
+        # Compute ideal height from content widget so every row is shown.
+        # Include the title label (in outer layout, not inside _content).
+        content_h = legend._content.sizeHint().height()
+        ideal_h = content_h + header_h + title_h + 16  # padding
+        h = min(ideal_h, available_h)
 
         # Anchor to top-left of the viewport.
         x = vp_rect.x() + _MARGIN
         y = vp_rect.y() + _MARGIN
         legend.move(x, y)
         legend.raise_()  # Ensure it floats above the QGraphicsView viewport
-
-        if animated and legend.isVisible():
-            # Smooth height transition to avoid jarring jump on toggle.
-            anim = QPropertyAnimation(legend, b"maximumHeight", legend)
-            anim.setDuration(180)
-            anim.setEasingCurve(QEasingCurve.Type.InOutQuad)
-            anim.setStartValue(legend.height())
-            anim.setEndValue(h)
-            # Also keep fixed-height in sync so the widget actually shrinks.
-            anim.valueChanged.connect(lambda val: legend.resize(w, val))
-            anim.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
-        else:
-            legend.resize(w, h)
+        legend.resize(w, h)
 
     @Slot(object, object)
     def _on_raster_layer_selected(self, node_id: object, layer_meta: object) -> None:

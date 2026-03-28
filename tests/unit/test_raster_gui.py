@@ -1006,13 +1006,13 @@ class TestRasterLegendWidget:
         qtbot.addWidget(w)
         assert w is not None
 
-    def test_legend_has_toggle_button(self, qtbot) -> None:
+    def test_legend_has_header_label(self, qtbot) -> None:
         from src.gui.widgets.map.raster_legend_widget import RasterLegendWidget
 
         w = RasterLegendWidget()
         qtbot.addWidget(w)
-        assert hasattr(w, "_toggle_btn")
-        assert "Legend" in w._toggle_btn.text()
+        assert hasattr(w, "_header_label")
+        assert "Legend" in w._header_label.text()
 
     def test_discrete_legend_populates_entries(self, qtbot) -> None:
         from src.gui.widgets.map.raster_legend_widget import RasterLegendWidget
@@ -1042,28 +1042,6 @@ class TestRasterLegendWidget:
         w.set_layer(None)
         # Only stretch left
         assert w._content_layout.count() == 1
-
-    def test_toggle_collapses_scroll(self, qtbot) -> None:
-        from src.gui.widgets.map.raster_legend_widget import RasterLegendWidget
-
-        w = RasterLegendWidget()
-        qtbot.addWidget(w)
-        w.show()
-        # Click toggle to collapse
-        w._toggle_btn.setChecked(False)
-        assert not w._scroll.isVisible()
-        assert "▶" in w._toggle_btn.text()
-
-    def test_toggle_expands_scroll(self, qtbot) -> None:
-        from src.gui.widgets.map.raster_legend_widget import RasterLegendWidget
-
-        w = RasterLegendWidget()
-        qtbot.addWidget(w)
-        w.show()
-        w._toggle_btn.setChecked(False)
-        w._toggle_btn.setChecked(True)
-        assert w._scroll.isVisible()
-        assert "▼" in w._toggle_btn.text()
 
 
 # ── New: Panel legend and entity picker ──────────────────────────────
