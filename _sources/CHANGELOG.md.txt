@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-03-28
 ### Changed
-- refactor: optimize theme lookups in raster widgets
+- refactor: simplify temporal date widget and fix code quality
 
 
 *This changelog was automatically generated.*
