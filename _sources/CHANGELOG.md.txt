@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-03-27
+## [Development] - 2026-03-28
 ### Internal
-- chore: record workspace changes
+- chore: refactor map widget toolbar and update layer panel button styles
 
 
 *This changelog was automatically generated.*
