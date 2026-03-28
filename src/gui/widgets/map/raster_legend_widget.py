@@ -9,7 +9,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
-from PySide6.QtCore import QPoint, Qt
+import shiboken6
+from PySide6.QtCore import QPoint, Qt, Slot
 from PySide6.QtGui import QColor, QLinearGradient, QMouseEvent, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -21,6 +22,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
+from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.map.raster_mapping import normalize_value_entity_map
 
 logger = logging.getLogger(__name__)
@@ -45,8 +47,11 @@ class RasterLegendWidget(QWidget):
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self._drag_last_global: Optional[QPoint] = None
-        self._theme = ThemeManager().get_theme()
+        self._layer_meta: Optional[Dict[str, Any]] = None
+        self._name_map: Optional[Dict[str, str]] = None
         self._setup_ui()
+        self._apply_theme({})
+        ThemeManager().theme_changed.connect(self._apply_theme)
 
     # ------------------------------------------------------------------
     # UI construction
@@ -64,20 +69,11 @@ class RasterLegendWidget(QWidget):
         self._header_label.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
-        self._header_label.setStyleSheet(
-            f"QLabel {{ text-align: left; padding: 3px 6px; "
-            f"color: {self._theme.get('text_main', '#E8E8E8')}; "
-            f"font-weight: bold; font-size: 9pt; }}"
-        )
         header.addWidget(self._header_label)
         outer.addLayout(header)
 
         # Layer name title (bold, visible only when a named layer is active)
         self._title_label = QLabel()
-        self._title_label.setStyleSheet(
-            f"QLabel {{ color: {self._theme.get('text_dim', '#aaaaaa')}; "
-            f"font-size: 8pt; padding: 0px 6px 2px 6px; }}"
-        )
         self._title_label.setVisible(False)
         outer.addWidget(self._title_label)
 
@@ -112,6 +108,8 @@ class RasterLegendWidget(QWidget):
             name_map: Optional dict mapping entity/event UUIDs to names.
         """
         self._clear_content()
+        self._layer_meta = layer_meta
+        self._name_map = name_map
         if not layer_meta:
             self._title_label.setVisible(False)
             return
@@ -149,6 +147,29 @@ class RasterLegendWidget(QWidget):
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
+
+    @Slot(dict)
+    def _apply_theme(self, _theme_dict: dict) -> None:
+        """Re-apply theme-aware styles in response to a theme change.
+
+        Args:
+            _theme_dict: New theme data emitted by ``ThemeManager.theme_changed``
+                (unused — the current theme is fetched fresh from ThemeManager).
+        """
+        theme = ThemeManager().get_theme()
+        self.setStyleSheet(StyleHelper.get_legend_overlay_style())
+        self._header_label.setStyleSheet(
+            f"QLabel {{ text-align: left; padding: 3px 6px; "
+            f"color: {theme.get('text_main', '#E8E8E8')}; "
+            f"font-weight: bold; font-size: 9pt; }}"
+        )
+        self._title_label.setStyleSheet(
+            f"QLabel {{ color: {theme.get('text_dim', '#aaaaaa')}; "
+            f"font-size: 8pt; padding: 0px 6px 2px 6px; }}"
+        )
+        # Rebuild swatch/gradient rows so individual label colours also update.
+        if self._layer_meta is not None:
+            self.set_layer(self._layer_meta, self._name_map)
 
     def _clear_content(self) -> None:
         while self._content_layout.count() > 1:  # keep trailing stretch
@@ -269,7 +290,7 @@ class RasterLegendWidget(QWidget):
         combined_lbl.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
-        combined_lbl.setStyleSheet(f"color: {self._theme.get('text_main', '#E8E8E8')};")
+        combined_lbl.setStyleSheet(f"color: {ThemeManager().get_theme().get('text_main', '#E8E8E8')};")
 
         return combined_lbl
 
@@ -283,7 +304,8 @@ class RasterLegendWidget(QWidget):
         swatch.setFixedSize(_SWATCH_SIZE, _SWATCH_SIZE)
         pixmap = QPixmap(_SWATCH_SIZE, _SWATCH_SIZE)
         pixmap.fill(Qt.GlobalColor.transparent)
-        border_color = QColor(self._theme.get("text_dim", "#666666"))
+        dim_color = ThemeManager().get_theme().get("text_dim", "#888888")
+        border_color = QColor(dim_color)
         p = QPainter(pixmap)
         p.setPen(border_color)
         p.drawRect(0, 0, _SWATCH_SIZE - 1, _SWATCH_SIZE - 1)
@@ -291,8 +313,6 @@ class RasterLegendWidget(QWidget):
         p.drawLine(0, _SWATCH_SIZE - 1, _SWATCH_SIZE - 1, 0)
         p.end()
         swatch.setPixmap(pixmap)
-
-        dim_color = self._theme.get("text_dim", "#888888")
         label_lbl = QLabel("No data  (0)")
         label_lbl.setStyleSheet(f"color: {dim_color}; font-style: italic;")
 
@@ -302,7 +322,7 @@ class RasterLegendWidget(QWidget):
 
     def _add_placeholder(self, text: str) -> None:
         lbl = QLabel(text)
-        dim_color = self._theme.get("text_dim", "#888888")
+        dim_color = ThemeManager().get_theme().get("text_dim", "#888888")
         lbl.setStyleSheet(f"color: {dim_color}; font-style: italic;")
         self._content_layout.insertWidget(0, lbl)
 
@@ -366,7 +386,13 @@ class _GradientBarWidget(QWidget):
         parent: Optional[QWidget] = None,
     ) -> None:
         super().__init__(parent)
-        self._theme = ThemeManager().get_theme()
+        _theme = ThemeManager().get_theme()
+        self._tick_color = QColor(_theme.get("text_dim", "#aaaaaa"))
+        self._tick_color.setAlpha(160)
+        self._bar_border_color = QColor(_theme.get("border", "#444444"))
+        ThemeManager().theme_changed.connect(
+            lambda _: self._refresh_bar_theme_colors() if shiboken6.isValid(self) else None
+        )
         self._gradient_stops: List[Dict[str, Any]] = gradient_stops or [
             {"position": 0.0, "color": "#000000"},
             {"position": 1.0, "color": "#FFFFFF"},
@@ -382,7 +408,7 @@ class _GradientBarWidget(QWidget):
         self._bar_label.setMaximumWidth(_GRADIENT_BAR_WIDTH)
         layout.addWidget(self._bar_label)
 
-        dim_style = f"font-size: 9pt; color: {self._theme.get('text_dim', '#aaaaaa')};"
+        dim_style = f"font-size: 9pt; color: {_theme.get('text_dim', '#aaaaaa')};"
         labels_layout = QVBoxLayout()
         labels_layout.setContentsMargins(0, 0, 0, 0)
         labels_layout.setSpacing(2)
@@ -456,6 +482,13 @@ class _GradientBarWidget(QWidget):
         super().showEvent(event)
         self._redraw_bar()
 
+    def _refresh_bar_theme_colors(self) -> None:
+        theme = ThemeManager().get_theme()
+        self._tick_color = QColor(theme.get("text_dim", "#aaaaaa"))
+        self._tick_color.setAlpha(160)
+        self._bar_border_color = QColor(theme.get("border", "#444444"))
+        self._redraw_bar()
+
     def _redraw_bar(self) -> None:
         h = max(self.height() - 8, 40)
         w = _GRADIENT_BAR_WIDTH
@@ -472,14 +505,12 @@ class _GradientBarWidget(QWidget):
         p.fillRect(0, 0, w, h, gradient)
 
         # Draw tick marks at 25 %, 50 %, 75 % (top = 0 %, bottom = 100 %)
-        tick_color = QColor(self._theme.get("text_dim", "#aaaaaa"))
-        tick_color.setAlpha(160)
-        p.setPen(tick_color)
+        p.setPen(self._tick_color)
         for frac in (0.25, 0.50, 0.75):
             y = int(frac * (h - 1))
             p.drawLine(0, y, w - 1, y)
 
-        p.setPen(QColor(self._theme.get("border", "#444444")))
+        p.setPen(self._bar_border_color)
         p.drawRect(0, 0, w - 1, h - 1)
         p.end()
         self._bar_label.setPixmap(pixmap)

@@ -7,6 +7,7 @@ continuous layers.
 
 from typing import Optional
 
+import shiboken6
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import (
@@ -50,7 +51,11 @@ class _HistogramWidget(QWidget):
         self._border_color: QColor = QColor("#3A5ACC")
         self._bg_color: QColor = QColor("#1E1E2E")
         self._refresh_theme_colors()
-        ThemeManager().theme_changed.connect(lambda _: self._refresh_theme_colors())
+        ThemeManager().theme_changed.connect(self._on_theme_changed)
+
+    def _on_theme_changed(self, _: dict) -> None:
+        if shiboken6.isValid(self):
+            self._refresh_theme_colors()
 
     def _refresh_theme_colors(self) -> None:
         """Update cached bar/border/background colors from the active theme.

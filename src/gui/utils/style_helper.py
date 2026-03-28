@@ -1289,10 +1289,13 @@ class StyleHelper:
         Returns:
             str: QSS stylesheet string for legend overlays.
         """
+        theme = ThemeManager().get_theme()
+        bg = theme.get("surface_alt", "#2A2A2A")
+        border = theme.get("border", "#444444")
         return (
             "QWidget {"
-            "  background-color: rgba(20, 20, 20, 200);"
-            "  border: 1px solid rgba(255,255,255,40);"
+            f"  background-color: {bg};"
+            f"  border: 1px solid {border};"
             "  border-radius: 6px;"
             "}"
         )
