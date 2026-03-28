@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-03-28
 ### Changed
-- refactor: simplify raster legend widget and optimize theme caching
+- refactor: optimize theme lookups in raster widgets
 
 
 *This changelog was automatically generated.*
