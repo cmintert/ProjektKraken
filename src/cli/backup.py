@@ -136,15 +136,13 @@ def restore_backup(args: argparse.Namespace) -> int:
         return 1
 
 
-def main() -> None:
-    """Main CLI entry point for backup tools."""
-    parser = argparse.ArgumentParser(description="Manage ProjektKraken backups")
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Enable verbose logging"
-    )
+def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: ignore
+    """Register backup subcommands with a parent subparsers group.
 
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    Args:
+        subparsers: The subparsers action group from a parent ArgumentParser.
 
+    """
     # Create
     create_p = subparsers.add_parser("create", help="Create a manual backup")
     create_p.add_argument("--database", "-d", required=True)
@@ -164,6 +162,17 @@ def main() -> None:
     restore_p.add_argument("--file", "-f", required=True, help="Path to backup file")
     restore_p.add_argument("--force", action="store_true", help="Skip confirmation")
     restore_p.set_defaults(func=restore_backup)
+
+
+def main() -> None:
+    """Main CLI entry point for backup tools."""
+    parser = argparse.ArgumentParser(description="Manage ProjektKraken backups")
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Enable verbose logging"
+    )
+
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    register_commands(subparsers)
 
     args = parser.parse_args()
 

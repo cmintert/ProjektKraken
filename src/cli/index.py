@@ -248,24 +248,13 @@ def query_index(args: argparse.Namespace) -> int:
             db_service.close()
 
 
-def main() -> None:
-    """Main entry point for the CLI."""
-    parser = argparse.ArgumentParser(
-        description="Semantic Search Index Management",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
+def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: ignore
+    """Register index subcommands with a parent subparsers group.
 
-    # Global options
-    parser.add_argument(
-        "-d", "--database", required=True, help="Path to .kraken database file"
-    )
-    parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Enable verbose logging"
-    )
+    Args:
+        subparsers: The subparsers action group from a parent ArgumentParser.
 
-    # Subcommands
-    subparsers = parser.add_subparsers(dest="command", help="Command to execute")
-
+    """
     # Rebuild command
     rebuild_parser = subparsers.add_parser(
         "rebuild", help="Rebuild the semantic search index"
@@ -370,6 +359,26 @@ def main() -> None:
     del_obj_parser.add_argument(
         "--model", help="Model name override (if expecting specific model deletion)"
     )
+
+
+def main() -> None:
+    """Main entry point for the CLI."""
+    parser = argparse.ArgumentParser(
+        description="Semantic Search Index Management",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    # Global options
+    parser.add_argument(
+        "-d", "--database", required=True, help="Path to .kraken database file"
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Enable verbose logging"
+    )
+
+    # Subcommands
+    subparsers = parser.add_subparsers(dest="command", help="Command to execute")
+    register_commands(subparsers)
 
     # Parse arguments
     args = parser.parse_args()

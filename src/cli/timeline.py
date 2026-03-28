@@ -118,19 +118,13 @@ def update_tag_color(args: argparse.Namespace) -> int:
             db_service.close()
 
 
-def main() -> None:
-    """Main CLI entry point."""
-    parser = argparse.ArgumentParser(
-        description="Manage ProjektKraken timeline grouping",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
+def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: ignore
+    """Register timeline subcommands with a parent subparsers group.
 
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Enable verbose logging"
-    )
+    Args:
+        subparsers: The subparsers action group from a parent ArgumentParser.
 
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
-
+    """
     # Group command
     group_parser = subparsers.add_parser("group", help="Set timeline grouping")
     group_parser.add_argument(
@@ -162,6 +156,21 @@ def main() -> None:
     color_parser.add_argument("--tag", required=True, help="Tag name")
     color_parser.add_argument("--color", required=True, help="Hex color code")
     color_parser.set_defaults(func=update_tag_color)
+
+
+def main() -> None:
+    """Main CLI entry point."""
+    parser = argparse.ArgumentParser(
+        description="Manage ProjektKraken timeline grouping",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Enable verbose logging"
+    )
+
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    register_commands(subparsers)
 
     args = parser.parse_args()
 

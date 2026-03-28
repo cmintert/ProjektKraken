@@ -338,15 +338,13 @@ def marker_list(args: argparse.Namespace) -> int:
             db_service.close()
 
 
-def main() -> None:
-    """Main entry point for the map CLI tool."""
-    parser = argparse.ArgumentParser(description="Manage ProjektKraken maps")
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Enable verbose logging"
-    )
+def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: ignore
+    """Register map subcommands with a parent subparsers group.
 
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    Args:
+        subparsers: The subparsers action group from a parent ArgumentParser.
 
+    """
     # Map Create
     create_p = subparsers.add_parser("create", help="Create a new map")
     create_p.add_argument("--database", "-d", required=True)
@@ -414,6 +412,17 @@ def main() -> None:
     marker_list_p.add_argument("--map-id", required=True)
     marker_list_p.add_argument("--json", action="store_true")
     marker_list_p.set_defaults(func=marker_list)
+
+
+def main() -> None:
+    """Main entry point for the map CLI tool."""
+    parser = argparse.ArgumentParser(description="Manage ProjektKraken maps")
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Enable verbose logging"
+    )
+
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    register_commands(subparsers)
 
     args = parser.parse_args()
 

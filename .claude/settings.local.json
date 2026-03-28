@@ -40,7 +40,11 @@
       "Bash(grep -n \"def _configure_map_width\" /c/Users/chris/VSCodeProjects/ProjektKraken/ProjektKraken/src/gui/mixins/*.py)",
       "Bash(grep -rn \"QMenu\" /c/Users/chris/VSCodeProjects/ProjektKraken/ProjektKraken/src/gui/widgets/*.py)",
       "Bash(grep -rn \"def.*menu.*QMenu\\\\|QMenu.*addAction\" /c/Users/chris/VSCodeProjects/ProjektKraken/ProjektKraken/src/gui/widgets/*.py)",
-      "Bash(ls /c/Users/chris/VSCodeProjects/ProjektKraken/ProjektKraken/src/gui/widgets/map/*.py)"
+      "Bash(ls /c/Users/chris/VSCodeProjects/ProjektKraken/ProjektKraken/src/gui/widgets/map/*.py)",
+      "Bash(grep -l \"argparse\" /c/Users/chris/VSCodeProjects/ProjektKraken/ProjektKraken/src/cli/*.py)",
+      "Bash(pytest tests/ -x -q --tb=short)",
+      "Bash(pytest tests/cli/ tests/unit/ -q --tb=short)",
+      "Bash(pytest tests/cli/ -q --tb=short)"
     ]
   }
 }

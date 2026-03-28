@@ -72,6 +72,22 @@ class AttachmentRepository(BaseRepository):
         cursor = self._connection.execute(sql, (owner_type, owner_id))
         return [self._row_to_domain(row) for row in cursor.fetchall()]
 
+    def list_all(self) -> List[ImageAttachment]:
+        """Retrieves all attachments in the database, ordered by owner and index.
+
+        Returns:
+            List of all ImageAttachment objects across all owners.
+
+        """
+        sql = """
+            SELECT * FROM image_attachments
+            ORDER BY owner_type, owner_id, order_index ASC
+        """
+        if not self._connection:
+            return []
+        cursor = self._connection.execute(sql)
+        return [self._row_to_domain(row) for row in cursor.fetchall()]
+
     def delete(self, attachment_id: str) -> None:
         """Deletes an attachment record by ID."""
         sql = "DELETE FROM image_attachments WHERE id = ?"

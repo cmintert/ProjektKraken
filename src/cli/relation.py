@@ -227,19 +227,13 @@ def update_relation(args: argparse.Namespace) -> int:
             db_service.close()
 
 
-def main() -> None:
-    """Main CLI entry point."""
-    parser = argparse.ArgumentParser(
-        description="Manage ProjektKraken relations",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
+def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: ignore
+    """Register relation subcommands with a parent subparsers group.
 
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Enable verbose logging"
-    )
+    Args:
+        subparsers: The subparsers action group from a parent ArgumentParser.
 
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
-
+    """
     # Add command
     add_parser = subparsers.add_parser("add", help="Add a new relation")
     add_parser.add_argument(
@@ -298,6 +292,21 @@ def main() -> None:
         "--force", "-f", action="store_true", help="Skip confirmation"
     )
     delete_parser.set_defaults(func=delete_relation)
+
+
+def main() -> None:
+    """Main CLI entry point."""
+    parser = argparse.ArgumentParser(
+        description="Manage ProjektKraken relations",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Enable verbose logging"
+    )
+
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    register_commands(subparsers)
 
     args = parser.parse_args()
 

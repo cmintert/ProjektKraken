@@ -62,15 +62,13 @@ def export_obsidian(args: argparse.Namespace) -> int:
             db_service.close()
 
 
-def main() -> None:
-    """Main CLI entry point for obsidian tools."""
-    parser = argparse.ArgumentParser(description="Export ProjektKraken to Obsidian")
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Enable verbose logging"
-    )
+def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: ignore
+    """Register obsidian subcommands with a parent subparsers group.
 
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    Args:
+        subparsers: The subparsers action group from a parent ArgumentParser.
 
+    """
     # Export
     export_p = subparsers.add_parser("export", help="Export to Obsidian vault")
     export_p.add_argument("--database", "-d", required=True)
@@ -79,6 +77,17 @@ def main() -> None:
         "--no-relations", action="store_true", help="Skip 'Related' section"
     )
     export_p.set_defaults(func=export_obsidian)
+
+
+def main() -> None:
+    """Main CLI entry point for obsidian tools."""
+    parser = argparse.ArgumentParser(description="Export ProjektKraken to Obsidian")
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Enable verbose logging"
+    )
+
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    register_commands(subparsers)
 
     args = parser.parse_args()
 

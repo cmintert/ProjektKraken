@@ -160,15 +160,13 @@ def reorder_attachments(args: argparse.Namespace) -> int:
             db_service.close()
 
 
-def main() -> None:
-    """Main entry point for the attachment CLI tool."""
-    parser = argparse.ArgumentParser(description="Manage ProjektKraken attachments")
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Enable verbose logging"
-    )
+def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: ignore
+    """Register attachment subcommands with a parent subparsers group.
 
-    subparsers = parser.add_subparsers(dest="command", help="Subcommands")
+    Args:
+        subparsers: The subparsers action group from a parent ArgumentParser.
 
+    """
     # Add
     add_p = subparsers.add_parser("add", help="Add attachments")
     add_p.add_argument("--database", "-d", required=True)
@@ -208,6 +206,17 @@ def main() -> None:
     rem_p.add_argument("--id", required=True, help="Attachment ID")
     rem_p.add_argument("--force", "-f", action="store_true")
     rem_p.set_defaults(func=remove_attachment)
+
+
+def main() -> None:
+    """Main entry point for the attachment CLI tool."""
+    parser = argparse.ArgumentParser(description="Manage ProjektKraken attachments")
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Enable verbose logging"
+    )
+
+    subparsers = parser.add_subparsers(dest="command", help="Subcommands")
+    register_commands(subparsers)
 
     args = parser.parse_args()
 

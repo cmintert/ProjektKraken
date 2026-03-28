@@ -233,17 +233,13 @@ def reindex_longform(args: argparse.Namespace) -> int:
             db_service.close()
 
 
-def main() -> None:
-    """Main entry point for the longform document CLI tool."""
-    parser = argparse.ArgumentParser(
-        description="Manage ProjektKraken longform document"
-    )
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Enable verbose logging"
-    )
+def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: ignore
+    """Register longform subcommands with a parent subparsers group.
 
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    Args:
+        subparsers: The subparsers action group from a parent ArgumentParser.
 
+    """
     # Export
     exp_p = subparsers.add_parser("export", help="Export to Markdown")
     exp_p.add_argument("--database", "-d", required=True)
@@ -300,6 +296,19 @@ def main() -> None:
     reindex_p.add_argument("--database", "-d", required=True)
     reindex_p.add_argument("--doc-id", default="default")
     reindex_p.set_defaults(func=reindex_longform)
+
+
+def main() -> None:
+    """Main entry point for the longform document CLI tool."""
+    parser = argparse.ArgumentParser(
+        description="Manage ProjektKraken longform document"
+    )
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Enable verbose logging"
+    )
+
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    register_commands(subparsers)
 
     args = parser.parse_args()
 

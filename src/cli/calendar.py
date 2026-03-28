@@ -247,15 +247,13 @@ def delete_calendar(args: argparse.Namespace) -> int:
             db_service.close()
 
 
-def main() -> None:
-    """Main entry point for the calendar CLI tool."""
-    parser = argparse.ArgumentParser(description="Manage ProjektKraken calendars")
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Enable verbose logging"
-    )
+def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: ignore
+    """Register calendar subcommands with a parent subparsers group.
 
-    subparsers = parser.add_subparsers(dest="command", help="Subcommands")
+    Args:
+        subparsers: The subparsers action group from a parent ArgumentParser.
 
+    """
     # Create
     create_p = subparsers.add_parser("create", help="Create a new calendar")
     create_p.add_argument("--database", "-d", required=True)
@@ -290,6 +288,17 @@ def main() -> None:
     del_p.add_argument("--id", required=True)
     del_p.add_argument("--force", "-f", action="store_true")
     del_p.set_defaults(func=delete_calendar)
+
+
+def main() -> None:
+    """Main entry point for the calendar CLI tool."""
+    parser = argparse.ArgumentParser(description="Manage ProjektKraken calendars")
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Enable verbose logging"
+    )
+
+    subparsers = parser.add_subparsers(dest="command", help="Subcommands")
+    register_commands(subparsers)
 
     args = parser.parse_args()
 

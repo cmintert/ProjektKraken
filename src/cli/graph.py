@@ -36,21 +36,24 @@ def export_graph(args: argparse.Namespace) -> int:
         if args.tags:
             tags = [t.strip() for t in args.tags.split(",") if t.strip()]
 
-        data = service.get_graph_data(
+        # Parse relation types filter
+        rel_types = None
+        if args.rel_types:
+            rel_types = [t.strip() for t in args.rel_types.split(",") if t.strip()]
+
+        nodes, edges = service.get_graph_data(
             db_service=db_service,
             include_tags=tags,
-            include_rel_types=None,  # No arg support yet for relation types
+            include_rel_types=rel_types,
         )
 
-        output_file = Path(args.out_file)
-        # Security: Resolve output path and check it exists as a file after creation
-        output_file = output_file.resolve()
+        output_file = Path(args.out_file).resolve()
         with open(output_file, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+            json.dump({"nodes": nodes, "edges": edges}, f, indent=2)
 
-        print(f"✓ Graph data exported to: {output_file}")
-        print(f"  Nodes: {len(data.get('nodes', []))}")
-        print(f"  Edges: {len(data.get('edges', []))}")
+        print(f"[OK] Graph data exported to: {output_file}")
+        print(f"  Nodes: {len(nodes)}")
+        print(f"  Edges: {len(edges)}")
         return 0
 
     except Exception as e:
@@ -63,6 +66,24 @@ def export_graph(args: argparse.Namespace) -> int:
             db_service.close()
 
 
+def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: ignore
+    """Register graph subcommands with a parent subparsers group.
+
+    Args:
+        subparsers: The subparsers action group from a parent ArgumentParser.
+
+    """
+    # Export
+    export_p = subparsers.add_parser("export", help="Export graph data to JSON")
+    export_p.add_argument("--database", "-d", required=True)
+    export_p.add_argument("--out-file", "-o", required=True, help="Output JSON file")
+    export_p.add_argument("--tags", help="Comma-separated list of tags to filter by")
+    export_p.add_argument(
+        "--rel-types", help="Comma-separated list of relation types to filter by"
+    )
+    export_p.set_defaults(func=export_graph)
+
+
 def main() -> None:
     """Main CLI entry point for graph tools."""
     parser = argparse.ArgumentParser(description="Export ProjektKraken graph data")
@@ -71,13 +92,7 @@ def main() -> None:
     )
 
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
-
-    # Export
-    export_p = subparsers.add_parser("export", help="Export graph data to JSON")
-    export_p.add_argument("--database", "-d", required=True)
-    export_p.add_argument("--out-file", "-o", required=True, help="Output JSON file")
-    export_p.add_argument("--tags", help="Comma-separated list of tags to filter by")
-    export_p.set_defaults(func=export_graph)
+    register_commands(subparsers)
 
     args = parser.parse_args()
 
