@@ -8,6 +8,7 @@ import logging
 import os
 import sys
 from logging.handlers import RotatingFileHandler
+from typing import Optional
 
 # Configuration
 LOG_DIR = "logs"
@@ -112,6 +113,33 @@ def setup_logging(debug_mode: bool = False, log_to_console: bool = True) -> None
     setup_audit_logging()
 
 
+def _make_audit_handler(path: str) -> SafeRotatingFileHandler:
+    """Create a rotating file handler for an audit log at *path*.
+
+    Args:
+        path: Absolute path to the audit log file.
+
+    Returns:
+        SafeRotatingFileHandler: Configured handler (delay=True so file is not
+        created until the first write).
+
+    Raises:
+        OSError: If the handler cannot be created.
+
+    """
+    handler = SafeRotatingFileHandler(
+        path,
+        maxBytes=MAX_BYTES,
+        backupCount=BACKUP_COUNT,
+        encoding="utf-8",
+        delay=True,
+    )
+    formatter = logging.Formatter(AUDIT_LOG_FORMAT, datefmt=DATE_FORMAT)
+    handler.setFormatter(formatter)
+    handler.setLevel(logging.INFO)
+    return handler
+
+
 def setup_audit_logging() -> None:
     """Configure the dedicated AI audit logger.
 
@@ -135,17 +163,7 @@ def setup_audit_logging() -> None:
         audit_path = AUDIT_LOG_FILENAME
 
     try:
-        handler = SafeRotatingFileHandler(
-            audit_path,
-            maxBytes=MAX_BYTES,
-            backupCount=BACKUP_COUNT,
-            encoding="utf-8",
-            delay=True,  # Don't create file until first write
-        )
-        formatter = logging.Formatter(AUDIT_LOG_FORMAT, datefmt=DATE_FORMAT)
-        handler.setFormatter(formatter)
-        handler.setLevel(logging.INFO)
-        audit_logger.addHandler(handler)
+        audit_logger.addHandler(_make_audit_handler(audit_path))
     except OSError as e:
         logging.getLogger(__name__).warning(f"Could not set up AI audit logging: {e}")
 
@@ -158,6 +176,58 @@ def get_audit_logger() -> logging.Logger:
 
     """
     return logging.getLogger("ai_audit")
+
+
+def get_audit_logger_for_path(audit_path: str) -> logging.Logger:
+    """Return a per-world AI audit logger writing to ``audit_path``.
+
+    Creates a ``SafeRotatingFileHandler`` for the given path on first call
+    and reuses the same logger on subsequent calls (identified by path).
+
+    Args:
+        audit_path: Absolute path to the world-local audit log file.
+
+    Returns:
+        logging.Logger: Logger that writes exclusively to ``audit_path``.
+
+    """
+    logger_name = f"ai_audit:{audit_path}"
+    audit_logger = logging.getLogger(logger_name)
+
+    # Avoid duplicate handlers on repeated calls
+    if audit_logger.handlers:
+        return audit_logger
+
+    audit_logger.setLevel(logging.INFO)
+    audit_logger.propagate = False
+
+    try:
+        os.makedirs(os.path.dirname(audit_path), exist_ok=True)
+        audit_logger.addHandler(_make_audit_handler(audit_path))
+    except OSError as e:
+        logging.getLogger(__name__).warning(
+            f"Could not set up per-world AI audit logging at {audit_path}: {e}"
+        )
+
+    return audit_logger
+
+
+def get_world_audit_log_path(db_path: Optional[str]) -> Optional[str]:
+    """Return the per-world audit log path derived from a world database path.
+
+    Args:
+        db_path: Absolute path to the world ``.kraken`` database file, or
+            ``None`` / ``":memory:"`` for in-memory databases.
+
+    Returns:
+        Optional[str]: Absolute path to ``ai_audit_log.txt`` in the same
+        directory as the database, or ``None`` when no persistent path is
+        available.
+
+    """
+    if db_path and db_path != ":memory:":
+        return os.path.join(os.path.dirname(db_path), AUDIT_LOG_FILENAME)
+    return None
 
 
 def get_logger(name: str) -> logging.Logger:

@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QPlainTextEdit,
     QPushButton,
     QVBoxLayout,
@@ -60,6 +61,7 @@ class GenerationReviewDialog(QDialog):
         # State
         self.action: Optional[ReviewAction] = None
         self.rating: Optional[int] = None  # 1 = thumbs up, -1 = thumbs down
+        self.comment: Optional[str] = None
 
         self._setup_ui(generated_text)
 
@@ -110,6 +112,14 @@ class GenerationReviewDialog(QDialog):
         rating_layout.addStretch()
         main_layout.addLayout(rating_layout)
 
+        # Comment field
+        self.comment_edit = QLineEdit()
+        self.comment_edit.setPlaceholderText("Optional comment…")
+        self.comment_edit.setMaxLength(200)
+        self.comment_edit.setStyleSheet(StyleHelper.get_input_field_style())
+        self.comment_edit.textChanged.connect(self._on_comment_changed)
+        main_layout.addWidget(self.comment_edit)
+
         # Action buttons
         buttons_layout = QHBoxLayout()
         buttons_layout.addStretch()
@@ -156,6 +166,7 @@ class GenerationReviewDialog(QDialog):
             "action": self.action,
             "text": self.get_text(),
             "rating": self.rating,
+            "comment": self.comment,
         }
 
     @Slot()
@@ -173,6 +184,11 @@ class GenerationReviewDialog(QDialog):
         self.thumbs_down_btn.setChecked(True)
         self.thumbs_up_btn.setChecked(False)
         logger.debug("User rated generation: thumbs down")
+
+    @Slot(str)
+    def _on_comment_changed(self, text: str) -> None:
+        """Handle comment field text change."""
+        self.comment = text.strip() or None
 
     @Slot()
     def _on_replace_clicked(self) -> None:

@@ -202,12 +202,17 @@ class SummaryService:
                 model=model,
             )
 
-            # Audit log prompt and response
+            # Audit log prompt and response (per-world file when available)
+            from src.core.logging_config import get_world_audit_log_path
+
+            audit_path = get_world_audit_log_path(self.db_service.db_path)
+
             log_ai_interaction(
                 prompt=prompt,
                 response_text=text,
                 model=model,
                 source="SummaryService",
+                audit_path=audit_path,
             )
 
             # Update item in memory (caller is responsible for persisting)

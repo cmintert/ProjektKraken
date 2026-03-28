@@ -273,6 +273,7 @@ class LLMGenerationWidget(QWidget):
         self._worker: Optional[GenerationWorker] = None
         self._current_provider = None
         self._context_provider = context_provider
+        self._current_db_path: Optional[str] = None
 
         # Main layout
         main_layout = QVBoxLayout(self)
@@ -627,21 +628,18 @@ class LLMGenerationWidget(QWidget):
         # Get temperature as float (0.0-2.0)
         temperature = self.temperature_spin.value() / 100.0
 
-        # Determine DB path for RAG if enabled
-        db_path = None
+        window = self.window()
+        db_path = getattr(window, "db_path", None)
+        self._current_db_path = db_path
 
-        # Determine DB path and run context logic if needed
-        # Logic moved to GenerationWorker/_on_preview_clicked
         if self.rag_cb.isChecked():
-            # Attempt to get db_path from main window via parent chain
-            # Parent is EntityEditor -> SplitterTabInspector -> ... -> MainWindow?
-            # Safer to traverse up to find window
-            window = self.window()
-            if hasattr(window, "db_path"):
-                db_path = window.db_path
+            if db_path:
                 logger.debug(f"RAG enabled. Using DB: {db_path}")
             else:
                 logger.warning("RAG enabled but could not find db_path on window.")
+            db_path_for_worker = db_path
+        else:
+            db_path_for_worker = None
 
         # Save settings
         self._save_settings()
@@ -662,7 +660,7 @@ class LLMGenerationWidget(QWidget):
             # Start generation
             logger.info(f"Starting generation with prompt length: {len(prompt)}")
             logger.info(f"Full Prompt (Pre-RAG):\n{prompt}")
-            self._start_generation(prompt, temperature, db_path)
+            self._start_generation(prompt, temperature, db_path_for_worker)
 
         except Exception as e:
             logger.error(f"Failed to create provider: {e}", exc_info=True)
@@ -838,17 +836,6 @@ class LLMGenerationWidget(QWidget):
             self._worker.deleteLater()
             self._worker = None
 
-        # Audit log the interaction
-        if worker_prompt is not None:
-            from src.services.llm_provider import log_ai_interaction
-
-            log_ai_interaction(
-                prompt=worker_prompt,
-                response_text=text,
-                model=worker_model,
-                source="LLMGenerationWidget",
-            )
-
         # Show review dialog
         from src.gui.dialogs.generation_review_dialog import (
             GenerationReviewDialog,
@@ -876,10 +863,25 @@ class LLMGenerationWidget(QWidget):
         action = result["action"]
         final_text = result["text"]
         rating = result["rating"]
+        comment = result.get("comment")
 
-        # Log rating if provided
-        if rating is not None:
-            logger.info(f"User rating: {'positive' if rating > 0 else 'negative'}")
+        # Audit log the interaction (post-dialog so rating is known)
+        if worker_prompt is not None:
+            from src.services.llm_provider import log_ai_interaction
+
+            from src.core.logging_config import get_world_audit_log_path
+
+            audit_path = get_world_audit_log_path(self._current_db_path)
+
+            log_ai_interaction(
+                prompt=worker_prompt,
+                response_text=final_text,
+                model=worker_model,
+                source="LLMGenerationWidget",
+                rating=rating,
+                rating_comment=comment,
+                audit_path=audit_path,
+            )
 
         # Emit signal based on action
         if action == ReviewAction.REPLACE:

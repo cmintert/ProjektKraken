@@ -13,12 +13,21 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+_RATING_LABELS: Dict[Optional[int], str] = {
+    1: "👍 positive",
+    -1: "👎 negative",
+    None: "(not rated)",
+}
+
 
 def log_ai_interaction(
     prompt: Any,
     response_text: str,
     model: str = "unknown",
     source: str = "unknown",
+    rating: Optional[int] = None,
+    rating_comment: Optional[str] = None,
+    audit_path: Optional[str] = None,
 ) -> None:
     """Log an AI prompt/response pair to the audit log if auditing is enabled.
 
@@ -31,6 +40,10 @@ def log_ai_interaction(
         response_text: The text returned by the model.
         model: Model identifier used for generation.
         source: Caller identifier (e.g. ``"SummaryService"``).
+        rating: Optional user rating (1 = thumbs up, -1 = thumbs down).
+        rating_comment: Optional short comment from the user (max 200 chars).
+        audit_path: Optional absolute path to a per-world audit log file.
+            When given, writes to that file instead of the global audit log.
 
     """
     try:
@@ -44,9 +57,14 @@ def log_ai_interaction(
         if not audit_enabled:
             return
 
-        from src.core.logging_config import get_audit_logger
+        if audit_path:
+            from src.core.logging_config import get_audit_logger_for_path
 
-        audit = get_audit_logger()
+            audit = get_audit_logger_for_path(audit_path)
+        else:
+            from src.core.logging_config import get_audit_logger
+
+            audit = get_audit_logger()
 
         # Format prompt for logging
         if isinstance(prompt, dict):
@@ -56,16 +74,24 @@ def log_ai_interaction(
         else:
             prompt_str = str(prompt)
 
+        rating_str = _RATING_LABELS.get(rating, "(not rated)")
+
         separator = "=" * 60
-        audit.info(
+        entry = (
             f"\n{separator}\n"
             f"SOURCE: {source} | MODEL: {model}\n"
+            f"RATING: {rating_str}\n"
+        )
+        if rating_comment:
+            entry += f"COMMENT: {rating_comment}\n"
+        entry += (
             f"{separator}\n"
             f"PROMPT:\n{prompt_str}\n"
             f"{'-' * 40}\n"
             f"RESPONSE:\n{response_text}\n"
             f"{separator}"
         )
+        audit.info(entry)
     except Exception as e:
         logger.debug(f"Audit logging skipped: {e}")
 
