@@ -335,7 +335,6 @@ class DataHandler(QObject):
                 "SetLayerVisibilityCommand",
                 # Raster metadata: visual already updated via update_display /
                 # set_blend_mode before the command is emitted.
-                "SetRasterMappingCommand",
                 "SetRasterBlendModeCommand",
                 "SetRasterNotesCommand",
             }

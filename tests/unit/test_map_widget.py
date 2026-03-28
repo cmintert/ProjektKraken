@@ -379,7 +379,7 @@ def test_clock_mode_jumps_time(map_widget, qtbot):
 def test_mode_indicator_ui(map_widget, qtbot):
     """Test that the mode indicator and overlay banner update correctly."""
     # 1. Initial State
-    assert map_widget.mode_indicator.text() == "Normal Mode"
+    assert map_widget.mode_indicator.text() == "\u25cf Normal"
     # isVisible() might be False if the widget isn't fully shown yet in headless CI,
     # but the explicit visibility bit should be correct.
     assert not map_widget.overlay_banner.isVisible()
@@ -399,7 +399,7 @@ def test_mode_indicator_ui(map_widget, qtbot):
     # 3. Exit Clock Mode (Cancel)
     map_widget._cancel_clock_mode()
 
-    assert map_widget.mode_indicator.text() == "Normal Mode"
+    assert map_widget.mode_indicator.text() == "\u25cf Normal"
     assert not map_widget.overlay_banner.isVisible()
 
 
@@ -423,7 +423,7 @@ def test_esc_cancels_clock_mode_via_view(map_widget, qtbot):
 
     # Clock mode should be cancelled
     assert map_widget._pinned_marker_id is None
-    assert map_widget.mode_indicator.text() == "Normal Mode"
+    assert map_widget.mode_indicator.text() == "\u25cf Normal"
 
 
 def test_enter_commits_clock_mode_via_view(map_widget, qtbot):
@@ -493,7 +493,7 @@ def test_esc_cancels_draft_mode_via_view(map_widget, qtbot):
 
     # Draft mode should be cleared
     assert len(map_widget._transient_marker_ids) == 0
-    assert map_widget.mode_indicator.text() == "Normal Mode"
+    assert map_widget.mode_indicator.text() == "\u25cf Normal"
 
 
 def test_esc_cancels_draft_mode_via_widget(map_widget, qtbot):
@@ -511,7 +511,7 @@ def test_esc_cancels_draft_mode_via_widget(map_widget, qtbot):
 
     # Draft mode should be cleared
     assert len(map_widget._transient_marker_ids) == 0
-    assert map_widget.mode_indicator.text() == "Normal Mode"
+    assert map_widget.mode_indicator.text() == "\u25cf Normal"
 
 
 def test_configure_map_width_emits_signal(map_widget, monkeypatch):

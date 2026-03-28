@@ -17,7 +17,8 @@ def test_coverage_stats_precedence() -> None:
     """Test CoverageStats naming precedence."""
     # Create simple buffer with values 1, 2, 3
     data = np.array([[1, 2], [3, 0]], dtype=np.uint16)
-    buffer = MapDataBuffer(2, 2, data)
+    buffer = MapDataBuffer(2, 2)
+    buffer._data = data  # inject pre-built array directly
 
     color_map = ColorMap.from_dict(
         {

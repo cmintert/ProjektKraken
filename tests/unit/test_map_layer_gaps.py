@@ -529,7 +529,7 @@ class TestMapWidgetLayerIntegration:
         assert count == 1
 
     def test_build_layer_model_with_persisted_root(self, qtbot) -> None:
-        """_build_layer_model accepts a persisted root node."""
+        """rebuild_layer_model accepts a persisted root node."""
         widget = _make_map_widget(qtbot)
         persisted = MapLayerNode(
             name="Root",
@@ -543,7 +543,7 @@ class TestMapWidgetLayerIntegration:
                 ),
             ],
         )
-        model = widget._build_layer_model(persisted)
+        model = widget.rebuild_layer_model(persisted)
         assert model.root.id == "persisted-root"
         assert model.find_node_by_id("custom-group") is not None
 

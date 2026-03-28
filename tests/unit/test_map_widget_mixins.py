@@ -54,7 +54,7 @@ class TestLayerMixinMethods:
     """Verify all MapLayerMixin methods are accessible on MapWidget."""
 
     EXPECTED_METHODS = [
-        "_build_layer_model",
+        "rebuild_layer_model",
         "_ensure_layer_model",
         "_default_group",
         "_feature_type_to_layer_type",

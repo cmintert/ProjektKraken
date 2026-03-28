@@ -224,6 +224,12 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             self.temporal_widget.set_calendar_converter(self._calendar_converter)
         self.form_layout.addRow(self.temporal_widget)
 
+        # Convenience aliases so tests and external code can reference the
+        # date / duration sub-widgets without going through temporal_widget.
+        self.date_edit = self.temporal_widget.date_start
+        self.end_date_edit = self.temporal_widget.date_end
+        self.duration_widget = self.temporal_widget.duration_widget
+
         self.form_layout.addRow("Description:", self.desc_edit)
 
         # Add Summary Widget (Collapsible)
