@@ -44,7 +44,11 @@
       "Bash(grep -l \"argparse\" /c/Users/chris/VSCodeProjects/ProjektKraken/ProjektKraken/src/cli/*.py)",
       "Bash(pytest tests/ -x -q --tb=short)",
       "Bash(pytest tests/cli/ tests/unit/ -q --tb=short)",
-      "Bash(pytest tests/cli/ -q --tb=short)"
+      "Bash(pytest tests/cli/ -q --tb=short)",
+      "Bash(git -C \"c:\\\\Users\\\\chris\\\\VSCodeProjects\\\\ProjektKraken\\\\ProjektKraken\" diff)",
+      "Bash(pytest tests/unit/test_compact_date_widget_icon.py tests/unit/test_event_editor.py tests/unit/test_events_duration.py -q --tb=short)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

@@ -76,17 +76,22 @@ class CompactDateWidget(QWidget):
 
     def _setup_ui(self) -> None:
         """Sets up the widget UI."""
-        # Use direct primary layout (replacing outer frame)
+        from PySide6.QtWidgets import QSizePolicy
+
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(2)
 
-        # Row 1: Date inputs
+        # ── Row 1: date chip + toggle buttons ─────────────────────────────
         date_row = QHBoxLayout()
-        date_row.setSpacing(8)
+        date_row.setSpacing(4)
 
-        # Year - allow expanding
-        from PySide6.QtWidgets import QSizePolicy
+        # Date chip: grouped QFrame for Year / Month / Day
+        self._date_chip = QFrame()
+        self._date_chip.setObjectName("date_chip")
+        chip_layout = QHBoxLayout(self._date_chip)
+        chip_layout.setContentsMargins(4, 1, 4, 1)
+        chip_layout.setSpacing(0)
 
         self.spin_year = QSpinBox()
         self.spin_year.setRange(-9999, 9999)
@@ -95,41 +100,54 @@ class CompactDateWidget(QWidget):
         self.spin_year.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
-        date_row.addWidget(self.spin_year, stretch=2)  # Higher stretch factor
+        chip_layout.addWidget(self.spin_year, stretch=2)
 
-        # Month dropdown - widen stretch
         self.combo_month = QComboBox()
         self.combo_month.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
-        date_row.addWidget(self.combo_month, stretch=3)  # Widest element
+        chip_layout.addWidget(self.combo_month, stretch=3)
 
-        # Day dropdown - moderate stretch
         self.combo_day = QComboBox()
         self.combo_day.setSizePolicy(
             QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
         )
-        date_row.addWidget(self.combo_day, stretch=1)
+        chip_layout.addWidget(self.combo_day, stretch=1)
 
-        # Calendar button with icon
+        self._date_chip.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
+        date_row.addWidget(self._date_chip, stretch=1)
+
+        # Time toggle button (clock icon)
+        self.btn_time_toggle = QPushButton()
+        self.btn_time_toggle.setFixedSize(32, 24)
+        self.btn_time_toggle.setCheckable(True)
+        self.btn_time_toggle.setToolTip(
+            "Show / hide time input (auto-shown for non-midnight dates)"
+        )
+        date_row.addWidget(self.btn_time_toggle, stretch=0)
+
+        # Calendar button
         self.btn_calendar = QPushButton()
-        self.btn_calendar.setFixedSize(32, 24)  # Icon button - fixed small size
+        self.btn_calendar.setFixedSize(32, 24)
         self.btn_calendar.setToolTip("Open calendar picker")
-
-        # Apply initial icon and style
-        self.btn_calendar.setStyleSheet(StyleHelper.get_icon_button_style())
-        theme = ThemeManager().get_theme()
-        self._update_icon(theme)
-
         date_row.addWidget(self.btn_calendar, stretch=0)
+
+        theme = ThemeManager().get_theme()
+        self._update_icons(theme)
 
         main_layout.addLayout(date_row)
 
-        # Row 2: Time inputs
-        time_row = QHBoxLayout()
+        # ── Row 2: time inputs (collapsible) ──────────────────────────────
+        self._time_container = QWidget()
+        self._time_container.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
+        time_row = QHBoxLayout(self._time_container)
+        time_row.setContentsMargins(0, 0, 0, 0)
         time_row.setSpacing(8)
 
-        # Hour - allow expanding
         self.spin_hour = QSpinBox()
         self.spin_hour.setRange(0, 23)
         self.spin_hour.setValue(0)
@@ -139,7 +157,6 @@ class CompactDateWidget(QWidget):
         )
         time_row.addWidget(self.spin_hour, stretch=1)
 
-        # Minute - allow expanding
         self.spin_minute = QSpinBox()
         self.spin_minute.setRange(0, 59)
         self.spin_minute.setValue(0)
@@ -149,7 +166,6 @@ class CompactDateWidget(QWidget):
         )
         time_row.addWidget(self.spin_minute, stretch=1)
 
-        # Text Input (replaces Preview label) - takes remaining space
         self.txt_date = QLineEdit()
         self.txt_date.setPlaceholderText("Type date...")
         self.txt_date.setToolTip("Enter date text (e.g. '15 Jan 3019')")
@@ -158,7 +174,8 @@ class CompactDateWidget(QWidget):
         )
         time_row.addWidget(self.txt_date, stretch=4)
 
-        main_layout.addLayout(time_row)
+        self._time_container.setVisible(False)
+        main_layout.addWidget(self._time_container)
 
         # Initialize with default months
         self._populate_months()
@@ -172,18 +189,21 @@ class CompactDateWidget(QWidget):
         input_style = StyleHelper.get_input_field_style()
         spinbox_style = StyleHelper.get_spinbox_style()
 
-        self.spin_year.setStyleSheet(spinbox_style)
-        self.combo_month.setStyleSheet(input_style)
-        self.combo_day.setStyleSheet(input_style)
+        # Date chip provides the unified outer border; internals go borderless.
+        self._date_chip.setStyleSheet(StyleHelper.get_date_chip_style())
+        self.spin_year.setStyleSheet(StyleHelper.get_chip_spinbox_style())
+        self.combo_month.setStyleSheet(StyleHelper.get_chip_combo_style())
+        self.combo_day.setStyleSheet(StyleHelper.get_chip_combo_style())
+
+        # Time row keeps its own normal styles.
         self.spin_hour.setStyleSheet(spinbox_style)
         self.spin_minute.setStyleSheet(spinbox_style)
-
-        # Text date needs input style + monospace font
         self.txt_date.setStyleSheet(
             input_style + " font-family: 'Consolas', monospace; font-size: 11px;"
         )
 
         self.btn_calendar.setStyleSheet(StyleHelper.get_icon_button_style())
+        self.btn_time_toggle.setStyleSheet(StyleHelper.get_icon_button_style())
 
     def _connect_signals(self) -> None:
         """Connects internal signals."""
@@ -193,10 +213,43 @@ class CompactDateWidget(QWidget):
         self.spin_hour.valueChanged.connect(self._on_input_changed)
         self.spin_minute.valueChanged.connect(self._on_input_changed)
         self.btn_calendar.clicked.connect(self._open_calendar_popup)
+        self.btn_time_toggle.toggled.connect(self._on_time_toggle)
         self.txt_date.editingFinished.connect(self._on_text_edited)
 
         # Theme changes
         ThemeManager().theme_changed.connect(self._on_theme_changed)
+
+    def _update_icons(self, theme: dict) -> None:
+        """Updates both the calendar and time-toggle icons for the given theme.
+
+        Args:
+            theme: Current theme dictionary from ThemeManager.
+
+        """
+        color = theme.get("accent_secondary", theme.get("text_main", "#e0e0e0"))
+        cal_path = os.path.join(
+            "default_assets", "icons", "ui_icons", "calendar.svg"
+        )
+        clock_path = os.path.join(
+            "default_assets", "icons", "ui_icons", "clock.svg"
+        )
+        self.btn_calendar.setIcon(load_icon(cal_path, color=color))
+        self.btn_calendar.setIconSize(QSize(16, 16))
+        self.btn_time_toggle.setIcon(load_icon(clock_path, color=color))
+        self.btn_time_toggle.setIconSize(QSize(14, 14))
+
+    @Slot(bool)
+    def _on_time_toggle(self, checked: bool) -> None:
+        """Shows or hides the time input row.
+
+        Args:
+            checked: True to show the time controls, False to hide them.
+
+        """
+        self._time_container.setVisible(checked)
+        self.updateGeometry()
+        if self.parentWidget():
+            self.parentWidget().updateGeometry()
 
     def set_calendar_converter(self, converter: CalendarConverter) -> None:
         """Sets the calendar converter for date calculations.
@@ -287,17 +340,9 @@ class CompactDateWidget(QWidget):
 
     @Slot(dict)
     def _on_theme_changed(self, theme: dict) -> None:
-        """Handles theme changes to update icon and style."""
+        """Handles theme changes to update icons and styles."""
         self._apply_styles()
-        self._update_icon(theme)
-
-    def _update_icon(self, theme: dict) -> None:
-        """Updates the calendar icon with the current theme color."""
-        icon_path = os.path.join("default_assets", "icons", "ui_icons", "calendar.svg")
-        # Use secondary accent or text main for the icon
-        color = theme.get("accent_secondary", theme.get("text_main", "#e0e0e0"))
-        self.btn_calendar.setIcon(load_icon(icon_path, color=color))
-        self.btn_calendar.setIconSize(QSize(16, 16))
+        self._update_icons(theme)
 
     @Slot()
     def _on_text_edited(self) -> None:
@@ -407,6 +452,11 @@ class CompactDateWidget(QWidget):
                 total_minutes = int(date.time_fraction * 24 * 60)
                 self.spin_hour.setValue(total_minutes // 60)
                 self.spin_minute.setValue(total_minutes % 60)
+
+                # Auto-expand time row for non-midnight dates.
+                has_time = total_minutes != 0
+                if self.btn_time_toggle.isChecked() != has_time:
+                    self.btn_time_toggle.setChecked(has_time)
             else:
                 # Fallback
                 year = int(days_float / 365) + 1
@@ -449,23 +499,23 @@ class CompactDateWidget(QWidget):
         """Returns the minimum size hint to prevent vertical collapse.
 
         Returns:
-            QSize: Minimum size for the date widget (two rows of controls).
+            QSize: Dynamic minimum size based on whether time row is shown.
 
         """
-        from PySide6.QtCore import QSize
-
-        return QSize(250, 72)  # Two rows of controls + frame padding
+        if self._time_container.isVisible():
+            return QSize(250, 64)
+        return QSize(250, 30)
 
     def sizeHint(self) -> QSize:
         """Returns the preferred size hint.
 
         Returns:
-            QSize: Preferred size for comfortable date input.
+            QSize: Dynamic preferred size based on time row visibility.
 
         """
-        from PySide6.QtCore import QSize
-
-        return QSize(350, 80)  # Comfortable size for two-row layout
+        if self._time_container.isVisible():
+            return QSize(350, 72)
+        return QSize(350, 34)
 
 
 class CalendarPopup(QDialog):

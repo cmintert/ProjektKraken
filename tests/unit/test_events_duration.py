@@ -14,7 +14,9 @@ class TestEventDuration:
         widget = EventEditorWidget(parent=mock_parent)
         qtbot.addWidget(widget)
 
-        assert hasattr(widget, "duration_widget")
+        # The temporal_widget now owns duration; check it has the sub-widget.
+        assert hasattr(widget, "temporal_widget")
+        assert hasattr(widget.temporal_widget, "duration_widget")
 
     def test_event_editor_loads_saves_duration(self, qtbot):
         mock_parent = QWidget()
@@ -25,10 +27,10 @@ class TestEventDuration:
         event = Event(name="Test Event", lore_date=100.0, lore_duration=5.5)
         widget.load_event(event)
 
-        assert widget.duration_widget.get_value() == 5.5
+        assert widget.temporal_widget.get_duration() == 5.5
 
-        # Change value
-        widget.duration_widget.set_value(10.0)
+        # Change value via temporal_widget
+        widget.temporal_widget.set_duration(10.0)
 
         # Check save signal
         with qtbot.waitSignal(widget.save_requested) as blocker:

@@ -679,6 +679,151 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_date_chip_style() -> str:
+        """Returns QSS for the date chip frame (grouped year/month/day container).
+
+        The chip frame provides a single unified border around the three date
+        components, replacing their individual borders for a cleaner look.
+
+        Returns:
+            str: QSS stylesheet string for the date chip QFrame.
+
+        """
+        theme = ThemeManager().get_theme()
+        return (
+            f"QFrame#date_chip {{"
+            f"background-color: {theme['surface']};"
+            f"border: 1px solid {theme['border']};"
+            f"border-radius: 4px;"
+            f"}}"
+        )
+
+    @staticmethod
+    def get_chip_spinbox_style() -> str:
+        """Returns QSS for a spinbox inside a date chip (no outer border).
+
+        Preserves the up/down arrow buttons while removing the outer border
+        so the chip frame's border serves as the visual boundary.
+
+        Returns:
+            str: QSS stylesheet string for borderless spinboxes in chips.
+
+        """
+        from src.core.paths import get_resource_path
+
+        theme = ThemeManager().get_theme()
+        up_icon_path = get_resource_path(
+            "default_assets/icons/ui_icons/arrow_up.svg"
+        ).replace("\\", "/")
+        down_icon_path = get_resource_path(
+            "default_assets/icons/ui_icons/arrow_down.svg"
+        ).replace("\\", "/")
+        return (
+            f"QSpinBox {{ background: transparent; border: none;"
+            f" color: {theme['text_main']}; padding-right: 20px; }}"
+            f"QSpinBox::up-button {{ subcontrol-origin: border;"
+            f" subcontrol-position: top right; width: 16px; border: none;"
+            f" background: transparent; margin-top: 1px; margin-right: 1px; }}"
+            f"QSpinBox::down-button {{ subcontrol-origin: border;"
+            f" subcontrol-position: bottom right; width: 16px; border: none;"
+            f" background: transparent; margin-bottom: 1px; margin-right: 1px; }}"
+            f"QSpinBox::up-button:hover, QSpinBox::down-button:hover {{"
+            f" background: {theme['border']}; }}"
+            f"QSpinBox::up-button:pressed, QSpinBox::down-button:pressed {{"
+            f" background: {theme.get('primary', theme['border'])}; }}"
+            f"QSpinBox::up-arrow {{ image: url('{up_icon_path}');"
+            f" width: 10px; height: 10px; }}"
+            f"QSpinBox::down-arrow {{ image: url('{down_icon_path}');"
+            f" width: 10px; height: 10px; }}"
+        )
+
+    @staticmethod
+    def get_chip_combo_style() -> str:
+        """Returns QSS for a combobox inside a date chip (no outer border).
+
+        Returns:
+            str: QSS stylesheet string for borderless comboboxes in chips.
+
+        """
+        theme = ThemeManager().get_theme()
+        return (
+            f"QComboBox {{ background: transparent; border: none;"
+            f" color: {theme['text_main']}; padding: 1px 4px; }}"
+            f"QComboBox::drop-down {{ border: none; }}"
+        )
+
+    @staticmethod
+    def get_temporal_card_style() -> str:
+        """Returns QSS for the temporal range card container.
+
+        The card visually groups start date, span, and end date into a
+        cohesive section with a subtle border and rounded corners.
+
+        Returns:
+            str: QSS stylesheet string for the temporal range QFrame.
+
+        """
+        theme = ThemeManager().get_theme()
+        return (
+            f"QFrame#temporal_card {{"
+            f"background-color: {theme['surface']};"
+            f"border: 1px solid {theme['border']};"
+            f"border-radius: 6px;"
+            f"}}"
+        )
+
+    @staticmethod
+    def get_temporal_separator_style() -> str:
+        """Returns QSS for horizontal separator lines inside the temporal card.
+
+        Returns:
+            str: QSS stylesheet string for HLine QFrame separators.
+
+        """
+        theme = ThemeManager().get_theme()
+        return f"color: {theme['border']};"
+
+    @staticmethod
+    def get_temporal_label_style() -> str:
+        """Returns QSS for section labels inside the temporal range widget.
+
+        Returns:
+            str: QSS stylesheet string for Start/Span/End labels.
+
+        """
+        theme = ThemeManager().get_theme()
+        return (
+            f"color: {theme['text_dim']}; font-size: 11px;"
+            f" font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;"
+        )
+
+    @staticmethod
+    def get_temporal_lock_style(active: bool) -> str:
+        """Returns QSS for the lock/anchor button in the temporal range widget.
+
+        Args:
+            active: True when end-date is locked (chain-break mode).
+
+        Returns:
+            str: QSS stylesheet string for the lock toggle button.
+
+        """
+        theme = ThemeManager().get_theme()
+        if active:
+            bg = theme.get("primary", "#4A90D9")
+            border = bg
+            hover = theme.get("accent_secondary", bg)
+        else:
+            bg = theme["surface"]
+            border = theme["border"]
+            hover = theme["border"]
+        return (
+            f"QPushButton {{ background-color: {bg}; border: 1px solid {border};"
+            f" border-radius: 4px; padding: 2px; }}"
+            f"QPushButton:hover {{ background-color: {hover}; }}"
+        )
+
+    @staticmethod
     def get_dialog_button_style(selected: bool) -> str:
         """Returns QSS for dialog day buttons.
 

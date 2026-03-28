@@ -40,8 +40,6 @@ from src.gui.mixins.autosave_mixin import AutoSaveManager
 from src.gui.mixins.editor_mixin import BaseEditorMixin
 from src.gui.utils.icon_loader import load_icon
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
-from src.gui.widgets.compact_date_widget import CompactDateWidget
-from src.gui.widgets.compact_duration_widget import CompactDurationWidget
 from src.gui.widgets.relation_item_widget import RelationItemWidget
 from src.gui.widgets.sheet_builder import SheetBuilderWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
@@ -53,6 +51,7 @@ from src.gui.widgets.standard_buttons import (
 )
 from src.gui.widgets.summary_widget import SummaryWidget
 from src.gui.widgets.tag_editor import TagEditorWidget
+from src.gui.widgets.temporal_range_widget import TemporalRangeWidget
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
 logger = logging.getLogger(__name__)
@@ -215,26 +214,15 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.form_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
         self.form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
-        # Lore date widget with structured input
-        self.date_edit = CompactDateWidget()
-
         self.desc_edit = WikiTextEdit()
         self.desc_edit.link_clicked.connect(self.link_clicked.emit)
         self.desc_edit.link_added.connect(self._on_wikilink_added)
 
-        self.form_layout.addRow("Lore Date:", self.date_edit)
-
-        # Duration & End Date
-        self.duration_widget = CompactDurationWidget()
-        self.duration_widget.set_calendar_converter(self._calendar_converter)
-        self.duration_widget.value_changed.connect(self._on_duration_changed)
-
-        self.end_date_edit = CompactDateWidget()
-        self.end_date_edit.set_calendar_converter(self._calendar_converter)
-        self.end_date_edit.value_changed.connect(self._on_end_date_changed)
-
-        self.form_layout.addRow("Duration:", self.duration_widget)
-        self.form_layout.addRow("End Date:", self.end_date_edit)
+        # Unified temporal range card (start / span / end with anchor lock)
+        self.temporal_widget = TemporalRangeWidget()
+        if self._calendar_converter:
+            self.temporal_widget.set_calendar_converter(self._calendar_converter)
+        self.form_layout.addRow(self.temporal_widget)
 
         self.form_layout.addRow("Description:", self.desc_edit)
 
@@ -309,16 +297,15 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             self.tab_details, "Details", "Event timing, description, and AI summary"
         )
 
-        # Connect Start Date change to Duration Context
-        self.date_edit.value_changed.connect(self._on_start_date_changed)
-
         # Connect modifications to dirty check and live preview
         self.name_edit.textChanged.connect(self._on_field_changed)
-        self.date_edit.value_changed.connect(lambda val: self._on_field_changed())
+        self.temporal_widget.start_changed.connect(lambda val: self._on_field_changed())
+        self.temporal_widget.duration_changed.connect(
+            lambda val: self._on_field_changed()
+        )
         self.type_edit.editTextChanged.connect(self._on_field_changed)
         self.type_edit.currentIndexChanged.connect(self._on_field_changed)
         self.desc_edit.textChanged.connect(self._on_field_changed)
-        self.duration_widget.value_changed.connect(lambda val: self._on_field_changed())
 
         # --- Tab 2: Tags ---
         self.tab_tags = QWidget()
@@ -803,10 +790,10 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
     def _connect_dirty_signals(self) -> None:
         """Connects input widget signals to set_dirty(True)."""
         self.name_edit.textChanged.connect(lambda: self.set_dirty(True))
-        self.date_edit.value_changed.connect(lambda: self.set_dirty(True))
+        self.temporal_widget.start_changed.connect(lambda val: self.set_dirty(True))
         # Duration/End Date logic triggers each other, but ultimately user interaction
         # should trigger dirty. Value changed is fine.
-        self.duration_widget.value_changed.connect(lambda: self.set_dirty(True))
+        self.temporal_widget.duration_changed.connect(lambda val: self.set_dirty(True))
         self.type_edit.currentTextChanged.connect(lambda: self.set_dirty(True))
         self.desc_edit.textChanged.connect(lambda: self.set_dirty(True))
         self.tag_editor.tags_changed.connect(lambda: self.set_dirty(True))
@@ -867,31 +854,6 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
                     self.sheet_builder.remove_attribute(key)
                     self.sheet_builder._block_signals = False
 
-    @Slot(float)
-    def _on_start_date_changed(self, new_start: float) -> None:
-        """Updates duration widget context and recalculates end date."""
-        self.duration_widget.set_start_date(new_start)
-        # Re-calc End Date based on current duration (preserved)
-        current_duration = self.duration_widget.get_value()
-        self.end_date_edit.set_value(new_start + current_duration)
-
-    @Slot(float)
-    def _on_duration_changed(self, duration: float) -> None:
-        """Syncs End Date when Duration changes."""
-        start = self.date_edit.get_value()
-        self.end_date_edit.blockSignals(True)
-        self.end_date_edit.set_value(start + duration)
-        self.end_date_edit.blockSignals(False)
-
-    @Slot(float)
-    def _on_end_date_changed(self, end_date: float) -> None:
-        """Syncs Duration when End Date changes."""
-        start = self.date_edit.get_value()
-        duration = max(0.0, end_date - start)
-        self.duration_widget.blockSignals(True)
-        self.duration_widget.set_value(duration)
-        self.duration_widget.blockSignals(False)
-
     def set_calendar_converter(self, converter: Any) -> None:
         """Sets the calendar converter for date formatting.
 
@@ -900,10 +862,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         """
         self._calendar_converter = converter
-        self.date_edit.set_calendar_converter(converter)
-        if hasattr(self, "duration_widget"):
-            self.duration_widget.set_calendar_converter(converter)
-            self.end_date_edit.set_calendar_converter(converter)
+        self.temporal_widget.set_calendar_converter(converter)
 
     def update_suggestions(
         self, items: list[tuple[str, str, str]] = None, names: list[str] = None
@@ -965,9 +924,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
             # Block signals to prevent dirty trigger during load
             self.name_edit.blockSignals(True)
-            self.date_edit.blockSignals(True)
-            self.duration_widget.blockSignals(True)
-            self.end_date_edit.blockSignals(True)
+            self.temporal_widget.blockSignals(True)
             self.type_edit.blockSignals(True)
             self.desc_edit.blockSignals(True)
 
@@ -977,9 +934,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
             # Unblock signals
             self.name_edit.blockSignals(False)
-            self.date_edit.blockSignals(False)
-            self.duration_widget.blockSignals(False)
-            self.end_date_edit.blockSignals(False)
+            self.temporal_widget.blockSignals(False)
             self.type_edit.blockSignals(False)
             self.desc_edit.blockSignals(False)
 
@@ -1053,17 +1008,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         if self.name_edit.text() != event.name:
             self.name_edit.setText(event.name)
 
-        # Avoid redundant updates
-        if self.date_edit.get_value() != event.lore_date:
-            self.date_edit.set_value(event.lore_date)
-
-        self.duration_widget.set_start_date(event.lore_date)
-        if self.duration_widget.get_value() != event.lore_duration:
-            self.duration_widget.set_value(event.lore_duration)
-
-        target_end = event.lore_date + event.lore_duration
-        if self.end_date_edit.get_value() != target_end:
-            self.end_date_edit.set_value(target_end)
+        # Load temporal fields in one call; TemporalRangeWidget handles
+        # internal signal suppression and end-date recalculation.
+        self.temporal_widget.set_values(event.lore_date, event.lore_duration)
 
         if self.type_edit.currentText() != event.type:
             self.type_edit.setCurrentText(event.type)
@@ -1242,8 +1189,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             event_data = {
                 "id": self._current_event_id,
                 "name": self.name_edit.text(),
-                "lore_date": self.date_edit.get_value(),
-                "lore_duration": self.duration_widget.get_value(),
+                "lore_date": self.temporal_widget.get_start(),
+                "lore_duration": self.temporal_widget.get_duration(),
                 "type": self.type_edit.currentText(),
                 "description": self.desc_edit.get_wiki_text(),
                 "attributes": base_attrs,
@@ -1366,7 +1313,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             suggestion_items=getattr(self, "_suggestion_items", []),
             calendar_converter=self._calendar_converter,
             source_event_date=(
-                self.date_edit.get_value() if self._current_event_id else None
+                self.temporal_widget.get_start() if self._current_event_id else None
             ),
             source_event_name=self.name_edit.text() if self._current_event_id else None,
             known_types=getattr(self, "_suggestion_types", []),
@@ -1433,7 +1380,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             suggestion_items=getattr(self, "_suggestion_items", []),
             calendar_converter=self._calendar_converter,
             source_event_date=(
-                self.date_edit.get_value() if self._current_event_id else None
+                self.temporal_widget.get_start() if self._current_event_id else None
             ),
             source_event_name=(
                 self.name_edit.text() if self._current_event_id else None
@@ -1460,8 +1407,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         # Construct temporary event from form
         temp_event = Event(
             name=self.name_edit.text(),
-            lore_date=self.date_edit.get_value(),
-            lore_duration=self.duration_widget.get_value(),
+            lore_date=self.temporal_widget.get_start(),
+            lore_duration=self.temporal_widget.get_duration(),
             type=self.type_edit.currentText(),
             description=self.desc_edit.get_wiki_text(),
             id=self._current_event_id,
@@ -1504,11 +1451,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             "existing_description": self.desc_edit.toPlainText(),
         }
 
-        # Add formatted date if available
-        if hasattr(self.date_edit, "lbl_preview"):
-            text = self.date_edit.lbl_preview.text()
-            if text:
-                context["lore_date"] = text
+        formatted_date = self.temporal_widget.get_formatted_start_text()
+        if formatted_date:
+            context["lore_date"] = formatted_date
 
         return context
 
@@ -1528,10 +1473,10 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             data = {
                 "id": self._current_event_id,
                 "name": self.name_edit.text(),
-                "lore_date": self.date_edit.get_value(),
+                "lore_date": self.temporal_widget.get_start(),
                 "type": self.type_edit.currentText(),
                 "description": self.desc_edit.toPlainText(),
-                "lore_duration": self.duration_widget.get_value(),
+                "lore_duration": self.temporal_widget.get_duration(),
                 # Include other fields if necessary for preview
                 # (e.g. attributes not yet)
             }

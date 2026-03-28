@@ -19,8 +19,10 @@ def test_calendar_icon_loaded(qtbot):
 
         # Check if load_icon was called
         assert mock_load.called
-        args, kwargs = mock_load.call_args
-        assert "calendar.svg" in args[0]
+        all_paths = [call.args[0] for call in mock_load.call_args_list]
+        assert any("calendar.svg" in p for p in all_paths), (
+            f"calendar.svg not found in icon paths: {all_paths}"
+        )
 
         # Check if text is empty (we removed the unicode char)
         assert widget.btn_calendar.text() == "", "Calendar button text should be empty"
@@ -55,7 +57,11 @@ def test_icon_updates_on_theme_change(qtbot):
         # Verify load_icon was called
         assert mock_load.called
 
-        # Check arguments
-        args, kwargs = mock_load.call_args
-        assert "calendar.svg" in args[0]
-        assert kwargs.get("color") == "#FF0000"
+        # Check arguments — _update_icons loads both calendar and clock icons.
+        all_calls = mock_load.call_args_list
+        all_paths = [call.args[0] for call in all_calls]
+        assert any("calendar.svg" in p for p in all_paths), (
+            f"calendar.svg not found in icon paths: {all_paths}"
+        )
+        cal_call = next(c for c in all_calls if "calendar.svg" in c.args[0])
+        assert cal_call.kwargs.get("color") == "#FF0000"

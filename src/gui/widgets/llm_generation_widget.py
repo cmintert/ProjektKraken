@@ -728,8 +728,12 @@ class LLMGenerationWidget(QWidget):
                     context["existing_description"] = current.desc_edit.toPlainText()
 
                 # Check for Lore Date (EventEditor specific)
-                if hasattr(current, "date_edit"):
-                    # Try to get formatted text from preview label
+                if hasattr(current, "temporal_widget"):
+                    formatted = current.temporal_widget.get_formatted_start_text()
+                    if formatted:
+                        context["lore_date"] = formatted
+                elif hasattr(current, "date_edit"):
+                    # Legacy fallback
                     if hasattr(current.date_edit, "lbl_preview"):
                         text = current.date_edit.lbl_preview.text()
                         if text:
@@ -867,9 +871,8 @@ class LLMGenerationWidget(QWidget):
 
         # Audit log the interaction (post-dialog so rating is known)
         if worker_prompt is not None:
-            from src.services.llm_provider import log_ai_interaction
-
             from src.core.logging_config import get_world_audit_log_path
+            from src.services.llm_provider import log_ai_interaction
 
             audit_path = get_world_audit_log_path(self._current_db_path)
 
