@@ -286,6 +286,17 @@
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="cli.attachment.register_commands">
+<span class="sig-prename descclassname"><span class="pre">cli.attachment.</span></span><span class="sig-name descname"><span class="pre">register_commands</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subparsers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_SubParsersAction</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/attachment.html#register_commands"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.attachment.register_commands" title="Link to this definition">¶</a></dt>
+<dd><p>Register attachment subcommands with a parent subparsers group.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>subparsers</strong> – The subparsers action group from a parent ArgumentParser.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="cli.attachment.remove_attachment">
 <span class="sig-prename descclassname"><span class="pre">cli.attachment.</span></span><span class="sig-name descname"><span class="pre">remove_attachment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/attachment.html#remove_attachment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.attachment.remove_attachment" title="Link to this definition">¶</a></dt>
 <dd><p>Remove an image attachment.</p>
@@ -333,6 +344,17 @@ python -m src.cli.backup restore –database world.kraken –file “path/to/bac
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="cli.backup.register_commands">
+<span class="sig-prename descclassname"><span class="pre">cli.backup.</span></span><span class="sig-name descname"><span class="pre">register_commands</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subparsers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_SubParsersAction</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/backup.html#register_commands"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.backup.register_commands" title="Link to this definition">¶</a></dt>
+<dd><p>Register backup subcommands with a parent subparsers group.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>subparsers</strong> – The subparsers action group from a parent ArgumentParser.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="cli.backup.restore_backup">
 <span class="sig-prename descclassname"><span class="pre">cli.backup.</span></span><span class="sig-name descname"><span class="pre">restore_backup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/backup.html#restore_backup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.backup.restore_backup" title="Link to this definition">¶</a></dt>
 <dd><p>Restore from a backup.</p>
@@ -364,6 +386,17 @@ python -m src.cli.backup restore –database world.kraken –file “path/to/bac
 <dt class="sig sig-object py" id="cli.calendar.main">
 <span class="sig-prename descclassname"><span class="pre">cli.calendar.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/calendar.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.calendar.main" title="Link to this definition">¶</a></dt>
 <dd><p>Main entry point for the calendar CLI tool.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.calendar.register_commands">
+<span class="sig-prename descclassname"><span class="pre">cli.calendar.</span></span><span class="sig-name descname"><span class="pre">register_commands</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subparsers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_SubParsersAction</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/calendar.html#register_commands"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.calendar.register_commands" title="Link to this definition">¶</a></dt>
+<dd><p>Register calendar subcommands with a parent subparsers group.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>subparsers</strong> – The subparsers action group from a parent ArgumentParser.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -427,6 +460,17 @@ python -m src.cli.entity show –database world.kraken</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="cli.entity.register_commands">
+<span class="sig-prename descclassname"><span class="pre">cli.entity.</span></span><span class="sig-name descname"><span class="pre">register_commands</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subparsers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_SubParsersAction</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/entity.html#register_commands"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.entity.register_commands" title="Link to this definition">¶</a></dt>
+<dd><p>Register entity subcommands with a parent subparsers group.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>subparsers</strong> – The subparsers action group from a parent ArgumentParser.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="cli.entity.show_entity">
 <span class="sig-prename descclassname"><span class="pre">cli.entity.</span></span><span class="sig-name descname"><span class="pre">show_entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/entity.html#show_entity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.entity.show_entity" title="Link to this definition">¶</a></dt>
 <dd><p>Show detailed information about a specific entity.</p>
@@ -487,6 +531,17 @@ python -m src.cli.event show –database world.kraken</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="cli.event.register_commands">
+<span class="sig-prename descclassname"><span class="pre">cli.event.</span></span><span class="sig-name descname"><span class="pre">register_commands</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subparsers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_SubParsersAction</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/event.html#register_commands"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.event.register_commands" title="Link to this definition">¶</a></dt>
+<dd><p>Register event subcommands with a parent subparsers group.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>subparsers</strong> – The subparsers action group from a parent ArgumentParser.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="cli.event.show_event">
 <span class="sig-prename descclassname"><span class="pre">cli.event.</span></span><span class="sig-name descname"><span class="pre">show_event</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/event.html#show_event"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.event.show_event" title="Link to this definition">¶</a></dt>
 <dd><p>Show detailed information about a specific event.</p>
@@ -517,6 +572,17 @@ python -m src.cli.event show –database world.kraken</p>
 <dt class="sig sig-object py" id="cli.graph.main">
 <span class="sig-prename descclassname"><span class="pre">cli.graph.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/graph.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.graph.main" title="Link to this definition">¶</a></dt>
 <dd><p>Main CLI entry point for graph tools.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.graph.register_commands">
+<span class="sig-prename descclassname"><span class="pre">cli.graph.</span></span><span class="sig-name descname"><span class="pre">register_commands</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subparsers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_SubParsersAction</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/graph.html#register_commands"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.graph.register_commands" title="Link to this definition">¶</a></dt>
+<dd><p>Register graph subcommands with a parent subparsers group.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>subparsers</strong> – The subparsers action group from a parent ArgumentParser.</p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>
@@ -606,6 +672,17 @@ python -m src.cli.index index-object –database world.kraken         –type en
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.index.register_commands">
+<span class="sig-prename descclassname"><span class="pre">cli.index.</span></span><span class="sig-name descname"><span class="pre">register_commands</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subparsers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_SubParsersAction</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/index.html#register_commands"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.index.register_commands" title="Link to this definition">¶</a></dt>
+<dd><p>Register index subcommands with a parent subparsers group.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>subparsers</strong> – The subparsers action group from a parent ArgumentParser.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 <section id="module-cli.longform">
 <span id="cli-longform-module"></span><h2>cli.longform module<a class="headerlink" href="#module-cli.longform" title="Link to this heading">¶</a></h2>
@@ -647,6 +724,17 @@ python -m src.cli.longform move –database world.kraken –table events        
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="cli.longform.register_commands">
+<span class="sig-prename descclassname"><span class="pre">cli.longform.</span></span><span class="sig-name descname"><span class="pre">register_commands</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subparsers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_SubParsersAction</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/longform.html#register_commands"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.longform.register_commands" title="Link to this definition">¶</a></dt>
+<dd><p>Register longform subcommands with a parent subparsers group.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>subparsers</strong> – The subparsers action group from a parent ArgumentParser.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="cli.longform.reindex_longform">
 <span class="sig-prename descclassname"><span class="pre">cli.longform.</span></span><span class="sig-name descname"><span class="pre">reindex_longform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/longform.html#reindex_longform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.longform.reindex_longform" title="Link to this definition">¶</a></dt>
 <dd><p>Reindex all positions in the longform document.</p>
@@ -680,6 +768,17 @@ python -m src.cli.longform move –database world.kraken –table events        
 <dt class="sig sig-object py" id="cli.obsidian.main">
 <span class="sig-prename descclassname"><span class="pre">cli.obsidian.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/obsidian.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.obsidian.main" title="Link to this definition">¶</a></dt>
 <dd><p>Main CLI entry point for obsidian tools.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.obsidian.register_commands">
+<span class="sig-prename descclassname"><span class="pre">cli.obsidian.</span></span><span class="sig-name descname"><span class="pre">register_commands</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subparsers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_SubParsersAction</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/obsidian.html#register_commands"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.obsidian.register_commands" title="Link to this definition">¶</a></dt>
+<dd><p>Register obsidian subcommands with a parent subparsers group.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>subparsers</strong> – The subparsers action group from a parent ArgumentParser.</p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>
@@ -724,6 +823,17 @@ between events and entities.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="cli.relation.register_commands">
+<span class="sig-prename descclassname"><span class="pre">cli.relation.</span></span><span class="sig-name descname"><span class="pre">register_commands</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subparsers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_SubParsersAction</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/relation.html#register_commands"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.relation.register_commands" title="Link to this definition">¶</a></dt>
+<dd><p>Register relation subcommands with a parent subparsers group.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>subparsers</strong> – The subparsers action group from a parent ArgumentParser.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="cli.relation.update_relation">
 <span class="sig-prename descclassname"><span class="pre">cli.relation.</span></span><span class="sig-name descname"><span class="pre">update_relation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/relation.html#update_relation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.relation.update_relation" title="Link to this definition">¶</a></dt>
 <dd><p>Update an existing relation.</p>
@@ -751,6 +861,17 @@ python -m src.cli.timeline tag-color –database world.kraken         –tag “
 <dt class="sig sig-object py" id="cli.timeline.main">
 <span class="sig-prename descclassname"><span class="pre">cli.timeline.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/timeline.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.timeline.main" title="Link to this definition">¶</a></dt>
 <dd><p>Main CLI entry point.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.timeline.register_commands">
+<span class="sig-prename descclassname"><span class="pre">cli.timeline.</span></span><span class="sig-name descname"><span class="pre">register_commands</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subparsers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_SubParsersAction</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/timeline.html#register_commands"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.timeline.register_commands" title="Link to this definition">¶</a></dt>
+<dd><p>Register timeline subcommands with a parent subparsers group.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>subparsers</strong> – The subparsers action group from a parent ArgumentParser.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -801,6 +922,17 @@ operations).</p></li>
 <dt class="sig sig-object py" id="cli.wiki.main">
 <span class="sig-prename descclassname"><span class="pre">cli.wiki.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/wiki.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.wiki.main" title="Link to this definition">¶</a></dt>
 <dd><p>Main entry point for the wiki content CLI tool.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.wiki.register_commands">
+<span class="sig-prename descclassname"><span class="pre">cli.wiki.</span></span><span class="sig-name descname"><span class="pre">register_commands</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subparsers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_SubParsersAction</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/wiki.html#register_commands"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.wiki.register_commands" title="Link to this definition">¶</a></dt>
+<dd><p>Register wiki subcommands with a parent subparsers group.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>subparsers</strong> – The subparsers action group from a parent ArgumentParser.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -877,6 +1009,7 @@ operations).</p></li>
 <li><a class="reference internal" href="#cli.attachment.add_attachments"><code class="docutils literal notranslate"><span class="pre">add_attachments()</span></code></a></li>
 <li><a class="reference internal" href="#cli.attachment.list_attachments"><code class="docutils literal notranslate"><span class="pre">list_attachments()</span></code></a></li>
 <li><a class="reference internal" href="#cli.attachment.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#cli.attachment.register_commands"><code class="docutils literal notranslate"><span class="pre">register_commands()</span></code></a></li>
 <li><a class="reference internal" href="#cli.attachment.remove_attachment"><code class="docutils literal notranslate"><span class="pre">remove_attachment()</span></code></a></li>
 <li><a class="reference internal" href="#cli.attachment.reorder_attachments"><code class="docutils literal notranslate"><span class="pre">reorder_attachments()</span></code></a></li>
 <li><a class="reference internal" href="#cli.attachment.update_caption"><code class="docutils literal notranslate"><span class="pre">update_caption()</span></code></a></li>
@@ -886,6 +1019,7 @@ operations).</p></li>
 <li><a class="reference internal" href="#cli.backup.create_backup"><code class="docutils literal notranslate"><span class="pre">create_backup()</span></code></a></li>
 <li><a class="reference internal" href="#cli.backup.list_backups"><code class="docutils literal notranslate"><span class="pre">list_backups()</span></code></a></li>
 <li><a class="reference internal" href="#cli.backup.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#cli.backup.register_commands"><code class="docutils literal notranslate"><span class="pre">register_commands()</span></code></a></li>
 <li><a class="reference internal" href="#cli.backup.restore_backup"><code class="docutils literal notranslate"><span class="pre">restore_backup()</span></code></a></li>
 </ul>
 </li>
@@ -894,6 +1028,7 @@ operations).</p></li>
 <li><a class="reference internal" href="#cli.calendar.delete_calendar"><code class="docutils literal notranslate"><span class="pre">delete_calendar()</span></code></a></li>
 <li><a class="reference internal" href="#cli.calendar.list_calendars"><code class="docutils literal notranslate"><span class="pre">list_calendars()</span></code></a></li>
 <li><a class="reference internal" href="#cli.calendar.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#cli.calendar.register_commands"><code class="docutils literal notranslate"><span class="pre">register_commands()</span></code></a></li>
 <li><a class="reference internal" href="#cli.calendar.set_active_calendar"><code class="docutils literal notranslate"><span class="pre">set_active_calendar()</span></code></a></li>
 <li><a class="reference internal" href="#cli.calendar.show_calendar"><code class="docutils literal notranslate"><span class="pre">show_calendar()</span></code></a></li>
 </ul>
@@ -903,6 +1038,7 @@ operations).</p></li>
 <li><a class="reference internal" href="#cli.entity.delete_entity"><code class="docutils literal notranslate"><span class="pre">delete_entity()</span></code></a></li>
 <li><a class="reference internal" href="#cli.entity.list_entities"><code class="docutils literal notranslate"><span class="pre">list_entities()</span></code></a></li>
 <li><a class="reference internal" href="#cli.entity.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#cli.entity.register_commands"><code class="docutils literal notranslate"><span class="pre">register_commands()</span></code></a></li>
 <li><a class="reference internal" href="#cli.entity.show_entity"><code class="docutils literal notranslate"><span class="pre">show_entity()</span></code></a></li>
 <li><a class="reference internal" href="#cli.entity.update_entity"><code class="docutils literal notranslate"><span class="pre">update_entity()</span></code></a></li>
 </ul>
@@ -912,6 +1048,7 @@ operations).</p></li>
 <li><a class="reference internal" href="#cli.event.delete_event"><code class="docutils literal notranslate"><span class="pre">delete_event()</span></code></a></li>
 <li><a class="reference internal" href="#cli.event.list_events"><code class="docutils literal notranslate"><span class="pre">list_events()</span></code></a></li>
 <li><a class="reference internal" href="#cli.event.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#cli.event.register_commands"><code class="docutils literal notranslate"><span class="pre">register_commands()</span></code></a></li>
 <li><a class="reference internal" href="#cli.event.show_event"><code class="docutils literal notranslate"><span class="pre">show_event()</span></code></a></li>
 <li><a class="reference internal" href="#cli.event.update_event"><code class="docutils literal notranslate"><span class="pre">update_event()</span></code></a></li>
 </ul>
@@ -919,6 +1056,7 @@ operations).</p></li>
 <li><a class="reference internal" href="#module-cli.graph">cli.graph module</a><ul>
 <li><a class="reference internal" href="#cli.graph.export_graph"><code class="docutils literal notranslate"><span class="pre">export_graph()</span></code></a></li>
 <li><a class="reference internal" href="#cli.graph.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#cli.graph.register_commands"><code class="docutils literal notranslate"><span class="pre">register_commands()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-cli.index">cli.index module</a><ul>
@@ -927,6 +1065,7 @@ operations).</p></li>
 <li><a class="reference internal" href="#cli.index.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
 <li><a class="reference internal" href="#cli.index.query_index"><code class="docutils literal notranslate"><span class="pre">query_index()</span></code></a></li>
 <li><a class="reference internal" href="#cli.index.rebuild_index"><code class="docutils literal notranslate"><span class="pre">rebuild_index()</span></code></a></li>
+<li><a class="reference internal" href="#cli.index.register_commands"><code class="docutils literal notranslate"><span class="pre">register_commands()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-cli.longform">cli.longform module</a><ul>
@@ -935,6 +1074,7 @@ operations).</p></li>
 <li><a class="reference internal" href="#cli.longform.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
 <li><a class="reference internal" href="#cli.longform.move_entry"><code class="docutils literal notranslate"><span class="pre">move_entry()</span></code></a></li>
 <li><a class="reference internal" href="#cli.longform.promote_entry"><code class="docutils literal notranslate"><span class="pre">promote_entry()</span></code></a></li>
+<li><a class="reference internal" href="#cli.longform.register_commands"><code class="docutils literal notranslate"><span class="pre">register_commands()</span></code></a></li>
 <li><a class="reference internal" href="#cli.longform.reindex_longform"><code class="docutils literal notranslate"><span class="pre">reindex_longform()</span></code></a></li>
 <li><a class="reference internal" href="#cli.longform.remove_entry"><code class="docutils literal notranslate"><span class="pre">remove_entry()</span></code></a></li>
 </ul>
@@ -943,6 +1083,7 @@ operations).</p></li>
 <li><a class="reference internal" href="#module-cli.obsidian">cli.obsidian module</a><ul>
 <li><a class="reference internal" href="#cli.obsidian.export_obsidian"><code class="docutils literal notranslate"><span class="pre">export_obsidian()</span></code></a></li>
 <li><a class="reference internal" href="#cli.obsidian.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#cli.obsidian.register_commands"><code class="docutils literal notranslate"><span class="pre">register_commands()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-cli.relation">cli.relation module</a><ul>
@@ -950,12 +1091,14 @@ operations).</p></li>
 <li><a class="reference internal" href="#cli.relation.delete_relation"><code class="docutils literal notranslate"><span class="pre">delete_relation()</span></code></a></li>
 <li><a class="reference internal" href="#cli.relation.list_relations"><code class="docutils literal notranslate"><span class="pre">list_relations()</span></code></a></li>
 <li><a class="reference internal" href="#cli.relation.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#cli.relation.register_commands"><code class="docutils literal notranslate"><span class="pre">register_commands()</span></code></a></li>
 <li><a class="reference internal" href="#cli.relation.update_relation"><code class="docutils literal notranslate"><span class="pre">update_relation()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-cli.timeline">cli.timeline module</a><ul>
 <li><a class="reference internal" href="#cli.timeline.clear_grouping"><code class="docutils literal notranslate"><span class="pre">clear_grouping()</span></code></a></li>
 <li><a class="reference internal" href="#cli.timeline.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#cli.timeline.register_commands"><code class="docutils literal notranslate"><span class="pre">register_commands()</span></code></a></li>
 <li><a class="reference internal" href="#cli.timeline.set_grouping"><code class="docutils literal notranslate"><span class="pre">set_grouping()</span></code></a></li>
 <li><a class="reference internal" href="#cli.timeline.update_tag_color"><code class="docutils literal notranslate"><span class="pre">update_tag_color()</span></code></a></li>
 </ul>
@@ -966,6 +1109,7 @@ operations).</p></li>
 </li>
 <li><a class="reference internal" href="#module-cli.wiki">cli.wiki module</a><ul>
 <li><a class="reference internal" href="#cli.wiki.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#cli.wiki.register_commands"><code class="docutils literal notranslate"><span class="pre">register_commands()</span></code></a></li>
 <li><a class="reference internal" href="#cli.wiki.scan_links"><code class="docutils literal notranslate"><span class="pre">scan_links()</span></code></a></li>
 </ul>
 </li>
