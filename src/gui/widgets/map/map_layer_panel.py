@@ -165,12 +165,15 @@ class MapLayerPanel(QWidget):
         )
         header_layout.addWidget(self.btn_new_raster)
 
+        header_layout.addSpacing(8)
+
         self.btn_delete = self._make_button(
             "Delete",
             "Delete the selected layer or feature",
             self._on_delete,
             enabled=False,
         )
+        self.btn_delete.setStyleSheet(StyleHelper.get_ghost_destructive_button_style())
         header_layout.addWidget(self.btn_delete)
 
         parent_layout.addLayout(header_layout)
@@ -677,7 +680,7 @@ class MapLayerPanel(QWidget):
         tool_style = StyleHelper.get_tool_button_style()
         self.btn_new_group.setStyleSheet(tool_style)
 
-        self.btn_delete.setStyleSheet(StyleHelper.get_destructive_button_style())
+        self.btn_delete.setStyleSheet(StyleHelper.get_ghost_destructive_button_style())
         self._title_label.setStyleSheet(StyleHelper.get_panel_header_style())
         self._opacity_slider.setStyleSheet(StyleHelper.get_slider_style())
         self._falloff_slider.setStyleSheet(StyleHelper.get_slider_style())

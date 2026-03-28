@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
     QLabel,
+    QMenu,
     QPushButton,
     QSizePolicy,
     QSplitter,
@@ -255,6 +256,8 @@ class MapWidget(
 
         # Buttons (themed via StyleHelper)
         tool_style = StyleHelper.get_tool_button_style()
+        drawing_style = StyleHelper.get_raster_tool_button_style()
+        toggle_style = StyleHelper.get_toggle_button_style()
 
         # Group 1: Map management
         self.btn_new_map = QPushButton("New Map")
@@ -263,11 +266,12 @@ class MapWidget(
         self.btn_new_map.clicked.connect(self._on_create_map_clicked)
         self.toolbar.addWidget(self.btn_new_map)
 
-        self.btn_delete_map = QPushButton("Delete Map")
-        self.btn_delete_map.setToolTip("Delete the currently selected map (cannot be undone)")
-        self.btn_delete_map.setStyleSheet(StyleHelper.get_destructive_button_style())
-        self.btn_delete_map.clicked.connect(self._on_delete_map_clicked)
-        self.toolbar.addWidget(self.btn_delete_map)
+        self.btn_map_overflow = QPushButton("⋯")
+        self.btn_map_overflow.setFixedWidth(28)
+        self.btn_map_overflow.setToolTip("Map options (delete, etc.)")
+        self.btn_map_overflow.setStyleSheet(tool_style)
+        self.btn_map_overflow.clicked.connect(self._show_map_overflow_menu)
+        self.toolbar.addWidget(self.btn_map_overflow)
 
         self.toolbar.addSeparator()
 
@@ -286,20 +290,13 @@ class MapWidget(
 
         self.toolbar.addSeparator()
 
-        # Group 3: Drawing tools
-        self.btn_add_keyframe = QPushButton("Add Keyframe")
-        self.btn_add_keyframe.setToolTip("Save current marker position at current time")
-        self.btn_add_keyframe.setStyleSheet(tool_style)
-        self.btn_add_keyframe.clicked.connect(self._on_add_keyframe)
-        self.toolbar.addWidget(self.btn_add_keyframe)
-
-        # Drawing tool buttons
+        # Group 3: Drawing tools (mutually exclusive, fill when active)
         self.btn_draw_path = QPushButton("Draw Path")
         self.btn_draw_path.setToolTip(
             "Draw a polyline path on the map (click vertices, double-click to finish)"
         )
         self.btn_draw_path.setCheckable(True)
-        self.btn_draw_path.setStyleSheet(tool_style)
+        self.btn_draw_path.setStyleSheet(drawing_style)
         self.btn_draw_path.clicked.connect(self._on_draw_path_clicked)
         self.toolbar.addWidget(self.btn_draw_path)
 
@@ -308,34 +305,47 @@ class MapWidget(
             "Draw a polygon region on the map (click vertices, double-click to finish)"
         )
         self.btn_draw_region.setCheckable(True)
-        self.btn_draw_region.setStyleSheet(tool_style)
+        self.btn_draw_region.setStyleSheet(drawing_style)
         self.btn_draw_region.clicked.connect(self._on_draw_region_clicked)
         self.toolbar.addWidget(self.btn_draw_region)
 
-        # Snap toggle
+        self.toolbar.addSeparator()
+
+        # Group 4: Persistent view toggles (border highlight when on)
         self.btn_snap = QPushButton("Snap")
         self.btn_snap.setToolTip("Toggle snapping to nearby feature vertices and edges")
         self.btn_snap.setCheckable(True)
         self.btn_snap.setChecked(True)  # enabled by default
-        self.btn_snap.setStyleSheet(tool_style)
+        self.btn_snap.setStyleSheet(toggle_style)
         self.btn_snap.clicked.connect(self._on_snap_toggled)
         self.toolbar.addWidget(self.btn_snap)
 
-        # Legend visibility toggle
         self.btn_legend_toggle = QPushButton("Legend")
         self.btn_legend_toggle.setToolTip("Show / hide the raster layer legend overlay")
         self.btn_legend_toggle.setCheckable(True)
         self.btn_legend_toggle.setChecked(False)
-        self.btn_legend_toggle.setStyleSheet(tool_style)
+        self.btn_legend_toggle.setStyleSheet(toggle_style)
         self.btn_legend_toggle.toggled.connect(self._on_legend_toggle)
         self.toolbar.addWidget(self.btn_legend_toggle)
 
-        # Mode Indicator (right side)
+        self.toolbar.addSeparator()
+
+        # Add Keyframe — hidden by default; shown only in draft mode
+        self.btn_add_keyframe = QPushButton("Add Keyframe")
+        self.btn_add_keyframe.setToolTip("Save current marker position at current time")
+        self.btn_add_keyframe.setStyleSheet(tool_style)
+        self.btn_add_keyframe.setVisible(False)
+        self.btn_add_keyframe.clicked.connect(self._on_add_keyframe)
+        self.toolbar.addWidget(self.btn_add_keyframe)
+
+        # Mode Pill (right side) — clickable to exit the current mode
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.toolbar.addWidget(spacer)
 
-        self.mode_indicator = QLabel("Normal Mode")
+        self.mode_indicator = QPushButton("● Normal")
+        self.mode_indicator.setToolTip("Current editing mode — click to exit")
+        self.mode_indicator.clicked.connect(self._on_mode_indicator_clicked)
         self._apply_mode_indicator_style("normal")
         self.toolbar.addWidget(self.mode_indicator)
 
@@ -668,6 +678,30 @@ class MapWidget(
     # -- Trajectory / drawing / dialog methods provided by mixins ------
 
     @Slot()
+    def _show_map_overflow_menu(self) -> None:
+        """Shows the map overflow menu containing destructive map actions."""
+        menu = QMenu(self)
+        delete_action = menu.addAction("Delete Map...")
+        delete_action.triggered.connect(self._on_delete_map_clicked)
+        pos = self.btn_map_overflow.mapToGlobal(self.btn_map_overflow.rect().bottomLeft())
+        menu.exec(pos)
+
+    @Slot()
+    def _on_mode_indicator_clicked(self) -> None:
+        """Exits the current editing mode when the mode pill is clicked."""
+        if self._pinned_marker_id:
+            self._cancel_clock_mode()  # already calls _update_mode_indicator internally
+            return
+        elif self.view.is_drawing:
+            self.view.cancel_drawing()
+        elif self.view.is_editing_vertices:
+            self.view.finish_editing()
+        elif self._transient_marker_ids:
+            self._transient_marker_ids.clear()
+            self._update_trajectory_positions(force_all=True)
+        self._update_mode_indicator()
+
+    @Slot()
     def _on_snap_toggled(self) -> None:
         """Toggles snapping on the map view."""
         self.view.snapping_enabled = self.btn_snap.isChecked()
@@ -977,7 +1011,8 @@ class MapWidget(
             "normal": theme.get("success", "#2ecc71"),
         }
         bg = color_map.get(mode, theme.get("text_dim", "#aaaaaa"))
-        self.mode_indicator.setStyleSheet(StyleHelper.get_mode_indicator_style(bg))
+        active = mode != "normal"
+        self.mode_indicator.setStyleSheet(StyleHelper.get_mode_pill_style(bg, active=active))
 
     def _update_mode_indicator(self) -> None:
         """Updates the toolbar status, map overlay, and Finish Sketch button."""
@@ -1002,7 +1037,7 @@ class MapWidget(
             self.view.setCursor(Qt.CursorShape.WaitCursor)
 
         elif self._transient_marker_ids:
-            # Draft Mode
+            # Draft Mode — Add Keyframe shown below via consolidated visibility call
             self.mode_indicator.setText("🟠 DRAFT MODE: Unsaved keys")
             self._apply_mode_indicator_style("draft")
 
@@ -1061,7 +1096,7 @@ class MapWidget(
 
         else:
             # Normal Mode
-            self.mode_indicator.setText("Normal Mode")
+            self.mode_indicator.setText("● Normal")
             self._apply_mode_indicator_style("normal")
 
             # Overlay Banner
@@ -1070,6 +1105,11 @@ class MapWidget(
 
             # Normal cursor
             self.view.setCursor(Qt.CursorShape.ArrowCursor)
+
+        # Add Keyframe is only relevant in draft mode
+        self.btn_add_keyframe.setVisible(
+            bool(self._transient_marker_ids) and not self._pinned_marker_id
+        )
 
     # -- Clock-mode visuals / keyframe delete provided by MapTrajectoryMixin --
 

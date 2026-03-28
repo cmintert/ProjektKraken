@@ -35,7 +35,12 @@
       "Bash(python -m pytest tests/unit/test_raster_editing.py tests/unit/test_raster_gui.py tests/unit/test_raster_persistence.py tests/integration/test_raster_edit_persistence.py -x -q)",
       "Bash(python -m ruff check src/app/connection_manager.py src/app/map_handler.py src/commands/raster_commands.py src/gui/widgets/map/map_data_buffer.py src/gui/widgets/map/map_layer_panel.py src/gui/widgets/map/raster_edit_tool.py src/gui/widgets/map/raster_mapping.py src/gui/widgets/map/raster_probe_popup.py src/gui/widgets/map/raster_palette_editor.py src/gui/utils/style_helper.py tests/unit/test_raster_editing.py tests/unit/test_raster_gui.py tests/unit/test_raster_persistence.py tests/integration/test_raster_edit_persistence.py)",
       "Bash(python -m ruff check --fix src/commands/raster_commands.py tests/unit/test_raster_editing.py tests/unit/test_raster_gui.py)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(grep -n \"def _on_draw_path_clicked\\\\|def _on_draw_region_clicked\\\\|def _on_add_keyframe\\\\|def _on_create_map\\\\|def _on_delete_map\" /c/Users/chris/VSCodeProjects/ProjektKraken/ProjektKraken/src/gui/mixins/*.py)",
+      "Bash(grep -n \"def _configure_map_width\" /c/Users/chris/VSCodeProjects/ProjektKraken/ProjektKraken/src/gui/mixins/*.py)",
+      "Bash(grep -rn \"QMenu\" /c/Users/chris/VSCodeProjects/ProjektKraken/ProjektKraken/src/gui/widgets/*.py)",
+      "Bash(grep -rn \"def.*menu.*QMenu\\\\|QMenu.*addAction\" /c/Users/chris/VSCodeProjects/ProjektKraken/ProjektKraken/src/gui/widgets/*.py)",
+      "Bash(ls /c/Users/chris/VSCodeProjects/ProjektKraken/ProjektKraken/src/gui/widgets/map/*.py)"
     ]
   }
 }
