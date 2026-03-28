@@ -477,14 +477,58 @@ class StyleHelper:
 
         theme = ThemeManager().get_theme()
         return (
-            f"QPushButton {{ background-color: {theme['destructive']}; "
-            f"color: white; border: 1px solid {theme['destructive']}; "
+            f"QPushButton {{ background-color: {theme['surface']}; "
+            f"color: {theme['destructive']}; border: 1px solid {theme['destructive']}; "
             f"border-radius: 4px; padding: 6px 16px; }}"
-            f"QPushButton:hover {{ background-color: {theme['border']}; "
-            f"color: {theme['text_main']}; }}"
+            f"QPushButton:hover {{ background-color: {theme['destructive']}; "
+            f"color: white; border: 1px solid {theme['destructive']}; }}"
             f"QPushButton:disabled {{ background-color: {theme['surface']}; "
             f"color: {theme['text_dim']}; "
             f"border: 1px solid {theme['border']}; }}"
+        )
+
+    @staticmethod
+    def get_toggle_button_style() -> str:
+        """Returns QSS for persistent on/off toggle buttons (e.g. Snap, Legend).
+
+        Uses a thick colored border when checked to signal persistent state,
+        rather than a fill, which is reserved for active tool modes.
+
+        Returns:
+            str: QSS stylesheet string for toggle buttons.
+        """
+        theme = ThemeManager().get_theme()
+        return (
+            f"QPushButton {{ background-color: {theme['surface']}; "
+            f"color: {theme['text_dim']}; border: 1px solid {theme['border']}; "
+            f"border-radius: 4px; padding: 4px 8px; }}"
+            f"QPushButton:hover {{ background-color: {theme['border']}; "
+            f"color: {theme['text_main']}; }}"
+            f"QPushButton:checked {{ background-color: {theme['surface']}; "
+            f"color: {theme['text_main']}; "
+            f"border: 2px solid {theme['accent_secondary']}; font-weight: bold; }}"
+        )
+
+    @staticmethod
+    def get_ghost_destructive_button_style() -> str:
+        """Returns QSS for a low-prominence destructive button.
+
+        Transparent at rest with a red border/text; fills red on hover.
+        Suitable for Delete buttons in compact panel headers.
+
+        Returns:
+            str: QSS stylesheet string for ghost destructive buttons.
+        """
+        theme = ThemeManager().get_theme()
+        return (
+            f"QPushButton {{ background-color: transparent; "
+            f"color: {theme['destructive']}; "
+            f"border: 1px solid {theme['destructive']}; "
+            f"border-radius: 4px; padding: 4px 8px; }}"
+            f"QPushButton:hover {{ background-color: {theme['destructive']}; "
+            f"color: white; }}"
+            f"QPushButton:disabled {{ color: {theme['text_dim']}; "
+            f"border-color: {theme['border']}; }}"
         )
 
     @staticmethod
@@ -1294,6 +1338,34 @@ class StyleHelper:
             "  font-weight: bold;"
             "  font-size: 11px;"
             "}"
+        )
+
+    @staticmethod
+    def get_mode_pill_style(bg_color: str, active: bool = False) -> str:
+        """Returns QSS for the toolbar mode indicator as a clickable pill button.
+
+        In normal (inactive) mode the pill is a low-weight outlined badge.
+        In active modes it fills with the mode color and becomes a prominent
+        clickable target that the user can press to exit the mode.
+
+        Args:
+            bg_color: Hex color for the current mode.
+            active: True when a special mode (clock/draft/drawing/vertex) is active.
+
+        Returns:
+            str: QSS stylesheet string for the mode pill button.
+        """
+        if active:
+            return (
+                f"QPushButton {{ background-color: {bg_color}; color: white; "
+                f"border: none; border-radius: 10px; padding: 4px 12px; "
+                f"font-weight: bold; font-size: 11px; }}"
+                f"QPushButton:hover {{ border: 2px solid white; }}"
+            )
+        return (
+            f"QPushButton {{ background-color: transparent; color: {bg_color}; "
+            f"border: 1px solid {bg_color}; border-radius: 10px; "
+            f"padding: 4px 10px; font-size: 11px; }}"
         )
 
     @staticmethod

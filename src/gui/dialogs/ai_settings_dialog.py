@@ -681,7 +681,7 @@ class AISettingsDialog(QDialog):
         editor_actions = QHBoxLayout()
         self.btn_delete_template = QPushButton("Delete")
         self.btn_delete_template.setStyleSheet(
-            "background-color: #AF4448; color: white;"
+            StyleHelper.get_destructive_button_style()
         )
         self.btn_delete_template.clicked.connect(self._on_delete_template)
         editor_actions.addWidget(self.btn_delete_template)
