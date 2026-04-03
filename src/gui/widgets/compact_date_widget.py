@@ -98,26 +98,29 @@ class CompactDateWidget(QWidget):
         self.spin_year.setValue(1)
         self.spin_year.setPrefix("Year ")
         self.spin_year.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
-        chip_layout.addWidget(self.spin_year, stretch=2)
+        self.spin_year.setFixedWidth(90)
+        chip_layout.addWidget(self.spin_year, stretch=0)
 
         self.combo_month = QComboBox()
         self.combo_month.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
-        chip_layout.addWidget(self.combo_month, stretch=3)
+        self.combo_month.setFixedWidth(100)
+        chip_layout.addWidget(self.combo_month, stretch=0)
 
         self.combo_day = QComboBox()
         self.combo_day.setSizePolicy(
-            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
-        chip_layout.addWidget(self.combo_day, stretch=1)
+        self.combo_day.setFixedWidth(70)
+        chip_layout.addWidget(self.combo_day, stretch=0)
 
         self._date_chip.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
-        date_row.addWidget(self._date_chip, stretch=1)
+        date_row.addWidget(self._date_chip, stretch=0)
 
         # Time toggle button (clock icon)
         self.btn_time_toggle = QPushButton()
@@ -133,6 +136,7 @@ class CompactDateWidget(QWidget):
         self.btn_calendar.setFixedSize(32, 24)
         self.btn_calendar.setToolTip("Open calendar picker")
         date_row.addWidget(self.btn_calendar, stretch=0)
+        date_row.addStretch(1)
 
         theme = ThemeManager().get_theme()
         self._update_icons(theme)
@@ -142,7 +146,7 @@ class CompactDateWidget(QWidget):
         # ── Row 2: time inputs (collapsible) ──────────────────────────────
         self._time_container = QWidget()
         self._time_container.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
         )
         time_row = QHBoxLayout(self._time_container)
         time_row.setContentsMargins(0, 0, 0, 0)
@@ -153,26 +157,30 @@ class CompactDateWidget(QWidget):
         self.spin_hour.setValue(0)
         self.spin_hour.setSuffix("h")
         self.spin_hour.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
-        time_row.addWidget(self.spin_hour, stretch=1)
+        self.spin_hour.setFixedWidth(60)
+        time_row.addWidget(self.spin_hour, stretch=0)
 
         self.spin_minute = QSpinBox()
         self.spin_minute.setRange(0, 59)
         self.spin_minute.setValue(0)
         self.spin_minute.setSuffix("m")
         self.spin_minute.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
-        time_row.addWidget(self.spin_minute, stretch=1)
+        self.spin_minute.setFixedWidth(60)
+        time_row.addWidget(self.spin_minute, stretch=0)
 
         self.txt_date = QLineEdit()
         self.txt_date.setPlaceholderText("Type date...")
         self.txt_date.setToolTip("Enter date text (e.g. '15 Jan 3019')")
         self.txt_date.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
-        time_row.addWidget(self.txt_date, stretch=4)
+        self.txt_date.setFixedWidth(140)
+        time_row.addWidget(self.txt_date, stretch=0)
+        time_row.addStretch(1)
 
         self._time_container.setVisible(False)
         main_layout.addWidget(self._time_container)

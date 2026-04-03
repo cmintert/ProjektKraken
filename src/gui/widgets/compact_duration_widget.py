@@ -76,9 +76,10 @@ class CompactDurationWidget(QWidget):
         self.spin_years.setValue(0)
         self.spin_years.setSuffix(" Y")
         self.spin_years.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
-        ymd_row.addWidget(self.spin_years, stretch=1)
+        self.spin_years.setFixedWidth(80)
+        ymd_row.addWidget(self.spin_years, stretch=0)
 
         # Months - allow expanding with suffix
         self.spin_months = QSpinBox()
@@ -86,9 +87,10 @@ class CompactDurationWidget(QWidget):
         self.spin_months.setValue(0)
         self.spin_months.setSuffix(" M")
         self.spin_months.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
-        ymd_row.addWidget(self.spin_months, stretch=1)
+        self.spin_months.setFixedWidth(75)
+        ymd_row.addWidget(self.spin_months, stretch=0)
 
         # Days - allow expanding with suffix
         self.spin_days = QSpinBox()
@@ -96,9 +98,11 @@ class CompactDurationWidget(QWidget):
         self.spin_days.setValue(0)
         self.spin_days.setSuffix(" D")
         self.spin_days.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
-        ymd_row.addWidget(self.spin_days, stretch=1)
+        self.spin_days.setFixedWidth(80)
+        ymd_row.addWidget(self.spin_days, stretch=0)
+        ymd_row.addStretch(1)
 
         main_layout.addLayout(ymd_row)
 
@@ -112,9 +116,10 @@ class CompactDurationWidget(QWidget):
         self.spin_hours.setValue(0)
         self.spin_hours.setSuffix(" h")
         self.spin_hours.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
-        hm_row.addWidget(self.spin_hours, stretch=1)
+        self.spin_hours.setFixedWidth(70)
+        hm_row.addWidget(self.spin_hours, stretch=0)
 
         # Minutes - allow expanding with suffix
         self.spin_minutes = QSpinBox()
@@ -122,9 +127,10 @@ class CompactDurationWidget(QWidget):
         self.spin_minutes.setValue(0)
         self.spin_minutes.setSuffix(" m")
         self.spin_minutes.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
-        hm_row.addWidget(self.spin_minutes, stretch=1)
+        self.spin_minutes.setFixedWidth(70)
+        hm_row.addWidget(self.spin_minutes, stretch=0)
 
         # Preview - takes remaining space
         self.lbl_preview = QLabel()
