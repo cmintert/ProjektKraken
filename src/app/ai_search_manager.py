@@ -5,7 +5,6 @@ from MainWindow to reduce its size and improve maintainability.
 """
 
 import datetime
-import os
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QMetaObject, QObject, QSettings, Qt, Slot
@@ -191,9 +190,18 @@ class AISearchManager(QObject):
 
             # Create search service with GUI thread connection
             assert self.window.gui_db_service._connection is not None
-            search_service = create_search_service(
-                self.window.gui_db_service._connection
-            )
+            try:
+                search_service = create_search_service(
+                    self.window.gui_db_service._connection
+                )
+            except ImportError as e:
+                msg = str(e).split("\n")[0]  # first line is the user-friendly part
+                self._set_status(msg, 10000)
+                return
+            except Exception as e:
+                logger.error(f"Failed to initialise embedding provider: {e}")
+                self._set_status(f"Embedding provider error: {e}", 8000)
+                return
 
             # Determine object types to rebuild
             types = ["entity", "event"] if object_type == "all" else [object_type]
@@ -212,17 +220,14 @@ class AISearchManager(QObject):
 
             # Show results
             total = sum(counts.values())
-            msg = f"Rebuilt index: {total} objects indexed"
-            self.window.status_bar.showMessage(msg, 5000)
-            self.window.ai_search_panel.set_status(msg)
+            self._set_status(f"Rebuilt index: {total} objects indexed")
 
             # Refresh index status
             self.refresh_search_index_status()
 
         except Exception as e:
             logger.error(f"Index rebuild failed: {e}")
-            self.window.status_bar.showMessage(f"Rebuild failed: {e}", 5000)
-            self.window.ai_search_panel.set_status(f"Rebuild failed: {e}")
+            self._set_status(f"Rebuild failed: {e}")
 
     @Slot(str, str)
     def on_search_result_selected(self, object_type: str, object_id: str) -> None:
@@ -250,8 +255,11 @@ class AISearchManager(QObject):
             if not hasattr(self.window, "gui_db_service"):
                 return
 
-            provider = os.getenv("EMBED_PROVIDER", "lmstudio")
-            model = os.getenv("LMSTUDIO_MODEL", "Not configured")
+            from src.services.search_service import get_llm_settings_from_qsettings
+
+            qsettings = get_llm_settings_from_qsettings()
+            provider = qsettings["provider"]
+            model = qsettings.get("st_model") or qsettings.get("lm_model") or "default"
 
             stats = self.window.gui_db_service.get_embedding_stats()
             count = stats["count"]
@@ -275,3 +283,8 @@ class AISearchManager(QObject):
 
         except Exception as e:
             logger.error(f"Failed to refresh index status: {e}")
+
+    def _set_status(self, msg: str, duration: int = 5000) -> None:
+        """Update the status bar and AI search panel with the same message."""
+        self.window.status_bar.showMessage(msg, duration)
+        self.window.ai_search_panel.set_status(msg)
