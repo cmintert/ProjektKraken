@@ -63,6 +63,12 @@ IMAGE_FILE_FILTER = (
 # Autosave Configuration
 AUTOSAVE_DELAY_MS = 2000  # 2 seconds
 
+# Semantic Completion Constants
+SEMANTIC_COMPLETION_MIN_SCORE = 0.85  # Minimum cosine similarity to surface a suggestion
+SEMANTIC_COMPLETION_TOP_K = 5  # Max candidates fetched from the semantic index
+SEMANTIC_COMPLETION_DEBOUNCE_MS = 350  # Keystroke debounce before querying the worker
+SEMANTIC_COMPLETION_MIN_PREFIX_LEN = 3  # Minimum [[prefix length before triggering query
+
 # UI Timing Constants
 # Delays for deferred initialization and UI updates
 UI_INIT_DELAY_MS = 100  # Initial delay for completing app initialization

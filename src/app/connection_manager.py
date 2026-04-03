@@ -359,6 +359,12 @@ class ConnectionManager:
                         self.window.navigation_coordinator.navigate_to_entity,
                         editor_name,
                     ),
+                    (
+                        editor,
+                        "completion_prefix_changed",
+                        dc.request_semantic_completions,
+                        editor_name,
+                    ),
                 ]
             )
         specs.extend(

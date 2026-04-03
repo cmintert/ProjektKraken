@@ -74,6 +74,9 @@ class DatabaseWorker(QObject):
     import_finished = Signal(ImportResult)
     summary_generated = Signal(str, SummaryData)
 
+    # Semantic completion signals
+    semantic_suggestions_ready = Signal(str, list)  # (prefix, list[str] names)
+
     def __init__(self, db_path: str) -> None:
         """Initializes the worker.
 
@@ -87,11 +90,13 @@ class DatabaseWorker(QObject):
         self.asset_store = None
         self.attachment_service = None
         self.temporal_manager = None
+        self._search_service = None
 
     @Slot()
     def initialize_db(self) -> None:
         """Initializes the database connection and services."""
         try:
+            self._search_service = None  # Reset cached service on re-init
             self.operation_started.emit("Connecting to Database...")
             self.db_service = DatabaseService(self.db_path)
             self.db_service.connect()
@@ -144,6 +149,7 @@ class DatabaseWorker(QObject):
         Should be called before the thread is terminated.
         """
         try:
+            self._search_service = None
             if self.db_service:
                 self.db_service.close()
                 logger.info("Database connection closed in worker cleanup.")
@@ -882,6 +888,58 @@ class DatabaseWorker(QObject):
         except Exception:
             logger.error(f"Failed to load graph data: {traceback.format_exc()}")
             self.error_occurred.emit("Failed to load graph data.")
+
+    def _get_search_service(self) -> Optional[object]:
+        """Return a cached SearchService, creating it lazily on first use.
+
+        Returns:
+            SearchService instance, or None if unavailable.
+
+        """
+        if self._search_service is not None:
+            return self._search_service
+        if not self.db_service:
+            return None
+        from src.services.search_service import create_search_service
+
+        conn = self.db_service.get_connection()
+        if conn is None:
+            return None
+        self._search_service = create_search_service(conn)
+        return self._search_service
+
+    @Slot(str, int, float)
+    def query_semantic_suggestions(
+        self, prefix: str, top_k: int = 5, min_score: float = 0.85
+    ) -> None:
+        """Run a semantic query and emit matching suggestions.
+
+        Called from the main thread via QueuedConnection. Filters results
+        by *min_score* before emitting to avoid sending noise to the UI.
+
+        Args:
+            prefix: The typed wiki-link prefix text.
+            top_k: Maximum results to retrieve from the index.
+            min_score: Minimum cosine similarity to include.
+
+        """
+        if not self.db_service:
+            return
+        try:
+            svc = self._get_search_service()
+            if svc is None:
+                return
+            results = svc.query(text=prefix, top_k=top_k)
+            names = [
+                r["name"]
+                for r in results
+                if r["score"] >= min_score and r["name"]
+            ]
+            self.semantic_suggestions_ready.emit(prefix, names)
+        except Exception:
+            logger.debug(
+                "Semantic suggestion query failed", exc_info=True
+            )
 
     @Slot()
     def load_completer_data(self) -> None:

@@ -96,6 +96,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
     navigate_to_relation = Signal(str)
     dirty_changed = Signal(bool)
     current_data_changed = Signal(dict)
+    completion_prefix_changed = Signal(str)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         """Initializes the editor widget with form fields.
@@ -217,6 +218,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.desc_edit = WikiTextEdit()
         self.desc_edit.link_clicked.connect(self.link_clicked.emit)
         self.desc_edit.link_added.connect(self._on_wikilink_added)
+        self.desc_edit.completion_prefix_changed.connect(
+            self.completion_prefix_changed.emit
+        )
 
         # Unified temporal range card (start / span / end with anchor lock)
         self.temporal_widget = TemporalRangeWidget()
@@ -891,6 +895,15 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             self._suggestion_items = items
         else:
             self._suggestion_items = []
+
+    def merge_wiki_completions(self, names: list[str]) -> None:
+        """Merge semantic suggestion names into the description field completer.
+
+        Args:
+            names: Additional display names to add.
+
+        """
+        self.desc_edit.merge_completions(names)
 
     def update_tag_suggestions(self, tags: list[str]) -> None:
         """Updates tag suggestions."""

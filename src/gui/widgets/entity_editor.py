@@ -80,6 +80,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
     return_to_present_requested = Signal()
     inject_ui_requested = Signal(str)
     summary_generation_requested = Signal(object)
+    completion_prefix_changed = Signal(str)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the EntityEditorWidget.
@@ -200,6 +201,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self.desc_edit = WikiTextEdit()
         self.desc_edit.link_clicked.connect(self.link_clicked.emit)
         self.desc_edit.link_added.connect(self._on_wikilink_added)
+        self.desc_edit.completion_prefix_changed.connect(
+            self.completion_prefix_changed.emit
+        )
 
         self.form_layout.addRow("Description:", self.desc_edit)
 
@@ -688,6 +692,15 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         # Store for RelationEditDialog
         self._suggestion_items = items or []
+
+    def merge_wiki_completions(self, names: list[str]) -> None:
+        """Merge semantic suggestion names into the description field completer.
+
+        Args:
+            names: Additional display names to add.
+
+        """
+        self.desc_edit.merge_completions(names)
 
     def update_tag_suggestions(self, tags: list[str]) -> None:
         """Update the tag autocomplete suggestions in the tag editor.

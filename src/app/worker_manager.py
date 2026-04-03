@@ -187,6 +187,9 @@ class WorkerManager(QObject):
         self.window.worker.completer_data_loaded.connect(
             self.window.data_coordinator.on_completer_data_loaded, connection_type
         )
+        self.window.worker.semantic_suggestions_ready.connect(
+            self.window.data_coordinator.on_semantic_suggestions, connection_type
+        )
         self.window.worker.import_finished.connect(
             self.window.import_coordinator.on_import_finished, connection_type
         )

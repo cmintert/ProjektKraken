@@ -1016,9 +1016,10 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         if hasattr(self, "timeline"):
             self.timeline.save_state()
 
-        # Stop debounce timer to prevent callbacks during shutdown
+        # Stop debounce timers to prevent callbacks during shutdown
         if hasattr(self, "data_coordinator"):
             self.data_coordinator.stop_graph_reload_timer()
+            self.data_coordinator.stop_semantic_debounce_timer()
 
         # Stop auto-backup timer if running
         if self.backup_service is not None:

@@ -31,6 +31,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.app.constants import SEMANTIC_COMPLETION_MIN_PREFIX_LEN
 from src.core.theme_manager import ThemeManager
 from src.core.wiki_ast import CursorMapper, WikiASTParser, WikiASTSerializer
 
@@ -116,6 +117,7 @@ class WikiTextEditView(QTextEdit):
 
     link_clicked = Signal(str)  # Emits the target name (e.g. "Gandalf")
     link_added = Signal(str, str)  # Emits (target_id_or_name, display_name) on creation
+    completion_prefix_changed = Signal(str)  # Emits prefix when >= 3 chars inside [[
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the WikiTextEdit.
@@ -128,6 +130,7 @@ class WikiTextEditView(QTextEdit):
         self._hovered_link = None
         self._completer = None
         self._completion_map = {}  # Maps display names to IDs
+        self._last_completion_prefix: str = ""
         self._link_resolver = None  # Will be set later
         self._section_manager = SectionManager(self.document())
         self._current_wiki_text = ""  # Store for re-rendering on theme change
@@ -367,6 +370,26 @@ class WikiTextEditView(QTextEdit):
         # would collapse empty blocks and reset the cursor position.
         if hasattr(self, "_view_mode") and self._view_mode == "rich":
             self._update_link_colors()
+
+    def merge_completions(self, names: list[str]) -> None:
+        """Append semantic suggestion names to the completer without replacing base list.
+
+        Deduplicates against existing names. Does nothing if the completer
+        has not been initialized or the input list is empty.
+
+        Args:
+            names: Additional display names to add to the completer model.
+
+        """
+        if not self._completer or not names:
+            return
+        model = self._completer.model()
+        current = model.stringList()
+        existing = set(current)
+        new_names = [n for n in names if n not in existing]
+        if not new_names:
+            return
+        self._completer.setModel(QStringListModel(current + new_names, self._completer))
 
     def _update_link_colors(self) -> None:
         """Update anchor link colors in-place without replacing the document.
@@ -1429,8 +1452,12 @@ class WikiTextEditView(QTextEdit):
                 and (popup := self._completer.popup())
             ):
                 self._show_completion_popup(popup, prefix)
+                if len(prefix) >= SEMANTIC_COMPLETION_MIN_PREFIX_LEN and prefix != self._last_completion_prefix:
+                    self._last_completion_prefix = prefix
+                    self.completion_prefix_changed.emit(prefix)
         elif self._completer and (popup := self._completer.popup()):
             popup.hide()
+            self._last_completion_prefix = ""
 
     def _show_completion_popup(self, popup: QAbstractItemView, prefix: str) -> None:
         """Helper to position and show completion popup."""
@@ -1513,6 +1540,7 @@ class WikiTextEdit(QFrame):
 
     link_clicked = Signal(str)
     link_added = Signal(str, str)
+    completion_prefix_changed = Signal(str)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the wiki text edit wrapper widget.
@@ -1564,6 +1592,9 @@ class WikiTextEdit(QFrame):
         # Forward signals
         self.editor.link_clicked.connect(self.link_clicked.emit)
         self.editor.link_added.connect(self.link_added.emit)
+        self.editor.completion_prefix_changed.connect(
+            self.completion_prefix_changed.emit
+        )
 
         # Expose textChanged signal directly from editor
         self.textChanged = self.editor.textChanged
@@ -1791,6 +1822,15 @@ class WikiTextEdit(QFrame):
             names: List of item names for completion.
         """
         self.editor.set_completer(items_or_names, items=items, names=names)
+
+    def merge_completions(self, names: list[str]) -> None:
+        """Merge semantic suggestion names into the completer.
+
+        Args:
+            names: Additional display names to add.
+
+        """
+        self.editor.merge_completions(names)
 
     def set_link_resolver(self, resolver: Any) -> None:
         """Set the link resolver for wiki links.

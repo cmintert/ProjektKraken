@@ -18,6 +18,11 @@ from typing import TYPE_CHECKING, Optional
 from PySide6.QtCore import Q_ARG, QMetaObject, Qt, QTimer, Slot
 from PySide6.QtWidgets import QMessageBox
 
+from src.app.constants import (
+    SEMANTIC_COMPLETION_DEBOUNCE_MS,
+    SEMANTIC_COMPLETION_MIN_SCORE,
+    SEMANTIC_COMPLETION_TOP_K,
+)
 from src.app.coordinators.base_coordinator import BaseCoordinator
 
 if TYPE_CHECKING:
@@ -45,6 +50,13 @@ class DataCoordinator(BaseCoordinator):
         self._cached_entities: list = []
         self._cached_longform_sequence: list = []
         self._graph_reload_timer: Optional[QTimer] = None
+
+        # Semantic completion debounce
+        self._pending_semantic_prefix: str = ""
+        self._semantic_debounce = QTimer()
+        self._semantic_debounce.setSingleShot(True)
+        self._semantic_debounce.setInterval(SEMANTIC_COMPLETION_DEBOUNCE_MS)
+        self._semantic_debounce.timeout.connect(self._fire_semantic_query)
 
     # ------------------------------------------------------------------
     # Cached Data Properties
@@ -456,6 +468,54 @@ class DataCoordinator(BaseCoordinator):
         )
 
     # ------------------------------------------------------------------
+    # Semantic Completion
+    # ------------------------------------------------------------------
+
+    def request_semantic_completions(self, prefix: str) -> None:
+        """Request semantic suggestions for a wiki-link prefix (debounced).
+
+        Restarts the debounce timer so only the last prefix typed in a
+        burst is actually sent to the worker thread.
+
+        Args:
+            prefix: The typed text after ``[[``.
+
+        """
+        self._pending_semantic_prefix = prefix
+        self._semantic_debounce.start()
+
+    def _fire_semantic_query(self) -> None:
+        """Send the pending prefix to the worker (called by debounce timer)."""
+        prefix = self._pending_semantic_prefix
+        if not prefix:
+            return
+        QMetaObject.invokeMethod(
+            self.main_window.worker,
+            "query_semantic_suggestions",
+            Qt.ConnectionType.QueuedConnection,
+            Q_ARG(str, prefix),
+            Q_ARG(int, SEMANTIC_COMPLETION_TOP_K),
+            Q_ARG(float, SEMANTIC_COMPLETION_MIN_SCORE),
+        )
+
+    @Slot(str, list)
+    def on_semantic_suggestions(self, prefix: str, names: list) -> None:
+        """Handle semantic suggestions from the worker and route to the active editor.
+
+        Args:
+            prefix: The original query prefix.
+            names: Suggested display names filtered by similarity score.
+
+        """
+        if not names:
+            return
+        active = self.main_window.navigation_coordinator.selected_type
+        if active == "event":
+            self.main_window.event_editor.merge_wiki_completions(names)
+        elif active == "entity":
+            self.main_window.entity_editor.merge_wiki_completions(names)
+
+    # ------------------------------------------------------------------
     # Internal Helpers
     # ------------------------------------------------------------------
 
@@ -471,3 +531,7 @@ class DataCoordinator(BaseCoordinator):
         """Stops the graph reload timer. Called during shutdown."""
         if self._graph_reload_timer is not None:
             self._graph_reload_timer.stop()
+
+    def stop_semantic_debounce_timer(self) -> None:
+        """Stops the semantic debounce timer. Called during shutdown."""
+        self._semantic_debounce.stop()
