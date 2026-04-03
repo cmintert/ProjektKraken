@@ -13,12 +13,17 @@ import pytest
 
 from src.core.entities import Entity
 from src.core.events import Event
+from unittest.mock import MagicMock, patch
+
 from src.services.search_service import (
     EmbeddingProvider,
     SearchService,
+    SentenceTransformersProvider,
     build_text_for_entity,
     build_text_for_event,
+    create_provider,
     deserialize_vector,
+    get_llm_settings_from_qsettings,
     normalize_vector,
     serialize_vector,
     text_sha256,
@@ -689,3 +694,82 @@ def test_model_dimension_filtering(search_service, search_db):
     # (In this case, we have 2 embeddings for the same object but different models)
     # The query should filter to only the current model
     assert len(results) >= 1
+
+
+# =============================================================================
+# Provider Default and Migration Tests
+# =============================================================================
+
+
+def test_create_provider_defaults_to_sentence_transformers():
+    """When QSettings has no saved provider, sentence-transformers is the default."""
+    with patch(
+        "src.services.search_service.get_llm_settings_from_qsettings"
+    ) as mock_settings:
+        mock_settings.return_value = {
+            "provider": "sentence-transformers",
+            "lm_url": "",
+            "lm_model": "",
+            "lm_api_key": "",
+            "lm_timeout": 30,
+            "st_model": "",
+        }
+        mock_st = MagicMock()
+        mock_st.get_dimension.return_value = 384
+        mock_st.get_model_name.return_value = "st:all-MiniLM-L6-v2"
+        with patch(
+            "src.services.search_service.SentenceTransformersProvider",
+            return_value=mock_st,
+        ) as mock_cls:
+            provider = create_provider()
+            mock_cls.assert_called_once()
+            assert provider is mock_st
+
+
+def test_get_llm_settings_normalises_underscore_variant():
+    """Old 'sentence_transformers' (underscore) value is migrated to 'sentence-transformers'."""
+    from tests.conftest import MockQSettings
+
+    storage_key = "ChristianMintert/ProjektKraken/ai_embedding_provider"
+    MockQSettings._storage[storage_key] = "sentence_transformers"
+    try:
+        result = get_llm_settings_from_qsettings()
+        assert result["provider"] == "sentence-transformers"
+        # Migration should have written the corrected hyphen form back
+        assert MockQSettings._storage.get(storage_key) == "sentence-transformers"
+    finally:
+        MockQSettings._storage.pop(storage_key, None)
+
+
+def test_sentence_transformers_provider_import_error():
+    """Clear, actionable ImportError when sentence-transformers is not installed."""
+    import sys
+
+    with patch.dict(sys.modules, {"sentence_transformers": None}):
+        with pytest.raises(ImportError, match="pip install sentence-transformers"):
+            SentenceTransformersProvider()
+
+
+def test_create_provider_explicit_lmstudio():
+    """lmstudio is still creatable when explicitly passed as provider_name."""
+    with patch(
+        "src.services.search_service.get_llm_settings_from_qsettings"
+    ) as mock_settings:
+        mock_settings.return_value = {
+            "provider": "sentence-transformers",
+            "lm_url": "",
+            "lm_model": "",
+            "lm_api_key": "",
+            "lm_timeout": 30,
+            "st_model": "",
+        }
+        mock_lm = MagicMock()
+        mock_lm.get_dimension.return_value = 768
+        mock_lm.get_model_name.return_value = "nomic-embed"
+        with patch(
+            "src.services.search_service.LMStudioEmbeddingProvider",
+            return_value=mock_lm,
+        ) as mock_cls:
+            provider = create_provider(provider_name="lmstudio", model="nomic-embed")
+            mock_cls.assert_called_once()
+            assert provider is mock_lm

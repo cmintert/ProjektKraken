@@ -72,3 +72,24 @@ def test_fallback_when_no_db_path(mock_create_service, manager, mock_window):
 
     # Verify results passed to panel
     mock_window.ai_search_panel.set_results.assert_called_with(expected_results)
+
+
+@patch("src.services.search_service.create_search_service")
+def test_rebuild_search_index_handles_import_error(
+    mock_create_service, manager, mock_window
+):
+    """rebuild_search_index shows a clear error when sentence-transformers is missing."""
+    mock_create_service.side_effect = ImportError(
+        "sentence-transformers is not installed. "
+        "Semantic search requires it. "
+        "Run: pip install sentence-transformers"
+    )
+    mock_window.gui_db_service._connection = MagicMock()
+
+    manager.rebuild_search_index("all")
+
+    # Status bar and panel should show the user-friendly first line
+    mock_window.status_bar.showMessage.assert_called()
+    call_args = mock_window.status_bar.showMessage.call_args[0]
+    assert "sentence-transformers" in call_args[0]
+    mock_window.ai_search_panel.set_status.assert_called()

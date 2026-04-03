@@ -329,7 +329,7 @@ class EmbeddingService:
 
 def create_embedding_service(
     db_connection: sqlite3.Connection,
-    provider_id: str = "lmstudio",
+    provider_id: str = "sentence-transformers",
     world_id: Optional[str] = None,
     **provider_kwargs: Any,
 ) -> EmbeddingService:

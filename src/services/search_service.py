@@ -1,7 +1,8 @@
 """Search Service Module.
 
 Provides semantic search functionality with local embeddings and vector similarity.
-Supports LM Studio and optional sentence-transformers as embedding providers.
+Supports sentence-transformers (default, local) and LM Studio (optional remote) as
+embedding providers.
 """
 
 import hashlib
@@ -456,12 +457,12 @@ class SentenceTransformersProvider(EmbeddingProvider):
         except ImportError as e:
             raise ImportError(
                 "sentence-transformers is not installed. "
-                "Install it with: pip install sentence-transformers"
+                "Semantic search requires it. "
+                "Run: pip install sentence-transformers\n"
+                "Or install all dependencies: pip install -r requirements.txt"
             ) from e
 
-        self.model_name = model or os.getenv(
-            "LMSTUDIO_MODEL", "all-MiniLM-L6-v2"
-        )  # Reuse env var
+        self.model_name = model or os.getenv("ST_MODEL", "all-MiniLM-L6-v2")
         self.model = SentenceTransformer(self.model_name)
         self._dimension = self.model.get_sentence_embedding_dimension()
 
@@ -1016,8 +1017,16 @@ def get_llm_settings_from_qsettings() -> Dict[str, Any]:
 
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
+        raw_provider = str(
+            settings.value("ai_embedding_provider", "sentence-transformers")
+        )
+        # Migrate old underscore variant saved by a previous dialog bug
+        if raw_provider == "sentence_transformers":
+            raw_provider = "sentence-transformers"
+            settings.setValue("ai_embedding_provider", raw_provider)
+
         return {
-            "provider": str(settings.value("ai_embedding_provider", "lmstudio")),
+            "provider": raw_provider,
             "lm_url": str(settings.value("ai_lmstudio_url", "")),
             "lm_model": str(settings.value("ai_lmstudio_model", "")),
             "lm_api_key": str(settings.value("ai_lmstudio_api_key", "")),
@@ -1029,7 +1038,7 @@ def get_llm_settings_from_qsettings() -> Dict[str, Any]:
     except Exception as e:
         logger.warning(f"Failed to load LLM settings from QSettings: {e}")
         return {
-            "provider": "lmstudio",
+            "provider": "sentence-transformers",
             "lm_url": "",
             "lm_model": "",
             "lm_api_key": "",
@@ -1071,7 +1080,7 @@ def create_provider(
     provider_name = (
         provider_name
         or qsettings["provider"]
-        or os.getenv("EMBED_PROVIDER", "lmstudio")
+        or os.getenv("EMBED_PROVIDER", "sentence-transformers")
     )
 
     if provider_name == "lmstudio":

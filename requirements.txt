@@ -29,6 +29,7 @@ pyinstaller==6.17.0
 # Semantic Search Dependencies
 numpy==2.4.2
 requests==2.32.3
+sentence-transformers>=2.2.2
 
 # Environment Configuration
 python-dotenv==1.2.1

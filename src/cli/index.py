@@ -108,7 +108,7 @@ def delete_object(args: argparse.Namespace) -> int:
         # Create search service
         assert db_service._connection is not None, "Database not connected"
         search_service = create_search_service(
-            db_service._connection, provider_name="lmstudio", model=args.model
+            db_service._connection, provider_name=None, model=args.model
         )
 
         search_service.delete_index_for_object(
@@ -268,8 +268,8 @@ def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: 
     rebuild_parser.add_argument(
         "--provider",
         choices=["lmstudio", "sentence-transformers"],
-        default="lmstudio",
-        help="Embedding provider (default: lmstudio)",
+        default="sentence-transformers",
+        help="Embedding provider (default: sentence-transformers)",
     )
     rebuild_parser.add_argument(
         "--model", help="Model name override (uses env var if not specified)"
@@ -295,8 +295,8 @@ def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: 
     index_parser.add_argument(
         "--provider",
         choices=["lmstudio", "sentence-transformers"],
-        default="lmstudio",
-        help="Embedding provider (default: lmstudio)",
+        default="sentence-transformers",
+        help="Embedding provider (default: sentence-transformers)",
     )
     index_parser.add_argument(
         "--model", help="Model name override (uses env var if not specified)"
@@ -329,8 +329,8 @@ def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: 
     query_parser.add_argument(
         "--provider",
         choices=["lmstudio", "sentence-transformers"],
-        default="lmstudio",
-        help="Embedding provider (default: lmstudio)",
+        default="sentence-transformers",
+        help="Embedding provider (default: sentence-transformers)",
     )
     query_parser.add_argument(
         "--model", help="Model name override (uses env var if not specified)"

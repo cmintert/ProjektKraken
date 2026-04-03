@@ -348,7 +348,9 @@ class AISettingsDialog(QDialog):
         provider_layout = QHBoxLayout()
         provider_layout.addWidget(QLabel("Provider:"))
         self.provider_combo = QComboBox()
-        self.provider_combo.addItems(["LM Studio", "Sentence Transformers"])
+        self.provider_combo.addItems(
+            ["Sentence Transformers (default)", "LM Studio (optional upgrade)"]
+        )
         self.provider_combo.currentIndexChanged.connect(self._on_provider_changed)
         self.provider_combo.currentIndexChanged.connect(self.save_settings)
         provider_layout.addWidget(self.provider_combo, stretch=1)
@@ -357,10 +359,34 @@ class AISettingsDialog(QDialog):
         # Stacked widget for provider-specific settings
         self.provider_stack = QStackedWidget()
 
-        # LM Studio settings page
+        # Sentence Transformers settings page (index 0 — default)
+        st_page = QGroupBox()
+        st_form = QFormLayout(st_page)
+        StyleHelper.apply_standard_list_spacing(st_form)
+        st_info_label = QLabel(
+            "Runs locally with no external service required. "
+            "The model is downloaded automatically on first use (~90 MB)."
+        )
+        st_info_label.setWordWrap(True)
+        st_info_label.setStyleSheet("color: #27ae60; font-size: 11px;")
+        st_form.addRow(st_info_label)
+        self.st_model_input = QLineEdit()
+        self.st_model_input.setPlaceholderText("all-MiniLM-L6-v2")
+        self.st_model_input.editingFinished.connect(self.save_settings)
+        st_form.addRow("Model:", self.st_model_input)
+        self.provider_stack.addWidget(st_page)
+
+        # LM Studio settings page (index 1 — optional upgrade)
         lm_studio_page = QGroupBox()
         lm_studio_form = QFormLayout(lm_studio_page)
         StyleHelper.apply_standard_list_spacing(lm_studio_form)
+        lm_info_label = QLabel(
+            "Optional upgrade: requires LM Studio to be running locally with an "
+            "embedding model loaded. Provides higher-quality embeddings."
+        )
+        lm_info_label.setWordWrap(True)
+        lm_info_label.setStyleSheet("font-size: 11px;")
+        lm_studio_form.addRow(lm_info_label)
         self.lm_url_input = QLineEdit()
         self.lm_url_input.setPlaceholderText("http://localhost:8080/v1/embeddings")
         self.lm_url_input.editingFinished.connect(self.save_settings)
@@ -387,15 +413,6 @@ class AISettingsDialog(QDialog):
         self.lm_timeout_input.valueChanged.connect(self.save_settings)
         lm_studio_form.addRow("Timeout:", self.lm_timeout_input)
         self.provider_stack.addWidget(lm_studio_page)
-
-        # Sentence Transformers settings page
-        st_page = QGroupBox()
-        st_form = QFormLayout(st_page)
-        StyleHelper.apply_standard_list_spacing(st_form)
-        self.st_model_input = QLineEdit()
-        self.st_model_input.setPlaceholderText("all-MiniLM-L6-v2")
-        st_form.addRow("Model:", self.st_model_input)
-        self.provider_stack.addWidget(st_page)
 
         llm_layout.addWidget(self.provider_stack)
         main_layout.addWidget(llm_group)
@@ -975,8 +992,8 @@ class AISettingsDialog(QDialog):
         # Save embedding provider settings
         provider = (
             "lmstudio"
-            if self.provider_combo.currentIndex() == 0
-            else "sentence_transformers"
+            if self.provider_combo.currentIndex() == 1
+            else "sentence-transformers"
         )
         settings.setValue("ai_embedding_provider", provider)
 
@@ -1082,8 +1099,11 @@ class AISettingsDialog(QDialog):
         self.excluded_attrs_input.setText(excluded)
 
         # Load embedding provider settings
-        provider = settings.value("ai_embedding_provider", "lmstudio")
-        self.provider_combo.setCurrentIndex(0 if provider == "lmstudio" else 1)
+        provider = settings.value("ai_embedding_provider", "sentence-transformers")
+        # Migrate old underscore variant saved by a previous dialog bug
+        if provider == "sentence_transformers":
+            provider = "sentence-transformers"
+        self.provider_combo.setCurrentIndex(1 if provider == "lmstudio" else 0)
 
         # LM Studio embedding settings
         self.lm_url_input.setText(
