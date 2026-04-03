@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-04-03
 ### Added
-- feat: switch default embedding provider from LM Studio to sentence-transformers
+- feat: add semantic completion for wiki links with 0.85+ similarity threshold
 
 
 *This changelog was automatically generated.*
