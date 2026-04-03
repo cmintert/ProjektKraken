@@ -10,11 +10,11 @@ Lock behaviour:
 """
 
 import logging
-import os
 from typing import Any, Optional
 
-from PySide6.QtCore import QSize, Signal, Slot
+from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import (
+    QButtonGroup,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -25,7 +25,6 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.theme_manager import ThemeManager
-from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.compact_duration_widget import CompactDurationWidget
@@ -109,15 +108,24 @@ class TemporalRangeWidget(QWidget):
         line_left.setLineWidth(1)
         lock_row.addWidget(line_left, stretch=1)
 
-        self.btn_lock = QPushButton()
-        self.btn_lock.setFixedSize(28, 20)
-        self.btn_lock.setCheckable(True)
-        self.btn_lock.setChecked(False)  # LOCK_DURATION is the default
-        self.btn_lock.setToolTip(
-            "Duration is fixed — end date moves with start.\n"
-            "Click to pin the end date instead."
-        )
-        lock_row.addWidget(self.btn_lock, stretch=0)
+        # Segmented control: Duration | End Date
+        self.btn_lock_duration = QPushButton("Duration")
+        self.btn_lock_duration.setCheckable(True)
+        self.btn_lock_duration.setChecked(True)
+        self.btn_lock_duration.setToolTip("Start changes move the end date (span stays fixed)")
+
+        self.btn_lock_end = QPushButton("End Date")
+        self.btn_lock_end.setCheckable(True)
+        self.btn_lock_end.setChecked(False)
+        self.btn_lock_end.setToolTip("Start changes adjust the span (end date stays fixed)")
+
+        self._lock_group = QButtonGroup(self)
+        self._lock_group.setExclusive(True)
+        self._lock_group.addButton(self.btn_lock_duration, 0)
+        self._lock_group.addButton(self.btn_lock_end, 1)
+
+        lock_row.addWidget(self.btn_lock_duration, stretch=0)
+        lock_row.addWidget(self.btn_lock_end, stretch=0)
 
         line_right = QFrame()
         line_right.setFrameShape(QFrame.Shape.HLine)
@@ -172,34 +180,17 @@ class TemporalRangeWidget(QWidget):
             ):
                 frame.setStyleSheet(sep_style)
 
-        self._update_lock_icon()
+        self._update_segment_styles()
 
-    def _update_lock_icon(self) -> None:
-        """Updates the lock button icon and tooltip to match the current mode."""
-        theme = ThemeManager().get_theme()
-        color = theme.get("accent_secondary", theme.get("text_main", "#e0e0e0"))
+    def _update_segment_styles(self) -> None:
+        """Updates the segmented control button styles to reflect the current lock mode."""
         is_locked_end = self._lock_mode == self.LOCK_END
-
-        if is_locked_end:
-            icon_path = os.path.join(
-                "default_assets", "icons", "ui_icons", "link-break.svg"
-            )
-            self.btn_lock.setToolTip(
-                "End date is pinned — duration adjusts when start changes.\n"
-                "Click to restore default (end date tracks start)."
-            )
-        else:
-            icon_path = os.path.join(
-                "default_assets", "icons", "ui_icons", "link.svg"
-            )
-            self.btn_lock.setToolTip(
-                "Duration is fixed — end date moves with start.\n"
-                "Click to pin the end date instead."
-            )
-
-        self.btn_lock.setIcon(load_icon(icon_path, color=color))
-        self.btn_lock.setIconSize(QSize(14, 14))
-        self.btn_lock.setStyleSheet(StyleHelper.get_temporal_lock_style(is_locked_end))
+        self.btn_lock_duration.setStyleSheet(
+            StyleHelper.get_temporal_segment_style(active=not is_locked_end, position="left")
+        )
+        self.btn_lock_end.setStyleSheet(
+            StyleHelper.get_temporal_segment_style(active=is_locked_end, position="right")
+        )
 
     # ── Signal wiring ──────────────────────────────────────────────────────
 
@@ -208,7 +199,7 @@ class TemporalRangeWidget(QWidget):
         self.date_start.value_changed.connect(self._on_start_changed)
         self.duration_widget.value_changed.connect(self._on_duration_changed)
         self.date_end.value_changed.connect(self._on_end_changed)
-        self.btn_lock.toggled.connect(self._on_lock_toggled)
+        self.btn_lock_end.toggled.connect(self._on_lock_toggled)
         ThemeManager().theme_changed.connect(self._on_theme_changed)
 
     # ── Internal slot handlers ─────────────────────────────────────────────
@@ -294,7 +285,7 @@ class TemporalRangeWidget(QWidget):
 
         """
         self._lock_mode = self.LOCK_END if checked else self.LOCK_DURATION
-        self._update_lock_icon()
+        self._update_segment_styles()
 
     @Slot(dict)
     def _on_theme_changed(self, theme: dict) -> None:

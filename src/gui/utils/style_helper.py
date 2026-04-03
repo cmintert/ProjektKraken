@@ -798,29 +798,39 @@ class StyleHelper:
         )
 
     @staticmethod
-    def get_temporal_lock_style(active: bool) -> str:
-        """Returns QSS for the lock/anchor button in the temporal range widget.
+    def get_temporal_segment_style(active: bool, position: str = "left") -> str:
+        """Returns QSS for a segmented control button in the temporal range widget.
 
         Args:
-            active: True when end-date is locked (chain-break mode).
+            active: True when this segment is the selected/active option.
+            position: "left" or "right" — determines which corners are rounded.
 
         Returns:
-            str: QSS stylesheet string for the lock toggle button.
+            str: QSS stylesheet string for the segmented button.
 
         """
         theme = ThemeManager().get_theme()
         if active:
             bg = theme.get("primary", "#4A90D9")
+            text = "#ffffff"
             border = bg
-            hover = theme.get("accent_secondary", bg)
+            hover_bg = theme.get("accent_secondary", bg)
         else:
             bg = theme["surface"]
+            text = theme["text_dim"]
             border = theme["border"]
-            hover = theme["border"]
+            hover_bg = theme.get("surface_alt", theme["border"])
+
+        if position == "left":
+            radius = "border-top-left-radius: 4px; border-bottom-left-radius: 4px; border-top-right-radius: 0px; border-bottom-right-radius: 0px;"
+        else:
+            radius = "border-top-right-radius: 4px; border-bottom-right-radius: 4px; border-top-left-radius: 0px; border-bottom-left-radius: 0px;"
+
         return (
-            f"QPushButton {{ background-color: {bg}; border: 1px solid {border};"
-            f" border-radius: 4px; padding: 2px; }}"
-            f"QPushButton:hover {{ background-color: {hover}; }}"
+            f"QPushButton {{ background-color: {bg}; color: {text};"
+            f" border: 1px solid {border}; {radius}"
+            f" padding: 2px 10px; font-size: 11px; font-weight: 500; }}"
+            f"QPushButton:hover {{ background-color: {hover_bg}; }}"
         )
 
     @staticmethod
