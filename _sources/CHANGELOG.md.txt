@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-04-03
-### Internal
-- ui: replace lock icon button with segmented control for temporal anchor mode
+### Added
+- feat: switch default embedding provider from LM Studio to sentence-transformers
 
 
 *This changelog was automatically generated.*

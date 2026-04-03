@@ -368,7 +368,7 @@
         <span class="c1"># Create search service</span>
         <span class="k">assert</span> <span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Database not connected&quot;</span>
         <span class="n">search_service</span> <span class="o">=</span> <span class="n">create_search_service</span><span class="p">(</span>
-            <span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span><span class="p">,</span> <span class="n">provider_name</span><span class="o">=</span><span class="s2">&quot;lmstudio&quot;</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">model</span>
+            <span class="n">db_service</span><span class="o">.</span><span class="n">_connection</span><span class="p">,</span> <span class="n">provider_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">model</span>
         <span class="p">)</span>
 
         <span class="n">search_service</span><span class="o">.</span><span class="n">delete_index_for_object</span><span class="p">(</span>
@@ -537,8 +537,8 @@
     <span class="n">rebuild_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--provider&quot;</span><span class="p">,</span>
         <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;lmstudio&quot;</span><span class="p">,</span> <span class="s2">&quot;sentence-transformers&quot;</span><span class="p">],</span>
-        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;lmstudio&quot;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Embedding provider (default: lmstudio)&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;sentence-transformers&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Embedding provider (default: sentence-transformers)&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">rebuild_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--model&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Model name override (uses env var if not specified)&quot;</span>
@@ -564,8 +564,8 @@
     <span class="n">index_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--provider&quot;</span><span class="p">,</span>
         <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;lmstudio&quot;</span><span class="p">,</span> <span class="s2">&quot;sentence-transformers&quot;</span><span class="p">],</span>
-        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;lmstudio&quot;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Embedding provider (default: lmstudio)&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;sentence-transformers&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Embedding provider (default: sentence-transformers)&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">index_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--model&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Model name override (uses env var if not specified)&quot;</span>
@@ -598,8 +598,8 @@
     <span class="n">query_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--provider&quot;</span><span class="p">,</span>
         <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;lmstudio&quot;</span><span class="p">,</span> <span class="s2">&quot;sentence-transformers&quot;</span><span class="p">],</span>
-        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;lmstudio&quot;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Embedding provider (default: lmstudio)&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;sentence-transformers&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Embedding provider (default: sentence-transformers)&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">query_parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--model&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Model name override (uses env var if not specified)&quot;</span>
