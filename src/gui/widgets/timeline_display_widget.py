@@ -131,6 +131,11 @@ class TimelineDisplayWidget(QWidget):
             else:
                 date_str = f"{event_date:.1f}"
 
+            # When the date is 0.0, it may be a genuine epoch event or a failed
+            # date parse that defaulted to 0.0.  Show a subtle indicator.
+            if event_date == 0.0:
+                date_str = f"{date_str} <i style='color:#888; font-size:10px;'>(date unknown)</i>"
+
             # Determine state: active (past/current) or future
             is_active = (
                 self._playhead_time is not None and event_date <= self._playhead_time
@@ -199,6 +204,12 @@ class TimelineDisplayWidget(QWidget):
         """Get the date to use for sorting/displaying an event.
 
         Uses source_event_date if available, otherwise valid_from.
+
+        Note:
+            A returned value of 0.0 is ambiguous: it may mean the event
+            genuinely occurs at the calendar epoch, or that its lore_date
+            could not be parsed during import and was silently defaulted to
+            0.0.  The caller should treat 0.0 with appropriate caution.
 
         Args:
             rel: Relation dict.

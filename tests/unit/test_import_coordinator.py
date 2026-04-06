@@ -97,6 +97,8 @@ class TestImportFinished:
         result.created_events = ["ev1"]
         result.created_relations = ["r1"]
         result.warnings = []
+        result.ambiguous_items = []
+        result.unparsed_date_count = 0
 
         # Set up progress dialog
         coordinator._import_progress_dialog = MagicMock()
@@ -128,6 +130,8 @@ class TestImportFinished:
         result.created_events = []
         result.created_relations = []
         result.warnings = []
+        result.ambiguous_items = []
+        result.unparsed_date_count = 0
 
         with patch("src.app.coordinators.import_coordinator.QMessageBox"):
             coordinator.on_import_finished(result)
@@ -141,6 +145,8 @@ class TestImportFinished:
         result.created_events = []
         result.created_relations = []
         result.warnings = []
+        result.ambiguous_items = []
+        result.unparsed_date_count = 0
 
         with patch("src.app.coordinators.import_coordinator.QMessageBox"):
             coordinator.on_import_finished(result)

@@ -112,8 +112,10 @@ class ImportPreviewDialog(QDialog):
         """Populate the tree with parsed data."""
         self.tree.clear()
 
-        # Entities
         entities = self.parsed_data.get("entities", [])
+        events = self.parsed_data.get("events", [])
+
+        # Entities
         if entities:
             root = QTreeWidgetItem(
                 self.tree, ["Entities", f"{len(entities)} found", ""]
@@ -123,10 +125,8 @@ class ImportPreviewDialog(QDialog):
                 name = ent.get("name", "<Missing Name>")
                 type_ = ent.get("type", "generic")
                 _ = QTreeWidgetItem(root, [type_, name, "Ready"])
-                # item.setIcon(0, StyleHelper.get_icon("cube"))  # Icon helper missing
 
         # Events
-        events = self.parsed_data.get("events", [])
         if events:
             root = QTreeWidgetItem(self.tree, ["Events", f"{len(events)} found", ""])
             root.setExpanded(True)
@@ -134,11 +134,9 @@ class ImportPreviewDialog(QDialog):
                 name = evt.get("name", "<Missing Name>")
                 date = evt.get("lore_date", "?")
                 _ = QTreeWidgetItem(root, ["Event", f"{name} (Date: {date})", "Ready"])
-                # item.setIcon(0, StyleHelper.get_icon("calendar"))  # Icon helper missing
 
         # Relations
         relations = self.parsed_data.get("relations", [])
-        # Also count nested relations for stats
         nested_rel_count = 0
         for ent in entities:
             nested_rel_count += len(ent.get("relations", []))
@@ -151,7 +149,6 @@ class ImportPreviewDialog(QDialog):
             root = QTreeWidgetItem(self.tree, ["Relations", f"{total_rels} found", ""])
             root.setExpanded(True)
 
-            # Root relations
             for rel in relations:
                 src = rel.get("source_name", rel.get("source_id", "?"))
                 tgt = rel.get("target_name", rel.get("target_id", "?"))
@@ -160,19 +157,64 @@ class ImportPreviewDialog(QDialog):
                     root, [rel_type, f"{src} -> {tgt}", "Pending Resolution"]
                 )
 
-            # Note: We don't list every nested relation to avoid clutter,
-            # but we could if requested. For now, just root ones.
             if nested_rel_count > 0:
                 QTreeWidgetItem(
                     root,
                     ["Nested", f"{nested_rel_count} nested relations", "Automatic"],
                 )
 
+        # Conflicts: intra-file duplicate names
+        conflicts = self._detect_intrafile_conflicts(entities, events)
+        if conflicts:
+            root = QTreeWidgetItem(
+                self.tree, ["Conflicts", f"{len(conflicts)} found", "\u26a0 Review"]
+            )
+            root.setExpanded(True)
+            for conflict in conflicts:
+                QTreeWidgetItem(
+                    root,
+                    [
+                        conflict["type"].title(),
+                        f"\u26a0 Duplicate name: '{conflict['name']}' appears {conflict['count']} times",
+                        "Will be skipped",
+                    ],
+                )
+
         # Update stats
+        conflict_note = f", {len(conflicts)} conflicts" if conflicts else ""
         self.stats_lbl.setText(
             f"Total: {len(entities)} Entities, {len(events)} Events, "
-            f"{total_rels} Relations"
+            f"{total_rels} Relations{conflict_note}"
         )
+
+    @staticmethod
+    def _detect_intrafile_conflicts(
+        entities: list, events: list
+    ) -> list:
+        """Detect items with duplicate normalized names within the import data.
+
+        Args:
+            entities: List of entity dicts from the parsed import.
+            events: List of event dicts from the parsed import.
+
+        Returns:
+            List of conflict dicts with 'type', 'name', and 'count' keys.
+
+        """
+        from collections import Counter
+
+        conflicts = []
+        entity_names = [str(e.get("name", "")).strip().lower() for e in entities]
+        for name, count in Counter(entity_names).items():
+            if count > 1 and name:
+                conflicts.append({"type": "entity", "name": name, "count": count})
+
+        event_names = [str(e.get("name", "")).strip().lower() for e in events]
+        for name, count in Counter(event_names).items():
+            if count > 1 and name:
+                conflicts.append({"type": "event", "name": name, "count": count})
+
+        return conflicts
 
     def get_options(self) -> Dict[str, Any]:
         """Returns the configured import options."""

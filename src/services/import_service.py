@@ -7,7 +7,7 @@ Supports batch operations and single-item imports with recursive relation resolu
 import json
 import logging
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
@@ -50,6 +50,8 @@ class ImportResult:
     created_relations: List[str]  # IDs
     errors: List[str]
     warnings: List[str]
+    ambiguous_items: List[Dict[str, Any]] = field(default_factory=list)
+    unparsed_date_count: int = 0
     # New field to track actions taken
     actions: List[Dict[str, Any]] = None
 
@@ -91,17 +93,24 @@ class ImportService:
 
     def _parse_lore_date(
         self, value: Any, result: Optional[ImportResult] = None
-    ) -> float:
-        """Parse lore date from diverse inputs (float, string, etc)."""
+    ) -> tuple[float, bool]:
+        """Parse lore date from diverse inputs (float, string, etc).
+
+        Returns:
+            Tuple of (lore_date, was_explicit) where was_explicit is True if the
+            value was successfully parsed, False if it defaulted to 0.0 due to a
+            parse failure or missing value.
+
+        """
         if isinstance(value, (int, float)):
-            return float(value)
+            return float(value), True
 
         if isinstance(value, str):
             parser = self._get_parser()
             if parser:
                 try:
                     parsed = parser.parse_date(value)
-                    return parser.calculate_timestamp(parsed)
+                    return parser.calculate_timestamp(parsed), True
                 except ValueError as e:
                     msg = (
                         f"Failed to parse date string '{value}': {e}. Defaulting to 0.0"
@@ -109,7 +118,7 @@ class ImportService:
                     logger.warning(msg)
                     if result:
                         result.warnings.append(msg)
-                    return 0.0
+                    return 0.0, False
             else:
                 msg = (
                     f"No active calendar to parse date string '{value}'. "
@@ -118,9 +127,9 @@ class ImportService:
                 logger.warning(msg)
                 if result:
                     result.warnings.append(msg)
-                return 0.0
+                return 0.0, False
 
-        return 0.0
+        return 0.0, False
 
     @staticmethod
     def parse_only(json_data: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
@@ -257,6 +266,7 @@ class ImportService:
             # For dry_run, we avoid calling insert methods in the internal helpers.
 
             with self._db.transaction() as _:
+                deferred_relations: List[Dict[str, Any]] = []
                 # ------------------------------------------------------------------
                 # PASS 1: Creation (Ignore Relations)
                 # ------------------------------------------------------------------
@@ -309,10 +319,14 @@ class ImportService:
                         for rel_data in entity_data["relations"]:
                             rel_data["source_id"] = entity_id
                             try:
-                                rel_id, was_created = self._import_relation_internal(
-                                    rel_data, result, options
+                                rel_id, was_created, is_deferred = (
+                                    self._import_relation_internal(
+                                        rel_data, result, options
+                                    )
                                 )
-                                if rel_id and was_created:
+                                if is_deferred:
+                                    deferred_relations.append(dict(rel_data))
+                                elif rel_id and was_created:
                                     result.created_relations.append(rel_id)
                             except Exception as e:
                                 msg = (
@@ -332,10 +346,14 @@ class ImportService:
                         for rel_data in event_data["relations"]:
                             rel_data["source_id"] = event_id
                             try:
-                                rel_id, was_created = self._import_relation_internal(
-                                    rel_data, result
+                                rel_id, was_created, is_deferred = (
+                                    self._import_relation_internal(
+                                        rel_data, result
+                                    )
                                 )
-                                if rel_id and was_created:
+                                if is_deferred:
+                                    deferred_relations.append(dict(rel_data))
+                                elif rel_id and was_created:
                                     result.created_relations.append(rel_id)
                             except Exception as e:
                                 msg = (
@@ -350,15 +368,23 @@ class ImportService:
                 # ------------------------------------------------------------------
                 for rel_data in data.get("relations", []):
                     try:
-                        rel_id, was_created = self._import_relation_internal(
-                            rel_data, result
+                        rel_id, was_created, is_deferred = (
+                            self._import_relation_internal(rel_data, result)
                         )
-                        if rel_id and was_created:
+                        if is_deferred:
+                            deferred_relations.append(dict(rel_data))
+                        elif rel_id and was_created:
                             result.created_relations.append(rel_id)
                     except Exception as e:
                         msg = f"Failed to import root relation: {e}"
                         result.warnings.append(msg)
                         logger.warning(msg)
+
+                # ------------------------------------------------------------------
+                # PASS 4: Retry Unresolved Relations
+                # ------------------------------------------------------------------
+                if deferred_relations:
+                    self._retry_unresolved_relations(deferred_relations, result, options)
 
         except Exception as e:
             result.success = False
@@ -441,6 +467,18 @@ class ImportService:
                 match_reason = "name_match"
             elif len(candidates) > 1:
                 action = ImportAction.AMBIGUOUS
+                candidate_list = [{"name": c.name, "id": c.id} for c in candidates]
+                result.ambiguous_items.append(
+                    {
+                        "type": "entity",
+                        "name": name,
+                        "candidates": candidate_list,
+                        "reason": (
+                            f"Normalized name '{normalize_name(name)}' matches "
+                            f"{len(candidates)} entities"
+                        ),
+                    }
+                )
                 result.warnings.append(
                     f"Ambiguous '{name}': {len(candidates)} matches. Skipping."
                 )
@@ -542,7 +580,7 @@ class ImportService:
             # But for completeness:
             for rel_data in data["relations"]:
                 rel_data["source_id"] = final_id
-                _, _ = self._import_relation_internal(rel_data, result, options)
+                _, _, _ = self._import_relation_internal(rel_data, result, options)
 
         # Update data with ID for Pass 2
         data["id"] = final_id
@@ -693,6 +731,18 @@ class ImportService:
                 match_reason = "name_match"
             elif len(candidates) > 1:
                 action = ImportAction.AMBIGUOUS
+                candidate_list = [{"name": c.name, "id": c.id} for c in candidates]
+                result.ambiguous_items.append(
+                    {
+                        "type": "event",
+                        "name": name,
+                        "candidates": candidate_list,
+                        "reason": (
+                            f"Normalized name '{normalize_name(name)}' matches "
+                            f"{len(candidates)} events"
+                        ),
+                    }
+                )
                 result.warnings.append(
                     f"Ambiguous match for event '{name}': found {len(candidates)} candidates. Skipping."
                 )
@@ -728,16 +778,22 @@ class ImportService:
             pass
 
         elif action == ImportAction.CREATE:
+            lore_date_float, date_was_explicit = self._parse_lore_date(
+                data.get("lore_date"), result
+            )
             new_event = Event(
                 id=event_id,
                 name=str(name).strip(),
                 type=str(data.get("type", "generic")).strip(),
-                lore_date=self._parse_lore_date(data.get("lore_date"), result),
+                lore_date=lore_date_float,
                 lore_duration=float(data.get("lore_duration", 0.0)),
                 description=str(data.get("description", "")).strip(),
                 attributes=data.get("attributes", {}),
                 created_at=data.get("created_at") or logging.time.time(),
             )
+            new_event.attributes["_date_parsed"] = date_was_explicit
+            if not date_was_explicit:
+                result.unparsed_date_count += 1
             self._update_import_metadata(new_event, import_source_entry)
 
             if not dry_run:
@@ -745,17 +801,23 @@ class ImportService:
 
         elif action == ImportAction.OVERWRITE:
             if existing_event:
+                lore_date_float, date_was_explicit = self._parse_lore_date(
+                    data.get("lore_date"), result
+                )
                 overwritten = Event(
                     id=event_id,
                     name=str(name).strip(),
                     type=str(data.get("type", existing_event.type)).strip(),
-                    lore_date=self._parse_lore_date(data.get("lore_date"), result),
+                    lore_date=lore_date_float,
                     lore_duration=float(data.get("lore_duration", 0.0)),
                     description=str(data.get("description", "")).strip(),
                     attributes=data.get("attributes", {}),
                     created_at=existing_event.created_at,
                     modified_at=logging.time.time(),
                 )
+                overwritten.attributes["_date_parsed"] = date_was_explicit
+                if not date_was_explicit:
+                    result.unparsed_date_count += 1
                 self._update_import_metadata(overwritten, import_source_entry)
 
                 if not dry_run:
@@ -763,16 +825,19 @@ class ImportService:
 
         elif action == ImportAction.UPDATE:
             if existing_event:
-                # Need _merge_events similar to _merge_entities
-                # Or reuse logic? Events have extra fields.
-                # Let's duplicate merge logic tailored for Event fields?
-                # Or make a generic merge.
-                data["lore_date"] = (
-                    self._parse_lore_date(data.get("lore_date"), result)
-                    if "lore_date" in data
-                    else None
-                )
+                if "lore_date" in data:
+                    lore_date_float, date_was_explicit = self._parse_lore_date(
+                        data["lore_date"], result
+                    )
+                    data["lore_date"] = lore_date_float
+                else:
+                    date_was_explicit = None
+                    data["lore_date"] = None
                 merged = self._merge_events(existing_event, data)
+                if date_was_explicit is not None:
+                    merged.attributes["_date_parsed"] = date_was_explicit
+                    if not date_was_explicit:
+                        result.unparsed_date_count += 1
                 self._update_import_metadata(merged, import_source_entry)
 
                 if not dry_run:
@@ -793,7 +858,7 @@ class ImportService:
         if not skip_relations and "relations" in data:
             for rel_data in data["relations"]:
                 rel_data["source_id"] = final_id
-                _, _ = self._import_relation_internal(rel_data, result, options)
+                _, _, _ = self._import_relation_internal(rel_data, result, options)
 
         # Update data with ID for Pass 2
         data["id"] = final_id
@@ -804,15 +869,20 @@ class ImportService:
         data: Dict[str, Any],
         result: ImportResult,
         options: Optional[Dict[str, Any]] = None,
-    ) -> tuple[Optional[str], bool]:
+        strict: bool = False,
+    ) -> tuple[Optional[str], bool, bool]:
         """Internal helper to import a relation, resolving names to IDs.
 
         Args:
             data: Relation data dict. Must have source_id/source_name and target_id/target_name.
             result: Result object.
+            options: Import options.
+            strict: If True, skip unresolved relations immediately. If False (default),
+                return is_deferred=True so the caller can collect for a Pass 4 retry.
 
         Returns:
-            Tuple of (relation_id, was_created). was_created is True if new.
+            Tuple of (relation_id, was_created, is_deferred). is_deferred is True when
+            names could not be resolved and strict=False.
 
         """
         source_id = data.get("source_id")
@@ -826,10 +896,12 @@ class ImportService:
             target_id = self._resolve_name_to_id(data["target_name"], result)
 
         if not source_id or not target_id:
+            if not strict:
+                return None, False, True
             msg = f"Skipping relation: Unresolved source '{data.get('source_name')}' or target '{data.get('target_name')}'"
             result.warnings.append(msg)
             logger.warning(msg)
-            return None, False
+            return None, False, False
 
         rel_type = data.get("rel_type", "related")
         attributes = data.get("attributes", {})
@@ -850,11 +922,49 @@ class ImportService:
                     f"Skipping duplicate relation: "
                     f"{source_id} -> {target_id} ({rel_type})"
                 )
-            return existing["id"], False
+            return existing["id"], False, False
 
         # Create new relation
         rel_id = self._db.insert_relation(source_id, target_id, rel_type, attributes)
-        return rel_id, True
+        return rel_id, True, False
+
+    def _retry_unresolved_relations(
+        self,
+        deferred: List[Dict[str, Any]],
+        result: ImportResult,
+        options: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Retry creating relations deferred from Passes 2-3 due to unresolved names.
+
+        Called after all entities and events for the batch have been created, so
+        forward references within the batch can now be resolved.
+
+        Args:
+            deferred: List of relation data dicts that were previously unresolved.
+            result: ImportResult to append outcomes to.
+            options: Import options.
+
+        """
+        for rel_data in deferred:
+            try:
+                rel_id, was_created, _ = self._import_relation_internal(
+                    rel_data, result, options, strict=True
+                )
+                if rel_id and was_created:
+                    result.created_relations.append(rel_id)
+                elif not rel_id:
+                    src = rel_data.get("source_name", rel_data.get("source_id", "?"))
+                    tgt = rel_data.get("target_name", rel_data.get("target_id", "?"))
+                    msg = (
+                        f"Forward reference unresolved after retry: "
+                        f"relation '{src}' -> '{tgt}' not found in this batch or existing DB"
+                    )
+                    result.warnings.append(msg)
+                    logger.warning(msg)
+            except Exception as e:
+                msg = f"Failed to retry deferred relation: {e}"
+                result.warnings.append(msg)
+                logger.warning(msg)
 
     def _resolve_name_to_id(self, name: str, result: ImportResult) -> Optional[str]:
         """Resolves a name to an ID by querying Entities and Events.

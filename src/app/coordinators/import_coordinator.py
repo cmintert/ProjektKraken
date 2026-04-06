@@ -200,6 +200,20 @@ class ImportCoordinator(BaseCoordinator):
                 f"Events: {len(result.created_events)}\n"
                 f"Relations: {len(result.created_relations)}"
             )
+            if result.ambiguous_items:
+                msg += f"\n\nAmbiguous items skipped: {len(result.ambiguous_items)}"
+                for item in result.ambiguous_items[:3]:
+                    msg += (
+                        f"\n  \u2022 {item['type'].title()} '{item['name']}': "
+                        f"{len(item['candidates'])} matches"
+                    )
+                if len(result.ambiguous_items) > 3:
+                    msg += f"\n  ...and {len(result.ambiguous_items) - 3} more."
+            if result.unparsed_date_count > 0:
+                msg += (
+                    f"\n\nEvents with unparsed dates (defaulted to 0.0): "
+                    f"{result.unparsed_date_count}"
+                )
             if result.warnings:
                 msg += "\n\nWarnings:\n" + "\n".join(result.warnings[:5])
                 if len(result.warnings) > 5:

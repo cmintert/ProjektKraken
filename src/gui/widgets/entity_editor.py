@@ -985,7 +985,12 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
                 self.rel_list.addItem(item)
                 self.rel_list.setItemWidget(item, widget)
 
-        self.timeline_display.set_relations(incoming_relations or [])
+        # Timeline should only show relations from events, not entity-to-entity relations
+        event_relations = [
+            rel for rel in (incoming_relations or [])
+            if rel.get("source_event_date") is not None
+        ]
+        self.timeline_display.set_relations(event_relations)
 
     @Slot(dict)
     def _on_theme_changed(self, theme: dict) -> None:

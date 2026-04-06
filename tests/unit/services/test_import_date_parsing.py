@@ -110,3 +110,69 @@ def test_import_raw_float_preserved(memory_db):
 
     event = memory_db.get_event(result.created_events[0])
     assert event.lore_date == 123.45
+
+
+def test_valid_date_sets_date_parsed_true(memory_db):
+    """Events with a valid lore_date should have _date_parsed=True in attributes."""
+    import_data = {
+        "events": [{"name": "Explicit Date Event", "lore_date": 42.0, "type": "generic"}]
+    }
+    importer = ImportService(memory_db)
+    result = importer.import_batch(import_data)
+
+    assert result.success
+    event = memory_db.get_event(result.created_events[0])
+    assert event.attributes.get("_date_parsed") is True
+    assert result.unparsed_date_count == 0
+
+
+def test_invalid_date_string_sets_date_parsed_false(memory_db):
+    """Events with an unparseable date string should have _date_parsed=False."""
+    import_data = {
+        "events": [
+            {"name": "Bad Date Event", "lore_date": "not-a-date", "type": "generic"}
+        ]
+    }
+    importer = ImportService(memory_db)
+    result = importer.import_batch(import_data)
+
+    assert result.success
+    assert result.unparsed_date_count == 1
+
+    event = memory_db.get_event(result.created_events[0])
+    assert event.lore_date == 0.0
+    assert event.attributes.get("_date_parsed") is False
+
+    # A warning about the parse failure should be present
+    assert any("not-a-date" in w or "Failed to parse" in w for w in result.warnings)
+
+
+def test_missing_date_defaults_to_zero_with_date_parsed_false(memory_db):
+    """Events with no lore_date key should default to 0.0 with _date_parsed=False."""
+    import_data = {
+        "events": [{"name": "No Date Event", "type": "generic"}]
+    }
+    importer = ImportService(memory_db)
+    result = importer.import_batch(import_data)
+
+    assert result.success
+    event = memory_db.get_event(result.created_events[0])
+    assert event.lore_date == 0.0
+    assert event.attributes.get("_date_parsed") is False
+    assert result.unparsed_date_count == 1
+
+
+def test_multiple_bad_dates_counted_in_unparsed_date_count(memory_db):
+    """unparsed_date_count should reflect the number of events with failed date parses."""
+    import_data = {
+        "events": [
+            {"name": "Event One", "lore_date": "baddate1", "type": "generic"},
+            {"name": "Event Two", "lore_date": 10.0, "type": "generic"},
+            {"name": "Event Three", "lore_date": "baddate2", "type": "generic"},
+        ]
+    }
+    importer = ImportService(memory_db)
+    result = importer.import_batch(import_data)
+
+    assert result.success
+    assert result.unparsed_date_count == 2

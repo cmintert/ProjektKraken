@@ -144,3 +144,40 @@ class TestImportDeduplication:
 
         assert result.success
         assert len(memory_db.get_all_entities()) == 0
+
+    def test_ambiguous_entity_populates_ambiguous_items(self, import_service, memory_db):
+        """Ambiguous name match should populate result.ambiguous_items."""
+        from src.core.entities import Entity
+
+        # Two entities with the same normalized name in the DB
+        memory_db.insert_entity(Entity(id="id-1", name="Aragorn", type="person"))
+        memory_db.insert_entity(Entity(id="id-2", name="aragorn", type="person"))
+
+        data = {"entities": [{"name": "Aragorn", "type": "person"}]}
+        result = import_service.import_batch(data)
+
+        assert len(result.ambiguous_items) == 1
+        item = result.ambiguous_items[0]
+        assert item["type"] == "entity"
+        assert item["name"] == "Aragorn"
+        assert len(item["candidates"]) == 2
+        assert "reason" in item
+        # The item should not have been created
+        assert len(result.created_entities) == 0
+
+    def test_ambiguous_event_populates_ambiguous_items(self, import_service, memory_db):
+        """Ambiguous event name match should populate result.ambiguous_items."""
+        from src.core.events import Event
+
+        memory_db.insert_event(Event(id="ev-1", name="Battle", lore_date=1.0))
+        memory_db.insert_event(Event(id="ev-2", name="battle", lore_date=2.0))
+
+        data = {"events": [{"name": "Battle", "lore_date": 3.0, "type": "conflict"}]}
+        result = import_service.import_batch(data)
+
+        assert len(result.ambiguous_items) == 1
+        item = result.ambiguous_items[0]
+        assert item["type"] == "event"
+        assert item["name"] == "Battle"
+        assert len(item["candidates"]) == 2
+        assert len(result.created_events) == 0

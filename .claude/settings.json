@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -rn \"get_incoming_relations\\\\|get_relations\" src/services/*.py)"
+    ]
+  }
+}
