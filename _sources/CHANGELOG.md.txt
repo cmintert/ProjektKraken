@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-04-03
-### Added
-- feat: add semantic completion for wiki links with 0.85+ similarity threshold
+## [Development] - 2026-04-06
+### Fixed
+- fix: filter entity-to-entity relations from timeline display
 
 
 *This changelog was automatically generated.*
