@@ -893,6 +893,24 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_to_float_negative</span><span class="p">(</span><span class="n">date</span><span class="p">)</span></div>
 
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_days_within_year</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">date</span><span class="p">:</span> <span class="n">CalendarDate</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the 0-based day offset of date within its year (including time fraction).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            date: The date to measure from its year start.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: Days elapsed since the start of date.year (Month 1, Day 1, midnight = 0.0).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">months</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">get_months_for_year</span><span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">)</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="k">for</span> <span class="n">m_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">month</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">offset</span> <span class="o">+=</span> <span class="n">months</span><span class="p">[</span><span class="n">m_idx</span><span class="p">]</span><span class="o">.</span><span class="n">days</span>
+        <span class="n">offset</span> <span class="o">+=</span> <span class="n">date</span><span class="o">.</span><span class="n">day</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">offset</span> <span class="o">+=</span> <span class="n">date</span><span class="o">.</span><span class="n">time_fraction</span>
+        <span class="k">return</span> <span class="n">offset</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_to_float_positive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">date</span><span class="p">:</span> <span class="n">CalendarDate</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts a positive-year date to float.</span>
 
@@ -905,8 +923,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">total_days</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-        <span class="c1"># Optimization: Check cache for closest starting point</span>
-        <span class="c1"># Find highest cached year &lt; date.year</span>
+        <span class="c1"># Use highest cached year below target as starting point</span>
         <span class="n">cached_years</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_year_cache</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
         <span class="n">current_year</span> <span class="o">=</span> <span class="mi">1</span>
 
@@ -916,30 +933,15 @@
                 <span class="n">total_days</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_year_cache</span><span class="p">[</span><span class="n">y</span><span class="p">]</span>
                 <span class="k">break</span>
 
-        <span class="c1"># Sum years from current_year to target</span>
         <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">current_year</span><span class="p">,</span> <span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">):</span>
-            <span class="c1"># Cache the start of this year if not known</span>
             <span class="k">if</span> <span class="n">y</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_year_cache</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_year_cache</span><span class="p">[</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_days</span>
-
             <span class="n">total_days</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">get_year_length</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
 
-        <span class="c1"># Ensure target year start is cached</span>
         <span class="k">if</span> <span class="n">date</span><span class="o">.</span><span class="n">year</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_year_cache</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_year_cache</span><span class="p">[</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_days</span>
 
-        <span class="c1"># Sum all complete months before target month</span>
-        <span class="n">months</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">get_months_for_year</span><span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">m_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">month</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>  <span class="c1"># month is 1-indexed</span>
-            <span class="n">total_days</span> <span class="o">+=</span> <span class="n">months</span><span class="p">[</span><span class="n">m_idx</span><span class="p">]</span><span class="o">.</span><span class="n">days</span>
-
-        <span class="c1"># Add days within the month (day is 1-indexed, so subtract 1)</span>
-        <span class="n">total_days</span> <span class="o">+=</span> <span class="n">date</span><span class="o">.</span><span class="n">day</span> <span class="o">-</span> <span class="mi">1</span>
-
-        <span class="c1"># Add time fraction</span>
-        <span class="n">total_days</span> <span class="o">+=</span> <span class="n">date</span><span class="o">.</span><span class="n">time_fraction</span>
-
-        <span class="k">return</span> <span class="n">total_days</span>
+        <span class="k">return</span> <span class="n">total_days</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_days_within_year</span><span class="p">(</span><span class="n">date</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_to_float_negative</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">date</span><span class="p">:</span> <span class="n">CalendarDate</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Converts a negative/zero-year date to float.</span>
@@ -953,25 +955,10 @@
 <span class="sd">            float: Negative absolute day value.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># For year 0: we need to count backwards from 0.0</span>
-        <span class="c1"># Year 0, Month 12, Day 30 = -1.0 (day before Epoch)</span>
-        <span class="c1"># Year 0, Month 1, Day 1 = -360.0 (for 360-day calendar)</span>
-
-        <span class="c1"># Calculate days from start of year to the date</span>
-        <span class="n">months</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">get_months_for_year</span><span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">)</span>
-        <span class="n">days_in_year</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">m_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">month</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="n">days_in_year</span> <span class="o">+=</span> <span class="n">months</span><span class="p">[</span><span class="n">m_idx</span><span class="p">]</span><span class="o">.</span><span class="n">days</span>
-        <span class="n">days_in_year</span> <span class="o">+=</span> <span class="n">date</span><span class="o">.</span><span class="n">day</span> <span class="o">-</span> <span class="mi">1</span>
-        <span class="n">days_in_year</span> <span class="o">+=</span> <span class="n">date</span><span class="o">.</span><span class="n">time_fraction</span>
-
-        <span class="c1"># Calculate total days for all years from date.year to year 0</span>
         <span class="n">total_years_days</span> <span class="o">=</span> <span class="mf">0.0</span>
-        <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>  <span class="c1"># from date.year up to but not including 1</span>
+        <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
             <span class="n">total_years_days</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">get_year_length</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
-
-        <span class="c1"># The float is negative: -(remaining days to reach year 1)</span>
-        <span class="k">return</span> <span class="o">-</span><span class="p">(</span><span class="n">total_years_days</span> <span class="o">-</span> <span class="n">days_in_year</span><span class="p">)</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">total_years_days</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_days_within_year</span><span class="p">(</span><span class="n">date</span><span class="p">)</span>
 
 <div class="viewcode-block" id="CalendarConverter.from_float">
 <a class="viewcode-back" href="../../core.html#core.calendar.CalendarConverter.from_float">[docs]</a>

@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-04-06
+## [Development] - 2026-04-07
 ### Fixed
-- fix: filter entity-to-entity relations from timeline display
+- fix: add relative-precision guard and extract day-calculation helper in date converter
 
 
 *This changelog was automatically generated.*
