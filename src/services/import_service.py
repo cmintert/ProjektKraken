@@ -15,6 +15,7 @@ from src.core.calendar import CalendarConfig
 from src.core.date_parser import DateParser
 from src.core.entities import Entity
 from src.core.events import Event
+from src.core.parsed_date import DatePrecision
 from src.services.db_service import DatabaseService
 from src.services.import_normalization import normalize_name
 
@@ -93,24 +94,34 @@ class ImportService:
 
     def _parse_lore_date(
         self, value: Any, result: Optional[ImportResult] = None
-    ) -> tuple[float, bool]:
+    ) -> tuple[float, float, bool]:
         """Parse lore date from diverse inputs (float, string, etc).
 
         Returns:
-            Tuple of (lore_date, was_explicit) where was_explicit is True if the
-            value was successfully parsed, False if it defaulted to 0.0 due to a
-            parse failure or missing value.
+            Tuple of (lore_date, lore_duration, was_explicit) where
+            was_explicit is True if the value was successfully parsed,
+            False if it defaulted to 0.0 due to a parse failure or
+            missing value.  lore_duration is non-zero only when the
+            input string describes a date range.
 
         """
         if isinstance(value, (int, float)):
-            return float(value), True
+            return float(value), 0.0, True
 
         if isinstance(value, str):
             parser = self._get_parser()
             if parser:
                 try:
                     parsed = parser.parse_date(value)
-                    return parser.calculate_timestamp(parsed), True
+                    if (
+                        parsed.precision == DatePrecision.RANGE
+                        and parsed.range_start
+                        and parsed.range_end
+                    ):
+                        start_ts = parser.calculate_timestamp(parsed.range_start)
+                        end_ts = parser.calculate_timestamp(parsed.range_end)
+                        return start_ts, end_ts - start_ts, True
+                    return parser.calculate_timestamp(parsed), 0.0, True
                 except ValueError as e:
                     msg = (
                         f"Failed to parse date string '{value}': {e}. Defaulting to 0.0"
@@ -118,7 +129,7 @@ class ImportService:
                     logger.warning(msg)
                     if result:
                         result.warnings.append(msg)
-                    return 0.0, False
+                    return 0.0, 0.0, False
             else:
                 msg = (
                     f"No active calendar to parse date string '{value}'. "
@@ -127,9 +138,9 @@ class ImportService:
                 logger.warning(msg)
                 if result:
                     result.warnings.append(msg)
-                return 0.0, False
+                return 0.0, 0.0, False
 
-        return 0.0, False
+        return 0.0, 0.0, False
 
     @staticmethod
     def parse_only(json_data: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
@@ -778,7 +789,7 @@ class ImportService:
             pass
 
         elif action == ImportAction.CREATE:
-            lore_date_float, date_was_explicit = self._parse_lore_date(
+            lore_date_float, parsed_duration, date_was_explicit = self._parse_lore_date(
                 data.get("lore_date"), result
             )
             new_event = Event(
@@ -786,7 +797,7 @@ class ImportService:
                 name=str(name).strip(),
                 type=str(data.get("type", "generic")).strip(),
                 lore_date=lore_date_float,
-                lore_duration=float(data.get("lore_duration", 0.0)),
+                lore_duration=parsed_duration or parsed_duration or float(data.get("lore_duration", 0.0)),
                 description=str(data.get("description", "")).strip(),
                 attributes=data.get("attributes", {}),
                 created_at=data.get("created_at") or logging.time.time(),
@@ -801,7 +812,7 @@ class ImportService:
 
         elif action == ImportAction.OVERWRITE:
             if existing_event:
-                lore_date_float, date_was_explicit = self._parse_lore_date(
+                lore_date_float, parsed_duration, date_was_explicit = self._parse_lore_date(
                     data.get("lore_date"), result
                 )
                 overwritten = Event(
@@ -809,7 +820,7 @@ class ImportService:
                     name=str(name).strip(),
                     type=str(data.get("type", existing_event.type)).strip(),
                     lore_date=lore_date_float,
-                    lore_duration=float(data.get("lore_duration", 0.0)),
+                    lore_duration=parsed_duration or parsed_duration or float(data.get("lore_duration", 0.0)),
                     description=str(data.get("description", "")).strip(),
                     attributes=data.get("attributes", {}),
                     created_at=existing_event.created_at,
@@ -826,10 +837,14 @@ class ImportService:
         elif action == ImportAction.UPDATE:
             if existing_event:
                 if "lore_date" in data:
-                    lore_date_float, date_was_explicit = self._parse_lore_date(
+                    lore_date_float, parsed_duration, date_was_explicit = self._parse_lore_date(
                         data["lore_date"], result
                     )
                     data["lore_date"] = lore_date_float
+                    if parsed_duration:
+                        data["lore_duration"] = parsed_duration
+                    if parsed_duration:
+                        data["lore_duration"] = parsed_duration
                 else:
                     date_was_explicit = None
                     data["lore_date"] = None

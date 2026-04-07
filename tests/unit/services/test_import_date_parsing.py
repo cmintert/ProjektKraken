@@ -99,6 +99,72 @@ def test_import_fallback_on_missing_calendar(memory_db):
     assert event.lore_date > 0.0, "Date should be parsed, not defaulted to 0.0"
 
 
+def test_import_range_date_sets_duration(memory_db):
+    """A range date like '23\u201330 AUG 1895' should set lore_duration from the span."""
+    import_data = {
+        "events": [
+            {
+                "name": "Audience Fainting Incidents",
+                "lore_date": "23\u201330 AUG 1895",
+                "type": "outbreak",
+            }
+        ]
+    }
+
+    importer = ImportService(memory_db)
+    result = importer.import_batch(import_data)
+
+    assert result.success is True
+    event = memory_db.get_event(result.created_events[0])
+    assert event is not None
+    # Start date should be Aug 23, not 0.0
+    assert event.lore_date > 0.0
+    # Duration should be 7 days (Aug 23 to Aug 30)
+    assert event.lore_duration == 7.0
+
+
+def test_import_exact_date_no_duration(memory_db):
+    """An exact date should not set lore_duration."""
+    import_data = {
+        "events": [
+            {
+                "name": "Single Day Event",
+                "lore_date": "23 AUG 1895",
+                "type": "event",
+            }
+        ]
+    }
+
+    importer = ImportService(memory_db)
+    result = importer.import_batch(import_data)
+
+    assert result.success is True
+    event = memory_db.get_event(result.created_events[0])
+    assert event is not None
+    assert event.lore_duration == 0.0
+
+
+def test_import_explicit_duration_not_overridden(memory_db):
+    """An explicit lore_duration in JSON should be used when no range is detected."""
+    import_data = {
+        "events": [
+            {
+                "name": "Long Event",
+                "lore_date": "23 AUG 1895",
+                "lore_duration": 14.0,
+                "type": "event",
+            }
+        ]
+    }
+
+    importer = ImportService(memory_db)
+    result = importer.import_batch(import_data)
+
+    assert result.success is True
+    event = memory_db.get_event(result.created_events[0])
+    assert event.lore_duration == 14.0
+
+
 def test_import_raw_float_preserved(memory_db):
     """Test that raw floats are preserved even if parser exists."""
     import_data = {

@@ -90,13 +90,7 @@ class DateParser:
 
     def _compile_all_patterns(self) -> None:
         """Compile all regex patterns for the various date formats."""
-        # Month names sorted longest-first to ensure greedy matching
-        month_names = sorted(
-            [m.name for m in self.calendar_config.months], key=len, reverse=True
-        )
-        month_pattern = f"({'|'.join(re.escape(n) for n in month_names)})"
-
-        # Also include abbreviations in month pattern for abbreviation-based dates
+        # Month tokens (names + abbreviations) sorted longest-first for greedy match
         all_month_tokens = sorted(
             list(self.month_lookup.keys()), key=len, reverse=True
         )
@@ -132,6 +126,13 @@ class DateParser:
         )
         opt_time_part = f"(?:(?:{space}|T){time_pattern})?"
 
+        # Dash character class for range notation (en-dash, em-dash, hyphen)
+        dash = r"[\u2013\u2014\-]"
+        opt_dash_space = f"{opt_space}{dash}{opt_space}"
+
+        # Use abbreviation-aware month pattern for all natural-language matches
+        mp = month_pattern_with_abbrev
+
         self.compiled_patterns: Dict[str, List[re.Pattern]] = {
             # ── Month-Year ───────────────────────────────────────────────────
             "month_year": [
@@ -153,25 +154,25 @@ class DateParser:
             "exact": [
                 # Natural language: (weekday,) (the) Nth (day) (of) Month, Year (time)
                 re.compile(
-                    f"^{weekday_prefix}{the_part}?{day}{day_part}{of_part}{month_pattern}"
+                    f"^{weekday_prefix}{the_part}?{day}{day_part}{of_part}{mp}"
                     f"{opt_space}{opt_comma}{opt_space}{year}{opt_time_part}$",
                     re.IGNORECASE,
                 ),
                 # Natural language: (weekday,) Month (the) Nth, Year (time)
                 re.compile(
-                    f"^{weekday_prefix}{month_pattern}{space}{the_part}?{day}"
+                    f"^{weekday_prefix}{mp}{space}{the_part}?{day}"
                     f"{opt_space}{opt_comma}{opt_space}{year}{opt_time_part}$",
                     re.IGNORECASE,
                 ),
                 # Natural language: (weekday,) N Month, Year (time)
                 re.compile(
-                    f"^{weekday_prefix}{day}{space}{month_pattern}"
+                    f"^{weekday_prefix}{day}{space}{mp}"
                     f"{opt_space}{opt_comma}{opt_space}{year}{opt_time_part}$",
                     re.IGNORECASE,
                 ),
                 # Same but no weekday prefix fallback
                 re.compile(
-                    f"^{day}{space}{month_pattern}"
+                    f"^{day}{space}{mp}"
                     f"{opt_space}{opt_comma}{opt_space}{year}{opt_time_part}$",
                     re.IGNORECASE,
                 ),
@@ -230,11 +231,11 @@ class DateParser:
             # ── Fuzzy ────────────────────────────────────────────────────────
             "fuzzy": [
                 re.compile(
-                    f"^(?:around|approximately|about|circa){space}{month_pattern}{space}{year}$",
+                    f"^(?:around|approximately|about|circa){space}{mp}{space}{year}$",
                     re.IGNORECASE,
                 ),
                 re.compile(
-                    f"^(?:around|approximately|about|circa){space}{day}{space}{month_pattern}{space}{year}$",
+                    f"^(?:around|approximately|about|circa){space}{day}{space}{mp}{space}{year}$",
                     re.IGNORECASE,
                 ),
                 re.compile(
@@ -244,12 +245,29 @@ class DateParser:
             ],
             # ── Range ────────────────────────────────────────────────────────
             "range": [
+                # Cross-month day range: "23 AUG–6 SEP 1895"
                 re.compile(
-                    f"^(?:from|between){space}{month_pattern}{space}(?:and|to){space}{month_pattern}{space}{year}$",
+                    f"^{day}{space}{mp}{opt_dash_space}{day}{space}{mp}{space}{year}$",
                     re.IGNORECASE,
                 ),
+                # Same-month day range: "23–30 AUG 1895"
                 re.compile(
-                    f"^from{space}{day}{space}to{space}{day}{space}{month_pattern}{space}{year}$",
+                    f"^{day}{opt_dash_space}{day}{space}{mp}{space}{year}$",
+                    re.IGNORECASE,
+                ),
+                # Month-to-month range (dash): "AUG–SEP 1895"
+                re.compile(
+                    f"^{mp}{opt_dash_space}{mp}{space}{year}$",
+                    re.IGNORECASE,
+                ),
+                # Keyword: "from March to June 3019" / "between March and June 3019"
+                re.compile(
+                    f"^(?:from|between){space}{mp}{space}(?:and|to){space}{mp}{space}{year}$",
+                    re.IGNORECASE,
+                ),
+                # Keyword: "from 1 to 15 March 3019"
+                re.compile(
+                    f"^from{space}{day}{space}to{space}{day}{space}{mp}{space}{year}$",
                     re.IGNORECASE,
                 ),
             ],
@@ -555,7 +573,13 @@ class DateParser:
         )
 
     def _parse_date_range(self, match: re.Match) -> ParsedDate:
-        """Parse a date range (RANGE precision)."""
+        """Parse a date range (RANGE precision).
+
+        Handles three range shapes:
+        - 2 days + 1 month: same-month day range (e.g. "23–30 AUG 1895")
+        - 2 days + 2 months: cross-month day range (e.g. "23 AUG–6 SEP 1895")
+        - 0 days + 2 months: month-to-month range (e.g. "AUG–SEP 1895")
+        """
         groups = [g for g in match.groups() if g is not None]
         year = int(next(g for g in reversed(groups) if re.match(r"^-?\d+$", g)))
 
@@ -566,10 +590,16 @@ class DateParser:
             if re.match(r"^\d{1,2}(?:st|nd|rd|th)?$", g)
         ]
 
-        if len(days) == 2:
+        if len(days) == 2 and len(months) >= 2:
+            # Cross-month: "23 AUG–6 SEP 1895"
+            start_date = ParsedDate(year=year, month=months[0], day=days[0])
+            end_date = ParsedDate(year=year, month=months[1], day=days[1])
+        elif len(days) == 2:
+            # Same-month: "23–30 AUG 1895"
             start_date = ParsedDate(year=year, month=months[0], day=days[0])
             end_date = ParsedDate(year=year, month=months[0], day=days[1])
         else:
+            # Month-to-month: "AUG–SEP 1895"
             start_date = ParsedDate(year=year, month=months[0], precision=DatePrecision.MONTH)
             end_date = ParsedDate(year=year, month=months[1], precision=DatePrecision.MONTH)
 
