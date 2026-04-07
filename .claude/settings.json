@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep -rn \"get_incoming_relations\\\\|get_relations\" src/services/*.py)"
+      "Bash(grep -rn \"get_incoming_relations\\\\|get_relations\" src/services/*.py)",
+      "Bash(python3)",
+      "Read(//c/Users/chris/VSCodeProjects/ProjektKraken/**)"
     ]
   }
 }

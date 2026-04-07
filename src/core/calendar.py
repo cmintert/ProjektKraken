@@ -558,6 +558,24 @@ class CalendarConverter:
         else:
             return self._to_float_negative(date)
 
+    def _days_within_year(self, date: CalendarDate) -> float:
+        """Returns the 0-based day offset of date within its year (including time fraction).
+
+        Args:
+            date: The date to measure from its year start.
+
+        Returns:
+            float: Days elapsed since the start of date.year (Month 1, Day 1, midnight = 0.0).
+
+        """
+        months = self._config.get_months_for_year(date.year)
+        offset = 0.0
+        for m_idx in range(date.month - 1):
+            offset += months[m_idx].days
+        offset += date.day - 1
+        offset += date.time_fraction
+        return offset
+
     def _to_float_positive(self, date: CalendarDate) -> float:
         """Converts a positive-year date to float.
 
@@ -570,8 +588,7 @@ class CalendarConverter:
         """
         total_days = 0.0
 
-        # Optimization: Check cache for closest starting point
-        # Find highest cached year < date.year
+        # Use highest cached year below target as starting point
         cached_years = sorted(self._year_cache.keys())
         current_year = 1
 
@@ -581,30 +598,15 @@ class CalendarConverter:
                 total_days = self._year_cache[y]
                 break
 
-        # Sum years from current_year to target
         for y in range(current_year, date.year):
-            # Cache the start of this year if not known
             if y not in self._year_cache:
                 self._year_cache[y] = total_days
-
             total_days += self._config.get_year_length(y)
 
-        # Ensure target year start is cached
         if date.year not in self._year_cache:
             self._year_cache[date.year] = total_days
 
-        # Sum all complete months before target month
-        months = self._config.get_months_for_year(date.year)
-        for m_idx in range(date.month - 1):  # month is 1-indexed
-            total_days += months[m_idx].days
-
-        # Add days within the month (day is 1-indexed, so subtract 1)
-        total_days += date.day - 1
-
-        # Add time fraction
-        total_days += date.time_fraction
-
-        return total_days
+        return total_days + self._days_within_year(date)
 
     def _to_float_negative(self, date: CalendarDate) -> float:
         """Converts a negative/zero-year date to float.
@@ -618,25 +620,10 @@ class CalendarConverter:
             float: Negative absolute day value.
 
         """
-        # For year 0: we need to count backwards from 0.0
-        # Year 0, Month 12, Day 30 = -1.0 (day before Epoch)
-        # Year 0, Month 1, Day 1 = -360.0 (for 360-day calendar)
-
-        # Calculate days from start of year to the date
-        months = self._config.get_months_for_year(date.year)
-        days_in_year = 0
-        for m_idx in range(date.month - 1):
-            days_in_year += months[m_idx].days
-        days_in_year += date.day - 1
-        days_in_year += date.time_fraction
-
-        # Calculate total days for all years from date.year to year 0
         total_years_days = 0.0
-        for y in range(date.year, 1):  # from date.year up to but not including 1
+        for y in range(date.year, 1):
             total_years_days += self._config.get_year_length(y)
-
-        # The float is negative: -(remaining days to reach year 1)
-        return -(total_years_days - days_in_year)
+        return -total_years_days + self._days_within_year(date)
 
     def from_float(self, absolute_day: float) -> CalendarDate:
         """Converts an absolute day float to a structured date.
