@@ -4,9 +4,11 @@ Provides a read-only widget that displays a chronological list of events affecti
 entity, with payload attributes shown inline.
 """
 
+import re
 from typing import Any, Optional
 
-from PySide6.QtWidgets import QTextEdit, QVBoxLayout, QWidget
+from PySide6.QtCore import QEvent, QObject
+from PySide6.QtWidgets import QTextEdit, QToolTip, QVBoxLayout, QWidget
 
 
 class TimelineDisplayWidget(QWidget):
@@ -36,6 +38,7 @@ class TimelineDisplayWidget(QWidget):
         self._relations: list[dict[str, Any]] = []
         self._playhead_time: Optional[float] = None
         self._current_time: Optional[float] = None  # Story's "current time"
+        self._description_map: dict[str, str] = {}  # anchor_id -> description
 
         # Setup UI
         layout = QVBoxLayout(self)
@@ -48,6 +51,10 @@ class TimelineDisplayWidget(QWidget):
         # Allow widget to expand to fill available space
         # self._text_display.setMaximumHeight(200)
         layout.addWidget(self._text_display)
+
+        # Setup hover tooltip detection
+        self._text_display.viewport().setMouseTracking(True)
+        self._text_display.viewport().installEventFilter(self)
 
         # Apply theme-aware styling to the QTextEdit
         self._apply_widget_style()
@@ -62,7 +69,8 @@ class TimelineDisplayWidget(QWidget):
 
         Args:
             relations: List of relation dicts with source_event_name,
-                      source_event_date, and attributes (including payload).
+                      source_event_date, source_event_description,
+                      and attributes (including payload).
 
         """
         self._relations = relations
@@ -106,6 +114,9 @@ class TimelineDisplayWidget(QWidget):
             )
             return
 
+        # Clear description map for new display
+        self._description_map = {}
+
         # Sort relations by date
         sorted_relations = sorted(
             self._relations,
@@ -125,6 +136,11 @@ class TimelineDisplayWidget(QWidget):
             event_name = rel.get("source_event_name") or "Event"
             payload = rel.get("attributes", {}).get("payload", {})
             rel_type = rel.get("rel_type", "")
+
+            # Extract description and build anchor ID
+            anchor_id = rel.get("id") or f"card_{i}"
+            raw_desc = rel.get("source_event_description") or ""
+            self._extract_and_map_description(anchor_id, raw_desc)
 
             # Format date using calendar converter if available
             if TimelineDisplayWidget._calendar_converter:
@@ -153,6 +169,10 @@ class TimelineDisplayWidget(QWidget):
             )
             html_parts.append("<tr><td>")
 
+            # Wrap content in anchor if description is available
+            has_desc = anchor_id in self._description_map
+            self._wrap_card_with_anchor(html_parts, anchor_id, has_desc)
+
             # Header: date + event name
             html_parts.append(
                 f"<span class='event-date'>{date_str}</span><br>"
@@ -174,6 +194,9 @@ class TimelineDisplayWidget(QWidget):
                         f"{key}:</span> "
                         f"<span class='payload-value'>{display_val}</span>"
                     )
+
+            # Close anchor if description is available
+            self._close_card_anchor(html_parts, anchor_id, has_desc)
 
             html_parts.append("</td></tr></table>")
 
@@ -199,6 +222,49 @@ class TimelineDisplayWidget(QWidget):
                         )
 
         self._text_display.setHtml("\n".join(html_parts))
+
+    def _extract_and_map_description(self, anchor_id: str, raw_desc: str) -> None:
+        """Extract description text and add to description map.
+
+        Strips HTML tags and stores in _description_map if non-empty.
+
+        Args:
+            anchor_id: The anchor ID (relation ID) for the card.
+            raw_desc: Raw description text, possibly containing HTML.
+
+        """
+        if raw_desc:
+            plain_desc = re.sub(r"<[^>]+>", "", raw_desc).strip()
+            if plain_desc:
+                self._description_map[anchor_id] = plain_desc[:400]
+
+    def _wrap_card_with_anchor(
+        self, html_parts: list[str], anchor_id: str, has_description: bool
+    ) -> None:
+        """Conditionally wrap card content in anchor tags for hover tooltip.
+
+        Args:
+            html_parts: HTML parts list to append opening anchor (if needed).
+            anchor_id: The anchor ID (relation ID).
+            has_description: Whether this card has a description to display.
+
+        """
+        if has_description:
+            html_parts.append(f"<a href='{anchor_id}' style='text-decoration: none;'>")
+
+    def _close_card_anchor(
+        self, html_parts: list[str], anchor_id: str, has_description: bool
+    ) -> None:
+        """Conditionally close anchor tags for hover tooltip.
+
+        Args:
+            html_parts: HTML parts list to append closing anchor (if needed).
+            anchor_id: The anchor ID (relation ID).
+            has_description: Whether this card has a description to display.
+
+        """
+        if has_description:
+            html_parts.append("</a>")
 
     def _get_event_date(self, rel: dict[str, Any]) -> float:
         """Get the date to use for sorting/displaying an event.
@@ -235,6 +301,30 @@ class TimelineDisplayWidget(QWidget):
         self._relations = []
         self._playhead_time = None
         self._text_display.clear()
+
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        """Handle mouse move events to show description tooltips.
+
+        Args:
+            obj: The object that received the event.
+            event: The event.
+
+        Returns:
+            bool: True if event was handled, False otherwise.
+
+        """
+        if obj is self._text_display.viewport() and event.type() == QEvent.Type.MouseMove:
+            pos = event.position().toPoint()
+            anchor = self._text_display.anchorAt(pos)
+            if anchor and anchor in self._description_map:
+                QToolTip.showText(
+                    event.globalPosition().toPoint(),
+                    self._description_map[anchor],
+                    self._text_display.viewport(),
+                )
+            else:
+                QToolTip.hideText()
+        return super().eventFilter(obj, event)
 
     def _apply_widget_style(self) -> None:
         """Apply theme-aware QSS to the QTextEdit container."""

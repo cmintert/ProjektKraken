@@ -107,7 +107,7 @@ class RelationRepository(BaseRepository):
     def get_by_target(self, target_id: str) -> List[Dict[str, Any]]:
         """Retrieve all relations where target_id matches.
 
-        Includes 'source_event_date' if the source is an event.
+        Includes 'source_event_date' and 'source_event_description' if the source is an event.
 
         Args:
             target_id: The target entity/event ID.
@@ -116,10 +116,11 @@ class RelationRepository(BaseRepository):
             List of relation dictionaries.
 
         """
-        # Join with events table to get source event date and name efficiently
+        # Join with events table to get source event date, name, and description efficiently
         # We rename e.lore_date to source_event_date to avoid collision/ambiguity
         sql = """
-            SELECT r.*, e.lore_date as source_event_date, e.name as source_event_name
+            SELECT r.*, e.lore_date as source_event_date, e.name as source_event_name,
+                   e.description as source_event_description
             FROM relations r
             LEFT JOIN events e ON r.source_id = e.id
             WHERE r.target_id = ?
