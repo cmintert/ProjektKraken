@@ -1311,18 +1311,17 @@ class StyleHelper:
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             }}
             .timeline-entry {{
+                background-color: {theme["surface"]};
                 padding: 8px 10px;
                 margin: 6px 2px;
                 border-radius: 3px;
                 border: 1px solid {theme["border"]};
             }}
             .timeline-entry.active {{
-                border-color: {theme["primary"]};
-                border-width: 2px;
-            }}
-            .timeline-entry.future {{
-                opacity: 0.5;
-                border-color: {theme["border"]};
+                border-left: 3px solid {theme["primary"]};
+                border-top: 1px solid {theme["border"]};
+                border-right: 1px solid {theme["border"]};
+                border-bottom: 1px solid {theme["border"]};
             }}
             .event-header {{ margin-bottom: 4px; }}
             .event-date {{
@@ -1331,11 +1330,19 @@ class StyleHelper:
                 font-weight: 500;
             }}
             .event-name {{
-                color: {theme["text_main"]};
+                color: {theme["text_dim"]};
                 font-weight: 600;
                 font-size: 13px;
             }}
+            .timeline-entry.active .event-name {{
+                color: {theme["text_main"]};
+            }}
             .event-type {{
+                color: {theme["text_dim"]};
+                font-size: 10px;
+                font-style: italic;
+            }}
+            .date-unknown {{
                 color: {theme["text_dim"]};
                 font-size: 10px;
                 font-style: italic;
@@ -1394,6 +1401,25 @@ class StyleHelper:
                 padding: 0 10px;
             }}
         """
+
+    @staticmethod
+    def get_timeline_textedit_style() -> str:
+        """Returns QSS for the TimelineDisplayWidget's QTextEdit container.
+
+        Sets the background to match app_bg and removes the default border
+        so the QTextEdit blends with the surrounding panel.
+
+        Returns:
+            str: QSS stylesheet string.
+        """
+        theme = ThemeManager().get_theme()
+        return (
+            f"QTextEdit {{"
+            f"  background-color: {theme['app_bg']};"
+            f"  border: none;"
+            f"  color: {theme['text_main']};"
+            f"}}"
+        )
 
     @staticmethod
     def get_drag_overlay_style() -> str:

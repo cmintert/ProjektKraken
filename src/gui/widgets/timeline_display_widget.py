@@ -49,6 +49,9 @@ class TimelineDisplayWidget(QWidget):
         # self._text_display.setMaximumHeight(200)
         layout.addWidget(self._text_display)
 
+        # Apply theme-aware styling to the QTextEdit
+        self._apply_widget_style()
+
         # Connect to theme changes
         from src.core.theme_manager import ThemeManager
 
@@ -134,7 +137,7 @@ class TimelineDisplayWidget(QWidget):
             # When the date is 0.0, it may be a genuine epoch event or a failed
             # date parse that defaulted to 0.0.  Show a subtle indicator.
             if event_date == 0.0:
-                date_str = f"{date_str} <i style='color:#888; font-size:10px;'>(date unknown)</i>"
+                date_str = f"{date_str} <span class='date-unknown'>(date unknown)</span>"
 
             # Determine state: active (past/current) or future
             is_active = (
@@ -143,7 +146,6 @@ class TimelineDisplayWidget(QWidget):
 
             # Use CSS classes for styling instead of inline styles
             entry_class = "timeline-entry active" if is_active else "timeline-entry"
-            text_opacity = "" if is_active else "color: #888;"
 
             html_parts.append(
                 f"<table width='100%' cellpadding='8' cellspacing='0' "
@@ -153,16 +155,14 @@ class TimelineDisplayWidget(QWidget):
 
             # Header: date + event name
             html_parts.append(
-                f"<span style='color: #888; font-size: 11px;'>{date_str}</span><br>"
+                f"<span class='event-date'>{date_str}</span><br>"
             )
             html_parts.append(
-                f"<span style='color: #E0E0E0; font-weight: bold; {text_opacity}'>"
-                f"{event_name}</span>"
+                f"<span class='event-name'>{event_name}</span>"
             )
             if rel_type:
                 html_parts.append(
-                    f" <span style='color: #666; font-size: 10px; font-style: italic;'>"
-                    f"({rel_type})</span>"
+                    f" <span class='event-type'>({rel_type})</span>"
                 )
 
             # Payload attributes (if any)
@@ -170,9 +170,9 @@ class TimelineDisplayWidget(QWidget):
                 for key, value in payload.items():
                     display_val = "—" if value is None else str(value)
                     html_parts.append(
-                        f"<br><span style='margin-left: 16px; color: #6A9FB5;'>"
+                        f"<br><span class='payload-key' style='margin-left: 16px;'>"
                         f"{key}:</span> "
-                        f"<span style='color: #B5BD68;'>{display_val}</span>"
+                        f"<span class='payload-value'>{display_val}</span>"
                     )
 
             html_parts.append("</td></tr></table>")
@@ -236,6 +236,12 @@ class TimelineDisplayWidget(QWidget):
         self._playhead_time = None
         self._text_display.clear()
 
+    def _apply_widget_style(self) -> None:
+        """Apply theme-aware QSS to the QTextEdit container."""
+        from src.gui.utils.style_helper import StyleHelper
+
+        self._text_display.setStyleSheet(StyleHelper.get_timeline_textedit_style())
+
     def _on_theme_changed(self, theme: dict) -> None:
         """Handle theme changes by refreshing the display.
 
@@ -243,4 +249,5 @@ class TimelineDisplayWidget(QWidget):
             theme: The new theme data (unused, but required by signal).
 
         """
+        self._apply_widget_style()
         self._refresh_display()
