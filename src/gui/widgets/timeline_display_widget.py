@@ -5,6 +5,7 @@ entity, with payload attributes shown inline.
 """
 
 import re
+import textwrap
 from typing import Any, Optional
 
 from PySide6.QtCore import QEvent, QObject
@@ -226,7 +227,8 @@ class TimelineDisplayWidget(QWidget):
     def _extract_and_map_description(self, anchor_id: str, raw_desc: str) -> None:
         """Extract description text and add to description map.
 
-        Strips HTML tags and stores in _description_map if non-empty.
+        Strips HTML tags, wraps to 80 characters per line, and stores
+        in _description_map if non-empty.
 
         Args:
             anchor_id: The anchor ID (relation ID) for the card.
@@ -236,7 +238,8 @@ class TimelineDisplayWidget(QWidget):
         if raw_desc:
             plain_desc = re.sub(r"<[^>]+>", "", raw_desc).strip()
             if plain_desc:
-                self._description_map[anchor_id] = plain_desc[:400]
+                wrapped = "\n".join(textwrap.wrap(plain_desc, width=80))
+                self._description_map[anchor_id] = wrapped
 
     def _wrap_card_with_anchor(
         self, html_parts: list[str], anchor_id: str, has_description: bool
