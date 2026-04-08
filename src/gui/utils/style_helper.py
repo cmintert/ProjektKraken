@@ -918,24 +918,6 @@ class StyleHelper:
             f"width: 0px; }}"
         )
 
-    @staticmethod
-    def get_tooltip_style() -> str:
-        """Returns QSS for application wide tooltips.
-
-        Provides consistent background, text, border, and padding using theme tokens.
-
-        Returns:
-            str: QSS stylesheet string for QToolTip.
-        """
-        theme = ThemeManager().get_theme()
-        return (
-            f"QToolTip {{ "
-            f"background-color: {theme['surface']}; "
-            f"color: {theme['text_main']}; "
-            f"border: 1px solid {theme['border']}; "
-            f"border-radius: 4px; "
-            f"padding: 4px; }}"
-        )
 
     @staticmethod
     def get_wiki_link_style(broken: bool = False) -> str:

@@ -3,7 +3,10 @@
     "allow": [
       "Bash(grep -rn \"get_incoming_relations\\\\|get_relations\" src/services/*.py)",
       "Bash(python3)",
-      "Read(//c/Users/chris/VSCodeProjects/ProjektKraken/**)"
+      "Read(//c/Users/chris/VSCodeProjects/ProjektKraken/**)",
+      "Bash(mypy src/gui/widgets/timeline_display_widget.py src/gui/utils/style_helper.py)",
+      "Bash(pytest tests/unit/ -v --tb=short)",
+      "Bash(pytest tests/unit/test_timeline_display.py -v)"
     ]
   }
 }

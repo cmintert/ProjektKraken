@@ -1,0 +1,887 @@
+{
+  "entities": [
+    {
+      "name": "The King in Yellow",
+      "type": "artifact",
+      "description": "A poisonous play whose beautiful, corrupting words awaken terrible realizations and drive audiences toward despair. It manifests in multiple forms: the original French production (Le Roi en jaune), and later the English translation (Red Book).",
+      "attributes": {
+        "aliases": ["Le Roi en Jaune", "Red Book"],
+        "forms": ["stage play", "written text", "French original", "English translation"],
+        "danger_level": "extreme"
+      }
+    },
+    {
+      "name": "STATIC Protocol",
+      "type": "organization/protocol",
+      "description": "A ruthless Delta Green response framework designed to contain and eliminate the threat posed by The King in Yellow through coordinated suppression operations.",
+      "attributes": {
+        "creator": "Delta Green leadership",
+        "established": "1 SEP 1955",
+        "purpose": "containment and elimination of King in Yellow manifestations"
+      }
+    },
+    {
+      "name": "Auteur X",
+      "type": "person",
+      "description": "The mysterious foreign author believed by the Sûreté and Deuxième Bureau to be the creator of Le Roi en Jaune, never successfully apprehended despite surveillance.",
+      "attributes": {
+        "aliases": ["X"],
+        "nationality": "foreign (non-French)",
+        "status": "unidentified"
+      }
+    },
+    {
+      "name": "Timothy Bael",
+      "type": "person",
+      "description": "A future inmate of Dorchester House psychiatric facility.",
+      "attributes": {
+        "born": "12 OCT 1984",
+        "birthplace": "Los Angeles, California, USA"
+      }
+    },
+    {
+      "name": "Elias Barbas",
+      "type": "person",
+      "description": "A veteran Delta Green agent and forensic scientist who becomes compromised by The King in Yellow. He constructs mechanical guardians and works with the corrupted Dr. Richard Dallan.",
+      "attributes": {
+        "born": "30 AUG 1955",
+        "occupation": "forensic scientist, Delta Green agent",
+        "aliases": ["Dr. Elias Barbas"]
+      }
+    },
+    {
+      "name": "Marvin Bloom",
+      "type": "person",
+      "description": "Agent MARCUS, a Delta Green operative.",
+      "attributes": {
+        "born": "2 SEP 1960",
+        "birthplace": "Queens, New York",
+        "aliases": ["Agent MARCUS"]
+      }
+    },
+    {
+      "name": "Brotherhood of Doors",
+      "type": "organization",
+      "description": "A Chicago-based religious order founded by Ian F. Decraig and three wealthy witnesses to Le Roi en Jaune's final 1895 performance, obsessed with reconstructing the complete play script.",
+      "attributes": {
+        "founded": "1 MAY 1897",
+        "founder": "Ian F. Decraig",
+        "location": "Chicago",
+        "members": 3
+      }
+    },
+    {
+      "name": "Roger Carun",
+      "type": "person",
+      "description": "A tenant of the Macallistar Building who made the last phone call from the building in 1995.",
+      "attributes": {
+        "born": "23 JUN 1952",
+        "birthplace": "Bellevue Hospital, New York City",
+        "moved_to_macallistar": "30 AUG 1990"
+      }
+    },
+    {
+      "name": "Debra Carver",
+      "type": "person",
+      "description": "A future resident of the Broadalbin hotel.",
+      "attributes": {
+        "born": "1 MAY 1899",
+        "birthplace": "Baton Rouge, Louisiana"
+      }
+    },
+    {
+      "name": "Castaigne/Chastaigne Family",
+      "type": "faction",
+      "description": "A noble French family whose house contained an architecture of doors with unnatural properties. Through them runs a lineage of occult practice, demonology, and the influence of entities claiming kingship.",
+      "attributes": {
+        "notable_members": ["Michel Chastaigne", "Augustus Chastaigne", "Gabriel Chastaigne"],
+        "primary_location": "Château des Portes",
+        "era": "15th-17th centuries"
+      }
+    },
+    {
+      "name": "Michel Chastaigne",
+      "type": "person",
+      "description": "A 15th-century builder of Château des Portes who designed every wall to contain doors, including those opening to the outside on upper floors. He disappeared inside the house after arranging his affairs.",
+      "attributes": {
+        "era": "~1402",
+        "profession": "architect/builder",
+        "status": "disappeared"
+      }
+    },
+    {
+      "name": "Augustus Chastaigne",
+      "type": "person",
+      "description": "A 15th-century occultist who inherited Château des Portes and spent his fortune investigating its secrets through codes and cyphers. He engaged in demonological communication, completed Hygromanteia under the name Solomon, and died by suicide.",
+      "attributes": {
+        "era": "1402-1403",
+        "became_obsessed": "OCTOBER 1402",
+        "died": "MARCH 1403",
+        "death_method": "suicide by hanging",
+        "wife": "Louise Chastaigne"
+      }
+    },
+    {
+      "name": "Louise Chastaigne",
+      "type": "person",
+      "description": "Wife of Augustus Chastaigne who died under mysterious circumstances, exiting a tower door and falling.",
+      "attributes": {
+        "died": "OCTOBER 1402",
+        "death_cause": "fall from tower door",
+        "death_location": "Château des Portes"
+      }
+    },
+    {
+      "name": "Gabriel Chastaigne/Castaigne",
+      "type": "person",
+      "description": "Son of Augustus who inherited his father's occult knowledge, became an artificer and builder of automata. He restored Château des Portes to prominence through clockwork marvels and later vanished, leaving behind ritual notes.",
+      "attributes": {
+        "born": "1423",
+        "came_of_age": "1423",
+        "disappeared": "28 AUG 1460",
+        "profession": "artificer, clockmaker, architect"
+      }
+    },
+    {
+      "name": "Château des Portes",
+      "type": "location",
+      "description": "An 11th-century estate in Reims, France with an impossibly recursive architecture where every wall contains a door. Its depths connect to other spaces and realities.",
+      "attributes": {
+        "location": "Reims, France",
+        "era": "11th century onwards",
+        "built": "~11th century",
+        "inhabited_by": ["Chastaigne family", "Castaigne family"],
+        "notable_feature": "every wall contains a door"
+      }
+    },
+    {
+      "name": "Hygromanteia",
+      "type": "document",
+      "description": "A grimoire of demonological names, seals, and spells compiled by Augustus Chastaigne under the name Solomon. It caused its author to claim revelation of the world's truth and facilitation of a 'red book' that would birth the 'king of this world'.",
+      "attributes": {
+        "author": "Augustus Chastaigne (pseudonym: Solomon)",
+        "completed": "FEBRUARY 1403",
+        "type": "grimoire",
+        "aliases": ["livre rouge"],
+        "content": "demon names, seals, spells"
+      }
+    },
+    {
+      "name": "Libro Secretorum Manifesta",
+      "type": "document",
+      "description": "A Latin reconstruction of Le Roi en Jaune completed by the Brotherhood of Doors after eight years of scholarly effort. Printed in 11 lavender hardcovers without listed author or printer.",
+      "attributes": {
+        "completed": "23 AUG 1905",
+        "language": "Latin",
+        "creator": "Brotherhood of Doors",
+        "copies_printed": 11,
+        "binding": "lavender hardcover",
+        "translation_of": "Le Roi en Jaune"
+      }
+    },
+    {
+      "name": "Deuxième Bureau",
+      "type": "organization",
+      "description": "Pre-World War II French military intelligence agency that investigated and suppressed Le Roi en Jaune in 1895. Files recovered after WWII became Delta Green intelligence.",
+      "attributes": {
+        "era": "1895-1940s",
+        "location": "France",
+        "function": "military intelligence",
+        "successor": "DGSE (modern France)"
+      }
+    },
+    {
+      "name": "Ian F. Decraig",
+      "type": "person",
+      "description": "A wealthy Chicago millionaire and occultist who witnessed the final 1895 performance of Le Roi en Jaune and became obsessed with reconstructing its complete text. He founded the Brotherhood of Doors, later imprisoned for murder and embezzlement, and mysteriously vanished from a locked room in 1925.",
+      "attributes": {
+        "born": "27 OCT 1865",
+        "birthplace": "Chicago",
+        "profession": "millionaire, businessman",
+        "founding": "Brotherhood of Doors, 1 MAY 1897",
+        "arrested": "2 SEP 1905",
+        "sentence": "50 years in Joliet Prison",
+        "disappeared": "30 AUG 1925"
+      }
+    },
+    {
+      "name": "Le Roi en Jaune",
+      "type": "artifact",
+      "description": "The original French stage play first published in 1894 and performed in Paris in August 1895. Its performance caused mass psychological damage and supernatural manifestations.",
+      "attributes": {
+        "language": "French",
+        "first_publication": "OCTOBER 1894",
+        "first_performance": "23 AUG 1895",
+        "location_of_performance": "Paris",
+        "acting_troupe": "les Coquelicots"
+      }
+    },
+    {
+      "name": "les Coquelicots",
+      "type": "organization",
+      "description": "A Parisian acting troupe that performed Le Roi en Jaune in August 1895.",
+      "attributes": {
+        "location": "Paris",
+        "activity": "1895"
+      }
+    },
+    {
+      "name": "Yellow Sign",
+      "type": "artifact",
+      "description": "A strange symbol associated with The King in Yellow, marked on covers and materials related to the play. It functions as a focus for supernatural corruption.",
+      "attributes": {
+        "appearance": "dragon or eye-like mark",
+        "function": "supernatural sigil"
+      }
+    },
+    {
+      "name": "Bael",
+      "type": "entity",
+      "description": "A supernatural being or demon that communicated with Augustus Chastaigne and revealed the truth of the world to him. It claims the book Hygromanteia is a 'red book' that births the 'king of this world'.",
+      "attributes": {
+        "communication_method": "appears in bottle, speaks through doors",
+        "nature": "demon or supernatural entity"
+      }
+    },
+    {
+      "name": "Delta Green",
+      "type": "organization",
+      "description": "A covert conspiracy dedicated to stopping unnatural terrors, which enacted the STATIC Protocol in response to The King in Yellow threat.",
+      "attributes": {
+        "function": "containment of supernatural threats",
+        "status": "operational"
+      }
+    },
+    {
+      "name": "Emmet Moseby",
+      "type": "person",
+      "description": "A Delta Green agent tasked with reviewing WWII paperwork who discovered French records of Le Roi en Jaune and translated it into English.",
+      "attributes": {
+        "born": "12 APR 1905",
+        "birthplace": "Wichita, Kansas",
+        "occupation": "Delta Green agent",
+        "translation_task": "22 FEB 1951"
+      }
+    },
+    {
+      "name": "St. Dymphna Foundation",
+      "type": "organization",
+      "description": "A Maryland charity established by Delta Green to funnel money to Dr. Richard Dallan for founding and operating a psychiatric facility treating Delta Green personnel with mental trauma.",
+      "attributes": {
+        "established": "1986",
+        "location": "Maryland",
+        "purpose": "mental health treatment for Delta Green agents",
+        "director": "Dr. Richard Dallan"
+      }
+    },
+    {
+      "name": "Richard Dallan",
+      "type": "person",
+      "description": "A physician and Delta Green associate who heads the St. Dymphna Foundation and its Dorchester House psychiatric facility.",
+      "attributes": {
+        "born": "3 FEB 1953",
+        "birthplace": "Austin, Texas",
+        "aliases": ["Dr. Richard Dallan"],
+        "profession": "physician"
+      }
+    },
+    {
+      "name": "Dorchester House",
+      "type": "location",
+      "description": "A psychiatric facility in Boston operated by the St. Dymphna Foundation, ostensibly for treating mental trauma. Originally a Catholic orphanage and school.",
+      "attributes": {
+        "location": "Boston, Massachusetts",
+        "original_function": "orphanage and school",
+        "became_facility": "30 AUG 1989",
+        "operated_by": "St. Dymphna Foundation"
+      }
+    },
+    {
+      "name": "Édouard Allard",
+      "type": "person",
+      "description": "A servant to Augustus Chastaigne who delivered his letters and later sold rare books on codes and cyphers in Paris. He was found murdered with his throat cut.",
+      "attributes": {
+        "role": "personal servant to Augustus Chastaigne",
+        "later_profession": "rare book dealer",
+        "died": "1405",
+        "death_method": "throat cut",
+        "death_location": "Paris apartment"
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "Death of Marie-Ange Reverdin",
+      "type": "death",
+      "lore_date": "12 JUL 1895",
+      "description": "The death of President Jean Casimir-Perier's personal secretary, which triggered French investigation into Le Roi en Jaune.",
+      "attributes": {
+        "victim": "Marie-Ange Reverdin",
+        "role": "president's secretary",
+        "consequence": "Deuxième Bureau investigation begins"
+      }
+    },
+    {
+      "name": "Publication of Le Roi en Jaune",
+      "type": "publication",
+      "lore_date": "OCTOBER 1894",
+      "description": "The mysterious play Le Roi en Jaune appears in bookshops across Paris in a slim black hardcover.",
+      "attributes": {
+        "location": "Paris",
+        "format": "slim black hardcover"
+      }
+    },
+    {
+      "name": "First Documented Supernatural Events of Le Roi en Jaune",
+      "type": "outbreak",
+      "lore_date": "6 MAY 1895",
+      "description": "The first recorded identification of unnatural events associated with the play, including deaths, suicides, and disappearances.",
+      "attributes": {
+        "casualties": "more than 200 (MAY-JULY 1895)",
+        "location": "Paris",
+        "manifestations": ["murder", "suicide", "disappearance"]
+      }
+    },
+    {
+      "name": "Poster Campaign for Le Roi en Jaune",
+      "type": "event",
+      "lore_date": "3 AUG 1895",
+      "description": "Posters depicting a woman holding a mask with a snake crawling through its eyes become common throughout Paris.",
+      "attributes": {
+        "location": "Paris",
+        "imagery": "woman with mask and snake"
+      }
+    },
+    {
+      "name": "Rehearsals for Le Roi en Jaune Stage Production",
+      "type": "event",
+      "lore_date": "6 AUG 1895",
+      "description": "Rehearsals begin for the stage production under surveillance by Deuxième Bureau agents attempting to apprehend Auteur X.",
+      "attributes": {
+        "location": "Paris",
+        "surveilling_agency": "Deuxième Bureau",
+        "target": "Auteur X"
+      }
+    },
+    {
+      "name": "Opening of Le Roi en Jaune Stage Production",
+      "type": "event",
+      "lore_date": "23 AUG 1895",
+      "description": "Le Roi en Jaune opens to sold-out crowds and becomes the talk of Paris. The venue's small size makes tickets nearly impossible to secure.",
+      "attributes": {
+        "location": "Paris",
+        "attendance": "sold-out",
+        "ticket_scarcity": "extreme"
+      }
+    },
+    {
+      "name": "Audience Fainting Incidents",
+      "type": "outbreak",
+      "lore_date": "23–30 AUG 1895",
+      "description": "Theater-goers report audience members fainting and requiring escort. Interest in the show builds dramatically.",
+      "attributes": {
+        "location": "Paris",
+        "manifestation": "fainting spells"
+      }
+    },
+    {
+      "name": "Final Performance of Le Roi en Jaune Interrupted",
+      "type": "event",
+      "lore_date": "30 AUG 1895",
+      "description": "The last sold-out show is disrupted by strangely-dressed English-speaking intruders drawing firearms, followed by masked riflemen in black and men from China. Paris police raid under Deuxième Bureau orders.",
+      "attributes": {
+        "location": "Paris",
+        "intruders": "English-speaking, armed",
+        "antagonists": ["men from China", "masked riflemen in black"],
+        "outcome": "cast arrested"
+      }
+    },
+    {
+      "name": "Founding of the Brotherhood of Doors",
+      "type": "founding",
+      "lore_date": "1 MAY 1897",
+      "description": "Ian F. Decraig founds a Chicago religious order with two other wealthy witnesses to Le Roi en Jaune's final performance, dedicated to reconstructing the complete play.",
+      "attributes": {
+        "founder": "Ian F. Decraig",
+        "location": "Chicago",
+        "members": 3,
+        "purpose": "reconstruct Le Roi en Jaune"
+      }
+    },
+    {
+      "name": "Completion of Libro Secretorum Manifesta",
+      "type": "event",
+      "lore_date": "23 AUG 1905",
+      "description": "The Brotherhood of Doors completes an eight-year reconstruction of Le Roi en Jaune in Latin, printing 11 copies in lavender hardcover at great expense.",
+      "attributes": {
+        "organization": "Brotherhood of Doors",
+        "copies": 11,
+        "language": "Latin",
+        "binding": "lavender hardcover"
+      }
+    },
+    {
+      "name": "Louise Chastaigne's Death",
+      "type": "death",
+      "lore_date": "OCTOBER 1402",
+      "description": "Louise Chastaigne exits a door on the third floor of a tower and falls to her death.",
+      "attributes": {
+        "victim": "Louise Chastaigne",
+        "location": "Château des Portes, tower third floor",
+        "death_method": "fall from door"
+      }
+    },
+    {
+      "name": "Augustus Chastaigne's Work on Hygromanteia",
+      "type": "event",
+      "lore_date": "FEBRUARY 1403",
+      "description": "Augustus Chastaigne begins a new demonological grimoire called Hygromanteia, claiming to receive instructions from 'a bottle' and gaining knowledge from 'demons in the doors'. He signs it with the pseudonym Solomon.",
+      "attributes": {
+        "author": "Augustus Chastaigne",
+        "pseudonym": "Solomon",
+        "sources": ["bottle", "demons in doors"],
+        "content": "demon names and seals"
+      }
+    },
+    {
+      "name": "Augustus Chastaigne's Revelation and Suicide",
+      "type": "death",
+      "lore_date": "MARCH 1403",
+      "description": "Augustus Chastaigne completes Hygromanteia and claims to be shown the truth of the world by an entity called Bael. Bael reveals the book is a 'red book' that will birth the 'king of this world.' Augustus then hangs himself in Château des Portes.",
+      "attributes": {
+        "victim": "Augustus Chastaigne",
+        "death_method": "hanging",
+        "location": "Château des Portes",
+        "revelation_entity": "Bael",
+        "work_completed": "Hygromanteia"
+      }
+    },
+    {
+      "name": "Gabriel Chastaigne's Apprenticeship",
+      "type": "event",
+      "lore_date": "APRIL 1403",
+      "description": "Following his father Augustus's suicide and a delivered letter from the family servant Édouard Allard, Gabriel Chastaigne leaves school to apprentice with clockmaker Dominic Antonin in Rouen.",
+      "attributes": {
+        "apprentice": "Gabriel Chastaigne",
+        "master": "Dominic Antonin",
+        "location": "Rouen, France"
+      }
+    },
+    {
+      "name": "Death of Édouard Allard",
+      "type": "death",
+      "lore_date": "1405",
+      "description": "Édouard Allard, former servant to Augustus Chastaigne who had been selling rare books on codes and cyphers, is found murdered with his throat cut. His face is branded with a foul mark like an eye or dragon. The room is empty when found.",
+      "attributes": {
+        "victim": "Édouard Allard",
+        "death_method": "throat cut",
+        "location": "Paris apartment",
+        "marking": "foul mark like eye or dragon on face"
+      }
+    },
+    {
+      "name": "Gabriel Chastaigne's Automata and Perpetual Motion Work",
+      "type": "event",
+      "lore_date": "1435",
+      "description": "Gabriel Chastaigne hosts a masquerade party at Château des Portes for French nobility, featuring giant mechanical marionettes controlled by wires from ceiling tracks. Rumors circulate of perpetual motion secrets.",
+      "attributes": {
+        "location": "Château des Portes",
+        "event_type": "masquerade",
+        "attractions": ["mechanical marionettes", "clockwork automata"],
+        "witnesses": "French nobility"
+      }
+    },
+    {
+      "name": "Gabriel Chastaigne's Disappearance",
+      "type": "disappearance",
+      "lore_date": "28 AUG 1460",
+      "description": "Gabriel Chastaigne vanishes, leaving behind strange papers outlining a ritual or process later called the Preliminary Invocation, and a sigil for a demon called Purson scratched into the floor.",
+      "attributes": {
+        "missing_person": "Gabriel Chastaigne",
+        "location": "Château des Portes",
+        "artifacts_left": ["ritual notes", "Purson sigil scratched in floor"]
+      }
+    }
+  ],
+  "relations": [
+    {
+      "source_name": "The King in Yellow",
+      "target_name": "Delta Green",
+      "rel_type": "primary_threat_of",
+      "attributes": {
+        "danger_classification": "extreme",
+        "response": "STATIC Protocol"
+      }
+    },
+    {
+      "source_name": "STATIC Protocol",
+      "target_name": "Delta Green",
+      "rel_type": "created_by",
+      "attributes": {
+        "date_established": "1 SEP 1955"
+      }
+    },
+    {
+      "source_name": "Auteur X",
+      "target_name": "Le Roi en Jaune",
+      "rel_type": "authored",
+      "attributes": {
+        "status": "suspected, never confirmed"
+      }
+    },
+    {
+      "source_name": "Deuxième Bureau",
+      "target_name": "Le Roi en Jaune",
+      "rel_type": "investigated",
+      "attributes": {
+        "period": "1895",
+        "actions": ["surveillance", "suppression", "destruction of copies"]
+      }
+    },
+    {
+      "source_name": "Deuxième Bureau",
+      "target_name": "Auteur X",
+      "rel_type": "pursued",
+      "attributes": {
+        "success": "failed"
+      }
+    },
+    {
+      "source_name": "Brotherhood of Doors",
+      "target_name": "Ian F. Decraig",
+      "rel_type": "founded_by",
+      "attributes": {
+        "date": "1 MAY 1897"
+      }
+    },
+    {
+      "source_name": "Brotherhood of Doors",
+      "target_name": "Libro Secretorum Manifesta",
+      "rel_type": "created",
+      "attributes": {
+        "date_completed": "23 AUG 1905"
+      }
+    },
+    {
+      "source_name": "Libro Secretorum Manifesta",
+      "target_name": "Le Roi en Jaune",
+      "rel_type": "reconstruction_of",
+      "attributes": {
+        "language": "Latin",
+        "effort_duration": "8 years"
+      }
+    },
+    {
+      "source_name": "Ian F. Decraig",
+      "target_name": "Le Roi en Jaune",
+      "rel_type": "witnessed",
+      "attributes": {
+        "date": "1895",
+        "reaction": "obsessed with reconstruction"
+      }
+    },
+    {
+      "source_name": "les Coquelicots",
+      "target_name": "Le Roi en Jaune",
+      "rel_type": "performed",
+      "attributes": {
+        "dates": "23-30 AUG 1895",
+        "location": "Paris"
+      }
+    },
+    {
+      "source_name": "Castaigne/Chastaigne Family",
+      "target_name": "Château des Portes",
+      "rel_type": "inhabited",
+      "attributes": {
+        "period": "15th century onwards"
+      }
+    },
+    {
+      "source_name": "Michel Chastaigne",
+      "target_name": "Château des Portes",
+      "rel_type": "built",
+      "attributes": {
+        "era": "~1402"
+      }
+    },
+    {
+      "source_name": "Augustus Chastaigne",
+      "target_name": "Château des Portes",
+      "rel_type": "inhabited",
+      "attributes": {
+        "period": "1402-1403"
+      }
+    },
+    {
+      "source_name": "Augustus Chastaigne",
+      "target_name": "Hygromanteia",
+      "rel_type": "authored",
+      "attributes": {
+        "pseudonym": "Solomon",
+        "completed": "FEBRUARY 1403"
+      }
+    },
+    {
+      "source_name": "Augustus Chastaigne",
+      "target_name": "Bael",
+      "rel_type": "communicated_with",
+      "attributes": {
+        "method": "through doors and bottles"
+      }
+    },
+    {
+      "source_name": "Louise Chastaigne",
+      "target_name": "Augustus Chastaigne",
+      "rel_type": "married_to",
+      "attributes": {
+        "status": "deceased"
+      }
+    },
+    {
+      "source_name": "Gabriel Chastaigne",
+      "target_name": "Augustus Chastaigne",
+      "rel_type": "child_of",
+      "attributes": {}
+    },
+    {
+      "source_name": "Gabriel Chastaigne",
+      "target_name": "Château des Portes",
+      "rel_type": "inherited",
+      "attributes": {
+        "period": "1403 onwards"
+      }
+    },
+    {
+      "source_name": "Édouard Allard",
+      "target_name": "Augustus Chastaigne",
+      "rel_type": "employed_by",
+      "attributes": {
+        "role": "personal servant"
+      }
+    },
+    {
+      "source_name": "Emmet Moseby",
+      "target_name": "Le Roi en Jaune",
+      "rel_type": "translated",
+      "attributes": {
+        "source_language": "French",
+        "target_language": "English",
+        "date": "22 FEB 1951"
+      }
+    },
+    {
+      "source_name": "Emmet Moseby",
+      "target_name": "Delta Green",
+      "rel_type": "employed_by",
+      "attributes": {
+        "role": "agent"
+      }
+    },
+    {
+      "source_name": "Elias Barbas",
+      "target_name": "Delta Green",
+      "rel_type": "member_of",
+      "attributes": {
+        "status": "veteran agent"
+      }
+    },
+    {
+      "source_name": "Elias Barbas",
+      "target_name": "Richard Dallan",
+      "rel_type": "works_under",
+      "attributes": {
+        "context": "psychiatric facility"
+      }
+    },
+    {
+      "source_name": "Richard Dallan",
+      "target_name": "St. Dymphna Foundation",
+      "rel_type": "led_by",
+      "attributes": {
+        "role": "director"
+      }
+    },
+    {
+      "source_name": "St. Dymphna Foundation",
+      "target_name": "Dorchester House",
+      "rel_type": "operates",
+      "attributes": {
+        "established": "1986"
+      }
+    },
+    {
+      "source_name": "St. Dymphna Foundation",
+      "target_name": "Delta Green",
+      "rel_type": "founded_by",
+      "attributes": {
+        "purpose": "treat agent mental trauma"
+      }
+    },
+    {
+      "source_name": "Death of Marie-Ange Reverdin",
+      "target_name": "Deuxième Bureau",
+      "rel_type": "triggered",
+      "attributes": {
+        "consequence": "investigation begins"
+      }
+    },
+    {
+      "source_name": "Publication of Le Roi en Jaune",
+      "target_name": "Le Roi en Jaune",
+      "rel_type": "founded_in",
+      "attributes": {
+        "location": "Paris"
+      }
+    },
+    {
+      "source_name": "First Documented Supernatural Events of Le Roi en Jaune",
+      "target_name": "Le Roi en Jaune",
+      "rel_type": "manifested_from",
+      "attributes": {
+        "casualties": "200+",
+        "phenomena": ["death", "suicide", "disappearance"]
+      }
+    },
+    {
+      "source_name": "Opening of Le Roi en Jaune Stage Production",
+      "target_name": "les Coquelicots",
+      "rel_type": "participated_in",
+      "attributes": {
+        "role": "performing troupe"
+      }
+    },
+    {
+      "source_name": "Opening of Le Roi en Jaune Stage Production",
+      "target_name": "Ian F. Decraig",
+      "rel_type": "affected_by",
+      "attributes": {
+        "outcome": "witnessed final performance, became obsessed"
+      }
+    },
+    {
+      "source_name": "Final Performance of Le Roi en Jaune Interrupted",
+      "target_name": "Deuxième Bureau",
+      "rel_type": "participated_in",
+      "attributes": {
+        "role": "conducted raid",
+        "outcome": "cast arrested"
+      }
+    },
+    {
+      "source_name": "Founding of the Brotherhood of Doors",
+      "target_name": "Ian F. Decraig",
+      "rel_type": "led_in",
+      "attributes": {
+        "role": "founder"
+      }
+    },
+    {
+      "source_name": "Louise Chastaigne's Death",
+      "target_name": "Louise Chastaigne",
+      "rel_type": "died_in",
+      "attributes": {
+        "payload": {
+          "death_method": "fall from tower door",
+          "location": "Château des Portes",
+          "witnesses": "household"
+        }
+      }
+    },
+    {
+      "source_name": "Louise Chastaigne's Death",
+      "target_name": "Augustus Chastaigne",
+      "rel_type": "affected_by",
+      "attributes": {
+        "payload": {
+          "role": "widower",
+          "consequence": "obsession with occultism intensifies"
+        }
+      }
+    },
+    {
+      "source_name": "Augustus Chastaigne's Work on Hygromanteia",
+      "target_name": "Augustus Chastaigne",
+      "rel_type": "participated_in",
+      "attributes": {
+        "payload": {
+          "role": "author",
+          "source_of_knowledge": "demons in doors, mysterious bottle",
+          "outcome": "claimed revelation of truth"
+        }
+      }
+    },
+    {
+      "source_name": "Augustus Chastaigne's Revelation and Suicide",
+      "target_name": "Augustus Chastaigne",
+      "rel_type": "died_in",
+      "attributes": {
+        "payload": {
+          "death_method": "suicide by hanging",
+          "location": "Château des Portes",
+          "final_revelation": "Bael reveals Hygromanteia births king of world"
+        }
+      }
+    },
+    {
+      "source_name": "Augustus Chastaigne's Revelation and Suicide",
+      "target_name": "Gabriel Chastaigne",
+      "rel_type": "affected_by",
+      "attributes": {
+        "payload": {
+          "role": "orphaned son",
+          "consequence": "inherits occult work and estate"
+        }
+      }
+    },
+    {
+      "source_name": "Gabriel Chastaigne's Apprenticeship",
+      "target_name": "Gabriel Chastaigne",
+      "rel_type": "participated_in",
+      "attributes": {
+        "payload": {
+          "role": "apprentice",
+          "master": "Dominic Antonin",
+          "purpose": "learn clockmaking arts"
+        }
+      }
+    },
+    {
+      "source_name": "Death of Édouard Allard",
+      "target_name": "Édouard Allard",
+      "rel_type": "died_in",
+      "attributes": {
+        "payload": {
+          "death_method": "throat cut",
+          "location": "Paris apartment",
+          "context": "selling stolen family books",
+          "mysterious_marking": "foul mark like eye or dragon"
+        }
+      }
+    },
+    {
+      "source_name": "Gabriel Chastaigne's Automata and Perpetual Motion Work",
+      "target_name": "Gabriel Chastaigne",
+      "rel_type": "participated_in",
+      "attributes": {
+        "payload": {
+          "role": "designer and builder",
+          "creations": ["mechanical marionettes", "clockwork automata"],
+          "achievement": "perfected father's mechanical arts"
+        }
+      }
+    },
+    {
+      "source_name": "Gabriel Chastaigne's Disappearance",
+      "target_name": "Gabriel Chastaigne",
+      "rel_type": "affected_by",
+      "attributes": {
+        "payload": {
+          "status": "vanished without trace",
+          "location": "Château des Portes",
+          "left_behind": ["Preliminary Invocation ritual notes", "Purson sigil on floor"]
+        }
+      }
+    }
+  ]
+}

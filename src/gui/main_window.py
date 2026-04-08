@@ -120,10 +120,6 @@ class MainWindow(QMainWindow):
             Qt.DockWidgetArea.RightDockWidgetArea,
         )
 
-        from src.gui.utils.style_helper import StyleHelper
-
-        self.setStyleSheet(StyleHelper.get_tooltip_style())
-
         logger.debug("Dock options configured: nested, tabbed, animated")
 
     # -- Activity Bar --------------------------------------------------------

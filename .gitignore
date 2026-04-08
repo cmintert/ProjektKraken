@@ -41,6 +41,7 @@ credentials/
 # IDEs
 .vscode/
 .idea/
+.claude/settings.json
 
 # Project Specific
 logs/

@@ -343,3 +343,13 @@ QListView::item:selected {{
 QListView::item:hover:!selected {{
     background-color: {border};
 }}
+
+/* Tooltips */
+QToolTip {{
+    background-color: {surface};
+    color: {text_main};
+    border: 1px solid {primary};
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: {font_size_body};
+}}
