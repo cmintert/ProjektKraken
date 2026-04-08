@@ -1307,13 +1307,13 @@ class StyleHelper:
             }}
             .event-header {{ margin-bottom: 4px; }}
             .event-date {{
-                color: {theme["text_dim"]};
+                color: {theme["text_main"]};
                 font-size: 11px;
                 font-weight: 500;
             }}
             .event-name {{
-                color: {theme["text_dim"]};
-                font-weight: 600;
+                color: {theme["text_main"]};
+                font-weight: 700;
                 font-size: 13px;
             }}
             .timeline-entry.active .event-name {{
@@ -1338,8 +1338,8 @@ class StyleHelper:
                 font-size: 11px;
                 line-height: 1.4;
             }}
-            .payload-key {{ color: {theme["accent_secondary"]}; }}
-            .payload-value {{ color: {theme["primary"]}; }}
+            .payload-key {{ color: {theme["text_dim"]}; }}
+            .payload-value {{ color: {theme["text_dim"]}; }}
             .now-separator {{
                 display: flex;
                 align-items: center;
