@@ -501,6 +501,7 @@
                 <span class="n">success</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                 <span class="n">message</span><span class="o">=</span><span class="s2">&quot;Event updated successfully.&quot;</span><span class="p">,</span>
                 <span class="n">command_name</span><span class="o">=</span><span class="s2">&quot;UpdateEventCommand&quot;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_id</span><span class="p">},</span>
             <span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to update event: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>

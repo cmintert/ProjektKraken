@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-04-08
 ### Added
-- feat: show event dates in longform editor headings
+- feat: offload index rebuild to worker thread with progress reporting
 
 
 *This changelog was automatically generated.*
