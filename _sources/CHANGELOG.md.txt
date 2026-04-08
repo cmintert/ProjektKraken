@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-04-08
-### Fixed
-- fix: increase spin box widths to accommodate full values
+### Added
+- feat: show event dates in longform editor headings
 
 
 *This changelog was automatically generated.*

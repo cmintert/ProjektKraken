@@ -385,7 +385,9 @@
     <span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="c1"># Read events</span>
-    <span class="n">cursor</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT id, name, description, attributes FROM events&quot;</span><span class="p">)</span>
+    <span class="n">cursor</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+        <span class="s2">&quot;SELECT id, name, description, attributes, lore_date, lore_duration FROM events&quot;</span>
+    <span class="p">)</span>
     <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">cursor</span><span class="o">.</span><span class="n">fetchall</span><span class="p">():</span>
         <span class="n">row_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
         <span class="n">attrs</span> <span class="o">=</span> <span class="n">_safe_json_loads</span><span class="p">(</span><span class="n">row_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attributes&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">))</span>
@@ -403,6 +405,8 @@
                     <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">row_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;description&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
                     <span class="s2">&quot;attributes&quot;</span><span class="p">:</span> <span class="n">attrs</span><span class="p">,</span>
                     <span class="s2">&quot;meta&quot;</span><span class="p">:</span> <span class="n">meta</span><span class="p">,</span>
+                    <span class="s2">&quot;lore_date&quot;</span><span class="p">:</span> <span class="n">row_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lore_date&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;lore_duration&quot;</span><span class="p">:</span> <span class="n">row_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lore_duration&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
                 <span class="p">}</span>
             <span class="p">)</span>
 
@@ -569,6 +573,8 @@
                 <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">],</span>
                 <span class="s2">&quot;meta&quot;</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;meta&quot;</span><span class="p">],</span>
                 <span class="s2">&quot;heading_level&quot;</span><span class="p">:</span> <span class="n">heading_level</span><span class="p">,</span>
+                <span class="s2">&quot;lore_date&quot;</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lore_date&quot;</span><span class="p">),</span>
+                <span class="s2">&quot;lore_duration&quot;</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lore_duration&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
             <span class="p">}</span>
             <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">output_item</span><span class="p">)</span>
 
