@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-04-07
-### Fixed
-- fix: add relative-precision guard and extract day-calculation helper in date converter
+## [Development] - 2026-04-08
+### Added
+- feat: migrate tooltip styling to main.qss with theme-aware primary color border
 
 
 *This changelog was automatically generated.*
