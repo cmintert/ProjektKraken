@@ -26,6 +26,8 @@ class FakeMainWindow(QObject):
         self.timeline = MagicMock()
         self.map_widget = MagicMock()
         self.unified_list = MagicMock()
+        self.longform_editor = MagicMock()
+        self.longform_editor.content = MagicMock()
         self.ui_manager = MagicMock()
         self.ui_manager.docks = {"event": MagicMock(), "entity": MagicMock()}
         self.lbl_world_time = MagicMock()
@@ -74,6 +76,7 @@ class TestCalendarConfigLoading:
         fake_window.timeline.set_calendar_converter.assert_called_once()
         fake_window.map_widget.set_calendar_converter.assert_called_once()
         fake_window.unified_list.set_calendar_converter.assert_called_once()
+        fake_window.longform_editor.content.set_calendar_converter.assert_called_once()
 
     def test_on_calendar_config_loaded_without_config(self, coordinator, fake_window):
         """Should create default converter when no config provided."""

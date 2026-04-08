@@ -162,6 +162,7 @@ class TimeCoordinator(BaseCoordinator):
             self.main_window.timeline.set_calendar_converter(converter)
             self.main_window.map_widget.set_calendar_converter(converter)
             self.main_window.unified_list.set_calendar_converter(converter)
+            self.main_window.longform_editor.content.set_calendar_converter(converter)
 
             # Set calendar converter for timeline display in entity editor
             from src.gui.widgets.timeline_display_widget import (

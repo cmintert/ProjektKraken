@@ -39,12 +39,24 @@ class LongformContentWidget(QTextBrowser):
         self.setOpenLinks(False)  # We handle links manually
         self.anchorClicked.connect(self._on_anchor_clicked)
         self._sequence = []
+        self._calendar_converter = None
 
         # Connect to theme changes
         ThemeManager().theme_changed.connect(lambda _: self._apply_theme())
 
         # Apply initial theme
         self._apply_theme()
+
+    def set_calendar_converter(self, converter: Any) -> None:
+        """Set the calendar converter used for formatting event dates.
+
+        Args:
+            converter: CalendarConverter instance.
+
+        """
+        self._calendar_converter = converter
+        if self._sequence:
+            self.load_content(self._sequence)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Detect card clicks vs link clicks."""
@@ -110,6 +122,25 @@ class LongformContentWidget(QTextBrowser):
                 f'color: inherit;">{heading_html}</a>'
             )
 
+            # Build optional date subtitle (events only)
+            date_html = ""
+            if item.get("table") == "events" and self._calendar_converter:
+                lore_date = item.get("lore_date")
+                if lore_date is not None:
+                    try:
+                        start_str = self._calendar_converter.format_date(lore_date)
+                        lore_duration = item.get("lore_duration") or 0.0
+                        if lore_duration > 0:
+                            end_str = self._calendar_converter.format_date(
+                                lore_date + lore_duration
+                            )
+                            date_str = f"{start_str} \u2013 {end_str}"
+                        else:
+                            date_str = start_str
+                        date_html = f'<p class="event-date">{date_str}</p>'
+                    except Exception:
+                        pass
+
             # Render content markdown
             content_html = (
                 self._render_markdown_fragment(content_md) if content_md else ""
@@ -125,6 +156,7 @@ class LongformContentWidget(QTextBrowser):
                 f'<td class="card-cell">'
                 f'<a name="item-{idx}"> </a>'  # Space marker for click detection
                 f"{heading_link}"
+                f"{date_html}"
                 f"{content_html}"
                 f"</td>"
                 f"</tr>"
@@ -202,6 +234,7 @@ class LongformContentWidget(QTextBrowser):
         surface_color = theme.get("surface", "#323232")
         border_color = theme.get("border", "#454545")
         primary_color = theme.get("primary", "#FF9900")
+        text_dim_color = theme.get("text_dim", "#9E9E9E")
         # bg_color = theme.get("app_bg", "#2B2B2B")
 
         fs_h1 = theme.get("font_size_h1", "18pt")
@@ -250,6 +283,14 @@ class LongformContentWidget(QTextBrowser):
             /* Event specific styling: Blue Headings */
             .type-events h1 {{
                 color: {link_color};
+            }}
+
+            .event-date {{
+                font-size: 8pt;
+                color: {text_dim_color};
+                margin-top: -6px;
+                margin-bottom: 10px;
+                font-style: italic;
             }}
 
             h2 {{
@@ -332,6 +373,7 @@ class LongformContentWidget(QTextBrowser):
             surface_color=surface_color,
             border_color=border_color,
             primary_color=primary_color,
+            text_dim_color=text_dim_color,
             accent_color=link_color,  # Re-using accent secondary for blockquote border
             fs_h1=fs_h1,
             fs_h2=fs_h2,

@@ -128,7 +128,9 @@ def read_all_longform_items(
     items = []
 
     # Read events
-    cursor = conn.execute("SELECT id, name, description, attributes FROM events")
+    cursor = conn.execute(
+        "SELECT id, name, description, attributes, lore_date, lore_duration FROM events"
+    )
     for row in cursor.fetchall():
         row_dict = dict(row)
         attrs = _safe_json_loads(row_dict.get("attributes", "{}"))
@@ -146,6 +148,8 @@ def read_all_longform_items(
                     "content": row_dict.get("description", ""),
                     "attributes": attrs,
                     "meta": meta,
+                    "lore_date": row_dict.get("lore_date"),
+                    "lore_duration": row_dict.get("lore_duration", 0.0),
                 }
             )
 
@@ -306,6 +310,8 @@ def build_longform_sequence(
                 "content": item["content"],
                 "meta": item["meta"],
                 "heading_level": heading_level,
+                "lore_date": item.get("lore_date"),
+                "lore_duration": item.get("lore_duration", 0.0),
             }
             result.append(output_item)
 
