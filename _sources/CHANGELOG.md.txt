@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-04-08
-### Added
-- feat: migrate tooltip styling to main.qss with theme-aware primary color border
+### Fixed
+- fix: increase spin box widths to accommodate full values
 
 
 *This changelog was automatically generated.*
