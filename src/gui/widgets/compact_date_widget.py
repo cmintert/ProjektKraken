@@ -94,13 +94,13 @@ class CompactDateWidget(QWidget):
         chip_layout.setSpacing(0)
 
         self.spin_year = QSpinBox()
-        self.spin_year.setRange(-9999, 9999)
+        self.spin_year.setRange(-999999, 999999)
         self.spin_year.setValue(1)
         self.spin_year.setPrefix("Year ")
         self.spin_year.setSizePolicy(
             QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
-        self.spin_year.setFixedWidth(90)
+        self.spin_year.setFixedWidth(130)
         chip_layout.addWidget(self.spin_year, stretch=0)
 
         self.combo_month = QComboBox()
@@ -159,7 +159,7 @@ class CompactDateWidget(QWidget):
         self.spin_hour.setSizePolicy(
             QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
-        self.spin_hour.setFixedWidth(60)
+        self.spin_hour.setFixedWidth(65)
         time_row.addWidget(self.spin_hour, stretch=0)
 
         self.spin_minute = QSpinBox()
@@ -169,7 +169,7 @@ class CompactDateWidget(QWidget):
         self.spin_minute.setSizePolicy(
             QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
-        self.spin_minute.setFixedWidth(60)
+        self.spin_minute.setFixedWidth(65)
         time_row.addWidget(self.spin_minute, stretch=0)
 
         self.txt_date = QLineEdit()
@@ -577,7 +577,7 @@ class CalendarPopup(QDialog):
         header = QHBoxLayout()
 
         self.spin_year = QSpinBox()
-        self.spin_year.setRange(-9999, 9999)
+        self.spin_year.setRange(-999999, 999999)
         self.spin_year.setValue(self._year)
         self.spin_year.valueChanged.connect(self._refresh_grid)
         header.addWidget(self.spin_year)

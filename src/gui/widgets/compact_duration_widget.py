@@ -72,13 +72,13 @@ class CompactDurationWidget(QWidget):
         from PySide6.QtWidgets import QSizePolicy
 
         self.spin_years = QSpinBox()
-        self.spin_years.setRange(0, 9999)
+        self.spin_years.setRange(0, 999999)
         self.spin_years.setValue(0)
         self.spin_years.setSuffix(" Y")
         self.spin_years.setSizePolicy(
             QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
-        self.spin_years.setFixedWidth(80)
+        self.spin_years.setFixedWidth(110)
         ymd_row.addWidget(self.spin_years, stretch=0)
 
         # Months - allow expanding with suffix
@@ -129,7 +129,7 @@ class CompactDurationWidget(QWidget):
         self.spin_minutes.setSizePolicy(
             QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
-        self.spin_minutes.setFixedWidth(70)
+        self.spin_minutes.setFixedWidth(75)
         hm_row.addWidget(self.spin_minutes, stretch=0)
 
         # Preview - takes remaining space
