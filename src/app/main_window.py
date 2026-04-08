@@ -4,7 +4,7 @@ The main application window that manages UI components, database workers, and
 signal/slot connections.
 """
 
-from typing import Optional
+from typing import Any, Optional
 
 # NOTE: Uses fully qualified PySide6 enum paths. See docs/PYSIDE6_ENUM_SOLUTION.md.
 from PySide6.QtCore import (
@@ -260,7 +260,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.resize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
 
         # Current world reference (will be set by worker_manager)
-        self.current_world = None
+        self.current_world: Optional[Any] = None
 
         # Connect Theme Manager Signal
         try:
@@ -276,7 +276,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.data_handler = DataHandler()
 
         # Initialize backup service (will be properly connected after DB init)
-        self.backup_service = None
+        self.backup_service: Optional[Any] = None
 
         # Initialize coordinators via AppCoordinator facade
         self.app_coordinator = AppCoordinator(self)

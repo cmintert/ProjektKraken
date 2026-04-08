@@ -48,6 +48,8 @@ class WorkerManager(QObject):
     """
 
     summary_requested = Signal(object)
+    rebuild_index_requested = Signal(str, list)  # → worker.rebuild_search_index
+    _index_single_requested = Signal(str, str, list)  # → worker.index_object
 
     def __init__(self, main_window: "MainWindow") -> None:
         """Initialize the WorkerManager.
@@ -85,7 +87,7 @@ class WorkerManager(QObject):
 
         # Load active world name from settings
         settings = QSettings()
-        active_world_name = settings.value(SETTINGS_ACTIVE_DB_KEY, None)
+        active_world_name = settings.value(SETTINGS_ACTIVE_DB_KEY, None, type=str)
 
         # Get or create default world
         world = None
@@ -196,6 +198,12 @@ class WorkerManager(QObject):
         self.window.worker.summary_generated.connect(
             self.window.data_coordinator.on_summary_generated_result, connection_type
         )
+        self.rebuild_index_requested.connect(
+            self.window.worker.rebuild_search_index, connection_type
+        )
+        self._index_single_requested.connect(
+            self.window.worker.index_object, connection_type
+        )
 
         # Connect MainWindow signals to worker (cross-thread: main → worker)
         # All connections use QueuedConnection because worker is on a different thread
@@ -248,6 +256,40 @@ class WorkerManager(QObject):
         self.window.status_bar.showMessage(f"{STATUS_ERROR_PREFIX}{message}", 5000)
         QApplication.restoreOverrideCursor()
         logger.error(message)
+
+    @Slot(str, str)
+    def _on_index_object_requested(
+        self, object_type: str, object_id: str
+    ) -> None:
+        """Re-embed a single object if auto-index is enabled.
+
+        Called when DataHandler emits ``index_object_requested`` after a
+        Create/Update command finishes.
+
+        Args:
+            object_type: 'entity' or 'event'.
+            object_id: UUID of the object to re-index.
+
+        """
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        auto_index = settings.value("ai_auto_index_on_save", False)
+        if isinstance(auto_index, str):
+            auto_index = auto_index.lower() == "true"
+        if not auto_index:
+            return
+
+        if getattr(self.window, "worker", None) is None:
+            return
+
+        # Get excluded attributes from settings
+        excluded_text = settings.value(
+            "ai_search_excluded_attrs", "", type=str
+        )
+        excluded = [
+            attr.strip() for attr in excluded_text.split(",") if attr.strip()
+        ]
+
+        self._index_single_requested.emit(object_type, object_id, excluded)
 
     @Slot(bool)
     def on_db_initialized(self, success: bool) -> None:

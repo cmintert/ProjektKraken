@@ -92,7 +92,14 @@ class MainWindowProtocol(Protocol):
         ...
 
     worker: object  # Worker instance for background operations
+    worker_thread: object  # QThread hosting the worker
     command_requested: object  # Signal for emitting commands
+    db_path: str  # Path to the active SQLite database
+    current_world: Any  # Active World model instance
+    gui_db_service: Any  # Main-thread DatabaseService
+    backup_service: Any  # BackupService instance
+    history_service: Any  # HistoryService instance
+    filter_config: dict  # Active tag filter configuration
 
     # Missing Attributes identified by Pyright (Typed as Any for flexibility)
     _on_command_failed: Any

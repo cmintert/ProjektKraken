@@ -167,6 +167,7 @@ class UpdateEntityCommand(BaseCommand):
                 success=True,
                 message="Entity updated.",
                 command_name="UpdateEntityCommand",
+                data={"id": self.entity_id},
             )
         except Exception as e:
             logger.error(f"Failed to update entity: {e}")

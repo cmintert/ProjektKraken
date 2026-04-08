@@ -77,6 +77,10 @@ class DatabaseWorker(QObject):
     # Semantic completion signals
     semantic_suggestions_ready = Signal(str, list)  # (prefix, list[str] names)
 
+    # Index rebuild signals
+    index_rebuild_progress = Signal(int, int, int)  # (done, total, pct)
+    index_rebuild_finished = Signal(int, int)  # (succeeded, failed)
+
     def __init__(self, db_path: str) -> None:
         """Initializes the worker.
 
@@ -721,13 +725,11 @@ class DatabaseWorker(QObject):
             )
             self.error_occurred.emit("Failed to load grouping data.")
 
-    @Slot(str, str, str, str, list)
+    @Slot(str, str, list)
     def index_object(
         self,
         object_type: str,
         object_id: str,
-        name: str,
-        content: str,
         excluded_attributes: Optional[List[str]] = None,
     ) -> None:
         """Index a single object (entity or event) for semantic search.
@@ -735,8 +737,6 @@ class DatabaseWorker(QObject):
         Args:
             object_type: 'entity' or 'event'.
             object_id: UUID of the object to index.
-            provider: Optional embedding provider name.
-            model: Optional model name override.
             excluded_attributes: Optional list of attribute keys to exclude.
 
         """
@@ -768,6 +768,62 @@ class DatabaseWorker(QObject):
         except Exception:
             logger.error(f"Failed to index {object_type}: {traceback.format_exc()}")
             self.error_occurred.emit(f"Failed to index {object_type} {object_id}.")
+
+    @Slot(str, list)
+    def rebuild_search_index(
+        self,
+        object_type: str,
+        excluded_attributes: Optional[List[str]] = None,
+    ) -> None:
+        """Rebuild the semantic search index on the worker thread.
+
+        Emits index_rebuild_progress periodically and index_rebuild_finished
+        when done.
+
+        Args:
+            object_type: 'all', 'entity', or 'event'.
+            excluded_attributes: Optional list of attribute keys to exclude.
+
+        """
+        if not self.db_service:
+            self.error_occurred.emit("Database not ready for index rebuild.")
+            return
+
+        try:
+            from src.services.search_service import create_search_service
+
+            connection = self.db_service.get_connection()
+            if not connection:
+                raise RuntimeError("Failed to establish database connection")
+
+            try:
+                search_service = create_search_service(connection)
+            except ImportError as e:
+                msg = str(e).split("\n")[0]
+                self.error_occurred.emit(msg)
+                self.index_rebuild_finished.emit(0, 0)
+                return
+
+            types = (
+                ["entity", "event"] if object_type == "all" else [object_type]
+            )
+
+            self.operation_started.emit("Rebuilding search index...")
+            counts = search_service.rebuild_index(
+                object_types=types,
+                excluded_attributes=excluded_attributes or [],
+            )
+
+            total = sum(counts.values())
+            self.index_rebuild_finished.emit(total, 0)
+            self.operation_finished.emit(f"Index rebuilt: {total} objects.")
+
+        except Exception:
+            logger.error(
+                f"Index rebuild failed: {traceback.format_exc()}"
+            )
+            self.error_occurred.emit("Index rebuild failed.")
+            self.index_rebuild_finished.emit(0, 0)
 
     @Slot(dict)
     def apply_filter(self, filter_config: dict) -> None:

@@ -441,10 +441,28 @@ class AISettingsDialog(QDialog):
         self.btn_rebuild.clicked.connect(self._on_rebuild_clicked)
         rebuild_layout.addWidget(self.btn_rebuild, stretch=1)
         index_layout.addLayout(rebuild_layout)
+
+        # Progress label (hidden by default)
+        self.lbl_rebuild_progress = QLabel("")
+        self.lbl_rebuild_progress.setVisible(False)
+        index_layout.addWidget(self.lbl_rebuild_progress)
+
         self.btn_refresh_status = QPushButton("Refresh Status")
         self.btn_refresh_status.clicked.connect(self.index_status_requested.emit)
         index_layout.addWidget(self.btn_refresh_status)
         main_layout.addWidget(index_group)
+
+        # === Auto-Index Section ===
+        auto_group = QGroupBox("Automatic Indexing")
+        auto_layout = QVBoxLayout(auto_group)
+        StyleHelper.apply_standard_list_spacing(auto_layout)
+        self.chk_auto_index = QCheckBox("Auto-index on save")
+        self.chk_auto_index.setToolTip(
+            "Re-embed entities and events immediately after each save."
+        )
+        self.chk_auto_index.stateChanged.connect(self.save_settings)
+        auto_layout.addWidget(self.chk_auto_index)
+        main_layout.addWidget(auto_group)
 
         # === Search Settings Section ===
         settings_group = QGroupBox("Search Rules")
@@ -989,6 +1007,11 @@ class AISettingsDialog(QDialog):
             "ai_search_excluded_attrs", self.excluded_attrs_input.text().strip()
         )
 
+        # Save auto-index on save setting
+        settings.setValue(
+            "ai_auto_index_on_save", self.chk_auto_index.isChecked()
+        )
+
         # Save embedding provider settings
         provider = (
             "lmstudio"
@@ -1097,6 +1120,12 @@ class AISettingsDialog(QDialog):
         # Load excluded attributes
         excluded = settings.value("ai_search_excluded_attrs", "")
         self.excluded_attrs_input.setText(excluded)
+
+        # Load auto-index on save setting
+        auto_index = settings.value("ai_auto_index_on_save", False)
+        if isinstance(auto_index, str):
+            auto_index = auto_index.lower() == "true"
+        self.chk_auto_index.setChecked(bool(auto_index))
 
         # Load embedding provider settings
         provider = settings.value("ai_embedding_provider", "sentence-transformers")
@@ -1217,3 +1246,31 @@ class AISettingsDialog(QDialog):
         self.lbl_model.setText(f"Model: {model}")
         self.lbl_indexed_count.setText(f"Indexed: {counts}")
         self.lbl_last_indexed.setText(f"Last Updated: {last_updated}")
+
+    def set_rebuild_in_progress(self, in_progress: bool) -> None:
+        """Toggle rebuild-in-progress state on the dialog.
+
+        Disables/enables the rebuild button and shows/hides the progress label.
+
+        Args:
+            in_progress: True to indicate a rebuild is running.
+
+        """
+        self.btn_rebuild.setEnabled(not in_progress)
+        self.lbl_rebuild_progress.setVisible(in_progress)
+        if not in_progress:
+            self.lbl_rebuild_progress.setText("")
+
+    def update_rebuild_progress(self, done: int, total: int, pct: int) -> None:
+        """Update the rebuild progress label.
+
+        Args:
+            done: Number of items processed so far.
+            total: Total number of items to process.
+            pct: Percentage complete.
+
+        """
+        self.lbl_rebuild_progress.setVisible(True)
+        self.lbl_rebuild_progress.setText(
+            f"Indexing {done}/{total} ({pct}%)"
+        )

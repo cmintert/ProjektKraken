@@ -172,62 +172,88 @@ class AISearchManager(QObject):
 
     @Slot(str)
     def rebuild_search_index(self, object_type: str) -> None:
-        """Rebuild the semantic search index.
+        """Dispatch index rebuild to the worker thread.
 
         Args:
             object_type: Type to rebuild ('all', 'entity', 'event').
 
         """
         try:
-            if not hasattr(self.window, "gui_db_service"):
-                logger.warning("GUI DB Service not ready for rebuild.")
+            worker = getattr(self.window, "worker", None)
+            if worker is None:
+                logger.warning("Worker not ready for rebuild.")
                 return
 
-            self.window.status_bar.showMessage(f"Rebuilding {object_type} index...", 0)
+            self.window.status_bar.showMessage(
+                f"Rebuilding {object_type} index...", 0
+            )
 
-            # Import search service
-            from src.services.search_service import create_search_service
-
-            # Create search service with GUI thread connection
-            assert self.window.gui_db_service._connection is not None
-            try:
-                search_service = create_search_service(
-                    self.window.gui_db_service._connection
-                )
-            except ImportError as e:
-                msg = str(e).split("\n")[0]  # first line is the user-friendly part
-                self._set_status(msg, 10000)
-                return
-            except Exception as e:
-                logger.error(f"Failed to initialise embedding provider: {e}")
-                self._set_status(f"Embedding provider error: {e}", 8000)
-                return
-
-            # Determine object types to rebuild
-            types = ["entity", "event"] if object_type == "all" else [object_type]
+            # Disable the rebuild button in the dialog while running
+            dlg = getattr(self.window, "ai_settings_dialog", None)
+            if dlg is not None:
+                dlg.set_rebuild_in_progress(True)
 
             # Get excluded attributes from QSettings
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-            excluded_text = settings.value("ai_search_excluded_attrs", "", type=str)
+            excluded_text = settings.value(
+                "ai_search_excluded_attrs", "", type=str
+            )
             excluded = [
-                attr.strip() for attr in excluded_text.split(",") if attr.strip()
+                attr.strip()
+                for attr in excluded_text.split(",")
+                if attr.strip()
             ]
 
-            # Rebuild index
-            counts = search_service.rebuild_index(
-                object_types=types, excluded_attributes=excluded
+            # Dispatch to worker thread via WorkerManager signal
+            self.window.worker_manager.rebuild_index_requested.emit(
+                object_type, excluded
             )
 
-            # Show results
-            total = sum(counts.values())
-            self._set_status(f"Rebuilt index: {total} objects indexed")
-
-            # Refresh index status
-            self.refresh_search_index_status()
-
         except Exception as e:
-            logger.error(f"Index rebuild failed: {e}")
+            logger.error(f"Failed to dispatch index rebuild: {e}")
             self._set_status(f"Rebuild failed: {e}")
+
+    @Slot(int, int, int)
+    def on_index_rebuild_progress(
+        self, done: int, total: int, pct: int
+    ) -> None:
+        """Handle progress updates from the worker thread.
+
+        Args:
+            done: Items processed so far.
+            total: Total items.
+            pct: Percentage complete.
+
+        """
+        self.window.status_bar.showMessage(
+            f"Indexing {done}/{total} ({pct}%)...", 0
+        )
+        dlg = getattr(self.window, "ai_settings_dialog", None)
+        if dlg is not None:
+            dlg.update_rebuild_progress(done, total, pct)
+
+    @Slot(int, int)
+    def on_index_rebuild_finished(self, succeeded: int, failed: int) -> None:
+        """Handle rebuild completion from the worker thread.
+
+        Args:
+            succeeded: Number of successfully indexed items.
+            failed: Number of failed items.
+
+        """
+        if failed:
+            msg = (
+                f"Index rebuilt: {succeeded} indexed, {failed} failed"
+            )
+        else:
+            msg = f"Index rebuilt: {succeeded} objects indexed"
+        self._set_status(msg)
+
+        dlg = getattr(self.window, "ai_settings_dialog", None)
+        if dlg is not None:
+            dlg.set_rebuild_in_progress(False)
+
+        self.refresh_search_index_status()
 
     @Slot(str, str)
     def on_search_result_selected(self, object_type: str, object_id: str) -> None:

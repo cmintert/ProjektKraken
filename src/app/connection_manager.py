@@ -773,6 +773,8 @@ class ConnectionManager:
         """Connect signals from the AI search panel widget."""
         panel = self.window.ai_search_panel
         ai = self.window.ai_search_manager
+        worker = self.window.worker
+        queued = Qt.ConnectionType.QueuedConnection
         return self._connect_batch(
             [
                 (
@@ -786,6 +788,26 @@ class ConnectionManager:
                     "result_selected",
                     ai.on_search_result_selected,
                     "AISearchPanel",
+                ),
+                (
+                    worker,
+                    "index_rebuild_progress",
+                    ai.on_index_rebuild_progress,
+                    "Worker→AISearchManager",
+                    queued,
+                ),
+                (
+                    worker,
+                    "index_rebuild_finished",
+                    ai.on_index_rebuild_finished,
+                    "Worker→AISearchManager",
+                    queued,
+                ),
+                (
+                    self.window.data_handler,
+                    "index_object_requested",
+                    self.window.worker_manager._on_index_object_requested,
+                    "DataHandler→WorkerManager",
                 ),
             ],
             "AISearchPanel",

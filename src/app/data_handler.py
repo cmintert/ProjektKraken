@@ -15,6 +15,13 @@ from src.core.events import Event
 
 logger = logging.getLogger(__name__)
 
+_INDEX_COMMANDS = {
+    "CreateEventCommand": "event",
+    "UpdateEventCommand": "event",
+    "CreateEntityCommand": "entity",
+    "UpdateEntityCommand": "entity",
+}
+
 
 class DataHandler(QObject):
     """Manages data loading and emits signals for UI updates.
@@ -74,6 +81,9 @@ class DataHandler(QObject):
     reload_entity_details = Signal(str)  # (entity_id)
     reload_longform = Signal()
     reload_active_editor_relations = Signal()  # Reload relations for active editor
+
+    # Auto-index: emitted when an entity/event is saved and should be re-embedded
+    index_object_requested = Signal(str, str)  # (object_type, object_id)
 
     def __init__(self) -> None:
         """Initialize the data handler.
@@ -407,6 +417,13 @@ class DataHandler(QObject):
             if "Longform" in command_name:
                 logger.debug("[DataHandler] Emitting reload_longform")
                 self.reload_longform.emit()
+
+            # Re-embed after saves so the semantic index stays fresh
+            if command_name in _INDEX_COMMANDS and result.data:
+                obj_id = result.data.get("id")
+                if obj_id:
+                    obj_type = _INDEX_COMMANDS[command_name]
+                    self.index_object_requested.emit(obj_type, obj_id)
 
             logger.debug(f"[DataHandler] on_command_finished completed: {command_name}")
 

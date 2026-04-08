@@ -215,6 +215,7 @@ class UpdateEventCommand(BaseCommand):
                 success=True,
                 message="Event updated successfully.",
                 command_name="UpdateEventCommand",
+                data={"id": self.event_id},
             )
         except Exception as e:
             logger.error(f"Failed to update event: {e}")

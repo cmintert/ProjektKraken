@@ -35,6 +35,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+REBUILD_BATCH_SIZE = 32
+
 
 # =============================================================================
 # Text Building Functions (Deterministic)
@@ -743,6 +745,139 @@ class SearchService:
 
         logger.info(f"Indexed event {event_id} ({event.name})")
 
+    def _prepare_item_for_batch(
+        self,
+        obj_type: str,
+        object_id: str,
+        excluded_attributes: Optional[List[str]] = None,
+    ) -> Optional[Tuple[str, str, str, Dict[str, str]]]:
+        """Prepare a single item for batch embedding.
+
+        Fetches the object from the database, builds text, checks hash to skip
+        unchanged items.
+
+        Args:
+            obj_type: 'entity' or 'event'.
+            object_id: Object UUID.
+            excluded_attributes: Attribute keys to exclude.
+
+        Returns:
+            Tuple of (object_id, text, text_hash, metadata) or None if unchanged.
+
+        """
+        if obj_type == "entity":
+            row = self.conn.execute(
+                "SELECT * FROM entities WHERE id = ?", (object_id,)
+            ).fetchone()
+            if not row:
+                return None
+            entity_data = dict(row)
+            if entity_data.get("attributes"):
+                entity_data["attributes"] = json.loads(entity_data["attributes"])
+            from src.core.entities import Entity
+            entity = Entity.from_dict(entity_data)
+            tags = self._get_tags_for_object("entity", object_id)
+            text = build_text_for_entity(entity, tags, excluded_attributes)
+            metadata = {"name": entity.name, "type": entity.type}
+        elif obj_type == "event":
+            row = self.conn.execute(
+                "SELECT * FROM events WHERE id = ?", (object_id,)
+            ).fetchone()
+            if not row:
+                return None
+            event_data = dict(row)
+            if event_data.get("attributes"):
+                event_data["attributes"] = json.loads(event_data["attributes"])
+            from src.core.events import Event
+            event = Event.from_dict(event_data)
+            tags = self._get_tags_for_object("event", object_id)
+            text = build_text_for_event(event, tags, excluded_attributes)
+            metadata = {"name": event.name, "type": event.type}
+        else:
+            return None
+
+        text_hash_val = text_sha256(text)
+
+        # Skip unchanged items
+        existing = self.conn.execute(
+            "SELECT text_hash FROM embeddings "
+            "WHERE object_type = ? AND object_id = ? AND model = ?",
+            (obj_type, object_id, self.model),
+        ).fetchone()
+        if existing and existing[0] == text_hash_val:
+            return None
+
+        return (object_id, text, text_hash_val, metadata)
+
+    def _batch_upsert(
+        self,
+        object_type: str,
+        items: List[Tuple[str, str, str, Dict[str, str]]],
+    ) -> Tuple[int, int]:
+        """Embed and upsert a batch of items.
+
+        Args:
+            object_type: 'entity' or 'event'.
+            items: List of (object_id, text, text_hash, metadata) tuples.
+
+        Returns:
+            Tuple of (succeeded, failed) counts.
+
+        """
+        if not items:
+            return (0, 0)
+
+        texts = [item[1] for item in items]
+        try:
+            embeddings = self.provider.embed(texts)
+        except Exception as e:
+            logger.error(f"Batch embedding failed: {e}")
+            return (0, len(items))
+
+        succeeded = 0
+        failed = 0
+        for idx, (object_id, text, text_hash_val, metadata) in enumerate(items):
+            try:
+                normalized = normalize_vector(embeddings[idx])
+                serialized = serialize_vector(normalized)
+                embedding_id = str(uuid.uuid4())
+                self.conn.execute(
+                    """
+                    INSERT INTO embeddings (
+                        id, object_type, object_id, model, vector, vector_dim,
+                        text_snippet, text_hash, metadata, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(object_type, object_id, model) DO UPDATE SET
+                        vector = excluded.vector,
+                        vector_dim = excluded.vector_dim,
+                        text_snippet = excluded.text_snippet,
+                        text_hash = excluded.text_hash,
+                        metadata = excluded.metadata,
+                        created_at = excluded.created_at
+                    """,
+                    (
+                        embedding_id,
+                        object_type,
+                        object_id,
+                        self.model,
+                        serialized,
+                        self.dimension,
+                        text,
+                        text_hash_val,
+                        json.dumps(metadata),
+                        time.time(),
+                    ),
+                )
+                succeeded += 1
+            except Exception as e:
+                logger.error(
+                    f"Failed to upsert {object_type} {object_id}: {e}"
+                )
+                failed += 1
+
+        self.conn.commit()
+        return (succeeded, failed)
+
     def rebuild_index(
         self,
         object_types: Optional[List[str]] = None,
@@ -750,6 +885,10 @@ class SearchService:
         excluded_attributes: Optional[List[str]] = None,
     ) -> Dict[str, int]:
         """Rebuild embeddings index for specified object types.
+
+        Uses batched embedding calls (REBUILD_BATCH_SIZE at a time) to avoid
+        one-at-a-time overhead.  Unchanged items (same text_hash) are skipped
+        before they enter a batch.
 
         Args:
             object_types: List of object types to index ('entity', 'event').
@@ -764,28 +903,41 @@ class SearchService:
         if object_types is None:
             object_types = ["entity", "event"]
 
-        counts = {}
+        counts: Dict[str, int] = {}
 
         for obj_type in object_types:
-            if obj_type == "entity":
-                cursor = self.conn.execute("SELECT id FROM entities")
-                ids = [row[0] for row in cursor.fetchall()]
-                for entity_id in ids:
-                    try:
-                        self.index_entity(entity_id, excluded_attributes)
-                    except Exception as e:
-                        logger.error(f"Failed to index entity {entity_id}: {e}")
-                counts["entity"] = len(ids)
+            table = "entities" if obj_type == "entity" else "events"
+            cursor = self.conn.execute(f"SELECT id FROM {table}")  # noqa: S608
+            ids = [row[0] for row in cursor.fetchall()]
 
-            elif obj_type == "event":
-                cursor = self.conn.execute("SELECT id FROM events")
-                ids = [row[0] for row in cursor.fetchall()]
-                for event_id in ids:
-                    try:
-                        self.index_event(event_id, excluded_attributes)
-                    except Exception as e:
-                        logger.error(f"Failed to index event {event_id}: {e}")
-                counts["event"] = len(ids)
+            total_succeeded = 0
+            total_failed = 0
+            batch: List[Tuple[str, str, str, Dict[str, str]]] = []
+
+            for object_id in ids:
+                try:
+                    prepared = self._prepare_item_for_batch(
+                        obj_type, object_id, excluded_attributes
+                    )
+                    if prepared is not None:
+                        batch.append(prepared)
+                except Exception as e:
+                    logger.error(f"Failed to prepare {obj_type} {object_id}: {e}")
+                    total_failed += 1
+
+                if len(batch) >= REBUILD_BATCH_SIZE:
+                    s, f = self._batch_upsert(obj_type, batch)
+                    total_succeeded += s
+                    total_failed += f
+                    batch = []
+
+            # Flush remaining items
+            if batch:
+                s, f = self._batch_upsert(obj_type, batch)
+                total_succeeded += s
+                total_failed += f
+
+            counts[obj_type] = len(ids)
 
         logger.info(f"Rebuild complete. Indexed: {counts}")
         return counts
