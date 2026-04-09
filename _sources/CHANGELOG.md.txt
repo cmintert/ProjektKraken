@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-04-09
-### Internal
-- Remove obsolete test output and error log files to clean up the repository
+### Fixed
+- fix: prevent summary generation button from getting stuck on failure
 
 
 *This changelog was automatically generated.*
