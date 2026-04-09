@@ -454,6 +454,15 @@ class SentenceTransformersProvider(EmbeddingProvider):
             model: Model name (default from env or 'all-MiniLM-L6-v2').
 
         """
+        # Prevent native-thread heap corruption on Windows.  The HuggingFace
+        # tokenizer uses parallel Rust threads by default, and OpenMP / ONNX
+        # Runtime spawn thread pools proportional to core count.  When the
+        # model runs on a background QThread these native threads clash with
+        # Qt's threading, producing STATUS_HEAP_CORRUPTION (0xc0000374).
+        # Setting these *before* the first import is critical.
+        os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+        os.environ.setdefault("OMP_NUM_THREADS", "1")
+
         try:
             from sentence_transformers import SentenceTransformer  # type: ignore
         except ImportError as e:

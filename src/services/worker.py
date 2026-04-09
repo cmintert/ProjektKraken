@@ -746,14 +746,14 @@ class DatabaseWorker(QObject):
         try:
             self.operation_started.emit(f"Indexing {object_type} {object_id}...")
 
-            # Import search service
-            from src.services.search_service import create_search_service
-
-            # Create search service with database connection
-            connection = self.db_service.get_connection()
-            if not connection:
-                raise RuntimeError("Failed to establish database connection")
-            search_service = create_search_service(connection)
+            # Reuse the cached SearchService so the underlying SentenceTransformer
+            # model is loaded only once per worker lifetime.  Creating a fresh
+            # provider on every call spawns tqdm monitor threads via
+            # huggingface_hub, which causes Windows heap corruption (0xc0000374)
+            # under repeated background-thread model instantiation.
+            search_service = self._get_search_service()
+            if search_service is None:
+                raise RuntimeError("Search service unavailable")
 
             # Index the object
             if object_type == "entity":
@@ -790,17 +790,19 @@ class DatabaseWorker(QObject):
             return
 
         try:
-            from src.services.search_service import create_search_service
-
-            connection = self.db_service.get_connection()
-            if not connection:
-                raise RuntimeError("Failed to establish database connection")
-
+            # Reuse cached SearchService for the same reason as index_object:
+            # avoids repeated SentenceTransformer instantiation on the worker
+            # thread which causes Windows heap corruption via tqdm monitor threads.
             try:
-                search_service = create_search_service(connection)
+                search_service = self._get_search_service()
             except ImportError as e:
                 msg = str(e).split("\n")[0]
                 self.error_occurred.emit(msg)
+                self.index_rebuild_finished.emit(0, 0)
+                return
+
+            if search_service is None:
+                self.error_occurred.emit("Search service unavailable for rebuild.")
                 self.index_rebuild_finished.emit(0, 0)
                 return
 
