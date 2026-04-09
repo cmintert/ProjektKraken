@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-04-09
 ### Fixed
-- fix: prevent summary generation button from getting stuck on failure
+- fix: prevent concurrent embedding operations in worker thread
 
 
 *This changelog was automatically generated.*
