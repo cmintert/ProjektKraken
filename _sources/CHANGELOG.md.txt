@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-04-09
 ### Internal
-- test: add regression tests for search indexing fixes
+- Remove obsolete test output and error log files to clean up the repository
 
 
 *This changelog was automatically generated.*
