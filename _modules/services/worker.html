@@ -1074,14 +1074,14 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">operation_started</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Indexing </span><span class="si">{</span><span class="n">object_type</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">object_id</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
 
-            <span class="c1"># Import search service</span>
-            <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.search_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_search_service</span>
-
-            <span class="c1"># Create search service with database connection</span>
-            <span class="n">connection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">get_connection</span><span class="p">()</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">connection</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Failed to establish database connection&quot;</span><span class="p">)</span>
-            <span class="n">search_service</span> <span class="o">=</span> <span class="n">create_search_service</span><span class="p">(</span><span class="n">connection</span><span class="p">)</span>
+            <span class="c1"># Reuse the cached SearchService so the underlying SentenceTransformer</span>
+            <span class="c1"># model is loaded only once per worker lifetime.  Creating a fresh</span>
+            <span class="c1"># provider on every call spawns tqdm monitor threads via</span>
+            <span class="c1"># huggingface_hub, which causes Windows heap corruption (0xc0000374)</span>
+            <span class="c1"># under repeated background-thread model instantiation.</span>
+            <span class="n">search_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_search_service</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">search_service</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Search service unavailable&quot;</span><span class="p">)</span>
 
             <span class="c1"># Index the object</span>
             <span class="k">if</span> <span class="n">object_type</span> <span class="o">==</span> <span class="s2">&quot;entity&quot;</span><span class="p">:</span>
@@ -1121,17 +1121,19 @@
             <span class="k">return</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.search_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_search_service</span>
-
-            <span class="n">connection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">get_connection</span><span class="p">()</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">connection</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Failed to establish database connection&quot;</span><span class="p">)</span>
-
+            <span class="c1"># Reuse cached SearchService for the same reason as index_object:</span>
+            <span class="c1"># avoids repeated SentenceTransformer instantiation on the worker</span>
+            <span class="c1"># thread which causes Windows heap corruption via tqdm monitor threads.</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">search_service</span> <span class="o">=</span> <span class="n">create_search_service</span><span class="p">(</span><span class="n">connection</span><span class="p">)</span>
+                <span class="n">search_service</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_search_service</span><span class="p">()</span>
             <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">index_rebuild_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="k">return</span>
+
+            <span class="k">if</span> <span class="n">search_service</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">&quot;Search service unavailable for rebuild.&quot;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">index_rebuild_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
                 <span class="k">return</span>
 

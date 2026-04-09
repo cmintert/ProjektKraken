@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-04-08
-### Added
-- feat: offload index rebuild to worker thread with progress reporting
+## [Development] - 2026-04-09
+### Internal
+- test: add regression tests for search indexing fixes
 
 
 *This changelog was automatically generated.*
