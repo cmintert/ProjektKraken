@@ -73,6 +73,7 @@ class DatabaseWorker(QObject):
     # Import signals
     import_finished = Signal(ImportResult)
     summary_generated = Signal(str, SummaryData)
+    summary_generation_failed = Signal(str)  # item_id
 
     # Semantic completion signals
     semantic_suggestions_ready = Signal(str, list)  # (prefix, list[str] names)
@@ -1244,6 +1245,7 @@ class DatabaseWorker(QObject):
             self.operation_finished.emit("Summary generated.")
         except Exception as e:
             logger.error(f"Summary generation failed: {e}\n{traceback.format_exc()}")
+            self.summary_generation_failed.emit(item.id)
             self.error_occurred.emit(f"Summary generation failed: {str(e)}")
 
     @Slot()

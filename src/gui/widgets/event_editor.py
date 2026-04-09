@@ -1453,6 +1453,17 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         except Exception as e:
             logger.error(f"Error applying summary: {e}")
 
+    @Slot()
+    def on_summary_generation_failed(self) -> None:
+        """Reset UI state when summary generation fails.
+
+        Re-enables the generate button and resets its text to allow retry.
+        """
+        self.summary_widget.generate_btn.setEnabled(True)
+        # Keep existing button text (Generate/Regenerate) based on current state
+        if self.summary_widget.generate_btn.text() == "Generating...":
+            self.summary_widget.generate_btn.setText("Generate")
+
     def get_generation_context(self) -> Dict[str, Any]:
         """Get context for LLM generation.
 

@@ -209,6 +209,9 @@ class WorkerManager(QObject):
         self.window.worker.summary_generated.connect(
             self.window.data_coordinator.on_summary_generated_result, connection_type
         )
+        self.window.worker.summary_generation_failed.connect(
+            self.window.data_coordinator.on_summary_generation_failed, connection_type
+        )
         self.rebuild_index_requested.connect(
             self.window.worker.rebuild_search_index, connection_type
         )

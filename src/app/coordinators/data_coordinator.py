@@ -467,6 +467,28 @@ class DataCoordinator(BaseCoordinator):
             f"Summary generated for {item_id}, but item is no longer active in editor."
         )
 
+    @Slot(str)
+    def on_summary_generation_failed(self, item_id: str) -> None:
+        """Handles summary generation failure.
+
+        Routes the failure event to the correct editor to reset the UI state.
+
+        Args:
+            item_id: The ID of the item the summary generation failed for.
+
+        """
+        if self.main_window.entity_editor._current_entity_id == item_id:
+            self.main_window.entity_editor.on_summary_generation_failed()
+            return
+
+        if self.main_window.event_editor._current_event_id == item_id:
+            self.main_window.event_editor.on_summary_generation_failed()
+            return
+
+        logger.warning(
+            f"Summary generation failed for {item_id}, but item is no longer active in editor."
+        )
+
     # ------------------------------------------------------------------
     # Semantic Completion
     # ------------------------------------------------------------------
