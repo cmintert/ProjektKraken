@@ -425,6 +425,26 @@ class DataHandler(QObject):
                     obj_type = _INDEX_COMMANDS[command_name]
                     self.index_object_requested.emit(obj_type, obj_id)
 
+            # CompositeCommand wraps Update* + ProcessWikiLinksCommand; inspect
+            # sub-commands so the re-embed still fires on autosave/save.
+            if command_name == "CompositeCommand":
+                cmd_obj = result.data.get("command")
+                for sub in getattr(cmd_obj, "commands", []):
+                    sub_name = sub.__class__.__name__
+                    if sub_name in _INDEX_COMMANDS:
+                        obj_id = getattr(sub, "entity_id", None) or getattr(
+                            sub, "event_id", None
+                        )
+                        if obj_id:
+                            logger.debug(
+                                f"[DataHandler] CompositeCommand: triggering "
+                                f"re-embed for {sub_name} id={obj_id}"
+                            )
+                            self.index_object_requested.emit(
+                                _INDEX_COMMANDS[sub_name], obj_id
+                            )
+                            break  # only the first matching sub-command matters
+
             logger.debug(f"[DataHandler] on_command_finished completed: {command_name}")
 
         except Exception as e:

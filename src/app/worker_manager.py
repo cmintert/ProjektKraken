@@ -51,6 +51,12 @@ class WorkerManager(QObject):
     rebuild_index_requested = Signal(str, list)  # → worker.rebuild_search_index
     _index_single_requested = Signal(str, str, list)  # → worker.index_object
 
+    # Delay (ms) after the last save before firing the re-embed request.
+    # Prevents running ONNX/numpy-heavy embedding code on every keystroke-
+    # triggered autosave, which crashes when native threads collide with
+    # the Chromium WebEngine graph view running on the main thread.
+    INDEX_DEBOUNCE_MS = 10_000
+
     def __init__(self, main_window: "MainWindow") -> None:
         """Initialize the WorkerManager.
 
@@ -60,6 +66,11 @@ class WorkerManager(QObject):
         """
         super().__init__()
         self.window = main_window
+
+        self._pending_indices: set[tuple[str, str]] = set()
+        self._index_timer = QTimer(self)
+        self._index_timer.setSingleShot(True)
+        self._index_timer.timeout.connect(self._flush_pending_index)
 
     def init_worker(self) -> None:
         """Initializes the DatabaseWorker and moves it to a separate thread. Connects
@@ -261,10 +272,15 @@ class WorkerManager(QObject):
     def _on_index_object_requested(
         self, object_type: str, object_id: str
     ) -> None:
-        """Re-embed a single object if auto-index is enabled.
+        """Queue a re-embed request with debounce.
 
         Called when DataHandler emits ``index_object_requested`` after a
-        Create/Update command finishes.
+        Create/Update command finishes.  Instead of firing immediately
+        (which would run ONNX-heavy code on the worker thread while the
+        Chromium graph view is still updating), we debounce: each new
+        request restarts a single-shot timer.  The actual embed fires
+        only after :pyattr:`INDEX_DEBOUNCE_MS` of silence, by which time
+        the UI has settled and the native-thread collision is avoided.
 
         Args:
             object_type: 'entity' or 'event'.
@@ -281,7 +297,28 @@ class WorkerManager(QObject):
         if getattr(self.window, "worker", None) is None:
             return
 
-        # Get excluded attributes from settings
+        self._pending_indices.add((object_type, object_id))
+        self._index_timer.start(self.INDEX_DEBOUNCE_MS)
+        logger.debug(
+            "[WorkerManager] Re-embed debounced for %s %s (%d ms)",
+            object_type,
+            object_id,
+            self.INDEX_DEBOUNCE_MS,
+        )
+
+    @Slot()
+    def _flush_pending_index(self) -> None:
+        """Fire the debounced re-embed requests now that the app is idle."""
+        pending = self._pending_indices
+        self._pending_indices = set()
+
+        if not pending:
+            return
+
+        if getattr(self.window, "worker", None) is None:
+            return
+
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         excluded_text = settings.value(
             "ai_search_excluded_attrs", "", type=str
         )
@@ -289,7 +326,13 @@ class WorkerManager(QObject):
             attr.strip() for attr in excluded_text.split(",") if attr.strip()
         ]
 
-        self._index_single_requested.emit(object_type, object_id, excluded)
+        for object_type, object_id in pending:
+            logger.debug(
+                "[WorkerManager] Flushing debounced re-embed: %s %s",
+                object_type,
+                object_id,
+            )
+            self._index_single_requested.emit(object_type, object_id, excluded)
 
     @Slot(bool)
     def on_db_initialized(self, success: bool) -> None:
