@@ -8,7 +8,7 @@ import logging
 import sqlite3
 import traceback
 from pathlib import Path
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Tuple
 
 from PySide6.QtCore import QObject, Signal, Slot
 
@@ -96,6 +96,9 @@ class DatabaseWorker(QObject):
         self.attachment_service = None
         self.temporal_manager = None
         self._search_service = None
+        # Embedding queue to prevent concurrent embedding operations
+        self._embedding_in_progress = False
+        self._pending_embeddings: Set[Tuple[str, str, Optional[List[str]]]] = set()
 
     @Slot()
     def initialize_db(self) -> None:
@@ -735,6 +738,10 @@ class DatabaseWorker(QObject):
     ) -> None:
         """Index a single object (entity or event) for semantic search.
 
+        Queues the embedding request if one is already in progress, otherwise
+        starts the embedding immediately. This prevents concurrent embedding
+        operations which can fail due to resource conflicts.
+
         Args:
             object_type: 'entity' or 'event'.
             object_id: UUID of the object to index.
@@ -743,6 +750,38 @@ class DatabaseWorker(QObject):
         """
         if not self.db_service:
             return
+
+        # Queue the request if an embedding is already in progress
+        if self._embedding_in_progress:
+            self._pending_embeddings.add(
+                (object_type, object_id, tuple(excluded_attributes) if excluded_attributes else None)
+            )
+            logger.debug(
+                f"[Worker] Embedding already in progress, queuing {object_type} {object_id}"
+            )
+            return
+
+        # Start the embedding
+        self._do_index_object(object_type, object_id, excluded_attributes)
+
+    def _do_index_object(
+        self,
+        object_type: str,
+        object_id: str,
+        excluded_attributes: Optional[List[str]] = None,
+    ) -> None:
+        """Perform the actual indexing operation.
+
+        Sets the embedding-in-progress flag and processes the embedding,
+        then clears the flag and processes any pending embeddings.
+
+        Args:
+            object_type: 'entity' or 'event'.
+            object_id: UUID of the object to index.
+            excluded_attributes: Optional list of attribute keys to exclude.
+
+        """
+        self._embedding_in_progress = True
 
         try:
             self.operation_started.emit(f"Indexing {object_type} {object_id}...")
@@ -769,6 +808,29 @@ class DatabaseWorker(QObject):
         except Exception:
             logger.error(f"Failed to index {object_type}: {traceback.format_exc()}")
             self.error_occurred.emit(f"Failed to index {object_type} {object_id}.")
+        finally:
+            # Clear the flag and process next pending embedding
+            self._embedding_in_progress = False
+            self._process_pending_embeddings()
+
+    def _process_pending_embeddings(self) -> None:
+        """Process the next pending embedding from the queue."""
+        if not self._pending_embeddings:
+            return
+
+        # Get the first pending embedding
+        next_embedding = self._pending_embeddings.pop()
+        object_type, object_id, excluded_attributes_tuple = next_embedding
+
+        # Convert tuple back to list if present
+        excluded_attributes = (
+            list(excluded_attributes_tuple) if excluded_attributes_tuple else None
+        )
+
+        logger.debug(
+            f"[Worker] Processing queued embedding for {object_type} {object_id}"
+        )
+        self._do_index_object(object_type, object_id, excluded_attributes)
 
     @Slot(str, list)
     def rebuild_search_index(

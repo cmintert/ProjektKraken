@@ -6,7 +6,14 @@
       "Read(//c/Users/chris/VSCodeProjects/ProjektKraken/**)",
       "Bash(mypy src/gui/widgets/timeline_display_widget.py src/gui/utils/style_helper.py)",
       "Bash(pytest tests/unit/ -v --tb=short)",
-      "Bash(pytest tests/unit/test_timeline_display.py -v)"
+      "Bash(pytest tests/unit/test_timeline_display.py -v)",
+      "Read(//temp/readonly/**)",
+      "Bash(pytest tests/unit/test_worker_manager_debounce.py -xvs)",
+      "Bash(pytest tests/unit/test_worker_embedding_queue.py -xvs)",
+      "Bash(pytest tests/unit/test_embedding_reliability.py::TestBatchEmbedding::test_rebuild_index_batches_embed_calls -xvs)",
+      "Bash(pytest tests/unit/test_worker_index_caching.py -xvs)",
+      "Bash(git checkout:*)",
+      "Bash(pytest tests/unit/test_worker_embedding_queue.py tests/unit/test_worker_index_caching.py -v)"
     ]
   }
 }
