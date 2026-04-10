@@ -245,6 +245,48 @@ class StyleHelper:
             SpacerWidget:hover {{
                 border: 1px dashed {primary};
             }}
+            SpacerWidget:focus {{
+                border: 1px solid {primary};
+                background-color: rgba(92, 130, 255, 0.08);
+            }}
+            SpacerWidget:focus:hover {{
+                border: 1px solid {primary};
+                background-color: rgba(92, 130, 255, 0.14);
+            }}
+        """
+
+    @staticmethod
+    def get_sheet_header_style() -> str:
+        """Returns QSS for HeaderWidget in Sheet Builder.
+
+        Headers use the accent colour as a bottom border to visually separate
+        sections, matching the TTRPG stat-block convention.
+
+        Returns:
+            str: QSS stylesheet string.
+        """
+        theme = ThemeManager().get_theme()
+        accent = theme.get("accent_secondary", theme.get("primary", "#5C82FF"))
+        text = theme.get("text", "#E0E0E0")
+        primary = theme.get("primary", "#5C82FF")
+
+        return f"""
+            HeaderWidget {{
+                border: none;
+                border-bottom: 2px solid {accent};
+                border-radius: 0px;
+            }}
+            HeaderWidget:hover {{
+                border-bottom: 2px solid {primary};
+            }}
+            HeaderWidget QLineEdit {{
+                background-color: transparent;
+                border: none;
+                color: {text};
+                font-weight: bold;
+                letter-spacing: 1px;
+                padding: 2px 4px;
+            }}
         """
 
     # -------------------------------------------------------------------------

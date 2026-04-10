@@ -7,6 +7,7 @@ and supports serialization of the spatial layout to a 2D list for persistence.
 
 import logging
 import math
+import uuid
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Union
 
@@ -19,7 +20,9 @@ from PySide6.QtGui import (
     QDragEnterEvent,
     QDragMoveEvent,
     QDropEvent,
+    QKeySequence,
     QMouseEvent,
+    QShortcut,
 )
 from PySide6.QtWidgets import (
     QComboBox,
@@ -405,8 +408,91 @@ class DividerWidget(QFrame):
             pass
 
 
+class HeaderWidget(QFrame):
+    """A full-width editable section header for the sheet.
+
+    Displays bold centered text with an accent-coloured underline, mimicking
+    TTRPG stat-block section headers (e.g. "ABILITY SCORES", "ACTIONS").
+
+    Signals:
+        text_changed: Emitted when the header text is modified.
+    """
+
+    text_changed = Signal()
+
+    def __init__(
+        self,
+        text: str = "",
+        parent: Optional[QWidget] = None,
+    ) -> None:
+        """Initialize the HeaderWidget.
+
+        Args:
+            text: Initial section name.
+            parent: Optional parent widget.
+        """
+        super().__init__(parent)
+        self.weight = 1
+        self.setObjectName("HeaderWidget")
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(6, 3, 6, 3)
+        layout.setSpacing(0)
+
+        self.text_edit = QLineEdit(text)
+        self.text_edit.setPlaceholderText("Section name…")
+        self.text_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.text_edit.textChanged.connect(lambda: self.text_changed.emit())
+        layout.addWidget(self.text_edit)
+
+        self._theme_mgr = ThemeManager()
+        self._apply_theme()
+        self._theme_mgr.theme_changed.connect(self._apply_theme)
+        self.destroyed.connect(self._on_header_destroyed)
+
+    def get_text(self) -> str:
+        """Return the current header text."""
+        return self.text_edit.text()
+
+    def set_text(self, text: str) -> None:
+        """Set header text without emitting a signal.
+
+        Args:
+            text: The new header text.
+        """
+        self.text_edit.blockSignals(True)
+        self.text_edit.setText(text)
+        self.text_edit.blockSignals(False)
+
+    def _apply_theme(self) -> None:
+        """Apply current theme colors."""
+        if not shiboken6.isValid(self):
+            return
+        self.setStyleSheet(StyleHelper.get_sheet_header_style())
+
+    def _on_header_destroyed(self) -> None:
+        """Disconnect theme signal when destroyed."""
+        try:
+            self._theme_mgr.theme_changed.disconnect(self._apply_theme)
+        except (RuntimeError, TypeError):
+            pass
+
+
 class SpacerWidget(QFrame):
-    """A visual spacer widget to represent empty flexible space."""
+    """A visual spacer widget representing empty flexible space.
+
+    Click-focused so Alt+Left/Right keyboard shortcuts can move it.  Drag it
+    like any attribute pill to reorder it within or across rows.
+
+    Signals:
+        drag_started: Emitted with the spacer's unique ``spacer_id`` when the
+            user begins a drag operation.
+        drag_finished: Emitted when the drag operation completes.
+    """
+
+    drag_started = Signal(str)
+    drag_finished = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the SpacerWidget.
@@ -416,15 +502,53 @@ class SpacerWidget(QFrame):
         """
         super().__init__(parent)
         self.weight = 1
+        # Unique ID used as the drag MIME payload so the drop handler can
+        # look the spacer up without conflating it with an attribute key.
+        self.spacer_id: str = f"__spacer_{uuid.uuid4().hex[:8]}"
+        self._drag_start_pos: Optional[QPoint] = None
+
         self.setObjectName("SpacerWidget")
         self.setFrameShape(QFrame.Shape.StyledPanel)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.setMinimumWidth(20)
+        # ClickFocus so keyboard shortcuts know this widget is "selected"
+        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
 
         self._theme_mgr = ThemeManager()
         self._apply_theme()
         self._theme_mgr.theme_changed.connect(self._apply_theme)
         self.destroyed.connect(self._on_spacer_destroyed)
+
+    # ------------------------------------------------------------------
+    # Drag support
+    # ------------------------------------------------------------------
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        """Record the drag-start point and claim keyboard focus on left-click."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._drag_start_pos = event.pos()
+            self.setFocus(Qt.FocusReason.MouseFocusReason)
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        """Initiate a drag once the mouse has moved far enough."""
+        if (
+            self._drag_start_pos is not None
+            and (event.pos() - self._drag_start_pos).manhattanLength() > 10
+        ):
+            drag = QDrag(self)
+            mime = QMimeData()
+            mime.setData(_SHEET_DRAG_MIME, self.spacer_id.encode("utf-8"))
+            drag.setMimeData(mime)
+            self.drag_started.emit(self.spacer_id)
+            drag.exec(Qt.DropAction.MoveAction)
+            self._drag_start_pos = None
+            self.drag_finished.emit()
+        super().mouseMoveEvent(event)
+
+    # ------------------------------------------------------------------
+    # Theme
+    # ------------------------------------------------------------------
 
     def _apply_theme(self) -> None:
         """Apply current theme colors."""
@@ -802,6 +926,11 @@ class SheetBuilderWidget(QWidget):
         self._act_add_text.triggered.connect(self._on_toolbar_add_text)
         self._toolbar.addAction(self._act_add_text)
 
+        self._act_add_header = QAction("𝐇 Header", self)
+        self._act_add_header.setToolTip("Add a section header row")
+        self._act_add_header.triggered.connect(self._on_toolbar_add_header)
+        self._toolbar.addAction(self._act_add_header)
+
         outer.addWidget(self._toolbar)
 
         # ── Scroll area ─────────────────────────────────────────────────
@@ -822,6 +951,8 @@ class SheetBuilderWidget(QWidget):
 
         # Pair widget lookup: key -> AttributePairWidget
         self._pairs: Dict[str, AttributePairWidget] = {}
+        # Spacer lookup: spacer_id -> SpacerWidget
+        self._spacers: Dict[str, SpacerWidget] = {}
 
         # WYSIWYG drag-and-drop feedback widgets
         self._ghost: Optional[_GhostWidget] = None
@@ -839,6 +970,14 @@ class SheetBuilderWidget(QWidget):
         self._apply_theme()
         self._theme_mgr.theme_changed.connect(self._apply_theme)
         self.destroyed.connect(self._on_builder_destroyed)
+
+        # ── Keyboard reordering shortcuts ────────────────────────────────
+        ctx = Qt.ShortcutContext.WidgetWithChildrenShortcut
+        self._make_shortcut("Alt+Up", self._move_focused_row_up, ctx)
+        self._make_shortcut("Alt+Down", self._move_focused_row_down, ctx)
+        self._make_shortcut("Alt+Left", self._move_focused_item_left, ctx)
+        self._make_shortcut("Alt+Right", self._move_focused_item_right, ctx)
+
         logger.debug("SheetBuilderWidget initialized.")
 
     def _apply_theme(self) -> None:
@@ -953,6 +1092,10 @@ class SheetBuilderWidget(QWidget):
                                 row_configs.append(
                                     {"type": "text", "text": item.get("text", "")}
                                 )
+                            elif item_type == "header":
+                                row_configs.append(
+                                    {"type": "header", "text": item.get("text", "")}
+                                )
                             elif item_type == "divider":
                                 row_configs.append({"type": "divider"})
                             elif is_spacer:
@@ -1023,6 +1166,8 @@ class SheetBuilderWidget(QWidget):
                         row_items.append({"key": widget.key, "weight": stretch})
                 elif isinstance(widget, TextBlockWidget):
                     row_items.append({"type": "text", "text": widget.get_text()})
+                elif isinstance(widget, HeaderWidget):
+                    row_items.append({"type": "header", "text": widget.get_text()})
                 elif isinstance(widget, DividerWidget):
                     row_items.append({"type": "divider"})
                 elif isinstance(widget, SpacerWidget):
@@ -1107,9 +1252,10 @@ class SheetBuilderWidget(QWidget):
         """Accept drags carrying the sheet MIME type and show ghost preview."""
         if event.mimeData().hasFormat(_SHEET_DRAG_MIME):
             event.acceptProposedAction()
-            # Create ghost widget showing the dragged attribute key
             key = bytes(event.mimeData().data(_SHEET_DRAG_MIME)).decode("utf-8")
-            self._ghost = _GhostWidget(key)
+            # Show a friendly label for spacers instead of the raw spacer_id
+            label = "⬜ Spacer" if key.startswith("__spacer_") else key
+            self._ghost = _GhostWidget(label)
             self._ghost.show()
         else:
             event.ignore()
@@ -1147,24 +1293,27 @@ class SheetBuilderWidget(QWidget):
             return
 
         key = bytes(mime.data(_SHEET_DRAG_MIME)).decode("utf-8")
-        pair = self._pairs.get(key)
-        if pair is None:
+        # Look up the dragged widget: attribute pairs take priority, then spacers
+        dragged: Optional[QWidget] = self._pairs.get(key) or self._spacers.get(key)
+        if dragged is None:
             event.ignore()
             return
 
         # Remove from current row
-        self._detach_pair(pair)
+        self._detach_widget(dragged)
 
         # Calculate target position
         drop_row, insert_col, new_row = self._calc_drop_position(
             event.position().toPoint()
         )
 
+        w_weight: int = getattr(dragged, "weight", 1)
+
         if new_row:
             hlayout = QHBoxLayout()
             hlayout.setSpacing(0)
             hlayout.setContentsMargins(0, 0, 0, 0)
-            hlayout.addWidget(pair, stretch=pair.weight)
+            hlayout.addWidget(dragged, stretch=w_weight)
             self._grid_layout.insertLayout(drop_row, hlayout)
         else:
             if drop_row < self._grid_layout.count():
@@ -1173,14 +1322,14 @@ class SheetBuilderWidget(QWidget):
                 if row_item and row_item.layout():
                     hlayout = row_item.layout()
                     idx = min(insert_col, hlayout.count())
-                    hlayout.insertWidget(idx, pair, stretch=pair.weight)
+                    hlayout.insertWidget(idx, dragged, stretch=w_weight)
                     self._strip_resize_handles(hlayout)
                     self._rebuild_resize_handles(hlayout)
                 else:
-                    self._append_new_row(pair)
+                    self._append_new_row_widget(dragged, w_weight)
             else:
                 # Append new row
-                self._append_new_row(pair)
+                self._append_new_row_widget(dragged, w_weight)
 
         event.acceptProposedAction()
         if self._block_depth == 0:
@@ -1287,13 +1436,14 @@ class SheetBuilderWidget(QWidget):
                         text_block_idx += 1
 
     def _clear(self) -> None:
-        """Remove all rows and pair widgets."""
+        """Remove all rows and pair/spacer widgets."""
         logger.debug(f"Clearing sheet builder. Currently has {len(self._pairs)} pairs.")
         for key, pair in list(self._pairs.items()):
             logger.debug(f"Deleting pair widget for key: {key}")
             pair.setParent(None)
             pair.deleteLater()
         self._pairs.clear()
+        self._spacers.clear()
 
         while self._grid_layout.count():
             item = self._grid_layout.takeAt(0)
@@ -1335,6 +1485,14 @@ class SheetBuilderWidget(QWidget):
                 widget_indices.append(idx)
                 continue
 
+            if item_type == "header":
+                hw = HeaderWidget(config.get("text", ""))
+                hw.text_changed.connect(self._on_pair_changed)
+                idx = hlayout.count()
+                hlayout.addWidget(hw, stretch=1)
+                widget_indices.append(idx)
+                continue
+
             if item_type == "divider":
                 dw = DividerWidget()
                 idx = hlayout.count()
@@ -1345,6 +1503,9 @@ class SheetBuilderWidget(QWidget):
             if config.get("spacer"):
                 sw = SpacerWidget()
                 sw.weight = weight
+                sw.drag_started.connect(self._on_child_drag_started)
+                sw.drag_finished.connect(self._on_child_drag_finished)
+                self._spacers[sw.spacer_id] = sw
                 idx = hlayout.count()
                 hlayout.addWidget(sw, stretch=weight)
                 widget_indices.append(idx)
@@ -1419,14 +1580,28 @@ class SheetBuilderWidget(QWidget):
 
     def _append_new_row(self, pair: AttributePairWidget) -> None:
         """Append a pair as the sole widget in a new row at the bottom."""
+        self._append_new_row_widget(pair, pair.weight)
+
+    def _append_new_row_widget(self, widget: QWidget, weight: int = 1) -> None:
+        """Append any content widget as the sole item in a new row at the bottom.
+
+        Args:
+            widget: The widget to place in the new row.
+            weight: Stretch factor for the widget.
+        """
         hlayout = QHBoxLayout()
         hlayout.setSpacing(0)
         hlayout.setContentsMargins(0, 0, 0, 0)
-        hlayout.addWidget(pair, stretch=pair.weight)
+        hlayout.addWidget(widget, stretch=weight)
         self._grid_layout.addLayout(hlayout)
 
-    def _detach_pair(self, pair: AttributePairWidget) -> None:
-        """Remove pair from its current row layout, cleaning up empty rows."""
+    def _detach_widget(self, widget: QWidget) -> None:
+        """Remove any widget from its current row layout, cleaning up empty rows.
+
+        Args:
+            widget: The widget to detach (attribute pair, spacer, or any other
+                sheet content widget).
+        """
         for row_idx in range(self._grid_layout.count()):
             row_item = self._grid_layout.itemAt(row_idx)
             if row_item is None or row_item.layout() is None:
@@ -1434,13 +1609,17 @@ class SheetBuilderWidget(QWidget):
             hlayout = row_item.layout()
             for col_idx in range(hlayout.count()):
                 item = hlayout.itemAt(col_idx)
-                if item is not None and item.widget() is pair:
-                    hlayout.removeWidget(pair)
+                if item is not None and item.widget() is widget:
+                    hlayout.removeWidget(widget)
                     if hlayout.count() == 0:
                         self._grid_layout.removeItem(row_item)
                         hlayout.setParent(None)
                         hlayout.deleteLater()
                     return
+
+    def _detach_pair(self, pair: AttributePairWidget) -> None:
+        """Remove an attribute pair from its row.  Delegates to _detach_widget."""
+        self._detach_widget(pair)
 
     def _row_at_pos(self, pos: QPoint) -> Optional[tuple]:
         """Return (row_idx, hlayout) for the row whose geometry contains *pos*.
@@ -1468,7 +1647,7 @@ class SheetBuilderWidget(QWidget):
         for i in range(hlayout.count()):
             item = hlayout.itemAt(i)
             if item and item.widget():
-                if isinstance(item.widget(), (TextBlockWidget, DividerWidget)):
+                if isinstance(item.widget(), (TextBlockWidget, DividerWidget, HeaderWidget)):
                     return False
         return True
 
@@ -1622,6 +1801,206 @@ class SheetBuilderWidget(QWidget):
             self._insertion_line.hide()
 
     # ------------------------------------------------------------------
+    # Keyboard reordering helpers
+    # ------------------------------------------------------------------
+
+    def _make_shortcut(
+        self,
+        seq: str,
+        slot: Any,
+        ctx: Qt.ShortcutContext,
+    ) -> QShortcut:
+        """Create a QShortcut parented to *self* and connected to *slot*.
+
+        Args:
+            seq: Key sequence string, e.g. ``"Alt+Up"``.
+            slot: Callable to connect to ``QShortcut.activated``.
+            ctx: Shortcut context (e.g. ``WidgetWithChildrenShortcut``).
+
+        Returns:
+            The created ``QShortcut`` instance.
+        """
+        sc = QShortcut(QKeySequence(seq), self)
+        sc.setContext(ctx)
+        sc.activated.connect(slot)
+        return sc
+
+    def _find_focused_row_and_col(
+        self,
+    ) -> Optional[tuple]:
+        """Return (row_idx, hlayout, col_idx, widget) for the row/item that
+        contains the current keyboard focus, or ``None`` if focus is outside
+        the sheet.
+
+        ``_ResizeHandle`` items are skipped; the column index returned is the
+        index of the content widget inside the row's ``QHBoxLayout`` (handles
+        included in the count, so callers that need a handle-free index must
+        filter separately).
+
+        Returns:
+            ``(row_idx, QHBoxLayout, col_idx, QWidget)`` or ``None``.
+        """
+        from PySide6.QtWidgets import QApplication
+
+        focus = QApplication.focusWidget()
+        if focus is None:
+            return None
+
+        for row_idx in range(self._grid_layout.count()):
+            row_item = self._grid_layout.itemAt(row_idx)
+            if row_item is None or row_item.layout() is None:
+                continue
+            hlayout = row_item.layout()
+            for col_idx in range(hlayout.count()):
+                item = hlayout.itemAt(col_idx)
+                if item is None:
+                    continue
+                w = item.widget()
+                if w is None or isinstance(w, _ResizeHandle):
+                    continue
+                if w is focus or w.isAncestorOf(focus):
+                    return row_idx, hlayout, col_idx, w
+
+        return None
+
+    def _move_focused_row_up(self) -> None:
+        """Move the focused row one position up (Alt+Up)."""
+        result = self._find_focused_row_and_col()
+        if result is None:
+            return
+        row_idx = result[0]
+        if row_idx <= 0:
+            return
+        self._swap_rows(row_idx, row_idx - 1)
+
+    def _move_focused_row_down(self) -> None:
+        """Move the focused row one position down (Alt+Down)."""
+        result = self._find_focused_row_and_col()
+        if result is None:
+            return
+        row_idx = result[0]
+        if row_idx >= self._grid_layout.count() - 1:
+            return
+        self._swap_rows(row_idx, row_idx + 1)
+
+    def _swap_rows(self, row_a: int, row_b: int) -> None:
+        """Swap two rows in the grid layout.
+
+        Args:
+            row_a: Index of the first row.
+            row_b: Index of the second row (must be adjacent, i.e. ``|a-b| == 1``).
+        """
+        # takeAt always takes the item at that index; removing the lower index
+        # first shifts the higher one down by one, so we remove in descending order.
+        hi, lo = max(row_a, row_b), min(row_a, row_b)
+        item_hi = self._grid_layout.takeAt(hi)
+        item_lo = self._grid_layout.takeAt(lo)
+        if item_hi is None or item_lo is None:
+            return
+        layout_hi = item_hi.layout()
+        layout_lo = item_lo.layout()
+        if layout_hi is None or layout_lo is None:
+            return
+        # Re-insert in swapped positions
+        self._grid_layout.insertLayout(lo, layout_hi)
+        self._grid_layout.insertLayout(hi, layout_lo)
+        if self._block_depth == 0:
+            self.attributes_changed.emit()
+
+    def _move_focused_item_left(self) -> None:
+        """Shift the focused item one position left within its row (Alt+Left)."""
+        result = self._find_focused_row_and_col()
+        if result is None:
+            return
+        _, hlayout, col_idx, _ = result
+        self._shift_item_in_row(hlayout, col_idx, direction=-1)
+
+    def _move_focused_item_right(self) -> None:
+        """Shift the focused item one position right within its row (Alt+Right)."""
+        result = self._find_focused_row_and_col()
+        if result is None:
+            return
+        _, hlayout, col_idx, _ = result
+        self._shift_item_in_row(hlayout, col_idx, direction=1)
+
+    def _shift_item_in_row(
+        self,
+        hlayout: QHBoxLayout,
+        focused_col: int,
+        direction: int,
+    ) -> None:
+        """Shift the item at *focused_col* left (direction=-1) or right (+1).
+
+        Works for all content widget types including ``SpacerWidget``.
+        ``_ResizeHandle`` widgets are stripped before the swap and rebuilt
+        afterwards so handle indices stay consistent.
+
+        Args:
+            hlayout: The row layout containing the items.
+            focused_col: ``QHBoxLayout`` index of the item to move.
+            direction: ``-1`` for left, ``+1`` for right.
+        """
+        # Build a list of (widget, stretch) for content items only (no handles)
+        content: list[tuple[QWidget, int]] = []
+        for i in range(hlayout.count()):
+            item = hlayout.itemAt(i)
+            if item is None:
+                continue
+            w = item.widget()
+            if w is None or isinstance(w, _ResizeHandle):
+                continue
+            stretch = hlayout.stretch(i)
+            if stretch <= 0 and hasattr(w, "weight"):
+                stretch = w.weight  # type: ignore[attr-defined]
+            content.append((w, max(1, stretch)))
+
+        if len(content) <= 1:
+            return
+
+        # Find which content index corresponds to focused_col
+        # (focused_col is the raw hlayout index, which may include handles)
+        focused_widget: Optional[QWidget] = None
+        raw_item = hlayout.itemAt(focused_col)
+        if raw_item:
+            focused_widget = raw_item.widget()
+
+        if focused_widget is None:
+            return
+
+        content_idx = next(
+            (i for i, (w, _) in enumerate(content) if w is focused_widget), None
+        )
+        if content_idx is None:
+            return
+
+        target_idx = content_idx + direction
+        if target_idx < 0 or target_idx >= len(content):
+            return  # Already at boundary
+
+        # Swap in the content list
+        content[content_idx], content[target_idx] = (
+            content[target_idx],
+            content[content_idx],
+        )
+
+        # Strip handles, clear layout without deleting widgets, re-add in new order
+        self._strip_resize_handles(hlayout)
+        while hlayout.count():
+            hlayout.takeAt(0)
+
+        new_indices: list[int] = []
+        for w, stretch in content:
+            idx = hlayout.count()
+            hlayout.addWidget(w, stretch=stretch)
+            new_indices.append(idx)
+
+        if len(new_indices) >= 2:
+            self._insert_resize_handles(hlayout, new_indices)
+
+        if self._block_depth == 0:
+            self.attributes_changed.emit()
+
+    # ------------------------------------------------------------------
     # Toolbar action handlers
     # ------------------------------------------------------------------
 
@@ -1642,6 +2021,9 @@ class SheetBuilderWidget(QWidget):
                 hlayout = last_item.layout()
                 sw = SpacerWidget()
                 sw.weight = 1
+                sw.drag_started.connect(self._on_child_drag_started)
+                sw.drag_finished.connect(self._on_child_drag_finished)
+                self._spacers[sw.spacer_id] = sw
                 hlayout.addWidget(sw, stretch=1)
                 # Re-inject resize handles so the new spacer is resizable
                 self._rebuild_resize_handles(hlayout)
@@ -1662,6 +2044,12 @@ class SheetBuilderWidget(QWidget):
     def _on_toolbar_add_text(self) -> None:
         """Add a full-width text block row."""
         self._add_row([{"type": "text", "text": ""}])
+        if self._block_depth == 0:
+            self.attributes_changed.emit()
+
+    def _on_toolbar_add_header(self) -> None:
+        """Add a full-width section header row."""
+        self._add_row([{"type": "header", "text": ""}])
         if self._block_depth == 0:
             self.attributes_changed.emit()
 
@@ -1755,6 +2143,14 @@ class SheetBuilderWidget(QWidget):
         act = menu.addAction("🗑 Delete Row")
         act.triggered.connect(lambda: self._ctx_delete_row(row_idx))
 
+        menu.addSeparator()
+        act = menu.addAction("── Add Divider")
+        act.triggered.connect(self._on_toolbar_add_divider)
+        act = menu.addAction("𝐓 Add Text")
+        act.triggered.connect(self._on_toolbar_add_text)
+        act = menu.addAction("𝐇 Add Header")
+        act.triggered.connect(self._on_toolbar_add_header)
+
     def _build_empty_context_menu(self, menu: QMenu) -> None:
         """Build context menu for clicks on empty space."""
         act = menu.addAction("＋ Add Attribute")
@@ -1765,6 +2161,9 @@ class SheetBuilderWidget(QWidget):
 
         act = menu.addAction("𝐓 Add Text")
         act.triggered.connect(self._on_toolbar_add_text)
+
+        act = menu.addAction("𝐇 Add Header")
+        act.triggered.connect(self._on_toolbar_add_header)
 
     # ------------------------------------------------------------------
     # Context menu action helpers
@@ -1797,6 +2196,9 @@ class SheetBuilderWidget(QWidget):
             hlayout = row_item.layout()
             sw = SpacerWidget()
             sw.weight = 1
+            sw.drag_started.connect(self._on_child_drag_started)
+            sw.drag_finished.connect(self._on_child_drag_finished)
+            self._spacers[sw.spacer_id] = sw
             hlayout.addWidget(sw, stretch=1)
             # Re-inject resize handles so the new spacer is resizable
             self._rebuild_resize_handles(hlayout)
@@ -1814,6 +2216,8 @@ class SheetBuilderWidget(QWidget):
             item = hlayout.itemAt(i)
             if item and item.widget() and isinstance(item.widget(), SpacerWidget):
                 widget = item.widget()
+                if isinstance(widget, SpacerWidget):
+                    self._spacers.pop(widget.spacer_id, None)
                 hlayout.removeWidget(widget)
                 widget.setParent(None)
                 widget.deleteLater()
@@ -1829,12 +2233,14 @@ class SheetBuilderWidget(QWidget):
         if not row_item or not row_item.layout():
             return
         hlayout = row_item.layout()
-        # Remove widgets and their pair entries
+        # Remove widgets and their pair/spacer entries
         while hlayout.count():
             child = hlayout.takeAt(0)
             widget = child.widget() if child else None
             if isinstance(widget, AttributePairWidget):
                 self._pairs.pop(widget.key, None)
+            elif isinstance(widget, SpacerWidget):
+                self._spacers.pop(widget.spacer_id, None)
             if widget:
                 widget.setParent(None)
                 widget.deleteLater()
