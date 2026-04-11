@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-03-03  
-**Commit:** 0.14.1
+**Last Updated:** 2026-04-11  
+**Commit:** 55c7013d
 ---
 
 # Changelog
@@ -37,6 +37,32 @@ All notable changes to this project will be documented in this file.
 - **Code**: Move inline QSS into `StyleHelper` helpers and refactor `MapLayerPanel` construction to reduce duplication.
 
 ### Deprecated
+
+### Added
+
+- *(2026-03-28)* **AI**: Per-world AI audit logging — added per-world `ai_audit_log.txt` support, rating and optional comment fields in generation review dialog, and logging utilities to route audit entries to world-specific audit files.
+
+### Fixed
+
+- *(2026-03-28)* **Map / UI**: Reworked map toolbar and layer panel spacing; fixed destructive button styling and hover states for clearer visual hierarchy.
+- *(2026-03-14 → 2026-03-12)* **Raster / Map**: Multiple raster import and map behavior fixes — improved flood-fill, marker deletion validation, non-blocking raster image analysis, resampling defaults, and passthrough handling for color rasters.
+
+### Changed
+
+- *(2026-03-28)* **UI**: Reorganized map toolbar into grouped button sets and moved less-frequent actions into an overflow menu to reduce clutter.
+- *(2026-03-12)* **Map**: Centralized inline QSS into `StyleHelper` and refactored `MapLayerPanel` for maintainability and better theme integration.
+
+### Refactor
+
+- *(2026-03-14)* **Map**: Extracted heavy image-processing into `raster_import_helpers.py` and `raster_image_analysis.py` to keep UI threads responsive and improve testability.
+
+### Testing
+
+- *(2026-03-12 → 2026-03-14)* **Tests**: Added and expanded unit tests for raster import helpers, marker deletion validation, map layer visibility caching, animation cleanup, and editor behaviors.
+
+### Documentation / Chore
+
+- *(2026-03-27)* **Chore**: Recorded workspace changes and updated various local settings and test fixtures; several commits updated linting and formatting across the codebase.
 
 ## [0.14.1]
 - *(2026-03-03)* **Architecture**: Implemented per-world theme persistence and GUI database initialization logic.

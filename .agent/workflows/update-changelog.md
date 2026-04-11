@@ -8,11 +8,11 @@ description: Update CHANGELOG.md with recent commits
 
 1. Get recent commits with full details:
    ```
-   git log --format="%h %ad %s" --date=short -15
+   git log 0.14.1..HEAD --format="%h %ad %s" --date=short
    ```
    Then review full commit messages for important details:
    ```
-   git log --format="%h %ad%n%s%n%n%b%n---" --date=short -10
+   git log 0.14.1..HEAD --format="%h %ad%n%s%n%n%b%n---" --date=short
    ```
 
 2. View current CHANGELOG.md to understand structure:
