@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-04-11
-### Added
-- feat(sheet-builder): interactive spacers + HeaderWidget + keyboard reordering
+### Internal
+- updated changelog
 
 
 *This changelog was automatically generated.*
