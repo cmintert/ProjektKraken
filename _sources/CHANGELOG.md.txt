@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-04-09
-### Fixed
-- fix: prevent concurrent embedding operations in worker thread
+## [Development] - 2026-04-11
+### Added
+- feat(sheet-builder): interactive spacers + HeaderWidget + keyboard reordering
 
 
 *This changelog was automatically generated.*
