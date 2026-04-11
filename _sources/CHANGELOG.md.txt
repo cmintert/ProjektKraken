@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-04-11
 ### Internal
-- updated changelog
+- Release v0.15.0
 
 
 *This changelog was automatically generated.*
