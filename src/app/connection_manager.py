@@ -405,6 +405,18 @@ class ConnectionManager:
                     dc.load_entity_details,
                     "EntityEditor",
                 ),
+                (
+                    self.window.event_editor,
+                    "create_new_requested",
+                    ec.create_event,
+                    "EventEditor",
+                ),
+                (
+                    self.window.entity_editor,
+                    "create_new_requested",
+                    ec.create_entity,
+                    "EntityEditor",
+                ),
             ]
         )
         return self._connect_batch(specs, "Editors")

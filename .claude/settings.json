@@ -13,7 +13,9 @@
       "Bash(pytest tests/unit/test_embedding_reliability.py::TestBatchEmbedding::test_rebuild_index_batches_embed_calls -xvs)",
       "Bash(pytest tests/unit/test_worker_index_caching.py -xvs)",
       "Bash(git checkout:*)",
-      "Bash(pytest tests/unit/test_worker_embedding_queue.py tests/unit/test_worker_index_caching.py -v)"
+      "Bash(pytest tests/unit/test_worker_embedding_queue.py tests/unit/test_worker_index_caching.py -v)",
+      "Bash(pytest tests/integration/test_main_window_initialization.py -xvs)",
+      "Bash(pytest tests/unit/test_entity_editor.py tests/unit/test_event_editor.py -x -q)"
     ]
   }
 }

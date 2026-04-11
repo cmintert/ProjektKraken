@@ -97,6 +97,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
     dirty_changed = Signal(bool)
     current_data_changed = Signal(dict)
     completion_prefix_changed = Signal(str)
+    create_new_requested = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         """Initializes the editor widget with form fields.
@@ -115,10 +116,30 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
-        main_layout = QVBoxLayout(self)
         from src.gui.utils.style_helper import StyleHelper
+        from src.gui.widgets.empty_state_widget import EmptyStateWidget
 
-        StyleHelper.apply_form_spacing(main_layout)
+        main_layout = QVBoxLayout(self)
+        StyleHelper.apply_no_margins(main_layout)
+
+        self._empty_state = EmptyStateWidget(
+            "No Event Selected",
+            "Select an event from the list to view and edit its details.",
+        )
+        self._empty_state.add_action(
+            "New Event", self.create_new_requested.emit, primary=True
+        )
+        main_layout.addWidget(self._empty_state)
+        self._empty_state.show()
+
+        self._content_widget = QWidget()
+        _content_layout = QVBoxLayout(self._content_widget)
+        StyleHelper.apply_form_spacing(_content_layout)
+        main_layout.addWidget(self._content_widget)
+        self._content_widget.hide()
+
+        # Alias so the rest of __init__ can keep using main_layout idiom
+        main_layout = _content_layout
 
         self._is_loading = False
         self._is_dirty = False
@@ -392,8 +413,6 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         # Connect signals for dirty tracking
         self._connect_dirty_signals()
 
-        # Start disabled until specific event loaded
-        self.setEnabled(False)
         self.summary_service = None
 
         # Enable drag-and-drop for relation creation
@@ -958,6 +977,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             self.desc_edit.blockSignals(False)
 
             self.set_dirty(False)
+            self._empty_state.hide()
+            self._content_widget.show()
             self.setEnabled(True)
 
             # Restore scroll position and description cursor

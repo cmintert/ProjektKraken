@@ -482,6 +482,23 @@ class UIManager:
 
         file_menu.addSeparator()
 
+        # Export submenu
+        export_menu = file_menu.addMenu("Export")
+
+        # Export to Markdown
+        export_md_action = export_menu.addAction("Export Longform to Markdown...")
+        export_md_action.triggered.connect(
+            self.main_window.longform_manager.export_longform_document
+        )
+
+        # Export as Vault
+        export_vault_action = export_menu.addAction("Export as Obsidian Vault...")
+        export_vault_action.triggered.connect(
+            self.main_window.longform_manager.export_as_vault
+        )
+
+        file_menu.addSeparator()
+
         # Backup submenu
         backup_menu = file_menu.addMenu("Backup && Restore")
 

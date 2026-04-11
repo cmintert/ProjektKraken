@@ -81,6 +81,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
     inject_ui_requested = Signal(str)
     summary_generation_requested = Signal(object)
     completion_prefix_changed = Signal(str)
+    create_new_requested = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the EntityEditorWidget.
@@ -98,10 +99,30 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
-        main_layout = QVBoxLayout(self)
         from src.gui.utils.style_helper import StyleHelper
+        from src.gui.widgets.empty_state_widget import EmptyStateWidget
 
-        StyleHelper.apply_form_spacing(main_layout)
+        main_layout = QVBoxLayout(self)
+        StyleHelper.apply_no_margins(main_layout)
+
+        self._empty_state = EmptyStateWidget(
+            "No Entity Selected",
+            "Select an entity from the list to view and edit its details.",
+        )
+        self._empty_state.add_action(
+            "New Entity", self.create_new_requested.emit, primary=True
+        )
+        main_layout.addWidget(self._empty_state)
+        self._empty_state.show()
+
+        self._content_widget = QWidget()
+        _content_layout = QVBoxLayout(self._content_widget)
+        StyleHelper.apply_form_spacing(_content_layout)
+        main_layout.addWidget(self._content_widget)
+        self._content_widget.hide()
+
+        # Alias so the rest of __init__ can keep using main_layout idiom
+        main_layout = _content_layout
 
         # --- Persistent Header ---
         self.header_widget = QWidget()
@@ -409,8 +430,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         self._connect_dirty_signals()
 
-        # Start disabled
-        self.setEnabled(False)
+        # Start hidden until an entity is loaded (empty state is shown instead)
         self.summary_service = None
 
         # Enable drag-and-drop for relation creation
@@ -805,6 +825,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self.exit_read_only_mode()
             self._load_entity_relations(relations, incoming_relations)
 
+            self._empty_state.hide()
+            self._content_widget.show()
             self.setEnabled(True)
 
             # Unblock & Reset
@@ -1116,18 +1138,18 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self.discard_requested.emit(self._current_entity_id)
 
     def clear(self) -> None:
-        """Clear all editor fields and disable the widget.
+        """Clear all editor fields and return to the empty state.
 
         Resets the internal entity ID, clears the name, description, and
-        relation list, and disables the editor to indicate that no entity is
-        loaded.
+        relation list, then hides the content widget and shows the empty state.
 
         """
         self._current_entity_id = None
         self.name_edit.clear()
         self.desc_edit.clear()
-        self.rel_list.clear()  # Clear relations
-        self.setEnabled(False)
+        self.rel_list.clear()
+        self._content_widget.hide()
+        self._empty_state.show()
 
     @Slot()
     def _on_add_relation(self) -> None:

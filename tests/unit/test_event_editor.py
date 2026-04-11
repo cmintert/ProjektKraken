@@ -19,7 +19,8 @@ def editor(qtbot):
 
 def test_editor_init(editor):
     assert editor.name_edit is not None
-    assert not editor.isEnabled()  # Disabled until loaded
+    assert editor._content_widget.isHidden()  # Hidden until event loaded
+    assert not editor._empty_state.isHidden()  # Empty state shown on init
 
 
 def test_load_event(editor):
