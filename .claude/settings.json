@@ -15,7 +15,15 @@
       "Bash(git checkout:*)",
       "Bash(pytest tests/unit/test_worker_embedding_queue.py tests/unit/test_worker_index_caching.py -v)",
       "Bash(pytest tests/integration/test_main_window_initialization.py -xvs)",
-      "Bash(pytest tests/unit/test_entity_editor.py tests/unit/test_event_editor.py -x -q)"
+      "Bash(pytest tests/unit/test_entity_editor.py tests/unit/test_event_editor.py -x -q)",
+      "Bash(mypy src/commands/base_command.py)",
+      "Bash(pytest -x -q)",
+      "Bash(pytest tests/integration/test_main_window_initialization.py::TestConnectionManagerIntegration::test_connect_all_returns_statistics -q)",
+      "Read(//c/Users/chris/.claude/plugins/marketplaces/claude-plugins-official/external_plugins/discord/skills/access/**)",
+      "Read(//c/Users/chris/.claude/plugins/marketplaces/claude-plugins-official/external_plugins/discord/skills/configure/**)",
+      "Read(//c/Users/chris/.claude/plugins/marketplaces/claude-plugins-official/plugins/frontend-design/skills/frontend-design/**)",
+      "Read(//c/Users/chris/.claude/plugins/marketplaces/claude-plugins-official/plugins/example-plugin/skills/example-skill/**)",
+      "Edit(/.claude/skills/commit/**)"
     ]
   }
 }

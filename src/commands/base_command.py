@@ -8,9 +8,12 @@ Classes:
 """
 
 import logging
+import re
+import time
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Dict, List, Set
+from typing import Any, Literal
 
 from src.services.db_service import DatabaseService
 
@@ -25,8 +28,10 @@ class CommandResult:
         success (bool): True if the command executed successfully,
                         False otherwise.
         message (str): A human-readable message describing the result.
-        errors (Dict[str, str]): A dictionary of validation errors
+        errors (dict[str, str]): A dictionary of validation errors
                                  (field -> error content).
+        data (dict[str, object]): Arbitrary payload returned by the command
+                                   (e.g. newly created IDs, updated records).
         command_name (str): The name of the command that generated
                             this result.
 
@@ -34,21 +39,29 @@ class CommandResult:
 
     success: bool
     message: str = ""
-    errors: Dict[str, str] = field(default_factory=dict)
-    data: Dict = field(default_factory=dict)
+    errors: dict[str, str] = field(default_factory=dict)
+    data: dict[str, object] = field(default_factory=dict)
     command_name: str = ""
 
 
 class BaseCommand(ABC):
     """Abstract base class for all user actions.
 
-    Encapsulates logic to generic execution and undo/redo support.
+    Encapsulates logic for generic execution and undo/redo support.
+    Concrete subclasses must implement :meth:`execute`, :meth:`undo`,
+    :meth:`to_dict`, and :meth:`from_dict`.
+
+    Attributes:
+        timestamp (float): Unix timestamp recorded when the command was
+                           instantiated.
+        _is_executed (bool): Internal flag set to ``True`` after the command
+                             has been executed; exposed via the
+                             :attr:`is_executed` property.
+
     """
 
     def __init__(self) -> None:
         """Initializes the command."""
-        import time
-
         self._is_executed = False
         self.timestamp: float = time.time()
 
@@ -63,7 +76,7 @@ class BaseCommand(ABC):
             CommandResult: Standardized result object indicating success or failure.
 
         """
-        pass
+        ...
 
     @abstractmethod
     def undo(self, db_service: DatabaseService) -> None:
@@ -73,31 +86,31 @@ class BaseCommand(ABC):
             db_service (DatabaseService): The database service to operate on.
 
         """
-        pass
+        ...
 
     @abstractmethod
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Serialize command to dictionary for persistence.
 
         Returns:
-            Dict: Dictionary containing all command data needed for reconstruction.
+            dict: Dictionary containing all command data needed for reconstruction.
 
         """
-        pass
+        ...
 
     @classmethod
     @abstractmethod
-    def from_dict(cls, data: Dict) -> "BaseCommand":
+    def from_dict(cls, data: dict) -> "BaseCommand":
         """Deserialize command from dictionary.
 
         Args:
-            data (Dict): Dictionary containing command data.
+            data (dict): Dictionary containing command data.
 
         Returns:
             BaseCommand: Reconstructed command instance.
 
         """
-        pass
+        ...
 
     def get_description(self) -> str:
         """Get a human-readable description of this command.
@@ -111,8 +124,6 @@ class BaseCommand(ABC):
         if class_name.endswith("Command"):
             class_name = class_name[:-7]  # Remove "Command"
         # Convert CamelCase to Title Case with spaces
-        import re
-
         result = re.sub(r"([A-Z])", r" \1", class_name).strip()
         return result
 
@@ -143,10 +154,15 @@ class BaseCommand(ABC):
     def _assign_tags(
         db_service: DatabaseService,
         object_id: str,
-        tags: List[str],
-        object_type: str,
+        tags: list[str],
+        object_type: Literal["entity", "event"],
     ) -> None:
         """Assigns a list of tags to an entity or event.
+
+        Note:
+            This method blindly assigns all supplied tags without checking for
+            duplicates. Use :meth:`_sync_tags` when the existing tag state is
+            unknown to avoid stale or duplicate entries.
 
         Args:
             db_service: The database service to use.
@@ -164,14 +180,14 @@ class BaseCommand(ABC):
             try:
                 assign_fn(object_id, tag_name)
             except Exception as e:
-                logger.warning(f"Failed to assign tag '{tag_name}': {e}")
+                logger.warning("Failed to assign tag '%s': %s", tag_name, e)
 
     @staticmethod
     def _sync_tags(
         db_service: DatabaseService,
         object_id: str,
-        new_tags: Set[str],
-        object_type: str,
+        new_tags: set[str],
+        object_type: Literal["entity", "event"],
     ) -> None:
         """Synchronizes normalized tag rows for an entity or event.
 
@@ -185,6 +201,9 @@ class BaseCommand(ABC):
             object_type: Either ``"entity"`` or ``"event"``.
 
         """
+        get_fn: Callable[[str], list[dict[str, Any]]]
+        remove_fn: Callable[[str, str], None]
+        assign_fn: Callable[[str, str], None]
         if object_type == "entity":
             get_fn = db_service.get_tags_for_entity
             remove_fn = db_service.remove_tag_from_entity
@@ -194,16 +213,16 @@ class BaseCommand(ABC):
             remove_fn = db_service.remove_tag_from_event
             assign_fn = db_service.assign_tag_to_event
 
-        current_tags: Set[str] = {t["name"] for t in get_fn(object_id)}
+        current_tags: set[str] = {t["name"] for t in get_fn(object_id)}
 
         for tag_name in current_tags - new_tags:
             try:
                 remove_fn(object_id, tag_name)
             except Exception as e:
-                logger.warning(f"Failed to remove tag '{tag_name}': {e}")
+                logger.warning("Failed to remove tag '%s': %s", tag_name, e)
 
         for tag_name in new_tags - current_tags:
             try:
                 assign_fn(object_id, tag_name)
             except Exception as e:
-                logger.warning(f"Failed to assign tag '{tag_name}': {e}")
+                logger.warning("Failed to assign tag '%s': %s", tag_name, e)
