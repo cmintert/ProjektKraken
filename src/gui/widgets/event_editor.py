@@ -938,7 +938,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
     def load_event(
         self,
-        event: Event,
+        event: Event | None,
         relations: list = None,
         incoming_relations: list = None,
         maps_data: Optional[list] = None,
@@ -951,6 +951,16 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             incoming_relations (list): List of incoming relation dicts.
 
         """
+        # Handle missing event (e.g., item was deleted)
+        if event is None:
+            self._current_event_id = None
+            self._current_created_at = 0.0
+            self._empty_state.show()
+            self._content_widget.hide()
+            self.set_dirty(False)
+            self.gallery.set_owner("", "")
+            return
+
         self._current_event_id = event.id
         self._current_created_at = event.created_at  # Preserve validation data
 

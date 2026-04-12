@@ -773,7 +773,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
     def load_entity(
         self,
-        entity: Entity,
+        entity: Entity | None,
         relations: list = None,
         incoming_relations: list = None,
         maps_data: list = None,
@@ -798,6 +798,16 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
                 to leave the section unchanged.
 
         """
+        # Handle missing entity (e.g., deleted)
+        if entity is None:
+            self._current_entity_id = None
+            self._current_created_at = 0.0
+            self._empty_state.show()
+            self._content_widget.hide()
+            self.set_dirty(False)
+            self.gallery.set_owner("", "")
+            return
+
         self._is_loading = True
         try:
             self._current_entity_id = entity.id

@@ -345,6 +345,9 @@ class DatabaseWorker(QObject):
                     rel["source_name"] = self.db_service.get_name(rel["source_id"])
 
                 self.event_details_loaded.emit(event, rels, incoming)
+            else:
+                # Signal that the requested event was not found so UI can clear editors
+                self.event_details_loaded.emit(None, [], [])
             self.operation_finished.emit("Event Details Loaded.")
         except Exception:
             logger.error(f"Failed to load event details: {traceback.format_exc()}")
@@ -369,6 +372,9 @@ class DatabaseWorker(QObject):
                     rel["source_name"] = self.db_service.get_name(rel["source_id"])
 
                 self.entity_details_loaded.emit(entity, rels, incoming)
+            else:
+                # Signal that the requested entity was not found so UI can clear editors
+                self.entity_details_loaded.emit(None, [], [])
             self.operation_finished.emit("Entity Details Loaded.")
         except Exception:
             logger.error(f"Failed to load entity details: {traceback.format_exc()}")
