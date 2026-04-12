@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-04-11
-### Added
-- feat(gui): add EmptyState for Event & Entity inspectors; wire actions
+## [Development] - 2026-04-12
+### Changed
+- refactor: simplify empty-state handling in entity/event editors
 
 
 *This changelog was automatically generated.*
