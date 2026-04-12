@@ -278,7 +278,34 @@ BaseCommand: Abstract base class implementing command pattern with undo/redo.</p
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.base_command.</span></span><span class="sig-name descname"><span class="pre">BaseCommand</span></span><a class="reference internal" href="_modules/commands/base_command.html#BaseCommand"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.BaseCommand" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
 <p>Abstract base class for all user actions.</p>
-<p>Encapsulates logic to generic execution and undo/redo support.</p>
+<p>Encapsulates logic for generic execution and undo/redo support.
+Concrete subclasses must implement <a class="reference internal" href="#commands.base_command.BaseCommand.execute" title="commands.base_command.BaseCommand.execute"><code class="xref py py-meth docutils literal notranslate"><span class="pre">execute()</span></code></a>, <a class="reference internal" href="#commands.base_command.BaseCommand.undo" title="commands.base_command.BaseCommand.undo"><code class="xref py py-meth docutils literal notranslate"><span class="pre">undo()</span></code></a>,
+<a class="reference internal" href="#commands.base_command.BaseCommand.to_dict" title="commands.base_command.BaseCommand.to_dict"><code class="xref py py-meth docutils literal notranslate"><span class="pre">to_dict()</span></code></a>, and <a class="reference internal" href="#commands.base_command.BaseCommand.from_dict" title="commands.base_command.BaseCommand.from_dict"><code class="xref py py-meth docutils literal notranslate"><span class="pre">from_dict()</span></code></a>.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="commands.base_command.BaseCommand.timestamp">
+<span class="sig-name descname"><span class="pre">timestamp</span></span><a class="headerlink" href="#commands.base_command.BaseCommand.timestamp" title="Link to this definition">¶</a></dt>
+<dd><p>Unix timestamp recorded when the command was
+instantiated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="commands.base_command.BaseCommand._is_executed">
+<span class="sig-name descname"><span class="pre">_is_executed</span></span><a class="headerlink" href="#commands.base_command.BaseCommand._is_executed" title="Link to this definition">¶</a></dt>
+<dd><p>Internal flag set to <code class="docutils literal notranslate"><span class="pre">True</span></code> after the command
+has been executed; exposed via the
+<a class="reference internal" href="#commands.base_command.BaseCommand.is_executed" title="commands.base_command.BaseCommand.is_executed"><code class="xref py py-attr docutils literal notranslate"><span class="pre">is_executed</span></code></a> property.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="commands.base_command.BaseCommand.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/base_command.html#BaseCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.BaseCommand.__init__" title="Link to this definition">¶</a></dt>
@@ -304,11 +331,11 @@ BaseCommand: Abstract base class implementing command pattern with undo/redo.</p
 
 <dl class="py method">
 <dt class="sig sig-object py" id="commands.base_command.BaseCommand.from_dict">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.base_command.BaseCommand" title="commands.base_command.BaseCommand"><span class="pre">BaseCommand</span></a></span></span><a class="reference internal" href="_modules/commands/base_command.html#BaseCommand.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.BaseCommand.from_dict" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.base_command.BaseCommand" title="commands.base_command.BaseCommand"><span class="pre">BaseCommand</span></a></span></span><a class="reference internal" href="_modules/commands/base_command.html#BaseCommand.from_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.BaseCommand.from_dict" title="Link to this definition">¶</a></dt>
 <dd><p>Deserialize command from dictionary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>data</strong> (<em>Dict</em>) – Dictionary containing command data.</p>
+<dd class="field-odd"><p><strong>data</strong> (<em>dict</em>) – Dictionary containing command data.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Reconstructed command instance.</p>
@@ -365,14 +392,14 @@ commands that should execute silently.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="commands.base_command.BaseCommand.to_dict">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="_modules/commands/base_command.html#BaseCommand.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.BaseCommand.to_dict" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/commands/base_command.html#BaseCommand.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.BaseCommand.to_dict" title="Link to this definition">¶</a></dt>
 <dd><p>Serialize command to dictionary for persistence.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Dictionary containing all command data needed for reconstruction.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Dict</p>
+<dd class="field-even"><p>dict</p>
 </dd>
 </dl>
 </dd></dl>
@@ -392,7 +419,7 @@ commands that should execute silently.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="commands.base_command.CommandResult">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.base_command.</span></span><span class="sig-name descname"><span class="pre">CommandResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">success:</span> <span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">message:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors:</span> <span class="pre">~typing.Dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data:</span> <span class="pre">~typing.Dict</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">command_name:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/base_command.html#CommandResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.CommandResult" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">commands.base_command.</span></span><span class="sig-name descname"><span class="pre">CommandResult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">success:</span> <span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">message:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">errors:</span> <span class="pre">dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data:</span> <span class="pre">dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">command_name:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/commands/base_command.html#CommandResult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.CommandResult" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Standardized result object for command execution.</p>
 <dl class="py attribute">
@@ -425,7 +452,19 @@ False otherwise.</p>
 (field -&gt; error content).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Dict[str, str]</p>
+<dd class="field-odd"><p>dict[str, str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="commands.base_command.CommandResult.data">
+<span class="sig-name descname"><span class="pre">data</span></span><a class="headerlink" href="#commands.base_command.CommandResult.data" title="Link to this definition">¶</a></dt>
+<dd><p>Arbitrary payload returned by the command
+(e.g. newly created IDs, updated records).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict[str, object]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -448,23 +487,23 @@ this result.</p>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="commands.base_command.CommandResult.data">
-<span class="sig-name descname"><span class="pre">data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><a class="headerlink" href="#commands.base_command.CommandResult.data" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
 <dt class="sig sig-object py" id="id1">
-<span class="sig-name descname"><span class="pre">errors</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#id1" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">object</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#id1" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id2">
-<span class="sig-name descname"><span class="pre">message</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#id2" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">errors</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#id2" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="id3">
-<span class="sig-name descname"><span class="pre">success</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#id3" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">message</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#id3" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">success</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#id4" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1941,6 +1980,8 @@ functionality. Commands encapsulate actions related to entities, events, and rel
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-commands.base_command">commands.base_command module</a><ul>
 <li><a class="reference internal" href="#commands.base_command.BaseCommand"><code class="docutils literal notranslate"><span class="pre">BaseCommand</span></code></a><ul>
+<li><a class="reference internal" href="#commands.base_command.BaseCommand.timestamp"><code class="docutils literal notranslate"><span class="pre">BaseCommand.timestamp</span></code></a></li>
+<li><a class="reference internal" href="#commands.base_command.BaseCommand._is_executed"><code class="docutils literal notranslate"><span class="pre">BaseCommand._is_executed</span></code></a></li>
 <li><a class="reference internal" href="#commands.base_command.BaseCommand.__init__"><code class="docutils literal notranslate"><span class="pre">BaseCommand.__init__()</span></code></a></li>
 <li><a class="reference internal" href="#commands.base_command.BaseCommand.execute"><code class="docutils literal notranslate"><span class="pre">BaseCommand.execute()</span></code></a></li>
 <li><a class="reference internal" href="#commands.base_command.BaseCommand.from_dict"><code class="docutils literal notranslate"><span class="pre">BaseCommand.from_dict()</span></code></a></li>
@@ -1955,12 +1996,13 @@ functionality. Commands encapsulate actions related to entities, events, and rel
 <li><a class="reference internal" href="#commands.base_command.CommandResult.success"><code class="docutils literal notranslate"><span class="pre">CommandResult.success</span></code></a></li>
 <li><a class="reference internal" href="#commands.base_command.CommandResult.message"><code class="docutils literal notranslate"><span class="pre">CommandResult.message</span></code></a></li>
 <li><a class="reference internal" href="#commands.base_command.CommandResult.errors"><code class="docutils literal notranslate"><span class="pre">CommandResult.errors</span></code></a></li>
+<li><a class="reference internal" href="#commands.base_command.CommandResult.data"><code class="docutils literal notranslate"><span class="pre">CommandResult.data</span></code></a></li>
 <li><a class="reference internal" href="#commands.base_command.CommandResult.command_name"><code class="docutils literal notranslate"><span class="pre">CommandResult.command_name</span></code></a></li>
 <li><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">CommandResult.command_name</span></code></a></li>
-<li><a class="reference internal" href="#commands.base_command.CommandResult.data"><code class="docutils literal notranslate"><span class="pre">CommandResult.data</span></code></a></li>
-<li><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">CommandResult.errors</span></code></a></li>
-<li><a class="reference internal" href="#id2"><code class="docutils literal notranslate"><span class="pre">CommandResult.message</span></code></a></li>
-<li><a class="reference internal" href="#id3"><code class="docutils literal notranslate"><span class="pre">CommandResult.success</span></code></a></li>
+<li><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">CommandResult.data</span></code></a></li>
+<li><a class="reference internal" href="#id2"><code class="docutils literal notranslate"><span class="pre">CommandResult.errors</span></code></a></li>
+<li><a class="reference internal" href="#id3"><code class="docutils literal notranslate"><span class="pre">CommandResult.message</span></code></a></li>
+<li><a class="reference internal" href="#id4"><code class="docutils literal notranslate"><span class="pre">CommandResult.success</span></code></a></li>
 </ul>
 </li>
 </ul>

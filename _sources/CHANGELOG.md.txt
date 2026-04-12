@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-04-12
 ### Changed
-- refactor: simplify empty-state handling in entity/event editors
+- refactor(commands): improve type hints and documentation in BaseCommand
 
 
 *This changelog was automatically generated.*

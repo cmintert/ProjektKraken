@@ -263,9 +263,12 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Set</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Literal</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.db_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatabaseService</span>
 
@@ -282,8 +285,10 @@
 <span class="sd">        success (bool): True if the command executed successfully,</span>
 <span class="sd">                        False otherwise.</span>
 <span class="sd">        message (str): A human-readable message describing the result.</span>
-<span class="sd">        errors (Dict[str, str]): A dictionary of validation errors</span>
+<span class="sd">        errors (dict[str, str]): A dictionary of validation errors</span>
 <span class="sd">                                 (field -&gt; error content).</span>
+<span class="sd">        data (dict[str, object]): Arbitrary payload returned by the command</span>
+<span class="sd">                                   (e.g. newly created IDs, updated records).</span>
 <span class="sd">        command_name (str): The name of the command that generated</span>
 <span class="sd">                            this result.</span>
 
@@ -291,8 +296,8 @@
 
     <span class="n">success</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="n">message</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-    <span class="n">errors</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
-    <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">errors</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
     <span class="n">command_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span></div>
 
 
@@ -302,15 +307,23 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseCommand</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base class for all user actions.</span>
 
-<span class="sd">    Encapsulates logic to generic execution and undo/redo support.</span>
+<span class="sd">    Encapsulates logic for generic execution and undo/redo support.</span>
+<span class="sd">    Concrete subclasses must implement :meth:`execute`, :meth:`undo`,</span>
+<span class="sd">    :meth:`to_dict`, and :meth:`from_dict`.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        timestamp (float): Unix timestamp recorded when the command was</span>
+<span class="sd">                           instantiated.</span>
+<span class="sd">        _is_executed (bool): Internal flag set to ``True`` after the command</span>
+<span class="sd">                             has been executed; exposed via the</span>
+<span class="sd">                             :attr:`is_executed` property.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="BaseCommand.__init__">
 <a class="viewcode-back" href="../../commands.html#commands.base_command.BaseCommand.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the command.&quot;&quot;&quot;</span>
-        <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">_is_executed</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">timestamp</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span></div>
 
@@ -328,7 +341,7 @@
 <span class="sd">            CommandResult: Standardized result object indicating success or failure.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span></div>
+        <span class="o">...</span></div>
 
 
 <div class="viewcode-block" id="BaseCommand.undo">
@@ -341,37 +354,37 @@
 <span class="sd">            db_service (DatabaseService): The database service to operate on.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span></div>
+        <span class="o">...</span></div>
 
 
 <div class="viewcode-block" id="BaseCommand.to_dict">
 <a class="viewcode-back" href="../../commands.html#commands.base_command.BaseCommand.to_dict">[docs]</a>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize command to dictionary for persistence.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Dict: Dictionary containing all command data needed for reconstruction.</span>
+<span class="sd">            dict: Dictionary containing all command data needed for reconstruction.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span></div>
+        <span class="o">...</span></div>
 
 
 <div class="viewcode-block" id="BaseCommand.from_dict">
 <a class="viewcode-back" href="../../commands.html#commands.base_command.BaseCommand.from_dict">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;BaseCommand&quot;</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;BaseCommand&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Deserialize command from dictionary.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            data (Dict): Dictionary containing command data.</span>
+<span class="sd">            data (dict): Dictionary containing command data.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            BaseCommand: Reconstructed command instance.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span></div>
+        <span class="o">...</span></div>
 
 
 <div class="viewcode-block" id="BaseCommand.get_description">
@@ -388,8 +401,6 @@
         <span class="k">if</span> <span class="n">class_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;Command&quot;</span><span class="p">):</span>
             <span class="n">class_name</span> <span class="o">=</span> <span class="n">class_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">7</span><span class="p">]</span>  <span class="c1"># Remove &quot;Command&quot;</span>
         <span class="c1"># Convert CamelCase to Title Case with spaces</span>
-        <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
-
         <span class="n">result</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;([A-Z])&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot; \1&quot;</span><span class="p">,</span> <span class="n">class_name</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">result</span></div>
 
@@ -421,10 +432,15 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_assign_tags</span><span class="p">(</span>
         <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">,</span>
         <span class="n">object_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">tags</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-        <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">tags</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">object_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;entity&quot;</span><span class="p">,</span> <span class="s2">&quot;event&quot;</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Assigns a list of tags to an entity or event.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            This method blindly assigns all supplied tags without checking for</span>
+<span class="sd">            duplicates. Use :meth:`_sync_tags` when the existing tag state is</span>
+<span class="sd">            unknown to avoid stale or duplicate entries.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            db_service: The database service to use.</span>
@@ -442,14 +458,14 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">assign_fn</span><span class="p">(</span><span class="n">object_id</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to assign tag &#39;</span><span class="si">{</span><span class="n">tag_name</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Failed to assign tag &#39;</span><span class="si">%s</span><span class="s2">&#39;: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_sync_tags</span><span class="p">(</span>
         <span class="n">db_service</span><span class="p">:</span> <span class="n">DatabaseService</span><span class="p">,</span>
         <span class="n">object_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">new_tags</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-        <span class="n">object_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">new_tags</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">object_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;entity&quot;</span><span class="p">,</span> <span class="s2">&quot;event&quot;</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Synchronizes normalized tag rows for an entity or event.</span>
 
@@ -463,6 +479,9 @@
 <span class="sd">            object_type: Either ``&quot;entity&quot;`` or ``&quot;event&quot;``.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">get_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span>
+        <span class="n">remove_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="n">assign_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">object_type</span> <span class="o">==</span> <span class="s2">&quot;entity&quot;</span><span class="p">:</span>
             <span class="n">get_fn</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">get_tags_for_entity</span>
             <span class="n">remove_fn</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">remove_tag_from_entity</span>
@@ -472,19 +491,19 @@
             <span class="n">remove_fn</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">remove_tag_from_event</span>
             <span class="n">assign_fn</span> <span class="o">=</span> <span class="n">db_service</span><span class="o">.</span><span class="n">assign_tag_to_event</span>
 
-        <span class="n">current_tags</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">get_fn</span><span class="p">(</span><span class="n">object_id</span><span class="p">)}</span>
+        <span class="n">current_tags</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">get_fn</span><span class="p">(</span><span class="n">object_id</span><span class="p">)}</span>
 
         <span class="k">for</span> <span class="n">tag_name</span> <span class="ow">in</span> <span class="n">current_tags</span> <span class="o">-</span> <span class="n">new_tags</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">remove_fn</span><span class="p">(</span><span class="n">object_id</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to remove tag &#39;</span><span class="si">{</span><span class="n">tag_name</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Failed to remove tag &#39;</span><span class="si">%s</span><span class="s2">&#39;: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">tag_name</span> <span class="ow">in</span> <span class="n">new_tags</span> <span class="o">-</span> <span class="n">current_tags</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">assign_fn</span><span class="p">(</span><span class="n">object_id</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to assign tag &#39;</span><span class="si">{</span><span class="n">tag_name</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Failed to assign tag &#39;</span><span class="si">%s</span><span class="s2">&#39;: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">tag_name</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span></div>
 
 </pre></div>
         </article>
