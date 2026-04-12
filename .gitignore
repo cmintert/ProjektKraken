@@ -41,7 +41,6 @@ credentials/
 # IDEs
 .vscode/
 .idea/
-.claude/  # Claude Code local config and runtime data (user-specific)
 
 # Project Specific
 logs/

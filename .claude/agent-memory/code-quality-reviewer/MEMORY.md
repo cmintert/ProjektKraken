@@ -1,0 +1,2 @@
+- [ProjektKraken Code Conventions](project_conventions.md) — Python 3.13 target, ruff rules, legacy typing imports to flag
+- [BaseCommand and Tag Helper Patterns](base_command_patterns.md) — Recurring issues found in base_command.py during first review
