@@ -10,6 +10,7 @@ and :data:`SEVERITY_COLORS` for consistent severity colour coding.
 
 from __future__ import annotations
 
+import html
 import logging
 import textwrap
 from typing import Any
@@ -21,7 +22,7 @@ from src.app.constants import (
     ANALYSIS_SEVERITY_INFO_COLOR,
     ANALYSIS_SEVERITY_WARNING_COLOR,
 )
-from src.core.analysis import SeverityLevel
+from src.core.analysis import ParsedLoreSuggestion, SeverityLevel
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,30 @@ def wrap_cell_text(text: str, width: int = 75) -> str:
         str: Text with ``\\n`` inserted at word boundaries.
     """
     return textwrap.fill(text, width=width) if text else text
+
+
+def format_lore_suggestions_html(suggestions: list[ParsedLoreSuggestion]) -> str:
+    """Format a list of ParsedLoreSuggestion objects as structured HTML.
+
+    Each suggestion renders as a mini-card with bold event name, italic date,
+    and description text, separated by horizontal dividers.
+
+    Args:
+        suggestions: List of parsed lore suggestions.
+
+    Returns:
+        str: HTML string ready for display in QTextBrowser.
+    """
+    html_parts = []
+    for i, suggestion in enumerate(suggestions):
+        if i > 0:
+            html_parts.append("<hr style='margin: 8px 0; border: 1px solid #999;' />")
+        html_parts.append(f"<b>{html.escape(suggestion.name)}</b><br/>")
+        if suggestion.date_str:
+            html_parts.append(f"<i>Date: {html.escape(suggestion.date_str)}</i><br/>")
+        if suggestion.description:
+            html_parts.append(html.escape(suggestion.description))
+    return "".join(html_parts)
 
 
 def make_analysis_table(headers: list[str]) -> QTableWidget:

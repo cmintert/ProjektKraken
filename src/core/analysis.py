@@ -364,6 +364,21 @@ class RelationProposal:
 
 
 @dataclass
+class ParsedLoreSuggestion:
+    """One bridging-event suggestion from the LLM.
+
+    Attributes:
+        name: Event title.
+        date_str: Estimated date string (e.g. "Approximately Year 1580").
+        description: Brief event description.
+    """
+
+    name: str
+    date_str: str
+    description: str
+
+
+@dataclass
 class LoreGapFiller:
     """Generated lore suggestions to fill a timeline gap.
 
@@ -378,7 +393,7 @@ class LoreGapFiller:
     gap_id: str
     start_date: float
     end_date: float
-    suggestions: list[str]
+    suggestions: list[ParsedLoreSuggestion]
     selected_suggestion: int | None = None
 
 

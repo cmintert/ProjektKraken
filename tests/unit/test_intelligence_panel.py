@@ -5,6 +5,7 @@ import pytest
 from src.core.analysis import (
     IntelligenceReport,
     LoreGapFiller,
+    ParsedLoreSuggestion,
     PlotHole,
     RelationProposal,
     SeverityLevel,
@@ -65,7 +66,18 @@ def _make_lore(start: float = 0.0, end: float = 500.0) -> LoreGapFiller:
         gap_id=f"gap_{start:.0f}_{end:.0f}",
         start_date=start,
         end_date=end,
-        suggestions=["The Long Silence", "Rise of the Eastern Clans"],
+        suggestions=[
+            ParsedLoreSuggestion(
+                name="The Long Silence",
+                date_str="Approximately Year 1200",
+                description="A period of isolation and mystery.",
+            ),
+            ParsedLoreSuggestion(
+                name="Rise of the Eastern Clans",
+                date_str="Approximately Year 1350",
+                description="Powerful clans emerge in the east.",
+            ),
+        ],
     )
 
 
@@ -267,13 +279,17 @@ class TestIntelligencePanelDisplayReport:
         assert "Year 3" in panel.lore_table.item(0, 1).text()
 
     def test_lore_suggestions_joined_in_table(self, qapp):
+        from PySide6.QtWidgets import QTextBrowser
+
         from src.gui.widgets.intelligence_panel import IntelligencePanel
 
         panel = IntelligencePanel()
         panel.display_report(_make_report(lore=[_make_lore()]))
-        suggestions_text = panel.lore_table.item(0, 2).text()
-        assert "Long Silence" in suggestions_text
-        assert "Eastern Clans" in suggestions_text
+        browser = panel.lore_table.cellWidget(0, 2)
+        assert isinstance(browser, QTextBrowser)
+        html = browser.toHtml()
+        assert "Long Silence" in html
+        assert "Eastern Clans" in html
 
     def test_display_report_called_twice_replaces_data(self, qapp):
         from src.gui.widgets.intelligence_panel import IntelligencePanel

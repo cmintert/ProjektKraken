@@ -11,8 +11,10 @@ import logging
 
 from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
+    QFrame,
     QLabel,
     QTableWidgetItem,
+    QTextBrowser,
     QVBoxLayout,
     QWidget,
 )
@@ -23,6 +25,7 @@ from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets._analysis_utils import (
     SEVERITY_COLORS,
     fmt_lore_date,
+    format_lore_suggestions_html,
     make_analysis_table,
     wrap_cell_text,
 )
@@ -190,8 +193,8 @@ class IntelligencePanel(QWidget):
     def _populate_lore_table(self, report: IntelligenceReport) -> None:
         """Fill the lore-suggestions table from the report's lore_suggestions list.
 
-        Multiple suggestions for a single gap are joined with ``"; "``
-        for display in a single cell.
+        Suggestions for a single gap are rendered as structured HTML cards with
+        event names, dates, and descriptions separated by dividers.
 
         Args:
             report: The report whose lore suggestions are displayed.
@@ -204,7 +207,9 @@ class IntelligencePanel(QWidget):
             self.lore_table.setItem(
                 row, 1, QTableWidgetItem(fmt_lore_date(filler.end_date, self._converter))
             )
-            self.lore_table.setItem(
-                row, 2, QTableWidgetItem(wrap_cell_text("; ".join(filler.suggestions)))
-            )
+            browser = QTextBrowser()
+            browser.setHtml(format_lore_suggestions_html(filler.suggestions))
+            browser.setReadOnly(True)
+            browser.setFrameShape(QFrame.Shape.NoFrame)
+            self.lore_table.setCellWidget(row, 2, browser)
         self.lore_table.resizeRowsToContents()

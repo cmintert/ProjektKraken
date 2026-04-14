@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, Any
 from src.core.analysis import (
     IntelligenceReport,
     LoreGapFiller,
+    ParsedLoreSuggestion,
     PlotHole,
     RelationProposal,
     SeverityLevel,
@@ -61,6 +62,11 @@ _MAX_RELATION_CANDIDATES: int = 20
 
 # Maximum number of timeline gaps to generate lore suggestions for.
 _MAX_GAPS_FOR_LORE: int = 5
+
+# Lore generation response field delimiters.
+_LORE_FIELD_EVENT = "EVENT:"
+_LORE_FIELD_DATE = "DATE:"
+_LORE_FIELD_DESCRIPTION = "DESCRIPTION:"
 
 
 class IntelligenceAnalyzer:
@@ -617,8 +623,8 @@ class IntelligenceAnalyzer:
     ) -> LoreGapFiller | None:
         """Parse an LLM lore-generation response into a LoreGapFiller.
 
-        Splits on ``EVENT:`` markers.  Returns ``None`` when no parseable
-        event blocks are found.
+        Splits on ``EVENT:`` markers and extracts name, date, and description fields.
+        Returns ``None`` when no parseable event blocks are found.
 
         Args:
             response: Raw LLM response text.
@@ -627,12 +633,26 @@ class IntelligenceAnalyzer:
         Returns:
             LoreGapFiller | None: Parsed filler or ``None``.
         """
-        suggestions: list[str] = []
-        parts = response.split("EVENT:")
+        suggestions: list[ParsedLoreSuggestion] = []
+        parts = response.split(_LORE_FIELD_EVENT)
         for part in parts[1:]:
             text = part.strip()
-            if text:
-                suggestions.append(text)
+            if not text:
+                continue
+            lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+            name = lines[0] if lines else ""
+            date_str = ""
+            description = ""
+            for line in lines[1:]:
+                if line.startswith(_LORE_FIELD_DATE):
+                    date_str = line.replace(_LORE_FIELD_DATE, "", 1).strip()
+                elif line.startswith(_LORE_FIELD_DESCRIPTION):
+                    description = line.replace(_LORE_FIELD_DESCRIPTION, "", 1).strip()
+            suggestions.append(ParsedLoreSuggestion(
+                name=name,
+                date_str=date_str,
+                description=description,
+            ))
 
         if not suggestions:
             return None
