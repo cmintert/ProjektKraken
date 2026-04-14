@@ -4,7 +4,11 @@ Verifies that the centralized command registry correctly loads and provides
 all known command types for history service registration.
 """
 
+import pytest
+
 from src.commands.registry import get_command_types, register_command_type
+
+pytestmark = [pytest.mark.unit, pytest.mark.smoke]
 
 # Expected command names that must always be present
 EXPECTED_COMMANDS = [

@@ -44,6 +44,8 @@ def cmd() -> _ConcreteCommand:
 class TestAssignTags:
     """Tests for BaseCommand._assign_tags."""
 
+    pytestmark = [pytest.mark.unit, pytest.mark.smoke]
+
     def test_assign_entity_tags(self, mock_db: MagicMock) -> None:
         """Tags are assigned to an entity via assign_tag_to_entity."""
         BaseCommand._assign_tags(mock_db, "e1", ["war", "peace"], "entity")
@@ -75,6 +77,8 @@ class TestAssignTags:
 
 class TestSyncTags:
     """Tests for BaseCommand._sync_tags."""
+
+    pytestmark = [pytest.mark.unit, pytest.mark.smoke]
 
     def test_sync_adds_new_tags(self, mock_db: MagicMock) -> None:
         """New tags are added when they don't exist in the database."""

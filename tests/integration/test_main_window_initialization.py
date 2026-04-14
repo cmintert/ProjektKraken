@@ -9,7 +9,6 @@ from unittest.mock import Mock
 
 import pytest
 from PySide6.QtCore import QSettings
-from PySide6.QtWidgets import QApplication
 
 from src.app.connection_manager import ConnectionManager
 from src.app.constants import (
@@ -18,15 +17,6 @@ from src.app.constants import (
     WINDOW_SETTINGS_APP,
     WINDOW_SETTINGS_KEY,
 )
-
-
-@pytest.fixture
-def qapp():
-    """Fixture to provide QApplication instance."""
-    app = QApplication.instance()
-    if app is None:
-        app = QApplication([])
-    yield app
 
 
 @pytest.fixture
@@ -136,6 +126,26 @@ def mock_main_window(qapp):
     window.ai_search_manager = Mock()
     window.ai_search_manager.perform_semantic_search = Mock()
     window.ai_search_manager.on_search_result_selected = Mock()
+
+    # Worker manager (used by AI search signal wiring)
+    window.worker_manager = Mock()
+    window.worker_manager._on_index_object_requested = Mock()
+
+    # Analysis panel wiring (used by ConnectionManager.connect_all)
+    window.analysis_panel = Mock()
+    window.analysis_panel.on_validation_complete = Mock()
+    window.analysis_panel.on_temporal_complete = Mock()
+    window.analysis_panel.on_intelligence_complete = Mock()
+    window.analysis_panel.on_analysis_started = Mock()
+    window.analysis_panel.validate_btn = Mock()
+    window.analysis_panel.temporal_btn = Mock()
+    window.analysis_panel.intelligence_btn = Mock()
+
+    # App coordinator actions triggered by analysis buttons
+    window.app_coordinator = Mock()
+    window.app_coordinator.validate_world = Mock()
+    window.app_coordinator.analyze_temporal = Mock()
+    window.app_coordinator.run_intelligence_analysis = Mock()
 
     window.load_graph_data = Mock()
     window.load_data = Mock()  # For unified_list refresh
