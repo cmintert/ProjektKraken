@@ -75,6 +75,11 @@ def _init_registry() -> None:
         RemoveRelationCommand,
         UpdateRelationCommand,
     )
+    from src.commands.analysis_commands import (
+        AnalyzeTemporalCommand,
+        RunIntelligenceAnalysisCommand,
+        ValidateWorldCommand,
+    )
     from src.commands.wiki_commands import ProcessWikiLinksCommand
 
     _COMMAND_TYPES.update(
@@ -114,6 +119,10 @@ def _init_registry() -> None:
             "DeleteRasterLayerCommand": DeleteRasterLayerCommand,
             "SetRasterMappingCommand": SetRasterMappingCommand,
             "SetRasterBlendModeCommand": SetRasterBlendModeCommand,
+            # Analysis commands
+            "ValidateWorldCommand": ValidateWorldCommand,
+            "AnalyzeTemporalCommand": AnalyzeTemporalCommand,
+            "RunIntelligenceAnalysisCommand": RunIntelligenceAnalysisCommand,
         }
     )
 

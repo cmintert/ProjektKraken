@@ -4,7 +4,7 @@ Stores default values for UI configuration and magic numbers.
 """
 
 # Window Configuration
-VERSION = "0.15.0"
+VERSION = "0.16.0"
 WINDOW_TITLE = f"Project Kraken - v{VERSION} (Beta)"
 DEFAULT_WINDOW_WIDTH = 1280
 DEFAULT_WINDOW_HEIGHT = 720
@@ -34,6 +34,7 @@ DOCK_OBJ_MAP = "MapDock"
 DOCK_OBJ_AI_SEARCH = "AISearchDock"
 DOCK_OBJ_GRAPH = "GraphDock"
 DOCK_OBJ_HISTORY = "HistoryDock"
+DOCK_OBJ_ANALYSIS = "AnalysisDock"
 
 # Dock Titles
 DOCK_TITLE_PROJECT = "Project Explorer"
@@ -45,6 +46,7 @@ DOCK_TITLE_MAP = "Map"
 DOCK_TITLE_AI_SEARCH = "AI Search"
 DOCK_TITLE_GRAPH = "Relationship Graph"
 DOCK_TITLE_HISTORY = "History"
+DOCK_TITLE_ANALYSIS = "Analysis Suite"
 
 # Status Messages
 STATUS_DB_INIT_FAIL = "Database Initialization Failed!"
@@ -230,3 +232,12 @@ MAP_LAYER_DEFAULT_GROUP_NAME = "Default"
 MAP_LAYER_Z_SPACING = 1.0
 # Base Z-value for dynamic layer ordering (above map bg, below UI overlay)
 MAP_LAYER_Z_BASE = 1.0
+
+# ---------------------------------------------------------------------------
+# Analysis Suite Constants
+# ---------------------------------------------------------------------------
+
+# Row foreground colors for severity-coded issues in analysis tables
+ANALYSIS_SEVERITY_CRITICAL_COLOR = "#e74c3c"  # red
+ANALYSIS_SEVERITY_WARNING_COLOR = "#e67e22"   # orange
+ANALYSIS_SEVERITY_INFO_COLOR = "#3498db"      # blue

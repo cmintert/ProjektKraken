@@ -810,6 +810,18 @@ class DatabaseService:
         )
         return rel_id
 
+    def get_all_relations(self) -> List[Dict[str, Any]]:
+        """Retrieves all relations from the database.
+
+        Returns:
+            List of relation dictionaries with keys: id, source_id, target_id,
+            rel_type, attributes, created_at.
+
+        """
+        if not self._connection:
+            self.connect()
+        return self._relation_repo.get_all()
+
     def get_relations_for_item(self, item_id: str) -> List[Dict[str, Any]]:
         """Retrieves all relations where the item is either source or target.
 

@@ -108,12 +108,14 @@ class RelationEditDialog(QDialog):
         # 2. Relation Type
         self.type_edit = QComboBox()
         default_types = [
+            "birth",
             "caused",
+            "death",
             "involved",
             "located_at",
-            "parent_of",
             "member_of",
             "owns",
+            "parent_of",
         ]
 
         # Merge with known types

@@ -48,7 +48,9 @@
       "Bash(git -C \"c:\\\\Users\\\\chris\\\\VSCodeProjects\\\\ProjektKraken\\\\ProjektKraken\" diff)",
       "Bash(pytest tests/unit/test_compact_date_widget_icon.py tests/unit/test_event_editor.py tests/unit/test_events_duration.py -q --tb=short)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(mypy src/core/analysis.py src/services/world_validator.py src/commands/analysis_commands.py src/gui/widgets/analysis_panel.py --ignore-missing-imports)",
+      "Bash(mypy src/core/analysis.py src/services/world_validator.py src/commands/analysis_commands.py src/gui/widgets/analysis_panel.py --ignore-missing-imports --explicit-package-bases)"
     ]
   }
 }

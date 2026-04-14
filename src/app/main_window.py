@@ -379,6 +379,11 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         self.history_panel = HistoryPanelWidget()
 
+        # Create Analysis Panel (Tier 1)
+        from src.gui.widgets.main_analysis_panel import MainAnalysisPanel
+
+        self.analysis_panel = MainAnalysisPanel()
+
         # Initialize Managers
         # MapHandler is initialized after coordinators (see below) because
         # it needs navigation_coordinator's set_global_selection callable.
@@ -431,6 +436,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
                 "ai_search_panel": self.ai_search_panel,
                 "graph_widget": self.graph_widget,
                 "history_panel": self.history_panel,
+                "analysis_panel": self.analysis_panel,
             }
         )
 

@@ -82,6 +82,11 @@ class DatabaseWorker(QObject):
     index_rebuild_progress = Signal(int, int, int)  # (done, total, pct)
     index_rebuild_finished = Signal(int, int)  # (succeeded, failed)
 
+    # Analysis signals
+    validation_complete = Signal(object)  # Emits WorldValidationReport
+    temporal_analysis_complete = Signal(object)  # Emits TemporalAnalysisReport
+    intelligence_analysis_complete = Signal(object)  # Emits IntelligenceReport
+
     def __init__(self, db_path: str) -> None:
         """Initializes the worker.
 
@@ -1326,3 +1331,99 @@ class DatabaseWorker(QObject):
         if hasattr(self, "summary_service") and self.summary_service:
             self.summary_service.reset_provider()
         logger.info("DatabaseWorker: AI settings refreshed")
+
+    def _run_analysis_command(
+        self,
+        cmd: "BaseCommand",
+        result_signal: "Signal",
+        start_msg: str,
+        done_msg: str,
+        error_prefix: str,
+    ) -> None:
+        """Execute an analysis command and emit results on the worker thread.
+
+        Emits :attr:`operation_started` before the command and
+        :attr:`operation_finished` after (success or failure).  On success
+        emits *result_signal* with the report; on failure emits
+        :attr:`error_occurred`.
+
+        Args:
+            cmd: A :class:`~src.commands.base_command.BaseCommand` whose
+                ``execute()`` returns a :class:`CommandResult` with
+                ``data["report"]`` on success.
+            result_signal: The signal to emit with the report on success.
+            start_msg: Status string passed to :attr:`operation_started`.
+            done_msg: Status string passed to :attr:`operation_finished`.
+            error_prefix: Short label used in error messages, e.g.
+                ``"Validation"``.
+        """
+        self.operation_started.emit(start_msg)
+        try:
+            result = cmd.execute(self.db_service)
+            if result.success:
+                result_signal.emit(result.data["report"])
+            else:
+                self.error_occurred.emit(f"{error_prefix} failed: {result.errors}")
+        except Exception as exc:
+            logger.error("%s error: %s\n%s", error_prefix, exc, traceback.format_exc())
+            self.error_occurred.emit(f"{error_prefix} error: {exc!s}")
+        finally:
+            self.operation_finished.emit(done_msg)
+
+    @Slot()
+    def validate_world(self) -> None:
+        """Run world validation in the worker thread and emit the report.
+
+        On success emits :attr:`validation_complete` with the
+        :class:`~src.core.analysis.WorldValidationReport`.
+        On failure emits :attr:`error_occurred` with an error string.
+        """
+        from src.commands.analysis_commands import ValidateWorldCommand
+
+        self._run_analysis_command(
+            ValidateWorldCommand(),
+            self.validation_complete,
+            "Validating world…",
+            "Validation complete.",
+            "Validation",
+        )
+
+    @Slot()
+    def analyze_temporal(self) -> None:
+        """Run temporal analysis in the worker thread and emit the report.
+
+        On success emits :attr:`temporal_analysis_complete` with the
+        :class:`~src.core.analysis.TemporalAnalysisReport`.
+        On failure emits :attr:`error_occurred` with an error string.
+        """
+        from src.commands.analysis_commands import AnalyzeTemporalCommand
+
+        self._run_analysis_command(
+            AnalyzeTemporalCommand(),
+            self.temporal_analysis_complete,
+            "Analyzing timeline…",
+            "Temporal analysis complete.",
+            "Temporal analysis",
+        )
+
+    @Slot(str)
+    def run_intelligence_analysis(self, analysis_type: str = "all") -> None:
+        """Run intelligence analysis in the worker thread and emit the report.
+
+        On success emits :attr:`intelligence_analysis_complete` with the
+        :class:`~src.core.analysis.IntelligenceReport`.
+        On failure emits :attr:`error_occurred` with an error string.
+
+        Args:
+            analysis_type: Scope of analysis — ``"all"``, ``"plot_holes"``,
+                ``"relations"``, or ``"lore"``.  Defaults to ``"all"``.
+        """
+        from src.commands.analysis_commands import RunIntelligenceAnalysisCommand
+
+        self._run_analysis_command(
+            RunIntelligenceAnalysisCommand(analysis_type),
+            self.intelligence_analysis_complete,
+            f"Running AI analysis ({analysis_type})…",
+            "Intelligence analysis complete.",
+            "Intelligence analysis",
+        )

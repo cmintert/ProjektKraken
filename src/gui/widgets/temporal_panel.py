@@ -1,0 +1,240 @@
+"""Temporal Panel Widget.
+
+Displays a :class:`~src.core.analysis.TemporalAnalysisReport` in a
+read-only tabular layout.  Shows a header summary, a timeline-gaps table,
+a temporal-conflicts table, and a character-lifespans table.
+"""
+
+from __future__ import annotations
+
+import logging
+
+from PySide6.QtWidgets import (
+    QLabel,
+    QVBoxLayout,
+    QWidget,
+)
+
+from src.core.analysis import TemporalAnalysisReport
+from src.core.theme_manager import ThemeManager
+from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets._analysis_utils import (
+    fmt_lore_date,
+    make_analysis_table,
+    wrap_cell_text,
+)
+
+logger = logging.getLogger(__name__)
+
+# Column headers for each table
+_GAP_HEADERS = ["Start Date", "End Date", "Duration (years)", "Message"]
+_CONFLICT_HEADERS = ["Type", "Entity", "Date", "Message", "Suggestion"]
+_LIFESPAN_HEADERS = ["Name", "Birth", "Death", "Lifespan (years)", "Valid"]
+
+
+class TemporalPanel(QWidget):
+    """Read-only panel displaying a temporal analysis report.
+
+    Provides four sections:
+    - A header label summarising the calendar and high-level counts.
+    - A gaps table listing every timeline gap with start, end, duration,
+      and a descriptive message.
+    - A conflicts table listing every temporal conflict with type, entity,
+      problem date, message, and suggestion.
+    - A lifespans table listing every entity's birth, death, computed
+      lifespan duration, and whether the lifespan is logically valid.
+
+    Call :meth:`display_report` to populate or refresh the panel.
+    """
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        """Initialise the panel and build the UI layout.
+
+        Args:
+            parent: Optional parent widget.
+        """
+        super().__init__(parent)
+        self._init_ui()
+        self._apply_styles()
+        self._connect_theme_changes()
+
+    def _init_ui(self) -> None:
+        """Build the widget layout."""
+        layout = QVBoxLayout(self)
+
+        self.header_label = QLabel("No report loaded.")
+        self.header_label.setWordWrap(True)
+        layout.addWidget(self.header_label)
+
+        self._gaps_label = QLabel("Timeline Gaps")
+        layout.addWidget(self._gaps_label)
+        self.gaps_table = make_analysis_table(_GAP_HEADERS)
+        layout.addWidget(self.gaps_table)
+
+        self._conflicts_label = QLabel("Temporal Conflicts")
+        layout.addWidget(self._conflicts_label)
+        self.conflicts_table = make_analysis_table(_CONFLICT_HEADERS)
+        layout.addWidget(self.conflicts_table)
+
+        self._lifespans_label = QLabel("Character Lifespans")
+        layout.addWidget(self._lifespans_label)
+        self._lifespans_hint = QLabel(
+            "Only entities with a \u201cbirth\u201d or \u201cdeath\u201d relation appear here. "
+            "To track a character, add a relation of that type from the entity to the "
+            "relevant event."
+        )
+        self._lifespans_hint.setWordWrap(True)
+        layout.addWidget(self._lifespans_hint)
+        self.lifespans_table = make_analysis_table(_LIFESPAN_HEADERS)
+        layout.addWidget(self.lifespans_table)
+
+    def _apply_styles(self) -> None:
+        """Apply theme-aware styles to all child widgets."""
+        self.header_label.setStyleSheet(StyleHelper.get_preview_label_style())
+        section_style = StyleHelper.get_section_header_style()
+        self._gaps_label.setStyleSheet(section_style)
+        self._conflicts_label.setStyleSheet(section_style)
+        self._lifespans_label.setStyleSheet(section_style)
+        self._lifespans_hint.setStyleSheet(StyleHelper.get_preview_label_style())
+        table_style = StyleHelper.get_table_widget_style()
+        self.gaps_table.setStyleSheet(table_style)
+        self.conflicts_table.setStyleSheet(table_style)
+        self.lifespans_table.setStyleSheet(table_style)
+
+    def _connect_theme_changes(self) -> None:
+        """Subscribe to theme-change notifications for live style updates."""
+        try:
+            ThemeManager().theme_changed.connect(self._apply_styles)
+        except Exception as exc:
+            logger.error("Failed to connect theme changes: %s", exc)
+
+    def display_report(self, report: TemporalAnalysisReport) -> None:
+        """Populate the panel with data from a temporal analysis report.
+
+        Replaces any previously displayed report.
+
+        Args:
+            report: The :class:`~src.core.analysis.TemporalAnalysisReport`
+                to display.
+        """
+        converter = None
+        if report.calendar_config is not None:
+            try:
+                from src.core.calendar import CalendarConverter
+
+                converter = CalendarConverter(report.calendar_config)
+            except Exception:
+                logger.debug("TemporalPanel: could not build CalendarConverter")
+
+        self._update_header(report)
+        self._populate_gaps_table(report, converter)
+        self._populate_conflicts_table(report, converter)
+        self._populate_lifespans_table(report, converter)
+
+    def _update_header(self, report: TemporalAnalysisReport) -> None:
+        """Update the summary header label.
+
+        Args:
+            report: The report to summarise.
+        """
+        self.header_label.setText(
+            f"Temporal Analysis | Calendar: {report.calendar_name} | "
+            f"Gaps: {len(report.timeline_gaps)} | "
+            f"Conflicts: {len(report.conflicts)}"
+        )
+
+    def _populate_gaps_table(
+        self, report: TemporalAnalysisReport, converter: object | None
+    ) -> None:
+        """Fill the gaps table from the report's timeline_gaps list.
+
+        Gaps are displayed in the order returned by the report.
+
+        Args:
+            report: The report whose gaps are displayed.
+            converter: Optional ``CalendarConverter`` for date formatting.
+        """
+        from PySide6.QtWidgets import QTableWidgetItem
+
+        self.gaps_table.setRowCount(len(report.timeline_gaps))
+        for row, gap in enumerate(report.timeline_gaps):
+            self.gaps_table.setItem(
+                row, 0, QTableWidgetItem(fmt_lore_date(gap.start_date, converter))
+            )
+            self.gaps_table.setItem(
+                row, 1, QTableWidgetItem(fmt_lore_date(gap.end_date, converter))
+            )
+            # gap_duration is in days; derive years via the converter's calendar
+            # or fall back to raw value when no converter is available.
+            if converter is not None:
+                try:
+                    year_len = converter._config.get_year_length(1)
+                    dur_str = f"{gap.gap_duration / year_len:.0f}"
+                except Exception:
+                    dur_str = f"{gap.gap_duration:.0f}"
+            else:
+                dur_str = f"{gap.gap_duration / 365.0:.0f}"
+            self.gaps_table.setItem(row, 2, QTableWidgetItem(dur_str))
+            self.gaps_table.setItem(row, 3, QTableWidgetItem(wrap_cell_text(gap.message)))
+        self.gaps_table.resizeRowsToContents()
+
+    def _populate_conflicts_table(
+        self, report: TemporalAnalysisReport, converter: object | None
+    ) -> None:
+        """Fill the conflicts table from the report's conflicts list.
+
+        Args:
+            report: The report whose conflicts are displayed.
+            converter: Optional ``CalendarConverter`` for date formatting.
+        """
+        from PySide6.QtWidgets import QTableWidgetItem
+
+        self.conflicts_table.setRowCount(len(report.conflicts))
+        for row, conflict in enumerate(report.conflicts):
+            self.conflicts_table.setItem(
+                row, 0, QTableWidgetItem(conflict.conflict_type)
+            )
+            self.conflicts_table.setItem(
+                row, 1, QTableWidgetItem(conflict.entity_name)
+            )
+            self.conflicts_table.setItem(
+                row, 2, QTableWidgetItem(fmt_lore_date(conflict.problem_date, converter))
+            )
+            self.conflicts_table.setItem(row, 3, QTableWidgetItem(wrap_cell_text(conflict.message)))
+            self.conflicts_table.setItem(
+                row, 4, QTableWidgetItem(wrap_cell_text(conflict.suggestion or ""))
+            )
+        self.conflicts_table.resizeRowsToContents()
+
+    def _populate_lifespans_table(
+        self, report: TemporalAnalysisReport, converter: object | None
+    ) -> None:
+        """Fill the lifespans table from the report's character_lifespans list.
+
+        Args:
+            report: The report whose character lifespans are displayed.
+            converter: Optional ``CalendarConverter`` for date formatting.
+        """
+        from PySide6.QtWidgets import QTableWidgetItem
+
+        self.lifespans_table.setRowCount(len(report.character_lifespans))
+        for row, lifespan in enumerate(report.character_lifespans):
+            # life_span_years is pre-computed in years by the analyzer
+            span = (
+                f"{lifespan.life_span_years:.0f}"
+                if lifespan.life_span_years is not None
+                else "Unknown"
+            )
+            valid = "Yes" if lifespan.is_valid() else "No"
+
+            self.lifespans_table.setItem(
+                row, 0, QTableWidgetItem(lifespan.entity_name)
+            )
+            self.lifespans_table.setItem(
+                row, 1, QTableWidgetItem(fmt_lore_date(lifespan.birth_date, converter))
+            )
+            self.lifespans_table.setItem(
+                row, 2, QTableWidgetItem(fmt_lore_date(lifespan.death_date, converter))
+            )
+            self.lifespans_table.setItem(row, 3, QTableWidgetItem(span))
+            self.lifespans_table.setItem(row, 4, QTableWidgetItem(valid))

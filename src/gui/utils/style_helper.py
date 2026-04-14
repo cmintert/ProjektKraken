@@ -1635,3 +1635,46 @@ class StyleHelper:
         """
         theme = ThemeManager().get_theme()
         return theme.get("text_dim", "#888888")
+
+    @staticmethod
+    def get_table_widget_style() -> str:
+        """Returns QSS for themed QTableWidget panels.
+
+        Matches the visual style of :meth:`get_list_widget_style` but uses
+        ``QTableWidget`` and ``QHeaderView`` selectors instead of
+        ``QListWidget``.
+
+        Returns:
+            str: QSS stylesheet string for table widgets.
+        """
+        theme = ThemeManager().get_theme()
+        primary = theme.get("primary", "#4A9EFF")
+
+        if len(primary) == 7 and primary.startswith("#"):
+            r = int(primary[1:3], 16)
+            g = int(primary[3:5], 16)
+            b = int(primary[5:7], 16)
+            hover_bg = f"rgba({r}, {g}, {b}, 0.1)"
+        else:
+            hover_bg = "rgba(74, 158, 255, 0.1)"
+
+        surface_alt = theme.get("surface_alt", theme.get("surface", "#2A2A2A"))
+        return (
+            f"QTableWidget {{ "
+            f"background-color: {theme['surface']}; "
+            f"color: {theme['text_main']}; "
+            f"border: 1px solid {theme['border']}; "
+            f"border-radius: 4px; "
+            f"gridline-color: {theme['border']}; }}"
+            f"QTableWidget::item {{ padding: 4px; }}"
+            f"QTableWidget::item:hover {{ background-color: {hover_bg}; }}"
+            f"QTableWidget::item:selected {{ "
+            f"background-color: {theme['border']}; "
+            f"color: {theme['text_main']}; }}"
+            f"QHeaderView::section {{ "
+            f"background-color: {surface_alt}; "
+            f"color: {theme.get('text_dim', theme['text_main'])}; "
+            f"border: none; "
+            f"border-bottom: 1px solid {theme['border']}; "
+            f"padding: 4px; font-weight: bold; }}"
+        )

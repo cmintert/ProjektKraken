@@ -23,7 +23,25 @@
       "Read(//c/Users/chris/.claude/plugins/marketplaces/claude-plugins-official/external_plugins/discord/skills/configure/**)",
       "Read(//c/Users/chris/.claude/plugins/marketplaces/claude-plugins-official/plugins/frontend-design/skills/frontend-design/**)",
       "Read(//c/Users/chris/.claude/plugins/marketplaces/claude-plugins-official/plugins/example-plugin/skills/example-skill/**)",
-      "Edit(/.claude/skills/commit/**)"
+      "Edit(/.claude/skills/commit/**)",
+      "WebSearch",
+      "Bash(grep -E \"\\\\.py$\")",
+      "Bash(wc -l /c/Users/chris/VSCodeProjects/ProjektKraken/ProjektKraken/src/services/*.py)",
+      "Bash(sed -i 's/- \\\\[ \\\\] Create `src\\\\/core\\\\/analysis.py` with data models/- [x] Create `src\\\\/core\\\\/analysis.py` with data models/' TIER1_DESIGN.md)",
+      "Bash(sed -i 's/- \\\\[ \\\\] ValidationIssue, WorldValidationReport, CompletenessScore/- [x] ValidationIssue, WorldValidationReport, CompletenessScore/' TIER1_DESIGN.md)",
+      "Bash(sed -i 's/- \\\\[ \\\\] TimelineGap, TemporalConflict, CharacterLifespan, TemporalAnalysisReport/- [x] TimelineGap, TemporalConflict, CharacterLifespan, TemporalAnalysisReport/' TIER1_DESIGN.md)",
+      "Bash(sed -i 's/- \\\\[ \\\\] PlotHole, RelationProposal, LoreGapFiller, IntelligenceReport/- [x] PlotHole, RelationProposal, LoreGapFiller, IntelligenceReport/' TIER1_DESIGN.md)",
+      "Bash(sed -i 's/- \\\\[ \\\\] Create `src\\\\/commands\\\\/analysis_commands.py`/- [x] Create `src\\\\/commands\\\\/analysis_commands.py`/' TIER1_DESIGN.md)",
+      "Bash(sed -i 's/- \\\\[ \\\\] ValidateWorldCommand class/- [x] ValidateWorldCommand class/' TIER1_DESIGN.md)",
+      "Bash(sed -i 's/- \\\\[ \\\\] Write unit tests for WorldValidator/- [x] Write unit tests for WorldValidator/' TIER1_DESIGN.md)",
+      "Bash(sed -i 's/- \\\\[ \\\\] Add signals to DatabaseWorker/- [x] Add signals to DatabaseWorker/' TIER1_DESIGN.md)",
+      "Bash(sed -i 's/- \\\\[ \\\\] `validation_complete` signal/- [x] `validation_complete` signal/' TIER1_DESIGN.md)",
+      "Bash(sed -i 's/- \\\\[ \\\\] `validate_world\\(\\)` method/- [x] `validate_world\\(\\)` method/' TIER1_DESIGN.md)",
+      "Bash(sed -i 's/- \\\\[ \\\\] Add method to AppCoordinator/- [x] Add method to AppCoordinator/' TIER1_DESIGN.md)",
+      "Bash(sed -i 's/- \\\\[ \\\\] Basic UI: `src\\\\/gui\\\\/widgets\\\\/analysis_panel.py`/- [x] Basic UI: `src\\\\/gui\\\\/widgets\\\\/analysis_panel.py`/' TIER1_DESIGN.md)",
+      "Bash(sed -i 's/- \\\\[ \\\\] Display validation report/- [x] Display validation report/' TIER1_DESIGN.md)",
+      "Bash(sed -i 's/- \\\\[ \\\\] Issue table/- [x] Issue table/' TIER1_DESIGN.md)",
+      "Bash(sed -i 's/- \\\\[ \\\\] Completeness table/- [x] Completeness table/' TIER1_DESIGN.md)"
     ]
   }
 }
