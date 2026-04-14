@@ -4,6 +4,14 @@ core package
 Submodules
 ----------
 
+core.base\_theme\_manager module
+--------------------------------
+
+.. automodule:: core.base_theme_manager
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 core.calendar module
 --------------------
 
@@ -32,6 +40,22 @@ core.logging\_config module
 ---------------------------
 
 .. automodule:: core.logging_config
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+core.map module
+---------------
+
+.. automodule:: core.map
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+core.marker module
+------------------
+
+.. automodule:: core.marker
    :members:
    :show-inheritance:
    :undoc-members:

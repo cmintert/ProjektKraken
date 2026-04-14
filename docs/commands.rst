@@ -44,6 +44,14 @@ commands.longform\_commands module
    :show-inheritance:
    :undoc-members:
 
+commands.map\_commands module
+-----------------------------
+
+.. automodule:: commands.map_commands
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 commands.relation\_commands module
 ----------------------------------
 
