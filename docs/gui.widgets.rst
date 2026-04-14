@@ -52,10 +52,66 @@ gui.widgets.longform\_editor module
    :show-inheritance:
    :undoc-members:
 
+gui.widgets.lore\_date\_widget module
+-------------------------------------
+
+.. automodule:: gui.widgets.lore_date_widget
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+gui.widgets.lore\_duration\_widget module
+-----------------------------------------
+
+.. automodule:: gui.widgets.lore_duration_widget
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+gui.widgets.map\_widget module
+------------------------------
+
+.. automodule:: gui.widgets.map_widget
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+gui.widgets.splitter\_tab\_inspector module
+-------------------------------------------
+
+.. automodule:: gui.widgets.splitter_tab_inspector
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+gui.widgets.tag\_editor module
+------------------------------
+
+.. automodule:: gui.widgets.tag_editor
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 gui.widgets.timeline module
 ---------------------------
 
 .. automodule:: gui.widgets.timeline
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+gui.widgets.timeline\_lane\_packer module
+-----------------------------------------
+
+.. automodule:: gui.widgets.timeline_lane_packer
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+gui.widgets.timeline\_ruler module
+----------------------------------
+
+.. automodule:: gui.widgets.timeline_ruler
    :members:
    :show-inheritance:
    :undoc-members:

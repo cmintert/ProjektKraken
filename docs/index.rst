@@ -4,7 +4,17 @@ Welcome to Project Kraken's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: User Guides:
+
+   DATABASE
+   SECURITY
+   WIKI_LINKING
+   MAP_USAGE_EXAMPLES
+   longform
+
+.. toctree::
+   :maxdepth: 2
+   :caption: API Reference:
 
    modules
 

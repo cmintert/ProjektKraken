@@ -55,7 +55,7 @@ python -m src.cli.relation add --database world.kraken --source <id> --target <i
 python -m src.cli.export_longform world.kraken output.md
 ```
 
-See **[CLI Documentation](src/cli/README.md)** for complete reference.
+See **[CLI Documentation](docs/cli.rst)** for complete reference.
 
 ## Testing
 
@@ -74,16 +74,17 @@ Current Test Coverage: **>95%** (Core, GUI, Interactions).
 - **PEP 8**: 99.6% compliant
 - **Type Hints**: Comprehensive throughout codebase
 
-See [CODE_REVIEW_SUMMARY.md](CODE_REVIEW_SUMMARY.md) for detailed assessment.
+See the [docs/](docs/) folder for complete reference.
 
 ## Documentation
 
-- **[CLI Tools](src/cli/README.md)**: Command-line interface reference
+- **[CLI Tools](docs/cli.rst)**: Command-line interface reference
 - **[DATABASE.md](docs/DATABASE.md)**: Database architecture and best practices
 - **[SECURITY.md](docs/SECURITY.md)**: Security guidelines and best practices
+- **[WIKI_LINKING.md](docs/WIKI_LINKING.md)**: Wiki-style linking system
+- **[MAP_USAGE_EXAMPLES.md](docs/MAP_USAGE_EXAMPLES.md)**: Map system usage guide
+- **[longform.md](docs/longform.md)**: Longform document feature
 - **[Design.md](Design.md)**: Architecture and design decisions
-- **[CODE_REVIEW_SUMMARY.md](CODE_REVIEW_SUMMARY.md)**: Production readiness assessment
-- **[ARCHITECTURAL_REVIEW_REPORT.md](ARCHITECTURAL_REVIEW_REPORT.md)**: Comprehensive architectural analysis
 
 ## Architecture
 
