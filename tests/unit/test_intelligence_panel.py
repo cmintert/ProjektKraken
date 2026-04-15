@@ -261,6 +261,37 @@ class TestIntelligencePanelDisplayReport:
         panel.display_report(_make_report(proposals=[_make_proposal()]))
         assert "ally" in panel.proposals_table.item(0, 2).text()
 
+    def test_proposal_reasoning_cell_does_not_insert_hard_wrap_newlines(self, qapp):
+        from src.gui.widgets.intelligence_panel import IntelligencePanel
+
+        panel = IntelligencePanel()
+        long_reasoning = " ".join(["reason"] * 200)
+        proposal = RelationProposal(
+            source_id="e1",
+            source_name="Alice",
+            target_id="e2",
+            target_name="Bob",
+            suggested_relation_type="ally",
+            reasoning=long_reasoning,
+            confidence=0.85,
+        )
+        panel.display_report(_make_report(proposals=[proposal]))
+        assert "\n" not in panel.proposals_table.item(0, 4).text()
+
+    def test_proposals_table_word_wrap_disabled_for_compact_rows(self, qapp):
+        from src.gui.widgets.intelligence_panel import IntelligencePanel
+
+        panel = IntelligencePanel()
+        assert panel.proposals_table.wordWrap() is False
+
+    def test_analysis_tables_hide_vertical_headers(self, qapp):
+        from src.gui.widgets.intelligence_panel import IntelligencePanel
+
+        panel = IntelligencePanel()
+        assert panel.plot_holes_table.verticalHeader().isVisible() is False
+        assert panel.proposals_table.verticalHeader().isVisible() is False
+        assert panel.lore_table.verticalHeader().isVisible() is False
+
     def test_lore_gap_start_in_table(self, qapp):
         from src.gui.widgets.intelligence_panel import IntelligencePanel
 

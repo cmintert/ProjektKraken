@@ -83,6 +83,7 @@ class IntelligencePanel(QWidget):
         self._proposals_label = QLabel("Relation Proposals")
         layout.addWidget(self._proposals_label)
         self.proposals_table = make_analysis_table(_PROPOSAL_HEADERS)
+        self.proposals_table.setWordWrap(False)
         layout.addWidget(self.proposals_table)
 
         self._lore_label = QLabel("Lore Gap Suggestions")
@@ -186,7 +187,7 @@ class IntelligencePanel(QWidget):
                 row, 3, QTableWidgetItem(f"{proposal.confidence:.2f}")
             )
             self.proposals_table.setItem(
-                row, 4, QTableWidgetItem(wrap_cell_text(proposal.reasoning))
+                row, 4, QTableWidgetItem(proposal.reasoning)
             )
         self.proposals_table.resizeRowsToContents()
 

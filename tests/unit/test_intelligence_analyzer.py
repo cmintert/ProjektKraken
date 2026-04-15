@@ -97,6 +97,7 @@ _PLOT_HOLE_RESPONSE = """\
 PLOT HOLE: Alice disappears for 200 years with no explanation.
 SEVERITY: high
 RESOLUTION: Add an event covering her whereabouts.
+CONFIDENCE: 0.91
 """
 
 _RELATION_YES_RESPONSE = """\
@@ -104,6 +105,15 @@ SHOULD_RELATE: yes
 RELATION_TYPE: ally
 CONFIDENCE: 0.85
 REASONING: Both characters share the warrior tag and fought in the same battle.
+"""
+
+_RELATION_YES_WITH_DIRECTION_RESPONSE = """\
+SHOULD_RELATE: yes
+SOURCE: Bob
+TARGET: Alice
+RELATION_TYPE: employs
+CONFIDENCE: 0.90
+REASONING: Bob runs the guild and Alice works for him.
 """
 
 _RELATION_NO_RESPONSE = """\
@@ -243,6 +253,25 @@ class TestDetectPlotHoles:
         report = analyzer.analyze(analysis_type="plot_holes")
         assert report.plot_holes[0].suggested_resolution is not None
         assert "event" in report.plot_holes[0].suggested_resolution.lower()
+
+    def test_plot_hole_confidence_extracted_from_response(self, db_service):
+        db_service.insert_entity(_make_entity("e1", "Alice"))
+        provider = _FakeProvider(response=_PLOT_HOLE_RESPONSE)
+        analyzer = IntelligenceAnalyzer(db_service, provider=provider)
+        report = analyzer.analyze(analysis_type="plot_holes")
+        assert abs(report.plot_holes[0].confidence - 0.91) < 0.001
+
+    def test_plot_hole_confidence_defaults_when_missing(self, db_service):
+        db_service.insert_entity(_make_entity("e1", "Alice"))
+        response = (
+            "PLOT HOLE: Alice disappears for 200 years with no explanation.\n"
+            "SEVERITY: high\n"
+            "RESOLUTION: Add an event covering her whereabouts.\n"
+        )
+        provider = _FakeProvider(response=response)
+        analyzer = IntelligenceAnalyzer(db_service, provider=provider)
+        report = analyzer.analyze(analysis_type="plot_holes")
+        assert abs(report.plot_holes[0].confidence - 0.75) < 0.001
 
     def test_provider_error_logged_in_audit(self, db_service):
         db_service.insert_entity(_make_entity("e1", "Alice"))
@@ -424,3 +453,116 @@ class TestGenerateLore:
         analyzer = IntelligenceAnalyzer(db_service, provider=provider)
         report = analyzer.analyze(analysis_type="lore")
         assert report.lore_suggestions == []
+
+
+# ---------------------------------------------------------------------------
+# TestPlotHolePromptDirection
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestPlotHolePromptDirection:
+    """Tests that _build_plot_hole_prompt uses SPO notation with correct direction."""
+
+    def _build(
+        self,
+        entity: Any,
+        relations: list[dict[str, Any]],
+        name_map: dict[str, str] | None = None,
+    ) -> str:
+        """Helper to call the prompt builder directly."""
+        analyzer = IntelligenceAnalyzer(None, provider=None)  # type: ignore[arg-type]
+        return analyzer._build_plot_hole_prompt(
+            entity=entity,
+            entity_relations=relations,
+            event_map={},
+            entity_name_map=name_map or {},
+        )
+
+    def test_outgoing_relation_shows_entity_as_source(self) -> None:
+        entity = _make_entity("e1", "Alice")
+        rel = {"source_id": "e1", "target_id": "e2", "rel_type": "employs"}
+        prompt = self._build(entity, [rel], {"e2": "Bob"})
+        assert "Alice --employs--> Bob" in prompt
+
+    def test_incoming_relation_shows_entity_as_target(self) -> None:
+        entity = _make_entity("e1", "Alice")
+        rel = {"source_id": "e2", "target_id": "e1", "rel_type": "employs"}
+        prompt = self._build(entity, [rel], {"e2": "Bob"})
+        assert "Bob --employs--> Alice" in prompt
+
+    def test_outgoing_and_incoming_differ_for_same_rel_type(self) -> None:
+        entity = _make_entity("e1", "Alice")
+        outgoing = {"source_id": "e1", "target_id": "e2", "rel_type": "allied_with"}
+        incoming = {"source_id": "e3", "target_id": "e1", "rel_type": "allied_with"}
+        prompt = self._build(entity, [outgoing, incoming], {"e2": "Bob", "e3": "Carol"})
+        assert "Alice --allied_with--> Bob" in prompt
+        assert "Carol --allied_with--> Alice" in prompt
+
+    def test_spo_preamble_present(self) -> None:
+        entity = _make_entity("e1", "Alice")
+        prompt = self._build(entity, [], {})
+        assert "A --relation--> B" in prompt
+
+
+# ---------------------------------------------------------------------------
+# TestRelationProposalDirectionSwap
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestRelationProposalDirectionSwap:
+    """Tests that _parse_relation_proposal honours SOURCE:/TARGET: direction."""
+
+    def _parse(self, response: str, source: Any, target: Any) -> RelationProposal | None:
+        analyzer = IntelligenceAnalyzer(None, provider=None)  # type: ignore[arg-type]
+        return analyzer._parse_relation_proposal(response, source, target)
+
+    def test_no_source_target_fields_uses_param_order(self) -> None:
+        src = _make_entity("e1", "Alice")
+        tgt = _make_entity("e2", "Bob")
+        result = self._parse(_RELATION_YES_RESPONSE, src, tgt)
+        assert result is not None
+        assert result.source_id == "e1"
+        assert result.target_id == "e2"
+
+    def test_source_target_matching_param_order_unchanged(self) -> None:
+        src = _make_entity("e1", "Alice")
+        tgt = _make_entity("e2", "Bob")
+        response = "SHOULD_RELATE: yes\nSOURCE: Alice\nTARGET: Bob\nRELATION_TYPE: ally\nCONFIDENCE: 0.9\nREASONING: x\n"
+        result = self._parse(response, src, tgt)
+        assert result is not None
+        assert result.source_id == "e1"
+        assert result.source_name == "Alice"
+        assert result.target_id == "e2"
+        assert result.target_name == "Bob"
+
+    def test_source_target_reversed_swaps_ids_and_names(self) -> None:
+        """LLM picks Bob as source and Alice as target → swap the pair."""
+        src = _make_entity("e1", "Alice")
+        tgt = _make_entity("e2", "Bob")
+        result = self._parse(_RELATION_YES_WITH_DIRECTION_RESPONSE, src, tgt)
+        assert result is not None
+        assert result.source_id == "e2"
+        assert result.source_name == "Bob"
+        assert result.target_id == "e1"
+        assert result.target_name == "Alice"
+
+    def test_source_target_unrecognised_names_falls_back_to_param_order(self) -> None:
+        src = _make_entity("e1", "Alice")
+        tgt = _make_entity("e2", "Bob")
+        response = "SHOULD_RELATE: yes\nSOURCE: Unknown\nTARGET: Entity\nRELATION_TYPE: ally\nCONFIDENCE: 0.9\nREASONING: x\n"
+        result = self._parse(response, src, tgt)
+        assert result is not None
+        # Falls back to param order
+        assert result.source_id == "e1"
+        assert result.target_id == "e2"
+
+    def test_inference_prompt_contains_source_target_fields(self) -> None:
+        """New prompt format must include SOURCE: and TARGET: in expected response."""
+        analyzer = IntelligenceAnalyzer(None, provider=None)  # type: ignore[arg-type]
+        src = _make_entity("e1", "Alice")
+        tgt = _make_entity("e2", "Bob")
+        prompt = analyzer._build_relation_inference_prompt(src, tgt)
+        assert "SOURCE:" in prompt
+        assert "TARGET:" in prompt

@@ -102,6 +102,57 @@ def test_rag_zero_threshold_keeps_all(mock_search_service_with_scores):
         assert "Noise Entity" in context
 
 
+def test_rag_relation_enrichment_in_context(mock_search_service_with_scores):
+    """Test that relation SPO lines appear in formatted context."""
+    from unittest.mock import MagicMock
+
+    mock_conn = MagicMock()
+    # Return two relation rows for the entity that appears in search results
+    mock_conn.execute.return_value.fetchall.return_value = [
+        {
+            "source_id": "uuid-1",
+            "source_name": "Relevant Entity",
+            "rel_type": "employs",
+            "target_id": "uuid-99",
+            "target_name": "Sidekick",
+        }
+    ]
+
+    with (
+        patch(
+            "src.services.rag_service.create_search_service",
+            return_value=mock_search_service_with_scores,
+        ),
+        patch("sqlite3.connect", side_effect=[MagicMock(), mock_conn]),
+    ):
+        service = RAGService(":memory:")
+        context = service.get_context("Tell me about characters")
+
+    assert "Relevant Entity --employs--> Sidekick" in context
+
+
+def test_rag_no_relations_when_fetch_fails(mock_search_service_with_scores):
+    """If the relation fetch raises, context still returns without relations."""
+    from unittest.mock import MagicMock
+
+    bad_conn = MagicMock()
+    bad_conn.execute.side_effect = Exception("DB error")
+
+    with (
+        patch(
+            "src.services.rag_service.create_search_service",
+            return_value=mock_search_service_with_scores,
+        ),
+        patch("sqlite3.connect", side_effect=[MagicMock(), bad_conn]),
+    ):
+        service = RAGService(":memory:")
+        context = service.get_context("Tell me about characters")
+
+    # Context still has the entities, just no relation lines
+    assert "Relevant Entity" in context
+    assert "-->" not in context
+
+
 def test_rag_lexical_results_bypass_threshold(mock_search_service_with_scores):
     """Test that lexical (direct mention) results are not filtered by score."""
     mock_search_service_with_scores.search_by_name.return_value = [

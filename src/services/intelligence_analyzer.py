@@ -440,15 +440,21 @@ class IntelligenceAnalyzer:
                 return ev.name
             return other_id
 
-        rel_lines = "\n".join(
-            f"- {rel.get('rel_type', 'unknown')}: {_other_name(rel)}"
-            for rel in entity_relations[:20]
-        )
+        def _rel_line(rel: dict[str, Any]) -> str:
+            rel_type = rel.get("rel_type", "unknown")
+            other = _other_name(rel)
+            if rel.get("target_id", "") == entity.id:
+                return f"- {other} --{rel_type}--> {entity.name}"
+            else:
+                return f"- {entity.name} --{rel_type}--> {other}"
+
+        rel_lines = "\n".join(_rel_line(rel) for rel in entity_relations[:20])
         return (
             f"Analyse this character/location for logical inconsistencies or plot holes:\n\n"
             f"Name: {entity.name}\n"
             f"Type: {getattr(entity, 'type', 'Unknown')}\n"
             f"Description: {entity.description or 'None'}\n\n"
+            f"Relations use directed notation: A --relation--> B means A [relation] B.\n"
             f"Relations:\n{rel_lines or '(none)'}\n\n"
             f"Identify any timeline contradictions, logical impossibilities, "
             f"missing context, or inconsistent characterization.\n\n"
@@ -456,6 +462,7 @@ class IntelligenceAnalyzer:
             f"PLOT HOLE: [description]\n"
             f"SEVERITY: [high/medium/low]\n"
             f"RESOLUTION: [suggested fix]\n"
+            f"CONFIDENCE: [0-1]\n"
         )
 
     def _build_relation_inference_prompt(self, source: Any, target: Any) -> str:
@@ -470,15 +477,20 @@ class IntelligenceAnalyzer:
         """
         return (
             f"Should these two entities have a direct relation?\n\n"
-            f"Entity 1: {source.name} ({getattr(source, 'type', 'unknown')})\n"
+            f"{source.name} ({getattr(source, 'type', 'unknown')})\n"
             f"Description: {source.description or 'None'}\n"
             f"Tags: {source.attributes.get('_tags', [])}\n\n"
-            f"Entity 2: {target.name} ({getattr(target, 'type', 'unknown')})\n"
+            f"{target.name} ({getattr(target, 'type', 'unknown')})\n"
             f"Description: {target.description or 'None'}\n"
             f"Tags: {target.attributes.get('_tags', [])}\n\n"
+            f"Relations use directed notation: SOURCE --RELATION_TYPE--> TARGET means "
+            f"SOURCE [RELATION_TYPE] TARGET. Use active-voice relation types "
+            f"(e.g. 'employs' not 'employed_by', 'governs' not 'governed_by').\n\n"
             f"Answer format:\n"
             f"SHOULD_RELATE: [yes/no]\n"
-            f"RELATION_TYPE: [type]\n"
+            f"SOURCE: [name of the source entity]\n"
+            f"TARGET: [name of the target entity]\n"
+            f"RELATION_TYPE: [active-voice type]\n"
             f"CONFIDENCE: [0-1]\n"
             f"REASONING: [why]\n"
         )
@@ -557,6 +569,8 @@ class IntelligenceAnalyzer:
             if "RESOLUTION:" in part:
                 resolution = part.split("RESOLUTION:")[1].split("\n")[0].strip() or None
 
+            confidence = self._extract_confidence_from_block(part, default=0.75)
+
             holes.append(
                 PlotHole(
                     issue_id=f"hole_{entity.id}_{idx}",
@@ -565,10 +579,30 @@ class IntelligenceAnalyzer:
                     description=description,
                     severity=severity,
                     suggested_resolution=resolution,
-                    confidence=0.75,
+                    confidence=confidence,
                 )
             )
         return holes
+
+    def _extract_confidence_from_block(self, text: str, default: float) -> float:
+        """Extract and clamp a CONFIDENCE value from an LLM response block.
+
+        Args:
+            text: Response block for a single parsed item.
+            default: Fallback confidence when no parseable value exists.
+
+        Returns:
+            float: Confidence clamped to [0.0, 1.0].
+        """
+        if "CONFIDENCE:" not in text:
+            return default
+
+        try:
+            raw = text.split("CONFIDENCE:")[1].split("\n")[0].strip()
+            parsed = float(raw)
+            return max(0.0, min(1.0, parsed))
+        except (ValueError, IndexError):
+            return default
 
     def _parse_relation_proposal(
         self, response: str, source: Any, target: Any
@@ -596,23 +630,29 @@ class IntelligenceAnalyzer:
                 or "related"
             )
 
-        confidence = 0.7
-        if "CONFIDENCE:" in response:
-            try:
-                conf_str = response.split("CONFIDENCE:")[1].split("\n")[0].strip()
-                confidence = float(conf_str)
-            except (ValueError, IndexError):
-                pass
+        confidence = self._extract_confidence_from_block(response, default=0.7)
 
         reasoning = ""
         if "REASONING:" in response:
             reasoning = response.split("REASONING:")[1].strip()
 
+        # Honour the SOURCE:/TARGET: fields the LLM may emit. If it chose the
+        # opposite direction from the candidate pair, swap so the proposal
+        # reflects the LLM's intent.
+        actual_source, actual_target = source, target
+        if "SOURCE:" in response and "TARGET:" in response:
+            llm_source = response.split("SOURCE:")[1].split("\n")[0].strip().lower()
+            llm_target = response.split("TARGET:")[1].split("\n")[0].strip().lower()
+            src_name_lower = source.name.lower()
+            tgt_name_lower = target.name.lower()
+            if llm_source == tgt_name_lower and llm_target == src_name_lower:
+                actual_source, actual_target = target, source
+
         return RelationProposal(
-            source_id=source.id,
-            source_name=source.name,
-            target_id=target.id,
-            target_name=target.name,
+            source_id=actual_source.id,
+            source_name=actual_source.name,
+            target_id=actual_target.id,
+            target_name=actual_target.name,
             suggested_relation_type=relation_type,
             reasoning=reasoning,
             confidence=confidence,

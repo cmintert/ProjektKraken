@@ -418,6 +418,12 @@ def test_toolbar_spacing_style_returns_qss():
     assert "spacing" in style
 
 
+def test_table_widget_style_includes_corner_button_styling(theme_manager):
+    """Table style should include themed corner button styling."""
+    style = StyleHelper.get_table_widget_style()
+    assert "QTableCornerButton::section" in style
+
+
 def test_raster_mode_badge_style_includes_bg_color():
     """get_raster_mode_badge_style embeds the given background colour."""
     style = StyleHelper.get_raster_mode_badge_style("#4A90D9")

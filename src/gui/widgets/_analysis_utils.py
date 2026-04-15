@@ -121,6 +121,7 @@ def make_analysis_table(headers: list[str]) -> QTableWidget:
     header = table.horizontalHeader()
     header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
     header.setStretchLastSection(True)
+    table.verticalHeader().setVisible(False)
 
     table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
     return table

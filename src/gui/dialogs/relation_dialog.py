@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QDoubleSpinBox,
     QFormLayout,
     QGroupBox,
+    QLabel,
     QLineEdit,
     QRadioButton,
     QTextEdit,
@@ -24,6 +25,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.compact_date_widget import CompactDateWidget
 
 
@@ -45,6 +47,7 @@ class RelationEditDialog(QDialog):
         source_event_date: Optional[float] = None,
         source_event_name: Optional[str] = None,
         known_types: list[str] = None,
+        source_name: Optional[str] = None,
     ) -> None:
         """Initializes the dialog.
 
@@ -58,6 +61,7 @@ class RelationEditDialog(QDialog):
             source_event_date: Optional lore_date of the source event.
             source_event_name: Optional name of the source event.
             known_types: Optional list of known relation types for suggestions.
+            source_name: Display name of the source entity for the live preview.
 
         """
         super().__init__(parent)
@@ -68,6 +72,7 @@ class RelationEditDialog(QDialog):
         self.calendar_converter = calendar_converter
         self.source_event_date = source_event_date
         self.source_event_name = source_event_name
+        self._source_name = source_name or "Source"
 
         main_layout = QVBoxLayout(self)
 
@@ -130,6 +135,16 @@ class RelationEditDialog(QDialog):
         self.type_edit.setEditable(True)
         self.type_edit.setCurrentText(rel_type)
         self.form_layout.addRow("Type:", self.type_edit)
+
+        # Live direction preview
+        self.preview_label = QLabel()
+        self.preview_label.setWordWrap(True)
+        self.preview_label.setStyleSheet(StyleHelper.get_preview_label_style())
+        self.form_layout.addRow("Preview:", self.preview_label)
+        self._update_preview()
+
+        self.target_edit.textChanged.connect(self._update_preview)
+        self.type_edit.currentTextChanged.connect(self._update_preview)
 
         # 3. Attributes Section
         self.attributes_group = QGroupBox("Attributes (Optional)")
@@ -322,6 +337,14 @@ class RelationEditDialog(QDialog):
 
         # Initial focus
         self.target_edit.setFocus()
+
+    def _update_preview(self) -> None:
+        """Refresh the live direction preview label."""
+        target_text = self.target_edit.text().strip() or "Target"
+        rel = self.type_edit.currentText().strip() or "relation"
+        self.preview_label.setText(
+            f"{self._source_name} --{rel}--> {target_text}"
+        )
 
     def _on_logic_changed(self, button: QRadioButton, checked: bool) -> None:
         """Handle logic radio button changes."""

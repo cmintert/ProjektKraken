@@ -95,6 +95,9 @@ class RAGService:
             logger.error(f"RAG search failed: {e}", exc_info=True)
             return []
 
+    # Maximum number of relations to include per entity in RAG context.
+    _MAX_RELATIONS_PER_ENTITY: int = 5
+
     def get_context(
         self, prompt: str, top_k: int = 3, exclude_names: Optional[List[str]] = None
     ) -> str:
@@ -103,7 +106,8 @@ class RAGService:
         Performs:
         1. Query cleaning (stripping inputs)
         2. Hybrid search (Name match + Semantic match)
-        3. Result formatting (with attributes and tags)
+        3. Relation enrichment (directed SPO triples per result entity)
+        4. Result formatting (with attributes, tags, and relations)
 
         Args:
             prompt: User's raw prompt/task.
@@ -127,8 +131,96 @@ class RAGService:
         if not results:
             return ""
 
-        # 4. Format
-        return self._format_results(results)
+        # Enrich each result with directed relation lines fetched from the DB.
+        relation_map = self._fetch_relations_for_results(results)
+
+        return self._format_results(results, relation_map=relation_map)
+
+    def _fetch_relations_for_results(
+        self, results: List[Dict[str, Any]]
+    ) -> Dict[str, List[str]]:
+        """Fetch directed relation lines for each result entity.
+
+        Opens a short-lived read connection to the DB, queries the ``relations``
+        table for each result whose ``object_id`` (or ``id``) looks like an
+        entity record, and returns a mapping of entity-id → list of SPO-formatted
+        relation strings.
+
+        Args:
+            results: Search result dicts as returned by :meth:`search`.
+
+        Returns:
+            Dict mapping entity id → list of SPO relation strings (may be empty
+            for events or entities with no relations).
+
+        """
+        if not self.db_path:
+            return {}
+
+        relation_map: Dict[str, List[str]] = {}
+        try:
+            conn = sqlite3.connect(self.db_path, check_same_thread=False)
+            conn.row_factory = sqlite3.Row
+            try:
+                for r in results:
+                    entity_id = r.get("object_id") or r.get("id", "")
+                    entity_name = r.get("name", entity_id)
+                    if not entity_id:
+                        continue
+                    relation_map[entity_id] = self._spo_lines_for_entity(
+                        conn, entity_id, entity_name
+                    )
+            finally:
+                conn.close()
+        except Exception as e:
+            logger.warning(f"RAG: failed to fetch entity relations: {e}")
+        return relation_map
+
+    def _spo_lines_for_entity(
+        self, conn: sqlite3.Connection, entity_id: str, entity_name: str
+    ) -> List[str]:
+        """Return up to _MAX_RELATIONS_PER_ENTITY SPO-formatted relation strings.
+
+        Queries both outgoing (source_id=entity_id) and incoming
+        (target_id=entity_id) relations, joining with the entities table to
+        resolve names.
+
+        Args:
+            conn: Open SQLite connection.
+            entity_id: UUID of the entity whose relations to fetch.
+            entity_name: Display name of the entity (used in SPO triples).
+
+        Returns:
+            List of strings like ``"EntityA --rel_type--> EntityB"``.
+
+        """
+        query = """
+            SELECT
+                r.source_id,
+                COALESCE(s.name, r.source_id) AS source_name,
+                r.rel_type,
+                r.target_id,
+                COALESCE(t.name, r.target_id) AS target_name
+            FROM relations r
+            LEFT JOIN entities s ON r.source_id = s.id
+            LEFT JOIN entities t ON r.target_id = t.id
+            WHERE r.source_id = ? OR r.target_id = ?
+            LIMIT ?
+        """
+        try:
+            rows = conn.execute(
+                query, (entity_id, entity_id, self._MAX_RELATIONS_PER_ENTITY)
+            ).fetchall()
+        except Exception as e:
+            logger.debug(f"RAG: relation query failed for {entity_id}: {e}")
+            return []
+
+        lines = []
+        for row in rows:
+            src = row["source_name"] if row["source_id"] != entity_id else entity_name
+            tgt = row["target_name"] if row["target_id"] != entity_id else entity_name
+            lines.append(f"{src} --{row['rel_type']}--> {tgt}")
+        return lines
 
     def _clean_query(self, prompt: str) -> str:
         """Remove instructional noise from prompt to improve semantic search."""
@@ -195,11 +287,26 @@ class RAGService:
 
         return merged
 
-    def _format_results(self, results: List[Dict[str, Any]]) -> str:
+    def _format_results(
+        self,
+        results: List[Dict[str, Any]],
+        relation_map: Optional[Dict[str, List[str]]] = None,
+    ) -> str:
         """Format results into compact text for the LLM.
 
         Uses a token-efficient format: one entry per block with minimal
         markup. Descriptions are truncated to keep context windows lean.
+        When *relation_map* is provided, directed SPO relation lines are
+        appended after the description block.
+
+        Args:
+            results: Search result dicts as returned by :meth:`search`.
+            relation_map: Optional mapping of entity-id → list of SPO relation
+                strings, as produced by :meth:`_fetch_relations_for_results`.
+
+        Returns:
+            str: Formatted context block for the LLM.
+
         """
         context_parts: List[str] = []
 
@@ -232,11 +339,22 @@ class RAGService:
                 parts.append(" | ".join(attributes_parts))
             header = " — ".join(parts)
 
+            entry_lines: List[str] = [header]
             if description:
                 if len(description) > 300:
                     description = description[:297] + "..."
-                context_parts.append(f"{header}\n{description}")
-            else:
-                context_parts.append(header)
+                entry_lines.append(description)
+
+            # Append SPO relation lines if available for this entity.
+            if relation_map:
+                entity_id = r.get("object_id") or r.get("id", "")
+                rel_lines = relation_map.get(entity_id, [])
+                if rel_lines:
+                    entry_lines.append(
+                        "Relations (A --rel--> B means A [rel] B):\n"
+                        + "\n".join(f"  {ln}" for ln in rel_lines)
+                    )
+
+            context_parts.append("\n".join(entry_lines))
 
         return "\n\n".join(context_parts)

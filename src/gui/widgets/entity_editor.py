@@ -974,10 +974,12 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         """
         self.rel_list.clear()
 
+        this_name = self.name_edit.text() or "this"
+
         if relations:
             for rel in relations:
                 target_display = rel.get("target_name") or rel["target_id"]
-                label = f"→ {target_display} [{rel['rel_type']}]"
+                label = f"{this_name} --{rel['rel_type']}--> {target_display}"
 
                 widget = RelationItemWidget(
                     label=label,
@@ -998,7 +1000,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         if incoming_relations:
             for rel in incoming_relations:
                 source_display = rel.get("source_name") or rel["source_id"]
-                label = f"← {source_display} [{rel['rel_type']}]"
+                label = f"{source_display} --{rel['rel_type']}--> {this_name}"
 
                 widget = RelationItemWidget(
                     label=label,

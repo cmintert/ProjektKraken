@@ -1677,4 +1677,9 @@ class StyleHelper:
             f"border: none; "
             f"border-bottom: 1px solid {theme['border']}; "
             f"padding: 4px; font-weight: bold; }}"
+            f"QTableCornerButton::section {{ "
+            f"background-color: {surface_alt}; "
+            f"border: none; "
+            f"border-bottom: 1px solid {theme['border']}; "
+            f"border-right: 1px solid {theme['border']}; }}"
         )

@@ -50,7 +50,13 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(mypy src/core/analysis.py src/services/world_validator.py src/commands/analysis_commands.py src/gui/widgets/analysis_panel.py --ignore-missing-imports)",
-      "Bash(mypy src/core/analysis.py src/services/world_validator.py src/commands/analysis_commands.py src/gui/widgets/analysis_panel.py --ignore-missing-imports --explicit-package-bases)"
+      "Bash(mypy src/core/analysis.py src/services/world_validator.py src/commands/analysis_commands.py src/gui/widgets/analysis_panel.py --ignore-missing-imports --explicit-package-bases)",
+      "Edit(/.claude/skills/user_docu/**)",
+      "Edit(/.claude/skills/user-docu/**)",
+      "Bash(where gh:*)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\chris\\VSCodeProjects\\ProjektKraken\\ProjektKraken\\.claude\\skills\\user_docu"
     ]
   }
 }
