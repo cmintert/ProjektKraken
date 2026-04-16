@@ -218,13 +218,15 @@ class BaseEditorMixin:
             self._type_picker.type_selected.connect(self._on_relation_type_selected)
 
         default_types = [
-            "related",
+            "birth",
             "caused",
-            "participated_in",
+            "created_by",
+            "death",
             "located_at",
             "owns",
-            "created_by",
             "part_of",
+            "participated_in",
+            "related",
         ]
 
         all_types = set(default_types)

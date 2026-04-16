@@ -160,6 +160,7 @@ class ConnectionManager:
         self.connect_map_widget()
         self.connect_ai_search_panel()
         self.connect_graph_widget()
+        self.connect_analysis_panel()
 
         # Log summary
         logger.info(
@@ -857,4 +858,82 @@ class ConnectionManager:
                 ),
             ],
             "GraphWidget",
+        )
+
+    def connect_analysis_panel(self) -> int:
+        """Connect signals between the analysis panel, worker, and coordinator.
+
+        Wires worker report signals to the panel's display slots (queued, cross-
+        thread) and each trigger button to the matching coordinator action.
+
+        Returns:
+            Number of failed connections.
+        """
+        panel = self.window.analysis_panel
+        worker = self.window.worker
+        coord = self.window.app_coordinator
+        return self._connect_batch(
+            [
+                # Worker → panel (cross-thread, must be queued)
+                (
+                    worker,
+                    "validation_complete",
+                    panel.on_validation_complete,
+                    "AnalysisPanel",
+                    Qt.ConnectionType.QueuedConnection,
+                ),
+                (
+                    worker,
+                    "temporal_analysis_complete",
+                    panel.on_temporal_complete,
+                    "AnalysisPanel",
+                    Qt.ConnectionType.QueuedConnection,
+                ),
+                (
+                    worker,
+                    "intelligence_analysis_complete",
+                    panel.on_intelligence_complete,
+                    "AnalysisPanel",
+                    Qt.ConnectionType.QueuedConnection,
+                ),
+                (
+                    worker,
+                    "intelligence_partial_result",
+                    panel.on_intelligence_partial,
+                    "AnalysisPanel",
+                    Qt.ConnectionType.QueuedConnection,
+                ),
+                # Buttons → coordinator (main thread).
+                # Each lambda fires on_analysis_started first so the panel
+                # immediately shows a busy state before the async worker call.
+                (
+                    panel.validate_btn,
+                    "clicked",
+                    lambda _checked: (
+                        panel.on_analysis_started("Validating world\u2026"),
+                        coord.validate_world(),
+                    ),
+                    "AnalysisPanel",
+                ),
+                (
+                    panel.temporal_btn,
+                    "clicked",
+                    lambda _checked: (
+                        panel.on_analysis_started("Analyzing timeline\u2026"),
+                        coord.analyze_temporal(),
+                    ),
+                    "AnalysisPanel",
+                ),
+                (
+                    panel.intelligence_btn,
+                    "clicked",
+                    lambda _checked: (
+                        panel.on_analysis_started("Running AI analysis\u2026"),
+                        panel.on_intelligence_analysis_started(),
+                        coord.run_intelligence_analysis(),
+                    ),
+                    "AnalysisPanel",
+                ),
+            ],
+            "AnalysisPanel",
         )

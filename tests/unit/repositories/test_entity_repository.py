@@ -3,15 +3,6 @@
 import pytest
 
 from src.core.entities import Entity
-from src.services.db_service import DatabaseService
-
-
-@pytest.fixture
-def db_service():
-    """Provides a fresh in-memory database service."""
-    service = DatabaseService(":memory:")
-    service.connect()
-    return service
 
 
 @pytest.fixture
@@ -36,6 +27,7 @@ def sample_entities(repository):
 
 
 @pytest.mark.unit
+@pytest.mark.smoke
 class TestEntityRepository:
     """Tests for EntityRepository methods."""
 
@@ -60,13 +52,7 @@ class TestEntityRepository:
         assert len(results) == 0
 
     def test_find_named_entities_trimming(self, repository, sample_entities):
-        """Should handle untrimmed input by matching trimmed name in DB?"""
-        # Note: current implementation intent is simple case-insensitive matching.
-        # It does NOT handle whitespace collapsing in the DB query itself unless we add it.
-        # But import service will normalize input.
-        # Let's verify that "  Bilbo  " input matches "Bilbo" if the repo trims input?
-        # Or should the caller trim?
-        # Convention: Repository methods generally expect clean input or match raw?
-        # Let's assume input matches raw DB content (case-blind).
-        # We'll skip complex whitespace tests here if we aren't implementing complex SQL.
-        pass
+        """Untrimmed input does not match because the repository uses exact lookup."""
+        results = repository.find_named_entities("  Bilbo  ")
+
+        assert results == []

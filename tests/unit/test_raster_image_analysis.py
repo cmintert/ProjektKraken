@@ -5,14 +5,10 @@ These tests define the expected interface and behaviour of
 implementation exists.
 """
 
-import io
-import struct
 
 import numpy as np
 import pytest
-
 from PIL import Image as PilImage
-
 
 # ---------------------------------------------------------------------------
 # Helpers to build synthetic image files in-memory

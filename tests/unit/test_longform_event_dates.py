@@ -1,6 +1,6 @@
 """Unit tests for event date rendering in longform content widget."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from PySide6.QtWidgets import QApplication
@@ -103,7 +103,7 @@ class TestEventDateRendering:
         ]
 
         content_widget.load_content(sequence)
-        html = content_widget.toHtml()
+        content_widget.toHtml()
 
         # Should not call format_date (no date to format)
         assert mock_converter.format_date.call_count == 0
@@ -126,7 +126,7 @@ class TestEventDateRendering:
         ]
 
         content_widget.load_content(sequence)
-        html = content_widget.toHtml()
+        content_widget.toHtml()
 
         # Should not call format_date for entities
         assert mock_converter.format_date.call_count == 0

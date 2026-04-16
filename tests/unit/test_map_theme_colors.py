@@ -7,14 +7,12 @@ hex strings rather than ThemeManager color tokens.
 from unittest.mock import MagicMock
 
 import pytest
-
 from PySide6.QtCore import QPointF
 from PySide6.QtWidgets import QGraphicsEllipseItem, QGraphicsPathItem, QGraphicsScene
 
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.map.drawing_tool import DrawingTool
 from src.gui.widgets.map.interaction_handler import _safe_color_css
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

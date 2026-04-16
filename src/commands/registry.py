@@ -30,6 +30,11 @@ def _init_registry() -> None:
     if _initialized:
         return
 
+    from src.commands.analysis_commands import (
+        AnalyzeTemporalCommand,
+        RunIntelligenceAnalysisCommand,
+        ValidateWorldCommand,
+    )
     from src.commands.calendar_commands import UpdateCalendarConfigCommand
     from src.commands.composite_command import CompositeCommand
     from src.commands.entity_commands import (
@@ -114,6 +119,10 @@ def _init_registry() -> None:
             "DeleteRasterLayerCommand": DeleteRasterLayerCommand,
             "SetRasterMappingCommand": SetRasterMappingCommand,
             "SetRasterBlendModeCommand": SetRasterBlendModeCommand,
+            # Analysis commands
+            "ValidateWorldCommand": ValidateWorldCommand,
+            "AnalyzeTemporalCommand": AnalyzeTemporalCommand,
+            "RunIntelligenceAnalysisCommand": RunIntelligenceAnalysisCommand,
         }
     )
 

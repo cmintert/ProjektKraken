@@ -7,14 +7,13 @@ Tests text building, vector operations, indexing, and querying.
 import json
 import sqlite3
 from typing import List
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
 
 from src.core.entities import Entity
 from src.core.events import Event
-from unittest.mock import MagicMock, patch
-
 from src.services.search_service import (
     EmbeddingProvider,
     SearchService,

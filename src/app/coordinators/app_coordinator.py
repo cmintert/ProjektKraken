@@ -8,7 +8,7 @@ and accesses individual coordinators through it.
 import logging
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QObject
+from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
@@ -62,4 +62,52 @@ class AppCoordinator(QObject):
         self.fast_inject = FastInjectCoordinator(main_window)
         self.import_coord = ImportCoordinator(main_window)
 
+        self.main_window = main_window
         logger.debug("AppCoordinator initialized with 7 coordinators")
+
+    def validate_world(self) -> None:
+        """Request world validation on the DatabaseWorker thread.
+
+        The result is delivered asynchronously via the worker's
+        ``validation_complete`` signal. Subscribe to that signal before
+        calling this method to receive the
+        :class:`~src.core.analysis.WorldValidationReport`.
+        """
+        QMetaObject.invokeMethod(
+            self.main_window.worker,
+            "validate_world",
+            Qt.ConnectionType.QueuedConnection,
+        )
+
+    def analyze_temporal(self) -> None:
+        """Request temporal analysis on the DatabaseWorker thread.
+
+        The result is delivered asynchronously via the worker's
+        ``temporal_analysis_complete`` signal. Subscribe to that signal before
+        calling this method to receive the
+        :class:`~src.core.analysis.TemporalAnalysisReport`.
+        """
+        QMetaObject.invokeMethod(
+            self.main_window.worker,
+            "analyze_temporal",
+            Qt.ConnectionType.QueuedConnection,
+        )
+
+    def run_intelligence_analysis(self, analysis_type: str = "all") -> None:
+        """Request intelligence analysis on the DatabaseWorker thread.
+
+        The result is delivered asynchronously via the worker's
+        ``intelligence_analysis_complete`` signal. Subscribe to that signal
+        before calling this method to receive the
+        :class:`~src.core.analysis.IntelligenceReport`.
+
+        Args:
+            analysis_type: Scope of analysis — ``"all"``, ``"plot_holes"``,
+                ``"relations"``, or ``"lore"``.  Defaults to ``"all"``.
+        """
+        QMetaObject.invokeMethod(
+            self.main_window.worker,
+            "run_intelligence_analysis",
+            Qt.ConnectionType.QueuedConnection,
+            Q_ARG(str, analysis_type),
+        )

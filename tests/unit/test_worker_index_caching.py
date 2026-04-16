@@ -6,12 +6,11 @@ cached SearchService returned by DatabaseWorker._get_search_service() so the
 underlying model is loaded at most once per worker lifetime.
 """
 
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock
 
 import pytest
 
 from src.services.worker import DatabaseWorker
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

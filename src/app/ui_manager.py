@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
 
 from src.app.constants import (
     DOCK_OBJ_AI_SEARCH,
+    DOCK_OBJ_ANALYSIS,
     DOCK_OBJ_ENTITY_INSPECTOR,
     DOCK_OBJ_EVENT_INSPECTOR,
     DOCK_OBJ_GRAPH,
@@ -32,6 +33,7 @@ from src.app.constants import (
     DOCK_OBJ_PROJECT,
     DOCK_OBJ_TIMELINE,
     DOCK_TITLE_AI_SEARCH,
+    DOCK_TITLE_ANALYSIS,
     DOCK_TITLE_ENTITY_INSPECTOR,
     DOCK_TITLE_EVENT_INSPECTOR,
     DOCK_TITLE_GRAPH,
@@ -348,6 +350,24 @@ class UIManager:
                     )
             else:
                 failed_docks.append("history")
+
+        # 10. Analysis Suite (Right, tabbed with entity inspector)
+        if "analysis_panel" in widgets:
+            dock = self._create_dock(
+                DOCK_TITLE_ANALYSIS, DOCK_OBJ_ANALYSIS, widgets["analysis_panel"]
+            )
+            if dock:
+                self.docks["analysis"] = dock
+                self.main_window.addDockWidget(
+                    Qt.DockWidgetArea.RightDockWidgetArea, self.docks["analysis"]
+                )
+                self._attach_diagnostics(self.docks["analysis"])
+                if "entity" in self.docks:
+                    self.main_window.tabifyDockWidget(
+                        self.docks["entity"], self.docks["analysis"]
+                    )
+            else:
+                failed_docks.append("analysis")
 
         # Report results
         if failed_docks:

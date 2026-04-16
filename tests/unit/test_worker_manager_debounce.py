@@ -9,10 +9,8 @@ native-thread collision with the Chromium graph view).
 from unittest.mock import MagicMock, patch
 
 import pytest
-from PySide6.QtCore import QTimer
 
 from src.app.worker_manager import WorkerManager
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

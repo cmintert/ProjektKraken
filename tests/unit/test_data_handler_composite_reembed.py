@@ -14,7 +14,6 @@ from src.commands.base_command import CommandResult
 from src.commands.entity_commands import UpdateEntityCommand
 from src.commands.event_commands import UpdateEventCommand
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

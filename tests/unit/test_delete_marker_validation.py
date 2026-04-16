@@ -3,14 +3,11 @@
 Verifies that delete_marker returning 0 affected rows causes the command to
 report failure and leaves _is_executed=False, preventing ghost marker on undo.
 """
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import patch
 
 from src.commands.marker_commands import DeleteMarkerCommand
 from src.core.map import Map
 from src.core.marker import Marker
-
 
 # ---------------------------------------------------------------------------
 # Helpers
