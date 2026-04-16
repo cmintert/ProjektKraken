@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-04-16
 ### Internal
-- chore: update version to 0.16.0 and refresh changelog, README, and pyproject.toml
+- Remove collection.txt file containing pytest session details and test collection output.
 
 
 *This changelog was automatically generated.*
