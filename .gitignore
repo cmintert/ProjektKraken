@@ -41,6 +41,12 @@ credentials/
 # IDEs
 .vscode/
 .idea/
+.agent/
+
+# Tool caches
+.mypy_cache/
+.ruff_cache/
+.pyright/
 
 # Project Specific
 logs/
@@ -55,8 +61,13 @@ logs/
 docs/_build/
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
 *.bak
+
+# OS noise
+.DS_Store
+Thumbs.db
 
 # Assets (User Content)
 assets/images/
