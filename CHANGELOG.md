@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-04-11  
-**Commit:** 0.15.0
+**Last Updated:** 2026-04-16  
+**Commit:** 0.16.0
 ---
 
 # Changelog
@@ -10,6 +10,34 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [0.16.0]
+
+### Added
+
+- *(2026-04-14)* **Analysis**: Added Tier 1 Analysis Suite — `WorldValidator`, `TemporalAnalyzer`, and `IntelligenceAnalyzer` services with a tabbed `MainAnalysisPanel` hosting validation, temporal, and intelligence sub-panels; `birth` and `death` relation types added.
+- *(2026-04-14)* **Analysis**: Structured lore gap suggestions as typed `ParsedLoreSuggestion` cards with HTML-escaped rendering in a `QTextBrowser`.
+- *(2026-04-15)* **Analysis**: Direction-aware SPO notation in prompts, relation list, and RAG context; live direction preview in `RelationEditDialog`; confidence value now extracted from LLM responses instead of hardcoded.
+- *(2026-04-11)* **GUI**: Added `EmptyStateWidget` to Event and Entity inspectors with "New Event" / "New Entity" actions wired to the editor coordinator.
+
+### Fixed
+
+- *(2026-04-15)* **Analysis**: Fixed DB connection leak in `RAGService._fetch_relations_for_results`; corrected direction-swap handling and confidence hardcoding in relation inference.
+- *(2026-04-16)* **CI**: Resolved ruff lint failures; added Qt system libraries (`libegl1`) to CI test jobs to fix `ImportError: libEGL.so.1` on Ubuntu runners.
+
+### Changed
+
+- *(2026-04-16)* **Analysis / GUI**: Analysis table cells replaced with selectable `AutoHeightTextEdit` widgets; row heights auto-adjust to content; shared `make_text_cell` / `make_html_cell` factories added to `_analysis_utils`.
+- *(2026-04-16)* **Architecture**: Moved analysis widgets into a dedicated `src/gui/widgets/analysis/` package for improved modularity.
+- *(2026-04-12)* **GUI**: Simplified empty-state handling in entity/event editors; removed redundant `_is_loading` guards and silent exception suppression; worker now signals when a requested item has been deleted.
+
+### Refactor
+
+- *(2026-04-12)* **Commands**: Improved type hints (modern `dict[str, str]` syntax) and docstrings in `BaseCommand`.
+
+### Testing
+
+- *(2026-04-14)* **Tests**: Fixed integration test fixture drift; added `smoke`, `req`, and `bug` markers to `pytest.ini`; added `.github/workflows/tests.yml` with smoke and parallel fast-regression jobs (pytest-xdist); updated `docs/TESTING.md`.
 
 ## [0.15.0]
 
