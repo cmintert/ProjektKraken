@@ -1,8 +1,12 @@
 """Analysis Panel Widget.
 
 Displays a :class:`~src.core.analysis.WorldValidationReport` in a read-only
-tabular layout. Shows a header summary, an issue table, and a completeness
+tabular layout.  Shows a header summary, an issue table, and a completeness
 score table.
+
+Text-heavy columns (message, suggestion) use selectable :class:`QLabel` cell
+widgets so the user can copy content directly from the table.  Lines wrap at
+≤75 characters.
 """
 
 from __future__ import annotations
@@ -21,9 +25,11 @@ from src.core.analysis import WorldValidationReport
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets._analysis_utils import (
+    ANALYSIS_TABLE_NO_HIGHLIGHT,
     SEVERITY_COLORS,
+    configure_stretch_columns,
     make_analysis_table,
-    wrap_cell_text,
+    make_text_cell,
 )
 
 logger = logging.getLogger(__name__)
@@ -40,7 +46,8 @@ class AnalysisPanel(QWidget):
     - A header label summarising world health and counts.
     - An issues table listing every validation issue with severity, type,
       affected object, message, and suggestion.  Severity cells are
-      color-coded (CRITICAL=red, WARNING=orange, INFO=blue).
+      color-coded (CRITICAL=red, WARNING=orange, INFO=blue).  Message and
+      suggestion cells are selectable QLabel widgets.
     - A completeness table sorted ascending by score, showing each object's
       name, type, computed score, and tag count.
 
@@ -62,18 +69,16 @@ class AnalysisPanel(QWidget):
         """Build the widget layout."""
         layout = QVBoxLayout(self)
 
-        # --- Header ---
         self.header_label = QLabel("No report loaded.")
         self.header_label.setWordWrap(True)
         layout.addWidget(self.header_label)
 
-        # --- Issues table ---
         self._issues_label = QLabel("Validation Issues")
         layout.addWidget(self._issues_label)
         self.issues_table = make_analysis_table(_ISSUE_HEADERS)
+        configure_stretch_columns(self.issues_table, 3, 4)  # Message, Suggestion
         layout.addWidget(self.issues_table)
 
-        # --- Completeness table ---
         self._completeness_label = QLabel("Completeness Scores")
         layout.addWidget(self._completeness_label)
         self.completeness_table = make_analysis_table(_COMPLETENESS_HEADERS)
@@ -84,7 +89,7 @@ class AnalysisPanel(QWidget):
         self.header_label.setStyleSheet(StyleHelper.get_preview_label_style())
         self._issues_label.setStyleSheet(StyleHelper.get_section_header_style())
         self._completeness_label.setStyleSheet(StyleHelper.get_section_header_style())
-        table_style = StyleHelper.get_table_widget_style()
+        table_style = StyleHelper.get_table_widget_style() + ANALYSIS_TABLE_NO_HIGHLIGHT
         self.issues_table.setStyleSheet(table_style)
         self.completeness_table.setStyleSheet(table_style)
 
@@ -117,6 +122,8 @@ class AnalysisPanel(QWidget):
         """Fill the issues table from the report's issue list.
 
         Severity cells are color-coded: CRITICAL=red, WARNING=orange, INFO=blue.
+        Message and suggestion cells use selectable QLabel widgets with text
+        wrapped at 75 characters.
 
         Args:
             report: The report whose issues are displayed.
@@ -130,9 +137,9 @@ class AnalysisPanel(QWidget):
             self.issues_table.setItem(row, 0, sev_item)
             self.issues_table.setItem(row, 1, QTableWidgetItem(issue.issue_type.value))
             self.issues_table.setItem(row, 2, QTableWidgetItem(issue.object_name))
-            self.issues_table.setItem(row, 3, QTableWidgetItem(wrap_cell_text(issue.message)))
-            self.issues_table.setItem(
-                row, 4, QTableWidgetItem(wrap_cell_text(issue.suggestion or ""))
+            self.issues_table.setCellWidget(row, 3, make_text_cell(issue.message))
+            self.issues_table.setCellWidget(
+                row, 4, make_text_cell(issue.suggestion or "")
             )
         self.issues_table.resizeRowsToContents()
 

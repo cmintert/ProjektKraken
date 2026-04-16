@@ -1,8 +1,12 @@
 """Temporal Panel Widget.
 
-Displays a :class:`~src.core.analysis.TemporalAnalysisReport` in a
-read-only tabular layout.  Shows a header summary, a timeline-gaps table,
-a temporal-conflicts table, and a character-lifespans table.
+Displays a :class:`~src.core.analysis.TemporalAnalysisReport` in a read-only
+tabular layout.  Shows a header summary, a timeline-gaps table, a temporal-
+conflicts table, and a character-lifespans table.
+
+Text-heavy columns (message, suggestion) use selectable :class:`QLabel` cell
+widgets so the user can copy content directly from the table.  Lines wrap at
+≤75 characters.
 """
 
 from __future__ import annotations
@@ -11,6 +15,7 @@ import logging
 
 from PySide6.QtWidgets import (
     QLabel,
+    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
@@ -19,9 +24,11 @@ from src.core.analysis import TemporalAnalysisReport
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets._analysis_utils import (
+    ANALYSIS_TABLE_NO_HIGHLIGHT,
+    configure_stretch_columns,
     fmt_lore_date,
     make_analysis_table,
-    wrap_cell_text,
+    make_text_cell,
 )
 
 logger = logging.getLogger(__name__)
@@ -38,9 +45,10 @@ class TemporalPanel(QWidget):
     Provides four sections:
     - A header label summarising the calendar and high-level counts.
     - A gaps table listing every timeline gap with start, end, duration,
-      and a descriptive message.
+      and a descriptive message.  The message cell is a selectable QLabel.
     - A conflicts table listing every temporal conflict with type, entity,
-      problem date, message, and suggestion.
+      problem date, message, and suggestion.  Message and suggestion cells
+      are selectable QLabel widgets.
     - A lifespans table listing every entity's birth, death, computed
       lifespan duration, and whether the lifespan is logically valid.
 
@@ -74,6 +82,7 @@ class TemporalPanel(QWidget):
         self._conflicts_label = QLabel("Temporal Conflicts")
         layout.addWidget(self._conflicts_label)
         self.conflicts_table = make_analysis_table(_CONFLICT_HEADERS)
+        configure_stretch_columns(self.conflicts_table, 3, 4)  # Message, Suggestion
         layout.addWidget(self.conflicts_table)
 
         self._lifespans_label = QLabel("Character Lifespans")
@@ -96,7 +105,7 @@ class TemporalPanel(QWidget):
         self._conflicts_label.setStyleSheet(section_style)
         self._lifespans_label.setStyleSheet(section_style)
         self._lifespans_hint.setStyleSheet(StyleHelper.get_preview_label_style())
-        table_style = StyleHelper.get_table_widget_style()
+        table_style = StyleHelper.get_table_widget_style() + ANALYSIS_TABLE_NO_HIGHLIGHT
         self.gaps_table.setStyleSheet(table_style)
         self.conflicts_table.setStyleSheet(table_style)
         self.lifespans_table.setStyleSheet(table_style)
@@ -148,14 +157,13 @@ class TemporalPanel(QWidget):
     ) -> None:
         """Fill the gaps table from the report's timeline_gaps list.
 
-        Gaps are displayed in the order returned by the report.
+        The message column uses a selectable QLabel widget with text wrapped
+        at 75 characters.
 
         Args:
             report: The report whose gaps are displayed.
             converter: Optional ``CalendarConverter`` for date formatting.
         """
-        from PySide6.QtWidgets import QTableWidgetItem
-
         self.gaps_table.setRowCount(len(report.timeline_gaps))
         for row, gap in enumerate(report.timeline_gaps):
             self.gaps_table.setItem(
@@ -164,8 +172,6 @@ class TemporalPanel(QWidget):
             self.gaps_table.setItem(
                 row, 1, QTableWidgetItem(fmt_lore_date(gap.end_date, converter))
             )
-            # gap_duration is in days; derive years via the converter's calendar
-            # or fall back to raw value when no converter is available.
             if converter is not None:
                 try:
                     year_len = converter._config.get_year_length(1)
@@ -175,7 +181,7 @@ class TemporalPanel(QWidget):
             else:
                 dur_str = f"{gap.gap_duration / 365.0:.0f}"
             self.gaps_table.setItem(row, 2, QTableWidgetItem(dur_str))
-            self.gaps_table.setItem(row, 3, QTableWidgetItem(wrap_cell_text(gap.message)))
+            self.gaps_table.setCellWidget(row, 3, make_text_cell(gap.message))
         self.gaps_table.resizeRowsToContents()
 
     def _populate_conflicts_table(
@@ -183,12 +189,13 @@ class TemporalPanel(QWidget):
     ) -> None:
         """Fill the conflicts table from the report's conflicts list.
 
+        Message and suggestion columns use selectable QLabel widgets with text
+        wrapped at 75 characters.
+
         Args:
             report: The report whose conflicts are displayed.
             converter: Optional ``CalendarConverter`` for date formatting.
         """
-        from PySide6.QtWidgets import QTableWidgetItem
-
         self.conflicts_table.setRowCount(len(report.conflicts))
         for row, conflict in enumerate(report.conflicts):
             self.conflicts_table.setItem(
@@ -200,9 +207,9 @@ class TemporalPanel(QWidget):
             self.conflicts_table.setItem(
                 row, 2, QTableWidgetItem(fmt_lore_date(conflict.problem_date, converter))
             )
-            self.conflicts_table.setItem(row, 3, QTableWidgetItem(wrap_cell_text(conflict.message)))
-            self.conflicts_table.setItem(
-                row, 4, QTableWidgetItem(wrap_cell_text(conflict.suggestion or ""))
+            self.conflicts_table.setCellWidget(row, 3, make_text_cell(conflict.message))
+            self.conflicts_table.setCellWidget(
+                row, 4, make_text_cell(conflict.suggestion or "")
             )
         self.conflicts_table.resizeRowsToContents()
 
@@ -215,11 +222,8 @@ class TemporalPanel(QWidget):
             report: The report whose character lifespans are displayed.
             converter: Optional ``CalendarConverter`` for date formatting.
         """
-        from PySide6.QtWidgets import QTableWidgetItem
-
         self.lifespans_table.setRowCount(len(report.character_lifespans))
         for row, lifespan in enumerate(report.character_lifespans):
-            # life_span_years is pre-computed in years by the analyzer
             span = (
                 f"{lifespan.life_span_years:.0f}"
                 if lifespan.life_span_years is not None

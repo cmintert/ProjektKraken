@@ -218,12 +218,45 @@ class TestTemporalPanelDisplayReport:
         # 400 days ÷ 365 ≈ Year 2.
         assert "Year 2" in panel.gaps_table.item(0, 1).text()
 
+    def test_gap_message_cell_is_selectable_label(self, qapp):
+        from PySide6.QtWidgets import QTextEdit
+
+        from src.gui.widgets.temporal_panel import TemporalPanel
+
+        panel = TemporalPanel()
+        panel.display_report(_make_report(gaps=[_make_gap(100.0, 400.0)]))
+        widget = panel.gaps_table.cellWidget(0, 3)
+        assert isinstance(widget, QTextEdit)
+        assert "Gap from" in widget.toPlainText()
+
     def test_conflict_type_in_table(self, qapp):
         from src.gui.widgets.temporal_panel import TemporalPanel
 
         panel = TemporalPanel()
         panel.display_report(_make_report(conflicts=[_make_conflict()]))
         assert "invalid_relation_window" in panel.conflicts_table.item(0, 0).text()
+
+    def test_conflict_message_cell_is_selectable_label(self, qapp):
+        from PySide6.QtWidgets import QTextEdit
+
+        from src.gui.widgets.temporal_panel import TemporalPanel
+
+        panel = TemporalPanel()
+        panel.display_report(_make_report(conflicts=[_make_conflict()]))
+        widget = panel.conflicts_table.cellWidget(0, 3)
+        assert isinstance(widget, QTextEdit)
+        assert "valid_from" in widget.toPlainText()
+
+    def test_conflict_suggestion_cell_is_selectable_label(self, qapp):
+        from PySide6.QtWidgets import QTextEdit
+
+        from src.gui.widgets.temporal_panel import TemporalPanel
+
+        panel = TemporalPanel()
+        panel.display_report(_make_report(conflicts=[_make_conflict()]))
+        widget = panel.conflicts_table.cellWidget(0, 4)
+        assert isinstance(widget, QTextEdit)
+        assert "Fix" in widget.toPlainText()
 
     def test_lifespan_name_in_table(self, qapp):
         from src.gui.widgets.temporal_panel import TemporalPanel
@@ -238,7 +271,6 @@ class TestTemporalPanelDisplayReport:
         from src.gui.widgets.temporal_panel import TemporalPanel
 
         panel = TemporalPanel()
-        # birth < death → is_valid() == True
         panel.display_report(
             _make_report(lifespans=[_make_lifespan("e1", "Alice")])
         )

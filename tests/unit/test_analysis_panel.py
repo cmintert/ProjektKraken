@@ -12,6 +12,7 @@ from src.core.analysis import (
 
 
 def _make_issue(severity: SeverityLevel, issue_type: IssueType, name: str = "X") -> ValidationIssue:
+    """Create a minimal ValidationIssue."""
     return ValidationIssue(
         severity=severity,
         issue_type=issue_type,
@@ -24,6 +25,7 @@ def _make_issue(severity: SeverityLevel, issue_type: IssueType, name: str = "X")
 
 
 def _make_score(name: str, score: float = 50.0) -> CompletenessScore:
+    """Create a minimal CompletenessScore."""
     return CompletenessScore(
         object_id="id-1",
         object_type="entity",
@@ -45,6 +47,7 @@ def _make_report(
     total_events: int = 2,
     avg_completeness: float = 55.0,
 ) -> WorldValidationReport:
+    """Build a minimal WorldValidationReport for widget tests."""
     return WorldValidationReport(
         timestamp=1000.0,
         total_entities=total_entities,
@@ -64,6 +67,8 @@ def _make_report(
 
 @pytest.mark.unit
 class TestAnalysisPanelCreation:
+    """Tests for AnalysisPanel widget instantiation."""
+
     def test_panel_creates_without_error(self, qapp):
         from src.gui.widgets.analysis_panel import AnalysisPanel
 
@@ -95,6 +100,8 @@ class TestAnalysisPanelCreation:
 
 @pytest.mark.unit
 class TestDisplayReport:
+    """Tests for AnalysisPanel.display_report population."""
+
     def test_issues_table_row_count_matches_issues(self, qapp):
         from src.gui.widgets.analysis_panel import AnalysisPanel
 
@@ -164,7 +171,6 @@ class TestDisplayReport:
         from src.gui.widgets.analysis_panel import AnalysisPanel
 
         panel = AnalysisPanel()
-        # First populate, then clear
         panel.display_report(_make_report(issues=[_make_issue(SeverityLevel.INFO, IssueType.TAG_UNUSED)]))
         panel.display_report(_make_report(issues=[]))
 
@@ -178,7 +184,6 @@ class TestDisplayReport:
         panel = AnalysisPanel()
         panel.display_report(_make_report(scores=scores))
 
-        # First row should be lowest score
         first_name = panel.completeness_table.item(0, 0).text()
         assert first_name == "Low"
         panel.close()
@@ -192,4 +197,32 @@ class TestDisplayReport:
 
         cell_text = panel.issues_table.item(0, 0).text()
         assert "critical" in cell_text.lower()
+        panel.close()
+
+    def test_issue_message_cell_is_selectable_label(self, qapp):
+        from PySide6.QtWidgets import QTextEdit
+
+        from src.gui.widgets.analysis_panel import AnalysisPanel
+
+        issues = [_make_issue(SeverityLevel.WARNING, IssueType.ORPHANED_ENTITY)]
+        panel = AnalysisPanel()
+        panel.display_report(_make_report(issues=issues))
+
+        widget = panel.issues_table.cellWidget(0, 3)
+        assert isinstance(widget, QTextEdit)
+        assert "Test message" in widget.toPlainText()
+        panel.close()
+
+    def test_issue_suggestion_cell_is_selectable_label(self, qapp):
+        from PySide6.QtWidgets import QTextEdit
+
+        from src.gui.widgets.analysis_panel import AnalysisPanel
+
+        issues = [_make_issue(SeverityLevel.INFO, IssueType.TAG_UNUSED)]
+        panel = AnalysisPanel()
+        panel.display_report(_make_report(issues=issues))
+
+        widget = panel.issues_table.cellWidget(0, 4)
+        assert isinstance(widget, QTextEdit)
+        assert "Test suggestion" in widget.toPlainText()
         panel.close()

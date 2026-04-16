@@ -211,21 +211,31 @@ class TestIntelligencePanelDisplayReport:
         panel.display_report(_make_report(holes=[_make_hole(entity_name="Gandalf")]))
         assert "Gandalf" in panel.plot_holes_table.item(0, 1).text()
 
-    def test_plot_hole_description_in_table(self, qapp):
+    def test_plot_hole_description_cell_is_selectable_label(self, qapp):
+        from PySide6.QtWidgets import QTextEdit
+
         from src.gui.widgets.intelligence_panel import IntelligencePanel
 
         panel = IntelligencePanel()
         panel.display_report(_make_report(holes=[_make_hole()]))
-        assert "Disappears" in panel.plot_holes_table.item(0, 2).text()
+        widget = panel.plot_holes_table.cellWidget(0, 2)
+        assert isinstance(widget, QTextEdit)
+        assert "Disappears" in widget.toPlainText()
 
-    def test_plot_hole_resolution_in_table(self, qapp):
+    def test_plot_hole_resolution_cell_is_selectable_label(self, qapp):
+        from PySide6.QtWidgets import QTextEdit
+
         from src.gui.widgets.intelligence_panel import IntelligencePanel
 
         panel = IntelligencePanel()
         panel.display_report(_make_report(holes=[_make_hole()]))
-        assert "bridging" in panel.plot_holes_table.item(0, 3).text()
+        widget = panel.plot_holes_table.cellWidget(0, 3)
+        assert isinstance(widget, QTextEdit)
+        assert "bridging" in widget.toPlainText()
 
     def test_plot_hole_no_resolution_shows_empty(self, qapp):
+        from PySide6.QtWidgets import QTextEdit
+
         from src.gui.widgets.intelligence_panel import IntelligencePanel
 
         panel = IntelligencePanel()
@@ -238,7 +248,9 @@ class TestIntelligencePanelDisplayReport:
             suggested_resolution=None,
         )
         panel.display_report(_make_report(holes=[hole]))
-        assert panel.plot_holes_table.item(0, 3).text() == ""
+        widget = panel.plot_holes_table.cellWidget(0, 3)
+        assert isinstance(widget, QTextEdit)
+        assert widget.toPlainText() == ""
 
     def test_proposal_source_name_in_table(self, qapp):
         from src.gui.widgets.intelligence_panel import IntelligencePanel
@@ -261,11 +273,24 @@ class TestIntelligencePanelDisplayReport:
         panel.display_report(_make_report(proposals=[_make_proposal()]))
         assert "ally" in panel.proposals_table.item(0, 2).text()
 
-    def test_proposal_reasoning_cell_does_not_insert_hard_wrap_newlines(self, qapp):
+    def test_proposal_reasoning_cell_is_selectable_label(self, qapp):
+        from PySide6.QtWidgets import QTextEdit
+
         from src.gui.widgets.intelligence_panel import IntelligencePanel
 
         panel = IntelligencePanel()
-        long_reasoning = " ".join(["reason"] * 200)
+        panel.display_report(_make_report(proposals=[_make_proposal()]))
+        widget = panel.proposals_table.cellWidget(0, 4)
+        assert isinstance(widget, QTextEdit)
+        assert "warrior" in widget.toPlainText()
+
+    def test_proposal_reasoning_wraps_long_text(self, qapp):
+        from PySide6.QtWidgets import QTextEdit
+
+        from src.gui.widgets.intelligence_panel import IntelligencePanel
+
+        panel = IntelligencePanel()
+        long_reasoning = " ".join(["reason"] * 30)
         proposal = RelationProposal(
             source_id="e1",
             source_name="Alice",
@@ -276,13 +301,11 @@ class TestIntelligencePanelDisplayReport:
             confidence=0.85,
         )
         panel.display_report(_make_report(proposals=[proposal]))
-        assert "\n" not in panel.proposals_table.item(0, 4).text()
-
-    def test_proposals_table_word_wrap_disabled_for_compact_rows(self, qapp):
-        from src.gui.widgets.intelligence_panel import IntelligencePanel
-
-        panel = IntelligencePanel()
-        assert panel.proposals_table.wordWrap() is False
+        widget = panel.proposals_table.cellWidget(0, 4)
+        assert isinstance(widget, QTextEdit)
+        # Text is whitespace-normalised but not hard-wrapped; Qt reflows it.
+        assert "reason" in widget.toPlainText()
+        assert "\n" not in widget.toPlainText()
 
     def test_analysis_tables_hide_vertical_headers(self, qapp):
         from src.gui.widgets.intelligence_panel import IntelligencePanel
@@ -309,18 +332,18 @@ class TestIntelligencePanelDisplayReport:
         # 800 days ÷ 365 ≈ Year 3.
         assert "Year 3" in panel.lore_table.item(0, 1).text()
 
-    def test_lore_suggestions_joined_in_table(self, qapp):
-        from PySide6.QtWidgets import QTextBrowser
+    def test_lore_suggestions_cell_is_text_browser(self, qapp):
+        from PySide6.QtWidgets import QTextEdit
 
         from src.gui.widgets.intelligence_panel import IntelligencePanel
 
         panel = IntelligencePanel()
         panel.display_report(_make_report(lore=[_make_lore()]))
         browser = panel.lore_table.cellWidget(0, 2)
-        assert isinstance(browser, QTextBrowser)
-        html = browser.toHtml()
-        assert "Long Silence" in html
-        assert "Eastern Clans" in html
+        assert isinstance(browser, QTextEdit)
+        content = browser.toHtml()
+        assert "Long Silence" in content
+        assert "Eastern Clans" in content
 
     def test_display_report_called_twice_replaces_data(self, qapp):
         from src.gui.widgets.intelligence_panel import IntelligencePanel
