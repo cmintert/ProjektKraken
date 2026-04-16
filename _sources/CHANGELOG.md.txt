@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-04-12
+## [Development] - 2026-04-16
 ### Internal
-- chore: add Claude Code config and memory files
+- Merge pull request #113 from cmintert/tier-1
 
 
 *This changelog was automatically generated.*

@@ -263,7 +263,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">sqlite3</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">traceback</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">QObject</span><span class="p">,</span> <span class="n">Signal</span><span class="p">,</span> <span class="n">Slot</span>
 
@@ -338,6 +338,12 @@
     <span class="c1"># Index rebuild signals</span>
     <span class="n">index_rebuild_progress</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>  <span class="c1"># (done, total, pct)</span>
     <span class="n">index_rebuild_finished</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>  <span class="c1"># (succeeded, failed)</span>
+
+    <span class="c1"># Analysis signals</span>
+    <span class="n">validation_complete</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>  <span class="c1"># Emits WorldValidationReport</span>
+    <span class="n">temporal_analysis_complete</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>  <span class="c1"># Emits TemporalAnalysisReport</span>
+    <span class="n">intelligence_analysis_complete</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>  <span class="c1"># Emits IntelligenceReport</span>
+    <span class="n">intelligence_partial_result</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>  <span class="c1"># (result_type, raw_result)</span>
 
 <div class="viewcode-block" id="DatabaseWorker.__init__">
 <a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.__init__">[docs]</a>
@@ -1687,6 +1693,126 @@
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;summary_service&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_service</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">summary_service</span><span class="o">.</span><span class="n">reset_provider</span><span class="p">()</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;DatabaseWorker: AI settings refreshed&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_run_analysis_command</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cmd</span><span class="p">:</span> <span class="s2">&quot;BaseCommand&quot;</span><span class="p">,</span>
+        <span class="n">result_signal</span><span class="p">:</span> <span class="s2">&quot;Signal&quot;</span><span class="p">,</span>
+        <span class="n">start_msg</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">done_msg</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">error_prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute an analysis command and emit results on the worker thread.</span>
+
+<span class="sd">        Emits :attr:`operation_started` before the command and</span>
+<span class="sd">        :attr:`operation_finished` after (success or failure).  On success</span>
+<span class="sd">        emits *result_signal* with the report; on failure emits</span>
+<span class="sd">        :attr:`error_occurred`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cmd: A :class:`~src.commands.base_command.BaseCommand` whose</span>
+<span class="sd">                ``execute()`` returns a :class:`CommandResult` with</span>
+<span class="sd">                ``data[&quot;report&quot;]`` on success.</span>
+<span class="sd">            result_signal: The signal to emit with the report on success.</span>
+<span class="sd">            start_msg: Status string passed to :attr:`operation_started`.</span>
+<span class="sd">            done_msg: Status string passed to :attr:`operation_finished`.</span>
+<span class="sd">            error_prefix: Short label used in error messages, e.g.</span>
+<span class="sd">                ``&quot;Validation&quot;``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">operation_started</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">start_msg</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span><span class="p">:</span>
+                <span class="n">result_signal</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;report&quot;</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">error_prefix</span><span class="si">}</span><span class="s2"> failed: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">errors</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> error: </span><span class="si">%s</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">error_prefix</span><span class="p">,</span> <span class="n">exc</span><span class="p">,</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">error_prefix</span><span class="si">}</span><span class="s2"> error: </span><span class="si">{</span><span class="n">exc</span><span class="si">!s}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">operation_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">done_msg</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DatabaseWorker.validate_world">
+<a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.validate_world">[docs]</a>
+    <span class="nd">@Slot</span><span class="p">()</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate_world</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run world validation in the worker thread and emit the report.</span>
+
+<span class="sd">        On success emits :attr:`validation_complete` with the</span>
+<span class="sd">        :class:`~src.core.analysis.WorldValidationReport`.</span>
+<span class="sd">        On failure emits :attr:`error_occurred` with an error string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">src.commands.analysis_commands</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidateWorldCommand</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_run_analysis_command</span><span class="p">(</span>
+            <span class="n">ValidateWorldCommand</span><span class="p">(),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">validation_complete</span><span class="p">,</span>
+            <span class="s2">&quot;Validating world…&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Validation complete.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Validation&quot;</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseWorker.analyze_temporal">
+<a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.analyze_temporal">[docs]</a>
+    <span class="nd">@Slot</span><span class="p">()</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">analyze_temporal</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run temporal analysis in the worker thread and emit the report.</span>
+
+<span class="sd">        On success emits :attr:`temporal_analysis_complete` with the</span>
+<span class="sd">        :class:`~src.core.analysis.TemporalAnalysisReport`.</span>
+<span class="sd">        On failure emits :attr:`error_occurred` with an error string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">src.commands.analysis_commands</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnalyzeTemporalCommand</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_run_analysis_command</span><span class="p">(</span>
+            <span class="n">AnalyzeTemporalCommand</span><span class="p">(),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">temporal_analysis_complete</span><span class="p">,</span>
+            <span class="s2">&quot;Analyzing timeline…&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Temporal analysis complete.&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;Temporal analysis&quot;</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseWorker.run_intelligence_analysis">
+<a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.run_intelligence_analysis">[docs]</a>
+    <span class="nd">@Slot</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_intelligence_analysis</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run intelligence analysis in the worker thread and emit the report.</span>
+
+<span class="sd">        Calls :class:`~src.services.intelligence_analyzer.IntelligenceAnalyzer`</span>
+<span class="sd">        directly (bypassing the command layer) so that</span>
+<span class="sd">        :attr:`intelligence_partial_result` can be emitted as each sub-analysis</span>
+<span class="sd">        completes, before the final :attr:`intelligence_analysis_complete` fires.</span>
+
+<span class="sd">        On success emits :attr:`intelligence_partial_result` once per completed</span>
+<span class="sd">        sub-analysis, then :attr:`intelligence_analysis_complete` with the full</span>
+<span class="sd">        :class:`~src.core.analysis.IntelligenceReport`.</span>
+<span class="sd">        On failure emits :attr:`error_occurred` with an error string.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            analysis_type: Scope of analysis — ``&quot;all&quot;``, ``&quot;plot_holes&quot;``,</span>
+<span class="sd">                ``&quot;relations&quot;``, or ``&quot;lore&quot;``.  Defaults to ``&quot;all&quot;``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.intelligence_analyzer</span><span class="w"> </span><span class="kn">import</span> <span class="n">IntelligenceAnalyzer</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">operation_started</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Running AI analysis (</span><span class="si">{</span><span class="n">analysis_type</span><span class="si">}</span><span class="s2">)…&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">_on_partial</span><span class="p">(</span><span class="n">result_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">intelligence_partial_result</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">result_type</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+
+            <span class="n">report</span> <span class="o">=</span> <span class="n">IntelligenceAnalyzer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">)</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span>
+                <span class="n">analysis_type</span><span class="p">,</span> <span class="n">on_partial</span><span class="o">=</span><span class="n">_on_partial</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">intelligence_analysis_complete</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">report</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;Intelligence analysis error: </span><span class="si">%s</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">,</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Intelligence analysis error: </span><span class="si">{</span><span class="n">exc</span><span class="si">!s}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">operation_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">&quot;Intelligence analysis complete.&quot;</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

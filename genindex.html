@@ -338,6 +338,8 @@
 </li>
         <li><a href="commands.html#commands.relation_commands.AddRelationCommand">AddRelationCommand (class in commands.relation_commands)</a>
 </li>
+        <li><a href="services.html#services.worker.DatabaseWorker.analyze_temporal">analyze_temporal() (services.worker.DatabaseWorker method)</a>
+</li>
         <li>
     app
 
@@ -936,6 +938,8 @@
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.get_all_maps">get_all_maps() (services.db_service.DatabaseService method)</a>
 </li>
+        <li><a href="services.html#services.db_service.DatabaseService.get_all_relations">get_all_relations() (services.db_service.DatabaseService method)</a>
+</li>
         <li><a href="services.html#services.db_service.DatabaseService.get_all_tags">get_all_tags() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.get_attachment_repo">get_attachment_repo() (services.db_service.DatabaseService method)</a>
@@ -990,10 +994,10 @@
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.get_group_counts">get_group_counts() (services.db_service.DatabaseService method)</a>
 </li>
-        <li><a href="services.html#services.db_service.DatabaseService.get_group_metadata">get_group_metadata() (services.db_service.DatabaseService method)</a>
-</li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="services.html#services.db_service.DatabaseService.get_group_metadata">get_group_metadata() (services.db_service.DatabaseService method)</a>
+</li>
         <li><a href="services.html#services.db_service.DatabaseService.get_incoming_relations">get_incoming_relations() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="core.html#core.logging_config.get_logger">get_logger() (in module core.logging_config)</a>
@@ -1121,10 +1125,10 @@
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.insert_entities_bulk">insert_entities_bulk() (services.db_service.DatabaseService method)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="services.html#services.db_service.DatabaseService.insert_entity">insert_entity() (services.db_service.DatabaseService method)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="services.html#services.db_service.DatabaseService.insert_event">insert_event() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.insert_events_bulk">insert_events_bulk() (services.db_service.DatabaseService method)</a>
@@ -1138,6 +1142,10 @@
         <li><a href="services.html#services.db_service.DatabaseService.insert_relation">insert_relation() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="services.html#services.db_service.DatabaseService.insert_trajectory">insert_trajectory() (services.db_service.DatabaseService method)</a>
+</li>
+        <li><a href="services.html#services.worker.DatabaseWorker.intelligence_analysis_complete">intelligence_analysis_complete (services.worker.DatabaseWorker attribute)</a>
+</li>
+        <li><a href="services.html#services.worker.DatabaseWorker.intelligence_partial_result">intelligence_partial_result (services.worker.DatabaseWorker attribute)</a>
 </li>
         <li><a href="core.html#core.calendar.LeapYearRule.interval">interval (core.calendar.LeapYearRule attribute)</a>, <a href="core.html#id15">[1]</a>
 </li>
@@ -1522,6 +1530,8 @@
 </li>
         <li><a href="services.html#services.worker.DatabaseWorker.run_import">run_import() (services.worker.DatabaseWorker method)</a>
 </li>
+        <li><a href="services.html#services.worker.DatabaseWorker.run_intelligence_analysis">run_intelligence_analysis() (services.worker.DatabaseWorker method)</a>
+</li>
         <li><a href="services.html#services.worker.DatabaseWorker.run_markdown_batch_import">run_markdown_batch_import() (services.worker.DatabaseWorker method)</a>
 </li>
         <li><a href="services.html#services.worker.DatabaseWorker.run_markdown_import">run_markdown_import() (services.worker.DatabaseWorker method)</a>
@@ -1657,6 +1667,8 @@
         <li><a href="services.html#id5">target_id (services.text_parser.LinkCandidate attribute)</a>, <a href="services.html#services.text_parser.LinkCandidate.target_id">[1]</a>
 </li>
         <li><a href="core.html#core.fast_inject.FastInjectTemplate.target_type">target_type (core.fast_inject.FastInjectTemplate attribute)</a>
+</li>
+        <li><a href="services.html#services.worker.DatabaseWorker.temporal_analysis_complete">temporal_analysis_complete (services.worker.DatabaseWorker attribute)</a>
 </li>
         <li><a href="core.html#core.calendar.CalendarDate.time_fraction">time_fraction (core.calendar.CalendarDate attribute)</a>, <a href="core.html#id12">[1]</a>
 </li>
@@ -1826,9 +1838,13 @@
 </li>
         <li><a href="core.html#core.calendar.CalendarConfig.validate">validate() (core.calendar.CalendarConfig method)</a>
 </li>
+        <li><a href="cli.html#cli.utils.validate_database_path">validate_database_path() (in module cli.utils)</a>
+</li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="cli.html#cli.utils.validate_database_path">validate_database_path() (in module cli.utils)</a>
+        <li><a href="services.html#services.worker.DatabaseWorker.validate_world">validate_world() (services.worker.DatabaseWorker method)</a>
+</li>
+        <li><a href="services.html#services.worker.DatabaseWorker.validation_complete">validation_complete (services.worker.DatabaseWorker attribute)</a>
 </li>
         <li><a href="core.html#core.fast_inject.FastInjectTemplate.version">version (core.fast_inject.FastInjectTemplate attribute)</a>
 </li>

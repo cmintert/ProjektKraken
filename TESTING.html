@@ -261,8 +261,8 @@
         <article role="main" id="furo-main-content">
           <section id="testing-guide">
 <h1>Testing Guide<a class="headerlink" href="#testing-guide" title="Link to this heading">¶</a></h1>
-<p><strong>Version:</strong> 0.11.0 (Beta)<br />
-<strong>Last Updated:</strong> February 2026</p>
+<p><strong>Version:</strong> 0.15.0 (Beta)<br />
+<strong>Last Updated:</strong> April 2026</p>
 <p>Comprehensive guide to testing in ProjektKraken.</p>
 <hr class="docutils" />
 <section id="table-of-contents">
@@ -302,13 +302,65 @@
 </ol>
 <p><strong>Coverage Target</strong>: 95%+ overall, 100% for core business logic.</p>
 </section>
+<section id="current-findings-and-recent-changes">
+<h3>Current Findings And Recent Changes<a class="headerlink" href="#current-findings-and-recent-changes" title="Link to this heading">¶</a></h3>
+<p>The test suite is large and already provides broad behavioral coverage, but a recent audit
+highlighted several maintainability and execution issues that were worth addressing.</p>
+<p><strong>Current findings:</strong></p>
+<ul class="simple">
+<li><p>The suite is healthy when run from the repository <code class="docutils literal notranslate"><span class="pre">.venv</span></code>; using a global Python
+interpreter can produce misleading import failures.</p></li>
+<li><p>The repository currently collects about <code class="docutils literal notranslate"><span class="pre">3,800+</span></code> tests quickly, so collection itself is
+not a bottleneck.</p></li>
+<li><p>Some tests had drifted behind the source of truth, especially around <code class="docutils literal notranslate"><span class="pre">MainWindow</span></code> /
+<code class="docutils literal notranslate"><span class="pre">ConnectionManager</span></code> wiring, which caused integration failures when mocks no longer
+reflected real dependencies.</p></li>
+<li><p>Several tests define local <code class="docutils literal notranslate"><span class="pre">qapp</span></code> fixtures even though <code class="docutils literal notranslate"><span class="pre">tests/conftest.py</span></code> already
+provides a shared session-scoped <code class="docutils literal notranslate"><span class="pre">qapp</span></code> fixture.</p></li>
+<li><p>Several tests create in-memory <code class="docutils literal notranslate"><span class="pre">DatabaseService</span></code> instances in local fixtures instead of
+reusing the shared <code class="docutils literal notranslate"><span class="pre">db_service</span></code> fixture, which increases duplication and can weaken
+cleanup consistency.</p></li>
+<li><p>A small number of tests contain placeholder <code class="docutils literal notranslate"><span class="pre">pass</span></code> bodies or outdated comments instead
+of explicit assertions for current behavior.</p></li>
+<li><p>The testing documentation had drifted behind the current command architecture and test
+workflow.</p></li>
+</ul>
+<p><strong>Changes implemented in April 2026:</strong></p>
+<ul class="simple">
+<li><p>Added a dedicated CI workflow at <code class="docutils literal notranslate"><span class="pre">.github/workflows/tests.yml</span></code> with a <code class="docutils literal notranslate"><span class="pre">smoke</span></code>
+job for critical-path feedback, a parallel <code class="docutils literal notranslate"><span class="pre">fast-regression</span></code> job for <code class="docutils literal notranslate"><span class="pre">not</span> <span class="pre">slow</span></code>
+coverage, JUnit XML artifacts, coverage XML artifacts, and offscreen Qt
+environment settings for CI stability.</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">smoke</span></code>, <code class="docutils literal notranslate"><span class="pre">req(id)</span></code>, and <code class="docutils literal notranslate"><span class="pre">bug(id)</span></code> markers to <code class="docutils literal notranslate"><span class="pre">pytest.ini</span></code>.</p></li>
+<li><p>Marked a small, critical path subset of tests as <code class="docutils literal notranslate"><span class="pre">smoke</span></code> to enable fast feedback.</p></li>
+<li><p>Fixed integration test drift in <code class="docutils literal notranslate"><span class="pre">tests/integration/test_main_window_initialization.py</span></code>
+so the mocked window matches current <code class="docutils literal notranslate"><span class="pre">ConnectionManager</span></code> dependencies.</p></li>
+<li><p>Removed a redundant local <code class="docutils literal notranslate"><span class="pre">qapp</span></code> fixture from that integration test so it now uses the
+shared fixture from <code class="docutils literal notranslate"><span class="pre">tests/conftest.py</span></code>.</p></li>
+<li><p>Simplified <code class="docutils literal notranslate"><span class="pre">tests/unit/repositories/test_entity_repository.py</span></code> to reuse the shared
+<code class="docutils literal notranslate"><span class="pre">db_service</span></code> fixture and replaced a placeholder <code class="docutils literal notranslate"><span class="pre">pass</span></code> test with an assertion that
+documents current exact-match repository behavior.</p></li>
+<li><p>Updated this guide so examples match the current codebase more closely.</p></li>
+</ul>
+<p><strong>Recommended next optimization targets:</strong></p>
+<ul class="simple">
+<li><p>Continue removing duplicated local <code class="docutils literal notranslate"><span class="pre">qapp</span></code> fixtures in favor of the shared session
+fixture.</p></li>
+<li><p>Continue migrating ad-hoc in-memory database fixtures to the shared <code class="docutils literal notranslate"><span class="pre">db_service</span></code>
+fixture where file-backed persistence is not required.</p></li>
+<li><p>Replace remaining placeholder tests with explicit assertions or remove them if they no
+longer serve a purpose.</p></li>
+<li><p>Expand the <code class="docutils literal notranslate"><span class="pre">smoke</span></code> lane carefully with a few more high-value persistence and timeline
+tests while keeping runtime short.</p></li>
+</ul>
+</section>
 </section>
 <hr class="docutils" />
 <section id="test-structure">
 <h2>Test Structure<a class="headerlink" href="#test-structure" title="Link to this heading">¶</a></h2>
 <section id="directory-organization">
 <h3>Directory Organization<a class="headerlink" href="#directory-organization" title="Link to this heading">¶</a></h3>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>tests/
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>tests/
 ├── conftest.py              # Shared fixtures
 ├── unit/                    # Fast unit tests
 │   ├── test_events.py
@@ -380,23 +432,27 @@
 <section id="basic-test-execution">
 <h3>Basic Test Execution<a class="headerlink" href="#basic-test-execution" title="Link to this heading">¶</a></h3>
 <p><strong>Run all tests:</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>.venv<span class="se">\S</span>cripts<span class="se">\p</span>ython<span class="w"> </span>-m<span class="w"> </span>pytest
 </pre></div>
 </div>
 <p><strong>Run with output:</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>-v
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>.venv<span class="se">\S</span>cripts<span class="se">\p</span>ython<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>-v
 </pre></div>
 </div>
 <p><strong>Run specific test file:</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>tests/unit/test_events.py
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>.venv<span class="se">\S</span>cripts<span class="se">\p</span>ython<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/unit/test_events.py
 </pre></div>
 </div>
 <p><strong>Run specific test function:</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>tests/unit/test_events.py::test_event_creation
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>.venv<span class="se">\S</span>cripts<span class="se">\p</span>ython<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/unit/test_events.py::test_event_creation
+</pre></div>
+</div>
+<p><strong>Run critical smoke tests:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>.venv<span class="se">\S</span>cripts<span class="se">\p</span>ython<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>-m<span class="w"> </span>smoke<span class="w"> </span>-q
 </pre></div>
 </div>
 <p><strong>Run specific test class:</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>tests/unit/test_events.py::TestEventCreation
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>.venv<span class="se">\S</span>cripts<span class="se">\p</span>ython<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>tests/unit/test_events.py::TestEventCreation
 </pre></div>
 </div>
 </section>
@@ -405,13 +461,16 @@
 <h3>Test Markers<a class="headerlink" href="#test-markers" title="Link to this heading">¶</a></h3>
 <p><strong>Run by marker:</strong></p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run only unit tests</span>
-pytest<span class="w"> </span>-m<span class="w"> </span>unit
+.venv<span class="se">\S</span>cripts<span class="se">\p</span>ython<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>-m<span class="w"> </span>unit
 
 <span class="c1"># Run only integration tests</span>
-pytest<span class="w"> </span>-m<span class="w"> </span>integration
+.venv<span class="se">\S</span>cripts<span class="se">\p</span>ython<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>-m<span class="w"> </span>integration
 
 <span class="c1"># Skip slow tests</span>
-pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;not slow&quot;</span>
+.venv<span class="se">\S</span>cripts<span class="se">\p</span>ython<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;not slow&quot;</span>
+
+<span class="c1"># Run smoke-only critical path</span>
+.venv<span class="se">\S</span>cripts<span class="se">\p</span>ython<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>-m<span class="w"> </span>smoke
 </pre></div>
 </div>
 <p><strong>Available markers</strong> (defined in <code class="docutils literal notranslate"><span class="pre">pytest.ini</span></code>):</p>
@@ -419,26 +478,27 @@ pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;n
 <li><p><code class="docutils literal notranslate"><span class="pre">unit</span></code>: Fast unit tests</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">integration</span></code>: Integration tests with dependencies</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">slow</span></code>: Tests that take &gt;1 second</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">smoke</span></code>: Critical-path tests for fast CI feedback</p></li>
 </ul>
 </section>
 <hr class="docutils" />
 <section id="coverage-reports">
 <h3>Coverage Reports<a class="headerlink" href="#coverage-reports" title="Link to this heading">¶</a></h3>
 <p><strong>Run with coverage:</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>term-missing
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>.venv<span class="se">\S</span>cripts<span class="se">\p</span>ython<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>term-missing
 </pre></div>
 </div>
 <p><strong>Generate HTML coverage report:</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>html
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>.venv<span class="se">\S</span>cripts<span class="se">\p</span>ython<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>html
 <span class="c1"># Opens htmlcov/index.html</span>
 </pre></div>
 </div>
 <p><strong>Coverage for specific module:</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>--cov<span class="o">=</span>src.commands<span class="w"> </span>tests/unit/test_commands.py
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>.venv<span class="se">\S</span>cripts<span class="se">\p</span>ython<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>--cov<span class="o">=</span>src.commands<span class="w"> </span>tests/unit/test_commands.py
 </pre></div>
 </div>
 <p><strong>Show missing lines:</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>term-missing
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>.venv<span class="se">\S</span>cripts<span class="se">\p</span>ython<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>term-missing
 </pre></div>
 </div>
 </section>
@@ -482,13 +542,13 @@ pytest<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;n
 </div>
 <p><strong>Examples:</strong></p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run tests with &quot;entity&quot; in name</span>
-pytest<span class="w"> </span>-k<span class="w"> </span>entity
+.venv<span class="se">\S</span>cripts<span class="se">\p</span>ython<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>-k<span class="w"> </span>entity
 
 <span class="c1"># Run tests, stop on first failure, show prints</span>
-pytest<span class="w"> </span>-x<span class="w"> </span>-s
+.venv<span class="se">\S</span>cripts<span class="se">\p</span>ython<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>-x<span class="w"> </span>-s
 
 <span class="c1"># Run last failed tests with debugger</span>
-pytest<span class="w"> </span>--lf<span class="w"> </span>--pdb
+.venv<span class="se">\S</span>cripts<span class="se">\p</span>ython<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>--lf<span class="w"> </span>--pdb
 </pre></div>
 </div>
 </section>
@@ -554,7 +614,7 @@ pytest<span class="w"> </span>--lf<span class="w"> </span>--pdb
 <span class="k">def</span><span class="w"> </span><span class="nf">db_service</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Provide an in-memory database.&quot;&quot;&quot;</span>
     <span class="n">service</span> <span class="o">=</span> <span class="n">DatabaseService</span><span class="p">(</span><span class="s2">&quot;:memory:&quot;</span><span class="p">)</span>
-    <span class="n">service</span><span class="o">.</span><span class="n">initialize_schema</span><span class="p">()</span>
+    <span class="n">service</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
     <span class="k">yield</span> <span class="n">service</span>
     <span class="n">service</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
@@ -580,37 +640,32 @@ pytest<span class="w"> </span>--lf<span class="w"> </span>--pdb
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_create_event_command_execute</span><span class="p">(</span><span class="n">db_service</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Test CreateEventCommand execution.&quot;&quot;&quot;</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">src.commands.event_commands</span><span class="w"> </span><span class="kn">import</span> <span class="n">CreateEventCommand</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.repositories.event_repository</span><span class="w"> </span><span class="kn">import</span> <span class="n">EventRepository</span>
     
-    <span class="n">cmd</span> <span class="o">=</span> <span class="n">CreateEventCommand</span><span class="p">(</span>
-        <span class="n">service</span><span class="o">=</span><span class="n">db_service</span><span class="p">,</span>
-        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Test Event&quot;</span><span class="p">,</span>
-        <span class="n">lore_date</span><span class="o">=</span><span class="mf">100.0</span>
-    <span class="p">)</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="n">CreateEventCommand</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Test Event&quot;</span><span class="p">,</span> <span class="s2">&quot;lore_date&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">})</span>
     
-    <span class="n">cmd</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">db_service</span><span class="p">)</span>
     
     <span class="c1"># Verify event was created</span>
     <span class="n">repo</span> <span class="o">=</span> <span class="n">EventRepository</span><span class="p">(</span><span class="n">db_service</span><span class="p">)</span>
-    <span class="n">event</span> <span class="o">=</span> <span class="n">repo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cmd</span><span class="o">.</span><span class="n">event_id</span><span class="p">)</span>
+    <span class="n">event</span> <span class="o">=</span> <span class="n">repo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cmd</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">success</span> <span class="ow">is</span> <span class="kc">True</span>
     <span class="k">assert</span> <span class="n">event</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
     <span class="k">assert</span> <span class="n">event</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;Test Event&quot;</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">test_create_event_command_undo</span><span class="p">(</span><span class="n">db_service</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Test CreateEventCommand undo.&quot;&quot;&quot;</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">src.commands.event_commands</span><span class="w"> </span><span class="kn">import</span> <span class="n">CreateEventCommand</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.repositories.event_repository</span><span class="w"> </span><span class="kn">import</span> <span class="n">EventRepository</span>
     
-    <span class="n">cmd</span> <span class="o">=</span> <span class="n">CreateEventCommand</span><span class="p">(</span>
-        <span class="n">service</span><span class="o">=</span><span class="n">db_service</span><span class="p">,</span>
-        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Test Event&quot;</span><span class="p">,</span>
-        <span class="n">lore_date</span><span class="o">=</span><span class="mf">100.0</span>
-    <span class="p">)</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="n">CreateEventCommand</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Test Event&quot;</span><span class="p">,</span> <span class="s2">&quot;lore_date&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">})</span>
     
-    <span class="n">cmd</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
-    <span class="n">cmd</span><span class="o">.</span><span class="n">undo</span><span class="p">()</span>
+    <span class="n">cmd</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">db_service</span><span class="p">)</span>
+    <span class="n">cmd</span><span class="o">.</span><span class="n">undo</span><span class="p">(</span><span class="n">db_service</span><span class="p">)</span>
     
     <span class="c1"># Verify event was removed</span>
     <span class="n">repo</span> <span class="o">=</span> <span class="n">EventRepository</span><span class="p">(</span><span class="n">db_service</span><span class="p">)</span>
-    <span class="n">event</span> <span class="o">=</span> <span class="n">repo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cmd</span><span class="o">.</span><span class="n">event_id</span><span class="p">)</span>
+    <span class="n">event</span> <span class="o">=</span> <span class="n">repo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cmd</span><span class="o">.</span><span class="n">event</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
     <span class="k">assert</span> <span class="n">event</span> <span class="ow">is</span> <span class="kc">None</span>
 </pre></div>
 </div>
@@ -699,7 +754,7 @@ pytest<span class="w"> </span>--lf<span class="w"> </span>--pdb
 <span class="k">def</span><span class="w"> </span><span class="nf">db_service</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Provide in-memory database service.&quot;&quot;&quot;</span>
     <span class="n">service</span> <span class="o">=</span> <span class="n">DatabaseService</span><span class="p">(</span><span class="s2">&quot;:memory:&quot;</span><span class="p">)</span>
-    <span class="n">service</span><span class="o">.</span><span class="n">initialize_schema</span><span class="p">()</span>
+    <span class="n">service</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
     <span class="k">yield</span> <span class="n">service</span>
     <span class="n">service</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
@@ -823,15 +878,15 @@ pytest<span class="w"> </span>--lf<span class="w"> </span>--pdb
 <section id="measuring-coverage">
 <h3>Measuring Coverage<a class="headerlink" href="#measuring-coverage" title="Link to this heading">¶</a></h3>
 <p><strong>Basic coverage:</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>--cov<span class="o">=</span>src
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>.venv<span class="se">\S</span>cripts<span class="se">\p</span>ython<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>--cov<span class="o">=</span>src
 </pre></div>
 </div>
 <p><strong>Detailed coverage with missing lines:</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>term-missing
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>.venv<span class="se">\S</span>cripts<span class="se">\p</span>ython<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>term-missing
 </pre></div>
 </div>
 <p><strong>HTML coverage report:</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>html
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>.venv<span class="se">\S</span>cripts<span class="se">\p</span>ython<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>html
 open<span class="w"> </span>htmlcov/index.html
 </pre></div>
 </div>
@@ -862,34 +917,49 @@ open<span class="w"> </span>htmlcov/index.html
 <h2>Continuous Integration<a class="headerlink" href="#continuous-integration" title="Link to this heading">¶</a></h2>
 <section id="github-actions">
 <h3>GitHub Actions<a class="headerlink" href="#github-actions" title="Link to this heading">¶</a></h3>
-<p>Example workflow (<code class="docutils literal notranslate"><span class="pre">.github/workflows/test.yml</span></code>):</p>
+<p>Current repository workflow:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">.github/workflows/tests.yml</span></code> runs <code class="docutils literal notranslate"><span class="pre">smoke</span></code> tests for rapid feedback.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">.github/workflows/tests.yml</span></code> runs <code class="docutils literal notranslate"><span class="pre">not</span> <span class="pre">slow</span></code> regression tests in parallel with
+<code class="docutils literal notranslate"><span class="pre">pytest-xdist</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">.github/workflows/tests.yml</span></code> exports JUnit XML reports.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">.github/workflows/tests.yml</span></code> exports coverage artifacts.</p></li>
+</ul>
+<p>Key CI behaviors:</p>
+<ul class="simple">
+<li><p>Set <code class="docutils literal notranslate"><span class="pre">QT_QPA_PLATFORM=offscreen</span></code> for headless Qt runs.</p></li>
+<li><p>Set <code class="docutils literal notranslate"><span class="pre">QT_OPENGL=software</span></code> for better graphics stability in CI environments.</p></li>
+<li><p>Prefer <code class="docutils literal notranslate"><span class="pre">.venv</span></code> locally and <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">pytest</span></code> in CI to avoid interpreter drift.</p></li>
+</ul>
+<p>Minimal example:</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Tests</span>
 
 <span class="nt">on</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">push</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">pull_request</span><span class="p p-Indicator">]</span>
 
 <span class="nt">jobs</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">test</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">smoke</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">runs-on</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ubuntu-latest</span>
-<span class="w">    </span>
+<span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">env</span><span class="p p-Indicator">:</span>
+<span class="w">            </span><span class="nt">QT_QPA_PLATFORM</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">offscreen</span>
+<span class="w">            </span><span class="nt">QT_OPENGL</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">software</span>
+
 <span class="w">    </span><span class="nt">steps</span><span class="p">:</span>
-<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/checkout@v3</span>
-<span class="w">    </span>
-<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Set up Python</span>
-<span class="w">      </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/setup-python@v4</span>
-<span class="w">      </span><span class="nt">with</span><span class="p">:</span>
-<span class="w">        </span><span class="nt">python-version</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;3.13&#39;</span>
-<span class="w">    </span>
-<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Install dependencies</span>
-<span class="w">      </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
-<span class="w">        </span><span class="no">pip install -r requirements.txt</span>
-<span class="w">        </span><span class="no">pip install -r requirements-dev.txt</span>
-<span class="w">    </span>
-<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Run tests with coverage</span>
-<span class="w">      </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
-<span class="w">        </span><span class="no">pytest --cov=src --cov-report=xml</span>
-<span class="w">    </span>
-<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Upload coverage</span>
-<span class="w">      </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">codecov/codecov-action@v3</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/checkout@v4</span>
+
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Set up Python</span>
+<span class="w">                </span><span class="l l-Scalar l-Scalar-Plain">uses</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/setup-python@v5</span>
+<span class="w">                </span><span class="l l-Scalar l-Scalar-Plain">with</span><span class="p p-Indicator">:</span>
+<span class="w">                    </span><span class="nt">python-version</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;3.13&#39;</span>
+
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Install dependencies</span>
+<span class="w">                </span><span class="l l-Scalar l-Scalar-Plain">run</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">                    </span><span class="no">python -m pip install --upgrade pip</span>
+<span class="w">                    </span><span class="no">pip install -r requirements.txt</span>
+<span class="w">                    </span><span class="no">pip install pytest pytest-qt pytest-cov pytest-xdist</span>
+
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Run smoke tests</span>
+<span class="w">                </span><span class="l l-Scalar l-Scalar-Plain">run</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">                    </span><span class="no">python -m pytest -m smoke -q --maxfail=1 --junitxml=test-results.xml</span>
 </pre></div>
 </div>
 </section>
@@ -1007,12 +1077,12 @@ pre-commit<span class="w"> </span>install
 </div>
 <p><strong>Import errors:</strong></p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Solution: Install package in development mode</span>
-pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+.venv<span class="se">\S</span>cripts<span class="se">\p</span>ython<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
 </pre></div>
 </div>
 <p><strong>Coverage not tracking all files:</strong></p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Solution: Specify source in pytest command</span>
-pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>term-missing
+.venv<span class="se">\S</span>cripts<span class="se">\p</span>ython<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> </span>--cov-report<span class="o">=</span>term-missing
 </pre></div>
 </div>
 </section>
@@ -1037,7 +1107,7 @@ pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> <
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Provide in-memory database.&quot;&quot;&quot;</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.db_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatabaseService</span>
     <span class="n">service</span> <span class="o">=</span> <span class="n">DatabaseService</span><span class="p">(</span><span class="s2">&quot;:memory:&quot;</span><span class="p">)</span>
-    <span class="n">service</span><span class="o">.</span><span class="n">initialize_schema</span><span class="p">()</span>
+    <span class="n">service</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
     <span class="k">yield</span> <span class="n">service</span>
     <span class="n">service</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
@@ -1172,6 +1242,7 @@ pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> <
 <li><a class="reference internal" href="#testing-overview">Testing Overview</a><ul>
 <li><a class="reference internal" href="#testing-framework">Testing Framework</a></li>
 <li><a class="reference internal" href="#test-philosophy">Test Philosophy</a></li>
+<li><a class="reference internal" href="#current-findings-and-recent-changes">Current Findings And Recent Changes</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#test-structure">Test Structure</a><ul>
