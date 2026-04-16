@@ -1,4 +1,3 @@
-import pytest
 from PySide6.QtWidgets import QGraphicsView
 
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView

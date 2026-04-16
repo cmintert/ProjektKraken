@@ -12,9 +12,9 @@ signal → slot) is done by :class:`~src.app.connection_manager.ConnectionManage
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from PySide6.QtCore import Slot
-from typing import Any
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,

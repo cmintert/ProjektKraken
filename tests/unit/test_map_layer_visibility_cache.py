@@ -5,11 +5,9 @@ a hidden parent's children do not trigger redundant ancestor re-walks.
 """
 from unittest.mock import patch
 
-import pytest
-
-from src.gui.widgets.map.map_layer_model import MapLayerModel
-from src.core.map import MapLayerNode
 from src.app.constants import MAP_LAYER_TYPE_GROUP, MAP_LAYER_TYPE_MARKER
+from src.core.map import MapLayerNode
+from src.gui.widgets.map.map_layer_model import MapLayerModel
 
 
 def _group(name: str, visible: bool = True) -> MapLayerNode:

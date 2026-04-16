@@ -7,12 +7,10 @@ debounces -> Worker queries SearchService -> results merge into completer.
 from unittest.mock import MagicMock, patch
 
 import pytest
-from PySide6.QtCore import QStringListModel, QTimer
-from PySide6.QtWidgets import QApplication, QCompleter
+from PySide6.QtWidgets import QApplication
 
 from src.gui.widgets.wiki_text_edit import WikiTextEdit, WikiTextEditView
 from src.services.worker import DatabaseWorker
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

@@ -177,7 +177,7 @@ class RasterLegendWidget(QWidget):
             if item.widget():
                 item.widget().deleteLater()
 
-    def _build_discrete_legend(
+    def _build_discrete_legend(  # noqa: C901
         self,
         color_map: Dict[str, Any],
         vem_raw: Any,

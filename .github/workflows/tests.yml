@@ -29,6 +29,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-qt pytest-cov pytest-xdist
+          sudo apt-get install -y libegl1 libgl1 libdbus-1-3 libxcb-icccm4 \
+            libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
+            libxcb-xinerama0 libxkbcommon-x11-0
 
       - name: Run smoke suite
         run: |
@@ -64,6 +67,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest pytest-qt pytest-cov pytest-xdist
+          sudo apt-get install -y libegl1 libgl1 libdbus-1-3 libxcb-icccm4 \
+            libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
+            libxcb-xinerama0 libxkbcommon-x11-0
 
       - name: Run fast suite in parallel
         run: |

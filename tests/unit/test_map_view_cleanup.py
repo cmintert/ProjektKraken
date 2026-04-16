@@ -3,7 +3,6 @@
 Verifies that cleanup() stops the _layout_debounce_timer so it can't fire
 on a partially-destroyed view, and that repeated calls are safe.
 """
-import pytest
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import QGraphicsPixmapItem

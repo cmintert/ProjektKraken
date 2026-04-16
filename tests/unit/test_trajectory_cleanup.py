@@ -3,9 +3,8 @@
 Verifies that cleanup() stops all running QPropertyAnimations so they
 cannot fire callbacks on a destroyed or partially-torn-down renderer.
 """
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-import pytest
 from PySide6.QtCore import QPropertyAnimation, QRectF, Qt
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import QGraphicsPixmapItem

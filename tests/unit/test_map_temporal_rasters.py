@@ -9,11 +9,8 @@ Covers:
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from src.app.map_handler import MapHandler
 from src.gui.widgets.map.map_data_buffer import ColorMap, MapDataBuffer
-
 
 # ── helpers ───────────────────────────────────────────────────────────
 

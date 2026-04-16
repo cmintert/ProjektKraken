@@ -3,7 +3,6 @@
 All functions operate on PIL Images and/or numpy arrays; no Qt required.
 """
 import numpy as np
-import pytest
 from PIL import Image as PilImage
 
 from src.services.raster_import_helpers import (
@@ -12,7 +11,6 @@ from src.services.raster_import_helpers import (
     normalize_to_uint16,
     quantize_discrete_rgb,
 )
-
 
 # ---------------------------------------------------------------------------
 # detect_greyscale

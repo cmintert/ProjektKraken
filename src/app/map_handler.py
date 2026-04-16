@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Set
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt, QTimer, Signal, Slot
 from PySide6.QtWidgets import QMessageBox
 
+from src.app.constants import TEMPORAL_SNAPSHOT_CACHE_MAX
 from src.commands.map_commands import (
     CreateMapCommand,
     CreateMarkerCommand,
@@ -32,7 +33,6 @@ from src.commands.map_commands import (
     UpdateMarkerCommand,
     UpdateMarkerIconCommand,
 )
-from src.app.constants import TEMPORAL_SNAPSHOT_CACHE_MAX
 from src.core.logging_config import get_logger
 from src.core.map import MapLayerNode
 
@@ -957,7 +957,7 @@ class MapHandler(QObject):
         self.command_requested.emit(cmd)
         logger.info("Requested raster layer deletion: %s", node_id)
 
-    def load_raster_layers(self, map_id: str) -> None:
+    def load_raster_layers(self, map_id: str) -> None:  # noqa: C901
         """Load and display raster layers for the given map.
 
         Reads ``maps.attributes["raster_layers"]`` metadata and creates
@@ -1267,7 +1267,8 @@ class MapHandler(QObject):
         # Without this, the palette block in _populate_discrete_rows is skipped,
         # the table appears empty, and saving produces an empty palette → black layer.
         if mode == "discrete" and item.color_map.type != "palette":
-            from src.gui.widgets.map.map_data_buffer import ColorEntry, ColorMap as _CM
+            from src.gui.widgets.map.map_data_buffer import ColorEntry
+            from src.gui.widgets.map.map_data_buffer import ColorMap as _CM
             from src.gui.widgets.map.raster_mapping import normalize_value_entity_map
 
             vem_norm = normalize_value_entity_map(existing_vem)
@@ -1366,7 +1367,7 @@ class MapHandler(QObject):
                 logger.debug("on_raster_palette_edit: SetRasterMappingCommand emitted")
 
     @Slot()
-    def on_raster_query_requested(self) -> None:
+    def on_raster_query_requested(self) -> None:  # noqa: C901
         """Open the cross-layer spatial query dialog and display the result overlay."""
         if not self._current_map_id:
             return
