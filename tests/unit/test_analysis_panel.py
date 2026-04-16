@@ -70,28 +70,28 @@ class TestAnalysisPanelCreation:
     """Tests for AnalysisPanel widget instantiation."""
 
     def test_panel_creates_without_error(self, qapp):
-        from src.gui.widgets.analysis_panel import AnalysisPanel
+        from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
 
         panel = AnalysisPanel()
         assert panel is not None
         panel.close()
 
     def test_panel_has_issues_table(self, qapp):
-        from src.gui.widgets.analysis_panel import AnalysisPanel
+        from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
 
         panel = AnalysisPanel()
         assert panel.issues_table is not None
         panel.close()
 
     def test_panel_has_completeness_table(self, qapp):
-        from src.gui.widgets.analysis_panel import AnalysisPanel
+        from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
 
         panel = AnalysisPanel()
         assert panel.completeness_table is not None
         panel.close()
 
     def test_panel_has_header_label(self, qapp):
-        from src.gui.widgets.analysis_panel import AnalysisPanel
+        from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
 
         panel = AnalysisPanel()
         assert panel.header_label is not None
@@ -103,7 +103,7 @@ class TestDisplayReport:
     """Tests for AnalysisPanel.display_report population."""
 
     def test_issues_table_row_count_matches_issues(self, qapp):
-        from src.gui.widgets.analysis_panel import AnalysisPanel
+        from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
 
         issues = [
             _make_issue(SeverityLevel.CRITICAL, IssueType.BROKEN_REFERENCE, "A"),
@@ -117,7 +117,7 @@ class TestDisplayReport:
         panel.close()
 
     def test_completeness_table_row_count_matches_scores(self, qapp):
-        from src.gui.widgets.analysis_panel import AnalysisPanel
+        from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
 
         scores = [_make_score("Entity A"), _make_score("Entity B")]
         panel = AnalysisPanel()
@@ -127,7 +127,7 @@ class TestDisplayReport:
         panel.close()
 
     def test_header_label_contains_entity_count(self, qapp):
-        from src.gui.widgets.analysis_panel import AnalysisPanel
+        from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
 
         panel = AnalysisPanel()
         panel.display_report(_make_report(total_entities=7))
@@ -136,7 +136,7 @@ class TestDisplayReport:
         panel.close()
 
     def test_header_label_contains_event_count(self, qapp):
-        from src.gui.widgets.analysis_panel import AnalysisPanel
+        from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
 
         panel = AnalysisPanel()
         panel.display_report(_make_report(total_events=5))
@@ -145,7 +145,7 @@ class TestDisplayReport:
         panel.close()
 
     def test_header_label_contains_completeness_score(self, qapp):
-        from src.gui.widgets.analysis_panel import AnalysisPanel
+        from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
 
         panel = AnalysisPanel()
         panel.display_report(_make_report(avg_completeness=73.0))
@@ -154,21 +154,21 @@ class TestDisplayReport:
         panel.close()
 
     def test_issues_table_has_five_columns(self, qapp):
-        from src.gui.widgets.analysis_panel import AnalysisPanel
+        from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
 
         panel = AnalysisPanel()
         assert panel.issues_table.columnCount() == 5
         panel.close()
 
     def test_completeness_table_has_four_columns(self, qapp):
-        from src.gui.widgets.analysis_panel import AnalysisPanel
+        from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
 
         panel = AnalysisPanel()
         assert panel.completeness_table.columnCount() == 4
         panel.close()
 
     def test_empty_report_clears_tables(self, qapp):
-        from src.gui.widgets.analysis_panel import AnalysisPanel
+        from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
 
         panel = AnalysisPanel()
         panel.display_report(_make_report(issues=[_make_issue(SeverityLevel.INFO, IssueType.TAG_UNUSED)]))
@@ -178,7 +178,7 @@ class TestDisplayReport:
         panel.close()
 
     def test_completeness_table_sorted_ascending_by_score(self, qapp):
-        from src.gui.widgets.analysis_panel import AnalysisPanel
+        from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
 
         scores = [_make_score("High", score=90.0), _make_score("Low", score=10.0)]
         panel = AnalysisPanel()
@@ -189,7 +189,7 @@ class TestDisplayReport:
         panel.close()
 
     def test_issue_severity_shown_in_first_column(self, qapp):
-        from src.gui.widgets.analysis_panel import AnalysisPanel
+        from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
 
         issues = [_make_issue(SeverityLevel.CRITICAL, IssueType.BROKEN_REFERENCE)]
         panel = AnalysisPanel()
@@ -202,7 +202,7 @@ class TestDisplayReport:
     def test_issue_message_cell_is_selectable_label(self, qapp):
         from PySide6.QtWidgets import QTextEdit
 
-        from src.gui.widgets.analysis_panel import AnalysisPanel
+        from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
 
         issues = [_make_issue(SeverityLevel.WARNING, IssueType.ORPHANED_ENTITY)]
         panel = AnalysisPanel()
@@ -216,7 +216,7 @@ class TestDisplayReport:
     def test_issue_suggestion_cell_is_selectable_label(self, qapp):
         from PySide6.QtWidgets import QTextEdit
 
-        from src.gui.widgets.analysis_panel import AnalysisPanel
+        from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
 
         issues = [_make_issue(SeverityLevel.INFO, IssueType.TAG_UNUSED)]
         panel = AnalysisPanel()

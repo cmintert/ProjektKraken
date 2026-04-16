@@ -566,3 +566,113 @@ class TestRelationProposalDirectionSwap:
         prompt = analyzer._build_relation_inference_prompt(src, tgt)
         assert "SOURCE:" in prompt
         assert "TARGET:" in prompt
+
+
+# ---------------------------------------------------------------------------
+# TestOnPartialCallback
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+class TestOnPartialCallback:
+    """Tests for the on_partial streaming callback in IntelligenceAnalyzer.analyze()."""
+
+    def test_callback_fires_for_plot_holes(self, db_service):
+        """on_partial fires with result_type='holes' when plot_holes sub-analysis runs."""
+        db_service.insert_entity(_make_entity("e1", "Alice"))
+        provider = _FakeProvider(response=_PLOT_HOLE_RESPONSE)
+        analyzer = IntelligenceAnalyzer(db_service, provider=provider)
+
+        received: list[tuple[str, Any]] = []
+        analyzer.analyze(analysis_type="plot_holes", on_partial=lambda t, d: received.append((t, d)))
+
+        assert len(received) == 1
+        assert received[0][0] == "holes"
+
+    def test_callback_fires_for_relations(self, db_service):
+        """on_partial fires with result_type='relations' when relation sub-analysis runs."""
+        db_service.insert_entity(_make_entity("e1", "Alice", tags=["warrior"]))
+        db_service.insert_entity(_make_entity("e2", "Bob", tags=["warrior"]))
+        provider = _FakeProvider(response=_RELATION_YES_RESPONSE)
+        analyzer = IntelligenceAnalyzer(db_service, provider=provider)
+
+        received: list[tuple[str, Any]] = []
+        analyzer.analyze(analysis_type="relations", on_partial=lambda t, d: received.append((t, d)))
+
+        assert len(received) == 1
+        assert received[0][0] == "relations"
+
+    def test_callback_fires_for_lore(self, db_service):
+        """on_partial fires with result_type='lore' when lore sub-analysis runs."""
+        db_service.insert_event(_make_event("ev1", "First", 0.0))
+        db_service.insert_event(_make_event("ev2", "Last", 500.0))
+        provider = _FakeProvider(response=_LORE_RESPONSE)
+        analyzer = IntelligenceAnalyzer(db_service, provider=provider)
+
+        received: list[tuple[str, Any]] = []
+        analyzer.analyze(analysis_type="lore", on_partial=lambda t, d: received.append((t, d)))
+
+        assert len(received) == 1
+        assert received[0][0] == "lore"
+
+    def test_callback_fires_three_times_for_all(self, db_service):
+        """on_partial fires once per sub-analysis when analysis_type='all'."""
+        db_service.insert_entity(_make_entity("e1", "Alice", tags=["warrior"]))
+        db_service.insert_entity(_make_entity("e2", "Bob", tags=["warrior"]))
+        db_service.insert_event(_make_event("ev1", "First", 0.0))
+        db_service.insert_event(_make_event("ev2", "Last", 500.0))
+        provider = _FakeProvider(response=_PLOT_HOLE_RESPONSE)
+        analyzer = IntelligenceAnalyzer(db_service, provider=provider)
+
+        received_types: list[str] = []
+        analyzer.analyze(on_partial=lambda t, _d: received_types.append(t))
+
+        assert sorted(received_types) == ["holes", "lore", "relations"]
+
+    def test_callback_not_called_when_none(self, db_service):
+        """analyze() does not raise when on_partial is omitted."""
+        provider = _FakeProvider()
+        analyzer = IntelligenceAnalyzer(db_service, provider=provider)
+        # Should complete without error
+        report = analyzer.analyze()
+        assert report is not None
+
+    def test_callback_fires_with_empty_list_on_provider_failure(self, db_service):
+        """on_partial fires with an empty result when the provider raises per-entity.
+
+        Provider failures are caught inside the sub-analyzer's per-entity loop so
+        the sub-analyzer itself returns successfully (with empty lists), and the
+        callback still fires — the caller can render an empty section immediately.
+        """
+        db_service.insert_entity(_make_entity("e1", "Alice"))
+        provider = _FakeProvider(raise_on_call=True)
+        analyzer = IntelligenceAnalyzer(db_service, provider=provider)
+
+        received: list[tuple[str, Any]] = []
+        analyzer.analyze(
+            analysis_type="plot_holes",
+            on_partial=lambda t, d: received.append((t, d)),
+        )
+
+        # Sub-analyzer returned ([], [...audit_error...]) — callback fires
+        assert len(received) == 1
+        assert received[0][0] == "holes"
+        holes, _audit = received[0][1]
+        assert holes == []
+
+    def test_callback_receives_result_tuple(self, db_service):
+        """on_partial data argument is the raw sub-analyzer result tuple."""
+        db_service.insert_entity(_make_entity("e1", "Alice"))
+        provider = _FakeProvider(response=_PLOT_HOLE_RESPONSE)
+        analyzer = IntelligenceAnalyzer(db_service, provider=provider)
+
+        received_data: list[Any] = []
+        analyzer.analyze(
+            analysis_type="plot_holes",
+            on_partial=lambda _t, d: received_data.append(d),
+        )
+
+        assert len(received_data) == 1
+        holes, audit = received_data[0]
+        assert isinstance(holes, list)
+        assert isinstance(audit, list)

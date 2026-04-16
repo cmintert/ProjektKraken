@@ -1509,7 +1509,7 @@ def run_intelligence_analysis(self, analysis_type: str = "all") -> None:
 ```python
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QTabWidget, QLabel
 from PySide6.QtCore import pyqtSignal
-from src.gui.widgets.analysis_panel import AnalysisPanel
+from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
 
 class MainAnalysisPanel(QWidget):
     """Main panel for all analysis features."""

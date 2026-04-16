@@ -896,6 +896,13 @@ class ConnectionManager:
                     "AnalysisPanel",
                     Qt.ConnectionType.QueuedConnection,
                 ),
+                (
+                    worker,
+                    "intelligence_partial_result",
+                    panel.on_intelligence_partial,
+                    "AnalysisPanel",
+                    Qt.ConnectionType.QueuedConnection,
+                ),
                 # Buttons → coordinator (main thread).
                 # Each lambda fires on_analysis_started first so the panel
                 # immediately shows a busy state before the async worker call.
@@ -922,6 +929,7 @@ class ConnectionManager:
                     "clicked",
                     lambda _checked: (
                         panel.on_analysis_started("Running AI analysis\u2026"),
+                        panel.on_intelligence_analysis_started(),
                         coord.run_intelligence_analysis(),
                     ),
                     "AnalysisPanel",

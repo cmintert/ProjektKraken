@@ -14,6 +14,7 @@ from __future__ import annotations
 import logging
 
 from PySide6.QtCore import Slot
+from typing import Any
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -29,9 +30,9 @@ from src.core.analysis import (
     WorldValidationReport,
 )
 from src.gui.utils.style_helper import StyleHelper
-from src.gui.widgets.analysis_panel import AnalysisPanel
-from src.gui.widgets.intelligence_panel import IntelligencePanel
-from src.gui.widgets.temporal_panel import TemporalPanel
+from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
+from src.gui.widgets.analysis.intelligence_panel import IntelligencePanel
+from src.gui.widgets.analysis.temporal_panel import TemporalPanel
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +106,17 @@ class MainAnalysisPanel(QWidget):
     # Loading-state helpers (called by ConnectionManager button wrappers)
     # ------------------------------------------------------------------
 
+    def on_intelligence_analysis_started(self) -> None:
+        """Prepare the Intelligence tab for streaming and switch to it.
+
+        Called by the :class:`~src.app.connection_manager.ConnectionManager`
+        button lambda immediately before the coordinator triggers the worker,
+        so the loading placeholders appear without waiting for the first
+        partial result.
+        """
+        self.tab_widget.setCurrentIndex(self._TAB_INTELLIGENCE)
+        self.intelligence_panel.start_streaming()
+
     def on_analysis_started(self, message: str) -> None:
         """Disable buttons and update the status label when analysis begins.
 
@@ -162,16 +174,31 @@ ConnectionManager` button lambdas before invoking the coordinator, so the
         self._set_buttons_enabled(True)
         logger.debug("MainAnalysisPanel: temporal report received")
 
-    @Slot(object)
-    def on_intelligence_complete(self, report: IntelligenceReport) -> None:
-        """Display an intelligence report and switch to the Intelligence tab.
+    @Slot(str, object)
+    def on_intelligence_partial(self, result_type: str, data: Any) -> None:
+        """Forward a completed sub-analysis to the Intelligence panel.
 
-        Re-enables the trigger buttons after the report is displayed.
+        Called via :attr:`~src.services.worker.DatabaseWorker.\
+intelligence_partial_result` (``QueuedConnection``) as each of the three
+        concurrent sub-analyses finishes, before the full report is available.
 
         Args:
-            report: The :class:`~src.core.analysis.IntelligenceReport` to display.
+            result_type: One of ``"holes"``, ``"relations"``, or ``"lore"``.
+            data: The raw result tuple returned by the sub-analyzer.
         """
-        self.intelligence_panel.display_report(report)
+        self.intelligence_panel.display_partial_result(result_type, data)
+
+    @Slot(object)
+    def on_intelligence_complete(self, report: IntelligenceReport) -> None:
+        """Finalise the Intelligence panel once all sub-analyses are done.
+
+        Updates the header label with final counts, clears any remaining
+        loading placeholders, and re-enables the trigger buttons.
+
+        Args:
+            report: The :class:`~src.core.analysis.IntelligenceReport` to finalise.
+        """
+        self.intelligence_panel.finalize_report(report)
         self.tab_widget.setCurrentIndex(self._TAB_INTELLIGENCE)
         self.status_label.setText("AI analysis complete.")
         self._set_buttons_enabled(True)

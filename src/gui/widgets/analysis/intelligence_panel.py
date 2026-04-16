@@ -13,7 +13,9 @@ tracks document content automatically.  Lines wrap at ≤75 characters.
 from __future__ import annotations
 
 import logging
+from typing import Any
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
     QLabel,
@@ -22,10 +24,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.core.analysis import IntelligenceReport
+from src.core.analysis import IntelligenceReport, LoreGapFiller, PlotHole, RelationProposal
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
-from src.gui.widgets._analysis_utils import (
+from src.gui.widgets.analysis._analysis_utils import (
     ANALYSIS_TABLE_NO_HIGHLIGHT,
     SEVERITY_COLORS,
     configure_stretch_columns,
@@ -111,10 +113,16 @@ class IntelligencePanel(QWidget):
         self.proposals_table.setStyleSheet(table_style)
         self.lore_table.setStyleSheet(table_style)
 
+    # ------------------------------------------------------------------
+    # One-shot render (non-streaming callers)
+    # ------------------------------------------------------------------
+
     def display_report(self, report: IntelligenceReport) -> None:
         """Populate the panel with data from an intelligence analysis report.
 
-        Replaces any previously displayed report.
+        Replaces any previously displayed report.  For streaming callers use
+        :meth:`start_streaming`, :meth:`display_partial_result`, and
+        :meth:`finalize_report` instead.
 
         Args:
             report: The :class:`~src.core.analysis.IntelligenceReport` to display.
@@ -129,9 +137,94 @@ class IntelligencePanel(QWidget):
                 logger.debug("IntelligencePanel: could not build CalendarConverter")
 
         self._update_header(report)
-        self._populate_plot_holes_table(report)
-        self._populate_proposals_table(report)
-        self._populate_lore_table(report)
+        self._populate_plot_holes_from_list(report.plot_holes)
+        self._populate_proposals_from_list(report.relation_proposals)
+        self._populate_lore_from_list(report.lore_suggestions)
+
+    # ------------------------------------------------------------------
+    # Streaming API
+    # ------------------------------------------------------------------
+
+    def start_streaming(self) -> None:
+        """Clear all tables and show an ``Analyzing…`` placeholder in each.
+
+        Call this immediately when the user triggers an analysis so the UI
+        reflects a busy state before any partial results arrive.
+        """
+        self._converter = None
+        self.header_label.setText("AI Analysis — Running…")
+        for table, col_count in (
+            (self.plot_holes_table, len(_HOLE_HEADERS)),
+            (self.proposals_table, len(_PROPOSAL_HEADERS)),
+            (self.lore_table, len(_LORE_HEADERS)),
+        ):
+            table.setRowCount(1)
+            placeholder = QTableWidgetItem("Analyzing…")
+            placeholder.setFlags(Qt.ItemFlag.ItemIsEnabled)
+            table.setItem(0, 0, placeholder)
+            for col in range(1, col_count):
+                table.setItem(0, col, QTableWidgetItem(""))
+
+    def display_partial_result(self, result_type: str, data: Any) -> None:
+        """Populate one table section as its sub-analysis completes.
+
+        Called via ``QueuedConnection`` from the main thread when
+        :attr:`~src.services.worker.DatabaseWorker.intelligence_partial_result`
+        fires, so it is safe to update widgets here.
+
+        Args:
+            result_type: ``"holes"``, ``"relations"``, or ``"lore"``.
+            data: The raw result tuple returned by the matching sub-analyzer.
+        """
+        if result_type == "holes":
+            holes, _audit = data
+            self._populate_plot_holes_from_list(holes)
+        elif result_type == "relations":
+            proposals, _audit = data
+            self._populate_proposals_from_list(proposals)
+        elif result_type == "lore":
+            suggestions, _audit, calendar_config = data
+            if calendar_config is not None and self._converter is None:
+                try:
+                    from src.core.calendar import CalendarConverter
+
+                    self._converter = CalendarConverter(calendar_config)
+                except Exception:
+                    logger.debug(
+                        "IntelligencePanel: could not build CalendarConverter"
+                    )
+            self._populate_lore_from_list(suggestions)
+
+    def finalize_report(self, report: IntelligenceReport) -> None:
+        """Update the header and clear any leftover loading placeholders.
+
+        Called once :attr:`~src.services.worker.DatabaseWorker.\
+intelligence_analysis_complete` fires with the full report.  Sections
+        populated via :meth:`display_partial_result` are re-rendered from the
+        authoritative report data; sections that were skipped (because the
+        analysis type was narrower than ``"all"``, or because a sub-analysis
+        failed) are replaced with empty tables instead of stale placeholders.
+
+        Args:
+            report: The final :class:`~src.core.analysis.IntelligenceReport`.
+        """
+        # Build converter from final report if not already set by a lore partial.
+        if self._converter is None and report.calendar_config is not None:
+            try:
+                from src.core.calendar import CalendarConverter
+
+                self._converter = CalendarConverter(report.calendar_config)
+            except Exception:
+                logger.debug("IntelligencePanel: could not build CalendarConverter")
+
+        self._update_header(report)
+        self._populate_plot_holes_from_list(report.plot_holes)
+        self._populate_proposals_from_list(report.relation_proposals)
+        self._populate_lore_from_list(report.lore_suggestions)
+
+    # ------------------------------------------------------------------
+    # Header
+    # ------------------------------------------------------------------
 
     def _update_header(self, report: IntelligenceReport) -> None:
         """Update the summary header label.
@@ -146,18 +239,22 @@ class IntelligencePanel(QWidget):
             f"Lore Fills: {len(report.lore_suggestions)}"
         )
 
-    def _populate_plot_holes_table(self, report: IntelligenceReport) -> None:
-        """Fill the plot-holes table from the report's plot_holes list.
+    # ------------------------------------------------------------------
+    # Table population (accept lists so streaming and one-shot share code)
+    # ------------------------------------------------------------------
+
+    def _populate_plot_holes_from_list(self, holes: list[PlotHole]) -> None:
+        """Fill the plot-holes table from a list of :class:`~src.core.analysis.PlotHole`.
 
         Severity cells are color-coded: CRITICAL=red, WARNING=orange, INFO=blue.
         Description and resolution cells use selectable QLabel widgets with
         text wrapped at 75 characters.
 
         Args:
-            report: The report whose plot holes are displayed.
+            holes: Plot holes to display.
         """
-        self.plot_holes_table.setRowCount(len(report.plot_holes))
-        for row, hole in enumerate(report.plot_holes):
+        self.plot_holes_table.setRowCount(len(holes))
+        for row, hole in enumerate(holes):
             sev_item = QTableWidgetItem(hole.severity.value)
             color = SEVERITY_COLORS.get(hole.severity)
             if color:
@@ -175,17 +272,17 @@ class IntelligencePanel(QWidget):
             )
         self.plot_holes_table.resizeRowsToContents()
 
-    def _populate_proposals_table(self, report: IntelligenceReport) -> None:
-        """Fill the proposals table from the report's relation_proposals list.
+    def _populate_proposals_from_list(self, proposals: list[RelationProposal]) -> None:
+        """Fill the proposals table from a list of :class:`~src.core.analysis.RelationProposal`.
 
         The reasoning cell uses a selectable QLabel widget with text wrapped
         at 75 characters.
 
         Args:
-            report: The report whose relation proposals are displayed.
+            proposals: Relation proposals to display.
         """
-        self.proposals_table.setRowCount(len(report.relation_proposals))
-        for row, proposal in enumerate(report.relation_proposals):
+        self.proposals_table.setRowCount(len(proposals))
+        for row, proposal in enumerate(proposals):
             self.proposals_table.setItem(
                 row, 0, QTableWidgetItem(proposal.source_name)
             )
@@ -203,18 +300,18 @@ class IntelligencePanel(QWidget):
             )
         self.proposals_table.resizeRowsToContents()
 
-    def _populate_lore_table(self, report: IntelligenceReport) -> None:
-        """Fill the lore-suggestions table from the report's lore_suggestions list.
+    def _populate_lore_from_list(self, suggestions: list[LoreGapFiller]) -> None:
+        """Fill the lore-suggestions table from a list of :class:`~src.core.analysis.LoreGapFiller`.
 
         Suggestions for a single gap are rendered as structured HTML mini-cards
         in a QTextBrowser cell, with event names, dates, and descriptions
         (wrapped at 75 chars) separated by dividers.
 
         Args:
-            report: The report whose lore suggestions are displayed.
+            suggestions: Lore gap fillers to display.
         """
-        self.lore_table.setRowCount(len(report.lore_suggestions))
-        for row, filler in enumerate(report.lore_suggestions):
+        self.lore_table.setRowCount(len(suggestions))
+        for row, filler in enumerate(suggestions):
             self.lore_table.setItem(
                 row,
                 0,

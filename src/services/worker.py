@@ -8,7 +8,7 @@ import logging
 import sqlite3
 import traceback
 from pathlib import Path
-from typing import List, Optional, Set, Tuple
+from typing import Any, List, Optional, Set, Tuple
 
 from PySide6.QtCore import QObject, Signal, Slot
 
@@ -86,6 +86,7 @@ class DatabaseWorker(QObject):
     validation_complete = Signal(object)  # Emits WorldValidationReport
     temporal_analysis_complete = Signal(object)  # Emits TemporalAnalysisReport
     intelligence_analysis_complete = Signal(object)  # Emits IntelligenceReport
+    intelligence_partial_result = Signal(str, object)  # (result_type, raw_result)
 
     def __init__(self, db_path: str) -> None:
         """Initializes the worker.
@@ -1410,7 +1411,13 @@ class DatabaseWorker(QObject):
     def run_intelligence_analysis(self, analysis_type: str = "all") -> None:
         """Run intelligence analysis in the worker thread and emit the report.
 
-        On success emits :attr:`intelligence_analysis_complete` with the
+        Calls :class:`~src.services.intelligence_analyzer.IntelligenceAnalyzer`
+        directly (bypassing the command layer) so that
+        :attr:`intelligence_partial_result` can be emitted as each sub-analysis
+        completes, before the final :attr:`intelligence_analysis_complete` fires.
+
+        On success emits :attr:`intelligence_partial_result` once per completed
+        sub-analysis, then :attr:`intelligence_analysis_complete` with the full
         :class:`~src.core.analysis.IntelligenceReport`.
         On failure emits :attr:`error_occurred` with an error string.
 
@@ -1418,12 +1425,21 @@ class DatabaseWorker(QObject):
             analysis_type: Scope of analysis — ``"all"``, ``"plot_holes"``,
                 ``"relations"``, or ``"lore"``.  Defaults to ``"all"``.
         """
-        from src.commands.analysis_commands import RunIntelligenceAnalysisCommand
+        from src.services.intelligence_analyzer import IntelligenceAnalyzer
 
-        self._run_analysis_command(
-            RunIntelligenceAnalysisCommand(analysis_type),
-            self.intelligence_analysis_complete,
-            f"Running AI analysis ({analysis_type})…",
-            "Intelligence analysis complete.",
-            "Intelligence analysis",
-        )
+        self.operation_started.emit(f"Running AI analysis ({analysis_type})…")
+        try:
+            def _on_partial(result_type: str, data: Any) -> None:
+                self.intelligence_partial_result.emit(result_type, data)
+
+            report = IntelligenceAnalyzer(self.db_service).analyze(
+                analysis_type, on_partial=_on_partial
+            )
+            self.intelligence_analysis_complete.emit(report)
+        except Exception as exc:
+            logger.error(
+                "Intelligence analysis error: %s\n%s", exc, traceback.format_exc()
+            )
+            self.error_occurred.emit(f"Intelligence analysis error: {exc!s}")
+        finally:
+            self.operation_finished.emit("Intelligence analysis complete.")

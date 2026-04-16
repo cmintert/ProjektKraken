@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
 from src.core.analysis import TemporalAnalysisReport
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
-from src.gui.widgets._analysis_utils import (
+from src.gui.widgets.analysis._analysis_utils import (
     ANALYSIS_TABLE_NO_HIGHLIGHT,
     configure_stretch_columns,
     fmt_lore_date,

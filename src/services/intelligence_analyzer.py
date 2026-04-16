@@ -7,6 +7,13 @@ and generates lore suggestions to fill timeline gaps.
 All LLM calls are isolated per sub-analyzer so a single provider failure
 does not prevent the others from running.  Each interaction is recorded in
 the ``audit_log`` of the returned :class:`~src.core.analysis.IntelligenceReport`.
+
+The three sub-analyses (plot_holes, relations, lore) are independent and run
+concurrently via :class:`~concurrent.futures.ThreadPoolExecutor`.  All database
+reads are pre-fetched on the calling thread so the ``DatabaseService`` SQLite
+connection is never accessed from a worker thread.  Each task receives its own
+:class:`~src.services.llm_provider.Provider` instance so that ``CircuitBreaker``
+state is not shared across threads.
 """
 
 from __future__ import annotations
@@ -14,7 +21,9 @@ from __future__ import annotations
 import logging
 import time
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from functools import partial
+from typing import TYPE_CHECKING, Any, Callable
 
 from src.core.analysis import (
     IntelligenceReport,
@@ -112,43 +121,123 @@ class IntelligenceAnalyzer:
     # Public API
     # ------------------------------------------------------------------
 
-    def analyze(self, analysis_type: str = "all") -> IntelligenceReport:
+    def analyze(
+        self,
+        analysis_type: str = "all",
+        on_partial: Callable[[str, Any], None] | None = None,
+    ) -> IntelligenceReport:
         """Run AI analysis and return an :class:`~src.core.analysis.IntelligenceReport`.
+
+        All database reads are performed on the calling thread before any worker
+        threads are spawned.  The three sub-analyses then run concurrently in a
+        :class:`~concurrent.futures.ThreadPoolExecutor`; each receives its own
+        :class:`~src.services.llm_provider.Provider` instance so ``CircuitBreaker``
+        state is not shared across threads.
 
         Args:
             analysis_type: Controls which sub-analyses run.  One of
                 ``"all"`` | ``"plot_holes"`` | ``"relations"`` | ``"lore"``.
                 Unknown values run all three.
+            on_partial: Optional callback invoked on the calling thread as each
+                sub-analysis completes, before the final report is returned.
+                Called with ``(result_type, raw_result)`` where *result_type* is
+                ``"holes"``, ``"relations"``, or ``"lore"`` and *raw_result* is
+                the tuple returned by that sub-analyzer.  Not called for failed
+                sub-analyses.
 
         Returns:
             IntelligenceReport: Populated report.  Sub-sections that were not
             requested are empty lists.
         """
-        provider = self._get_provider()
-        model_name = provider.metadata().get("generation_model", "unknown")
-
-        # Fetch shared data once; pass to sub-analyzers to avoid redundant DB reads.
+        # ------------------------------------------------------------------
+        # Phase 1: pre-fetch all DB data on the calling thread.
+        # ThreadPoolExecutor workers must not touch db_service — the SQLite
+        # connection is not safe to share across threads without check_same_thread=False.
+        # ------------------------------------------------------------------
         entities = self.db_service.get_all_entities()
         relations = self.db_service.get_all_relations()
+        events = self.db_service.get_all_events()
 
+        temporal_report: Any | None = None
+        if analysis_type in ("all", "lore"):
+            temporal_report = TemporalAnalyzer(self.db_service).analyze()
+
+        # ------------------------------------------------------------------
+        # Phase 2: build tasks.  Each task gets its own provider so that
+        # CircuitBreaker mutable state is not shared across threads.
+        # functools.partial binds the provider immediately — no closure-capture bug.
+        # ------------------------------------------------------------------
+        tasks: dict[str, Any] = {}
+
+        if analysis_type in ("all", "plot_holes"):
+            tasks["holes"] = partial(
+                self._detect_plot_holes,
+                self._get_provider(),
+                entities,
+                relations,
+                events,
+            )
+
+        if analysis_type in ("all", "relations"):
+            tasks["relations"] = partial(
+                self._infer_relations,
+                self._get_provider(),
+                entities,
+                relations,
+            )
+
+        if analysis_type in ("all", "lore") and temporal_report is not None:
+            tasks["lore"] = partial(
+                self._generate_lore,
+                self._get_provider(),
+                temporal_report,
+                events,
+            )
+
+        # Derive model name from first provider before threads start.
+        model_name = "unknown"
+        if tasks:
+            # Peek at metadata via a temporary provider (cheap — no API call).
+            model_name = self._get_provider().metadata().get("generation_model", "unknown")
+
+        # ------------------------------------------------------------------
+        # Phase 3: run sub-analyses concurrently.
+        # ------------------------------------------------------------------
+        results: dict[str, Any] = {}
+        if tasks:
+            with ThreadPoolExecutor(max_workers=len(tasks)) as pool:
+                future_to_name = {pool.submit(fn): name for name, fn in tasks.items()}
+                for future in as_completed(future_to_name):
+                    name = future_to_name[future]
+                    try:
+                        results[name] = future.result()
+                        if on_partial is not None:
+                            on_partial(name, results[name])
+                    except Exception as exc:
+                        logger.error("Sub-analysis %r failed: %s", name, exc)
+                        results[name] = None
+
+        # ------------------------------------------------------------------
+        # Phase 4: collect results.
+        # ------------------------------------------------------------------
         plot_holes: list[PlotHole] = []
         relation_proposals: list[RelationProposal] = []
         lore_suggestions: list[LoreGapFiller] = []
         audit_log: list[dict[str, Any]] = []
+        calendar_config: Any | None = None
 
-        if analysis_type in ("all", "plot_holes"):
-            holes, holes_audit = self._detect_plot_holes(provider, entities, relations)
+        if results.get("holes") is not None:
+            holes, holes_audit = results["holes"]
             plot_holes.extend(holes)
             audit_log.extend(holes_audit)
 
-        if analysis_type in ("all", "relations"):
-            proposals, rel_audit = self._infer_relations(provider, entities, relations)
+        if results.get("relations") is not None:
+            proposals, rel_audit = results["relations"]
             relation_proposals.extend(proposals)
             audit_log.extend(rel_audit)
 
-        calendar_config: Any | None = None
-        if analysis_type in ("all", "lore"):
-            suggestions, lore_audit, calendar_config = self._generate_lore(provider)
+        if results.get("lore") is not None:
+            suggestions, lore_audit, calendar_config = results["lore"]
             lore_suggestions.extend(suggestions)
             audit_log.extend(lore_audit)
 
@@ -171,6 +260,7 @@ class IntelligenceAnalyzer:
         provider: Provider,
         entities: list[Any],
         relations: list[dict[str, Any]],
+        events: list[Any],
     ) -> tuple[list[PlotHole], list[dict[str, Any]]]:
         """Detect plot holes in entity narratives via LLM analysis.
 
@@ -178,10 +268,14 @@ class IntelligenceAnalyzer:
         total relation count, builds a context prompt for each, and asks
         the LLM to identify inconsistencies.
 
+        Does not access the database — all data is pre-fetched by the caller
+        so this method is safe to run in a worker thread.
+
         Args:
             provider: The LLM provider to use.
             entities: All entities in the world (pre-fetched by caller).
             relations: All relations in the world (pre-fetched by caller).
+            events: All events in the world (pre-fetched by caller).
 
         Returns:
             tuple: ``(plot_holes, audit_log)`` where *plot_holes* is a list
@@ -206,7 +300,6 @@ class IntelligenceAnalyzer:
             reverse=True,
         )[:_MAX_ENTITIES_FOR_PLOT_HOLES]
 
-        events = self.db_service.get_all_events()
         event_map = {e.id: e for e in events}
         entity_name_map: dict[str, str] = {e.id: e.name for e in entities}
         relations_by_entity: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -321,15 +414,22 @@ class IntelligenceAnalyzer:
         return proposals, audit_log
 
     def _generate_lore(
-        self, provider: Provider
+        self,
+        provider: Provider,
+        temporal_report: Any,
+        events: list[Any],
     ) -> tuple[list[LoreGapFiller], list[dict[str, Any]], Any | None]:
         """Generate bridging lore suggestions for timeline gaps.
 
-        Delegates gap detection to :class:`~src.services.temporal_analyzer.TemporalAnalyzer`
-        and generates up to :data:`_MAX_GAPS_FOR_LORE` suggestions.
+        Uses a pre-computed :class:`~src.services.temporal_analyzer.TemporalAnalysisReport`
+        and pre-fetched events so this method performs no database access and
+        is safe to run in a worker thread.
 
         Args:
             provider: The LLM provider to use.
+            temporal_report: Pre-computed temporal analysis report from the
+                calling thread (contains timeline gaps and calendar config).
+            events: All events in the world (pre-fetched by caller).
 
         Returns:
             tuple: ``(suggestions, audit_log, calendar_config)`` where
@@ -340,7 +440,6 @@ class IntelligenceAnalyzer:
         audit_log: list[dict[str, Any]] = []
         suggestions: list[LoreGapFiller] = []
 
-        temporal_report = TemporalAnalyzer(self.db_service).analyze()
         calendar_config = temporal_report.calendar_config
         gaps = temporal_report.timeline_gaps[:_MAX_GAPS_FOR_LORE]
         if not gaps:
@@ -353,7 +452,6 @@ class IntelligenceAnalyzer:
             except Exception:
                 logger.debug("_generate_lore: failed to build CalendarConverter")
 
-        events = self.db_service.get_all_events()
         # Only include events with numeric lore dates to avoid TypeError when
         # comparing float with str in Python 3.
         sorted_events = sorted(

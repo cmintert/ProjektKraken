@@ -380,7 +380,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.history_panel = HistoryPanelWidget()
 
         # Create Analysis Panel (Tier 1)
-        from src.gui.widgets.main_analysis_panel import MainAnalysisPanel
+        from src.gui.widgets.analysis import MainAnalysisPanel
 
         self.analysis_panel = MainAnalysisPanel()
 
