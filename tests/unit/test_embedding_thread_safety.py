@@ -8,8 +8,6 @@ on the background QThread where the embedding model runs.
 import os
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 
 class TestSentenceTransformersThreadSafety:
     """Verify that thread-safety env vars are set before model loading."""

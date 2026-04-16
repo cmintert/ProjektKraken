@@ -114,7 +114,7 @@ class CreateRasterLayerCommand(BaseCommand):
         self._node_id: str = str(uuid.uuid4())
         self._file_path: str = ""
 
-    def execute(self, db_service: DatabaseService) -> CommandResult:
+    def execute(self, db_service: DatabaseService) -> CommandResult:  # noqa: C901
         """Create the raster file, layer node, and persist metadata.
 
         Args:

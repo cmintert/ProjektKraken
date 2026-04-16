@@ -461,7 +461,6 @@ class TestColorizeLUT:
 
     def test_colorize_palette_pixel_exact_multi_value(self) -> None:
         """Palette with multiple entries produces correct RGBA per pixel."""
-        import numpy as np
 
         buf = MapDataBuffer(8, 8)
         # Paint distinct values into known pixel positions
@@ -502,7 +501,6 @@ class TestColorizeLUT:
 
     def test_colorize_region_matches_full_colorize(self) -> None:
         """Colorize sub-region must be pixel-exact vs full colorize crop."""
-        import numpy as np
 
         buf = MapDataBuffer(16, 16)
         # Fill with a pattern of values

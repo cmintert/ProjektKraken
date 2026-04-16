@@ -5,13 +5,12 @@ add/remove/update changed markers — not clear and rebuild the
 entire scene.  Full rebuild should only happen on map switch.
 """
 
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock
 
 import pytest
 from PySide6.QtWidgets import QApplication
 
 from src.app.map_handler import MapHandler
-from src.core.map import Map
 
 
 @pytest.fixture(scope="session", autouse=True)

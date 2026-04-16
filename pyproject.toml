@@ -48,6 +48,7 @@ exclude = [
     "dist",
     "node_modules",
     "site-packages",
+    "tmp",
     "venv",
 ]
 

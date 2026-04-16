@@ -3,15 +3,13 @@
 Verifies that when summary generation fails, the UI button state is properly reset.
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QApplication
 
 from src.app.coordinators.data_coordinator import DataCoordinator
-from src.core.entities import Entity
-from src.core.events import Event
 from src.gui.widgets.entity_editor import EntityEditorWidget
 from src.gui.widgets.event_editor import EventEditorWidget
 

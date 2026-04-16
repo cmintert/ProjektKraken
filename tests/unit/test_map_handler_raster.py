@@ -14,8 +14,8 @@ nothing persists across restarts.
 """
 
 import tempfile
-from types import SimpleNamespace
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from src.app.map_handler import MapHandler

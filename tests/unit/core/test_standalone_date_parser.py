@@ -24,7 +24,6 @@ from src.core.calendar import (
 from src.core.date_parser import DateParser
 from src.core.parsed_date import DatePrecision, ParsedDate
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Calendar fixtures
 # ─────────────────────────────────────────────────────────────────────────────

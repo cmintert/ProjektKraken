@@ -14,7 +14,7 @@ Covers:
 import json
 import sqlite3
 from typing import List
-from unittest.mock import MagicMock, PropertyMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
@@ -25,11 +25,7 @@ from src.core.events import Event
 from src.services.search_service import (
     EmbeddingProvider,
     SearchService,
-    build_text_for_entity,
-    build_text_for_event,
-    text_sha256,
 )
-
 
 # =============================================================================
 # Shared Fixtures
@@ -225,12 +221,12 @@ class TestBatchEmbedding:
 
     def test_rebuild_index_skips_unchanged_in_batch(self, search_db, mock_provider):
         """Unchanged items should be skipped and not sent to the provider."""
-        ids = _insert_entities(search_db, 5)
+        _insert_entities(search_db, 5)
 
         svc = SearchService(search_db, mock_provider)
         # First rebuild
         svc.rebuild_index(object_types=["entity"])
-        first_call_count = len(mock_provider.embed_calls)
+        len(mock_provider.embed_calls)
 
         # Reset call tracker
         mock_provider.embed_calls.clear()
@@ -437,6 +433,7 @@ class TestAISettingsDialogProgress:
         dialog.save_settings()
 
         from PySide6.QtCore import QSettings
+
         from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         val = settings.value("ai_auto_index_on_save", False, type=bool)

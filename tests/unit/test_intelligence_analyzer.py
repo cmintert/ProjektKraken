@@ -10,7 +10,6 @@ All tests inject a _FakeProvider so no real LLM is called.  Tests cover:
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -24,7 +23,6 @@ from src.core.analysis import (
 from src.core.entities import Entity
 from src.core.events import Event
 from src.services.intelligence_analyzer import IntelligenceAnalyzer
-
 
 # ---------------------------------------------------------------------------
 # Fake Provider

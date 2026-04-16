@@ -5,7 +5,6 @@ all public/private imports work correctly after the refactor to
 src/gui/widgets/analysis/.
 """
 
-import pytest
 
 
 def test_package_import() -> None:
@@ -17,10 +16,10 @@ def test_package_import() -> None:
 
 def test_submodule_imports() -> None:
     """Verify that all analysis submodules can be imported directly."""
+    from src.gui.widgets.analysis._analysis_utils import make_analysis_table
     from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
     from src.gui.widgets.analysis.intelligence_panel import IntelligencePanel
     from src.gui.widgets.analysis.temporal_panel import TemporalPanel
-    from src.gui.widgets.analysis._analysis_utils import make_analysis_table
 
     assert all(
         x is not None

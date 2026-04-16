@@ -217,7 +217,7 @@ class TemporalAnalyzer:
 
         return conflicts
 
-    def _analyze_character_lifespans(
+    def _analyze_character_lifespans(  # noqa: C901
         self,
         entities: list[Entity],
         events: list[Event],

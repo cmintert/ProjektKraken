@@ -7,10 +7,7 @@ import pytest
 from src.commands.base_command import CommandResult
 from src.core.analysis import (
     IntelligenceReport,
-    IssueType,
-    SeverityLevel,
     TemporalAnalysisReport,
-    ValidationIssue,
     WorldValidationReport,
 )
 

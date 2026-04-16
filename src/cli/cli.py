@@ -15,9 +15,22 @@ import argparse
 import logging
 import sys
 
-from src.cli import attachment, backup, calendar, entity, event, graph, index
-from src.cli import info, longform, map as cli_map
-from src.cli import obsidian, relation, timeline, wiki
+from src.cli import (
+    attachment,
+    backup,
+    calendar,
+    entity,
+    event,
+    graph,
+    index,
+    info,
+    longform,
+    obsidian,
+    relation,
+    timeline,
+    wiki,
+)
+from src.cli import map as cli_map
 from src.cli.utils import validate_database_path
 
 # Setup logging

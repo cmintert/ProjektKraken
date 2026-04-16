@@ -24,7 +24,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.core.analysis import IntelligenceReport, LoreGapFiller, PlotHole, RelationProposal
+from src.core.analysis import (
+    IntelligenceReport,
+    LoreGapFiller,
+    PlotHole,
+    RelationProposal,
+)
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.analysis._analysis_utils import (
