@@ -5,45 +5,114 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ProjektKraken Longform</title>
-  <link rel="stylesheet" href="/static/styles.css?v=2" />
+  <script>
+    window.__INITIAL_THEME__ = "{{ initial_theme }}";
+  </script>
+  <link rel="stylesheet" href="/static/styles.css?v=3" />
 </head>
 
 <body>
   <div id="app">
     <header>
-      <h1>ProjektKraken</h1>
-      <!-- available-tags removed, now handled by dropdown -->
-      <div class="filter-container">
-        <div id="tag-input-wrapper" class="tag-input-wrapper">
-          <!-- Selected tag chips will be injected here -->
-          <input type="text" id="tag-input" placeholder="Type to filter tags..." autocomplete="off">
+      <div class="header-row">
+        <h1>ProjektKraken</h1>
+        <div class="header-actions">
+          <select id="theme-switcher" class="theme-switcher" title="Switch theme" aria-label="Switch theme"></select>
+          <button id="search-toggle" class="icon-btn" title="Find text (Ctrl+F)" aria-label="Find">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </button>
+          <span id="status" class="status-indicator">Loading&hellip;</span>
         </div>
-        <!-- Dropdown for suggestions -->
-        <div id="tag-dropdown" class="tag-dropdown hidden"></div>
+      </div>
 
-        <button id="apply-filter" class="btn btn-primary">Apply</button>
+      <div class="filter-bar">
+        <div class="filter-group">
+          <label class="filter-label">Include</label>
+          <div class="tag-combo">
+            <div id="tag-input-wrapper" class="tag-input-wrapper">
+              <input type="text" id="tag-input" placeholder="Add tag&hellip;" autocomplete="off" />
+            </div>
+            <div id="tag-dropdown" class="tag-dropdown hidden"></div>
+          </div>
+          <button id="include-mode" class="mode-btn" data-mode="any" title="Match mode">ANY</button>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Exclude</label>
+          <div class="tag-combo">
+            <div id="exclude-input-wrapper" class="tag-input-wrapper exclude-wrapper">
+              <input type="text" id="exclude-input" placeholder="Exclude tag&hellip;" autocomplete="off" />
+            </div>
+            <div id="exclude-dropdown" class="tag-dropdown hidden"></div>
+          </div>
+          <button id="exclude-mode" class="mode-btn" data-mode="any" title="Match mode">ANY</button>
+        </div>
+
+        <label class="case-label" title="Case sensitive matching">
+          <input type="checkbox" id="case-sensitive" />
+          <span>Aa</span>
+        </label>
+
         <button id="reset-filter" class="btn btn-secondary">Reset</button>
         <span id="filter-status" class="filter-status"></span>
       </div>
-      <div id="status" class="status-indicator">Connecting...</div>
+
+      <div id="search-bar" class="search-bar hidden">
+        <label for="search-input" class="search-label">Find</label>
+        <input type="text" id="search-input" placeholder="Search in document&hellip;" autocomplete="off" />
+        <span id="search-count" class="search-count"></span>
+        <button id="search-prev" class="icon-btn" title="Previous (Shift+Enter)" aria-label="Previous match">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="18 15 12 9 6 15"></polyline>
+          </svg>
+        </button>
+        <button id="search-next" class="icon-btn" title="Next (Enter)" aria-label="Next match">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <button id="search-close" class="icon-btn" title="Close (Esc)" aria-label="Close search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
     </header>
 
     <div class="main-container">
       <aside id="toc-panel">
-        <nav id="toc">
-          <!-- TOC items will be injected here -->
-        </nav>
+        <div class="toc-header">Contents</div>
+        <nav id="toc"></nav>
       </aside>
 
-      <main id="content-panel">
-        <div id="longform-content">
-          <!-- Content will be injected here -->
-          <p class="loading">Loading story...</p>
+      <div class="content-wrapper">
+        <main id="content-panel">
+          <div id="longform-content"></div>
+          <div id="empty-state" class="empty-state hidden">
+            <div class="empty-state-inner">
+              <h2>No content</h2>
+              <p id="empty-message">The document is empty or no items match your current filter.</p>
+              <button id="empty-reset" class="btn btn-primary">Clear filter</button>
+            </div>
+          </div>
+        </main>
+        <div id="status-bar" class="status-bar">
+          <span id="item-count"></span>
+          <span class="status-spacer"></span>
+          <span id="shortcut-hint" class="shortcut-hint">Ctrl+F to search</span>
         </div>
-      </main>
+      </div>
     </div>
   </div>
-  <script src="/static/app.js?v=2"></script>
+  <script src="/static/app.js?v=3"></script>
 </body>
 
 </html>

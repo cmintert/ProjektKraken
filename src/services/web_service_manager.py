@@ -129,11 +129,14 @@ class WebServiceManager(QObject):
         if db_path:
             self._config.db_path = db_path
 
-        # Determine paths based on DB location...
-        # For simplicity in MVP,
-        # we assume standard 'world.kraken' or we need to pass it in.
-        # Ideally the Manager should receive the active DB path.
-        # But for now let's default to config default ("world.kraken").
+        # Capture active theme from Qt main thread before handing off to the
+        # background uvicorn thread (ThemeManager is a Qt singleton).
+        try:
+            from src.core.theme_manager import ThemeManager
+
+            self._config.theme_name = ThemeManager().current_theme_name
+        except Exception:
+            self._config.theme_name = "dark_mode"
 
         self._thread = WebServerThread(self._config)
         self._thread.error_occurred.connect(self._on_thread_error)

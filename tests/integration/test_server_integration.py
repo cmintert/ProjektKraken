@@ -128,14 +128,18 @@ def test_server_endpoints(web_server):
     assert code == 200
     assert json.loads(body)["status"] == "ok"
 
-    # 2. Test Longform API
+    # 2. Test Longform API (now includes lore_date/lore_duration)
     code, body = http_get(f"http://127.0.0.1:{port}/api/longform")
     assert code == 200
     data = json.loads(body)
     assert data["title"] == "default"
     assert len(data["sections"]) == 1
-    assert data["sections"][0]["id"] == "evt-1"
-    assert "first" in data["sections"][0]["html"]
+    section = data["sections"][0]
+    assert section["id"] == "evt-1"
+    assert "first" in section["html"]
+    # Event section exposes lore fields for client-side date rendering
+    assert section["lore_date"] == 100.0
+    assert "lore_duration" in section
 
     # 3. Test TOC API
     code, body = http_get(f"http://127.0.0.1:{port}/api/toc")
@@ -148,3 +152,77 @@ def test_server_endpoints(web_server):
     code, body = http_get(f"http://127.0.0.1:{port}/longform")
     assert code == 200
     assert '<div id="app">' in body
+
+
+def test_root_redirects_to_longform(web_server):
+    """GET / should redirect to /longform."""
+    port = web_server._test_port
+    # Manually inspect the redirect (urllib follows by default).
+    req = urllib.request.Request(f"http://127.0.0.1:{port}/", method="GET")
+    # Install a handler that does NOT follow redirects.
+    opener = urllib.request.build_opener(urllib.request.HTTPRedirectHandler())
+
+    class NoRedirect(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, *args, **kwargs):  # noqa: ANN002, ANN003
+            return None
+
+    opener = urllib.request.build_opener(NoRedirect())
+    try:
+        opener.open(req)
+        raise AssertionError("Expected redirect")
+    except urllib.error.HTTPError as e:
+        assert e.code in (301, 302, 307, 308)
+        assert "/longform" in e.headers.get("Location", "")
+
+
+def test_api_theme_endpoint(web_server):
+    """/api/theme returns active_theme and themes dict with expected keys."""
+    port = web_server._test_port
+    code, body = http_get(f"http://127.0.0.1:{port}/api/theme")
+    assert code == 200
+    data = json.loads(body)
+    assert "active_theme" in data
+    assert "themes" in data
+    assert isinstance(data["themes"], dict)
+    # Should have at least the default dark_mode theme with core color keys
+    assert "dark_mode" in data["themes"]
+    dark = data["themes"]["dark_mode"]
+    for key in ("app_bg", "surface", "primary", "text_main", "event_main"):
+        assert key in dark, f"Missing theme key: {key}"
+
+
+def test_api_toc_respects_filter(web_server):
+    """/api/toc accepts filter_json and returns the same filtered set as longform."""
+    port = web_server._test_port
+    # Filter that includes a nonexistent tag -> no results
+    filter_json = json.dumps({"include": ["nonexistent_tag_xyz"]})
+    import urllib.parse
+
+    q = urllib.parse.urlencode({"filter_json": filter_json})
+    code, body = http_get(f"http://127.0.0.1:{port}/api/toc?{q}")
+    assert code == 200
+    assert json.loads(body) == []
+
+
+def test_longform_page_embeds_initial_theme(web_server):
+    """The /longform HTML includes the active theme name for JS bootstrap."""
+    port = web_server._test_port
+    code, body = http_get(f"http://127.0.0.1:{port}/longform")
+    assert code == 200
+    # The template renders window.__INITIAL_THEME__ = "dark_mode" by default.
+    assert "__INITIAL_THEME__" in body
+    assert "dark_mode" in body
+
+
+def test_wikilink_target_is_escaped():
+    """Verify attribute escaping in _resolve_wikilinks — defense against injection."""
+    from src.webserver.server import _resolve_wikilinks
+
+    # Target containing a quote must not break out of the attribute
+    result = _resolve_wikilinks('See [[bad"name|Label]] for details')
+    assert 'data-target="bad"name"' not in result
+    assert "&quot;" in result
+    # Plain form also escaped
+    result2 = _resolve_wikilinks('[[<script>alert(1)</script>]]')
+    assert "<script>" not in result2
+    assert "&lt;script&gt;" in result2
