@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-04-16
-### Internal
-- Remove collection.txt file containing pytest session details and test collection output.
+## [Development] - 2026-04-18
+### Added
+- feat: Enhance image analysis by handling unsupported modes and adding conversion flag
 
 
 *This changelog was automatically generated.*
