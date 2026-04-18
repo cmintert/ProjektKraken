@@ -873,7 +873,12 @@ class MapWidget(
             bool: True if successful, False otherwise.
 
         """
-        return self.view.load_map(image_path)
+        ok = self.view.load_map(image_path)
+        if ok:
+            # A fresh pixmap item was just created — re-apply the
+            # basemap layer node's visibility/opacity to it.
+            self._sync_basemap_to_view()
+        return ok
 
     # -- Layer management provided by MapLayerMixin --------------------
 

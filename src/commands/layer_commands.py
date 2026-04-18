@@ -70,9 +70,10 @@ class SetLayerVisibilityCommand(BaseCommand):
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Execute the visibility change and persist.
 
-        Always reads the layer tree from the DB. If ``layer_tree_dict`` was
-        provided it is ignored for tree sourcing to prevent a stale snapshot
-        from overwriting newer DB data.
+        When ``layer_tree_dict`` is provided, uses the snapshot (which
+        already reflects the user's change) as the source of truth and
+        writes it directly — avoiding stale-DB-read races where a
+        concurrent change on the worker thread would be undone.
 
         Args:
             db_service: The database service.
@@ -90,29 +91,43 @@ class SetLayerVisibilityCommand(BaseCommand):
                     command_name="SetLayerVisibilityCommand",
                 )
 
-            if not map_obj.layers:
-                return CommandResult(
-                    success=False,
-                    message="Map layers not found.",
-                    command_name="SetLayerVisibilityCommand",
-                )
-
-            node = _find_layer_node(map_obj.layers, self.node_id)
-            if not node:
-                return CommandResult(
-                    success=False,
-                    message=f"Layer node {self.node_id} not found.",
-                    command_name="SetLayerVisibilityCommand",
-                )
-
-            self._previous_visible = node.visible
-            node.visible = self.visible
-
-            # Persist
             attrs = dict(map_obj.attributes) if map_obj.attributes else {}
-            attrs["layers"] = map_obj.layers.to_dict()
-            map_obj.attributes = attrs
-            db_service.map_repo.insert_map(map_obj)
+
+            if self.layer_tree_dict is not None:
+                # Record previous visibility from DB tree for undo
+                if map_obj.layers:
+                    db_node = _find_layer_node(map_obj.layers, self.node_id)
+                    if db_node:
+                        self._previous_visible = db_node.visible
+
+                attrs["layers"] = self.layer_tree_dict
+                map_obj.attributes = attrs
+                # Clear layers so insert_map won't re-serialize the
+                # stale in-memory tree over our snapshot.
+                map_obj.layers = None
+                db_service.map_repo.insert_map(map_obj)
+            else:
+                if not map_obj.layers:
+                    return CommandResult(
+                        success=False,
+                        message="Map layers not found.",
+                        command_name="SetLayerVisibilityCommand",
+                    )
+
+                node = _find_layer_node(map_obj.layers, self.node_id)
+                if not node:
+                    return CommandResult(
+                        success=False,
+                        message=f"Layer node {self.node_id} not found.",
+                        command_name="SetLayerVisibilityCommand",
+                    )
+
+                self._previous_visible = node.visible
+                node.visible = self.visible
+
+                attrs["layers"] = map_obj.layers.to_dict()
+                map_obj.attributes = attrs
+                db_service.map_repo.insert_map(map_obj)
 
             self._is_executed = True
             return CommandResult(
@@ -494,9 +509,9 @@ class SetLayerOpacityCommand(BaseCommand):
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Execute the opacity change and persist.
 
-        Always reads the layer tree from the DB. If ``layer_tree_dict`` was
-        provided it is ignored for tree sourcing to prevent a stale snapshot
-        from overwriting newer DB data.
+        When ``layer_tree_dict`` is provided, uses the snapshot (which
+        already reflects the user's change) as the source of truth and
+        writes it directly — avoiding stale-DB-read races.
 
         Args:
             db_service: The database service.
@@ -514,31 +529,42 @@ class SetLayerOpacityCommand(BaseCommand):
                     command_name="SetLayerOpacityCommand",
                 )
 
-            if not map_obj.layers:
-                return CommandResult(
-                    success=False,
-                    message="Map layers not found.",
-                    command_name="SetLayerOpacityCommand",
-                )
-
-            node = _find_layer_node(map_obj.layers, self.node_id)
-            if not node:
-                return CommandResult(
-                    success=False,
-                    message=f"Layer node {self.node_id} not found.",
-                    command_name="SetLayerOpacityCommand",
-                )
-
-            if self._previous_opacity is None:
-                self._previous_opacity = node.opacity
-
-            node.opacity = max(0.0, min(1.0, self.opacity))
-
-            # Persist
             attrs = dict(map_obj.attributes) if map_obj.attributes else {}
-            attrs["layers"] = map_obj.layers.to_dict()
-            map_obj.attributes = attrs
-            db_service.map_repo.insert_map(map_obj)
+
+            if self.layer_tree_dict is not None:
+                if self._previous_opacity is None and map_obj.layers:
+                    db_node = _find_layer_node(map_obj.layers, self.node_id)
+                    if db_node:
+                        self._previous_opacity = db_node.opacity
+
+                attrs["layers"] = self.layer_tree_dict
+                map_obj.attributes = attrs
+                map_obj.layers = None
+                db_service.map_repo.insert_map(map_obj)
+            else:
+                if not map_obj.layers:
+                    return CommandResult(
+                        success=False,
+                        message="Map layers not found.",
+                        command_name="SetLayerOpacityCommand",
+                    )
+
+                node = _find_layer_node(map_obj.layers, self.node_id)
+                if not node:
+                    return CommandResult(
+                        success=False,
+                        message=f"Layer node {self.node_id} not found.",
+                        command_name="SetLayerOpacityCommand",
+                    )
+
+                if self._previous_opacity is None:
+                    self._previous_opacity = node.opacity
+
+                node.opacity = max(0.0, min(1.0, self.opacity))
+
+                attrs["layers"] = map_obj.layers.to_dict()
+                map_obj.attributes = attrs
+                db_service.map_repo.insert_map(map_obj)
 
             self._is_executed = True
             return CommandResult(
@@ -638,6 +664,10 @@ class RenameLayerCommand(BaseCommand):
         self._prev_lore_name: Optional[str] = None
         self._lore_object_id: Optional[str] = None
         self._lore_object_type: Optional[str] = None
+        # Atomic-rollback state: the full attrs["layers"] dict as it was
+        # *before* execute() wrote its change.  Used to revert the tree
+        # write if any downstream sync (marker/lore) fails.
+        self._prev_layers_attr: Optional[Dict[str, Any]] = None
 
     # ------------------------------------------------------------------
     # Private helpers — sync feature label & lore item name
@@ -716,6 +746,30 @@ class RenameLayerCommand(BaseCommand):
                 event.name = self._prev_lore_name
                 db_service.insert_event(event)
 
+    def _undo_layer_tree_write(self, db_service: DatabaseService) -> None:
+        """Restore the map's ``attributes["layers"]`` to its pre-execute value.
+
+        Called when a downstream sync (marker label or lore item) fails
+        after the tree write succeeded, so that the three stores stay
+        consistent.
+
+        Args:
+            db_service: Database service instance.
+
+        """
+        if self._prev_layers_attr is None:
+            return
+        map_obj = db_service.map_repo.get_map(self.map_id)
+        if not map_obj:
+            return
+        attrs = dict(map_obj.attributes) if map_obj.attributes else {}
+        attrs["layers"] = self._prev_layers_attr
+        map_obj.attributes = attrs
+        # Clear layers so insert_map writes the restored snapshot, not
+        # the in-memory tree that was mutated above.
+        map_obj.layers = None
+        db_service.map_repo.insert_map(map_obj)
+
     # ------------------------------------------------------------------
     # Command interface
     # ------------------------------------------------------------------
@@ -746,6 +800,10 @@ class RenameLayerCommand(BaseCommand):
                 )
 
             attrs = dict(map_obj.attributes) if map_obj.attributes else {}
+
+            # Capture the pre-execute layers snapshot so any sync failure
+            # further down can roll the tree write back.
+            self._prev_layers_attr = copy.deepcopy(attrs.get("layers"))
 
             if self._layer_tree_dict is not None:
                 # -- Snapshot path (fast, avoids stale reads) --
@@ -785,18 +843,34 @@ class RenameLayerCommand(BaseCommand):
                 db_service.map_repo.insert_map(map_obj)
 
             # -- Sync feature label + lore item name --
-            self._sync_feature_label(db_service)
+            # Both syncs must succeed together; if either fails, roll
+            # back every write that came before so all three stores
+            # (layer tree, marker, lore item) stay consistent.
+            try:
+                self._sync_feature_label(db_service)
+            except Exception as marker_exc:
+                logger.error(
+                    "RenameLayerCommand: _sync_feature_label failed (%s); "
+                    "rolling back layer-tree write",
+                    marker_exc,
+                )
+                self._undo_layer_tree_write(db_service)
+                return CommandResult(
+                    success=False,
+                    message=str(marker_exc),
+                    command_name="RenameLayerCommand",
+                )
+
             try:
                 self._sync_lore_item(db_service)
             except Exception as lore_exc:
-                # _sync_lore_item failed after _sync_feature_label already ran.
-                # Roll back the marker label so the DB stays consistent.
                 logger.error(
                     "RenameLayerCommand: _sync_lore_item failed (%s); "
-                    "rolling back feature label",
+                    "rolling back feature label and layer-tree write",
                     lore_exc,
                 )
                 self._undo_feature_label(db_service)
+                self._undo_layer_tree_write(db_service)
                 return CommandResult(
                     success=False,
                     message=str(lore_exc),

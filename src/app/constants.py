@@ -224,14 +224,29 @@ MAP_LAYER_TYPE_SNAPSHOT = "raster_snapshot"  # Virtual display-only snapshot row
 MAP_LAYER_TYPE_PATH = "path"
 MAP_LAYER_TYPE_REGION = "region"
 MAP_LAYER_TYPE_RASTER = "raster"
+# Background map image — represented as a pinned, non-deletable node so
+# the user can hide/show the base map and adjust its opacity from the
+# layer panel just like any other layer.
+MAP_LAYER_TYPE_BASEMAP = "basemap"
+
+# Fixed node ID for the pinned basemap layer.  Using a well-known ID
+# lets the view route visibility/opacity changes to the pixmap item.
+MAP_LAYER_BASEMAP_NODE_ID = "__basemap__"
 
 # Default group name for auto-registered features
 MAP_LAYER_DEFAULT_GROUP_NAME = "Default"
 
 # Z-index spacing between dynamically ordered layers
-MAP_LAYER_Z_SPACING = 1.0
-# Base Z-value for dynamic layer ordering (above map bg, below UI overlay)
-MAP_LAYER_Z_BASE = 1.0
+#
+# Dynamic values are assigned by ``MapLayerModel.compute_z_order`` and
+# override the static defaults above for items registered in the layer
+# tree.  The base must sit *above* the highest static default
+# (``MAP_LAYER_Z_MARKERS = 10``) so that registered and unregistered
+# items never swap stacking order.  Fine spacing (0.01) permits a deep
+# tree (up to ~8000 nodes) before hitting ``MAP_LAYER_Z_UI_OVERLAY``.
+MAP_LAYER_Z_SPACING = 0.01
+# Base Z-value for dynamic layer ordering (above markers, below UI overlay)
+MAP_LAYER_Z_BASE = 20.0
 
 # ---------------------------------------------------------------------------
 # Analysis Suite Constants

@@ -1,9 +1,11 @@
 """Regression tests for layer command snapshots.
 
-H4 fix: SetLayerVisibilityCommand and SetLayerOpacityCommand now ALWAYS
-read the layer tree from the DB. The ``layer_tree_dict`` snapshot parameter
-is kept for API compatibility but is no longer used to source the tree in
-``execute()``, preventing a stale snapshot from overwriting newer DB data.
+The layer commands run on a serial DatabaseWorker thread, and the UI
+often mutates the in-memory tree faster than those commands can drain.
+To keep the user's latest state from being lost by a stale DB read, the
+commands now prefer ``layer_tree_dict`` (the UI snapshot) as the source
+of truth when one is provided, falling back to the DB tree only when
+the snapshot is absent.
 """
 
 from unittest.mock import MagicMock
@@ -42,37 +44,32 @@ def test_opacity_command_fails_without_snapshot_if_db_stale(mock_db_service_stal
     assert "not found" in result.message
 
 
-def test_opacity_command_fails_with_stale_snapshot_when_db_lacks_node(
-    mock_db_service_stale,
-):
-    """H4 fix: even WITH a snapshot, command fails if the DB tree lacks the node.
+def test_opacity_command_uses_snapshot_when_db_is_stale(mock_db_service_stale):
+    """With a snapshot, the command persists the UI tree even if the DB is stale.
 
-    Previously (pre-fix), providing a snapshot would succeed even when the DB
-    was stale. Now the DB tree is always authoritative.
+    The snapshot is the source of truth: it already contains the user's
+    latest edits, including the node missing from the stale DB tree.
     """
-    # Create a snapshot representing the UI state (which HAS the new node)
     root = MapLayerNode(name="Root", id="root-1")
     new_node = MapLayerNode(name="New Node", id="new-node-1", opacity=1.0)
     root.children.append(new_node)
 
     snapshot = root.to_dict()
 
-    # Init command with the snapshot
     cmd = SetLayerOpacityCommand(
         map_id="map-1", node_id="new-node-1", opacity=0.5, layer_tree_dict=snapshot
     )
 
     result = cmd.execute(mock_db_service_stale)
 
-    # H4 fix: the DB tree is always used — command must fail when node is absent
-    assert result.success is False
-    assert "not found" in result.message
+    assert result.success is True
+    saved_map = mock_db_service_stale.map_repo.insert_map.call_args[0][0]
+    # The persisted attributes should carry the snapshot, not the stale DB tree
+    assert saved_map.attributes["layers"] == snapshot
 
 
-def test_visibility_command_fails_with_stale_snapshot_when_db_lacks_node(
-    mock_db_service_stale,
-):
-    """H4 fix: SetLayerVisibilityCommand uses DB tree, not snapshot."""
+def test_visibility_command_uses_snapshot_when_db_is_stale(mock_db_service_stale):
+    """SetLayerVisibilityCommand also prefers the snapshot when provided."""
     root = MapLayerNode(name="Root", id="root-1")
     new_node = MapLayerNode(name="New Node", id="new-node-1", visible=True)
     root.children.append(new_node)
@@ -85,9 +82,9 @@ def test_visibility_command_fails_with_stale_snapshot_when_db_lacks_node(
 
     result = cmd.execute(mock_db_service_stale)
 
-    # H4 fix: must fail because the DB tree doesn't have new-node-1
-    assert result.success is False
-    assert "not found" in result.message
+    assert result.success is True
+    saved_map = mock_db_service_stale.map_repo.insert_map.call_args[0][0]
+    assert saved_map.attributes["layers"] == snapshot
 
 
 def test_opacity_command_succeeds_when_node_exists_in_db():

@@ -784,17 +784,22 @@ class MapHandler(QObject):
         cmd = SaveLayerTreeCommand(map_id, tree_dict)
         self.command_requested.emit(cmd)
 
-        # If the persisted tree diverged from the in-memory model
-        # (e.g. raster create/delete), rebuild the layer model.
+        # If a command (e.g. CreateRasterLayerCommand) injected nodes into
+        # maps_data directly that the model doesn't know about, rebuild.
+        # Rebuild ONLY when the DB snapshot has extra nodes the model is
+        # missing — NOT when the model has nodes absent from the stale
+        # maps_data (that would wipe freshly-added user nodes).
         maps = self._map_widget.maps_data
         selected_map = next((m for m in maps if m.id == map_id), None)
         if selected_map and selected_map.layers:
             db_ids = self._collect_node_ids(selected_map.layers)
             mem_ids = self._collect_node_ids(model.root)
-            if db_ids != mem_ids:
+            missing_in_model = db_ids - mem_ids
+            if missing_in_model:
                 logger.debug(
-                    "on_layer_tree_changed: tree diverged "
-                    "(db=%d nodes, mem=%d nodes) — rebuilding layer model",
+                    "on_layer_tree_changed: model missing %d nodes from "
+                    "maps_data (db=%d, mem=%d) — rebuilding layer model",
+                    len(missing_in_model),
                     len(db_ids),
                     len(mem_ids),
                 )
@@ -1139,6 +1144,13 @@ class MapHandler(QObject):
                 self.on_raster_snapshot_delete_requested
             )
             self._raster_signals_connected = True
+
+        # Apply dynamic z-values from the layer model now that raster items
+        # are registered in view._raster_items.  Raster items default to
+        # the static MAP_LAYER_Z_RASTER at construction; without this call
+        # they'd stay pinned there until the user next moved a layer.
+        if getattr(view, "_layer_model", None) is not None:
+            view._on_layer_order_changed()
 
     # ------------------------------------------------------------------
     # Raster editing handlers

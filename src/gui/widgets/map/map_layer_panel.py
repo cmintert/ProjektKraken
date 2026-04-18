@@ -114,6 +114,10 @@ class MapLayerPanel(QWidget):
         self._current_node_id: str = ""
         self._slider_updating = False  # guard against feedback loops
         self._start_opacity: Optional[float] = None  # Opacity at drag start
+        self._slider_dragging = False  # True while mouse is on the slider handle
+        # Last committed opacity for the selected node — used as the
+        # "old" value when a discrete change (keyboard) is committed.
+        self._committed_opacity: Optional[float] = None
         # Full raster layer metadata keyed by node_id (set by MapHandler)
         self._raster_meta_by_id: Dict[str, Dict[str, Any]] = {}
         self._calendar_converter: Optional[Any] = None
@@ -812,6 +816,9 @@ class MapLayerPanel(QWidget):
                         self._tree.setCurrentIndex(parent_idx)
             return
 
+        # Before switching selection, flush any pending drag commit so
+        # the outgoing node's opacity change is persisted.
+        self._flush_pending_opacity_commit()
         self._selected_node_id = node.id
         self._sync_opacity_slider(node)
         self._update_button_state()
@@ -877,20 +884,27 @@ class MapLayerPanel(QWidget):
             self._sync_opacity_slider(node)
             self._update_button_state()
 
+            from src.app.constants import MAP_LAYER_BASEMAP_NODE_ID
+
+            is_basemap = node.id == MAP_LAYER_BASEMAP_NODE_ID
+
             # Toggle visibility
             vis_text = "Hide" if node.visible else "Show"
             action_toggle = menu.addAction(f"{vis_text} Layer")
             action_toggle.triggered.connect(lambda: self._toggle_visibility(node))
 
-            # Rename
-            action_rename = menu.addAction("Rename…")
-            action_rename.triggered.connect(lambda: self._on_item_double_clicked(index))
+            # Rename (not allowed for the pinned basemap node)
+            if not is_basemap:
+                action_rename = menu.addAction("Rename…")
+                action_rename.triggered.connect(
+                    lambda: self._on_item_double_clicked(index)
+                )
 
-            menu.addSeparator()
+                menu.addSeparator()
 
-            # Delete
-            action_delete = menu.addAction("Delete")
-            action_delete.triggered.connect(self._on_delete)
+                # Delete
+                action_delete = menu.addAction("Delete")
+                action_delete.triggered.connect(self._on_delete)
         else:
             # Click on empty area — offer to create
             action_group = menu.addAction("New Group…")
@@ -916,10 +930,12 @@ class MapLayerPanel(QWidget):
 
     @Slot(int)
     def _on_opacity_preview(self, value: int) -> None:
-        """Handle slider drag (live preview).
+        """Handle slider value change (live preview).
 
-        Updates the model (visuals) but does NOT emit the change signal,
-        avoiding a flood of undo commands.
+        Updates the model visuals on every tick.  When the change did NOT
+        originate from a mouse drag (``_slider_dragging`` is False) — e.g.
+        arrow keys, Page Up/Down or a click at a new position — it also
+        commits so the change reaches the undo stack and database.
 
         Args:
             value: Slider value 0–100.
@@ -934,10 +950,15 @@ class MapLayerPanel(QWidget):
             if node is not None:
                 # Update visual state only (no command, no auto-save)
                 self._model.set_node_opacity(node, pct, preview=True)
+                # Discrete changes (keyboard, click-at-position) are not
+                # bracketed by sliderPressed/Released, so commit now.
+                if not self._slider_dragging:
+                    self._commit_opacity(node)
 
     @Slot()
     def _on_slider_pressed(self) -> None:
         """Handle slider press to capture initial opacity."""
+        self._slider_dragging = True
         if self._model is None or not self._selected_node_id:
             return
         if node := self._model.find_node_by_id(self._selected_node_id):
@@ -949,20 +970,59 @@ class MapLayerPanel(QWidget):
 
         Emits the change signal to create a single undoable command.
         """
+        self._slider_dragging = False
         if self._slider_updating or self._model is None or not self._selected_node_id:
             return
 
         if node := self._model.find_node_by_id(self._selected_node_id):
-            # Emit signal to create undo command, passing both new and old opacity
-            # If _start_opacity is None (e.g. key press instead of drag),
-            # try to use current (less ideal)
-            old_opacity = (
-                self._start_opacity if self._start_opacity is not None else node.opacity
-            )
-            self.layer_opacity_changed.emit(
-                self._selected_node_id, node.opacity, old_opacity
-            )
+            self._commit_opacity(node)
+
+    def _flush_pending_opacity_commit(self) -> None:
+        """Commit an in-flight drag if the slider state suggests one.
+
+        Called on selection change or when the panel is about to lose
+        focus, so an abandoned drag still produces an undo entry and a
+        database write.
+        """
+        if self._model is None or not self._selected_node_id:
+            return
+        if self._start_opacity is None:
+            return
+        node = self._model.find_node_by_id(self._selected_node_id)
+        if node is None:
+            return
+        self._slider_dragging = False
+        self._commit_opacity(node)
+
+    def _commit_opacity(self, node: "MapLayerNode") -> None:
+        """Emit the opacity-changed signal once per discrete edit.
+
+        Uses ``_start_opacity`` when available (mouse drag).  For a
+        discrete change (keyboard) the value has already been applied to
+        the node by the time this runs, so the last committed opacity is
+        used as the "old" value to keep undo correct.
+
+        Args:
+            node: The layer node whose opacity was committed.
+        """
+        if self._start_opacity is not None:
+            old_opacity = self._start_opacity
+        elif self._committed_opacity is not None:
+            old_opacity = self._committed_opacity
+        else:
+            old_opacity = node.opacity
+
+        if old_opacity == node.opacity:
+            # Nothing actually changed (e.g. slider snapped back) — no
+            # need to create a no-op undo entry.
             self._start_opacity = None
+            return
+
+        self.layer_opacity_changed.emit(
+            self._selected_node_id, node.opacity, old_opacity
+        )
+        self._start_opacity = None
+        self._committed_opacity = node.opacity
 
     def _sync_opacity_slider(self, node: "MapLayerNode") -> None:
         """Update the slider to reflect the selected node's opacity.
@@ -975,6 +1035,7 @@ class MapLayerPanel(QWidget):
         value = int(node.opacity * 100)
         self._opacity_slider.setValue(value)
         self._opacity_value_label.setText(f"{value} %")
+        self._committed_opacity = node.opacity
         self._slider_updating = False
 
     # ------------------------------------------------------------------
@@ -982,9 +1043,16 @@ class MapLayerPanel(QWidget):
     # ------------------------------------------------------------------
 
     def _update_button_state(self) -> None:
-        """Enable/disable the Delete button based on selection."""
+        """Enable/disable the Delete button based on selection.
+
+        The pinned basemap node is never deletable, so the button stays
+        disabled while it is selected.
+        """
+        from src.app.constants import MAP_LAYER_BASEMAP_NODE_ID
+
         has_selection = self._selected_node_id is not None
-        self.btn_delete.setEnabled(has_selection)
+        is_basemap = self._selected_node_id == MAP_LAYER_BASEMAP_NODE_ID
+        self.btn_delete.setEnabled(has_selection and not is_basemap)
 
     # ------------------------------------------------------------------
     # Private — raster editing toolbar

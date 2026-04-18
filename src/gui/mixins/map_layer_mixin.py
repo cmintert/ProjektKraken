@@ -10,7 +10,9 @@ from typing import TYPE_CHECKING, List, Optional, Tuple
 from PySide6.QtCore import Qt, Slot
 
 from src.app.constants import (
+    MAP_LAYER_BASEMAP_NODE_ID,
     MAP_LAYER_DEFAULT_GROUP_NAME,
+    MAP_LAYER_TYPE_BASEMAP,
     MAP_LAYER_TYPE_GROUP,
     MAP_LAYER_TYPE_MARKER,
     MAP_LAYER_TYPE_PATH,
@@ -60,13 +62,54 @@ class MapLayerMixin:
                     ),
                 ],
             )
+        self._ensure_basemap_node(root)
         model = MapLayerModel(root=root)
         self._layer_model = model
         self.view.set_layer_model(model)
         self.layer_panel.set_model(model)
         # Forward model mutations → widget signal for command-stack persistence
         model.layer_tree_changed.connect(self.layer_tree_changed.emit)
+        # Apply the persisted basemap state to the pixmap item immediately
+        # (the view's signal handlers only fire on *changes*, not initial sync).
+        self._sync_basemap_to_view()
         return model
+
+    @staticmethod
+    def _ensure_basemap_node(root: MapLayerNode) -> None:
+        """Guarantee a pinned basemap node exists as ``root``'s first child.
+
+        Args:
+            root: The layer tree root to augment in-place.
+        """
+        for child in root.children:
+            if child.id == MAP_LAYER_BASEMAP_NODE_ID:
+                # Already present — re-assert the layer type in case the
+                # tree was persisted under an older schema.
+                child.layer_type = MAP_LAYER_TYPE_BASEMAP
+                return
+        basemap = MapLayerNode(
+            name="Base Map",
+            layer_type=MAP_LAYER_TYPE_BASEMAP,
+            id=MAP_LAYER_BASEMAP_NODE_ID,
+        )
+        root.children.insert(0, basemap)
+
+    def _sync_basemap_to_view(self) -> None:
+        """Apply the basemap node's visibility/opacity to the pixmap item."""
+        if self._layer_model is None:
+            return
+        pixmap_item = getattr(self.view, "pixmap_item", None)
+        if pixmap_item is None:
+            return
+        node = self._layer_model.find_node_by_id(MAP_LAYER_BASEMAP_NODE_ID)
+        if node is None:
+            return
+        try:
+            pixmap_item.setVisible(node.visible)
+            pixmap_item.setOpacity(node.opacity)
+        except RuntimeError:
+            # pixmap_item was deleted — ignore
+            pass
 
     def _ensure_layer_model(self) -> MapLayerModel:
         """Return the current layer model, creating one if needed.
@@ -259,6 +302,11 @@ class MapLayerMixin:
         # Don't delete the root
         if node is self._layer_model.root:
             logger.warning("Cannot delete the root node")
+            return
+
+        # Pinned basemap node — cannot be removed
+        if node.id == MAP_LAYER_BASEMAP_NODE_ID:
+            logger.info("Cannot delete the base-map layer node")
             return
 
         # Collect all leaf feature IDs before mutating the tree

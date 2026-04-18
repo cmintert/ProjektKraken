@@ -25,6 +25,7 @@ from PySide6.QtCore import (
 
 from src.app.constants import (
     MAP_LAYER_DEFAULT_OPACITY,
+    MAP_LAYER_TYPE_BASEMAP,
     MAP_LAYER_TYPE_GROUP,
     MAP_LAYER_TYPE_MARKER,
     MAP_LAYER_TYPE_PATH,
@@ -478,7 +479,9 @@ class MapLayerModel(QAbstractItemModel):
 
         """
         node.opacity = max(0.0, min(1.0, opacity))
-        self.invalidate_cache()
+        # Opacity is not tracked in the zoom/visibility cache; no need to
+        # invalidate it on opacity changes.  Invalidating here caused a
+        # cache-miss on every slider tick, re-walking the whole tree.
         self._emit_subtree_opacity(node)
         if not preview:
             self.layer_tree_changed.emit()
@@ -799,6 +802,11 @@ class MapLayerModel(QAbstractItemModel):
             icon = load_icon(
                 "default_assets/icons/markers/grid-raster.svg",
                 theme.get("accent_secondary"),
+            )
+        elif layer_type == MAP_LAYER_TYPE_BASEMAP:
+            icon = load_icon(
+                "default_assets/icons/markers/mountain.svg",
+                theme.get("text_main"),
             )
 
         if icon:

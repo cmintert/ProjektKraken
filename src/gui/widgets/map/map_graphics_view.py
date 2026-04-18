@@ -63,6 +63,7 @@ from PySide6.QtWidgets import (
 
 from src.app.constants import (
     MAP_DEFAULT_WIDTH_METERS,
+    MAP_LAYER_BASEMAP_NODE_ID,
     MAP_LAYER_Z_MAP_BG,
     MAP_LAYER_Z_MARKERS,
     MAP_LAYER_Z_TRAJECTORIES,
@@ -685,6 +686,7 @@ class MapGraphicsView(QGraphicsView):
 
         # Scale bar overlay (viewport-space widget, avoids FullViewportUpdate)
         self._scale_bar_overlay = ScaleBarOverlay(self.viewport())
+        self._scale_bar_overlay.show()
 
         # Temporal state
         self._current_time: float = 0.0
@@ -1027,6 +1029,7 @@ class MapGraphicsView(QGraphicsView):
 
             logger.info(f"Loaded map: {image_path}")
             self._schedule_label_layout()
+            self._update_scale_bar_overlay()
             return True
 
         except Exception as e:
@@ -1075,7 +1078,8 @@ class MapGraphicsView(QGraphicsView):
 
         This method replaces the ``QOpenGLWidget`` viewport with a plain
         ``QWidget``, transparently preserving all render hints.  Calling it
-        when already in software mode is a no-op.
+        when already in software mode is a no-op.  Overlay reparenting is
+        handled automatically by :meth:`setupViewport`.
         """
         from PySide6.QtOpenGLWidgets import QOpenGLWidget
 
@@ -1088,6 +1092,35 @@ class MapGraphicsView(QGraphicsView):
             # Re-apply render hints; setViewport() resets the viewport widget
             self.setRenderHint(QPainter.Antialiasing)
             self.setRenderHint(QPainter.SmoothPixmapTransform)
+
+    def setupViewport(self, viewport: QWidget) -> None:
+        """Reparent floating overlays whenever the viewport is replaced.
+
+        Qt calls this method each time a new viewport widget is installed
+        (including the initial creation and any call to ``setViewport()``).
+        Overriding it is the correct hook for keeping overlay widgets parented
+        to the *active* viewport so they always render on top of the scene.
+
+        Args:
+            viewport: The new viewport widget being installed.
+        """
+        super().setupViewport(viewport)
+        import shiboken6
+
+        if hasattr(self, "_scale_bar_overlay") and shiboken6.isValid(
+            self._scale_bar_overlay
+        ):
+            self._scale_bar_overlay.setParent(viewport)
+            self._scale_bar_overlay.show()
+            self._scale_bar_overlay.reposition(viewport.size())
+        if hasattr(self, "_drop_hint_overlay") and shiboken6.isValid(
+            self._drop_hint_overlay
+        ):
+            was_visible = self._drop_hint_overlay.isVisible()
+            self._drop_hint_overlay.setParent(viewport)
+            self._drop_hint_overlay.setGeometry(viewport.rect())
+            if was_visible:
+                self._drop_hint_overlay.show()
 
     # ------------------------------------------------------------------
     # Label layout (delegated to LabelManager)
@@ -1440,6 +1473,12 @@ class MapGraphicsView(QGraphicsView):
 
     def _update_scale_bar_overlay(self) -> None:
         """Recompute and push the current resolution to the scale bar overlay."""
+        import shiboken6
+
+        if not hasattr(self, "_scale_bar_overlay") or not shiboken6.isValid(
+            self._scale_bar_overlay
+        ):
+            return
         if not self.pixmap_item or self.map_width_meters <= 0:
             return
         image_width_px = self.pixmap_item.boundingRect().width()
@@ -1470,8 +1509,8 @@ class MapGraphicsView(QGraphicsView):
     def _find_graphics_item(self, node_id: str) -> Optional[QGraphicsItem]:
         """Look up a graphics item by layer node ID.
 
-        Checks both the marker manager (for markers/polygons/connections)
-        and the raster item registry.
+        Checks the base-map pixmap, raster items, and the marker manager
+        (which handles markers, paths, and regions).
 
         Args:
             node_id: ID of the layer node.
@@ -1479,6 +1518,8 @@ class MapGraphicsView(QGraphicsView):
         Returns:
             The matching QGraphicsItem, or None.
         """
+        if node_id == MAP_LAYER_BASEMAP_NODE_ID:
+            return self.pixmap_item
         # Check raster items first (fast dict lookup)
         raster_item = self._raster_items.get(node_id)
         if raster_item is not None:
@@ -1566,6 +1607,11 @@ class MapGraphicsView(QGraphicsView):
             return
         z_map = self._layer_model.compute_z_order()
         for node_id, z_val in z_map.items():
+            # The basemap is pinned at MAP_LAYER_Z_MAP_BG and must stay
+            # below every other layer, regardless of its position in the
+            # layer tree.  Don't let compute_z_order override that.
+            if node_id == MAP_LAYER_BASEMAP_NODE_ID:
+                continue
             item = self._find_graphics_item(node_id)
             if item is not None:
                 item.setZValue(z_val)
