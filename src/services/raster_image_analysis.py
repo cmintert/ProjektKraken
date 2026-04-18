@@ -40,6 +40,8 @@ class ImageAnalysisResult:
         thumbnail_arr: A uint8 ndarray of shape ``(H, W, 3)`` suitable for
             direct use with :class:`PySide6.QtGui.QImage` Format_RGB888.
             Dimensions are at most ``128 × 128``.
+        mode_converted: True if the image was converted from an unsupported
+            mode to RGB for analysis.
     """
 
     width: int
@@ -50,6 +52,7 @@ class ImageAnalysisResult:
     suggested_mode: str
     hint: str
     thumbnail_arr: np.ndarray
+    mode_converted: bool = False
 
 
 def analyse_image(path: str) -> ImageAnalysisResult:
@@ -74,7 +77,25 @@ def analyse_image(path: str) -> ImageAnalysisResult:
 
     with PilImage.open(path) as im:
         width, height = im.size
-        mode = im.mode
+        original_mode = im.mode
+        mode = original_mode
+        mode_converted = False
+
+        # I;16 is PIL's raw 16-bit representation — unusable for copy/thumbnail.
+        # Promote to I (32-bit int, still greyscale) to preserve values.
+        if mode == "I;16":
+            im = im.convert("I")
+            mode = im.mode
+        # Palette modes carry no scalar data — convert to colour.
+        elif mode in ("P", "PA"):
+            im = im.convert("RGBA" if mode == "PA" else "RGB")
+            mode = im.mode
+            mode_converted = True
+        # Any other exotic mode: fall back to RGB but flag the conversion.
+        elif mode not in ("L", "LA", "I", "F", "RGB", "RGBA"):
+            im = im.convert("RGB")
+            mode = im.mode
+            mode_converted = True
 
         # ------------------------------------------------------------------ #
         # Greyscale detection
@@ -116,6 +137,9 @@ def analyse_image(path: str) -> ImageAnalysisResult:
         else:
             hint = "Colour — Color recommended (RGB preserved as-is)"
 
+        if mode_converted:
+            hint += f" (⚠ Image format '{original_mode}' was converted to RGB for compatibility)"
+
         # ------------------------------------------------------------------ #
         # Thumbnail (convert to RGB for safe QImage display across all modes)
         # ------------------------------------------------------------------ #
@@ -133,4 +157,5 @@ def analyse_image(path: str) -> ImageAnalysisResult:
         suggested_mode=suggested_mode,
         hint=hint,
         thumbnail_arr=thumbnail_arr,
+        mode_converted=mode_converted,
     )
