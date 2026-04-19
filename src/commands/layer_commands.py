@@ -426,6 +426,9 @@ class SaveLayerTreeCommand(BaseCommand):
             self._previous_tree_dict = attrs.get("layers")
             attrs["layers"] = self.layer_tree_dict
             map_obj.attributes = attrs
+            # Clear the in-memory MapLayerNode so insert_map uses our
+            # layer_tree_dict snapshot rather than re-serializing the stale tree.
+            map_obj.layers = None
             db_service.map_repo.insert_map(map_obj)
 
             self._is_executed = True

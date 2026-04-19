@@ -958,7 +958,7 @@ class MapLayerModel(QAbstractItemModel):
         if node is not self._root:
             result[node.id] = counter
             counter += MAP_LAYER_Z_SPACING
-        for child in node.children:
+        for child in reversed(node.children):
             counter = self._assign_z(child, result, counter)
         return counter
 

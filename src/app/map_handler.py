@@ -108,6 +108,10 @@ class MapHandler(QObject):
         self._loaded_marker_data: dict[str, dict] = {}
         # Whether raster layer panel signals have been connected
         self._raster_signals_connected: bool = False
+        # Set when maps_data was just freshly reloaded; consumed by the first
+        # on_markers_ready that follows so newly-injected layer nodes
+        # (e.g. from CreateRasterLayerCommand) are synced into the model.
+        self._pending_layer_node_sync: bool = False
 
         # ── Temporal rasters ──────────────────────────────────────────
         self._current_lore_date: float = 0.0
@@ -558,6 +562,7 @@ class MapHandler(QObject):
         current_map_id = self._map_widget.get_selected_map_id()
 
         self._map_widget.set_maps(maps)
+        self._pending_layer_node_sync = True
 
         # Restore the previous selection if it still exists
         if current_map_id and any(m.id == current_map_id for m in maps):
@@ -590,7 +595,32 @@ class MapHandler(QObject):
 
         if map_id == self._loaded_markers_map_id:
             self._incremental_marker_update(map_id, processed_markers)
+            # If a command (e.g. CreateRasterLayerCommand) injected new nodes
+            # into maps_data since the last reload, sync them into the model
+            # now that maps_data is guaranteed fresh.
+            if self._pending_layer_node_sync:
+                self._pending_layer_node_sync = False
+                model = self._map_widget.get_layer_model()
+                selected_map = next(
+                    (m for m in self._map_widget.maps_data if m.id == map_id),
+                    None,
+                )
+                if selected_map and selected_map.layers and model:
+                    db_ids = self._collect_node_ids(selected_map.layers)
+                    mem_ids = self._collect_node_ids(model.root)
+                    missing_in_model = db_ids - mem_ids
+                    if missing_in_model:
+                        logger.debug(
+                            "on_markers_ready: model missing %d nodes from "
+                            "maps_data (db=%d, mem=%d) — rebuilding layer model",
+                            len(missing_in_model),
+                            len(db_ids),
+                            len(mem_ids),
+                        )
+                        self._map_widget.rebuild_layer_model(selected_map.layers)
         else:
+            # Full rebuild already resynchronises the model from fresh maps_data.
+            self._pending_layer_node_sync = False
             self._full_marker_rebuild(map_id, processed_markers)
 
         # Load raster layers for this map
@@ -638,9 +668,10 @@ class MapHandler(QObject):
         to_add = incoming_ids - existing_ids
         to_check = existing_ids & incoming_ids
 
-        # Remove departed markers
+        # Remove departed markers — use the widget method so the layer panel
+        # node is unregistered too (not just the graphics-scene item).
         for mid in to_remove:
-            self._map_widget.view.remove_marker(mid)
+            self._map_widget.remove_marker(mid)
             self._marker_object_to_id.pop(mid, None)
 
         # Add newcomers
@@ -769,12 +800,10 @@ class MapHandler(QObject):
 
     @Slot()
     def on_layer_tree_changed(self) -> None:
-        """Persist the current layer tree and resync the layer model if needed.
+        """Persist the current layer tree to the database.
 
-        Persists the in-memory tree whenever it is mutated.  Also detects the
-        case where a command (e.g. ``CreateRasterLayerCommand``) updated
-        ``maps_data`` directly, causing the persisted tree to diverge from the
-        model — and triggers a rebuild so the new nodes appear in the panel.
+        Queues a ``SaveLayerTreeCommand`` whenever the in-memory layer tree
+        is mutated so the change is durable on the worker thread.
         """
         map_id = self._map_widget.get_selected_map_id()
         model = self._map_widget.get_layer_model()
@@ -783,27 +812,6 @@ class MapHandler(QObject):
         tree_dict = model.root.to_dict()
         cmd = SaveLayerTreeCommand(map_id, tree_dict)
         self.command_requested.emit(cmd)
-
-        # If a command (e.g. CreateRasterLayerCommand) injected nodes into
-        # maps_data directly that the model doesn't know about, rebuild.
-        # Rebuild ONLY when the DB snapshot has extra nodes the model is
-        # missing — NOT when the model has nodes absent from the stale
-        # maps_data (that would wipe freshly-added user nodes).
-        maps = self._map_widget.maps_data
-        selected_map = next((m for m in maps if m.id == map_id), None)
-        if selected_map and selected_map.layers:
-            db_ids = self._collect_node_ids(selected_map.layers)
-            mem_ids = self._collect_node_ids(model.root)
-            missing_in_model = db_ids - mem_ids
-            if missing_in_model:
-                logger.debug(
-                    "on_layer_tree_changed: model missing %d nodes from "
-                    "maps_data (db=%d, mem=%d) — rebuilding layer model",
-                    len(missing_in_model),
-                    len(db_ids),
-                    len(mem_ids),
-                )
-                self._map_widget.rebuild_layer_model(selected_map.layers)
 
     @Slot(str, float, float)
     def on_layer_opacity_changed(

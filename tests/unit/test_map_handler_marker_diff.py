@@ -131,10 +131,10 @@ class TestIncrementalMarkerDiff:
         reloaded = [_make_marker("a")]
         handler.on_markers_ready("map-1", reloaded)
 
-        # b and c should be individually removed
+        # b and c should be individually removed via the widget (not view directly)
         removed_ids = [
             c.args[0] if c.args else c.kwargs.get("marker_id")
-            for c in widget.view.remove_marker.call_args_list
+            for c in widget.remove_marker.call_args_list
         ]
         assert sorted(removed_ids) == ["b", "c"]
 

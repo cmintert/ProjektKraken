@@ -239,22 +239,31 @@ class TestZSorting:
     """Z-order must reflect the DFS traversal order of the tree."""
 
     def test_initial_z_order(self, model: MapLayerModel) -> None:
-        """Depth-first order: group-a, markers-1, paths-1, group-b, regions-1."""
+        """Top-of-tree items render on top (Photoshop-style stacking).
+
+        Tree: root -> [group-a [markers-1, paths-1], group-b [regions-1]]
+        group-a is first (top) so its subtree has higher Z than group-b's.
+        Within group-a, markers-1 (top) has higher Z than paths-1.
+        """
         z = model.compute_z_order()
-        assert z["group-a"] < z["markers-1"]
-        assert z["markers-1"] < z["paths-1"]
-        assert z["paths-1"] < z["group-b"]
-        assert z["group-b"] < z["regions-1"]
+        # group-a (top of root) renders above group-b (bottom of root)
+        assert z["group-a"] > z["group-b"]
+        # group-a subtree sits entirely above group-b subtree
+        assert z["paths-1"] > z["group-b"]
+        assert z["group-a"] > z["regions-1"]
+        # Within group-a, markers-1 (top) renders above paths-1
+        assert z["markers-1"] > z["paths-1"]
 
     def test_z_order_spacing(self, model: MapLayerModel) -> None:
-        """Z values should increase by MAP_LAYER_Z_SPACING."""
+        """Z values increase by MAP_LAYER_Z_SPACING; bottom item gets the base value."""
         z = model.compute_z_order()
-        assert z["group-a"] == pytest.approx(MAP_LAYER_Z_BASE)
-        assert z["markers-1"] == pytest.approx(MAP_LAYER_Z_BASE + MAP_LAYER_Z_SPACING)
+        # group-b is last (bottom of tree) so it receives MAP_LAYER_Z_BASE
+        assert z["group-b"] == pytest.approx(MAP_LAYER_Z_BASE)
+        # regions-1 is the only child of group-b, one step above
+        assert z["regions-1"] == pytest.approx(MAP_LAYER_Z_BASE + MAP_LAYER_Z_SPACING)
 
     def test_z_order_after_move(self, model: MapLayerModel) -> None:
-        """After moving Group B before Group A, the Z order reflects the
-        new tree structure."""
+        """After moving Group B to the top (row 0), its subtree renders above Group A."""
         # Move group-b (row 1 under root) to row 0 under root
         group_b = model.find_node_by_id("group-b")
         assert group_b is not None
@@ -268,10 +277,9 @@ class TestZSorting:
         assert model.root.children[1].id == "group-a"
 
         z = model.compute_z_order()
-        # Now: group-b comes first
-        assert z["group-b"] < z["regions-1"]
-        assert z["regions-1"] < z["group-a"]
-        assert z["group-a"] < z["markers-1"]
+        # group-b is now at top → its subtree renders above group-a's subtree
+        assert z["group-b"] > z["group-a"]
+        assert z["regions-1"] > z["markers-1"]
 
     def test_layer_order_signal_emitted_on_move(self, model: MapLayerModel) -> None:
         """The layer_order_changed signal fires after a move."""

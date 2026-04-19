@@ -824,8 +824,10 @@ class TestMapWidgetLayerCRUD:
 
         widget._on_create_group("Test Group")
         assert len(model.root.children) == initial_count + 1
-        new_group = model.root.children[-1]
-        assert new_group.name == "Test Group"
+        new_group = next(
+            (c for c in model.root.children if c.name == "Test Group"), None
+        )
+        assert new_group is not None
         assert new_group.layer_type == MAP_LAYER_TYPE_GROUP
 
     def test_create_layer_under_default(self, qtbot) -> None:

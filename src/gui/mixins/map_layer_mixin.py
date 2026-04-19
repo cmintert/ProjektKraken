@@ -76,7 +76,7 @@ class MapLayerMixin:
 
     @staticmethod
     def _ensure_basemap_node(root: MapLayerNode) -> None:
-        """Guarantee a pinned basemap node exists as ``root``'s first child.
+        """Guarantee a pinned basemap node exists as ``root``'s last child.
 
         Args:
             root: The layer tree root to augment in-place.
@@ -86,13 +86,29 @@ class MapLayerMixin:
                 # Already present — re-assert the layer type in case the
                 # tree was persisted under an older schema.
                 child.layer_type = MAP_LAYER_TYPE_BASEMAP
+                if root.children[-1] is not child:
+                    # Move basemap to end via index swap (avoid O(n) remove()).
+                    idx = root.children.index(child)
+                    root.children[idx], root.children[-1] = (
+                        root.children[-1],
+                        root.children[idx],
+                    )
                 return
         basemap = MapLayerNode(
             name="Base Map",
             layer_type=MAP_LAYER_TYPE_BASEMAP,
             id=MAP_LAYER_BASEMAP_NODE_ID,
         )
-        root.children.insert(0, basemap)
+        root.children.append(basemap)
+
+    def _insert_row_before_basemap(self) -> int:
+        """Get the row index to insert layers before the pinned basemap.
+
+        Returns:
+            int: Row index for insertion (one before basemap at end).
+        """
+        model = self._ensure_layer_model()
+        return max(0, len(model.root.children) - 1)
 
     def _sync_basemap_to_view(self) -> None:
         """Apply the basemap node's visibility/opacity to the pixmap item."""
@@ -143,7 +159,7 @@ class MapLayerMixin:
             layer_type=MAP_LAYER_TYPE_GROUP,
         )
         root_idx = model.index_from_node(model.root)
-        model.add_layer(root_idx, node)
+        model.add_layer(root_idx, node, row=self._insert_row_before_basemap())
         return node
 
     @staticmethod
@@ -244,7 +260,7 @@ class MapLayerMixin:
         model = self._ensure_layer_model()
         node = MapLayerNode(name=name, layer_type=MAP_LAYER_TYPE_GROUP)
         root_idx = model.index_from_node(model.root)
-        model.add_layer(root_idx, node)
+        model.add_layer(root_idx, node, row=self._insert_row_before_basemap())
         logger.info(f"Created layer group: {name}")
 
     @Slot(str)
