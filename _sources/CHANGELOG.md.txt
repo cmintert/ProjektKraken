@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-04-19
-### Added
-- feat: enhance layer management and synchronization in MapHandler and related components
+### Fixed
+- fix(raster): sync edit toggle, passive sample, gradient, cursor, brush resize
 
 
 *This changelog was automatically generated.*
