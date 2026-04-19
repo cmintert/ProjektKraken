@@ -2753,3 +2753,44 @@ class TestCursorRefreshAfterZoom:
         view = _make_view(qtbot)
         tool = view._raster_edit_tool
         tool.refresh_cursor()  # Should not raise
+
+
+# ── Bug fix: Space-to-pan works immediately after entering edit mode ──
+
+
+class TestFocusTransferOnEditStart:
+    """Map view must receive keyboard focus when raster edit starts, so
+    Space-to-pan works before the first brush stroke."""
+
+    def test_view_gains_focus_on_edit_requested(self, qtbot) -> None:
+        from PySide6.QtWidgets import QApplication
+
+        from src.gui.widgets.map_widget import MapWidget
+
+        widget = MapWidget()
+        qtbot.addWidget(widget)
+        widget.show()
+        widget.activateWindow()
+        QApplication.processEvents()
+
+        img = QImage(200, 200, QImage.Format.Format_RGB32)
+        img.fill(Qt.GlobalColor.white)
+        widget.view.pixmap_item = QGraphicsPixmapItem(QPixmap.fromImage(img))
+        widget.view.scene.addItem(widget.view.pixmap_item)
+        widget.view.coord_system.set_scene_rect(QRectF(0, 0, 200, 200))
+        _make_raster_item(widget.view, node_id="focus1")
+
+        # Give focus to the Edit button — simulates user activating it via keyboard
+        widget.layer_panel._btn_edit_toggle.setFocus()
+        QApplication.processEvents()
+        assert not widget.view.hasFocus()
+
+        widget._on_raster_edit_requested("focus1")
+        QApplication.processEvents()
+
+        fw = QApplication.focusWidget()
+        # Focus must be on the view or its viewport child
+        is_view_focused = fw is widget.view or (
+            fw is not None and widget.view.isAncestorOf(fw)
+        )
+        assert is_view_focused, f"Expected view to have focus, got {fw}"

@@ -498,6 +498,9 @@ class MapLayerMixin:
         )
 
         view.start_raster_editing(node_id)
+        # Transfer keyboard focus to the map view so Space-to-pan works
+        # immediately without requiring a mouse click on the canvas first.
+        view.setFocus(Qt.FocusReason.OtherFocusReason)
         self.raster_edit_requested.emit(node_id)
 
     @Slot()
