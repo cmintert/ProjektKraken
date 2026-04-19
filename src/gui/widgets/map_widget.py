@@ -468,6 +468,15 @@ class MapWidget(
         # Forward raster signals from the graphics view
         self.view.raster_stroke_completed.connect(self.raster_stroke_completed.emit)
         self.view.raster_value_probed.connect(self.raster_value_probed.emit)
+        self.view.raster_edit_externally_stopped.connect(
+            self.layer_panel.reset_edit_toggle
+        )
+        self.view.raster_edit_externally_stopped.connect(
+            self._on_raster_edit_stopped
+        )
+        self.view.raster_brush_resize_requested.connect(
+            self._on_raster_brush_resize_from_view
+        )
 
         self._maps_data = []  # List of maps for selector
         self._playhead_time: float = 0.0  # Current playhead time from Timeline
@@ -593,6 +602,11 @@ class MapWidget(
             if overlay.isVisible():
                 self._position_legend_overlay()
                 QTimer.singleShot(0, self._position_legend_overlay)
+
+    @Slot(int)
+    def _on_raster_brush_resize_from_view(self, new_size: int) -> None:
+        """Sync panel brush-size spinbox when Ctrl+scroll resized the brush."""
+        self.layer_panel.set_raster_brush_size(new_size)
 
     @Slot(bool)
     def _on_legend_toggle(self, checked: bool) -> None:

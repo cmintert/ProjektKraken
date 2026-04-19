@@ -484,6 +484,7 @@ class MapLayerMixin:
         tool.brush_size = panel.raster_brush_size
         tool.paint_value = panel.raster_paint_value
         tool.falloff = panel.raster_falloff
+        tool.set_gradient_sub_mode(panel.raster_gradient_sub_mode)
 
         logger.debug(
             "_on_raster_edit_requested: node_id=%s mode=%s brush_size=%d "
@@ -512,7 +513,12 @@ class MapLayerMixin:
 
     @Slot()
     def _on_raster_settings_changed(self) -> None:
-        """Push updated tool settings from the panel to the active tool."""
+        """Push updated tool settings from the panel to the active tool.
+
+        The tool *mode* is always synced so that passive Sample probing
+        works without requiring active edit mode.  Other brush parameters
+        are only pushed while editing is active.
+        """
         from src.gui.widgets.map.raster_edit_tool import RasterEditMode
 
         view = getattr(self, "view", None)
@@ -521,19 +527,22 @@ class MapLayerMixin:
             return
 
         tool = view._raster_edit_tool
-        if not tool.is_active:
-            return
-
         mode_map = {
             "brush": RasterEditMode.BRUSH,
             "fill": RasterEditMode.FILL,
             "gradient": RasterEditMode.GRADIENT,
             "sample": RasterEditMode.SAMPLE,
         }
+        # Always sync mode so passive Sample works without entering Edit.
         tool.mode = mode_map.get(panel.raster_tool_mode, RasterEditMode.BRUSH)
+
+        if not tool.is_active:
+            return
+
         tool.brush_size = panel.raster_brush_size
         tool.paint_value = panel.raster_paint_value
         tool.falloff = panel.raster_falloff
+        tool.set_gradient_sub_mode(panel.raster_gradient_sub_mode)
 
         logger.debug(
             "_on_raster_settings_changed: mode=%s brush_size=%d "

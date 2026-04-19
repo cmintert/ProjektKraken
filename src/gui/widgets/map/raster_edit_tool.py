@@ -77,6 +77,9 @@ class RasterEditTool:
         # Gradient state
         self._gradient_start: Optional[QPointF] = None
 
+        # Last known cursor position in scene coordinates
+        self._last_cursor_scene_pos: Optional[QPointF] = None
+
         # Cursor overlay
         self._cursor_item: Optional[QGraphicsEllipseItem] = None
 
@@ -204,7 +207,7 @@ class RasterEditTool:
         self._active_node_id = node_id
         self._preview_node_id = node_id  # keep for passive probing after stop
         self._view.setDragMode(QGraphicsView.DragMode.NoDrag)
-        self._view.setCursor(Qt.CursorShape.CrossCursor)
+        self._view.viewport().setCursor(Qt.CursorShape.CrossCursor)
         logger.info("Raster edit started: %s (mode=%s)", node_id, self._mode.name)
 
     def stop_editing(self) -> None:
@@ -216,7 +219,7 @@ class RasterEditTool:
         self._gradient_start = None
         self._remove_cursor()
         self._view.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
-        self._view.setCursor(Qt.CursorShape.ArrowCursor)
+        self._view.viewport().setCursor(Qt.CursorShape.ArrowCursor)
         logger.info("Raster edit stopped")
 
     # ------------------------------------------------------------------
@@ -357,11 +360,18 @@ class RasterEditTool:
     def handle_key_escape(self) -> bool:
         """Handle Escape key — exit editing mode.
 
+        Emits ``raster_edit_externally_stopped`` so the layer panel can
+        reset its toggle button to match the tool state.
+
         Returns:
             True if the event was consumed.
         """
         if self._active:
             self.stop_editing()
+            import shiboken6
+
+            if shiboken6.isValid(self._view):
+                self._view.raster_edit_externally_stopped.emit()
             return True
         return False
 
@@ -625,6 +635,7 @@ class RasterEditTool:
 
     def _update_cursor(self, scene_pos: QPointF) -> None:
         """Update the visual brush circle at the cursor position."""
+        self._last_cursor_scene_pos = scene_pos
         if self._mode not in (RasterEditMode.BRUSH, RasterEditMode.GRADIENT):
             self._remove_cursor()
             return
@@ -670,6 +681,15 @@ class RasterEditTool:
             if scene is not None:
                 scene.removeItem(self._cursor_item)
             self._cursor_item = None
+
+    def refresh_cursor(self) -> None:
+        """Re-draw the cursor overlay at the last known position.
+
+        Call after zoom or brush size changes so the overlay circle
+        stays in sync with the current view transform and tool settings.
+        """
+        if self._last_cursor_scene_pos is not None and self._active:
+            self._update_cursor(self._last_cursor_scene_pos)
 
     # ------------------------------------------------------------------
     # Helpers

@@ -592,6 +592,8 @@ class MapGraphicsView(QGraphicsView):
         str, tuple, bytes, bytes
     )  # node_id, dirty, before, after
     raster_value_probed = Signal(str, int, float, float)  # node_id, value, x, y
+    raster_edit_externally_stopped = Signal()  # edit stopped by Escape or other non-panel trigger
+    raster_brush_resize_requested = Signal(int)  # new brush size from Ctrl+scroll
 
     # Emitted when the viewport resizes, useful for positioning overlays
     viewport_resized = Signal(QResizeEvent)
@@ -1881,7 +1883,25 @@ class MapGraphicsView(QGraphicsView):
         return None
 
     def wheelEvent(self, event: QWheelEvent) -> None:
-        """Handle mouse wheel for zooming."""
+        """Handle mouse wheel for zooming, with Ctrl+scroll brush resize."""
+        # Ctrl+scroll → adjust raster brush size
+        if (
+            event.modifiers() & Qt.KeyboardModifier.ControlModifier
+            and self._raster_edit_tool.is_active
+        ):
+            delta = event.angleDelta().y()
+            if delta != 0:
+                step = max(1, self._raster_edit_tool.brush_size // 5)
+                new_size = self._raster_edit_tool.brush_size + (
+                    step if delta > 0 else -step
+                )
+                new_size = max(1, min(128, new_size))
+                self._raster_edit_tool.brush_size = new_size
+                self._raster_edit_tool.refresh_cursor()
+                self.raster_brush_resize_requested.emit(new_size)
+            event.accept()
+            return
+
         zoom_out_factor = 1 / MAP_ZOOM_IN_FACTOR
 
         factor = MAP_ZOOM_IN_FACTOR if event.angleDelta().y() > 0 else zoom_out_factor
@@ -1890,6 +1910,10 @@ class MapGraphicsView(QGraphicsView):
         self._trajectory.update_label_scales()
         self._apply_scale_dependent_visibility()
         self._schedule_label_layout()
+
+        # Keep the raster brush cursor overlay sized correctly after zoom
+        if self._raster_edit_tool.is_active:
+            self._raster_edit_tool.refresh_cursor()
 
     def contextMenuEvent(self, event: QContextMenuEvent) -> None:
         """Handle context menu events.

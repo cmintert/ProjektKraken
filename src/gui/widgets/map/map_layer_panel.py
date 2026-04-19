@@ -1110,9 +1110,23 @@ class MapLayerPanel(QWidget):
             # Notify consumers that no raster is selected
             self.raster_layer_selected.emit(None, None)
 
-        # Reset edit toggle when switching layers
-        if not is_raster and self._btn_edit_toggle.isChecked():
-            self._btn_edit_toggle.setChecked(False)
+        # Reset edit toggle when switching layers or switching between rasters
+        if self._btn_edit_toggle.isChecked():
+            if not is_raster or node.id != self._current_node_id:
+                self.reset_edit_toggle()
+                self.raster_edit_stopped.emit()
+
+    def reset_edit_toggle(self) -> None:
+        """Reset the edit toggle button without emitting signals.
+
+        Use when edit mode was stopped externally (e.g. Escape key or
+        raster-to-raster layer switch) so the panel stays in sync with
+        the tool state.
+        """
+        self._btn_edit_toggle.blockSignals(True)
+        self._btn_edit_toggle.setChecked(False)
+        self._btn_edit_toggle.setText("✎ Edit")
+        self._btn_edit_toggle.blockSignals(False)
 
     def _on_edit_toggled(self, checked: bool) -> None:
         """Handle the Edit / Done toggle button."""
@@ -1366,6 +1380,15 @@ class MapLayerPanel(QWidget):
     def raster_brush_size(self) -> int:
         """Current brush size from the spin box."""
         return self._brush_size_spin.value()
+
+    def set_raster_brush_size(self, size: int) -> None:
+        """Set the brush size spinbox without emitting settings_changed.
+
+        Used by Ctrl+scroll in the view to keep the panel in sync.
+        """
+        self._brush_size_spin.blockSignals(True)
+        self._brush_size_spin.setValue(max(1, min(128, size)))
+        self._brush_size_spin.blockSignals(False)
 
     @property
     def raster_paint_value(self) -> int:

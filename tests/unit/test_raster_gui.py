@@ -2518,3 +2518,238 @@ class TestLegendOverlayOnMapWidget:
         w = MapWidget()
         qtbot.addWidget(w)
         assert w.legend_overlay.maximumWidth() <= 400
+
+
+# ── Bug fix: Escape key emits raster_edit_externally_stopped ──────────
+
+
+class TestEscapeEmitsExternallyStopped:
+    """Pressing Escape must emit raster_edit_externally_stopped so
+    the layer panel toggle resets."""
+
+    def test_escape_emits_signal(self, qtbot) -> None:
+        view = _make_view(qtbot)
+        _make_raster_item(view, node_id="esc1")
+        view.start_raster_editing("esc1")
+
+        with qtbot.waitSignal(view.raster_edit_externally_stopped, timeout=500):
+            view._raster_edit_tool.handle_key_escape()
+
+    def test_escape_no_signal_when_not_editing(self, qtbot) -> None:
+        view = _make_view(qtbot)
+        signals: list[bool] = []
+        view.raster_edit_externally_stopped.connect(lambda: signals.append(True))
+        view._raster_edit_tool.handle_key_escape()
+        assert signals == []
+
+
+# ── Bug fix: Raster-to-raster switch stops editing ────────────────────
+
+
+class TestRasterToRasterSwitchStopsEditing:
+    """Switching between raster layers must stop editing on the old layer."""
+
+    def test_panel_reset_edit_toggle(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+
+        # Simulate checked state
+        panel._btn_edit_toggle.setChecked(True)
+        assert panel._btn_edit_toggle.isChecked()
+
+        panel.reset_edit_toggle()
+        assert not panel._btn_edit_toggle.isChecked()
+        assert panel._btn_edit_toggle.text() == "\u270e Edit"
+
+    def test_reset_edit_toggle_does_not_emit_toggled(self, qtbot) -> None:
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel._btn_edit_toggle.setChecked(True)
+
+        signals: list[bool] = []
+        panel._btn_edit_toggle.toggled.connect(signals.append)
+
+        panel.reset_edit_toggle()
+        assert signals == []
+
+
+# ── Bug fix: Passive Sample mode activates without Edit ───────────────
+
+
+class TestPassiveSampleMode:
+    """Sample mode must be synced to the tool even when edit is not active."""
+
+    def test_sample_mode_set_without_edit(self, qtbot) -> None:
+        from unittest.mock import PropertyMock, patch
+
+        from src.gui.widgets.map.raster_edit_tool import RasterEditMode
+        from src.gui.widgets.map_widget import MapWidget
+
+        widget = MapWidget()
+        qtbot.addWidget(widget)
+
+        # Set up a raster item so the tool has something to reference
+        img = QImage(200, 200, QImage.Format.Format_RGB32)
+        img.fill(Qt.GlobalColor.white)
+        widget.view.pixmap_item = QGraphicsPixmapItem(QPixmap.fromImage(img))
+        widget.view.scene.addItem(widget.view.pixmap_item)
+        widget.view.coord_system.set_scene_rect(QRectF(0, 0, 200, 200))
+
+        tool = widget.view._raster_edit_tool
+        assert not tool.is_active  # Not editing
+
+        # Mock panel properties to return sample mode
+        with (
+            patch.object(
+                type(widget.layer_panel),
+                "raster_tool_mode",
+                new_callable=PropertyMock,
+                return_value="sample",
+            ),
+            patch.object(
+                type(widget.layer_panel),
+                "raster_gradient_sub_mode",
+                new_callable=PropertyMock,
+                return_value="linear",
+            ),
+        ):
+            widget._on_raster_settings_changed()
+
+        assert tool.mode == RasterEditMode.SAMPLE
+
+
+# ── Bug fix: Ctrl+scroll changes brush size ──────────────────────────
+
+
+class TestCtrlScrollBrushResize:
+    """Ctrl+scroll must adjust the raster brush size."""
+
+    def _wheel_event(self, view: MapGraphicsView, angle_y: int) -> "QWheelEvent":
+        from PySide6.QtCore import QPoint
+        from PySide6.QtGui import QWheelEvent
+
+        pos = QPointF(view.viewport().rect().center())
+        global_pos = QPointF(view.mapToGlobal(view.viewport().rect().center()))
+        return QWheelEvent(
+            pos,
+            global_pos,
+            QPoint(0, 0),
+            QPoint(0, angle_y),
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.ControlModifier,
+            Qt.ScrollPhase.NoScrollPhase,
+            False,
+        )
+
+    def test_ctrl_scroll_up_increases_size(self, qtbot) -> None:
+        view = _make_view(qtbot)
+        _make_raster_item(view, node_id="cw1")
+        view.start_raster_editing("cw1")
+
+        tool = view._raster_edit_tool
+        tool.brush_size = 20
+        original = tool.brush_size
+
+        sizes: list[int] = []
+        view.raster_brush_resize_requested.connect(sizes.append)
+
+        view.wheelEvent(self._wheel_event(view, 120))
+
+        assert tool.brush_size > original
+        assert len(sizes) == 1
+        assert sizes[0] == tool.brush_size
+
+    def test_ctrl_scroll_down_decreases_size(self, qtbot) -> None:
+        view = _make_view(qtbot)
+        _make_raster_item(view, node_id="cw2")
+        view.start_raster_editing("cw2")
+
+        tool = view._raster_edit_tool
+        tool.brush_size = 20
+        original = tool.brush_size
+
+        view.wheelEvent(self._wheel_event(view, -120))
+
+        assert tool.brush_size < original
+
+    def test_ctrl_scroll_clamps_min(self, qtbot) -> None:
+        view = _make_view(qtbot)
+        _make_raster_item(view, node_id="cw3")
+        view.start_raster_editing("cw3")
+
+        tool = view._raster_edit_tool
+        tool.brush_size = 1
+
+        view.wheelEvent(self._wheel_event(view, -120))
+        assert tool.brush_size >= 1
+
+
+# ── Bug fix: gradient_sub_mode synced on edit start ───────────────────
+
+
+class TestGradientSubModeSyncOnEditStart:
+    """gradient_sub_mode must be pushed to the tool when editing starts."""
+
+    def test_gradient_sub_mode_synced(self, qtbot) -> None:
+        from unittest.mock import PropertyMock, patch
+
+        from src.gui.widgets.map_widget import MapWidget
+
+        widget = MapWidget()
+        qtbot.addWidget(widget)
+
+        img = QImage(200, 200, QImage.Format.Format_RGB32)
+        img.fill(Qt.GlobalColor.white)
+        widget.view.pixmap_item = QGraphicsPixmapItem(QPixmap.fromImage(img))
+        widget.view.scene.addItem(widget.view.pixmap_item)
+        widget.view.coord_system.set_scene_rect(QRectF(0, 0, 200, 200))
+        _make_raster_item(widget.view, node_id="grad1")
+
+        with patch.object(
+            type(widget.layer_panel),
+            "raster_gradient_sub_mode",
+            new_callable=PropertyMock,
+            return_value="radial",
+        ):
+            widget._on_raster_edit_requested("grad1")
+
+        tool = widget.view._raster_edit_tool
+        assert tool._gradient_sub_mode == "radial"
+
+
+# ── Bug fix: Cursor refresh after zoom ────────────────────────────────
+
+
+class TestCursorRefreshAfterZoom:
+    """Brush cursor must be refreshed after wheel zoom."""
+
+    def test_refresh_cursor_updates_overlay(self, qtbot) -> None:
+        view = _make_view(qtbot)
+        _make_raster_item(view, node_id="zc1")
+        view.start_raster_editing("zc1")
+
+        tool = view._raster_edit_tool
+        tool.mode = RasterEditMode.BRUSH
+        tool.brush_size = 10
+
+        # Simulate a brush paint so _last_cursor_scene_pos is set
+        tool._update_cursor(QPointF(100, 100))
+        assert tool._cursor_item is not None
+
+        # Record old rect
+        old_rect = tool._cursor_item.rect()
+
+        # After refresh the cursor item should still exist
+        tool.refresh_cursor()
+        assert tool._cursor_item is not None
+        # Rect should equal — position unchanged, same zoom
+        assert tool._cursor_item.rect() == old_rect
+
+    def test_refresh_cursor_noop_when_inactive(self, qtbot) -> None:
+        view = _make_view(qtbot)
+        tool = view._raster_edit_tool
+        tool.refresh_cursor()  # Should not raise
