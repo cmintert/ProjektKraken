@@ -289,6 +289,13 @@ class ColorMap:
 
         flat = rgb_arr.reshape(-1, 3).astype(np.float32)  # (N, 3)
 
+        # Subsample large images — k-means quality is stable beyond ~20K points.
+        # This caps runtime at O(50K × k × iters) regardless of source resolution.
+        _MAX_KM_PX = 50_000
+        if flat.shape[0] > _MAX_KM_PX:
+            _rng_sub = np.random.RandomState(42)
+            flat = flat[_rng_sub.choice(flat.shape[0], size=_MAX_KM_PX, replace=False)]
+
         # Perceived luminance (Rec. 709)
         lum = 0.2126 * flat[:, 0] + 0.7152 * flat[:, 1] + 0.0722 * flat[:, 2]
 
@@ -916,7 +923,7 @@ class MapDataBuffer:
             img = Image.fromarray(self._rgba_data, mode="RGBA")
         else:
             img = Image.fromarray(self._data)
-        img.save(path)
+        img.save(path, compress_level=1)
         logger.info("Saved raster buffer %dx%d → %s", self._width, self._height, path)
 
     @classmethod

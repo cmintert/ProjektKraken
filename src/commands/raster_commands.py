@@ -306,11 +306,8 @@ class CreateRasterLayerCommand(BaseCommand):
                 # Build a multicolor gradient from the original RGB image so
                 # the greyscale buffer renders close to the original colours.
                 try:
-                    from PIL import Image as _PILImage
-
-                    _orig = _PILImage.open(self.import_path)
                     initial_color_map = ColorMap.from_rgb_image(
-                        _orig, n_stops=12
+                        img, n_stops=12
                     ).to_dict()
                 except Exception:
                     logger.debug(
