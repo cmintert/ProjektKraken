@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-04-16  
-**Commit:** 0.16.0
+**Last Updated:** 2026-04-21  
+**Commit:** 53c9d23c
 ---
 
 # Changelog
@@ -10,6 +10,28 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Added
+
+- *(2026-04-21)* **Raster / GUI**: Redesigned paint-value selector with `NumericScrubberSpinBox` (press-drag editing), `SwatchGridWidget` for discrete rasters, `GradientScrubberWidget` for continuous rasters, and `RecentValuesStrip` for one-click access to recently-used values.
+- *(2026-04-21)* **GUI**: Added reusable color-picker / scrubbing widgets: `NumericScrubberSpinBox`, `GradientScrubberWidget`, `SwatchGridWidget`, `RecentValuesStrip`, `InlineColorPickerPopover`, and `ColorHistoryService` singleton.
+- *(2026-04-21)* **Raster / GUI**: Added icon-only buttons (new group, new raster layer) to the map layer panel header using theme-aware SVG icons; added `get_icon_raster_tool_button_style()` to `StyleHelper`.
+- *(2026-04-21)* **Assets**: Added 17 new SVG icons to `default_assets/icons/ui_icons/` (camera, chart-bar, drop, eraser, eye, eye-slash, eyedropper, funnel, funnel-x, gradient, note-pencil, paint-brush, paint-brush-broad, paint-bucket, pencil-simple, sliders, trash).
+- *(2026-04-19)* **Map**: Enhanced layer management and synchronization in `MapHandler` and related components.
+- *(2026-04-17)* **Web**: Overhauled embedded FastAPI longform viewer with redesigned theme-matched UI, include/exclude tag chip filters (ANY/ALL modes), Ctrl+F text search, active TOC highlighting, WikiLink resolution, and `/api/theme` endpoint.
+
+### Fixed
+
+- *(2026-04-21)* **Raster / UX**: Replaced modal `QColorDialog` with non-modal `InlineColorPickerPopover` in the palette editor; synced all paint-value peers to prevent UI feedback loops.
+- *(2026-04-19)* **Raster / UX**: Fixed keyboard focus not transferring to the map view on edit start, causing Space key to toggle edit mode off instead of activating hold-to-pan.
+- *(2026-04-19)* **Raster / UX**: Fixed edit toggle, passive sample, gradient sub-mode sync, cursor overlay refresh after zoom, and Ctrl+scroll brush resize; fixed Escape key stopping raster editing and resetting the toggle.
+
+### Changed
+
+- *(2026-04-21)* **Raster / Performance**: Cached brush kernels via `@lru_cache(32)` and pre-built colorization LUTs (`_lut` field on `RasterLayerItem`), yielding ~40% speedup on stroke rendering.
+- *(2026-04-21)* **Raster / Painting**: Improved brush stroke quality with evenly-spaced dab interpolation (`RASTER_DAB_SPACING_FACTOR`), cosine/gaussian/linear falloff curve options, and per-stroke strength-map blending to eliminate luminosity banding.
+- *(2026-04-18)* **Map / Architecture**: Consolidated layer update flow in `MapGraphicsView`, `MapHandler`, and related mixins/models; reduced duplicated state and race conditions during layer add/remove/visibility changes.
+- *(2026-04-18)* **Analysis**: Enhanced image analysis to handle unsupported PIL modes with automatic conversion fallback.
 
 ## [0.16.0]
 
