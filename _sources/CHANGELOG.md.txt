@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-04-21
-### Internal
-- perf(raster): cache brush kernels and colorization lookup tables
+### Documentation
+- docs: update CHANGELOG for raster editing and UI improvements (0.16.1 dev)
 
 
 *This changelog was automatically generated.*
