@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.app.constants import MAP_LAYER_Z_UI_OVERLAY
+from src.app.ui_constants import RASTER_DAB_SPACING_FACTOR
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.map.raster_layer_item import RasterLayerItem
 
@@ -65,6 +66,7 @@ class RasterEditTool:
         self._brush_size: int = 8
         self._paint_value: int = 1
         self._falloff: float = 0.0
+        self._falloff_curve: str = "cosine"
 
         # Gradient sub-mode
         self._gradient_sub_mode: str = GRADIENT_SUB_LINEAR
@@ -73,6 +75,10 @@ class RasterEditTool:
         self._stroke_active: bool = False
         self._stroke_before: Optional[np.ndarray] = None
         self._stroke_dirty: Optional[tuple[int, int, int, int]] = None
+        self._stroke_strength_map: Optional[np.ndarray] = None
+
+        # Dab spacing: last position where a dab was actually placed
+        self._last_dab_pos: Optional[tuple[float, float]] = None
 
         # Gradient state
         self._gradient_start: Optional[QPointF] = None
@@ -145,6 +151,18 @@ class RasterEditTool:
     @falloff.setter
     def falloff(self, value: float) -> None:
         self._falloff = max(0.0, min(value, 1.0))
+
+    @property
+    def falloff_curve(self) -> str:
+        """Falloff curve shape: ``"linear"``, ``"cosine"``, or ``"gaussian"``."""
+        return self._falloff_curve
+
+    @falloff_curve.setter
+    def falloff_curve(self, value: str) -> None:
+        if value in ("linear", "cosine", "gaussian"):
+            self._falloff_curve = value
+        else:
+            logger.warning("Unknown falloff_curve %r, keeping %r", value, self._falloff_curve)
 
     @property
     def active_node_id(self) -> Optional[str]:
@@ -274,6 +292,7 @@ class RasterEditTool:
 
         if self._mode == RasterEditMode.BRUSH:
             self._begin_stroke(item)
+            self._last_dab_pos = (norm[0], norm[1])
             self._apply_brush(item, norm[0], norm[1])
             return True
 
@@ -321,7 +340,7 @@ class RasterEditTool:
                     norm[0],
                     norm[1],
                 )
-                self._apply_brush(item, norm[0], norm[1])
+                self._emit_dabs(item, norm[0], norm[1])
             else:
                 logger.debug(
                     "handle_mouse_move: out-of-bounds at (%.1f,%.1f), skipping paint",
@@ -385,6 +404,8 @@ class RasterEditTool:
         self._stroke_active = True
         self._stroke_before = buf.data.copy()
         self._stroke_dirty = None
+        self._stroke_strength_map = np.zeros(buf.data.shape, dtype=np.float32)
+        self._last_dab_pos = None
         logger.debug(
             "_begin_stroke: node_id=%s buffer=%dx%d",
             self._active_node_id,
@@ -396,7 +417,14 @@ class RasterEditTool:
         """Paint a single brush dab and update display."""
         buf = item.buffer
         dirty = buf.paint_brush(
-            x_norm, y_norm, self._brush_size, self._paint_value, self._falloff
+            x_norm,
+            y_norm,
+            self._brush_size,
+            self._paint_value,
+            self._falloff,
+            falloff_curve=self._falloff_curve,
+            stroke_before=self._stroke_before,
+            stroke_strength_map=self._stroke_strength_map,
         )
         logger.debug(
             "_apply_brush: pos=(%.3f,%.3f) radius=%d value=%d dirty=%s",
@@ -420,6 +448,55 @@ class RasterEditTool:
 
         # Partial display update for responsiveness
         item.update_region(dirty)
+
+    def _emit_dabs(self, item: RasterLayerItem, x_norm: float, y_norm: float) -> None:
+        """Paint interpolated dabs from the last placed dab to *x_norm/y_norm*.
+
+        Interpolates positions at ``RASTER_DAB_SPACING_FACTOR * brush_size``
+        pixel intervals so that fast mouse movement does not leave visible gaps
+        between dabs.
+
+        Args:
+            item: The active raster layer item.
+            x_norm: Current horizontal position in normalised [0, 1] space.
+            y_norm: Current vertical position in normalised [0, 1] space.
+        """
+        if self._last_dab_pos is None:
+            # First move after press — place a dab directly and track position
+            self._apply_brush(item, x_norm, y_norm)
+            self._last_dab_pos = (x_norm, y_norm)
+            return
+
+        buf = item.buffer
+        lx, ly = self._last_dab_pos
+
+        # Convert both positions to pixel space for metric distance
+        dx_px = (x_norm - lx) * buf.width
+        dy_px = (y_norm - ly) * buf.height
+        dist_px = float(np.hypot(dx_px, dy_px))
+
+        spacing_px = max(1.0, self._brush_size * RASTER_DAB_SPACING_FACTOR)
+        if dist_px < spacing_px:
+            # Haven't moved far enough for a new dab yet
+            return
+
+        # How many evenly-spaced dabs fit between last position and current?
+        n_dabs = int(dist_px / spacing_px)
+        total_steps = dist_px / spacing_px  # may be fractional
+
+        for i in range(1, n_dabs + 1):
+            t = i / total_steps
+            xi = lx + t * (x_norm - lx)
+            yi = ly + t * (y_norm - ly)
+            self._apply_brush(item, xi, yi)
+
+        # Advance last_dab_pos to the position of the last placed dab (not
+        # the current mouse position) so carry-over spacing is continuous.
+        t_last = n_dabs / total_steps
+        self._last_dab_pos = (
+            lx + t_last * (x_norm - lx),
+            ly + t_last * (y_norm - ly),
+        )
 
     def _finish_stroke(self) -> None:
         """Emit a paint command for the completed stroke."""
@@ -458,6 +535,8 @@ class RasterEditTool:
 
         self._stroke_before = None
         self._stroke_dirty = None
+        self._stroke_strength_map = None
+        self._last_dab_pos = None
 
     # ------------------------------------------------------------------
     # Fill

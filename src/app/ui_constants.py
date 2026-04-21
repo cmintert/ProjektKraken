@@ -24,3 +24,9 @@ class Margins:
     STANDARD = 16  # 2x base
     WIDE = 24  # 3x base
     EXTRA_WIDE = 32  # 4x base
+
+
+# Raster brush: dab spacing as a fraction of brush radius.
+# 0.25 means a new dab every 25 % of the radius, keeping strokes gapless
+# at typical painting speeds while avoiding excessive dab overlap.
+RASTER_DAB_SPACING_FACTOR: float = 0.25

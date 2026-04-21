@@ -392,6 +392,7 @@ class MapLayerPanel(QWidget):
             icon_path="default_assets/icons/ui_icons/drop.svg",
         )
 
+        self._build_falloff_curve_combo(rt)
         self._build_gradient_sub_combo(rt)
 
     def _build_paint_value_selector(self, rt: QVBoxLayout) -> None:
@@ -492,6 +493,31 @@ class MapLayerPanel(QWidget):
         ep_layout.addWidget(self._entity_picker_combo, 1)
         ep_layout.addStretch()
         rt.addWidget(self._entity_picker_row)
+
+    def _build_falloff_curve_combo(self, rt: QVBoxLayout) -> None:
+        """Build the falloff curve combo row (Linear / Cosine / Gaussian).
+
+        Args:
+            rt: Raster toolbar layout to append into.
+        """
+        curve_row = QHBoxLayout()
+        curve_row.setSpacing(Spacing.COMPACT)
+        curve_lbl = QLabel("Curve:")
+        curve_lbl.setFixedWidth(_LABEL_WIDTH)
+        curve_lbl.setToolTip("Shape of the brush feather ramp")
+        curve_row.addWidget(curve_lbl)
+        self._falloff_curve_combo = QComboBox()
+        self._falloff_curve_combo.addItems(["Cosine", "Linear", "Gaussian"])
+        self._falloff_curve_combo.setToolTip(
+            "Cosine: smooth S-curve (default)  |  "
+            "Linear: uniform ramp  |  "
+            "Gaussian: tight centre, rapid falloff"
+        )
+        self._falloff_curve_combo.currentTextChanged.connect(
+            lambda _: self._on_raster_setting_changed()
+        )
+        curve_row.addWidget(self._falloff_curve_combo, 1)
+        rt.addLayout(curve_row)
 
     def _build_gradient_sub_combo(self, rt: QVBoxLayout) -> None:
         """Build the gradient sub-mode combo row.
@@ -1827,6 +1853,11 @@ class MapLayerPanel(QWidget):
     def raster_falloff(self) -> float:
         """Current falloff (0.0–1.0) from the slider."""
         return self._falloff_slider.value() / 100.0
+
+    @property
+    def raster_falloff_curve(self) -> str:
+        """Current falloff curve name (lowercase) from the combo box."""
+        return self._falloff_curve_combo.currentText().lower()
 
     @property
     def raster_gradient_sub_mode(self) -> str:

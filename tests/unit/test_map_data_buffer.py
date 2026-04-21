@@ -563,3 +563,164 @@ class TestColorizeLUT:
         # Unmapped values are transparent
         assert img.pixelColor(1, 0).alpha() == 0
         assert img.pixelColor(0, 1).alpha() == 0
+
+
+# ------------------------------------------------------------------
+# Falloff curve shapes
+# ------------------------------------------------------------------
+
+
+class TestFalloffCurves:
+    """Tests for cosine and gaussian falloff curve shapes.
+
+    These tests verify that the shaped falloff curves differ from the
+    linear baseline in the expected directions, and that boundary
+    conditions are preserved for all curves.
+    """
+
+    def test_cosine_center_is_full_value(self) -> None:
+        """Cosine curve: centre pixel must be the target value."""
+        buf = MapDataBuffer(256, 256)
+        buf.paint_brush(0.5, 0.5, radius_px=40, value=10000, falloff=1.0, falloff_curve="cosine")
+        assert buf.get_value_at(0.5, 0.5) == 10000
+
+    def test_gaussian_center_is_full_value(self) -> None:
+        """Gaussian curve: centre pixel must be the target value."""
+        buf = MapDataBuffer(256, 256)
+        buf.paint_brush(0.5, 0.5, radius_px=40, value=10000, falloff=1.0, falloff_curve="gaussian")
+        assert buf.get_value_at(0.5, 0.5) == 10000
+
+    def test_cosine_outside_is_zero(self) -> None:
+        """Cosine curve: pixels beyond the radius are untouched."""
+        buf = MapDataBuffer(256, 256, default_value=0)
+        buf.paint_brush(0.5, 0.5, radius_px=40, value=10000, falloff=1.0, falloff_curve="cosine")
+        assert buf.get_value_at(0.5, 0.5 + 45 / 255) == 0
+
+    def test_gaussian_outside_is_zero(self) -> None:
+        """Gaussian curve: pixels beyond the radius are untouched."""
+        buf = MapDataBuffer(256, 256, default_value=0)
+        buf.paint_brush(0.5, 0.5, radius_px=40, value=10000, falloff=1.0, falloff_curve="gaussian")
+        assert buf.get_value_at(0.5, 0.5 + 45 / 255) == 0
+
+    def test_cosine_midpoint_near_half(self) -> None:
+        """Cosine at t=0.5 of ramp (= half radius with full falloff) ≈ 50 % value.
+
+        For a symmetric cosine S-curve, f(0.5) = 0.5 - 0.5*cos(pi*0.5) = 0.5.
+        """
+        buf = MapDataBuffer(256, 256)
+        buf.paint_brush(0.5, 0.5, radius_px=40, value=10000, falloff=1.0, falloff_curve="cosine")
+        # At exactly half the radius, linear progress t ≈ 0.5, cosine f(t) ≈ 0.5
+        val = buf.get_value_at(0.5, 0.5 + 20 / 255)
+        assert 3500 < val < 6500
+
+    def test_gaussian_tighter_than_linear_near_edge(self) -> None:
+        """Gaussian falloff has lower strength near the edge than linear.
+
+        Near the outer edge (small t) the Gaussian bell curve falls faster
+        than the linear ramp.
+        """
+        buf_lin = MapDataBuffer(256, 256)
+        buf_lin.paint_brush(0.5, 0.5, radius_px=40, value=10000, falloff=1.0, falloff_curve="linear")
+
+        buf_gauss = MapDataBuffer(256, 256)
+        buf_gauss.paint_brush(0.5, 0.5, radius_px=40, value=10000, falloff=1.0, falloff_curve="gaussian")
+
+        # 36 px away from centre in a 40-px brush → in feather zone, near edge
+        y_offset = 36 / 255
+        linear_val = buf_lin.get_value_at(0.5, 0.5 + y_offset)
+        gauss_val = buf_gauss.get_value_at(0.5, 0.5 + y_offset)
+        assert gauss_val < linear_val, (
+            f"Expected gaussian ({gauss_val}) < linear ({linear_val}) near edge"
+        )
+
+    def test_cosine_monotonic_decrease(self) -> None:
+        """Cosine falloff values decrease monotonically from centre outward."""
+        buf = MapDataBuffer(256, 256)
+        buf.paint_brush(0.5, 0.5, radius_px=40, value=10000, falloff=1.0, falloff_curve="cosine")
+        prev = buf.get_value_at(0.5, 0.5)
+        for px_away in (5, 10, 15, 20, 25, 30, 35):
+            cur = buf.get_value_at(0.5, 0.5 + px_away / 255)
+            assert cur <= prev, f"Value at {px_away}px ({cur}) > previous ({prev})"
+            prev = cur
+
+
+# ------------------------------------------------------------------
+# Idempotent stroke strength map
+# ------------------------------------------------------------------
+
+
+class TestStrokeStrengthMap:
+    """Tests for idempotent stroke mode using stroke_before + stroke_strength_map.
+
+    When both are supplied, repeated dabs at the same location must not
+    accumulate beyond the first dab's contribution.
+    """
+
+    def test_idempotent_single_vs_repeated(self) -> None:
+        """Painting 10 dabs at the same position equals one dab in stroke mode."""
+        import numpy as np
+
+        buf_single = MapDataBuffer(128, 128)
+        buf_single.paint_brush(0.5, 0.5, radius_px=20, value=8000, falloff=0.8, falloff_curve="cosine")
+
+        buf_repeat = MapDataBuffer(128, 128)
+        before = buf_repeat.data.copy()
+        strength_map = np.zeros(buf_repeat.data.shape, dtype=np.float32)
+        for _ in range(10):
+            buf_repeat.paint_brush(
+                0.5, 0.5,
+                radius_px=20, value=8000, falloff=0.8, falloff_curve="cosine",
+                stroke_before=before, stroke_strength_map=strength_map,
+            )
+
+        # In idempotent mode, 10 overlapping dabs == 1 dab
+        assert buf_single.data.tobytes() == buf_repeat.data.tobytes()
+
+    def test_stroke_max_strength_takes_largest_dab(self) -> None:
+        """A larger-radius dab over the same region dominates the feather zone."""
+        import numpy as np
+
+        buf = MapDataBuffer(128, 128)
+        before = buf.data.copy()
+        strength_map = np.zeros(buf.data.shape, dtype=np.float32)
+
+        # Small dab — low strength at the feather zone of the large dab
+        buf.paint_brush(
+            0.5, 0.5, radius_px=5, value=8000, falloff=1.0, falloff_curve="linear",
+            stroke_before=before, stroke_strength_map=strength_map,
+        )
+        # Large dab — higher strength at its own feather zone
+        buf.paint_brush(
+            0.5, 0.5, radius_px=30, value=8000, falloff=1.0, falloff_curve="linear",
+            stroke_before=before, stroke_strength_map=strength_map,
+        )
+
+        # Build reference: only large dab
+        buf_ref = MapDataBuffer(128, 128)
+        buf_ref.paint_brush(0.5, 0.5, radius_px=30, value=8000, falloff=1.0, falloff_curve="linear")
+
+        # Centre should be full value in both
+        assert buf.get_value_at(0.5, 0.5) == 8000
+        assert buf_ref.get_value_at(0.5, 0.5) == 8000
+
+        # In the feather zone of the large dab (beyond the small dab),
+        # the strength_map should match the large dab's contribution.
+        # At 20 px from centre (inside large dab, outside small dab),
+        # the combined result must equal the large-dab-only result.
+        combined = buf.get_value_at(0.5, 0.5 + 20 / 127)
+        reference = buf_ref.get_value_at(0.5, 0.5 + 20 / 127)
+        assert abs(combined - reference) <= 1, (
+            f"combined={combined} should match reference={reference}"
+        )
+
+    def test_no_strength_map_behaves_as_accumulation(self) -> None:
+        """Without stroke_strength_map, repeated dabs still accumulate (legacy mode)."""
+        buf = MapDataBuffer(128, 128)
+        # First dab with falloff=1.0 sets feather zone to ~50 % at half radius
+        for _ in range(20):
+            buf.paint_brush(0.5, 0.5, radius_px=20, value=8000, falloff=1.0, falloff_curve="cosine")
+        # After 20 accumulations, feather zone should converge toward full value
+        val_at_half_r = buf.get_value_at(0.5, 0.5 + 10 / 127)
+        assert val_at_half_r > 7000, (
+            f"Legacy accumulation: expected near-full value, got {val_at_half_r}"
+        )

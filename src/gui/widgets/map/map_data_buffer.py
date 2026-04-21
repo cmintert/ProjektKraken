@@ -541,6 +541,26 @@ class MapDataBuffer:
     # Brush painting
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _apply_falloff_curve(t: "np.ndarray", curve: str) -> "np.ndarray":
+        """Map linear ramp progress *t* through a shaped falloff curve.
+
+        Args:
+            t: Progress array in [0, 1] where 0 = outer edge, 1 = core.
+            curve: One of ``"linear"``, ``"cosine"``, or ``"gaussian"``.
+
+        Returns:
+            Shaped strength array same shape as *t*, values in [0, 1].
+        """
+        if curve == "cosine":
+            # S-shaped ease in/out: smooth transition at both ends
+            return 0.5 - 0.5 * np.cos(np.pi * t)
+        if curve == "gaussian":
+            # Bell curve: tight, bright centre with rapid falloff toward edge
+            return np.exp(-4.5 * (1.0 - t) ** 2)
+        # Default: linear
+        return t
+
     def paint_brush(
         self,
         center_x: float,
@@ -548,6 +568,9 @@ class MapDataBuffer:
         radius_px: int,
         value: int,
         falloff: float = 0.0,
+        falloff_curve: str = "cosine",
+        stroke_before: "Optional[np.ndarray]" = None,
+        stroke_strength_map: "Optional[np.ndarray]" = None,
     ) -> Tuple[int, int, int, int]:
         """Paint a circular brush stroke onto the buffer.
 
@@ -555,18 +578,33 @@ class MapDataBuffer:
         ----------------
         - ``falloff = 0.0`` — Hard circle: uniform *value* inside the
           radius, untouched outside.
-        - ``falloff = 1.0`` — Full linear ramp: full *value* at the
-          centre, linearly decreasing to zero at the outer edge.
+        - ``falloff = 1.0`` — Full shaped ramp: full *value* at the
+          centre, decaying to zero at the outer edge via *falloff_curve*.
         - ``0 < falloff < 1`` — Hard inner core of radius
-          ``r * (1 - falloff)`` (full value), then a linear ramp from
+          ``r * (1 - falloff)`` (full value), then a shaped ramp from
           the core boundary down to zero at the outer radius.
+
+        Idempotent stroke mode
+        ----------------------
+        When both *stroke_before* and *stroke_strength_map* are supplied the
+        method operates in idempotent stroke mode: each dab records the
+        *maximum* strength it contributes per pixel, and the final pixel
+        colour is always ``before * (1 - max_strength) + value * max_strength``.
+        This prevents the feather zone from accumulating toward full opacity
+        on slow, overlapping strokes.
 
         Args:
             center_x: Normalised X centre [0, 1].
             center_y: Normalised Y centre [0, 1].
             radius_px: Brush radius in **buffer pixels**.
             value: Value to paint.
-            falloff: 0.0 = hard brush, 1.0 = full linear falloff.
+            falloff: 0.0 = hard brush, 1.0 = full ramp.
+            falloff_curve: Shape of the feather ramp — ``"linear"``,
+                ``"cosine"`` (default), or ``"gaussian"``.
+            stroke_before: Full-buffer snapshot at stroke start (uint16).
+                Must be supplied together with *stroke_strength_map*.
+            stroke_strength_map: Per-pixel maximum-strength accumulator
+                (float32, same shape as buffer data).  Updated in-place.
 
         Returns:
             Dirty region as ``(min_col, min_row, max_col, max_row)``.
@@ -582,12 +620,13 @@ class MapDataBuffer:
 
         logger.debug(
             "paint_brush: center_px=(%d,%d) radius=%d value=%d "
-            "falloff=%.2f dirty=(%d,%d,%d,%d)",
+            "falloff=%.2f curve=%s dirty=(%d,%d,%d,%d)",
             cx,
             cy,
             r,
             value,
             falloff,
+            falloff_curve,
             min_col,
             min_row,
             max_col,
@@ -603,31 +642,48 @@ class MapDataBuffer:
         mask = dist <= r
 
         if falloff > 0.0:
-            # Hard-core + linear-ramp feathering
+            # Hard-core + shaped-ramp feathering
             core_r = r * (1.0 - falloff)
             ramp_width = r - core_r  # == r * falloff
 
-            # strength = 1.0 inside the core, linear ramp in the
-            # feather zone, 0.0 outside the outer radius.
+            # Linear progress through the feather zone: 0 at outer edge, 1 at core
+            t_linear = np.clip(
+                (r - dist) / max(ramp_width, 1e-6),
+                0.0,
+                1.0,
+            ).astype(np.float32)
+
+            # Apply the chosen curve to the ramp zone only; core stays at 1.0
             strength = np.where(
                 dist <= core_r,
-                1.0,
-                np.clip(
-                    (r - dist) / max(ramp_width, 1e-6),
-                    0.0,
-                    1.0,
-                ),
-            )
+                np.float32(1.0),
+                self._apply_falloff_curve(t_linear, falloff_curve),
+            ).astype(np.float32)
+
             # Zero out anything outside the circle
             strength = strength * mask
 
-            region = self._data[min_row : max_row + 1, min_col : max_col + 1].astype(
-                np.float32
-            )
-            blended = region * (1.0 - strength) + value * strength
-            self._data[min_row : max_row + 1, min_col : max_col + 1] = np.clip(
-                blended, 0, 65535
-            ).astype(np.uint16)
+            if stroke_before is not None and stroke_strength_map is not None:
+                # --- Idempotent stroke mode ---
+                region_before = stroke_before[
+                    min_row : max_row + 1, min_col : max_col + 1
+                ].astype(np.float32)
+                cur_max = stroke_strength_map[min_row : max_row + 1, min_col : max_col + 1]
+                new_max = np.maximum(cur_max, strength)
+                stroke_strength_map[min_row : max_row + 1, min_col : max_col + 1] = new_max
+                blended = region_before * (1.0 - new_max) + value * new_max
+                self._data[min_row : max_row + 1, min_col : max_col + 1] = np.clip(
+                    blended, 0, 65535
+                ).astype(np.uint16)
+            else:
+                # --- Legacy accumulation mode (backward-compatible) ---
+                region = self._data[
+                    min_row : max_row + 1, min_col : max_col + 1
+                ].astype(np.float32)
+                blended = region * (1.0 - strength) + value * strength
+                self._data[min_row : max_row + 1, min_col : max_col + 1] = np.clip(
+                    blended, 0, 65535
+                ).astype(np.uint16)
         else:
             self._data[min_row : max_row + 1, min_col : max_col + 1] = np.where(
                 mask,
