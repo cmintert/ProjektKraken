@@ -18,7 +18,6 @@ from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QColor, QDoubleValidator, QLinearGradient, QPainter
 from PySide6.QtWidgets import (
     QCheckBox,
-    QColorDialog,
     QComboBox,
     QCompleter,
     QDialog,
@@ -38,6 +37,13 @@ from PySide6.QtWidgets import (
 
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.color_pickers import (
+    ColorHistoryService,
+    GradientScrubberWidget,
+    InlineColorPickerPopover,
+    NumericScrubberSpinBox,
+    RecentValuesStrip,
+)
 from src.gui.widgets.map.map_data_buffer import (
     ColorEntry,
     ColorMap,
@@ -145,11 +151,25 @@ class _ColorButton(QPushButton):
         )
 
     def _pick(self) -> None:
-        c = QColorDialog.getColor(QColor(self._color), self, "Pick Colour")
-        if c.isValid():
-            self._color = c.name()
-            self._apply_color()
-            self.color_changed.emit(self._color)
+        """Open the non-modal inline colour picker anchored to the button."""
+        popover = InlineColorPickerPopover(
+            self.window(), initial_color=self._color, history_context="palette.color"
+        )
+        popover.color_changed.connect(self._on_popover_color_changed)
+        popover.color_chosen.connect(self._on_popover_color_chosen)
+        popover.show_at(self.mapToGlobal(self.rect().bottomLeft()))
+
+    def _on_popover_color_changed(self, hex_str: str) -> None:
+        """Live update while the user drags in the popover."""
+        self._color = hex_str
+        self._apply_color()
+        self.color_changed.emit(self._color)
+
+    def _on_popover_color_chosen(self, hex_str: str) -> None:
+        """Final commit when the popover closes with an accepted colour."""
+        self._color = hex_str
+        self._apply_color()
+        self.color_changed.emit(self._color)
 
 
 class _GradientPreview(QFrame):
@@ -293,6 +313,13 @@ class RasterPaletteEditor(QDialog):
             self._build_discrete_ui(layout)
         else:
             self._build_gradient_ui(layout)
+
+        # Shared recent-colours strip — one-click reuse of any colour that
+        # has been picked across the app.
+        self._recent_palette_colors = RecentValuesStrip(
+            "palette.color", is_color=True, parent=self
+        )
+        layout.addWidget(self._recent_palette_colors)
 
         btn_box = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
@@ -440,24 +467,30 @@ class RasterPaletteEditor(QDialog):
         stretch_row = QHBoxLayout()
         stretch_row.setSpacing(4)
         stretch_row.addWidget(QLabel("Stretch range:"))
-        self._stretch_min_spin = QSpinBox()
+        self._stretch_min_spin = NumericScrubberSpinBox()
         self._stretch_min_spin.setRange(0, 65535)
         self._stretch_min_spin.setValue(
             self._color_map.stretch_min
             if self._color_map.stretch_min is not None
             else 0
         )
-        self._stretch_min_spin.setToolTip("Minimum value mapped to the start colour")
+        self._stretch_min_spin.setFixedWidth(80)
+        self._stretch_min_spin.setToolTip(
+            "Minimum value mapped to the start colour — drag to scrub"
+        )
         stretch_row.addWidget(self._stretch_min_spin)
         stretch_row.addWidget(QLabel("–"))
-        self._stretch_max_spin = QSpinBox()
+        self._stretch_max_spin = NumericScrubberSpinBox()
         self._stretch_max_spin.setRange(0, 65535)
         self._stretch_max_spin.setValue(
             self._color_map.stretch_max
             if self._color_map.stretch_max is not None
             else 65535
         )
-        self._stretch_max_spin.setToolTip("Maximum value mapped to the end colour")
+        self._stretch_max_spin.setFixedWidth(80)
+        self._stretch_max_spin.setToolTip(
+            "Maximum value mapped to the end colour — drag to scrub"
+        )
         stretch_row.addWidget(self._stretch_max_spin)
 
         btn_auto_stretch = QPushButton("Auto-stretch")
@@ -472,6 +505,19 @@ class RasterPaletteEditor(QDialog):
 
         stretch_row.addStretch()
         layout.addLayout(stretch_row)
+
+        # Visual gradient strip showing the active stretch range.
+        self._stretch_scrubber = GradientScrubberWidget()
+        self._stretch_scrubber.setToolTip(
+            "Visual preview of the stretch range — click/drag to nudge the max end"
+        )
+        self._stretch_scrubber.set_range(
+            self._stretch_min_spin.value(), self._stretch_max_spin.value()
+        )
+        self._stretch_scrubber.value_committed.connect(self._on_stretch_scrub_committed)
+        self._stretch_min_spin.valueChanged.connect(self._refresh_stretch_scrubber)
+        self._stretch_max_spin.valueChanged.connect(self._refresh_stretch_scrubber)
+        layout.addWidget(self._stretch_scrubber)
 
         # --- Value Range Mapping (optional) -----------------------------------
         sep = QFrame()
@@ -614,6 +660,7 @@ class RasterPaletteEditor(QDialog):
     def _refresh_gradient_preview(self, *_args: object) -> None:
         if hasattr(self, "_gradient_preview") and hasattr(self, "_stops_layout"):
             self._gradient_preview.set_stops(self._collect_gradient_stops())
+        self._refresh_stretch_scrubber()
 
     def _add_stop_row(self, position: float, color: str) -> None:
         """Append a new stop row to the stop editor."""
@@ -622,13 +669,15 @@ class RasterPaletteEditor(QDialog):
         row_layout.setContentsMargins(0, 0, 0, 0)
         row_layout.setSpacing(4)
 
-        pos_spin = QSpinBox()
+        pos_spin = NumericScrubberSpinBox()
         pos_spin.setObjectName("pos_spin")
         pos_spin.setRange(0, 100)
         pos_spin.setValue(round(position * 100))
         pos_spin.setSuffix("%")
         pos_spin.setFixedWidth(68)
-        pos_spin.setToolTip("Stop position along the gradient (0 = start, 100 = end)")
+        pos_spin.setToolTip(
+            "Stop position along the gradient (0 = start, 100 = end) — drag to scrub"
+        )
         pos_spin.valueChanged.connect(self._refresh_gradient_preview)
 
         color_btn = _ColorButton(color)
@@ -719,6 +768,32 @@ class RasterPaletteEditor(QDialog):
         self._stretch_min_spin.setValue(0)
         self._stretch_max_spin.setValue(65535)
 
+    def _refresh_stretch_scrubber(self, *_args: object) -> None:
+        """Keep the visual stretch gradient in sync with the spin boxes."""
+        if not hasattr(self, "_stretch_scrubber"):
+            return
+        lo = self._stretch_min_spin.value()
+        hi = self._stretch_max_spin.value()
+        preview_map = ColorMap(
+            type="gradient",
+            gradient_stops=self._collect_gradient_stops(),
+            stretch_min=lo,
+            stretch_max=hi,
+        )
+        self._stretch_scrubber.set_color_map(preview_map)
+        self._stretch_scrubber.set_range(lo, hi)
+
+    def _on_stretch_scrub_committed(self, value: int) -> None:
+        """User dragged the gradient-strip handle — nudge whichever endpoint
+        is closer so clicks feel intuitive."""
+        lo = self._stretch_min_spin.value()
+        hi = self._stretch_max_spin.value()
+        # Move whichever endpoint is closer to the click.
+        if abs(value - lo) < abs(value - hi):
+            self._stretch_min_spin.setValue(min(value, hi - 1))
+        else:
+            self._stretch_max_spin.setValue(max(value, lo + 1))
+
     def _on_display_mapping_toggled(self, enabled: bool) -> None:
         """Enable or disable the value-range mapping controls.
 
@@ -794,11 +869,14 @@ class RasterPaletteEditor(QDialog):
         row = self._table.rowCount()
         self._table.insertRow(row)
 
-        # Col 0: value spinner; stable mapping_id stored as a property
-        spin = QSpinBox()
+        # Col 0: value scrubber; stable mapping_id stored as a property
+        spin = NumericScrubberSpinBox()
         spin.setRange(0, 65535)
         spin.setValue(value)
         spin.setProperty("mapping_id", mapping_id)
+        spin.setToolTip(
+            "Raster pixel value for this class — drag to scrub, double-click to type"
+        )
         self._table.setCellWidget(row, _COL_VALUE, spin)
 
         # Col 1: colour picker

@@ -512,37 +512,35 @@ class TestFalloffLabel:
         assert panel._falloff_label.text() == "100%"
 
 
-# ── UX Fix: Spinbox arrows visible ───────────────────────────────────
+# ── UX: Scrubbable numeric inputs ────────────────────────────────────
 
 
-class TestSpinboxArrows:
-    """Spinboxes should have UpDownArrows button symbols."""
+class TestScrubbableSpinboxes:
+    """Brush-size and paint-value spinboxes are scrubbable (AE-style).
 
-    def test_brush_size_has_arrows(self, qtbot) -> None:
-        from PySide6.QtWidgets import QAbstractSpinBox
+    The redesigned picker replaces the old up/down arrow spinboxes with
+    :class:`NumericScrubberSpinBox` (press-drag to scrub, click to type).
+    The arrow buttons are intentionally hidden — the scrub cursor is the
+    primary interaction.
+    """
 
+    def test_brush_size_is_scrubbable(self, qtbot) -> None:
+        from src.gui.widgets.color_pickers import NumericScrubberSpinBox
         from src.gui.widgets.map.map_layer_panel import MapLayerPanel
 
         panel = MapLayerPanel()
         qtbot.addWidget(panel)
 
-        assert (
-            panel._brush_size_spin.buttonSymbols()
-            == QAbstractSpinBox.ButtonSymbols.UpDownArrows
-        )
+        assert isinstance(panel._brush_size_spin, NumericScrubberSpinBox)
 
-    def test_paint_value_has_arrows(self, qtbot) -> None:
-        from PySide6.QtWidgets import QAbstractSpinBox
-
+    def test_paint_value_is_scrubbable(self, qtbot) -> None:
+        from src.gui.widgets.color_pickers import NumericScrubberSpinBox
         from src.gui.widgets.map.map_layer_panel import MapLayerPanel
 
         panel = MapLayerPanel()
         qtbot.addWidget(panel)
 
-        assert (
-            panel._paint_value_spin.buttonSymbols()
-            == QAbstractSpinBox.ButtonSymbols.UpDownArrows
-        )
+        assert isinstance(panel._paint_value_spin, NumericScrubberSpinBox)
 
 
 # ── UX Fix: Live tool mode and settings signals ──────────────────────

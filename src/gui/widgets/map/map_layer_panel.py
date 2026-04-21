@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QSlider,
     QSpinBox,
+    QStackedWidget,
     QTreeView,
     QVBoxLayout,
     QWidget,
@@ -29,6 +30,18 @@ from PySide6.QtWidgets import (
 from src.app.ui_constants import Spacing
 from src.core.map import MapLayerNode
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.color_pickers import (
+    ColorHistoryService,
+    GradientScrubberWidget,
+    NumericScrubberSpinBox,
+    RecentValuesStrip,
+    Swatch,
+    SwatchGridWidget,
+)
+from src.gui.widgets.map.map_data_buffer import (
+    ColorMap,
+    format_display_value,
+)
 from src.gui.widgets.map.raster_layer_item import BLEND_MODE_NAMES
 
 if TYPE_CHECKING:
@@ -307,15 +320,22 @@ class MapLayerPanel(QWidget):
         Args:
             rt: Raster toolbar layout to append into.
         """
-        self._brush_size_spin = self._make_labeled_spinbox(
-            rt, "Size:", 1, 128, 8, self._on_raster_setting_changed
+        self._brush_size_spin, self._brush_size_slider = (
+            self._make_slider_scrubber_row(
+                rt,
+                "Size:",
+                1,
+                128,
+                8,
+                "Brush radius in pixels (1–128)",
+                self._on_brush_size_slider_changed,
+                self._on_brush_size_spin_changed,
+            )
         )
-        self._brush_size_spin.setToolTip("Brush radius in pixels (1–128)")
-        self._paint_value_spin = self._make_labeled_spinbox(
-            rt, "Value:", 0, 65535, 1, self._on_paint_value_spin_changed
-        )
-        self._paint_value_spin.setToolTip("Raw raster value to paint (0–65535)")
+
+        self._build_paint_value_selector(rt)
         self._build_entity_picker(rt)
+        self._build_recent_values_strip(rt)
 
         self._falloff_slider, self._falloff_label = self._make_labeled_slider(
             rt,
@@ -328,6 +348,80 @@ class MapLayerPanel(QWidget):
         )
 
         self._build_gradient_sub_combo(rt)
+
+    def _build_paint_value_selector(self, rt: QVBoxLayout) -> None:
+        """Build the mode-aware paint-value selector.
+
+        Contents:
+        - Stacked area that shows either a :class:`SwatchGridWidget`
+          (discrete) or a :class:`GradientScrubberWidget` (continuous)
+        - A numeric scrubber spin box for precise entry (always visible)
+        - An implicit sync helper (:meth:`_set_paint_value`)
+
+        Args:
+            rt: Raster toolbar layout to append into.
+        """
+        # Value scrubber spin (always visible, compact — source of truth)
+        scrub_row = QHBoxLayout()
+        scrub_row.setSpacing(Spacing.COMPACT)
+        lbl = QLabel("Value:")
+        lbl.setFixedWidth(_LABEL_WIDTH)
+        scrub_row.addWidget(lbl)
+
+        self._paint_value_spin = NumericScrubberSpinBox()
+        self._paint_value_spin.setRange(0, 65535)
+        self._paint_value_spin.setValue(1)
+        self._paint_value_spin.setFixedWidth(96)
+        self._paint_value_spin.setToolTip(
+            "Raw raster value to paint (0–65535) — drag to scrub, double-click to type"
+        )
+        self._paint_value_spin.valueChanged.connect(
+            self._on_paint_value_spin_changed
+        )
+        scrub_row.addWidget(self._paint_value_spin)
+
+        self._paint_value_display_label = QLabel("")
+        self._paint_value_display_label.setStyleSheet(
+            "color: rgba(255,255,255,0.55); font-style: italic;"
+        )
+        scrub_row.addWidget(self._paint_value_display_label, 1)
+        rt.addLayout(scrub_row)
+
+        # Mode-dependent picker: swatch grid (discrete) vs gradient scrubber (continuous)
+        self._paint_value_stack = QStackedWidget()
+        self._swatch_grid = SwatchGridWidget()
+        self._swatch_grid.swatch_clicked.connect(self._on_swatch_clicked)
+        self._paint_value_stack.addWidget(self._swatch_grid)
+
+        self._gradient_scrubber = GradientScrubberWidget()
+        self._gradient_scrubber.value_changed.connect(
+            self._on_gradient_scrubber_changed
+        )
+        self._gradient_scrubber.value_committed.connect(
+            self._on_gradient_scrubber_committed
+        )
+        self._paint_value_stack.addWidget(self._gradient_scrubber)
+
+        # Empty page for color / no-raster modes
+        empty = QWidget()
+        self._paint_value_stack.addWidget(empty)
+
+        rt.addWidget(self._paint_value_stack)
+
+    def _build_recent_values_strip(self, rt: QVBoxLayout) -> None:
+        """Build the recent-paint-values strip below the paint selector.
+
+        Args:
+            rt: Raster toolbar layout to append into.
+        """
+        self._recent_paint_values = RecentValuesStrip(
+            "raster.paint_value", is_color=False
+        )
+        self._recent_paint_values.set_label_formatter(
+            self._format_value_for_display
+        )
+        self._recent_paint_values.value_chosen.connect(self._on_recent_value_chosen)
+        rt.addWidget(self._recent_paint_values)
 
     def _build_entity_picker(self, rt: QVBoxLayout) -> None:
         """Build the entity/class picker combo row (discrete rasters only).
@@ -562,6 +656,59 @@ class MapLayerPanel(QWidget):
         row.addWidget(spin, 1)
         parent_layout.addLayout(row)
         return spin
+
+    @staticmethod
+    def _make_slider_scrubber_row(
+        parent_layout: QVBoxLayout,
+        label: str,
+        min_val: int,
+        max_val: int,
+        default: int,
+        tooltip: str,
+        on_slider_changed: Any,
+        on_spin_changed: Any,
+    ) -> Tuple[NumericScrubberSpinBox, QSlider]:
+        """Create a slider + numeric scrubber spin box row.
+
+        The slider gives a visual overview; the scrubber spin provides
+        precision (press-drag or keyboard entry).
+
+        Args:
+            parent_layout: Layout to add the row into.
+            label: Row label text.
+            min_val: Minimum value.
+            max_val: Maximum value.
+            default: Initial value.
+            tooltip: Shared tooltip text.
+            on_slider_changed: Slot for slider ``valueChanged``.
+            on_spin_changed: Slot for spin ``valueChanged``.
+
+        Returns:
+            Tuple of ``(spin, slider)``.
+        """
+        row = QHBoxLayout()
+        row.setSpacing(Spacing.COMPACT)
+        lbl = QLabel(label)
+        lbl.setFixedWidth(_LABEL_WIDTH)
+        row.addWidget(lbl)
+
+        slider = QSlider(Qt.Orientation.Horizontal)
+        slider.setRange(min_val, max_val)
+        slider.setValue(default)
+        slider.setToolTip(tooltip)
+        slider.valueChanged.connect(on_slider_changed)
+        row.addWidget(slider, 1)
+
+        spin = NumericScrubberSpinBox()
+        spin.setRange(min_val, max_val)
+        spin.setValue(default)
+        spin.setFixedWidth(64)
+        spin.setToolTip(tooltip + " — drag to scrub, double-click to type")
+        spin.valueChanged.connect(on_spin_changed)
+        row.addWidget(spin)
+
+        parent_layout.addLayout(row)
+        return spin, slider
 
     @staticmethod
     def _make_labeled_slider(
@@ -1149,35 +1296,90 @@ class MapLayerPanel(QWidget):
         mode: str,
         name_map: Optional[Dict[str, str]] = None,
     ) -> None:
-        """Repopulate the *Paint as:* class picker from *layer_meta*.
+        """Repopulate the *Paint as:* class picker and paint-value selector.
 
-        The picker is only visible for discrete layers with at least one
-        defined class. For continuous and color layers it is hidden.
+        Also drives the visual swatch grid / gradient scrubber switch: in
+        discrete mode the stack shows the swatch grid; in continuous mode it
+        shows the gradient scrubber; in color mode both are hidden.
 
         Args:
             layer_meta: Raster layer metadata dict, or ``None``.
             mode: ``"discrete"``, ``"continuous"``, or ``"color"``.
             name_map: Optional dict mapping entity/event UUIDs to names.
-
         """
         from src.gui.widgets.map.raster_mapping import get_discrete_class_choices
 
         is_discrete = mode == "discrete"
+        is_continuous = mode == "continuous"
         choices: List[Tuple[str, int]] = []
 
         if is_discrete and layer_meta:
             choices = get_discrete_class_choices(layer_meta, name_map)
 
-        # Block signals while repopulating to avoid spurious value changes
+        # Repopulate class combo
         self._entity_picker_combo.blockSignals(True)
         self._entity_picker_combo.clear()
         if choices:
             self._entity_picker_combo.addItem("— manual —", -1)
             for label, value in choices:
                 self._entity_picker_combo.addItem(f"{label}  ({value})", value)
-
         self._entity_picker_combo.blockSignals(False)
         self._entity_picker_row.setVisible(is_discrete and bool(choices))
+
+        # Populate visual selectors from the active ColorMap (if any).
+        color_map: Optional[ColorMap] = None
+        cm_dict = (layer_meta or {}).get("color_map")
+        if cm_dict:
+            try:
+                color_map = ColorMap.from_dict(cm_dict)
+            except Exception:
+                color_map = None
+
+        # Swatch grid (discrete).
+        swatches: List[Swatch] = []
+        if is_discrete and color_map is not None:
+            label_by_value: Dict[int, str] = {val: lbl for lbl, val in choices}
+            for idx, entry in enumerate(color_map.entries):
+                try:
+                    val = int(entry.value) if entry.value is not None else None
+                except (TypeError, ValueError):
+                    val = None
+                if val is None:
+                    continue
+                lbl = label_by_value.get(val, str(val))
+                hotkey = idx + 1 if idx < 9 else None
+                swatches.append(Swatch(value=val, color=entry.color, label=lbl, hotkey=hotkey))
+        self._swatch_grid.set_swatches(swatches)
+        self._swatch_grid.set_active_value(self._paint_value_spin.value())
+
+        # Gradient scrubber (continuous).
+        self._gradient_scrubber.set_color_map(color_map)
+        if color_map is not None:
+            lo = color_map.stretch_min if color_map.stretch_min is not None else 0
+            hi = color_map.stretch_max if color_map.stretch_max is not None else 65535
+            try:
+                self._gradient_scrubber.set_range(int(lo), int(hi))
+            except (TypeError, ValueError):
+                pass
+        self._gradient_scrubber.blockSignals(True)
+        self._gradient_scrubber.set_value(self._paint_value_spin.value())
+        self._gradient_scrubber.blockSignals(False)
+
+        # Switch stacked page: 0=swatch, 1=gradient, 2=empty (color mode).
+        if is_discrete and swatches:
+            self._paint_value_stack.setCurrentIndex(0)
+            self._paint_value_stack.setVisible(True)
+        elif is_continuous:
+            self._paint_value_stack.setCurrentIndex(1)
+            self._paint_value_stack.setVisible(True)
+        else:
+            self._paint_value_stack.setCurrentIndex(2)
+            self._paint_value_stack.setVisible(mode != "color")
+
+        # Refresh the display-mapped label for the current value.
+        self._paint_value_display_label.setText(
+            self._format_value_for_display(self._paint_value_spin.value())
+        )
 
     @Slot(int)
     def _on_entity_picked(self, index: int) -> None:
@@ -1189,11 +1391,12 @@ class MapLayerPanel(QWidget):
         """
         value = self._entity_picker_combo.itemData(index)
         if value is not None and value >= 0:
-            self._paint_value_spin.setValue(int(value))
+            self._set_paint_value(int(value))
+            ColorHistoryService.instance().push("raster.paint_value", int(value))
 
     @Slot(int)
     def _on_paint_value_spin_changed(self, value: int) -> None:
-        """Sync the class picker combo to reflect the typed paint value.
+        """Sync the class picker combo, swatch grid, scrubber and display label.
 
         When the user manually enters a value that matches a mapped class the
         combo automatically selects that class, giving instant feedback via
@@ -1203,22 +1406,126 @@ class MapLayerPanel(QWidget):
         Args:
             value: New paint value from the spin box.
         """
+        self._sync_paint_value_peers(value)
         self._on_raster_setting_changed()
 
-        if not self._entity_picker_row.isVisible():
-            return
+    def _sync_paint_value_peers(self, value: int) -> None:
+        """Push *value* into swatch grid, scrubber, combo, and display label.
 
-        self._entity_picker_combo.blockSignals(True)
+        Called from the spin-box slot and from :meth:`_set_paint_value`.
+        Signals on peer widgets are blocked to avoid feedback loops.
+        """
+        self._swatch_grid.set_active_value(int(value))
+        self._gradient_scrubber.blockSignals(True)
+        self._gradient_scrubber.set_value(int(value))
+        self._gradient_scrubber.blockSignals(False)
+        self._paint_value_display_label.setText(
+            self._format_value_for_display(int(value))
+        )
+        if self._entity_picker_row.isVisible():
+            self._entity_picker_combo.blockSignals(True)
+            try:
+                matched = False
+                for i in range(self._entity_picker_combo.count()):
+                    if self._entity_picker_combo.itemData(i) == value:
+                        self._entity_picker_combo.setCurrentIndex(i)
+                        matched = True
+                        break
+                if not matched and self._entity_picker_combo.count() > 0:
+                    self._entity_picker_combo.setCurrentIndex(0)
+            finally:
+                self._entity_picker_combo.blockSignals(False)
+
+    def _set_paint_value(self, value: int) -> None:
+        """Set the paint value from an external caller (syncs all peers).
+
+        Use this instead of ``self._paint_value_spin.setValue(...)`` so the
+        swatch grid, scrubber, and display label all stay aligned.
+
+        Args:
+            value: New paint value.
+        """
+        clamped = max(0, min(65535, int(value)))
+        if self._paint_value_spin.value() == clamped:
+            # Still sync peers in case they drifted.
+            self._sync_paint_value_peers(clamped)
+            return
+        self._paint_value_spin.setValue(clamped)
+
+    @Slot(int)
+    def _on_brush_size_slider_changed(self, value: int) -> None:
+        """Mirror the brush-size slider into the scrubber spin box."""
+        if self._brush_size_spin.value() == value:
+            return
+        self._brush_size_spin.blockSignals(True)
+        self._brush_size_spin.setValue(int(value))
+        self._brush_size_spin.blockSignals(False)
+        self._on_raster_setting_changed()
+
+    @Slot(int)
+    def _on_brush_size_spin_changed(self, value: int) -> None:
+        """Mirror the brush-size scrubber into the slider."""
+        if self._brush_size_slider.value() == value:
+            return
+        self._brush_size_slider.blockSignals(True)
+        self._brush_size_slider.setValue(int(value))
+        self._brush_size_slider.blockSignals(False)
+        self._on_raster_setting_changed()
+
+    @Slot(object)
+    def _on_swatch_clicked(self, value: object) -> None:
+        """Set the paint value from a swatch tile click."""
         try:
-            for i in range(self._entity_picker_combo.count()):
-                if self._entity_picker_combo.itemData(i) == value:
-                    self._entity_picker_combo.setCurrentIndex(i)
-                    return
-            # No exact match — reset to the "— manual —" placeholder
-            if self._entity_picker_combo.count() > 0:
-                self._entity_picker_combo.setCurrentIndex(0)
-        finally:
-            self._entity_picker_combo.blockSignals(False)
+            int_val = int(value)  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            return
+        self._set_paint_value(int_val)
+        ColorHistoryService.instance().push("raster.paint_value", int_val)
+
+    @Slot(int)
+    def _on_gradient_scrubber_changed(self, value: int) -> None:
+        """Live scrubber drag — update spin without pushing to history."""
+        if self._paint_value_spin.value() == value:
+            return
+        self._paint_value_spin.setValue(int(value))
+
+    @Slot(int)
+    def _on_gradient_scrubber_committed(self, value: int) -> None:
+        """Gradient scrubber release — commit value to history."""
+        self._set_paint_value(int(value))
+        ColorHistoryService.instance().push("raster.paint_value", int(value))
+
+    @Slot(object)
+    def _on_recent_value_chosen(self, value: object) -> None:
+        """A recent-values tile was clicked — restore its value."""
+        try:
+            int_val = int(value)  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            return
+        self._set_paint_value(int_val)
+
+    def _format_value_for_display(self, value: int) -> str:
+        """Format *value* using the active colour map's display mapping.
+
+        Returns the raw integer string when no display mapping is defined.
+
+        Args:
+            value: Raw raster value.
+
+        Returns:
+            Human-readable value (e.g. ``"23.5 °C"`` or ``"42"``).
+        """
+        layer_meta = self._raster_meta_by_id.get(self._current_node_id) if self._current_node_id else None
+        cm_dict = (layer_meta or {}).get("color_map")
+        if not cm_dict:
+            return str(int(value))
+        try:
+            color_map = ColorMap.from_dict(cm_dict)
+            if color_map.display_min is not None:
+                return format_display_value(color_map, int(value))
+        except Exception:
+            pass
+        return str(int(value))
 
     def set_raster_mode_metadata(self, mode_by_id: "dict[str, str]") -> None:
         """Update the cached raster mode lookup used by the mode badge.
@@ -1319,7 +1626,7 @@ class MapLayerPanel(QWidget):
         # where continuous ramps painted with value=1 are visually null.
         try:
             if mode == "continuous" and self._paint_value_spin.value() < 256:
-                self._paint_value_spin.setValue(32768)
+                self._set_paint_value(32768)
         except Exception:
             # In some test contexts _paint_value_spin may not yet exist; ignore
             pass
@@ -1382,13 +1689,17 @@ class MapLayerPanel(QWidget):
         return self._brush_size_spin.value()
 
     def set_raster_brush_size(self, size: int) -> None:
-        """Set the brush size spinbox without emitting settings_changed.
+        """Set the brush size spinbox and slider without emitting settings_changed.
 
         Used by Ctrl+scroll in the view to keep the panel in sync.
         """
+        clamped = max(1, min(128, int(size)))
         self._brush_size_spin.blockSignals(True)
-        self._brush_size_spin.setValue(max(1, min(128, size)))
+        self._brush_size_spin.setValue(clamped)
         self._brush_size_spin.blockSignals(False)
+        self._brush_size_slider.blockSignals(True)
+        self._brush_size_slider.setValue(clamped)
+        self._brush_size_slider.blockSignals(False)
 
     @property
     def raster_paint_value(self) -> int:
@@ -1560,7 +1871,7 @@ class MapLayerPanel(QWidget):
         # Apply preset values to controls
         self._brush_size_spin.setValue(preset.size)
         self._falloff_slider.setValue(int(preset.falloff * 100))
-        self._paint_value_spin.setValue(preset.paint_value)
+        self._set_paint_value(preset.paint_value)
 
         # Select the matching tool mode button
         mode_map = {
