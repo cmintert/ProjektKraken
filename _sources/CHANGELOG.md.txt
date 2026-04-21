@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-04-19
-### Fixed
-- fix(raster): transfer keyboard focus to map view on edit start
+## [Development] - 2026-04-21
+### Added
+- feat(color_pickers): add reusable scrubbing and selection widgets
 
 
 *This changelog was automatically generated.*
