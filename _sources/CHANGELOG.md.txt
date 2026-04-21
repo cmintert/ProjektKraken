@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-04-21
 ### Added
-- feat(color_pickers): add reusable scrubbing and selection widgets
+- feat(raster): improve brush stroke interpolation and falloff curves
 
 
 *This changelog was automatically generated.*
