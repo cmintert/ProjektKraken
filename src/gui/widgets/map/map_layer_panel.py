@@ -392,6 +392,17 @@ class MapLayerPanel(QWidget):
             icon_path="default_assets/icons/ui_icons/drop.svg",
         )
 
+        self._brush_opacity_slider, self._brush_opacity_label = self._make_labeled_slider(
+            rt,
+            "Opacity:",
+            0,
+            100,
+            100,
+            "Brush opacity (100=full replacement, 0=no change)",
+            self._on_brush_opacity_changed,
+            icon_path="default_assets/icons/ui_icons/circle-half.svg",
+        )
+
         self._build_falloff_curve_combo(rt)
         self._build_gradient_sub_combo(rt)
 
@@ -977,6 +988,7 @@ class MapLayerPanel(QWidget):
         self._title_label.setStyleSheet(StyleHelper.get_panel_header_style())
         self._opacity_slider.setStyleSheet(StyleHelper.get_slider_style())
         self._falloff_slider.setStyleSheet(StyleHelper.get_slider_style())
+        self._brush_opacity_slider.setStyleSheet(StyleHelper.get_slider_style())
         dim_style = f"color: {self._theme_token('text_dim')}; font-size: 9pt;"
         self._opacity_label.setStyleSheet(dim_style)
         self._opacity_value_label.setStyleSheet(
@@ -1803,6 +1815,12 @@ class MapLayerPanel(QWidget):
         self._falloff_label.setText(f"{value}%")
         self._on_raster_setting_changed()
 
+    @Slot(int)
+    def _on_brush_opacity_changed(self, value: int) -> None:
+        """Update opacity readout label and emit settings changed."""
+        self._brush_opacity_label.setText(f"{value}%")
+        self._on_raster_setting_changed()
+
     @Slot()
     def _on_raster_setting_changed(self) -> None:
         """Emit raster_settings_changed when any tool setting changes."""
@@ -1853,6 +1871,11 @@ class MapLayerPanel(QWidget):
     def raster_falloff(self) -> float:
         """Current falloff (0.0–1.0) from the slider."""
         return self._falloff_slider.value() / 100.0
+
+    @property
+    def raster_brush_opacity(self) -> float:
+        """Current brush opacity (0.0–1.0) from the slider."""
+        return self._brush_opacity_slider.value() / 100.0
 
     @property
     def raster_falloff_curve(self) -> str:

@@ -67,6 +67,7 @@ class RasterEditTool:
         self._paint_value: int = 1
         self._falloff: float = 0.0
         self._falloff_curve: str = "cosine"
+        self._brush_opacity: float = 1.0
 
         # Gradient sub-mode
         self._gradient_sub_mode: str = GRADIENT_SUB_LINEAR
@@ -163,6 +164,15 @@ class RasterEditTool:
             self._falloff_curve = value
         else:
             logger.warning("Unknown falloff_curve %r, keeping %r", value, self._falloff_curve)
+
+    @property
+    def brush_opacity(self) -> float:
+        """Global brush opacity multiplier (0.0 = transparent, 1.0 = full)."""
+        return self._brush_opacity
+
+    @brush_opacity.setter
+    def brush_opacity(self, value: float) -> None:
+        self._brush_opacity = max(0.0, min(1.0, value))
 
     @property
     def active_node_id(self) -> Optional[str]:
@@ -442,6 +452,7 @@ class RasterEditTool:
             self._paint_value,
             self._falloff,
             falloff_curve=self._falloff_curve,
+            opacity=self._brush_opacity,
             stroke_before=self._stroke_before,
             stroke_strength_map=self._stroke_strength_map,
         )

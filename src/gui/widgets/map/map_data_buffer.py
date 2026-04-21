@@ -631,6 +631,7 @@ class MapDataBuffer:
         value: int,
         falloff: float = 0.0,
         falloff_curve: str = "cosine",
+        opacity: float = 1.0,
         stroke_before: "Optional[np.ndarray]" = None,
         stroke_strength_map: "Optional[np.ndarray]" = None,
     ) -> Tuple[int, int, int, int]:
@@ -663,6 +664,11 @@ class MapDataBuffer:
             falloff: 0.0 = hard brush, 1.0 = full ramp.
             falloff_curve: Shape of the feather ramp — ``"linear"``,
                 ``"cosine"`` (default), or ``"gaussian"``.
+            opacity: Global brush opacity multiplier [0.0, 1.0].  Scales the
+                effective strength of every dab — 1.0 (default) is full
+                replacement; lower values blend more weakly toward *value*.
+                Applied after the falloff kernel so the radial feather shape
+                is preserved.
             stroke_before: Full-buffer snapshot at stroke start (uint16).
                 Must be supplied together with *stroke_strength_map*.
             stroke_strength_map: Per-pixel maximum-strength accumulator
@@ -709,7 +715,15 @@ class MapDataBuffer:
             k_left : kw - k_right if k_right else kw,
         ].copy()  # writable slice for in-place ops below
 
-        if falloff > 0.0:
+        # Apply global opacity: scale kernel strength before any blending.
+        # Clamped so floating-point drift never exceeds [0, 1].
+        opacity = max(0.0, min(1.0, opacity))
+        if opacity < 1.0:
+            strength = strength * opacity
+
+        # With opacity < 1.0 a hard brush (falloff=0) must use the blend
+        # path rather than binary replacement so values are mixed correctly.
+        if falloff > 0.0 or opacity < 1.0:
             if stroke_before is not None and stroke_strength_map is not None:
                 # --- Idempotent stroke mode ---
                 region_before = stroke_before[
@@ -732,7 +746,7 @@ class MapDataBuffer:
                     blended, 0, 65535
                 ).astype(np.uint16)
         else:
-            # Hard brush — the kernel is already a binary mask
+            # Hard brush at full opacity — binary replace (fast path).
             mask = strength.astype(bool)
             self._data[min_row : max_row + 1, min_col : max_col + 1] = np.where(
                 mask,

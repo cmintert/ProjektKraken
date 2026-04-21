@@ -546,16 +546,18 @@ class MapLayerMixin:
         tool.paint_value = panel.raster_paint_value
         tool.falloff = panel.raster_falloff
         tool.falloff_curve = panel.raster_falloff_curve
+        tool.brush_opacity = panel.raster_brush_opacity
         tool.set_gradient_sub_mode(panel.raster_gradient_sub_mode)
 
         logger.debug(
             "_on_raster_settings_changed: mode=%s brush_size=%d "
-            "paint_value=%d falloff=%.2f curve=%s",
+            "paint_value=%d falloff=%.2f curve=%s opacity=%.2f",
             tool.mode.name,
             tool.brush_size,
             tool.paint_value,
             tool.falloff,
             tool.falloff_curve,
+            tool.brush_opacity,
         )
 
     def get_layer_model(self) -> Optional[MapLayerModel]:
