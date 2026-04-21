@@ -8,6 +8,7 @@ palette-based colorisation, and 16-bit PNG persistence via Pillow.
 import logging
 from collections import deque
 from dataclasses import dataclass, field
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -17,6 +18,60 @@ from PySide6.QtGui import QImage
 from src.gui.widgets.map.raster_mapping import normalize_value_entity_map
 
 logger = logging.getLogger(__name__)
+
+
+@lru_cache(maxsize=32)
+def _compute_brush_kernel(r: int, falloff: float, falloff_curve: str) -> np.ndarray:
+    """Return a ``(2r+1, 2r+1)`` float32 strength kernel centred at ``(r, r)``.
+
+    The kernel is built once per unique ``(r, falloff, falloff_curve)``
+    combination and then cached by :func:`functools.lru_cache` so that all
+    dabs in a stroke share the same pre-computed array, eliminating the
+    ``meshgrid``/``sqrt``/``clip``/``where`` pipeline from the hot path.
+
+    Args:
+        r: Brush radius in buffer pixels (>= 1).
+        falloff: Feather strength 0.0 – 1.0.
+        falloff_curve: One of ``"linear"``, ``"cosine"``, ``"gaussian"``.
+
+    Returns:
+        Read-only float32 array of shape ``(2r+1, 2r+1)``.
+    """
+    size = 2 * r + 1
+    # Coordinate grid centred at (r, r)
+    idx = np.arange(size, dtype=np.float32) - r
+    cc, rr = np.meshgrid(idx, idx)
+    dist = np.sqrt(cc ** 2 + rr ** 2).astype(np.float32)
+    mask = dist <= r
+
+    if falloff > 0.0:
+        core_r = r * (1.0 - falloff)
+        ramp_width = r - core_r  # == r * falloff
+
+        t_linear = np.clip(
+            (r - dist) / max(ramp_width, 1e-6),
+            0.0,
+            1.0,
+        ).astype(np.float32)
+
+        if falloff_curve == "cosine":
+            t_shaped: np.ndarray = (0.5 - 0.5 * np.cos(np.pi * t_linear)).astype(np.float32)
+        elif falloff_curve == "gaussian":
+            t_shaped = np.exp(-4.5 * (1.0 - t_linear) ** 2).astype(np.float32)
+        else:
+            t_shaped = t_linear
+
+        kernel: np.ndarray = np.where(
+            dist <= core_r,
+            np.float32(1.0),
+            t_shaped,
+        ).astype(np.float32)
+        kernel = kernel * mask
+    else:
+        kernel = mask.astype(np.float32)
+
+    kernel.flags.writeable = False  # safety: slices are read-only copies anyway
+    return kernel
 
 
 @dataclass
@@ -633,36 +688,21 @@ class MapDataBuffer:
             max_row,
         )
 
-        # Build pixel coordinate grids for the affected region
-        rows = np.arange(min_row, max_row + 1)
-        cols = np.arange(min_col, max_col + 1)
-        cc, rr = np.meshgrid(cols, rows)
-
-        dist = np.sqrt((cc - cx) ** 2 + (rr - cy) ** 2).astype(np.float32)
-        mask = dist <= r
+        # Fetch or compute the full (2r+1, 2r+1) strength kernel (cached).
+        # Slice to clamp brush against buffer edges.
+        kernel = _compute_brush_kernel(r, falloff, falloff_curve)
+        k_top = max(0, r - cy)
+        k_bottom = max(0, cy + r - (self._height - 1))
+        k_left = max(0, r - cx)
+        k_right = max(0, cx + r - (self._width - 1))
+        kh = 2 * r + 1
+        kw = 2 * r + 1
+        strength: np.ndarray = kernel[
+            k_top : kh - k_bottom if k_bottom else kh,
+            k_left : kw - k_right if k_right else kw,
+        ].copy()  # writable slice for in-place ops below
 
         if falloff > 0.0:
-            # Hard-core + shaped-ramp feathering
-            core_r = r * (1.0 - falloff)
-            ramp_width = r - core_r  # == r * falloff
-
-            # Linear progress through the feather zone: 0 at outer edge, 1 at core
-            t_linear = np.clip(
-                (r - dist) / max(ramp_width, 1e-6),
-                0.0,
-                1.0,
-            ).astype(np.float32)
-
-            # Apply the chosen curve to the ramp zone only; core stays at 1.0
-            strength = np.where(
-                dist <= core_r,
-                np.float32(1.0),
-                self._apply_falloff_curve(t_linear, falloff_curve),
-            ).astype(np.float32)
-
-            # Zero out anything outside the circle
-            strength = strength * mask
-
             if stroke_before is not None and stroke_strength_map is not None:
                 # --- Idempotent stroke mode ---
                 region_before = stroke_before[
@@ -685,6 +725,8 @@ class MapDataBuffer:
                     blended, 0, 65535
                 ).astype(np.uint16)
         else:
+            # Hard brush — the kernel is already a binary mask
+            mask = strength.astype(bool)
             self._data[min_row : max_row + 1, min_col : max_col + 1] = np.where(
                 mask,
                 np.uint16(max(0, min(value, 65535))),
@@ -742,6 +784,35 @@ class MapDataBuffer:
         for entry in color_map.entries:
             r, g, b, a = _hex_to_rgba(entry.color)
             lut[entry.value] = [r, g, b, a]
+        return lut
+
+    @staticmethod
+    def _build_gradient_lut(color_map: ColorMap) -> np.ndarray:
+        """Build a uint16 → RGBA lookup table from gradient stops in one pass.
+
+        Evaluates the gradient at all 65536 integer index values, avoiding
+        per-region ``np.interp`` calls during painting.
+
+        Args:
+            color_map: A colour map with ``type == "gradient"``.
+
+        Returns:
+            Array of shape ``(65536, 4)`` with dtype ``uint8``.
+        """
+        stops = sorted(color_map.gradient_stops, key=lambda s: s.position)
+        positions = np.array([s.position for s in stops], dtype=np.float32)
+        rgba_stops = np.array(
+            [_hex_to_rgba(s.color) for s in stops], dtype=np.float32
+        )
+        s_min = color_map.stretch_min if color_map.stretch_min is not None else 0
+        s_max = color_map.stretch_max if color_map.stretch_max is not None else 65535
+
+        all_idx = np.arange(65536, dtype=np.float32)
+        t = np.clip((all_idx - s_min) / max(s_max - s_min, 1), 0.0, 1.0)
+
+        lut = np.zeros((65536, 4), dtype=np.uint8)
+        for ch in range(4):
+            lut[:, ch] = np.interp(t, positions, rgba_stops[:, ch]).astype(np.uint8)
         return lut
 
     def colorize(self, color_map: ColorMap) -> QImage:
@@ -910,6 +981,7 @@ class MapDataBuffer:
         min_row: int,
         max_col: int,
         max_row: int,
+        lut: Optional[np.ndarray] = None,
     ) -> QImage:
         """Colourize a rectangular sub-region of the buffer.
 
@@ -919,6 +991,12 @@ class MapDataBuffer:
             min_row: Top row (inclusive).
             max_col: Right column (inclusive).
             max_row: Bottom row (inclusive).
+            lut: Optional pre-built ``(65536, 4)`` uint8 lookup table.
+                When supplied, the table is used directly for both palette
+                and gradient colour maps, avoiding per-call LUT construction
+                and ``np.interp`` overhead.  Callers are responsible for
+                invalidating and rebuilding the LUT when the colour map
+                changes.
 
         Returns:
             QImage (RGBA8888) covering the requested region.
@@ -954,9 +1032,11 @@ class MapDataBuffer:
         region = self._data[min_row : max_row + 1, min_col : max_col + 1]
         rh, rw = region.shape
 
-        if color_map.type == "palette":
-            lut = self._build_palette_lut(color_map)
+        if lut is not None:
+            # Fast path: caller supplied a pre-built (65536, 4) LUT
             rgba = lut[region]
+        elif color_map.type == "palette":
+            rgba = self._build_palette_lut(color_map)[region]
         else:
             rgba = np.zeros((rh, rw, 4), dtype=np.uint8)
             stops = sorted(color_map.gradient_stops, key=lambda s: s.position)

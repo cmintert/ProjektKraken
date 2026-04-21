@@ -724,3 +724,130 @@ class TestStrokeStrengthMap:
         assert val_at_half_r > 7000, (
             f"Legacy accumulation: expected near-full value, got {val_at_half_r}"
         )
+
+
+# ------------------------------------------------------------------
+# Brush kernel LRU cache
+# ------------------------------------------------------------------
+
+
+class TestBrushKernelCache:
+    """Tests for the module-level ``_compute_brush_kernel`` LRU cache."""
+
+    def test_kernel_cached_same_object(self) -> None:
+        """The same (r, falloff, curve) triple returns the identical array."""
+        from src.gui.widgets.map.map_data_buffer import _compute_brush_kernel
+
+        k1 = _compute_brush_kernel(10, 0.5, "cosine")
+        k2 = _compute_brush_kernel(10, 0.5, "cosine")
+        assert k1 is k2, "Expected lru_cache to return the same array object"
+
+    def test_different_args_different_kernels(self) -> None:
+        """Different arguments produce distinct arrays."""
+        from src.gui.widgets.map.map_data_buffer import _compute_brush_kernel
+
+        k_soft = _compute_brush_kernel(10, 0.8, "cosine")
+        k_hard = _compute_brush_kernel(10, 0.0, "cosine")
+        # Hard brush has ones/zeros only; soft brush has gradients
+
+        assert not (k_soft == k_hard).all()
+
+    def test_kernel_shape(self) -> None:
+        """Kernel has the expected (2r+1, 2r+1) shape."""
+        from src.gui.widgets.map.map_data_buffer import _compute_brush_kernel
+
+        r = 15
+        k = _compute_brush_kernel(r, 0.5, "gaussian")
+        assert k.shape == (2 * r + 1, 2 * r + 1)
+
+    def test_kernel_centre_is_one(self) -> None:
+        """The centre pixel of any kernel with falloff > 0 is always 1.0."""
+
+        from src.gui.widgets.map.map_data_buffer import _compute_brush_kernel
+
+        for curve in ("cosine", "linear", "gaussian"):
+            k = _compute_brush_kernel(12, 0.6, curve)
+            assert k[12, 12] == pytest.approx(1.0), f"curve={curve} centre should be 1.0"
+
+    def test_hard_kernel_is_binary(self) -> None:
+        """falloff=0 kernel contains only 0.0 and 1.0."""
+        import numpy as np
+
+        from src.gui.widgets.map.map_data_buffer import _compute_brush_kernel
+
+        k = _compute_brush_kernel(8, 0.0, "cosine")
+        unique = set(np.unique(k).tolist())
+        assert unique <= {0.0, 1.0}, f"Hard kernel should be binary, got {unique}"
+
+
+# ------------------------------------------------------------------
+# Gradient LUT builder + colorize_region(lut=) fast path
+# ------------------------------------------------------------------
+
+
+class TestGradientLut:
+    """Tests for ``_build_gradient_lut`` and the ``lut=`` parameter on
+    ``colorize_region``."""
+
+    def _make_gradient_color_map(self) -> ColorMap:
+        """Two-stop gradient: black → white over the full 0–65535 range."""
+        return ColorMap(
+            type="gradient",
+            entries=[],
+            gradient_stops=[
+                GradientStop(position=0.0, color="#000000ff"),
+                GradientStop(position=1.0, color="#ffffffff"),
+            ],
+        )
+
+    def test_gradient_lut_shape(self) -> None:
+        """LUT must be (65536, 4) uint8."""
+        import numpy as np
+
+        cmap = self._make_gradient_color_map()
+        lut = MapDataBuffer._build_gradient_lut(cmap)
+        assert lut.shape == (65536, 4)
+        assert lut.dtype == np.uint8
+
+    def test_gradient_lut_endpoints(self) -> None:
+        """Index 0 → black (0,0,0,255); index 65535 → white (255,255,255,255)."""
+        cmap = self._make_gradient_color_map()
+        lut = MapDataBuffer._build_gradient_lut(cmap)
+        assert list(lut[0]) == [0, 0, 0, 255]
+        assert list(lut[65535]) == [255, 255, 255, 255]
+
+    def test_colorize_region_lut_matches_no_lut(self) -> None:
+        """``colorize_region(lut=…)`` pixel values match the slow path."""
+
+        buf = MapDataBuffer(64, 64, default_value=0)
+        # Paint a gradient of values across the buffer
+        for col in range(64):
+            buf._data[:, col] = int(col / 63 * 65535)
+
+        cmap = self._make_gradient_color_map()
+        lut = MapDataBuffer._build_gradient_lut(cmap)
+
+        img_slow = buf.colorize_region(cmap, 0, 0, 63, 63)
+        img_fast = buf.colorize_region(cmap, 0, 0, 63, 63, lut=lut)
+
+        slow_bytes = img_slow.bits().tobytes()
+        fast_bytes = img_fast.bits().tobytes()
+        assert slow_bytes == fast_bytes, "LUT fast path must match per-pixel interp path"
+
+    def test_palette_lut_passed_to_colorize_region(self) -> None:
+        """A pre-built palette LUT produces the same output as the default path."""
+        buf = MapDataBuffer(16, 16, default_value=1)
+        cmap = ColorMap(
+            type="palette",
+            entries=[
+                ColorEntry(value=0, color="#000000ff", label="bg"),
+                ColorEntry(value=1, color="#ff0000ff", label="red"),
+            ],
+        )
+        lut = MapDataBuffer._build_palette_lut(cmap)
+
+        img_default = buf.colorize_region(cmap, 0, 0, 15, 15)
+        img_with_lut = buf.colorize_region(cmap, 0, 0, 15, 15, lut=lut)
+
+        assert img_default.bits().tobytes() == img_with_lut.bits().tobytes()
+

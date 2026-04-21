@@ -7,6 +7,7 @@ renders it as a colourised RGBA pixmap in the map's graphics scene.
 import logging
 from typing import Any, Dict, Optional
 
+import numpy as np
 from PySide6.QtCore import QRectF
 from PySide6.QtGui import QPainter, QPixmap
 from PySide6.QtWidgets import QGraphicsPixmapItem
@@ -61,6 +62,9 @@ class RasterLayerItem(QGraphicsPixmapItem):
         self._scene_blend_mode: QPainter.CompositionMode = (
             QPainter.CompositionMode.CompositionMode_SourceOver
         )
+        # Pre-built (65536, 4) uint8 LUT for fast colorize_region calls.
+        # Rebuilt whenever the colour map changes.
+        self._lut: Optional[np.ndarray] = None
 
         # Initial render
         self.update_display()
@@ -97,6 +101,21 @@ class RasterLayerItem(QGraphicsPixmapItem):
     # Display
     # ------------------------------------------------------------------
 
+    def _rebuild_lut(self) -> None:
+        """Rebuild the cached (65536, 4) LUT from the current colour map.
+
+        Called whenever the colour map is changed so that subsequent
+        ``update_region`` calls can use the pre-built table directly.
+        Passthrough layers do not use a LUT; the field is set to ``None``.
+        """
+        cmap = self._color_map
+        if cmap.type == "palette":
+            self._lut = MapDataBuffer._build_palette_lut(cmap)
+        elif cmap.type == "gradient":
+            self._lut = MapDataBuffer._build_gradient_lut(cmap)
+        else:
+            self._lut = None
+
     def update_display(self, color_map: Optional[ColorMap] = None) -> None:
         """Re-colourize the buffer and update the displayed pixmap.
 
@@ -112,12 +131,15 @@ class RasterLayerItem(QGraphicsPixmapItem):
                 color_map.type,
             )
             self._color_map = color_map
+            self._rebuild_lut()
         else:
             logger.debug(
                 "update_display: node_id=%s using existing color_map type=%s",
                 self._node_id,
                 self._color_map.type,
             )
+            if self._lut is None:
+                self._rebuild_lut()
 
         qimage = self._buffer.colorize(self._color_map)
         logger.debug(
@@ -179,6 +201,7 @@ class RasterLayerItem(QGraphicsPixmapItem):
         """
         if color_map is not None:
             self._color_map = color_map
+            self._rebuild_lut()
 
         cmap = self._color_map
         min_col, min_row, max_col, max_row = dirty_region
@@ -188,7 +211,7 @@ class RasterLayerItem(QGraphicsPixmapItem):
             dirty_region,
         )
         tile_img = self._buffer.colorize_region(
-            cmap, min_col, min_row, max_col, max_row
+            cmap, min_col, min_row, max_col, max_row, lut=self._lut
         )
 
         current = self.pixmap()

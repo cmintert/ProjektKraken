@@ -413,8 +413,27 @@ class RasterEditTool:
             buf.height,
         )
 
-    def _apply_brush(self, item: RasterLayerItem, x_norm: float, y_norm: float) -> None:
-        """Paint a single brush dab and update display."""
+    def _apply_brush(
+        self,
+        item: RasterLayerItem,
+        x_norm: float,
+        y_norm: float,
+        update_display: bool = True,
+    ) -> tuple[int, int, int, int]:
+        """Paint a single brush dab and optionally refresh the display.
+
+        Args:
+            item: The active raster layer item.
+            x_norm: Horizontal position in normalised [0, 1] space.
+            y_norm: Vertical position in normalised [0, 1] space.
+            update_display: When ``True`` (default) immediately calls
+                ``item.update_region`` so the stroke appears on screen.
+                Pass ``False`` when batching multiple dabs — the caller
+                is responsible for a single ``update_region`` call.
+
+        Returns:
+            Dirty region ``(min_col, min_row, max_col, max_row)``.
+        """
         buf = item.buffer
         dirty = buf.paint_brush(
             x_norm,
@@ -435,7 +454,7 @@ class RasterEditTool:
             dirty,
         )
 
-        # Expand accumulated dirty region
+        # Expand accumulated stroke dirty region
         if self._stroke_dirty is None:
             self._stroke_dirty = dirty
         else:
@@ -446,8 +465,10 @@ class RasterEditTool:
                 max(self._stroke_dirty[3], dirty[3]),
             )
 
-        # Partial display update for responsiveness
-        item.update_region(dirty)
+        if update_display:
+            item.update_region(dirty)
+
+        return dirty
 
     def _emit_dabs(self, item: RasterLayerItem, x_norm: float, y_norm: float) -> None:
         """Paint interpolated dabs from the last placed dab to *x_norm/y_norm*.
@@ -484,11 +505,26 @@ class RasterEditTool:
         n_dabs = int(dist_px / spacing_px)
         total_steps = dist_px / spacing_px  # may be fractional
 
+        # Paint all dabs without triggering per-dab Qt renders, then do a
+        # single blit covering the union of all dirty regions.
+        union: Optional[tuple[int, int, int, int]] = None
         for i in range(1, n_dabs + 1):
             t = i / total_steps
             xi = lx + t * (x_norm - lx)
             yi = ly + t * (y_norm - ly)
-            self._apply_brush(item, xi, yi)
+            d = self._apply_brush(item, xi, yi, update_display=False)
+            if union is None:
+                union = d
+            else:
+                union = (
+                    min(union[0], d[0]),
+                    min(union[1], d[1]),
+                    max(union[2], d[2]),
+                    max(union[3], d[3]),
+                )
+
+        if union is not None:
+            item.update_region(union)
 
         # Advance last_dab_pos to the position of the last placed dab (not
         # the current mouse position) so carry-over spacing is continuous.
