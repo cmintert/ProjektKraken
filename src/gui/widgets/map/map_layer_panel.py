@@ -9,7 +9,7 @@ and reordering via drag-and-drop.  Integrates with the application's
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
-from PySide6.QtCore import QModelIndex, QPoint, Qt, Signal, Slot
+from PySide6.QtCore import QModelIndex, QPoint, QSize, Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
@@ -27,8 +27,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.app.constants import EDITOR_ICON_BUTTON_SIZE
 from src.app.ui_constants import Spacing
 from src.core.map import MapLayerNode
+from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.color_pickers import (
     ColorHistoryService,
@@ -50,7 +52,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 # Label width used for consistent alignment across raster tool rows.
-_LABEL_WIDTH = 92
+_LABEL_WIDTH = 52
 
 
 class MapLayerPanel(QWidget):
@@ -172,25 +174,43 @@ class MapLayerPanel(QWidget):
         header_layout.addWidget(self._title_label)
         header_layout.addStretch()
 
-        self.btn_new_group = self._make_button(
-            "+ Group", "Create a new layer (container)", self._on_new_group
+        _dim = self._theme_token("text_dim")
+        _err = self._theme_token("destructive")
+
+        self.btn_new_group = QPushButton()
+        self.btn_new_group.setIcon(
+            load_icon("default_assets/icons/ui_icons/stack-simple.svg", _dim)
         )
+        self.btn_new_group.setIconSize(QSize(16, 16))
+        self.btn_new_group.setFixedSize(QSize(28, 28))
+        self.btn_new_group.setToolTip("New Group — Create a new layer group")
+        self.btn_new_group.setStyleSheet(StyleHelper.get_icon_button_style())
+        self.btn_new_group.clicked.connect(self._on_new_group)
         header_layout.addWidget(self.btn_new_group)
 
-        self.btn_new_raster = self._make_button(
-            "+ Raster", "Create a new raster / heatmap layer", self._on_new_raster
+        self.btn_new_raster = QPushButton()
+        self.btn_new_raster.setIcon(
+            load_icon("default_assets/icons/ui_icons/paint-brush-broad.svg", _dim)
         )
+        self.btn_new_raster.setIconSize(QSize(16, 16))
+        self.btn_new_raster.setFixedSize(QSize(28, 28))
+        self.btn_new_raster.setToolTip("New Raster — Create a new raster / heatmap layer")
+        self.btn_new_raster.setStyleSheet(StyleHelper.get_icon_button_style())
+        self.btn_new_raster.clicked.connect(self._on_new_raster)
         header_layout.addWidget(self.btn_new_raster)
 
         header_layout.addSpacing(8)
 
-        self.btn_delete = self._make_button(
-            "Delete",
-            "Delete the selected layer or feature",
-            self._on_delete,
-            enabled=False,
+        self.btn_delete = QPushButton()
+        self.btn_delete.setIcon(
+            load_icon("default_assets/icons/ui_icons/trash.svg", _err)
         )
+        self.btn_delete.setIconSize(QSize(16, 16))
+        self.btn_delete.setFixedSize(QSize(28, 28))
+        self.btn_delete.setToolTip("Delete — Delete the selected layer or feature")
         self.btn_delete.setStyleSheet(StyleHelper.get_ghost_destructive_button_style())
+        self.btn_delete.setEnabled(False)
+        self.btn_delete.clicked.connect(self._on_delete)
         header_layout.addWidget(self.btn_delete)
 
         parent_layout.addLayout(header_layout)
@@ -273,10 +293,12 @@ class MapLayerPanel(QWidget):
         rt.addWidget(self._make_section_separator("PAINT"))
         self._build_paint_settings(rt)
 
-        rt.addWidget(self._make_section_separator("SNAPSHOTS"))
-        self._build_action_rows(rt)
+        self._build_edit_action_row(rt)
 
-        rt.addWidget(self._make_section_separator("DISPLAY"))
+        rt.addWidget(self._make_section_separator("SNAPSHOTS"))
+        self._build_snapshot_row(rt)
+
+        rt.addWidget(self._make_section_separator("LAYER"))
         self._build_layer_settings(rt)
 
         parent_layout.addWidget(self._raster_toolbar)
@@ -290,18 +312,40 @@ class MapLayerPanel(QWidget):
         tool_row = QHBoxLayout()
         tool_row.setSpacing(2)
 
-        tool_defs: list[tuple[str, str, bool, str]] = [
-            ("_btn_brush", "Brush", True, "Paint individual pixels with the selected value"),
-            ("_btn_fill", "Fill", False, "Flood-fill a contiguous region with the selected value"),
-            ("_btn_gradient", "Gradient", False, "Paint a smooth gradient from center to edge of brush"),
-            ("_btn_sample", "Sample", False, "Sample the value under the cursor (eye-dropper)"),
+        _dim = self._theme_token("text_dim")
+        _icon_style = StyleHelper.get_icon_raster_tool_button_style()
+        tool_defs: list[tuple[str, str, bool, str, str]] = [
+            (
+                "_btn_brush", "Brush", True,
+                "Paint individual pixels with the selected value",
+                "default_assets/icons/ui_icons/paint-brush.svg",
+            ),
+            (
+                "_btn_fill", "Fill", False,
+                "Flood-fill a contiguous region with the selected value",
+                "default_assets/icons/ui_icons/paint-bucket.svg",
+            ),
+            (
+                "_btn_gradient", "Gradient", False,
+                "Paint a smooth gradient from center to edge of brush",
+                "default_assets/icons/ui_icons/gradient.svg",
+            ),
+            (
+                "_btn_sample", "Sample", False,
+                "Sample the value under the cursor (eye-dropper)",
+                "default_assets/icons/ui_icons/eyedropper.svg",
+            ),
         ]
-        for attr, label, checked, tooltip in tool_defs:
-            btn = QPushButton(label)
+        for attr, label, checked, tooltip, icon_path in tool_defs:
+            btn = QPushButton()
             btn.setCheckable(True)
             btn.setChecked(checked)
             btn.setAutoExclusive(True)
-            btn.setToolTip(tooltip)
+            btn.setToolTip(f"{label} — {tooltip}")
+            btn.setIcon(load_icon(icon_path, _dim))
+            btn.setIconSize(QSize(20, 20))
+            btn.setFixedSize(QSize(EDITOR_ICON_BUTTON_SIZE, EDITOR_ICON_BUTTON_SIZE))
+            btn.setStyleSheet(_icon_style)
             btn.toggled.connect(self._on_tool_mode_changed)
             setattr(self, attr, btn)
             tool_row.addWidget(btn)
@@ -315,7 +359,7 @@ class MapLayerPanel(QWidget):
         rt.addLayout(tool_row)
 
     def _build_paint_settings(self, rt: QVBoxLayout) -> None:
-        """Build paint parameter controls (size, value, entity picker, falloff, gradient).
+        """Build paint parameter controls (size, value, entity picker, hardness, gradient).
 
         Args:
             rt: Raster toolbar layout to append into.
@@ -339,12 +383,13 @@ class MapLayerPanel(QWidget):
 
         self._falloff_slider, self._falloff_label = self._make_labeled_slider(
             rt,
-            "Falloff:",
+            "Hardness:",
             0,
             100,
             0,
-            "Brush falloff (0=hard, 100=soft)",
+            "Brush hardness (0=soft edge, 100=hard edge)",
             self._on_falloff_changed,
+            icon_path="default_assets/icons/ui_icons/drop.svg",
         )
 
         self._build_gradient_sub_combo(rt)
@@ -456,8 +501,15 @@ class MapLayerPanel(QWidget):
         """
         gradient_row = QHBoxLayout()
         gradient_row.setSpacing(Spacing.COMPACT)
-        grad_lbl = QLabel("Gradient Style:")
-        grad_lbl.setFixedWidth(_LABEL_WIDTH)
+        grad_lbl = QLabel()
+        grad_lbl.setPixmap(
+            load_icon(
+                "default_assets/icons/ui_icons/gradient.svg",
+                self._theme_token("text_dim"),
+            ).pixmap(QSize(16, 16))
+        )
+        grad_lbl.setFixedWidth(22)
+        grad_lbl.setToolTip("Gradient style")
         gradient_row.addWidget(grad_lbl)
         self._gradient_sub_combo = QComboBox()
         self._gradient_sub_combo.addItems(["Linear", "Radial", "Reflected"])
@@ -470,12 +522,13 @@ class MapLayerPanel(QWidget):
         gradient_row.addWidget(self._gradient_sub_combo, 1)
         rt.addLayout(gradient_row)
 
-    def _build_action_rows(self, rt: QVBoxLayout) -> None:
-        """Build the action button rows (edit, palette, stats, snapshot).
+    def _build_edit_action_row(self, rt: QVBoxLayout) -> None:
+        """Build the Edit / Palette / Stats action row (appended to the PAINT section).
 
         Args:
             rt: Raster toolbar layout to append into.
         """
+        _dim = self._theme_token("text_dim")
         action_row = QHBoxLayout()
         action_row.setSpacing(Spacing.COMPACT)
         self._btn_edit_toggle = QPushButton("✎ Edit")
@@ -483,28 +536,51 @@ class MapLayerPanel(QWidget):
         self._btn_edit_toggle.setToolTip("Enter/exit raster edit mode — changes are applied to the active layer")
         self._btn_edit_toggle.toggled.connect(self._on_edit_toggled)
         action_row.addWidget(self._btn_edit_toggle)
-        self._btn_palette = self._make_button(
-            "Edit Palette…",
-            "Open the colour map / class palette editor",
-            self._on_palette_clicked,
+
+        self._btn_palette = QPushButton()
+        self._btn_palette.setIcon(
+            load_icon("default_assets/icons/ui_icons/palette.svg", _dim)
         )
+        self._btn_palette.setIconSize(QSize(16, 16))
+        self._btn_palette.setFixedSize(QSize(28, 28))
+        self._btn_palette.setToolTip("Palette — Open the colour map / class palette editor")
+        self._btn_palette.setStyleSheet(StyleHelper.get_icon_button_style())
+        self._btn_palette.clicked.connect(self._on_palette_clicked)
         action_row.addWidget(self._btn_palette)
-        self._btn_stats = self._make_button(
-            "Stats…",
-            "Show coverage statistics for this raster layer",
-            self._on_stats_clicked,
+
+        self._btn_stats = QPushButton()
+        self._btn_stats.setIcon(
+            load_icon("default_assets/icons/ui_icons/chart-bar.svg", _dim)
         )
+        self._btn_stats.setIconSize(QSize(16, 16))
+        self._btn_stats.setFixedSize(QSize(28, 28))
+        self._btn_stats.setToolTip("Stats — Show coverage statistics for this raster layer")
+        self._btn_stats.setStyleSheet(StyleHelper.get_icon_button_style())
+        self._btn_stats.clicked.connect(self._on_stats_clicked)
         action_row.addWidget(self._btn_stats)
         action_row.addStretch()
         rt.addLayout(action_row)
 
+    def _build_snapshot_row(self, rt: QVBoxLayout) -> None:
+        """Build the snapshot button and count label row.
+
+        Args:
+            rt: Raster toolbar layout to append into.
+        """
+        _dim = self._theme_token("text_dim")
         snapshot_row = QHBoxLayout()
         snapshot_row.setSpacing(Spacing.COMPACT)
-        self._btn_snapshot = self._make_button(
-            "📸 Snapshot",
-            "Save snapshot of this raster layer at the current timeline date",
-            self._on_snapshot_clicked,
+        self._btn_snapshot = QPushButton()
+        self._btn_snapshot.setIcon(
+            load_icon("default_assets/icons/ui_icons/camera.svg", _dim)
         )
+        self._btn_snapshot.setIconSize(QSize(16, 16))
+        self._btn_snapshot.setFixedSize(QSize(28, 28))
+        self._btn_snapshot.setToolTip(
+            "Snapshot — Save raster layer state at the current timeline date"
+        )
+        self._btn_snapshot.setStyleSheet(StyleHelper.get_icon_button_style())
+        self._btn_snapshot.clicked.connect(self._on_snapshot_clicked)
         snapshot_row.addWidget(self._btn_snapshot)
         self._snapshot_count_label = QLabel("")
         self._snapshot_count_label.setToolTip(
@@ -520,10 +596,19 @@ class MapLayerPanel(QWidget):
         Args:
             rt: Raster toolbar layout to append into.
         """
+        _dim = self._theme_token("text_dim")
         # Blend mode
         blend_row = QHBoxLayout()
         blend_row.setSpacing(Spacing.COMPACT)
-        blend_row.addWidget(QLabel("Blend:"))
+        _blend_lbl = QLabel()
+        _blend_lbl.setPixmap(
+            load_icon("default_assets/icons/ui_icons/sliders.svg", _dim).pixmap(
+                QSize(16, 16)
+            )
+        )
+        _blend_lbl.setFixedWidth(22)
+        _blend_lbl.setToolTip("Blend mode")
+        blend_row.addWidget(_blend_lbl)
         self._blend_combo = QComboBox()
         self._blend_combo.addItems(BLEND_MODE_NAMES)
         self._blend_combo.setToolTip("How this layer blends with layers below it")
@@ -535,11 +620,15 @@ class MapLayerPanel(QWidget):
         # Notes
         notes_row = QHBoxLayout()
         notes_row.setSpacing(Spacing.COMPACT)
-        self._btn_notes = self._make_button(
-            "📝 Notes",
-            "Add or edit text notes for this raster layer",
-            self._on_notes_clicked,
+        self._btn_notes = QPushButton()
+        self._btn_notes.setIcon(
+            load_icon("default_assets/icons/ui_icons/note-pencil.svg", _dim)
         )
+        self._btn_notes.setIconSize(QSize(16, 16))
+        self._btn_notes.setFixedSize(QSize(28, 28))
+        self._btn_notes.setToolTip("Notes — Add or edit text notes for this raster layer")
+        self._btn_notes.setStyleSheet(StyleHelper.get_icon_button_style())
+        self._btn_notes.clicked.connect(self._on_notes_clicked)
         notes_row.addWidget(self._btn_notes)
         self._notes_indicator_label = QLabel("")
         self._notes_indicator_label.setToolTip("This layer has saved notes")
@@ -569,18 +658,27 @@ class MapLayerPanel(QWidget):
         query_layout = QHBoxLayout(self._query_row)
         query_layout.setContentsMargins(0, 0, 0, 0)
         query_layout.setSpacing(Spacing.COMPACT)
-        self._btn_query = self._make_button(
-            "🔍 Query",
-            "Build a cross-layer spatial query",
-            lambda: self.raster_query_requested.emit(),
+        self._btn_query = QPushButton()
+        self._btn_query.setIcon(
+            load_icon("default_assets/icons/ui_icons/funnel.svg", _dim)
         )
+        self._btn_query.setIconSize(QSize(16, 16))
+        self._btn_query.setFixedSize(QSize(28, 28))
+        self._btn_query.setToolTip("Query — Build a cross-layer spatial query")
+        self._btn_query.setStyleSheet(StyleHelper.get_icon_button_style())
+        self._btn_query.clicked.connect(lambda: self.raster_query_requested.emit())
         query_layout.addWidget(self._btn_query)
-        self._btn_clear_query = self._make_button(
-            "✕ Clear Query",
-            "Remove the spatial query overlay",
-            lambda: self.raster_query_cleared.emit(),
-            visible=False,
+
+        self._btn_clear_query = QPushButton()
+        self._btn_clear_query.setIcon(
+            load_icon("default_assets/icons/ui_icons/funnel-x.svg", _dim)
         )
+        self._btn_clear_query.setIconSize(QSize(16, 16))
+        self._btn_clear_query.setFixedSize(QSize(28, 28))
+        self._btn_clear_query.setToolTip("Clear Query — Remove the spatial query overlay")
+        self._btn_clear_query.setStyleSheet(StyleHelper.get_icon_button_style())
+        self._btn_clear_query.clicked.connect(lambda: self.raster_query_cleared.emit())
+        self._btn_clear_query.setVisible(False)
         query_layout.addWidget(self._btn_clear_query)
         query_layout.addStretch()
         self._query_row.setVisible(False)
@@ -719,25 +817,43 @@ class MapLayerPanel(QWidget):
         default: int,
         tooltip: str,
         on_changed: Any,
+        *,
+        icon_path: str = "",
     ) -> Tuple[QSlider, QLabel]:
         """Create a labeled slider row with a value readout label.
 
         Args:
             parent_layout: Layout to add the row into.
-            label: Row label text.
+            label: Row label text (shown as tooltip when *icon_path* is used).
             min_val: Minimum slider value.
             max_val: Maximum slider value.
             default: Initial slider value.
             tooltip: Slider tooltip text.
             on_changed: Slot connected to ``valueChanged``.
+            icon_path: Optional path to a Phosphor SVG icon to show in place of
+                the text label.  Relative to the project root, e.g.
+                ``"default_assets/icons/ui_icons/drop.svg"``.
 
         Returns:
             A ``(slider, value_label)`` tuple.
         """
+        from src.core.theme_manager import ThemeManager
+
         row = QHBoxLayout()
         row.setSpacing(Spacing.COMPACT)
-        lbl = QLabel(label)
-        lbl.setFixedWidth(_LABEL_WIDTH)
+        if icon_path:
+            lbl = QLabel()
+            lbl.setPixmap(
+                load_icon(
+                    icon_path,
+                    ThemeManager().get_theme().get("text_dim", "#888888"),
+                ).pixmap(QSize(16, 16))
+            )
+            lbl.setFixedWidth(22)
+            lbl.setToolTip(label)
+        else:
+            lbl = QLabel(label)
+            lbl.setFixedWidth(_LABEL_WIDTH)
         row.addWidget(lbl)
 
         slider = QSlider(Qt.Orientation.Horizontal)
@@ -842,16 +958,17 @@ class MapLayerPanel(QWidget):
         )
         self._apply_tree_style()
 
-        # Raster tool buttons — prominent checked state
-        raster_style = StyleHelper.get_raster_tool_button_style()
+        # Raster tool icon buttons — prominent checked state
+        icon_tool_style = StyleHelper.get_icon_raster_tool_button_style()
         for btn in (
             self._btn_brush,
             self._btn_fill,
             self._btn_gradient,
             self._btn_sample,
-            self._btn_edit_toggle,
         ):
-            btn.setStyleSheet(raster_style)
+            btn.setStyleSheet(icon_tool_style)
+        # Edit toggle is a text button; keep the text-oriented style
+        self._btn_edit_toggle.setStyleSheet(StyleHelper.get_raster_tool_button_style())
 
     # ------------------------------------------------------------------
     # Private — style helpers
@@ -1655,7 +1772,7 @@ class MapLayerPanel(QWidget):
 
     @Slot()
     def _on_falloff_changed(self) -> None:
-        """Update falloff label and emit settings changed."""
+        """Update hardness label and emit settings changed."""
         value = self._falloff_slider.value()
         self._falloff_label.setText(f"{value}%")
         self._on_raster_setting_changed()

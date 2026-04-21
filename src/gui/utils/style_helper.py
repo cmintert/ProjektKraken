@@ -485,6 +485,34 @@ class StyleHelper:
         )
 
     @staticmethod
+    def get_icon_raster_tool_button_style() -> str:
+        """Style for square icon-only raster editing tool buttons.
+
+        Like :meth:`get_raster_tool_button_style` but uses compact padding
+        suitable for fixed-size icon-only buttons (e.g. brush/fill/gradient/sample).
+
+        Returns:
+            str: QSS stylesheet string for icon-only raster tool buttons.
+        """
+        theme = ThemeManager().get_theme()
+        primary = theme.get("primary", "#5C82FF")
+        surface = theme.get("surface", "#1E1E1E")
+        text_main = theme.get("text_main", "#E0E0E0")
+        border = theme.get("border", "#333333")
+        app_bg = theme.get("app_bg", "#121212")
+
+        return (
+            f"QPushButton {{ background-color: {surface}; "
+            f"color: {text_main}; border: 1px solid {border}; "
+            f"border-radius: 4px; padding: 2px; }}"
+            f"QPushButton:hover {{ background-color: {border}; }}"
+            f"QPushButton:pressed {{ background-color: {app_bg}; }}"
+            f"QPushButton:checked {{ "
+            f"background-color: {primary}; color: {theme.get('text_on_primary', '#FFFFFF')}; "
+            f"border: 2px solid {primary}; }}"
+        )
+
+    @staticmethod
     def get_flat_tool_button_style() -> str:
         """
         Returns QSS for flat tool buttons typically used in headers or toolbars.
