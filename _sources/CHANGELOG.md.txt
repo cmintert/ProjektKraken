@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-04-21
-### Added
-- feat(raster): improve brush stroke interpolation and falloff curves
+### Internal
+- perf(raster): cache brush kernels and colorization lookup tables
 
 
 *This changelog was automatically generated.*
