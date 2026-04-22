@@ -8,14 +8,16 @@ import re
 from typing import Any, List, Optional, Tuple
 
 import shiboken6
-from PySide6.QtCore import QStringListModel, Qt, QTimer, Signal, Slot
+from PySide6.QtCore import QStringListModel, Qt, QThread, QTimer, Signal, Slot
 from PySide6.QtGui import (
     QAction,
+    QColor,
     QKeyEvent,
     QMouseEvent,
     QPaintEvent,
     QTextBlock,
     QTextBlockUserData,
+    QTextCharFormat,
     QTextCursor,
     QTextDocument,
     QTextFragment,
@@ -23,8 +25,10 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QCompleter,
+    QDialog,
     QFrame,
     QHBoxLayout,
+    QMenu,
     QTextEdit,
     QToolBar,
     QVBoxLayout,
@@ -118,6 +122,7 @@ class WikiTextEditView(QTextEdit):
     link_clicked = Signal(str)  # Emits the target name (e.g. "Gandalf")
     link_added = Signal(str, str)  # Emits (target_id_or_name, display_name) on creation
     completion_prefix_changed = Signal(str)  # Emits prefix when >= 3 chars inside [[
+    _lt_check_requested = Signal(str, str, str, str)  # (text, language, username, api_key)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the WikiTextEdit.
@@ -162,6 +167,9 @@ class WikiTextEditView(QTextEdit):
 
         # Setup Shortcuts using QActions
         self._setup_actions()
+
+        # Spell / grammar check (LanguageTool)
+        self._setup_spell_check()
 
     def _setup_actions(self) -> None:
         """Setup formatting actions with shortcuts."""
@@ -1505,6 +1513,193 @@ class WikiTextEditView(QTextEdit):
             return
         super().mouseReleaseEvent(event)
 
+    # ------------------------------------------------------------------ #
+    #  Spell / grammar check (LanguageTool)                               #
+    # ------------------------------------------------------------------ #
+
+    def _setup_spell_check(self) -> None:
+        """Initialize the LanguageTool spell/grammar check subsystem."""
+        from PySide6.QtWidgets import QApplication
+
+        from src.services.language_tool_service import LanguageToolWorker
+
+        self._lt_matches: list = []
+        self._lt_thread = QThread(self)
+        self._lt_worker = LanguageToolWorker()
+        self._lt_worker.moveToThread(self._lt_thread)
+        self._lt_worker.results_ready.connect(self._apply_lt_results)
+        # Route check requests through a queued signal so the HTTP call
+        # runs in the worker thread, not the main/UI thread.
+        self._lt_check_requested.connect(
+            self._lt_worker.check, Qt.ConnectionType.QueuedConnection
+        )
+        self._lt_thread.start()
+
+        self._lt_timer = QTimer(self)
+        self._lt_timer.setSingleShot(True)
+        self._lt_timer.setInterval(800)
+        self._lt_timer.timeout.connect(self._trigger_lt_check)
+        self.textChanged.connect(self._lt_timer.start)
+
+        # Ensure the worker thread is stopped cleanly on app shutdown so Qt
+        # does not abort with "QThread: Destroyed while thread is still running".
+        app = QApplication.instance()
+        if app is not None:
+            app.aboutToQuit.connect(self._shutdown_spell_check)
+
+    def _shutdown_spell_check(self) -> None:
+        """Stop the spell-check worker thread if still running.
+
+        Safe to call multiple times. Invoked on QApplication.aboutToQuit and
+        can be called explicitly by tests.
+        """
+        thread = getattr(self, "_lt_thread", None)
+        if thread is None:
+            return
+        try:
+            if thread.isRunning():
+                thread.quit()
+                thread.wait(1000)
+        except RuntimeError:
+            # Underlying C++ object already deleted — nothing to do.
+            pass
+
+    def _lt_settings(self) -> dict:
+        """Read spell check settings from QSettings."""
+        from PySide6.QtCore import QSettings
+
+        s = QSettings()
+        s.beginGroup("SpellCheck")
+        result = {
+            "enabled": s.value("enabled", False, type=bool),
+            "language": s.value("language", "auto"),
+            "username": s.value("username", ""),
+            "api_key": s.value("api_key", ""),
+        }
+        s.endGroup()
+        return result
+
+    def _trigger_lt_check(self) -> None:
+        """Fire a LanguageTool check after the debounce timer fires."""
+        settings = self._lt_settings()
+        if not settings["enabled"]:
+            return
+        # IMPORTANT: send ``toPlainText()`` rather than the raw WikiLink/Markdown
+        # source. Offsets returned by LanguageTool are used to position cursors
+        # inside ``self.document()``; in rich mode the document contains the
+        # rendered text, not the raw markdown, so offsets computed from the raw
+        # source would be misaligned and underlines would land on the wrong span.
+        text = self.toPlainText()
+        if len(text.strip()) < 15:
+            self._lt_matches = []
+            self.setExtraSelections([])
+            return
+        self._lt_check_requested.emit(
+            text,
+            settings["language"],
+            settings.get("username", ""),
+            settings.get("api_key", ""),
+        )
+
+    @Slot(list)
+    def _apply_lt_results(self, matches: list) -> None:
+        """Apply LanguageTool matches as wavy underline ExtraSelections.
+
+        Args:
+            matches: List of LTMatch objects from the worker.
+
+        """
+        self._lt_matches = matches
+        tm = ThemeManager()
+        theme = tm.get_theme()
+        error_color = theme.get("error", "#e05252")
+
+        fmt = QTextCharFormat()
+        fmt.setUnderlineStyle(QTextCharFormat.UnderlineStyle.SpellCheckUnderline)
+        fmt.setUnderlineColor(QColor(error_color))
+
+        selections = []
+        for m in matches:
+            cursor = QTextCursor(self.document())
+            cursor.setPosition(m.offset)
+            cursor.setPosition(m.offset + m.length, QTextCursor.MoveMode.KeepAnchor)
+            sel = QTextEdit.ExtraSelection()
+            sel.cursor = cursor
+            sel.format = fmt
+            selections.append(sel)
+        self.setExtraSelections(selections)
+
+    def clear_spell_check(self) -> None:
+        """Remove all spell check underlines and cached matches."""
+        self._lt_matches = []
+        self.setExtraSelections([])
+
+    def contextMenuEvent(self, event: Any) -> None:
+        """Show context menu, prepending spell check suggestions when applicable.
+
+        Args:
+            event: The context menu event.
+
+        """
+        cursor_pos = self.cursorForPosition(event.pos()).position()
+        hit = next(
+            (m for m in self._lt_matches if m.offset <= cursor_pos < m.offset + m.length),
+            None,
+        )
+
+        if not hit:
+            self.createStandardContextMenu().exec(event.globalPos())
+            return
+
+        # Build a new menu: spell suggestions first, then standard items.
+        # Keep ``standard`` alive as a local — exec() blocks so the actions
+        # owned by ``standard`` remain valid for the lifetime of the popup.
+        # Do NOT reparent ``standard`` to ``menu``; a child QMenu renders
+        # itself alongside its parent, causing a duplicate overlay.
+        menu = QMenu(self)
+        standard = self.createStandardContextMenu()  # noqa: F841 — kept alive intentionally
+
+        if hit.replacements:
+            for suggestion in hit.replacements[:5]:
+                action = menu.addAction(suggestion)
+                action.triggered.connect(
+                    lambda _, s=suggestion, m=hit: self._apply_lt_suggestion(s, m)
+                )
+            menu.addSeparator()
+
+        ignore_action = menu.addAction(f"Ignore ({hit.rule_id})")
+        ignore_action.triggered.connect(lambda _, m=hit: self._ignore_lt_match(m))
+        menu.addSeparator()
+
+        for action in standard.actions():
+            menu.addAction(action)
+
+        menu.exec(event.globalPos())
+
+    def _apply_lt_suggestion(self, replacement: str, match: Any) -> None:
+        """Replace the matched span with a chosen suggestion.
+
+        Args:
+            replacement: The replacement text to insert.
+            match: The LTMatch whose span should be replaced.
+
+        """
+        cursor = QTextCursor(self.document())
+        cursor.setPosition(match.offset)
+        cursor.setPosition(match.offset + match.length, QTextCursor.MoveMode.KeepAnchor)
+        cursor.insertText(replacement)
+        self._ignore_lt_match(match)
+
+    def _ignore_lt_match(self, match: Any) -> None:
+        """Remove a match from the active list and refresh underlines.
+
+        Args:
+            match: The LTMatch to ignore.
+
+        """
+        self._lt_matches = [m for m in self._lt_matches if m is not match]
+        self._apply_lt_results(self._lt_matches)
+
     @Slot(dict)
     def _on_theme_changed(self, theme_data: dict) -> None:
         """Updates link color and text style when theme changes.
@@ -1530,6 +1725,139 @@ class WikiTextEditView(QTextEdit):
                 self._apply_theme_stylesheet()
         finally:
             self.blockSignals(was_blocked)
+
+
+class SpellCheckSettingsDialog(QDialog):
+    """Settings dialog for the LanguageTool spell/grammar check feature.
+
+    Allows the user to opt in, choose a language, and optionally provide
+    premium credentials for the LanguageTool public API.
+    """
+
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
+        """Initialize the settings dialog.
+
+        Args:
+            parent: Optional parent widget.
+        """
+        from PySide6.QtCore import QSettings
+        from PySide6.QtWidgets import (
+            QComboBox,
+            QFormLayout,
+            QGroupBox,
+            QHBoxLayout,
+            QLabel,
+            QLineEdit,
+        )
+
+        from src.core.theme_manager import ThemeManager
+        from src.gui.utils.style_helper import StyleHelper
+        from src.gui.widgets.standard_buttons import (
+            PrimaryButton,
+            StandardButton,
+            StandardCheckbox,
+        )
+
+        super().__init__(parent)
+        self.setWindowTitle("Spell & Grammar Check")
+        self.setMinimumWidth(400)
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
+
+        self._apply_style()
+        ThemeManager().theme_changed.connect(self._apply_style)
+
+        layout = QVBoxLayout(self)
+        StyleHelper.apply_standard_list_spacing(layout)
+
+        # Enable toggle
+        self._enabled_cb = StandardCheckbox("Enable spell & grammar checking")
+        layout.addWidget(self._enabled_cb)
+
+        # Language selector
+        lang_group = QGroupBox("Language")
+        lang_form = QFormLayout(lang_group)
+        StyleHelper.apply_standard_list_spacing(lang_form)
+        self._language_combo = QComboBox()
+        self._language_combo.setEditable(True)
+        self._language_combo.addItems(
+            ["auto", "en-US", "en-GB", "de-DE", "fr-FR", "es-ES", "pt-BR", "it-IT"]
+        )
+        self._language_combo.setStyleSheet(StyleHelper.get_input_field_style())
+        lang_form.addRow("Language:", self._language_combo)
+        layout.addWidget(lang_group)
+
+        # Premium group
+        premium_group = QGroupBox("Premium Account (optional)")
+        premium_layout = QFormLayout(premium_group)
+        StyleHelper.apply_standard_list_spacing(premium_layout)
+
+        self._username_edit = QLineEdit()
+        self._username_edit.setPlaceholderText("your@email.com")
+        self._username_edit.setStyleSheet(StyleHelper.get_input_field_style())
+        premium_layout.addRow("Username:", self._username_edit)
+
+        self._apikey_edit = QLineEdit()
+        self._apikey_edit.setEchoMode(QLineEdit.EchoMode.Password)
+        self._apikey_edit.setPlaceholderText("API key")
+        self._apikey_edit.setStyleSheet(StyleHelper.get_input_field_style())
+        premium_layout.addRow("API Key:", self._apikey_edit)
+
+        layout.addWidget(premium_group)
+
+        # Info label
+        info = QLabel(
+            'Uses the <a href="https://languagetool.org">LanguageTool</a> public API. '
+            "Free tier: 20 req/min, 20 KB/request."
+        )
+        info.setOpenExternalLinks(True)
+        info.setWordWrap(True)
+        layout.addWidget(info)
+
+        # Buttons
+        btn_row = QHBoxLayout()
+        btn_row.addStretch()
+        cancel_btn = StandardButton("Cancel")
+        cancel_btn.clicked.connect(self.close)
+        save_btn = PrimaryButton("Save")
+        save_btn.clicked.connect(self._save)
+        btn_row.addWidget(cancel_btn)
+        btn_row.addWidget(save_btn)
+        layout.addLayout(btn_row)
+
+        # Load current settings
+        s = QSettings()
+        s.beginGroup("SpellCheck")
+        self._enabled_cb.setChecked(s.value("enabled", False, type=bool))
+        lang = s.value("language", "auto")
+        idx = self._language_combo.findText(lang)
+        if idx >= 0:
+            self._language_combo.setCurrentIndex(idx)
+        else:
+            self._language_combo.setCurrentText(lang)
+        self._username_edit.setText(s.value("username", ""))
+        self._apikey_edit.setText(s.value("api_key", ""))
+        s.endGroup()
+
+    def _apply_style(self) -> None:
+        """Apply the current theme stylesheet to this dialog."""
+        from src.gui.utils.style_helper import StyleHelper
+
+        self.setStyleSheet(
+            StyleHelper.get_dialog_base_style() + StyleHelper.get_scrollbar_style()
+        )
+
+    def _save(self) -> None:
+        """Persist settings to QSettings and close the dialog."""
+        from PySide6.QtCore import QSettings
+
+        s = QSettings()
+        s.beginGroup("SpellCheck")
+        s.setValue("enabled", self._enabled_cb.isChecked())
+        s.setValue("language", self._language_combo.currentText())
+        s.setValue("username", self._username_edit.text())
+        s.setValue("api_key", self._apikey_edit.text())
+        s.endGroup()
+        self.accept()
 
 
 class WikiTextEdit(QFrame):
@@ -1649,6 +1977,41 @@ class WikiTextEdit(QFrame):
         self.action_toggle_toc = self.toolbar.addAction("TOC")
         self.action_toggle_toc.setToolTip("Toggle Table of Contents sidebar")
         self.action_toggle_toc.triggered.connect(self._toggle_toc)
+
+        # Spell check button — always opens settings dialog; checked = currently enabled
+        self.action_spell_check = self.toolbar.addAction("ABC")
+        self.action_spell_check.setCheckable(True)
+        self.action_spell_check.setToolTip("Spell & grammar check settings (LanguageTool)")
+        self.action_spell_check.triggered.connect(self._open_spell_settings)
+
+        # Sync visual state with persisted settings
+        from PySide6.QtCore import QSettings
+
+        s = QSettings()
+        self.action_spell_check.setChecked(s.value("SpellCheck/enabled", False, type=bool))
+
+    def _open_spell_settings(self, _checked: bool = False) -> None:
+        """Show the SpellCheckSettingsDialog and sync the toolbar button state on close."""
+        from PySide6.QtCore import QSettings
+
+        # Restore the button's visual state before opening — triggered() may
+        # have toggled it, but the dialog owns the enabled/disabled decision.
+        s = QSettings()
+        self.action_spell_check.setChecked(s.value("SpellCheck/enabled", False, type=bool))
+
+        dlg = SpellCheckSettingsDialog(self)
+
+        def _on_close() -> None:
+            s2 = QSettings()
+            enabled = s2.value("SpellCheck/enabled", False, type=bool)
+            self.action_spell_check.setChecked(enabled)
+            if enabled:
+                self.editor._trigger_lt_check()
+            else:
+                self.editor.clear_spell_check()
+
+        dlg.finished.connect(_on_close)
+        dlg.show()
 
     def _toggle_view_mode(self) -> None:
         """Proxy to toggle view mode and update toolbar button text."""

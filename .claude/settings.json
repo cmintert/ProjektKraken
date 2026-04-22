@@ -41,7 +41,9 @@
       "Bash(sed -i 's/- \\\\[ \\\\] Basic UI: `src\\\\/gui\\\\/widgets\\\\/analysis_panel.py`/- [x] Basic UI: `src\\\\/gui\\\\/widgets\\\\/analysis_panel.py`/' TIER1_DESIGN.md)",
       "Bash(sed -i 's/- \\\\[ \\\\] Display validation report/- [x] Display validation report/' TIER1_DESIGN.md)",
       "Bash(sed -i 's/- \\\\[ \\\\] Issue table/- [x] Issue table/' TIER1_DESIGN.md)",
-      "Bash(sed -i 's/- \\\\[ \\\\] Completeness table/- [x] Completeness table/' TIER1_DESIGN.md)"
+      "Bash(sed -i 's/- \\\\[ \\\\] Completeness table/- [x] Completeness table/' TIER1_DESIGN.md)",
+      "Bash(python -c ' *)",
+      "Bash(python -m pytest tests/unit/services/test_language_tool_service.py -x -q)"
     ]
   }
 }
