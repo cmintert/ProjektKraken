@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-04-21
-### Added
-- feat(raster): add brush opacity control
+## [Development] - 2026-04-22
+### Internal
+- Implement LanguageTool integration for spell and grammar checking
 
 
 *This changelog was automatically generated.*
