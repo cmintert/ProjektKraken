@@ -1580,6 +1580,13 @@ class MapGraphicsView(QGraphicsView):
         if item is not None and shiboken6.isValid(item):
             try:
                 item.setVisible(visible)
+                # If hiding a feature that's currently being edited, finish editing
+                # to remove vertex handles
+                if not visible and hasattr(item, "marker_id"):
+                    if self._vertex_editor.editing_feature_id == item.marker_id:
+                        self._vertex_editor.finish_vertex_editing(
+                            emit_geometry_change=False
+                        )
             except RuntimeError:
                 logger.debug(
                     "_on_layer_visibility_changed: item %s already deleted", node_id
