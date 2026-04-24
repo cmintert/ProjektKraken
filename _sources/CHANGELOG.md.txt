@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-04-24
 ### Added
-- feat: Enhance raster layer handling with value metadata support
+- feat(llm): inject active-map spatial context into generation prompts
 
 
 *This changelog was automatically generated.*
