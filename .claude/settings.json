@@ -43,7 +43,12 @@
       "Bash(sed -i 's/- \\\\[ \\\\] Issue table/- [x] Issue table/' TIER1_DESIGN.md)",
       "Bash(sed -i 's/- \\\\[ \\\\] Completeness table/- [x] Completeness table/' TIER1_DESIGN.md)",
       "Bash(python -c ' *)",
-      "Bash(python -m pytest tests/unit/services/test_language_tool_service.py -x -q)"
+      "Bash(python -m pytest tests/unit/services/test_language_tool_service.py -x -q)",
+      "Bash(python -m pytest tests/unit/test_raster_value_metadata.py -x --no-header)",
+      "Bash(python -m pytest tests/unit/test_raster_value_metadata.py --no-header)",
+      "Bash(python -c \"import pytest\")",
+      "Bash(python -m pytest tests/unit/test_raster_image_analysis.py tests/unit/test_raster_value_metadata.py --no-header)",
+      "Bash(python -m pytest tests/unit/test_raster_commands_display_mapping.py --no-header)"
     ]
   }
 }

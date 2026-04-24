@@ -62,6 +62,41 @@ def _set_raster_layers(map_obj: Any, raster_layers: List[Dict[str, Any]]) -> Non
     map_obj.attributes = attrs
 
 
+def _apply_display_mapping(
+    color_map: Dict[str, Any],
+    *,
+    display_min: Optional[float],
+    display_max: Optional[float],
+    unit: str,
+    format_str: str,
+    scale: str,
+) -> None:
+    """Merge real-world display-mapping fields into a color_map dict.
+
+    Mutates *color_map* in place.  Only sets a field when the corresponding
+    argument is non-default, so older maps without display mapping continue
+    to round-trip unchanged.
+
+    Args:
+        color_map: The color_map dict to augment.
+        display_min: Real-world value for the lowest pixel (None skips).
+        display_max: Real-world value for the highest pixel (None skips).
+        unit: Unit label (empty string skips).
+        format_str: Python format string (empty string skips).
+        scale: ``"linear"`` or ``"log"`` (empty string skips).
+    """
+    if display_min is not None:
+        color_map["display_min"] = float(display_min)
+    if display_max is not None:
+        color_map["display_max"] = float(display_max)
+    if unit:
+        color_map["unit"] = unit
+    if format_str and format_str != "{:.2f}":
+        color_map["format_str"] = format_str
+    if scale and scale != "linear":
+        color_map["scale"] = scale
+
+
 class CreateRasterLayerCommand(BaseCommand):
     """Create a new raster layer: blank PNG, layer node, and metadata.
 
@@ -86,6 +121,15 @@ class CreateRasterLayerCommand(BaseCommand):
             Continuous mode: image is converted to grayscale uint16.
             Color mode: image is stored as-is (8-bit RGBA PNG); original colours
             are preserved exactly.
+        display_min: Optional real-world value corresponding to the lowest
+            pixel value (e.g. ``-4000.0`` for a DEM's deepest point).
+        display_max: Optional real-world value corresponding to the highest
+            pixel value.
+        unit: Optional unit label (e.g. ``"m"``, ``"°C"``).
+        format_str: Optional Python format string for display values
+            (e.g. ``"{:.1f}"``).  Empty string means "use default".
+        scale: Optional interpolation scale — ``"linear"`` or ``"log"``.
+            Empty string means "use default" (linear).
 
     """
 
@@ -99,6 +143,11 @@ class CreateRasterLayerCommand(BaseCommand):
         default_value: int = 0,
         world_root: str = "",
         import_path: str = "",
+        display_min: Optional[float] = None,
+        display_max: Optional[float] = None,
+        unit: str = "",
+        format_str: str = "",
+        scale: str = "",
     ) -> None:
         super().__init__()
         self.map_id = map_id
@@ -109,6 +158,11 @@ class CreateRasterLayerCommand(BaseCommand):
         self.default_value = default_value
         self.world_root = world_root
         self.import_path = import_path
+        self.display_min = display_min
+        self.display_max = display_max
+        self.unit = unit
+        self.format_str = format_str
+        self.scale = scale
 
         # Generated on execute
         self._node_id: str = str(uuid.uuid4())
@@ -337,6 +391,45 @@ class CreateRasterLayerCommand(BaseCommand):
                     ],
                 ).to_dict()
 
+            # Apply display-mapping params (from dialog / inferred metadata)
+            effective_min = self.display_min
+            effective_max = self.display_max
+            effective_unit = self.unit
+            # Fallback: for continuous layers imported from a file, infer
+            # real-world range from GeoTIFF metadata / float pixel stats when
+            # the caller did not supply explicit values.
+            if (
+                self.mode == "continuous"
+                and self.import_path
+                and effective_min is None
+                and effective_max is None
+            ):
+                try:
+                    from src.services.raster_image_analysis import (
+                        extract_value_metadata,
+                    )
+
+                    inferred = extract_value_metadata(self.import_path)
+                except Exception:  # pragma: no cover - defensive
+                    logger.debug(
+                        "extract_value_metadata raised during create", exc_info=True
+                    )
+                    inferred = None
+                if inferred is not None:
+                    effective_min = inferred.min
+                    effective_max = inferred.max
+                    if not effective_unit:
+                        effective_unit = inferred.unit
+
+            _apply_display_mapping(
+                initial_color_map,
+                display_min=effective_min,
+                display_max=effective_max,
+                unit=effective_unit,
+                format_str=self.format_str,
+                scale=self.scale,
+            )
+
             raster_meta: Dict[str, Any] = {
                 "node_id": self._node_id,
                 "file_path": self._file_path,
@@ -439,6 +532,11 @@ class CreateRasterLayerCommand(BaseCommand):
             "world_root": self.world_root,
             "node_id": self._node_id,
             "file_path": self._file_path,
+            "display_min": self.display_min,
+            "display_max": self.display_max,
+            "unit": self.unit,
+            "format_str": self.format_str,
+            "scale": self.scale,
         }
 
     @classmethod
@@ -452,6 +550,11 @@ class CreateRasterLayerCommand(BaseCommand):
             mode=data.get("mode", "discrete"),
             default_value=data.get("default_value", 0),
             world_root=data.get("world_root", ""),
+            display_min=data.get("display_min"),
+            display_max=data.get("display_max"),
+            unit=data.get("unit", ""),
+            format_str=data.get("format_str", ""),
+            scale=data.get("scale", ""),
         )
         cmd._node_id = data.get("node_id", cmd._node_id)
         cmd._file_path = data.get("file_path", "")

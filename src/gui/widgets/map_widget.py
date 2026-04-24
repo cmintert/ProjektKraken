@@ -208,7 +208,9 @@ class MapWidget(
     layer_delete_feature_requested = Signal(
         str, str
     )  # object_id, layer_type of deleted leaf
-    create_raster_layer_requested = Signal(str, int, int, str, int, str)  # name,w,h,mode,def,import_path
+    create_raster_layer_requested = Signal(
+        str, int, int, str, int, str, object, object, str
+    )  # name,w,h,mode,def,import_path,display_min,display_max,unit
     raster_edit_requested = Signal(str)  # node_id — start raster editing
     raster_edit_stopped = Signal()  # stop raster editing
     raster_stroke_completed = Signal(

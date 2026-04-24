@@ -123,3 +123,50 @@ def test_analyse_hint_color_uses_color_text(tmp_path):
 
     result = analyse_image(_color_png(tmp_path))
     assert "color" in result.hint.lower() or "colour" in result.hint.lower()
+
+
+# ---------------------------------------------------------------------------
+# value_metadata field
+# ---------------------------------------------------------------------------
+
+
+def test_analyse_image_populates_value_metadata_for_geotiff(tmp_path):
+    """analyse_image exposes inferred value range via .value_metadata."""
+    from PIL import TiffImagePlugin
+
+    from src.services.raster_image_analysis import analyse_image
+
+    arr = np.full((8, 8), 2.0, dtype=np.float32)
+    path = str(tmp_path / "dem.tif")
+    extra = TiffImagePlugin.ImageFileDirectory_v2()
+    extra[42112] = (
+        '<GDALMetadata>'
+        '<Item name="STATISTICS_MINIMUM">-4000</Item>'
+        '<Item name="STATISTICS_MAXIMUM">8000</Item>'
+        '<Item name="UNITTYPE">metre</Item>'
+        '</GDALMetadata>'
+    )
+    PilImage.fromarray(arr, mode="F").save(path, tiffinfo=extra)
+
+    result = analyse_image(path)
+    assert result.value_metadata is not None
+    assert result.value_metadata.min == pytest.approx(-4000.0)
+    assert result.value_metadata.max == pytest.approx(8000.0)
+    assert result.value_metadata.unit == "metre"
+
+
+def test_analyse_image_value_metadata_none_for_plain_png(tmp_path):
+    """Plain PNGs yield value_metadata=None."""
+    from src.services.raster_image_analysis import analyse_image
+
+    result = analyse_image(_grey_png(tmp_path))
+    assert result.value_metadata is None
+
+
+def test_analyse_image_value_metadata_falls_back_for_float_tiff(tmp_path):
+    """Float TIFF without metadata tags falls back to pixel range."""
+    from src.services.raster_image_analysis import analyse_image
+
+    result = analyse_image(_float_tiff(tmp_path))
+    assert result.value_metadata is not None
+    assert result.value_metadata.source == "float_pixel_range"

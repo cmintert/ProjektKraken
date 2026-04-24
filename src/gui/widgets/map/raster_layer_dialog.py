@@ -10,7 +10,7 @@ import os
 from typing import Any, Dict, Optional, Tuple
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QDoubleValidator, QImage, QPixmap
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QFormLayout,
     QFrame,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -31,6 +32,17 @@ from src.gui.utils.style_helper import StyleHelper
 from src.services.raster_image_analysis import ImageAnalysisResult, analyse_image
 
 logger = logging.getLogger(__name__)
+
+def _parse_float_or_none(text: str) -> Optional[float]:
+    """Return a float parsed from *text*, or ``None`` for blank / invalid."""
+    text = text.strip()
+    if not text:
+        return None
+    try:
+        return float(text)
+    except ValueError:
+        return None
+
 
 # Pre-defined resolution presets as (width, height) tuples
 _RESOLUTION_PRESETS: list[Tuple[str, int, int]] = [
@@ -188,6 +200,10 @@ class RasterLayerDialog(QDialog):
         info.setWordWrap(True)
         layout.addWidget(info)
 
+        # Value range (continuous mode only)
+        self._build_value_range_group(layout)
+        self._update_value_range_visibility(self._mode_combo.currentText())
+
         # Buttons
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
@@ -216,7 +232,14 @@ class RasterLayerDialog(QDialog):
         )
         if not path:
             return
+        self._apply_imported_file(path)
 
+    def _apply_imported_file(self, path: str) -> None:
+        """Analyse *path* and populate preview / inferred fields.
+
+        Separated from :meth:`_on_browse_clicked` so tests can drive the
+        inference flow without opening a native file dialog.
+        """
         try:
             result: ImageAnalysisResult = analyse_image(path)
         except Exception as exc:
@@ -257,6 +280,9 @@ class RasterLayerDialog(QDialog):
         self._res_combo.setEnabled(False)
         self._default_spin.setEnabled(False)
 
+        # Pre-fill real-world value range from inferred metadata
+        self._apply_value_metadata(result.value_metadata)
+
     def _on_clear_import(self) -> None:
         """Clear the selected import file and re-enable resolution controls."""
         self._import_path = ""
@@ -271,6 +297,11 @@ class RasterLayerDialog(QDialog):
         self._clear_btn.setVisible(False)
         self._res_combo.setEnabled(True)
         self._default_spin.setEnabled(self._mode_combo.currentText() != "color")
+        # Clear inferred value-range fields
+        self._display_min_edit.clear()
+        self._display_max_edit.clear()
+        self._display_unit_edit.clear()
+        self._value_range_hint.setVisible(False)
 
     def _on_mode_changed(self, mode: str) -> None:
         """Update the hint label when the mode selection changes.
@@ -296,6 +327,91 @@ class RasterLayerDialog(QDialog):
         # Default value only makes sense for discrete/continuous
         if hasattr(self, "_default_spin"):
             self._default_spin.setEnabled(mode != "color")
+        self._update_value_range_visibility(mode)
+
+    # ------------------------------------------------------------------
+    # Value-range section (continuous mode only)
+    # ------------------------------------------------------------------
+
+    def _build_value_range_group(self, layout: QVBoxLayout) -> None:
+        """Create the collapsible value-range group and append it to *layout*.
+
+        Populates ``self._value_range_group`` and its child edits so that
+        :meth:`_apply_value_metadata` and :meth:`result_data` can reference
+        them.
+        """
+        self._value_range_group = QGroupBox("Value Range (optional)")
+        self._value_range_group.setToolTip(
+            "Map raw pixel values (0–65535) to real-world units such as "
+            "elevation in metres or temperature in °C. Used by the legend and "
+            "probe popup."
+        )
+        group_layout = QVBoxLayout(self._value_range_group)
+        group_layout.setContentsMargins(8, 8, 8, 8)
+        group_layout.setSpacing(4)
+
+        # Hint: shown after a successful inference pre-fill
+        self._value_range_hint = QLabel("")
+        self._value_range_hint.setWordWrap(True)
+        self._value_range_hint.setStyleSheet(StyleHelper.get_preview_label_style())
+        self._value_range_hint.setVisible(False)
+        group_layout.addWidget(self._value_range_hint)
+
+        row = QHBoxLayout()
+        row.setSpacing(6)
+        row.addWidget(QLabel("Min:"))
+        self._display_min_edit = QLineEdit()
+        self._display_min_edit.setFixedWidth(80)
+        self._display_min_edit.setPlaceholderText("e.g. -4000")
+        self._display_min_edit.setValidator(QDoubleValidator())
+        row.addWidget(self._display_min_edit)
+        row.addWidget(QLabel("Max:"))
+        self._display_max_edit = QLineEdit()
+        self._display_max_edit.setFixedWidth(80)
+        self._display_max_edit.setPlaceholderText("e.g. 8000")
+        self._display_max_edit.setValidator(QDoubleValidator())
+        row.addWidget(self._display_max_edit)
+        row.addWidget(QLabel("Unit:"))
+        self._display_unit_edit = QLineEdit()
+        self._display_unit_edit.setFixedWidth(60)
+        self._display_unit_edit.setPlaceholderText("e.g. m")
+        row.addWidget(self._display_unit_edit)
+        row.addStretch()
+        group_layout.addLayout(row)
+
+        layout.addWidget(self._value_range_group)
+
+    def _update_value_range_visibility(self, mode: str) -> None:
+        """Show the value-range group only in continuous mode."""
+        if hasattr(self, "_value_range_group"):
+            self._value_range_group.setVisible(mode == "continuous")
+
+    def _apply_value_metadata(self, meta: Any) -> None:
+        """Populate value-range fields from an inferred ValueMetadata.
+
+        Args:
+            meta: A :class:`ValueMetadata` instance or ``None``.
+        """
+        if meta is None:
+            self._value_range_hint.setVisible(False)
+            return
+        # Only pre-fill when user hasn't typed anything yet
+        if not self._display_min_edit.text():
+            self._display_min_edit.setText(str(float(meta.min)))
+        if not self._display_max_edit.text():
+            self._display_max_edit.setText(str(float(meta.max)))
+        if not self._display_unit_edit.text() and meta.unit:
+            self._display_unit_edit.setText(meta.unit)
+
+        source_text = {
+            "gdal_metadata": "GDAL statistics",
+            "tiff_sample_tags": "TIFF sample tags",
+            "float_pixel_range": "float pixel range",
+        }.get(meta.source, meta.source)
+        self._value_range_hint.setText(
+            f"📊 Inferred from {source_text} — edit to override."
+        )
+        self._value_range_hint.setVisible(True)
 
     # ------------------------------------------------------------------
     # Public API
@@ -305,7 +421,9 @@ class RasterLayerDialog(QDialog):
         """Return the user's choices as a dict.
 
         Keys: ``name``, ``mode``, ``width``, ``height``, ``default_value``,
-        ``import_path``.  When *import_path* is non-empty the width/height
+        ``import_path``, plus optional real-world value-range keys
+        (``display_min``, ``display_max``, ``unit``) populated only in
+        *continuous* mode.  When *import_path* is non-empty the width/height
         come from the detected image dimensions.
 
         """
@@ -314,11 +432,24 @@ class RasterLayerDialog(QDialog):
         else:
             idx = self._res_combo.currentIndex()
             _label, w, h = _RESOLUTION_PRESETS[idx]
+
+        mode = self._mode_combo.currentText()
+        display_min: Optional[float] = None
+        display_max: Optional[float] = None
+        unit = ""
+        if mode == "continuous":
+            display_min = _parse_float_or_none(self._display_min_edit.text())
+            display_max = _parse_float_or_none(self._display_max_edit.text())
+            unit = self._display_unit_edit.text().strip()
+
         return {
             "name": self._name_edit.text().strip() or "Raster Layer",
-            "mode": self._mode_combo.currentText(),
+            "mode": mode,
             "width": w,
             "height": h,
             "default_value": self._default_spin.value(),
             "import_path": self._import_path,
+            "display_min": display_min,
+            "display_max": display_max,
+            "unit": unit,
         }

@@ -435,15 +435,21 @@ class MapLayerMixin:
         if dialog.exec():
             data = dialog.result_data()
             import_path = data.get("import_path", "")
+            display_min = data.get("display_min")
+            display_max = data.get("display_max")
+            unit = data.get("unit", "")
             logger.debug(
                 "_on_create_raster_layer: accepted — name=%r size=%dx%d mode=%s "
-                "default=%d import_path=%r",
+                "default=%d import_path=%r display=[%s..%s] unit=%r",
                 data["name"],
                 data["width"],
                 data["height"],
                 data["mode"],
                 data["default_value"],
                 import_path,
+                display_min,
+                display_max,
+                unit,
             )
             self.create_raster_layer_requested.emit(
                 data["name"],
@@ -452,6 +458,9 @@ class MapLayerMixin:
                 data["mode"],
                 data["default_value"],
                 import_path,
+                display_min,
+                display_max,
+                unit,
             )
         else:
             logger.debug("_on_create_raster_layer: dialog cancelled")

@@ -904,6 +904,9 @@ class MapHandler(QObject):
         mode: str = "discrete",
         default_value: int = 0,
         import_path: str = "",
+        display_min: Optional[float] = None,
+        display_max: Optional[float] = None,
+        unit: str = "",
     ) -> None:
         """Create a new raster (heatmap) layer on the current map.
 
@@ -916,6 +919,11 @@ class MapHandler(QObject):
             import_path: Optional filesystem path to an image file to import as
                 the layer's initial pixel data.  When non-empty, the image is
                 converted to uint16 and scaled to ``width × height``.
+            display_min: Real-world value mapped to pixel value 0, or ``None``
+                to infer from metadata (continuous mode only).
+            display_max: Real-world value mapped to pixel value 65535, or
+                ``None`` to infer from metadata (continuous mode only).
+            unit: Optional unit label (e.g. ``"m"``, ``"°C"``).
 
         """
         map_id = self._map_widget.get_selected_map_id()
@@ -936,15 +944,22 @@ class MapHandler(QObject):
             default_value=default_value,
             world_root=world_root,
             import_path=import_path,
+            display_min=display_min,
+            display_max=display_max,
+            unit=unit,
         )
         self.command_requested.emit(cmd)
         logger.info(
-            "Requested raster layer creation: '%s' %dx%d (%s) import=%r",
+            "Requested raster layer creation: '%s' %dx%d (%s) import=%r "
+            "display=[%s..%s] unit=%r",
             name,
             width,
             height,
             mode,
             import_path or None,
+            display_min,
+            display_max,
+            unit,
         )
 
     def delete_raster_layer(self, node_id: str) -> None:
