@@ -1331,12 +1331,16 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
                 - 'name' (str): Entity name
                 - 'type' (str): Entity type
                 - 'existing_description' (str): Current description text
+                - 'object_id' (str): Entity UUID for spatial-context lookup
+                - 'object_type' (str): Always ``"entity"``
 
         """
         return {
             "name": self.name_edit.text(),
             "type": self.type_edit.currentText(),
             "existing_description": self.desc_edit.toPlainText(),
+            "object_id": self._current_entity_id or "",
+            "object_type": "entity",
         }
 
     @Slot(str)

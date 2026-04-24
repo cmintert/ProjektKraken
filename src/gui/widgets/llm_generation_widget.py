@@ -35,6 +35,7 @@ from src.services.prompt_builder import DEFAULT_SYSTEM_PROMPT, PromptBuilder
 from src.services.prompt_loader import PromptLoader
 from src.services.rag_service import RAGService
 from src.services.reasoning_filter import filter_reasoning_tags
+from src.services.spatial_context_builder import lookup_spatial_context
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +76,10 @@ class GenerationWorker(QThread):
         db_path: Optional[str] = None,
         rag_limit: int = 3,
         exclude_names: Optional[list[str]] = None,
+        object_id: Optional[str] = None,
+        object_type: Optional[str] = None,
+        active_map_id: Optional[str] = None,
+        spatial_enabled: bool = False,
     ) -> None:
         """Initialize generation worker.
 
@@ -86,6 +91,14 @@ class GenerationWorker(QThread):
             temperature: Temperature parameter (0.0-2.0).
             db_path: Optional path to database for RAG context.
             rag_limit: Number of RAG items to retrieve.
+            exclude_names: Entity/event names to exclude from RAG hits.
+            object_id: UUID of the entity/event being generated for. Required
+                together with ``active_map_id`` for spatial context.
+            object_type: ``"entity"`` or ``"event"``.
+            active_map_id: ID of the map currently selected in the map widget,
+                used as the strict primary map for spatial context lookup.
+            spatial_enabled: When True, the worker attempts to inject a
+                ``[Spatial Context]`` block in place of ``{{SPATIAL_CONTEXT}}``.
 
         """
         super().__init__()
@@ -96,6 +109,13 @@ class GenerationWorker(QThread):
         self.db_path = db_path
         self.rag_limit = rag_limit
         self.exclude_names = exclude_names or []
+        self.object_id = object_id
+        self.object_type = object_type
+        self.active_map_id = active_map_id
+        self.spatial_enabled = spatial_enabled
+        # Populated during run() when spatial context is actually injected;
+        # read by the widget to drive the post-generation transparency label.
+        self.spatial_context_used: Optional[str] = None
         self._cancelled = False
 
     def _apply_rag_to_prompt(self) -> None:
@@ -168,11 +188,56 @@ class GenerationWorker(QThread):
         if rag_context:
             logger.debug(f"Applied RAG context: {len(rag_context)} chars")
 
+    def _apply_spatial_to_prompt(self) -> None:
+        """Inject spatial context into the prompt (mirrors ``_apply_rag_to_prompt``).
+
+        Runs synchronously on the worker thread. ``lookup_spatial_context``
+        opens its own short-lived SQLite connection so the worker never
+        touches the main thread's DB connection. Silently no-ops when
+        spatial context is disabled, no DB is available, or the quality
+        gate fails.
+        """
+        placeholder = "{{SPATIAL_CONTEXT}}"
+        is_dict = isinstance(self.prompt, dict)
+        user_msg = self.prompt.get("user", "") if is_dict else str(self.prompt)
+        if placeholder not in user_msg:
+            return
+
+        context_text: Optional[str] = None
+        if (
+            self.spatial_enabled
+            and self.db_path
+            and self.object_id
+            and self.object_type
+            and self.active_map_id
+        ):
+            context_text = lookup_spatial_context(
+                self.db_path,
+                self.object_id,
+                self.object_type,
+                self.active_map_id,
+            )
+
+        self.spatial_context_used = context_text
+        replacement = context_text if context_text else ""
+        if is_dict:
+            self.prompt["user"] = self.prompt["user"].replace(placeholder, replacement)
+        else:
+            self.prompt = self.prompt.replace(placeholder, replacement)
+
+        if context_text:
+            logger.debug(
+                f"Applied spatial context: {len(context_text)} chars for "
+                f"{self.object_type}={self.object_id} on map={self.active_map_id}"
+            )
+
     def run(self) -> None:
         """Run generation in background thread."""
         try:
             # 1. Perform RAG if enabled (synchronous in this thread)
             self._apply_rag_to_prompt()
+            # 2. Inject spatial context (also synchronous in this thread)
+            self._apply_spatial_to_prompt()
 
             if isinstance(self.prompt, dict):
                 sys_len = len(self.prompt.get("system", ""))
@@ -362,6 +427,18 @@ class LLMGenerationWidget(QWidget):
 
         grid_layout.addWidget(self.rag_limit_input, 2, 3)
 
+        # Row 3: Spatial Context (opt-in). When enabled and the entity is
+        # placed on the currently active map with sufficient data, the
+        # worker injects a [Spatial Context] block into the prompt.
+        self.spatial_cb = QCheckBox("Include spatial context")
+        self.spatial_cb.setChecked(False)
+        self.spatial_cb.setToolTip(
+            "Include map placement, layer notes, raster classes, and nearby "
+            "named entities when available on the active map."
+        )
+        self.spatial_cb.toggled.connect(self._save_settings)
+        grid_layout.addWidget(self.spatial_cb, 3, 2, 1, 2)
+
         main_layout.addLayout(grid_layout)
 
         # Header for prompt section
@@ -422,6 +499,28 @@ class LLMGenerationWidget(QWidget):
         self.status_label = QLabel("")
         self.status_label.setStyleSheet("color: #95a5a6; font-size: 11px;")
         main_layout.addWidget(self.status_label)
+
+        # Post-generation transparency line for spatial context. Hidden until
+        # a generation run produces a decision. A clickable "Show" link opens
+        # a modal dialog containing the exact injected [Spatial Context] text.
+        spatial_row = QHBoxLayout()
+        spatial_row.setContentsMargins(0, 0, 0, 0)
+        self.spatial_used_label = QLabel("")
+        self.spatial_used_label.setStyleSheet("color: #888888; font-size: 11px;")
+        spatial_row.addWidget(self.spatial_used_label)
+        self.spatial_show_btn = QPushButton("Show")
+        self.spatial_show_btn.setFlat(True)
+        self.spatial_show_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.spatial_show_btn.setStyleSheet(
+            "QPushButton { color: #5dade2; border: none; font-size: 11px; "
+            "padding: 0px 4px; } QPushButton:hover { text-decoration: underline; }"
+        )
+        self.spatial_show_btn.clicked.connect(self._on_show_spatial_context_clicked)
+        spatial_row.addWidget(self.spatial_show_btn)
+        spatial_row.addStretch()
+        main_layout.addLayout(spatial_row)
+        self._last_spatial_context: Optional[str] = None
+        self._set_spatial_used_visible(False)
 
         # Preview area removed as per user request
         # self.preview_text = QPlainTextEdit()
@@ -541,6 +640,13 @@ class LLMGenerationWidget(QWidget):
             )
             self.rag_cb.blockSignals(False)
 
+            # Load spatial-context setting (opt-in; defaults off)
+            self.spatial_cb.blockSignals(True)
+            self.spatial_cb.setChecked(
+                settings.value("ai_gen_spatial_enabled", False, type=bool)
+            )
+            self.spatial_cb.blockSignals(False)
+
             # rag_limit_input only saves on editingFinished, but for consistency:
             self.rag_limit_input.blockSignals(True)
             limit = str(settings.value("ai_gen_rag_limit", 3))
@@ -570,6 +676,7 @@ class LLMGenerationWidget(QWidget):
             settings.setValue("ai_gen_max_tokens", self.max_tokens_spin.value())
             settings.setValue("ai_gen_temperature", self.temperature_spin.value())
             settings.setValue("ai_gen_rag_enabled", self.rag_cb.isChecked())
+            settings.setValue("ai_gen_spatial_enabled", self.spatial_cb.isChecked())
 
             # Make sure to save a valid integer
             try:
@@ -622,6 +729,7 @@ class LLMGenerationWidget(QWidget):
             context_str,
             user_prompt,
             include_rag_placeholder=self.rag_cb.isChecked(),
+            include_spatial_placeholder=self.spatial_cb.isChecked(),
         )
         self.status_label.setText("Generating with context...")
 
@@ -660,7 +768,13 @@ class LLMGenerationWidget(QWidget):
             # Start generation
             logger.info(f"Starting generation with prompt length: {len(prompt)}")
             logger.info(f"Full Prompt (Pre-RAG):\n{prompt}")
-            self._start_generation(prompt, temperature, db_path_for_worker)
+            self._start_generation(
+                prompt,
+                temperature,
+                db_path_for_worker,
+                object_id=context.get("object_id") or None,
+                object_type=context.get("object_type") or None,
+            )
 
         except Exception as e:
             logger.error(f"Failed to create provider: {e}", exc_info=True)
@@ -768,24 +882,33 @@ class LLMGenerationWidget(QWidget):
             context_str,
             user_prompt,
             include_rag_placeholder=self.rag_cb.isChecked(),
+            include_spatial_placeholder=self.spatial_cb.isChecked(),
         )
 
     def _start_generation(
-        self, prompt: dict, temperature: float, db_path: Optional[str] = None
+        self,
+        prompt: dict,
+        temperature: float,
+        db_path: Optional[str] = None,
+        object_id: Optional[str] = None,
+        object_type: Optional[str] = None,
     ) -> None:
         """Start generation in worker thread."""
         # Update UI
         self.generate_btn.setEnabled(False)
         self.cancel_btn.setEnabled(True)
         self.status_label.setText("Generating...")
-        # self.preview_text.clear()  # Removed
-        # self.preview_text.setVisible(True)  # Removed
+        self._last_spatial_context = None
+        self._set_spatial_used_visible(False)
 
         # Prepare exclusion list (current entity name)
         exclude_names = []
         current_context = self._get_generation_context()
         if current_context and "name" in current_context:
             exclude_names.append(current_context["name"])
+
+        spatial_enabled = self.spatial_cb.isChecked()
+        active_map_id = self._resolve_active_map_id() if spatial_enabled else None
 
         # Create worker
         self._worker = GenerationWorker(
@@ -796,6 +919,10 @@ class LLMGenerationWidget(QWidget):
             db_path=db_path,
             rag_limit=self._get_rag_limit(),
             exclude_names=exclude_names,
+            object_id=object_id,
+            object_type=object_type,
+            active_map_id=active_map_id,
+            spatial_enabled=spatial_enabled,
         )
 
         # Connect signals
@@ -804,6 +931,53 @@ class LLMGenerationWidget(QWidget):
 
         # Start worker
         self._worker.start()
+
+    def _preview_spatial_context(
+        self, db_path: str, context: dict
+    ) -> Optional[str]:
+        """Run the same spatial lookup the worker performs, for preview use."""
+        object_id = context.get("object_id") or ""
+        object_type = context.get("object_type") or ""
+        active_map_id = self._resolve_active_map_id()
+        if not (object_id and object_type and active_map_id):
+            return None
+        return lookup_spatial_context(
+            db_path, object_id, object_type, active_map_id
+        )
+
+    def _resolve_active_map_id(self) -> Optional[str]:
+        """Walk the widget tree to find the MainWindow's active map id.
+
+        Uses :meth:`MapWidget.get_selected_map_id` via the main window's
+        ``map_widget`` attribute. Returns ``None`` if the widget is not
+        embedded under a main window that exposes a map widget — in that
+        case the spatial-context feature cleanly stands down.
+        """
+        window = self.window()
+        try:
+            map_widget = getattr(window, "map_widget", None)
+            if map_widget is None:
+                return None
+            getter = getattr(map_widget, "get_selected_map_id", None)
+            if getter is None:
+                return None
+            map_id = getter()
+            return str(map_id) if map_id else None
+        except Exception as e:  # pragma: no cover - defensive
+            logger.debug("Failed to resolve active map id: %s", e)
+            return None
+
+    def _set_spatial_used_visible(self, visible: bool, *, has_context: bool = False) -> None:
+        """Toggle visibility of the spatial-context transparency row.
+
+        Args:
+            visible: Whether to show the label at all.
+            has_context: When True, the "Show" link is revealed so the user
+                can inspect the injected text. When False, the label carries
+                a muted "no spatial context" hint only.
+        """
+        self.spatial_used_label.setVisible(visible)
+        self.spatial_show_btn.setVisible(visible and has_context)
 
     def _get_rag_limit(self) -> int:
         """Safely retrieve RAG limit from input."""
@@ -828,12 +1002,21 @@ class LLMGenerationWidget(QWidget):
         # Capture audit data before cleaning up worker
         worker_prompt = None
         worker_model = "unknown"
+        worker_spatial_context: Optional[str] = None
+        worker_spatial_requested = False
         if self._worker:
             worker_prompt = self._worker.prompt
+            worker_spatial_context = self._worker.spatial_context_used
+            worker_spatial_requested = self._worker.spatial_enabled
             try:
                 worker_model = self._worker.provider.get_model_name()
             except Exception:
                 pass
+
+        # Update the post-generation spatial-context transparency row.
+        self._update_spatial_used_label(
+            worker_spatial_requested, worker_spatial_context
+        )
 
         # Clean up worker
         if self._worker:
@@ -906,6 +1089,77 @@ class LLMGenerationWidget(QWidget):
             self._worker.deleteLater()
             self._worker = None
 
+    def _update_spatial_used_label(
+        self, spatial_requested: bool, context_text: Optional[str]
+    ) -> None:
+        """Render the post-generation spatial-context transparency line.
+
+        Three states:
+
+        * Feature disabled (checkbox off): hide the row.
+        * Enabled but no context injected: show a muted "no spatial context"
+          hint that nudges the user toward richer map data.
+        * Enabled and context injected: show a summary + clickable "Show"
+          link that opens the full injected text in a modal dialog.
+        """
+        if not spatial_requested:
+            self._last_spatial_context = None
+            self._set_spatial_used_visible(False)
+            return
+
+        if context_text:
+            self._last_spatial_context = context_text
+            summary = self._summarise_spatial_context(context_text)
+            self.spatial_used_label.setText(f"Spatial context used · {summary}")
+            self._set_spatial_used_visible(True, has_context=True)
+        else:
+            self._last_spatial_context = None
+            self.spatial_used_label.setText(
+                "No spatial context available for this entity on the active map."
+            )
+            self._set_spatial_used_visible(True, has_context=False)
+
+    @staticmethod
+    def _summarise_spatial_context(context_text: str) -> str:
+        """Produce a one-line summary of an injected spatial-context block."""
+        for line in context_text.splitlines():
+            stripped = line.strip()
+            if stripped and not stripped.startswith("["):
+                return stripped
+        return "details available"
+
+    @Slot()
+    def _on_show_spatial_context_clicked(self) -> None:
+        """Open a modal dialog showing the raw injected spatial-context text."""
+        if not self._last_spatial_context:
+            return
+        dlg = QDialog(self)
+        dlg.setWindowTitle("Spatial Context Used")
+        dlg.resize(520, 360)
+        dlg.setStyleSheet(StyleHelper.get_dialog_base_style())
+        layout = QVBoxLayout(dlg)
+        info = QLabel(
+            "Exact text inserted into the prompt in place of "
+            "{{SPATIAL_CONTEXT}}."
+        )
+        info.setStyleSheet(StyleHelper.get_preview_label_style())
+        layout.addWidget(info)
+        text_edit = QPlainTextEdit()
+        text_edit.setPlainText(self._last_spatial_context)
+        text_edit.setReadOnly(True)
+        text_edit.setStyleSheet(
+            f"{StyleHelper.get_input_field_style()}font-family: Consolas, monospace;"
+        )
+        layout.addWidget(text_edit)
+        btn_row = QHBoxLayout()
+        close_btn = QPushButton("Close")
+        close_btn.clicked.connect(dlg.accept)
+        close_btn.setStyleSheet(StyleHelper.get_primary_button_style())
+        btn_row.addStretch()
+        btn_row.addWidget(close_btn)
+        layout.addLayout(btn_row)
+        dlg.exec()
+
     @Slot()
     def _on_cancel_clicked(self) -> None:
         """Handle cancel button click."""
@@ -962,6 +1216,7 @@ class LLMGenerationWidget(QWidget):
             context_str,
             user_prompt,
             include_rag_placeholder=self.rag_cb.isChecked(),
+            include_spatial_placeholder=self.spatial_cb.isChecked(),
         )
 
         # Show dialog
@@ -1045,6 +1300,18 @@ class LLMGenerationWidget(QWidget):
                 else "[Context]\n(No results found for query)"
             )
             prompt["user"] = user_msg.replace("{{RAG_CONTEXT}}", replacement)
+
+        # Resolve spatial context for preview, mirroring the worker's path
+        if self.spatial_cb.isChecked() and db_path:
+            spatial_text = self._preview_spatial_context(db_path, context)
+            replacement = (
+                spatial_text
+                if spatial_text
+                else "[Spatial Context]\n(No spatial context available)"
+            )
+            prompt["user"] = prompt["user"].replace(
+                "{{SPATIAL_CONTEXT}}", replacement
+            )
 
         # Format for display in preview (show keys clearly)
         display_text = (

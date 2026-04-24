@@ -47,7 +47,7 @@ def test_custom_prompt_structure(qtbot, widget, monkeypatch):
 
     captured_prompt = []
 
-    def mock_start(prompt, temp, db):
+    def mock_start(prompt, temp, db, **_kwargs):
         captured_prompt.append(prompt)
 
     monkeypatch.setattr(widget, "_start_generation", mock_start)

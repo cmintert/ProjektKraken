@@ -197,6 +197,87 @@ def extract_value_metadata(path: str) -> Optional[ValueMetadata]:
     return _pixel_range_from_float(path)
 
 
+def _sample_pixel_value(file_path: str, norm_x: float, norm_y: float) -> Optional[int]:
+    """Return the integer pixel value at a normalised position, or ``None``.
+
+    Strict bounds check — coordinates outside ``[0, 1]`` return ``None``.
+    Only discrete single-channel PIL modes are supported.
+    """
+    if not (0.0 <= norm_x <= 1.0 and 0.0 <= norm_y <= 1.0):
+        return None
+
+    from PIL import Image as PilImage
+
+    try:
+        with PilImage.open(file_path) as im:
+            if im.mode not in ("L", "I", "I;16"):
+                return None
+            width, height = im.size
+            if width <= 0 or height <= 0:
+                return None
+            raw = im.getpixel(
+                (int(norm_x * (width - 1)), int(norm_y * (height - 1)))
+            )
+    except (OSError, ValueError):
+        return None
+
+    if isinstance(raw, (tuple, list)):
+        if not raw:
+            return None
+        raw = raw[0]
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def sample_raster_semantic(
+    file_path: str,
+    norm_x: float,
+    norm_y: float,
+    value_entity_map: dict,
+) -> Optional[str]:
+    """Sample one pixel of a discrete raster and resolve it to a VEM label.
+
+    Used by the spatial-context builder to answer "what class does the raster
+    layer assign to this entity's position?" — e.g. ``"Temperate Forest"``.
+
+    Bounds handling is **strict**: normalised coordinates outside ``[0, 1]``
+    return ``None`` rather than clamping to the edge pixel. This avoids the
+    ``MapDataBuffer.get_value_at`` failure mode where out-of-coverage points
+    silently report the edge pixel's class (commonly "No data" or whatever
+    fill value sits at the image border).
+
+    Supported PIL modes: ``"L"``, ``"I"``, ``"I;16"`` (discrete single-channel
+    rasters). Color or float-continuous rasters have no categorical mapping
+    and return ``None``.
+
+    Args:
+        file_path: Absolute path to the raster PNG/TIFF file.
+        norm_x: Normalised horizontal position in ``[0, 1]``.
+        norm_y: Normalised vertical position in ``[0, 1]``.
+        value_entity_map: Canonical VEM dict with ``"mode"`` and ``"mappings"``
+            keys, as produced by ``raster_mapping.normalize_value_entity_map``.
+
+    Returns:
+        The matching mapping's ``"label"`` field, or ``None`` if the pixel
+        cannot be sampled, falls outside bounds, the raster mode is not
+        discrete, or no mapping entry covers the sampled value.
+    """
+    if not isinstance(value_entity_map, dict):
+        return None
+    if not value_entity_map.get("mappings"):
+        return None
+
+    value = _sample_pixel_value(file_path, norm_x, norm_y)
+    if value is None:
+        return None
+
+    from src.gui.widgets.map.raster_mapping import lookup_label_for_value
+
+    return lookup_label_for_value({"value_entity_map": value_entity_map}, value)
+
+
 @dataclass(frozen=True)
 class ImageAnalysisResult:
     """Structured result returned by :func:`analyse_image`.

@@ -74,6 +74,9 @@ class PromptBuilder:
             "lore_date",
             "existing_description",
             "description",
+            # Metadata keys consumed by spatial-context lookup — not LLM-facing.
+            "object_id",
+            "object_type",
         }
         context_lines.extend(
             f"{k.replace('_', ' ').title()}: {v}"
@@ -112,6 +115,7 @@ class PromptBuilder:
         context_str: str,
         user_prompt: str,
         include_rag_placeholder: bool = False,
+        include_spatial_placeholder: bool = False,
     ) -> Dict[str, str]:
         """Construct the final structured prompt with persona and context.
 
@@ -124,6 +128,9 @@ class PromptBuilder:
             user_prompt: User's custom prompt/task (already substituted).
             include_rag_placeholder: Whether to include the {{RAG_CONTEXT}}
                 placeholder for later injection by the worker.
+            include_spatial_placeholder: Whether to include the
+                {{SPATIAL_CONTEXT}} placeholder for later injection by the
+                worker.
 
         Returns:
             Dict[str, str]: Structured prompt with 'system' and 'user' keys.
@@ -138,6 +145,10 @@ class PromptBuilder:
         # -- DATA: RAG CONTEXT -- (optional placeholder)
         if include_rag_placeholder:
             user_message_parts.append("{{RAG_CONTEXT}}")
+
+        # -- DATA: SPATIAL CONTEXT -- (optional placeholder)
+        if include_spatial_placeholder:
+            user_message_parts.append("{{SPATIAL_CONTEXT}}")
 
         # -- TASK -- (placed last to reduce recency bias)
         user_message_parts.append(f"[Task]\n{user_prompt}")

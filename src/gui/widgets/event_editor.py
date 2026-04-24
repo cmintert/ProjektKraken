@@ -1504,12 +1504,16 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
                 - 'type' (str): Event type
                 - 'existing_description' (str): Current description text
                 - 'lore_date' (str, optional): Formatted date string if available
+                - 'object_id' (str): Event UUID for spatial-context lookup
+                - 'object_type' (str): Always ``"event"``
 
         """
         context = {
             "name": self.name_edit.text(),
             "type": self.type_edit.currentText(),
             "existing_description": self.desc_edit.toPlainText(),
+            "object_id": self._current_event_id or "",
+            "object_type": "event",
         }
 
         formatted_date = self.temporal_widget.get_formatted_start_text()
