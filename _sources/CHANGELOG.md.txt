@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-04-22
-### Internal
-- Implement LanguageTool integration for spell and grammar checking
+## [Development] - 2026-04-24
+### Added
+- feat: Enhance raster layer handling with value metadata support
 
 
 *This changelog was automatically generated.*
