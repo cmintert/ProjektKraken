@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-04-24
+## [Development] - 2026-04-25
 ### Added
-- feat(llm): inject active-map spatial context into generation prompts
+- feat(map-nesting): Phase 1 — data foundation for master/detail map hierarchy
 
 
 *This changelog was automatically generated.*
