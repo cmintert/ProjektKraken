@@ -13,6 +13,10 @@ from src.commands.base_command import BaseCommand, CommandResult
 from src.core.map import Map
 from src.core.marker import Marker
 from src.services.db_service import DatabaseService
+from src.services.map_nesting_service import (
+    MapNestingService,
+    NestingValidationError,
+)
 from src.services.repositories.map_repository import MapRepository
 
 logger = logging.getLogger(__name__)
@@ -528,7 +532,7 @@ class RegisterDetailMapCommand(BaseCommand):
 
             all_maps = db_service.get_all_maps()
             try:
-                _validate_registration(
+                MapNestingService.validate_registration(
                     self.detail_map_id,
                     self.parent_map_id,
                     self.registration,
@@ -620,116 +624,31 @@ class RegisterDetailMapCommand(BaseCommand):
 # ---------------------------------------------------------------------------
 
 
-class NestingValidationError(ValueError):
-    """Raised when a detail-map registration is rejected.
+# NestingValidationError is defined in map_nesting_service and imported above.
+# Re-exported here so that callers that import it from this module
+# (including the Phase-1 tests) continue to work unchanged.
+__all__ = [
+    "NestingValidationError",
+]
 
-    Phase 2 will move this exception to ``map_nesting_service`` and
-    re-export it here for backwards compatibility.
-    """
-
-
-def _validate_registration_payload(registration: Dict[str, Any]) -> None:
-    """Validate the structural shape of a registration dict.
-
-    Checks the keys, types, and finite-numeric values required by the
-    aspect-locked-affine registration mode.  Pulled out of
-    :func:`_validate_registration` to keep complexity bounded.
-
-    Raises:
-        NestingValidationError: When the payload is malformed.
-
-    """
-    from math import isfinite
-
-    if not isinstance(registration, dict):
-        raise NestingValidationError("Registration payload must be a dict.")
-    if registration.get("mode") != "aspect_locked_affine":
-        raise NestingValidationError(
-            "Registration mode must be 'aspect_locked_affine'."
-        )
-    center = registration.get("master_center_norm") or {}
-    fields = {
-        "master_center_norm.x": center.get("x"),
-        "master_center_norm.y": center.get("y"),
-        "scale_norm": registration.get("scale_norm"),
-        "aspect_ratio": registration.get("aspect_ratio"),
-        "rotation_deg": registration.get("rotation_deg", 0.0),
-    }
-    for name, value in fields.items():
-        if not isinstance(value, (int, float)) or isinstance(value, bool):
-            raise NestingValidationError(
-                f"Registration field '{name}' must be a finite number."
-            )
-        if not isfinite(float(value)):
-            raise NestingValidationError(
-                f"Registration field '{name}' must be a finite number."
-            )
-    if float(fields["scale_norm"]) <= 0:
-        raise NestingValidationError("scale_norm must be > 0.")
-    if float(fields["aspect_ratio"]) <= 0:
-        raise NestingValidationError("aspect_ratio must be > 0.")
-
-
+# _validate_registration is kept as a thin shim used by the Phase-1 tests
+# that import it directly.  Phase 2+ code should call
+# MapNestingService.validate_registration instead.
 def _validate_registration(
     detail_id: str,
     parent_id: str,
     registration: Dict[str, Any],
     all_maps: List[Map],
 ) -> None:
-    """Phase-1 minimal validator.
+    """Shim — delegates to :meth:`MapNestingService.validate_registration`.
 
-    Catches the structural failures that would corrupt the data store
-    even before the full transform service is available.  See Phase 2 of
-    the master-map-nesting design doc for the full contract.
+    Kept for backwards compatibility with Phase-1 tests that import this
+    symbol directly.
 
     Raises:
-        NestingValidationError: On any of the documented failure modes.
+        NestingValidationError: On any validation failure.
 
     """
-    # Constants referenced as integers to avoid an import cycle in tests
-    # that stub the constants module.
-    depth_cap = 5
-
-    if detail_id == parent_id:
-        raise NestingValidationError("A map cannot be its own parent.")
-
-    by_id = {m.id: m for m in all_maps}
-    parent = by_id.get(parent_id)
-    if parent is None:
-        raise NestingValidationError(f"Parent map not found: {parent_id}")
-
-    parent_role = (parent.attributes or {}).get("map_role")
-    if parent_role not in (MAP_ROLE_MASTER, MAP_ROLE_DETAIL):
-        raise NestingValidationError(
-            "Parent map must already be designated as a master or detail map."
-        )
-
-    # Cycle detection — walk the parent's chain looking for ``detail_id``.
-    visited = {parent_id}
-    cursor: Optional[Map] = parent
-    depth = 1  # parent is depth 1 in the resulting chain (parent -> detail)
-    while cursor is not None:
-        cursor_attrs = cursor.attributes or {}
-        next_id = cursor_attrs.get("parent_map_id")
-        if not next_id:
-            break
-        if next_id == detail_id:
-            raise NestingValidationError(
-                "Registration would create a cycle in the nesting chain."
-            )
-        if next_id in visited:
-            raise NestingValidationError(
-                "Existing nesting chain already contains a cycle."
-            )
-        visited.add(next_id)
-        cursor = by_id.get(next_id)
-        if cursor is None:
-            break
-        depth += 1
-
-    if depth + 1 > depth_cap:
-        raise NestingValidationError(
-            f"Nesting depth would exceed cap of {depth_cap} levels."
-        )
-
-    _validate_registration_payload(registration)
+    MapNestingService.validate_registration(
+        detail_id, parent_id, registration, all_maps
+    )
