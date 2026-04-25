@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-04-25
 ### Added
-- feat(map-nesting): Phase 1 — data foundation for master/detail map hierarchy
+- feat(map-nesting): Phase 2 — MapNestingService transform & validation service
 
 
 *This changelog was automatically generated.*
