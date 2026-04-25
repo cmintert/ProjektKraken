@@ -27,6 +27,9 @@ from src.commands.layer_commands import (  # noqa: F401
 from src.commands.map_crud_commands import (  # noqa: F401
     CreateMapCommand,
     DeleteMapCommand,
+    NestingValidationError,
+    RegisterDetailMapCommand,
+    SetMasterMapCommand,
     UpdateMapCommand,
 )
 
@@ -55,6 +58,10 @@ __all__ = [
     "CreateMapCommand",
     "UpdateMapCommand",
     "DeleteMapCommand",
+    # Map nesting
+    "SetMasterMapCommand",
+    "RegisterDetailMapCommand",
+    "NestingValidationError",
     # Marker / Feature
     "CreateMarkerCommand",
     "UpdateMarkerCommand",

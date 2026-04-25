@@ -43,6 +43,7 @@ from src.gui.mixins.map_calibration_mixin import MapCalibrationMixin
 from src.gui.mixins.map_dialog_mixin import MapDialogMixin
 from src.gui.mixins.map_drawing_mixin import MapDrawingMixin
 from src.gui.mixins.map_layer_mixin import MapLayerMixin
+from src.gui.mixins.map_nesting_mixin import MapNestingMixin
 from src.gui.mixins.map_trajectory_mixin import MapTrajectoryMixin
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
@@ -155,6 +156,7 @@ class MapWidget(
     MapTrajectoryMixin,
     MapDrawingMixin,
     MapCalibrationMixin,
+    MapNestingMixin,
     MapDialogMixin,
     QWidget,
 ):
@@ -199,6 +201,12 @@ class MapWidget(
     jump_to_time_requested = Signal(float)  # target_time
     map_scale_changed = Signal(float)  # For persisting map scale
     show_onboarding_requested = Signal()  # To trigger animation or hints
+    # Map nesting (master / detail) signals
+    set_master_map_requested = Signal(str)  # map_id
+    register_detail_map_requested = Signal(
+        str, str, dict
+    )  # detail_id, parent_id, registration
+    edit_footprint_requested = Signal(str)  # detail_map_id (Phase 3)
     # Layer operations (routed through the command stack)
     layer_tree_changed = Signal()  # auto-persist hook
     layer_opacity_change_requested = Signal(
@@ -671,8 +679,39 @@ class MapWidget(
 
     @Slot()
     def _show_map_overflow_menu(self) -> None:
-        """Shows the map overflow menu containing destructive map actions."""
+        """Shows the map overflow menu containing map-level actions.
+
+        Includes nesting actions (Set as Master, Register as Detail,
+        Edit Footprint) gated by the active map's role and the world's
+        master state, plus the destructive Delete action.
+
+        """
         menu = QMenu(self)
+        active_role = self._active_map_role()
+        has_master = self._world_has_master_map()
+
+        master_action = menu.addAction("Set as Master Map")
+        master_action.setCheckable(True)
+        master_action.setChecked(active_role == "master")
+        master_action.triggered.connect(self._on_set_master_map_clicked)
+
+        register_action = menu.addAction("Register as Detail Map…")
+        register_action.setEnabled(has_master and active_role != "master")
+        if not has_master:
+            register_action.setToolTip(
+                "Designate a master map first before registering a detail map."
+            )
+        register_action.triggered.connect(
+            self._on_register_detail_map_clicked
+        )
+
+        edit_footprint_action = menu.addAction("Edit Footprint…")
+        edit_footprint_action.setEnabled(active_role == "detail")
+        edit_footprint_action.triggered.connect(
+            self._on_edit_footprint_clicked
+        )
+
+        menu.addSeparator()
         delete_action = menu.addAction("Delete Map...")
         delete_action.triggered.connect(self._on_delete_map_clicked)
         pos = self.btn_map_overflow.mapToGlobal(self.btn_map_overflow.rect().bottomLeft())

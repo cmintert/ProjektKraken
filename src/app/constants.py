@@ -203,8 +203,21 @@ MAP_LAYER_Z_MAP_BG = 0
 MAP_LAYER_Z_TRAJECTORIES = 0.5
 MAP_LAYER_Z_RASTER = 4  # raster / heatmap overlays
 MAP_LAYER_Z_FEATURES = 8  # paths / regions
+MAP_LAYER_Z_FOOTPRINTS = 9  # detail-map footprint overlays
 MAP_LAYER_Z_MARKERS = 10
 MAP_LAYER_Z_UI_OVERLAY = 100
+
+# ---------------------------------------------------------------------------
+# Map Nesting Constants
+# ---------------------------------------------------------------------------
+
+# Role discriminators stored in Map.attributes["map_role"]
+MAP_ROLE_MASTER = "master"
+MAP_ROLE_DETAIL = "detail"
+
+# Maximum depth of the master -> detail -> ... chain.  Prevents runaway
+# nesting and keeps transform composition bounded.
+MAP_NESTING_DEPTH_CAP = 5
 
 # ---------------------------------------------------------------------------
 # Hierarchical Layer System Constants

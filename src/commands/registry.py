@@ -57,6 +57,8 @@ def _init_registry() -> None:
     from src.commands.map_commands import (
         CreateMapCommand,
         DeleteMapCommand,
+        RegisterDetailMapCommand,
+        SetMasterMapCommand,
         UpdateMapCommand,
     )
     from src.commands.marker_commands import (
@@ -98,6 +100,8 @@ def _init_registry() -> None:
             "CreateMapCommand": CreateMapCommand,
             "UpdateMapCommand": UpdateMapCommand,
             "DeleteMapCommand": DeleteMapCommand,
+            "SetMasterMapCommand": SetMasterMapCommand,
+            "RegisterDetailMapCommand": RegisterDetailMapCommand,
             "RemoveRasterSnapshotCommand": RemoveRasterSnapshotCommand,
             "UpdateCalendarConfigCommand": UpdateCalendarConfigCommand,
             # Marker commands

@@ -24,9 +24,11 @@ from src.commands.map_commands import (
     CreateMarkerCommand,
     DeleteMapCommand,
     DeleteMarkerCommand,
+    RegisterDetailMapCommand,
     RenameLayerCommand,
     SaveLayerTreeCommand,
     SetLayerOpacityCommand,
+    SetMasterMapCommand,
     UpdateMapCommand,
     UpdateMarkerAttributeCommand,
     UpdateMarkerColorCommand,
@@ -793,6 +795,40 @@ class MapHandler(QObject):
             current_map_id, {"attributes": {"width_meters": width_meters}}
         )
         self.command_requested.emit(cmd)
+
+    # ------------------------------------------------------------------
+    # Map nesting (master / detail) operations
+    # ------------------------------------------------------------------
+
+    @Slot(str)
+    def on_set_master_map_requested(self, map_id: str) -> None:
+        """Dispatch a :class:`SetMasterMapCommand` for ``map_id``.
+
+        Args:
+            map_id: ID of the map to mark as the world's master.
+
+        """
+        if not map_id:
+            return
+        self.command_requested.emit(SetMasterMapCommand(map_id))
+
+    @Slot(str, str, dict)
+    def on_register_detail_map_requested(
+        self, detail_map_id: str, parent_map_id: str, registration: dict
+    ) -> None:
+        """Dispatch a :class:`RegisterDetailMapCommand`.
+
+        Args:
+            detail_map_id: ID of the map being registered as a detail.
+            parent_map_id: ID of the chosen parent (master or detail) map.
+            registration: Aspect-locked-affine registration payload.
+
+        """
+        if not detail_map_id or not parent_map_id or not registration:
+            return
+        self.command_requested.emit(
+            RegisterDetailMapCommand(detail_map_id, parent_map_id, registration)
+        )
 
     # ------------------------------------------------------------------
     # Layer operations (routed through the command stack)

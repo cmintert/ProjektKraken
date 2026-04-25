@@ -600,6 +600,18 @@ class ConnectionManager:
                 (map_widget, "map_created", map_handler.create_map, "MapWidget"),
                 (map_widget, "map_deleted", map_handler.delete_map, "MapWidget"),
                 (map_widget, "map_selected", map_handler.on_map_selected, "MapWidget"),
+                (
+                    map_widget,
+                    "set_master_map_requested",
+                    map_handler.on_set_master_map_requested,
+                    "MapWidget",
+                ),
+                (
+                    map_widget,
+                    "register_detail_map_requested",
+                    map_handler.on_register_detail_map_requested,
+                    "MapWidget",
+                ),
                 (map_widget, "marker_created", map_handler.create_marker, "MapWidget"),
                 (
                     map_widget,

@@ -5,8 +5,9 @@ Handles CRUD operations for Map and MapFeature (Marker) entities in the database
 
 import json
 import logging
-from typing import List, Optional
+from typing import Iterator, List, Optional
 
+from src.app.constants import MAP_ROLE_DETAIL, MAP_ROLE_MASTER
 from src.core.map import Map
 from src.core.marker import Marker
 from src.services.repositories.base_repository import BaseRepository
@@ -142,6 +143,84 @@ class MapRepository(BaseRepository):
         """
         with self.transaction() as conn:
             conn.execute("DELETE FROM maps WHERE id = ?", (map_id,))
+
+    # ------------------------------------------------------------------
+    # Map nesting helpers
+    #
+    # These operate on a list of already-loaded ``Map`` objects rather
+    # than issuing fresh queries.  Callers typically obtain the list via
+    # ``get_all_maps()`` once and reuse it for multiple lookups.
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def get_master_map(maps: List[Map]) -> Optional[Map]:
+        """Return the world's master map, if one is designated.
+
+        Args:
+            maps: All maps in the current world.
+
+        Returns:
+            The map whose ``attributes["map_role"]`` equals
+            ``MAP_ROLE_MASTER``, or ``None`` if no master is set.
+
+        """
+        for m in maps:
+            if (m.attributes or {}).get("map_role") == MAP_ROLE_MASTER:
+                return m
+        return None
+
+    @staticmethod
+    def get_children_of(parent_id: str, maps: List[Map]) -> List[Map]:
+        """Return the direct detail-map children of ``parent_id``.
+
+        Walks one level only.  For multi-level traversal use
+        :meth:`iter_descendants`.
+
+        Args:
+            parent_id: ID of the parent map.
+            maps: All maps in the current world.
+
+        Returns:
+            List of detail maps whose ``parent_map_id`` equals
+            ``parent_id``.
+
+        """
+        children: List[Map] = []
+        for m in maps:
+            attrs = m.attributes or {}
+            if (
+                attrs.get("map_role") == MAP_ROLE_DETAIL
+                and attrs.get("parent_map_id") == parent_id
+            ):
+                children.append(m)
+        return children
+
+    @classmethod
+    def iter_descendants(cls, parent_id: str, maps: List[Map]) -> Iterator[Map]:
+        """Yield every descendant of ``parent_id`` (depth-first).
+
+        Used by the delete-guard to enumerate the full subtree that
+        would be orphaned if a parent map were removed.
+
+        Args:
+            parent_id: ID of the root whose descendants to enumerate.
+            maps: All maps in the current world.
+
+        Yields:
+            Each descendant map exactly once.  Cycles, if any, are
+            broken via a visited-set guard.
+
+        """
+        visited: set[str] = set()
+        stack = [parent_id]
+        while stack:
+            current = stack.pop()
+            for child in cls.get_children_of(current, maps):
+                if child.id in visited:
+                    continue
+                visited.add(child.id)
+                yield child
+                stack.append(child.id)
 
     # Marker operations
     def insert_marker(self, marker: Marker) -> str:
