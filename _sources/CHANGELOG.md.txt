@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-04-25
+## [Development] - 2026-04-26
 ### Added
-- feat(map-nesting): Phase 2 — MapNestingService transform & validation service
+- feat(map-nesting): Phase 6 — thumbnail previews, visibility toggle, smart label layout
 
 
 *This changelog was automatically generated.*
