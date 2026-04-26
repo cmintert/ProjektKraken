@@ -41,6 +41,7 @@ from src.commands.map_commands import (
 )
 from src.core.logging_config import get_logger
 from src.core.map import MapLayerNode
+from src.services.map_nesting_service import MapNestingService, NestingValidationError
 from src.services.repositories.map_repository import MapRepository
 
 if TYPE_CHECKING:
@@ -214,6 +215,9 @@ class MapHandler(QObject):
 
             # Load footprint overlays for detail-map children.
             self._load_footprints_for_map(selected_map, maps)
+
+            # Update breadcrumb navigation.
+            self._load_breadcrumb_for_map(selected_map, maps)
 
     @Slot(str)
     def reload_markers(self, map_id: str) -> None:
@@ -904,6 +908,30 @@ class MapHandler(QObject):
             )
 
         self._map_widget.view.set_footprints(footprint_data)
+
+    def _load_breadcrumb_for_map(self, current_map: Any, all_maps: list) -> None:
+        """Build and display the breadcrumb chain for ``current_map``.
+
+        The chain runs from the root ancestor down to ``current_map``.
+        Plain maps (no ``map_role``) and the master map alone both
+        produce a short chain that hides the breadcrumb.
+
+        Args:
+            current_map: The ``Map`` object currently loaded in the view.
+            all_maps: All maps in the current world.
+
+        """
+        try:
+            ancestors = list(
+                MapNestingService.iter_ancestors(current_map.id, all_maps)
+            )
+        except NestingValidationError:
+            ancestors = []
+
+        # ancestors is ordered nearest → farthest; reverse to get root first.
+        chain = [(m.id, m.name) for m in reversed(ancestors)]
+        chain.append((current_map.id, current_map.name))
+        self._map_widget.set_breadcrumb(chain)
 
     # ------------------------------------------------------------------
     # Layer operations (routed through the command stack)

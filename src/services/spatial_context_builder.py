@@ -32,9 +32,10 @@ import sqlite3
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple
 
-from src.app.constants import MAP_DEFAULT_WIDTH_METERS
+from src.app.constants import MAP_DEFAULT_WIDTH_METERS, MAP_ROLE_MASTER
 from src.core.map import Map, MapLayerNode
 from src.core.marker import Marker
+from src.services.map_nesting_service import MapNestingService
 from src.services.raster_image_analysis import sample_raster_semantic
 from src.services.repositories.map_repository import MapRepository
 
@@ -74,6 +75,7 @@ class SpatialContextBuilder:
         map_repo: MapRepository,
         world_root: Optional[Path] = None,
         name_lookup: Optional[NameLookup] = None,
+        nesting_service: Optional[MapNestingService] = None,
     ) -> None:
         """Initialise the builder.
 
@@ -86,10 +88,15 @@ class SpatialContextBuilder:
                 marker's linked object to a display name. When ``None`` or
                 the callable returns ``None``, the builder falls back to
                 ``Marker.label``.
+            nesting_service: When provided, ``build()`` will append a
+                ``Detail map available:`` advisory line when the marker
+                position falls inside a registered child-map footprint.
+                ``None`` (default) preserves existing behaviour exactly.
         """
         self._map_repo = map_repo
         self._world_root = Path(world_root) if world_root is not None else None
         self._name_lookup = name_lookup
+        self._nesting_service = nesting_service
 
     def build(
         self,
@@ -139,13 +146,19 @@ class SpatialContextBuilder:
         if not (has_notes or has_raster or has_nearby):
             return None
 
-        return self._format_context(
+        context = self._format_context(
             map_name=map_obj.name,
             layer_name=layer_name,
             layer_notes=layer_notes,
             raster_facts=raster_facts,
             nearby=nearby,
         )
+
+        advisory = self._resolve_detail_advisory(map_obj, marker)
+        if advisory:
+            context = context + "\n" + advisory
+
+        return context
 
     # ------------------------------------------------------------------
     # Component resolvers
@@ -364,6 +377,50 @@ class SpatialContextBuilder:
         return "\n".join(lines)
 
 
+    def _resolve_detail_advisory(
+        self, map_obj: Map, marker: Marker
+    ) -> Optional[str]:
+        """Return an advisory line if the marker falls inside a child footprint.
+
+        Only fires when:
+        * ``self._nesting_service`` is not ``None``.
+        * The active map's role is ``MAP_ROLE_MASTER`` (Decision 5 — when
+          a detail map is active, its own context wins; no advisory).
+        * At least one registered child map's footprint contains the
+          marker's normalised position.
+
+        Args:
+            map_obj: The active map.
+            marker: The marker being described.
+
+        Returns:
+            A ``"Detail map available: <name>"`` line, or ``None``.
+
+        """
+        if self._nesting_service is None:
+            return None
+        role = (map_obj.attributes or {}).get("map_role")
+        if role != MAP_ROLE_MASTER:
+            return None
+        try:
+            all_maps = self._map_repo.get_all_maps()
+        except Exception:
+            return None
+        children = MapRepository.get_children_of(map_obj.id, all_maps)
+        for child in children:
+            registration = (child.attributes or {}).get("registration")
+            if registration is None:
+                continue
+            try:
+                if self._nesting_service.point_in_footprint(
+                    (marker.x, marker.y), registration
+                ):
+                    return f"Detail map available: {child.name}"
+            except Exception:
+                continue
+        return None
+
+
 # ---------------------------------------------------------------------------
 # Module-level tree helpers (pure functions — easy to unit-test)
 # ---------------------------------------------------------------------------
@@ -458,7 +515,9 @@ def lookup_spatial_context(
         try:
             repo = MapRepository(conn)
             builder = SpatialContextBuilder(
-                repo, world_root=Path(db_path).parent
+                repo,
+                world_root=Path(db_path).parent,
+                nesting_service=MapNestingService(),
             )
             return builder.build(object_id, object_type, active_map_id)
         finally:

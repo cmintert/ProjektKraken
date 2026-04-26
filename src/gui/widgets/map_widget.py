@@ -257,6 +257,26 @@ class MapWidget(
         self.toolbar.setStyleSheet(StyleHelper.get_toolbar_spacing_style())
         layout.addWidget(self.toolbar)
 
+        # Breadcrumb — shows the ancestor chain for master/detail maps.
+        # Hidden for plain maps.  Each ancestor segment is a hyperlink.
+        self.breadcrumb_label = QLabel()
+        self.breadcrumb_label.setTextFormat(Qt.TextFormat.RichText)
+        self.breadcrumb_label.setOpenExternalLinks(False)
+        self.breadcrumb_label.linkActivated.connect(self.select_map)
+        self.breadcrumb_label.setToolTip("Nesting path — click a segment to navigate")
+        self.breadcrumb_label.hide()
+        self.toolbar.addWidget(self.breadcrumb_label)
+
+        # Back-to-parent button — visible only when a detail map is active.
+        self.btn_parent = QPushButton("↑")
+        self.btn_parent.setFixedWidth(24)
+        self.btn_parent.setToolTip("Navigate to parent map")
+        self.btn_parent.setStyleSheet(StyleHelper.get_tool_button_style())
+        self.btn_parent.clicked.connect(self._on_navigate_to_parent)
+        self.btn_parent.hide()
+        self.toolbar.addWidget(self.btn_parent)
+        self._breadcrumb_parent_id: Optional[str] = None
+
         # Map Selector
         self.map_selector = QComboBox()
         self.map_selector.setMinimumWidth(200)
@@ -798,6 +818,52 @@ class MapWidget(
             self.map_selector.setCurrentIndex(index)
         else:
             logger.warning(f"Map ID {map_id} not found in selector")
+
+    def set_breadcrumb(self, chain: list) -> None:
+        """Update the breadcrumb label from the nesting ancestor chain.
+
+        Args:
+            chain: Ordered list of ``(map_id, map_name)`` tuples from root
+                to the current map.  An empty list hides the breadcrumb.
+
+        """
+        if len(chain) <= 1:
+            self.breadcrumb_label.hide()
+            self.btn_parent.hide()
+            self._breadcrumb_parent_id = None
+            return
+
+        theme = ThemeManager().get_theme()
+        link_color = theme.get("accent_secondary", "#4DA6FF")
+        dim_color = theme.get("text_dim", "#9E9E9E")
+
+        parts = []
+        for i, (mid, mname) in enumerate(chain):
+            is_last = i == len(chain) - 1
+            if is_last:
+                parts.append(
+                    f'<span style="color:{dim_color};">{mname}</span>'
+                )
+            else:
+                parts.append(
+                    f'<a href="{mid}" style="color:{link_color};'
+                    f' text-decoration:none;">{mname}</a>'
+                )
+
+        separator = f' <span style="color:{dim_color};">›</span> '
+        self.breadcrumb_label.setText(separator.join(parts))
+        self.breadcrumb_label.show()
+
+        # Back-to-parent: parent is the second-to-last in the chain.
+        parent_id = chain[-2][0] if len(chain) >= 2 else None
+        self._breadcrumb_parent_id = parent_id
+        self.btn_parent.setVisible(parent_id is not None)
+
+    @Slot()
+    def _on_navigate_to_parent(self) -> None:
+        """Navigate to the parent map when the back button is clicked."""
+        if self._breadcrumb_parent_id:
+            self.select_map(self._breadcrumb_parent_id)
 
     @Slot(int)
     def _on_map_selected(self, index: int) -> None:
