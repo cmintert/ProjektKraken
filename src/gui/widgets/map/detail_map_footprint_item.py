@@ -32,6 +32,7 @@ from PySide6.QtGui import (
     QPainter,
     QPainterPath,
     QPen,
+    QPixmap,
     QPolygonF,
 )
 from PySide6.QtWidgets import (
@@ -82,6 +83,9 @@ class DetailMapFootprintItem(QGraphicsObject):
     registration_changed = Signal(dict)
     """Emitted during drag with the live registration dict."""
 
+    # Longest edge of the cached thumbnail (scene pixels → Qt scales down further)
+    _THUMB_MAX_PX = 512
+
     def __init__(
         self,
         detail_map_id: str,
@@ -90,6 +94,7 @@ class DetailMapFootprintItem(QGraphicsObject):
         registration: Dict[str, Any],
         image_w: float,
         image_h: float,
+        image_path: str = "",
         parent: Optional[QGraphicsObject] = None,
     ) -> None:
         super().__init__(parent)
@@ -99,6 +104,7 @@ class DetailMapFootprintItem(QGraphicsObject):
         self._registration: Dict[str, Any] = dict(registration)
         self._iw = image_w
         self._ih = image_h
+        self._pixmap: Optional[QPixmap] = self._load_pixmap(image_path)
 
         self._edit_mode = False
         self._pre_edit_registration: Optional[Dict[str, Any]] = None
@@ -106,6 +112,9 @@ class DetailMapFootprintItem(QGraphicsObject):
         self._drag_zone = _ZONE_NONE
         self._drag_start_scene: Optional[QPointF] = None
         self._drag_start_reg: Optional[Dict[str, Any]] = None
+
+        self._label_rect_scene: Optional[QRectF] = None
+        self._label_zoom_scale: float = 1.0
 
         self.setZValue(MAP_LAYER_Z_FOOTPRINTS)
         self.setAcceptHoverEvents(False)
@@ -140,6 +149,60 @@ class DetailMapFootprintItem(QGraphicsObject):
         self._registration = dict(registration)
         self._invalidate_shape_cache()
         self.update()
+
+    def set_label_layout(
+        self, rect: Optional[QRectF], zoom_scale: float = 1.0
+    ) -> None:
+        """Set externally computed label placement and zoom scale.
+
+        Args:
+            rect: Label rectangle in scene coordinates, or ``None`` to hide.
+            zoom_scale: View zoom scale used to size label typography.
+
+        """
+        self._label_rect_scene = QRectF(rect) if rect is not None else None
+        self._label_zoom_scale = max(0.05, float(zoom_scale))
+        self.update()
+
+    def label_rect(self) -> Optional[QRectF]:
+        """Return the current scene-space label rectangle for testing."""
+        return QRectF(self._label_rect_scene) if self._label_rect_scene else None
+
+    def footprint_bounds_rect(self) -> QRectF:
+        """Return the axis-aligned scene rect of the footprint polygon."""
+        corners = self._scene_corners()
+        if not corners:
+            return QRectF()
+        xs = [c[0] for c in corners]
+        ys = [c[1] for c in corners]
+        return QRectF(
+            min(xs),
+            min(ys),
+            max(xs) - min(xs),
+            max(ys) - min(ys),
+        )
+
+    def preferred_label_rect(self, zoom_scale: float = 1.0) -> QRectF:
+        """Return a default below-footprint label rect for layout.
+
+        Args:
+            zoom_scale: View zoom scale used for font sizing.
+
+        Returns:
+            Proposed label rect in scene coordinates.
+
+        """
+        _font, tw, th = self._label_typography(zoom_scale)
+        rect_w = tw + _LABEL_PADDING_H * 2
+        rect_h = th + _LABEL_PADDING_V * 2
+
+        footprint_rect = self.footprint_bounds_rect()
+        if footprint_rect.isNull():
+            return QRectF()
+
+        lx = footprint_rect.center().x() - rect_w / 2.0
+        ly = footprint_rect.bottom() + 6.0
+        return QRectF(lx, ly, rect_w, rect_h)
 
     # ------------------------------------------------------------------
     # Edit mode
@@ -208,6 +271,33 @@ class DetailMapFootprintItem(QGraphicsObject):
         self._invalidate_shape_cache()
         self.update()
 
+    def _load_pixmap(self, image_path: str) -> Optional[QPixmap]:
+        """Load and cache a downscaled thumbnail for ``image_path``.
+
+        Returns ``None`` if the path is empty or the image cannot be loaded.
+
+        Args:
+            image_path: Absolute filesystem path to the detail map image.
+
+        Returns:
+            A ``QPixmap`` scaled so its longest edge ≤ ``_THUMB_MAX_PX``,
+            or ``None`` on failure.
+
+        """
+        if not image_path:
+            return None
+        px = QPixmap(image_path)
+        if px.isNull():
+            return None
+        if max(px.width(), px.height()) > self._THUMB_MAX_PX:
+            px = px.scaled(
+                self._THUMB_MAX_PX,
+                self._THUMB_MAX_PX,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+        return px
+
     # ------------------------------------------------------------------
     # Qt item interface
     # ------------------------------------------------------------------
@@ -268,20 +358,65 @@ class DetailMapFootprintItem(QGraphicsObject):
             return
         poly = QPolygonF([QPointF(*c) for c in corners])
 
-        # Fill
-        fill_color = QColor(accent)
-        fill_color.setAlpha(45)
-        painter.setBrush(QBrush(fill_color))
+        clip_path = QPainterPath()
+        clip_path.addPolygon(poly)
+        clip_path.closeSubpath()
+
+        if self._pixmap is not None:
+            reg = self._registration
+            cx_px = float(reg["master_center_norm"]["x"]) * self._iw
+            cy_px = float(reg["master_center_norm"]["y"]) * self._ih
+            rot = float(reg.get("rotation_deg", 0.0))
+
+            fp_w = math.hypot(
+                corners[1][0] - corners[0][0], corners[1][1] - corners[0][1]
+            )
+            fp_h = math.hypot(
+                corners[3][0] - corners[0][0], corners[3][1] - corners[0][1]
+            )
+            px_ar = self._pixmap.width() / max(1, self._pixmap.height())
+
+            # Clip trims the overflow from fill-to-fit scaling.
+            if fp_h > 0 and fp_w / fp_h >= px_ar:
+                img_w, img_h = fp_w, fp_w / px_ar
+            else:
+                img_w, img_h = fp_h * px_ar, fp_h
+
+            painter.save()
+            painter.setClipPath(clip_path)
+            painter.translate(cx_px, cy_px)
+            painter.rotate(rot)
+            painter.drawPixmap(
+                QRectF(-img_w / 2, -img_h / 2, img_w, img_h),
+                self._pixmap,
+                QRectF(0, 0, self._pixmap.width(), self._pixmap.height()),
+            )
+            painter.restore()
+
+            # Subtle tint so the footprint reads as an overlay, not bare terrain.
+            tint = QColor(accent)
+            tint.setAlpha(25)
+            painter.setBrush(QBrush(tint))
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.drawPolygon(poly)
+        else:
+            # Fallback: solid fill when no image is available.
+            fill_color = QColor(accent)
+            fill_color.setAlpha(45)
+            painter.setBrush(QBrush(fill_color))
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.drawPolygon(poly)
 
         # Outline
         outline_color = QColor(accent)
         outline_color.setAlpha(200)
         outline_w = 2.5 if self._edit_mode else 1.5
+        painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.setPen(QPen(outline_color, outline_w))
         painter.drawPolygon(poly)
 
-        # Label plate (top-left corner area of footprint, always drawn)
-        self._draw_label(painter, corners, theme)
+        # Label plate is laid out by MapGraphicsView to avoid overlaps.
+        self._draw_label(painter, theme)
 
         # Edit handles
         if self._edit_mode:
@@ -356,7 +491,7 @@ class DetailMapFootprintItem(QGraphicsObject):
             curr_dist = math.hypot(pos.x() - cx_px, pos.y() - cy_px)
             if start_dist > 1e-6:
                 new_scale = reg["scale_norm"] * (curr_dist / start_dist)
-                reg["scale_norm"] = max(0.01, new_scale)
+                reg["scale_norm"] = max(1e-6, new_scale)
 
         elif self._drag_zone == _ZONE_ROTATE:
             cx_px = reg["master_center_norm"]["x"] * self._iw
@@ -497,33 +632,42 @@ class DetailMapFootprintItem(QGraphicsObject):
             return _ZONE_BODY
         return _ZONE_NONE
 
-    def _draw_label(
-        self,
-        painter: QPainter,
-        corners: List[Tuple[float, float]],
-        theme: dict,
-    ) -> None:
-        """Draw the map name label near the top-left corner of the footprint.
+    def _label_typography(self, zoom_scale: float) -> Tuple[QFont, float, float]:
+        """Build a zoom-reactive font and return width/height metrics.
+
+        Args:
+            zoom_scale: Current view zoom scale.
+
+        Returns:
+            Tuple of ``(font, text_width, text_height)``.
+
+        """
+        scale_factor = max(0.85, min(1.6, zoom_scale ** 0.28))
+        font_size = max(8.0, min(14.0, _LABEL_FONT_SIZE * scale_factor))
+        font = QFont("Segoe UI")
+        font.setPointSizeF(font_size)
+        font.setBold(True)
+        fm = QFontMetricsF(font)
+        text = self._name
+        return font, fm.horizontalAdvance(text), fm.height()
+
+    def _draw_label(self, painter: QPainter, theme: dict) -> None:
+        """Draw the map name label from view-computed placement.
 
         Args:
             painter: Active painter.
-            corners: Scene pixel corners (TL, TR, BR, BL).
             theme: Theme dict.
 
         """
-        font = QFont("Segoe UI", _LABEL_FONT_SIZE)
-        font.setBold(True)
-        painter.setFont(font)
-        fm = QFontMetricsF(font)
-        text = self._name
-        tw = fm.horizontalAdvance(text)
-        th = fm.height()
-        rect_w = tw + _LABEL_PADDING_H * 2
-        rect_h = th + _LABEL_PADDING_V * 2
+        if self._label_rect_scene is None:
+            return
+        label_rect = QRectF(self._label_rect_scene)
+        if label_rect.isNull():
+            return
 
-        # Position: slightly inside the top-left corner
-        lx = corners[0][0] + 4.0
-        ly = corners[0][1] + 4.0
+        font, tw, th = self._label_typography(self._label_zoom_scale)
+        painter.setFont(font)
+        text = self._name
 
         bg = QColor(theme.get("app_bg", "#2B2B2B"))
         bg.setAlpha(200)
@@ -533,14 +677,12 @@ class DetailMapFootprintItem(QGraphicsObject):
 
         painter.setBrush(QBrush(bg))
         painter.setPen(QPen(border, 1.0))
-        painter.drawRoundedRect(
-            QRectF(lx, ly, rect_w, rect_h), 3.0, 3.0
-        )
+        painter.drawRoundedRect(label_rect, 3.0, 3.0)
         painter.setPen(QPen(text_col))
         painter.drawText(
             QRectF(
-                lx + _LABEL_PADDING_H,
-                ly + _LABEL_PADDING_V,
+                label_rect.x() + _LABEL_PADDING_H,
+                label_rect.y() + _LABEL_PADDING_V,
                 tw,
                 th,
             ),

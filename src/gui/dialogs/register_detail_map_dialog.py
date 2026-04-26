@@ -10,7 +10,7 @@ default with canvas-driven placement.
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QImageReader
@@ -119,7 +119,17 @@ class RegisterDetailMapDialog(QDialog):
             self.reject()
             return
         self._selected_parent_id = parent_id
-        aspect = self._compute_aspect_ratio()
+
+        # Effective aspect ratio = intrinsic * (parent_h / parent_w).
+        # This makes the footprint polygon have the correct visual shape on
+        # the specific parent map regardless of its pixel aspect ratio.
+        intrinsic = self._read_image_aspect(self._detail_map.image_path or "")
+        parent_size = self._read_parent_pixel_size(parent_id)
+        if parent_size and parent_size[0] > 0:
+            effective = intrinsic * parent_size[1] / parent_size[0]
+        else:
+            effective = intrinsic
+
         self._registration = {
             "mode": "aspect_locked_affine",
             "version": 1,
@@ -129,33 +139,65 @@ class RegisterDetailMapDialog(QDialog):
             },
             "scale_norm": _DEFAULT_SCALE,
             "rotation_deg": _DEFAULT_ROTATION_DEG,
-            "aspect_ratio": aspect,
+            "aspect_ratio": effective,
             "confidence": "user_confirmed",
         }
         self.accept()
 
-    def _compute_aspect_ratio(self) -> float:
-        """Read the detail map image and return ``width / height``.
+    def _read_image_size(self, image_path: str) -> Optional[Tuple[int, int]]:
+        """Return ``(width, height)`` in pixels for ``image_path``, or ``None``.
 
-        Falls back to ``1.0`` when the image cannot be read — the
-        registration validator only requires the value to be positive
-        and finite.
+        Resolves relative paths via ``_resolve_image_path`` when available.
+
+        Args:
+            image_path: Raw path (may be relative) to the image file.
+
+        Returns:
+            ``(w, h)`` tuple, or ``None`` if the image cannot be read.
 
         """
-        image_path = self._detail_map.image_path or ""
         if self._resolve_image_path is not None:
             try:
                 image_path = self._resolve_image_path(image_path)
             except Exception:
-                logger.exception("Failed to resolve detail-map image path")
+                logger.exception("Failed to resolve image path")
+                return None
         try:
             reader = QImageReader(image_path)
             size = reader.size()
-            if size.isValid() and size.height() > 0:
-                return float(size.width()) / float(size.height())
+            if size.isValid() and size.width() > 0 and size.height() > 0:
+                return (size.width(), size.height())
         except Exception:
-            logger.exception("Failed to read detail-map image dimensions")
-        return 1.0
+            logger.exception("Failed to read image dimensions for %s", image_path)
+        return None
+
+    def _read_image_aspect(self, image_path: str) -> float:
+        """Return ``width / height`` for ``image_path``, or ``1.0`` on failure.
+
+        Args:
+            image_path: Raw path (may be relative) to the image file.
+
+        Returns:
+            Positive float pixel aspect ratio.
+
+        """
+        size = self._read_image_size(image_path)
+        return float(size[0]) / float(size[1]) if size else 1.0
+
+    def _read_parent_pixel_size(self, parent_id: str) -> Optional[Tuple[int, int]]:
+        """Return ``(width, height)`` in pixels for the selected parent map.
+
+        Args:
+            parent_id: ID of the candidate parent map.
+
+        Returns:
+            ``(w, h)`` tuple, or ``None`` if the image cannot be read.
+
+        """
+        parent_map = next((m for m in self._candidates if m.id == parent_id), None)
+        if parent_map is None:
+            return None
+        return self._read_image_size(parent_map.image_path or "")
 
     def selected_parent_id(self) -> Optional[str]:
         """Return the chosen parent map ID after accept (else ``None``)."""

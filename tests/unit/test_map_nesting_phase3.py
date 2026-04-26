@@ -192,11 +192,73 @@ class TestMapGraphicsViewFootprints:
         item = view._footprint_items["d1"]
         assert item.scene() is view.scene
 
+    def test_labels_render_below_footprints(self, view):
+        view.set_footprints([_make_footprint_data("d1")])
+        item = view._footprint_items["d1"]
+
+        label_rect = item.label_rect()
+        footprint_rect = item.footprint_bounds_rect()
+
+        assert label_rect is not None
+        assert label_rect.top() >= footprint_rect.bottom()
+
+    def test_labels_avoid_overlap(self, view):
+        data = [
+            _make_footprint_data("d1", reg=_affine(cx=0.45, cy=0.40, scale=0.22)),
+            _make_footprint_data("d2", reg=_affine(cx=0.55, cy=0.40, scale=0.22)),
+        ]
+        view.set_footprints(data)
+
+        rect1 = view._footprint_items["d1"].label_rect()
+        rect2 = view._footprint_items["d2"].label_rect()
+
+        assert rect1 is not None
+        assert rect2 is not None
+        assert not rect1.intersects(rect2)
+
+    def test_labels_scale_with_zoom(self, view):
+        view.set_footprints([_make_footprint_data("d1")])
+        item = view._footprint_items["d1"]
+
+        before = item.label_rect()
+        assert before is not None
+
+        view.scale(2.0, 2.0)
+        view._layout_footprint_labels()
+
+        after = item.label_rect()
+        assert after is not None
+        assert after.height() > before.height()
+
     def test_set_footprints_noop_without_pixmap(self, qtbot):
         v = MapGraphicsView()
         qtbot.addWidget(v)
         v.set_footprints([_make_footprint_data("d1")])
         assert len(v._footprint_items) == 0
+
+    def test_set_footprints_visible_false_hides_items(self, view):
+        view.set_footprints([_make_footprint_data("d1"), _make_footprint_data("d2")])
+
+        view.set_footprints_visible(False)
+
+        assert view.footprints_visible is False
+        assert all(not item.isVisible() for item in view._footprint_items.values())
+
+    def test_set_footprints_visible_false_disables_items(self, view):
+        view.set_footprints([_make_footprint_data("d1"), _make_footprint_data("d2")])
+
+        view.set_footprints_visible(False)
+
+        assert all(not item.isEnabled() for item in view._footprint_items.values())
+
+    def test_set_footprints_respects_existing_visibility_state(self, view):
+        view.set_footprints_visible(False)
+
+        view.set_footprints([_make_footprint_data("d1")])
+
+        item = view._footprint_items["d1"]
+        assert not item.isVisible()
+        assert not item.isEnabled()
 
     def test_detail_map_clicked_signal_propagates(self, view, qtbot):
         """detail_map_clicked from footprint item is re-emitted by the view."""
@@ -228,6 +290,14 @@ class TestFootprintEditMode:
     def test_start_footprint_edit_unknown_id_is_noop(self, view):
         view.set_footprints([_make_footprint_data("d1")])
         view.start_footprint_edit("nonexistent")
+        assert not view.is_editing_footprint
+
+    def test_start_footprint_edit_hidden_footprints_is_noop(self, view):
+        view.set_footprints([_make_footprint_data("d1")])
+        view.set_footprints_visible(False)
+
+        view.start_footprint_edit("d1")
+
         assert not view.is_editing_footprint
 
     def test_finish_footprint_edit_emits_confirmed(self, view, qtbot):
@@ -267,6 +337,18 @@ class TestFootprintEditMode:
         view.cancel_footprint_edit()
         restored = view._footprint_items["d1"].current_registration()
         assert abs(restored["master_center_norm"]["x"] - 0.5) < 1e-9
+
+    def test_hiding_footprints_cancels_active_edit(self, view):
+        view.set_footprints([_make_footprint_data("d1")])
+        view.start_footprint_edit("d1")
+
+        cancelled: list[int] = []
+        view.footprint_edit_cancelled.connect(lambda: cancelled.append(1))
+
+        view.set_footprints_visible(False)
+
+        assert not view.is_editing_footprint
+        assert cancelled == [1]
 
     def test_clear_footprints_resets_editing_id(self, view):
         view.set_footprints([_make_footprint_data("d1")])

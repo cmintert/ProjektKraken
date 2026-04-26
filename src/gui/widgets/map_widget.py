@@ -725,8 +725,21 @@ class MapWidget(
             self._on_register_detail_map_clicked
         )
 
+        show_footprints_action = menu.addAction("Show Footprints")
+        show_footprints_action.setCheckable(True)
+        show_footprints_action.setChecked(self.view.footprints_visible)
+
+        def _on_show_footprints_toggled(checked: bool) -> None:
+            self.view.set_footprints_visible(checked)
+            self._update_mode_indicator()
+
+        show_footprints_action.toggled.connect(_on_show_footprints_toggled)
+
         edit_footprint_action = menu.addAction("Edit Footprint…")
-        edit_footprint_action.setEnabled(active_role == "detail")
+        edit_footprint_action.setEnabled(
+            self.view.footprints_visible
+            and (bool(self.view._footprint_items) or active_role == "detail")
+        )
         edit_footprint_action.triggered.connect(
             self._on_edit_footprint_clicked
         )

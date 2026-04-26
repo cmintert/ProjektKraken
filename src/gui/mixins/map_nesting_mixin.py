@@ -13,7 +13,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Slot
-from PySide6.QtWidgets import QDialog, QMessageBox
+from PySide6.QtWidgets import QDialog, QInputDialog, QMessageBox
 
 from src.app.constants import MAP_ROLE_DETAIL, MAP_ROLE_MASTER
 from src.gui.dialogs.register_detail_map_dialog import RegisterDetailMapDialog
@@ -97,13 +97,55 @@ class MapNestingMixin:
 
     @Slot()
     def _on_edit_footprint_clicked(self) -> None:
-        """Enter canvas footprint-edit mode for the active detail map.
+        """Enter canvas footprint-edit mode for a detail map.
 
-        Requires the detail map's footprint to already be rendered on
-        the parent map's canvas (i.e. the parent map is currently
-        loaded).  If the footprint item is not present, does nothing.
+        Two cases:
+        - Footprints are already visible (parent map is loaded): show a
+          picker when there are multiple footprints, then enter edit mode.
+        - The current map is a detail map (parent not yet loaded): navigate
+          to the parent map and store a pending edit that activates once
+          footprints are rendered.
 
         """
+        view = getattr(self, "view", None)
+        if view is None:
+            return
+        if not getattr(view, "footprints_visible", True):
+            QMessageBox.information(
+                self,
+                "Footprints Hidden",
+                "Footprints are currently hidden. Enable Show Footprints "
+                "to edit placements.",
+            )
+            return
+
+        footprint_items = view._footprint_items
+        if footprint_items:
+            # Footprints are visible — pick one and enter edit mode directly.
+            if len(footprint_items) == 1:
+                fid = next(iter(footprint_items))
+            else:
+                id_list = list(footprint_items.keys())
+                display = [
+                    f"{footprint_items[k]._name} ({k[:8]})"
+                    for k in id_list
+                ]
+                chosen, ok = QInputDialog.getItem(
+                    self,
+                    "Edit Footprint",
+                    "Select a footprint to edit:",
+                    display,
+                    editable=False,
+                )
+                if not ok:
+                    return
+                fid = id_list[display.index(chosen)]
+            view.start_footprint_edit(fid)
+            self._update_mode_indicator()
+            self.edit_footprint_requested.emit(fid)
+            return
+
+        # No footprints in view — navigate to the detail map's parent first.
         map_id = self.get_selected_map_id()
         if not map_id:
             return
@@ -112,17 +154,36 @@ class MapNestingMixin:
         )
         if active_map is None:
             return
-        role = (active_map.attributes or {}).get("map_role")
-        if role != MAP_ROLE_DETAIL:
+        if (active_map.attributes or {}).get("map_role") != MAP_ROLE_DETAIL:
+            return
+        parent_id = (active_map.attributes or {}).get("parent_map_id")
+        if not parent_id:
+            return
+        self._pending_footprint_edit_id = map_id
+        index = self.map_selector.findData(parent_id)
+        if index >= 0:
+            self.map_selector.setCurrentIndex(index)
+
+    def _try_activate_pending_footprint_edit(self) -> None:
+        """Activate a deferred footprint edit once the parent map has loaded.
+
+        Called by ``MapHandler`` after footprint overlays are set on the
+        view.  If a pending edit was stored by ``_on_edit_footprint_clicked``
+        and the footprint item now exists, enter edit mode immediately.
+
+        """
+        fid = getattr(self, "_pending_footprint_edit_id", None)
+        if fid is None:
             return
         view = getattr(self, "view", None)
         if view is None:
             return
-        if map_id not in view._footprint_items:
+        if fid not in view._footprint_items:
             return
-        view.start_footprint_edit(map_id)
+        self._pending_footprint_edit_id = None
+        view.start_footprint_edit(fid)
         self._update_mode_indicator()
-        self.edit_footprint_requested.emit(map_id)
+        self.edit_footprint_requested.emit(fid)
 
     # ------------------------------------------------------------------
     # Helpers used by the overflow menu to gate visibility of actions

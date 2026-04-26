@@ -898,16 +898,21 @@ class MapHandler(QObject):
             registration = attrs.get("registration")
             if registration is None:
                 continue
+            abs_path = self._map_widget._resolve_world_image_path(
+                child.image_path or ""
+            )
             footprint_data.append(
                 {
                     "id": child.id,
                     "name": child.name,
                     "parent_map_id": current_map.id,
                     "registration": registration,
+                    "image_path": abs_path,
                 }
             )
 
         self._map_widget.view.set_footprints(footprint_data)
+        self._map_widget._try_activate_pending_footprint_edit()
 
     def _load_breadcrumb_for_map(self, current_map: Any, all_maps: list) -> None:
         """Build and display the breadcrumb chain for ``current_map``.

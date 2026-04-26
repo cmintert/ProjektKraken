@@ -723,6 +723,13 @@ class MapGraphicsView(QGraphicsView):
         self._layout_debounce_timer.setInterval(50)
         self._layout_debounce_timer.timeout.connect(self._execute_label_layout)
 
+        self._footprint_label_debounce_timer = QTimer(self)
+        self._footprint_label_debounce_timer.setSingleShot(True)
+        self._footprint_label_debounce_timer.setInterval(50)
+        self._footprint_label_debounce_timer.timeout.connect(
+            self._layout_footprint_labels
+        )
+
         # Hierarchical Layer Model
         self._layer_model: Optional["MapLayerModel"] = None
 
@@ -731,6 +738,7 @@ class MapGraphicsView(QGraphicsView):
 
         # Footprint overlay items (detail_map_id → DetailMapFootprintItem)
         self._footprint_items: dict[str, DetailMapFootprintItem] = {}
+        self._footprints_visible: bool = True
         self._editing_footprint_id: Optional[str] = None
 
         # Spatial query overlay item (Feature D)
@@ -1044,6 +1052,7 @@ class MapGraphicsView(QGraphicsView):
 
             logger.info(f"Loaded map: {image_path}")
             self._schedule_label_layout()
+            self._layout_footprint_labels()
             self._update_scale_bar_overlay()
             return True
 
@@ -1068,6 +1077,7 @@ class MapGraphicsView(QGraphicsView):
         ):
             self._scale_bar_overlay.reposition(self.viewport().size())
         self._schedule_label_layout()
+        self._layout_footprint_labels()
 
     def sizeHint(self) -> QSize:
         """Return a stable preferred size.
@@ -1081,6 +1091,7 @@ class MapGraphicsView(QGraphicsView):
         """Fits the map to the current view size."""
         if self.pixmap_item:
             self.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
+            self._layout_footprint_labels()
 
     def ensure_software_rendering(self) -> None:
         """Switch the viewport to software rendering if not already set.
@@ -1553,6 +1564,34 @@ class MapGraphicsView(QGraphicsView):
         """Return ``True`` when a footprint is being interactively edited."""
         return self._editing_footprint_id is not None
 
+    @property
+    def footprints_visible(self) -> bool:
+        """Return whether footprint overlays are currently visible."""
+        return self._footprints_visible
+
+    def set_footprints_visible(self, visible: bool) -> None:
+        """Show or hide all footprint overlays.
+
+        Hidden footprints are made non-interactive by disabling their
+        scene items.
+
+        Args:
+            visible: ``True`` to show footprints, ``False`` to hide.
+
+        """
+        visible = bool(visible)
+        self._footprints_visible = visible
+
+        if not visible and self.is_editing_footprint:
+            self.cancel_footprint_edit()
+
+        for item in self._footprint_items.values():
+            item.setVisible(visible)
+            item.setEnabled(visible)
+
+        if visible:
+            self._layout_footprint_labels()
+
     def set_footprints(self, footprint_data: list) -> None:
         """Replace all footprint overlays.
 
@@ -1580,10 +1619,16 @@ class MapGraphicsView(QGraphicsView):
                 registration=data["registration"],
                 image_w=iw,
                 image_h=ih,
+                image_path=data.get("image_path", ""),
             )
             item.detail_map_clicked.connect(self.detail_map_clicked)
+            item.registration_changed.connect(self._on_footprint_registration_changed)
+            item.setVisible(self._footprints_visible)
+            item.setEnabled(self._footprints_visible)
             self.scene.addItem(item)
             self._footprint_items[data["id"]] = item
+
+        self._layout_footprint_labels()
 
     def clear_footprints(self) -> None:
         """Remove all footprint overlay items from the scene."""
@@ -1592,6 +1637,75 @@ class MapGraphicsView(QGraphicsView):
         self._footprint_items.clear()
         self._editing_footprint_id = None
 
+    def _on_footprint_registration_changed(self, _registration: dict) -> None:
+        """Relayout labels while a footprint registration is being edited."""
+        if hasattr(self, "_footprint_label_debounce_timer"):
+            self._footprint_label_debounce_timer.start()
+
+    def _layout_footprint_labels(self) -> None:
+        """Layout footprint labels below footprints without overlaps.
+
+        Labels are stacked downward when collisions occur, and hidden if
+        no collision-free slot remains within the map bounds.
+        """
+        if not self.pixmap_item:
+            return
+
+        visible_items = [
+            item
+            for item in self._footprint_items.values()
+            if item.isVisible() and item.isEnabled()
+        ]
+        if not visible_items:
+            return
+
+        zoom_scale = max(0.05, float(self.transform().m11()) or 1.0)
+        map_rect = QRectF(self.pixmap_item.boundingRect())
+        item_bounds = {item: item.footprint_bounds_rect() for item in visible_items}
+        footprint_rects = list(item_bounds.values())
+
+        occupied_label_rects: list[QRectF] = []
+        ordered_items = sorted(
+            visible_items,
+            key=lambda it: (item_bounds[it].bottom(), item_bounds[it].left()),
+        )
+
+        for item in ordered_items:
+            candidate = item.preferred_label_rect(zoom_scale)
+            if candidate.isNull():
+                item.set_label_layout(None, zoom_scale)
+                continue
+
+            max_left = map_rect.right() - candidate.width() - 2.0
+            clamped_left = max(map_rect.left() + 2.0, min(candidate.left(), max_left))
+            candidate.moveLeft(clamped_left)
+
+            step = max(6.0, candidate.height() + 2.0)
+            placed_rect: Optional[QRectF] = None
+            for _ in range(80):
+                overlaps_label = any(
+                    candidate.intersects(r.adjusted(-2.0, -1.0, 2.0, 1.0))
+                    for r in occupied_label_rects
+                )
+                overlaps_footprint = any(
+                    candidate.intersects(r.adjusted(-1.0, -1.0, 1.0, 2.0))
+                    for r in footprint_rects
+                )
+                if not overlaps_label and not overlaps_footprint:
+                    placed_rect = QRectF(candidate)
+                    break
+
+                candidate.translate(0.0, step)
+                if candidate.bottom() > map_rect.bottom() - 2.0:
+                    break
+
+            if placed_rect is None:
+                item.set_label_layout(None, zoom_scale)
+                continue
+
+            item.set_label_layout(placed_rect, zoom_scale)
+            occupied_label_rects.append(placed_rect)
+
     def start_footprint_edit(self, detail_map_id: str) -> None:
         """Enter interactive edit mode for a footprint.
 
@@ -1599,6 +1713,8 @@ class MapGraphicsView(QGraphicsView):
             detail_map_id: ID of the detail map whose footprint to edit.
 
         """
+        if not self._footprints_visible:
+            return
         item = self._footprint_items.get(detail_map_id)
         if item is None:
             return
@@ -2090,6 +2206,7 @@ class MapGraphicsView(QGraphicsView):
         self._trajectory.update_label_scales()
         self._apply_scale_dependent_visibility()
         self._schedule_label_layout()
+        self._layout_footprint_labels()
 
         # Keep the raster brush cursor overlay sized correctly after zoom
         if self._raster_edit_tool.is_active:
