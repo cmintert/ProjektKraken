@@ -723,6 +723,8 @@ class MapWidget(
         if self._pinned_marker_id:
             self._cancel_clock_mode()  # already calls _update_mode_indicator internally
             return
+        elif self.view.is_editing_footprint:
+            self.view.cancel_footprint_edit()
         elif self.view.is_drawing:
             self.view.cancel_drawing()
         elif self.view.is_editing_vertices:
@@ -1129,6 +1131,26 @@ class MapWidget(
             # Show Finish Sketch button
             self.btn_finish_sketch.show()
             self._update_finish_sketch_position()
+
+        elif self.view.is_editing_footprint:
+            # Footprint Edit Mode
+            self.mode_indicator.setText("🟤 EDITING FOOTPRINT")
+            self._apply_mode_indicator_style("drawing")
+
+            # Overlay Banner
+            banner_text = (
+                "📌 <b>FOOTPRINT EDIT</b><br/>"
+                "Drag body to move · Drag corner to scale · "
+                "Drag ○ to rotate<br/>"
+                "<small>[←→↑↓ nudge] [[ ]] rotate] "
+                "[Enter to Confirm] [Esc to Cancel]</small>"
+            )
+            self.overlay_banner.setText(banner_text)
+            self.overlay_banner.show()
+            self._update_overlay_position()
+            self.btn_finish_sketch.hide()
+
+            self.view.setCursor(Qt.CursorShape.SizeAllCursor)
 
         else:
             # Normal Mode

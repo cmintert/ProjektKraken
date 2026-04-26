@@ -97,12 +97,11 @@ class MapNestingMixin:
 
     @Slot()
     def _on_edit_footprint_clicked(self) -> None:
-        """Emit ``edit_footprint_requested`` for the active detail map.
+        """Enter canvas footprint-edit mode for the active detail map.
 
-        Phase 1 is a stub — the canvas-edit handles ship in Phase 3.
-        For Phase 1 the action only appears when the active map is a
-        detail map, and emitting the signal lets a Phase-3 handler
-        attach without further menu changes.
+        Requires the detail map's footprint to already be rendered on
+        the parent map's canvas (i.e. the parent map is currently
+        loaded).  If the footprint item is not present, does nothing.
 
         """
         map_id = self.get_selected_map_id()
@@ -116,6 +115,13 @@ class MapNestingMixin:
         role = (active_map.attributes or {}).get("map_role")
         if role != MAP_ROLE_DETAIL:
             return
+        view = getattr(self, "view", None)
+        if view is None:
+            return
+        if map_id not in view._footprint_items:
+            return
+        view.start_footprint_edit(map_id)
+        self._update_mode_indicator()
         self.edit_footprint_requested.emit(map_id)
 
     # ------------------------------------------------------------------

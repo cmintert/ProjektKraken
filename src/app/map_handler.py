@@ -18,7 +18,11 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Set
 from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt, QTimer, Signal, Slot
 from PySide6.QtWidgets import QMessageBox
 
-from src.app.constants import TEMPORAL_SNAPSHOT_CACHE_MAX
+from src.app.constants import (
+    MAP_ROLE_DETAIL,
+    MAP_ROLE_MASTER,
+    TEMPORAL_SNAPSHOT_CACHE_MAX,
+)
 from src.commands.map_commands import (
     CreateMapCommand,
     CreateMarkerCommand,
@@ -37,6 +41,7 @@ from src.commands.map_commands import (
 )
 from src.core.logging_config import get_logger
 from src.core.map import MapLayerNode
+from src.services.repositories.map_repository import MapRepository
 
 if TYPE_CHECKING:
     from src.gui.widgets.map_widget import MapWidget
@@ -206,6 +211,9 @@ class MapHandler(QObject):
                 Qt.ConnectionType.QueuedConnection,
                 Q_ARG(str, map_id),
             )
+
+            # Load footprint overlays for detail-map children.
+            self._load_footprints_for_map(selected_map, maps)
 
     @Slot(str)
     def reload_markers(self, map_id: str) -> None:
@@ -829,6 +837,73 @@ class MapHandler(QObject):
         self.command_requested.emit(
             RegisterDetailMapCommand(detail_map_id, parent_map_id, registration)
         )
+
+    @Slot(str)
+    def on_detail_map_clicked(self, detail_map_id: str) -> None:
+        """Navigate to a detail map when its footprint is clicked.
+
+        Args:
+            detail_map_id: ID of the detail map to switch to.
+
+        """
+        if not detail_map_id:
+            return
+        self._map_widget.select_map(detail_map_id)
+
+    @Slot(str, str, dict)
+    def on_footprint_edit_confirmed(
+        self, detail_map_id: str, parent_map_id: str, registration: dict
+    ) -> None:
+        """Dispatch a :class:`RegisterDetailMapCommand` after canvas edit.
+
+        Called when the user presses Enter to confirm an interactive
+        footprint placement.
+
+        Args:
+            detail_map_id: ID of the detail map whose footprint was edited.
+            parent_map_id: ID of the parent map.
+            registration: Updated aspect-locked-affine registration.
+
+        """
+        self.on_register_detail_map_requested(detail_map_id, parent_map_id, registration)
+
+    def _load_footprints_for_map(self, current_map: Any, all_maps: list) -> None:
+        """Load footprint overlays for the children of ``current_map``.
+
+        Only maps that have the ``master`` or ``detail`` role can have
+        children, so for ordinary maps this is a fast no-op.
+
+        Args:
+            current_map: The ``Map`` object currently loaded in the view.
+            all_maps: All maps in the current world.
+
+        """
+        role = (current_map.attributes or {}).get("map_role")
+        if role not in (MAP_ROLE_MASTER, MAP_ROLE_DETAIL):
+            self._map_widget.view.clear_footprints()
+            return
+
+        children = MapRepository.get_children_of(current_map.id, all_maps)
+        if not children:
+            self._map_widget.view.clear_footprints()
+            return
+
+        footprint_data = []
+        for child in children:
+            attrs = child.attributes or {}
+            registration = attrs.get("registration")
+            if registration is None:
+                continue
+            footprint_data.append(
+                {
+                    "id": child.id,
+                    "name": child.name,
+                    "parent_map_id": current_map.id,
+                    "registration": registration,
+                }
+            )
+
+        self._map_widget.view.set_footprints(footprint_data)
 
     # ------------------------------------------------------------------
     # Layer operations (routed through the command stack)

@@ -77,6 +77,7 @@ from src.app.constants import (
 )
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.map.coordinate_system import MapCoordinateSystem
+from src.gui.widgets.map.detail_map_footprint_item import DetailMapFootprintItem
 from src.gui.widgets.map.drawing_tool import DrawingTool
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.interaction_handler import InteractionHandler
@@ -576,6 +577,14 @@ class MapGraphicsView(QGraphicsView):
     # -- Calibration --
     calibration_completed = Signal(float)
 
+    # -- Footprint overlay signals --
+    detail_map_clicked = Signal(str)
+    """Emitted when the user clicks a detail-map footprint in normal mode."""
+    footprint_edit_confirmed = Signal(str, str, dict)
+    """Emitted when the user confirms a footprint edit (detail_id, parent_id, reg)."""
+    footprint_edit_cancelled = Signal()
+    """Emitted when the user cancels a footprint edit."""
+
     # -- Drawing mode signals --
     drawing_finished = Signal(str, list)
     drawing_cancelled = Signal()
@@ -719,6 +728,10 @@ class MapGraphicsView(QGraphicsView):
 
         # Raster overlay items (node_id → RasterLayerItem)
         self._raster_items: dict[str, Any] = {}
+
+        # Footprint overlay items (detail_map_id → DetailMapFootprintItem)
+        self._footprint_items: dict[str, DetailMapFootprintItem] = {}
+        self._editing_footprint_id: Optional[str] = None
 
         # Spatial query overlay item (Feature D)
         self._query_overlay_item: Optional[QGraphicsPixmapItem] = None
@@ -1526,7 +1539,97 @@ class MapGraphicsView(QGraphicsView):
         raster_item = self._raster_items.get(node_id)
         if raster_item is not None:
             return raster_item
+        footprint_item = self._footprint_items.get(node_id)
+        if footprint_item is not None:
+            return footprint_item
         return self._marker_manager.find_item(node_id)
+
+    # ------------------------------------------------------------------
+    # Footprint overlay management
+    # ------------------------------------------------------------------
+
+    @property
+    def is_editing_footprint(self) -> bool:
+        """Return ``True`` when a footprint is being interactively edited."""
+        return self._editing_footprint_id is not None
+
+    def set_footprints(self, footprint_data: list) -> None:
+        """Replace all footprint overlays.
+
+        Clears any existing footprint items and creates new ones from
+        ``footprint_data``.  Does nothing if no map image is loaded.
+
+        Args:
+            footprint_data: List of dicts, each with keys:
+                ``id`` (str), ``name`` (str), ``parent_map_id`` (str),
+                ``registration`` (dict).
+
+        """
+        self.clear_footprints()
+        if not self.pixmap_item:
+            return
+        iw = self.pixmap_item.boundingRect().width()
+        ih = self.pixmap_item.boundingRect().height()
+        if iw <= 0 or ih <= 0:
+            return
+        for data in footprint_data:
+            item = DetailMapFootprintItem(
+                detail_map_id=data["id"],
+                name=data["name"],
+                parent_map_id=data["parent_map_id"],
+                registration=data["registration"],
+                image_w=iw,
+                image_h=ih,
+            )
+            item.detail_map_clicked.connect(self.detail_map_clicked)
+            self.scene.addItem(item)
+            self._footprint_items[data["id"]] = item
+
+    def clear_footprints(self) -> None:
+        """Remove all footprint overlay items from the scene."""
+        for item in list(self._footprint_items.values()):
+            self.scene.removeItem(item)
+        self._footprint_items.clear()
+        self._editing_footprint_id = None
+
+    def start_footprint_edit(self, detail_map_id: str) -> None:
+        """Enter interactive edit mode for a footprint.
+
+        Args:
+            detail_map_id: ID of the detail map whose footprint to edit.
+
+        """
+        item = self._footprint_items.get(detail_map_id)
+        if item is None:
+            return
+        self._editing_footprint_id = detail_map_id
+        item.set_edit_mode(True)
+
+    def finish_footprint_edit(self) -> None:
+        """Confirm the current footprint edit and emit the result signal."""
+        fid = self._editing_footprint_id
+        if fid is None:
+            return
+        item = self._footprint_items.get(fid)
+        self._editing_footprint_id = None
+        if item is None:
+            return
+        item.set_edit_mode(False)
+        self.footprint_edit_confirmed.emit(
+            fid, item.parent_map_id, item.current_registration()
+        )
+
+    def cancel_footprint_edit(self) -> None:
+        """Cancel the current footprint edit and revert to the saved registration."""
+        fid = self._editing_footprint_id
+        if fid is None:
+            return
+        item = self._footprint_items.get(fid)
+        self._editing_footprint_id = None
+        if item is None:
+            return
+        item.cancel_edit()
+        self.footprint_edit_cancelled.emit()
 
     # ------------------------------------------------------------------
     # Hierarchical Layer System integration
@@ -1832,6 +1935,11 @@ class MapGraphicsView(QGraphicsView):
                 map_widget.keyPressEvent(event)
                 return
 
+        # Footprint edit mode — consume keys before general handlers.
+        if self.is_editing_footprint:
+            if self._handle_footprint_edit_key(event, map_widget):
+                return
+
         if event.key() == Qt.Key.Key_Escape:
             if self._raster_edit_tool.handle_key_escape():
                 return
@@ -1873,6 +1981,71 @@ class MapGraphicsView(QGraphicsView):
             event.accept()
             return
         super().keyReleaseEvent(event)
+
+    def _handle_footprint_edit_key(
+        self, event: "QKeyEvent", map_widget: "Optional[QWidget]"
+    ) -> bool:
+        """Process a key event while footprint edit mode is active.
+
+        Returns ``True`` if the event was handled (and ``event.accept()``
+        was called), ``False`` to let the caller fall through to the
+        normal key handlers.
+
+        Args:
+            event: The key event to process.
+            map_widget: The owning MapWidget for mode-indicator updates.
+
+        Returns:
+            bool: ``True`` if consumed, ``False`` otherwise.
+
+        """
+        key = event.key()
+        if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            self.finish_footprint_edit()
+            if map_widget is not None:
+                map_widget._update_mode_indicator()
+            event.accept()
+            return True
+        if key == Qt.Key.Key_Escape:
+            self.cancel_footprint_edit()
+            if map_widget is not None:
+                map_widget._update_mode_indicator()
+            event.accept()
+            return True
+        item = self._footprint_items.get(self._editing_footprint_id or "")
+        if item is None:
+            return False
+        iw = (
+            self.pixmap_item.boundingRect().width()
+            if self.pixmap_item
+            else 1000.0
+        )
+        ih = (
+            self.pixmap_item.boundingRect().height()
+            if self.pixmap_item
+            else 1000.0
+        )
+        shift = bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)
+        step = 10.0 if shift else 1.0
+        nudge_map = {
+            Qt.Key.Key_Left: (-step / iw, 0.0),
+            Qt.Key.Key_Right: (step / iw, 0.0),
+            Qt.Key.Key_Up: (0.0, -step / ih),
+            Qt.Key.Key_Down: (0.0, step / ih),
+        }
+        if key in nudge_map:
+            item.nudge(*nudge_map[key])
+            event.accept()
+            return True
+        if key == Qt.Key.Key_BracketLeft:
+            item.rotate(-5.0)
+            event.accept()
+            return True
+        if key == Qt.Key.Key_BracketRight:
+            item.rotate(5.0)
+            event.accept()
+            return True
+        return False
 
     def _find_map_widget(self) -> "Optional[QWidget]":
         """Walks up the parent chain to find the owning MapWidget.

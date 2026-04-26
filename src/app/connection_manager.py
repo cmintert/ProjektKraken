@@ -612,6 +612,18 @@ class ConnectionManager:
                     map_handler.on_register_detail_map_requested,
                     "MapWidget",
                 ),
+                (
+                    map_widget.view,
+                    "footprint_edit_confirmed",
+                    map_handler.on_footprint_edit_confirmed,
+                    "MapGraphicsView",
+                ),
+                (
+                    map_widget.view,
+                    "detail_map_clicked",
+                    map_handler.on_detail_map_clicked,
+                    "MapGraphicsView",
+                ),
                 (map_widget, "marker_created", map_handler.create_marker, "MapWidget"),
                 (
                     map_widget,
