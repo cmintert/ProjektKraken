@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-04-21  
-**Commit:** 0.17.0
+**Last Updated:** 2026-04-27  
+**Commit:** 0.18.0
 ---
 
 # Changelog
@@ -10,6 +10,30 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Added
+
+- *(2026-04-25)* **Map / Nesting**: Phase 1 — data foundation for a master/detail map hierarchy: `MAP_ROLE_MASTER` / `MAP_ROLE_DETAIL` attributes, `SetMapRoleCommand`, `RegisterDetailMapCommand`, and `RemoveDetailMapCommand`; all metadata stored in `Map.attributes` with no schema migration required.
+- *(2026-04-25)* **Map / Nesting**: Phase 2 — `MapNestingService` pure-stateless transform & validation service: six-mode registration validator, `detail_to_parent` / `parent_to_detail` affine transforms (Qt y-down convention), and cycle-safe `iter_ancestors` walk.
+- *(2026-04-26)* **Map / Nesting**: Phase 3 — `DetailMapFootprintItem` QGraphicsObject: translucent fill with accent-outline polygon overlay on the parent canvas, 4-corner drag-to-scale interactive edit mode, `detail_map_clicked` and `registration_changed` signals.
+- *(2026-04-26)* **Map / Nesting**: Phase 4+5 — breadcrumb navigation bar (`set_breadcrumb`, `btn_parent` ↑ button) in `MapWidget`; AI-aware spatial advisory in `SpatialContextBuilder` that resolves nesting context (parent/sibling relationships) when a `nesting_service` is provided.
+- *(2026-04-26)* **Map / Nesting**: Phase 6 — thumbnail previews (≤ 512 px, fill-with-crop scaling) rendered inside footprint polygons; footprint visibility toggle in the map overflow menu; smart label layout engine with greedy downward-scan de-overlap, bounds clamping, and zoom-aware scaling.
+- *(2026-04-22)* **GUI / Text**: `LanguageToolWorker` async spell and grammar checker via the LanguageTool API; `LTMatch` dataclass for match representation; debounced checking with right-click suggestion menu integrated into `WikiTextEdit`; `SpellCheckSettingsDialog` for user configuration of the LanguageTool endpoint.
+- *(2026-04-24)* **Raster**: Value metadata support for raster layers — `raster_image_analysis` now extracts display min/max/unit from GeoTIFF GDAL_METADATA and pixel ranges; `RasterLayerDialog` shows and allows editing of inferred value ranges for continuous layers; `CreateRasterLayerCommand` persists the metadata.
+- *(2026-04-21)* **Raster**: Added brush opacity slider to the raster toolbar; opacity is applied after the cached kernel so both hard and feathered brushes share the same blend model; added `circle-half` Phosphor icon.
+
+### Fixed
+
+- *(2026-04-27)* **Map / UX**: Moved breadcrumb navigation to its own row below the main toolbar to prevent label overflow on narrower windows.
+- *(2026-04-22)* **Map / UX**: Close vertex editing when a path layer is hidden; previously left dangling edit handles visible on the canvas.
+
+### Changed
+
+- *(2026-04-25)* **LLM**: Active-map spatial context (map name, bounds, visible markers, and registered detail maps) is now injected into entity/event generation prompts when a map is open in the editor.
+
+### Performance
+
+- *(2026-04-21)* **Raster / Import**: 3–30× faster large raster import via pixel subsampling before k-means colour analysis (capped at 50 K pixels; previously all pixels); a 4K image drops from ~30 s and ~3 GB peak memory to under 0.1 s and ~10 MB.
 
 ## [0.17.0]
 
