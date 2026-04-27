@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-04-27
-### Fixed
-- fix(map): move breadcrumb to its own row below the toolbar
+### Internal
+- chore(release): bump version to 0.18.0
 
 
 *This changelog was automatically generated.*
