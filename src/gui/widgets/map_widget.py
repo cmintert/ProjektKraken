@@ -257,24 +257,6 @@ class MapWidget(
         self.toolbar.setStyleSheet(StyleHelper.get_toolbar_spacing_style())
         layout.addWidget(self.toolbar)
 
-        # Breadcrumb — shows the ancestor chain for master/detail maps.
-        # Hidden for plain maps.  Each ancestor segment is a hyperlink.
-        self.breadcrumb_label = QLabel()
-        self.breadcrumb_label.setTextFormat(Qt.TextFormat.RichText)
-        self.breadcrumb_label.setOpenExternalLinks(False)
-        self.breadcrumb_label.linkActivated.connect(self.select_map)
-        self.breadcrumb_label.setToolTip("Nesting path — click a segment to navigate")
-        self.breadcrumb_label.hide()
-        self.toolbar.addWidget(self.breadcrumb_label)
-
-        # Back-to-parent button — visible only when a detail map is active.
-        self.btn_parent = QPushButton("↑")
-        self.btn_parent.setFixedWidth(24)
-        self.btn_parent.setToolTip("Navigate to parent map")
-        self.btn_parent.setStyleSheet(StyleHelper.get_tool_button_style())
-        self.btn_parent.clicked.connect(self._on_navigate_to_parent)
-        self.btn_parent.hide()
-        self.toolbar.addWidget(self.btn_parent)
         self._breadcrumb_parent_id: Optional[str] = None
 
         # Map Selector
@@ -380,6 +362,38 @@ class MapWidget(
         self.toolbar.addWidget(self.mode_indicator)
 
         # Add View (after toolbar) — wrapped in a splitter with the layer panel
+        # Breadcrumb row — shows the ancestor chain for master/detail maps.
+        # Hidden for plain maps.  Lives on its own row to avoid being
+        # clipped by the crowded toolbar above.
+        breadcrumb_row = QWidget(self)
+        breadcrumb_layout = QHBoxLayout(breadcrumb_row)
+        breadcrumb_layout.setContentsMargins(8, 2, 8, 2)
+        breadcrumb_layout.setSpacing(6)
+
+        self.btn_parent = QPushButton("↑")
+        self.btn_parent.setFixedWidth(24)
+        self.btn_parent.setToolTip("Navigate to parent map")
+        self.btn_parent.setStyleSheet(StyleHelper.get_tool_button_style())
+        self.btn_parent.clicked.connect(self._on_navigate_to_parent)
+        self.btn_parent.hide()
+        breadcrumb_layout.addWidget(self.btn_parent)
+
+        self.breadcrumb_label = QLabel()
+        self.breadcrumb_label.setTextFormat(Qt.TextFormat.RichText)
+        self.breadcrumb_label.setOpenExternalLinks(False)
+        self.breadcrumb_label.linkActivated.connect(self.select_map)
+        self.breadcrumb_label.setToolTip("Nesting path — click a segment to navigate")
+        self.breadcrumb_label.hide()
+        breadcrumb_layout.addWidget(self.breadcrumb_label)
+        breadcrumb_layout.addStretch(1)
+
+        breadcrumb_row.setSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
+        )
+        self._breadcrumb_row = breadcrumb_row
+        self._breadcrumb_row.hide()
+        layout.addWidget(self._breadcrumb_row)
+
         self._splitter = QSplitter(Qt.Orientation.Horizontal, self)
 
         self._splitter.addWidget(self.view)
@@ -843,6 +857,7 @@ class MapWidget(
         if len(chain) <= 1:
             self.breadcrumb_label.hide()
             self.btn_parent.hide()
+            self._breadcrumb_row.hide()
             self._breadcrumb_parent_id = None
             return
 
@@ -871,6 +886,7 @@ class MapWidget(
         parent_id = chain[-2][0] if len(chain) >= 2 else None
         self._breadcrumb_parent_id = parent_id
         self.btn_parent.setVisible(parent_id is not None)
+        self._breadcrumb_row.show()
 
     @Slot()
     def _on_navigate_to_parent(self) -> None:
