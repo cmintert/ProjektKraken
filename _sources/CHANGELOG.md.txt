@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-04-27
-### Internal
-- chore(release): bump version to 0.18.0
+## [Development] - 2026-04-28
+### Added
+- feat(import): add support for importing pasted JSON data with dialog
 
 
 *This changelog was automatically generated.*
