@@ -267,6 +267,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">PySide6.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">QObject</span><span class="p">,</span> <span class="n">Signal</span><span class="p">,</span> <span class="n">Slot</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.app.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">SEMANTIC_COMPLETION_ENABLE_EMBEDDING</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.commands.base_command</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseCommand</span><span class="p">,</span> <span class="n">CommandResult</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.entities</span><span class="w"> </span><span class="kn">import</span> <span class="n">Entity</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">src.core.events</span><span class="w"> </span><span class="kn">import</span> <span class="n">Event</span>
@@ -1399,6 +1400,8 @@
 <span class="sd">            min_score: Minimum cosine similarity to include.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">SEMANTIC_COMPLETION_ENABLE_EMBEDDING</span><span class="p">:</span>
+            <span class="k">return</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
             <span class="k">return</span>
         <span class="k">try</span><span class="p">:</span>
