@@ -500,6 +500,13 @@ class UIManager:
                 self.main_window.import_coordinator.import_item_requested
             )
 
+        # Import Pasted JSON
+        paste_json_action = file_menu.addAction("Import Pasted JSON...")
+        if hasattr(self.main_window, "import_coordinator"):
+            paste_json_action.triggered.connect(
+                self.main_window.import_coordinator.import_pasted_json_requested
+            )
+
         file_menu.addSeparator()
 
         # Export submenu

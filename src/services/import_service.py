@@ -7,6 +7,7 @@ Supports batch operations and single-item imports with recursive relation resolu
 import json
 import logging
 import uuid
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
@@ -141,6 +142,82 @@ class ImportService:
                 return 0.0, 0.0, False
 
         return 0.0, 0.0, False
+
+    @staticmethod
+    def _normalize_tag_values(raw_tags: Any) -> list[str]:
+        """Normalize unknown tag payloads into a de-duplicated string list."""
+        if raw_tags is None:
+            return []
+
+        if isinstance(raw_tags, str):
+            candidates: list[Any] = [raw_tags]
+        elif isinstance(raw_tags, Iterable):
+            candidates = list(raw_tags)
+        else:
+            candidates = [raw_tags]
+
+        normalized: list[str] = []
+        seen: set[str] = set()
+        for value in candidates:
+            if not isinstance(value, str):
+                continue
+            tag = value.strip()
+            if not tag or tag in seen:
+                continue
+            seen.add(tag)
+            normalized.append(tag)
+        return normalized
+
+    def _extract_import_tags(self, data: Dict[str, Any]) -> tuple[list[str], bool]:
+        """Extract tags from accepted import keys and return presence metadata."""
+        attrs = data.get("attributes")
+        attrs_dict = attrs if isinstance(attrs, dict) else {}
+        has_tag_field = (
+            "tags" in data
+            or "_tags" in data
+            or "_tags" in attrs_dict
+        )
+
+        merged: list[str] = []
+        seen: set[str] = set()
+        for raw in (data.get("tags"), data.get("_tags"), attrs_dict.get("_tags")):
+            for tag in self._normalize_tag_values(raw):
+                if tag in seen:
+                    continue
+                seen.add(tag)
+                merged.append(tag)
+
+        return merged, has_tag_field
+
+    @staticmethod
+    def _ensure_attribute_tags(data: Dict[str, Any], tags: list[str]) -> None:
+        """Mirror imported tags into attributes._tags for model compatibility."""
+        attrs = data.get("attributes")
+        if not isinstance(attrs, dict):
+            attrs = {}
+            data["attributes"] = attrs
+        attrs["_tags"] = list(tags)
+
+    def _sync_object_tags(
+        self,
+        object_type: str,
+        object_id: str,
+        desired_tags: set[str],
+    ) -> None:
+        """Synchronize normalized tag tables with the desired tag set."""
+        if object_type == "entity":
+            current_tags = {t["name"] for t in self._db.get_tags_for_entity(object_id)}
+            for tag_name in current_tags - desired_tags:
+                self._db.remove_tag_from_entity(object_id, tag_name)
+            for tag_name in desired_tags - current_tags:
+                self._db.assign_tag_to_entity(object_id, tag_name)
+            return
+
+        current_tags = {t["name"] for t in self._db.get_tags_for_event(object_id)}
+        for tag_name in current_tags - desired_tags:
+            self._db.remove_tag_from_event(object_id, tag_name)
+        for tag_name in desired_tags - current_tags:
+            self._db.assign_tag_to_event(object_id, tag_name)
 
     @staticmethod
     def parse_only(json_data: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
@@ -432,6 +509,10 @@ class ImportService:
         if not name:
             raise ValueError("Entity missing 'name'")
 
+        imported_tags, has_tag_field = self._extract_import_tags(data)
+        if has_tag_field:
+            self._ensure_attribute_tags(data, imported_tags)
+
         # 1. Conflict Resolution / ID Determination
         entity_id = None
         action = ImportAction.CREATE
@@ -541,8 +622,16 @@ class ImportService:
             # Add metadata
             self._update_import_metadata(new_entity, import_source_entry)
 
+            if has_tag_field:
+                new_entity.tags = list(imported_tags)
+
             if not dry_run:
                 self._db.insert_entity(new_entity)
+                self._sync_object_tags(
+                    "entity",
+                    entity_id,
+                    set(imported_tags),
+                )
 
         elif action == ImportAction.OVERWRITE:
             # Replace fields, preserve ID/Created
@@ -557,18 +646,34 @@ class ImportService:
                     modified_at=logging.time.time(),
                 )
                 self._update_import_metadata(overwritten, import_source_entry)
+                overwritten.tags = list(imported_tags)
 
                 if not dry_run:
                     self._db.insert_entity(overwritten)  # Upsert
+                    self._sync_object_tags(
+                        "entity",
+                        entity_id,
+                        set(imported_tags),
+                    )
 
         elif action == ImportAction.UPDATE:
             # Merge fields
             if existing_entity:
+                existing_tags_before_merge = set(existing_entity.tags)
                 merged = self._merge_entities(existing_entity, data)
+                if has_tag_field:
+                    merged_tags = existing_tags_before_merge | set(imported_tags)
+                    merged.tags = sorted(merged_tags)
                 self._update_import_metadata(merged, import_source_entry)
 
                 if not dry_run:
                     self._db.insert_entity(merged)
+                    if has_tag_field:
+                        self._sync_object_tags(
+                            "entity",
+                            entity_id,
+                            set(merged.tags),
+                        )
 
         # 3. Recording
         result.actions.append(
@@ -698,6 +803,10 @@ class ImportService:
         if not name:
             raise ValueError("Event missing 'name'")
 
+        imported_tags, has_tag_field = self._extract_import_tags(data)
+        if has_tag_field:
+            self._ensure_attribute_tags(data, imported_tags)
+
         # 1. Conflict Resolution / ID Determination
         event_id = None
         action = ImportAction.CREATE
@@ -805,10 +914,17 @@ class ImportService:
             new_event.attributes["_date_parsed"] = date_was_explicit
             if not date_was_explicit:
                 result.unparsed_date_count += 1
+            if has_tag_field:
+                new_event.tags = list(imported_tags)
             self._update_import_metadata(new_event, import_source_entry)
 
             if not dry_run:
                 self._db.insert_event(new_event)
+                self._sync_object_tags(
+                    "event",
+                    event_id,
+                    set(imported_tags),
+                )
 
         elif action == ImportAction.OVERWRITE:
             if existing_event:
@@ -829,13 +945,20 @@ class ImportService:
                 overwritten.attributes["_date_parsed"] = date_was_explicit
                 if not date_was_explicit:
                     result.unparsed_date_count += 1
+                overwritten.tags = list(imported_tags)
                 self._update_import_metadata(overwritten, import_source_entry)
 
                 if not dry_run:
                     self._db.insert_event(overwritten)
+                    self._sync_object_tags(
+                        "event",
+                        event_id,
+                        set(imported_tags),
+                    )
 
         elif action == ImportAction.UPDATE:
             if existing_event:
+                existing_tags_before_merge = set(existing_event.tags)
                 if "lore_date" in data:
                     lore_date_float, parsed_duration, date_was_explicit = self._parse_lore_date(
                         data["lore_date"], result
@@ -849,6 +972,9 @@ class ImportService:
                     date_was_explicit = None
                     data["lore_date"] = None
                 merged = self._merge_events(existing_event, data)
+                if has_tag_field:
+                    merged_tags = existing_tags_before_merge | set(imported_tags)
+                    merged.tags = sorted(merged_tags)
                 if date_was_explicit is not None:
                     merged.attributes["_date_parsed"] = date_was_explicit
                     if not date_was_explicit:
@@ -857,6 +983,12 @@ class ImportService:
 
                 if not dry_run:
                     self._db.insert_event(merged)
+                    if has_tag_field:
+                        self._sync_object_tags(
+                            "event",
+                            event_id,
+                            set(merged.tags),
+                        )
 
         # 3. Recording
         result.actions.append(

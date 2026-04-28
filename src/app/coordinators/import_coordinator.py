@@ -18,6 +18,7 @@ from PySide6.QtWidgets import QDialog, QFileDialog, QMessageBox, QProgressDialog
 from src.app.coordinators.base_coordinator import BaseCoordinator
 from src.gui.dialogs.database_manager_dialog import DatabaseManagerDialog
 from src.gui.dialogs.import_preview_dialog import ImportPreviewDialog
+from src.gui.dialogs.paste_json_import_dialog import PasteJsonImportDialog
 from src.services.import_service import ImportService
 
 if TYPE_CHECKING:
@@ -135,6 +136,54 @@ class ImportCoordinator(BaseCoordinator):
                 "2. Verify file is not corrupted\n"
                 "3. Check application logs for detailed error\n"
                 "4. Try exporting and re-importing a small test dataset",
+            )
+
+    @Slot()
+    def import_pasted_json_requested(self) -> None:
+        """Import JSON data entered directly in a text dialog."""
+        dialog = PasteJsonImportDialog(self.main_window)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        json_text = dialog.get_json_text().strip()
+        if not json_text:
+            return
+
+        try:
+            parsed_data = ImportService.parse_only(json_text)
+
+            preview = ImportPreviewDialog(self.main_window, parsed_data)
+            if preview.exec() != QDialog.DialogCode.Accepted:
+                return
+
+            import json
+
+            options = preview.get_options()
+            options_json = json.dumps(options)
+            parsed_json = json.dumps(parsed_data)
+
+            QMetaObject.invokeMethod(
+                self.main_window.worker,
+                "run_import",
+                Qt.ConnectionType.QueuedConnection,
+                Q_ARG(str, parsed_json),
+                Q_ARG(str, options_json),
+            )
+
+            self._show_import_progress()
+
+        except ValueError as e:
+            QMessageBox.critical(
+                self.main_window,
+                "Invalid JSON",
+                f"Failed to parse pasted JSON: {e}",
+            )
+        except Exception as e:
+            logger.exception("Pasted JSON import error")
+            QMessageBox.critical(
+                self.main_window,
+                "Import Error",
+                f"An unexpected error occurred during pasted JSON import: {e}",
             )
 
     def _import_markdown_batch(self, file_paths: list) -> None:

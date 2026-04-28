@@ -198,3 +198,159 @@ def test_import_markdown_uses_filename_fallback():
     entity_arg = mock_db.insert_entity.call_args[0][0]
     assert entity_arg.name == "MyFallbackTitle"
     assert entity_arg.description == "Just some description text."
+
+
+def test_import_batch_persists_entity_tags_to_normalized_tables():
+    """Entity tags should be persisted to normalized tag tables."""
+    from src.services.db_service import DatabaseService
+
+    db = DatabaseService(":memory:")
+    db.connect()
+    service = ImportService(db)
+
+    result = service.import_batch(
+        {
+            "entities": [
+                {
+                    "name": "Tagged Entity",
+                    "type": "character",
+                    "tags": ["hero", "party", "hero"],
+                }
+            ]
+        }
+    )
+
+    assert result.success
+    assert result.created_entities
+
+    entity_id = result.created_entities[0]
+    tag_rows = db.get_tags_for_entity(entity_id)
+    assert {row["name"] for row in tag_rows} == {"hero", "party"}
+
+    entity = db.get_entity(entity_id)
+    assert entity is not None
+    assert set(entity.tags) == {"hero", "party"}
+
+    db.close()
+
+
+def test_import_batch_persists_event_tags_to_normalized_tables():
+    """Event tags should be persisted from _tags import payloads."""
+    from src.services.db_service import DatabaseService
+
+    db = DatabaseService(":memory:")
+    db.connect()
+    service = ImportService(db)
+
+    result = service.import_batch(
+        {
+            "events": [
+                {
+                    "name": "Tagged Event",
+                    "lore_date": 1.0,
+                    "attributes": {"_tags": ["war", "history"]},
+                }
+            ]
+        }
+    )
+
+    assert result.success
+    assert result.created_events
+
+    event_id = result.created_events[0]
+    tag_rows = db.get_tags_for_event(event_id)
+    assert {row["name"] for row in tag_rows} == {"war", "history"}
+
+    event = db.get_event(event_id)
+    assert event is not None
+    assert set(event.tags) == {"war", "history"}
+
+    db.close()
+
+
+def test_import_batch_update_mode_merges_existing_tags():
+    """Update mode should merge imported tags with existing tags."""
+    from src.services.db_service import DatabaseService
+
+    db = DatabaseService(":memory:")
+    db.connect()
+    service = ImportService(db)
+
+    first = service.import_batch(
+        {
+            "entities": [
+                {"name": "Merge Target", "type": "character", "tags": ["old"]}
+            ]
+        }
+    )
+    assert first.success
+
+    second = service.import_batch(
+        {
+            "entities": [
+                {
+                    "name": "Merge Target",
+                    "type": "character",
+                    "_tags": ["new"],
+                }
+            ]
+        },
+        options={"mode": "update"},
+    )
+    assert second.success
+
+    entity_id = first.created_entities[0]
+    tag_rows = db.get_tags_for_entity(entity_id)
+    assert {row["name"] for row in tag_rows} == {"old", "new"}
+
+    entity = db.get_entity(entity_id)
+    assert entity is not None
+    assert set(entity.tags) == {"old", "new"}
+
+    db.close()
+
+
+def test_import_batch_overwrite_mode_syncs_tags():
+    """Overwrite mode should replace existing tags with imported tags."""
+    from src.services.db_service import DatabaseService
+
+    db = DatabaseService(":memory:")
+    db.connect()
+    service = ImportService(db)
+
+    first = service.import_batch(
+        {
+            "events": [
+                {
+                    "name": "Overwrite Target",
+                    "lore_date": 10.0,
+                    "tags": ["old", "remove"],
+                }
+            ]
+        }
+    )
+    assert first.success
+
+    second = service.import_batch(
+        {
+            "events": [
+                {
+                    "name": "Overwrite Target",
+                    "lore_date": 10.0,
+                    "tags": ["new"],
+                }
+            ]
+        },
+        options={"mode": "overwrite"},
+    )
+    assert second.success
+
+    event_id = first.created_events[0]
+    tag_rows = db.get_tags_for_event(event_id)
+    assert {row["name"] for row in tag_rows} == {"new"}
+
+    event = db.get_event(event_id)
+    assert event is not None
+    assert set(event.tags) == {"new"}
+
+    db.close()

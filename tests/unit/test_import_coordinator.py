@@ -209,3 +209,117 @@ class TestDatabaseManager:
         mock_dialog_class.return_value = mock_dialog
         coordinator.show_database_manager()
         mock_dialog.exec.assert_called_once()
+
+
+class TestPastedJsonImport:
+    """Tests for pasted JSON import workflow."""
+
+    @patch("src.app.coordinators.import_coordinator.PasteJsonImportDialog")
+    def test_import_pasted_json_cancelled(self, mock_paste_dialog, coordinator):
+        """Cancelling the paste dialog should not start import."""
+        from PySide6.QtWidgets import QDialog
+
+        dialog = MagicMock()
+        dialog.exec.return_value = QDialog.DialogCode.Rejected
+        mock_paste_dialog.return_value = dialog
+
+        coordinator.import_pasted_json_requested()
+        coordinator.main_window.worker.run_import.assert_not_called()
+
+    @patch("src.app.coordinators.import_coordinator.QMessageBox")
+    @patch("src.app.coordinators.import_coordinator.ImportService")
+    @patch("src.app.coordinators.import_coordinator.PasteJsonImportDialog")
+    def test_import_pasted_json_invalid_json(
+        self,
+        mock_paste_dialog,
+        mock_import_service,
+        mock_message_box,
+        coordinator,
+    ):
+        """Invalid pasted JSON should show an error."""
+        from PySide6.QtWidgets import QDialog
+
+        dialog = MagicMock()
+        dialog.exec.return_value = QDialog.DialogCode.Accepted
+        dialog.get_json_text.return_value = "not json"
+        mock_paste_dialog.return_value = dialog
+        mock_import_service.parse_only.side_effect = ValueError("bad json")
+
+        coordinator.import_pasted_json_requested()
+
+        mock_message_box.critical.assert_called_once()
+
+    @patch("src.app.coordinators.import_coordinator.QMetaObject")
+    @patch("src.app.coordinators.import_coordinator.ImportPreviewDialog")
+    @patch("src.app.coordinators.import_coordinator.ImportService")
+    @patch("src.app.coordinators.import_coordinator.PasteJsonImportDialog")
+    @patch(
+        "src.app.coordinators.import_coordinator.ImportCoordinator._show_import_progress"
+    )
+    def test_import_pasted_json_valid_dispatches_worker(
+        self,
+        mock_show_progress,
+        mock_paste_dialog,
+        mock_import_service,
+        mock_preview_dialog,
+        mock_qmetaobject,
+        coordinator,
+    ):
+        """Valid pasted JSON should follow preview and dispatch to worker."""
+        from PySide6.QtWidgets import QDialog
+
+        paste_dialog = MagicMock()
+        paste_dialog.exec.return_value = QDialog.DialogCode.Accepted
+        paste_dialog.get_json_text.return_value = "{}"
+        mock_paste_dialog.return_value = paste_dialog
+
+        parsed_data = {"entities": [{"name": "E1"}], "events": [], "relations": []}
+        mock_import_service.parse_only.return_value = parsed_data
+
+        preview = MagicMock()
+        preview.exec.return_value = QDialog.DialogCode.Accepted
+        preview.get_options.return_value = {
+            "source_name": "manual_import",
+            "mode": "update",
+            "dry_run": False,
+        }
+        mock_preview_dialog.return_value = preview
+
+        coordinator.import_pasted_json_requested()
+
+        mock_qmetaobject.invokeMethod.assert_called_once()
+        mock_show_progress.assert_called_once()
+
+    @patch("src.app.coordinators.import_coordinator.QMetaObject")
+    @patch("src.app.coordinators.import_coordinator.ImportPreviewDialog")
+    @patch("src.app.coordinators.import_coordinator.ImportService")
+    @patch("src.app.coordinators.import_coordinator.PasteJsonImportDialog")
+    def test_import_pasted_json_preview_rejected(
+        self,
+        mock_paste_dialog,
+        mock_import_service,
+        mock_preview_dialog,
+        mock_qmetaobject,
+        coordinator,
+    ):
+        """Rejecting the preview should not dispatch worker import."""
+        from PySide6.QtWidgets import QDialog
+
+        paste_dialog = MagicMock()
+        paste_dialog.exec.return_value = QDialog.DialogCode.Accepted
+        paste_dialog.get_json_text.return_value = "{}"
+        mock_paste_dialog.return_value = paste_dialog
+
+        mock_import_service.parse_only.return_value = {
+            "entities": [],
+            "events": [],
+            "relations": [],
+        }
+
+        preview = MagicMock()
+        preview.exec.return_value = QDialog.DialogCode.Rejected
+        mock_preview_dialog.return_value = preview
+
+        coordinator.import_pasted_json_requested()
+
+        mock_qmetaobject.invokeMethod.assert_not_called()
