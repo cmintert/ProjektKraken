@@ -19,6 +19,7 @@ from PySide6.QtCore import Q_ARG, QMetaObject, Qt, QTimer, Slot
 from PySide6.QtWidgets import QMessageBox
 
 from src.app.constants import (
+    SEMANTIC_COMPLETION_ENABLE_EMBEDDING,
     SEMANTIC_COMPLETION_DEBOUNCE_MS,
     SEMANTIC_COMPLETION_MIN_SCORE,
     SEMANTIC_COMPLETION_TOP_K,
@@ -503,11 +504,15 @@ class DataCoordinator(BaseCoordinator):
             prefix: The typed text after ``[[``.
 
         """
+        if not SEMANTIC_COMPLETION_ENABLE_EMBEDDING:
+            return
         self._pending_semantic_prefix = prefix
         self._semantic_debounce.start()
 
     def _fire_semantic_query(self) -> None:
         """Send the pending prefix to the worker (called by debounce timer)."""
+        if not SEMANTIC_COMPLETION_ENABLE_EMBEDDING:
+            return
         prefix = self._pending_semantic_prefix
         if not prefix:
             return

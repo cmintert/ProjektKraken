@@ -42,8 +42,11 @@ def editor_view(qapp):
 
 
 @pytest.fixture
-def worker():
+def worker(monkeypatch):
     """A DatabaseWorker with a mocked db_service."""
+    monkeypatch.setattr(
+        "src.services.worker.SEMANTIC_COMPLETION_ENABLE_EMBEDDING", True
+    )
     w = DatabaseWorker("test.db")
     w.db_service = MagicMock()
     w.db_service.get_connection.return_value = MagicMock()
@@ -300,11 +303,16 @@ class TestDataCoordinatorSemantic:
     """Tests for DataCoordinator.request_semantic_completions and handler."""
 
     @pytest.fixture
-    def coordinator(self, qapp):
+    def coordinator(self, qapp, monkeypatch):
         """A DataCoordinator with a QObject parent that has mocked attributes."""
         from PySide6.QtCore import QObject
 
         from src.app.coordinators.data_coordinator import DataCoordinator
+
+        monkeypatch.setattr(
+            "src.app.coordinators.data_coordinator.SEMANTIC_COMPLETION_ENABLE_EMBEDDING",
+            True,
+        )
 
         # BaseCoordinator needs a real QObject as parent
         mw = QObject()
@@ -354,3 +362,26 @@ class TestDataCoordinatorSemantic:
         coordinator.main_window.navigation_coordinator.selected_type = "event"
         coordinator.on_semantic_suggestions("Dra", [])
         coordinator.main_window.event_editor.merge_wiki_completions.assert_not_called()
+
+    def test_request_noop_when_embedding_disabled(self, qapp, monkeypatch):
+        """No semantic debounce/query is scheduled when embedding is disabled."""
+        from PySide6.QtCore import QObject
+
+        from src.app.coordinators.data_coordinator import DataCoordinator
+
+        monkeypatch.setattr(
+            "src.app.coordinators.data_coordinator.SEMANTIC_COMPLETION_ENABLE_EMBEDDING",
+            False,
+        )
+
+        mw = QObject()
+        mw.worker = MagicMock()
+        mw.navigation_coordinator = MagicMock()
+        mw.event_editor = MagicMock()
+        mw.entity_editor = MagicMock()
+        coordinator = DataCoordinator(mw)
+
+        coordinator.request_semantic_completions("Dra")
+
+        assert coordinator._pending_semantic_prefix == ""
+        assert not coordinator._semantic_debounce.isActive()

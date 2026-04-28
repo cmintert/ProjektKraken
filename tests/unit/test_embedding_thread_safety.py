@@ -80,3 +80,16 @@ class TestSentenceTransformersThreadSafety:
                 os.environ["OMP_NUM_THREADS"] = old_val
             else:
                 os.environ.pop("OMP_NUM_THREADS", None)
+
+    def test_sentence_transformer_forced_cpu_device(self):
+        """SentenceTransformer must be initialized with explicit CPU device."""
+        from src.services.search_service import SentenceTransformersProvider
+
+        with patch("sentence_transformers.SentenceTransformer") as mock_st:
+            mock_model = MagicMock()
+            mock_model.get_sentence_embedding_dimension.return_value = 384
+            mock_st.return_value = mock_model
+
+            SentenceTransformersProvider(model="test-model")
+
+            mock_st.assert_called_once_with("test-model", device="cpu")

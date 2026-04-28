@@ -474,7 +474,9 @@ class SentenceTransformersProvider(EmbeddingProvider):
             ) from e
 
         self.model_name = model or os.getenv("ST_MODEL", "all-MiniLM-L6-v2")
-        self.model = SentenceTransformer(self.model_name)
+        # Force CPU inference to avoid torch device conversion crashes on
+        # Windows when semantic queries execute from the worker QThread.
+        self.model = SentenceTransformer(self.model_name, device="cpu")
         self._dimension = self.model.get_sentence_embedding_dimension()
 
         logger.info(

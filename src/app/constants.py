@@ -3,6 +3,17 @@
 Stores default values for UI configuration and magic numbers.
 """
 
+import os
+import sys
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    """Parse a boolean environment variable with a fallback default."""
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
 # Window Configuration
 VERSION = "0.18.0"
 WINDOW_TITLE = f"Project Kraken - v{VERSION} (Beta)"
@@ -70,6 +81,10 @@ SEMANTIC_COMPLETION_MIN_SCORE = 0.85  # Minimum cosine similarity to surface a s
 SEMANTIC_COMPLETION_TOP_K = 5  # Max candidates fetched from the semantic index
 SEMANTIC_COMPLETION_DEBOUNCE_MS = 350  # Keystroke debounce before querying the worker
 SEMANTIC_COMPLETION_MIN_PREFIX_LEN = 3  # Minimum [[prefix length before triggering query
+SEMANTIC_COMPLETION_ENABLE_EMBEDDING = _env_bool(
+    "PK_SEMANTIC_COMPLETION_ENABLE_EMBEDDING",
+    default=sys.platform != "win32",
+)
 
 # UI Timing Constants
 # Delays for deferred initialization and UI updates

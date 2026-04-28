@@ -12,6 +12,7 @@ from typing import Any, List, Optional, Set, Tuple
 
 from PySide6.QtCore import QObject, Signal, Slot
 
+from src.app.constants import SEMANTIC_COMPLETION_ENABLE_EMBEDDING
 from src.commands.base_command import BaseCommand, CommandResult
 from src.core.entities import Entity
 from src.core.events import Event
@@ -1056,6 +1057,8 @@ class DatabaseWorker(QObject):
             min_score: Minimum cosine similarity to include.
 
         """
+        if not SEMANTIC_COMPLETION_ENABLE_EMBEDDING:
+            return
         if not self.db_service:
             return
         try:
