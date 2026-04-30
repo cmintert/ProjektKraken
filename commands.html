@@ -6,7 +6,7 @@
 <link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="next" title="core package" href="core.html"><link rel="prev" title="cli package" href="cli.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
-        <title>commands package - Project Kraken 0.18.5 documentation</title>
+        <title>commands package - Project Kraken 0.18.6 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -167,7 +167,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="index.html"><div class="brand">Project Kraken 0.18.5 documentation</div></a>
+      <a href="index.html"><div class="brand">Project Kraken 0.18.6 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -188,7 +188,7 @@
       
       <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
-  <span class="sidebar-brand-text">Project Kraken 0.18.5 documentation</span>
+  <span class="sidebar-brand-text">Project Kraken 0.18.6 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -1823,7 +1823,10 @@ relations.</p>
 - Resolves names to entities (case-insensitive, including aliases)
 - Creates ‘mentions’ relations with metadata (snippet, offsets, field)
 - Skips ambiguous matches (multiple entities with same name/alias)
-- Deduplicates by (target_id, start_offset)</p>
+- Deduplicates by (target_id, start_offset) — one relation per unique wikilink</p>
+<blockquote>
+<div><p>location; two links to the same target at different offsets are both recorded</p>
+</div></blockquote>
 <dl class="py method">
 <dt class="sig sig-object py" id="commands.wiki_commands.ProcessWikiLinksCommand.__init__">
 <span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_content</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'description'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/wiki_commands.html#ProcessWikiLinksCommand.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.wiki_commands.ProcessWikiLinksCommand.__init__" title="Link to this definition">¶</a></dt>
@@ -2186,7 +2189,7 @@ functionality. Commands encapsulate actions related to entities, events, and rel
       
     </aside>
   </div>
-</div><script src="_static/documentation_options.js?v=8f1aeff0"></script>
+</div><script src="_static/documentation_options.js?v=afab751b"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/scripts/furo.js?v=46bd48cc"></script>

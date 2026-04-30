@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-04-30
-### Internal
-- chore(release): bump version to 0.18.5 and update changelog
+### Fixed
+- fix(wiki): fix mention dedup key, add unique index, gate behind setting
 
 
 *This changelog was automatically generated.*
