@@ -6,6 +6,7 @@ Tests text building, vector operations, indexing, and querying.
 
 import json
 import sqlite3
+import subprocess
 from typing import List
 from unittest.mock import MagicMock, patch
 
@@ -18,6 +19,7 @@ from src.services.search_service import (
     EmbeddingProvider,
     SearchService,
     SentenceTransformersProvider,
+    SubprocessSentenceTransformersProvider,
     build_text_for_entity,
     build_text_for_event,
     create_provider,
@@ -720,7 +722,8 @@ def test_create_provider_defaults_to_sentence_transformers():
             "src.services.search_service.SentenceTransformersProvider",
             return_value=mock_st,
         ) as mock_cls:
-            provider = create_provider()
+            with patch("src.services.search_service.sys.platform", "linux"):
+                provider = create_provider()
             mock_cls.assert_called_once()
             assert provider is mock_st
 
@@ -772,3 +775,46 @@ def test_create_provider_explicit_lmstudio():
             provider = create_provider(provider_name="lmstudio", model="nomic-embed")
             mock_cls.assert_called_once()
             assert provider is mock_lm
+
+
+def test_create_provider_uses_subprocess_sentence_transformers_on_windows():
+    """Windows defaults to subprocess-backed sentence-transformers provider."""
+    with patch(
+        "src.services.search_service.get_llm_settings_from_qsettings"
+    ) as mock_settings:
+        mock_settings.return_value = {
+            "provider": "sentence-transformers",
+            "lm_url": "",
+            "lm_model": "",
+            "lm_api_key": "",
+            "lm_timeout": 30,
+            "st_model": "",
+        }
+        mock_provider = MagicMock()
+        with patch("src.services.search_service.sys.platform", "win32"):
+            with patch(
+                "src.services.search_service.SubprocessSentenceTransformersProvider",
+                return_value=mock_provider,
+            ) as mock_subprocess_cls:
+                provider = create_provider()
+
+    mock_subprocess_cls.assert_called_once()
+    assert provider is mock_provider
+
+
+def test_subprocess_sentence_transformers_provider_parses_result():
+    """Subprocess provider extracts JSON payload from noisy stdout."""
+    provider = SubprocessSentenceTransformersProvider(model="test-model")
+
+    completed = subprocess.CompletedProcess(
+        args=["python"],
+        returncode=0,
+        stdout='noise line\n{"embeddings": [[1.0, 2.0]]}\n',
+        stderr="",
+    )
+
+    with patch("src.services.search_service.subprocess.run", return_value=completed):
+        vectors = provider.embed(["probe"])
+
+    assert vectors.shape == (1, 2)
+    assert vectors.dtype == np.float32

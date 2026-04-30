@@ -6,13 +6,19 @@ Handles asynchronous database operations to keep the UI responsive.
 import json
 import logging
 import sqlite3
+import subprocess
+import sys
 import traceback
 from pathlib import Path
 from typing import Any, List, Optional, Set, Tuple
 
 from PySide6.QtCore import QObject, Signal, Slot
 
-from src.app.constants import SEMANTIC_COMPLETION_ENABLE_EMBEDDING
+from src.app.constants import (
+    SEMANTIC_COMPLETION_ENABLE_EMBEDDING,
+    SEMANTIC_COMPLETION_PROBE_ON_WINDOWS,
+    SEMANTIC_COMPLETION_PROBE_TIMEOUT_S,
+)
 from src.commands.base_command import BaseCommand, CommandResult
 from src.core.entities import Entity
 from src.core.events import Event
@@ -106,6 +112,62 @@ class DatabaseWorker(QObject):
         # Embedding queue to prevent concurrent embedding operations
         self._embedding_in_progress = False
         self._pending_embeddings: Set[Tuple[str, str, Optional[List[str]]]] = set()
+        self._semantic_probe_ran = False
+        self._semantic_probe_ok = True
+
+    def _ensure_semantic_probe(self) -> bool:
+        """Run a one-time crash-safety probe before semantic model usage.
+
+        On Windows, sentence-transformers / torch may crash the host process in
+        native code. This probe runs in a child Python process so a failure does
+        not terminate the app. If the probe fails, semantic embedding completions
+        are disabled for this worker lifetime.
+        """
+        if self._semantic_probe_ran:
+            return self._semantic_probe_ok
+
+        self._semantic_probe_ran = True
+
+        if sys.platform != "win32" or not SEMANTIC_COMPLETION_PROBE_ON_WINDOWS:
+            self._semantic_probe_ok = True
+            return True
+
+        model_name = "all-MiniLM-L6-v2"
+        probe_code = (
+            "import os;"
+            "os.environ.setdefault('TOKENIZERS_PARALLELISM','false');"
+            "os.environ.setdefault('OMP_NUM_THREADS','1');"
+            "from sentence_transformers import SentenceTransformer;"
+            f"m=SentenceTransformer('{model_name}', device='cpu');"
+            "m.encode(['probe'], show_progress_bar=False)"
+        )
+
+        try:
+            result = subprocess.run(
+                [sys.executable, "-c", probe_code],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=SEMANTIC_COMPLETION_PROBE_TIMEOUT_S,
+            )
+        except Exception:
+            logger.warning("Semantic embedding probe failed", exc_info=True)
+            self._semantic_probe_ok = False
+            return False
+
+        if result.returncode != 0:
+            logger.warning(
+                "Semantic embedding probe disabled feature on this run "
+                "(code=%s, stderr=%s)",
+                result.returncode,
+                (result.stderr or "").strip()[:300],
+            )
+            self._semantic_probe_ok = False
+            return False
+
+        self._semantic_probe_ok = True
+        logger.info("Semantic embedding probe passed")
+        return True
 
     @Slot()
     def initialize_db(self) -> None:
@@ -1060,6 +1122,8 @@ class DatabaseWorker(QObject):
         if not SEMANTIC_COMPLETION_ENABLE_EMBEDDING:
             return
         if not self.db_service:
+            return
+        if not self._ensure_semantic_probe():
             return
         try:
             svc = self._get_search_service()

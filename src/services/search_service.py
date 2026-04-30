@@ -11,6 +11,8 @@ import json
 import logging
 import os
 import sqlite3
+import subprocess
+import sys
 import time
 import uuid
 from abc import ABC, abstractmethod
@@ -32,6 +34,8 @@ import numpy as np
 if TYPE_CHECKING:
     from src.core.entities import Entity
     from src.core.events import Event
+
+from src.app.constants import _env_bool
 
 logger = logging.getLogger(__name__)
 
@@ -515,6 +519,102 @@ class SentenceTransformersProvider(EmbeddingProvider):
             str: Model identifier with 'st:' prefix.
 
         """
+        return f"st:{self.model_name}"
+
+
+class SubprocessSentenceTransformersProvider(EmbeddingProvider):
+    """Sentence-transformers provider that runs embedding in a child process.
+
+    This isolates native crashes from torch/onnx/tokenizers away from the Qt
+    process. Every embed call executes in a short-lived Python subprocess.
+    """
+
+    def __init__(self, model: Optional[str] = None) -> None:
+        """Initialize subprocess-backed provider.
+
+        Args:
+            model: Model name (default from env or 'all-MiniLM-L6-v2').
+
+        """
+        self.model_name = model or os.getenv("ST_MODEL", "all-MiniLM-L6-v2")
+        self.timeout_s = float(os.getenv("PK_ST_SUBPROCESS_TIMEOUT_S", "30"))
+        self._dimension: Optional[int] = None
+
+        logger.info(
+            "SubprocessSentenceTransformersProvider initialized with model: "
+            f"{self.model_name}"
+        )
+
+    def _run_embed_subprocess(self, texts: List[str]) -> np.ndarray:
+        """Run embedding in child process and return vectors as float32 numpy."""
+        payload = {
+            "model": self.model_name,
+            "texts": texts,
+        }
+
+        result = subprocess.run(
+            [sys.executable, "-m", "src.services.embedding_subprocess"],
+            input=json.dumps(payload, ensure_ascii=False),
+            text=True,
+            capture_output=True,
+            timeout=self.timeout_s,
+            check=False,
+        )
+
+        stdout = (result.stdout or "").strip()
+        stderr = (result.stderr or "").strip()
+
+        parsed: Optional[Dict[str, Any]] = None
+        for line in reversed(stdout.splitlines()):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                candidate = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(candidate, dict):
+                parsed = candidate
+                break
+
+        if result.returncode != 0:
+            error_text = ""
+            if parsed and isinstance(parsed.get("error"), str):
+                error_text = parsed["error"]
+            elif stderr:
+                error_text = stderr[:300]
+            raise RuntimeError(
+                "Subprocess embedding failed "
+                f"(code={result.returncode}): {error_text}"
+            )
+
+        if not parsed or "embeddings" not in parsed:
+            raise RuntimeError("Subprocess embedding returned invalid payload")
+
+        embeddings = np.array(parsed["embeddings"], dtype=np.float32)
+        if embeddings.ndim != 2:
+            raise RuntimeError("Subprocess embedding payload had unexpected shape")
+        return embeddings
+
+    def embed(self, texts: List[str]) -> np.ndarray:
+        """Generate embeddings in isolated child process."""
+        if not texts:
+            return np.array([])
+
+        embeddings = self._run_embed_subprocess(texts)
+        if self._dimension is None and embeddings.size > 0:
+            self._dimension = int(embeddings.shape[1])
+        return embeddings
+
+    def get_dimension(self) -> int:
+        """Get embedding dimension."""
+        if self._dimension is None:
+            probe = self.embed(["dimension probe"])
+            self._dimension = int(probe.shape[1])
+        return self._dimension
+
+    def get_model_name(self) -> str:
+        """Get model name with provider prefix."""
         return f"st:{self.model_name}"
 
 
@@ -1261,6 +1361,14 @@ def create_provider(
         )
     elif provider_name == "sentence-transformers":
         st_model = model or qsettings["st_model"] or None
+        use_subprocess_provider = _env_bool(
+            "PK_ST_EMBED_SUBPROCESS",
+            default=sys.platform == "win32",
+        )
+        if use_subprocess_provider:
+            return SubprocessSentenceTransformersProvider(
+                model=st_model if st_model else None
+            )
         return SentenceTransformersProvider(model=st_model if st_model else None)
     else:
         raise ValueError(

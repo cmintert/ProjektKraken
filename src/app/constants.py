@@ -4,7 +4,6 @@ Stores default values for UI configuration and magic numbers.
 """
 
 import os
-import sys
 
 
 def _env_bool(name: str, default: bool) -> bool:
@@ -13,6 +12,18 @@ def _env_bool(name: str, default: bool) -> bool:
     if value is None:
         return default
     return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_float(name: str, default: float) -> float:
+    """Parse a float environment variable with a fallback default."""
+    value = os.getenv(name)
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except ValueError:
+        return default
+
 
 # Window Configuration
 VERSION = "0.18.0"
@@ -83,7 +94,15 @@ SEMANTIC_COMPLETION_DEBOUNCE_MS = 350  # Keystroke debounce before querying the 
 SEMANTIC_COMPLETION_MIN_PREFIX_LEN = 3  # Minimum [[prefix length before triggering query
 SEMANTIC_COMPLETION_ENABLE_EMBEDDING = _env_bool(
     "PK_SEMANTIC_COMPLETION_ENABLE_EMBEDDING",
-    default=sys.platform != "win32",
+    default=True,
+)
+SEMANTIC_COMPLETION_PROBE_ON_WINDOWS = _env_bool(
+    "PK_SEMANTIC_COMPLETION_PROBE_ON_WINDOWS",
+    default=True,
+)
+SEMANTIC_COMPLETION_PROBE_TIMEOUT_S = _env_float(
+    "PK_SEMANTIC_COMPLETION_PROBE_TIMEOUT_S",
+    default=15.0,
 )
 
 # UI Timing Constants

@@ -47,6 +47,9 @@ def worker(monkeypatch):
     monkeypatch.setattr(
         "src.services.worker.SEMANTIC_COMPLETION_ENABLE_EMBEDDING", True
     )
+    monkeypatch.setattr(
+        "src.services.worker.SEMANTIC_COMPLETION_PROBE_ON_WINDOWS", False
+    )
     w = DatabaseWorker("test.db")
     w.db_service = MagicMock()
     w.db_service.get_connection.return_value = MagicMock()
@@ -292,6 +295,25 @@ class TestWorkerSemanticQuery:
             worker.initialize_db()
 
         assert worker._search_service is None
+
+    def test_probe_failure_disables_query_safely(self, worker, monkeypatch):
+        """A failed Windows probe must skip SearchService creation and emit nothing."""
+        monkeypatch.setattr(
+            "src.services.worker.SEMANTIC_COMPLETION_PROBE_ON_WINDOWS", True
+        )
+        monkeypatch.setattr("src.services.worker.sys.platform", "win32")
+        worker._semantic_probe_ran = False
+
+        spy = MagicMock()
+        worker.semantic_suggestions_ready.connect(spy)
+
+        with patch("src.services.worker.subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=1, stderr="probe failed")
+            with patch("src.services.search_service.create_search_service") as mock_css:
+                worker.query_semantic_suggestions("Dragon", 5, 0.85)
+
+        mock_css.assert_not_called()
+        spy.assert_not_called()
 
 
 # ===========================================================================
