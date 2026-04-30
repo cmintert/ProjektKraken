@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-04-27  
-**Commit:** 0.18.0
+**Last Updated:** 2026-04-30  
+**Commit:** 328df768
 ---
 
 # Changelog
@@ -10,6 +10,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [0.18.5]
 
 ### Added
 
@@ -21,6 +23,9 @@ All notable changes to this project will be documented in this file.
 - *(2026-04-22)* **GUI / Text**: `LanguageToolWorker` async spell and grammar checker via the LanguageTool API; `LTMatch` dataclass for match representation; debounced checking with right-click suggestion menu integrated into `WikiTextEdit`; `SpellCheckSettingsDialog` for user configuration of the LanguageTool endpoint.
 - *(2026-04-24)* **Raster**: Value metadata support for raster layers — `raster_image_analysis` now extracts display min/max/unit from GeoTIFF GDAL_METADATA and pixel ranges; `RasterLayerDialog` shows and allows editing of inferred value ranges for continuous layers; `CreateRasterLayerCommand` persists the metadata.
 - *(2026-04-21)* **Raster**: Added brush opacity slider to the raster toolbar; opacity is applied after the cached kernel so both hard and feathered brushes share the same blend model; added `circle-half` Phosphor icon.
+- *(2026-04-28)* **Import**: Added "Paste JSON" import dialog for importing world data directly from the clipboard, without a file picker.
+- *(2026-04-29)* **Embedding**: `PK_SEMANTIC_COMPLETION_ENABLE_EMBEDDING` env var now controls semantic completion embedding; defaults to enabled on all platforms (was Windows-disabled by a compile-time platform check).
+- *(2026-04-30)* **Embedding / Stability**: Sentence-transformers runs in an isolated child process on Windows (`SubprocessSentenceTransformersProvider`) to prevent native torch/tokenizers crashes from terminating the Qt process; a one-time preflight probe (`_ensure_semantic_probe`) disables the feature gracefully on failure.
 
 ### Fixed
 
