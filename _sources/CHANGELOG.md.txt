@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-04-30
 ### Fixed
-- fix(wiki): fix mention dedup key, add unique index, gate behind setting
+- fix(wiki): resolve deduplication issue in ProcessWikiLinksCommand and enforce unique mentions in DB
 
 
 *This changelog was automatically generated.*
