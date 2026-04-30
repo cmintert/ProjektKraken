@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-04-30  
-**Commit:** 328df768
+**Commit:** 0.18.6
 ---
 
 # Changelog
@@ -11,7 +11,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [0.18.5]
+## [0.18.6]
 
 ### Added
 

@@ -8,11 +8,12 @@ Manages all editor-related operations extracted from MainWindow:
 """
 
 import logging
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import QSettings, Signal, Slot
 from PySide6.QtWidgets import QInputDialog, QMessageBox, QWidget
 
+from src.app.constants import SETTINGS_AUTO_RELATION_KEY
 from src.app.coordinators.base_coordinator import BaseCoordinator
 from src.commands.composite_command import CompositeCommand
 from src.commands.entity_commands import (
@@ -30,7 +31,9 @@ from src.commands.relation_commands import (
     RemoveRelationCommand,
     UpdateRelationCommand,
 )
+from src.commands.base_command import CommandResult
 from src.commands.wiki_commands import ProcessWikiLinksCommand
+from src.core.map import Map
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
@@ -121,7 +124,7 @@ class EditorCoordinator(BaseCoordinator):
         )
         from src.gui.widgets.map.raster_mapping import check_entity_raster_refs
 
-        maps_data = []
+        maps_data: List[Map] = []
         try:
             maps_data = self.main_window.map_handler._map_widget.maps_data or []
         except AttributeError:
@@ -231,8 +234,7 @@ class EditorCoordinator(BaseCoordinator):
         cmds.append(UpdateEventCommand(event_id, event_data))
 
         if "description" in event_data:
-            wiki_cmd = ProcessWikiLinksCommand(event_id, event_data["description"])
-            cmds.append(wiki_cmd)
+            self._append_wiki_cmd_if_enabled(cmds, event_id, event_data["description"])
 
         if len(cmds) > 1:
             desc = f"Update Event '{event_data.get('name', '?')}'"
@@ -267,8 +269,7 @@ class EditorCoordinator(BaseCoordinator):
         cmds.append(UpdateEntityCommand(entity_id, entity_data))
 
         if "description" in entity_data:
-            wiki_cmd = ProcessWikiLinksCommand(entity_id, entity_data["description"])
-            cmds.append(wiki_cmd)
+            self._append_wiki_cmd_if_enabled(cmds, entity_id, entity_data["description"])
 
         if len(cmds) > 1:
             desc = f"Update Entity '{entity_data.get('name', '?')}'"
@@ -280,6 +281,13 @@ class EditorCoordinator(BaseCoordinator):
 
         self.command_requested.emit(cmd)
 
+    def _append_wiki_cmd_if_enabled(
+        self, cmds: list, source_id: str, description: str
+    ) -> None:
+        """Appends ProcessWikiLinksCommand to cmds if auto-relation is enabled."""
+        if QSettings().value(SETTINGS_AUTO_RELATION_KEY, False, type=bool):
+            cmds.append(ProcessWikiLinksCommand(source_id, description))
+
     # ------------------------------------------------------------------
     # Relation Operations
     # ------------------------------------------------------------------
@@ -289,7 +297,7 @@ class EditorCoordinator(BaseCoordinator):
         source_id: str,
         target_id: str,
         rel_type: str,
-        attributes: dict = None,
+        attributes: Optional[dict] = None,
         bidirectional: bool = False,
     ) -> None:
         """Adds a relation between entities.
@@ -326,7 +334,7 @@ class EditorCoordinator(BaseCoordinator):
         self.command_requested.emit(cmd)
 
     def update_relation(
-        self, rel_id: str, target_id: str, rel_type: str, attributes: dict = None
+        self, rel_id: str, target_id: str, rel_type: str, attributes: Optional[dict] = None
     ) -> None:
         """Updates an existing relation.
 
@@ -456,7 +464,7 @@ class EditorCoordinator(BaseCoordinator):
     # ------------------------------------------------------------------
 
     @Slot(object)
-    def on_command_finished_check_toast(self, result: object) -> None:
+    def on_command_finished_check_toast(self, result: CommandResult) -> None:
         """Check if completed command was a drag-drop relation and show toast.
 
         Args:

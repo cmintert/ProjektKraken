@@ -575,6 +575,63 @@ class DatabaseService:
                     logger.error(f"Failed to add style column to markers: {e}")
                     raise
 
+            # --- Mentions deduplication and unique expression index ---
+            cursor = self._connection.execute(
+                "SELECT COUNT(*) FROM sqlite_master"
+                " WHERE type='index' AND name='uq_mentions_src_tgt_offset'"
+            )
+            if cursor.fetchone()[0] == 0:
+                logger.info(
+                    "Applying migration: Deduplicate mentions relations "
+                    "and add unique index"
+                )
+                try:
+                    # Remove duplicate mentions keeping the oldest by rowid.
+                    # Only affects rows that have a non-NULL start_offset in
+                    # their attributes JSON.
+                    self._connection.execute(
+                        """
+                        DELETE FROM relations
+                        WHERE rel_type = 'mentions'
+                          AND json_extract(attributes, '$.start_offset') IS NOT NULL
+                          AND rowid NOT IN (
+                            SELECT MIN(rowid)
+                            FROM relations
+                            WHERE rel_type = 'mentions'
+                              AND json_extract(attributes, '$.start_offset')
+                                  IS NOT NULL
+                            GROUP BY
+                              source_id,
+                              target_id,
+                              json_extract(attributes, '$.start_offset')
+                          )
+                        """
+                    )
+                    # Partial unique expression index so future inserts are
+                    # rejected at the DB layer for rows with a start_offset.
+                    self._connection.execute(
+                        """
+                        CREATE UNIQUE INDEX IF NOT EXISTS uq_mentions_src_tgt_offset
+                        ON relations(
+                            source_id,
+                            target_id,
+                            json_extract(attributes, '$.start_offset')
+                        )
+                        WHERE rel_type = 'mentions'
+                          AND json_extract(attributes, '$.start_offset') IS NOT NULL
+                        """
+                    )
+                    self._connection.commit()
+                    logger.info(
+                        "Migration successful: Added uq_mentions_src_tgt_offset index"
+                    )
+                except sqlite3.Error as e:
+                    self._connection.rollback()
+                    logger.error(
+                        f"Failed to deduplicate/index mentions relations: {e}"
+                    )
+                    raise
+
         except sqlite3.Error as e:
             logger.critical(f"Migration check failed: {e}")
             raise

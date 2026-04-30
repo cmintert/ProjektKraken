@@ -26,7 +26,7 @@ def _env_float(name: str, default: float) -> float:
 
 
 # Window Configuration
-VERSION = "0.18.5"
+VERSION = "0.18.6"
 WINDOW_TITLE = f"Project Kraken - v{VERSION} (Beta)"
 DEFAULT_WINDOW_WIDTH = 1280
 DEFAULT_WINDOW_HEIGHT = 720

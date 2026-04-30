@@ -2,8 +2,9 @@
 Integration tests for ID-based wiki links with commands.
 
 Tests the complete flow of creating ID-based links and processing them.
-NOTE: ProcessWikiLinksCommand is now read-only and does NOT create relations.
-These tests verify detection logic and ensure NO relations are created.
+ProcessWikiLinksCommand resolves ID-based and name-based wikilinks and creates
+'mentions' relations.  Deduplication is enforced per (source, target,
+start_offset) so the same span cannot produce duplicate relations.
 """
 
 from src.commands.wiki_commands import ProcessWikiLinksCommand

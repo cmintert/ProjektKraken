@@ -23,7 +23,8 @@ class ProcessWikiLinksCommand(BaseCommand):
     - Resolves names to entities (case-insensitive, including aliases)
     - Creates 'mentions' relations with metadata (snippet, offsets, field)
     - Skips ambiguous matches (multiple entities with same name/alias)
-    - Deduplicates by (target_id, start_offset)
+    - Deduplicates by (target_id, start_offset) — one relation per unique wikilink
+      location; two links to the same target at different offsets are both recorded
     """
 
     def __init__(
@@ -181,8 +182,8 @@ class ProcessWikiLinksCommand(BaseCommand):
                 # It's a valid link
                 if (
                     target_obj.id,
-                    0,
-                ) not in existing_keys:  # Simplified check - ideally check offsets
+                    candidate.span[0],
+                ) not in existing_keys:
                     # Create the relation
                     attributes = {
                         "field": self.field,
