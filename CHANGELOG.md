@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-04-30  
-**Commit:** 0.18.6
+**Commit:** 3d913b55
 ---
 
 # Changelog
@@ -29,11 +29,14 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-04-30)* **Wiki / Relations**: Fixed `ProcessWikiLinksCommand` deduplication using hardcoded offset `0`; now uses `candidate.span[0]` so distinct wikilink spans to the same target each produce their own `mentions` relation instead of being falsely collapsed.
+- *(2026-04-30)* **Wiki / DB**: Added DB migration to remove pre-existing duplicate `mentions` rows and create partial unique expression index `uq_mentions_src_tgt_offset` on `(source_id, target_id, start_offset)` to enforce uniqueness at the database layer.
 - *(2026-04-27)* **Map / UX**: Moved breadcrumb navigation to its own row below the main toolbar to prevent label overflow on narrower windows.
 - *(2026-04-22)* **Map / UX**: Close vertex editing when a path layer is hidden; previously left dangling edit handles visible on the canvas.
 
 ### Changed
 
+- *(2026-04-30)* **Wiki / Relations**: `ProcessWikiLinksCommand` dispatch in `EditorCoordinator` is now gated behind the `SETTINGS_AUTO_RELATION_KEY` setting; wiki-link relation creation only runs when the user has explicitly opted in.
 - *(2026-04-25)* **LLM**: Active-map spatial context (map name, bounds, visible markers, and registered detail maps) is now injected into entity/event generation prompts when a map is open in the editor.
 
 ### Performance
