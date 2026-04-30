@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-04-28
-### Added
-- feat(embedding): enable semantic completion embedding configuration via environment variable
+## [Development] - 2026-04-30
+### Internal
+- chore(release): bump version to 0.18.5 and update changelog
 
 
 *This changelog was automatically generated.*
