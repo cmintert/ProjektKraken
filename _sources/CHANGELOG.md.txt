@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-07-21
-### Added
-- feat(startup): add verified Windows launch workflow
+### Internal
+- chore(skills): move project workflows to Codex
 
 
 *This changelog was automatically generated.*
