@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-04-30
-### Fixed
-- fix(wiki): resolve deduplication issue in ProcessWikiLinksCommand and enforce unique mentions in DB
+## [Development] - 2026-07-21
+### Added
+- feat(startup): add verified Windows launch workflow
 
 
 *This changelog was automatically generated.*

@@ -261,7 +261,7 @@
         <article role="main" id="furo-main-content">
           <section id="development-guide">
 <h1>Development Guide<a class="headerlink" href="#development-guide" title="Link to this heading">¶</a></h1>
-<p><strong>Version:</strong> 0.11.0 (Beta)<br />
+<p><strong>Version:</strong> 0.18.6 (Beta)
 <strong>Last Updated:</strong> February 2026</p>
 <p>Guide for developers contributing to or extending ProjektKraken.</p>
 <hr class="docutils" />
@@ -320,7 +320,7 @@
 </div>
 </li>
 <li><p><strong>Install Development Tools</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements-dev.txt
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
 </pre></div>
 </div>
 <p>This installs:</p>
@@ -334,10 +334,11 @@
 </ul>
 </li>
 <li><p><strong>Verify Installation</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>src.app.main
+<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="p">.\</span><span class="nb">start-kraken</span><span class="p">.</span><span class="n">cmd</span>
 </pre></div>
 </div>
-<p>Application should launch successfully.</p>
+<p>The launcher should report a healthy Python 3.13 environment and start the
+application successfully.</p>
 </li>
 </ol>
 </section>
@@ -400,7 +401,7 @@
 ├── default_assets/           # Default assets
 ├── themes.json               # UI themes
 ├── requirements.txt          # Runtime dependencies
-├── requirements-dev.txt      # Development dependencies
+├── requirements.txt          # Runtime and development dependencies
 ├── pyproject.toml           # Project configuration
 ├── pytest.ini               # Pytest configuration
 ├── .flake8                  # Flake8 configuration
@@ -610,14 +611,17 @@ git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </sp
 <h2>Building and Testing<a class="headerlink" href="#building-and-testing" title="Link to this heading">¶</a></h2>
 <section id="running-the-application">
 <h3>Running the Application<a class="headerlink" href="#running-the-application" title="Link to this heading">¶</a></h3>
-<p><strong>Development Mode:</strong></p>
+<p><strong>Windows (recommended, with environment preflight):</strong></p>
+<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="p">.\</span><span class="nb">start-kraken</span><span class="p">.</span><span class="n">cmd</span>
+</pre></div>
+</div>
+<p><strong>Cross-platform module entry point:</strong></p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>src.app.main
 </pre></div>
 </div>
-<p>Or use the launcher:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>launcher.py
-</pre></div>
-</div>
+<p>Run <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">launcher.py</span> <span class="pre">--check</span></code> to verify Python and the required runtime modules
+without opening the GUI. In VS Code, use <strong>Run and Debug → ProjektKraken: Launch</strong>;
+the checked-in launch configuration uses the same launcher and working directory.</p>
 <p><strong>With Debugging:</strong></p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>pdb<span class="w"> </span>-m<span class="w"> </span>src.app.main
 </pre></div>

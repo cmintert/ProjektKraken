@@ -261,8 +261,8 @@
         <article role="main" id="furo-main-content">
           <section id="installation-guide">
 <h1>Installation Guide<a class="headerlink" href="#installation-guide" title="Link to this heading">¶</a></h1>
-<p><strong>Version:</strong> 0.11.0 (Beta)<br />
-<strong>Last Updated:</strong> February 2026</p>
+<p><strong>Version:</strong> 0.18.6 (Beta)
+<strong>Last Updated:</strong> July 2026</p>
 <p>This guide covers installation, system requirements, and initial setup for ProjektKraken.</p>
 <hr class="docutils" />
 <section id="table-of-contents">
@@ -327,7 +327,7 @@
 <ol class="arabic">
 <li><p><strong>Download</strong> the latest release from <a class="reference external" href="https://github.com/cmintert/ProjektKraken/releases">GitHub Releases</a></p>
 <ul class="simple">
-<li><p>Download <code class="docutils literal notranslate"><span class="pre">ProjektKraken-v0.11.0-Windows.zip</span></code></p></li>
+<li><p>Download <code class="docutils literal notranslate"><span class="pre">ProjektKraken-v0.18.6-Windows.zip</span></code></p></li>
 </ul>
 </li>
 <li><p><strong>Extract</strong> the archive to your desired location</p>
@@ -396,32 +396,21 @@ ProjektKraken stores all worlds in a <code class="docutils literal notranslate">
 </pre></div>
 </div>
 </li>
-<li><p><strong>Run Application</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>src.app.main
+<li><p><strong>Run Application on Windows</strong></p>
+<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="p">.\</span><span class="nb">start-kraken</span><span class="p">.</span><span class="n">cmd</span>
 </pre></div>
 </div>
-<p>Or use the launcher:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>launcher.py
+<p>Double-clicking <code class="docutils literal notranslate"><span class="pre">start-kraken.cmd</span></code> does the same thing. It prefers the local
+<code class="docutils literal notranslate"><span class="pre">.venv</span></code>, checks Python and required runtime modules, and displays a useful error
+if startup fails.</p>
+<p>On any platform, the underlying entry point is:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>src.app.main
 </pre></div>
 </div>
 </li>
 </ol>
-</section>
-<section id="optional-install-development-tools">
-<h4>Optional: Install Development Tools<a class="headerlink" href="#optional-install-development-tools" title="Link to this heading">¶</a></h4>
-<p>For contributors and developers:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements-dev.txt
-</pre></div>
-</div>
-<p>This installs:</p>
-<ul class="simple">
-<li><p>pytest (testing)</p></li>
-<li><p>pytest-qt (Qt testing)</p></li>
-<li><p>pytest-cov (coverage)</p></li>
-<li><p>ruff (linting)</p></li>
-<li><p>black (formatting)</p></li>
-<li><p>mypy (type checking)</p></li>
-</ul>
+<p>The current <code class="docutils literal notranslate"><span class="pre">requirements.txt</span></code> includes the application, testing, documentation,
+quality, and packaging dependencies used by this repository.</p>
 </section>
 </section>
 <hr class="docutils" />
@@ -475,7 +464,7 @@ ProjektKraken stores all worlds in a <code class="docutils literal notranslate">
 <ol class="arabic simple">
 <li><p><strong>Launch ProjektKraken</strong></p>
 <ul class="simple">
-<li><p>Double-click the executable or run <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">launcher.py</span></code></p></li>
+<li><p>Double-click the executable or <code class="docutils literal notranslate"><span class="pre">start-kraken.cmd</span></code></p></li>
 </ul>
 </li>
 <li><p><strong>Welcome Screen</strong></p>
@@ -536,7 +525,7 @@ ProjektKraken stores all worlds in a <code class="docutils literal notranslate">
 <ul class="simple">
 <li><p>Open ProjektKraken</p></li>
 <li><p>Go to <strong>Help → About</strong></p></li>
-<li><p>Verify version is <strong>0.11.0</strong></p></li>
+<li><p>Verify version is <strong>0.18.6</strong></p></li>
 </ul>
 </li>
 <li><p><strong>Test Basic Functionality</strong></p>
@@ -562,9 +551,8 @@ ProjektKraken stores all worlds in a <code class="docutils literal notranslate">
 python<span class="w"> </span>--version
 <span class="c1"># Should show Python 3.13.x or higher</span>
 
-<span class="c1"># Check dependencies</span>
-pip<span class="w"> </span>list<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>PySide6
-<span class="c1"># Should show PySide6 and version</span>
+<span class="c1"># Check Python and all required runtime modules</span>
+python<span class="w"> </span>launcher.py<span class="w"> </span>--check
 
 <span class="c1"># Run tests (optional)</span>
 pytest<span class="w"> </span>tests/
@@ -631,16 +619,19 @@ ProjektKraken automatically handles DPI scaling. If issues persist:</p>
 <p><strong>Problem</strong>: Application crashes immediately on launch.</p>
 <p><strong>Solution</strong>:</p>
 <ol class="arabic simple">
-<li><p><strong>Check Logs</strong> (if available):</p>
+<li><p><strong>Check Logs</strong>:</p>
 <ul class="simple">
-<li><p>Windows: <code class="docutils literal notranslate"><span class="pre">%APPDATA%\ProjektKraken\logs\</span></code></p></li>
-<li><p>macOS/Linux: <code class="docutils literal notranslate"><span class="pre">~/.local/share/ProjektKraken/logs/</span></code></p></li>
+<li><p>Source checkout: <code class="docutils literal notranslate"><span class="pre">&lt;project</span> <span class="pre">folder&gt;\logs\kraken.log</span></code></p></li>
+<li><p>Packaged application: <code class="docutils literal notranslate"><span class="pre">&lt;folder</span> <span class="pre">containing</span> <span class="pre">ProjektKraken.exe&gt;\logs\kraken.log</span></code></p></li>
+<li><p>Preflight/startup failures: the adjacent <code class="docutils literal notranslate"><span class="pre">logs\startup_error.log</span></code></p></li>
 </ul>
 </li>
 <li><p><strong>Reset Settings</strong>:</p>
 <ul class="simple">
-<li><p>Delete settings file: <code class="docutils literal notranslate"><span class="pre">ProjektKraken.ini</span></code> in user preferences folder</p></li>
-<li><p>Restart application</p></li>
+<li><p>Windows source checkout: <code class="docutils literal notranslate"><span class="pre">start-kraken.cmd</span> <span class="pre">--reset-settings</span></code></p></li>
+<li><p>Cross-platform source checkout: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">launcher.py</span> <span class="pre">--reset-settings</span></code></p></li>
+<li><p>This clears QSettings-managed preferences, including the saved window layout
+and active database selection. It does not delete worlds.</p></li>
 </ul>
 </li>
 <li><p><strong>Reinstall</strong>:</p>
@@ -774,7 +765,6 @@ ProjektKraken automatically handles DPI scaling. If issues persist:</p>
 <li><a class="reference internal" href="#option-2-python-source-installation-for-developers">Option 2: Python Source Installation (For Developers)</a><ul>
 <li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
 <li><a class="reference internal" href="#steps">Steps</a></li>
-<li><a class="reference internal" href="#optional-install-development-tools">Optional: Install Development Tools</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#option-3-building-from-source-advanced">Option 3: Building from Source (Advanced)</a><ul>

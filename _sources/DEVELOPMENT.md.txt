@@ -1,6 +1,6 @@
 # Development Guide
 
-**Version:** 0.11.0 (Beta)  
+**Version:** 0.18.6 (Beta)
 **Last Updated:** February 2026
 
 Guide for developers contributing to or extending ProjektKraken.
@@ -65,7 +65,7 @@ Guide for developers contributing to or extending ProjektKraken.
 5. **Install Development Tools**
 
    ```bash
-   pip install -r requirements-dev.txt
+   pip install -r requirements.txt
    ```
 
    This installs:
@@ -78,11 +78,12 @@ Guide for developers contributing to or extending ProjektKraken.
 
 6. **Verify Installation**
 
-   ```bash
-   python -m src.app.main
+   ```powershell
+   .\start-kraken.cmd
    ```
 
-   Application should launch successfully.
+   The launcher should report a healthy Python 3.13 environment and start the
+   application successfully.
 
 ---
 
@@ -144,7 +145,7 @@ ProjektKraken/
 ├── default_assets/           # Default assets
 ├── themes.json               # UI themes
 ├── requirements.txt          # Runtime dependencies
-├── requirements-dev.txt      # Development dependencies
+├── requirements.txt          # Runtime and development dependencies
 ├── pyproject.toml           # Project configuration
 ├── pytest.ini               # Pytest configuration
 ├── .flake8                  # Flake8 configuration
@@ -335,17 +336,21 @@ Then create a Pull Request on GitHub.
 
 ### Running the Application
 
-**Development Mode:**
+**Windows (recommended, with environment preflight):**
+
+```powershell
+.\start-kraken.cmd
+```
+
+**Cross-platform module entry point:**
 
 ```bash
 python -m src.app.main
 ```
 
-Or use the launcher:
-
-```bash
-python launcher.py
-```
+Run `python launcher.py --check` to verify Python and the required runtime modules
+without opening the GUI. In VS Code, use **Run and Debug → ProjektKraken: Launch**;
+the checked-in launch configuration uses the same launcher and working directory.
 
 **With Debugging:**
 

@@ -1,6 +1,6 @@
 # Frequently Asked Questions (FAQ)
 
-**Version:** 0.11.0 (Beta)  
+**Version:** 0.18.6 (Beta)
 **Last Updated:** February 2026
 
 Common questions, troubleshooting, and tips for using ProjektKraken.
