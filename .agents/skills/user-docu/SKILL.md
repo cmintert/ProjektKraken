@@ -1,14 +1,6 @@
 ---
 name: user-docu
 description: Generate user-facing documentation from Python code (especially PySide6 apps). Triggers on "create user docs", "write documentation for this feature", "generate end-user guide", "create docs for Projekt Kraken", or when pasting code asking for user-facing documentation.
-user-invocable: true
-metadata:
-  triggers:
-    - create user docs
-    - write documentation for this feature
-    - generate end-user guide
-    - create docs for Projekt Kraken
-    - user-facing documentation
 ---
 
 # User Documentation Generator

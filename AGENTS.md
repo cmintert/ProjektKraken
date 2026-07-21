@@ -41,7 +41,11 @@
 - Watch for test pitfalls: shared `MockQSettings._storage`, teardown validity checks (`shiboken6.isValid(...)`), and debounce/timer-driven UI behavior.
 
 ## Read First
-- `README.md`, `.github/copilot-instructions.md`, `CLAUDE.md`
+- `README.md`, `.github/copilot-instructions.md`, `docs/ARCHITECTURE.md`
 - `src/app/worker_manager.py`, `src/app/connection_manager.py`, `src/app/coordinators/`
 - `src/commands/base_command.py`, `src/services/worker.py`, `tests/conftest.py`
+
+## Project Skills
+- `.agents/skills/` is the canonical home for ProjektKraken-specific Codex
+  workflows. Keep project-only skills there rather than installing global copies.
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "ProjektKraken Code Review"
+  short_description: "Review changes against ProjektKraken standards"
+  default_prompt: "Use $code-quality-reviewer to review the current changes for correctness and maintainability."

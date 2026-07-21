@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commit Changes"
+  short_description: "Prepare and execute reviewed Git commits"
+  default_prompt: "Use $commit to prepare and execute a reviewed conventional commit."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "ProjektKraken User Docs"
+  short_description: "Write user-focused ProjektKraken documentation"
+  default_prompt: "Use $user-docu to write an end-user guide for this ProjektKraken feature."

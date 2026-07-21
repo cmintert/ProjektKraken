@@ -1,7 +1,6 @@
 ---
 name: commit
 description: Use this skill when the user wants to commit changes, create a git commit, write a commit message, or types "/commit". Guides the user through writing a conventional commit message with the correct type, scope, description, body, and footer.
-argument-hint: [optional hint about the change]
 ---
 
 # Conventional Commit Skill
@@ -93,21 +92,19 @@ Show the user the full drafted commit message in a fenced code block. Ask them t
 Once the user approves:
 
 1. Stage any files the user agreed to stage (if not already staged)
-2. Run the commit using a heredoc so multi-line messages are preserved:
+2. Write the approved message to a temporary file outside the repository, then use
+   Git's file-based message option so Windows quoting cannot corrupt it:
 
-```bash
-git commit -m "$(cat <<'EOF'
-<type>(<scope>): <description>
-
-<body if any>
-
-<footer if any>
-EOF
-)"
+```powershell
+git commit -F C:\tmp\projektkraken-commit-message.txt
 ```
 
-3. Run `git status` after the commit to confirm it succeeded
-4. Do **not** push unless the user explicitly asks
+   Create the temporary file with the available safe file-writing tool, never stage
+   it, and remove it after the commit attempt.
+
+3. Run `git status` and `git log -1 --oneline` after the commit to confirm it
+   succeeded.
+4. Do **not** push unless the user explicitly asks.
 
 ## Safety Rules
 

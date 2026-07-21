@@ -79,4 +79,4 @@ For styling:
 - `README.md` for developer commands and product context.
 - `docs/ARCHITECTURE.md` for deeper architecture details.
 - `docs/TESTING.md` for test strategy and expectations.
-- `CLAUDE.md` for additional repo-specific examples and patterns.
+- `AGENTS.md` for repository-wide agent instructions and critical invariants.
