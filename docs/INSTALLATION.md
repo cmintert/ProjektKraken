@@ -1,7 +1,7 @@
 # Installation Guide
 
-**Version:** 0.11.0 (Beta)  
-**Last Updated:** February 2026
+**Version:** 0.18.6 (Beta)
+**Last Updated:** July 2026
 
 This guide covers installation, system requirements, and initial setup for ProjektKraken.
 
@@ -47,7 +47,7 @@ The easiest way to install ProjektKraken on Windows.
 **Steps:**
 
 1. **Download** the latest release from [GitHub Releases](https://github.com/cmintert/ProjektKraken/releases)
-   - Download `ProjektKraken-v0.11.0-Windows.zip`
+   - Download `ProjektKraken-v0.18.6-Windows.zip`
 
 2. **Extract** the archive to your desired location
    ```
@@ -111,33 +111,24 @@ For developers who want to modify the code or run from source.
    pip install -r requirements.txt
    ```
 
-5. **Run Application**
+5. **Run Application on Windows**
+
+   ```powershell
+   .\start-kraken.cmd
+   ```
+
+   Double-clicking `start-kraken.cmd` does the same thing. It prefers the local
+   `.venv`, checks Python and required runtime modules, and displays a useful error
+   if startup fails.
+
+   On any platform, the underlying entry point is:
 
    ```bash
    python -m src.app.main
    ```
 
-   Or use the launcher:
-
-   ```bash
-   python launcher.py
-   ```
-
-#### Optional: Install Development Tools
-
-For contributors and developers:
-
-```bash
-pip install -r requirements-dev.txt
-```
-
-This installs:
-- pytest (testing)
-- pytest-qt (Qt testing)
-- pytest-cov (coverage)
-- ruff (linting)
-- black (formatting)
-- mypy (type checking)
+The current `requirements.txt` includes the application, testing, documentation,
+quality, and packaging dependencies used by this repository.
 
 ---
 
@@ -186,7 +177,7 @@ Create a standalone executable using PyInstaller.
 ### Initial Launch
 
 1. **Launch ProjektKraken**
-   - Double-click the executable or run `python launcher.py`
+   - Double-click the executable or `start-kraken.cmd`
 
 2. **Welcome Screen**
    - You'll see the main window with an empty project explorer
@@ -232,7 +223,7 @@ ProjektKraken stores user preferences (window layouts, settings, backups) in:
 1. **Check Version**
    - Open ProjektKraken
    - Go to **Help → About**
-   - Verify version is **0.11.0**
+   - Verify version is **0.18.6**
 
 2. **Test Basic Functionality**
    - Create a new world
@@ -252,9 +243,8 @@ ProjektKraken stores user preferences (window layouts, settings, backups) in:
 python --version
 # Should show Python 3.13.x or higher
 
-# Check dependencies
-pip list | grep PySide6
-# Should show PySide6 and version
+# Check Python and all required runtime modules
+python launcher.py --check
 
 # Run tests (optional)
 pytest tests/
@@ -318,13 +308,16 @@ ProjektKraken automatically handles DPI scaling. If issues persist:
 **Problem**: Application crashes immediately on launch.
 
 **Solution**:
-1. **Check Logs** (if available):
-   - Windows: `%APPDATA%\ProjektKraken\logs\`
-   - macOS/Linux: `~/.local/share/ProjektKraken/logs/`
+1. **Check Logs**:
+   - Source checkout: `<project folder>\logs\kraken.log`
+   - Packaged application: `<folder containing ProjektKraken.exe>\logs\kraken.log`
+   - Preflight/startup failures: the adjacent `logs\startup_error.log`
 
 2. **Reset Settings**:
-   - Delete settings file: `ProjektKraken.ini` in user preferences folder
-   - Restart application
+   - Windows source checkout: `start-kraken.cmd --reset-settings`
+   - Cross-platform source checkout: `python launcher.py --reset-settings`
+   - This clears QSettings-managed preferences, including the saved window layout
+     and active database selection. It does not delete worlds.
 
 3. **Reinstall**:
    - Delete application folder

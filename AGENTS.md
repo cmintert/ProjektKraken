@@ -1,7 +1,9 @@
 # AGENTS.md
 ## Project Snapshot
 - ProjektKraken is a PySide6 desktop worldbuilding app with timeline-first UX and portable world folders.
-- Launch with `python -m src.app.main` (`src/app/main.py` is a shim; real startup is in `src/app/entry.py`).
+- On Windows, launch with `start-kraken.cmd` for the environment preflight. The
+  cross-platform entry point is `python -m src.app.main` (`src/app/main.py` is a
+  shim; real startup is in `src/app/entry.py`).
 
 ## Architecture To Preserve
 - Respect one-way dependencies: `src/app` -> `src/gui` -> `src/commands` -> `src/services` -> `src/core`.
@@ -30,7 +32,9 @@
 - Ruff/mypy conventions are enforced: annotations in non-test code, 88-char lines, double quotes, stdlib/third-party/local import order.
 
 ## Build, Test, And CI Workflow
-- App: `python -m src.app.main`; tests: `pytest`; fast suites: `pytest -m smoke -q`, `pytest -m "not slow"`.
+- App: `start-kraken.cmd` on Windows or `python -m src.app.main`; environment:
+  `python launcher.py --check`; tests: `pytest`; fast suites: `pytest -m smoke -q`,
+  `pytest -m "not slow"`.
 - On Windows GUI tests, set `$env:QT_QPA_PLATFORM = "offscreen"` before running pytest.
 - Quality gates: `python -m ruff check src/ tests/`, `python -m ruff check src/ tests/ --fix`, `mypy src/`.
 - Reuse `tests/conftest.py` fixtures (`qapp`, `db_service`, `init_theme_manager`); avoid ad-hoc Qt/DB fixture copies.

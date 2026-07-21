@@ -38,6 +38,10 @@ python-dotenv==1.2.1
 fastapi==0.128.0
 uvicorn==0.40.0
 httpx==0.28.1
+python-multipart>=0.0.20
+
+# Structured Map Data
+geojson>=3.0.0
 
 # Graph Visualization
 pyvis==0.3.2

@@ -107,13 +107,14 @@ Download the latest release from GitHub Releases. The application is portable - 
 ### From Source
 
 1. Clone the repository
-2. Create a virtual environment:
+2. Install Python **3.13 or newer**.
+3. Create a virtual environment:
    ```bash
    python -m venv .venv
    .venv\Scripts\activate  # Windows
    source .venv/bin/activate  # Linux/Mac
    ```
-3. Install dependencies:
+4. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
@@ -121,6 +122,15 @@ Download the latest release from GitHub Releases. The application is portable - 
 ## Usage
 
 ### GUI Application
+
+On Windows, double-click `start-kraken.cmd`, or run it from a terminal:
+
+```powershell
+.\start-kraken.cmd
+```
+
+The launcher prefers `.venv`, verifies Python 3.13 and the runtime dependencies,
+then starts the application. The underlying cross-platform entry point remains:
 
 ```bash
 python -m src.app.main
@@ -204,10 +214,16 @@ See **[Semantic Search Documentation](docs/SEMANTIC_SEARCH.md)** for details.
 ## Troubleshooting
 
 ### Startup Crashes
-If the application crashes immediately upon launch (even after updating versions), your local configuration settings might be corrupted. You can reset the window layout and preferences by running:
+The Windows launcher shows an actionable error and writes full startup details to
+`logs/startup_error.log`. Normal application diagnostics are in `logs/kraken.log`.
+During source development, `logs/` is in the repository root; packaged builds keep
+it beside `ProjektKraken.exe`.
 
-```bash
-python launcher.py --reset-settings
+If the application crashes after a layout or settings change, reset the window
+layout and preferences by running:
+
+```powershell
+.\start-kraken.cmd --reset-settings
 ```
 
 This will clear the saved window state and reset the active database, allowing the application to launch with default settings. Use this with caution as it resets your workspace layout customization.
@@ -268,7 +284,7 @@ src/
 
 ## Technology
 
-- **Python 3.11+**
+- **Python 3.13+**
 - **PySide6** (Qt 6) for GUI
 - **SQLite** for data persistence
 - **pytest** for testing

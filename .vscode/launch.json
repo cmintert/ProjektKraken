@@ -1,0 +1,37 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "ProjektKraken: Launch",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/launcher.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "justMyCode": false
+        },
+        {
+            "name": "ProjektKraken: Reset settings and launch",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/launcher.py",
+            "args": ["--reset-settings"],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "justMyCode": false
+        },
+        {
+            "name": "ProjektKraken: Check environment",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/launcher.py",
+            "args": ["--check"],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "justMyCode": true
+        }
+    ]
+}

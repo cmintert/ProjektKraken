@@ -136,8 +136,11 @@ def main() -> None:
         exit_code = app.exec()
         cleanup_app()
         sys.exit(exit_code)
-    except Exception:
+    except Exception as exc:
         logger.exception("CRITICAL: Unhandled exception in main application loop")
+        from src.app.startup_check import report_unhandled_startup_exception
+
+        report_unhandled_startup_exception(exc)
         sys.exit(1)
 
 

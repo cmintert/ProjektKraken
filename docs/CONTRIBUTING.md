@@ -1,6 +1,6 @@
 # Contributing Guide
 
-**Version:** 0.11.0 (Beta)  
+**Version:** 0.18.6 (Beta)
 **Last Updated:** February 2026
 
 Guide for contributing to ProjektKraken.
@@ -58,15 +58,17 @@ Before contributing, ensure you have:
    python -m venv .venv
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    pip install -r requirements.txt
-   pip install -r requirements-dev.txt
+   pip install -r requirements.txt
    ```
 
 5. **Verify Setup**
 
    ```bash
    pytest
-   python -m src.app.main
+   python launcher.py --check
    ```
+
+   On Windows, launch the application with `start-kraken.cmd`.
 
 ---
 
@@ -159,7 +161,7 @@ If applicable, add screenshots.
 **Environment:**
 - OS: [e.g. Windows 10]
 - Python version: [e.g. 3.13.1]
-- ProjektKraken version: [e.g. 0.11.0]
+- ProjektKraken version: [e.g. 0.18.6]
 ```
 
 ---

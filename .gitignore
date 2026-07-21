@@ -39,7 +39,9 @@ secrets/
 credentials/
 
 # IDEs
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
 .idea/
 .agent/
 

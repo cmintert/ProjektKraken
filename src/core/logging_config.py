@@ -10,8 +10,12 @@ import sys
 from logging.handlers import RotatingFileHandler
 from typing import Optional
 
+from src.core.paths import get_log_directory
+
 # Configuration
-LOG_DIR = "logs"
+# Override hook retained for tests and specialized embeddings. Normal launches resolve
+# the portable project/executable log directory through ``get_log_directory``.
+LOG_DIR: str | None = None
 LOG_FILENAME = "kraken.log"
 AUDIT_LOG_FILENAME = "ai_audit_log.txt"
 MAX_BYTES = 5 * 1024 * 1024  # 5 MB
@@ -19,6 +23,14 @@ BACKUP_COUNT = 5
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 AUDIT_LOG_FORMAT = "%(asctime)s - %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+
+def _resolve_log_directory() -> str:
+    """Return the configured log directory or the portable default."""
+    if LOG_DIR is not None:
+        os.makedirs(LOG_DIR, exist_ok=True)
+        return LOG_DIR
+    return str(get_log_directory())
 
 
 class SafeRotatingFileHandler(RotatingFileHandler):
@@ -58,13 +70,14 @@ def setup_logging(debug_mode: bool = False, log_to_console: bool = True) -> None
     """
     # 1. Create Log Directory
     try:
-        os.makedirs(LOG_DIR, exist_ok=True)
+        log_dir = _resolve_log_directory()
     except OSError as e:
-        # Fallback to current directory if we can't create 'logs' (e.g. permissions)
+        # Fall back to the current directory if the portable log directory is not
+        # writable. The console message remains visible in source launches.
         print(f"Failed to create log directory: {e}. Logging to current directory.")
         log_path = LOG_FILENAME
     else:
-        log_path = os.path.join(LOG_DIR, LOG_FILENAME)
+        log_path = os.path.join(log_dir, LOG_FILENAME)
 
     # 2. Get Root Logger
     root_logger = logging.getLogger()
@@ -157,8 +170,7 @@ def setup_audit_logging() -> None:
     audit_logger.propagate = False  # Don't spam the main log
 
     try:
-        os.makedirs(LOG_DIR, exist_ok=True)
-        audit_path = os.path.join(LOG_DIR, AUDIT_LOG_FILENAME)
+        audit_path = os.path.join(_resolve_log_directory(), AUDIT_LOG_FILENAME)
     except OSError:
         audit_path = AUDIT_LOG_FILENAME
 

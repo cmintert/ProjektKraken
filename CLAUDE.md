@@ -5,9 +5,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ### Run the application
-```bash
-python -m src.app.main
+```powershell
+.\start-kraken.cmd
 ```
+
+Use `python -m src.app.main` as the cross-platform module entry point.
 
 ### Run all tests
 ```bash

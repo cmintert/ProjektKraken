@@ -131,6 +131,23 @@ def get_backup_directory() -> Path:
     return backup_dir
 
 
+def get_log_directory() -> Path:
+    """Return the application log directory, creating it if necessary.
+
+    Logs are kept beside the executable in packaged builds and in the project-root
+    ``logs`` directory during development. This mirrors the portable world layout
+    and makes startup failures discoverable without relying on the current working
+    directory.
+
+    Returns:
+        Path: The absolute application log directory.
+
+    """
+    log_dir = get_executable_dir() / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    return log_dir
+
+
 def get_executable_dir() -> Path:
     """Returns the directory containing the executable or main script.
 

@@ -7,7 +7,8 @@ Primary stack: Python 3.13+, PySide6, SQLite, pytest, ruff, and mypy.
 
 ## Build And Test
 
-- Run the app with `python -m src.app.main`.
+- On Windows, run the app with `start-kraken.cmd` so the environment is checked;
+  `python -m src.app.main` remains the cross-platform module entry point.
 - Run the test suite with `pytest`.
 - Run GUI tests on Windows with `$env:QT_QPA_PLATFORM = "offscreen"` before invoking pytest.
 - Run a focused test with `pytest tests/unit/test_events.py::test_event_creation`.
