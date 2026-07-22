@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-07-21
-### Internal
-- chore(skills): move project workflows to Codex
+## [Development] - 2026-07-22
+### Added
+- feat(ai): harden local generation workflow
 
 
 *This changelog was automatically generated.*

@@ -434,7 +434,8 @@ Following the assassination, the kingdom erupted into civil war...
 
 1. **Build Search Index**
    - **Tools → AI Settings**
-   - Configure LM Studio or other provider
+   - Configure Sentence Transformers or LM Studio
+   - For LM Studio, enter the server URL and select a discovered embedding model
    - **Tools → Build Search Index**
    - Wait for indexing (one-time process)
 
@@ -462,19 +463,26 @@ Following the assassination, the kingdom erupted into civil war...
 1. **Select Context**
    - Select entity or event for context
 
-2. **Open AI Panel**
-   - **AI → Generate Content**
+2. **Configure LM Studio**
+   - Open **Tools → AI Settings**
+   - Enter the server URL, for example `http://localhost:1234`
+   - Select **Refresh Models**
+   - Choose a text-generation model; choose a separate embedding model if needed
 
-3. **Choose Prompt**
+3. **Open Generation Controls**
+   - Expand **LLM Generation** in the entity or event editor
+
+4. **Choose Prompt**
    - "Expand backstory" - for characters
    - "Generate description" - for locations
    - "Suggest relationships" - for entities
 
-4. **Review and Edit**
+5. **Review and Edit**
    - AI generates text based on your world
    - Uses RAG to stay consistent with lore
    - Edit as needed
-   - Save to entity description
+   - Choose **Replace**, **Append**, or **Discard** explicitly
+   - Visible formatting and wiki links are preserved exactly
 
 ---
 

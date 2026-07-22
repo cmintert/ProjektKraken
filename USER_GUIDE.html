@@ -956,11 +956,14 @@
 <li><p><strong>Tools → AI Settings</strong></p></li>
 <li><p><strong>Choose Provider</strong>:</p>
 <ul class="simple">
-<li><p><strong>LM Studio</strong> (local, private)</p></li>
-<li><p><strong>OpenAI</strong> (cloud)</p></li>
-<li><p><strong>Google</strong> (cloud)</p></li>
+<li><p><strong>Sentence Transformers</strong> (built-in local default)</p></li>
+<li><p><strong>LM Studio</strong> (local, private, optional)</p></li>
 </ul>
 </li>
+<li><p>For LM Studio, enter only the server address, such as
+<code class="docutils literal notranslate"><span class="pre">http://localhost:1234</span></code>, then select <strong>Refresh Models</strong>.</p></li>
+<li><p>Choose an embedding-capable model. This can be different from the model
+used for text generation.</p></li>
 <li><p><strong>Index World</strong>: Tools → Build Search Index</p></li>
 </ol>
 </section>
@@ -985,7 +988,9 @@
 <h4>Generating Content<a class="headerlink" href="#generating-content" title="Link to this heading">¶</a></h4>
 <ol class="arabic simple">
 <li><p><strong>Select Context</strong> (entity or event)</p></li>
-<li><p><strong>AI → Generate</strong></p></li>
+<li><p>In <strong>Tools → AI Settings</strong>, configure LM Studio and choose a loaded
+text-generation model. Cloud generation providers are currently disabled.</p></li>
+<li><p>Expand <strong>LLM Generation</strong> in the editor.</p></li>
 <li><p><strong>Choose Prompt</strong>:</p>
 <ul class="simple">
 <li><p>“Expand backstory”</p></li>
@@ -993,8 +998,13 @@
 <li><p>“Write description”</p></li>
 </ul>
 </li>
-<li><p><strong>Review and Edit</strong> generated text</p></li>
+<li><p><strong>Review and Edit</strong> generated text, then explicitly choose <strong>Replace</strong> or
+<strong>Append</strong>. <strong>Discard</strong> leaves the description unchanged.</p></li>
 </ol>
+<p>ProjektKraken preserves the visible reply exactly, including Markdown, wiki
+links, Unicode, leading/trailing spaces, and blank lines. Model reasoning and
+tool-call fields are kept separate and are never inserted into descriptions.
+If the selected item changes during generation, the stale result is rejected.</p>
 </section>
 <section id="custom-prompts">
 <h4>Custom Prompts<a class="headerlink" href="#custom-prompts" title="Link to this heading">¶</a></h4>

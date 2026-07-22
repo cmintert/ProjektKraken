@@ -837,7 +837,8 @@ Following the assassination, the kingdom erupted into civil war...
 <li><p><strong>Build Search Index</strong></p>
 <ul class="simple">
 <li><p><strong>Tools → AI Settings</strong></p></li>
-<li><p>Configure LM Studio or other provider</p></li>
+<li><p>Configure Sentence Transformers or LM Studio</p></li>
+<li><p>For LM Studio, enter the server URL and select a discovered embedding model</p></li>
 <li><p><strong>Tools → Build Search Index</strong></p></li>
 <li><p>Wait for indexing (one-time process)</p></li>
 </ul>
@@ -875,9 +876,17 @@ Following the assassination, the kingdom erupted into civil war...
 <li><p>Select entity or event for context</p></li>
 </ul>
 </li>
-<li><p><strong>Open AI Panel</strong></p>
+<li><p><strong>Configure LM Studio</strong></p>
 <ul class="simple">
-<li><p><strong>AI → Generate Content</strong></p></li>
+<li><p>Open <strong>Tools → AI Settings</strong></p></li>
+<li><p>Enter the server URL, for example <code class="docutils literal notranslate"><span class="pre">http://localhost:1234</span></code></p></li>
+<li><p>Select <strong>Refresh Models</strong></p></li>
+<li><p>Choose a text-generation model; choose a separate embedding model if needed</p></li>
+</ul>
+</li>
+<li><p><strong>Open Generation Controls</strong></p>
+<ul class="simple">
+<li><p>Expand <strong>LLM Generation</strong> in the entity or event editor</p></li>
 </ul>
 </li>
 <li><p><strong>Choose Prompt</strong></p>
@@ -892,7 +901,8 @@ Following the assassination, the kingdom erupted into civil war...
 <li><p>AI generates text based on your world</p></li>
 <li><p>Uses RAG to stay consistent with lore</p></li>
 <li><p>Edit as needed</p></li>
-<li><p>Save to entity description</p></li>
+<li><p>Choose <strong>Replace</strong>, <strong>Append</strong>, or <strong>Discard</strong> explicitly</p></li>
+<li><p>Visible formatting and wiki links are preserved exactly</p></li>
 </ul>
 </li>
 </ol>
