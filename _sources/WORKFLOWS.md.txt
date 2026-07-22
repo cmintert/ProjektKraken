@@ -472,10 +472,11 @@ Following the assassination, the kingdom erupted into civil war...
 3. **Open Generation Controls**
    - Expand **LLM Generation** in the entity or event editor
 
-4. **Choose Prompt**
-   - "Expand backstory" - for characters
-   - "Generate description" - for locations
-   - "Suggest relationships" - for entities
+4. **Choose and Apply a Task**
+   - **Create — Complete Description** for an empty description
+   - **Revise — Clarity and Flow** for a complete replacement
+   - **Expand — Grounded Detail** or **Condense — Essential Version** as needed
+   - Select **Use Template**; changing the selection alone preserves your draft
 
 5. **Review and Edit**
    - AI generates text based on your world
@@ -483,6 +484,11 @@ Following the assassination, the kingdom erupted into civil war...
    - Edit as needed
    - Choose **Replace**, **Append**, or **Discard** explicitly
    - Visible formatting and wiki links are preserved exactly
+
+6. **Create World-Specific Tasks (optional)**
+   - Open **Tools → AI Settings → Task Templates**
+   - Duplicate a locked bundled task or create a new task
+   - Custom tasks are stored with the active world
 
 ---
 
