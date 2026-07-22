@@ -4,6 +4,7 @@ Unit tests for LLM provider abstraction and implementations.
 Tests the Provider interface, factory, and individual provider implementations.
 """
 
+import asyncio
 import os
 from unittest.mock import patch
 
@@ -156,6 +157,70 @@ def test_lmstudio_generate(mock_requests):
     assert payload["messages"][0]["content"] == "Test prompt"
     assert payload["max_tokens"] == 100
     assert payload["temperature"] == 0.7
+
+
+def test_lmstudio_generate_preserves_reply_fields_and_format(mock_requests):
+    """Visible content remains exact and non-visible fields stay separate."""
+    content = "  # Kraken\n\n[[Abyss]] — *unchanged*\n\n"
+    mock_requests.post.return_value = MockResponse(
+        {
+            "model": "loaded-model",
+            "system_fingerprint": "fp_test",
+            "choices": [
+                {
+                    "message": {
+                        "role": "assistant",
+                        "content": content,
+                        "reasoning_content": "private reasoning",
+                        "tool_calls": [{"id": "tool-1", "type": "function"}],
+                    },
+                    "finish_reason": "length",
+                }
+            ],
+            "usage": {"total_tokens": 42},
+            "stats": {"tokens_per_second": 12.5},
+        }
+    )
+
+    result = LMStudioProvider(model="requested-model").generate("prompt")
+
+    assert result["text"] == content
+    assert result["reasoning_content"] == "private reasoning"
+    assert result["tool_calls"] == [{"id": "tool-1", "type": "function"}]
+    assert result["model"] == "loaded-model"
+    assert result["finish_reason"] == "length"
+    assert result["system_fingerprint"] == "fp_test"
+    assert result["provider_metadata"]["stats"]["tokens_per_second"] == 12.5
+
+
+def test_lmstudio_stream_preserves_separate_reply_fields(mock_requests):
+    """Streaming exposes visible, reasoning, tools, and metadata separately."""
+    response = MockResponse({}, stream=True)
+    response.iter_lines = lambda: [
+        b'data: {"model":"loaded","system_fingerprint":"fp","choices":['
+        b'{"delta":{"content":"# Kraken\\n","reasoning_content":"private",'
+        b'"tool_calls":[{"id":"call-1"}]},"finish_reason":null}]}',
+        b'data: {"choices":[{"delta":{"content":"\\n[[Abyss]]"},'
+        b'"finish_reason":"stop"}],"usage":{"total_tokens":12},'
+        b'"stats":{"tokens_per_second":4.2}}',
+        b"data: [DONE]",
+    ]
+    mock_requests.post.return_value = response
+    provider = LMStudioProvider(model="requested-model")
+
+    async def collect() -> list[dict]:
+        return [chunk async for chunk in provider.stream_generate("prompt")]
+
+    chunks = asyncio.run(collect())
+
+    assert "".join(chunk["delta"] for chunk in chunks) == (
+        "# Kraken\n\n[[Abyss]]"
+    )
+    assert chunks[0]["reasoning_delta"] == "private"
+    assert chunks[0]["tool_calls_delta"] == [{"id": "call-1"}]
+    assert chunks[-1]["finish_reason"] == "stop"
+    assert chunks[-1]["usage"]["total_tokens"] == 12
+    assert chunks[-1]["provider_metadata"]["stats"]["tokens_per_second"] == 4.2
 
 
 def test_lmstudio_health_check(mock_requests):

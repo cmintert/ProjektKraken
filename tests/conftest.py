@@ -1,6 +1,7 @@
 import os
 import pathlib
 import sys
+import tempfile
 
 import pytest
 
@@ -13,9 +14,52 @@ repo_root = pathlib.Path(__file__).parent.parent
 sys.path.insert(0, str(repo_root))
 
 try:
+    from PySide6 import QtCore
     from PySide6.QtWidgets import QApplication
 except ImportError:
     QApplication = None
+    QSettings = None
+else:
+    _NativeQSettings = QtCore.QSettings
+    _test_settings_dir = tempfile.mkdtemp(prefix="projektkraken-tests-")
+    _NativeQSettings.setPath(
+        _NativeQSettings.Format.IniFormat,
+        _NativeQSettings.Scope.UserScope,
+        _test_settings_dir,
+    )
+
+    class TestQSettings(_NativeQSettings):
+        """QSettings redirected to a temporary INI store for every test."""
+
+        def __init__(self, *args, **kwargs):
+            if not args:
+                organization = (
+                    QtCore.QCoreApplication.organizationName()
+                    or "ProjektKrakenTests"
+                )
+                application = (
+                    QtCore.QCoreApplication.applicationName() or "pytest"
+                )
+                super().__init__(
+                    self.Format.IniFormat,
+                    self.Scope.UserScope,
+                    organization,
+                    application,
+                    **kwargs,
+                )
+            elif len(args) == 2 and all(isinstance(arg, str) for arg in args):
+                super().__init__(
+                    self.Format.IniFormat,
+                    self.Scope.UserScope,
+                    args[0],
+                    args[1],
+                    **kwargs,
+                )
+            else:
+                super().__init__(*args, **kwargs)
+
+    QtCore.QSettings = TestQSettings
+    QSettings = TestQSettings
 
 
 @pytest.fixture(scope="session")

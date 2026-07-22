@@ -5,7 +5,6 @@ description field.
 """
 
 import logging
-from enum import Enum, auto
 from typing import Optional
 
 from PySide6.QtCore import Slot
@@ -20,17 +19,18 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.ai_generation import (
+    GenerationApplyMode,
+    GenerationReviewResult,
+    ModelReply,
+)
 from src.gui.utils.style_helper import StyleHelper
 
 logger = logging.getLogger(__name__)
 
 
-class ReviewAction(Enum):
-    """Actions available in the review dialog."""
-
-    REPLACE = auto()
-    APPEND = auto()
-    DISCARD = auto()
+# Backwards-compatible import for callers and existing extensions.
+ReviewAction = GenerationApplyMode
 
 
 class GenerationReviewDialog(QDialog):
@@ -44,6 +44,7 @@ class GenerationReviewDialog(QDialog):
         self,
         generated_text: str,
         parent: Optional[QWidget] = None,
+        reply: ModelReply | None = None,
     ) -> None:
         """Initialize the generation review dialog.
 
@@ -59,7 +60,8 @@ class GenerationReviewDialog(QDialog):
         self.setModal(True)
 
         # State
-        self.action: Optional[ReviewAction] = None
+        self.reply = reply
+        self.action: Optional[GenerationApplyMode] = None
         self.rating: Optional[int] = None  # 1 = thumbs up, -1 = thumbs down
         self.comment: Optional[str] = None
 
@@ -82,6 +84,26 @@ class GenerationReviewDialog(QDialog):
         header = QLabel("Review and edit the generated content before applying:")
         header.setStyleSheet("font-weight: bold; margin-bottom: 8px;")
         main_layout.addWidget(header)
+
+        if self.reply is not None:
+            details = []
+            if self.reply.model:
+                details.append(self.reply.model)
+            if self.reply.finish_reason:
+                details.append(f"finish: {self.reply.finish_reason}")
+            if details:
+                reply_details = QLabel(" · ".join(details))
+                reply_details.setStyleSheet("color: #888888;")
+                main_layout.addWidget(reply_details)
+            if self.reply.finish_reason == "length":
+                truncation_warning = QLabel(
+                    "The model stopped at the token limit; this reply may be truncated."
+                )
+                truncation_warning.setWordWrap(True)
+                truncation_warning.setStyleSheet(
+                    StyleHelper.get_error_label_style()
+                )
+                main_layout.addWidget(truncation_warning)
 
         # Editable text area
         self.text_edit = QPlainTextEdit()
@@ -169,6 +191,16 @@ class GenerationReviewDialog(QDialog):
             "comment": self.comment,
         }
 
+    def get_review_result(self) -> GenerationReviewResult:
+        """Return the typed result consumed by description editors."""
+        return GenerationReviewResult(
+            action=self.action or GenerationApplyMode.DISCARD,
+            text=self.get_text(),
+            rating=self.rating or 0,
+            comment=self.comment or "",
+            reply=self.reply,
+        )
+
     @Slot()
     def _on_thumbs_up_clicked(self) -> None:
         """Handle thumbs up button click."""
@@ -193,20 +225,20 @@ class GenerationReviewDialog(QDialog):
     @Slot()
     def _on_replace_clicked(self) -> None:
         """Handle Replace button click."""
-        self.action = ReviewAction.REPLACE
+        self.action = GenerationApplyMode.REPLACE
         logger.info("User chose to replace description with generated content")
         self.accept()
 
     @Slot()
     def _on_append_clicked(self) -> None:
         """Handle Append button click."""
-        self.action = ReviewAction.APPEND
+        self.action = GenerationApplyMode.APPEND
         logger.info("User chose to append generated content to description")
         self.accept()
 
     @Slot()
     def _on_discard_clicked(self) -> None:
         """Handle Discard button click."""
-        self.action = ReviewAction.DISCARD
+        self.action = GenerationApplyMode.DISCARD
         logger.info("User discarded generated content")
         self.reject()

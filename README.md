@@ -199,7 +199,7 @@ ProjektKraken includes local semantic search powered by LM Studio:
 ```bash
 # Configure (one time)
 export EMBED_PROVIDER=lmstudio
-export LMSTUDIO_EMBED_URL=http://localhost:8080/v1/embeddings
+export LMSTUDIO_EMBED_URL=http://localhost:1234/v1/embeddings
 export LMSTUDIO_MODEL=bge-small-en-v1.5
 
 # Build search index
@@ -210,6 +210,14 @@ python -m src.cli.index query --database world.kraken --text "ancient wizard"
 ```
 
 See **[Semantic Search Documentation](docs/SEMANTIC_SEARCH.md)** for details.
+
+For desktop AI features, open **Tools → AI Settings**, enter the LM Studio
+server address (for example `http://localhost:1234`), and select **Refresh
+Models**. Choose one loaded text-generation model and, if semantic search uses
+LM Studio, one embedding-capable model. ProjektKraken derives the individual
+`/v1` endpoints; do not paste a completion or embedding endpoint into the
+server field. Cloud generation providers remain visible but disabled until
+their adapters meet the same reply and cancellation contract.
 
 ## Troubleshooting
 

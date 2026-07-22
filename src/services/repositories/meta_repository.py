@@ -213,6 +213,35 @@ class MetaRepository(BaseRepository):
             )
         logger.debug(f"Saved world_theme: {theme_name}")
 
+    def get_ai_generation_preferences(self) -> Optional[Dict[str, Any]]:
+        """Retrieve portable AI creative preferences for this world."""
+        cursor = self._connection.execute(
+            "SELECT value FROM system_meta WHERE key = 'ai_generation_preferences'"
+        )
+        row = cursor.fetchone()
+        if not row or not row["value"]:
+            return None
+        try:
+            value = json.loads(row["value"])
+        except (json.JSONDecodeError, TypeError):
+            logger.warning("Invalid ai_generation_preferences in system_meta")
+            return None
+        return value if isinstance(value, dict) else None
+
+    def set_ai_generation_preferences(self, data: Dict[str, Any]) -> None:
+        """Persist versioned AI creative preferences in the world database."""
+        config_json = json.dumps(data, ensure_ascii=False)
+        with self.transaction() as conn:
+            conn.execute(
+                """
+                INSERT INTO system_meta (key, value)
+                VALUES ('ai_generation_preferences', ?)
+                ON CONFLICT(key) DO UPDATE SET value=excluded.value
+                """,
+                (config_json,),
+            )
+        logger.debug("Saved portable AI generation preferences")
+
     def get_name(self, object_id: str) -> Optional[str]:
         """Retrieves the name of an entity or event by its ID.
 

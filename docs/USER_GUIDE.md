@@ -533,10 +533,13 @@ Enter dates in multiple formats:
 
 1. **Tools → AI Settings**
 2. **Choose Provider**:
-   - **LM Studio** (local, private)
-   - **OpenAI** (cloud)
-   - **Google** (cloud)
-3. **Index World**: Tools → Build Search Index
+   - **Sentence Transformers** (built-in local default)
+   - **LM Studio** (local, private, optional)
+3. For LM Studio, enter only the server address, such as
+   `http://localhost:1234`, then select **Refresh Models**.
+4. Choose an embedding-capable model. This can be different from the model
+   used for text generation.
+5. **Index World**: Tools → Build Search Index
 
 #### Using Semantic Search
 
@@ -552,12 +555,20 @@ Enter dates in multiple formats:
 #### Generating Content
 
 1. **Select Context** (entity or event)
-2. **AI → Generate**
-3. **Choose Prompt**:
+2. In **Tools → AI Settings**, configure LM Studio and choose a loaded
+   text-generation model. Cloud generation providers are currently disabled.
+3. Expand **LLM Generation** in the editor.
+4. **Choose Prompt**:
    - "Expand backstory"
    - "Generate relationships"
    - "Write description"
-4. **Review and Edit** generated text
+5. **Review and Edit** generated text, then explicitly choose **Replace** or
+   **Append**. **Discard** leaves the description unchanged.
+
+ProjektKraken preserves the visible reply exactly, including Markdown, wiki
+links, Unicode, leading/trailing spaces, and blank lines. Model reasoning and
+tool-call fields are kept separate and are never inserted into descriptions.
+If the selected item changes during generation, the stale result is rejected.
 
 #### Custom Prompts
 

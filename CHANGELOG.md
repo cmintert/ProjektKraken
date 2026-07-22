@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-04-30  
-**Commit:** 3d913b55
+**Last Updated:** 2026-07-22
+**Commit:** 457eb6de
 ---
 
 # Changelog
@@ -10,6 +10,21 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Added
+
+- *(2026-07-22)* **AI / LM Studio**: Added model discovery, separate generation and embedding model selection, connection testing, and per-world AI preferences for OpenAI-compatible local servers.
+- *(2026-07-22)* **AI / Security**: Added operating-system keyring storage for provider credentials instead of retaining API keys in application settings.
+
+### Fixed
+
+- *(2026-07-22)* **AI / Generation**: Preserved each model's reply structure through review and explicit apply actions for generated event and entity descriptions.
+- *(2026-07-22)* **AI / Stability**: Added cancellation and lifecycle guards so stale generation results cannot update closed editors or interfere with application shutdown.
+
+### Changed
+
+- *(2026-07-22)* **AI / Architecture**: Reworked description generation around typed request, reply, and apply contracts with clearer provider capability handling and cloud providers disabled until configured.
+- *(2026-07-22)* **Development / Workflow**: Made a dated `Unreleased` changelog update mandatory before every commit and documented pre-commit baseline metadata.
 
 ## [0.18.6]
 

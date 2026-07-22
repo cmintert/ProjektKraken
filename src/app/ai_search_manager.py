@@ -5,12 +5,14 @@ from MainWindow to reduce its size and improve maintainability.
 """
 
 import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
-from PySide6.QtCore import QMetaObject, QObject, QSettings, Qt, Slot
+from PySide6.QtCore import QMetaObject, QObject, QSettings, Qt, QTimer, Slot
 
 from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+from src.core.ai_generation import AIGenerationPreferences
 from src.core.logging_config import get_logger
+from src.services.prompt_builder import DEFAULT_SYSTEM_PROMPT
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
@@ -38,6 +40,25 @@ class AISearchManager(QObject):
         """
         super().__init__()
         self.window = main_window
+        worker = getattr(self.window, "worker", None)
+        if worker is not None:
+            worker.ai_generation_preferences_loaded.connect(
+                self.on_ai_preferences_loaded,
+                Qt.ConnectionType.QueuedConnection,
+            )
+        self._preference_save_timer = QTimer(self)
+        self._preference_save_timer.setSingleShot(True)
+        self._preference_save_timer.setInterval(500)
+        self._preference_save_timer.timeout.connect(
+            self._save_current_world_preferences
+        )
+        for editor_name in ("entity_editor", "event_editor"):
+            editor = getattr(self.window, editor_name, None)
+            generator = getattr(editor, "llm_generator", None)
+            if generator is not None:
+                generator.preferences_changed.connect(
+                    self._preference_save_timer.start
+                )
 
     @Slot()
     def show_ai_settings_dialog(self) -> None:
@@ -55,6 +76,7 @@ class AISearchManager(QObject):
             self.window.ai_settings_dialog.settings_saved.connect(
                 self._on_settings_saved
             )
+            self.window.worker_manager.load_ai_preferences_requested.emit()
             # Initial status update
             self.refresh_search_index_status()
 
@@ -72,6 +94,10 @@ class AISearchManager(QObject):
         """
         logger.info("AI settings saved — propagating refresh")
 
+        dialog = getattr(self.window, "ai_settings_dialog", None)
+        if dialog is not None:
+            self._save_current_world_preferences()
+
         # Refresh worker-thread services (cross-thread call)
         if hasattr(self.window, "worker") and self.window.worker:
             QMetaObject.invokeMethod(
@@ -85,6 +111,108 @@ class AISearchManager(QObject):
             self.window.entity_editor, "llm_generator"
         ):
             self.window.entity_editor.llm_generator.refresh_settings()
+        if hasattr(self.window, "event_editor") and hasattr(
+            self.window.event_editor, "llm_generator"
+        ):
+            self.window.event_editor.llm_generator.refresh_settings()
+
+    @Slot(object)
+    def on_ai_preferences_loaded(self, raw_preferences: object) -> None:
+        """Apply world preferences, or seed a new world from legacy settings."""
+        dialog = getattr(self.window, "ai_settings_dialog", None)
+        if isinstance(raw_preferences, dict):
+            preferences = AIGenerationPreferences.from_dict(raw_preferences)
+            self._cache_world_preferences(preferences)
+            if dialog is not None:
+                dialog.apply_world_preferences(preferences)
+        else:
+            self._save_current_world_preferences()
+
+        for editor_name in ("entity_editor", "event_editor"):
+            editor = getattr(self.window, editor_name, None)
+            generator = getattr(editor, "llm_generator", None)
+            if generator is not None:
+                generator.refresh_settings()
+
+    @staticmethod
+    def _cache_world_preferences(
+        preferences: AIGenerationPreferences,
+    ) -> None:
+        """Cache active-world preferences for existing UI consumers."""
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        values = {
+            "ai_gen_system_prompt": preferences.persona,
+            "ai_gen_max_tokens": preferences.max_tokens,
+            "ai_gen_temperature": preferences.temperature_percent,
+            "ai_gen_rag_enabled": preferences.rag_enabled,
+            "ai_gen_rag_limit": preferences.rag_limit,
+            "ai_gen_spatial_enabled": preferences.spatial_enabled,
+            "ai_gen_filter_reasoning": preferences.filter_reasoning,
+            "ai_gen_audit_log": preferences.audit_enabled,
+            "ai_gen_template_id": preferences.selected_template_id,
+            "ai_gen_entity_prompt": preferences.entity_prompt_draft,
+            "ai_gen_event_prompt": preferences.event_prompt_draft,
+        }
+        for key, value in values.items():
+            settings.setValue(key, value)
+
+    @Slot()
+    def _save_current_world_preferences(self) -> None:
+        """Persist current creative settings via the queued DB worker path."""
+        dialog = getattr(self.window, "ai_settings_dialog", None)
+        if dialog is not None:
+            preferences = dialog.export_world_preferences()
+        else:
+            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+            preferences = AIGenerationPreferences(
+                persona=str(
+                    settings.value("ai_gen_system_prompt", DEFAULT_SYSTEM_PROMPT)
+                ),
+                max_tokens=cast(
+                    int,
+                    settings.value("ai_gen_max_tokens", 512, type=int),
+                ),
+                temperature_percent=cast(
+                    int,
+                    settings.value("ai_gen_temperature", 70, type=int),
+                ),
+                rag_enabled=cast(
+                    bool,
+                    settings.value("ai_gen_rag_enabled", True, type=bool),
+                ),
+                rag_limit=cast(
+                    int,
+                    settings.value("ai_gen_rag_limit", 3, type=int),
+                ),
+                spatial_enabled=cast(
+                    bool,
+                    settings.value(
+                        "ai_gen_spatial_enabled", False, type=bool
+                    ),
+                ),
+                filter_reasoning=cast(
+                    bool,
+                    settings.value(
+                        "ai_gen_filter_reasoning", True, type=bool
+                    ),
+                ),
+                audit_enabled=cast(
+                    bool,
+                    settings.value("ai_gen_audit_log", False, type=bool),
+                ),
+                selected_template_id=str(
+                    settings.value("ai_gen_template_id", "") or ""
+                ),
+                entity_prompt_draft=str(
+                    settings.value("ai_gen_entity_prompt", "") or ""
+                ),
+                event_prompt_draft=str(
+                    settings.value("ai_gen_event_prompt", "") or ""
+                ),
+            )
+        self.window.worker_manager.save_ai_preferences_requested.emit(
+            preferences.to_dict()
+        )
 
     @Slot(str)
     def on_ai_settings_rebuild_requested(self, object_type: str) -> None:

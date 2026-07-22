@@ -51,6 +51,7 @@ class DatabaseWorker(QObject):
         object
     )  # CalendarConfig | None (use object for union types)
     current_time_loaded = Signal(float)  # Current time in lore_date units
+    ai_generation_preferences_loaded = Signal(object)
     grouping_dialog_data_loaded = Signal(
         list, object
     )  # tags_data, GroupingConfig | None (use object for union types)
@@ -742,6 +743,35 @@ class DatabaseWorker(QObject):
         except Exception:
             logger.error(f"Failed to save current_time: {traceback.format_exc()}")
             self.error_occurred.emit("Failed to save current time.")
+
+    @Slot()
+    def load_ai_generation_preferences(self) -> None:
+        """Load portable AI preferences on the database worker thread."""
+        if not self.db_service:
+            return
+        try:
+            preferences = self.db_service.get_ai_generation_preferences()
+            self.ai_generation_preferences_loaded.emit(preferences)
+        except Exception:
+            logger.error(
+                "Failed to load AI generation preferences: %s",
+                traceback.format_exc(),
+            )
+            self.ai_generation_preferences_loaded.emit(None)
+
+    @Slot(dict)
+    def save_ai_generation_preferences(self, preferences: dict) -> None:
+        """Save portable AI preferences on the database worker thread."""
+        if not self.db_service:
+            return
+        try:
+            self.db_service.set_ai_generation_preferences(preferences)
+        except Exception:
+            logger.error(
+                "Failed to save AI generation preferences: %s",
+                traceback.format_exc(),
+            )
+            self.error_occurred.emit("Failed to save AI generation preferences.")
 
     @Slot(dict)
     def save_graph_lexicon(self, config: dict) -> None:

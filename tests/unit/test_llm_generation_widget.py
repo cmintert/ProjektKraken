@@ -6,6 +6,11 @@ import pytest
 from PySide6.QtCore import QSettings
 
 from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+from src.core.ai_generation import (
+    GenerationApplyMode,
+    GenerationReviewResult,
+    ModelReply,
+)
 
 # Reload the widget module after QSettings is mocked to ensure it uses MockQSettings
 if "src.gui.widgets.llm_generation_widget" in sys.modules:
@@ -17,11 +22,19 @@ from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
 
 
 @pytest.fixture
-def clean_settings():
+def clean_settings(tmp_path):
+    original_format = QSettings.defaultFormat()
+    QSettings.setDefaultFormat(QSettings.Format.IniFormat)
+    QSettings.setPath(
+        QSettings.Format.IniFormat,
+        QSettings.Scope.UserScope,
+        str(tmp_path),
+    )
     settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
     settings.clear()
     yield
     settings.clear()
+    QSettings.setDefaultFormat(original_format)
 
 
 @pytest.fixture
@@ -68,14 +81,12 @@ def test_generation_flow_custom_prompt(
             "src.gui.dialogs.generation_review_dialog.GenerationReviewDialog"
         ) as MockDialog:
             mock_dlg_instance = MockDialog.return_value
-            # Configure dialog result to be REPLACE
-            from src.gui.dialogs.generation_review_dialog import ReviewAction
-
-            mock_dlg_instance.get_result.return_value = {
-                "action": ReviewAction.REPLACE,
-                "text": "Generated text",
-                "rating": None,
-            }
+            mock_dlg_instance.get_review_result.return_value = (
+                GenerationReviewResult(
+                    action=GenerationApplyMode.REPLACE,
+                    text="Generated text",
+                )
+            )
 
             # Watch for the final signal
             with qtbot.waitSignal(widget.text_generated, timeout=1000) as blocker:
@@ -95,11 +106,13 @@ def test_generation_flow_custom_prompt(
                 # args[0] of connect call
                 connect_call = mock_worker.generation_complete.connect.call_args
                 callback = connect_call[0][0]
-                callback("Generated text")
+                callback(ModelReply(content="Generated text"))
 
     # Verify signal verified by waitSignal
     assert blocker.signal_triggered
-    assert blocker.args == ["REPLACE:Generated text"]
+    emitted = blocker.args[0]
+    assert emitted.action == GenerationApplyMode.REPLACE
+    assert emitted.text == "Generated text"
 
     # Verify UI state reset
     assert not widget.cancel_btn.isEnabled()

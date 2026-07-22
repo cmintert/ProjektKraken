@@ -8,13 +8,21 @@ from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
 
 
 @pytest.fixture
-def widget(qtbot):
+def widget(qtbot, tmp_path):
     """Fixture for LLMGenerationWidget."""
+    original_format = QSettings.defaultFormat()
+    QSettings.setDefaultFormat(QSettings.Format.IniFormat)
+    QSettings.setPath(
+        QSettings.Format.IniFormat,
+        QSettings.Scope.UserScope,
+        str(tmp_path),
+    )
     settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
     settings.clear()
     widget = LLMGenerationWidget()
     qtbot.addWidget(widget)
-    return widget
+    yield widget
+    QSettings.setDefaultFormat(original_format)
 
 
 @pytest.mark.skip(

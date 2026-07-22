@@ -2,6 +2,21 @@ from src.core.entities import Entity
 from src.core.events import Event
 
 
+def test_ai_generation_preferences_round_trip(db_service):
+    """Portable AI preferences are stored as world metadata."""
+    preferences = {
+        "version": 1,
+        "persona": "A precise chronicler",
+        "entity_prompt_draft": "Describe [[Kraken]].",
+        "audit_enabled": False,
+    }
+
+    assert db_service.get_ai_generation_preferences() is None
+    db_service.set_ai_generation_preferences(preferences)
+
+    assert db_service.get_ai_generation_preferences() == preferences
+
+
 def test_event_crud(db_service):
     """Test Create, Read, Update, Delete for Events."""
     # Create

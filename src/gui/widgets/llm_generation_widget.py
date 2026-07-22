@@ -5,12 +5,15 @@ streaming output and appending to existing text.
 """
 
 import asyncio
+import hashlib
 import logging
+from dataclasses import replace
 from typing import Any, Dict, Optional, Protocol, runtime_checkable
 
 from PySide6.QtCore import QSettings, Qt, QThread, Signal, Slot
-from PySide6.QtGui import QIntValidator
+from PySide6.QtGui import QCloseEvent, QIntValidator
 from PySide6.QtWidgets import (
+    QApplication,
     QCheckBox,
     QComboBox,
     QDialog,
@@ -28,6 +31,11 @@ from PySide6.QtWidgets import (
 )
 
 from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+from src.core.ai_generation import (
+    GenerationApplyMode,
+    GenerationRequest,
+    ModelReply,
+)
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.prompt_editor import PromptEditorWidget
 from src.services.llm_provider import create_provider
@@ -64,7 +72,7 @@ class GenerationWorker(QThread):
     """
 
     # chunk_received = Signal(str)  # Removed as per user request
-    generation_complete = Signal(str)  # Full generated text
+    generation_complete = Signal(object)  # ModelReply
     generation_error = Signal(str)  # Error message
 
     def __init__(
@@ -80,6 +88,7 @@ class GenerationWorker(QThread):
         object_type: Optional[str] = None,
         active_map_id: Optional[str] = None,
         spatial_enabled: bool = False,
+        request: GenerationRequest | None = None,
     ) -> None:
         """Initialize generation worker.
 
@@ -103,16 +112,28 @@ class GenerationWorker(QThread):
         """
         super().__init__()
         self.provider = provider
-        self.prompt = prompt
-        self.max_tokens = max_tokens
-        self.temperature = temperature
-        self.db_path = db_path
-        self.rag_limit = rag_limit
-        self.exclude_names = exclude_names or []
-        self.object_id = object_id
-        self.object_type = object_type
-        self.active_map_id = active_map_id
-        self.spatial_enabled = spatial_enabled
+        if request is not None:
+            self.prompt = dict(request.prompt)
+            self.max_tokens = request.max_tokens
+            self.temperature = request.temperature
+            self.db_path = request.db_path
+            self.rag_limit = request.rag_limit
+            self.exclude_names = list(request.exclude_names)
+            self.object_id = request.target_id
+            self.object_type = request.object_type
+            self.active_map_id = request.active_map_id
+            self.spatial_enabled = request.spatial_enabled
+        else:
+            self.prompt = prompt
+            self.max_tokens = max_tokens
+            self.temperature = temperature
+            self.db_path = db_path
+            self.rag_limit = rag_limit
+            self.exclude_names = exclude_names or []
+            self.object_id = object_id
+            self.object_type = object_type
+            self.active_map_id = active_map_id
+            self.spatial_enabled = spatial_enabled
         # Populated during run() when spatial context is actually injected;
         # read by the widget to drive the post-generation transparency label.
         self.spatial_context_used: Optional[str] = None
@@ -144,8 +165,9 @@ class GenerationWorker(QThread):
                 # Use modular RAGService
                 rag_service = RAGService(self.db_path)
                 logger.info(
-                    f"RAG: Searching context for query: '{user_msg[:50]}...' "
-                    f"(Limit: {self.rag_limit})"
+                    "RAG: Searching context (query_chars=%d limit=%d)",
+                    len(user_msg),
+                    self.rag_limit,
                 )
 
                 # Pass full user message; service cleans it.
@@ -155,8 +177,7 @@ class GenerationWorker(QThread):
 
                 if rag_context:
                     logger.info(
-                        f"RAG: Found context ({len(rag_context)} chars). "
-                        f"Snippet: {rag_context[:100].replace(chr(10), ' ')}..."
+                        "RAG: Found context (chars=%d)", len(rag_context)
                     )
                 else:
                     logger.info("RAG: No context found or returned empty.")
@@ -236,8 +257,12 @@ class GenerationWorker(QThread):
         try:
             # 1. Perform RAG if enabled (synchronous in this thread)
             self._apply_rag_to_prompt()
+            if self._cancelled:
+                return
             # 2. Inject spatial context (also synchronous in this thread)
             self._apply_spatial_to_prompt()
+            if self._cancelled:
+                return
 
             if isinstance(self.prompt, dict):
                 sys_len = len(self.prompt.get("system", ""))
@@ -245,9 +270,6 @@ class GenerationWorker(QThread):
                 logger.debug(
                     f"Final prompt (dict): system={sys_len} chars, user={usr_len} chars"
                 )
-                logger.debug(f"System Prompt: {self.prompt.get('system', '')[:100]}...")
-                logger.debug(f"User Prompt: {self.prompt.get('user', '')[:200]}...")
-
             # Check if provider supports streaming
             meta = self.provider.metadata()
             if meta.get("supports_streaming", False):
@@ -258,7 +280,8 @@ class GenerationWorker(QThread):
                 self._run_non_streaming()
         except Exception as e:
             logger.error(f"Generation failed: {e}", exc_info=True)
-            self.generation_error.emit(str(e))
+            if not self._cancelled:
+                self.generation_error.emit(str(e))
 
     def _run_streaming(self) -> None:
         """Run streaming generation."""
@@ -266,28 +289,57 @@ class GenerationWorker(QThread):
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
 
-            async def generate() -> str:
-                """Execute the streaming generation and collect the full text."""
+            async def generate() -> ModelReply:
+                """Execute streaming generation and preserve its reply fields."""
                 full_text = ""
+                reasoning_content = ""
+                tool_calls: list[dict[str, Any]] = []
+                finish_reason = None
+                usage: dict[str, Any] = {}
+                model = ""
+                system_fingerprint = None
+                provider_metadata: dict[str, Any] = {}
                 async for chunk in self.provider.stream_generate(
                     self.prompt,
                     max_tokens=self.max_tokens,
                     temperature=self.temperature,
                 ):
                     delta = chunk.get("delta", "")
-                    # We no longer emit chunk_received
                     full_text += delta
-                return full_text
+                    reasoning_content += chunk.get("reasoning_delta", "")
+                    tool_calls.extend(chunk.get("tool_calls_delta") or [])
+                    finish_reason = chunk.get("finish_reason") or finish_reason
+                    usage = chunk.get("usage") or usage
+                    model = str(chunk.get("model") or model)
+                    system_fingerprint = (
+                        chunk.get("system_fingerprint") or system_fingerprint
+                    )
+                    provider_metadata.update(
+                        chunk.get("provider_metadata") or {}
+                    )
+                return ModelReply(
+                    content=full_text,
+                    reasoning_content=reasoning_content,
+                    tool_calls=tool_calls,
+                    finish_reason=finish_reason,
+                    usage=usage,
+                    model=model,
+                    system_fingerprint=system_fingerprint,
+                    provider_metadata=provider_metadata,
+                )
 
             result = loop.run_until_complete(generate())
             loop.close()
 
             if not self._cancelled:
+                if not result.content:
+                    raise ValueError("The model returned no visible content")
                 self.generation_complete.emit(result)
 
         except Exception as e:
             logger.error(f"Streaming generation failed: {e}", exc_info=True)
-            self.generation_error.emit(f"Streaming failed: {e}")
+            if not self._cancelled:
+                self.generation_error.emit(f"Streaming failed: {e}")
 
     def _run_non_streaming(self) -> None:
         """Run non-streaming generation."""
@@ -299,16 +351,22 @@ class GenerationWorker(QThread):
             )
 
             if not self._cancelled:
-                text = result.get("text", "")
-                self.generation_complete.emit(text)
+                reply = ModelReply.from_provider_result(result)
+                if not reply.content:
+                    raise ValueError("The model returned no visible content")
+                self.generation_complete.emit(reply)
 
         except Exception as e:
             logger.error(f"Non-streaming generation failed: {e}", exc_info=True)
-            self.generation_error.emit(f"Generation failed: {e}")
+            if not self._cancelled:
+                self.generation_error.emit(f"Generation failed: {e}")
 
     def cancel(self) -> None:
         """Cancel the generation."""
         self._cancelled = True
+        cancel_request = getattr(self.provider, "cancel_current_request", None)
+        if callable(cancel_request):
+            cancel_request()
 
 
 class LLMGenerationWidget(QWidget):
@@ -318,7 +376,8 @@ class LLMGenerationWidget(QWidget):
     providers.
     """
 
-    text_generated = Signal(str)  # Emitted when generation completes
+    text_generated = Signal(object)  # GenerationReviewResult
+    preferences_changed = Signal()
 
     def __init__(
         self,
@@ -333,6 +392,11 @@ class LLMGenerationWidget(QWidget):
 
         """
         super().__init__(parent)
+        self._generation_target_id: str | None = None
+        self._generation_source_hash: str | None = None
+        app = QApplication.instance()
+        if app is not None:
+            app.aboutToQuit.connect(self._shutdown_worker)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         self._worker: Optional[GenerationWorker] = None
@@ -374,7 +438,14 @@ class LLMGenerationWidget(QWidget):
         self.provider_combo.addItems(
             ["LM Studio", "OpenAI", "Google Vertex AI", "Anthropic"]
         )
-        self.provider_combo.setToolTip("Select LLM provider for generation")
+        for index in range(1, self.provider_combo.count()):
+            item = self.provider_combo.model().item(index)
+            if item is not None:
+                item.setEnabled(False)
+                item.setToolTip("Cloud generation is not enabled in this release")
+        self.provider_combo.setToolTip(
+            "LM Studio is supported. Cloud providers are planned but disabled."
+        )
         self.provider_combo.currentIndexChanged.connect(self._save_settings)
         # Removing manual size policy, Grid should handle it better
         from PySide6.QtWidgets import QSizePolicy
@@ -459,6 +530,7 @@ class LLMGenerationWidget(QWidget):
             ["{name}", "{type}", "{description}", "{lore_date}"]
         )
         self.custom_prompt_edit.setMaximumHeight(120)  # Slightly taller for toolbar
+        self.custom_prompt_edit.textChanged.connect(self._save_settings)
         main_layout.addWidget(self.custom_prompt_edit)
 
         # Separator line before buttons
@@ -602,9 +674,7 @@ class LLMGenerationWidget(QWidget):
             template = loader.load_template(template_id)
             if template and template.content:
                 self.custom_prompt_edit.setPlainText(template.content)
-                # We do NOT save the template ID to settings as "system prompt override" anymore.
-                # Use standard saving for valid settings if needed, but template selection
-                # is now an ACTION, not a persisted SETTING for system prompt.
+                self._save_settings()
         except Exception as e:
             logger.error(f"Failed to load template content: {e}")
             self.status_label.setText(f"Error loading template: {e}")
@@ -617,6 +687,9 @@ class LLMGenerationWidget(QWidget):
             # Load last used provider
             self.provider_combo.blockSignals(True)
             provider = settings.value("ai_gen_last_provider", "LM Studio")
+            if provider != "LM Studio":
+                provider = "LM Studio"
+                settings.setValue("ai_gen_last_provider", provider)
             index = self.provider_combo.findText(provider)
             if index >= 0:
                 self.provider_combo.setCurrentIndex(index)
@@ -664,6 +737,15 @@ class LLMGenerationWidget(QWidget):
                     break
             self.template_combo.blockSignals(False)
 
+            context = self._get_generation_context() or {}
+            object_type = context.get("object_type")
+            if object_type in {"entity", "event"}:
+                draft = settings.value(f"ai_gen_{object_type}_prompt", "")
+                if draft:
+                    self.custom_prompt_edit.blockSignals(True)
+                    self.custom_prompt_edit.setPlainText(str(draft))
+                    self.custom_prompt_edit.blockSignals(False)
+
         except Exception as e:
             logger.warning(f"Failed to load generation settings: {e}")
 
@@ -685,9 +767,19 @@ class LLMGenerationWidget(QWidget):
                 limit_val = 3
             settings.setValue("ai_gen_rag_limit", limit_val)
 
-            # Save template selection
-            # NOTE: We no longer persist 'ai_gen_template_id' as a System Prompt override.
-            # Template selection is ephemeral or just fills the text box.
+            settings.setValue(
+                "ai_gen_template_id", self.template_combo.currentData() or ""
+            )
+
+            context = self._get_generation_context() or {}
+            object_type = context.get("object_type")
+            if object_type in {"entity", "event"}:
+                settings.setValue(
+                    f"ai_gen_{object_type}_prompt",
+                    self.custom_prompt_edit.toPlainText(),
+                )
+
+            self.preferences_changed.emit()
 
         except Exception as e:
             logger.error(f"Failed to save generation settings: {e}", exc_info=True)
@@ -714,6 +806,8 @@ class LLMGenerationWidget(QWidget):
             return
 
         logger.debug(f"Generation context retrieved: {context.keys()}")
+        self._generation_target_id = str(context.get("object_id") or "") or None
+        self._generation_source_hash = self._hash_source_description(context)
 
         # Validate custom prompt
         user_prompt = self.custom_prompt_edit.toPlainText().strip()
@@ -758,16 +852,15 @@ class LLMGenerationWidget(QWidget):
             logger.info(f"Creating LLM provider: {provider_id}")
             self._current_provider = create_provider(provider_id)
 
-            # Check provider health
-            health = self._current_provider.health_check()
-            if health["status"] == "unhealthy":
-                logger.error(f"Provider health check failed: {health['message']}")
-                self.status_label.setText(f"Error: {health['message']}")
-                return
-
             # Start generation
-            logger.info(f"Starting generation with prompt length: {len(prompt)}")
-            logger.info(f"Full Prompt (Pre-RAG):\n{prompt}")
+            prompt_length = sum(
+                len(str(value)) for value in prompt.values()
+            )
+            logger.info(
+                "Starting generation: provider=%s prompt_chars=%d",
+                provider_id,
+                prompt_length,
+            )
             self._start_generation(
                 prompt,
                 temperature,
@@ -862,6 +955,12 @@ class LLMGenerationWidget(QWidget):
 
         return context if found_editor else None
 
+    @staticmethod
+    def _hash_source_description(context: dict[str, Any]) -> str:
+        """Hash the source description used to build a request."""
+        description = str(context.get("existing_description") or "")
+        return hashlib.sha256(description.encode("utf-8")).hexdigest()
+
     def _construct_prompt(self, context_str: str, user_prompt: str) -> Dict[str, Any]:
         """Construct the final prompt with persona and delimited context.
 
@@ -911,23 +1010,31 @@ class LLMGenerationWidget(QWidget):
         active_map_id = self._resolve_active_map_id() if spatial_enabled else None
 
         # Create worker
+        request = GenerationRequest(
+            prompt=dict(prompt),
+            max_tokens=self.max_tokens_spin.value(),
+            temperature=temperature,
+            db_path=db_path,
+            rag_limit=self._get_rag_limit(),
+            exclude_names=tuple(exclude_names),
+            target_id=object_id,
+            source_hash=self._generation_source_hash,
+            object_type=object_type,
+            active_map_id=active_map_id,
+            spatial_enabled=spatial_enabled,
+        )
         self._worker = GenerationWorker(
             self._current_provider,
             prompt,
             self.max_tokens_spin.value(),
             temperature,
-            db_path=db_path,
-            rag_limit=self._get_rag_limit(),
-            exclude_names=exclude_names,
-            object_id=object_id,
-            object_type=object_type,
-            active_map_id=active_map_id,
-            spatial_enabled=spatial_enabled,
+            request=request,
         )
 
         # Connect signals
         self._worker.generation_complete.connect(self._on_generation_complete)
         self._worker.generation_error.connect(self._on_generation_error)
+        self._worker.finished.connect(self._on_worker_finished)
 
         # Start worker
         self._worker.start()
@@ -990,14 +1097,31 @@ class LLMGenerationWidget(QWidget):
     #     """Handle streaming chunk."""
     #     self.preview_text.appendPlainText(chunk)
 
-    @Slot(str)
-    def _on_generation_complete(self, text: str) -> None:
+    @Slot(object)
+    def _on_generation_complete(self, reply: ModelReply) -> None:
         """Handle generation completion by showing review dialog."""
+        text = reply.content
         logger.info(f"Generation complete. Received {len(text)} characters.")
-        logger.debug(f"Generated Text:\n{text}")
         self.status_label.setText(f"Generated {len(text)} characters")
         self.generate_btn.setEnabled(True)
         self.cancel_btn.setEnabled(False)
+
+        current_context = self._get_generation_context() or {}
+        current_target_id = str(current_context.get("object_id") or "") or None
+        current_source_hash = self._hash_source_description(current_context)
+        if (
+            current_target_id != self._generation_target_id
+            or current_source_hash != self._generation_source_hash
+        ):
+            self.status_label.setText("Result discarded: editor context changed")
+            QMessageBox.warning(
+                self,
+                "Generation Context Changed",
+                "The selected item or its description changed while the model was "
+                "working. The result was not applied. Generate again from the "
+                "current editor state.",
+            )
+            return
 
         # Capture audit data before cleaning up worker
         worker_prompt = None
@@ -1018,15 +1142,9 @@ class LLMGenerationWidget(QWidget):
             worker_spatial_requested, worker_spatial_context
         )
 
-        # Clean up worker
-        if self._worker:
-            self._worker.deleteLater()
-            self._worker = None
-
         # Show review dialog
         from src.gui.dialogs.generation_review_dialog import (
             GenerationReviewDialog,
-            ReviewAction,
         )
 
         # Check if filtering is enabled in settings (defaults to True)
@@ -1043,14 +1161,20 @@ class LLMGenerationWidget(QWidget):
         else:
             filtered_text = text
 
-        dialog = GenerationReviewDialog(generated_text=filtered_text, parent=self)
+        dialog = GenerationReviewDialog(
+            generated_text=filtered_text,
+            parent=self,
+            reply=reply,
+        )
         dialog.exec()  # Result code not needed, using dialog.get_result()
 
-        result = dialog.get_result()
-        action = result["action"]
-        final_text = result["text"]
-        rating = result["rating"]
-        comment = result.get("comment")
+        result = dialog.get_review_result()
+        result = replace(
+            result,
+            target_id=self._generation_target_id,
+            source_hash=self._generation_source_hash,
+        )
+        final_text = result.text
 
         # Audit log the interaction (post-dialog so rating is known)
         if worker_prompt is not None:
@@ -1062,19 +1186,15 @@ class LLMGenerationWidget(QWidget):
             log_ai_interaction(
                 prompt=worker_prompt,
                 response_text=final_text,
-                model=worker_model,
+                model=reply.model or worker_model,
                 source="LLMGenerationWidget",
-                rating=rating,
-                rating_comment=comment,
+                rating=result.rating or None,
+                rating_comment=result.comment or None,
                 audit_path=audit_path,
             )
 
-        # Emit signal based on action
-        if action == ReviewAction.REPLACE:
-            self.text_generated.emit(f"REPLACE:{final_text}")
-        elif action == ReviewAction.APPEND:
-            self.text_generated.emit(f"APPEND:{final_text}")
-        # DISCARD: do nothing
+        if result.action != GenerationApplyMode.DISCARD:
+            self.text_generated.emit(result)
 
     @Slot(str)
     def _on_generation_error(self, error: str) -> None:
@@ -1084,10 +1204,17 @@ class LLMGenerationWidget(QWidget):
         self.generate_btn.setEnabled(True)
         self.cancel_btn.setEnabled(False)
 
-        # Clean up worker
-        if self._worker:
-            self._worker.deleteLater()
-            self._worker = None
+    @Slot()
+    def _on_worker_finished(self) -> None:
+        """Delete a worker only after its thread has actually stopped."""
+        worker = self.sender()
+        if isinstance(worker, GenerationWorker):
+            if worker._cancelled:
+                self.status_label.setText("Generation cancelled")
+                self.generate_btn.setEnabled(True)
+            worker.deleteLater()
+            if worker is self._worker:
+                self._worker = None
 
     def _update_spatial_used_label(
         self, spatial_requested: bool, context_text: Optional[str]
@@ -1165,13 +1292,24 @@ class LLMGenerationWidget(QWidget):
         """Handle cancel button click."""
         if self._worker:
             self._worker.cancel()
-            self._worker.wait(1000)  # Wait up to 1 second
-            self._worker.deleteLater()
-            self._worker = None
 
-        self.status_label.setText("Generation cancelled")
-        self.generate_btn.setEnabled(True)
+        self.status_label.setText("Cancelling generation...")
+        self.generate_btn.setEnabled(False)
         self.cancel_btn.setEnabled(False)
+
+    def _shutdown_worker(self) -> None:
+        """Request cancellation and retain the thread until it has stopped."""
+        worker = self._worker
+        if worker is None or not worker.isRunning():
+            return
+        worker.cancel()
+        if not worker.wait(5000):
+            logger.warning("Generation worker did not stop within shutdown timeout")
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """Stop active generation before the widget can be destroyed."""
+        self._shutdown_worker()
+        super().closeEvent(event)
 
     @Slot()
     def _on_preview_clicked(self) -> None:

@@ -1277,6 +1277,7 @@ def get_llm_settings_from_qsettings() -> Dict[str, Any]:
         from PySide6.QtCore import QSettings
 
         from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+        from src.services.secret_store import get_api_key
 
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
@@ -1292,7 +1293,7 @@ def get_llm_settings_from_qsettings() -> Dict[str, Any]:
             "provider": raw_provider,
             "lm_url": str(settings.value("ai_lmstudio_url", "")),
             "lm_model": str(settings.value("ai_lmstudio_model", "")),
-            "lm_api_key": str(settings.value("ai_lmstudio_api_key", "")),
+            "lm_api_key": get_api_key("lmstudio"),
             "lm_timeout": cast(
                 int, settings.value("ai_lmstudio_timeout", 30, type=int)
             ),

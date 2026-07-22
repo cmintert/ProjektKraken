@@ -41,6 +41,13 @@ class TestGenerationReviewDialog:
         dialog.text_edit.setPlainText("Modified text")
         assert dialog.get_text() == "Modified text"
 
+    def test_visible_format_round_trips_exactly(self, qapp):
+        """Markdown, wiki links, Unicode, and whitespace remain unchanged."""
+        text = "  # Kraken\n\n[[Abyss]] — *unchanged*\n\n\n  "
+        dialog = GenerationReviewDialog(generated_text=text, parent=None)
+
+        assert dialog.get_text() == text
+
     def test_replace_action(self, qapp):
         """Test Replace button sets correct action."""
         dialog = GenerationReviewDialog(generated_text="Test text", parent=None)

@@ -52,7 +52,9 @@ class TestCompleteStandardTags:
             "I'll consider each one.\n</think>\n"
             "The Eldertree stands tall in the forest."
         )
-        assert filter_reasoning_tags(text) == "The Eldertree stands tall in the forest."
+        assert filter_reasoning_tags(text) == (
+            "\nThe Eldertree stands tall in the forest."
+        )
 
     def test_multiple_tag_blocks(self) -> None:
         """Multiple separate reasoning blocks should all be removed."""
@@ -107,7 +109,9 @@ class TestPipeDelimitedTags:
             "<|/think|>\n"
             "The kingdom fell in the third age."
         )
-        assert filter_reasoning_tags(text) == "The kingdom fell in the third age."
+        assert filter_reasoning_tags(text) == (
+            "\nThe kingdom fell in the third age."
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -130,12 +134,12 @@ class TestUnclosedTags:
             "<think>Now I need to describe more about the tree "
             "and its significance in the lore"
         )
-        assert filter_reasoning_tags(text) == "The Eldertree is ancient."
+        assert filter_reasoning_tags(text) == "The Eldertree is ancient. "
 
     def test_unclosed_thinking_tag(self) -> None:
         """Unclosed <thinking> tag."""
         text = "Intro. <thinking>Let me analyze this request thoroughly..."
-        assert filter_reasoning_tags(text) == "Intro."
+        assert filter_reasoning_tags(text) == "Intro. "
 
     def test_unclosed_pipe_tag(self) -> None:
         """Unclosed pipe-delimited tag."""
@@ -145,7 +149,7 @@ class TestUnclosedTags:
     def test_unclosed_pipe_with_preceding_content(self) -> None:
         """Content before an unclosed pipe tag should be preserved."""
         text = "Here is the answer. <|think|>Let me verify that..."
-        assert filter_reasoning_tags(text) == "Here is the answer."
+        assert filter_reasoning_tags(text) == "Here is the answer. "
 
     def test_closed_tag_followed_by_unclosed(self) -> None:
         """A closed block followed by an unclosed block."""
@@ -154,7 +158,7 @@ class TestUnclosedTags:
             "The castle was built in the second age. "
             "<think>Let me add more detail about the construction"
         )
-        expected = "The castle was built in the second age."
+        expected = "The castle was built in the second age. "
         assert filter_reasoning_tags(text) == expected
 
     def test_real_world_truncation(self) -> None:
@@ -232,18 +236,20 @@ class TestEdgeCases:
             filter_reasoning_tags(text) == "<b>Bold text</b> and <i>italic</i> content."
         )
 
-    def test_whitespace_normalisation(self) -> None:
-        """Excessive blank lines left after removal should be collapsed."""
+    def test_whitespace_is_preserved(self) -> None:
+        """Whitespace outside reasoning blocks must be preserved exactly."""
         text = (
             "<think>reasoning</think>\n\n\n\n\n"
             "First paragraph.\n\n\n\n\n"
             "Second paragraph."
         )
-        result = filter_reasoning_tags(text)
-        assert "First paragraph." in result
-        assert "Second paragraph." in result
-        # Should not have more than one blank line between paragraphs
-        assert "\n\n\n" not in result
+        expected = "\n\n\n\n\nFirst paragraph.\n\n\n\n\nSecond paragraph."
+        assert filter_reasoning_tags(text) == expected
+
+    def test_visible_reply_format_is_byte_for_byte_unchanged(self) -> None:
+        """Markdown, wiki links, Unicode, and outer whitespace survive."""
+        text = "  # Heading\n\n[[Abyss]] — *unchanged*\n\n\n  "
+        assert filter_reasoning_tags(text) == text
 
     def test_inner_monologue_tag(self) -> None:
         """<inner_monologue> tag should be filtered."""

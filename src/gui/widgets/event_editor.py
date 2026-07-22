@@ -34,6 +34,7 @@ from src.app.constants import (
     EDITOR_RELATION_LIST_MIN_HEIGHT,
     EDITOR_SECTION_SPACING,
 )
+from src.core.ai_generation import GenerationReviewResult, apply_reviewed_generation
 from src.core.events import Event
 from src.core.summary_data import SummaryData
 from src.gui.mixins.autosave_mixin import AutoSaveManager
@@ -1550,32 +1551,18 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             # Widgets may not be fully initialized during loading or partial state
             logger.debug(f"Could not emit current data: {e}")
 
-    @Slot(str)
-    def _on_text_generated(self, text: str) -> None:
-        """Handle text generated from LLM.
-
-        Appends generated text to the description field.
-
-        Args:
-            text: Generated text from LLM.
-
-        """
-        if not text:
+    @Slot(object)
+    def _on_text_generated(self, result: GenerationReviewResult) -> None:
+        """Apply explicitly reviewed generated text to the description."""
+        if not isinstance(result, GenerationReviewResult) or not result.text:
             return
 
-        # Get current description
         current = self.desc_edit.toPlainText()
+        new_text = apply_reviewed_generation(current, result)
+        if new_text == current:
+            return
 
-        # Append generated text with newline separator if there's existing content
-        if current.strip():
-            new_text = current + "\n\n" + text
-        else:
-            new_text = text
-
-        # Update description
         self.desc_edit.setPlainText(new_text)
-
-        # Mark as dirty
         self.set_dirty(True)
 
     def minimumSizeHint(self) -> QSize:

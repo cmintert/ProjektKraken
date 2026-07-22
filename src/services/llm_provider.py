@@ -281,41 +281,47 @@ def get_provider_settings_from_qsettings(
 
         # Provider-specific settings
         if provider_id == "lmstudio":
-            # Map keys from AISettingsDialog
-            # ai_lmstudio_url -> Embedding URL in dialog
-            # ai_gen_lmstudio_url -> Generation URL in dialog
+            from src.services.lmstudio_config import derive_lmstudio_endpoints
+            from src.services.secret_store import get_api_key
+
+            legacy_url = str(
+                settings.value(
+                    "ai_lmstudio_base_url",
+                    settings.value(
+                        "ai_gen_lmstudio_url",
+                        settings.value(
+                            "ai_lmstudio_url", "http://localhost:1234"
+                        ),
+                    ),
+                )
+            )
+            endpoints = derive_lmstudio_endpoints(legacy_url)
             result.update(
                 {
-                    "url": str(settings.value(f"{prefix}url", "")),
-                    "model": str(
-                        settings.value(
-                            f"ai_gen_{provider_id}_model",
-                            settings.value(f"{prefix}model", ""),
-                        )
+                    "base_url": endpoints.base_url,
+                    "generation_model": str(
+                        settings.value("ai_gen_lmstudio_model", "")
                     ),
-                    "api_key": str(settings.value(f"{prefix}api_key", "")),
-                    "embed_url": str(
-                        settings.value(
-                            f"{prefix}url",  # Embedding URL
-                            "http://localhost:8080/v1/embeddings",
-                        )
+                    "embedding_model": str(
+                        settings.value("ai_lmstudio_model", "")
                     ),
-                    "generate_url": str(
-                        settings.value(
-                            f"ai_gen_{provider_id}_url",
-                            "http://localhost:8080/v1/chat/completions",
-                        )
-                    ),
+                    "api_key": get_api_key("lmstudio"),
+                    "embed_url": endpoints.embeddings_url,
+                    "generate_url": endpoints.chat_completions_url,
                     "use_chat_api": settings.value(
                         f"ai_gen_{provider_id}_use_chat_api", True, type=bool
                     ),
                 }
             )
         elif provider_id == "openai":
+            from src.services.secret_store import get_api_key
+
             result.update(
                 {
-                    "api_key": settings.value(f"{prefix}api_key", ""),
-                    "model": settings.value(f"{prefix}model", "gpt-3.5-turbo"),
+                    "api_key": get_api_key("openai"),
+                    "model": settings.value(
+                        "ai_gen_openai_model", "gpt-3.5-turbo"
+                    ),
                     "embed_model": settings.value(
                         f"{prefix}embed_model", "text-embedding-ada-002"
                     ),
@@ -327,21 +333,32 @@ def get_provider_settings_from_qsettings(
         elif provider_id == "google":
             result.update(
                 {
-                    "project_id": settings.value(f"{prefix}project_id", ""),
-                    "location": settings.value(f"{prefix}location", "us-central1"),
-                    "credentials_path": settings.value(f"{prefix}credentials_path", ""),
-                    "model": settings.value(f"{prefix}model", "text-bison@001"),
+                    "project_id": settings.value("ai_gen_google_project_id", ""),
+                    "location": settings.value(
+                        "ai_gen_google_location", "us-central1"
+                    ),
+                    "credentials_path": settings.value(
+                        "ai_gen_google_credentials_path", ""
+                    ),
+                    "model": settings.value(
+                        "ai_gen_google_model", "text-bison@001"
+                    ),
                     "embed_model": settings.value(
                         f"{prefix}embed_model", "textembedding-gecko@001"
                     ),
                 }
             )
         elif provider_id == "anthropic":
+            from src.services.secret_store import get_api_key
+
             result.update(
                 {
-                    "api_key": str(settings.value(f"{prefix}api_key", "")),
+                    "api_key": get_api_key("anthropic"),
                     "model": str(
-                        settings.value(f"{prefix}model", "claude-3-haiku-20240307")
+                        settings.value(
+                            "ai_gen_anthropic_model",
+                            "claude-3-haiku-20240307",
+                        )
                     ),
                     "base_url": str(
                         settings.value(
@@ -383,7 +400,12 @@ def create_provider(
     # Load settings from QSettings
     settings = get_provider_settings_from_qsettings(provider_id, world_id)
 
-    logger.info(f"Loaded QSettings for {provider_id}: {settings}")
+    logger.info(
+        "Loaded provider settings: provider=%s enabled=%s timeout=%s",
+        provider_id,
+        settings.get("enabled"),
+        settings.get("timeout"),
+    )
 
     # Apply overrides
     if overrides:
@@ -394,15 +416,20 @@ def create_provider(
     if provider_id == "lmstudio":
         from src.services.providers.lmstudio_provider import LMStudioProvider
 
+        capability = str(settings.pop("capability", "generation"))
+        selected_model = (
+            settings.get("embedding_model")
+            if capability == "embedding"
+            else settings.get("generation_model")
+        )
         return LMStudioProvider(
-            url=settings.get("url") or os.getenv("LMSTUDIO_URL"),
-            model=settings.get("model") or os.getenv("LMSTUDIO_MODEL"),
+            model=settings.get("model") or selected_model or os.getenv("LMSTUDIO_MODEL"),
             api_key=settings.get("api_key") or os.getenv("LMSTUDIO_API_KEY"),
             embed_url=settings.get("embed_url")
-            or os.getenv("LMSTUDIO_EMBED_URL", "http://localhost:8080/v1/embeddings"),
+            or os.getenv("LMSTUDIO_EMBED_URL", "http://localhost:1234/v1/embeddings"),
             generate_url=settings.get("generate_url")
             or os.getenv(
-                "LMSTUDIO_GENERATE_URL", "http://localhost:8080/v1/chat/completions"
+                "LMSTUDIO_GENERATE_URL", "http://localhost:1234/v1/chat/completions"
             ),
             timeout=settings.get("timeout", 30),
             use_chat_api=settings.get("use_chat_api", True),

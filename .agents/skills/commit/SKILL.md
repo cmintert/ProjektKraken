@@ -19,7 +19,21 @@ If nothing is staged and nothing is modified, tell the user there is nothing to 
 
 If there are unstaged changes but nothing staged, ask the user whether they want to stage everything (`git add -A`) or specific files before continuing.
 
-## Step 2 — Draft the Commit Message
+## Step 2 — Update the Changelog
+
+Every commit must include an update to the root `CHANGELOG.md`. Follow
+`.agent/workflows/update-changelog.md` before drafting the commit message:
+
+- add concise, dated entries under `## [Unreleased]` for the complete commit
+  scope, including documentation, tests, tooling, and internal maintenance;
+- update `Last Updated` to the current date;
+- set `Commit` to the current pre-commit `HEAD` hash, which records the baseline
+  reviewed for the new entry (a commit cannot contain its own final hash);
+- stage the changelog with the rest of the approved changes.
+
+Do not skip this step for small or non-user-facing commits.
+
+## Step 3 — Draft the Commit Message
 
 Using the diff content, draft a message that follows this structure:
 
@@ -83,11 +97,11 @@ All known clients have migrated.
 BREAKING CHANGE: /v1/events is no longer available. Use /v2/events.
 ```
 
-## Step 3 — Present for Review
+## Step 4 — Present for Review
 
 Show the user the full drafted commit message in a fenced code block. Ask them to confirm or request changes. Do **not** commit yet.
 
-## Step 4 — Commit
+## Step 5 — Commit
 
 Once the user approves:
 

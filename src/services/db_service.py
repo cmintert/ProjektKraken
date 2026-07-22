@@ -1146,6 +1146,14 @@ class DatabaseService:
         """Persists the active theme name for this world in system_meta."""
         self._meta_repo.set_world_theme(theme_name)
 
+    def get_ai_generation_preferences(self) -> Optional[Dict[str, Any]]:
+        """Retrieve portable AI generation preferences for this world."""
+        return self._meta_repo.get_ai_generation_preferences()
+
+    def set_ai_generation_preferences(self, data: Dict[str, Any]) -> None:
+        """Persist portable AI generation preferences for this world."""
+        self._meta_repo.set_ai_generation_preferences(data)
+
     # --------------------------------------------------------------------------
     # Map CRUD - Delegates to MapRepository
     # --------------------------------------------------------------------------

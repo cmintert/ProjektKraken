@@ -90,7 +90,9 @@ def filter_reasoning_tags(text: str) -> str:
         text: Raw LLM output text.
 
     Returns:
-        Cleaned text with reasoning blocks removed and whitespace normalised.
+        Text with reasoning blocks removed. Every character outside a matched
+        reasoning block is preserved exactly, including leading/trailing space
+        and blank lines.
 
     """
     if not text:
@@ -106,9 +108,6 @@ def filter_reasoning_tags(text: str) -> str:
     result = _PATTERN_UNCLOSED_STANDARD.sub("", result)
     result = _PATTERN_UNCLOSED_PIPE.sub("", result)
 
-    # --- Tidy up whitespace artefacts left by removal ---
-    result = _normalise_whitespace(result)
-
     chars_removed = len(text) - len(result)
     if chars_removed > 0:
         logger.debug(
@@ -118,19 +117,3 @@ def filter_reasoning_tags(text: str) -> str:
         )
 
     return result
-
-
-def _normalise_whitespace(text: str) -> str:
-    """Collapse runs of 3+ newlines into 2 and strip leading/trailing space.
-
-    Args:
-        text: Text that may contain excessive blank lines after tag removal.
-
-    Returns:
-        Cleaned text.
-
-    """
-    # Collapse 3+ consecutive newlines (with optional whitespace-only lines
-    # between them) into exactly two newlines (one visible blank line).
-    text = re.sub(r"(\n\s*){3,}", "\n\n", text)
-    return text.strip()

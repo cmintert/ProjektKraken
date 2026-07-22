@@ -50,6 +50,8 @@ class WorkerManager(QObject):
     summary_requested = Signal(object)
     rebuild_index_requested = Signal(str, list)  # → worker.rebuild_search_index
     _index_single_requested = Signal(str, str, list)  # → worker.index_object
+    load_ai_preferences_requested = Signal()
+    save_ai_preferences_requested = Signal(dict)
 
     # Delay (ms) after the last save before firing the re-embed request.
     # Prevents running ONNX/numpy-heavy embedding code on every keystroke-
@@ -217,6 +219,14 @@ class WorkerManager(QObject):
         )
         self._index_single_requested.connect(
             self.window.worker.index_object, connection_type
+        )
+        self.load_ai_preferences_requested.connect(
+            self.window.worker.load_ai_generation_preferences,
+            connection_type,
+        )
+        self.save_ai_preferences_requested.connect(
+            self.window.worker.save_ai_generation_preferences,
+            connection_type,
         )
 
         # Connect MainWindow signals to worker (cross-thread: main → worker)
@@ -449,6 +459,7 @@ class WorkerManager(QObject):
             self.window.time_coordinator.request_current_time()
             self.window._request_grouping_config()
             self.window.load_maps()
+            self.load_ai_preferences_requested.emit()
 
             # Refresh AI search index status
             QTimer.singleShot(

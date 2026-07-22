@@ -19,6 +19,28 @@ from src.services.resilience import CircuitBreaker
 logger = logging.getLogger(__name__)
 
 
+def _coerce_text_content(content: Any) -> str:
+    """Return visible text without changing its formatting.
+
+    OpenAI-compatible servers may return either a string or an array of typed
+    content parts. Non-text parts are deliberately kept out of editor text.
+    """
+    if isinstance(content, str):
+        return content
+    if not isinstance(content, list):
+        return "" if content is None else str(content)
+
+    parts: list[str] = []
+    for part in content:
+        if isinstance(part, str):
+            parts.append(part)
+        elif isinstance(part, dict) and part.get("type") in {None, "text"}:
+            text = part.get("text", "")
+            if isinstance(text, str):
+                parts.append(text)
+    return "".join(parts)
+
+
 class LMStudioProvider(Provider):
     """LM Studio provider supporting embeddings and text generation.
 
@@ -66,21 +88,22 @@ class LMStudioProvider(Provider):
         if url and not embed_url:
             embed_url = url
 
-        self.embed_url = embed_url or "http://localhost:8080/v1/embeddings"
+        self.embed_url = embed_url or "http://localhost:1234/v1/embeddings"
         self.use_chat_api = use_chat_api
 
         # Set default generate URL based on API mode
         if generate_url:
             self.generate_url = generate_url
         elif use_chat_api:
-            self.generate_url = "http://localhost:8080/v1/chat/completions"
+            self.generate_url = "http://localhost:1234/v1/chat/completions"
         else:
-            self.generate_url = "http://localhost:8080/v1/completions"
+            self.generate_url = "http://localhost:1234/v1/completions"
 
         self.api_key = api_key
         self.timeout = timeout
         self.max_retries = max_retries
         self._dimension = None
+        self._active_response: Optional[requests.Response] = None
         self.circuit_breaker = CircuitBreaker(failure_threshold=5, timeout=60.0)
 
         logger.info(f"LMStudioProvider initialized with model: {self.model}")
@@ -274,7 +297,13 @@ class LMStudioProvider(Provider):
             if stop:
                 payload["stop"] = stop
 
-            logger.debug(f"LM Studio generate payload: {json.dumps(payload, indent=2)}")
+            logger.debug(
+                "Sending LM Studio generation request: model=%s max_tokens=%d "
+                "temperature=%s",
+                self.model,
+                max_tokens,
+                temperature,
+            )
 
             response = requests.post(
                 self.generate_url,
@@ -301,10 +330,16 @@ class LMStudioProvider(Provider):
             if self.use_chat_api:
                 # Chat API returns message.content
                 message = choices[0].get("message", {})
-                text = message.get("content", "")
+                text = _coerce_text_content(message.get("content", ""))
+                reasoning_content = _coerce_text_content(
+                    message.get("reasoning_content", "")
+                )
+                tool_calls = list(message.get("tool_calls") or [])
             else:
                 # Legacy API returns text directly
-                text = choices[0].get("text", "")
+                text = _coerce_text_content(choices[0].get("text", ""))
+                reasoning_content = ""
+                tool_calls = []
 
             finish_reason = choices[0].get("finish_reason", "unknown")
 
@@ -313,11 +348,22 @@ class LMStudioProvider(Provider):
 
             result = {
                 "text": text,
-                "model": self.model,
+                "reasoning_content": reasoning_content,
+                "tool_calls": tool_calls,
+                "model": str(data.get("model") or self.model),
                 "usage": usage,
                 "finish_reason": finish_reason,
+                "system_fingerprint": data.get("system_fingerprint"),
+                "provider_metadata": {"stats": data.get("stats", {})},
             }
-            logger.debug(f"LM Studio generate response: {result}")
+            logger.debug(
+                "Received LM Studio generation response: model=%s "
+                "finish_reason=%s visible_chars=%d reasoning_chars=%d",
+                result["model"],
+                finish_reason,
+                len(text),
+                len(reasoning_content),
+            )
             return result
 
         try:
@@ -333,7 +379,7 @@ class LMStudioProvider(Provider):
             logger.error(f"Failed to parse LM Studio generation response: {e}")
             raise Exception(f"Invalid response from LM Studio API: {e}") from e
 
-    async def stream_generate(
+    async def stream_generate(  # noqa: C901
         self,
         prompt: Any,
         max_tokens: int = 512,
@@ -390,7 +436,12 @@ class LMStudioProvider(Provider):
             # Use asyncio to run blocking requests in executor
             loop = asyncio.get_event_loop()
 
-            logger.debug(f"LM Studio stream payload: {json.dumps(payload, indent=2)}")
+            logger.debug(
+                "Starting LM Studio stream: model=%s max_tokens=%d temperature=%s",
+                self.model,
+                max_tokens,
+                temperature,
+            )
 
             def _make_request() -> requests.Response:
                 """Make HTTP request to streaming endpoint."""
@@ -403,6 +454,7 @@ class LMStudioProvider(Provider):
                 )
 
             response = await loop.run_in_executor(None, _make_request)
+            self._active_response = response
             response.raise_for_status()
 
             # Parse SSE stream
@@ -431,16 +483,42 @@ class LMStudioProvider(Provider):
                             if self.use_chat_api:
                                 # Chat API returns delta.content
                                 delta_obj = choice.get("delta", {})
-                                delta = delta_obj.get("content", "")
+                                delta = _coerce_text_content(
+                                    delta_obj.get("content", "")
+                                )
+                                reasoning_delta = _coerce_text_content(
+                                    delta_obj.get("reasoning_content", "")
+                                )
+                                tool_calls_delta = list(
+                                    delta_obj.get("tool_calls") or []
+                                )
                             else:
                                 # Legacy API returns text directly
-                                delta = choice.get("text", "")
+                                delta = _coerce_text_content(choice.get("text", ""))
+                                reasoning_delta = ""
+                                tool_calls_delta = []
 
                             finish_reason = choice.get("finish_reason")
 
                             chunk = {"delta": delta}
+                            if reasoning_delta:
+                                chunk["reasoning_delta"] = reasoning_delta
+                            if tool_calls_delta:
+                                chunk["tool_calls_delta"] = tool_calls_delta
                             if finish_reason:
                                 chunk["finish_reason"] = finish_reason
+                            if data.get("usage"):
+                                chunk["usage"] = data["usage"]
+                            if data.get("model"):
+                                chunk["model"] = data["model"]
+                            if data.get("system_fingerprint"):
+                                chunk["system_fingerprint"] = data[
+                                    "system_fingerprint"
+                                ]
+                            if data.get("stats"):
+                                chunk["provider_metadata"] = {
+                                    "stats": data["stats"]
+                                }
 
                             yield chunk
 
@@ -454,6 +532,14 @@ class LMStudioProvider(Provider):
                 f"Failed to stream completion from LM Studio at {self.generate_url}. "
                 f"Error: {e}"
             ) from e
+        finally:
+            self._active_response = None
+
+    def cancel_current_request(self) -> None:
+        """Abort an active streaming response, if one exists."""
+        response = self._active_response
+        if response is not None:
+            response.close()
 
     def health_check(self) -> Dict[str, Any]:
         """Check provider health and availability.

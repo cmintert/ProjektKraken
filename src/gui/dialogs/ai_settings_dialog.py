@@ -7,9 +7,10 @@ exclusion.
 import logging
 from typing import Optional
 
-from PySide6.QtCore import Qt, QTimer, Signal, Slot
+from PySide6.QtCore import Qt, QThread, QTimer, Signal, Slot
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QApplication,
     QCheckBox,
     QComboBox,
     QDialog,
@@ -29,11 +30,48 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.ai_generation import AIGenerationPreferences
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.prompt_editor import PromptEditorWidget
+from src.services.lmstudio_config import (
+    DEFAULT_LMSTUDIO_BASE_URL,
+    discover_lmstudio_models,
+    normalize_lmstudio_base_url,
+)
 from src.services.prompt_loader import PromptLoader
 
 logger = logging.getLogger(__name__)
+
+
+class LMStudioDiscoveryWorker(QThread):
+    """Discover LM Studio models without blocking the Qt main thread."""
+
+    models_discovered = Signal(object)
+    discovery_failed = Signal(str)
+
+    def __init__(
+        self,
+        base_url: str,
+        api_key: str,
+        timeout: float,
+        parent: Optional[QWidget] = None,
+    ) -> None:
+        super().__init__(parent)
+        self.base_url = base_url
+        self.api_key = api_key
+        self.timeout = timeout
+
+    def run(self) -> None:
+        """Fetch model identifiers from the OpenAI-compatible API."""
+        try:
+            models = discover_lmstudio_models(
+                self.base_url,
+                api_key=self.api_key,
+                timeout=self.timeout,
+            )
+            self.models_discovered.emit(models)
+        except Exception as exc:
+            self.discovery_failed.emit(str(exc))
 
 
 class AISettingsDialog(QDialog):
@@ -59,6 +97,10 @@ class AISettingsDialog(QDialog):
         # )  # Removed to prevent RuntimeError on re-open
 
         self._initializing = True
+        self._discovery_worker: LMStudioDiscoveryWorker | None = None
+        app = QApplication.instance()
+        if app is not None:
+            app.aboutToQuit.connect(self._shutdown_discovery)
         logger.info("Initializing AI Settings Dialog")
 
         # Main layout
@@ -187,6 +229,11 @@ class AISettingsDialog(QDialog):
         self.gen_provider_combo.addItems(
             ["LM Studio", "OpenAI", "Google Vertex AI", "Anthropic Claude"]
         )
+        for index in range(1, self.gen_provider_combo.count()):
+            item = self.gen_provider_combo.model().item(index)
+            if item is not None:
+                item.setEnabled(False)
+                item.setToolTip("Cloud providers are not enabled in this release")
         self.gen_provider_combo.currentIndexChanged.connect(
             self._on_gen_provider_changed
         )
@@ -214,27 +261,43 @@ class AISettingsDialog(QDialog):
         self.lm_gen_use_chat_api.toggled.connect(self.save_settings)
         lm_gen_form.addRow("Chat Mode:", self.lm_gen_use_chat_api)
         self.lm_gen_url_input = QLineEdit()
-        self.lm_gen_url_input.setPlaceholderText(
-            "http://localhost:8080/v1/chat/completions"
+        self.lm_gen_url_input.setPlaceholderText(DEFAULT_LMSTUDIO_BASE_URL)
+        self.lm_gen_url_input.setToolTip(
+            "LM Studio server address. Kraken derives /v1/models and API endpoints."
         )
-        self.lm_gen_url_input.editingFinished.connect(self.save_settings)
-        lm_gen_form.addRow("API URL:", self.lm_gen_url_input)
-        self.btn_test_lm_gen = QPushButton("Test Connection")
+        self.lm_gen_url_input.editingFinished.connect(
+            lambda: self._sync_lmstudio_base_url(self.lm_gen_url_input)
+        )
+        lm_gen_form.addRow("Server URL:", self.lm_gen_url_input)
+        self.btn_test_lm_gen = QPushButton("Refresh Models")
         self.btn_test_lm_gen.setFixedWidth(120)
         self.btn_test_lm_gen.clicked.connect(
             lambda: self._test_connection("lmstudio", "generate")
         )
         lm_gen_form.addRow("", self.btn_test_lm_gen)
-        self.lm_gen_model_input = QLineEdit()
+        self.lm_gen_model_input = QComboBox()
+        self.lm_gen_model_input.setEditable(True)
         self.lm_gen_model_input.setPlaceholderText("e.g. mistral-7b-instruct")
-        self.lm_gen_model_input.editingFinished.connect(self.save_settings)
+        if self.lm_gen_model_input.lineEdit() is not None:
+            self.lm_gen_model_input.lineEdit().editingFinished.connect(
+                self.save_settings
+            )
+        self.lm_gen_model_input.currentIndexChanged.connect(self.save_settings)
         lm_gen_form.addRow("Model:", self.lm_gen_model_input)
+        lm_gen_help = QLabel(
+            "Choose the loaded text-generation model Kraken should request."
+        )
+        lm_gen_help.setWordWrap(True)
+        lm_gen_form.addRow("", lm_gen_help)
         self.gen_provider_stack.addWidget(lm_gen_page)
 
         # [OpenAI Gen Page]
         openai_gen_page = QGroupBox()
         openai_gen_form = QFormLayout(openai_gen_page)
         StyleHelper.apply_standard_list_spacing(openai_gen_form)
+        openai_notice = QLabel("Cloud providers are visible for future support only.")
+        openai_notice.setWordWrap(True)
+        openai_gen_form.addRow(openai_notice)
         self.openai_gen_enabled = QCheckBox("Enable for this world")
         self.openai_gen_enabled.toggled.connect(self.save_settings)
         openai_gen_form.addRow("Enabled:", self.openai_gen_enabled)
@@ -248,11 +311,15 @@ class AISettingsDialog(QDialog):
         self.openai_model_input.editingFinished.connect(self.save_settings)
         openai_gen_form.addRow("Model:", self.openai_model_input)
         self.gen_provider_stack.addWidget(openai_gen_page)
+        openai_gen_page.setEnabled(False)
 
         # [Google Gen Page]
         google_gen_page = QGroupBox()
         google_gen_form = QFormLayout(google_gen_page)
         StyleHelper.apply_standard_list_spacing(google_gen_form)
+        google_notice = QLabel("Cloud providers are visible for future support only.")
+        google_notice.setWordWrap(True)
+        google_gen_form.addRow(google_notice)
         self.google_gen_enabled = QCheckBox("Enable for this world")
         self.google_gen_enabled.toggled.connect(self.save_settings)
         google_gen_form.addRow("Enabled:", self.google_gen_enabled)
@@ -271,11 +338,17 @@ class AISettingsDialog(QDialog):
         self.google_creds_input.editingFinished.connect(self.save_settings)
         google_gen_form.addRow("Credentials Path:", self.google_creds_input)
         self.gen_provider_stack.addWidget(google_gen_page)
+        google_gen_page.setEnabled(False)
 
         # [Anthropic Gen Page]
         anthropic_gen_page = QGroupBox()
         anthropic_gen_form = QFormLayout(anthropic_gen_page)
         StyleHelper.apply_standard_list_spacing(anthropic_gen_form)
+        anthropic_notice = QLabel(
+            "Cloud providers are visible for future support only."
+        )
+        anthropic_notice.setWordWrap(True)
+        anthropic_gen_form.addRow(anthropic_notice)
         self.anthropic_gen_enabled = QCheckBox("Enable for this world")
         self.anthropic_gen_enabled.toggled.connect(self.save_settings)
         anthropic_gen_form.addRow("Enabled:", self.anthropic_gen_enabled)
@@ -288,6 +361,7 @@ class AISettingsDialog(QDialog):
         self.anthropic_model_input.editingFinished.connect(self.save_settings)
         anthropic_gen_form.addRow("Model:", self.anthropic_model_input)
         self.gen_provider_stack.addWidget(anthropic_gen_page)
+        anthropic_gen_page.setEnabled(False)
 
         gen_layout.addWidget(self.gen_provider_stack)
         main_layout.addWidget(gen_group)
@@ -388,19 +462,32 @@ class AISettingsDialog(QDialog):
         lm_info_label.setStyleSheet("font-size: 11px;")
         lm_studio_form.addRow(lm_info_label)
         self.lm_url_input = QLineEdit()
-        self.lm_url_input.setPlaceholderText("http://localhost:8080/v1/embeddings")
-        self.lm_url_input.editingFinished.connect(self.save_settings)
-        lm_studio_form.addRow("API URL:", self.lm_url_input)
-        self.lm_model_input = QLineEdit()
+        self.lm_url_input.setPlaceholderText(DEFAULT_LMSTUDIO_BASE_URL)
+        self.lm_url_input.setToolTip(
+            "Uses the same LM Studio server as text generation."
+        )
+        self.lm_url_input.editingFinished.connect(
+            lambda: self._sync_lmstudio_base_url(self.lm_url_input)
+        )
+        lm_studio_form.addRow("Server URL:", self.lm_url_input)
+        self.lm_model_input = QComboBox()
+        self.lm_model_input.setEditable(True)
         self.lm_model_input.setPlaceholderText("e.g. nomic-embed-text-v1.5")
-        self.lm_model_input.editingFinished.connect(self.save_settings)
+        if self.lm_model_input.lineEdit() is not None:
+            self.lm_model_input.lineEdit().editingFinished.connect(self.save_settings)
+        self.lm_model_input.currentIndexChanged.connect(self.save_settings)
         lm_studio_form.addRow("Embedding Model:", self.lm_model_input)
+        lm_model_help = QLabel(
+            "Choose a separate embedding-capable model for semantic search."
+        )
+        lm_model_help.setWordWrap(True)
+        lm_studio_form.addRow("", lm_model_help)
         self.lm_api_key_input = QLineEdit()
         self.lm_api_key_input.setPlaceholderText("Optional")
         self.lm_api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.lm_api_key_input.editingFinished.connect(self.save_settings)
         lm_studio_form.addRow("API Key:", self.lm_api_key_input)
-        self.btn_test_lm_embed = QPushButton("Test Connection")
+        self.btn_test_lm_embed = QPushButton("Refresh Models")
         self.btn_test_lm_embed.setFixedWidth(120)
         self.btn_test_lm_embed.clicked.connect(
             lambda: self._test_connection("lmstudio", "embed")
@@ -874,6 +961,16 @@ class AISettingsDialog(QDialog):
         """Handle generation provider selection change."""
         self.gen_provider_stack.setCurrentIndex(index)
 
+    def _sync_lmstudio_base_url(self, source: QLineEdit) -> None:
+        """Normalize one edited server address and mirror it across both pages."""
+        try:
+            base_url = normalize_lmstudio_base_url(source.text())
+        except ValueError:
+            base_url = source.text().strip()
+        self.lm_gen_url_input.setText(base_url)
+        self.lm_url_input.setText(base_url)
+        self.save_settings()
+
     @Slot()
     def _on_clear_generation_settings(self) -> None:
         """Clear all generation provider settings."""
@@ -892,6 +989,7 @@ class AISettingsDialog(QDialog):
 
         if reply == QMessageBox.StandardButton.Yes:
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+            from src.services.secret_store import set_api_key
 
             # Clear generation settings for all providers
             for provider in ["lmstudio", "openai", "google", "anthropic"]:
@@ -907,6 +1005,8 @@ class AISettingsDialog(QDialog):
             settings.remove("ai_gen_audit_log")
             settings.remove("ai_gen_max_tokens")
             settings.remove("ai_gen_temperature")
+            for provider in ("lmstudio", "openai", "anthropic"):
+                set_api_key(provider, "")
 
             # Reload settings to update UI
             self.load_settings()
@@ -928,56 +1028,89 @@ class AISettingsDialog(QDialog):
         self.rebuild_index_requested.emit(obj_type)
 
     def _test_connection(self, provider_id: str, mode: str) -> None:
-        """Test connection to the specified provider.
+        """Discover models from LM Studio without blocking the UI.
 
         Args:
             provider_id: Provider ID (e.g. 'lmstudio')
             mode: 'embed' or 'generate' to determine which URL to test
 
         """
+        if provider_id != "lmstudio" or self._discovery_worker is not None:
+            return
+
+        source = self.lm_url_input if mode == "embed" else self.lm_gen_url_input
         try:
-            from src.services.llm_provider import create_provider
+            base_url = normalize_lmstudio_base_url(source.text())
+        except ValueError as exc:
+            QMessageBox.warning(self, "Invalid Server URL", str(exc))
+            return
 
-            # Create a temporary provider instance with current UI values
-            overrides = {}
-            if provider_id == "lmstudio":
-                overrides["timeout"] = self.lm_timeout_input.value()
-                overrides["api_key"] = self.lm_api_key_input.text().strip()
-                if mode == "embed":
-                    overrides["embed_url"] = self.lm_url_input.text().strip()
-                    overrides["model"] = self.lm_model_input.text().strip()
-                else:  # generate
-                    overrides["generate_url"] = self.lm_gen_url_input.text().strip()
-                    overrides["model"] = self.lm_gen_model_input.text().strip()
+        self.lm_url_input.setText(base_url)
+        self.lm_gen_url_input.setText(base_url)
+        self.btn_test_lm_embed.setEnabled(False)
+        self.btn_test_lm_gen.setEnabled(False)
+        self._show_save_status("Discovering models...")
 
-            logger.info(
-                f"Testing connection for {provider_id} ({mode}) "
-                f"with overrides: {overrides}"
-            )
+        self._discovery_worker = LMStudioDiscoveryWorker(
+            base_url,
+            self.lm_api_key_input.text().strip(),
+            min(float(self.lm_timeout_input.value()), 10.0),
+            self,
+        )
+        self._discovery_worker.models_discovered.connect(
+            self._on_models_discovered
+        )
+        self._discovery_worker.discovery_failed.connect(
+            self._on_model_discovery_failed
+        )
+        self._discovery_worker.finished.connect(self._on_discovery_finished)
+        self._discovery_worker.start()
 
-            # Create provider and check health
-            provider = create_provider(provider_id, **overrides)
-            health = provider.health_check()
+    @Slot(object)
+    def _on_models_discovered(self, models: object) -> None:
+        """Populate both model selectors while retaining manual selections."""
+        model_ids = [str(model) for model in models] if isinstance(models, list) else []
+        generation_model = self.lm_gen_model_input.currentText()
+        embedding_model = self.lm_model_input.currentText()
+        for combo, selected in (
+            (self.lm_gen_model_input, generation_model),
+            (self.lm_model_input, embedding_model),
+        ):
+            combo.blockSignals(True)
+            combo.clear()
+            combo.addItems(model_ids)
+            combo.setCurrentText(selected)
+            combo.blockSignals(False)
 
-            if health["status"] == "healthy":
-                QMessageBox.information(
-                    self,
-                    "Connection Successful",
-                    f"Successfully connected to {provider_id}!\n\n"
-                    f"Latency: {health.get('latency_ms', 0):.2f}ms",
-                )
-            else:
-                QMessageBox.warning(
-                    self,
-                    "Connection Failed",
-                    f"Connection failed:\n{health.get('message', 'Unknown error')}",
-                )
+        self._show_save_status(f"Found {len(model_ids)} models")
+        self.save_settings()
 
-        except Exception as e:
-            logger.error(f"Test connection error: {e}", exc_info=True)
-            QMessageBox.critical(
-                self, "Error", f"An error occurred while testing connection:\n{str(e)}"
-            )
+    @Slot(str)
+    def _on_model_discovery_failed(self, error: str) -> None:
+        """Report model discovery errors without exposing credentials."""
+        logger.warning("LM Studio model discovery failed: %s", error)
+        self._show_save_status("Model discovery failed")
+        QMessageBox.warning(
+            self,
+            "LM Studio Unavailable",
+            f"Could not load models from LM Studio:\n{error}",
+        )
+
+    @Slot()
+    def _on_discovery_finished(self) -> None:
+        """Clean up a completed discovery thread."""
+        worker = self._discovery_worker
+        self._discovery_worker = None
+        self.btn_test_lm_embed.setEnabled(True)
+        self.btn_test_lm_gen.setEnabled(True)
+        if worker is not None:
+            worker.deleteLater()
+
+    def _shutdown_discovery(self) -> None:
+        """Keep a discovery QThread alive until its bounded request exits."""
+        worker = self._discovery_worker
+        if worker is not None and worker.isRunning() and not worker.wait(11_000):
+            logger.warning("LM Studio discovery did not stop during shutdown")
 
     @Slot()
     def save_settings(self) -> None:
@@ -1020,10 +1153,27 @@ class AISettingsDialog(QDialog):
         )
         settings.setValue("ai_embedding_provider", provider)
 
-        # LM Studio embedding settings
-        settings.setValue("ai_lmstudio_url", self.lm_url_input.text().strip())
-        settings.setValue("ai_lmstudio_model", self.lm_model_input.text().strip())
-        settings.setValue("ai_lmstudio_api_key", self.lm_api_key_input.text().strip())
+        # LM Studio connection is machine-global. Retain the legacy endpoint
+        # keys temporarily for older search code while storing one canonical base.
+        from src.services.lmstudio_config import derive_lmstudio_endpoints
+        from src.services.secret_store import set_api_key
+
+        try:
+            base_url = normalize_lmstudio_base_url(
+                self.lm_gen_url_input.text()
+            )
+        except ValueError as exc:
+            logger.warning("Invalid LM Studio server URL: %s", exc)
+            self._show_save_status("Invalid LM Studio server URL")
+            return
+        endpoints = derive_lmstudio_endpoints(base_url)
+        settings.setValue("ai_lmstudio_base_url", endpoints.base_url)
+        settings.setValue("ai_lmstudio_url", endpoints.embeddings_url)
+        settings.setValue(
+            "ai_lmstudio_model", self.lm_model_input.currentText().strip()
+        )
+        if set_api_key("lmstudio", self.lm_api_key_input.text().strip()):
+            settings.remove("ai_lmstudio_api_key")
         settings.setValue("ai_lmstudio_timeout", self.lm_timeout_input.value())
 
         # Sentence Transformers settings
@@ -1035,16 +1185,15 @@ class AISettingsDialog(QDialog):
         settings.setValue(
             "ai_gen_lmstudio_use_chat_api", self.lm_gen_use_chat_api.isChecked()
         )
-        settings.setValue("ai_gen_lmstudio_url", self.lm_gen_url_input.text().strip())
+        settings.setValue("ai_gen_lmstudio_url", endpoints.chat_completions_url)
         settings.setValue(
-            "ai_gen_lmstudio_model", self.lm_gen_model_input.text().strip()
+            "ai_gen_lmstudio_model", self.lm_gen_model_input.currentText().strip()
         )
 
         # OpenAI
         settings.setValue("ai_gen_openai_enabled", self.openai_gen_enabled.isChecked())
-        settings.setValue(
-            "ai_gen_openai_api_key", self.openai_api_key_input.text().strip()
-        )
+        if set_api_key("openai", self.openai_api_key_input.text().strip()):
+            settings.remove("ai_gen_openai_api_key")
         settings.setValue("ai_gen_openai_model", self.openai_model_input.text().strip())
 
         # Google Vertex AI
@@ -1064,9 +1213,8 @@ class AISettingsDialog(QDialog):
         settings.setValue(
             "ai_gen_anthropic_enabled", self.anthropic_gen_enabled.isChecked()
         )
-        settings.setValue(
-            "ai_gen_anthropic_api_key", self.anthropic_api_key_input.text().strip()
-        )
+        if set_api_key("anthropic", self.anthropic_api_key_input.text().strip()):
+            settings.remove("ai_gen_anthropic_api_key")
         settings.setValue(
             "ai_gen_anthropic_model", self.anthropic_model_input.text().strip()
         )
@@ -1134,12 +1282,32 @@ class AISettingsDialog(QDialog):
             provider = "sentence-transformers"
         self.provider_combo.setCurrentIndex(1 if provider == "lmstudio" else 0)
 
-        # LM Studio embedding settings
-        self.lm_url_input.setText(
-            settings.value("ai_lmstudio_url", "http://localhost:8080/v1/embeddings")
+        # LM Studio connection settings. Endpoint-shaped legacy values are
+        # normalized automatically to the new canonical base URL.
+        legacy_url = str(
+            settings.value(
+                "ai_lmstudio_base_url",
+                settings.value(
+                    "ai_gen_lmstudio_url",
+                    settings.value("ai_lmstudio_url", DEFAULT_LMSTUDIO_BASE_URL),
+                ),
+            )
         )
-        self.lm_model_input.setText(settings.value("ai_lmstudio_model", ""))
-        self.lm_api_key_input.setText(settings.value("ai_lmstudio_api_key", ""))
+        base_url = normalize_lmstudio_base_url(legacy_url)
+        self.lm_url_input.setText(base_url)
+        self.lm_gen_url_input.setText(base_url)
+        self.lm_model_input.setCurrentText(
+            str(settings.value("ai_lmstudio_model", ""))
+        )
+        from src.services.secret_store import migrate_qsettings_secret
+
+        self.lm_api_key_input.setText(
+            migrate_qsettings_secret(
+                settings,
+                "ai_lmstudio_api_key",
+                "lmstudio",
+            )
+        )
         self.lm_timeout_input.setValue(int(settings.value("ai_lmstudio_timeout", 30)))
 
         # Sentence Transformers settings
@@ -1153,18 +1321,21 @@ class AISettingsDialog(QDialog):
         self.lm_gen_use_chat_api.setChecked(
             settings.value("ai_gen_lmstudio_use_chat_api", True, type=bool)
         )
-        self.lm_gen_url_input.setText(
-            settings.value(
-                "ai_gen_lmstudio_url", "http://localhost:8080/v1/chat/completions"
-            )
+        self.lm_gen_model_input.setCurrentText(
+            str(settings.value("ai_gen_lmstudio_model", ""))
         )
-        self.lm_gen_model_input.setText(settings.value("ai_gen_lmstudio_model", ""))
 
         # OpenAI
         self.openai_gen_enabled.setChecked(
             settings.value("ai_gen_openai_enabled", False, type=bool)
         )
-        self.openai_api_key_input.setText(settings.value("ai_gen_openai_api_key", ""))
+        self.openai_api_key_input.setText(
+            migrate_qsettings_secret(
+                settings,
+                "ai_gen_openai_api_key",
+                "openai",
+            )
+        )
         self.openai_model_input.setText(
             settings.value("ai_gen_openai_model", "gpt-3.5-turbo")
         )
@@ -1191,7 +1362,11 @@ class AISettingsDialog(QDialog):
             settings.value("ai_gen_anthropic_enabled", False, type=bool)
         )
         self.anthropic_api_key_input.setText(
-            settings.value("ai_gen_anthropic_api_key", "")
+            migrate_qsettings_secret(
+                settings,
+                "ai_gen_anthropic_api_key",
+                "anthropic",
+            )
         )
         self.anthropic_model_input.setText(
             settings.value("ai_gen_anthropic_model", "claude-3-haiku-20240307")
@@ -1240,6 +1415,76 @@ class AISettingsDialog(QDialog):
         self.summary_temperature_input.setValue(
             int(settings.value("ai_gen_summary_temperature", 0))
         )
+
+    def export_world_preferences(self) -> AIGenerationPreferences:
+        """Build the portable creative settings for the current world."""
+        from PySide6.QtCore import QSettings
+
+        from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        return AIGenerationPreferences(
+            persona=self.system_prompt_edit.toPlainText(),
+            max_tokens=self.max_tokens_input.value(),
+            temperature_percent=self.temperature_input.value(),
+            rag_enabled=settings.value("ai_gen_rag_enabled", True, type=bool),
+            rag_limit=int(settings.value("ai_gen_rag_limit", 3)),
+            spatial_enabled=settings.value(
+                "ai_gen_spatial_enabled", False, type=bool
+            ),
+            filter_reasoning=self.filter_reasoning_cb.isChecked(),
+            audit_enabled=self.enable_audit_log.isChecked(),
+            selected_template_id=str(
+                settings.value("ai_gen_template_id", "") or ""
+            ),
+            entity_prompt_draft=str(
+                settings.value("ai_gen_entity_prompt", "") or ""
+            ),
+            event_prompt_draft=str(
+                settings.value("ai_gen_event_prompt", "") or ""
+            ),
+        )
+
+    def apply_world_preferences(self, preferences: AIGenerationPreferences) -> None:
+        """Apply portable world settings to the dialog and compatibility cache."""
+        from PySide6.QtCore import QSettings
+
+        from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+
+        self._initializing = True
+        try:
+            self.system_prompt_edit.setPlainText(preferences.persona)
+            self.max_tokens_input.setValue(preferences.max_tokens)
+            self.temperature_input.setValue(preferences.temperature_percent)
+            self.filter_reasoning_cb.setChecked(preferences.filter_reasoning)
+            self.enable_audit_log.setChecked(preferences.audit_enabled)
+
+            settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+            settings.setValue("ai_gen_system_prompt", preferences.persona)
+            settings.setValue("ai_gen_max_tokens", preferences.max_tokens)
+            settings.setValue(
+                "ai_gen_temperature", preferences.temperature_percent
+            )
+            settings.setValue("ai_gen_rag_enabled", preferences.rag_enabled)
+            settings.setValue("ai_gen_rag_limit", preferences.rag_limit)
+            settings.setValue(
+                "ai_gen_spatial_enabled", preferences.spatial_enabled
+            )
+            settings.setValue(
+                "ai_gen_filter_reasoning", preferences.filter_reasoning
+            )
+            settings.setValue("ai_gen_audit_log", preferences.audit_enabled)
+            settings.setValue(
+                "ai_gen_template_id", preferences.selected_template_id
+            )
+            settings.setValue(
+                "ai_gen_entity_prompt", preferences.entity_prompt_draft
+            )
+            settings.setValue(
+                "ai_gen_event_prompt", preferences.event_prompt_draft
+            )
+        finally:
+            self._initializing = False
 
     def update_status(self, model: str, counts: str, last_updated: str) -> None:
         """Update the status labels."""

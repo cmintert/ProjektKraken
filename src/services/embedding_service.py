@@ -348,5 +348,10 @@ def create_embedding_service(
         ValueError: If provider doesn't support embeddings.
 
     """
-    provider = create_provider(provider_id, world_id, **provider_kwargs)
+    provider = create_provider(
+        provider_id,
+        world_id,
+        capability="embedding",
+        **provider_kwargs,
+    )
     return EmbeddingService(db_connection, provider, world_id=world_id)
