@@ -1,0 +1,19 @@
+---
+version: 1.0
+template_id: revise_clarity_flow
+name: Revise — Clarity and Flow
+description: Improve an existing description without changing its established facts
+intent: update
+author: ProjektKraken Team
+created: 2026-07-22
+tags: [revise, clarity, description]
+---
+
+Revise the existing description of {name} for clarity, structure, and flow. Return the complete revised description, not a list of changes. Preserve every established fact, proper name, date, and deliberate uncertainty. Preserve every Markdown structural element exactly, including headings, lists, blank-line separation, and [[Wiki Links]]; keep each one in the same relative position. Remove repetition and awkward phrasing without adding unsupported canon.
+
+SOURCE DESCRIPTION — copy its Markdown markers and [[Wiki Links]] verbatim into the revision:
+{description}
+
+The response is invalid if any heading marker, list marker, or [[Wiki Link]] from the source is missing or altered.
+
+Return only the finished description. Do not add JSON, a code fence, a new heading, or commentary about the task.

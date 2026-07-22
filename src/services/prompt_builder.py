@@ -116,6 +116,7 @@ class PromptBuilder:
         user_prompt: str,
         include_rag_placeholder: bool = False,
         include_spatial_placeholder: bool = False,
+        object_type: str | None = None,
     ) -> Dict[str, str]:
         """Construct the final structured prompt with persona and context.
 
@@ -131,6 +132,8 @@ class PromptBuilder:
             include_spatial_placeholder: Whether to include the
                 {{SPATIAL_CONTEXT}} placeholder for later injection by the
                 worker.
+            object_type: Context object type. ``entity`` and ``event`` receive
+                matching prompt headings; other values use ``Item``.
 
         Returns:
             Dict[str, str]: Structured prompt with 'system' and 'user' keys.
@@ -140,7 +143,11 @@ class PromptBuilder:
 
         # -- DATA: ENTITY/EVENT DETAILS -- (placed first)
         if context_str:
-            user_message_parts.append(f"[Entity]\n{context_str}")
+            context_label = {
+                "entity": "Entity",
+                "event": "Event",
+            }.get((object_type or "").lower(), "Item")
+            user_message_parts.append(f"[{context_label}]\n{context_str}")
 
         # -- DATA: RAG CONTEXT -- (optional placeholder)
         if include_rag_placeholder:

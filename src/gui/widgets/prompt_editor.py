@@ -36,7 +36,6 @@ class PromptEditorWidget(QWidget):
         super().__init__(parent)
 
         self._default_text = ""
-        self._highlighting_rules = []
 
         # Layout
         layout = QVBoxLayout(self)
@@ -123,6 +122,16 @@ class PromptEditorWidget(QWidget):
     def clear(self) -> None:
         """Clear the editor content."""
         self.editor.clear()
+
+    def setReadOnly(self, read_only: bool) -> None:
+        """Set editor and prompt-editing controls to read-only mode."""
+        self.editor.setReadOnly(read_only)
+        self.var_combo.setEnabled(not read_only)
+        self.btn_restore.setEnabled(not read_only)
+
+    def isReadOnly(self) -> bool:
+        """Return whether prompt text editing is disabled."""
+        return self.editor.isReadOnly()
 
     def set_variables(self, variables: List[str]) -> None:
         """Set the list of available variables.

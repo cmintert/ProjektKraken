@@ -1,168 +1,154 @@
-from unittest.mock import MagicMock, patch
+"""Task-template management tests for AI Settings."""
+
+from unittest.mock import patch
 
 import pytest
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QMessageBox
+from PySide6.QtWidgets import QMessageBox
 
+from src.core.ai_generation import TaskIntent, TaskTemplate, TaskTemplateSource
 from src.gui.dialogs.ai_settings_dialog import AISettingsDialog
 
 
 @pytest.fixture
-def qapp():
-    app = QApplication.instance()
-    if app is None:
-        app = QApplication([])
-    return app
+def built_in() -> TaskTemplate:
+    return TaskTemplate(
+        template_id="create_builtin",
+        name="Create — Built In",
+        description="Bundled task",
+        intent=TaskIntent.CREATE,
+        content="Write {name}",
+        source=TaskTemplateSource.BUILT_IN,
+    )
 
 
 @pytest.fixture
-def mock_loader():
-    with patch("src.gui.dialogs.ai_settings_dialog.PromptLoader") as MockLoader:
-        loader_instance = MockLoader.return_value
-        # Setup default return values
-        loader_instance.list_templates.return_value = [
-            {
-                "template_id": "test_t1",
-                "version": "1.0",
-                "name": "Test Template 1",
-                "description": "Desc 1",
-                "content": "Content 1",
-                "metadata": {"name": "Test Template 1"},
-            },
-            {
-                "template_id": "test_t2",
-                "version": "2.0",
-                "name": "Test Template 2",
-                "description": "Desc 2",
-                "content": "Content 2",
-                "metadata": {"name": "Test Template 2"},
-            },
-        ]
-
-        def create_mock_template(tid, v=None):
-            m = MagicMock()
-            m.template_id = tid
-            m.version = "1.0"
-            m.name = f"Name {tid}"
-            m.content = f"Content {tid}"
-            m.metadata = {}
-            return m
-
-        loader_instance.load_template.side_effect = create_mock_template
-        yield loader_instance
+def world_template() -> TaskTemplate:
+    return TaskTemplate(
+        template_id="29ee028a-e40e-441f-bd9d-e170c55bf998",
+        name="World Revision",
+        description="Custom world task",
+        intent=TaskIntent.UPDATE,
+        content="Revise {description}",
+        source=TaskTemplateSource.WORLD,
+    )
 
 
 @pytest.fixture
-def dialog(qapp, qtbot, mock_loader):
-    dlg = AISettingsDialog()
-    qtbot.addWidget(dlg)
-    return dlg
+def dialog(qtbot, built_in, world_template):
+    instance = AISettingsDialog()
+    qtbot.addWidget(instance)
+    instance.set_task_templates((built_in, world_template))
+    return instance
 
 
-def test_templates_sidebar_item_exists(dialog):
-    """Test that 'Templates' item exists in sidebar."""
-    # Should be 4th item (index 3)
-    assert dialog.sidebar_list.count() == 4
-    assert dialog.sidebar_list.item(3).text() == "Task Templates"
+def _select(dialog: AISettingsDialog, template_id: str) -> None:
+    for index in range(dialog.template_list.count()):
+        item = dialog.template_list.item(index)
+        if item.data(Qt.ItemDataRole.UserRole) == template_id:
+            dialog.template_list.setCurrentItem(item)
+            return
+    raise AssertionError(f"Template not found: {template_id}")
 
 
 def test_templates_page_structure(dialog):
-    """Test the structure of the templates page."""
-    # Select Templates page
+    """The page exposes useful metadata without user-facing IDs."""
     dialog.sidebar_list.setCurrentRow(3)
-
-    # Check key widgets exist
-    assert hasattr(dialog, "template_list")  # The list of templates
-    assert hasattr(dialog, "template_id_edit")
-    assert hasattr(dialog, "template_name_edit")
-    assert hasattr(dialog, "template_content_edit")
-    assert hasattr(dialog, "btn_new_template")
-    assert hasattr(dialog, "btn_save_template")
-    assert hasattr(dialog, "btn_delete_template")
-
-
-def test_templates_list_population(dialog, mock_loader):
-    """Test that template list is populated from loader."""
-    dialog.sidebar_list.setCurrentRow(3)  # Switch to page to trigger refresh if needed
-
-    # Force refresh manually if it's not auto-triggered (implementation detail)
-    if hasattr(dialog, "_refresh_templates_list"):
-        dialog._refresh_templates_list()
 
     assert dialog.template_list.count() == 2
-    assert dialog.template_list.item(0).data(Qt.ItemDataRole.UserRole) == "test_t1"
-    assert dialog.template_list.item(1).data(Qt.ItemDataRole.UserRole) == "test_t2"
+    assert hasattr(dialog, "template_name_edit")
+    assert hasattr(dialog, "template_description_edit")
+    assert hasattr(dialog, "template_intent_combo")
+    assert hasattr(dialog, "btn_duplicate_template")
+    assert not hasattr(dialog, "template_id_edit")
 
 
-def test_select_template_populates_editor(dialog, mock_loader, qtbot):
-    """Test selecting a template populates the editor fields."""
-    dialog.sidebar_list.setCurrentRow(3)
-    dialog._refresh_templates_list()
+def test_built_in_is_locked_and_can_be_duplicated(dialog, built_in, qtbot):
+    """Bundled tasks cannot be edited or deleted, only copied to the world."""
+    _select(dialog, built_in.template_id)
 
-    # Mock load_template return specifically for this test
-    mock_loader.load_template.side_effect = None
-    mock_template = MagicMock()
-    mock_template.template_id = "test_t1"
-    mock_template.name = "Test Template 1"
-    mock_template.content = "Content 1"
-    mock_template.metadata = {"description": "Desc 1"}
-    mock_loader.load_template.return_value = mock_template
+    assert dialog.template_content_edit.isReadOnly()
+    assert not dialog.btn_save_template.isEnabled()
+    assert not dialog.btn_delete_template.isEnabled()
+    assert dialog.btn_duplicate_template.isEnabled()
 
-    # Select first item
-    dialog.template_list.setCurrentRow(0)
+    with qtbot.waitSignal(dialog.task_templates_changed) as blocker:
+        dialog.btn_duplicate_template.click()
 
-    assert dialog.template_id_edit.text() == "test_t1"
-    assert dialog.template_name_edit.text() == "Test Template 1"
-    # assert dialog.template_content_edit.toPlainText() == "Content 1"
-    # depends on widget type
+    custom = blocker.args[0]
+    assert len(custom) == 2
+    assert custom[-1].source == TaskTemplateSource.WORLD
+    assert custom[-1].name == "Copy of Create — Built In"
 
 
-def test_new_template_clears_editor(dialog, qtbot):
-    """Test clicking New Template clears fields."""
-    dialog.sidebar_list.setCurrentRow(3)
+def test_new_template_saves_uuid_and_supported_variables(dialog, qtbot):
+    """A new task is created in place and emitted as a world snapshot."""
+    dialog.btn_new_template.click()
+    dialog.template_name_edit.setText("Continuity Pass")
+    dialog.template_description_edit.setText("Align supplied facts")
+    dialog.template_intent_combo.setCurrentIndex(
+        dialog.template_intent_combo.findData(TaskIntent.UPDATE.value)
+    )
+    dialog.template_content_edit.setPlainText("Revise {name}: {description}")
 
-    # Simulate existing data
-    dialog.template_id_edit.setText("old")
-    dialog.template_name_edit.setText("old")
+    with qtbot.waitSignal(dialog.task_templates_changed) as blocker:
+        dialog.btn_save_template.click()
 
-    # Click New
-    qtbot.mouseClick(dialog.btn_new_template, Qt.MouseButton.LeftButton)
-
-    assert dialog.template_id_edit.text() == ""
-    assert dialog.template_name_edit.text() == ""
-    assert dialog.template_id_edit.isReadOnly() is False
-
-
-def test_save_template(dialog, mock_loader, qtbot):
-    """Test saving calls loader.save_template."""
-    dialog.sidebar_list.setCurrentRow(3)
-
-    # Fill data
-    dialog.template_id_edit.setText("new_t")
-    dialog.template_name_edit.setText("New T")
-    dialog.template_content_edit.setPlainText("New Content")
-
-    # Click Save
-    qtbot.mouseClick(dialog.btn_save_template, Qt.MouseButton.LeftButton)
-
-    # Verify mock call
-    mock_loader.save_template.assert_called_once()
-    args = mock_loader.save_template.call_args
-    assert args[0][0] == "new_t"  # id
-    assert args[0][1] == "New Content"  # content
-    assert args[0][2]["name"] == "New T"  # metadata
+    custom = blocker.args[0]
+    assert len(custom) == 2
+    assert custom[-1].name == "Continuity Pass"
+    assert custom[-1].template_id
 
 
-def test_delete_template(dialog, mock_loader, qtbot):
-    """Test deleting calls loader.delete_template."""
-    dialog.sidebar_list.setCurrentRow(3)
-    dialog._refresh_templates_list()
-    dialog.template_list.setCurrentRow(0)  # Select first
+def test_unsupported_variable_is_rejected(dialog):
+    """The editor reports variables that generation cannot substitute."""
+    dialog.btn_new_template.click()
+    dialog.template_name_edit.setText("Broken")
+    dialog.template_content_edit.setPlainText("Use {relations}")
 
-    # Mock confirmation dialog to click Yes
+    dialog.btn_save_template.click()
+
+    assert "Unsupported template variables" in dialog.save_status_label.text()
+
+
+def test_world_template_updates_in_place(dialog, world_template, qtbot):
+    """Saving an existing world task retains its stable ID."""
+    _select(dialog, world_template.template_id)
+    dialog.template_content_edit.setPlainText("Improve {description}")
+
+    with qtbot.waitSignal(dialog.task_templates_changed) as blocker:
+        dialog.btn_save_template.click()
+
+    updated = next(
+        item for item in blocker.args[0] if item.template_id == world_template.template_id
+    )
+    assert updated.content == "Improve {description}"
+
+
+def test_world_template_can_be_deleted(dialog, world_template, qtbot):
+    """Deleting removes only the selected world-owned task."""
+    _select(dialog, world_template.template_id)
     with patch.object(
-        QMessageBox, "question", return_value=QMessageBox.StandardButton.Yes
+        QMessageBox,
+        "question",
+        return_value=QMessageBox.StandardButton.Yes,
     ):
-        qtbot.mouseClick(dialog.btn_delete_template, Qt.MouseButton.LeftButton)
+        with qtbot.waitSignal(dialog.task_templates_changed) as blocker:
+            dialog.btn_delete_template.click()
 
-    mock_loader.delete_template.assert_called_once_with("test_t1")
+    assert blocker.args[0] == ()
+
+
+def test_dirty_editor_blocks_selection_change(dialog, built_in, world_template):
+    """A declined discard confirmation restores the previous selection."""
+    _select(dialog, world_template.template_id)
+    dialog.template_content_edit.setPlainText("Unsaved edit")
+
+    with patch.object(
+        QMessageBox,
+        "question",
+        return_value=QMessageBox.StandardButton.No,
+    ):
+        _select(dialog, built_in.template_id)
+
+    assert dialog._editing_template_id == world_template.template_id

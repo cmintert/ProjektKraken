@@ -10,6 +10,9 @@ from src.core.ai_generation import (
     GenerationApplyMode,
     GenerationReviewResult,
     ModelReply,
+    TaskIntent,
+    TaskTemplate,
+    TaskTemplateSource,
 )
 
 # Reload the widget module after QSettings is mocked to ensure it uses MockQSettings
@@ -186,73 +189,109 @@ def test_settings_usage(mock_get_settings, widget):
     assert widget._get_provider_id() == "lmstudio"
 
 
-@patch("src.gui.widgets.llm_generation_widget.PromptLoader")
-def test_template_combo_populated(MockLoader, widget):
-    """Test that template dropdown is populated with description templates."""
-    # Setup mock
-    mock_instance = MockLoader.return_value
-    mock_instance.list_templates.return_value = [
-        {"template_id": "description_test", "version": "1.0", "name": "Test Template"}
-    ]
-
-    # Re-populate (since widget init ran before mock)
-    widget._populate_template_combo()
-
-    # Check that template combo exists
-    assert widget.template_combo is not None
-
-    # Should have at least one item (fallback at minimum)
-    assert widget.template_combo.count() > 0
-
-    # Check that items have data (template_id)
-    # 0 is usually header ("Select...") or first item if we logic changes
-    # Let's check finding our mocked item
-    found = False
-    for i in range(widget.template_combo.count()):
-        if widget.template_combo.itemData(i) == "description_test":
-            found = True
-            break
-    assert found
+def _task_template() -> TaskTemplate:
+    return TaskTemplate(
+        template_id="create_test",
+        name="Create — Test",
+        description="Create a test description",
+        intent=TaskIntent.CREATE,
+        content="Template content for {name}",
+        source=TaskTemplateSource.BUILT_IN,
+    )
 
 
-@patch("src.gui.widgets.llm_generation_widget.PromptLoader")
-def test_template_selection_populates_textbox(MockLoader, widget, clean_settings):
-    """Test that template selection populates the prompt text box."""
-    # Setup mock with a known content
-    mock_instance = MockLoader.return_value
-    from collections import namedtuple
+def test_template_combo_uses_injected_snapshot(widget):
+    """The widget lists templates supplied by the app manager."""
+    widget.custom_prompt_edit.setPlainText("Existing custom draft")
+    widget.set_task_templates((_task_template(),))
 
-    Template = namedtuple("Template", ["content"])
-    mock_instance.load_template.return_value = Template(content="Template Content")
-
-    # Needs to be populated first
-    mock_instance.list_templates.return_value = [
-        {"template_id": "test_id", "version": "1.0", "name": "Test Template"}
-    ]
-    widget._populate_template_combo()
-
-    # Select the template (index 1, as index 0 is "Free Text")
-    if widget.template_combo.count() > 1:
-        widget.template_combo.setCurrentIndex(1)
-
-        # Verify text box updated
-        assert widget.custom_prompt_edit.toPlainText() == "Template Content"
+    assert widget.template_combo.count() == 2
+    assert widget.template_combo.itemData(0) is None
+    assert widget.template_combo.findData("create_test") == 1
 
 
-@patch("src.gui.widgets.llm_generation_widget.PromptLoader")
-def test_initial_selection_is_free_text(MockLoader, qtbot, clean_settings):
-    """Test that widget initializes with Free Text selected by default."""
-    # Ensure no templates interfere
-    mock_instance = MockLoader.return_value
-    mock_instance.list_templates.return_value = []
+def test_template_requires_explicit_use_and_edits_become_custom(widget):
+    """Selecting is safe; applying copies content; editing detaches the task."""
+    widget.custom_prompt_edit.setPlainText("Keep this draft")
+    widget.set_task_templates((_task_template(),))
+    widget.template_combo.setCurrentIndex(1)
 
-    # Create new widget
+    assert widget.custom_prompt_edit.toPlainText() == "Keep this draft"
+
+    widget.use_template_btn.click()
+    assert widget.custom_prompt_edit.toPlainText() == "Template content for {name}"
+    assert widget.template_combo.currentData() == "create_test"
+
+    widget.custom_prompt_edit.setPlainText("Edited task")
+    assert widget.template_combo.currentData() is None
+
+
+def test_initial_selection_is_custom(qtbot, clean_settings):
+    """Without a coordinator snapshot the safe initial state is Custom task."""
     widget = LLMGenerationWidget()
     qtbot.addWidget(widget)
 
-    # Check that ONLY "Free Text" exists (index 0)
     assert widget.template_combo.count() == 1
     assert widget.template_combo.itemData(0) is None
-
-    # And it should be selected
     assert widget.template_combo.currentIndex() == 0
+
+
+def test_recommends_create_or_update_without_crossing_object_drafts(
+    qtbot, clean_settings
+):
+    """Entity and event selectors use independent per-world preference keys."""
+    create = TaskTemplate(
+        template_id="create_complete_description",
+        name="Create — Complete Description",
+        description="Create a complete description",
+        intent=TaskIntent.CREATE,
+        content="Create {name}",
+        source=TaskTemplateSource.BUILT_IN,
+    )
+    revise = TaskTemplate(
+        template_id="revise_clarity_flow",
+        name="Revise — Clarity and Flow",
+        description="Revise a test description",
+        intent=TaskIntent.UPDATE,
+        content="Revise {description}",
+        source=TaskTemplateSource.BUILT_IN,
+    )
+    condense = TaskTemplate(
+        template_id="condense_essential_version",
+        name="Condense — Essential Version",
+        description="Condense a test description",
+        intent=TaskIntent.UPDATE,
+        content="Condense {description}",
+        source=TaskTemplateSource.BUILT_IN,
+    )
+
+    class Provider:
+        def __init__(self, context):
+            self.context = context
+
+        def get_generation_context(self):
+            return dict(self.context)
+
+    entity = LLMGenerationWidget(
+        context_provider=Provider(
+            {"object_type": "entity", "existing_description": ""}
+        )
+    )
+    event = LLMGenerationWidget(
+        context_provider=Provider(
+            {"object_type": "event", "existing_description": "Existing"}
+        )
+    )
+    qtbot.addWidget(entity)
+    qtbot.addWidget(event)
+    # Catalog order must not make the first generic update task the recommendation.
+    entity.set_task_templates((condense, create, revise))
+    event.set_task_templates((condense, create, revise))
+
+    settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+    assert entity.template_combo.currentData() == "create_complete_description"
+    assert event.template_combo.currentData() == "revise_clarity_flow"
+    assert settings.value("ai_gen_entity_template_id") == (
+        "create_complete_description"
+    )
+    assert settings.value("ai_gen_event_template_id") == "revise_clarity_flow"

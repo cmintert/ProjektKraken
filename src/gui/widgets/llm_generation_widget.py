@@ -35,12 +35,13 @@ from src.core.ai_generation import (
     GenerationApplyMode,
     GenerationRequest,
     ModelReply,
+    TaskIntent,
+    TaskTemplate,
 )
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.prompt_editor import PromptEditorWidget
 from src.services.llm_provider import create_provider
 from src.services.prompt_builder import DEFAULT_SYSTEM_PROMPT, PromptBuilder
-from src.services.prompt_loader import PromptLoader
 from src.services.rag_service import RAGService
 from src.services.reasoning_filter import filter_reasoning_tags
 from src.services.spatial_context_builder import lookup_spatial_context
@@ -403,6 +404,9 @@ class LLMGenerationWidget(QWidget):
         self._current_provider = None
         self._context_provider = context_provider
         self._current_db_path: Optional[str] = None
+        self._task_templates: tuple[TaskTemplate, ...] = ()
+        self._applied_template_content: str | None = None
+        self._loading_prompt = False
 
         # Main layout
         main_layout = QVBoxLayout(self)
@@ -424,12 +428,19 @@ class LLMGenerationWidget(QWidget):
         grid_layout.addWidget(QLabel("Task Template:"), 0, 0)
         self.template_combo = QComboBox()
         self.template_combo.setToolTip(
-            "Select task template. NOTE: Selecting a template overrides the\n"
-            "global Persona configured in AI Settings."
+            "Choose a reusable task. It is copied only when you select Use "
+            "Template and does not change the configured Persona."
         )
         self._populate_template_combo()
         self.template_combo.currentIndexChanged.connect(self._on_template_combo_changed)
-        grid_layout.addWidget(self.template_combo, 0, 1, 1, 3)  # Span 3 cols
+        grid_layout.addWidget(self.template_combo, 0, 1, 1, 2)
+        self.use_template_btn = QPushButton("Use Template")
+        self.use_template_btn.setEnabled(False)
+        self.use_template_btn.setToolTip(
+            "Copy the selected task into the editable prompt"
+        )
+        self.use_template_btn.clicked.connect(self._on_use_template_clicked)
+        grid_layout.addWidget(self.use_template_btn, 0, 3)
 
         # Row 1: Provider | Max Tokens
         grid_layout.addWidget(QLabel("Provider:"), 1, 0)
@@ -530,7 +541,7 @@ class LLMGenerationWidget(QWidget):
             ["{name}", "{type}", "{description}", "{lore_date}"]
         )
         self.custom_prompt_edit.setMaximumHeight(120)  # Slightly taller for toolbar
-        self.custom_prompt_edit.textChanged.connect(self._save_settings)
+        self.custom_prompt_edit.textChanged.connect(self._on_prompt_text_changed)
         main_layout.addWidget(self.custom_prompt_edit)
 
         # Separator line before buttons
@@ -602,31 +613,43 @@ class LLMGenerationWidget(QWidget):
         self._load_settings()
 
     def _populate_template_combo(self) -> None:
-        """Populate template combo box with available templates."""
-        try:
-            self.template_combo.clear()
+        """Populate the selector from the coordinator-provided snapshot."""
+        self.template_combo.blockSignals(True)
+        self.template_combo.clear()
+        self.template_combo.addItem("Custom task", None)
+        for template in sorted(
+            self._task_templates,
+            key=lambda item: (item.intent.value, item.name.casefold()),
+        ):
+            self.template_combo.addItem(template.name, template.template_id)
+            self.template_combo.setItemData(
+                self.template_combo.count() - 1,
+                template.description,
+                Qt.ItemDataRole.ToolTipRole,
+            )
+        self.template_combo.blockSignals(False)
 
-            # Add option for no template (Free Text)
-            self.template_combo.addItem("Free Text / Custom", None)
+    def set_task_templates(self, templates: tuple[TaskTemplate, ...]) -> None:
+        """Apply an immutable task-template snapshot from the app manager."""
+        selected_id = self.template_combo.currentData()
+        self._task_templates = tuple(templates)
+        self._populate_template_combo()
 
-            loader = PromptLoader()
-            templates = loader.list_templates()
+        context = self._get_generation_context() or {}
+        object_type = str(context.get("object_type") or "")
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        saved_id = settings.value(f"ai_gen_{object_type}_template_id", "")
+        self._select_template_id(str(selected_id or saved_id or ""))
 
-            # Sort by name for consistent ordering
-            templates.sort(key=lambda t: t.get("name", "").lower())
-
-            # Store template info as user data for easy retrieval
-            for template in templates:
-                display_name = f"{template['name']}"
-                template_id = template["template_id"]
-                # Store template_id as item data
-                self.template_combo.addItem(display_name, template_id)
-
-        except Exception as e:
-            logger.error(f"Failed to populate template combo: {e}")
-            # Ensure at least the default exists
-            if self.template_combo.count() == 0:
-                self.template_combo.addItem("Free Text / Custom", None)
+        draft = self.custom_prompt_edit.toPlainText()
+        selected = self._find_task_template(self.template_combo.currentData())
+        if selected is not None and draft == selected.content:
+            self._applied_template_content = selected.content
+        elif draft.strip():
+            self._select_template_id("")
+            self._applied_template_content = None
+        else:
+            self._apply_recommended_template(context)
 
     def refresh_settings(self) -> None:
         """Reload settings and refresh the template list.
@@ -636,48 +659,87 @@ class LLMGenerationWidget(QWidget):
         and template changes without restarting.
         """
         logger.info("LLMGenerationWidget: refreshing settings")
-        # Remember current template selection
-        current_template_id = self.template_combo.currentData()
-
-        # Reload provider/generation settings
         self._load_settings()
-
-        # Refresh template list (picks up new/modified/deleted templates)
-        self._populate_template_combo()
-
-        # Restore previous template selection if it still exists
-        if current_template_id:
-            for i in range(self.template_combo.count()):
-                if self.template_combo.itemData(i) == current_template_id:
-                    self.template_combo.setCurrentIndex(i)
-                    break
 
     @Slot()
     def _on_template_combo_changed(self) -> None:
-        """Handle template selection change.
+        """Update selector affordances without overwriting the draft."""
+        template = self._find_task_template(self.template_combo.currentData())
+        self.use_template_btn.setEnabled(template is not None)
+        if template is not None:
+            self.template_combo.setToolTip(template.description)
 
-        Populates the custom prompt text edit with the selected template's content.
-        This represents the 'Task' part of the Trinity.
-        """
-        template_id = self.template_combo.currentData()
-        if not template_id:
-            # Clears the prompt if "Free Text" is selected?
-            # Or maybe we leave it as is?
-            # User experience: if I type something, then accidentally switch, I lose it?
-            # Let's decide to NOT clear automatically to be safe,
-            # unless the user explicitly wants to.
-            # BUT: If I select a template, I expect text.
+    @Slot()
+    def _on_use_template_clicked(self) -> None:
+        """Copy the selected template into the editable task draft."""
+        template = self._find_task_template(self.template_combo.currentData())
+        if template is None:
             return
-
+        self._loading_prompt = True
         try:
-            loader = PromptLoader()
-            template = loader.load_template(template_id)
-            if template and template.content:
-                self.custom_prompt_edit.setPlainText(template.content)
-                self._save_settings()
-        except Exception as e:
-            logger.error(f"Failed to load template content: {e}")
-            self.status_label.setText(f"Error loading template: {e}")
+            self.custom_prompt_edit.setPlainText(template.content)
+            self._applied_template_content = template.content
+        finally:
+            self._loading_prompt = False
+        self._save_settings()
+
+    @Slot()
+    def _on_prompt_text_changed(self) -> None:
+        """Mark edited template text as a custom draft and persist it."""
+        if self._loading_prompt:
+            return
+        text = self.custom_prompt_edit.toPlainText()
+        if self.template_combo.currentData() and text != self._applied_template_content:
+            self._select_template_id("")
+            self._applied_template_content = None
+        self._save_settings()
+
+    def _find_task_template(self, template_id: object) -> TaskTemplate | None:
+        """Return a template from the current snapshot by stable ID."""
+        if not template_id:
+            return None
+        return next(
+            (
+                template
+                for template in self._task_templates
+                if template.template_id == str(template_id)
+            ),
+            None,
+        )
+
+    def _select_template_id(self, template_id: str) -> None:
+        """Select a task without applying its content."""
+        index = self.template_combo.findData(template_id) if template_id else 0
+        self.template_combo.setCurrentIndex(index if index >= 0 else 0)
+        self._on_template_combo_changed()
+
+    def _apply_recommended_template(self, context: dict[str, Any]) -> None:
+        """Seed an untouched draft from create/update intent."""
+        intent = (
+            TaskIntent.UPDATE
+            if str(context.get("existing_description") or "").strip()
+            else TaskIntent.CREATE
+        )
+        preferred_id = (
+            "revise_clarity_flow"
+            if intent == TaskIntent.UPDATE
+            else "create_complete_description"
+        )
+        template = next(
+            (
+                item
+                for item in self._task_templates
+                if item.template_id == preferred_id
+            ),
+            next(
+                (item for item in self._task_templates if item.intent == intent),
+                None,
+            ),
+        )
+        if template is None:
+            return
+        self._select_template_id(template.template_id)
+        self._on_use_template_clicked()
 
     def _load_settings(self) -> None:
         """Load provider settings from QSettings."""
@@ -727,24 +789,37 @@ class LLMGenerationWidget(QWidget):
             self.rag_limit_input.setVisible(self.rag_cb.isChecked())
             self.rag_limit_input.blockSignals(False)
 
-            # Load template selection
+            context = self._get_generation_context() or {}
+            object_type = str(context.get("object_type") or "")
+
+            # Load object-specific template selection.
             self.template_combo.blockSignals(True)
-            saved_template_id = settings.value("ai_gen_template_id", None)
-            # Find the template in the combo box by its data (template_id)
-            for i in range(self.template_combo.count()):
-                if self.template_combo.itemData(i) == saved_template_id:
-                    self.template_combo.setCurrentIndex(i)
-                    break
+            saved_template_id = settings.value(
+                f"ai_gen_{object_type}_template_id", ""
+            )
+            saved_index = self.template_combo.findData(saved_template_id)
+            self.template_combo.setCurrentIndex(
+                saved_index if saved_index >= 0 else 0
+            )
             self.template_combo.blockSignals(False)
 
-            context = self._get_generation_context() or {}
-            object_type = context.get("object_type")
             if object_type in {"entity", "event"}:
                 draft = settings.value(f"ai_gen_{object_type}_prompt", "")
                 if draft:
-                    self.custom_prompt_edit.blockSignals(True)
-                    self.custom_prompt_edit.setPlainText(str(draft))
-                    self.custom_prompt_edit.blockSignals(False)
+                    self._loading_prompt = True
+                    try:
+                        self.custom_prompt_edit.setPlainText(str(draft))
+                    finally:
+                        self._loading_prompt = False
+
+            selected = self._find_task_template(self.template_combo.currentData())
+            if selected is not None and self.custom_prompt_edit.toPlainText() == (
+                selected.content
+            ):
+                self._applied_template_content = selected.content
+            elif self.custom_prompt_edit.toPlainText().strip():
+                self._select_template_id("")
+                self._applied_template_content = None
 
         except Exception as e:
             logger.warning(f"Failed to load generation settings: {e}")
@@ -767,13 +842,20 @@ class LLMGenerationWidget(QWidget):
                 limit_val = 3
             settings.setValue("ai_gen_rag_limit", limit_val)
 
-            settings.setValue(
-                "ai_gen_template_id", self.template_combo.currentData() or ""
-            )
-
             context = self._get_generation_context() or {}
             object_type = context.get("object_type")
             if object_type in {"entity", "event"}:
+                selected = self._find_task_template(self.template_combo.currentData())
+                active_template_id = (
+                    selected.template_id
+                    if selected is not None
+                    and self.custom_prompt_edit.toPlainText() == selected.content
+                    else ""
+                )
+                settings.setValue(
+                    f"ai_gen_{object_type}_template_id",
+                    active_template_id,
+                )
                 settings.setValue(
                     f"ai_gen_{object_type}_prompt",
                     self.custom_prompt_edit.toPlainText(),
@@ -824,6 +906,7 @@ class LLMGenerationWidget(QWidget):
             user_prompt,
             include_rag_placeholder=self.rag_cb.isChecked(),
             include_spatial_placeholder=self.spatial_cb.isChecked(),
+            object_type=str(context.get("object_type") or ""),
         )
         self.status_label.setText("Generating with context...")
 
@@ -1355,6 +1438,7 @@ class LLMGenerationWidget(QWidget):
             user_prompt,
             include_rag_placeholder=self.rag_cb.isChecked(),
             include_spatial_placeholder=self.spatial_cb.isChecked(),
+            object_type=str(context.get("object_type") or ""),
         )
 
         # Show dialog

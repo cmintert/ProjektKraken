@@ -558,11 +558,14 @@ Enter dates in multiple formats:
 2. In **Tools → AI Settings**, configure LM Studio and choose a loaded
    text-generation model. Cloud generation providers are currently disabled.
 3. Expand **LLM Generation** in the editor.
-4. **Choose Prompt**:
-   - "Expand backstory"
-   - "Generate relationships"
-   - "Write description"
-5. **Review and Edit** generated text, then explicitly choose **Replace** or
+4. **Choose a Task Template**:
+   - **Create — Complete Description** for new content
+   - **Revise — Clarity and Flow** for a complete improved replacement
+   - **Expand — Grounded Detail** to add context-supported detail
+   - **Condense — Essential Version** to shorten without losing established facts
+5. Select **Use Template** to copy the task into the editable prompt. Merely
+   selecting a template does not overwrite the current draft.
+6. **Review and Edit** generated text, then explicitly choose **Replace** or
    **Append**. **Discard** leaves the description unchanged.
 
 ProjektKraken preserves the visible reply exactly, including Markdown, wiki
@@ -570,18 +573,15 @@ links, Unicode, leading/trailing spaces, and blank lines. Model reasoning and
 tool-call fields are kept separate and are never inserted into descriptions.
 If the selected item changes during generation, the stale result is rejected.
 
-#### Custom Prompts
+#### Per-World Task Templates
 
-Create custom LLM prompts:
+Create reusable tasks under **Tools → AI Settings → Task Templates**. Bundled
+tasks are locked; choose **Duplicate to World** to customize one. New and copied
+tasks are stored with the active world and update in place.
 
-1. **AI → Manage Prompts**
-2. **New Prompt**
-3. **Template with Variables**:
-   ```
-   Write a detailed description of {entity_name}.
-   Type: {entity_type}
-   Context: {related_events}
-   ```
+Templates support `{name}`, `{type}`, `{description}`, and `{lore_date}`. The
+configured Persona controls voice and tone separately. RAG and spatial context are
+added automatically when enabled.
 
 ### RAG Integration
 

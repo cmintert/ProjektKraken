@@ -1,0 +1,16 @@
+---
+version: 1.0
+template_id: create_complete_description
+name: Create — Complete Description
+description: Write a self-contained description from the supplied world context
+intent: create
+author: ProjektKraken Team
+created: 2026-07-22
+tags: [create, description, worldbuilding]
+---
+
+Write a self-contained description of {name} using only facts present in the supplied item data and retrieved or spatial context. Establish what it is and summarize its known distinctive qualities and significance. Preserve all supplied names, dates, uncertainty, Markdown, and [[Wiki Links]].
+
+Do not invent proper nouns, origins, causes, durations, consequences, beliefs, relationships, locations, organizations, or reactions. Never add a named person, place, event, deity, or [[Wiki Link]] that is absent from the supplied context. When the context is sparse, write a short neutral description rather than filling gaps with new canon.
+
+Return only the finished description. Do not add JSON, a code fence, a heading, or commentary about the task.

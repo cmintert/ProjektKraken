@@ -1,0 +1,19 @@
+---
+version: 1.0
+template_id: condense_essential_version
+name: Condense — Essential Version
+description: Shorten an existing description while retaining its essential content
+intent: update
+author: ProjektKraken Team
+created: 2026-07-22
+tags: [condense, concise, description]
+---
+
+Condense the existing description of {name} to its essential version. Return the complete condensed description. Preserve all important facts, proper names, dates, deliberate uncertainty, Markdown elements, and [[Wiki Links]]. Remove repetition, secondary detail, and padding without changing meaning or introducing new canon.
+
+SOURCE DESCRIPTION — copy its Markdown markers and [[Wiki Links]] verbatim into the condensed version:
+{description}
+
+The response is invalid if any heading marker, list marker, or [[Wiki Link]] from the source is missing or altered.
+
+Return only the finished description. Do not add JSON, a code fence, a new heading, or commentary about the task.

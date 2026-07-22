@@ -10,9 +10,10 @@ from typing import TYPE_CHECKING, cast
 from PySide6.QtCore import QMetaObject, QObject, QSettings, Qt, QTimer, Slot
 
 from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
-from src.core.ai_generation import AIGenerationPreferences
+from src.core.ai_generation import AIGenerationPreferences, TaskTemplate
 from src.core.logging_config import get_logger
 from src.services.prompt_builder import DEFAULT_SYSTEM_PROMPT
+from src.services.task_template_catalog import TaskTemplateCatalog
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
@@ -40,6 +41,9 @@ class AISearchManager(QObject):
         """
         super().__init__()
         self.window = main_window
+        self._task_template_catalog = TaskTemplateCatalog()
+        self._custom_task_templates: tuple[TaskTemplate, ...] = ()
+        self._task_templates = self._task_template_catalog.built_in_templates()
         worker = getattr(self.window, "worker", None)
         if worker is not None:
             worker.ai_generation_preferences_loaded.connect(
@@ -76,6 +80,10 @@ class AISearchManager(QObject):
             self.window.ai_settings_dialog.settings_saved.connect(
                 self._on_settings_saved
             )
+            self.window.ai_settings_dialog.task_templates_changed.connect(
+                self._on_task_templates_changed
+            )
+            self.window.ai_settings_dialog.set_task_templates(self._task_templates)
             self.window.worker_manager.load_ai_preferences_requested.emit()
             # Initial status update
             self.refresh_search_index_status()
@@ -110,10 +118,16 @@ class AISearchManager(QObject):
         if hasattr(self.window, "entity_editor") and hasattr(
             self.window.entity_editor, "llm_generator"
         ):
+            self.window.entity_editor.llm_generator.set_task_templates(
+                self._task_templates
+            )
             self.window.entity_editor.llm_generator.refresh_settings()
         if hasattr(self.window, "event_editor") and hasattr(
             self.window.event_editor, "llm_generator"
         ):
+            self.window.event_editor.llm_generator.set_task_templates(
+                self._task_templates
+            )
             self.window.event_editor.llm_generator.refresh_settings()
 
     @Slot(object)
@@ -121,10 +135,20 @@ class AISearchManager(QObject):
         """Apply world preferences, or seed a new world from legacy settings."""
         dialog = getattr(self.window, "ai_settings_dialog", None)
         if isinstance(raw_preferences, dict):
-            preferences = AIGenerationPreferences.from_dict(raw_preferences)
+            loaded = AIGenerationPreferences.from_dict(raw_preferences)
+            preferences = self._task_template_catalog.migrate_preferences(loaded)
+            self._custom_task_templates = preferences.custom_task_templates
+            self._task_templates = self._task_template_catalog.merge(
+                self._custom_task_templates
+            )
             self._cache_world_preferences(preferences)
             if dialog is not None:
+                dialog.set_task_templates(self._task_templates)
                 dialog.apply_world_preferences(preferences)
+            if preferences != loaded:
+                self.window.worker_manager.save_ai_preferences_requested.emit(
+                    preferences.to_dict()
+                )
         else:
             self._save_current_world_preferences()
 
@@ -132,7 +156,32 @@ class AISearchManager(QObject):
             editor = getattr(self.window, editor_name, None)
             generator = getattr(editor, "llm_generator", None)
             if generator is not None:
+                generator.set_task_templates(self._task_templates)
                 generator.refresh_settings()
+
+    @Slot(object)
+    def _on_task_templates_changed(self, templates: object) -> None:
+        """Validate and publish a serializable world-template snapshot."""
+        if not isinstance(templates, (list, tuple)):
+            return
+        custom = tuple(
+            template for template in templates if isinstance(template, TaskTemplate)
+        )
+        merged = self._task_template_catalog.merge(custom)
+        for template in custom:
+            self._task_template_catalog.validate_world_template(template, merged)
+        self._custom_task_templates = custom
+        self._task_templates = merged
+
+        dialog = getattr(self.window, "ai_settings_dialog", None)
+        if dialog is not None:
+            dialog.set_task_templates(self._task_templates)
+        for editor_name in ("entity_editor", "event_editor"):
+            editor = getattr(self.window, editor_name, None)
+            generator = getattr(editor, "llm_generator", None)
+            if generator is not None:
+                generator.set_task_templates(self._task_templates)
+        self._save_current_world_preferences()
 
     @staticmethod
     def _cache_world_preferences(
@@ -149,7 +198,8 @@ class AISearchManager(QObject):
             "ai_gen_spatial_enabled": preferences.spatial_enabled,
             "ai_gen_filter_reasoning": preferences.filter_reasoning,
             "ai_gen_audit_log": preferences.audit_enabled,
-            "ai_gen_template_id": preferences.selected_template_id,
+            "ai_gen_entity_template_id": preferences.selected_entity_template_id,
+            "ai_gen_event_template_id": preferences.selected_event_template_id,
             "ai_gen_entity_prompt": preferences.entity_prompt_draft,
             "ai_gen_event_prompt": preferences.event_prompt_draft,
         }
@@ -200,8 +250,11 @@ class AISearchManager(QObject):
                     bool,
                     settings.value("ai_gen_audit_log", False, type=bool),
                 ),
-                selected_template_id=str(
-                    settings.value("ai_gen_template_id", "") or ""
+                selected_entity_template_id=str(
+                    settings.value("ai_gen_entity_template_id", "") or ""
+                ),
+                selected_event_template_id=str(
+                    settings.value("ai_gen_event_template_id", "") or ""
                 ),
                 entity_prompt_draft=str(
                     settings.value("ai_gen_entity_prompt", "") or ""
@@ -209,6 +262,7 @@ class AISearchManager(QObject):
                 event_prompt_draft=str(
                     settings.value("ai_gen_event_prompt", "") or ""
                 ),
+                custom_task_templates=self._custom_task_templates,
             )
         self.window.worker_manager.save_ai_preferences_requested.emit(
             preferences.to_dict()

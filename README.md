@@ -88,7 +88,7 @@ Backups and AI search indexes are also stored in the user data directory.
 - **Semantic Search**: Local embeddings with LM Studio for natural language queries
 - **AI Panel**: Dedicated search interface with keyboard navigation
 - **LLM Generation**: Context-aware content generation with RAG integration
-- **Custom Prompts**: Configurable LLM prompts and personas
+- **Portable Task Templates**: Read-only authoring presets plus custom per-world tasks
 
 ### Data & UI
 - **Event-Driven Architecture**: Signal-based communication between components

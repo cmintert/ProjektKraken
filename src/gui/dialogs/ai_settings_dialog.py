@@ -5,6 +5,7 @@ exclusion.
 """
 
 import logging
+import uuid
 from typing import Optional
 
 from PySide6.QtCore import Qt, QThread, QTimer, Signal, Slot
@@ -30,7 +31,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.core.ai_generation import AIGenerationPreferences
+from src.core.ai_generation import (
+    AIGenerationPreferences,
+    TaskIntent,
+    TaskTemplate,
+    TaskTemplateSource,
+)
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.prompt_editor import PromptEditorWidget
 from src.services.lmstudio_config import (
@@ -38,7 +44,10 @@ from src.services.lmstudio_config import (
     discover_lmstudio_models,
     normalize_lmstudio_base_url,
 )
-from src.services.prompt_loader import PromptLoader
+from src.services.task_template_catalog import (
+    TaskTemplateCatalog,
+    TaskTemplateValidationError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +89,7 @@ class AISettingsDialog(QDialog):
     rebuild_index_requested = Signal(str)  # object_type ('entity', 'event', 'all')
     index_status_requested = Signal()  # Request to refresh index status
     settings_saved = Signal()  # Emitted after settings are persisted to QSettings
+    task_templates_changed = Signal(object)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the AI Settings Dialog.
@@ -98,6 +108,11 @@ class AISettingsDialog(QDialog):
 
         self._initializing = True
         self._discovery_worker: LMStudioDiscoveryWorker | None = None
+        self._task_templates: tuple[TaskTemplate, ...] = ()
+        self._editing_template_id: str | None = None
+        self._template_editor_dirty = False
+        self._restoring_template_selection = False
+        self._task_template_catalog = TaskTemplateCatalog()
         app = QApplication.instance()
         if app is not None:
             app.aboutToQuit.connect(self._shutdown_discovery)
@@ -210,6 +225,11 @@ class AISettingsDialog(QDialog):
         self.save_settings()
         self._show_save_status("Saved")
         self.accept()
+
+    def reject(self) -> None:
+        """Protect unsaved world-template edits when closing the dialog."""
+        if self._confirm_discard_template_changes():
+            super().reject()
 
     def _create_generative_ai_page(self) -> QWidget:
         """Create the Generative AI (Text Generation) page."""
@@ -587,9 +607,8 @@ class AISettingsDialog(QDialog):
         )
         self.system_prompt_edit.setMinimumHeight(120)  # Taller for reading
         self.system_prompt_edit.setToolTip(
-            "The persona defines how the LLM should behave and respond.\n\n"
-            "NOTE: If a specific Task Template is selected in the Generation Widget,\n"
-            "it will OVERRIDE this setting."
+            "The persona defines how the LLM should behave and respond. "
+            "Task templates provide a separate instruction for the current request."
         )
         # Default prompt
         default_prompt = (
@@ -603,14 +622,7 @@ class AISettingsDialog(QDialog):
         )
         self.system_prompt_edit.set_default_text(default_prompt)
         self.system_prompt_edit.set_variables(
-            [
-                "{type}",
-                "{name}",
-                "{description}",
-                "{lore_date}",
-                "{attributes}",
-                "{relations}",
-            ]
+            ["{type}", "{name}", "{description}", "{lore_date}"]
         )
         system_layout.addWidget(self.system_prompt_edit)
         self.system_prompt_edit.textChanged.connect(self.save_settings)
@@ -743,7 +755,7 @@ class AISettingsDialog(QDialog):
             }
         """
         )
-        self.template_list.currentRowChanged.connect(self._on_template_selected)
+        self.template_list.currentItemChanged.connect(self._on_template_selected)
         left_layout.addWidget(self.template_list)
 
         # Actions below list
@@ -769,13 +781,21 @@ class AISettingsDialog(QDialog):
         meta_form = QFormLayout(meta_group)
         StyleHelper.apply_compact_spacing(meta_form)
 
-        self.template_id_edit = QLineEdit()
-        self.template_id_edit.setPlaceholderText("e.g. fantasy_prompt")
-        meta_form.addRow("ID:", self.template_id_edit)
-
         self.template_name_edit = QLineEdit()
-        self.template_name_edit.setPlaceholderText("e.g. Fantasy World Builder")
+        self.template_name_edit.setPlaceholderText("e.g. Revise — Preserve Tone")
         meta_form.addRow("Name:", self.template_name_edit)
+
+        self.template_description_edit = QLineEdit()
+        self.template_description_edit.setPlaceholderText(
+            "Explain when this task is useful"
+        )
+        meta_form.addRow("Description:", self.template_description_edit)
+
+        self.template_intent_combo = QComboBox()
+        self.template_intent_combo.addItem("Create", TaskIntent.CREATE.value)
+        self.template_intent_combo.addItem("Update", TaskIntent.UPDATE.value)
+        self.template_intent_combo.addItem("General", TaskIntent.GENERAL.value)
+        meta_form.addRow("Intent:", self.template_intent_combo)
 
         right_layout.addWidget(meta_group)
 
@@ -787,14 +807,7 @@ class AISettingsDialog(QDialog):
         self.template_content_edit = PromptEditorWidget()
         self.template_content_edit.setPlaceholderText("Enter template content here...")
         self.template_content_edit.set_variables(
-            [
-                "{type}",
-                "{name}",
-                "{description}",
-                "{lore_date}",
-                "{attributes}",
-                "{relations}",
-            ]
+            ["{type}", "{name}", "{description}", "{lore_date}"]
         )
         content_layout.addWidget(self.template_content_edit)
         right_layout.addWidget(content_group, stretch=1)
@@ -807,6 +820,10 @@ class AISettingsDialog(QDialog):
         )
         self.btn_delete_template.clicked.connect(self._on_delete_template)
         editor_actions.addWidget(self.btn_delete_template)
+
+        self.btn_duplicate_template = QPushButton("Duplicate to World")
+        self.btn_duplicate_template.clicked.connect(self._on_duplicate_template)
+        editor_actions.addWidget(self.btn_duplicate_template)
 
         editor_actions.addStretch()
 
@@ -826,130 +843,315 @@ class AISettingsDialog(QDialog):
 
         main_layout.addWidget(splitter)
 
-        # Initial refresh
+        for editor in (
+            self.template_name_edit,
+            self.template_description_edit,
+            self.template_content_edit,
+        ):
+            editor.textChanged.connect(self._mark_template_editor_dirty)
+        self.template_intent_combo.currentIndexChanged.connect(
+            self._mark_template_editor_dirty
+        )
+
+        self._set_template_editor_enabled(False)
         self._refresh_templates_list()
 
         return page
 
     @Slot()
     def _refresh_templates_list(self) -> None:
-        """Reload templates from disk."""
-        self.template_list.clear()
+        """Render the coordinator-provided task-template snapshot."""
+        selected_id = self._editing_template_id
+        self._restoring_template_selection = True
         try:
-            loader = PromptLoader()
-            templates = loader.list_templates()
-            # Sort by name
-            templates.sort(key=lambda x: x.get("name", "").lower())
-
-            for t in templates:
-                item = QListWidgetItem(f"{t['name']} (v{t['version']})")
-                item.setData(Qt.ItemDataRole.UserRole, t["template_id"])
-                item.setToolTip(f"ID: {t['template_id']}\n{t.get('description', '')}")
+            self.template_list.clear()
+            for template in sorted(
+                self._task_templates,
+                key=lambda item: (
+                    item.source != TaskTemplateSource.BUILT_IN,
+                    item.intent.value,
+                    item.name.casefold(),
+                ),
+            ):
+                prefix = "🔒 " if template.source == TaskTemplateSource.BUILT_IN else ""
+                item = QListWidgetItem(f"{prefix}{template.name}")
+                item.setData(Qt.ItemDataRole.UserRole, template.template_id)
+                item.setToolTip(
+                    f"{template.intent.value.title()} · {template.description}"
+                )
                 self.template_list.addItem(item)
+                if template.template_id == selected_id:
+                    self.template_list.setCurrentItem(item)
+        finally:
+            self._restoring_template_selection = False
 
-        except Exception as e:
-            logger.error(f"Failed to load templates: {e}")
-            self._show_save_status(f"Error loading templates: {e}")
-
-    @Slot(int)
-    def _on_template_selected(self, row: int) -> None:
-        """Load selected template into editor."""
-        if row < 0:
+    @Slot(object, object)
+    def _on_template_selected(
+        self,
+        current: QListWidgetItem | None,
+        previous: QListWidgetItem | None,
+    ) -> None:
+        """Load a selection after protecting unsaved editor changes."""
+        if self._restoring_template_selection:
             return
-
-        item = self.template_list.item(row)
-        template_id = item.data(Qt.ItemDataRole.UserRole)
-
-        try:
-            loader = PromptLoader()
-            # Load latest version
-            template = loader.load_template(template_id)
-
-            self.template_id_edit.setText(template.template_id)
-            self.template_id_edit.setReadOnly(True)  # Lock ID for existing templates
-            self.template_name_edit.setText(template.name)
-            self.template_content_edit.setPlainText(template.content)
-
-            # Enable buttons
-            self.btn_delete_template.setEnabled(True)
-            self.btn_save_template.setEnabled(True)
-
-        except Exception as e:
-            logger.error(f"Failed to load template details: {e}")
-            self._show_save_status("Error loading template")
+        if self._template_editor_dirty and previous is not None:
+            reply = QMessageBox.question(
+                self,
+                "Discard Template Changes?",
+                "The current template has unsaved changes. Discard them?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                self._restoring_template_selection = True
+                self.template_list.setCurrentItem(previous)
+                self._restoring_template_selection = False
+                return
+        if current is None:
+            return
+        template_id = str(current.data(Qt.ItemDataRole.UserRole) or "")
+        template = self._find_task_template(template_id)
+        if template is not None:
+            self._load_template_editor(template)
 
     @Slot()
     def _on_new_template(self) -> None:
         """Prepare editor for new template."""
+        if not self._confirm_discard_template_changes():
+            return
+        self._template_editor_dirty = False
         self.template_list.clearSelection()
-        self.template_id_edit.clear()
-        self.template_id_edit.setReadOnly(False)
+        self._editing_template_id = str(uuid.uuid4())
+        self._set_template_editor_enabled(True)
+        self._set_template_editor_read_only(False)
+        self._template_editor_dirty = False
         self.template_name_edit.clear()
+        self.template_description_edit.clear()
+        self.template_intent_combo.setCurrentIndex(2)
         self.template_content_edit.clear()
-        self.template_id_edit.setFocus()
+        self.template_name_edit.setFocus()
         self.btn_delete_template.setEnabled(False)
+        self.btn_duplicate_template.setEnabled(False)
+        self.btn_save_template.setEnabled(True)
+        self._template_editor_dirty = False
 
     @Slot()
     def _on_save_template(self) -> None:
-        """Save the current template."""
-        tid = self.template_id_edit.text().strip()
+        """Create or update a world-owned template in place."""
+        template_id = self._editing_template_id or str(uuid.uuid4())
         name = self.template_name_edit.text().strip()
+        description = self.template_description_edit.text().strip()
         content = self.template_content_edit.toPlainText()
-
-        if not tid or not name:
-            self._show_save_status("Error: ID and Name required")
-            return
-
+        intent = TaskIntent(str(self.template_intent_combo.currentData()))
+        template = TaskTemplate(
+            template_id=template_id,
+            name=name,
+            description=description,
+            intent=intent,
+            content=content,
+            source=TaskTemplateSource.WORLD,
+        )
+        custom = self.get_custom_task_templates()
         try:
-            loader = PromptLoader()
-            metadata = {"name": name}
-            loader.save_template(tid, content, metadata)
-
+            self._task_template_catalog.validate_world_template(
+                template, self._task_templates
+            )
+            updated = tuple(
+                candidate
+                for candidate in custom
+                if candidate.template_id != template.template_id
+            ) + (template,)
+            built_ins = tuple(
+                candidate
+                for candidate in self._task_templates
+                if candidate.source == TaskTemplateSource.BUILT_IN
+            )
+            self._task_templates = built_ins + updated
+            self._editing_template_id = template.template_id
+            self._template_editor_dirty = False
             self._show_save_status("Template saved")
             self._refresh_templates_list()
-
-            # Find and reselet
-            for i in range(self.template_list.count()):
-                if self.template_list.item(i).data(Qt.ItemDataRole.UserRole) == tid:
-                    self.template_list.setCurrentRow(i)
-                    break
-
-        except Exception as e:
-            logger.error(f"Failed to save template: {e}")
-            self._show_save_status(f"Error: {e}")
+            self._select_template_list_item(template.template_id)
+            self.task_templates_changed.emit(updated)
+        except TaskTemplateValidationError as exc:
+            self._show_save_status(f"Error: {exc}")
 
     @Slot()
     def _on_delete_template(self) -> None:
-        """Delete the selected template."""
-        row = self.template_list.currentRow()
-        if row < 0:
+        """Delete one mutable world template."""
+        template = self._find_task_template(self._editing_template_id)
+        if template is None or template.source != TaskTemplateSource.WORLD:
             return
-
-        tid = self.template_id_edit.text()
-
         reply = QMessageBox.question(
             self,
             "Confirm Delete",
-            f"Are you sure you want to delete template '{tid}'?\n"
-            "This will delete ALL versions.",
+            f"Delete the world template '{template.name}'?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )
-
         if reply == QMessageBox.StandardButton.Yes:
-            try:
-                loader = PromptLoader()
-                loader.delete_template(tid)
-                self._show_save_status("Template deleted")
-                self._new_template()  # Clear editor
-                self._refresh_templates_list()
-            except Exception as e:
-                logger.error(f"Failed to delete template: {e}")
-                self._show_save_status(f"Error: {e}")
+            updated = tuple(
+                candidate
+                for candidate in self.get_custom_task_templates()
+                if candidate.template_id != template.template_id
+            )
+            self._task_templates = tuple(
+                candidate
+                for candidate in self._task_templates
+                if candidate.template_id != template.template_id
+            )
+            self._show_save_status("Template deleted")
+            self._clear_template_editor()
+            self._refresh_templates_list()
+            self.task_templates_changed.emit(updated)
+
+    @Slot()
+    def _on_duplicate_template(self) -> None:
+        """Copy a bundled task into the active world's mutable collection."""
+        source = self._find_task_template(self._editing_template_id)
+        if source is None:
+            return
+        existing_names = {
+            template.name.casefold() for template in self.get_custom_task_templates()
+        }
+        base_name = f"Copy of {source.name}"
+        name = base_name
+        suffix = 2
+        while name.casefold() in existing_names:
+            name = f"{base_name} {suffix}"
+            suffix += 1
+        self._editing_template_id = str(uuid.uuid4())
+        self._set_template_editor_read_only(False)
+        self.template_name_edit.setText(name)
+        self.template_description_edit.setText(source.description)
+        self.template_intent_combo.setCurrentIndex(
+            self.template_intent_combo.findData(source.intent.value)
+        )
+        self.template_content_edit.setPlainText(source.content)
+        self._template_editor_dirty = True
+        self.btn_delete_template.setEnabled(False)
+        self.btn_duplicate_template.setEnabled(False)
+        self.btn_save_template.setEnabled(True)
+        self._on_save_template()
 
     def _new_template(self) -> None:
         """Handle new template action."""
         self._on_new_template()
+
+    def set_task_templates(self, templates: tuple[TaskTemplate, ...]) -> None:
+        """Apply the merged template snapshot owned by the app manager."""
+        self._task_templates = tuple(templates)
+        self._refresh_templates_list()
+
+    def get_custom_task_templates(self) -> tuple[TaskTemplate, ...]:
+        """Return only mutable templates for portable world preferences."""
+        return tuple(
+            template
+            for template in self._task_templates
+            if template.source == TaskTemplateSource.WORLD
+        )
+
+    def _find_task_template(self, template_id: object) -> TaskTemplate | None:
+        """Find a task in the current UI snapshot."""
+        if not template_id:
+            return None
+        return next(
+            (
+                template
+                for template in self._task_templates
+                if template.template_id == str(template_id)
+            ),
+            None,
+        )
+
+    def _load_template_editor(self, template: TaskTemplate) -> None:
+        """Render one selected template without marking it dirty."""
+        self._editing_template_id = template.template_id
+        self._set_template_editor_enabled(True)
+        self._set_template_editor_read_only(
+            template.source == TaskTemplateSource.BUILT_IN
+        )
+        for widget in (
+            self.template_name_edit,
+            self.template_description_edit,
+            self.template_content_edit,
+            self.template_intent_combo,
+        ):
+            widget.blockSignals(True)
+        self.template_name_edit.setText(template.name)
+        self.template_description_edit.setText(template.description)
+        self.template_intent_combo.setCurrentIndex(
+            self.template_intent_combo.findData(template.intent.value)
+        )
+        self.template_content_edit.setPlainText(template.content)
+        for widget in (
+            self.template_name_edit,
+            self.template_description_edit,
+            self.template_content_edit,
+            self.template_intent_combo,
+        ):
+            widget.blockSignals(False)
+        built_in = template.source == TaskTemplateSource.BUILT_IN
+        self.btn_delete_template.setEnabled(not built_in)
+        self.btn_duplicate_template.setEnabled(built_in)
+        self.btn_save_template.setEnabled(not built_in)
+        self._template_editor_dirty = False
+
+    def _set_template_editor_enabled(self, enabled: bool) -> None:
+        """Enable or disable all task editor fields."""
+        for widget in (
+            self.template_name_edit,
+            self.template_description_edit,
+            self.template_intent_combo,
+            self.template_content_edit,
+        ):
+            widget.setEnabled(enabled)
+        self.btn_save_template.setEnabled(enabled)
+
+    def _set_template_editor_read_only(self, read_only: bool) -> None:
+        """Protect bundled templates while keeping them inspectable."""
+        self.template_name_edit.setReadOnly(read_only)
+        self.template_description_edit.setReadOnly(read_only)
+        self.template_content_edit.setReadOnly(read_only)
+        self.template_intent_combo.setEnabled(not read_only)
+
+    @Slot()
+    def _mark_template_editor_dirty(self) -> None:
+        """Record unsaved edits for selection and close protection."""
+        if self._editing_template_id is not None:
+            self._template_editor_dirty = True
+
+    def _confirm_discard_template_changes(self) -> bool:
+        """Confirm abandoning an unsaved world-template edit."""
+        if not self._template_editor_dirty:
+            return True
+        reply = QMessageBox.question(
+            self,
+            "Discard Template Changes?",
+            "Discard the unsaved changes to this task template?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        return reply == QMessageBox.StandardButton.Yes
+
+    def _clear_template_editor(self) -> None:
+        """Reset the editor after deletion or an empty selection."""
+        self._editing_template_id = None
+        self._template_editor_dirty = False
+        self.template_name_edit.clear()
+        self.template_description_edit.clear()
+        self.template_content_edit.clear()
+        self._set_template_editor_enabled(False)
+        self.btn_delete_template.setEnabled(False)
+        self.btn_duplicate_template.setEnabled(False)
+
+    def _select_template_list_item(self, template_id: str) -> None:
+        """Select a list row by stable ID."""
+        for index in range(self.template_list.count()):
+            item = self.template_list.item(index)
+            if item.data(Qt.ItemDataRole.UserRole) == template_id:
+                self.template_list.setCurrentItem(item)
+                break
 
     @Slot(int)
     def _on_provider_changed(self, index: int) -> None:
@@ -1434,8 +1636,11 @@ class AISettingsDialog(QDialog):
             ),
             filter_reasoning=self.filter_reasoning_cb.isChecked(),
             audit_enabled=self.enable_audit_log.isChecked(),
-            selected_template_id=str(
-                settings.value("ai_gen_template_id", "") or ""
+            selected_entity_template_id=str(
+                settings.value("ai_gen_entity_template_id", "") or ""
+            ),
+            selected_event_template_id=str(
+                settings.value("ai_gen_event_template_id", "") or ""
             ),
             entity_prompt_draft=str(
                 settings.value("ai_gen_entity_prompt", "") or ""
@@ -1443,6 +1648,7 @@ class AISettingsDialog(QDialog):
             event_prompt_draft=str(
                 settings.value("ai_gen_event_prompt", "") or ""
             ),
+            custom_task_templates=self.get_custom_task_templates(),
         )
 
     def apply_world_preferences(self, preferences: AIGenerationPreferences) -> None:
@@ -1475,7 +1681,12 @@ class AISettingsDialog(QDialog):
             )
             settings.setValue("ai_gen_audit_log", preferences.audit_enabled)
             settings.setValue(
-                "ai_gen_template_id", preferences.selected_template_id
+                "ai_gen_entity_template_id",
+                preferences.selected_entity_template_id,
+            )
+            settings.setValue(
+                "ai_gen_event_template_id",
+                preferences.selected_event_template_id,
             )
             settings.setValue(
                 "ai_gen_entity_prompt", preferences.entity_prompt_draft
@@ -1483,6 +1694,13 @@ class AISettingsDialog(QDialog):
             settings.setValue(
                 "ai_gen_event_prompt", preferences.event_prompt_draft
             )
+            built_ins = tuple(
+                template
+                for template in self._task_templates
+                if template.source == TaskTemplateSource.BUILT_IN
+            )
+            self._task_templates = built_ins + preferences.custom_task_templates
+            self._refresh_templates_list()
         finally:
             self._initializing = False
 

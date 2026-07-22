@@ -84,3 +84,21 @@ def test_rebuild_search_index_dispatches_to_worker(manager, mock_window):
     mock_window.worker_manager.rebuild_index_requested.emit.assert_called_once_with(
         "all", []
     )
+
+
+def test_loading_v1_preferences_persists_v2_template_migration(
+    manager, mock_window
+):
+    """The app manager upgrades legacy selections through the worker path."""
+    manager.on_ai_preferences_loaded(
+        {
+            "version": 1,
+            "selected_template_id": "description_default",
+            "entity_prompt_draft": "Keep this draft",
+        }
+    )
+
+    saved = mock_window.worker_manager.save_ai_preferences_requested.emit.call_args[0][0]
+    assert saved["version"] == 2
+    assert saved["selected_entity_template_id"] == "create_complete_description"
+    assert saved["entity_prompt_draft"] == "Keep this draft"

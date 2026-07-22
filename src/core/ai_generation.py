@@ -7,6 +7,66 @@ from enum import Enum
 from typing import Any
 
 
+class TaskIntent(str, Enum):
+    """Authoring purpose of a task template."""
+
+    CREATE = "create"
+    UPDATE = "update"
+    GENERAL = "general"
+
+
+class TaskTemplateSource(str, Enum):
+    """Ownership and mutability of a task template."""
+
+    BUILT_IN = "built_in"
+    WORLD = "world"
+
+
+@dataclass(frozen=True)
+class TaskTemplate:
+    """Serializable task prompt available to description-generation widgets."""
+
+    template_id: str
+    name: str
+    description: str
+    intent: TaskIntent
+    content: str
+    source: TaskTemplateSource = TaskTemplateSource.WORLD
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "TaskTemplate":
+        """Build a template from a portable preferences snapshot."""
+        intent_value = str(data.get("intent", TaskIntent.GENERAL.value))
+        source_value = str(data.get("source", TaskTemplateSource.WORLD.value))
+        try:
+            intent = TaskIntent(intent_value)
+        except ValueError:
+            intent = TaskIntent.GENERAL
+        try:
+            source = TaskTemplateSource(source_value)
+        except ValueError:
+            source = TaskTemplateSource.WORLD
+        return cls(
+            template_id=str(data.get("template_id", "")),
+            name=str(data.get("name", "")),
+            description=str(data.get("description", "")),
+            intent=intent,
+            content=str(data.get("content", "")),
+            source=source,
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return a JSON-serializable template snapshot."""
+        return {
+            "template_id": self.template_id,
+            "name": self.name,
+            "description": self.description,
+            "intent": self.intent.value,
+            "content": self.content,
+            "source": self.source.value,
+        }
+
+
 class GenerationApplyMode(str, Enum):
     """How an approved generation should be applied to an editor."""
 
@@ -115,7 +175,7 @@ class GenerationReviewResult:
 class AIGenerationPreferences:
     """Portable, versioned creative preferences stored inside a world."""
 
-    version: int = 1
+    version: int = 2
     persona: str = ""
     max_tokens: int = 512
     temperature_percent: int = 70
@@ -124,13 +184,31 @@ class AIGenerationPreferences:
     spatial_enabled: bool = False
     filter_reasoning: bool = True
     audit_enabled: bool = False
-    selected_template_id: str = ""
+    selected_entity_template_id: str = ""
+    selected_event_template_id: str = ""
     entity_prompt_draft: str = ""
     event_prompt_draft: str = ""
+    custom_task_templates: tuple[TaskTemplate, ...] = ()
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "AIGenerationPreferences":
         """Load known fields while tolerating newer schema versions."""
+        legacy_id = str(data.get("selected_template_id", ""))
+        legacy_map = {
+            "description_default": "create_complete_description",
+            "description_detailed": "expand_grounded_detail",
+            "description_concise": "condense_essential_version",
+            "fantasy_worldbuilder": "",
+        }
+        migrated_id = legacy_map.get(legacy_id, legacy_id)
+        raw_templates = data.get("custom_task_templates", [])
+        templates = tuple(
+            template
+            for raw in raw_templates
+            if isinstance(raw, dict)
+            and (template := TaskTemplate.from_dict(raw)).template_id
+            and template.source == TaskTemplateSource.WORLD
+        )
         return cls(
             version=int(data.get("version", 1)),
             persona=str(data.get("persona", "")),
@@ -141,9 +219,15 @@ class AIGenerationPreferences:
             spatial_enabled=bool(data.get("spatial_enabled", False)),
             filter_reasoning=bool(data.get("filter_reasoning", True)),
             audit_enabled=bool(data.get("audit_enabled", False)),
-            selected_template_id=str(data.get("selected_template_id", "")),
+            selected_entity_template_id=str(
+                data.get("selected_entity_template_id", migrated_id)
+            ),
+            selected_event_template_id=str(
+                data.get("selected_event_template_id", migrated_id)
+            ),
             entity_prompt_draft=str(data.get("entity_prompt_draft", "")),
             event_prompt_draft=str(data.get("event_prompt_draft", "")),
+            custom_task_templates=templates,
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -158,9 +242,13 @@ class AIGenerationPreferences:
             "spatial_enabled": self.spatial_enabled,
             "filter_reasoning": self.filter_reasoning,
             "audit_enabled": self.audit_enabled,
-            "selected_template_id": self.selected_template_id,
+            "selected_entity_template_id": self.selected_entity_template_id,
+            "selected_event_template_id": self.selected_event_template_id,
             "entity_prompt_draft": self.entity_prompt_draft,
             "event_prompt_draft": self.event_prompt_draft,
+            "custom_task_templates": [
+                template.to_dict() for template in self.custom_task_templates
+            ],
         }
 
 

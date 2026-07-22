@@ -32,3 +32,20 @@ def test_sidebar_structure(dialog):
 
     # We should have 4 pages in the stack
     assert dialog.pages_stack.count() == 4
+
+
+def test_persona_editor_only_offers_supported_variables(dialog):
+    """Persona help must match variables PromptBuilder can substitute."""
+    variables = {
+        dialog.system_prompt_edit.var_combo.itemData(index)
+        for index in range(dialog.system_prompt_edit.var_combo.count())
+    }
+
+    assert variables == {
+        None,
+        "{type}",
+        "{name}",
+        "{description}",
+        "{lore_date}",
+    }
+    assert "override" not in dialog.system_prompt_edit.toolTip().lower()

@@ -78,7 +78,9 @@ class TestPromptBuilder:
         then receives the creative task as the final instruction.
         """
         builder = PromptBuilder()
-        result = builder.construct_prompt("Name: Eldrath", "Write a backstory")
+        result = builder.construct_prompt(
+            "Name: Eldrath", "Write a backstory", object_type="entity"
+        )
         user_msg = result["user"]
 
         entity_pos = user_msg.index("[Entity]")
@@ -110,11 +112,20 @@ class TestPromptBuilder:
     def test_construct_prompt_contains_delimiters(self) -> None:
         """Test that prompt contains expected section markers."""
         builder = PromptBuilder()
-        result = builder.construct_prompt("ctx", "task")
+        result = builder.construct_prompt("ctx", "task", object_type="entity")
         user_msg = result["user"]
         assert "[Entity]" in user_msg
         assert "[Task]" in user_msg
         assert "task" in user_msg
+
+    def test_construct_prompt_labels_events_correctly(self) -> None:
+        """Event context is never mislabeled as an entity."""
+        result = PromptBuilder().construct_prompt(
+            "Name: Eclipse", "Revise this", object_type="event"
+        )
+
+        assert "[Event]" in result["user"]
+        assert "[Entity]" not in result["user"]
 
     def test_default_system_prompt_narrative_temporal(self) -> None:
         """Test that default system prompt uses narrative-friendly temporal guidance.

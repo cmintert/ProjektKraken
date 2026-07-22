@@ -38,7 +38,7 @@ def test_custom_prompt_structure(qtbot, widget, monkeypatch):
 
     # Mock context
     def mock_context():
-        return {"name": "Test Item"}
+        return {"name": "Test Item", "object_type": "entity"}
 
     monkeypatch.setattr(widget, "_get_generation_context", mock_context)
 
@@ -88,7 +88,7 @@ def test_preview_fetches_rag(qtbot, widget, monkeypatch):  # noqa: C901
 
     # Mock context
     def mock_context():
-        return {"name": "Test Item"}
+        return {"name": "Test Item", "object_type": "event"}
 
     monkeypatch.setattr(widget, "_get_generation_context", mock_context)
 
@@ -200,7 +200,7 @@ def test_preview_fetches_rag(qtbot, widget, monkeypatch):  # noqa: C901
     # Ensure RAG placeholder is present in the query
     assert "{{RAG_CONTEXT}}" in context_calls[0][0]
     # Ensure section marker is present
-    assert "[Entity]" in context_calls[0][0]
+    assert "[Event]" in context_calls[0][0]
 
 
 def test_default_system_prompt_fallback(qtbot, widget, monkeypatch):
@@ -211,18 +211,6 @@ def test_default_system_prompt_fallback(qtbot, widget, monkeypatch):
     settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
     settings.remove("ai_gen_system_prompt")
     settings.remove("ai_gen_system_prompt_template_id")
-
-    # MockLoader fails everything
-    class MockLoader:
-        def load_template(self, tid):
-            raise FileNotFoundError()
-
-        def get_template(self, tid, tver):
-            raise FileNotFoundError()
-
-    monkeypatch.setattr(
-        "src.gui.widgets.llm_generation_widget.PromptLoader", MockLoader
-    )
 
     # It should strictly look at settings, so if missing, it falls back to default.
     result = widget._get_system_prompt()
