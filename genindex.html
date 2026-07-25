@@ -334,6 +334,8 @@
           <li><a href="services.html#services.worker.DatabaseWorker.add_keyframe">(services.worker.DatabaseWorker method)</a>
 </li>
         </ul></li>
+        <li><a href="cli.html#cli.map.add_marker">add_marker() (in module cli.map)</a>
+</li>
         <li><a href="cli.html#cli.relation.add_relation">add_relation() (in module cli.relation)</a>
 </li>
         <li><a href="commands.html#commands.relation_commands.AddRelationCommand">AddRelationCommand (class in commands.relation_commands)</a>
@@ -386,10 +388,12 @@
   <h2>B</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="commands.html#commands.base_command.BaseCommand">BaseCommand (class in commands.base_command)</a>
+        <li><a href="commands.html#commands.base_command.BaseCommand.base_state_dict">base_state_dict() (commands.base_command.BaseCommand method)</a>
 </li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="commands.html#commands.base_command.BaseCommand">BaseCommand (class in commands.base_command)</a>
+</li>
         <li><a href="services.html#services.longform_builder.build_longform_sequence">build_longform_sequence() (in module services.longform_builder)</a>
 </li>
     </ul></td>
@@ -409,6 +413,8 @@
         <li><a href="core.html#core.calendar.CalendarDate">CalendarDate (class in core.calendar)</a>
 </li>
         <li><a href="services.html#services.worker.DatabaseWorker.cleanup">cleanup() (services.worker.DatabaseWorker method)</a>
+</li>
+        <li><a href="services.html#services.worker.DatabaseWorker.clear_command_history">clear_command_history() (services.worker.DatabaseWorker method)</a>
 </li>
         <li><a href="cli.html#cli.timeline.clear_grouping">clear_grouping() (in module cli.timeline)</a>
 </li>
@@ -475,6 +481,13 @@
 
         <ul>
           <li><a href="cli.html#module-cli.longform">module</a>
+</li>
+        </ul></li>
+        <li>
+    cli.map
+
+        <ul>
+          <li><a href="cli.html#module-cli.map">module</a>
 </li>
         </ul></li>
         <li>
@@ -634,6 +647,8 @@
 </li>
         <li><a href="cli.html#cli.event.create_event">create_event() (in module cli.event)</a>
 </li>
+        <li><a href="cli.html#cli.map.create_map">create_map() (in module cli.map)</a>
+</li>
         <li><a href="services.html#services.db_service.DatabaseService.create_tag">create_tag() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="core.html#core.fast_inject.FastInjectManager.create_template_from_target">create_template_from_target() (core.fast_inject.FastInjectManager method)</a>
@@ -700,8 +715,12 @@
           <li><a href="services.html#services.worker.DatabaseWorker.delete_keyframe">(services.worker.DatabaseWorker method)</a>
 </li>
         </ul></li>
-        <li><a href="services.html#services.db_service.DatabaseService.delete_map">delete_map() (services.db_service.DatabaseService method)</a>
+        <li><a href="cli.html#cli.map.delete_map">delete_map() (in module cli.map)</a>
+
+        <ul>
+          <li><a href="services.html#services.db_service.DatabaseService.delete_map">(services.db_service.DatabaseService method)</a>
 </li>
+        </ul></li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="services.html#services.db_service.DatabaseService.delete_marker">delete_marker() (services.db_service.DatabaseService method)</a>
@@ -1090,6 +1109,12 @@
         <li><a href="commands.html#commands.base_command.BaseCommand.has_history">has_history (commands.base_command.BaseCommand property)</a>
 </li>
     </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="services.html#services.worker.DatabaseWorker.history_cleared">history_cleared (services.worker.DatabaseWorker attribute)</a>
+</li>
+        <li><a href="services.html#services.worker.DatabaseWorker.history_loaded">history_loaded (services.worker.DatabaseWorker attribute)</a>
+</li>
+    </ul></td>
   </tr></table>
 </section>
 
@@ -1122,6 +1147,8 @@
         <li><a href="services.html#services.worker.DatabaseWorker.index_rebuild_progress">index_rebuild_progress (services.worker.DatabaseWorker attribute)</a>
 </li>
         <li><a href="services.html#services.worker.DatabaseWorker.initialize_db">initialize_db() (services.worker.DatabaseWorker method)</a>
+</li>
+        <li><a href="services.html#services.worker.DatabaseWorker.initialize_history">initialize_history() (services.worker.DatabaseWorker method)</a>
 </li>
         <li><a href="services.html#services.worker.DatabaseWorker.initialized">initialized (services.worker.DatabaseWorker attribute)</a>
 </li>
@@ -1163,6 +1190,8 @@
 </li>
         <li><a href="services.html#id0">is_id_based (services.text_parser.LinkCandidate attribute)</a>, <a href="services.html#services.text_parser.LinkCandidate.is_id_based">[1]</a>
 </li>
+        <li><a href="commands.html#commands.base_command.BaseCommand.is_undoable">is_undoable (commands.base_command.BaseCommand property)</a>
+</li>
     </ul></td>
   </tr></table>
 </section>
@@ -1188,6 +1217,8 @@
         <li><a href="cli.html#cli.entity.list_entities">list_entities() (in module cli.entity)</a>
 </li>
         <li><a href="cli.html#cli.event.list_events">list_events() (in module cli.event)</a>
+</li>
+        <li><a href="cli.html#cli.map.list_maps">list_maps() (in module cli.map)</a>
 </li>
         <li><a href="cli.html#cli.relation.list_relations">list_relations() (in module cli.relation)</a>
 </li>
@@ -1256,6 +1287,8 @@
 </li>
           <li><a href="cli.html#cli.longform.main">(in module cli.longform)</a>
 </li>
+          <li><a href="cli.html#cli.map.main">(in module cli.map)</a>
+</li>
           <li><a href="cli.html#cli.obsidian.main">(in module cli.obsidian)</a>
 </li>
           <li><a href="cli.html#cli.relation.main">(in module cli.relation)</a>
@@ -1268,6 +1301,12 @@
         <li><a href="services.html#services.db_service.DatabaseService.map_repo">map_repo (services.db_service.DatabaseService property)</a>
 </li>
         <li><a href="services.html#services.worker.DatabaseWorker.maps_loaded">maps_loaded (services.worker.DatabaseWorker attribute)</a>
+</li>
+        <li><a href="cli.html#cli.map.marker_delete">marker_delete() (in module cli.map)</a>
+</li>
+        <li><a href="cli.html#cli.map.marker_list">marker_list() (in module cli.map)</a>
+</li>
+        <li><a href="cli.html#cli.map.marker_update">marker_update() (in module cli.map)</a>
 </li>
         <li><a href="services.html#services.worker.DatabaseWorker.markers_loaded">markers_loaded (services.worker.DatabaseWorker attribute)</a>
 </li>
@@ -1308,6 +1347,8 @@
           <li><a href="cli.html#module-cli.index">cli.index</a>
 </li>
           <li><a href="cli.html#module-cli.longform">cli.longform</a>
+</li>
+          <li><a href="cli.html#module-cli.map">cli.map</a>
 </li>
           <li><a href="cli.html#module-cli.obsidian">cli.obsidian</a>
 </li>
@@ -1430,6 +1471,8 @@
   <h2>P</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="commands.html#commands.base_command.BaseCommand.persist_to_history">persist_to_history (commands.base_command.BaseCommand property)</a>
+</li>
         <li><a href="services.html#services.longform_builder.place_between_siblings_and_set_parent">place_between_siblings_and_set_parent() (in module services.longform_builder)</a>
 </li>
         <li><a href="commands.html#commands.wiki_commands.ProcessWikiLinksCommand">ProcessWikiLinksCommand (class in commands.wiki_commands)</a>
@@ -1493,6 +1536,8 @@
 </li>
           <li><a href="cli.html#cli.longform.register_commands">(in module cli.longform)</a>
 </li>
+          <li><a href="cli.html#cli.map.register_commands">(in module cli.map)</a>
+</li>
           <li><a href="cli.html#cli.obsidian.register_commands">(in module cli.obsidian)</a>
 </li>
           <li><a href="cli.html#cli.relation.register_commands">(in module cli.relation)</a>
@@ -1531,6 +1576,8 @@
         <li><a href="services.html#services.worker.DatabaseWorker.resolve_entity_state">resolve_entity_state() (services.worker.DatabaseWorker method)</a>
 </li>
         <li><a href="cli.html#cli.backup.restore_backup">restore_backup() (in module cli.backup)</a>
+</li>
+        <li><a href="commands.html#commands.base_command.BaseCommand.restore_base_state">restore_base_state() (commands.base_command.BaseCommand method)</a>
 </li>
         <li><a href="services.html#services.worker.DatabaseWorker.run_command">run_command() (services.worker.DatabaseWorker method)</a>
 </li>
@@ -1748,6 +1795,8 @@
 </li>
         <li><a href="services.html#services.worker.DatabaseWorker.trajectories_loaded">trajectories_loaded (services.worker.DatabaseWorker attribute)</a>
 </li>
+        <li><a href="services.html#services.db_service.DatabaseService.trajectory_repo">trajectory_repo (services.db_service.DatabaseService property)</a>
+</li>
         <li><a href="services.html#services.db_service.DatabaseService.transaction">transaction() (services.db_service.DatabaseService method)</a>
 </li>
         <li><a href="core.html#core.entities.Entity.type">type (core.entities.Entity attribute)</a>
@@ -1820,6 +1869,8 @@
           <li><a href="services.html#services.worker.DatabaseWorker.update_keyframe_time">(services.worker.DatabaseWorker method)</a>
 </li>
         </ul></li>
+        <li><a href="cli.html#cli.map.update_map">update_map() (in module cli.map)</a>
+</li>
         <li><a href="cli.html#cli.relation.update_relation">update_relation() (in module cli.relation)</a>
 
         <ul>

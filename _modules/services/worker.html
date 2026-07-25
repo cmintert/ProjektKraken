@@ -329,6 +329,8 @@
     <span class="n">entity_state_resolved</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>  <span class="c1"># entity_id, resolved_attributes</span>
 
     <span class="n">command_finished</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="n">CommandResult</span><span class="p">)</span>
+    <span class="n">history_loaded</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">history_cleared</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
     <span class="n">error_occurred</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
 
     <span class="c1"># Status signals for UI feedback</span>
@@ -368,6 +370,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">asset_store</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attachment_service</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">temporal_manager</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">history_service</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_search_service</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="c1"># Embedding queue to prevent concurrent embedding operations</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_embedding_in_progress</span> <span class="o">=</span> <span class="kc">False</span>
@@ -493,6 +496,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_search_service</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">history_service</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">history_service</span><span class="o">.</span><span class="n">end_session</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">history_service</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Database connection closed in worker cleanup.&quot;</span><span class="p">)</span>
@@ -502,6 +508,47 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Error during worker cleanup (</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseWorker.initialize_history">
+<a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.initialize_history">[docs]</a>
+    <span class="nd">@Slot</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">initialize_history</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">world_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create and load persistent command history on the worker thread.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">&quot;Database not ready for command history.&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">src.commands.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_command_types</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">src.services.history_service</span><span class="w"> </span><span class="kn">import</span> <span class="n">HistoryService</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">history_service</span> <span class="o">=</span> <span class="n">HistoryService</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">,</span> <span class="n">world_id</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">command_type</span> <span class="ow">in</span> <span class="n">get_command_types</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">history_service</span><span class="o">.</span><span class="n">register_command_type</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">command_type</span><span class="p">)</span>
+            <span class="n">commands</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history_service</span><span class="o">.</span><span class="n">load_recent_history</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+            <span class="n">payloads</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">command</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+                    <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">command</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+                    <span class="s2">&quot;base&quot;</span><span class="p">:</span> <span class="n">command</span><span class="o">.</span><span class="n">base_state_dict</span><span class="p">(),</span>
+                <span class="p">}</span>
+                <span class="k">for</span> <span class="n">command</span> <span class="ow">in</span> <span class="n">commands</span>
+            <span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">history_loaded</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">payloads</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Failed to initialize command history&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">&quot;Failed to initialize command history.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DatabaseWorker.clear_command_history">
+<a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.clear_command_history">[docs]</a>
+    <span class="nd">@Slot</span><span class="p">()</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear_command_history</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clear persistent history and command artifacts on the worker.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">history_service</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">history_cleared</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">history_cleared</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history_service</span><span class="o">.</span><span class="n">clear_all_history</span><span class="p">())</span></div>
 
 
 <div class="viewcode-block" id="DatabaseWorker.load_events">
@@ -842,18 +889,45 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">calendar_config_loaded</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span></div>
 
 
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_command_from_request</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BaseCommand</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reconstruct a command from a serializable main-thread intent.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">BaseCommand</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">request</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Command request must be a serializable dictionary&quot;</span><span class="p">)</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">src.commands.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_command_types</span>
+
+        <span class="n">command_type</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+        <span class="n">command_class</span> <span class="o">=</span> <span class="n">get_command_types</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">command_type</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">command_class</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown command type: </span><span class="si">{</span><span class="n">command_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;base&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid command request: </span><span class="si">{</span><span class="n">command_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="n">command_class</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">command</span><span class="o">.</span><span class="n">restore_base_state</span><span class="p">(</span><span class="n">base</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">command</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_command_state</span><span class="p">(</span><span class="n">command</span><span class="p">:</span> <span class="n">BaseCommand</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the canonical serializable state returned to the UI.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">command</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+            <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">command</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+            <span class="s2">&quot;base&quot;</span><span class="p">:</span> <span class="n">command</span><span class="o">.</span><span class="n">base_state_dict</span><span class="p">(),</span>
+        <span class="p">}</span>
+
 <div class="viewcode-block" id="DatabaseWorker.run_command">
 <a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.run_command">[docs]</a>
-    <span class="nd">@Slot</span><span class="p">(</span>
-        <span class="nb">object</span><span class="p">,</span> <span class="nb">object</span>
-    <span class="p">)</span>  <span class="c1"># Command, Optional[args] - simplified mainly for command objects</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">run_command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">:</span> <span class="n">BaseCommand</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Executes a command object.</span>
-<span class="sd">        IMPORTANT: The command must NOT already have the db_service injected.</span>
-<span class="sd">        We inject the worker&#39;s thread-local service here.</span>
+    <span class="nd">@Slot</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_command</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Execute a serialized command intent with the worker-owned database.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            command (BaseCommand): The command object to execute.</span>
+<span class="sd">            request: Serializable command payload. A command object is accepted</span>
+<span class="sd">                temporarily for compatibility with direct unit tests.</span>
 
 <span class="sd">        Emits:</span>
 <span class="sd">            command_finished (CommandResult): The result of the command</span>
@@ -864,6 +938,19 @@
 <span class="sd">            operation_finished (str): Status update.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">command</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_command_from_request</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Invalid command request: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">command_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span>
+                <span class="n">CommandResult</span><span class="p">(</span>
+                    <span class="n">success</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">message</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">),</span>
+                    <span class="n">command_name</span><span class="o">=</span><span class="s2">&quot;InvalidCommand&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">return</span>
+
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
             <span class="n">cmd_name</span> <span class="o">=</span> <span class="n">command</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Database not ready when executing </span><span class="si">{</span><span class="n">cmd_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -885,16 +972,14 @@
                     <span class="n">success</span><span class="o">=</span><span class="n">success</span><span class="p">,</span>
                     <span class="n">message</span><span class="o">=</span><span class="n">msg</span><span class="p">,</span>
                     <span class="n">command_name</span><span class="o">=</span><span class="n">command_name</span><span class="p">,</span>
-                    <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;command&quot;</span><span class="p">:</span> <span class="n">command</span><span class="p">},</span>  <span class="c1"># Include command for undo stack</span>
+                    <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;command_id&quot;</span><span class="p">:</span> <span class="n">command</span><span class="o">.</span><span class="n">command_id</span><span class="p">},</span>
                 <span class="p">)</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">CommandResult</span><span class="p">):</span>
                 <span class="n">result_obj</span> <span class="o">=</span> <span class="n">result</span>
                 <span class="c1"># Ensure command_name is set if missing</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">command_name</span><span class="p">:</span>
                     <span class="n">result_obj</span><span class="o">.</span><span class="n">command_name</span> <span class="o">=</span> <span class="n">command_name</span>
-                <span class="c1"># Include command in result data for undo stack</span>
-                <span class="k">if</span> <span class="s2">&quot;command&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result_obj</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-                    <span class="n">result_obj</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;command&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">command</span>
+                <span class="n">result_obj</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;command_id&quot;</span><span class="p">,</span> <span class="n">command</span><span class="o">.</span><span class="n">command_id</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Unexpected return type</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
@@ -906,6 +991,13 @@
                     <span class="n">command_name</span><span class="o">=</span><span class="n">command_name</span><span class="p">,</span>
                 <span class="p">)</span>
 
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">result_obj</span><span class="o">.</span><span class="n">success</span>
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">history_service</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="ow">and</span> <span class="n">command</span><span class="o">.</span><span class="n">persist_to_history</span>
+            <span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">history_service</span><span class="o">.</span><span class="n">save_command</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+            <span class="n">result_obj</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;command_state&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_command_state</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">command_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">result_obj</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">operation_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Finished </span><span class="si">{</span><span class="n">command_name</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
 
@@ -917,6 +1009,10 @@
                 <span class="n">success</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                 <span class="n">message</span><span class="o">=</span><span class="s2">&quot;An unexpected error occurred during execution.&quot;</span><span class="p">,</span>
                 <span class="n">command_name</span><span class="o">=</span><span class="n">command_name</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;command_id&quot;</span><span class="p">:</span> <span class="n">command</span><span class="o">.</span><span class="n">command_id</span><span class="p">,</span>
+                    <span class="s2">&quot;command_state&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_command_state</span><span class="p">(</span><span class="n">command</span><span class="p">),</span>
+                <span class="p">},</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">command_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">fail_res</span><span class="p">)</span></div>
 
@@ -924,16 +1020,28 @@
 <div class="viewcode-block" id="DatabaseWorker.run_undo">
 <a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.run_undo">[docs]</a>
     <span class="nd">@Slot</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">run_undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">:</span> <span class="n">BaseCommand</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_undo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Undoes a command.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            command (BaseCommand): The command object to undo.</span>
+<span class="sd">            request: Serialized command state to undo.</span>
 
 <span class="sd">        Emits:</span>
 <span class="sd">            command_finished (CommandResult): Result indicating undo success.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">command</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_command_from_request</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">command_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span>
+                <span class="n">CommandResult</span><span class="p">(</span>
+                    <span class="n">success</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">message</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">),</span>
+                    <span class="n">command_name</span><span class="o">=</span><span class="s2">&quot;Undo_InvalidCommand&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">return</span>
+
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Database not ready for undo&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">&quot;Database not ready for undo.&quot;</span><span class="p">)</span>
@@ -942,13 +1050,24 @@
         <span class="n">command_name</span> <span class="o">=</span> <span class="n">command</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">operation_started</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Undoing </span><span class="si">{</span><span class="n">command_name</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
-            <span class="n">command</span><span class="o">.</span><span class="n">undo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">)</span>
-
-            <span class="n">result_obj</span> <span class="o">=</span> <span class="n">CommandResult</span><span class="p">(</span>
-                <span class="n">success</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Undone: </span><span class="si">{</span><span class="n">command</span><span class="o">.</span><span class="n">get_description</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                <span class="n">command_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Undo_</span><span class="si">{</span><span class="n">command_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-            <span class="p">)</span>
+            <span class="n">undo_result</span> <span class="o">=</span> <span class="n">command</span><span class="o">.</span><span class="n">undo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">undo_result</span><span class="p">,</span> <span class="n">CommandResult</span><span class="p">):</span>
+                <span class="n">result_obj</span> <span class="o">=</span> <span class="n">undo_result</span>
+                <span class="n">result_obj</span><span class="o">.</span><span class="n">command_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Undo_</span><span class="si">{</span><span class="n">command_name</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result_obj</span> <span class="o">=</span> <span class="n">CommandResult</span><span class="p">(</span>
+                    <span class="n">success</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">message</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Undone: </span><span class="si">{</span><span class="n">command</span><span class="o">.</span><span class="n">get_description</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">command_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Undo_</span><span class="si">{</span><span class="n">command_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="n">result_obj</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;command_id&quot;</span><span class="p">,</span> <span class="n">command</span><span class="o">.</span><span class="n">command_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">result_obj</span><span class="o">.</span><span class="n">success</span>
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">history_service</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="ow">and</span> <span class="n">command</span><span class="o">.</span><span class="n">persist_to_history</span>
+            <span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">history_service</span><span class="o">.</span><span class="n">set_command_executed</span><span class="p">(</span><span class="n">command</span><span class="o">.</span><span class="n">command_id</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="n">result_obj</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;command_state&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_command_state</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">command_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">result_obj</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">operation_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Undone </span><span class="si">{</span><span class="n">command_name</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
 
@@ -959,6 +1078,10 @@
                 <span class="n">success</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                 <span class="n">message</span><span class="o">=</span><span class="s2">&quot;Failed to undo operation.&quot;</span><span class="p">,</span>
                 <span class="n">command_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Undo_</span><span class="si">{</span><span class="n">command_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;command_id&quot;</span><span class="p">:</span> <span class="n">command</span><span class="o">.</span><span class="n">command_id</span><span class="p">,</span>
+                    <span class="s2">&quot;command_state&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_command_state</span><span class="p">(</span><span class="n">command</span><span class="p">),</span>
+                <span class="p">},</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">command_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">fail_res</span><span class="p">)</span></div>
 
@@ -966,16 +1089,28 @@
 <div class="viewcode-block" id="DatabaseWorker.run_redo">
 <a class="viewcode-back" href="../../services.html#services.worker.DatabaseWorker.run_redo">[docs]</a>
     <span class="nd">@Slot</span><span class="p">(</span><span class="nb">object</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">run_redo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">command</span><span class="p">:</span> <span class="n">BaseCommand</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_redo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Redoes a command.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            command (BaseCommand): The command object to redo.</span>
+<span class="sd">            request: Serialized command state to redo.</span>
 
 <span class="sd">        Emits:</span>
 <span class="sd">            command_finished (CommandResult): Result indicating redo success.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">command</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_command_from_request</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">command_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span>
+                <span class="n">CommandResult</span><span class="p">(</span>
+                    <span class="n">success</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">message</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">exc</span><span class="p">),</span>
+                    <span class="n">command_name</span><span class="o">=</span><span class="s2">&quot;Redo_InvalidCommand&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">return</span>
+
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_service</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Database not ready for redo&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">error_occurred</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s2">&quot;Database not ready for redo.&quot;</span><span class="p">)</span>
@@ -1006,6 +1141,14 @@
                     <span class="n">command_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Redo_</span><span class="si">{</span><span class="n">command_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
                 <span class="p">)</span>
 
+            <span class="n">result_obj</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;command_id&quot;</span><span class="p">,</span> <span class="n">command</span><span class="o">.</span><span class="n">command_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">result_obj</span><span class="o">.</span><span class="n">success</span>
+                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">history_service</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="ow">and</span> <span class="n">command</span><span class="o">.</span><span class="n">persist_to_history</span>
+            <span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">history_service</span><span class="o">.</span><span class="n">set_command_executed</span><span class="p">(</span><span class="n">command</span><span class="o">.</span><span class="n">command_id</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="n">result_obj</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;command_state&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_command_state</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">command_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">result_obj</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">operation_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Redone </span><span class="si">{</span><span class="n">command_name</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
 
@@ -1016,6 +1159,10 @@
                 <span class="n">success</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                 <span class="n">message</span><span class="o">=</span><span class="s2">&quot;Failed to redo operation.&quot;</span><span class="p">,</span>
                 <span class="n">command_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Redo_</span><span class="si">{</span><span class="n">command_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;command_id&quot;</span><span class="p">:</span> <span class="n">command</span><span class="o">.</span><span class="n">command_id</span><span class="p">,</span>
+                    <span class="s2">&quot;command_state&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_command_state</span><span class="p">(</span><span class="n">command</span><span class="p">),</span>
+                <span class="p">},</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">command_finished</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="n">fail_res</span><span class="p">)</span></div>
 

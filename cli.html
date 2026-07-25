@@ -747,8 +747,82 @@ python -m src.cli.longform move –database world.kraken –table events        
 </dd></dl>
 
 </section>
-<section id="cli-map-module">
-<h2>cli.map module<a class="headerlink" href="#cli-map-module" title="Link to this heading">¶</a></h2>
+<section id="module-cli.map">
+<span id="cli-map-module"></span><h2>cli.map module<a class="headerlink" href="#module-cli.map" title="Link to this heading">¶</a></h2>
+<p>Map Management CLI.</p>
+<p>Provides command-line tools for creating, listing, updating, and deleting
+maps and markers.</p>
+<dl class="simple">
+<dt>Usage:</dt><dd><p>python -m src.cli.map create –database world.kraken –name “World Map”
+python -m src.cli.map list –database world.kraken
+python -m src.cli.map marker-add –database world.kraken –map-id &lt;id&gt; …</p>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.map.add_marker">
+<span class="sig-prename descclassname"><span class="pre">cli.map.</span></span><span class="sig-name descname"><span class="pre">add_marker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/map.html#add_marker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.map.add_marker" title="Link to this definition">¶</a></dt>
+<dd><p>Add a marker to a map.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.map.create_map">
+<span class="sig-prename descclassname"><span class="pre">cli.map.</span></span><span class="sig-name descname"><span class="pre">create_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/map.html#create_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.map.create_map" title="Link to this definition">¶</a></dt>
+<dd><p>Create a new map.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.map.delete_map">
+<span class="sig-prename descclassname"><span class="pre">cli.map.</span></span><span class="sig-name descname"><span class="pre">delete_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/map.html#delete_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.map.delete_map" title="Link to this definition">¶</a></dt>
+<dd><p>Delete a map.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.map.list_maps">
+<span class="sig-prename descclassname"><span class="pre">cli.map.</span></span><span class="sig-name descname"><span class="pre">list_maps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/map.html#list_maps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.map.list_maps" title="Link to this definition">¶</a></dt>
+<dd><p>List all maps.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.map.main">
+<span class="sig-prename descclassname"><span class="pre">cli.map.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/map.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.map.main" title="Link to this definition">¶</a></dt>
+<dd><p>Main entry point for the map CLI tool.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.map.marker_delete">
+<span class="sig-prename descclassname"><span class="pre">cli.map.</span></span><span class="sig-name descname"><span class="pre">marker_delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/map.html#marker_delete"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.map.marker_delete" title="Link to this definition">¶</a></dt>
+<dd><p>Delete a marker.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.map.marker_list">
+<span class="sig-prename descclassname"><span class="pre">cli.map.</span></span><span class="sig-name descname"><span class="pre">marker_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/map.html#marker_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.map.marker_list" title="Link to this definition">¶</a></dt>
+<dd><p>List markers for a map.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.map.marker_update">
+<span class="sig-prename descclassname"><span class="pre">cli.map.</span></span><span class="sig-name descname"><span class="pre">marker_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/map.html#marker_update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.map.marker_update" title="Link to this definition">¶</a></dt>
+<dd><p>Update an existing marker.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.map.register_commands">
+<span class="sig-prename descclassname"><span class="pre">cli.map.</span></span><span class="sig-name descname"><span class="pre">register_commands</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subparsers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">_SubParsersAction</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/cli/map.html#register_commands"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.map.register_commands" title="Link to this definition">¶</a></dt>
+<dd><p>Register map subcommands with a parent subparsers group.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>subparsers</strong> – The subparsers action group from a parent ArgumentParser.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cli.map.update_map">
+<span class="sig-prename descclassname"><span class="pre">cli.map.</span></span><span class="sig-name descname"><span class="pre">update_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/cli/map.html#update_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#cli.map.update_map" title="Link to this definition">¶</a></dt>
+<dd><p>Update an existing map.</p>
+</dd></dl>
+
 </section>
 <section id="module-cli.obsidian">
 <span id="cli-obsidian-module"></span><h2>cli.obsidian module<a class="headerlink" href="#module-cli.obsidian" title="Link to this heading">¶</a></h2>
@@ -1079,7 +1153,19 @@ operations).</p></li>
 <li><a class="reference internal" href="#cli.longform.remove_entry"><code class="docutils literal notranslate"><span class="pre">remove_entry()</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#cli-map-module">cli.map module</a></li>
+<li><a class="reference internal" href="#module-cli.map">cli.map module</a><ul>
+<li><a class="reference internal" href="#cli.map.add_marker"><code class="docutils literal notranslate"><span class="pre">add_marker()</span></code></a></li>
+<li><a class="reference internal" href="#cli.map.create_map"><code class="docutils literal notranslate"><span class="pre">create_map()</span></code></a></li>
+<li><a class="reference internal" href="#cli.map.delete_map"><code class="docutils literal notranslate"><span class="pre">delete_map()</span></code></a></li>
+<li><a class="reference internal" href="#cli.map.list_maps"><code class="docutils literal notranslate"><span class="pre">list_maps()</span></code></a></li>
+<li><a class="reference internal" href="#cli.map.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li><a class="reference internal" href="#cli.map.marker_delete"><code class="docutils literal notranslate"><span class="pre">marker_delete()</span></code></a></li>
+<li><a class="reference internal" href="#cli.map.marker_list"><code class="docutils literal notranslate"><span class="pre">marker_list()</span></code></a></li>
+<li><a class="reference internal" href="#cli.map.marker_update"><code class="docutils literal notranslate"><span class="pre">marker_update()</span></code></a></li>
+<li><a class="reference internal" href="#cli.map.register_commands"><code class="docutils literal notranslate"><span class="pre">register_commands()</span></code></a></li>
+<li><a class="reference internal" href="#cli.map.update_map"><code class="docutils literal notranslate"><span class="pre">update_map()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#module-cli.obsidian">cli.obsidian module</a><ul>
 <li><a class="reference internal" href="#cli.obsidian.export_obsidian"><code class="docutils literal notranslate"><span class="pre">export_obsidian()</span></code></a></li>
 <li><a class="reference internal" href="#cli.obsidian.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>

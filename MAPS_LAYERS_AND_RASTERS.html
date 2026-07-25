@@ -3,10 +3,10 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html"><link rel="prev" title="services package" href="services.html">
+<link rel="index" title="Index" href="genindex.html"><link rel="search" title="Search" href="search.html">
 
     <!-- Generated with Sphinx 8.2.3 and Furo 2025.09.25 -->
-        <title>Changelog - Project Kraken 0.18.6 documentation</title>
+        <title>Maps, Layers, and Rasters - Project Kraken 0.18.6 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=580074bf" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -219,8 +219,8 @@
 </li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
-<ul class="current">
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Changelog</a></li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="CHANGELOG.html">Changelog</a></li>
 </ul>
 
 </div>
@@ -241,7 +241,7 @@
         </a>
         <div class="content-icon-container">
           <div class="view-this-page">
-  <a class="muted-link" href="_sources/CHANGELOG.md.txt" title="View this page">
+  <a class="muted-link" href="_sources/MAPS_LAYERS_AND_RASTERS.md.txt" title="View this page">
     <svg><use href="#svg-eye"></use></svg>
     <span class="visually-hidden">View this page</span>
   </a>
@@ -259,18 +259,82 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="changelog">
-<h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">¶</a></h1>
-<p>All notable changes to this project will be documented in this file.</p>
-<section id="development-2026-07-25">
-<h2>[Development] - 2026-07-25<a class="headerlink" href="#development-2026-07-25" title="Link to this heading">¶</a></h2>
-<section id="changed">
-<h3>Changed<a class="headerlink" href="#changed" title="Link to this heading">¶</a></h3>
+          <section id="maps-layers-and-rasters">
+<h1>Maps, Layers, and Rasters<a class="headerlink" href="#maps-layers-and-rasters" title="Link to this heading">¶</a></h1>
+<p>Projekt Kraken treats each map as a worldbuilding workspace. Its layer tree,
+placed entities and events, paths, regions, trajectories, raster metadata, and
+raster files form one logical map state. Actions such as deleting a group are
+therefore undone as one action rather than as a series of unrelated edits.</p>
+<section id="layers">
+<h2>Layers<a class="headerlink" href="#layers" title="Link to this heading">¶</a></h2>
+<p>The <strong>Layers</strong> panel controls order, visibility, opacity, and grouping. Open
+<strong>Properties</strong> on a layer to edit:</p>
 <ul class="simple">
-<li><p>refactor(map): harden raster command architecture</p></li>
+<li><p>its name, visibility, opacity, and notes;</p></li>
+<li><p>mutually exclusive children for groups;</p></li>
+<li><p>inclusive first and last lore dates;</p></li>
+<li><p>minimum and maximum zoom ratios.</p></li>
 </ul>
-<p><em>This changelog was automatically generated.</em></p>
+<p>Zoom limits edited in Properties are relative to <strong>Fit to Map</strong>. A ratio of
+<code class="docutils literal notranslate"><span class="pre">1.0</span></code> is the fitted view, so the result is stable when the window changes size.
+Older layers retain their previous zoom behaviour until their properties are
+edited.</p>
+<p>Deleting a group or raster shows the number of nested groups, features, raster
+layers, and dated raster states that will be affected. The whole subtree is
+deleted and restored together.</p>
 </section>
+<section id="raster-purposes">
+<h2>Raster purposes<a class="headerlink" href="#raster-purposes" title="Link to this heading">¶</a></h2>
+<p>Choose the purpose before creating a raster:</p>
+<ul class="simple">
+<li><p><strong>Visual overlay</strong> preserves imported RGB colours. Use it for illustrated
+terrain, scans, or reference imagery. It has no numeric mapping or painting.</p></li>
+<li><p><strong>Classified world data</strong> stores integer categories such as biome, political
+control, geology, or land use. Values can have labels, colours, and links to
+entities or events.</p></li>
+<li><p><strong>Continuous measured field</strong> stores a scalar surface such as elevation,
+rainfall, temperature, population density, or magical intensity. It supports
+a gradient and optional real-world value range and unit.</p></li>
+</ul>
+<p>The creation dialog shows the chosen resolution and approximate uncompressed
+working memory. Spatial queries exclude visual overlays. They identify layers
+by UUID, resample categorical data with nearest-neighbour interpolation, and
+resample continuous fields bilinearly onto the largest selected grid.</p>
+</section>
+<section id="timeline-states-and-editing">
+<h2>Timeline states and editing<a class="headerlink" href="#timeline-states-and-editing" title="Link to this heading">¶</a></h2>
+<p>A raster has an undated base file and may have dated states. Dated states are
+<strong>effective from</strong> their exact lore date:</p>
+<ol class="arabic simple">
+<li><p>Before the first dated state, the base is displayed.</p></li>
+<li><p>At any later date, the latest state at or before the playhead is displayed.</p></li>
+<li><p>Moving the playhead stops editing and makes the resolved display read-only.</p></li>
+</ol>
+<p>Use <strong>Create Editable State</strong> to copy the currently resolved raster into a new
+UUID-named state at the current lore date. Use <strong>Edit This State</strong> on an exact
+dated-state row, or <strong>Edit base</strong> to make the undated file the explicit target.
+Painting is saved in stroke order. A failed save reverts that stroke and every
+dependent queued stroke and pauses editing for that raster.</p>
+<p>Raster strokes are undoable during the current application session. Structural
+actions and destructive raster operations are also retained in persistent
+history, including their file artifacts.</p>
+</section>
+<section id="calibration-and-measurement">
+<h2>Calibration and measurement<a class="headerlink" href="#calibration-and-measurement" title="Link to this heading">¶</a></h2>
+<p>New and legacy maps without a positive <code class="docutils literal notranslate"><span class="pre">width_meters</span></code> value are uncalibrated.
+They show no metric scale bar, and paths and regions display <strong>Calibrate map to
+measure</strong> instead of fabricated distances or areas.</p>
+<p>Use the map scale action to enter a positive total map width or calibrate from a
+known measured segment. Calibration affects measurement display; it does not
+change raster resolution or pixel data.</p>
+</section>
+<section id="compatibility">
+<h2>Compatibility<a class="headerlink" href="#compatibility" title="Link to this heading">¶</a></h2>
+<p>Existing world folders remain readable. Legacy <code class="docutils literal notranslate"><span class="pre">maps.attributes[&quot;layers&quot;]</span></code> and
+<code class="docutils literal notranslate"><span class="pre">raster_layers</span></code> records are accepted without an eager migration. Unchanged
+legacy raster metadata round-trips in its original form. Newly created or
+modified raster records use <code class="docutils literal notranslate"><span class="pre">schema_version:</span> <span class="pre">2</span></code>, full-precision lore-date keys,
+and UUID filenames for dated states.</p>
 </section>
 </section>
 
@@ -280,17 +344,7 @@
         
         <div class="related-pages">
           
-          <a class="prev-page" href="services.html">
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-              <div class="page-info">
-                <div class="context">
-                  <span>Previous</span>
-                </div>
-                
-                <div class="title">services package</div>
-                
-              </div>
-            </a>
+          
         </div>
         <div class="bottom-of-page">
           <div class="left-details">
@@ -321,11 +375,12 @@
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">Changelog</a><ul>
-<li><a class="reference internal" href="#development-2026-07-25">[Development] - 2026-07-25</a><ul>
-<li><a class="reference internal" href="#changed">Changed</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#">Maps, Layers, and Rasters</a><ul>
+<li><a class="reference internal" href="#layers">Layers</a></li>
+<li><a class="reference internal" href="#raster-purposes">Raster purposes</a></li>
+<li><a class="reference internal" href="#timeline-states-and-editing">Timeline states and editing</a></li>
+<li><a class="reference internal" href="#calibration-and-measurement">Calibration and measurement</a></li>
+<li><a class="reference internal" href="#compatibility">Compatibility</a></li>
 </ul>
 </li>
 </ul>

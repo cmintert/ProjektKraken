@@ -313,6 +313,12 @@ has been executed; exposed via the
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="commands.base_command.BaseCommand.base_state_dict">
+<span class="sig-name descname"><span class="pre">base_state_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/commands/base_command.html#BaseCommand.base_state_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.BaseCommand.base_state_dict" title="Link to this definition">¶</a></dt>
+<dd><p>Return JSON-safe fields shared by every serialized command.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="commands.base_command.BaseCommand.execute">
 <em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult"><span class="pre">CommandResult</span></a></span></span><a class="reference internal" href="_modules/commands/base_command.html#BaseCommand.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.BaseCommand.execute" title="Link to this definition">¶</a></dt>
 <dd><p>Performs the action.</p>
@@ -363,17 +369,7 @@ has been executed; exposed via the
 <dl class="py property">
 <dt class="sig sig-object py" id="commands.base_command.BaseCommand.has_history">
 <em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">has_history</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#commands.base_command.BaseCommand.has_history" title="Link to this definition">¶</a></dt>
-<dd><p>Whether this command should be added to the undo/redo stack.</p>
-<p>Override and return <code class="docutils literal notranslate"><span class="pre">False</span></code> for background synchronisation
-commands that should execute silently.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>True if the command should be tracked in the undo stack.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>bool</p>
-</dd>
-</dl>
+<dd><p>Deprecated compatibility alias for <a class="reference internal" href="#commands.base_command.BaseCommand.is_undoable" title="commands.base_command.BaseCommand.is_undoable"><code class="xref py py-attr docutils literal notranslate"><span class="pre">is_undoable</span></code></a>.</p>
 </dd></dl>
 
 <dl class="py property">
@@ -388,6 +384,24 @@ commands that should execute silently.</p>
 <dd class="field-even"><p>bool</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="commands.base_command.BaseCommand.is_undoable">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_undoable</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#commands.base_command.BaseCommand.is_undoable" title="Link to this definition">¶</a></dt>
+<dd><p>Whether this command belongs in the in-memory undo/redo stack.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="commands.base_command.BaseCommand.persist_to_history">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">persist_to_history</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#commands.base_command.BaseCommand.persist_to_history" title="Link to this definition">¶</a></dt>
+<dd><p>Whether this command should survive an application restart.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="commands.base_command.BaseCommand.restore_base_state">
+<span class="sig-name descname"><span class="pre">restore_base_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/base_command.html#BaseCommand.restore_base_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.BaseCommand.restore_base_state" title="Link to this definition">¶</a></dt>
+<dd><p>Restore base fields shared by every serialized command.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -406,7 +420,7 @@ commands that should execute silently.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="commands.base_command.BaseCommand.undo">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/base_command.html#BaseCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.BaseCommand.undo" title="Link to this definition">¶</a></dt>
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">undo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_service</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatabaseService</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#commands.base_command.CommandResult" title="commands.base_command.CommandResult"><span class="pre">CommandResult</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="_modules/commands/base_command.html#BaseCommand.undo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#commands.base_command.BaseCommand.undo" title="Link to this definition">¶</a></dt>
 <dd><p>Reverts the action.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1986,11 +2000,15 @@ functionality. Commands encapsulate actions related to entities, events, and rel
 <li><a class="reference internal" href="#commands.base_command.BaseCommand.timestamp"><code class="docutils literal notranslate"><span class="pre">BaseCommand.timestamp</span></code></a></li>
 <li><a class="reference internal" href="#commands.base_command.BaseCommand._is_executed"><code class="docutils literal notranslate"><span class="pre">BaseCommand._is_executed</span></code></a></li>
 <li><a class="reference internal" href="#commands.base_command.BaseCommand.__init__"><code class="docutils literal notranslate"><span class="pre">BaseCommand.__init__()</span></code></a></li>
+<li><a class="reference internal" href="#commands.base_command.BaseCommand.base_state_dict"><code class="docutils literal notranslate"><span class="pre">BaseCommand.base_state_dict()</span></code></a></li>
 <li><a class="reference internal" href="#commands.base_command.BaseCommand.execute"><code class="docutils literal notranslate"><span class="pre">BaseCommand.execute()</span></code></a></li>
 <li><a class="reference internal" href="#commands.base_command.BaseCommand.from_dict"><code class="docutils literal notranslate"><span class="pre">BaseCommand.from_dict()</span></code></a></li>
 <li><a class="reference internal" href="#commands.base_command.BaseCommand.get_description"><code class="docutils literal notranslate"><span class="pre">BaseCommand.get_description()</span></code></a></li>
 <li><a class="reference internal" href="#commands.base_command.BaseCommand.has_history"><code class="docutils literal notranslate"><span class="pre">BaseCommand.has_history</span></code></a></li>
 <li><a class="reference internal" href="#commands.base_command.BaseCommand.is_executed"><code class="docutils literal notranslate"><span class="pre">BaseCommand.is_executed</span></code></a></li>
+<li><a class="reference internal" href="#commands.base_command.BaseCommand.is_undoable"><code class="docutils literal notranslate"><span class="pre">BaseCommand.is_undoable</span></code></a></li>
+<li><a class="reference internal" href="#commands.base_command.BaseCommand.persist_to_history"><code class="docutils literal notranslate"><span class="pre">BaseCommand.persist_to_history</span></code></a></li>
+<li><a class="reference internal" href="#commands.base_command.BaseCommand.restore_base_state"><code class="docutils literal notranslate"><span class="pre">BaseCommand.restore_base_state()</span></code></a></li>
 <li><a class="reference internal" href="#commands.base_command.BaseCommand.to_dict"><code class="docutils literal notranslate"><span class="pre">BaseCommand.to_dict()</span></code></a></li>
 <li><a class="reference internal" href="#commands.base_command.BaseCommand.undo"><code class="docutils literal notranslate"><span class="pre">BaseCommand.undo()</span></code></a></li>
 </ul>

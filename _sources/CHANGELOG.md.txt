@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-07-22
-### Added
-- feat(ai): redesign task template workflow
+## [Development] - 2026-07-25
+### Changed
+- refactor(map): harden raster command architecture
 
 
 *This changelog was automatically generated.*

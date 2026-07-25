@@ -347,7 +347,19 @@
 <li class="toctree-l3"><a class="reference internal" href="cli.html#cli.longform.remove_entry"><code class="docutils literal notranslate"><span class="pre">remove_entry()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="cli.html#cli-map-module">cli.map module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cli.html#module-cli.map">cli.map module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="cli.html#cli.map.add_marker"><code class="docutils literal notranslate"><span class="pre">add_marker()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cli.html#cli.map.create_map"><code class="docutils literal notranslate"><span class="pre">create_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cli.html#cli.map.delete_map"><code class="docutils literal notranslate"><span class="pre">delete_map()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cli.html#cli.map.list_maps"><code class="docutils literal notranslate"><span class="pre">list_maps()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cli.html#cli.map.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cli.html#cli.map.marker_delete"><code class="docutils literal notranslate"><span class="pre">marker_delete()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cli.html#cli.map.marker_list"><code class="docutils literal notranslate"><span class="pre">marker_list()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cli.html#cli.map.marker_update"><code class="docutils literal notranslate"><span class="pre">marker_update()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cli.html#cli.map.register_commands"><code class="docutils literal notranslate"><span class="pre">register_commands()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="cli.html#cli.map.update_map"><code class="docutils literal notranslate"><span class="pre">update_map()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="cli.html#module-cli.obsidian">cli.obsidian module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="cli.html#cli.obsidian.export_obsidian"><code class="docutils literal notranslate"><span class="pre">export_obsidian()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="cli.html#cli.obsidian.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
@@ -391,11 +403,15 @@
 <li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.BaseCommand.timestamp"><code class="docutils literal notranslate"><span class="pre">BaseCommand.timestamp</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.BaseCommand._is_executed"><code class="docutils literal notranslate"><span class="pre">BaseCommand._is_executed</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.BaseCommand.__init__"><code class="docutils literal notranslate"><span class="pre">BaseCommand.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.BaseCommand.base_state_dict"><code class="docutils literal notranslate"><span class="pre">BaseCommand.base_state_dict()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.BaseCommand.execute"><code class="docutils literal notranslate"><span class="pre">BaseCommand.execute()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.BaseCommand.from_dict"><code class="docutils literal notranslate"><span class="pre">BaseCommand.from_dict()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.BaseCommand.get_description"><code class="docutils literal notranslate"><span class="pre">BaseCommand.get_description()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.BaseCommand.has_history"><code class="docutils literal notranslate"><span class="pre">BaseCommand.has_history</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.BaseCommand.is_executed"><code class="docutils literal notranslate"><span class="pre">BaseCommand.is_executed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.BaseCommand.is_undoable"><code class="docutils literal notranslate"><span class="pre">BaseCommand.is_undoable</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.BaseCommand.persist_to_history"><code class="docutils literal notranslate"><span class="pre">BaseCommand.persist_to_history</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.BaseCommand.restore_base_state"><code class="docutils literal notranslate"><span class="pre">BaseCommand.restore_base_state()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.BaseCommand.to_dict"><code class="docutils literal notranslate"><span class="pre">BaseCommand.to_dict()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="commands.html#commands.base_command.BaseCommand.undo"><code class="docutils literal notranslate"><span class="pre">BaseCommand.undo()</span></code></a></li>
 </ul>
@@ -885,6 +901,7 @@
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.set_tag_color"><code class="docutils literal notranslate"><span class="pre">DatabaseService.set_tag_color()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.set_timeline_grouping_config"><code class="docutils literal notranslate"><span class="pre">DatabaseService.set_timeline_grouping_config()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.set_world_theme"><code class="docutils literal notranslate"><span class="pre">DatabaseService.set_world_theme()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.trajectory_repo"><code class="docutils literal notranslate"><span class="pre">DatabaseService.trajectory_repo</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.transaction"><code class="docutils literal notranslate"><span class="pre">DatabaseService.transaction()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.update_keyframe_time"><code class="docutils literal notranslate"><span class="pre">DatabaseService.update_keyframe_time()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.db_service.DatabaseService.update_relation"><code class="docutils literal notranslate"><span class="pre">DatabaseService.update_relation()</span></code></a></li>
@@ -953,6 +970,7 @@
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.attachments_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.attachments_loaded</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.calendar_config_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.calendar_config_loaded</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.cleanup"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.cleanup()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.clear_command_history"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.clear_command_history()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.command_finished"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.command_finished</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.completer_data_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.completer_data_loaded</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.current_time_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.current_time_loaded</span></code></a></li>
@@ -969,11 +987,14 @@
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.graph_lexicon_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.graph_lexicon_loaded</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.graph_metadata_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.graph_metadata_loaded</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.grouping_dialog_data_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.grouping_dialog_data_loaded</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.history_cleared"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.history_cleared</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.history_loaded"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.history_loaded</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.import_finished"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.import_finished</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.index_object"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.index_object()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.index_rebuild_finished"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.index_rebuild_finished</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.index_rebuild_progress"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.index_rebuild_progress</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.initialize_db"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.initialize_db()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.initialize_history"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.initialize_history()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.initialized"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.initialized</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.intelligence_analysis_complete"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.intelligence_analysis_complete</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="services.html#services.worker.DatabaseWorker.intelligence_partial_result"><code class="docutils literal notranslate"><span class="pre">DatabaseWorker.intelligence_partial_result</span></code></a></li>

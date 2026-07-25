@@ -262,7 +262,7 @@
           <section id="architecture-documentation">
 <h1>Architecture Documentation<a class="headerlink" href="#architecture-documentation" title="Link to this heading">¶</a></h1>
 <p><strong>Version:</strong> 0.14.1 (Beta)<br />
-<strong>Last Updated:</strong> March 2026</p>
+<strong>Last Updated:</strong> July 2026</p>
 <p>Technical architecture and design patterns in ProjektKraken.</p>
 <hr class="docutils" />
 <section id="table-of-contents">
@@ -453,6 +453,23 @@
 <li><p>Session tracking across app restarts</p></li>
 <li><p>Command serialization/deserialization</p></li>
 </ul>
+</section>
+<section id="map-aggregate-and-raster-storage">
+<h4>Map aggregate and raster storage<a class="headerlink" href="#map-aggregate-and-raster-storage" title="Link to this heading">¶</a></h4>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">MapAggregateService</span></code> loads and validates the layer tree, markers,
+trajectories, and raster metadata as one logical state.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">RasterAssetService</span></code> validates world-relative paths and atomically replaces
+raster files.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CommandArtifactStore</span></code> holds reversible files under
+<code class="docutils literal notranslate"><span class="pre">assets/.history/&lt;command-id&gt;/</span></code> and is pruned with command history.</p></li>
+<li><p>Raster grids, mappings, serializable patches, calibration, and map constants
+live below the GUI layer. Qt image conversion remains presentation-only.</p></li>
+</ul>
+<p>The database layer tree and raster metadata are canonical. Widgets may preview
+an interaction, but they send one intent and reconcile from a successful worker
+result. Destructive subtree and map commands stage files, perform their database
+changes in one transaction, and restore staged files on failure.</p>
 </section>
 <section id="backupservice-backup-service-py">
 <h4>BackupService (<code class="docutils literal notranslate"><span class="pre">backup_service.py</span></code>)<a class="headerlink" href="#backupservice-backup-service-py" title="Link to this heading">¶</a></h4>
@@ -974,6 +991,16 @@
 <hr class="docutils" />
 <section id="command-system">
 <h2>Command System<a class="headerlink" href="#command-system" title="Link to this heading">¶</a></h2>
+<p>Commands expose two separate history policies:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">is_undoable</span></code> controls the current in-memory undo stack.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">persist_to_history</span></code> controls whether the command survives restart.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">has_history</span></code> remains a compatibility alias during migration.</p></li>
+</ul>
+<p>Every command has a stable <code class="docutils literal notranslate"><span class="pre">command_id</span></code>. Worker results may contain serializable
+effects, which are applied only on the Qt main thread. <code class="docutils literal notranslate"><span class="pre">CommandCoordinator</span></code>
+moves undo and redo stack entries only after the worker reports success, so a
+failed execute, undo, or redo retains the prior stack state.</p>
 <section id="commandcoordinator">
 <h3>CommandCoordinator<a class="headerlink" href="#commandcoordinator" title="Link to this heading">¶</a></h3>
 <p><strong>Purpose</strong>: Manage undo/redo stacks.</p>
@@ -1137,6 +1164,7 @@
 <li><a class="reference internal" href="#databaseservice-db-service-py">DatabaseService (<code class="docutils literal notranslate"><span class="pre">db_service.py</span></code>)</a></li>
 <li><a class="reference internal" href="#repositories-repositories">Repositories (<code class="docutils literal notranslate"><span class="pre">repositories/</span></code>)</a></li>
 <li><a class="reference internal" href="#historyservice-history-service-py">HistoryService (<code class="docutils literal notranslate"><span class="pre">history_service.py</span></code>)</a></li>
+<li><a class="reference internal" href="#map-aggregate-and-raster-storage">Map aggregate and raster storage</a></li>
 <li><a class="reference internal" href="#backupservice-backup-service-py">BackupService (<code class="docutils literal notranslate"><span class="pre">backup_service.py</span></code>)</a></li>
 <li><a class="reference internal" href="#assetstore-asset-store-py">AssetStore (<code class="docutils literal notranslate"><span class="pre">asset_store.py</span></code>)</a></li>
 <li><a class="reference internal" href="#ragservice-rag-service-py">RAGService (<code class="docutils literal notranslate"><span class="pre">rag_service.py</span></code>)</a></li>
