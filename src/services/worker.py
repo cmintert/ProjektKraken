@@ -72,6 +72,8 @@ class DatabaseWorker(QObject):
     entity_state_resolved = Signal(str, dict)  # entity_id, resolved_attributes
 
     command_finished = Signal(CommandResult)
+    history_loaded = Signal(list)
+    history_cleared = Signal(int)
     error_occurred = Signal(str)
 
     # Status signals for UI feedback
@@ -109,6 +111,7 @@ class DatabaseWorker(QObject):
         self.asset_store = None
         self.attachment_service = None
         self.temporal_manager = None
+        self.history_service = None
         self._search_service = None
         # Embedding queue to prevent concurrent embedding operations
         self._embedding_in_progress = False
@@ -228,6 +231,9 @@ class DatabaseWorker(QObject):
         """
         try:
             self._search_service = None
+            if self.history_service:
+                self.history_service.end_session()
+                self.history_service = None
             if self.db_service:
                 self.db_service.close()
                 logger.info("Database connection closed in worker cleanup.")
@@ -237,6 +243,41 @@ class DatabaseWorker(QObject):
             logger.error(
                 f"Error during worker cleanup ({type(e).__name__}): {e}\n{traceback.format_exc()}"
             )
+
+    @Slot(str)
+    def initialize_history(self, world_id: str) -> None:
+        """Create and load persistent command history on the worker thread."""
+        if not self.db_service:
+            self.error_occurred.emit("Database not ready for command history.")
+            return
+        try:
+            from src.commands.registry import get_command_types
+            from src.services.history_service import HistoryService
+
+            self.history_service = HistoryService(self.db_service, world_id)
+            for name, command_type in get_command_types().items():
+                self.history_service.register_command_type(name, command_type)
+            commands = self.history_service.load_recent_history(limit=100)
+            payloads = [
+                {
+                    "type": command.__class__.__name__,
+                    "data": command.to_dict(),
+                    "base": command.base_state_dict(),
+                }
+                for command in commands
+            ]
+            self.history_loaded.emit(payloads)
+        except Exception:
+            logger.exception("Failed to initialize command history")
+            self.error_occurred.emit("Failed to initialize command history.")
+
+    @Slot()
+    def clear_command_history(self) -> None:
+        """Clear persistent history and command artifacts on the worker."""
+        if self.history_service is None:
+            self.history_cleared.emit(0)
+            return
+        self.history_cleared.emit(self.history_service.clear_all_history())
 
     @Slot()
     def load_events(self) -> None:
@@ -537,16 +578,43 @@ class DatabaseWorker(QObject):
             logger.error(f"Failed to load calendar config: {e}")
             self.calendar_config_loaded.emit(None)
 
-    @Slot(
-        object, object
-    )  # Command, Optional[args] - simplified mainly for command objects
-    def run_command(self, command: BaseCommand) -> None:
-        """Executes a command object.
-        IMPORTANT: The command must NOT already have the db_service injected.
-        We inject the worker's thread-local service here.
+    @staticmethod
+    def _command_from_request(request: object) -> BaseCommand:
+        """Reconstruct a command from a serializable main-thread intent."""
+        if isinstance(request, BaseCommand):
+            return request
+        if not isinstance(request, dict):
+            raise TypeError("Command request must be a serializable dictionary")
+        from src.commands.registry import get_command_types
+
+        command_type = str(request.get("type", ""))
+        command_class = get_command_types().get(command_type)
+        if command_class is None:
+            raise ValueError(f"Unknown command type: {command_type}")
+        data = request.get("data", {})
+        base = request.get("base", {})
+        if not isinstance(data, dict) or not isinstance(base, dict):
+            raise TypeError(f"Invalid command request: {command_type}")
+        command = command_class.from_dict(data)
+        command.restore_base_state(base)
+        return command
+
+    @staticmethod
+    def _command_state(command: BaseCommand) -> dict[str, object]:
+        """Create the canonical serializable state returned to the UI."""
+        return {
+            "type": command.__class__.__name__,
+            "data": command.to_dict(),
+            "base": command.base_state_dict(),
+        }
+
+    @Slot(object)
+    def run_command(self, request: object) -> None:
+        """Execute a serialized command intent with the worker-owned database.
 
         Args:
-            command (BaseCommand): The command object to execute.
+            request: Serializable command payload. A command object is accepted
+                temporarily for compatibility with direct unit tests.
 
         Emits:
             command_finished (CommandResult): The result of the command
@@ -557,6 +625,19 @@ class DatabaseWorker(QObject):
             operation_finished (str): Status update.
 
         """
+        try:
+            command = self._command_from_request(request)
+        except Exception as exc:
+            logger.error("Invalid command request: %s", exc)
+            self.command_finished.emit(
+                CommandResult(
+                    success=False,
+                    message=str(exc),
+                    command_name="InvalidCommand",
+                )
+            )
+            return
+
         if not self.db_service:
             cmd_name = command.__class__.__name__
             logger.error(f"Database not ready when executing {cmd_name}")
@@ -578,16 +659,14 @@ class DatabaseWorker(QObject):
                     success=success,
                     message=msg,
                     command_name=command_name,
-                    data={"command": command},  # Include command for undo stack
+                    data={"command_id": command.command_id},
                 )
             elif isinstance(result, CommandResult):
                 result_obj = result
                 # Ensure command_name is set if missing
                 if not result_obj.command_name:
                     result_obj.command_name = command_name
-                # Include command in result data for undo stack
-                if "command" not in result_obj.data:
-                    result_obj.data["command"] = command
+                result_obj.data.setdefault("command_id", command.command_id)
             else:
                 # Unexpected return type
                 logger.warning(
@@ -599,6 +678,13 @@ class DatabaseWorker(QObject):
                     command_name=command_name,
                 )
 
+            if (
+                result_obj.success
+                and self.history_service is not None
+                and command.persist_to_history
+            ):
+                self.history_service.save_command(command)
+            result_obj.data["command_state"] = self._command_state(command)
             self.command_finished.emit(result_obj)
             self.operation_finished.emit(f"Finished {command_name}.")
 
@@ -610,20 +696,36 @@ class DatabaseWorker(QObject):
                 success=False,
                 message="An unexpected error occurred during execution.",
                 command_name=command_name,
+                data={
+                    "command_id": command.command_id,
+                    "command_state": self._command_state(command),
+                },
             )
             self.command_finished.emit(fail_res)
 
     @Slot(object)
-    def run_undo(self, command: BaseCommand) -> None:
+    def run_undo(self, request: object) -> None:
         """Undoes a command.
 
         Args:
-            command (BaseCommand): The command object to undo.
+            request: Serialized command state to undo.
 
         Emits:
             command_finished (CommandResult): Result indicating undo success.
 
         """
+        try:
+            command = self._command_from_request(request)
+        except Exception as exc:
+            self.command_finished.emit(
+                CommandResult(
+                    success=False,
+                    message=str(exc),
+                    command_name="Undo_InvalidCommand",
+                )
+            )
+            return
+
         if not self.db_service:
             logger.error("Database not ready for undo")
             self.error_occurred.emit("Database not ready for undo.")
@@ -632,13 +734,24 @@ class DatabaseWorker(QObject):
         command_name = command.__class__.__name__
         try:
             self.operation_started.emit(f"Undoing {command_name}...")
-            command.undo(self.db_service)
-
-            result_obj = CommandResult(
-                success=True,
-                message=f"Undone: {command.get_description()}",
-                command_name=f"Undo_{command_name}",
-            )
+            undo_result = command.undo(self.db_service)
+            if isinstance(undo_result, CommandResult):
+                result_obj = undo_result
+                result_obj.command_name = f"Undo_{command_name}"
+            else:
+                result_obj = CommandResult(
+                    success=True,
+                    message=f"Undone: {command.get_description()}",
+                    command_name=f"Undo_{command_name}",
+                )
+            result_obj.data.setdefault("command_id", command.command_id)
+            if (
+                result_obj.success
+                and self.history_service is not None
+                and command.persist_to_history
+            ):
+                self.history_service.set_command_executed(command.command_id, False)
+            result_obj.data["command_state"] = self._command_state(command)
             self.command_finished.emit(result_obj)
             self.operation_finished.emit(f"Undone {command_name}.")
 
@@ -649,20 +762,36 @@ class DatabaseWorker(QObject):
                 success=False,
                 message="Failed to undo operation.",
                 command_name=f"Undo_{command_name}",
+                data={
+                    "command_id": command.command_id,
+                    "command_state": self._command_state(command),
+                },
             )
             self.command_finished.emit(fail_res)
 
     @Slot(object)
-    def run_redo(self, command: BaseCommand) -> None:
+    def run_redo(self, request: object) -> None:
         """Redoes a command.
 
         Args:
-            command (BaseCommand): The command object to redo.
+            request: Serialized command state to redo.
 
         Emits:
             command_finished (CommandResult): Result indicating redo success.
 
         """
+        try:
+            command = self._command_from_request(request)
+        except Exception as exc:
+            self.command_finished.emit(
+                CommandResult(
+                    success=False,
+                    message=str(exc),
+                    command_name="Redo_InvalidCommand",
+                )
+            )
+            return
+
         if not self.db_service:
             logger.error("Database not ready for redo")
             self.error_occurred.emit("Database not ready for redo.")
@@ -693,6 +822,14 @@ class DatabaseWorker(QObject):
                     command_name=f"Redo_{command_name}",
                 )
 
+            result_obj.data.setdefault("command_id", command.command_id)
+            if (
+                result_obj.success
+                and self.history_service is not None
+                and command.persist_to_history
+            ):
+                self.history_service.set_command_executed(command.command_id, True)
+            result_obj.data["command_state"] = self._command_state(command)
             self.command_finished.emit(result_obj)
             self.operation_finished.emit(f"Redone {command_name}.")
 
@@ -703,6 +840,10 @@ class DatabaseWorker(QObject):
                 success=False,
                 message="Failed to redo operation.",
                 command_name=f"Redo_{command_name}",
+                data={
+                    "command_id": command.command_id,
+                    "command_state": self._command_state(command),
+                },
             )
             self.command_finished.emit(fail_res)
 

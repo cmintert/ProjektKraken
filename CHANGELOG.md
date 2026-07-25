@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-07-22
-**Commit:** 635cbab9
+**Last Updated:** 2026-07-25
+**Commit:** 5bdbffa8
 ---
 
 # Changelog
@@ -13,18 +13,23 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-07-25)* **Map / Raster**: Added aggregate loading, raster asset and query services, reversible command artifacts, layer properties, and dated-state editing.
+- *(2026-07-25)* **Documentation**: Added a guide to maps, layers, raster purposes, timeline states, queries, and calibration.
 - *(2026-07-22)* **AI / LM Studio**: Added model discovery, separate generation and embedding model selection, connection testing, and per-world AI preferences for OpenAI-compatible local servers.
 - *(2026-07-22)* **AI / Security**: Added operating-system keyring storage for provider credentials instead of retaining API keys in application settings.
 - *(2026-07-22)* **AI / Task Templates**: Added four intent-based description tasks plus portable per-world custom templates with create, edit, duplicate, and delete workflows.
 
 ### Fixed
 
+- *(2026-07-25)* **Map / Stability**: Made map and raster mutations transactional and kept undo and redo stacks unchanged when worker operations fail.
 - *(2026-07-22)* **AI / Generation**: Preserved each model's reply structure through review and explicit apply actions for generated event and entity descriptions.
 - *(2026-07-22)* **AI / Stability**: Added cancellation and lifecycle guards so stale generation results cannot update closed editors or interfere with application shutdown.
 - *(2026-07-22)* **AI / Prompts**: Fixed duplicate version selection, event context labels, unsupported template variables, and unsafe editing or deletion of bundled assets.
 
 ### Changed
 
+- *(2026-07-25)* **Map / Architecture**: Moved map and raster mutations behind worker-owned services and made persisted aggregate state canonical for the UI.
+- *(2026-07-25)* **Testing**: Expanded command, threading, layer, raster editing, query, snapshot, and display-mapping regression coverage.
 - *(2026-07-22)* **AI / Architecture**: Reworked description generation around typed request, reply, and apply contracts with clearer provider capability handling and cloud providers disabled until configured.
 - *(2026-07-22)* **Development / Workflow**: Made a dated `Unreleased` changelog update mandatory before every commit and documented pre-commit baseline metadata.
 - *(2026-07-22)* **AI / Task Templates**: Replaced fantasy and length-only presets with genre-neutral create, revise, expand, and condense tasks; applying a selection is now explicit and preserves custom drafts.

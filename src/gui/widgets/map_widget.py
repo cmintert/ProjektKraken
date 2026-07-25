@@ -216,6 +216,7 @@ class MapWidget(
     layer_delete_feature_requested = Signal(
         str, str
     )  # object_id, layer_type of deleted leaf
+    layer_properties_changed = Signal(str, dict)
     create_raster_layer_requested = Signal(
         str, int, int, str, int, str, object, object, str
     )  # name,w,h,mode,def,import_path,display_min,display_max,unit
@@ -493,6 +494,9 @@ class MapWidget(
         self.layer_panel.delete_layer_requested.connect(self._on_delete_layer)
         self.layer_panel.layer_renamed.connect(self._on_layer_renamed)
         self.layer_panel.layer_opacity_changed.connect(self._on_layer_opacity_changed)
+        self.layer_panel.layer_properties_changed.connect(
+            self.layer_properties_changed.emit
+        )
         self.layer_panel.create_raster_layer_requested.connect(
             self._on_create_raster_layer
         )

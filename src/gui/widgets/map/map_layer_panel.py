@@ -88,6 +88,7 @@ class MapLayerPanel(QWidget):
     delete_layer_requested = Signal(str)
     layer_opacity_changed = Signal(str, float, float)  # id, new, old
     layer_renamed = Signal(str, str)
+    layer_properties_changed = Signal(str, dict)
 
     # Raster editing signals
     raster_edit_requested = Signal(str)  # node_id — start editing
@@ -100,6 +101,8 @@ class MapLayerPanel(QWidget):
     raster_snapshot_selected = Signal(
         str, float
     )  # node_id, lore_date — jump playhead
+    raster_snapshot_edit_requested = Signal(str, float)
+    raster_base_edit_requested = Signal(str)
     raster_snapshot_delete_requested = Signal(
         str, float
     )  # node_id, lore_date — delete snapshot
@@ -170,7 +173,7 @@ class MapLayerPanel(QWidget):
         header_layout = QHBoxLayout()
         header_layout.setSpacing(Spacing.COMPACT)
 
-        self._title_label = QLabel("Map Hierarchy")
+        self._title_label = QLabel("Layers")
         header_layout.addWidget(self._title_label)
         header_layout.addStretch()
 
@@ -614,14 +617,21 @@ class MapLayerPanel(QWidget):
         self._btn_snapshot.setIconSize(QSize(16, 16))
         self._btn_snapshot.setFixedSize(QSize(28, 28))
         self._btn_snapshot.setToolTip(
-            "Snapshot — Save raster layer state at the current timeline date"
+            "Create Editable State — branch the displayed raster at the "
+            "current timeline date"
         )
         self._btn_snapshot.setStyleSheet(StyleHelper.get_icon_button_style())
         self._btn_snapshot.clicked.connect(self._on_snapshot_clicked)
         snapshot_row.addWidget(self._btn_snapshot)
+        self._btn_edit_base = QPushButton("Edit base")
+        self._btn_edit_base.setToolTip(
+            "Explicitly display and edit the undated base raster"
+        )
+        self._btn_edit_base.clicked.connect(self._on_edit_base_clicked)
+        snapshot_row.addWidget(self._btn_edit_base)
         self._snapshot_count_label = QLabel("")
         self._snapshot_count_label.setToolTip(
-            "Number of saved temporal snapshots for this layer"
+            "Number of dated raster states for this layer"
         )
         snapshot_row.addWidget(self._snapshot_count_label)
         snapshot_row.addStretch()
@@ -1172,7 +1182,15 @@ class MapLayerPanel(QWidget):
                 parent_id = str(node.attributes.get("parent_node_id", ""))
                 action_jump = menu.addAction("↰ Jump Playhead Here")
                 action_jump.triggered.connect(
-                    lambda _=False, pid=parent_id, ld=lore_date: self.raster_snapshot_selected.emit(pid, ld)
+                    lambda _=False, pid=parent_id, ld=lore_date: (
+                        self.raster_snapshot_selected.emit(pid, ld)
+                    )
+                )
+                action_edit = menu.addAction("Edit This State")
+                action_edit.triggered.connect(
+                    lambda _=False, pid=parent_id, ld=lore_date: (
+                        self.raster_snapshot_edit_requested.emit(pid, ld)
+                    )
                 )
                 menu.addSeparator()
                 action_del = menu.addAction("🗑 Delete Snapshot")
@@ -1201,6 +1219,10 @@ class MapLayerPanel(QWidget):
                 action_rename.triggered.connect(
                     lambda: self._on_item_double_clicked(index)
                 )
+                action_properties = menu.addAction("Properties…")
+                action_properties.triggered.connect(
+                    lambda: self._edit_properties(node)
+                )
 
                 menu.addSeparator()
 
@@ -1215,6 +1237,16 @@ class MapLayerPanel(QWidget):
             action_raster.triggered.connect(self._on_new_raster)
 
         menu.exec(self._tree.viewport().mapToGlobal(pos))
+
+    def _edit_properties(self, node: "MapLayerNode") -> None:
+        """Open the contextual inspector and emit a property-edit intent."""
+        from src.gui.dialogs.layer_properties_dialog import (
+            LayerPropertiesDialog,
+        )
+
+        dialog = LayerPropertiesDialog(node, self)
+        if dialog.exec():
+            self.layer_properties_changed.emit(node.id, dialog.properties())
 
     def _toggle_visibility(self, node: "MapLayerNode") -> None:
         """Toggle a node's visibility via the model.
@@ -1747,7 +1779,7 @@ class MapLayerPanel(QWidget):
         snap_count = len((layer_meta or {}).get("snapshots", {}))
         if snap_count:
             self._snapshot_count_label.setText(
-                f"{snap_count} snapshot{'s' if snap_count != 1 else ''}"
+                f"{snap_count} dated state{'s' if snap_count != 1 else ''}"
             )
         else:
             self._snapshot_count_label.setText("")
@@ -1916,6 +1948,12 @@ class MapLayerPanel(QWidget):
         """Emit snapshot request for the currently selected raster layer."""
         if self._current_node_id:
             self.raster_snapshot_requested.emit(self._current_node_id)
+
+    @Slot()
+    def _on_edit_base_clicked(self) -> None:
+        """Explicitly select the base raster as the current edit target."""
+        if self._current_node_id:
+            self.raster_base_edit_requested.emit(self._current_node_id)
 
     def _clear_snapshot_list(self, node_id: str = "") -> None:
         """Remove virtual snapshot children for the given raster node from the model."""

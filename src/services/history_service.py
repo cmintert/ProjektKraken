@@ -8,7 +8,10 @@ import json
 import logging
 import time
 import uuid
+from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional
+
+from src.services.command_artifact_store import CommandArtifactStore
 
 if TYPE_CHECKING:
     from src.commands.base_command import BaseCommand
@@ -121,8 +124,16 @@ class HistoryService:
             aggregate_type: Type of affected object (optional)
         """
         try:
+            if not command.persist_to_history:
+                logger.debug(
+                    "Skipping session-only command: %s",
+                    command.__class__.__name__,
+                )
+                return
             command_type = command.__class__.__name__
-            command_data = json.dumps(command.to_dict())
+            payload = command.to_dict()
+            payload["_command_base"] = command.base_state_dict()
+            command_data = json.dumps(payload)
 
             if description is None:
                 description = command.get_description()
@@ -169,7 +180,7 @@ class HistoryService:
                 """
                 SELECT command_type, command_data, description, timestamp
                 FROM command_history
-                WHERE world_id = ?
+                WHERE world_id = ? AND is_executed = 1
                 ORDER BY timestamp DESC
                 LIMIT ?
                 """,
@@ -193,6 +204,43 @@ class HistoryService:
         except Exception as e:
             logger.error(f"Failed to load command history: {e}")
             return []
+
+    def set_command_executed(self, command_id: str, is_executed: bool) -> None:
+        """Mark the matching persistent command as currently applied or undone."""
+        try:
+            with self.db_service.transaction() as conn:
+                cursor = conn.execute(
+                    """
+                    SELECT id, command_data
+                    FROM command_history
+                    WHERE world_id = ?
+                    ORDER BY id DESC
+                    """,
+                    (self.world_id,),
+                )
+                row_id: Optional[int] = None
+                for row in cursor.fetchall():
+                    payload = json.loads(row["command_data"])
+                    stored_id = str(
+                        payload.get("_command_base", {}).get("command_id", "")
+                    )
+                    if stored_id == command_id:
+                        row_id = int(row["id"])
+                        break
+                if row_id is None:
+                    logger.warning(
+                        "Persistent command not found while changing state: %s",
+                        command_id,
+                    )
+                    return
+                conn.execute(
+                    "UPDATE command_history SET is_executed = ? WHERE id = ?",
+                    (int(is_executed), row_id),
+                )
+        except (TypeError, ValueError, json.JSONDecodeError) as exc:
+            logger.error("Invalid persistent history payload: %s", exc)
+        except Exception as exc:
+            logger.error("Failed to update persistent command state: %s", exc)
 
     def _deserialize_command(
         self, command_type: str, command_data_json: str, timestamp: float = 0.0
@@ -219,7 +267,10 @@ class HistoryService:
 
             # Reconstruct command
             command = command_class.from_dict(data)
-            command.timestamp = timestamp
+            base_state = dict(data.get("_command_base", {}))
+            if timestamp:
+                base_state["timestamp"] = timestamp
+            command.restore_base_state(base_state)
             return command
 
         except Exception as e:
@@ -236,6 +287,7 @@ class HistoryService:
             Number of commands deleted
         """
         try:
+            removed_payloads: list[str] = []
             with self.db_service.transaction() as conn:
                 # Get session IDs to keep
                 cursor = conn.execute(
@@ -256,6 +308,14 @@ class HistoryService:
                 placeholders = ",".join("?" * len(keep_session_ids))
                 cursor = conn.execute(
                     f"""
+                    SELECT command_data FROM command_history
+                    WHERE world_id = ? AND session_id NOT IN ({placeholders})
+                    """,
+                    [self.world_id] + keep_session_ids,
+                )
+                removed_payloads = [row["command_data"] for row in cursor.fetchall()]
+                cursor = conn.execute(
+                    f"""
                     DELETE FROM command_history
                     WHERE world_id = ? AND session_id NOT IN ({placeholders})
                     """,
@@ -272,6 +332,7 @@ class HistoryService:
                     [self.world_id] + keep_session_ids,
                 )
 
+            self._discard_command_artifacts(removed_payloads)
             logger.info(f"Cleared {deleted_count} old commands from history")
             return deleted_count
 
@@ -289,13 +350,14 @@ class HistoryService:
             Number of commands deleted
         """
         try:
+            removed_payloads: list[str] = []
             with self.db_service.transaction() as conn:
-                # Count commands before deletion
                 cursor = conn.execute(
-                    "SELECT COUNT(*) as count FROM command_history WHERE world_id = ?",
+                    "SELECT command_data FROM command_history WHERE world_id = ?",
                     (self.world_id,),
                 )
-                deleted_count = cursor.fetchone()["count"]
+                removed_payloads = [row["command_data"] for row in cursor.fetchall()]
+                deleted_count = len(removed_payloads)
 
                 # Delete all commands for this world
                 conn.execute(
@@ -308,12 +370,26 @@ class HistoryService:
                     (self.world_id, self.session_id),
                 )
 
+            self._discard_command_artifacts(removed_payloads)
             logger.info(f"Cleared ALL history: {deleted_count} commands deleted")
             return deleted_count
 
         except Exception as e:
             logger.error(f"Failed to clear all history: {e}")
             return 0
+
+    def _discard_command_artifacts(self, payloads: list[str]) -> None:
+        """Remove persistent file artifacts for history rows that were pruned."""
+        world_root = Path(self.db_service.get_db_file_path()).resolve().parent
+        store = CommandArtifactStore(world_root)
+        for payload in payloads:
+            try:
+                data = json.loads(payload)
+                command_id = str(data.get("_command_base", {}).get("command_id", ""))
+                if command_id:
+                    store.discard(command_id)
+            except (TypeError, ValueError, OSError) as exc:
+                logger.warning("Could not prune command artifacts: %s", exc)
 
     def get_history_stats(self) -> Dict[str, int]:
         """Get statistics about command history.

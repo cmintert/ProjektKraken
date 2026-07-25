@@ -68,8 +68,7 @@ def test_initialization(coordinator, main_window):
 
 
 def test_execute_command(coordinator):
-    mock_command = MagicMock()
-    mock_command.__class__.__name__ = "MockCommand"
+    mock_command = MockCommand("Serialized")
 
     # Connect to the signal to verify emission
     signal_spy = MagicMock()
@@ -77,7 +76,10 @@ def test_execute_command(coordinator):
 
     coordinator.execute_command(mock_command)
 
-    signal_spy.assert_called_once_with(mock_command)
+    payload = signal_spy.call_args.args[0]
+    assert payload["type"] == "MockCommand"
+    assert payload["data"] == {"name": "Serialized"}
+    assert payload["base"]["command_id"] == mock_command.command_id
 
 
 def test_on_command_result_success_adds_to_undo_stack(coordinator, main_window):
@@ -139,7 +141,7 @@ def test_stack_size_limit(coordinator, main_window):
 
 
 def test_undo_moves_to_redo_stack(coordinator):
-    """Test that undo pops from undo stack and pushes to redo stack."""
+    """Undo moves stacks only after the worker reports success."""
     cmd = MockCommand("TestUndo")
     coordinator.undo_stack.append(cmd)
 
@@ -149,17 +151,24 @@ def test_undo_moves_to_redo_stack(coordinator):
 
     coordinator.undo()
 
-    # Should move from undo to redo
+    assert coordinator.undo_stack == [cmd]
+    assert coordinator.redo_stack == []
+    coordinator.on_command_result(
+        CommandResult(True, "Undone", command_name="Undo_MockCommand")
+    )
+
     assert len(coordinator.undo_stack) == 0
     assert len(coordinator.redo_stack) == 1
     assert coordinator.redo_stack[0] == cmd
 
     # Should emit undo_requested signal
-    signal_spy.assert_called_once_with(cmd)
+    payload = signal_spy.call_args.args[0]
+    assert payload["type"] == "MockCommand"
+    assert payload["base"]["command_id"] == cmd.command_id
 
 
 def test_redo_moves_to_undo_stack(coordinator):
-    """Test that redo pops from redo stack and pushes to undo stack."""
+    """Redo moves stacks only after the worker reports success."""
     cmd = MockCommand("TestRedo")
     coordinator.redo_stack.append(cmd)
 
@@ -169,13 +178,20 @@ def test_redo_moves_to_undo_stack(coordinator):
 
     coordinator.redo()
 
-    # Should move from redo to undo
+    assert coordinator.redo_stack == [cmd]
+    assert coordinator.undo_stack == []
+    coordinator.on_command_result(
+        CommandResult(True, "Redone", command_name="Redo_MockCommand")
+    )
+
     assert len(coordinator.redo_stack) == 0
     assert len(coordinator.undo_stack) == 1
     assert coordinator.undo_stack[0] == cmd
 
     # Should emit redo_requested signal
-    signal_spy.assert_called_once_with(cmd)
+    payload = signal_spy.call_args.args[0]
+    assert payload["type"] == "MockCommand"
+    assert payload["base"]["command_id"] == cmd.command_id
 
 
 def test_can_undo(coordinator):
@@ -240,7 +256,7 @@ def test_redo_on_empty_stack_does_nothing(coordinator):
 
 
 def test_history_changed_signal_on_undo(coordinator):
-    """Test that history_changed signal is emitted on undo with snapshots."""
+    """History changes only after successful undo finalization."""
     cmd = MockCommand()
     coordinator.undo_stack.append(cmd)
 
@@ -249,6 +265,10 @@ def test_history_changed_signal_on_undo(coordinator):
 
     coordinator.undo()
 
+    signal_spy.assert_not_called()
+    coordinator.on_command_result(
+        CommandResult(True, "Undone", command_name="Undo_MockCommand")
+    )
     signal_spy.assert_called_once()
     # Signal emits (undo_snapshots, redo_snapshots)
     undo_snaps, redo_snaps = signal_spy.call_args[0]
@@ -258,7 +278,7 @@ def test_history_changed_signal_on_undo(coordinator):
 
 
 def test_history_changed_signal_on_redo(coordinator):
-    """Test that history_changed signal is emitted on redo with snapshots."""
+    """History changes only after successful redo finalization."""
     cmd = MockCommand()
     coordinator.redo_stack.append(cmd)
 
@@ -267,12 +287,32 @@ def test_history_changed_signal_on_redo(coordinator):
 
     coordinator.redo()
 
+    signal_spy.assert_not_called()
+    coordinator.on_command_result(
+        CommandResult(True, "Redone", command_name="Redo_MockCommand")
+    )
     signal_spy.assert_called_once()
     # Signal emits (undo_snapshots, redo_snapshots)
     undo_snaps, redo_snaps = signal_spy.call_args[0]
     assert len(undo_snaps) == 1
     assert len(redo_snaps) == 0
     assert undo_snaps[0]["description"] == "Mock: MockCommand"
+
+
+@patch("PySide6.QtWidgets.QMessageBox")
+def test_failed_undo_retains_stack(mock_message_box, coordinator):
+    """A failed worker undo leaves the command in its original position."""
+    command = MockCommand("Stable")
+    coordinator.undo_stack.append(command)
+
+    coordinator.undo()
+    coordinator.on_command_result(
+        CommandResult(False, "No change", command_name="Undo_MockCommand")
+    )
+
+    assert coordinator.undo_stack == [command]
+    assert coordinator.redo_stack == []
+    mock_message_box.critical.assert_called_once()
 
 
 @patch("PySide6.QtWidgets.QMessageBox")
@@ -293,5 +333,19 @@ def test_on_command_result_failure(mock_msg_box, coordinator, main_window):
     # Should NOT trigger load_data
     main_window.load_data.assert_not_called()
 
-    # Should NOT add to undo stack
-    assert len(coordinator.undo_stack) == 0
+
+def test_worker_result_resolves_command_by_serializable_id(coordinator):
+    """The worker need not return a live command object across threads."""
+    command = MockCommand("ById")
+    coordinator.track_command(command)
+
+    coordinator.on_command_result(
+        CommandResult(
+            success=True,
+            message="Success",
+            command_name="MockCommand",
+            data={"command_id": command.command_id},
+        )
+    )
+
+    assert coordinator.undo_stack == [command]

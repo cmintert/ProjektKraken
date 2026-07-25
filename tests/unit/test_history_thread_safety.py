@@ -99,11 +99,8 @@ def test_snapshot_handles_missing_timestamp(coordinator):
     assert "timestamp" in undo_snaps[0]
 
 
-def test_on_command_result_defers_db_save(coordinator):
-    """DB save is deferred (QTimer), not called inline."""
-    mock_svc = MagicMock()
-    coordinator.history_service = mock_svc
-
+def test_on_command_result_does_not_persist_on_main_thread(coordinator):
+    """The main-thread coordinator only updates its in-memory stack."""
     cmd = MockCommand("Save")
     result = CommandResult(
         success=True,
@@ -114,8 +111,8 @@ def test_on_command_result_defers_db_save(coordinator):
 
     coordinator.on_command_result(result)
 
-    # save_command should NOT have been called synchronously
-    mock_svc.save_command.assert_not_called()
+    assert coordinator.undo_stack == [cmd]
+    assert not hasattr(coordinator, "history_service")
 
 
 def test_on_command_result_emits_snapshots(coordinator):

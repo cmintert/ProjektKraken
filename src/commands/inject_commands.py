@@ -6,7 +6,8 @@ Undo/Redo operations.
 
 import copy
 import logging
-from typing import Dict, Union
+from pathlib import Path
+from typing import Dict, Optional, Union
 
 from src.commands.base_command import BaseCommand, CommandResult
 from src.core.entities import Entity
@@ -25,11 +26,13 @@ class InjectTemplateCommand(BaseCommand):
 
     def __init__(
         self,
-        target: Union[Entity, Event],
+        target: Optional[Union[Entity, Event]],
         template: FastInjectTemplate,
-        manager: FastInjectManager,
+        manager: Optional[FastInjectManager],
         overwrite: bool = False,
         variables: Dict[str, str] = None,
+        target_id: str = "",
+        target_type: str = "",
     ) -> None:
         """Initialize the command.
 
@@ -59,8 +62,14 @@ class InjectTemplateCommand(BaseCommand):
         # But for simplicity and robustness, creating a snapshot of attributes
         # that overlap with the template + all tags is safer.
 
-        self._target_id = target.id
-        self._target_type_str = "entity" if isinstance(target, Entity) else "event"
+        if target is not None:
+            self._target_id = target.id
+            self._target_type_str = (
+                "entity" if isinstance(target, Entity) else "event"
+            )
+        else:
+            self._target_id = target_id
+            self._target_type_str = target_type
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Executes the injection.
@@ -73,41 +82,52 @@ class InjectTemplateCommand(BaseCommand):
 
         """
         try:
+            target = (
+                db_service.get_entity(self._target_id)
+                if self._target_type_str == "entity"
+                else db_service.get_event(self._target_id)
+            )
+            if target is None:
+                raise ValueError(f"Target not found: {self._target_id}")
+            self.target = target
+            manager = self.manager or FastInjectManager(
+                Path(db_service.get_db_file_path()).parent
+            )
             # 1. Snapshot State for Undo
-            self._previous_tags = copy.deepcopy(self.target.tags)
-            self._previous_type = self.target.type
+            self._previous_tags = copy.deepcopy(target.tags)
+            self._previous_type = target.type
 
             # Smart snapshot: only backup attributes that might be touched
             # However, since 'overwrite' logic is inside manager,
             # we can just blindly backup keys present in template.
             self._previous_attributes = {}
             for key in self.template.attributes.keys():
-                if key in self.target.attributes:
+                if key in target.attributes:
                     self._previous_attributes[key] = copy.deepcopy(
-                        self.target.attributes[key]
+                        target.attributes[key]
                     )
 
             # 2. Apply Template (In Memory)
             # using manager to reuse variable resolution business logic
-            self.manager.apply_template(
-                self.target,
+            manager.apply_template(
+                target,
                 self.template,
                 overwrite=self.overwrite,
                 variables=self.variables,
             )
 
             # 3. Persist Changes
-            if isinstance(self.target, Entity):
-                db_service.insert_entity(self.target)
-            elif isinstance(self.target, Event):
-                db_service.insert_event(self.target)
+            if isinstance(target, Entity):
+                db_service.insert_entity(target)
+            elif isinstance(target, Event):
+                db_service.insert_event(target)
 
             self._is_executed = True
 
             return CommandResult(
                 success=True,
                 message=(
-                    f"Applied template '{self.template.name}' to {self.target.name}"
+                    f"Applied template '{self.template.name}' to {target.name}"
                 ),
                 command_name="InjectTemplateCommand",
             )
@@ -128,11 +148,19 @@ class InjectTemplateCommand(BaseCommand):
             return
 
         try:
+            target = (
+                db_service.get_entity(self._target_id)
+                if self._target_type_str == "entity"
+                else db_service.get_event(self._target_id)
+            )
+            if target is None:
+                raise ValueError(f"Target not found: {self._target_id}")
+            self.target = target
             # 1. Restore Tags
-            self.target.tags = self._previous_tags
+            target.tags = self._previous_tags
 
             if self._previous_type is not None:
-                self.target.type = self._previous_type
+                target.type = self._previous_type
 
             # 2. Restore Attributes
             # We need to act carefully:
@@ -146,16 +174,16 @@ class InjectTemplateCommand(BaseCommand):
                 if key not in self._previous_attributes:
                     keys_to_remove.append(key)
                 else:
-                    self.target.attributes[key] = self._previous_attributes[key]
+                    target.attributes[key] = self._previous_attributes[key]
 
             for key in keys_to_remove:
-                self.target.attributes.pop(key, None)
+                target.attributes.pop(key, None)
 
             # 3. Persist Reversion
-            if isinstance(self.target, Entity):
-                db_service.insert_entity(self.target)
-            elif isinstance(self.target, Event):
-                db_service.insert_event(self.target)
+            if isinstance(target, Entity):
+                db_service.insert_entity(target)
+            elif isinstance(target, Event):
+                db_service.insert_event(target)
 
             self._is_executed = False
 
@@ -173,33 +201,39 @@ class InjectTemplateCommand(BaseCommand):
         return {
             "target_id": self._target_id,
             "target_type": self._target_type_str,
-            "template_name": self.template.name,
+            "template": self.template.to_dict(),
             "overwrite": self.overwrite,
             "variables": self.variables,
+            "previous_tags": self._previous_tags,
+            "previous_attributes": self._previous_attributes,
+            "previous_type": self._previous_type,
             "is_executed": self._is_executed,
         }
 
     @classmethod
     def from_dict(cls, data: Dict) -> "InjectTemplateCommand":
-        """Deserialize command from dictionary.
-
-        Note:
-            InjectTemplateCommand requires live object references (target,
-            template, manager) that cannot be reconstructed from a dict.
-            This method raises NotImplementedError because full
-            deserialization is not supported for this command type.
+        """Deserialize a worker-safe template application command.
 
         Args:
             data: Dictionary containing command data.
 
         Returns:
-            InjectTemplateCommand: Not supported.
-
-        Raises:
-            NotImplementedError: Always raised; live references required.
+            Reconstructed command using canonical worker-side target loading.
 
         """
-        raise NotImplementedError(
-            "InjectTemplateCommand requires live object references "
-            "and cannot be fully deserialized from a dictionary."
+        command = cls(
+            target=None,
+            template=FastInjectTemplate.from_dict(data["template"]),
+            manager=None,
+            overwrite=bool(data.get("overwrite", False)),
+            variables=dict(data.get("variables", {})),
+            target_id=str(data["target_id"]),
+            target_type=str(data["target_type"]),
         )
+        command._previous_tags = list(data.get("previous_tags", []))
+        command._previous_attributes = dict(
+            data.get("previous_attributes", {})
+        )
+        command._previous_type = data.get("previous_type")
+        command._is_executed = bool(data.get("is_executed", False))
+        return command

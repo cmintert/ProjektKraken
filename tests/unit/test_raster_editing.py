@@ -151,14 +151,20 @@ class TestColorizeRegion:
 class TestStrokeRasterCommand:
     """Tests for StrokeRasterCommand undo/redo."""
 
-    def test_stroke_undo_restores_region(self) -> None:
+    def test_stroke_undo_restores_region(self, tmp_path) -> None:
         from src.commands.raster_commands import StrokeRasterCommand
+        from src.core.raster_grid import encode_value_png, load_value_grid
+        from src.services.db_service import DatabaseService
 
-        buf = MapDataBuffer(width=16, height=16, default_value=0)
-        # Simulate painting: save before, paint, save after
-        before = buf.get_region(2, 2, 6, 6)
-        buf._data[2:7, 2:7] = 42
-        after = buf.get_region(2, 2, 6, 6)
+        db = DatabaseService(str(tmp_path / "world.kraken"))
+        db.connect()
+        raster_path = tmp_path / "rasters" / "test.png"
+        raster_path.parent.mkdir(parents=True)
+        raster_path.write_bytes(
+            encode_value_png(np.zeros((16, 16), dtype=np.uint16))
+        )
+        before = np.zeros((5, 5), dtype=np.uint16)
+        after = np.full((5, 5), 42, dtype=np.uint16)
 
         cmd = StrokeRasterCommand(
             map_id="m1",
@@ -166,23 +172,25 @@ class TestStrokeRasterCommand:
             dirty_region=(2, 2, 6, 6),
             before_bytes=before.tobytes(),
             after_bytes=after.tobytes(),
+            target_file="rasters/test.png",
         )
-        cmd.buffer = buf
+        assert cmd.execute(db).success
+        assert load_value_grid(str(raster_path))[4, 4] == 42
 
-        # Undo → should restore zeros
-        cmd._is_executed = True
-        cmd.undo(None)  # type: ignore[arg-type]
-        assert buf._data[4, 4] == 0
+        assert cmd.undo(db).success
+        assert load_value_grid(str(raster_path))[4, 4] == 0
 
-        # Re-execute → should re-apply 42
-        cmd.execute(None)  # type: ignore[arg-type]
-        assert buf._data[4, 4] == 42
+        assert cmd.execute(db).success
+        assert load_value_grid(str(raster_path))[4, 4] == 42
+        db.close()
 
     def test_stroke_has_no_history(self) -> None:
         from src.commands.raster_commands import StrokeRasterCommand
 
         cmd = StrokeRasterCommand("m", "n", (0, 0, 1, 1), b"", b"")
-        assert cmd.has_history is False
+        assert cmd.is_undoable is True
+        assert cmd.has_history is True
+        assert cmd.persist_to_history is False
 
     def test_stroke_serialization(self) -> None:
         from src.commands.raster_commands import StrokeRasterCommand

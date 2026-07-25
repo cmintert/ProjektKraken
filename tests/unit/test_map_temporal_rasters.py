@@ -253,5 +253,7 @@ class TestSnapshotSelectionAndDeletion:
         assert emitted[0].node_id == "node-A"
         assert emitted[0].lore_date == 5.0
 
+        # The database aggregate is canonical. The view remains unchanged until
+        # the worker confirms the command and the map is reloaded.
         meta = widget.maps_data[0].attributes["raster_layers"][0]
-        assert "5.0" not in meta.get("snapshots", {})
+        assert "5.0" in meta.get("snapshots", {})

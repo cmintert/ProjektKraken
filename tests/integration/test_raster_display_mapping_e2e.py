@@ -75,7 +75,7 @@ def test_geotiff_to_persisted_color_map(
     dlg._name_edit.setText("DEM")
     dlg._apply_imported_file(geotiff)
 
-    assert dlg._mode_combo.currentText() == "continuous"
+    assert dlg._mode_combo.currentData() == "continuous"
     data = dlg.result_data()
     assert data["display_min"] == pytest.approx(-4000.0)
     assert data["display_max"] == pytest.approx(8000.0)

@@ -1,7 +1,7 @@
 # Architecture Documentation
 
 **Version:** 0.14.1 (Beta)  
-**Last Updated:** March 2026
+**Last Updated:** July 2026
 
 Technical architecture and design patterns in ProjektKraken.
 
@@ -167,6 +167,22 @@ class BaseCommand(ABC):
 - Persists command history to `command_history` table
 - Session tracking across app restarts
 - Command serialization/deserialization
+
+#### Map aggregate and raster storage
+
+- `MapAggregateService` loads and validates the layer tree, markers,
+  trajectories, and raster metadata as one logical state.
+- `RasterAssetService` validates world-relative paths and atomically replaces
+  raster files.
+- `CommandArtifactStore` holds reversible files under
+  `assets/.history/<command-id>/` and is pruned with command history.
+- Raster grids, mappings, serializable patches, calibration, and map constants
+  live below the GUI layer. Qt image conversion remains presentation-only.
+
+The database layer tree and raster metadata are canonical. Widgets may preview
+an interaction, but they send one intent and reconcile from a successful worker
+result. Destructive subtree and map commands stage files, perform their database
+changes in one transaction, and restore staged files on failure.
 
 #### BackupService (`backup_service.py`)
 - Automated backup scheduling
@@ -683,6 +699,17 @@ class HistoryService:
 ---
 
 ## Command System
+
+Commands expose two separate history policies:
+
+- `is_undoable` controls the current in-memory undo stack.
+- `persist_to_history` controls whether the command survives restart.
+- `has_history` remains a compatibility alias during migration.
+
+Every command has a stable `command_id`. Worker results may contain serializable
+effects, which are applied only on the Qt main thread. `CommandCoordinator`
+moves undo and redo stack entries only after the worker reports success, so a
+failed execute, undo, or redo retains the prior stack state.
 
 ### CommandCoordinator
 

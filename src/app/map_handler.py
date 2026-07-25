@@ -9,13 +9,23 @@ Dialog creation is the responsibility of the widget layer
 received through signals.
 """
 
-import shutil
 import uuid
 from collections import OrderedDict
+from io import BytesIO
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Set
 
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt, QTimer, Signal, Slot
+import numpy as np
+from PySide6.QtCore import (
+    Q_ARG,
+    QMetaObject,
+    QObject,
+    Qt,
+    QThreadPool,
+    QTimer,
+    Signal,
+    Slot,
+)
 from PySide6.QtWidgets import QMessageBox
 
 from src.app.constants import (
@@ -23,6 +33,7 @@ from src.app.constants import (
     MAP_ROLE_MASTER,
     TEMPORAL_SNAPSHOT_CACHE_MAX,
 )
+from src.commands.layer_commands import UpdateLayerTreeCommand
 from src.commands.map_commands import (
     CreateMapCommand,
     CreateMarkerCommand,
@@ -30,7 +41,6 @@ from src.commands.map_commands import (
     DeleteMarkerCommand,
     RegisterDetailMapCommand,
     RenameLayerCommand,
-    SaveLayerTreeCommand,
     SetLayerOpacityCommand,
     SetMasterMapCommand,
     UpdateMapCommand,
@@ -124,10 +134,14 @@ class MapHandler(QObject):
         # ── Temporal rasters ──────────────────────────────────────────
         self._current_lore_date: float = 0.0
         # abs_path → MapDataBuffer (avoids re-reading same snapshot file)
-        self._snapshot_cache: OrderedDict[str, Any] = OrderedDict()
+        self._snapshot_cache: OrderedDict[tuple[Any, ...], Any] = OrderedDict()
         self._snapshot_cache_max: int = TEMPORAL_SNAPSHOT_CACHE_MAX
         # node_id → abs_path currently shown in scene
         self._current_snapshot_by_node: Dict[str, str] = {}
+        self._current_snapshot_identity_by_node: Dict[str, tuple[Any, ...]] = {}
+        self._raster_edit_target_by_node: Dict[str, str] = {}
+        self._pending_raster_strokes: dict[str, list[Any]] = {}
+        self._failed_raster_nodes: set[str] = set()
         self._temporal_debounce_timer = QTimer()
         self._temporal_debounce_timer.setSingleShot(True)
         self._temporal_debounce_timer.setInterval(300)
@@ -170,6 +184,9 @@ class MapHandler(QObject):
             map_id: ID of the selected map.
 
         """
+        if not self.has_pending_raster_strokes():
+            self._failed_raster_nodes.clear()
+
         # Find map object
         maps = self._map_widget.maps_data
         selected_map = next((m for m in maps if m.id == map_id), None)
@@ -194,8 +211,7 @@ class MapHandler(QObject):
             if width_meters:
                 self._map_widget.view.set_map_width_meters(float(width_meters))
             else:
-                # Reset to default if no specific scale set (1000 km)
-                self._map_widget.view.set_map_width_meters(1_000_000.0)
+                self._map_widget.view.clear_map_scale()
 
             # Request markers
             QMetaObject.invokeMethod(
@@ -260,28 +276,14 @@ class MapHandler(QObject):
             name: Display name for the map.
 
         """
-        # Copy image to project assets folder
         source_path = Path(file_path)
-        project_dir = Path(self._db_path_accessor()).parent
-        assets_dir = project_dir / "assets" / "maps"
-        assets_dir.mkdir(parents=True, exist_ok=True)
-
-        # Generate unique filename to avoid conflicts
         unique_suffix = uuid.uuid4().hex[:8]
         dest_filename = f"{source_path.stem}_{unique_suffix}{source_path.suffix}"
-        dest_path = assets_dir / dest_filename
-
-        try:
-            shutil.copy2(source_path, dest_path)
-            logger.info(f"Copied map image to: {dest_path}")
-        except Exception as e:
-            logger.error(f"Failed to copy image: {e}")
-            return
-
-        # Store relative path
-        relative_path = str(dest_path.relative_to(project_dir))
-
-        cmd = CreateMapCommand({"name": name.strip(), "image_path": relative_path})
+        relative_path = (Path("assets") / "maps" / dest_filename).as_posix()
+        cmd = CreateMapCommand(
+            {"name": name.strip(), "image_path": relative_path},
+            source_image_path=str(source_path.resolve()),
+        )
         self.command_requested.emit(cmd)
 
     def delete_map(self, map_id: str) -> None:
@@ -934,8 +936,15 @@ class MapHandler(QObject):
             ancestors = []
 
         # ancestors is ordered nearest → farthest; reverse to get root first.
-        chain = [(m.id, m.name) for m in reversed(ancestors)]
-        chain.append((current_map.id, current_map.name))
+        chain = [
+            (m.id, str(getattr(m, "name", m.id))) for m in reversed(ancestors)
+        ]
+        chain.append(
+            (
+                current_map.id,
+                str(getattr(current_map, "name", current_map.id)),
+            )
+        )
         self._map_widget.set_breadcrumb(chain)
 
     # ------------------------------------------------------------------
@@ -946,7 +955,7 @@ class MapHandler(QObject):
     def on_layer_tree_changed(self) -> None:
         """Persist the current layer tree to the database.
 
-        Queues a ``SaveLayerTreeCommand`` whenever the in-memory layer tree
+        Queues an ``UpdateLayerTreeCommand`` whenever the in-memory layer tree
         is mutated so the change is durable on the worker thread.
         """
         map_id = self._map_widget.get_selected_map_id()
@@ -954,7 +963,7 @@ class MapHandler(QObject):
         if not map_id or not model:
             return
         tree_dict = model.root.to_dict()
-        cmd = SaveLayerTreeCommand(map_id, tree_dict)
+        cmd = UpdateLayerTreeCommand(map_id, tree_dict)
         self.command_requested.emit(cmd)
 
     @Slot(str, float, float)
@@ -1007,14 +1016,7 @@ class MapHandler(QObject):
 
     @Slot(str, str)
     def on_layer_feature_deleted(self, object_id: str, layer_type: str) -> None:
-        """Delete a feature from the database after layer panel removal.
-
-        The graphics item and layer node have already been cleaned up by
-        ``MapWidget._on_delete_layer``.  This handler dispatches to the
-        correct delete command based on *layer_type*:
-
-        - ``MAP_LAYER_TYPE_RASTER`` → :class:`DeleteRasterLayerCommand`.
-        - All other leaf types → :class:`DeleteMarkerCommand`.
+        """Delete a canonical layer subtree through one reversible command.
 
         Args:
             object_id: For markers, the entity/event UUID used as the UI
@@ -1022,19 +1024,31 @@ class MapHandler(QObject):
             layer_type: One of the ``MAP_LAYER_TYPE_*`` constants.
 
         """
-        from src.app.constants import MAP_LAYER_TYPE_RASTER
-
-        if layer_type == MAP_LAYER_TYPE_RASTER:
-            self.delete_raster_layer(object_id)
+        del layer_type
+        map_id = self._map_widget.get_selected_map_id()
+        if not map_id:
+            logger.warning("on_layer_feature_deleted: no map selected")
             return
+        from src.commands.layer_commands import DeleteLayerSubtreeCommand
 
-        actual_marker_id = self._marker_object_to_id.get(object_id)
-        if not actual_marker_id:
-            logger.warning("on_layer_feature_deleted: no mapping for %s", object_id)
-            return
-        del self._marker_object_to_id[object_id]
-        cmd = DeleteMarkerCommand(actual_marker_id)
+        cmd = DeleteLayerSubtreeCommand(map_id, object_id)
         self.command_requested.emit(cmd)
+
+    @Slot(str, dict)
+    def on_layer_properties_changed(
+        self, node_id: str, properties: dict
+    ) -> None:
+        """Persist a contextual layer-inspector edit."""
+        map_id = self._map_widget.get_selected_map_id()
+        if not map_id:
+            return
+        from src.commands.layer_commands import (
+            UpdateLayerPropertiesCommand,
+        )
+
+        self.command_requested.emit(
+            UpdateLayerPropertiesCommand(map_id, node_id, properties)
+        )
 
     # ------------------------------------------------------------------
     # Raster layer operations
@@ -1117,15 +1131,9 @@ class MapHandler(QObject):
         if not map_id:
             return
 
-        world_root = str(Path(self._db_path_accessor()).parent)
+        from src.commands.layer_commands import DeleteLayerSubtreeCommand
 
-        from src.commands.raster_commands import DeleteRasterLayerCommand
-
-        cmd = DeleteRasterLayerCommand(
-            map_id=map_id,
-            node_id=node_id,
-            world_root=world_root,
-        )
+        cmd = DeleteLayerSubtreeCommand(map_id=map_id, node_id=node_id)
         self.command_requested.emit(cmd)
         logger.info("Requested raster layer deletion: %s", node_id)
 
@@ -1143,6 +1151,7 @@ class MapHandler(QObject):
         # Clear temporal state when map changes; always clear node tracking
         if map_id != self._current_map_id:
             self._snapshot_cache.clear()
+            self._current_snapshot_identity_by_node.clear()
             # Clear query overlay when switching maps
             try:
                 self._map_widget.view.clear_query_overlay()
@@ -1373,27 +1382,193 @@ class MapHandler(QObject):
             dirty_region=dirty_region,
             before_bytes=before_bytes,
             after_bytes=after_bytes,
+            target_file=self._editable_raster_target(map_id, node_id),
         )
 
-        # Inject the live buffer reference
-        view = self._map_widget.view
-        item = view._raster_items.get(node_id)
-        if item is not None:
-            cmd.buffer = item.buffer
-            logger.debug("on_raster_stroke_completed: buffer injected into command")
-        else:
-            logger.warning(
-                "on_raster_stroke_completed: no raster item for node_id=%s "
-                "(registered=%s)",
-                node_id,
-                list(view._raster_items.keys()),
+        if not cmd.target_file:
+            self._apply_raster_patch_to_view(
+                node_id, dirty_region, before_bytes
             )
+            QMessageBox.information(
+                self._map_widget,
+                "Historical raster is read-only",
+                "Create or select an editable state before painting this "
+                "raster at the current lore date.",
+            )
+            return
 
-        # Also save the raster file to disk
-        self._save_raster_to_disk(node_id)
+        if node_id in self._failed_raster_nodes:
+            self._apply_raster_patch_to_view(
+                node_id, dirty_region, before_bytes
+            )
+            QMessageBox.warning(
+                self._map_widget,
+                "Raster editing paused",
+                "This raster has an unresolved persistence failure. Reload "
+                "the map or select an editable state before continuing.",
+            )
+            return
 
-        logger.debug("on_raster_stroke_completed: emitting command_requested")
-        self.command_requested.emit(cmd)
+        pending = self._pending_raster_strokes.setdefault(node_id, [])
+        pending.append(cmd)
+        if len(pending) == 1:
+            logger.debug(
+                "on_raster_stroke_completed: emitting head of raster queue"
+            )
+            self.command_requested.emit(cmd)
+
+    def _editable_raster_target(self, map_id: str, node_id: str) -> str:
+        """Return an explicit edit target, or a safe unsnapshotted base."""
+        explicit = self._raster_edit_target_by_node.get(node_id)
+        if explicit:
+            return explicit
+        selected_map = next(
+            (item for item in self._map_widget.maps_data if item.id == map_id),
+            None,
+        )
+        if selected_map is None:
+            return ""
+        for metadata in (selected_map.attributes or {}).get(
+            "raster_layers", []
+        ):
+            if metadata.get("node_id") != node_id:
+                continue
+            if metadata.get("snapshots"):
+                return ""
+            return str(metadata.get("file_path", ""))
+        return ""
+
+    def _apply_raster_patch_to_view(
+        self, node_id: str, region: tuple, raw: bytes
+    ) -> None:
+        """Apply immutable raster bytes to the GUI buffer on the main thread."""
+        item = self._map_widget.view._raster_items.get(node_id)
+        if item is None:
+            return
+        min_col, min_row, max_col, max_row = region
+        width = max_col - min_col + 1
+        height = max_row - min_row + 1
+        array = np.frombuffer(raw, dtype=np.uint16).reshape((height, width))
+        item.buffer.set_region(min_col, min_row, array)
+        item.update_region((min_col, min_row, max_col, max_row))
+
+    @Slot(object)
+    def on_command_effects(self, result: object) -> None:
+        """Apply worker-produced serializable effects on the Qt main thread."""
+        data = getattr(result, "data", {}) or {}
+        command_id = str(data.get("command_id", ""))
+        command = self._pending_stroke_by_id(command_id)
+        if command is not None:
+            self._finalize_raster_stroke(
+                command, bool(getattr(result, "success", False))
+            )
+        if not bool(getattr(result, "success", False)):
+            command_name = str(getattr(result, "command_name", ""))
+            if command is None and any(
+                token in command_name
+                for token in ("Map", "Marker", "Layer", "Raster")
+            ):
+                self.load_maps()
+                if self._current_map_id:
+                    self.reload_markers(self._current_map_id)
+            return
+        for effect in data.get("effects", []):
+            kind = effect.get("kind")
+            node_id = str(effect.get("node_id", ""))
+            if kind == "raster_patch":
+                from src.core.map_state import RasterPatch
+
+                raw = RasterPatch._decode(str(effect["data"]))
+                self._apply_raster_patch_to_view(
+                    node_id,
+                    tuple(int(value) for value in effect["region"]),
+                    raw,
+                )
+            elif kind == "raster_edit_target":
+                relative_path = str(effect["file_path"])
+                self._raster_edit_target_by_node[node_id] = relative_path
+                self._failed_raster_nodes.discard(node_id)
+                absolute_path = str(
+                    Path(self._db_path_accessor()).parent / relative_path
+                )
+                self._invalidate_snapshot_cache(node_id, absolute_path)
+                self._current_snapshot_by_node[node_id] = absolute_path
+                self._current_snapshot_identity_by_node.pop(node_id, None)
+            elif kind == "raster_edit_target_cleared":
+                self._raster_edit_target_by_node.pop(node_id, None)
+                self._invalidate_snapshot_cache(node_id)
+                self._current_snapshot_by_node.pop(node_id, None)
+                self._current_snapshot_identity_by_node.pop(node_id, None)
+
+    def _finalize_raster_stroke(self, command: Any, success: bool) -> None:
+        """Finalize a per-raster stroke queue and unwind dependent failures."""
+        node_id = str(command.node_id)
+        pending = self._pending_raster_strokes.get(node_id, [])
+        if command not in pending:
+            return
+        if success:
+            pending.remove(command)
+            if not pending:
+                self._pending_raster_strokes.pop(node_id, None)
+            else:
+                self.command_requested.emit(pending[0])
+            return
+
+        for queued in reversed(pending):
+            self._apply_raster_patch_to_view(
+                node_id, queued.dirty_region, queued._before_bytes
+            )
+        self._pending_raster_strokes.pop(node_id, None)
+        self._failed_raster_nodes.add(node_id)
+        QMessageBox.critical(
+            self._map_widget,
+            "Raster save failed",
+            "The failed stroke and all dependent queued strokes were reverted. "
+            "Raster editing is paused until the map or editable state is reloaded.",
+        )
+
+    def _pending_stroke_by_id(self, command_id: str) -> Optional[Any]:
+        """Resolve a main-thread stroke without crossing the command object back."""
+        if not command_id:
+            return None
+        return next(
+            (
+                command
+                for pending in self._pending_raster_strokes.values()
+                for command in pending
+                if command.command_id == command_id
+            ),
+            None,
+        )
+
+    def has_pending_raster_strokes(self) -> bool:
+        """Return whether raster writes are still queued on the worker."""
+        return any(self._pending_raster_strokes.values())
+
+    @staticmethod
+    def _snapshot_cache_key(
+        node_id: str, absolute_path: str
+    ) -> tuple[Any, ...]:
+        """Build an immutable cache identity from owner, path, and file state."""
+        try:
+            stat = Path(absolute_path).stat()
+        except OSError:
+            # Let the renderer produce the actionable load error. A missing-file
+            # identity is replaced as soon as the file appears and can be statted.
+            return (node_id, absolute_path, None, None)
+        return (node_id, absolute_path, stat.st_mtime_ns, stat.st_size)
+
+    def _invalidate_snapshot_cache(
+        self, node_id: str, absolute_path: str = ""
+    ) -> None:
+        """Invalidate cached copies owned by a node and optional path."""
+        stale = [
+            key
+            for key in self._snapshot_cache
+            if key[0] == node_id and (not absolute_path or key[1] == absolute_path)
+        ]
+        for key in stale:
+            self._snapshot_cache.pop(key, None)
 
     @Slot(str)
     def on_raster_palette_edit(self, node_id: str) -> None:
@@ -1583,6 +1758,7 @@ class MapHandler(QObject):
             }
             for m in raster_metas
             if m.get("node_id") in view._raster_items
+            and m.get("mode", "discrete") != "color"
         ]
         if not layers:
             return
@@ -1597,24 +1773,38 @@ class MapHandler(QObject):
         if not conditions:
             return
 
-        # Build name → node_id lookup using the layer-tree names.
-        # Conditions carry "name" (new) or "node_id" (legacy), both supported.
-        name_to_node: Dict[str, str] = {
-            node_id_to_name.get(m["node_id"], m["node_id"]): m["node_id"]
-            for m in raster_metas
-        }
-
-        def _resolve_node(c: Dict[str, Any]) -> Optional[str]:
-            nid = c.get("node_id")
-            if nid:
-                return nid
-            return name_to_node.get(c.get("name", ""))
-
-        unique_nodes: list[str] = list(
-            dict.fromkeys(
-                n for c in conditions if (n := _resolve_node(c)) is not None
+        # Legacy name-based conditions remain readable, while new dialog rows
+        # carry canonical node UUIDs.
+        name_to_nodes: dict[str, list[str]] = {}
+        available_ids = {str(layer["node_id"]) for layer in layers}
+        for layer in layers:
+            name_to_nodes.setdefault(str(layer["name"]), []).append(
+                str(layer["node_id"])
             )
-        )
+        resolved_nodes: list[str] = []
+        for condition in conditions:
+            node_id = str(condition.get("node_id", ""))
+            if not node_id:
+                matches = name_to_nodes.get(str(condition.get("name", "")), [])
+                if len(matches) != 1:
+                    QMessageBox.warning(
+                        self._map_widget,
+                        "Spatial Query Failed",
+                        "A legacy layer name is missing or ambiguous. "
+                        "Select the layer again by its UUID-backed choice.",
+                    )
+                    return
+                node_id = matches[0]
+            if node_id not in available_ids:
+                QMessageBox.warning(
+                    self._map_widget,
+                    "Spatial Query Failed",
+                    f"Raster layer is unavailable: {node_id}",
+                )
+                return
+            resolved_nodes.append(node_id)
+
+        unique_nodes = list(dict.fromkeys(resolved_nodes))
         arrays_by_node: Dict[str, Any] = {
             nid: view._raster_items[nid].buffer.data
             for nid in unique_nodes
@@ -1623,29 +1813,61 @@ class MapHandler(QObject):
 
         arrays = [arrays_by_node[n] for n in unique_nodes if n in arrays_by_node]
         normalized: list[Dict[str, Any]] = []
-        for c in conditions:
-            nid = _resolve_node(c)
-            if nid is not None and nid in arrays_by_node:
-                normalized.append({**c, "index": unique_nodes.index(nid)})
+        for condition, node_id in zip(conditions, resolved_nodes):
+            if node_id not in arrays_by_node:
+                QMessageBox.warning(
+                    self._map_widget,
+                    "Spatial Query Failed",
+                    f"Raster data is not loaded: {node_id}",
+                )
+                return
+            normalized.append(
+                {**condition, "index": unique_nodes.index(node_id)}
+            )
 
         if not arrays or not normalized:
             return
 
+        modes_by_node = {
+            str(metadata.get("node_id")): str(
+                metadata.get("mode", "discrete")
+            )
+            for metadata in raster_metas
+        }
+        modes = [
+            modes_by_node[node_id]
+            for node_id in unique_nodes
+            if node_id in arrays_by_node
+        ]
+
+        from src.app.raster_query_task import RasterQueryTask
+
+        task = RasterQueryTask(arrays, modes, normalized)
+        task.signals.finished.connect(self._on_raster_query_finished)
+        task.signals.failed.connect(self._on_raster_query_failed)
+        QThreadPool.globalInstance().start(task)
+
+    @Slot(object)
+    def _on_raster_query_finished(self, mask: object) -> None:
+        """Render a worker-produced query mask on the Qt main thread."""
         from PySide6.QtCore import QRectF
 
-        from src.gui.widgets.map.map_data_buffer import compute_spatial_query
-
-        try:
-            mask = compute_spatial_query(arrays, normalized)
-        except Exception as exc:
-            logger.warning("Spatial query failed: %s", exc)
-            return
-
+        view = self._map_widget.view
         scene_rect: QRectF = (
             view.pixmap_item.boundingRect() if view.pixmap_item else QRectF()
         )
         view.set_query_overlay(mask, scene_rect)
         self._map_widget.layer_panel.set_query_active(True)
+
+    @Slot(str)
+    def _on_raster_query_failed(self, message: str) -> None:
+        """Display a visible query failure on the Qt main thread."""
+        logger.warning("Spatial query failed: %s", message)
+        QMessageBox.warning(
+            self._map_widget,
+            "Spatial Query Failed",
+            message,
+        )
 
     @Slot()
     def on_raster_query_cleared(self) -> None:
@@ -2005,6 +2227,9 @@ class MapHandler(QObject):
             lore_date: New playhead position in lore time (float days).
         """
         self._current_lore_date = lore_date
+        self._raster_edit_target_by_node.clear()
+        self._map_widget.view.stop_raster_editing()
+        self._map_widget.layer_panel.reset_edit_toggle()
         if not self._current_map_id:
             return
 
@@ -2049,25 +2274,31 @@ class MapHandler(QObject):
             best_abs_path = str(Path(world_root) / best_rel_path)
 
             current = self._current_snapshot_by_node.get(node_id)
-            if current == best_abs_path:
+            cache_key = self._snapshot_cache_key(node_id, best_abs_path)
+            if (
+                current == best_abs_path
+                and self._current_snapshot_identity_by_node.get(node_id)
+                == cache_key
+            ):
                 continue  # Already showing this snapshot
 
-            buf = self._snapshot_cache.get(best_abs_path)
+            buf = self._snapshot_cache.get(cache_key)
             if buf is None:
                 try:
                     from src.gui.widgets.map.map_data_buffer import MapDataBuffer
 
                     buf = MapDataBuffer.from_file(best_abs_path)
-                    self._snapshot_cache[best_abs_path] = buf
+                    self._snapshot_cache[cache_key] = buf
                 except Exception as e:
                     logger.warning("Failed to load snapshot %s: %s", best_abs_path, e)
                     continue
             else:
                 # Move to end so recently-used entries survive eviction
-                self._snapshot_cache.move_to_end(best_abs_path)
+                self._snapshot_cache.move_to_end(cache_key)
 
             item.swap_buffer(buf)
             self._current_snapshot_by_node[node_id] = best_abs_path
+            self._current_snapshot_identity_by_node[node_id] = cache_key
             logger.debug(
                 "Temporal raster: node=%s loaded snapshot=%s at lore_date=%.2f",
                 node_id,
@@ -2106,9 +2337,9 @@ class MapHandler(QObject):
         if not snapshots:
             return base_path
         valid = [
-            (float(k), v)
+            (date, v)
             for k, v in snapshots.items()
-            if _safe_float(k) is not None and _safe_float(k) <= lore_date
+            if (date := _safe_float(k)) is not None and date <= lore_date
         ]
         if not valid:
             return base_path
@@ -2147,34 +2378,33 @@ class MapHandler(QObject):
         if meta is None:
             return
 
-        world_root = Path(self._db_path_accessor()).parent
         lore_date = self._current_lore_date
-
-        base_path = meta.get("file_path", f"rasters/{node_id[:8]}.png")
-        base_stem = Path(base_path).stem
-        snap_filename = f"{base_stem}_snap_{lore_date:.2f}.png"
-        snap_rel_path = f"rasters/{snap_filename}"
-        snap_abs_path = str(world_root / snap_rel_path)
-
         try:
-            Path(snap_abs_path).parent.mkdir(parents=True, exist_ok=True)
-            item.buffer.save(snap_abs_path)
-        except Exception as e:
-            logger.error("Failed to save snapshot: %s", e)
-            from PySide6.QtWidgets import QMessageBox
+            from PIL import Image as PilImage
 
+            rgba = getattr(item.buffer, "_rgba_data", None)
+            if rgba is not None:
+                image = PilImage.fromarray(rgba.copy(), mode="RGBA")
+            else:
+                image = PilImage.fromarray(item.buffer.data.copy())
+            encoded = BytesIO()
+            image.save(encoded, format="PNG", compress_level=1)
+        except Exception as e:
+            logger.error("Failed to encode snapshot: %s", e)
             QMessageBox.warning(
                 self._map_widget,
                 "Snapshot Failed",
-                f"Could not save snapshot:\n{e}",
+                f"Could not prepare snapshot:\n{e}",
             )
             return
 
-        old_snapshots = dict(meta.get("snapshots", {}))
-        meta.setdefault("snapshots", {})[str(lore_date)] = snap_rel_path
+        from src.services.raster_asset_service import RasterAssetService
 
-        self._snapshot_cache[snap_abs_path] = item.buffer
-        self._current_snapshot_by_node[node_id] = snap_abs_path
+        world_root = Path(self._db_path_accessor()).parent
+        snap_rel_path = RasterAssetService(world_root).allocate_snapshot_path(
+            node_id
+        )
+        old_snapshots = dict(meta.get("snapshots", {}))
 
         from src.commands.raster_commands import SetRasterSnapshotCommand
 
@@ -2184,19 +2414,13 @@ class MapHandler(QObject):
             lore_date=lore_date,
             rel_file_path=snap_rel_path,
             old_snapshots=old_snapshots,
+            image_bytes=encoded.getvalue(),
         )
         self.command_requested.emit(cmd)
-
-        # Refresh panel snapshot count
-        meta_by_id = {m.get("node_id", ""): m for m in raster_metas if m.get("node_id")}
-        self._map_widget.layer_panel.set_raster_layer_metadata(meta_by_id)
-
-        snap_count = len(meta.get("snapshots", {}))
         logger.info(
-            "Saved snapshot for node=%s at lore_date=%.2f (%d total)",
+            "Requested editable raster state for node=%s at lore_date=%.17g",
             node_id,
             lore_date,
-            snap_count,
         )
 
     @Slot(str, float)
@@ -2204,6 +2428,96 @@ class MapHandler(QObject):
         """Handle selecting a snapshot row by jumping the timeline playhead."""
         _ = node_id
         self._map_widget.jump_to_time_requested.emit(lore_date)
+
+    @Slot(str)
+    def on_raster_base_edit_requested(self, node_id: str) -> None:
+        """Explicitly display and select the undated base raster for editing."""
+        metadata = self._raster_metadata(node_id)
+        if metadata is not None:
+            self._select_raster_edit_target(
+                node_id, str(metadata.get("file_path", ""))
+            )
+
+    @Slot(str, float)
+    def on_raster_snapshot_edit_requested(
+        self, node_id: str, lore_date: float
+    ) -> None:
+        """Explicitly select an exact dated state as the editable target."""
+        metadata = self._raster_metadata(node_id)
+        if metadata is None:
+            return
+        exact_path = ""
+        for key, path in dict(metadata.get("snapshots", {})).items():
+            try:
+                if float(key) == lore_date:
+                    exact_path = str(path)
+                    break
+            except (TypeError, ValueError):
+                continue
+        if not exact_path:
+            QMessageBox.warning(
+                self._map_widget,
+                "Raster state unavailable",
+                "No exact raster state exists at this lore date.",
+            )
+            return
+        self.on_raster_snapshot_selected(node_id, lore_date)
+        self._select_raster_edit_target(node_id, exact_path)
+
+    def _raster_metadata(self, node_id: str) -> Optional[dict[str, Any]]:
+        """Return current metadata for a raster node from loaded map state."""
+        map_id = self._map_widget.get_selected_map_id()
+        selected_map = next(
+            (item for item in self._map_widget.maps_data if item.id == map_id),
+            None,
+        )
+        if selected_map is None:
+            return None
+        return next(
+            (
+                item
+                for item in (selected_map.attributes or {}).get(
+                    "raster_layers", []
+                )
+                if item.get("node_id") == node_id
+            ),
+            None,
+        )
+
+    def _select_raster_edit_target(
+        self, node_id: str, relative_path: str
+    ) -> None:
+        """Load one immutable file copy and select it as the paint target."""
+        if not relative_path or self._pending_raster_strokes.get(node_id):
+            QMessageBox.warning(
+                self._map_widget,
+                "Raster state unavailable",
+                "Wait for pending raster strokes before changing edit targets.",
+            )
+            return
+        absolute_path = str(Path(self._db_path_accessor()).parent / relative_path)
+        try:
+            from src.gui.widgets.map.map_data_buffer import MapDataBuffer
+
+            buffer = MapDataBuffer.from_file(absolute_path)
+            cache_key = self._snapshot_cache_key(node_id, absolute_path)
+        except Exception as exc:
+            QMessageBox.warning(
+                self._map_widget,
+                "Raster state unavailable",
+                str(exc),
+            )
+            return
+        item = self._map_widget.view._raster_items.get(node_id)
+        if item is None:
+            return
+        item.swap_buffer(buffer)
+        self._snapshot_cache[cache_key] = buffer
+        self._current_snapshot_by_node[node_id] = absolute_path
+        self._current_snapshot_identity_by_node[node_id] = cache_key
+        self._raster_edit_target_by_node[node_id] = relative_path
+        self._failed_raster_nodes.discard(node_id)
+        self._evict_snapshot_cache()
 
     @Slot(str, float)
     def on_raster_snapshot_delete_requested(self, node_id: str, lore_date: float) -> None:
@@ -2225,7 +2539,7 @@ class MapHandler(QObject):
         target_key: Optional[str] = None
         for key in snapshots:
             val = _safe_float(key)
-            if val is not None and abs(val - lore_date) < 1e-9:
+            if val is not None and val == lore_date:
                 target_key = key
                 break
         if target_key is None:
@@ -2249,16 +2563,8 @@ class MapHandler(QObject):
             return
 
         old_snapshots = dict(snapshots)
-        snapshots.pop(target_key, None)
-        meta["snapshots"] = snapshots
 
         world_root = Path(self._db_path_accessor()).parent
-        abs_path = str(world_root / rel_path)
-
-        self._snapshot_cache.pop(abs_path, None)
-        current = self._current_snapshot_by_node.get(node_id)
-        if current == abs_path:
-            self._current_snapshot_by_node.pop(node_id, None)
 
         from src.commands.raster_commands import RemoveRasterSnapshotCommand
 
@@ -2271,7 +2577,3 @@ class MapHandler(QObject):
             old_snapshots=old_snapshots,
         )
         self.command_requested.emit(cmd)
-
-        meta_by_id = {m.get("node_id", ""): m for m in raster_metas if m.get("node_id")}
-        self._map_widget.layer_panel.set_raster_layer_metadata(meta_by_id)
-        self._apply_temporal_rasters()

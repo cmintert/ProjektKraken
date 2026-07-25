@@ -93,7 +93,9 @@ class RasterLayerDialog(QDialog):
 
         # Mode
         self._mode_combo = QComboBox()
-        self._mode_combo.addItems(["discrete", "continuous", "color"])
+        self._mode_combo.addItem("Classified world data", "discrete")
+        self._mode_combo.addItem("Continuous measured field", "continuous")
+        self._mode_combo.addItem("Visual overlay", "color")
         self._mode_combo.setToolTip(
             "<b>Discrete</b>: Each pixel value maps to a named class (e.g. biome, terrain type).\n"
             "Use for categorical data — colours, labels, and linked world items per value.\n\n"
@@ -111,8 +113,10 @@ class RasterLayerDialog(QDialog):
         self._mode_hint.setWordWrap(True)
         self._mode_hint.setStyleSheet(StyleHelper.get_preview_label_style())
         form.addRow("", self._mode_hint)
-        self._mode_combo.currentTextChanged.connect(self._on_mode_changed)
-        self._on_mode_changed(self._mode_combo.currentText())
+        self._mode_combo.currentIndexChanged.connect(
+            lambda: self._on_mode_changed(str(self._mode_combo.currentData()))
+        )
+        self._on_mode_changed(str(self._mode_combo.currentData()))
 
         # Resolution preset
         self._res_combo = QComboBox()
@@ -121,6 +125,12 @@ class RasterLayerDialog(QDialog):
         # Default to 1024×1024
         self._res_combo.setCurrentIndex(3)
         form.addRow("Resolution:", self._res_combo)
+        self._memory_estimate = QLabel()
+        self._memory_estimate.setStyleSheet(StyleHelper.get_preview_label_style())
+        form.addRow("", self._memory_estimate)
+        self._res_combo.currentIndexChanged.connect(self._update_memory_estimate)
+        self._mode_combo.currentIndexChanged.connect(self._update_memory_estimate)
+        self._update_memory_estimate()
 
         # Default value
         self._default_spin = QSpinBox()
@@ -202,7 +212,7 @@ class RasterLayerDialog(QDialog):
 
         # Value range (continuous mode only)
         self._build_value_range_group(layout)
-        self._update_value_range_visibility(self._mode_combo.currentText())
+        self._update_value_range_visibility(str(self._mode_combo.currentData()))
 
         # Buttons
         buttons = QDialogButtonBox(
@@ -249,7 +259,7 @@ class RasterLayerDialog(QDialog):
         w, h = result.width, result.height
 
         # Auto-select mode
-        idx = self._mode_combo.findText(result.suggested_mode)
+        idx = self._mode_combo.findData(result.suggested_mode)
         if idx >= 0:
             self._mode_combo.setCurrentIndex(idx)
 
@@ -270,6 +280,7 @@ class RasterLayerDialog(QDialog):
         self._import_path = path
         self._import_width = w
         self._import_height = h
+        self._update_memory_estimate()
         self._import_file_label.setText(os.path.basename(path))
         self._import_dims_label.setText(f"{w} × {h}")
         self._import_dims_label.setVisible(True)
@@ -288,6 +299,7 @@ class RasterLayerDialog(QDialog):
         self._import_path = ""
         self._import_width = 0
         self._import_height = 0
+        self._update_memory_estimate()
         self._import_file_label.setText("No file selected")
         self._import_dims_label.setVisible(False)
         self._aspect_warn_label.setVisible(False)
@@ -296,7 +308,7 @@ class RasterLayerDialog(QDialog):
         self._preview_label.setVisible(False)
         self._clear_btn.setVisible(False)
         self._res_combo.setEnabled(True)
-        self._default_spin.setEnabled(self._mode_combo.currentText() != "color")
+        self._default_spin.setEnabled(self._mode_combo.currentData() != "color")
         # Clear inferred value-range fields
         self._display_min_edit.clear()
         self._display_max_edit.clear()
@@ -328,6 +340,24 @@ class RasterLayerDialog(QDialog):
         if hasattr(self, "_default_spin"):
             self._default_spin.setEnabled(mode != "color")
         self._update_value_range_visibility(mode)
+        self._update_memory_estimate()
+
+    def _update_memory_estimate(self) -> None:
+        """Show raster dimensions and approximate uncompressed working memory."""
+        if not hasattr(self, "_memory_estimate"):
+            return
+        if self._import_path and self._import_width and self._import_height:
+            width, height = self._import_width, self._import_height
+        else:
+            _label, width, height = _RESOLUTION_PRESETS[
+                self._res_combo.currentIndex()
+            ]
+        bytes_per_pixel = 4 if self._mode_combo.currentData() == "color" else 2
+        memory_mib = width * height * bytes_per_pixel / (1024 * 1024)
+        self._memory_estimate.setText(
+            f"{width:,} × {height:,} pixels · about {memory_mib:.1f} MiB "
+            "working memory"
+        )
 
     # ------------------------------------------------------------------
     # Value-range section (continuous mode only)
@@ -433,7 +463,7 @@ class RasterLayerDialog(QDialog):
             idx = self._res_combo.currentIndex()
             _label, w, h = _RESOLUTION_PRESETS[idx]
 
-        mode = self._mode_combo.currentText()
+        mode = str(self._mode_combo.currentData())
         display_min: Optional[float] = None
         display_max: Optional[float] = None
         unit = ""

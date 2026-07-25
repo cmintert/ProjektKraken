@@ -9,7 +9,7 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from src.app.constants import (
+from src.core.map_constants import (
     MAP_LAYER_DEFAULT_MAX_ZOOM,
     MAP_LAYER_DEFAULT_MIN_ZOOM,
     MAP_LAYER_DEFAULT_OPACITY,

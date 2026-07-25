@@ -5,14 +5,13 @@ database worker thread.
 """
 
 import logging
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional, cast
 
-from PySide6.QtCore import QObject, QTimer, Signal, Slot
+from PySide6.QtCore import QObject, Signal, Slot
 
 if TYPE_CHECKING:
     from src.commands.base_command import BaseCommand, CommandResult
     from src.core.protocols import MainWindowProtocol
-    from src.services.history_service import HistoryService
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +39,7 @@ class CommandCoordinator(QObject):
     command_requested = Signal(object)
     undo_requested = Signal(object)  # Emits the command to undo
     redo_requested = Signal(object)  # Emits the command to redo
+    clear_persistent_history_requested = Signal()
     history_changed = Signal(list, list)  # (undo_snapshots, redo_snapshots)
 
     def __init__(self, main_window: "MainWindowProtocol") -> None:
@@ -54,8 +54,9 @@ class CommandCoordinator(QObject):
         self.undo_stack: List["BaseCommand"] = []
         self.redo_stack: List["BaseCommand"] = []
         self.max_stack_size = 100  # Limit memory usage
-        self.history_service: Optional["HistoryService"] = None
         self._undo_redo_in_progress = False
+        self._pending_history_action: Optional[tuple[str, "BaseCommand"]] = None
+        self._pending_commands: Dict[str, "BaseCommand"] = {}
         logger.debug("CommandCoordinator initialized with undo/redo support")
 
     # ------------------------------------------------------------------
@@ -104,28 +105,70 @@ class CommandCoordinator(QObject):
         undo, redo = self._build_snapshots()
         self.history_changed.emit(undo, redo)
 
-    def set_history_service(self, history_service: "HistoryService") -> None:
-        """Set the history service for persistent command storage.
+    @staticmethod
+    def _serialize_command(command: "BaseCommand") -> dict[str, object]:
+        """Create a worker-safe command intent without sharing a live object."""
+        return {
+            "type": command.__class__.__name__,
+            "data": command.to_dict(),
+            "base": command.base_state_dict(),
+        }
 
-        Args:
-            history_service: HistoryService instance for this world
-        """
-        self.history_service = history_service
-        logger.debug("HistoryService attached to CommandCoordinator")
+    @staticmethod
+    def _restore_command(
+        payload: object,
+        fallback: Optional["BaseCommand"] = None,
+    ) -> Optional["BaseCommand"]:
+        """Reconstruct canonical worker state on the Qt main thread."""
+        if not isinstance(payload, dict):
+            return fallback
+        data = payload.get("data", {})
+        base = payload.get("base", {})
+        if not isinstance(data, dict) or not isinstance(base, dict):
+            return fallback
+        command_class = fallback.__class__ if fallback is not None else None
+        if command_class is None:
+            from src.commands.registry import get_command_types
 
-    def load_history(self) -> None:
-        """Load command history from database.
-
-        Populates the undo stack with recent commands from previous sessions.
-        """
-        if not self.history_service:
-            logger.warning("No history service available, skipping history load")
-            return
-
+            command_class = get_command_types().get(str(payload.get("type", "")))
+        if command_class is None:
+            return fallback
         try:
-            commands = self.history_service.load_recent_history(
-                limit=self.max_stack_size
+            command = command_class.from_dict(data)
+            command.restore_base_state(base)
+            return command
+        except Exception:
+            logger.exception(
+                "Could not restore canonical command state for %s",
+                payload.get("type", ""),
             )
+            return fallback
+
+    @Slot(list)
+    def load_history_payloads(self, payloads: list[dict[str, object]]) -> None:
+        """Rebuild the undo stack from worker-produced serializable payloads."""
+        try:
+            from src.commands.registry import get_command_types
+
+            command_types = get_command_types()
+            commands: List["BaseCommand"] = []
+            for payload in payloads[-self.max_stack_size :]:
+                command_type = str(payload.get("type", ""))
+                command_class = command_types.get(command_type)
+                if command_class is None:
+                    logger.warning("Unknown persisted command type: %s", command_type)
+                    continue
+                data = payload.get("data", {})
+                base = payload.get("base", {})
+                if not isinstance(data, dict) or not isinstance(base, dict):
+                    logger.warning(
+                        "Invalid persisted command payload: %s",
+                        command_type,
+                    )
+                    continue
+                command = command_class.from_dict(data)
+                command.restore_base_state(base)
+                commands.append(command)
             self.undo_stack = commands
             self.redo_stack.clear()
             self._emit_history_changed()
@@ -142,7 +185,13 @@ class CommandCoordinator(QObject):
 
         """
         logger.debug(f"Executing command: {command.__class__.__name__}")
-        self.command_requested.emit(command)
+        self.track_command(command)
+        self.command_requested.emit(self._serialize_command(command))
+
+    @Slot(object)
+    def track_command(self, command: "BaseCommand") -> None:
+        """Retain a main-thread command by ID until its worker result arrives."""
+        self._pending_commands[command.command_id] = command
 
     @Slot()
     def undo(self) -> None:
@@ -163,19 +212,10 @@ class CommandCoordinator(QObject):
             return
 
         self._undo_redo_in_progress = True
-        command = self.undo_stack.pop()
+        command = self.undo_stack[-1]
+        self._pending_history_action = ("undo", command)
         logger.debug(f"Undoing command: {command.__class__.__name__}")
-        # Optimistically move to redo stack to keep UI responsive
-        if command.has_history:
-            self.redo_stack.append(command)
-
-        # Build and emit snapshots BEFORE dispatching to worker, so the
-        # history panel finishes reading command attributes before the
-        # worker thread starts mutating them during undo.
-        self._emit_history_changed()
-
-        # Now dispatch to the worker thread (QueuedConnection)
-        self.undo_requested.emit(command)
+        self.undo_requested.emit(self._serialize_command(command))
 
     @Slot()
     def redo(self) -> None:
@@ -195,15 +235,10 @@ class CommandCoordinator(QObject):
             return
 
         self._undo_redo_in_progress = True
-        command = self.redo_stack.pop()
+        command = self.redo_stack[-1]
+        self._pending_history_action = ("redo", command)
         logger.debug(f"Redoing command: {command.__class__.__name__}")
-        self.undo_stack.append(command)
-
-        # Build and emit snapshots BEFORE dispatching to worker
-        self._emit_history_changed()
-
-        # Now dispatch to the worker thread (QueuedConnection)
-        self.redo_requested.emit(command)
+        self.redo_requested.emit(self._serialize_command(command))
 
     def can_undo(self) -> bool:
         """Check if undo operation is available.
@@ -232,15 +267,8 @@ class CommandCoordinator(QObject):
         logger.debug("Clearing undo/redo history")
         self.undo_stack.clear()
         self.redo_stack.clear()
-
-        # Also clear persistent history from database
-        if self.history_service:
-            try:
-                deleted_count = self.history_service.clear_all_history()
-                logger.info(f"Cleared {deleted_count} commands from persistent history")
-            except Exception as e:
-                logger.error(f"Failed to clear persistent history: {e}")
-
+        self._pending_commands.clear()
+        self.clear_persistent_history_requested.emit()
         self._emit_history_changed()
 
     @Slot(object)
@@ -250,15 +278,13 @@ class CommandCoordinator(QObject):
         This slot runs on the **main thread** (connected via
         ``QueuedConnection``).  It updates the in-memory undo/redo
         stacks, builds lightweight snapshots, emits
-        ``history_changed(undo_snapshots, redo_snapshots)``, and then
-        defers database persistence to a ``QTimer.singleShot(0)`` so
-        that the UI update completes before any blocking I/O.
+        ``history_changed(undo_snapshots, redo_snapshots)``. Persistent
+        history is owned and updated by the database worker.
 
         Args:
             result: CommandResult object containing execution status.
 
         """
-        # Clear the undo/redo guard when the worker result arrives
         is_undo_redo = result.command_name.startswith(
             (
                 "Undo_",
@@ -267,14 +293,50 @@ class CommandCoordinator(QObject):
         )
         if is_undo_redo:
             self._undo_redo_in_progress = False
+            pending = self._pending_history_action
+            self._pending_history_action = None
+            if result.success and pending is not None:
+                action, command = pending
+                canonical = self._restore_command(
+                    result.data.get("command_state"),
+                    command,
+                )
+                if canonical is None:
+                    canonical = command
+                if action == "undo" and self.undo_stack[-1:] == [command]:
+                    self.undo_stack.pop()
+                    self.redo_stack.append(canonical)
+                elif action == "redo" and self.redo_stack[-1:] == [command]:
+                    self.redo_stack.pop()
+                    self.undo_stack.append(canonical)
+                self._emit_history_changed()
+                self.log_stack_state()
+
+        command_id = str(result.data.get("command_id", ""))
+        tracked_command = (
+            self._pending_commands.pop(command_id, None)
+            if command_id and not is_undo_redo
+            else None
+        )
 
         if result.success:
             logger.info(f"Command succeeded: {result.message}")
 
             # Add command to undo stack if it was successful
             # The command object should be in result.data
-            command = result.data.get("command")
-            if command is not None and getattr(command, "has_history", True):
+            command = self._restore_command(
+                result.data.get("command_state"),
+                tracked_command,
+            )
+            if command is None:
+                legacy_command = result.data.get("command")
+                if legacy_command is not None:
+                    command = cast("BaseCommand", legacy_command)
+            if (
+                not is_undo_redo
+                and command is not None
+                and getattr(command, "is_undoable", True)
+            ):
                 self.undo_stack.append(command)
                 self.redo_stack.clear()  # Clear redo stack on new action
 
@@ -290,14 +352,6 @@ class CommandCoordinator(QObject):
                 self._emit_history_changed()
                 self.log_stack_state()
 
-                # Defer persistent DB save so the UI can finish
-                # refreshing without blocking on SQLite I/O.
-                if self.history_service:
-                    # Capture a reference; the lambda closure is safe
-                    # because the command object is in the undo stack.
-                    svc = self.history_service
-                    QTimer.singleShot(0, lambda: self._save_command_safe(svc, command))
-
             # Trigger data refresh based on command type.
             # Skip for Undo/Redo results — DataHandler already handles
             # those reloads via its own command_finished connection.
@@ -312,24 +366,6 @@ class CommandCoordinator(QObject):
         else:
             logger.error(f"Command failed: {result.message}")
             self._show_error(result.message)
-
-    @staticmethod
-    def _save_command_safe(
-        history_service: "HistoryService", command: "BaseCommand"
-    ) -> None:
-        """Persist *command* to the history database, swallowing errors.
-
-        Called from a deferred ``QTimer.singleShot(0)`` so that the UI
-        refresh triggered by ``history_changed`` completes first.
-
-        Args:
-            history_service: The active HistoryService instance.
-            command: The command to persist.
-        """
-        try:
-            history_service.save_command(command)
-        except Exception as e:
-            logger.error(f"Failed to save command to history: {e}")
 
     def _refresh_after_command(self, result: "CommandResult") -> None:
         """Refresh UI data after successful command execution.

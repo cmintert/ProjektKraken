@@ -64,11 +64,11 @@ def test_on_map_selected_loads_scale(map_handler, mock_map_widget):
     mock_map_widget.load_map.assert_called()
     mock_map_widget.view.set_map_width_meters.assert_called_with(2500.0)
 
-    # Action 2: Load map without scale (default)
+    # Action 2: Load map without scale (explicitly uncalibrated)
     mock_map_widget.view.set_map_width_meters.reset_mock()
     map_handler.on_map_selected("map_2")
 
-    mock_map_widget.view.set_map_width_meters.assert_called_with(1_000_000.0)
+    mock_map_widget.view.clear_map_scale.assert_called_once_with()
 
 
 def test_delete_map_exits_editing_before_emitting_command(map_handler, mock_map_widget):

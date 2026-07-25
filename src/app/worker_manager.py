@@ -52,6 +52,7 @@ class WorkerManager(QObject):
     _index_single_requested = Signal(str, str, list)  # → worker.index_object
     load_ai_preferences_requested = Signal()
     save_ai_preferences_requested = Signal(dict)
+    initialize_history_requested = Signal(str)
 
     # Delay (ms) after the last save before firing the re-embed request.
     # Prevents running ONNX/numpy-heavy embedding code on every keystroke-
@@ -228,6 +229,10 @@ class WorkerManager(QObject):
             self.window.worker.save_ai_generation_preferences,
             connection_type,
         )
+        self.initialize_history_requested.connect(
+            self.window.worker.initialize_history,
+            connection_type,
+        )
 
         # Connect MainWindow signals to worker (cross-thread: main → worker)
         # All connections use QueuedConnection because worker is on a different thread
@@ -236,9 +241,6 @@ class WorkerManager(QObject):
         )
         self.summary_requested.connect(
             self.window.worker.generate_summary, connection_type
-        )
-        self.window.command_requested.connect(
-            self.window.worker.run_command, connection_type
         )
         self.window.load_graph_data_requested.connect(
             self.window.worker.load_graph_data, connection_type
@@ -422,37 +424,12 @@ class WorkerManager(QObject):
                 # Don't fail the entire app if backup service fails to init
                 self.window.backup_service = None
 
-            # Initialize History Service for Phase 2 persistent undo/redo
-            try:
-                from src.commands.registry import get_command_types
-                from src.services.history_service import HistoryService
-
-                # Create history service with current world ID
-                world_id = (
-                    self.window.current_world.id
-                    if self.window.current_world
-                    else "default"
-                )
-                self.window.history_service = HistoryService(
-                    self.window.gui_db_service, world_id
-                )
-
-                # Register all known command types from centralized registry
-                for name, cls in get_command_types().items():
-                    self.window.history_service.register_command_type(name, cls)
-
-                # Connect to command coordinator
-                self.window.coordinator.set_history_service(self.window.history_service)
-
-                # Load command history from database
-                self.window.coordinator.load_history()
-
-                logger.info("History service initialized successfully")
-
-            except Exception as e:
-                logger.error(f"Failed to initialize history service: {e}")
-                # Don't fail the entire app if history service fails to init
-                self.window.history_service = None
+            world_id = (
+                self.window.current_world.id
+                if self.window.current_world
+                else "default"
+            )
+            self.initialize_history_requested.emit(world_id)
 
             self.window.data_coordinator.load_data()
             self.window.time_coordinator.request_calendar_config()

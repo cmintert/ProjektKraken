@@ -326,6 +326,8 @@ class _FeatureItemBase(QGraphicsObject):
             lines.append(f"Area: {self._format_metric_area(props['area'])}")
         if "perimeter" in props:
             lines.append(f"Perimeter: {self._format_metric_length(props['perimeter'])}")
+        if props.get("calibration_required"):
+            lines.append("Calibrate map to measure")
 
         tooltip_content = "<br>".join(lines)
         self.setToolTip(f"<div style='width: 150px;'>{tooltip_content}</div>")
@@ -368,7 +370,7 @@ class PathItem(_FeatureItemBase):
         style: Optional[Dict[str, Any]] = None,
         description: Optional[str] = None,
         lore_date: Optional[float] = None,
-        map_width_meters: float = 1_000_000.0,
+        map_width_meters: float = 0.0,
     ) -> None:
         """Initialise the PathItem.
 
@@ -515,6 +517,9 @@ class PathItem(_FeatureItemBase):
         pts = [(p["x"], p["y"]) for p in self._geometry]
         props["vertex_count"] = len(pts)
         props["segment_count"] = max(0, len(pts) - 1)
+        if self._map_width_meters <= 0:
+            props["calibration_required"] = True
+            return props
         w = self._map_width_meters
         h = self._map_height_meters()
         total = 0.0
@@ -544,7 +549,7 @@ class RegionItem(_FeatureItemBase):
         style: Optional[Dict[str, Any]] = None,
         description: Optional[str] = None,
         lore_date: Optional[float] = None,
-        map_width_meters: float = 1_000_000.0,
+        map_width_meters: float = 0.0,
     ) -> None:
         """Initialise the RegionItem.
 
@@ -691,6 +696,9 @@ class RegionItem(_FeatureItemBase):
         n = len(pts)
         props["vertex_count"] = n
         props["segment_count"] = n  # closed polygon
+        if self._map_width_meters <= 0:
+            props["calibration_required"] = True
+            return props
 
         w = self._map_width_meters
         h = self._map_height_meters()

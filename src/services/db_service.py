@@ -168,6 +168,13 @@ class DatabaseService:
             raise RuntimeError("Map repository not initialized")
         return self._map_repo
 
+    @property
+    def trajectory_repo(self) -> TrajectoryRepository:
+        """Gets the trajectory repository used by aggregate commands."""
+        if not self._trajectory_repo:
+            raise RuntimeError("Trajectory repository not initialized")
+        return self._trajectory_repo
+
     def get_attachment_repo(self) -> AttachmentRepository:
         """Gets the attachment repository.
 
@@ -188,11 +195,16 @@ class DatabaseService:
         if not self._connection:
             self.connect()
         assert self._connection is not None
+        owns_transaction = not self._connection.in_transaction
         try:
+            if owns_transaction:
+                self._connection.execute("BEGIN")
             yield self._connection
-            self._connection.commit()
+            if owns_transaction:
+                self._connection.commit()
         except Exception as e:
-            self._connection.rollback()
+            if owns_transaction:
+                self._connection.rollback()
             logger.error(f"Transaction rolled back due to error: {e}")
             raise
 

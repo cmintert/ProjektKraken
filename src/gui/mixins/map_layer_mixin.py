@@ -8,6 +8,7 @@ import logging
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from PySide6.QtCore import Qt, Slot
+from PySide6.QtWidgets import QMessageBox
 
 from src.app.constants import (
     MAP_LAYER_BASEMAP_NODE_ID,
@@ -311,10 +312,6 @@ class MapLayerMixin:
         if node is None:
             return
 
-        exit_editing_modes = getattr(self, "exit_editing_modes", None)
-        if callable(exit_editing_modes):
-            exit_editing_modes()
-
         # Don't delete the root
         if node is self._layer_model.root:
             logger.warning("Cannot delete the root node")
@@ -325,24 +322,59 @@ class MapLayerMixin:
             logger.info("Cannot delete the base-map layer node")
             return
 
-        # Collect all leaf feature IDs before mutating the tree
-        leaf_ids = self._collect_leaf_ids(node)
+        nodes = self._collect_subtree_nodes(node)
+        group_count = sum(
+            item.layer_type == MAP_LAYER_TYPE_GROUP for item in nodes
+        )
+        raster_ids = {
+            item.id for item in nodes if item.layer_type == "raster"
+        }
+        feature_count = sum(
+            item.layer_type not in {MAP_LAYER_TYPE_GROUP, "raster"}
+            for item in nodes
+        )
+        snapshot_count = 0
+        for map_obj in getattr(self, "maps_data", []) or []:
+            metadata = (map_obj.attributes or {}).get("raster_layers", [])
+            snapshot_count += sum(
+                len(item.get("snapshots", {}))
+                for item in metadata
+                if item.get("node_id") in raster_ids
+            )
 
-        # Remove the graphics item if it's a leaf feature
-        if node.layer_type != MAP_LAYER_TYPE_GROUP:
-            self.view.remove_marker(node_id)
+        if group_count or raster_ids:
+            details = (
+                f"Delete '{node.name}'?\n\n"
+                f"Groups: {group_count}\n"
+                f"Features: {feature_count}\n"
+                f"Raster layers: {len(raster_ids)}\n"
+                f"Temporal states: {snapshot_count}\n\n"
+                "The complete operation can be undone."
+            )
+            answer = QMessageBox.question(
+                self,
+                "Delete layer",
+                details,
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if answer != QMessageBox.StandardButton.Yes:
+                return
 
-        # Also remove children's graphics items for groups
-        if node.layer_type == MAP_LAYER_TYPE_GROUP:
-            self._remove_children_graphics(node)
+        exit_editing_modes = getattr(self, "exit_editing_modes", None)
+        if callable(exit_editing_modes):
+            exit_editing_modes()
 
-        idx = self._layer_model.index_from_node(node)
-        self._layer_model.remove_layer(idx)
-        logger.info(f"Deleted layer: {node.name} ({node_id})")
+        # The canonical tree and all descendant data are removed together by
+        # one worker command.  The UI is refreshed only after command success.
+        self.layer_delete_feature_requested.emit(node_id, node.layer_type)
 
-        # Request DB deletion for every leaf feature
-        for leaf_id, leaf_type in leaf_ids:
-            self.layer_delete_feature_requested.emit(leaf_id, leaf_type)
+    def _collect_subtree_nodes(self, node: MapLayerNode) -> List[MapLayerNode]:
+        """Return ``node`` and all descendants in display order."""
+        nodes = [node]
+        for child in node.children:
+            nodes.extend(self._collect_subtree_nodes(child))
+        return nodes
 
     def _collect_leaf_ids(self, node: MapLayerNode) -> List[Tuple[str, str]]:
         """Recursively collect IDs and types of all leaf (non-group) nodes.

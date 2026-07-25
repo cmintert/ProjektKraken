@@ -56,11 +56,16 @@ class BaseRepository:
         if not self._connection:
             raise RuntimeError("Database connection not initialized")
 
+        owns_transaction = not self._connection.in_transaction
         try:
+            if owns_transaction:
+                self._connection.execute("BEGIN")
             yield self._connection
-            self._connection.commit()
+            if owns_transaction:
+                self._connection.commit()
         except Exception as e:
-            self._connection.rollback()
+            if owns_transaction:
+                self._connection.rollback()
             logger.error(f"Transaction rolled back due to error: {e}")
             raise
 

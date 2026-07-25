@@ -5,6 +5,34 @@ Stores default values for UI configuration and magic numbers.
 
 import os
 
+from src.core.map_constants import (  # noqa: F401
+    MAP_DEFAULT_WIDTH_METERS,
+    MAP_LAYER_BASEMAP_NODE_ID,
+    MAP_LAYER_DEFAULT_GROUP_NAME,
+    MAP_LAYER_DEFAULT_MAX_ZOOM,
+    MAP_LAYER_DEFAULT_MIN_ZOOM,
+    MAP_LAYER_DEFAULT_OPACITY,
+    MAP_LAYER_TYPE_BASEMAP,
+    MAP_LAYER_TYPE_GROUP,
+    MAP_LAYER_TYPE_MARKER,
+    MAP_LAYER_TYPE_PATH,
+    MAP_LAYER_TYPE_RASTER,
+    MAP_LAYER_TYPE_REGION,
+    MAP_LAYER_TYPE_SNAPSHOT,
+    MAP_LAYER_Z_BASE,
+    MAP_LAYER_Z_FEATURES,
+    MAP_LAYER_Z_FOOTPRINTS,
+    MAP_LAYER_Z_MAP_BG,
+    MAP_LAYER_Z_MARKERS,
+    MAP_LAYER_Z_RASTER,
+    MAP_LAYER_Z_SPACING,
+    MAP_LAYER_Z_TRAJECTORIES,
+    MAP_LAYER_Z_UI_OVERLAY,
+    MAP_ROLE_DETAIL,
+    MAP_ROLE_MASTER,
+    TEMPORAL_SNAPSHOT_CACHE_MAX,
+)
+
 
 def _env_bool(name: str, default: bool) -> bool:
     """Parse a boolean environment variable with a fallback default."""
@@ -127,8 +155,6 @@ PROVIDER_RETRY_WAIT_TIME_S = 1.0  # Wait time between provider retries
 TEMPORAL_FUTURE_OPACITY = 0.7  # Opacity for future events (0.0-1.0)
 TEMPORAL_FUTURE_SATURATION_FACTOR = 0.8  # Saturation multiplier for future events
 TEMPORAL_FUTURE_LIGHTNESS_BOOST = 0.1  # Lightness increase for future events
-TEMPORAL_SNAPSHOT_CACHE_MAX = 20  # Max entries in the raster snapshot LRU cache
-
 # Sheet Builder Constants
 SHEET_VALUE_MAX_LINES = 4  # Max visible lines for multiline attribute values
 
@@ -222,78 +248,16 @@ MAP_SNAP_INDICATOR_RADIUS = 6  # screen pixels (cosmetic)
 MAP_SNAP_INDICATOR_BORDER_COLOR = "#FFFFFF"
 MAP_SNAP_INDICATOR_BORDER_WIDTH = 1.5
 
-# Default map scale
-MAP_DEFAULT_WIDTH_METERS = 1_000_000.0  # 1000 km
-
 # Zoom factor for mouse wheel
 MAP_ZOOM_IN_FACTOR = 1.25
-
-# ---------------------------------------------------------------------------
-# Map Layer Z-Value Constants
-# ---------------------------------------------------------------------------
-
-# Static Z-values for layer ordering in the graphics scene
-MAP_LAYER_Z_MAP_BG = 0
-MAP_LAYER_Z_TRAJECTORIES = 0.5
-MAP_LAYER_Z_RASTER = 4  # raster / heatmap overlays
-MAP_LAYER_Z_FEATURES = 8  # paths / regions
-MAP_LAYER_Z_FOOTPRINTS = 9  # detail-map footprint overlays
-MAP_LAYER_Z_MARKERS = 10
-MAP_LAYER_Z_UI_OVERLAY = 100
 
 # ---------------------------------------------------------------------------
 # Map Nesting Constants
 # ---------------------------------------------------------------------------
 
-# Role discriminators stored in Map.attributes["map_role"]
-MAP_ROLE_MASTER = "master"
-MAP_ROLE_DETAIL = "detail"
-
 # Maximum depth of the master -> detail -> ... chain.  Prevents runaway
 # nesting and keeps transform composition bounded.
 MAP_NESTING_DEPTH_CAP = 5
-
-# ---------------------------------------------------------------------------
-# Hierarchical Layer System Constants
-# ---------------------------------------------------------------------------
-
-# Default layer opacity (fully opaque)
-MAP_LAYER_DEFAULT_OPACITY = 1.0
-
-# Default zoom thresholds for scale-dependent visibility
-MAP_LAYER_DEFAULT_MIN_ZOOM = 0.0  # visible at all zoom-out levels
-MAP_LAYER_DEFAULT_MAX_ZOOM = float("inf")  # visible at all zoom-in levels
-
-# Layer node type discriminators
-MAP_LAYER_TYPE_GROUP = "group"
-MAP_LAYER_TYPE_MARKER = "marker"
-MAP_LAYER_TYPE_SNAPSHOT = "raster_snapshot"  # Virtual display-only snapshot rows
-MAP_LAYER_TYPE_PATH = "path"
-MAP_LAYER_TYPE_REGION = "region"
-MAP_LAYER_TYPE_RASTER = "raster"
-# Background map image — represented as a pinned, non-deletable node so
-# the user can hide/show the base map and adjust its opacity from the
-# layer panel just like any other layer.
-MAP_LAYER_TYPE_BASEMAP = "basemap"
-
-# Fixed node ID for the pinned basemap layer.  Using a well-known ID
-# lets the view route visibility/opacity changes to the pixmap item.
-MAP_LAYER_BASEMAP_NODE_ID = "__basemap__"
-
-# Default group name for auto-registered features
-MAP_LAYER_DEFAULT_GROUP_NAME = "Default"
-
-# Z-index spacing between dynamically ordered layers
-#
-# Dynamic values are assigned by ``MapLayerModel.compute_z_order`` and
-# override the static defaults above for items registered in the layer
-# tree.  The base must sit *above* the highest static default
-# (``MAP_LAYER_Z_MARKERS = 10``) so that registered and unregistered
-# items never swap stacking order.  Fine spacing (0.01) permits a deep
-# tree (up to ~8000 nodes) before hitting ``MAP_LAYER_Z_UI_OVERLAY``.
-MAP_LAYER_Z_SPACING = 0.01
-# Base Z-value for dynamic layer ordering (above markers, below UI overlay)
-MAP_LAYER_Z_BASE = 20.0
 
 # ---------------------------------------------------------------------------
 # Analysis Suite Constants

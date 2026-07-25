@@ -75,10 +75,26 @@ class CompositeCommand(BaseCommand):
                 )
 
         self._is_executed = True
+        index_requests: list[dict[str, str]] = []
+        for command in self.commands:
+            command_name = command.__class__.__name__
+            if command_name in {"CreateEntityCommand", "UpdateEntityCommand"}:
+                object_id = getattr(command, "entity_id", None)
+                if object_id:
+                    index_requests.append(
+                        {"object_type": "entity", "object_id": str(object_id)}
+                    )
+            elif command_name in {"CreateEventCommand", "UpdateEventCommand"}:
+                object_id = getattr(command, "event_id", None)
+                if object_id:
+                    index_requests.append(
+                        {"object_type": "event", "object_id": str(object_id)}
+                    )
         return CommandResult(
             success=True,
             message=f"{self.get_description()} completed.",
             command_name="CompositeCommand",
+            data={"index_requests": index_requests[:1]},
         )
 
     def _rollback(self, db_service: DatabaseService) -> None:
@@ -117,7 +133,11 @@ class CompositeCommand(BaseCommand):
         return {
             "description": self._custom_description,
             "commands": [
-                {"type": cmd.__class__.__name__, "data": cmd.to_dict()}
+                {
+                    "type": cmd.__class__.__name__,
+                    "data": cmd.to_dict(),
+                    "base": cmd.base_state_dict(),
+                }
                 for cmd in self.commands
             ],
             "is_executed": self._is_executed,
@@ -127,43 +147,27 @@ class CompositeCommand(BaseCommand):
     def from_dict(cls, data: Dict) -> "CompositeCommand":
         """Deserialize command from dictionary.
 
-        NOTE: This requires knowledge of supported sub-command types.
+        Command types are resolved through the central command registry.
         """
         description = data.get("description", "Composite Command")
         cmd_dicts = data.get("commands", [])
 
         reconstructed_commands = []
 
-        # Pragmatic registry import for deserialization
-        from src.commands.entity_commands import (
-            CreateEntityCommand,
-            UpdateEntityCommand,
-        )
-        from src.commands.event_commands import CreateEventCommand, UpdateEventCommand
-        from src.commands.relation_commands import AddRelationCommand
-        from src.commands.wiki_commands import ProcessWikiLinksCommand
+        from src.commands.registry import get_command_types
 
-        known_types = {
-            "UpdateEventCommand": UpdateEventCommand,
-            "CreateEventCommand": CreateEventCommand,
-            "UpdateEntityCommand": UpdateEntityCommand,
-            "CreateEntityCommand": CreateEntityCommand,
-            "ProcessWikiLinksCommand": ProcessWikiLinksCommand,
-            "AddRelationCommand": AddRelationCommand,
-        }
+        known_types = get_command_types()
 
         for cmd_info in cmd_dicts:
             cmd_type = cmd_info.get("type")
             cmd_data = cmd_info.get("data")
 
-            if cmd_type == "MockCommand":
-                # Special case for testing
-                # In real app logic, this branch wouldn't exist or we'd use registration
-                continue
-
             cmd_class = known_types.get(cmd_type)
-            if cmd_class:
+            if cmd_class and cmd_class is not cls:
                 cmd = cmd_class.from_dict(cmd_data)
+                base_state = cmd_info.get("base", {})
+                if isinstance(base_state, dict):
+                    cmd.restore_base_state(base_state)
                 reconstructed_commands.append(cmd)
 
         command = cls(reconstructed_commands, description)

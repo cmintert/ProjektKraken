@@ -257,6 +257,8 @@ pytest --cov=src --cov-report=term-missing
 ### Quick Start
 - **[Installation Guide](docs/INSTALLATION.md)** - System requirements, installation methods, and setup
 - **[User Guide](docs/USER_GUIDE.md)** - Complete guide to using ProjektKraken
+- **[Maps, Layers, and Rasters](docs/MAPS_LAYERS_AND_RASTERS.md)** - Layer
+  properties, raster purposes, timeline states, queries, and calibration
 - **[Workflows Guide](docs/WORKFLOWS.md)** - Step-by-step guides for common tasks
 - **[FAQ](docs/FAQ.md)** - Frequently asked questions and troubleshooting
 

@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
     QDockWidget,
     QLabel,
     QMainWindow,
+    QMessageBox,
     QStatusBar,
     QWidget,
 )
@@ -418,6 +419,10 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         )
         # Forward MapHandler's command_requested to MainWindow's
         self.map_handler.command_requested.connect(self.command_requested.emit)
+        self.worker.command_finished.connect(
+            self.map_handler.on_command_effects,
+            Qt.ConnectionType.QueuedConnection,
+        )
 
         # Status Bar
         self.status_bar = QStatusBar()
@@ -482,8 +487,10 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # Initialize Command Coordinator
         self.command_coordinator = CommandCoordinator(self)
         self.coordinator = self.command_coordinator  # Alias for shorter access
+        self.command_requested.connect(self.command_coordinator.execute_command)
         self.command_coordinator.command_requested.connect(
-            lambda cmd: self.command_requested.emit(cmd)
+            self.worker.run_command,
+            Qt.ConnectionType.QueuedConnection,
         )
         # Connect undo/redo signals to worker
         self.command_coordinator.undo_requested.connect(
@@ -491,6 +498,14 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         )
         self.command_coordinator.redo_requested.connect(
             self.worker.run_redo, Qt.ConnectionType.QueuedConnection
+        )
+        self.command_coordinator.clear_persistent_history_requested.connect(
+            self.worker.clear_command_history,
+            Qt.ConnectionType.QueuedConnection,
+        )
+        self.worker.history_loaded.connect(
+            self.command_coordinator.load_history_payloads,
+            Qt.ConnectionType.QueuedConnection,
         )
         # Update UI when history changes
         self.command_coordinator.history_changed.connect(
@@ -1000,6 +1015,19 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         Saves window geometry/state and strictly cleans up worker thread. Also checks
         for unsaved changes.
         """
+        if (
+            hasattr(self, "map_handler")
+            and self.map_handler.has_pending_raster_strokes()
+        ):
+            QMessageBox.information(
+                self,
+                "Raster changes are still saving",
+                "Wait for the pending raster strokes to finish, then close "
+                "Projekt Kraken again.",
+            )
+            event.ignore()
+            return
+
         # Check unsaved changes
         for editor in [self.event_editor, self.entity_editor]:
             if not self.check_unsaved_changes(editor):

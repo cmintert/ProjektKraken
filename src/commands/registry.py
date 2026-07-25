@@ -35,7 +35,11 @@ def _init_registry() -> None:
         RunIntelligenceAnalysisCommand,
         ValidateWorldCommand,
     )
-    from src.commands.calendar_commands import UpdateCalendarConfigCommand
+    from src.commands.calendar_commands import (
+        CreateCalendarConfigCommand,
+        SetActiveCalendarCommand,
+        UpdateCalendarConfigCommand,
+    )
     from src.commands.composite_command import CompositeCommand
     from src.commands.entity_commands import (
         CreateEntityCommand,
@@ -47,12 +51,27 @@ def _init_registry() -> None:
         DeleteEventCommand,
         UpdateEventCommand,
     )
+    from src.commands.image_commands import (
+        AddImagesCommand,
+        RemoveImageCommand,
+        ReorderImagesCommand,
+        UpdateImageCaptionCommand,
+    )
+    from src.commands.inject_commands import InjectTemplateCommand
     from src.commands.layer_commands import (
+        DeleteLayerSubtreeCommand,
         MoveLayerCommand,
         RenameLayerCommand,
         SaveLayerTreeCommand,
         SetLayerOpacityCommand,
         SetLayerVisibilityCommand,
+        UpdateLayerPropertiesCommand,
+        UpdateLayerTreeCommand,
+    )
+    from src.commands.longform_commands import (
+        DemoteLongformEntryCommand,
+        MoveLongformEntryCommand,
+        PromoteLongformEntryCommand,
     )
     from src.commands.map_commands import (
         CreateMapCommand,
@@ -76,11 +95,19 @@ def _init_registry() -> None:
         RemoveRasterSnapshotCommand,
         SetRasterBlendModeCommand,
         SetRasterMappingCommand,
+        SetRasterNotesCommand,
+        SetRasterSnapshotCommand,
+        StrokeRasterCommand,
     )
     from src.commands.relation_commands import (
         AddRelationCommand,
         RemoveRelationCommand,
         UpdateRelationCommand,
+    )
+    from src.commands.timeline_grouping_commands import (
+        ClearTimelineGroupingCommand,
+        SetTimelineGroupingCommand,
+        UpdateTagColorCommand,
     )
     from src.commands.wiki_commands import ProcessWikiLinksCommand
 
@@ -102,8 +129,20 @@ def _init_registry() -> None:
             "DeleteMapCommand": DeleteMapCommand,
             "SetMasterMapCommand": SetMasterMapCommand,
             "RegisterDetailMapCommand": RegisterDetailMapCommand,
-            "RemoveRasterSnapshotCommand": RemoveRasterSnapshotCommand,
             "UpdateCalendarConfigCommand": UpdateCalendarConfigCommand,
+            "CreateCalendarConfigCommand": CreateCalendarConfigCommand,
+            "SetActiveCalendarCommand": SetActiveCalendarCommand,
+            "SetTimelineGroupingCommand": SetTimelineGroupingCommand,
+            "ClearTimelineGroupingCommand": ClearTimelineGroupingCommand,
+            "UpdateTagColorCommand": UpdateTagColorCommand,
+            "InjectTemplateCommand": InjectTemplateCommand,
+            "MoveLongformEntryCommand": MoveLongformEntryCommand,
+            "PromoteLongformEntryCommand": PromoteLongformEntryCommand,
+            "DemoteLongformEntryCommand": DemoteLongformEntryCommand,
+            "AddImagesCommand": AddImagesCommand,
+            "RemoveImageCommand": RemoveImageCommand,
+            "ReorderImagesCommand": ReorderImagesCommand,
+            "UpdateImageCaptionCommand": UpdateImageCaptionCommand,
             # Marker commands
             "CreateMarkerCommand": CreateMarkerCommand,
             "UpdateMarkerCommand": UpdateMarkerCommand,
@@ -116,13 +155,20 @@ def _init_registry() -> None:
             "SetLayerVisibilityCommand": SetLayerVisibilityCommand,
             "MoveLayerCommand": MoveLayerCommand,
             "SaveLayerTreeCommand": SaveLayerTreeCommand,
+            "UpdateLayerTreeCommand": UpdateLayerTreeCommand,
+            "DeleteLayerSubtreeCommand": DeleteLayerSubtreeCommand,
             "SetLayerOpacityCommand": SetLayerOpacityCommand,
+            "UpdateLayerPropertiesCommand": UpdateLayerPropertiesCommand,
             "RenameLayerCommand": RenameLayerCommand,
             # Raster commands
             "CreateRasterLayerCommand": CreateRasterLayerCommand,
             "DeleteRasterLayerCommand": DeleteRasterLayerCommand,
             "SetRasterMappingCommand": SetRasterMappingCommand,
             "SetRasterBlendModeCommand": SetRasterBlendModeCommand,
+            "SetRasterSnapshotCommand": SetRasterSnapshotCommand,
+            "RemoveRasterSnapshotCommand": RemoveRasterSnapshotCommand,
+            "SetRasterNotesCommand": SetRasterNotesCommand,
+            "StrokeRasterCommand": StrokeRasterCommand,
             # Analysis commands
             "ValidateWorldCommand": ValidateWorldCommand,
             "AnalyzeTemporalCommand": AnalyzeTemporalCommand,

@@ -62,7 +62,6 @@ from PySide6.QtWidgets import (
 )
 
 from src.app.constants import (
-    MAP_DEFAULT_WIDTH_METERS,
     MAP_LAYER_BASEMAP_NODE_ID,
     MAP_LAYER_Z_MAP_BG,
     MAP_LAYER_Z_MARKERS,
@@ -677,6 +676,7 @@ class MapGraphicsView(QGraphicsView):
 
         # Map background
         self.pixmap_item: Optional[QGraphicsPixmapItem] = None
+        self._fit_zoom_level = 1.0
 
         # Theme
         self.tm = ThemeManager()
@@ -1004,11 +1004,13 @@ class MapGraphicsView(QGraphicsView):
 
         # Scale Bar
         self.scale_bar_painter = ScaleBarPainter()
-        self.map_width_meters = MAP_DEFAULT_WIDTH_METERS
+        if not hasattr(self, "map_width_meters"):
+            self.map_width_meters = 0.0
 
         # Calibration State
-        self.calibration_mode = False
-        self.calibration_points: list[QPointF] = []
+        if not hasattr(self, "calibration_mode"):
+            self.calibration_mode = False
+            self.calibration_points: list[QPointF] = []
 
     def cleanup(self) -> None:
         """Stop all owned timers and release sub-component resources.
@@ -1046,6 +1048,7 @@ class MapGraphicsView(QGraphicsView):
             self.coord_system.set_scene_rect(self.pixmap_item.boundingRect())
 
             self.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
+            self._fit_zoom_level = max(self.transform().m11(), 1e-9)
             self.scene.setSceneRect(self.pixmap_item.boundingRect())
 
             self.current_image_path = image_path
@@ -1091,6 +1094,7 @@ class MapGraphicsView(QGraphicsView):
         """Fits the map to the current view size."""
         if self.pixmap_item:
             self.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
+            self._fit_zoom_level = max(self.transform().m11(), 1e-9)
             self._layout_footprint_labels()
 
     def ensure_software_rendering(self) -> None:
@@ -1497,6 +1501,12 @@ class MapGraphicsView(QGraphicsView):
         self.map_width_meters = width_meters
         self._update_scale_bar_overlay()
 
+    def clear_map_scale(self) -> None:
+        """Mark the map as uncalibrated and hide metric scale output."""
+        self.map_width_meters = 0.0
+        if hasattr(self, "_scale_bar_overlay"):
+            self._scale_bar_overlay.update_scale(0.0)
+
     def _update_scale_bar_overlay(self) -> None:
         """Recompute and push the current resolution to the scale bar overlay."""
         import shiboken6
@@ -1506,6 +1516,7 @@ class MapGraphicsView(QGraphicsView):
         ):
             return
         if not self.pixmap_item or self.map_width_meters <= 0:
+            self._scale_bar_overlay.update_scale(0.0)
             return
         image_width_px = self.pixmap_item.boundingRect().width()
         if image_width_px <= 0:
@@ -1872,7 +1883,9 @@ class MapGraphicsView(QGraphicsView):
         """
         if self._layer_model is None:
             return
-        vis = self._layer_model.visible_at_zoom(node, zoom)
+        vis = self._layer_model.visible_at_zoom(
+            node, zoom, self._fit_zoom_level
+        )
         item = self._find_graphics_item(node.id)
         if item is not None:
             item.setVisible(vis)

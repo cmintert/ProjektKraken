@@ -166,8 +166,8 @@ def test_create_marker_command(db_service):
     assert marker.label == "Castle"
 
 
-def test_create_marker_command_upsert(db_service):
-    """Test that CreateMarkerCommand handles upsert correctly."""
+def test_create_marker_command_rejects_duplicate_placement(db_service):
+    """Duplicate composite placement is visible and never moves the marker."""
     # Create map
     map_obj = Map(name="Test Map", image_path="/test.png")
     db_service.insert_map(map_obj)
@@ -197,17 +197,17 @@ def test_create_marker_command_upsert(db_service):
     )
     result2 = cmd2.execute(db_service)
 
-    # Should return same ID (upsert occurred)
-    assert result2.data["id"] == marker1_id
+    assert result2.success is False
+    assert result2.data["existing_marker_id"] == marker1_id
 
     # Should only have one marker
     markers = db_service.get_markers_for_map(map_obj.id)
     assert len(markers) == 1
 
-    # Position should be updated
+    # Existing position is not overwritten.
     updated = db_service.get_marker(marker1_id)
-    assert updated.x == 0.8
-    assert updated.y == 0.9
+    assert updated.x == 0.3
+    assert updated.y == 0.4
 
 
 def test_create_marker_command_undo(db_service):

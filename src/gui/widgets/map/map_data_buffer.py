@@ -246,7 +246,7 @@ class ColorMap:
         return d
 
     @classmethod
-    def from_rgb_image(
+    def from_rgb_image(  # noqa: C901
         cls,
         img: Any,
         n_stops: int = 8,
@@ -308,6 +308,18 @@ class ColorMap:
         rng = np.random.RandomState(42)
         n_pixels = features.shape[0]
         k = min(n_stops, n_pixels)
+        if np.all(flat == flat[0]):
+            r, g, b = (int(value) for value in flat[0])
+            color = f"#{r:02X}{g:02X}{b:02X}FF"
+            return cls(
+                type="gradient",
+                gradient_stops=[
+                    GradientStop(position=0.0, color=color),
+                    GradientStop(position=1.0, color=color),
+                ],
+                stretch_min=0,
+                stretch_max=65535,
+            )
 
         # Initialise centroids via k-means++ seeding
         indices = np.empty(k, dtype=np.intp)
@@ -317,8 +329,12 @@ class ColorMap:
                 np.sum((features[indices[:ci], np.newaxis] - features[np.newaxis, :]) ** 2, axis=2),
                 axis=0,
             )
-            probs = dists / dists.sum()
-            indices[ci] = rng.choice(n_pixels, p=probs)
+            distance_sum = float(dists.sum())
+            if distance_sum <= np.finfo(float).eps:
+                indices[ci] = indices[ci - 1]
+            else:
+                probs = dists / distance_sum
+                indices[ci] = rng.choice(n_pixels, p=probs)
         centroids = features[indices].copy()
 
         labels = np.zeros(n_pixels, dtype=np.intp)

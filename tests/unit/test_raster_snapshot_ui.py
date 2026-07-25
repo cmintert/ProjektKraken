@@ -98,7 +98,7 @@ def test_panel_snapshot_count_clears_when_all_deleted(qtbot) -> None:
     )
     panel._on_item_clicked(model.index(0, 0))
 
-    assert panel._snapshot_count_label.text() == "1 snapshot"
+    assert panel._snapshot_count_label.text() == "1 dated state"
 
     panel.set_raster_layer_metadata(
         {

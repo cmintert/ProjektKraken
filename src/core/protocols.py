@@ -98,7 +98,6 @@ class MainWindowProtocol(Protocol):
     current_world: Any  # Active World model instance
     gui_db_service: Any  # Main-thread DatabaseService
     backup_service: Any  # BackupService instance
-    history_service: Any  # HistoryService instance
     filter_config: dict  # Active tag filter configuration
 
     # Missing Attributes identified by Pyright (Typed as Any for flexibility)

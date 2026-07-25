@@ -45,7 +45,21 @@ class CreateMarkerCommand(BaseCommand):
 
         """
         try:
-            # Insert may return different ID if upsert occurred
+            existing = db_service.get_marker_by_composite(
+                self._marker.map_id,
+                self._marker.object_id,
+                self._marker.object_type,
+            )
+            if existing is not None:
+                return CommandResult(
+                    success=False,
+                    message=(
+                        "This object is already placed on the selected map. "
+                        "Move the existing marker instead."
+                    ),
+                    command_name="CreateMarkerCommand",
+                    data={"existing_marker_id": existing.id},
+                )
             self._actual_marker_id = db_service.insert_marker(self._marker)
             self._is_executed = True
             logger.info(
@@ -87,6 +101,7 @@ class CreateMarkerCommand(BaseCommand):
         return {
             "marker_data": self._marker.to_dict(),
             "actual_marker_id": self._actual_marker_id,
+            "is_executed": self._is_executed,
         }
 
     @classmethod
@@ -101,6 +116,9 @@ class CreateMarkerCommand(BaseCommand):
         """
         instance = cls(data["marker_data"])
         instance._actual_marker_id = data.get("actual_marker_id")
+        instance._is_executed = bool(
+            data.get("is_executed", instance._actual_marker_id)
+        )
         return instance
 
 
@@ -214,6 +232,7 @@ class DeleteMarkerCommand(BaseCommand):
         super().__init__()
         self.marker_id = marker_id
         self._deleted_marker: Optional[Marker] = None
+        self._deleted_trajectories: list[dict] = []
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Executes the deletion.
@@ -235,6 +254,9 @@ class DeleteMarkerCommand(BaseCommand):
                     command_name="DeleteMarkerCommand",
                 )
 
+            self._deleted_trajectories = (
+                db_service.trajectory_repo.snapshot_by_marker(self.marker_id)
+            )
             rows_deleted = db_service.delete_marker(self.marker_id)
             if rows_deleted == 0:
                 return CommandResult(
@@ -265,7 +287,10 @@ class DeleteMarkerCommand(BaseCommand):
 
         """
         if self._is_executed and self._deleted_marker:
-            db_service.insert_marker(self._deleted_marker)
+            with db_service.transaction():
+                db_service.insert_marker(self._deleted_marker)
+                for trajectory in self._deleted_trajectories:
+                    db_service.trajectory_repo.restore_snapshot(trajectory)
             self._is_executed = False
             logger.info(f"Undid deletion of marker: {self.marker_id}")
 
@@ -275,7 +300,14 @@ class DeleteMarkerCommand(BaseCommand):
         Returns:
             Dictionary representation of the command.
         """
-        return {"marker_id": self.marker_id}
+        return {
+            "marker_id": self.marker_id,
+            "deleted_marker": (
+                self._deleted_marker.to_dict() if self._deleted_marker else None
+            ),
+            "deleted_trajectories": self._deleted_trajectories,
+            "is_executed": self._is_executed,
+        }
 
     @classmethod
     def from_dict(cls, data: dict) -> "DeleteMarkerCommand":
@@ -287,7 +319,15 @@ class DeleteMarkerCommand(BaseCommand):
         Returns:
             DeleteMarkerCommand instance.
         """
-        return cls(data["marker_id"])
+        command = cls(data["marker_id"])
+        marker_data = data.get("deleted_marker")
+        if marker_data:
+            command._deleted_marker = Marker.from_dict(marker_data)
+        command._deleted_trajectories = list(
+            data.get("deleted_trajectories", [])
+        )
+        command._is_executed = bool(data.get("is_executed", marker_data))
+        return command
 
 
 class UpdateMarkerIconCommand(BaseCommand):

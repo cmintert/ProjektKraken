@@ -353,6 +353,12 @@ class DataHandler(QObject):
             ) and command_name not in _NO_RELOAD_LAYER_CMDS:
                 logger.debug("[DataHandler] Emitting reload_maps")
                 self.reload_maps.emit()
+            if command_name in {
+                "SetRasterSnapshotCommand",
+                "RemoveRasterSnapshotCommand",
+            }:
+                logger.debug("[DataHandler] Reloading dated raster state")
+                self.reload_maps.emit()
 
             if command_name == "RenameLayerCommand":
                 logger.debug(
@@ -426,24 +432,29 @@ class DataHandler(QObject):
                     self.index_object_requested.emit(obj_type, obj_id)
 
             # CompositeCommand wraps Update* + ProcessWikiLinksCommand; inspect
-            # sub-commands so the re-embed still fires on autosave/save.
+            # the worker-produced serializable request. The object fallback is
+            # retained only for compatibility with older callers and tests.
             if command_name == "CompositeCommand":
-                cmd_obj = result.data.get("command")
-                for sub in getattr(cmd_obj, "commands", []):
-                    sub_name = sub.__class__.__name__
-                    if sub_name in _INDEX_COMMANDS:
-                        obj_id = getattr(sub, "entity_id", None) or getattr(
-                            sub, "event_id", None
-                        )
-                        if obj_id:
-                            logger.debug(
-                                f"[DataHandler] CompositeCommand: triggering "
-                                f"re-embed for {sub_name} id={obj_id}"
+                requests = list(result.data.get("index_requests", []))
+                if requests:
+                    request = requests[0]
+                    self.index_object_requested.emit(
+                        str(request["object_type"]),
+                        str(request["object_id"]),
+                    )
+                else:
+                    cmd_obj = result.data.get("command")
+                    for sub in getattr(cmd_obj, "commands", []):
+                        sub_name = sub.__class__.__name__
+                        if sub_name in _INDEX_COMMANDS:
+                            obj_id = getattr(sub, "entity_id", None) or getattr(
+                                sub, "event_id", None
                             )
-                            self.index_object_requested.emit(
-                                _INDEX_COMMANDS[sub_name], obj_id
-                            )
-                            break  # only the first matching sub-command matters
+                            if obj_id:
+                                self.index_object_requested.emit(
+                                    _INDEX_COMMANDS[sub_name], obj_id
+                                )
+                                break
 
             logger.debug(f"[DataHandler] on_command_finished completed: {command_name}")
 

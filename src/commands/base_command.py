@@ -10,6 +10,7 @@ Classes:
 import logging
 import re
 import time
+import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -63,6 +64,7 @@ class BaseCommand(ABC):
     def __init__(self) -> None:
         """Initializes the command."""
         self._is_executed = False
+        self.command_id: str = str(uuid.uuid4())
         self.timestamp: float = time.time()
 
     @abstractmethod
@@ -79,7 +81,9 @@ class BaseCommand(ABC):
         ...
 
     @abstractmethod
-    def undo(self, db_service: DatabaseService) -> None:
+    def undo(
+        self, db_service: DatabaseService
+    ) -> "CommandResult | None":
         """Reverts the action.
 
         Args:
@@ -138,17 +142,33 @@ class BaseCommand(ABC):
         return self._is_executed
 
     @property
-    def has_history(self) -> bool:
-        """Whether this command should be added to the undo/redo stack.
-
-        Override and return ``False`` for background synchronisation
-        commands that should execute silently.
-
-        Returns:
-            bool: True if the command should be tracked in the undo stack.
-
-        """
+    def is_undoable(self) -> bool:
+        """Whether this command belongs in the in-memory undo/redo stack."""
         return True
+
+    @property
+    def persist_to_history(self) -> bool:
+        """Whether this command should survive an application restart."""
+        return self.is_undoable
+
+    @property
+    def has_history(self) -> bool:
+        """Deprecated compatibility alias for :attr:`is_undoable`."""
+        return self.is_undoable
+
+    def restore_base_state(self, data: dict) -> None:
+        """Restore base fields shared by every serialized command."""
+        self.command_id = str(data.get("command_id") or self.command_id)
+        self.timestamp = float(data.get("timestamp", self.timestamp))
+        self._is_executed = bool(data.get("is_executed", self._is_executed))
+
+    def base_state_dict(self) -> dict:
+        """Return JSON-safe fields shared by every serialized command."""
+        return {
+            "command_id": self.command_id,
+            "timestamp": self.timestamp,
+            "is_executed": self._is_executed,
+        }
 
     @staticmethod
     def _assign_tags(

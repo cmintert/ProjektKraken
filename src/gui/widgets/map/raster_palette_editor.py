@@ -38,7 +38,6 @@ from PySide6.QtWidgets import (
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.color_pickers import (
-    ColorHistoryService,
     GradientScrubberWidget,
     InlineColorPickerPopover,
     NumericScrubberSpinBox,
@@ -258,25 +257,31 @@ class RasterPaletteEditor(QDialog):
         )
 
         # Build name↔ID lookup tables from the provided entity/event lists.
-        self._name_to_id: Dict[str, str] = {}
+        self._choice_to_id: Dict[str, str] = {}
+        self._name_to_ids: Dict[str, List[str]] = {}
         self._id_to_name: Dict[str, str] = {}
+        self._id_to_choice: Dict[str, str] = {}
         self._entity_id_set: set = set()
         self._event_id_set: set = set()
-        for obj in entities or []:
-            name = getattr(obj, "name", None) or ""
-            oid = getattr(obj, "id", None) or ""
-            if name and oid:
-                self._name_to_id[name] = oid
+        choices: list[tuple[str, str, str]] = []
+        for item_type, objects, id_set in (
+            ("Entity", entities or [], self._entity_id_set),
+            ("Event", events or [], self._event_id_set),
+        ):
+            for obj in objects:
+                name = getattr(obj, "name", None) or ""
+                oid = getattr(obj, "id", None) or ""
+                if not name or not oid:
+                    continue
                 self._id_to_name[oid] = name
-                self._entity_id_set.add(oid)
-        for obj in events or []:
-            name = getattr(obj, "name", None) or ""
-            oid = getattr(obj, "id", None) or ""
-            if name and oid:
-                self._name_to_id[name] = oid
-                self._id_to_name[oid] = name
-                self._event_id_set.add(oid)
-        self._all_item_names: List[str] = sorted(self._name_to_id.keys(), key=str.lower)
+                self._name_to_ids.setdefault(name.casefold(), []).append(oid)
+                id_set.add(oid)
+                choices.append((name, item_type, oid))
+        for name, item_type, oid in choices:
+            label = f"{name} — {item_type} · {oid[:8]}"
+            self._choice_to_id[label] = oid
+            self._id_to_choice[oid] = label
+        self._all_item_names = sorted(self._choice_to_id, key=str.casefold)
 
         self._build_ui()
 
@@ -647,7 +652,7 @@ class RasterPaletteEditor(QDialog):
         # Pre-populate from existing color_map
         if self._color_map.linked_entity_id:
             lid = self._color_map.linked_entity_id
-            name = self._id_to_name.get(lid, "")
+            name = self._id_to_choice.get(lid, self._id_to_name.get(lid, ""))
             if name:
                 self._linked_name_edit.setText(name)
             self._linked_name_edit.setProperty("linked_id", lid)
@@ -903,7 +908,9 @@ class RasterPaletteEditor(QDialog):
         # Col 3: linked entity/event — shows human name, stores UUID as a property.
         # If the ID is known in our lookup table, show the name; otherwise show the
         # raw ID (backward-compat when no entity/event list was provided).
-        display_name = self._id_to_name.get(entity_id, entity_id)
+        display_name = self._id_to_choice.get(
+            entity_id, self._id_to_name.get(entity_id, entity_id)
+        )
         entity_name_edit = QLineEdit(display_name)
         entity_name_edit.setPlaceholderText("Link to entity or event…")
         entity_name_edit.setProperty("linked_id", entity_id)
@@ -949,7 +956,7 @@ class RasterPaletteEditor(QDialog):
             edit: The entity name QLineEdit for the affected row.
             combo: The type QComboBox for the affected row.
         """
-        eid = self._name_to_id.get(name, "")
+        eid = self._choice_to_id.get(name, "")
         edit.setProperty("linked_id", eid)
         if eid in self._entity_id_set:
             combo.setCurrentText("Entity")
@@ -973,7 +980,10 @@ class RasterPaletteEditor(QDialog):
             edit.setProperty("linked_id", "")
             combo.setCurrentText("None")
             return
-        eid = self._name_to_id.get(text, "")
+        eid = self._choice_to_id.get(text, "")
+        if not eid:
+            matches = self._name_to_ids.get(text.casefold(), [])
+            eid = matches[0] if len(matches) == 1 else ""
         edit.setProperty("linked_id", eid)
         if eid:
             if eid in self._entity_id_set:
@@ -988,7 +998,7 @@ class RasterPaletteEditor(QDialog):
         Args:
             name: The entity/event name selected from the completer.
         """
-        eid = self._name_to_id.get(name, "")
+        eid = self._choice_to_id.get(name, "")
         self._linked_name_edit.setProperty("linked_id", eid)
         if eid and hasattr(self, "_linked_type_combo"):
             if eid in self._entity_id_set:
@@ -1010,14 +1020,15 @@ class RasterPaletteEditor(QDialog):
         # Keep existing UUID if it still matches the typed name
         current_lid = (self._linked_name_edit.property("linked_id") or "").strip()
         if current_lid:
-            expected = self._id_to_name.get(current_lid, "")
-            if expected.lower() == text.lower():
+            expected = self._id_to_choice.get(
+                current_lid, self._id_to_name.get(current_lid, "")
+            )
+            if expected.casefold() == text.casefold():
                 return
-        # Try to resolve by name (case-insensitive fallback)
-        eid = self._name_to_id.get(text, "")
+        eid = self._choice_to_id.get(text, "")
         if not eid:
-            lower_map = {k.lower(): v for k, v in self._name_to_id.items()}
-            eid = lower_map.get(text.lower(), "")
+            matches = self._name_to_ids.get(text.casefold(), [])
+            eid = matches[0] if len(matches) == 1 else ""
         self._linked_name_edit.setProperty("linked_id", eid)
 
     def _on_auto_color(self) -> None:

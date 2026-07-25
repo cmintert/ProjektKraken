@@ -9,7 +9,7 @@ Requires QT_QPA_PLATFORM=offscreen.
 from unittest.mock import MagicMock
 
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QImage, QPixmap, QWheelEvent
 from PySide6.QtWidgets import QGraphicsPixmapItem
 from pytestqt.qtbot import QtBot
 
@@ -830,7 +830,7 @@ class TestLayerDialogModeHint:
         dlg = RasterLayerDialog()
         qtbot.addWidget(dlg)
 
-        idx = dlg._mode_combo.findText("discrete")
+        idx = dlg._mode_combo.findData("discrete")
         dlg._mode_combo.setCurrentIndex(idx)
 
         hint = dlg._mode_hint.text()
@@ -843,7 +843,7 @@ class TestLayerDialogModeHint:
         dlg = RasterLayerDialog()
         qtbot.addWidget(dlg)
 
-        idx = dlg._mode_combo.findText("continuous")
+        idx = dlg._mode_combo.findData("continuous")
         dlg._mode_combo.setCurrentIndex(idx)
 
         hint = dlg._mode_hint.text()
@@ -1666,6 +1666,7 @@ class TestTemporalRasters:
             lore_date=5.0,
             rel_file_path="rasters/base_snap_5.00.png",
             old_snapshots={},
+            image_bytes=b"snapshot-image",
         )
         result = cmd.execute(db)
         assert result.success
@@ -1673,7 +1674,10 @@ class TestTemporalRasters:
         stored = db.map_repo.get_map(map_id)
         layers = (stored.attributes or {}).get("raster_layers", [])
         layer = next(la for la in layers if la["node_id"] == node_id)
-        assert layer.get("snapshots", {}).get("5.0") == "rasters/base_snap_5.00.png"
+        snapshots = layer.get("snapshots", {})
+        assert next(
+            path for key, path in snapshots.items() if float(key) == 5.0
+        ) == "rasters/base_snap_5.00.png"
 
     def test_set_raster_snapshot_command_undo(self) -> None:
         """SetRasterSnapshotCommand undo restores old snapshots."""
@@ -2046,8 +2050,7 @@ class TestSpatialQuery:
         # One row is added by default when layers is non-empty
         assert len(dlg.conditions) == 1
         cond = dlg.conditions[0]
-        assert "name" in cond  # dialog now uses display name; MapHandler resolves to node_id
-        assert cond["name"] == "L1"
+        assert cond["node_id"] == "n1"
         assert "op" in cond
 
     def test_map_graphics_view_query_overlay(self, qtbot) -> None:

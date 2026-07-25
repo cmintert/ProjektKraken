@@ -968,7 +968,8 @@ class TestFeatureHoverTooltip:
         assert props["feature_type"] == "path"
         assert props["vertex_count"] == 3
         assert props["segment_count"] == 2
-        assert props["length"] > 0
+        assert "length" not in props
+        assert props["calibration_required"] is True
 
     def test_region_spatial_properties(
         self, pixmap_item, sample_region_geometry
@@ -987,8 +988,9 @@ class TestFeatureHoverTooltip:
         assert props["feature_type"] == "region"
         assert props["vertex_count"] == 4
         assert props["segment_count"] == 4
-        assert props["area"] > 0
-        assert props["perimeter"] > 0
+        assert "area" not in props
+        assert "perimeter" not in props
+        assert props["calibration_required"] is True
 
     def test_hover_timer_exists(self, pixmap_item, sample_path_geometry) -> None:
         """Feature items have a debounce timer for hover tooltip."""
@@ -1142,7 +1144,7 @@ class TestMetricUnits:
         assert "km" in tooltip or "m" in tooltip
 
     def test_default_map_width_meters(self, pixmap_item, sample_path_geometry) -> None:
-        """Feature items default to 1_000_000 m when no scale specified."""
+        """Feature items default to an explicitly uncalibrated state."""
         item = PathItem(
             marker_id="p1",
             object_type="entity",
@@ -1152,7 +1154,7 @@ class TestMetricUnits:
             anchor_x=0.5,
             anchor_y=0.5,
         )
-        assert item._map_width_meters == 1_000_000.0
+        assert item._map_width_meters == 0.0
 
 
 class TestConstantsImport:
@@ -1168,7 +1170,7 @@ class TestConstantsImport:
             MAP_ZOOM_IN_FACTOR,
         )
 
-        assert MAP_DEFAULT_WIDTH_METERS == 1_000_000.0
+        assert MAP_DEFAULT_WIDTH_METERS == 0.0
         assert MAP_VERTEX_HANDLE_RADIUS == 5
         assert MAP_MIDPOINT_HANDLE_RADIUS == 4
         assert MAP_SNAP_RADIUS_PX == 10.0

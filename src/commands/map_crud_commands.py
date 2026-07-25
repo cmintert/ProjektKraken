@@ -6,17 +6,22 @@ individual markers or the layer hierarchy.
 
 import dataclasses
 import logging
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from src.app.constants import MAP_ROLE_DETAIL, MAP_ROLE_MASTER
 from src.commands.base_command import BaseCommand, CommandResult
 from src.core.map import Map
+from src.core.map_constants import MAP_ROLE_DETAIL, MAP_ROLE_MASTER
+from src.core.map_state import MapAggregateSnapshot
 from src.core.marker import Marker
+from src.services.command_artifact_store import CommandArtifactStore
 from src.services.db_service import DatabaseService
+from src.services.map_aggregate_service import MapAggregateService
 from src.services.map_nesting_service import (
     MapNestingService,
     NestingValidationError,
 )
+from src.services.raster_asset_service import RasterAssetService
 from src.services.repositories.map_repository import MapRepository
 
 logger = logging.getLogger(__name__)
@@ -25,7 +30,11 @@ logger = logging.getLogger(__name__)
 class CreateMapCommand(BaseCommand):
     """Command to create a new map."""
 
-    def __init__(self, map_data: Optional[dict] = None) -> None:
+    def __init__(
+        self,
+        map_data: Optional[dict] = None,
+        source_image_path: str = "",
+    ) -> None:
         """Initializes the CreateMapCommand.
 
         Args:
@@ -38,6 +47,9 @@ class CreateMapCommand(BaseCommand):
             self._map = Map(**map_data)
         else:
             self._map = Map(name="New Map", image_path="")
+        self.source_image_path = source_image_path
+        self._artifact_manifest: dict[str, str] = {}
+        self._owns_image = bool(source_image_path and self._map.image_path)
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Executes the command to create the map.
@@ -50,7 +62,37 @@ class CreateMapCommand(BaseCommand):
 
         """
         try:
-            db_service.insert_map(self._map)
+            world_root = Path(db_service.get_db_file_path()).parent
+            artifacts = CommandArtifactStore(world_root)
+            image_created = False
+            image_restored = False
+            if self._owns_image:
+                if self._artifact_manifest:
+                    artifacts.restore(self._artifact_manifest)
+                    image_restored = True
+                else:
+                    source = Path(self.source_image_path).resolve()
+                    RasterAssetService(world_root).atomic_write_bytes(
+                        self._map.image_path,
+                        source.read_bytes(),
+                    )
+                    image_created = True
+            try:
+                with db_service.transaction():
+                    db_service.insert_map(self._map)
+            except Exception:
+                if image_restored:
+                    self._artifact_manifest = artifacts.stash(
+                        self.command_id,
+                        [self._map.image_path],
+                    )
+                elif image_created:
+                    target = (world_root / self._map.image_path).resolve()
+                    if target.exists() and target.is_relative_to(
+                        world_root.resolve()
+                    ):
+                        target.unlink()
+                raise
             self._is_executed = True
             logger.info(f"Created map: {self._map.name} ({self._map.id})")
             return CommandResult(
@@ -75,7 +117,20 @@ class CreateMapCommand(BaseCommand):
 
         """
         if self._is_executed:
-            db_service.delete_map(self._map.id)
+            world_root = Path(db_service.get_db_file_path()).parent
+            artifacts = CommandArtifactStore(world_root)
+            if self._owns_image:
+                self._artifact_manifest = artifacts.stash(
+                    self.command_id,
+                    [self._map.image_path],
+                )
+            try:
+                with db_service.transaction():
+                    db_service.delete_map(self._map.id)
+            except Exception:
+                if self._artifact_manifest:
+                    artifacts.restore(self._artifact_manifest)
+                raise
             self._is_executed = False
             logger.info(f"Undid creation of map: {self._map.id}")
 
@@ -85,7 +140,12 @@ class CreateMapCommand(BaseCommand):
         Returns:
             Dictionary representation of the command.
         """
-        return {"map_data": self._map.to_dict()}
+        return {
+            "map_data": self._map.to_dict(),
+            "source_image_path": self.source_image_path,
+            "artifact_manifest": self._artifact_manifest,
+            "owns_image": self._owns_image,
+        }
 
     @classmethod
     def from_dict(cls, data: dict) -> "CreateMapCommand":
@@ -97,7 +157,13 @@ class CreateMapCommand(BaseCommand):
         Returns:
             CreateMapCommand instance.
         """
-        return cls(data.get("map_data"))
+        command = cls(
+            data.get("map_data"),
+            source_image_path=str(data.get("source_image_path", "")),
+        )
+        command._artifact_manifest = dict(data.get("artifact_manifest", {}))
+        command._owns_image = bool(data.get("owns_image", command._owns_image))
+        return command
 
 
 class UpdateMapCommand(BaseCommand):
@@ -222,6 +288,8 @@ class DeleteMapCommand(BaseCommand):
         self.map_id = map_id
         self._deleted_map: Optional[Map] = None
         self._deleted_markers: List[Marker] = []
+        self._aggregate_snapshot: Optional[MapAggregateSnapshot] = None
+        self._artifact_manifest: dict[str, str] = {}
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Executes the deletion.
@@ -265,9 +333,22 @@ class DeleteMapCommand(BaseCommand):
                     command_name="DeleteMapCommand",
                 )
 
+            self._aggregate_snapshot = MapAggregateService(db_service).snapshot(
+                self.map_id
+            )
             self._deleted_markers = db_service.get_markers_for_map(self.map_id)
-
-            db_service.delete_map(self.map_id)
+            world_root = Path(db_service.get_db_file_path()).parent
+            artifact_store = CommandArtifactStore(world_root)
+            self._artifact_manifest = artifact_store.stash(
+                self.command_id,
+                self._aggregate_snapshot.raster_files,
+            )
+            try:
+                db_service.delete_map(self.map_id)
+            except Exception:
+                artifact_store.restore(self._artifact_manifest)
+                self._artifact_manifest = {}
+                raise
             self._is_executed = True
             logger.info(f"Deleted map: {self.map_id}")
             return CommandResult(
@@ -290,12 +371,28 @@ class DeleteMapCommand(BaseCommand):
             db_service (DatabaseService): The database service to operate on.
 
         """
-        if self._is_executed and self._deleted_map:
-            db_service.insert_map(self._deleted_map)
-            for marker in self._deleted_markers:
-                db_service.insert_marker(marker)
-            self._is_executed = False
-            logger.info(f"Undid deletion of map: {self.map_id}")
+        if not self._is_executed or self._aggregate_snapshot is None:
+            return
+
+        snapshot = self._aggregate_snapshot
+        map_obj = Map.from_dict(snapshot.map_data)
+        world_root = Path(db_service.get_db_file_path()).parent
+        artifacts = CommandArtifactStore(world_root)
+        artifacts.restore(self._artifact_manifest)
+        try:
+            with db_service.transaction():
+                db_service.insert_map(map_obj)
+                for marker_data in snapshot.markers:
+                    db_service.insert_marker(Marker.from_dict(marker_data))
+                for trajectory in snapshot.trajectories:
+                    db_service.trajectory_repo.restore_snapshot(trajectory)
+        except Exception:
+            self._artifact_manifest = artifacts.stash(
+                self.command_id, snapshot.raster_files
+            )
+            raise
+        self._is_executed = False
+        logger.info(f"Undid deletion of map: {self.map_id}")
 
     def to_dict(self) -> dict:
         """Serialize command to dictionary.
@@ -303,7 +400,16 @@ class DeleteMapCommand(BaseCommand):
         Returns:
             Dictionary representation of the command.
         """
-        return {"map_id": self.map_id}
+        return {
+            "map_id": self.map_id,
+            "aggregate_snapshot": (
+                self._aggregate_snapshot.to_dict()
+                if self._aggregate_snapshot
+                else None
+            ),
+            "artifact_manifest": self._artifact_manifest,
+            "is_executed": self._is_executed,
+        }
 
     @classmethod
     def from_dict(cls, data: dict) -> "DeleteMapCommand":
@@ -315,7 +421,22 @@ class DeleteMapCommand(BaseCommand):
         Returns:
             DeleteMapCommand instance.
         """
-        return cls(data["map_id"])
+        command = cls(data["map_id"])
+        snapshot_data = data.get("aggregate_snapshot")
+        if snapshot_data:
+            command._aggregate_snapshot = MapAggregateSnapshot.from_dict(
+                snapshot_data
+            )
+            command._deleted_map = Map.from_dict(
+                command._aggregate_snapshot.map_data
+            )
+            command._deleted_markers = [
+                Marker.from_dict(marker)
+                for marker in command._aggregate_snapshot.markers
+            ]
+        command._artifact_manifest = dict(data.get("artifact_manifest", {}))
+        command._is_executed = bool(data.get("is_executed", snapshot_data))
+        return command
 
 
 # ---------------------------------------------------------------------------

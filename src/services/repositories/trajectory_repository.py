@@ -108,6 +108,42 @@ class TrajectoryRepository(BaseRepository):
 
         return results
 
+    def snapshot_by_marker(self, marker_db_id: str) -> List[dict]:
+        """Return JSON-safe trajectory rows for reversible marker deletion."""
+        if not self._connection:
+            raise RuntimeError("Database connection not initialized")
+        rows = self._connection.execute(
+            """
+            SELECT id, marker_id, t_start, t_end, trajectory, properties, created_at
+            FROM moving_features
+            WHERE marker_id = ?
+            ORDER BY t_start
+            """,
+            (marker_db_id,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+    def restore_snapshot(self, snapshot: dict) -> None:
+        """Restore an exact trajectory row captured by :meth:`snapshot_by_marker`."""
+        sql = """
+            INSERT INTO moving_features
+                (id, marker_id, t_start, t_end, trajectory, properties, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """
+        with self.transaction() as conn:
+            conn.execute(
+                sql,
+                (
+                    snapshot["id"],
+                    snapshot["marker_id"],
+                    snapshot["t_start"],
+                    snapshot["t_end"],
+                    snapshot["trajectory"],
+                    snapshot["properties"],
+                    snapshot["created_at"],
+                ),
+            )
+
     def get_by_map_id(self, map_id: str) -> List[Tuple[str, str, List[Keyframe]]]:
         """Retrieves all trajectories for all markers on a specific map.
 

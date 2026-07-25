@@ -10,10 +10,8 @@ produces a list of conditions suitable for
 import logging
 from typing import Any, Dict, List, Optional
 
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
-    QCompleter,
     QDialog,
     QDialogButtonBox,
     QHBoxLayout,
@@ -62,13 +60,16 @@ class _ConditionRow(QWidget):
         layout.setSpacing(4)
 
         self._layer_combo = QComboBox()
-        self._layer_combo.setEditable(True)
+        name_counts: dict[str, int] = {}
         for layer in layers:
-            self._layer_combo.addItem(layer["name"], layer["node_id"])
-        completer = QCompleter([layer["name"] for layer in layers], self)
-        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-        completer.setFilterMode(Qt.MatchFlag.MatchContains)
-        self._layer_combo.setCompleter(completer)
+            name = str(layer["name"])
+            name_counts[name] = name_counts.get(name, 0) + 1
+        for layer in layers:
+            name = str(layer["name"])
+            label = name
+            if name_counts[name] > 1:
+                label = f"{name} — {str(layer['node_id'])[:8]}"
+            self._layer_combo.addItem(label, layer["node_id"])
         layout.addWidget(self._layer_combo, 2)
 
         self._op_combo = QComboBox()
@@ -102,21 +103,20 @@ class _ConditionRow(QWidget):
         """Build the condition dict for this row.
 
         Returns:
-            Condition dict with ``"name"`` (layer display name), ``"op"``,
-            and either ``"value"`` (scalar ops) or ``"min"`` / ``"max"``
-            (between).  The MapHandler resolves ``"name"`` to a ``node_id``.
+            Condition dict with ``"node_id"``, ``"op"``, and either
+            ``"value"`` or ``"min"`` / ``"max"``.
         """
         op = self._op_combo.currentData()
-        layer_name: str = self._layer_combo.currentText() or ""
+        node_id: str = self._layer_combo.currentData() or ""
         if op == "between":
             return {
-                "name": layer_name,
+                "node_id": node_id,
                 "op": "between",
                 "min": self._value_spin.value(),
                 "max": self._max_spin.value(),
             }
         return {
-            "name": layer_name,
+            "node_id": node_id,
             "op": op,
             "value": self._value_spin.value(),
         }
@@ -218,10 +218,9 @@ class RasterQueryDialog(QDialog):
 
     @property
     def conditions(self) -> List[Dict[str, Any]]:
-        """Built condition list (name-keyed, resolved by MapHandler).
+        """Build UUID-keyed query conditions.
 
         Returns:
-            List of condition dicts, each with ``"name"`` (layer display
-            name), ``"op"``, and either ``"value"`` or ``"min"``/``"max"``.
+            Conditions with ``"node_id"``, ``"op"``, and scalar/range values.
         """
         return [row.to_condition() for row in self._condition_rows]

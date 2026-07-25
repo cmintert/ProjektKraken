@@ -8,11 +8,16 @@ JSON column.
 
 import copy
 import logging
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 from src.commands.base_command import BaseCommand, CommandResult
 from src.core.map import MapLayerNode
+from src.core.map_state import LayerSubtreeSnapshot
+from src.core.marker import Marker
+from src.services.command_artifact_store import CommandArtifactStore
 from src.services.db_service import DatabaseService
+from src.services.raster_asset_service import RasterAssetService
 
 logger = logging.getLogger(__name__)
 
@@ -399,8 +404,13 @@ class SaveLayerTreeCommand(BaseCommand):
         self._previous_tree_dict: Optional[Dict[str, Any]] = None
 
     @property
-    def has_history(self) -> bool:
+    def is_undoable(self) -> bool:
         """Background sync — never tracked in the undo stack."""
+        return False
+
+    @property
+    def persist_to_history(self) -> bool:
+        """Background synchronization is never persisted."""
         return False
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
@@ -475,6 +485,398 @@ class SaveLayerTreeCommand(BaseCommand):
     def from_dict(cls, data: dict) -> "SaveLayerTreeCommand":
         """Deserialize command from dictionary."""
         return cls(data["map_id"], data["layer_tree_dict"])
+
+
+class UpdateLayerTreeCommand(SaveLayerTreeCommand):
+    """Undoable user-initiated replacement of the canonical layer tree."""
+
+    @property
+    def is_undoable(self) -> bool:
+        """User tree edits belong in the current undo stack."""
+        return True
+
+    @property
+    def persist_to_history(self) -> bool:
+        """Structural tree edits remain undoable after restart."""
+        return True
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Persist the tree while retaining the exact previous snapshot."""
+        result = super().execute(db_service)
+        result.command_name = self.__class__.__name__
+        return result
+
+    def to_dict(self) -> dict:
+        """Serialize both sides of the structural edit."""
+        return {
+            "map_id": self.map_id,
+            "layer_tree_dict": self.layer_tree_dict,
+            "previous_tree_dict": self._previous_tree_dict,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "UpdateLayerTreeCommand":
+        """Deserialize a persistent structural edit."""
+        command = cls(data["map_id"], data["layer_tree_dict"])
+        command._previous_tree_dict = data.get("previous_tree_dict")
+        command._is_executed = bool(data.get("is_executed", True))
+        return command
+
+
+class DeleteLayerSubtreeCommand(BaseCommand):
+    """Delete one canonical layer subtree as a single reversible action."""
+
+    def __init__(
+        self,
+        map_id: str,
+        node_id: str,
+        world_root: str = "",
+    ) -> None:
+        super().__init__()
+        self.map_id = map_id
+        self.node_id = node_id
+        self.world_root = world_root
+        self._snapshot: Optional[LayerSubtreeSnapshot] = None
+        self._artifact_manifest: dict[str, str] = {}
+
+    @staticmethod
+    def _find_parent(
+        root: MapLayerNode, node_id: str
+    ) -> Optional[tuple[MapLayerNode, int, MapLayerNode]]:
+        for row, child in enumerate(root.children):
+            if child.id == node_id:
+                return root, row, child
+            found = DeleteLayerSubtreeCommand._find_parent(child, node_id)
+            if found is not None:
+                return found
+        return None
+
+    @staticmethod
+    def _find_node(
+        root: MapLayerNode, node_id: str
+    ) -> Optional[MapLayerNode]:
+        if root.id == node_id:
+            return root
+        for child in root.children:
+            found = DeleteLayerSubtreeCommand._find_node(child, node_id)
+            if found is not None:
+                return found
+        return None
+
+    @staticmethod
+    def _collect_nodes(node: MapLayerNode) -> list[MapLayerNode]:
+        nodes = [node]
+        for child in node.children:
+            nodes.extend(DeleteLayerSubtreeCommand._collect_nodes(child))
+        return nodes
+
+    @staticmethod
+    def _persist_tree(
+        db_service: DatabaseService,
+        map_obj: Any,
+        raster_layers: list[dict[str, Any]],
+    ) -> None:
+        attributes = dict(map_obj.attributes or {})
+        attributes["layers"] = map_obj.layers.to_dict()
+        attributes["raster_layers"] = raster_layers
+        map_obj.attributes = attributes
+        db_service.map_repo.insert_map(map_obj)
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Delete tree state, descendant features, and owned raster files."""
+        map_obj = db_service.map_repo.get_map(self.map_id)
+        if map_obj is None or map_obj.layers is None:
+            return CommandResult(
+                success=False,
+                message="Map or layer tree not found.",
+                command_name=self.__class__.__name__,
+            )
+        found = self._find_parent(map_obj.layers, self.node_id)
+        if found is None:
+            return CommandResult(
+                success=False,
+                message="Layer not found.",
+                command_name=self.__class__.__name__,
+            )
+        parent, row, node = found
+        nodes = self._collect_nodes(node)
+        node_ids = {item.id for item in nodes}
+        raster_ids = {
+            item.id for item in nodes if item.layer_type == "raster"
+        }
+        markers = [
+            marker
+            for marker in db_service.get_markers_for_map(self.map_id)
+            if marker.id in node_ids
+        ]
+        trajectories: list[dict[str, Any]] = []
+        for marker in markers:
+            trajectories.extend(
+                db_service.trajectory_repo.snapshot_by_marker(marker.id)
+            )
+
+        all_rasters = list(
+            (map_obj.attributes or {}).get("raster_layers", [])
+        )
+        deleted_rasters = [
+            dict(item)
+            for item in all_rasters
+            if item.get("node_id") in raster_ids
+        ]
+        kept_rasters = [
+            dict(item)
+            for item in all_rasters
+            if item.get("node_id") not in raster_ids
+        ]
+        raster_files = RasterAssetService.owned_files_from_metadata(
+            deleted_rasters
+        )
+        self._snapshot = LayerSubtreeSnapshot(
+            parent_id=parent.id,
+            row=row,
+            node=node.to_dict(),
+            markers=[marker.to_dict() for marker in markers],
+            trajectories=trajectories,
+            raster_layers=deleted_rasters,
+            raster_files=raster_files,
+        )
+
+        world_root = (
+            Path(self.world_root)
+            if self.world_root
+            else Path(db_service.get_db_file_path()).parent
+        )
+        artifacts = CommandArtifactStore(world_root)
+        self._artifact_manifest = artifacts.stash(
+            self.command_id, raster_files
+        )
+        try:
+            with db_service.transaction():
+                for marker in markers:
+                    db_service.delete_marker(marker.id)
+                parent.children.pop(row)
+                self._persist_tree(db_service, map_obj, kept_rasters)
+        except Exception:
+            artifacts.restore(self._artifact_manifest)
+            raise
+
+        self._is_executed = True
+        return CommandResult(
+            success=True,
+            message=f"Deleted layer '{node.name}'.",
+            command_name=self.__class__.__name__,
+            data={
+                "effects": [
+                    {"kind": "map_state_changed", "map_id": self.map_id}
+                ]
+            },
+        )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Restore the exact hierarchy, database rows, and raster assets."""
+        if not self._is_executed or self._snapshot is None:
+            return
+        map_obj = db_service.map_repo.get_map(self.map_id)
+        if map_obj is None or map_obj.layers is None:
+            raise ValueError("Map or layer tree not found during undo")
+        parent = self._find_node(map_obj.layers, self._snapshot.parent_id)
+        if parent is None:
+            raise ValueError("Original layer parent no longer exists")
+
+        node = MapLayerNode.from_dict(self._snapshot.node)
+        row = min(self._snapshot.row, len(parent.children))
+        parent.children.insert(row, node)
+        current_rasters = list(
+            (map_obj.attributes or {}).get("raster_layers", [])
+        )
+        current_rasters.extend(copy.deepcopy(self._snapshot.raster_layers))
+        world_root = (
+            Path(self.world_root)
+            if self.world_root
+            else Path(db_service.get_db_file_path()).parent
+        )
+        artifacts = CommandArtifactStore(world_root)
+        artifacts.restore(self._artifact_manifest)
+        try:
+            with db_service.transaction():
+                self._persist_tree(db_service, map_obj, current_rasters)
+                for marker_data in self._snapshot.markers:
+                    db_service.insert_marker(Marker.from_dict(marker_data))
+                for trajectory in self._snapshot.trajectories:
+                    db_service.trajectory_repo.restore_snapshot(trajectory)
+        except Exception:
+            self._artifact_manifest = artifacts.stash(
+                self.command_id, self._snapshot.raster_files
+            )
+            raise
+        self._is_executed = False
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize persistent undo state."""
+        return {
+            "map_id": self.map_id,
+            "node_id": self.node_id,
+            "world_root": self.world_root,
+            "snapshot": self._snapshot.to_dict() if self._snapshot else None,
+            "artifact_manifest": self._artifact_manifest,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "DeleteLayerSubtreeCommand":
+        """Restore a command from persistent history."""
+        command = cls(
+            str(data["map_id"]),
+            str(data["node_id"]),
+            str(data.get("world_root", "")),
+        )
+        if data.get("snapshot"):
+            command._snapshot = LayerSubtreeSnapshot.from_dict(data["snapshot"])
+        command._artifact_manifest = dict(data.get("artifact_manifest", {}))
+        command._is_executed = bool(data.get("is_executed", command._snapshot))
+        return command
+
+    def get_description(self) -> str:
+        """Return the history-panel description."""
+        return "Delete layer subtree"
+
+
+class UpdateLayerPropertiesCommand(BaseCommand):
+    """Update common, temporal, and zoom properties for one layer."""
+
+    def __init__(
+        self, map_id: str, node_id: str, properties: dict[str, Any]
+    ) -> None:
+        super().__init__()
+        self.map_id = map_id
+        self.node_id = node_id
+        self.properties = dict(properties)
+        self._previous: dict[str, Any] = {}
+
+    @staticmethod
+    def _state(node: MapLayerNode) -> dict[str, Any]:
+        return {
+            "name": node.name,
+            "visible": node.visible,
+            "opacity": node.opacity,
+            "notes": node.attributes.get("notes", ""),
+            "mutually_exclusive": node.mutually_exclusive,
+            "start_date": node.start_date,
+            "end_date": node.end_date,
+            "min_zoom": node.min_zoom,
+            "max_zoom": node.max_zoom,
+            "zoom_basis": node.attributes.get("zoom_basis"),
+        }
+
+    @staticmethod
+    def _apply(node: MapLayerNode, properties: dict[str, Any]) -> None:
+        node.name = str(properties.get("name", node.name)).strip() or node.name
+        node.visible = bool(properties.get("visible", node.visible))
+        node.opacity = max(
+            0.0, min(1.0, float(properties.get("opacity", node.opacity)))
+        )
+        node.mutually_exclusive = bool(
+            properties.get("mutually_exclusive", node.mutually_exclusive)
+        )
+        node.start_date = properties.get("start_date")
+        node.end_date = properties.get("end_date")
+        node.min_zoom = float(properties.get("min_zoom", node.min_zoom))
+        node.max_zoom = float(properties.get("max_zoom", node.max_zoom))
+        if (
+            node.start_date is not None
+            and node.end_date is not None
+            and node.start_date > node.end_date
+        ):
+            raise ValueError("Layer start date must not be after its end date")
+        if node.min_zoom > node.max_zoom:
+            raise ValueError("Minimum zoom must not exceed maximum zoom")
+        attributes = dict(node.attributes)
+        attributes["notes"] = str(properties.get("notes", ""))
+        zoom_basis = properties.get("zoom_basis")
+        if zoom_basis:
+            attributes["zoom_basis"] = str(zoom_basis)
+        else:
+            attributes.pop("zoom_basis", None)
+        node.attributes = attributes
+
+    def _persist(
+        self, db_service: DatabaseService, properties: dict[str, Any]
+    ) -> None:
+        map_obj = db_service.map_repo.get_map(self.map_id)
+        if map_obj is None or map_obj.layers is None:
+            raise ValueError("Map or layer tree not found")
+        node = DeleteLayerSubtreeCommand._find_node(
+            map_obj.layers, self.node_id
+        )
+        if node is None:
+            raise ValueError("Layer not found")
+        self._apply(node, properties)
+        attrs = dict(map_obj.attributes or {})
+        attrs["layers"] = map_obj.layers.to_dict()
+        map_obj.attributes = attrs
+        db_service.map_repo.insert_map(map_obj)
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Apply and persist layer properties."""
+        map_obj = db_service.map_repo.get_map(self.map_id)
+        if map_obj is None or map_obj.layers is None:
+            return CommandResult(
+                False,
+                "Map or layer tree not found.",
+                command_name=self.__class__.__name__,
+            )
+        node = DeleteLayerSubtreeCommand._find_node(
+            map_obj.layers, self.node_id
+        )
+        if node is None:
+            return CommandResult(
+                False,
+                "Layer not found.",
+                command_name=self.__class__.__name__,
+            )
+        if not self._previous:
+            self._previous = self._state(node)
+        try:
+            self._persist(db_service, self.properties)
+        except ValueError as exc:
+            return CommandResult(
+                False, str(exc), command_name=self.__class__.__name__
+            )
+        self._is_executed = True
+        return CommandResult(
+            True,
+            "Layer properties updated.",
+            command_name=self.__class__.__name__,
+        )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Restore the preceding property values."""
+        if self._is_executed:
+            self._persist(db_service, self._previous)
+            self._is_executed = False
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize the property edit."""
+        return {
+            "map_id": self.map_id,
+            "node_id": self.node_id,
+            "properties": self.properties,
+            "previous": self._previous,
+            "is_executed": self._is_executed,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "UpdateLayerPropertiesCommand":
+        """Deserialize the property edit."""
+        command = cls(
+            str(data["map_id"]),
+            str(data["node_id"]),
+            dict(data.get("properties", {})),
+        )
+        command._previous = dict(data.get("previous", {}))
+        command._is_executed = bool(data.get("is_executed", True))
+        return command
 
 
 class SetLayerOpacityCommand(BaseCommand):

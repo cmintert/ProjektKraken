@@ -95,6 +95,7 @@ class MapLayerModel(QAbstractItemModel):
         )
         self._zoom_cache: Dict[str, bool] = {}
         self._last_zoom: Optional[float] = None
+        self._last_fit_zoom: Optional[float] = None
         self._last_time: Optional[float] = None
         self._icon_cache: Dict[str, Any] = {}
         ThemeManager().theme_changed.connect(self._on_theme_changed)
@@ -673,7 +674,12 @@ class MapLayerModel(QAbstractItemModel):
     # Scale-dependent visibility query
     # ------------------------------------------------------------------
 
-    def visible_at_zoom(self, node: MapLayerNode, zoom_level: float) -> bool:
+    def visible_at_zoom(
+        self,
+        node: MapLayerNode,
+        zoom_level: float,
+        fit_zoom_level: Optional[float] = None,
+    ) -> bool:
         """Check whether *node* should be visible at the given zoom level.
 
         This combines the node's own ``visible`` flag with its
@@ -690,13 +696,20 @@ class MapLayerModel(QAbstractItemModel):
         """
         if not node.visible:
             return False
-        if zoom_level < node.min_zoom:
+        comparison_zoom = zoom_level
+        if (
+            node.attributes.get("zoom_basis") == "fit_ratio"
+            and fit_zoom_level
+            and fit_zoom_level > 0
+        ):
+            comparison_zoom = zoom_level / fit_zoom_level
+        if comparison_zoom < node.min_zoom:
             return False
-        if zoom_level > node.max_zoom:
+        if comparison_zoom > node.max_zoom:
             return False
         parent = self._find_parent(node)
         if parent is not None and parent is not self._root:
-            return self.visible_at_zoom(parent, zoom_level)
+            return self.visible_at_zoom(parent, zoom_level, fit_zoom_level)
         return True
 
     def visible_at_time(self, node: MapLayerNode, current_time: float) -> bool:
@@ -731,6 +744,7 @@ class MapLayerModel(QAbstractItemModel):
         self,
         zoom_level: float,
         current_time: Optional[float] = None,
+        fit_zoom_level: Optional[float] = None,
     ) -> Dict[str, bool]:
         """Compute effective visibility for all leaf nodes.
 
@@ -747,16 +761,22 @@ class MapLayerModel(QAbstractItemModel):
         """
         if (
             zoom_level == self._last_zoom
+            and fit_zoom_level == self._last_fit_zoom
             and current_time == self._last_time
             and self._zoom_cache
         ):
             return self._zoom_cache
 
         self._last_zoom = zoom_level
+        self._last_fit_zoom = fit_zoom_level
         self._last_time = current_time
         self._zoom_cache = {}
         self._compute_vis_recursive(
-            self._root, zoom_level, current_time, self._zoom_cache
+            self._root,
+            zoom_level,
+            current_time,
+            self._zoom_cache,
+            fit_zoom_level=fit_zoom_level,
         )
         return self._zoom_cache
 
@@ -764,6 +784,7 @@ class MapLayerModel(QAbstractItemModel):
         """Force the visibility cache to be recomputed on next query."""
         self._zoom_cache = {}
         self._last_zoom = None
+        self._last_fit_zoom = None
         self._last_time = None
 
     @Slot()
@@ -1007,6 +1028,7 @@ class MapLayerModel(QAbstractItemModel):
         current_time: Optional[float],
         result: Dict[str, bool],
         parent_visible: bool = True,
+        fit_zoom_level: Optional[float] = None,
     ) -> None:
         """Walk the tree and collect visibility for each node.
 
@@ -1025,7 +1047,16 @@ class MapLayerModel(QAbstractItemModel):
             if not parent_visible:
                 vis = False
             else:
-                vis = self.visible_at_zoom(node, zoom_level)
+                if fit_zoom_level is None:
+                    # Preserve the two-argument compatibility surface for
+                    # legacy callers and test instrumentation.
+                    vis = self.visible_at_zoom(node, zoom_level)
+                else:
+                    vis = self.visible_at_zoom(
+                        node,
+                        zoom_level,
+                        fit_zoom_level,
+                    )
                 if vis and current_time is not None:
                     vis = self.visible_at_time(node, current_time)
             result[node.id] = vis
@@ -1033,4 +1064,11 @@ class MapLayerModel(QAbstractItemModel):
         else:
             node_vis = True  # root container is always the visible anchor
         for child in node.children:
-            self._compute_vis_recursive(child, zoom_level, current_time, result, node_vis)
+            self._compute_vis_recursive(
+                child,
+                zoom_level,
+                current_time,
+                result,
+                node_vis,
+                fit_zoom_level,
+            )

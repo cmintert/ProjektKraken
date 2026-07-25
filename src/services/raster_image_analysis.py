@@ -16,9 +16,11 @@ import os
 import struct
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 import numpy as np
+
+from src.core.raster_mapping import lookup_label_for_value
 
 logger = logging.getLogger(__name__)
 
@@ -273,8 +275,6 @@ def sample_raster_semantic(
     if value is None:
         return None
 
-    from src.gui.widgets.map.raster_mapping import lookup_label_for_value
-
     return lookup_label_for_value({"value_entity_map": value_entity_map}, value)
 
 
@@ -426,3 +426,35 @@ def analyse_image(path: str) -> ImageAnalysisResult:
         mode_converted=mode_converted,
         value_metadata=value_metadata,
     )
+def gradient_from_rgb_image(image: Any, stop_count: int = 12) -> dict[str, Any]:
+    """Extract a deterministic luminance-ordered gradient from an RGB image."""
+    rgb = np.asarray(image.convert("RGB"), dtype=np.uint8).reshape(-1, 3)
+    if rgb.size == 0:
+        raise ValueError("Cannot extract a palette from an empty image")
+    luminance = (
+        0.2126 * rgb[:, 0] + 0.7152 * rgb[:, 1] + 0.0722 * rgb[:, 2]
+    )
+    order = np.argsort(luminance, kind="stable")
+    sorted_rgb = rgb[order]
+    if np.all(sorted_rgb == sorted_rgb[0]):
+        color = "#{:02X}{:02X}{:02X}FF".format(*sorted_rgb[0])
+        stops = [
+            {"position": 0.0, "color": color},
+            {"position": 1.0, "color": color},
+        ]
+    else:
+        count = max(2, min(int(stop_count), len(sorted_rgb)))
+        indices = np.linspace(0, len(sorted_rgb) - 1, count).round().astype(int)
+        stops = [
+            {
+                "position": index / (count - 1),
+                "color": "#{:02X}{:02X}{:02X}FF".format(*sorted_rgb[pixel]),
+            }
+            for index, pixel in enumerate(indices)
+        ]
+    return {
+        "type": "gradient",
+        "gradient_stops": stops,
+        "stretch_min": 0,
+        "stretch_max": 65535,
+    }

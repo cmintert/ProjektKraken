@@ -732,6 +732,12 @@ class ConnectionManager:
                 ),
                 (
                     map_widget,
+                    "layer_properties_changed",
+                    map_handler.on_layer_properties_changed,
+                    "MapWidget",
+                ),
+                (
+                    map_widget,
                     "layer_delete_feature_requested",
                     map_handler.on_layer_feature_deleted,
                     "MapWidget",
@@ -764,6 +770,18 @@ class ConnectionManager:
                     map_widget.layer_panel,
                     "raster_snapshot_requested",
                     map_handler.on_raster_snapshot_requested,
+                    "MapLayerPanel",
+                ),
+                (
+                    map_widget.layer_panel,
+                    "raster_snapshot_edit_requested",
+                    map_handler.on_raster_snapshot_edit_requested,
+                    "MapLayerPanel",
+                ),
+                (
+                    map_widget.layer_panel,
+                    "raster_base_edit_requested",
+                    map_handler.on_raster_base_edit_requested,
                     "MapLayerPanel",
                 ),
                 (

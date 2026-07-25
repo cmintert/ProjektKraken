@@ -1,0 +1,52 @@
+"""GUI-independent raster grid encoding and patch helpers."""
+
+from __future__ import annotations
+
+from io import BytesIO
+
+import numpy as np
+from PIL import Image as PilImage
+
+
+def encode_value_png(array: np.ndarray) -> bytes:
+    """Encode a two-dimensional uint16 value grid as PNG."""
+    values = np.asarray(array, dtype=np.uint16)
+    if values.ndim != 2:
+        raise ValueError("Value raster must be a two-dimensional grid")
+    output = BytesIO()
+    PilImage.fromarray(values, mode="I;16").save(output, format="PNG")
+    return output.getvalue()
+
+
+def encode_rgba_png(array: np.ndarray) -> bytes:
+    """Encode an RGBA visual grid as PNG."""
+    rgba = np.asarray(array, dtype=np.uint8)
+    if rgba.ndim != 3 or rgba.shape[2] != 4:
+        raise ValueError("Visual raster must be an RGBA grid")
+    output = BytesIO()
+    PilImage.fromarray(rgba, mode="RGBA").save(output, format="PNG")
+    return output.getvalue()
+
+
+def load_value_grid(path: str) -> np.ndarray:
+    """Load a value raster into an independent uint16 array."""
+    with PilImage.open(path) as image:
+        values = np.array(image, dtype=np.uint16)
+    if values.ndim != 2:
+        raise ValueError("Value raster must be a two-dimensional grid")
+    return values
+
+
+def apply_value_patch(
+    array: np.ndarray,
+    region: tuple[int, int, int, int],
+    raw: bytes,
+) -> np.ndarray:
+    """Return a copy with one inclusive uint16 rectangle replaced."""
+    min_col, min_row, max_col, max_row = region
+    width = max_col - min_col + 1
+    height = max_row - min_row + 1
+    patch = np.frombuffer(raw, dtype=np.uint16).reshape((height, width))
+    result = np.asarray(array, dtype=np.uint16).copy()
+    result[min_row : max_row + 1, min_col : max_col + 1] = patch
+    return result

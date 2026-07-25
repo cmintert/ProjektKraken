@@ -15,7 +15,6 @@ from pytestqt.qtbot import QtBot
 
 from src.gui.widgets.map.raster_layer_dialog import RasterLayerDialog
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -57,7 +56,7 @@ def test_value_range_hidden_for_discrete_mode(qtbot: QtBot) -> None:
     """Value-range section stays hidden for discrete mode."""
     dlg = RasterLayerDialog()
     qtbot.addWidget(dlg)
-    dlg._mode_combo.setCurrentText("discrete")
+    dlg._mode_combo.setCurrentIndex(dlg._mode_combo.findData("discrete"))
     assert dlg._value_range_group.isVisible() is False
 
 
@@ -66,7 +65,7 @@ def test_value_range_visible_for_continuous_mode(qtbot: QtBot) -> None:
     dlg = RasterLayerDialog()
     qtbot.addWidget(dlg)
     dlg.show()
-    dlg._mode_combo.setCurrentText("continuous")
+    dlg._mode_combo.setCurrentIndex(dlg._mode_combo.findData("continuous"))
     assert dlg._value_range_group.isVisible() is True
     dlg.close()
 
@@ -75,7 +74,7 @@ def test_value_range_hidden_for_color_mode(qtbot: QtBot) -> None:
     """Value-range section is hidden for color mode (no scalar values)."""
     dlg = RasterLayerDialog()
     qtbot.addWidget(dlg)
-    dlg._mode_combo.setCurrentText("color")
+    dlg._mode_combo.setCurrentIndex(dlg._mode_combo.findData("color"))
     assert dlg._value_range_group.isVisible() is False
 
 
@@ -136,7 +135,7 @@ def test_result_data_includes_display_fields_when_filled(qtbot: QtBot) -> None:
     """result_data() carries display_min/max/unit when the user filled them."""
     dlg = RasterLayerDialog()
     qtbot.addWidget(dlg)
-    dlg._mode_combo.setCurrentText("continuous")
+    dlg._mode_combo.setCurrentIndex(dlg._mode_combo.findData("continuous"))
     dlg._display_min_edit.setText("-4000")
     dlg._display_max_edit.setText("8000")
     dlg._display_unit_edit.setText("m")
@@ -151,7 +150,7 @@ def test_result_data_display_fields_none_when_empty(qtbot: QtBot) -> None:
     """Empty fields yield None / empty string in result_data()."""
     dlg = RasterLayerDialog()
     qtbot.addWidget(dlg)
-    dlg._mode_combo.setCurrentText("continuous")
+    dlg._mode_combo.setCurrentIndex(dlg._mode_combo.findData("continuous"))
 
     data = dlg.result_data()
     assert data["display_min"] is None
@@ -163,7 +162,7 @@ def test_result_data_for_discrete_mode_returns_none(qtbot: QtBot) -> None:
     """Discrete mode: display_min/max are always None (ignored downstream)."""
     dlg = RasterLayerDialog()
     qtbot.addWidget(dlg)
-    dlg._mode_combo.setCurrentText("discrete")
+    dlg._mode_combo.setCurrentIndex(dlg._mode_combo.findData("discrete"))
     # Even if fields have stale text (shouldn't happen via UI, but defensive)
     dlg._display_min_edit.setText("99")
     dlg._display_max_edit.setText("100")

@@ -14,7 +14,7 @@ Covers:
 import pytest
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QImage, QPixmap
-from PySide6.QtWidgets import QGraphicsPixmapItem
+from PySide6.QtWidgets import QGraphicsPixmapItem, QMessageBox
 
 from src.app.constants import (
     MAP_LAYER_TYPE_GROUP,
@@ -861,17 +861,19 @@ class TestMapWidgetLayerCRUD:
         assert "Child Layer" in child_names
 
     def test_delete_leaf_layer(self, qtbot) -> None:
-        """Deleting a leaf layer removes it from the model."""
+        """Deletion sends an intent and waits for canonical worker state."""
         widget = _make_map_widget(qtbot)
         widget.add_marker("del-1", "entity", "To Delete", 0.5, 0.5)
         model = widget.get_layer_model()
 
         assert model.find_node_by_id("del-1") is not None
         widget._on_delete_layer("del-1")
-        assert model.find_node_by_id("del-1") is None
+        assert model.find_node_by_id("del-1") is not None
 
-    def test_delete_group_removes_children_graphics(self, qtbot) -> None:
-        """Deleting a group also removes children graphics items."""
+    def test_delete_group_waits_for_worker_refresh(
+        self, qtbot, monkeypatch
+    ) -> None:
+        """Confirmed group deletion does not mutate optimistic GUI state."""
         widget = _make_map_widget(qtbot)
         widget.add_marker("child-1", "entity", "Child", 0.5, 0.5)
         model = widget.get_layer_model()
@@ -881,8 +883,13 @@ class TestMapWidgetLayerCRUD:
         assert model.find_node_by_id("child-1") is not None
 
         # Delete the whole group
+        monkeypatch.setattr(
+            QMessageBox,
+            "question",
+            lambda *args, **kwargs: QMessageBox.StandardButton.Yes,
+        )
         widget._on_delete_layer(default.id)
-        assert model.find_node_by_id(default.id) is None
+        assert model.find_node_by_id(default.id) is not None
 
     def test_delete_root_prevented(self, qtbot) -> None:
         """Cannot delete the root node."""
@@ -1086,8 +1093,10 @@ class TestDeleteLayerEmitsDBSignal:
         assert received[0][0] == "del-db-1"
         assert received[0][1] == MAP_LAYER_TYPE_MARKER
 
-    def test_delete_group_emits_for_all_children(self, qtbot) -> None:
-        """Deleting a group emits layer_delete_feature_requested for each child."""
+    def test_delete_group_emits_one_subtree_intent(
+        self, qtbot, monkeypatch
+    ) -> None:
+        """A group deletion emits one canonical subtree intent."""
         widget = _make_map_widget(qtbot)
         widget.add_marker("g-child-1", "entity", "Child 1", 0.2, 0.2)
         widget.add_marker("g-child-2", "entity", "Child 2", 0.7, 0.7)
@@ -1098,12 +1107,18 @@ class TestDeleteLayerEmitsDBSignal:
         )
 
         default = widget._default_group()
+        monkeypatch.setattr(
+            QMessageBox,
+            "question",
+            lambda *args, **kwargs: QMessageBox.StandardButton.Yes,
+        )
         widget._on_delete_layer(default.id)
-        emitted_ids = {t[0] for t in received}
-        assert emitted_ids == {"g-child-1", "g-child-2"}
+        assert received == [(default.id, MAP_LAYER_TYPE_GROUP)]
 
-    def test_delete_group_type_not_emitted(self, qtbot) -> None:
-        """Deleting an empty group does NOT emit layer_delete_feature_requested."""
+    def test_delete_empty_group_emits_subtree_intent(
+        self, qtbot, monkeypatch
+    ) -> None:
+        """Empty groups are structural data and use the same subtree command."""
         widget = _make_map_widget(qtbot)
         model = widget._ensure_layer_model()
 
@@ -1119,8 +1134,13 @@ class TestDeleteLayerEmitsDBSignal:
             lambda nid, lt: received.append((nid, lt))
         )
 
+        monkeypatch.setattr(
+            QMessageBox,
+            "question",
+            lambda *args, **kwargs: QMessageBox.StandardButton.Yes,
+        )
         widget._on_delete_layer("empty-grp")
-        assert received == []
+        assert received == [("empty-grp", MAP_LAYER_TYPE_GROUP)]
 
     def test_delete_layer_exits_vertex_editing_first(self, qtbot) -> None:
         """Deleting a layer while editing its path must remove edit handles first."""
@@ -1147,7 +1167,7 @@ class TestDeleteLayerEmitsDBSignal:
         assert widget.view.is_editing_vertices is False
         assert len(widget.view._vertex_handles) == 0
         assert len(widget.view._midpoint_handles) == 0
-        assert "edit-path-1" not in widget.view.feature_items
+        assert "edit-path-1" in widget.view.feature_items
 
     def test_collect_leaf_ids_nested_groups(self, qtbot) -> None:
         """_collect_leaf_ids recurses through nested groups, returning (id, type) tuples."""

@@ -26,12 +26,17 @@ class ReadOnlyAnalysisCommand(BaseCommand):
     """
 
     @property
-    def has_history(self) -> bool:
+    def is_undoable(self) -> bool:
         """Return False — read-only commands are never added to undo history.
 
         Returns:
             bool: Always False.
         """
+        return False
+
+    @property
+    def persist_to_history(self) -> bool:
+        """Read-only analysis commands are never persisted."""
         return False
 
     def undo(self, db_service: DatabaseService) -> None:

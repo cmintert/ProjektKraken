@@ -5,26 +5,32 @@ Raster metadata is persisted inside ``maps.attributes["raster_layers"]``
 and the pixel data lives in 16-bit PNG files on disk.
 """
 
+from __future__ import annotations
+
 import logging
 import re
 import time
 import uuid
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Protocol
 
 import numpy as np
 
-from src.app.constants import MAP_LAYER_TYPE_RASTER
 from src.commands.base_command import BaseCommand, CommandResult
+from src.commands.layer_commands import DeleteLayerSubtreeCommand
 from src.core.map import MapLayerNode
-from src.gui.widgets.map.map_data_buffer import (
-    ColorEntry,
-    ColorMap,
-    GradientStop,
-    MapDataBuffer,
+from src.core.map_constants import MAP_LAYER_TYPE_GROUP, MAP_LAYER_TYPE_RASTER
+from src.core.map_state import RasterPatch
+from src.core.raster_grid import (
+    apply_value_patch,
+    encode_rgba_png,
+    encode_value_png,
+    load_value_grid,
 )
-from src.gui.widgets.map.raster_mapping import make_empty_vem, validate_no_overlaps
+from src.core.raster_mapping import make_empty_vem, validate_no_overlaps
+from src.services.command_artifact_store import CommandArtifactStore
 from src.services.db_service import DatabaseService
+from src.services.raster_asset_service import RasterAssetService
 from src.services.raster_import_helpers import (
     choose_resample,
     detect_greyscale,
@@ -33,6 +39,35 @@ from src.services.raster_import_helpers import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class RasterBufferProtocol(Protocol):
+    """Minimal legacy paint-buffer interface, without a GUI dependency."""
+
+    @property
+    def width(self) -> int: ...
+
+    @property
+    def height(self) -> int: ...
+
+    def _norm_to_pixel(self, x_norm: float, y_norm: float) -> tuple[int, int]: ...
+
+    def get_region(
+        self, min_col: int, min_row: int, max_col: int, max_row: int
+    ) -> np.ndarray: ...
+
+    def set_region(
+        self, min_col: int, min_row: int, region_data: np.ndarray
+    ) -> None: ...
+
+    def paint_brush(
+        self,
+        center_x: float,
+        center_y: float,
+        radius_px: int,
+        value: int,
+        falloff: float,
+    ) -> None: ...
 
 
 def _sanitize_filename(name: str, fallback: str) -> str:
@@ -47,6 +82,17 @@ def _sanitize_filename(name: str, fallback: str) -> str:
     if not base or base in {".", ".."}:
         base = fallback
     return base
+
+
+def _default_gradient() -> dict[str, Any]:
+    """Return the canonical black-to-white value-raster gradient."""
+    return {
+        "type": "gradient",
+        "gradient_stops": [
+            {"position": 0.0, "color": "#000000FF"},
+            {"position": 1.0, "color": "#FFFFFFFF"},
+        ],
+    }
 
 
 def _get_raster_layers(map_obj: Any) -> List[Dict[str, Any]]:
@@ -167,6 +213,8 @@ class CreateRasterLayerCommand(BaseCommand):
         # Generated on execute
         self._node_id: str = str(uuid.uuid4())
         self._file_path: str = ""
+        self._raster_metadata: Dict[str, Any] = {}
+        self._file_manifest: dict[str, str] = {}
 
     def execute(self, db_service: DatabaseService) -> CommandResult:  # noqa: C901
         """Create the raster file, layer node, and persist metadata.
@@ -190,6 +238,7 @@ class CreateRasterLayerCommand(BaseCommand):
             self.world_root,
             self.import_path or None,
         )
+        restored_from_manifest = False
         try:
             map_obj = db_service.map_repo.get_map(self.map_id)
             if not map_obj:
@@ -198,6 +247,40 @@ class CreateRasterLayerCommand(BaseCommand):
                     success=False,
                     message="Map not found.",
                     command_name="CreateRasterLayerCommand",
+                )
+            if not self.world_root:
+                self.world_root = str(Path(db_service.get_db_file_path()).parent)
+            if self._file_manifest and self._raster_metadata:
+                CommandArtifactStore(Path(self.world_root)).restore(
+                    self._file_manifest
+                )
+                restored_from_manifest = True
+                self._file_manifest = {}
+                if map_obj.layers is None:
+                    map_obj.layers = MapLayerNode(name="Root")
+                map_obj.layers.children.append(
+                    MapLayerNode(
+                        name=self.name,
+                        layer_type=MAP_LAYER_TYPE_RASTER,
+                        id=self._node_id,
+                    )
+                )
+                raster_layers = _get_raster_layers(map_obj)
+                raster_layers.append(dict(self._raster_metadata))
+                _set_raster_layers(map_obj, raster_layers)
+                attrs = dict(map_obj.attributes or {})
+                attrs["layers"] = map_obj.layers.to_dict()
+                map_obj.attributes = attrs
+                db_service.map_repo.insert_map(map_obj)
+                self._is_executed = True
+                return CommandResult(
+                    success=True,
+                    message=f"Raster layer '{self.name}' restored.",
+                    command_name="CreateRasterLayerCommand",
+                    data={
+                        "node_id": self._node_id,
+                        "file_path": self._file_path,
+                    },
                 )
             logger.debug(
                 "CreateRasterLayerCommand: got map %r (attrs keys=%s)",
@@ -218,20 +301,22 @@ class CreateRasterLayerCommand(BaseCommand):
                     )
                 else:
                     # Blank transparent image
-                    img_c = PilImage.new("RGBA", (self.width, self.height), (0, 0, 0, 0))
+                    img_c = PilImage.new(
+                        "RGBA", (self.width, self.height), (0, 0, 0, 0)
+                    )
                 rgba_arr = np.array(img_c, dtype=np.uint8)
-                buf = MapDataBuffer(self.width, self.height, 0)
-                buf._rgba_data = rgba_arr
                 raster_dir = Path(self.world_root) / "rasters"
-                raster_dir.mkdir(parents=True, exist_ok=True)
                 safe_base = _sanitize_filename(self.name, self._node_id[:8])
                 filename = f"{safe_base}_{self._node_id[:8]}.png"
                 abs_path = raster_dir / filename
                 if not abs_path.resolve().is_relative_to(raster_dir.resolve()):
                     raise ValueError(f"Path traversal detected: {abs_path}")
-                logger.debug("CreateRasterLayerCommand (color): saving PNG → %s", abs_path)
-                buf.save(str(abs_path))
                 self._file_path = f"rasters/{filename}"
+                RasterAssetService(
+                    Path(self.world_root)
+                ).atomic_write_bytes(
+                    self._file_path, encode_rgba_png(rgba_arr)
+                )
 
                 # Add layer node
                 node = MapLayerNode(
@@ -240,7 +325,6 @@ class CreateRasterLayerCommand(BaseCommand):
                     id=self._node_id,
                 )
                 if map_obj.layers is None:
-                    from src.app.constants import MAP_LAYER_TYPE_GROUP
                     map_obj.layers = MapLayerNode(
                         name="Root", layer_type=MAP_LAYER_TYPE_GROUP
                     )
@@ -249,7 +333,7 @@ class CreateRasterLayerCommand(BaseCommand):
                 # Raster metadata for color mode
                 now = time.time()
                 raster_layers = _get_raster_layers(map_obj)
-                raster_layers.append({
+                self._raster_metadata = {
                     "node_id": self._node_id,
                     "file_path": self._file_path,
                     "resolution": [self.width, self.height],
@@ -257,12 +341,15 @@ class CreateRasterLayerCommand(BaseCommand):
                     "color_map": {"type": "passthrough"},
                     "created_at": now,
                     "modified_at": now,
-                })
+                    "schema_version": 2,
+                }
+                raster_layers.append(dict(self._raster_metadata))
                 _set_raster_layers(map_obj, raster_layers)
                 attrs = dict(map_obj.attributes) if map_obj.attributes else {}
                 attrs["layers"] = map_obj.layers.to_dict()
                 map_obj.attributes = attrs
                 db_service.map_repo.insert_map(map_obj)
+                self._is_executed = True
 
                 return CommandResult(
                     success=True,
@@ -293,26 +380,27 @@ class CreateRasterLayerCommand(BaseCommand):
                 else:
                     arr16 = normalize_to_uint16(img_resized)
 
-                buf = MapDataBuffer(self.width, self.height, 0)
-                buf._data = arr16
             else:
-                buf = MapDataBuffer(self.width, self.height, self.default_value)
+                arr16 = np.full(
+                    (self.height, self.width),
+                    self.default_value,
+                    dtype=np.uint16,
+                )
             raster_dir = Path(self.world_root) / "rasters"
-            raster_dir.mkdir(parents=True, exist_ok=True)
             safe_base = _sanitize_filename(self.name, self._node_id[:8])
             filename = f"{safe_base}_{self._node_id[:8]}.png"
             abs_path = raster_dir / filename
             if not abs_path.resolve().is_relative_to(raster_dir.resolve()):
                 raise ValueError(f"Path traversal detected: {abs_path}")
+            self._file_path = f"rasters/{filename}"
             logger.debug("CreateRasterLayerCommand: saving PNG → %s", abs_path)
-            buf.save(str(abs_path))
+            RasterAssetService(Path(self.world_root)).atomic_write_bytes(
+                self._file_path, encode_value_png(arr16)
+            )
             logger.debug(
                 "CreateRasterLayerCommand: PNG saved OK (%d bytes)",
                 abs_path.stat().st_size if abs_path.exists() else -1,
             )
-
-            # Store relative path from world root
-            self._file_path = f"rasters/{filename}"
 
             # 2. Add layer node to tree
             node = MapLayerNode(
@@ -324,8 +412,6 @@ class CreateRasterLayerCommand(BaseCommand):
                 "CreateRasterLayerCommand: new layer node id=%s", self._node_id
             )
             if map_obj.layers is None:
-                from src.app.constants import MAP_LAYER_TYPE_GROUP
-
                 map_obj.layers = MapLayerNode(
                     name="Root", layer_type=MAP_LAYER_TYPE_GROUP
                 )
@@ -344,52 +430,41 @@ class CreateRasterLayerCommand(BaseCommand):
             )
             now = time.time()
             if auto_palette_entries:
-                initial_color_map = ColorMap(
-                    type="palette",
-                    entries=[
-                        ColorEntry(
-                            value=e["value"],
-                            color=e["color"],
-                            entity_id=None,
-                            label=e["label"],
-                        )
-                        for e in auto_palette_entries
+                initial_color_map = {
+                    "type": "palette",
+                    "entries": [
+                        {
+                            "value": entry["value"],
+                            "color": entry["color"],
+                            "label": entry["label"],
+                        }
+                        for entry in auto_palette_entries
                     ],
-                ).to_dict()
+                }
             elif self.import_path and self.mode != "discrete":
                 # Build a multicolor gradient from the original RGB image so
                 # the greyscale buffer renders close to the original colours.
                 try:
-                    initial_color_map = ColorMap.from_rgb_image(
-                        img, n_stops=12
-                    ).to_dict()
+                    from src.services.raster_image_analysis import (
+                        gradient_from_rgb_image,
+                    )
+
+                    initial_color_map = gradient_from_rgb_image(img, 12)
                 except Exception:
                     logger.debug(
                         "from_rgb_image failed; falling back to B/W gradient",
                         exc_info=True,
                     )
-                    initial_color_map = ColorMap(
-                        type="gradient",
-                        gradient_stops=[
-                            GradientStop(0.0, "#000000FF"),
-                            GradientStop(1.0, "#FFFFFFFF"),
-                        ],
-                    ).to_dict()
+                    initial_color_map = _default_gradient()
             elif self.mode == "discrete":
                 # Discrete layers start with an empty palette; the user
                 # populates it via the palette editor.  A gradient here would
                 # cause the editor to show an empty table and save back an
                 # empty palette (making the layer invisible) when the user
                 # just wants to add entity links.
-                initial_color_map = ColorMap(type="palette", entries=[]).to_dict()
+                initial_color_map = {"type": "palette", "entries": []}
             else:
-                initial_color_map = ColorMap(
-                    type="gradient",
-                    gradient_stops=[
-                        GradientStop(0.0, "#000000FF"),
-                        GradientStop(1.0, "#FFFFFFFF"),
-                    ],
-                ).to_dict()
+                initial_color_map = _default_gradient()
 
             # Apply display-mapping params (from dialog / inferred metadata)
             effective_min = self.display_min
@@ -440,7 +515,9 @@ class CreateRasterLayerCommand(BaseCommand):
                 "color_map": initial_color_map,
                 "created_at": now,
                 "modified_at": now,
+                "schema_version": 2,
             }
+            self._raster_metadata = dict(raster_meta)
             raster_layers.append(raster_meta)
             _set_raster_layers(map_obj, raster_layers)
             logger.debug(
@@ -473,6 +550,15 @@ class CreateRasterLayerCommand(BaseCommand):
                 },
             )
         except Exception as e:
+            if self._file_path and self.world_root:
+                if restored_from_manifest:
+                    self._file_manifest = CommandArtifactStore(
+                        Path(self.world_root)
+                    ).stash(self.command_id, [self._file_path])
+                else:
+                    failed_path = Path(self.world_root) / self._file_path
+                    if failed_path.exists():
+                        failed_path.unlink()
             logger.error("CreateRasterLayerCommand failed: %s", e, exc_info=True)
             return CommandResult(
                 success=False,
@@ -489,7 +575,13 @@ class CreateRasterLayerCommand(BaseCommand):
         """
         if not self._is_executed:
             return
+        stashed = False
         try:
+            if self._file_path and self.world_root:
+                self._file_manifest = CommandArtifactStore(
+                    Path(self.world_root)
+                ).stash(self.command_id, [self._file_path])
+                stashed = True
             map_obj = db_service.map_repo.get_map(self.map_id)
             if map_obj:
                 # Remove layer node
@@ -509,16 +601,16 @@ class CreateRasterLayerCommand(BaseCommand):
                 map_obj.attributes = attrs
                 db_service.map_repo.insert_map(map_obj)
 
-            # Delete file
-            if self._file_path and self.world_root:
-                abs_path = Path(self.world_root) / self._file_path
-                if abs_path.exists():
-                    abs_path.unlink()
-
             self._is_executed = False
             logger.info("Undid raster layer creation: %s", self._node_id)
         except Exception as e:
+            if stashed and self._file_manifest:
+                CommandArtifactStore(Path(self.world_root)).restore(
+                    self._file_manifest
+                )
+                self._file_manifest = {}
             logger.error("Undo CreateRasterLayerCommand failed: %s", e)
+            raise
 
     def to_dict(self) -> Dict:
         """Serialize command to dictionary."""
@@ -530,6 +622,7 @@ class CreateRasterLayerCommand(BaseCommand):
             "mode": self.mode,
             "default_value": self.default_value,
             "world_root": self.world_root,
+            "import_path": self.import_path,
             "node_id": self._node_id,
             "file_path": self._file_path,
             "display_min": self.display_min,
@@ -537,6 +630,9 @@ class CreateRasterLayerCommand(BaseCommand):
             "unit": self.unit,
             "format_str": self.format_str,
             "scale": self.scale,
+            "raster_metadata": self._raster_metadata,
+            "file_manifest": self._file_manifest,
+            "is_executed": self._is_executed,
         }
 
     @classmethod
@@ -550,6 +646,7 @@ class CreateRasterLayerCommand(BaseCommand):
             mode=data.get("mode", "discrete"),
             default_value=data.get("default_value", 0),
             world_root=data.get("world_root", ""),
+            import_path=data.get("import_path", ""),
             display_min=data.get("display_min"),
             display_max=data.get("display_max"),
             unit=data.get("unit", ""),
@@ -558,18 +655,14 @@ class CreateRasterLayerCommand(BaseCommand):
         )
         cmd._node_id = data.get("node_id", cmd._node_id)
         cmd._file_path = data.get("file_path", "")
+        cmd._raster_metadata = dict(data.get("raster_metadata", {}))
+        cmd._file_manifest = dict(data.get("file_manifest", {}))
+        cmd._is_executed = bool(data.get("is_executed", cmd._file_path))
         return cmd
 
 
 class DeleteRasterLayerCommand(BaseCommand):
-    """Delete a raster layer: remove node, metadata, and file.
-
-    Args:
-        map_id: ID of the parent map.
-        node_id: Layer node ID of the raster to delete.
-        world_root: Absolute path to the world directory.
-
-    """
+    """Compatibility wrapper around canonical subtree deletion."""
 
     def __init__(
         self,
@@ -581,149 +674,42 @@ class DeleteRasterLayerCommand(BaseCommand):
         self.map_id = map_id
         self.node_id = node_id
         self.world_root = world_root
-
-        # Stored for undo
-        self._deleted_meta: Optional[Dict[str, Any]] = None
-        self._deleted_node_dict: Optional[Dict[str, Any]] = None
-        self._file_backup: Optional[bytes] = None
+        self._delegate: Optional[DeleteLayerSubtreeCommand] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """Delete the raster layer.
-
-        Args:
-            db_service: The database service.
-
-        Returns:
-            CommandResult.
-
-        """
-        logger.debug(
-            "DeleteRasterLayerCommand.execute: map_id=%s node_id=%s world_root=%r",
-            self.map_id,
-            self.node_id,
-            self.world_root,
-        )
-        try:
-            map_obj = db_service.map_repo.get_map(self.map_id)
-            if not map_obj:
-                logger.error("DeleteRasterLayerCommand: map not found: %s", self.map_id)
-                return CommandResult(
-                    success=False,
-                    message="Map not found.",
-                    command_name="DeleteRasterLayerCommand",
-                )
-
-            # Find and remove the raster metadata
-            raster_layers = _get_raster_layers(map_obj)
-            logger.debug(
-                "DeleteRasterLayerCommand: raster_layers before=%d", len(raster_layers)
+        """Delete the raster and every nested asset through one implementation."""
+        if self._delegate is None:
+            self._delegate = DeleteLayerSubtreeCommand(
+                self.map_id,
+                self.node_id,
+                self.world_root,
             )
-            self._deleted_meta = None
-            new_raster_layers = []
-            for r in raster_layers:
-                if r.get("node_id") == self.node_id:
-                    self._deleted_meta = r
-                    logger.debug(
-                        "DeleteRasterLayerCommand: found meta for node_id=%s",
-                        self.node_id,
-                    )
-                else:
-                    new_raster_layers.append(r)
-            _set_raster_layers(map_obj, new_raster_layers)
+            self._delegate.command_id = self.command_id
+        result = self._delegate.execute(db_service)
+        result.command_name = self.__class__.__name__
+        self._is_executed = result.success
+        return result
 
-            # Find and remove the layer node
-            if map_obj.layers:
-                for i, c in enumerate(map_obj.layers.children):
-                    if c.id == self.node_id:
-                        self._deleted_node_dict = c.to_dict()
-                        map_obj.layers.children.pop(i)
-                        logger.debug(
-                            "DeleteRasterLayerCommand: removed layer node at index %d",
-                            i,
-                        )
-                        break
-
-            # Backup and delete file
-            if self._deleted_meta and self.world_root:
-                file_path = self._deleted_meta.get("file_path", "")
-                abs_path = Path(self.world_root) / file_path
-                if abs_path.exists():
-                    self._file_backup = abs_path.read_bytes()
-                    abs_path.unlink()
-                    logger.debug(
-                        "DeleteRasterLayerCommand: deleted file %s (%d bytes backed up)",
-                        abs_path,
-                        len(self._file_backup),
-                    )
-                else:
-                    logger.warning(
-                        "DeleteRasterLayerCommand: file not found: %s", abs_path
-                    )
-
-            # Persist
-            attrs = dict(map_obj.attributes) if map_obj.attributes else {}
-            if map_obj.layers:
-                attrs["layers"] = map_obj.layers.to_dict()
-            map_obj.attributes = attrs
-            db_service.map_repo.insert_map(map_obj)
-            logger.debug("DeleteRasterLayerCommand: DB persist OK")
-
-            self._is_executed = True
-            return CommandResult(
-                success=True,
-                message="Raster layer deleted.",
-                command_name="DeleteRasterLayerCommand",
-            )
-        except Exception as e:
-            logger.error("DeleteRasterLayerCommand failed: %s", e, exc_info=True)
+    def undo(self, db_service: DatabaseService) -> CommandResult:
+        """Restore the exact original hierarchy and every owned raster file."""
+        if self._delegate is None:
             return CommandResult(
                 success=False,
-                message=str(e),
-                command_name="DeleteRasterLayerCommand",
+                message="Raster deletion snapshot is unavailable.",
+                command_name="Undo_DeleteRasterLayerCommand",
             )
-
-    def undo(self, db_service: DatabaseService) -> None:
-        """Restore the deleted raster layer.
-
-        Args:
-            db_service: The database service.
-
-        """
-        if not self._is_executed:
-            return
-        try:
-            map_obj = db_service.map_repo.get_map(self.map_id)
-            if not map_obj:
-                return
-
-            # Restore layer node
-            if self._deleted_node_dict and map_obj.layers:
-                node = MapLayerNode.from_dict(self._deleted_node_dict)
-                map_obj.layers.children.append(node)
-
-            # Restore metadata
-            if self._deleted_meta:
-                raster_layers = _get_raster_layers(map_obj)
-                raster_layers.append(self._deleted_meta)
-                _set_raster_layers(map_obj, raster_layers)
-
-            # Restore file
-            if self._file_backup and self._deleted_meta and self.world_root:
-                file_path = self._deleted_meta.get("file_path", "")
-                abs_path = Path(self.world_root) / file_path
-                abs_path.parent.mkdir(parents=True, exist_ok=True)
-                abs_path.write_bytes(self._file_backup)
-
-            # Persist
-            attrs = dict(map_obj.attributes) if map_obj.attributes else {}
-            if map_obj.layers:
-                attrs["layers"] = map_obj.layers.to_dict()
-            map_obj.attributes = attrs
-            db_service.map_repo.insert_map(map_obj)
-
-            self._is_executed = False
-        except Exception as e:
-            logger.error("Undo DeleteRasterLayerCommand failed: %s", e)
+        self._delegate.undo(db_service)
+        self._is_executed = False
+        return CommandResult(
+            success=True,
+            message="Raster layer restored.",
+            command_name="Undo_DeleteRasterLayerCommand",
+            data={
+                "effects": [
+                    {"kind": "map_state_changed", "map_id": self.map_id}
+                ]
+            },
+        )
 
     def to_dict(self) -> Dict:
         """Serialize command to dictionary."""
@@ -731,16 +717,24 @@ class DeleteRasterLayerCommand(BaseCommand):
             "map_id": self.map_id,
             "node_id": self.node_id,
             "world_root": self.world_root,
+            "delegate": self._delegate.to_dict() if self._delegate else None,
+            "is_executed": self._is_executed,
         }
 
     @classmethod
     def from_dict(cls, data: Dict) -> "DeleteRasterLayerCommand":
         """Deserialize command from dictionary."""
-        return cls(
+        command = cls(
             map_id=data["map_id"],
             node_id=data["node_id"],
             world_root=data.get("world_root", ""),
         )
+        if data.get("delegate"):
+            command._delegate = DeleteLayerSubtreeCommand.from_dict(
+                data["delegate"]
+            )
+        command._is_executed = bool(data.get("is_executed", command._delegate))
+        return command
 
 
 class PaintRasterCommand(BaseCommand):
@@ -785,7 +779,7 @@ class PaintRasterCommand(BaseCommand):
         self.falloff = falloff
 
         # Set by caller before execute
-        self.buffer: Optional[MapDataBuffer] = None
+        self.buffer: Optional[RasterBufferProtocol] = None
 
         # Snapshot for undo
         self._before: Optional[np.ndarray] = None
@@ -860,8 +854,13 @@ class PaintRasterCommand(BaseCommand):
             self._is_executed = False
 
     @property
-    def has_history(self) -> bool:
-        """Paint commands are not persisted to command history files."""
+    def is_undoable(self) -> bool:
+        """Legacy live-paint commands are not independent undo entries."""
+        return False
+
+    @property
+    def persist_to_history(self) -> bool:
+        """Legacy live-paint commands are session-only."""
         return False
 
     def to_dict(self) -> Dict:
@@ -912,6 +911,7 @@ class StrokeRasterCommand(BaseCommand):
         dirty_region: tuple[int, int, int, int],
         before_bytes: bytes,
         after_bytes: bytes,
+        target_file: str = "",
     ) -> None:
         super().__init__()
         self.map_id = map_id
@@ -919,17 +919,21 @@ class StrokeRasterCommand(BaseCommand):
         self.dirty_region = dirty_region
         self._before_bytes = before_bytes
         self._after_bytes = after_bytes
+        self.target_file = target_file
+        self._cancel_reason = ""
 
-        # Injected at execution time by the caller
-        self.buffer: Optional[MapDataBuffer] = None
+    def cancel(self, reason: str) -> None:
+        """Prevent a queued dependent stroke from reaching persistence."""
+        self._cancel_reason = reason
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """Apply the after-snapshot to the buffer.
-
-        The buffer is typically already in the "after" state (the tool
-        already painted live).  This command exists for the undo stack.
-        If the buffer has been reverted we re-apply ``after_bytes``.
-        """
+        """Persist the immutable after-patch without touching GUI state."""
+        if self._cancel_reason:
+            return CommandResult(
+                success=False,
+                message=self._cancel_reason,
+                command_name="StrokeRasterCommand",
+            )
         logger.debug(
             "StrokeRasterCommand.execute: node_id=%s dirty=%s before=%d bytes after=%d bytes",
             self.node_id,
@@ -937,24 +941,15 @@ class StrokeRasterCommand(BaseCommand):
             len(self._before_bytes),
             len(self._after_bytes),
         )
-        if self.buffer is None:
-            logger.error(
-                "StrokeRasterCommand.execute: no buffer attached for node_id=%s",
-                self.node_id,
-            )
-            return CommandResult(
-                success=False,
-                message="No buffer attached.",
-                command_name="StrokeRasterCommand",
-            )
         try:
-            self._apply_snapshot(self._after_bytes)
+            self._apply_snapshot(db_service, self._after_bytes)
             self._is_executed = True
             logger.debug("StrokeRasterCommand.execute: applied after-snapshot OK")
             return CommandResult(
                 success=True,
                 message="Stroke applied.",
                 command_name="StrokeRasterCommand",
+                data={"effects": [self._effect("after")]},
             )
         except Exception as e:
             logger.error("StrokeRasterCommand.execute failed: %s", e, exc_info=True)
@@ -962,57 +957,108 @@ class StrokeRasterCommand(BaseCommand):
                 success=False, message=str(e), command_name="StrokeRasterCommand"
             )
 
-    def undo(self, db_service: DatabaseService) -> None:
-        """Restore the before-snapshot."""
+    def undo(self, db_service: DatabaseService) -> CommandResult:
+        """Persist and return the before-patch."""
         logger.debug(
             "StrokeRasterCommand.undo: node_id=%s dirty=%s",
             self.node_id,
             self.dirty_region,
         )
-        if self._is_executed and self.buffer is not None:
-            self._apply_snapshot(self._before_bytes)
-            self._is_executed = False
-            logger.debug("StrokeRasterCommand.undo: before-snapshot applied OK")
-        else:
-            logger.warning(
-                "StrokeRasterCommand.undo: skipped (is_executed=%s, buffer=%s)",
-                self._is_executed,
-                self.buffer is not None,
+        if not self._is_executed:
+            return CommandResult(
+                success=False,
+                message="Stroke is not currently applied.",
+                command_name="Undo_StrokeRasterCommand",
             )
+        self._apply_snapshot(db_service, self._before_bytes)
+        self._is_executed = False
+        logger.debug("StrokeRasterCommand.undo: before-snapshot applied OK")
+        return CommandResult(
+            success=True,
+            message="Stroke undone.",
+            command_name="Undo_StrokeRasterCommand",
+            data={"effects": [self._effect("before")]},
+        )
 
-    def _apply_snapshot(self, raw: bytes) -> None:
-        """Write raw uint16 bytes back into the buffer's dirty region."""
-        if self.buffer is None:
-            return
-        d = self.dirty_region
-        w = d[2] - d[0] + 1
-        h = d[3] - d[1] + 1
-        arr = np.frombuffer(raw, dtype=np.uint16).reshape((h, w))
-        self.buffer.set_region(d[0], d[1], arr)
+    def _resolve_target(self, db_service: DatabaseService) -> str:
+        if self.target_file:
+            return self.target_file
+        map_obj = db_service.map_repo.get_map(self.map_id)
+        if map_obj is None:
+            raise ValueError(f"Map not found: {self.map_id}")
+        for metadata in (map_obj.attributes or {}).get("raster_layers", []):
+            if metadata.get("node_id") == self.node_id:
+                if metadata.get("mode") == "color":
+                    raise ValueError("Color overlays cannot be value-painted")
+                self.target_file = str(metadata.get("file_path", ""))
+                break
+        if not self.target_file:
+            raise ValueError(f"Raster layer not found: {self.node_id}")
+        return self.target_file
+
+    def _apply_snapshot(
+        self, db_service: DatabaseService, raw: bytes
+    ) -> None:
+        """Write raw uint16 bytes into the persisted raster region."""
+        target_file = self._resolve_target(db_service)
+        world_root = Path(db_service.get_db_file_path()).parent
+        assets = RasterAssetService(world_root)
+        target = assets.resolve(target_file)
+        array = load_value_grid(str(target))
+        updated = apply_value_patch(array, self.dirty_region, raw)
+        assets.atomic_write_bytes(target_file, encode_value_png(updated))
+
+    def _effect(self, direction: str) -> Dict[str, Any]:
+        raw = self._after_bytes if direction == "after" else self._before_bytes
+        return {
+            "kind": "raster_patch",
+            "map_id": self.map_id,
+            "node_id": self.node_id,
+            "region": list(self.dirty_region),
+            "dtype": "uint16",
+            "data": RasterPatch._encode(raw),
+            "direction": direction,
+        }
 
     @property
-    def has_history(self) -> bool:
-        """Stroke commands are session-only (not persisted to file)."""
+    def is_undoable(self) -> bool:
+        """Stroke commands are reversible in the current session."""
+        return True
+
+    @property
+    def persist_to_history(self) -> bool:
+        """Stroke byte patches are deliberately not persisted across restarts."""
         return False
 
     def to_dict(self) -> Dict:
-        """Minimal serialization."""
+        """Serialize the session patch for safe queued worker delivery."""
         return {
             "map_id": self.map_id,
             "node_id": self.node_id,
             "dirty_region": list(self.dirty_region),
+            "target_file": self.target_file,
+            "before_data": RasterPatch._encode(self._before_bytes),
+            "after_data": RasterPatch._encode(self._after_bytes),
+            "cancel_reason": self._cancel_reason,
         }
 
     @classmethod
     def from_dict(cls, data: Dict) -> "StrokeRasterCommand":
-        """Deserialize (lossy — byte data not persisted)."""
-        return cls(
+        """Deserialize a worker-bound or in-session patch."""
+        command = cls(
             map_id=data["map_id"],
             node_id=data["node_id"],
             dirty_region=tuple(data["dirty_region"]),
-            before_bytes=b"",
-            after_bytes=b"",
+            before_bytes=RasterPatch._decode(str(data.get("before_data", "")))
+            if data.get("before_data")
+            else b"",
+            after_bytes=RasterPatch._decode(str(data.get("after_data", "")))
+            if data.get("after_data")
+            else b"",
+            target_file=data.get("target_file", ""),
         )
+        command._cancel_reason = str(data.get("cancel_reason", ""))
+        return command
 
 
 class SetRasterMappingCommand(BaseCommand):
@@ -1196,8 +1242,13 @@ class SetRasterBlendModeCommand(BaseCommand):
         self.old_mode = old_mode
 
     @property
-    def has_history(self) -> bool:
+    def is_undoable(self) -> bool:
         """Blend mode is a cosmetic preference — not added to undo history."""
+        return False
+
+    @property
+    def persist_to_history(self) -> bool:
+        """Blend mode updates are not persisted as command history."""
         return False
 
     def _apply_mode(self, db_service: DatabaseService, mode: str) -> None:
@@ -1309,20 +1360,7 @@ class SetRasterBlendModeCommand(BaseCommand):
 
 
 class SetRasterSnapshotCommand(BaseCommand):
-    """Record a snapshot file path at a specific lore date in raster metadata.
-
-    The actual PNG file is written by MapHandler before this command is
-    emitted.  This command only persists the metadata mapping
-    ``{str(lore_date): rel_path}`` inside
-    ``maps.attributes["raster_layers"][n]["snapshots"]``.
-
-    Args:
-        map_id: Parent map ID.
-        node_id: Raster layer node ID.
-        lore_date: The lore timeline date at which this snapshot was taken.
-        rel_file_path: Relative path from world root to the snapshot PNG.
-        old_snapshots: The ``snapshots`` dict *before* this change (for undo).
-    """
+    """Create a dated raster file and metadata entry as one command."""
 
     def __init__(
         self,
@@ -1331,6 +1369,7 @@ class SetRasterSnapshotCommand(BaseCommand):
         lore_date: float,
         rel_file_path: str,
         old_snapshots: Dict[str, str],
+        image_bytes: bytes = b"",
     ) -> None:
         super().__init__()
         self.map_id = map_id
@@ -1338,6 +1377,9 @@ class SetRasterSnapshotCommand(BaseCommand):
         self.lore_date = lore_date
         self.rel_file_path = rel_file_path
         self.old_snapshots = old_snapshots
+        self._image_bytes = image_bytes
+        self._old_file_manifest: dict[str, str] = {}
+        self._new_file_manifest: dict[str, str] = {}
 
     def _apply_snapshots(
         self, db_service: DatabaseService, snapshots: Dict[str, str]
@@ -1361,19 +1403,38 @@ class SetRasterSnapshotCommand(BaseCommand):
         repo.insert_map(map_obj)
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
-        """Persist the new snapshot path to the raster layer metadata.
-
-        Args:
-            db_service: Database service.
-
-        Returns:
-            CommandResult indicating success or failure.
-        """
+        """Create/restore the PNG and persist the full-precision date mapping."""
+        world_root = Path(db_service.get_db_file_path()).parent
+        assets = RasterAssetService(world_root)
+        artifacts = CommandArtifactStore(world_root)
+        old_path = ""
+        for key, path in self.old_snapshots.items():
+            try:
+                if float(key) == self.lore_date:
+                    old_path = path
+                    break
+            except (TypeError, ValueError):
+                continue
         try:
+            if old_path:
+                self._old_file_manifest = artifacts.stash(
+                    self.command_id, [old_path]
+                )
+            if self._new_file_manifest:
+                artifacts.restore(self._new_file_manifest)
+                self._new_file_manifest = {}
+            elif self._image_bytes:
+                assets.atomic_write_bytes(
+                    self.rel_file_path, self._image_bytes
+                )
+            else:
+                raise ValueError("Snapshot image data is unavailable")
+
             new_snapshots = dict(self.old_snapshots)
-            new_snapshots[str(self.lore_date)] = self.rel_file_path
+            new_snapshots[format(self.lore_date, ".17g")] = self.rel_file_path
             self._apply_snapshots(db_service, new_snapshots)
             self._is_executed = True
+            self._image_bytes = b""
             logger.debug(
                 "SetRasterSnapshotCommand.execute: node_id=%s lore_date=%.2f path=%s",
                 self.node_id,
@@ -1384,8 +1445,23 @@ class SetRasterSnapshotCommand(BaseCommand):
                 success=True,
                 message="Snapshot recorded.",
                 command_name="SetRasterSnapshotCommand",
+                data={
+                    "effects": [
+                        {
+                            "kind": "raster_edit_target",
+                            "node_id": self.node_id,
+                            "file_path": self.rel_file_path,
+                        }
+                    ]
+                },
             )
         except Exception as e:
+            target = assets.resolve(self.rel_file_path)
+            if target.exists():
+                target.unlink()
+            if self._old_file_manifest:
+                artifacts.restore(self._old_file_manifest)
+                self._old_file_manifest = {}
             logger.error("SetRasterSnapshotCommand failed: %s", e, exc_info=True)
             return CommandResult(
                 success=False,
@@ -1393,20 +1469,43 @@ class SetRasterSnapshotCommand(BaseCommand):
                 command_name="SetRasterSnapshotCommand",
             )
 
-    def undo(self, db_service: DatabaseService) -> None:
-        """Restore the snapshot dict to its previous state.
-
-        Args:
-            db_service: Database service.
-        """
-        if self._is_executed:
-            self._apply_snapshots(db_service, dict(self.old_snapshots))
-            self._is_executed = False
-            logger.debug(
-                "SetRasterSnapshotCommand.undo: node_id=%s restored %d snapshots",
-                self.node_id,
-                len(self.old_snapshots),
+    def undo(self, db_service: DatabaseService) -> CommandResult:
+        """Restore previous metadata and file ownership."""
+        if not self._is_executed:
+            return CommandResult(
+                success=False,
+                message="Raster state is not currently applied.",
+                command_name="Undo_SetRasterSnapshotCommand",
             )
+        world_root = Path(db_service.get_db_file_path()).parent
+        artifacts = CommandArtifactStore(world_root)
+        self._new_file_manifest = artifacts.stash(
+            self.command_id, [self.rel_file_path]
+        )
+        try:
+            if self._old_file_manifest:
+                artifacts.restore(self._old_file_manifest)
+                self._old_file_manifest = {}
+            self._apply_snapshots(db_service, dict(self.old_snapshots))
+        except Exception:
+            if self._new_file_manifest:
+                artifacts.restore(self._new_file_manifest)
+                self._new_file_manifest = {}
+            raise
+        self._is_executed = False
+        return CommandResult(
+            success=True,
+            message="Raster state removed.",
+            command_name="Undo_SetRasterSnapshotCommand",
+            data={
+                "effects": [
+                    {
+                        "kind": "raster_edit_target_cleared",
+                        "node_id": self.node_id,
+                    }
+                ]
+            },
+        )
 
     def to_dict(self) -> Dict:
         """Serialise to a JSON-friendly dict."""
@@ -1416,6 +1515,14 @@ class SetRasterSnapshotCommand(BaseCommand):
             "lore_date": self.lore_date,
             "rel_file_path": self.rel_file_path,
             "old_snapshots": self.old_snapshots,
+            "old_file_manifest": self._old_file_manifest,
+            "new_file_manifest": self._new_file_manifest,
+            "is_executed": self._is_executed,
+            "image_data": (
+                RasterPatch._encode(self._image_bytes)
+                if self._image_bytes
+                else ""
+            ),
         }
 
     @classmethod
@@ -1428,19 +1535,32 @@ class SetRasterSnapshotCommand(BaseCommand):
         Returns:
             New :class:`SetRasterSnapshotCommand` instance.
         """
-        return cls(
+        command = cls(
             map_id=data["map_id"],
             node_id=data["node_id"],
             lore_date=data["lore_date"],
             rel_file_path=data["rel_file_path"],
             old_snapshots=data.get("old_snapshots", {}),
+            image_bytes=(
+                RasterPatch._decode(str(data["image_data"]))
+                if data.get("image_data")
+                else b""
+            ),
         )
+        command._old_file_manifest = dict(
+            data.get("old_file_manifest", {})
+        )
+        command._new_file_manifest = dict(
+            data.get("new_file_manifest", {})
+        )
+        command._is_executed = bool(data.get("is_executed", True))
+        return command
 
 
 class RemoveRasterSnapshotCommand(BaseCommand):
     """Remove a temporal raster snapshot entry and its PNG file.
 
-    Restores metadata and file bytes on undo.
+    The deleted file is retained in the persistent command artifact store.
     """
 
     def __init__(
@@ -1461,10 +1581,16 @@ class RemoveRasterSnapshotCommand(BaseCommand):
         self.old_snapshots = old_snapshots
 
         self._deleted_key: str = ""
-        self._file_backup: Optional[bytes] = None
+        self._artifact_manifest: dict[str, str] = {}
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Remove the snapshot metadata entry and delete the snapshot file."""
+        world_root = (
+            Path(self.world_root)
+            if self.world_root
+            else Path(db_service.get_db_file_path()).parent
+        )
+        artifacts = CommandArtifactStore(world_root)
         try:
             map_obj = db_service.map_repo.get_map(self.map_id)
             if map_obj is None:
@@ -1490,7 +1616,7 @@ class RemoveRasterSnapshotCommand(BaseCommand):
             self._deleted_key = ""
             for key in snapshots:
                 try:
-                    if abs(float(key) - self.lore_date) < 1e-9:
+                    if float(key) == self.lore_date:
                         self._deleted_key = str(key)
                         break
                 except (TypeError, ValueError):
@@ -1502,21 +1628,33 @@ class RemoveRasterSnapshotCommand(BaseCommand):
             if not self.rel_file_path:
                 self.rel_file_path = self.old_snapshots.get(self._deleted_key, "")
 
+            if self.rel_file_path:
+                self._artifact_manifest = artifacts.stash(
+                    self.command_id, [self.rel_file_path]
+                )
             snapshots.pop(self._deleted_key, None)
             target_meta["snapshots"] = snapshots
             _set_raster_layers(map_obj, raster_layers)
-            db_service.map_repo.insert_map(map_obj)
-
-            abs_path = Path(self.world_root) / self.rel_file_path
-            if abs_path.exists():
-                self._file_backup = abs_path.read_bytes()
-                abs_path.unlink()
+            try:
+                db_service.map_repo.insert_map(map_obj)
+            except Exception:
+                artifacts.restore(self._artifact_manifest)
+                self._artifact_manifest = {}
+                raise
 
             self._is_executed = True
             return CommandResult(
                 success=True,
                 message="Snapshot deleted.",
                 command_name="RemoveRasterSnapshotCommand",
+                data={
+                    "effects": [
+                        {
+                            "kind": "raster_edit_target_cleared",
+                            "node_id": self.node_id,
+                        }
+                    ]
+                },
             )
         except Exception as e:
             logger.error("RemoveRasterSnapshotCommand failed: %s", e, exc_info=True)
@@ -1526,15 +1664,25 @@ class RemoveRasterSnapshotCommand(BaseCommand):
                 command_name="RemoveRasterSnapshotCommand",
             )
 
-    def undo(self, db_service: DatabaseService) -> None:
-        """Restore the snapshot metadata and file bytes."""
+    def undo(self, db_service: DatabaseService) -> CommandResult:
+        """Restore the snapshot metadata and artifact."""
         if not self._is_executed:
-            return
+            return CommandResult(
+                success=False,
+                message="Raster state is not currently deleted.",
+                command_name="Undo_RemoveRasterSnapshotCommand",
+            )
 
+        world_root = (
+            Path(self.world_root)
+            if self.world_root
+            else Path(db_service.get_db_file_path()).parent
+        )
+        artifacts = CommandArtifactStore(world_root)
         try:
             map_obj = db_service.map_repo.get_map(self.map_id)
             if map_obj is None:
-                return
+                raise ValueError(f"Map not found: {self.map_id}")
 
             raster_layers = _get_raster_layers(map_obj)
             target_meta = next(
@@ -1542,20 +1690,37 @@ class RemoveRasterSnapshotCommand(BaseCommand):
                 None,
             )
             if target_meta is None:
-                return
+                raise ValueError(f"Raster layer not found: {self.node_id}")
 
+            artifacts.restore(self._artifact_manifest)
             target_meta["snapshots"] = dict(self.old_snapshots)
             _set_raster_layers(map_obj, raster_layers)
-            db_service.map_repo.insert_map(map_obj)
-
-            if self._file_backup is not None:
-                abs_path = Path(self.world_root) / self.rel_file_path
-                abs_path.parent.mkdir(parents=True, exist_ok=True)
-                abs_path.write_bytes(self._file_backup)
+            try:
+                db_service.map_repo.insert_map(map_obj)
+            except Exception:
+                self._artifact_manifest = artifacts.stash(
+                    self.command_id, [self.rel_file_path]
+                )
+                raise
 
             self._is_executed = False
-        except Exception as e:
-            logger.error("Undo RemoveRasterSnapshotCommand failed: %s", e)
+            return CommandResult(
+                success=True,
+                message="Raster state restored.",
+                command_name="Undo_RemoveRasterSnapshotCommand",
+                data={
+                    "effects": [
+                        {
+                            "kind": "raster_edit_target",
+                            "node_id": self.node_id,
+                            "file_path": self.rel_file_path,
+                        }
+                    ]
+                },
+            )
+        except Exception:
+            logger.exception("Undo RemoveRasterSnapshotCommand failed")
+            raise
 
     def to_dict(self) -> Dict:
         """Serialize command to dictionary."""
@@ -1566,12 +1731,15 @@ class RemoveRasterSnapshotCommand(BaseCommand):
             "rel_file_path": self.rel_file_path,
             "world_root": self.world_root,
             "old_snapshots": self.old_snapshots,
+            "deleted_key": self._deleted_key,
+            "artifact_manifest": self._artifact_manifest,
+            "is_executed": self._is_executed,
         }
 
     @classmethod
     def from_dict(cls, data: Dict) -> "RemoveRasterSnapshotCommand":
         """Deserialize command from dictionary."""
-        return cls(
+        command = cls(
             map_id=data["map_id"],
             node_id=data["node_id"],
             lore_date=data["lore_date"],
@@ -1579,6 +1747,10 @@ class RemoveRasterSnapshotCommand(BaseCommand):
             world_root=data.get("world_root", ""),
             old_snapshots=data.get("old_snapshots", {}),
         )
+        command._deleted_key = str(data.get("deleted_key", ""))
+        command._artifact_manifest = dict(data.get("artifact_manifest", {}))
+        command._is_executed = bool(data.get("is_executed", True))
+        return command
 
 
 class SetRasterNotesCommand(BaseCommand):
@@ -1607,7 +1779,7 @@ class SetRasterNotesCommand(BaseCommand):
         self.old_notes = old_notes
 
     @property
-    def has_history(self) -> bool:
+    def is_undoable(self) -> bool:
         """Notes edits are undoable."""
         return True
 
