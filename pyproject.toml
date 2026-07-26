@@ -100,3 +100,10 @@ line-ending = "auto"
 wrap-summaries = 88
 wrap-descriptions = 88
 
+[tool.mypy]
+python_version = "3.13"
+namespace_packages = true
+explicit_package_bases = true
+show_error_codes = true
+warn_unused_configs = true
+

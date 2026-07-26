@@ -4,13 +4,15 @@ Provides path/region drawing mode management for the MapWidget.
 """
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from PySide6.QtCore import Slot
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox, QPushButton, QWidget
+
+from src.core.protocols import SignalProtocol
 
 if TYPE_CHECKING:
-    pass
+    from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +29,24 @@ class MapDrawingMixin:
         - self.get_selected_map_id(): method
         - self._select_or_create_object(): method
     """
+
+    if TYPE_CHECKING:
+        # Host contract supplied by MapWidget.
+        view: "MapGraphicsView"
+        btn_draw_path: QPushButton
+        btn_draw_region: QPushButton
+        feature_created: SignalProtocol
+
+        def _update_mode_indicator(self) -> None:
+            ...
+
+        def get_selected_map_id(self) -> str | None:
+            ...
+
+        def _select_or_create_object(
+            self, title: str, prompt: str
+        ) -> tuple[str, str, str] | None:
+            ...
 
     @Slot()
     def _on_draw_path_clicked(self) -> None:
@@ -63,7 +83,11 @@ class MapDrawingMixin:
 
         map_id = self.get_selected_map_id()
         if not map_id:
-            QMessageBox.warning(self, "No Map", "Please create or select a map first.")
+            QMessageBox.warning(
+                cast(QWidget, self),
+                "No Map",
+                "Please create or select a map first.",
+            )
             return
 
         result = self._select_or_create_object(

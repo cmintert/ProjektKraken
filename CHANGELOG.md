@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-07-26
-**Commit:** 19cd5a21
+**Commit:** 94f548ab
 ---
 
 # Changelog
@@ -23,6 +23,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-07-26)* **Development / Typing**: Fixed mypy namespace-package discovery and stale window, worker, Qt, and map-mixin contracts, reducing the baseline from 1,217 to 1,017 errors.
 - *(2026-07-26)* **Raster / Stability**: Kept Paint active across successful strokes, paused safely on failed saves, and prevented editing a stale raster target.
 - *(2026-07-26)* **Map / Layers**: Removed deleted nodes from refreshed layer trees and cleared Paint controls when the selected raster no longer exists.
 - *(2026-07-25)* **Map / Stability**: Made map and raster mutations transactional and kept undo and redo stacks unchanged when worker operations fail.
@@ -32,6 +33,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-07-26)* **Development / Workflow**: Established an incremental no-new-errors mypy ratchet with bounded cleanup thresholds for changed modules.
+- *(2026-07-26)* **Testing**: Updated connection-manager fixtures for the worker and analysis coordinator contracts.
 - *(2026-07-26)* **Raster / Architecture**: Generalized buffers, patches, commands, and PNG persistence for 16-bit value rasters and straight-alpha RGBA rasters.
 - *(2026-07-26)* **Testing**: Added matrix coverage for raster modes and tools, tiled persistence, autosave queues, target selection, layer deletion, and Qt workflow state.
 - *(2026-07-26)* **Development / Cleanup**: Normalized imports and removed unused imports across coordinators, colour pickers, spellcheck tests, and map-nesting tests.

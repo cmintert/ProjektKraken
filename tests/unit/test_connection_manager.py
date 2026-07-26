@@ -47,8 +47,11 @@ def mock_main_window(qapp):
     window.ai_search_panel = Mock()
     window.graph_widget = Mock()
     window.worker = Mock()
+    window.worker_manager = Mock()
     window.longform_manager = Mock()
     window.map_handler = Mock()
+    window.analysis_panel = Mock()
+    window.app_coordinator = Mock()
 
     # Add coordinator mocks
     window.editor_coordinator = Mock()

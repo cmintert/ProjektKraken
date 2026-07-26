@@ -287,8 +287,12 @@ flake8 src/ tests/
 **MyPy (type checking):**
 
 ```bash
-mypy src/
+python -m mypy src/
 ```
+
+Follow the incremental type-checking rule in
+[`CONTRIBUTING.md`](CONTRIBUTING.md#incremental-type-checking-rule) when a
+changed module still contains legacy mypy errors.
 
 ### 4. Running Tests
 

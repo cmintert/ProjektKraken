@@ -4,7 +4,9 @@ The main application window that manages UI components, database workers, and
 signal/slot connections.
 """
 
-from typing import Any, Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 # NOTE: Uses fully qualified PySide6 enum paths. See docs/PYSIDE6_ENUM_SOLUTION.md.
 from PySide6.QtCore import (
@@ -17,7 +19,7 @@ from PySide6.QtCore import (
     Signal,
     Slot,
 )
-from PySide6.QtGui import QCloseEvent
+from PySide6.QtGui import QCloseEvent, QKeyEvent
 from PySide6.QtWidgets import (
     QDialog,
     QDockWidget,
@@ -65,6 +67,12 @@ from src.gui.widgets.longform import LongformEditorWidget
 from src.gui.widgets.map_widget import MapWidget
 from src.gui.widgets.timeline import TimelineWidget
 from src.gui.widgets.unified_list import UnifiedListWidget
+
+if TYPE_CHECKING:
+    from PySide6.QtCore import QThread
+
+    from src.services.db_service import DatabaseService
+    from src.services.worker import DatabaseWorker
 
 logger = get_logger(__name__)
 
@@ -156,8 +164,8 @@ class GlobalShortcutFilter(QObject):
         if event.type() != QEvent.Type.KeyPress:
             return False
 
-        key_event = event  # type: QKeyEvent
-        key = key_event.key()
+        key_event = cast(QKeyEvent, event)
+        key = Qt.Key(key_event.key())
         modifiers = key_event.modifiers()
 
         handler = self._shortcuts.get((key, modifiers))
@@ -192,6 +200,13 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     load_graph_data_requested = Signal(
         object, object
     )  # (tags: list|None, rel_types: list|None)
+
+    # WorkerManager injects these during phase-one initialization.
+    worker: DatabaseWorker
+    worker_thread: QThread
+    db_path: str
+    gui_db_service: DatabaseService
+    filter_config: dict[str, Any]
 
     def __init__(self, capture_layout_on_exit: bool = False) -> None:
         """Initializes the MainWindow using three-phase initialization.
@@ -581,9 +596,10 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         )
 
         # Initialize Database
+        # PySide6 requires str here at runtime although its stub declares bytes.
         QMetaObject.invokeMethod(
             self.worker, "initialize_db", Qt.ConnectionType.QueuedConnection
-        )
+        )  # type: ignore[call-overload]
 
         # Apply initial Windows Title Bar Style (deferred until window is ready)
         try:
@@ -1060,9 +1076,10 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             self.backup_service.stop_auto_backup()
 
         # Cleanup Worker
+        # PySide6 requires str here at runtime although its stub declares bytes.
         QMetaObject.invokeMethod(
             self.worker, "cleanup", Qt.ConnectionType.BlockingQueuedConnection
-        )
+        )  # type: ignore[call-overload]
 
         self.worker_thread.quit()
         if not self.worker_thread.wait(2000):  # 2000ms timeout

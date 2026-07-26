@@ -36,7 +36,14 @@
   `python launcher.py --check`; tests: `pytest`; fast suites: `pytest -m smoke -q`,
   `pytest -m "not slow"`.
 - On Windows GUI tests, set `$env:QT_QPA_PLATFORM = "offscreen"` before running pytest.
-- Quality gates: `python -m ruff check src/ tests/`, `python -m ruff check src/ tests/ --fix`, `mypy src/`.
+- Quality gates: `python -m ruff check src/ tests/`, `python -m ruff check src/ tests/ --fix`, `python -m mypy src/`.
+- Mypy debt follows a no-new-errors ratchet. For every changed Python module,
+  fix all errors introduced by the change and all errors in the changed code
+  path. If the module has 0-10 existing errors, leave the whole module clean;
+  with 11-30, fix related errors plus a small bounded cleanup; with more than
+  30, keep the feature scoped and schedule a dedicated typing cleanup. Use a
+  narrow `# type: ignore[code]` only for a verified third-party stub/runtime
+  mismatch, with an explanatory comment. See `docs/CONTRIBUTING.md`.
 - Reuse `tests/conftest.py` fixtures (`qapp`, `db_service`, `init_theme_manager`); avoid ad-hoc Qt/DB fixture copies.
 - Watch for test pitfalls: shared `MockQSettings._storage`, teardown validity checks (`shiboken6.isValid(...)`), and debounce/timer-driven UI behavior.
 

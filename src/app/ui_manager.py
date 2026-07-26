@@ -4,7 +4,7 @@ Handles the creation and layout of dock widgets and menus for the MainWindow.
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
 
 # NOTE: PySide6 Fully Qualified Enum Paths
 # =========================================
@@ -111,7 +111,11 @@ class UIManager:
 
         """
         self.main_window = main_window
-        self.docks = {}
+        # MainWindowProtocol deliberately lives in core and cannot inherit Qt types.
+        # UIManager is only constructed with the real QMainWindow, so keep the Qt
+        # parent view explicit at this boundary.
+        self._window_widget = cast(QWidget, main_window)
+        self.docks: dict[str, QDockWidget] = {}
 
     def _attach_diagnostics(self, dock: QDockWidget) -> None:
         """Attach diagnostic logging to a dock widget.
@@ -389,7 +393,7 @@ class UIManager:
         )
 
     def _create_dock(
-        self, title: str, obj_name: str, widget: QWidget
+        self, title: str, obj_name: str, widget: QWidget | None
     ) -> Optional[QDockWidget]:
         """Helper to create a configured dock widget with size constraints.
 
@@ -429,7 +433,7 @@ class UIManager:
             )
 
             # Create dock widget
-            dock = QDockWidget(title, self.main_window)
+            dock = QDockWidget(title, self._window_widget)
             dock.setObjectName(obj_name)
             dock.setWidget(widget)
 
@@ -642,7 +646,7 @@ class UIManager:
         # Create action group for exclusivity
         from PySide6.QtGui import QActionGroup
 
-        action_group = QActionGroup(self.main_window)
+        action_group = QActionGroup(self._window_widget)
 
         for theme_name in available_themes:
             action = theme_menu.addAction(theme_name.replace("_", " ").title())
@@ -719,11 +723,13 @@ class UIManager:
 
     def prompt_save_layout(self) -> None:
         """Prompts user for a layout name and saves it."""
-        name, ok = QInputDialog.getText(self.main_window, "Save Layout", "Layout Name:")
+        name, ok = QInputDialog.getText(
+            self._window_widget, "Save Layout", "Layout Name:"
+        )
         if ok and name:
             if name in self.get_saved_layouts():
                 reply = QMessageBox.question(
-                    self.main_window,
+                    self._window_widget,
                     "Overwrite Layout?",
                     f"Layout '{name}' already exists. Overwrite?",
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
@@ -784,7 +790,7 @@ class UIManager:
 
         """
         reply = QMessageBox.question(
-            self.main_window,
+            self._window_widget,
             "Delete Layout",
             f"Are you sure you want to delete layout '{name}'?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
@@ -1001,7 +1007,9 @@ class UIManager:
 
             # Init state
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-            is_checked = settings.value(SETTINGS_AUTO_RELATION_KEY, False, type=bool)
+            is_checked = cast(
+                bool, settings.value(SETTINGS_AUTO_RELATION_KEY, False, type=bool)
+            )
             self.auto_relation_action.setChecked(is_checked)
 
         # Longform Auto-Refresh Setting
@@ -1016,7 +1024,9 @@ class UIManager:
             )
             # Init state (default True)
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-            is_checked = settings.value("longform_auto_refresh", True, type=bool)
+            is_checked = cast(
+                bool, settings.value("longform_auto_refresh", True, type=bool)
+            )
             self.longform_refresh_action.setChecked(is_checked)
 
         # Track pending dialog state
@@ -1044,27 +1054,32 @@ class UIManager:
         """Show the keyboard shortcuts dialog."""
         from src.gui.dialogs.keyboard_shortcuts_dialog import KeyboardShortcutsDialog
 
-        dialog = KeyboardShortcutsDialog(self.main_window)
+        dialog = KeyboardShortcutsDialog(self._window_widget)
         dialog.exec()
 
     def _show_about_dialog(self) -> None:
         """Show a simple about dialog."""
         from src.gui.dialogs.about_dialog import AboutDialog
 
-        dialog = AboutDialog(self.main_window)
+        dialog = AboutDialog(self._window_widget)
         dialog.exec()
 
     def _open_calendar_config(self) -> None:
         """Requests loading of calendar config to open dialog."""
+        self._calendar_dialog_pending = True
+        self._request_calendar_config()
+
+    def _request_calendar_config(self) -> None:
+        """Queue a calendar-config load on the database worker thread."""
         from PySide6.QtCore import QMetaObject
 
-        # Request config from worker (will be handled by on_calendar_config_loaded)
-        self._calendar_dialog_pending = True
+        # PySide6's runtime requires a str member name, while its current type
+        # stub declares bytes. Keep the mismatch isolated at this Qt boundary.
         QMetaObject.invokeMethod(
-            self.main_window.worker,
+            cast(QObject, self.main_window.worker),
             "load_calendar_config",
             Qt.ConnectionType.QueuedConnection,
-        )
+        )  # type: ignore[call-overload]
 
     def show_calendar_dialog(self, current_config: Optional[Any]) -> None:
         """Shows the calendar configuration dialog.
@@ -1077,6 +1092,7 @@ class UIManager:
             return
         self._calendar_dialog_pending = False
 
+        from src.commands.base_command import BaseCommand
         from src.commands.calendar_commands import (
             CreateCalendarConfigCommand,
             SetActiveCalendarCommand,
@@ -1084,7 +1100,7 @@ class UIManager:
         )
         from src.gui.dialogs.calendar_config_dialog import CalendarConfigDialog
 
-        dialog = CalendarConfigDialog(self.main_window, config=current_config)
+        dialog = CalendarConfigDialog(self._window_widget, config=current_config)
 
         def on_config_saved(config: Any) -> None:
             """Handles calendar config save by creating appropriate commands.
@@ -1095,7 +1111,7 @@ class UIManager:
             """
             # Save the config
             if current_config and current_config.id == config.id:
-                cmd = UpdateCalendarConfigCommand(config)
+                cmd: BaseCommand = UpdateCalendarConfigCommand(config)
             else:
                 cmd = CreateCalendarConfigCommand(config)
             self.main_window.command_requested.emit(cmd)
@@ -1105,7 +1121,7 @@ class UIManager:
             self.main_window.command_requested.emit(active_cmd)
 
             # Refresh the calendar converter
-            self.main_window._request_calendar_config()
+            self._request_calendar_config()
 
         dialog.config_saved.connect(on_config_saved)
         dialog.exec()

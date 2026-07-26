@@ -10,43 +10,78 @@ methods automatically satisfies the protocol without explicit inheritance.
 from typing import Any, Protocol, runtime_checkable
 
 
+class ByteArrayProtocol(Protocol):
+    """Structural subset of Qt's QByteArray used for layout persistence."""
+
+    def toHex(self) -> "ByteArrayProtocol":
+        """Return a hexadecimal representation of this byte array."""
+        ...
+
+    def data(self) -> bytes:
+        """Return the byte array contents."""
+        ...
+
+
+class SignalProtocol(Protocol):
+    """Minimal contract shared by bound Qt signals used across app layers."""
+
+    def emit(self, *args: Any) -> None:
+        """Emit the signal with the supplied arguments."""
+        ...
+
+
+class DatabaseWorkerProtocol(Protocol):
+    """Worker operations invoked directly by application coordinators."""
+
+    def add_keyframe(
+        self, map_id: str, marker_id: str, t: float, x: float, y: float
+    ) -> None:
+        """Add a trajectory keyframe."""
+        ...
+
+    def update_keyframe_time(
+        self, map_id: str, marker_id: str, old_t: float, new_t: float
+    ) -> None:
+        """Move a trajectory keyframe in time."""
+        ...
+
+    def delete_keyframe(self, map_id: str, marker_id: str, t: float) -> None:
+        """Delete a trajectory keyframe."""
+        ...
+
+    def load_calendar_config(self) -> None:
+        """Load the active calendar configuration."""
+        ...
+
+    def save_graph_lexicon(self, config: dict) -> None:
+        """Persist the graph lexicon configuration."""
+        ...
+
+
 @runtime_checkable
 class MainWindowProtocol(Protocol):
-    """Protocol defining the interface that UIManager expects from MainWindow.
-
-    This formalizes the contract between UIManager and MainWindow, making the coupling
-    explicit and checkable at runtime.
-    """
-
-    def _on_configure_grouping_requested(self) -> None:
-        """Handle timeline grouping configuration request."""
-        ...
-
-    def _on_clear_grouping_requested(self) -> None:
-        """Handle timeline grouping clear request."""
-        ...
-
-    def _request_calendar_config(self) -> None:
-        """Request loading of calendar configuration."""
-        ...
-
-    def show_database_manager(self) -> None:
-        """Show the database manager dialog."""
-        ...
-
-    def show_ai_settings_dialog(self) -> None:
-        """Show the AI settings dialog."""
-        ...
+    """Contract used by the app-layer managers that collaborate with MainWindow."""
 
     def toggle_auto_relation_setting(self) -> None:
         """Toggle the auto-relation setting."""
+        ...
+
+    def load_maps(self) -> None:
+        """Request the current world's maps."""
+        ...
+
+    def show_filter_dialog(self) -> None:
+        """Show the global filter dialog."""
+        ...
+
+    def clear_filter(self) -> None:
+        """Clear the active global filter."""
         ...
 
     def close(self) -> bool:
         """Close the window."""
         ...
 
-    # QMainWindow methods
     def setDockOptions(self, options: Any) -> None:
         """Set dock widget options for the main window."""
         ...
@@ -67,98 +102,68 @@ class MainWindowProtocol(Protocol):
         """Stack second dock widget on top of first as tabs."""
         ...
 
-    def addToolBar(self, toolbar: Any) -> None:
-        """Add a toolbar to the main window."""
+    def addAction(self, action: Any) -> None:
+        """Add an action to the main window."""
         ...
 
-    def removeDockWidget(self, dockwidget: Any) -> None:
-        """Remove a dock widget from the main window."""
+    def height(self) -> int:
+        """Return the current window height."""
         ...
 
-    def saveState(self, version: int = 0) -> bytes:
+    def resizeDocks(self, docks: Any, sizes: Any, orientation: Any) -> None:
+        """Resize dock widgets along the supplied orientation."""
+        ...
+
+    def saveState(self, version: int = 0) -> ByteArrayProtocol:
         """Save the current window state (docks/toolbars)."""
         ...
 
-    def restoreState(self, state: bytes, version: int = 0) -> bool:
+    def restoreState(self, state: Any, version: int = 0) -> bool:
         """Restore the window state."""
         ...
 
-    def saveGeometry(self) -> bytes:
+    def saveGeometry(self) -> ByteArrayProtocol:
         """Save the current window geometry."""
         ...
 
-    def restoreGeometry(self, geometry: bytes) -> bool:
+    def restoreGeometry(self, geometry: Any) -> bool:
         """Restore the window geometry."""
         ...
 
-    worker: object  # Worker instance for background operations
-    worker_thread: object  # QThread hosting the worker
-    command_requested: object  # Signal for emitting commands
-    db_path: str  # Path to the active SQLite database
-    current_world: Any  # Active World model instance
-    gui_db_service: Any  # Main-thread DatabaseService
-    backup_service: Any  # BackupService instance
-    filter_config: dict  # Active tag filter configuration
+    @property
+    def worker(self) -> DatabaseWorkerProtocol:
+        """Return the database worker owned by the worker thread."""
+        ...
 
-    # Missing Attributes identified by Pyright (Typed as Any for flexibility)
-    _on_command_failed: Any
-    _on_dock_raise_requested: Any
-    _on_entities_ready: Any
-    _on_entity_details_ready: Any
-    _on_event_date_changed: Any
-    _on_event_details_ready: Any
-    _on_events_ready: Any
-    _on_item_delete_requested: Any
-    _on_item_selected: Any
-    _on_longform_sequence_ready: Any
-    _on_maps_ready: Any
-    _on_marker_clicked: Any
-    _on_marker_color_changed: Any
-    _on_marker_dropped: Any
-    _on_marker_icon_changed: Any
-    _on_marker_position_changed: Any
-    _on_markers_ready: Any
-    _on_reload_active_editor_relations: Any
-    _on_selection_requested: Any
-    _on_suggestions_update: Any
-    add_relation: Any
+    @property
+    def command_requested(self) -> SignalProtocol:
+        """Return the command-dispatch signal."""
+        ...
+
     ai_search_manager: Any
     ai_search_panel: Any
-    clear_filter: Any
-    create_entity: Any
-    create_event: Any
-    create_map: Any
-    create_marker: Any
+    analysis_panel: Any
+    app_coordinator: Any
+    backup_coordinator: Any
+    coordinator: Any
+    data_coordinator: Any
     data_handler: Any
-    delete_map: Any
-    delete_marker: Any
     editor_coordinator: Any
     entity_editor: Any
     event_editor: Any
     grouping_manager: Any
-    load_data: Any
-    load_entities: Any
-    load_entity_details: Any
-    load_event_details: Any
-    load_events: Any
-    load_longform_sequence: Any
-    load_maps: Any
+    graph_widget: Any
+    import_coordinator: Any
     longform_editor: Any
     longform_manager: Any
+    map_handler: Any
     map_widget: Any
-    navigate_to_entity: Any
     navigation_coordinator: Any
-    on_current_time_changed: Any
-    on_map_selected: Any
-    remove_relation: Any
-    show_filter_dialog: Any
     status_bar: Any
+    time_coordinator: Any
     timeline: Any
     unified_list: Any
-    update_entity: Any
-    update_event: Any
-    update_playhead_time_label: Any
-    update_relation: Any
+    worker_manager: Any
 
 
 @runtime_checkable

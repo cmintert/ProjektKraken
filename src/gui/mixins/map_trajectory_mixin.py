@@ -5,15 +5,17 @@ and clock-mode temporal editing for the MapWidget.
 """
 
 import logging
-from typing import TYPE_CHECKING, Iterator, Tuple
+from typing import TYPE_CHECKING, Any, Iterator, Tuple, cast
 
 from PySide6.QtCore import QSettings, Slot
+from PySide6.QtWidgets import QComboBox, QLabel, QWidget
 
+from src.core.protocols import SignalProtocol
 from src.core.trajectory import KEYFRAME_TIME_EPSILON, interpolate_position
 from src.gui.widgets.map.marker_item import MarkerItem
 
 if TYPE_CHECKING:
-    pass
+    from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +41,30 @@ class MapTrajectoryMixin:
         - self._update_mode_indicator(): method
         - self.get_selected_map_id(): method
     """
+
+    if TYPE_CHECKING:
+        # Host contract supplied by MapWidget. Keeping it here makes the mixin
+        # independently type-checkable without adding runtime base classes.
+        view: "MapGraphicsView"
+        _active_trajectories: dict[str, list[Any]]
+        _playhead_time: float
+        _current_time: float
+        _selected_marker_id: str | None
+        _pinned_marker_id: str | None
+        _pinned_original_t: float | None
+        _transient_marker_ids: set[str]
+        add_keyframe_requested: SignalProtocol
+        update_keyframe_time_requested: SignalProtocol
+        jump_to_time_requested: SignalProtocol
+        delete_keyframe_requested: SignalProtocol
+        map_selector: QComboBox
+        coord_label: QLabel
+
+        def _update_mode_indicator(self) -> None:
+            ...
+
+        def get_selected_map_id(self) -> str | None:
+            ...
 
     def set_trajectories(self, trajectories: list) -> None:
         """Sets the active trajectories for the current map.
@@ -232,7 +258,7 @@ class MapTrajectoryMixin:
         """Shows the onboarding dialog for first-time keyframe creation."""
         from src.gui.widgets.map_widget import OnboardingDialog
 
-        dialog = OnboardingDialog(self)
+        dialog = OnboardingDialog(cast(QWidget, self))
         dialog.exec()
 
     @Slot(str, str)
