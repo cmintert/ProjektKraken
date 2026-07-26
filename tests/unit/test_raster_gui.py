@@ -434,7 +434,7 @@ class TestLiveToolSettings:
         qtbot.addWidget(panel)
 
         panel._falloff_slider.setValue(75)
-        assert abs(panel.raster_falloff - 0.75) < 0.01
+        assert abs(panel.raster_falloff - 0.25) < 0.01
 
 
 # ── UX Fix: Button styling and text ──────────────────────────────────
@@ -450,16 +450,15 @@ class TestRasterButtonStyling:
         qtbot.addWidget(panel)
         panel._selected_node_id = "test-node"
 
-        # Unchecked: shows "✎ Edit"
-        assert "Edit" in panel._btn_edit_toggle.text()
+        assert panel._btn_edit_toggle.text() == "Paint"
 
-        # Check it: should show "✎ Editing…" to indicate active state
+        # Check it: should expose the explicit stop action.
         panel._btn_edit_toggle.setChecked(True)
-        assert "Editing" in panel._btn_edit_toggle.text()
+        assert panel._btn_edit_toggle.text() == "Stop painting"
 
-        # Uncheck: back to "✎ Edit"
+        # Uncheck: back to Paint.
         panel._btn_edit_toggle.setChecked(False)
-        assert "Edit" in panel._btn_edit_toggle.text()
+        assert panel._btn_edit_toggle.text() == "Paint"
 
     def test_tool_buttons_have_stylesheet(self, qtbot) -> None:
         from src.gui.widgets.map.map_layer_panel import MapLayerPanel
@@ -497,7 +496,7 @@ class TestFalloffLabel:
         qtbot.addWidget(panel)
 
         assert hasattr(panel, "_falloff_label")
-        assert panel._falloff_label.text() == "0%"
+        assert panel._falloff_label.text() == "100%"
 
     def test_falloff_label_updates_on_slider(self, qtbot) -> None:
         from src.gui.widgets.map.map_layer_panel import MapLayerPanel
@@ -1105,8 +1104,8 @@ class TestPanelLegendAndEntityPicker:
             "color_map": {},
         }
         panel._refresh_entity_picker(layer_meta, "discrete")
-        # "— manual —" + 2 entries = 3 items
-        assert panel._entity_picker_combo.count() == 3
+        # Named classes are primary; manual entry lives behind its own toggle.
+        assert panel._entity_picker_combo.count() == 2
 
     def test_refresh_entity_picker_hidden_for_continuous(self, qtbot) -> None:
         from src.gui.widgets.map.map_layer_panel import MapLayerPanel
@@ -1124,7 +1123,7 @@ class TestPanelLegendAndEntityPicker:
         panel._refresh_entity_picker({"value_entity_map": {}}, "color")
         assert not panel._entity_picker_row.isVisible()
 
-    def test_color_mode_disables_sample_tool(self, qtbot) -> None:
+    def test_color_mode_exposes_eyedropper(self, qtbot) -> None:
         from src.gui.widgets.map.map_layer_panel import MapLayerPanel
 
         panel = MapLayerPanel()
@@ -1133,9 +1132,8 @@ class TestPanelLegendAndEntityPicker:
 
         panel._update_sample_tool_availability("color")
 
-        assert not panel._btn_sample.isEnabled()
-        assert panel._btn_brush.isChecked()
-        assert "unavailable for color rasters" in panel._btn_sample.toolTip()
+        assert panel._btn_sample.isEnabled()
+        assert "Eyedropper" in panel._btn_sample.toolTip()
 
     def test_entity_picked_sets_paint_value(self, qtbot) -> None:
         from src.gui.widgets.map.map_layer_panel import MapLayerPanel
@@ -1150,9 +1148,74 @@ class TestPanelLegendAndEntityPicker:
             "color_map": {},
         }
         panel._refresh_entity_picker(layer_meta, "discrete")
-        # Select index 1 (first real class — index 0 is "manual")
-        panel._entity_picker_combo.setCurrentIndex(1)
+        panel._entity_picker_combo.setCurrentIndex(0)
         assert panel._paint_value_spin.value() == 42
+
+    def test_discrete_recent_value_requires_manual_mode(self, qtbot) -> None:
+        """Cross-mode raw history must not bypass a discrete class palette."""
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel._current_node_id = "classes"
+        panel._raster_mode_by_id["classes"] = "discrete"
+        panel._discrete_paint_values_by_id["classes"] = {7, 42}
+        panel._set_paint_value(7)
+        panel._apply_mode_tool_visibility()
+
+        assert panel._recent_paint_values.isHidden()
+        panel._on_recent_value_chosen(46000)
+        assert panel.raster_paint_value == 7
+
+        panel._advanced_paint_toggle.setChecked(True)
+        assert not panel._recent_paint_values.isHidden()
+        panel._on_recent_value_chosen(46000)
+        assert panel.raster_paint_value == 46000
+
+    def test_discrete_selector_coerces_to_named_class(self, qtbot) -> None:
+        """Entering discrete mode should select a valid class by default."""
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel._current_node_id = "classes"
+        panel._raster_mode_by_id["classes"] = "discrete"
+        panel._paint_value_spin.setValue(60000)
+        layer_meta = {
+            "value_entity_map": {
+                "mode": "exact",
+                "mappings": [
+                    {"id": "forest", "label": "Forest", "value": 42},
+                    {"id": "tundra", "label": "Tundra", "value": 7},
+                ],
+            },
+            "color_map": {},
+        }
+
+        panel._refresh_entity_picker(layer_meta, "discrete")
+
+        assert panel.raster_paint_value in {7, 42}
+        assert panel._entity_picker_combo.currentData() == panel.raster_paint_value
+
+    def test_mode_visibility_hides_complete_setting_rows(self, qtbot) -> None:
+        """Mode/tool changes must not leave labels from hidden controls behind."""
+        from src.gui.widgets.map.map_layer_panel import MapLayerPanel
+
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel._current_node_id = "classes"
+        panel._raster_mode_by_id["classes"] = "discrete"
+        panel._apply_mode_tool_visibility()
+
+        assert panel._hardness_row.isHidden()
+        assert panel._brush_opacity_row.isHidden()
+        assert not panel._brush_size_row.isHidden()
+
+        panel._btn_fill.setChecked(True)
+
+        assert panel._brush_size_row.isHidden()
+        assert panel._hardness_row.isHidden()
+        assert panel._brush_opacity_row.isHidden()
 
 
 # ── New: get_discrete_class_choices helper ────────────────────────────
@@ -2562,7 +2625,7 @@ class TestRasterToRasterSwitchStopsEditing:
 
         panel.reset_edit_toggle()
         assert not panel._btn_edit_toggle.isChecked()
-        assert panel._btn_edit_toggle.text() == "\u270e Edit"
+        assert panel._btn_edit_toggle.text() == "Paint"
 
     def test_reset_edit_toggle_does_not_emit_toggled(self, qtbot) -> None:
         from src.gui.widgets.map.map_layer_panel import MapLayerPanel

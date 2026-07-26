@@ -11,14 +11,11 @@ Covers:
 
 from __future__ import annotations
 
-import math
-
 import pytest
 
 from src.app.constants import MAP_NESTING_DEPTH_CAP, MAP_ROLE_DETAIL, MAP_ROLE_MASTER
 from src.core.map import Map
 from src.services.map_nesting_service import MapNestingService, NestingValidationError
-
 
 # ---------------------------------------------------------------------------
 # Helpers

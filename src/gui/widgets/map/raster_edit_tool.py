@@ -9,7 +9,7 @@ returns ``True`` when it consumes the event.
 
 import logging
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import numpy as np
 from PySide6.QtCore import QPointF, QRectF, Qt
@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
 
 from src.app.constants import MAP_LAYER_Z_UI_OVERLAY
 from src.app.ui_constants import RASTER_DAB_SPACING_FACTOR
+from src.core.raster_paint import RasterPaintMode, brush_bounds
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.map.raster_layer_item import RasterLayerItem
 
@@ -44,6 +45,154 @@ GRADIENT_SUB_RADIAL = "radial"
 GRADIENT_SUB_REFLECTED = "reflected"
 
 
+class _TiledStrokeJournal:
+    """Capture touched pixels lazily in clipped 256×256 tiles."""
+
+    TILE_SIZE = 256
+
+    def __init__(self, array: np.ndarray) -> None:
+        self._shape = array.shape
+        self._dtype = array.dtype
+        self._before: dict[tuple[int, int], np.ndarray] = {}
+        self._strength: dict[tuple[int, int], np.ndarray] = {}
+
+    def capture_bounds(
+        self,
+        array: np.ndarray,
+        bounds: tuple[int, int, int, int],
+    ) -> None:
+        """Snapshot tiles intersecting inclusive *bounds* once."""
+        min_col, min_row, max_col, max_row = bounds
+        first_x = min_col // self.TILE_SIZE
+        last_x = max_col // self.TILE_SIZE
+        first_y = min_row // self.TILE_SIZE
+        last_y = max_row // self.TILE_SIZE
+        for tile_y in range(first_y, last_y + 1):
+            for tile_x in range(first_x, last_x + 1):
+                key = (tile_x, tile_y)
+                if key in self._before:
+                    continue
+                x0, y0, x1, y1 = self._tile_bounds(key)
+                self._before[key] = array[y0 : y1 + 1, x0 : x1 + 1].copy()
+                self._strength[key] = np.zeros(
+                    (y1 - y0 + 1, x1 - x0 + 1),
+                    dtype=np.float32,
+                )
+
+    def before_region(
+        self,
+        bounds: tuple[int, int, int, int],
+    ) -> np.ndarray:
+        """Assemble a dab-sized baseline from captured tile snapshots."""
+        return self._assemble(bounds, self._before)
+
+    def strength_region(
+        self,
+        bounds: tuple[int, int, int, int],
+    ) -> np.ndarray:
+        """Assemble current per-pixel maximum coverage for one dab."""
+        return self._assemble(bounds, self._strength)
+
+    def store_strength(
+        self,
+        bounds: tuple[int, int, int, int],
+        strength: np.ndarray,
+    ) -> None:
+        """Write a dab-sized maximum-coverage region back into tile storage."""
+        self._scatter(bounds, strength, self._strength)
+
+    def patches(self, array: np.ndarray) -> list[dict[str, Any]]:
+        """Return ordered serializable tile patches for changed tiles."""
+        result: list[dict[str, Any]] = []
+        for key in sorted(self._before, key=lambda item: (item[1], item[0])):
+            x0, y0, x1, y1 = self._tile_bounds(key)
+            before = self._before[key]
+            after = array[y0 : y1 + 1, x0 : x1 + 1].copy()
+            if np.array_equal(before, after):
+                continue
+            result.append(
+                {
+                    "region": (x0, y0, x1, y1),
+                    "shape": after.shape,
+                    "dtype": str(after.dtype),
+                    "before_bytes": before.tobytes(),
+                    "after_bytes": after.tobytes(),
+                }
+            )
+        return result
+
+    def _tile_bounds(
+        self,
+        key: tuple[int, int],
+    ) -> tuple[int, int, int, int]:
+        tile_x, tile_y = key
+        height, width = self._shape[:2]
+        x0 = tile_x * self.TILE_SIZE
+        y0 = tile_y * self.TILE_SIZE
+        return (
+            x0,
+            y0,
+            min(width - 1, x0 + self.TILE_SIZE - 1),
+            min(height - 1, y0 + self.TILE_SIZE - 1),
+        )
+
+    def _assemble(
+        self,
+        bounds: tuple[int, int, int, int],
+        source: dict[tuple[int, int], np.ndarray],
+    ) -> np.ndarray:
+        min_col, min_row, max_col, max_row = bounds
+        suffix = self._shape[2:]
+        result = np.empty(
+            (max_row - min_row + 1, max_col - min_col + 1, *suffix),
+            dtype=next(iter(source.values())).dtype,
+        )
+        self._scatter_from_tiles(bounds, result, source)
+        return result
+
+    def _scatter_from_tiles(
+        self,
+        bounds: tuple[int, int, int, int],
+        result: np.ndarray,
+        source: dict[tuple[int, int], np.ndarray],
+    ) -> None:
+        min_col, min_row, max_col, max_row = bounds
+        for key, tile in source.items():
+            x0, y0, x1, y1 = self._tile_bounds(key)
+            ix0, iy0 = max(min_col, x0), max(min_row, y0)
+            ix1, iy1 = min(max_col, x1), min(max_row, y1)
+            if ix0 > ix1 or iy0 > iy1:
+                continue
+            result[
+                iy0 - min_row : iy1 - min_row + 1,
+                ix0 - min_col : ix1 - min_col + 1,
+            ] = tile[
+                iy0 - y0 : iy1 - y0 + 1,
+                ix0 - x0 : ix1 - x0 + 1,
+            ]
+
+    def _scatter(
+        self,
+        bounds: tuple[int, int, int, int],
+        region: np.ndarray,
+        destination: dict[tuple[int, int], np.ndarray],
+    ) -> None:
+        min_col, min_row, max_col, max_row = bounds
+        for key, tile in destination.items():
+            x0, y0, x1, y1 = self._tile_bounds(key)
+            ix0, iy0 = max(min_col, x0), max(min_row, y0)
+            ix1, iy1 = min(max_col, x1), min(max_row, y1)
+            if ix0 > ix1 or iy0 > iy1:
+                continue
+            tile[
+                iy0 - y0 : iy1 - y0 + 1,
+                ix0 - x0 : ix1 - x0 + 1,
+            ] = region[
+                iy0 - min_row : iy1 - min_row + 1,
+                ix0 - min_col : ix1 - min_col + 1,
+            ]
+
+
 class RasterEditTool:
     """Interactive raster editing delegated from MapGraphicsView.
 
@@ -65,6 +214,10 @@ class RasterEditTool:
         # Tool settings
         self._brush_size: int = 8
         self._paint_value: int = 1
+        self._paint_color: tuple[int, int, int, int] = (255, 255, 255, 255)
+        self._fill_tolerance: int = 0
+        self._gradient_from: int | tuple[int, int, int, int] = 0
+        self._gradient_to: int | tuple[int, int, int, int] = 1
         self._falloff: float = 0.0
         self._falloff_curve: str = "cosine"
         self._brush_opacity: float = 1.0
@@ -74,9 +227,8 @@ class RasterEditTool:
 
         # Brush stroke accumulation
         self._stroke_active: bool = False
-        self._stroke_before: Optional[np.ndarray] = None
         self._stroke_dirty: Optional[tuple[int, int, int, int]] = None
-        self._stroke_strength_map: Optional[np.ndarray] = None
+        self._stroke_journal: Optional[_TiledStrokeJournal] = None
 
         # Dab spacing: last position where a dab was actually placed
         self._last_dab_pos: Optional[tuple[float, float]] = None
@@ -143,6 +295,35 @@ class RasterEditTool:
     @paint_value.setter
     def paint_value(self, value: int) -> None:
         self._paint_value = max(0, min(value, 65535))
+
+    @property
+    def paint_color(self) -> tuple[int, int, int, int]:
+        """Active straight-alpha RGBA colour."""
+        return self._paint_color
+
+    @paint_color.setter
+    def paint_color(self, value: tuple[int, int, int, int]) -> None:
+        self._paint_color = tuple(
+            max(0, min(int(channel), 255)) for channel in value
+        )  # type: ignore[assignment]
+
+    @property
+    def fill_tolerance(self) -> int:
+        """Connected-fill tolerance in raw channel/value units."""
+        return self._fill_tolerance
+
+    @fill_tolerance.setter
+    def fill_tolerance(self, value: int) -> None:
+        self._fill_tolerance = max(0, min(int(value), 65535))
+
+    def set_gradient_targets(
+        self,
+        start: int | tuple[int, int, int, int],
+        end: int | tuple[int, int, int, int],
+    ) -> None:
+        """Set explicit From and To targets used by gradient tools."""
+        self._gradient_from = start
+        self._gradient_to = end
 
     @property
     def falloff(self) -> float:
@@ -409,12 +590,11 @@ class RasterEditTool:
     # ------------------------------------------------------------------
 
     def _begin_stroke(self, item: RasterLayerItem) -> None:
-        """Snapshot the full buffer before a stroke begins."""
+        """Begin lazy tile capture without copying the complete raster."""
         buf = item.buffer
         self._stroke_active = True
-        self._stroke_before = buf.data.copy()
         self._stroke_dirty = None
-        self._stroke_strength_map = np.zeros(buf.data.shape, dtype=np.float32)
+        self._stroke_journal = _TiledStrokeJournal(buf.editable_data)
         self._last_dab_pos = None
         logger.debug(
             "_begin_stroke: node_id=%s buffer=%dx%d",
@@ -445,17 +625,52 @@ class RasterEditTool:
             Dirty region ``(min_col, min_row, max_col, max_row)``.
         """
         buf = item.buffer
-        dirty = buf.paint_brush(
-            x_norm,
-            y_norm,
+        journal = self._stroke_journal
+        if journal is None:
+            raise RuntimeError("Brush dab started without a stroke journal")
+        center_col, center_row = buf._norm_to_pixel(x_norm, y_norm)
+        dirty = brush_bounds(
+            buf.editable_data.shape,
+            center_col,
+            center_row,
             self._brush_size,
-            self._paint_value,
-            self._falloff,
-            falloff_curve=self._falloff_curve,
-            opacity=self._brush_opacity,
-            stroke_before=self._stroke_before,
-            stroke_strength_map=self._stroke_strength_map,
         )
+        journal.capture_bounds(buf.editable_data, dirty)
+        if buf.raster_mode is RasterPaintMode.DISCRETE:
+            dirty = buf.paint_brush(
+                x_norm,
+                y_norm,
+                self._brush_size,
+                self._paint_value,
+            )
+        else:
+            baseline = journal.before_region(dirty)
+            strength = journal.strength_region(dirty)
+            if buf.raster_mode is RasterPaintMode.RGBA:
+                dirty = buf.paint_color_brush(
+                    x_norm,
+                    y_norm,
+                    self._brush_size,
+                    self._paint_color,
+                    hardness=1.0 - self._falloff,
+                    opacity=self._brush_opacity,
+                    falloff_curve=self._falloff_curve,
+                    stroke_before=baseline,
+                    stroke_strength_map=strength,
+                )
+            else:
+                dirty = buf.paint_brush(
+                    x_norm,
+                    y_norm,
+                    self._brush_size,
+                    self._paint_value,
+                    self._falloff,
+                    falloff_curve=self._falloff_curve,
+                    opacity=self._brush_opacity,
+                    stroke_before=baseline,
+                    stroke_strength_map=strength,
+                )
+            journal.store_strength(dirty, strength)
         logger.debug(
             "_apply_brush: pos=(%.3f,%.3f) radius=%d value=%d dirty=%s",
             x_norm,
@@ -550,39 +765,31 @@ class RasterEditTool:
         item = self._get_active_item()
         self._stroke_active = False
 
-        if item is None or self._stroke_before is None or self._stroke_dirty is None:
+        journal = self._stroke_journal
+        if item is None or journal is None or self._stroke_dirty is None:
             logger.debug(
-                "_finish_stroke: nothing to commit (item=%s before=%s dirty=%s)",
+                "_finish_stroke: nothing to commit (item=%s journal=%s dirty=%s)",
                 item is not None,
-                self._stroke_before is not None,
+                journal is not None,
                 self._stroke_dirty,
             )
-            self._stroke_before = None
+            self._stroke_journal = None
             self._stroke_dirty = None
             return
 
-        d = self._stroke_dirty
-        before_region = self._stroke_before[d[1] : d[3] + 1, d[0] : d[2] + 1].copy()
-        after_region = item.buffer.get_region(d[0], d[1], d[2], d[3])
+        patches = journal.patches(item.buffer.editable_data)
         logger.debug(
-            "_finish_stroke: node_id=%s dirty=%s before_bytes=%d after_bytes=%d",
+            "_finish_stroke: node_id=%s dirty=%s tile_patches=%d",
             self._active_node_id,
-            d,
-            len(before_region.tobytes()),
-            len(after_region.tobytes()),
+            self._stroke_dirty,
+            len(patches),
         )
 
-        # Emit signal for command creation
-        self._emit_stroke_completed(
-            self._active_node_id or "",
-            d,
-            before_region.tobytes(),
-            after_region.tobytes(),
-        )
+        if patches:
+            self._emit_stroke_completed(self._active_node_id or "", patches)
 
-        self._stroke_before = None
+        self._stroke_journal = None
         self._stroke_dirty = None
-        self._stroke_strength_map = None
         self._last_dab_pos = None
 
     # ------------------------------------------------------------------
@@ -592,32 +799,37 @@ class RasterEditTool:
     def _apply_fill(self, item: RasterLayerItem, x_norm: float, y_norm: float) -> None:
         """Flood fill at the clicked position."""
         buf = item.buffer
-        seed_val = buf.get_value_at(x_norm, y_norm)
+        seed_val = buf.sample_at(x_norm, y_norm)
         logger.debug(
-            "_apply_fill: pos=(%.3f,%.3f) seed_value=%d fill_value=%d buffer=%dx%d",
+            "_apply_fill: pos=(%.3f,%.3f) seed_value=%s buffer=%dx%d",
             x_norm,
             y_norm,
             seed_val,
-            self._paint_value,
             buf.width,
             buf.height,
         )
-        before = buf.data.copy()
-
-        dirty = buf.flood_fill(x_norm, y_norm, self._paint_value)
-        logger.debug("_apply_fill: dirty_region=%s", dirty)
-
-        before_region = before[dirty[1] : dirty[3] + 1, dirty[0] : dirty[2] + 1].copy()
-        after_region = buf.get_region(dirty[0], dirty[1], dirty[2], dirty[3])
-
-        item.update_region(dirty)
-
-        self._emit_stroke_completed(
-            self._active_node_id or "",
-            dirty,
-            before_region.tobytes(),
-            after_region.tobytes(),
+        tolerance = min(
+            self._fill_tolerance,
+            255 if buf.raster_mode is RasterPaintMode.RGBA else 65535,
         )
+        dirty = buf.connected_fill_bounds(x_norm, y_norm, tolerance)
+        if dirty is None:
+            return
+        journal = _TiledStrokeJournal(buf.editable_data)
+        journal.capture_bounds(buf.editable_data, dirty)
+        target: int | tuple[int, int, int, int] = (
+            self._paint_color
+            if buf.raster_mode is RasterPaintMode.RGBA
+            else self._paint_value
+        )
+        dirty = buf.fill_connected(x_norm, y_norm, target, tolerance)
+        if dirty is None:
+            return
+        logger.debug("_apply_fill: dirty_region=%s", dirty)
+        item.update_region(dirty)
+        patches = journal.patches(buf.editable_data)
+        if patches:
+            self._emit_stroke_completed(self._active_node_id or "", patches)
 
     # ------------------------------------------------------------------
     # Gradient
@@ -655,49 +867,41 @@ class RasterEditTool:
             self._brush_size,
         )
         buf = item.buffer
-        before = buf.data.copy()
-
-        if self._gradient_sub_mode == GRADIENT_SUB_RADIAL:
-            dx = n1[0] - n0[0]
-            dy = n1[1] - n0[1]
-            radius_norm = float(np.sqrt(dx * dx + dy * dy))
-            dirty = buf.paint_radial_gradient(
-                n0[0], n0[1], radius_norm, self._paint_value, 0
-            )
-        elif self._gradient_sub_mode == GRADIENT_SUB_REFLECTED:
-            dirty = buf.paint_reflected_gradient(
-                n0[0],
-                n0[1],
-                n1[0],
-                n1[1],
-                self._paint_value,
-                0,
-                self._brush_size,
-            )
+        if buf.raster_mode is RasterPaintMode.DISCRETE:
+            logger.warning("Gradient ignored for discrete raster %s", item.node_id)
+            return
+        journal = _TiledStrokeJournal(buf.editable_data)
+        full_bounds = (0, 0, buf.width - 1, buf.height - 1)
+        journal.capture_bounds(buf.editable_data, full_bounds)
+        gradient_from = self._gradient_from
+        gradient_to = self._gradient_to
+        if buf.raster_mode is RasterPaintMode.RGBA:
+            if not isinstance(gradient_from, tuple):
+                gradient_from = self._paint_color
+            if not isinstance(gradient_to, tuple):
+                gradient_to = self._paint_color
         else:
-            dirty = buf.paint_gradient(
-                n0[0],
-                n0[1],
-                n1[0],
-                n1[1],
-                0,
-                self._paint_value,
-                self._brush_size,
-            )
+            if isinstance(gradient_from, tuple):
+                gradient_from = 0
+            if isinstance(gradient_to, tuple):
+                gradient_to = self._paint_value
+        dirty = buf.paint_explicit_gradient(
+            n0,
+            n1,
+            gradient_from,
+            gradient_to,
+            kind=self._gradient_sub_mode,
+            width_px=self._brush_size,
+        )
+        if dirty is None:
+            return
 
         logger.debug("_apply_gradient: dirty_region=%s", dirty)
 
-        before_region = before[dirty[1] : dirty[3] + 1, dirty[0] : dirty[2] + 1].copy()
-        after_region = buf.get_region(dirty[0], dirty[1], dirty[2], dirty[3])
-
         item.update_region(dirty)
-
-        self._emit_stroke_completed(
-            self._active_node_id or "",
-            dirty,
-            before_region.tobytes(),
-            after_region.tobytes(),
-        )
+        patches = journal.patches(buf.editable_data)
+        if patches:
+            self._emit_stroke_completed(self._active_node_id or "", patches)
 
     # ------------------------------------------------------------------
     # Sample / probe
@@ -728,9 +932,9 @@ class RasterEditTool:
         if norm is None:
             return False
 
-        value = item.buffer.get_value_at(norm[0], norm[1])
+        value = item.buffer.sample_at(norm[0], norm[1])
         logger.debug(
-            "_try_sample_passively: pos=(%.3f,%.3f) value=%d node_id=%s",
+            "_try_sample_passively: pos=(%.3f,%.3f) value=%s node_id=%s",
             norm[0],
             norm[1],
             value,
@@ -743,9 +947,18 @@ class RasterEditTool:
         self, item: RasterLayerItem, x_norm: float, y_norm: float
     ) -> None:
         """Read the value at the given position and emit a probe signal."""
-        value = item.buffer.get_value_at(x_norm, y_norm)
+        value = item.buffer.sample_at(x_norm, y_norm)
+        if isinstance(value, tuple) and len(value) == 4:
+            self._paint_color = (
+                value[0],
+                value[1],
+                value[2],
+                value[3],
+            )
+        else:
+            self._paint_value = value
         logger.debug(
-            "_apply_sample: pos=(%.3f,%.3f) value=%d node_id=%s",
+            "_apply_sample: pos=(%.3f,%.3f) value=%s node_id=%s",
             x_norm,
             y_norm,
             value,
@@ -824,9 +1037,9 @@ class RasterEditTool:
     def _emit_stroke_completed(
         self,
         node_id: str,
-        dirty: tuple,
-        before_bytes: bytes,
-        after_bytes: bytes,
+        patches_or_region: list[dict[str, Any]] | tuple[int, int, int, int],
+        before_bytes: bytes | None = None,
+        after_bytes: bytes | None = None,
     ) -> None:
         """Emit ``raster_stroke_completed`` only when the view is still valid.
 
@@ -835,19 +1048,39 @@ class RasterEditTool:
 
         Args:
             node_id: Raster layer node ID.
-            dirty: ``(min_col, min_row, max_col, max_row)`` dirty rectangle.
-            before_bytes: Buffer region bytes before the operation.
-            after_bytes: Buffer region bytes after the operation.
+            patches_or_region: Serializable patch collection, or one legacy
+                dirty rectangle.
+            before_bytes: Legacy region bytes before the operation.
+            after_bytes: Legacy region bytes after the operation.
         """
         import shiboken6
 
         if not shiboken6.isValid(self._view):
             logger.debug("_emit_stroke_completed: view already deleted, skipping emit")
             return
+        if isinstance(patches_or_region, tuple):
+            item = self._get_active_item()
+            if item is None or before_bytes is None or after_bytes is None:
+                return
+            min_col, min_row, max_col, max_row = patches_or_region
+            shape: tuple[int, ...]
+            if item.buffer.pixel_format.value == "rgba8":
+                shape = (max_row - min_row + 1, max_col - min_col + 1, 4)
+            else:
+                shape = (max_row - min_row + 1, max_col - min_col + 1)
+            patches = [
+                {
+                    "region": patches_or_region,
+                    "shape": shape,
+                    "dtype": str(item.buffer.editable_data.dtype),
+                    "before_bytes": before_bytes,
+                    "after_bytes": after_bytes,
+                }
+            ]
+        else:
+            patches = patches_or_region
         try:
-            self._view.raster_stroke_completed.emit(
-                node_id, dirty, before_bytes, after_bytes
-            )
+            self._view.raster_stroke_completed.emit(node_id, patches)
         except RuntimeError:
             logger.debug("_emit_stroke_completed: RuntimeError during emit, skipping")
 

@@ -7,15 +7,20 @@ and manage the 16-bit PNG file on disk.
 
 import os
 import tempfile
+from pathlib import Path
 from typing import Generator
 
+import numpy as np
 import pytest
 
 from src.commands.raster_commands import (
     CreateRasterLayerCommand,
     DeleteRasterLayerCommand,
+    StrokeRasterCommand,
 )
 from src.core.map import Map, MapLayerNode
+from src.core.map_state import RasterPatch
+from src.core.raster_grid import load_rgba_grid
 from src.services.db_service import DatabaseService
 
 
@@ -235,3 +240,52 @@ class TestCreateRasterLayerSerialization:
         assert restored.height == 128
         assert restored.mode == "continuous"
         assert restored.default_value == 100
+
+
+def test_rgba_stroke_persists_and_undoes(
+    db_service: DatabaseService,
+    map_with_layers: Map,
+    world_dir: str,
+) -> None:
+    """RGBA tile patches use straight-alpha PNG persistence in both directions."""
+    db_service.db_path = str(Path(world_dir) / "test.kraken")
+    world_root = world_dir
+    create = CreateRasterLayerCommand(
+        map_id=map_with_layers.id,
+        name="Visual overlay",
+        width=4,
+        height=4,
+        mode="color",
+        world_root=world_root,
+    )
+    created = create.execute(db_service)
+    assert created.success, created.message
+    node_id = created.data["node_id"]
+    relative_path = created.data["file_path"]
+    absolute_path = str(Path(world_root) / relative_path)
+    before = load_rgba_grid(absolute_path)[1:3, 1:3].copy()
+    after = np.full((2, 2, 4), (12, 34, 56, 78), dtype=np.uint8)
+    patch = RasterPatch(
+        map_id=map_with_layers.id,
+        node_id=node_id,
+        target_file=relative_path,
+        region=(1, 1, 2, 2),
+        shape=(2, 2, 4),
+        dtype="uint8",
+        before_data=before.tobytes(),
+        after_data=after.tobytes(),
+    )
+    stroke = StrokeRasterCommand(
+        map_id=map_with_layers.id,
+        node_id=node_id,
+        target_file=relative_path,
+        patches=[patch],
+    )
+
+    result = stroke.execute(db_service)
+    assert result.success, result.message
+    assert np.array_equal(load_rgba_grid(absolute_path)[1:3, 1:3], after)
+
+    undone = stroke.undo(db_service)
+    assert undone.success, undone.message
+    assert np.array_equal(load_rgba_grid(absolute_path)[1:3, 1:3], before)

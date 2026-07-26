@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import List
 
 import pytest
-from PySide6.QtCore import QSettings, Qt
+from PySide6.QtCore import QSettings
 from PySide6.QtGui import QContextMenuEvent
 
 from src.gui.widgets.wiki_text_edit import WikiTextEdit

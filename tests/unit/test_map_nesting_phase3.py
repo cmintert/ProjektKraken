@@ -20,7 +20,6 @@ from PySide6.QtWidgets import QGraphicsPixmapItem
 from src.gui.widgets.map.detail_map_footprint_item import DetailMapFootprintItem
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -145,7 +144,6 @@ class TestDetailMapFootprintItem:
     def test_shape_contains_no_area_on_invalid_registration(self):
         bad_reg = {"mode": "aspect_locked_affine", "scale_norm": 0}  # invalid
         item = DetailMapFootprintItem("d1", "T", "p1", bad_reg, 200.0, 100.0)
-        from PySide6.QtCore import QPointF
 
         # shape() should not raise even for a degenerate registration
         path = item.shape()

@@ -14,8 +14,8 @@ from PySide6.QtGui import (
     QFontMetrics,
     QKeyEvent,
     QMouseEvent,
-    QPaintEvent,
     QPainter,
+    QPaintEvent,
     QPen,
 )
 from PySide6.QtWidgets import QSizePolicy, QWidget

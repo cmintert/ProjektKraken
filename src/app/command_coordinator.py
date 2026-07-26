@@ -374,6 +374,18 @@ class CommandCoordinator(QObject):
             result: CommandResult object.
 
         """
+        # Raster paint commands already return immutable patch effects that the
+        # MapHandler applies directly to the active buffer.  Reloading all data
+        # after every stroke is redundant and can make the timeline re-emit its
+        # unchanged playhead.  A playhead event deliberately invalidates raster
+        # edit targets, so that generic refresh used to stop Paint after each
+        # successful stroke.
+        if result.command_name in {
+            "PaintRasterCommand",
+            "StrokeRasterCommand",
+        }:
+            return
+
         # Determine what needs refreshing based on command type
         # This could be enhanced to be more specific per command
         if hasattr(self.window, "data_coordinator"):

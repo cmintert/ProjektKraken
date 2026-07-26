@@ -20,6 +20,7 @@ from src.app.constants import (
     MAP_LAYER_TYPE_GROUP,
     MAP_LAYER_TYPE_MARKER,
     MAP_LAYER_TYPE_PATH,
+    MAP_LAYER_TYPE_RASTER,
     MAP_LAYER_TYPE_REGION,
 )
 from src.commands.map_commands import (
@@ -668,8 +669,10 @@ class TestMapLayerPanelToolbar:
         assert len(received) == 1
         assert received[0] == "default"
 
-    def test_delete_clears_selection(self, qtbot, simple_model: MapLayerModel) -> None:
-        """After deleting, selected_node_id is cleared."""
+    def test_delete_waits_for_model_before_clearing_selection(
+        self, qtbot, simple_model: MapLayerModel
+    ) -> None:
+        """A cancelled or failed deletion must retain the selected layer."""
         panel = MapLayerPanel()
         qtbot.addWidget(panel)
         panel.set_model(simple_model)
@@ -681,7 +684,44 @@ class TestMapLayerPanelToolbar:
         # Capture signal but don't actually delete
         panel.delete_layer_requested.connect(lambda _: None)
         panel._on_delete()
-        assert panel._selected_node_id is None
+        assert panel._selected_node_id == "default"
+
+    def test_deleted_raster_hides_paint_menu(self, qtbot) -> None:
+        """Replacing the model after raster deletion clears raster-only UI."""
+        raster = MapLayerNode(
+            name="Paint layer",
+            layer_type=MAP_LAYER_TYPE_RASTER,
+            id="raster-1",
+        )
+        root = MapLayerNode(
+            name="Root",
+            layer_type=MAP_LAYER_TYPE_GROUP,
+            id="root",
+            children=[raster],
+        )
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel.show()
+        panel.set_model(MapLayerModel(root=root))
+        panel._on_item_clicked(panel._model.index_from_node(raster))
+        assert panel._raster_toolbar.isVisible()
+
+        panel._btn_edit_toggle.setEnabled(True)
+        panel._btn_edit_toggle.setChecked(True)
+        stopped: list[bool] = []
+        panel.raster_edit_stopped.connect(lambda: stopped.append(True))
+
+        replacement_root = MapLayerNode(
+            name="Root",
+            layer_type=MAP_LAYER_TYPE_GROUP,
+            id="root",
+        )
+        panel.set_model(MapLayerModel(root=replacement_root))
+
+        assert panel.selected_node_id is None
+        assert not panel._raster_toolbar.isVisible()
+        assert not panel._btn_edit_toggle.isChecked()
+        assert stopped
 
 
 class TestMapLayerPanelOpacity:

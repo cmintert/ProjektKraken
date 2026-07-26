@@ -83,6 +83,7 @@ from src.gui.widgets.map.interaction_handler import InteractionHandler
 from src.gui.widgets.map.label_manager import LabelManager
 from src.gui.widgets.map.marker_item import MarkerItem
 from src.gui.widgets.map.marker_manager import MarkerManager
+from src.gui.widgets.map.raster_edit_tool import RasterEditMode
 from src.gui.widgets.map.scale_bar_overlay import ScaleBarOverlay
 from src.gui.widgets.map.scale_bar_painter import ScaleBarPainter
 from src.gui.widgets.map.snapping_manager import SnappingManager, SnapType
@@ -596,12 +597,11 @@ class MapGraphicsView(QGraphicsView):
     marker_visual_style_changed = Signal(str, dict)
 
     # -- Raster editing signals --
-    raster_stroke_completed = Signal(
-        str, tuple, bytes, bytes
-    )  # node_id, dirty, before, after
-    raster_value_probed = Signal(str, int, float, float)  # node_id, value, x, y
+    raster_stroke_completed = Signal(str, object)  # node_id, tile patches
+    raster_value_probed = Signal(str, object, float, float)  # node_id, sample, x, y
     raster_edit_externally_stopped = Signal()  # edit stopped by Escape or other non-panel trigger
     raster_brush_resize_requested = Signal(int)  # new brush size from Ctrl+scroll
+    raster_tool_shortcut_requested = Signal(str)
 
     # Emitted when the viewport resizes, useful for positioning overlays
     viewport_resized = Signal(QResizeEvent)
@@ -2079,6 +2079,30 @@ class MapGraphicsView(QGraphicsView):
             # Clear selection when no drawing/vertex editing is active
             if self.scene.selectedItems():
                 self.scene.clearSelection()
+                event.accept()
+                return
+
+        if self._raster_edit_tool.is_active:
+            shortcut_modes: dict[int, RasterEditMode] = {
+                Qt.Key.Key_B: RasterEditMode.BRUSH,
+                Qt.Key.Key_F: RasterEditMode.FILL,
+                Qt.Key.Key_G: RasterEditMode.GRADIENT,
+                Qt.Key.Key_I: RasterEditMode.SAMPLE,
+            }
+            shortcut_mode = shortcut_modes.get(event.key())
+            if shortcut_mode is not None:
+                item = self._raster_edit_tool._get_active_item()
+                if (
+                    shortcut_mode is RasterEditMode.GRADIENT
+                    and item is not None
+                    and item.mode == "discrete"
+                ):
+                    event.accept()
+                    return
+                self._raster_edit_tool.mode = shortcut_mode
+                self.raster_tool_shortcut_requested.emit(
+                    shortcut_mode.name.lower()
+                )
                 event.accept()
                 return
 

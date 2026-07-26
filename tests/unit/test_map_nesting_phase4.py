@@ -8,12 +8,9 @@ Covers:
 
 from __future__ import annotations
 
-import pytest
-
 from src.app.constants import MAP_ROLE_DETAIL, MAP_ROLE_MASTER
 from src.core.map import Map
 from src.services.map_nesting_service import MapNestingService, NestingValidationError
-
 
 # ---------------------------------------------------------------------------
 # Helpers

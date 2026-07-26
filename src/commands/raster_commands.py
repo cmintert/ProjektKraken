@@ -22,9 +22,11 @@ from src.core.map import MapLayerNode
 from src.core.map_constants import MAP_LAYER_TYPE_GROUP, MAP_LAYER_TYPE_RASTER
 from src.core.map_state import RasterPatch
 from src.core.raster_grid import (
+    apply_rgba_patch,
     apply_value_patch,
     encode_rgba_png,
     encode_value_png,
+    load_rgba_grid,
     load_value_grid,
 )
 from src.core.raster_mapping import make_empty_vem, validate_no_overlaps
@@ -890,36 +892,53 @@ class PaintRasterCommand(BaseCommand):
 
 
 class StrokeRasterCommand(BaseCommand):
-    """Undoable region-snapshot command for completed raster strokes.
+    """Undoable ordered tile-patch command for a completed raster stroke.
 
-    Stores compressed before/after snapshots of the dirty region so
-    that an entire brush drag, flood fill, or gradient operation can
-    be undone in a single step.
-
-    Args:
-        map_id: Parent map ID.
-        node_id: Raster layer node ID.
-        dirty_region: ``(min_col, min_row, max_col, max_row)``.
-        before_bytes: Raw ``uint16`` bytes of the region before the edit.
-        after_bytes: Raw ``uint16`` bytes of the region after the edit.
+    The legacy single-region arguments remain supported so session history and
+    older callers can be deserialized without migrating world data.
     """
 
     def __init__(
         self,
         map_id: str,
         node_id: str,
-        dirty_region: tuple[int, int, int, int],
-        before_bytes: bytes,
-        after_bytes: bytes,
+        dirty_region: tuple[int, int, int, int] | None = None,
+        before_bytes: bytes = b"",
+        after_bytes: bytes = b"",
         target_file: str = "",
+        patches: Optional[List[RasterPatch]] = None,
+        pixel_format: str = "value16",
     ) -> None:
         super().__init__()
         self.map_id = map_id
         self.node_id = node_id
-        self.dirty_region = dirty_region
-        self._before_bytes = before_bytes
-        self._after_bytes = after_bytes
         self.target_file = target_file
+        if patches is None:
+            if dirty_region is None:
+                raise ValueError("A raster stroke requires at least one patch")
+            width = dirty_region[2] - dirty_region[0] + 1
+            height = dirty_region[3] - dirty_region[1] + 1
+            dtype = "uint8" if pixel_format == "rgba8" else "uint16"
+            shape = (height, width, 4) if dtype == "uint8" else (height, width)
+            patches = [
+                RasterPatch(
+                    map_id=map_id,
+                    node_id=node_id,
+                    target_file=target_file,
+                    region=dirty_region,
+                    shape=shape,
+                    dtype=dtype,
+                    before_data=before_bytes,
+                    after_data=after_bytes,
+                )
+            ]
+        if not patches:
+            raise ValueError("A raster stroke requires at least one patch")
+        self.patches = list(patches)
+        first = self.patches[0]
+        self.dirty_region = first.region
+        self._before_bytes = first.before_data
+        self._after_bytes = first.after_data
         self._cancel_reason = ""
 
     def cancel(self, reason: str) -> None:
@@ -942,14 +961,14 @@ class StrokeRasterCommand(BaseCommand):
             len(self._after_bytes),
         )
         try:
-            self._apply_snapshot(db_service, self._after_bytes)
+            self._apply_patches(db_service, "after")
             self._is_executed = True
             logger.debug("StrokeRasterCommand.execute: applied after-snapshot OK")
             return CommandResult(
                 success=True,
                 message="Stroke applied.",
                 command_name="StrokeRasterCommand",
-                data={"effects": [self._effect("after")]},
+                data={"effects": self._effects("after")},
             )
         except Exception as e:
             logger.error("StrokeRasterCommand.execute failed: %s", e, exc_info=True)
@@ -970,14 +989,14 @@ class StrokeRasterCommand(BaseCommand):
                 message="Stroke is not currently applied.",
                 command_name="Undo_StrokeRasterCommand",
             )
-        self._apply_snapshot(db_service, self._before_bytes)
+        self._apply_patches(db_service, "before")
         self._is_executed = False
         logger.debug("StrokeRasterCommand.undo: before-snapshot applied OK")
         return CommandResult(
             success=True,
             message="Stroke undone.",
             command_name="Undo_StrokeRasterCommand",
-            data={"effects": [self._effect("before")]},
+            data={"effects": self._effects("before")},
         )
 
     def _resolve_target(self, db_service: DatabaseService) -> str:
@@ -988,37 +1007,51 @@ class StrokeRasterCommand(BaseCommand):
             raise ValueError(f"Map not found: {self.map_id}")
         for metadata in (map_obj.attributes or {}).get("raster_layers", []):
             if metadata.get("node_id") == self.node_id:
-                if metadata.get("mode") == "color":
-                    raise ValueError("Color overlays cannot be value-painted")
                 self.target_file = str(metadata.get("file_path", ""))
                 break
         if not self.target_file:
             raise ValueError(f"Raster layer not found: {self.node_id}")
         return self.target_file
 
-    def _apply_snapshot(
-        self, db_service: DatabaseService, raw: bytes
+    def _apply_patches(
+        self,
+        db_service: DatabaseService,
+        direction: str,
     ) -> None:
-        """Write raw uint16 bytes into the persisted raster region."""
+        """Apply all tile patches in stroke order and atomically replace PNG."""
         target_file = self._resolve_target(db_service)
         world_root = Path(db_service.get_db_file_path()).parent
         assets = RasterAssetService(world_root)
         target = assets.resolve(target_file)
-        array = load_value_grid(str(target))
-        updated = apply_value_patch(array, self.dirty_region, raw)
-        assets.atomic_write_bytes(target_file, encode_value_png(updated))
+        rgba = self.patches[0].dtype == "uint8"
+        array = load_rgba_grid(str(target)) if rgba else load_value_grid(str(target))
+        ordered = self.patches if direction == "after" else reversed(self.patches)
+        for patch in ordered:
+            raw = patch.after_data if direction == "after" else patch.before_data
+            if rgba:
+                array = apply_rgba_patch(array, patch.region, raw)
+            else:
+                array = apply_value_patch(array, patch.region, raw)
+        encoded = encode_rgba_png(array) if rgba else encode_value_png(array)
+        assets.atomic_write_bytes(target_file, encoded)
 
-    def _effect(self, direction: str) -> Dict[str, Any]:
-        raw = self._after_bytes if direction == "after" else self._before_bytes
-        return {
-            "kind": "raster_patch",
-            "map_id": self.map_id,
-            "node_id": self.node_id,
-            "region": list(self.dirty_region),
-            "dtype": "uint16",
-            "data": RasterPatch._encode(raw),
-            "direction": direction,
-        }
+    def _effects(self, direction: str) -> List[Dict[str, Any]]:
+        ordered = self.patches if direction == "after" else list(reversed(self.patches))
+        return [
+            {
+                "kind": "raster_patch",
+                "map_id": self.map_id,
+                "node_id": self.node_id,
+                "region": list(patch.region),
+                "shape": list(patch.shape),
+                "dtype": patch.dtype,
+                "data": RasterPatch._encode(
+                    patch.after_data if direction == "after" else patch.before_data
+                ),
+                "direction": direction,
+            }
+            for patch in ordered
+        ]
 
     @property
     def is_undoable(self) -> bool:
@@ -1039,24 +1072,41 @@ class StrokeRasterCommand(BaseCommand):
             "target_file": self.target_file,
             "before_data": RasterPatch._encode(self._before_bytes),
             "after_data": RasterPatch._encode(self._after_bytes),
+            "patches": [patch.to_dict() for patch in self.patches],
             "cancel_reason": self._cancel_reason,
         }
 
     @classmethod
     def from_dict(cls, data: Dict) -> "StrokeRasterCommand":
         """Deserialize a worker-bound or in-session patch."""
-        command = cls(
-            map_id=data["map_id"],
-            node_id=data["node_id"],
-            dirty_region=tuple(data["dirty_region"]),
-            before_bytes=RasterPatch._decode(str(data.get("before_data", "")))
-            if data.get("before_data")
-            else b"",
-            after_bytes=RasterPatch._decode(str(data.get("after_data", "")))
-            if data.get("after_data")
-            else b"",
-            target_file=data.get("target_file", ""),
-        )
+        serialized_patches = data.get("patches")
+        if serialized_patches:
+            command = cls(
+                map_id=data["map_id"],
+                node_id=data["node_id"],
+                target_file=data.get("target_file", ""),
+                patches=[
+                    RasterPatch.from_dict(patch_data)
+                    for patch_data in serialized_patches
+                ],
+            )
+        else:
+            command = cls(
+                map_id=data["map_id"],
+                node_id=data["node_id"],
+                dirty_region=tuple(data["dirty_region"]),
+                before_bytes=RasterPatch._decode(
+                    str(data.get("before_data", ""))
+                )
+                if data.get("before_data")
+                else b"",
+                after_bytes=RasterPatch._decode(
+                    str(data.get("after_data", ""))
+                )
+                if data.get("after_data")
+                else b"",
+                target_file=data.get("target_file", ""),
+            )
         command._cancel_reason = str(data.get("cancel_reason", ""))
         return command
 
@@ -1451,6 +1501,7 @@ class SetRasterSnapshotCommand(BaseCommand):
                             "kind": "raster_edit_target",
                             "node_id": self.node_id,
                             "file_path": self.rel_file_path,
+                            "lore_date": self.lore_date,
                         }
                     ]
                 },

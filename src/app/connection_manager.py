@@ -767,6 +767,12 @@ class ConnectionManager:
                     "MapWidget",
                 ),
                 (
+                    map_handler,
+                    "raster_save_state_changed",
+                    map_widget.layer_panel.set_raster_save_state,
+                    "MapHandler",
+                ),
+                (
                     map_widget.layer_panel,
                     "raster_snapshot_requested",
                     map_handler.on_raster_snapshot_requested,

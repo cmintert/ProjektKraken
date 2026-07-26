@@ -50,12 +50,15 @@ class RasterLayerItem(QGraphicsPixmapItem):
         color_map: ColorMap,
         scene_rect: QRectF,
         node_id: str = "",
+        mode: str = "continuous",
     ) -> None:
         super().__init__()
         self._buffer = buffer
         self._color_map = color_map
         self._scene_rect = scene_rect
         self._node_id = node_id
+        self._mode = mode
+        self._buffer.set_raster_mode(mode)
 
         self.setZValue(MAP_LAYER_Z_RASTER)
         self.setPos(scene_rect.topLeft())
@@ -96,6 +99,11 @@ class RasterLayerItem(QGraphicsPixmapItem):
     def node_id(self) -> str:
         """Layer node ID."""
         return self._node_id
+
+    @property
+    def mode(self) -> str:
+        """Semantic raster paint mode."""
+        return self._mode
 
     # ------------------------------------------------------------------
     # Display
@@ -263,6 +271,7 @@ class RasterLayerItem(QGraphicsPixmapItem):
             new_buffer: The new buffer to display.
         """
         self._buffer = new_buffer
+        self._buffer.set_raster_mode(self._mode)
         self.update_display()
 
     def set_blend_mode(self, mode_name: str) -> None:

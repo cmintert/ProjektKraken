@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-07-25
-**Commit:** 5bdbffa8
+**Last Updated:** 2026-07-26
+**Commit:** 19cd5a21
 ---
 
 # Changelog
@@ -13,6 +13,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-07-26)* **Raster / Painting**: Added mode-aware discrete, continuous, and RGBA brush, fill, gradient, sampling, and eyedropper operations with tiled stroke capture.
+- *(2026-07-26)* **Raster / UX**: Added explicit Base or dated edit targets, mode-specific controls, accessible tool labels, and visible saving, saved, and failed states.
 - *(2026-07-25)* **Map / Raster**: Added aggregate loading, raster asset and query services, reversible command artifacts, layer properties, and dated-state editing.
 - *(2026-07-25)* **Documentation**: Added a guide to maps, layers, raster purposes, timeline states, queries, and calibration.
 - *(2026-07-22)* **AI / LM Studio**: Added model discovery, separate generation and embedding model selection, connection testing, and per-world AI preferences for OpenAI-compatible local servers.
@@ -21,6 +23,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-07-26)* **Raster / Stability**: Kept Paint active across successful strokes, paused safely on failed saves, and prevented editing a stale raster target.
+- *(2026-07-26)* **Map / Layers**: Removed deleted nodes from refreshed layer trees and cleared Paint controls when the selected raster no longer exists.
 - *(2026-07-25)* **Map / Stability**: Made map and raster mutations transactional and kept undo and redo stacks unchanged when worker operations fail.
 - *(2026-07-22)* **AI / Generation**: Preserved each model's reply structure through review and explicit apply actions for generated event and entity descriptions.
 - *(2026-07-22)* **AI / Stability**: Added cancellation and lifecycle guards so stale generation results cannot update closed editors or interfere with application shutdown.
@@ -28,6 +32,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-07-26)* **Raster / Architecture**: Generalized buffers, patches, commands, and PNG persistence for 16-bit value rasters and straight-alpha RGBA rasters.
+- *(2026-07-26)* **Testing**: Added matrix coverage for raster modes and tools, tiled persistence, autosave queues, target selection, layer deletion, and Qt workflow state.
+- *(2026-07-26)* **Development / Cleanup**: Normalized imports and removed unused imports across coordinators, colour pickers, spellcheck tests, and map-nesting tests.
 - *(2026-07-25)* **Map / Architecture**: Moved map and raster mutations behind worker-owned services and made persisted aggregate state canonical for the UI.
 - *(2026-07-25)* **Testing**: Expanded command, threading, layer, raster editing, query, snapshot, and display-mapping regression coverage.
 - *(2026-07-22)* **AI / Architecture**: Reworked description generation around typed request, reply, and apply contracts with clearer provider capability handling and cloud providers disabled until configured.

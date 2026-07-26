@@ -13,14 +13,11 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-import pytest
-
 from src.app.constants import MAP_ROLE_DETAIL, MAP_ROLE_MASTER
 from src.core.map import Map, MapLayerNode
 from src.core.marker import Marker
 from src.services.map_nesting_service import MapNestingService
 from src.services.spatial_context_builder import SpatialContextBuilder
-
 
 # ---------------------------------------------------------------------------
 # Helpers

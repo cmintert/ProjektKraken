@@ -19,8 +19,8 @@ from PySide6.QtCore import Q_ARG, QMetaObject, Qt, QTimer, Slot
 from PySide6.QtWidgets import QMessageBox
 
 from src.app.constants import (
-    SEMANTIC_COMPLETION_ENABLE_EMBEDDING,
     SEMANTIC_COMPLETION_DEBOUNCE_MS,
+    SEMANTIC_COMPLETION_ENABLE_EMBEDDING,
     SEMANTIC_COMPLETION_MIN_SCORE,
     SEMANTIC_COMPLETION_TOP_K,
 )

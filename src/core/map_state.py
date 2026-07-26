@@ -124,7 +124,7 @@ class RasterPatch:
     node_id: str
     target_file: str
     region: tuple[int, int, int, int]
-    shape: tuple[int, int]
+    shape: tuple[int, ...]
     dtype: str
     before_data: bytes
     after_data: bytes
@@ -155,7 +155,7 @@ class RasterPatch:
         """Deserialize a patch."""
         region_values = [int(v) for v in data["region"]]
         shape_values = [int(v) for v in data["shape"]]
-        if len(region_values) != 4 or len(shape_values) != 2:
+        if len(region_values) != 4 or len(shape_values) not in (2, 3):
             raise ValueError("Invalid raster patch dimensions")
         return cls(
             map_id=str(data["map_id"]),
@@ -167,7 +167,7 @@ class RasterPatch:
                 region_values[2],
                 region_values[3],
             ),
-            shape=(shape_values[0], shape_values[1]),
+            shape=tuple(shape_values),
             dtype=str(data["dtype"]),
             before_data=cls._decode(str(data["before_data"])),
             after_data=cls._decode(str(data["after_data"])),

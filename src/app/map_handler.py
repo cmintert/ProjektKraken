@@ -90,6 +90,7 @@ class MapHandler(QObject):
 
     # Emitted when a command should be executed on the worker thread.
     command_requested = Signal(object)
+    raster_save_state_changed = Signal(str, str, str)
 
     def __init__(
         self,
@@ -625,11 +626,14 @@ class MapHandler(QObject):
                     db_ids = self._collect_node_ids(selected_map.layers)
                     mem_ids = self._collect_node_ids(model.root)
                     missing_in_model = db_ids - mem_ids
-                    if missing_in_model:
+                    stale_in_model = mem_ids - db_ids
+                    if missing_in_model or stale_in_model:
                         logger.debug(
-                            "on_markers_ready: model missing %d nodes from "
-                            "maps_data (db=%d, mem=%d) — rebuilding layer model",
+                            "on_markers_ready: layer model differs from fresh "
+                            "maps_data (missing=%d, stale=%d, db=%d, mem=%d) — "
+                            "rebuilding layer model",
                             len(missing_in_model),
+                            len(stale_in_model),
                             len(db_ids),
                             len(mem_ids),
                         )
@@ -1220,7 +1224,10 @@ class MapHandler(QObject):
             )
 
             try:
-                buf = MapDataBuffer.from_file(abs_path)
+                buf = MapDataBuffer.from_file(
+                    abs_path,
+                    mode=str(meta.get("mode", "continuous")),
+                )
                 logger.debug(
                     "load_raster_layers: loaded buffer %dx%d for node_id=%s",
                     buf.width,
@@ -1244,6 +1251,7 @@ class MapHandler(QObject):
                 color_map=color_map,
                 scene_rect=scene_rect,
                 node_id=node_id,
+                mode=str(meta.get("mode", "continuous")),
             )
 
             # Apply persisted blend mode if non-default
@@ -1332,13 +1340,13 @@ class MapHandler(QObject):
     # Raster editing handlers
     # ------------------------------------------------------------------
 
-    @Slot(str, tuple, bytes, bytes)
+    @Slot(str, object)
     def on_raster_stroke_completed(
         self,
         node_id: str,
-        dirty_region: tuple,
-        before_bytes: bytes,
-        after_bytes: bytes,
+        patches_or_region: object,
+        before_bytes: bytes | None = None,
+        after_bytes: bytes | None = None,
     ) -> None:
         """Handle a completed raster brush stroke.
 
@@ -1352,6 +1360,7 @@ class MapHandler(QObject):
             after_bytes: Raw buffer bytes after the stroke.
         """
         from src.commands.raster_commands import StrokeRasterCommand
+        from src.core.map_state import RasterPatch
 
         if self._map_widget is None:
             logger.warning("on_raster_stroke_completed: _map_widget is None")
@@ -1360,35 +1369,83 @@ class MapHandler(QObject):
         if not map_id:
             logger.warning(
                 "on_raster_stroke_completed: no current_map_id on map_widget "
-                "(node_id=%s dirty=%s)",
+                "(node_id=%s patches=%s)",
                 node_id,
-                dirty_region,
+                patches_or_region,
             )
             return
 
+        target_file = self._editable_raster_target(map_id, node_id)
+        if isinstance(patches_or_region, tuple):
+            region = tuple(int(value) for value in patches_or_region)
+            item = self._map_widget.view._raster_items.get(node_id)
+            rgba = bool(
+                item is not None
+                and item.buffer.pixel_format.value == "rgba8"
+            )
+            height = region[3] - region[1] + 1
+            width = region[2] - region[0] + 1
+            payloads = [
+                {
+                    "region": region,
+                    "shape": (height, width, 4) if rgba else (height, width),
+                    "dtype": "uint8" if rgba else "uint16",
+                    "before_bytes": before_bytes or b"",
+                    "after_bytes": after_bytes or b"",
+                }
+            ]
+        elif isinstance(patches_or_region, list):
+            payloads = patches_or_region
+        else:
+            logger.warning("Invalid raster patch payload: %r", patches_or_region)
+            return
+        raster_patches: list[RasterPatch] = []
+        for payload in payloads:
+            if not isinstance(payload, dict):
+                continue
+            region_values = tuple(int(value) for value in payload["region"])
+            if len(region_values) != 4:
+                continue
+            region = (
+                region_values[0],
+                region_values[1],
+                region_values[2],
+                region_values[3],
+            )
+            raster_patches.append(
+                RasterPatch(
+                    map_id=map_id,
+                    node_id=node_id,
+                    target_file=target_file,
+                    region=region,
+                    shape=tuple(int(value) for value in payload["shape"]),
+                    dtype=str(payload["dtype"]),
+                    before_data=bytes(payload["before_bytes"]),
+                    after_data=bytes(payload["after_bytes"]),
+                )
+            )
+        patches = raster_patches
+        if not patches:
+            return
         logger.debug(
-            "on_raster_stroke_completed: node_id=%s map_id=%s dirty=%s "
-            "before_bytes=%d after_bytes=%d",
+            "on_raster_stroke_completed: node_id=%s map_id=%s patches=%d",
             node_id,
             map_id,
-            dirty_region,
-            len(before_bytes),
-            len(after_bytes),
+            len(patches),
         )
 
         cmd = StrokeRasterCommand(
             map_id=map_id,
             node_id=node_id,
-            dirty_region=dirty_region,
-            before_bytes=before_bytes,
-            after_bytes=after_bytes,
-            target_file=self._editable_raster_target(map_id, node_id),
+            target_file=target_file,
+            patches=patches,
         )
 
         if not cmd.target_file:
-            self._apply_raster_patch_to_view(
-                node_id, dirty_region, before_bytes
-            )
+            for patch in reversed(cmd.patches):
+                self._apply_raster_patch_to_view(
+                    node_id, patch.region, patch.before_data, patch.dtype
+                )
             QMessageBox.information(
                 self._map_widget,
                 "Historical raster is read-only",
@@ -1398,9 +1455,10 @@ class MapHandler(QObject):
             return
 
         if node_id in self._failed_raster_nodes:
-            self._apply_raster_patch_to_view(
-                node_id, dirty_region, before_bytes
-            )
+            for patch in reversed(cmd.patches):
+                self._apply_raster_patch_to_view(
+                    node_id, patch.region, patch.before_data, patch.dtype
+                )
             QMessageBox.warning(
                 self._map_widget,
                 "Raster editing paused",
@@ -1411,6 +1469,7 @@ class MapHandler(QObject):
 
         pending = self._pending_raster_strokes.setdefault(node_id, [])
         pending.append(cmd)
+        self.raster_save_state_changed.emit(node_id, "saving", "")
         if len(pending) == 1:
             logger.debug(
                 "on_raster_stroke_completed: emitting head of raster queue"
@@ -1439,7 +1498,11 @@ class MapHandler(QObject):
         return ""
 
     def _apply_raster_patch_to_view(
-        self, node_id: str, region: tuple, raw: bytes
+        self,
+        node_id: str,
+        region: tuple,
+        raw: bytes,
+        dtype: str = "uint16",
     ) -> None:
         """Apply immutable raster bytes to the GUI buffer on the main thread."""
         item = self._map_widget.view._raster_items.get(node_id)
@@ -1448,7 +1511,10 @@ class MapHandler(QObject):
         min_col, min_row, max_col, max_row = region
         width = max_col - min_col + 1
         height = max_row - min_row + 1
-        array = np.frombuffer(raw, dtype=np.uint16).reshape((height, width))
+        if dtype == "uint8":
+            array = np.frombuffer(raw, dtype=np.uint8).reshape((height, width, 4))
+        else:
+            array = np.frombuffer(raw, dtype=np.uint16).reshape((height, width))
         item.buffer.set_region(min_col, min_row, array)
         item.update_region((min_col, min_row, max_col, max_row))
 
@@ -1483,10 +1549,21 @@ class MapHandler(QObject):
                     node_id,
                     tuple(int(value) for value in effect["region"]),
                     raw,
+                    str(effect.get("dtype", "uint16")),
                 )
             elif kind == "raster_edit_target":
                 relative_path = str(effect["file_path"])
                 self._raster_edit_target_by_node[node_id] = relative_path
+                lore_date = effect.get("lore_date")
+                label = (
+                    f"Dated state ({float(lore_date):.2f})"
+                    if lore_date is not None
+                    else "Dated state"
+                )
+                self._map_widget.layer_panel.set_raster_edit_target(
+                    node_id,
+                    label,
+                )
                 self._failed_raster_nodes.discard(node_id)
                 absolute_path = str(
                     Path(self._db_path_accessor()).parent / relative_path
@@ -1496,6 +1573,7 @@ class MapHandler(QObject):
                 self._current_snapshot_identity_by_node.pop(node_id, None)
             elif kind == "raster_edit_target_cleared":
                 self._raster_edit_target_by_node.pop(node_id, None)
+                self._map_widget.layer_panel.clear_raster_edit_targets(node_id)
                 self._invalidate_snapshot_cache(node_id)
                 self._current_snapshot_by_node.pop(node_id, None)
                 self._current_snapshot_identity_by_node.pop(node_id, None)
@@ -1510,16 +1588,26 @@ class MapHandler(QObject):
             pending.remove(command)
             if not pending:
                 self._pending_raster_strokes.pop(node_id, None)
+                self.raster_save_state_changed.emit(node_id, "saved", "")
             else:
                 self.command_requested.emit(pending[0])
             return
 
         for queued in reversed(pending):
-            self._apply_raster_patch_to_view(
-                node_id, queued.dirty_region, queued._before_bytes
-            )
+            for patch in reversed(queued.patches):
+                self._apply_raster_patch_to_view(
+                    node_id,
+                    patch.region,
+                    patch.before_data,
+                    patch.dtype,
+                )
         self._pending_raster_strokes.pop(node_id, None)
         self._failed_raster_nodes.add(node_id)
+        self.raster_save_state_changed.emit(
+            node_id,
+            "failed",
+            "Save failed — editing paused",
+        )
         QMessageBox.critical(
             self._map_widget,
             "Raster save failed",
@@ -1875,9 +1963,13 @@ class MapHandler(QObject):
         self._map_widget.view.clear_query_overlay()
         self._map_widget.layer_panel.set_query_active(False)
 
-    @Slot(str, int, float, float)
+    @Slot(str, object, float, float)
     def on_raster_value_probed(
-        self, node_id: str, value: int, x_norm: float, y_norm: float
+        self,
+        node_id: str,
+        value: object,
+        x_norm: float,
+        y_norm: float,
     ) -> None:
         """Handle a raster sample/probe event and display the result.
 
@@ -1891,7 +1983,7 @@ class MapHandler(QObject):
             y_norm: Normalised Y coordinate [0, 1].
         """
         logger.debug(
-            "on_raster_value_probed: node_id=%s value=%d pos=(%.3f,%.3f)",
+            "on_raster_value_probed: node_id=%s value=%s pos=(%.3f,%.3f)",
             node_id,
             value,
             x_norm,
@@ -1899,6 +1991,16 @@ class MapHandler(QObject):
         )
         if self._map_widget is None:
             return
+        rgba_value = (
+            tuple(int(channel) for channel in value)
+            if isinstance(value, tuple)
+            else None
+        )
+        if rgba_value is None and not isinstance(value, int):
+            return
+        raw_value = 0 if rgba_value is not None else int(value)
+        if rgba_value is not None and len(rgba_value) == 4:
+            self._map_widget.layer_panel.set_raster_paint_color(rgba_value)
 
         from src.gui.widgets.map.raster_mapping import probe_all_layers
 
@@ -1934,7 +2036,7 @@ class MapHandler(QObject):
                         )
 
                         cmap = ColorMap.from_dict(cmap_dict)
-                        display_value = format_display_value(cmap, value)
+                        display_value = format_display_value(cmap, raw_value)
                     except Exception as exc:
                         logger.debug("Could not format display value: %s", exc)
                 # Continuous layers link the whole layer to one entity/event
@@ -1953,7 +2055,16 @@ class MapHandler(QObject):
 
         # Show the probe popup overlay
         self._show_probe_popup(
-            node_id, value, entity_name, label, layer_mode, display_value
+            node_id,
+            raw_value,
+            entity_name,
+            label,
+            layer_mode,
+            (
+                f"RGBA {rgba_value}"
+                if rgba_value is not None
+                else display_value
+            ),
         )
 
     def _show_probe_popup(
@@ -2228,6 +2339,7 @@ class MapHandler(QObject):
         """
         self._current_lore_date = lore_date
         self._raster_edit_target_by_node.clear()
+        self._map_widget.layer_panel.clear_raster_edit_targets()
         self._map_widget.view.stop_raster_editing()
         self._map_widget.layer_panel.reset_edit_toggle()
         if not self._current_map_id:
@@ -2287,7 +2399,10 @@ class MapHandler(QObject):
                 try:
                     from src.gui.widgets.map.map_data_buffer import MapDataBuffer
 
-                    buf = MapDataBuffer.from_file(best_abs_path)
+                    buf = MapDataBuffer.from_file(
+                        best_abs_path,
+                        mode=str(meta.get("mode", "continuous")),
+                    )
                     self._snapshot_cache[cache_key] = buf
                 except Exception as e:
                     logger.warning("Failed to load snapshot %s: %s", best_abs_path, e)
@@ -2435,7 +2550,9 @@ class MapHandler(QObject):
         metadata = self._raster_metadata(node_id)
         if metadata is not None:
             self._select_raster_edit_target(
-                node_id, str(metadata.get("file_path", ""))
+                node_id,
+                str(metadata.get("file_path", "")),
+                "Base",
             )
 
     @Slot(str, float)
@@ -2462,7 +2579,11 @@ class MapHandler(QObject):
             )
             return
         self.on_raster_snapshot_selected(node_id, lore_date)
-        self._select_raster_edit_target(node_id, exact_path)
+        self._select_raster_edit_target(
+            node_id,
+            exact_path,
+            f"Dated state ({lore_date:.2f})",
+        )
 
     def _raster_metadata(self, node_id: str) -> Optional[dict[str, Any]]:
         """Return current metadata for a raster node from loaded map state."""
@@ -2485,7 +2606,10 @@ class MapHandler(QObject):
         )
 
     def _select_raster_edit_target(
-        self, node_id: str, relative_path: str
+        self,
+        node_id: str,
+        relative_path: str,
+        label: str = "Base",
     ) -> None:
         """Load one immutable file copy and select it as the paint target."""
         if not relative_path or self._pending_raster_strokes.get(node_id):
@@ -2499,7 +2623,11 @@ class MapHandler(QObject):
         try:
             from src.gui.widgets.map.map_data_buffer import MapDataBuffer
 
-            buffer = MapDataBuffer.from_file(absolute_path)
+            metadata = self._raster_metadata(node_id)
+            buffer = MapDataBuffer.from_file(
+                absolute_path,
+                mode=str((metadata or {}).get("mode", "continuous")),
+            )
             cache_key = self._snapshot_cache_key(node_id, absolute_path)
         except Exception as exc:
             QMessageBox.warning(
@@ -2517,6 +2645,7 @@ class MapHandler(QObject):
         self._current_snapshot_identity_by_node[node_id] = cache_key
         self._raster_edit_target_by_node[node_id] = relative_path
         self._failed_raster_nodes.discard(node_id)
+        self._map_widget.layer_panel.set_raster_edit_target(node_id, label)
         self._evict_snapshot_cache()
 
     @Slot(str, float)

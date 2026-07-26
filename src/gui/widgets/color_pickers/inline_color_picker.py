@@ -16,13 +16,13 @@ and/or :pyattr:`color_changed`.
 
 from typing import Optional
 
-from PySide6.QtCore import QPoint, QRect, Qt, Signal
+from PySide6.QtCore import QPoint, Qt, Signal
 from PySide6.QtGui import (
     QColor,
     QLinearGradient,
     QMouseEvent,
-    QPaintEvent,
     QPainter,
+    QPaintEvent,
     QPen,
 )
 from PySide6.QtWidgets import (

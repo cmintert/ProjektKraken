@@ -10,9 +10,13 @@ import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from PySide6.QtCore import QModelIndex, QPoint, QSize, Qt, Signal, Slot
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QCheckBox,
+    QColorDialog,
     QComboBox,
+    QDoubleSpinBox,
     QFrame,
     QHBoxLayout,
     QInputDialog,
@@ -27,7 +31,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.constants import EDITOR_ICON_BUTTON_SIZE
 from src.app.ui_constants import Spacing
 from src.core.map import MapLayerNode
 from src.gui.utils.icon_loader import load_icon
@@ -141,6 +144,12 @@ class MapLayerPanel(QWidget):
         self._calendar_converter: Optional[Any] = None
         # Internal lookup: node_id → mode string (populated by MapHandler)
         self._raster_mode_by_id: dict[str, str] = {}
+        self._raster_edit_target_label_by_id: dict[str, str] = {}
+        self._selected_snapshot_date_by_node: dict[str, float] = {}
+        self._discrete_paint_values_by_id: dict[str, set[int]] = {}
+        self._raster_save_failed_nodes: set[str] = set()
+        self._active_color_map: Optional[ColorMap] = None
+        self._display_value_updating = False
 
         # ── Build UI ─────────────────────────────────────────────────
         main_layout = QVBoxLayout(self)
@@ -283,7 +292,9 @@ class MapLayerPanel(QWidget):
         )
         rt.setSpacing(Spacing.COMPACT)
 
-        rt.addWidget(QLabel("Raster Tools"))
+        self._raster_name_label = QLabel("Raster")
+        self._raster_name_label.setObjectName("RasterEditName")
+        rt.addWidget(self._raster_name_label)
 
         # Mode badge — shows "Discrete" or "Continuous"
         self._raster_mode_label = QLabel()
@@ -291,14 +302,27 @@ class MapLayerPanel(QWidget):
         self._raster_mode_label.setVisible(False)
         rt.addWidget(self._raster_mode_label)
 
+        self._edit_target_label = QLabel("Target: Base")
+        self._edit_target_label.setObjectName("RasterEditTarget")
+        self._edit_target_label.setVisible(False)
+        rt.addWidget(self._edit_target_label)
+        self._paint_guidance_label = QLabel("")
+        self._paint_guidance_label.setObjectName("RasterPaintGuidance")
+        self._paint_guidance_label.setWordWrap(True)
+        self._paint_guidance_label.setVisible(False)
+        rt.addWidget(self._paint_guidance_label)
+        self._save_status_label = QLabel("Saved")
+        self._save_status_label.setObjectName("RasterSaveStatus")
+        self._save_status_label.setVisible(False)
+        rt.addWidget(self._save_status_label)
+
+        self._build_edit_action_row(rt)
         self._build_tool_mode_buttons(rt)
 
         rt.addWidget(self._make_section_separator("PAINT"))
         self._build_paint_settings(rt)
 
-        self._build_edit_action_row(rt)
-
-        rt.addWidget(self._make_section_separator("SNAPSHOTS"))
+        rt.addWidget(self._make_section_separator("RASTER STATES"))
         self._build_snapshot_row(rt)
 
         rt.addWidget(self._make_section_separator("LAYER"))
@@ -340,14 +364,14 @@ class MapLayerPanel(QWidget):
             ),
         ]
         for attr, label, checked, tooltip, icon_path in tool_defs:
-            btn = QPushButton()
+            btn = QPushButton(label)
             btn.setCheckable(True)
             btn.setChecked(checked)
             btn.setAutoExclusive(True)
             btn.setToolTip(f"{label} — {tooltip}")
             btn.setIcon(load_icon(icon_path, _dim))
-            btn.setIconSize(QSize(20, 20))
-            btn.setFixedSize(QSize(EDITOR_ICON_BUTTON_SIZE, EDITOR_ICON_BUTTON_SIZE))
+            btn.setIconSize(QSize(16, 16))
+            btn.setAccessibleName(label)
             btn.setStyleSheet(_icon_style)
             btn.toggled.connect(self._on_tool_mode_changed)
             setattr(self, attr, btn)
@@ -379,21 +403,24 @@ class MapLayerPanel(QWidget):
                 self._on_brush_size_spin_changed,
             )
         )
+        self._brush_size_row = self._brush_size_spin.parentWidget()
 
         self._build_paint_value_selector(rt)
         self._build_entity_picker(rt)
         self._build_recent_values_strip(rt)
+        self._build_mode_specific_paint_controls(rt)
 
         self._falloff_slider, self._falloff_label = self._make_labeled_slider(
             rt,
             "Hardness:",
             0,
             100,
-            0,
+            100,
             "Brush hardness (0=soft edge, 100=hard edge)",
             self._on_falloff_changed,
             icon_path="default_assets/icons/ui_icons/drop.svg",
         )
+        self._hardness_row = self._falloff_slider.parentWidget()
 
         self._brush_opacity_slider, self._brush_opacity_label = self._make_labeled_slider(
             rt,
@@ -405,9 +432,107 @@ class MapLayerPanel(QWidget):
             self._on_brush_opacity_changed,
             icon_path="default_assets/icons/ui_icons/circle-half.svg",
         )
+        self._brush_opacity_row = self._brush_opacity_slider.parentWidget()
 
         self._build_falloff_curve_combo(rt)
         self._build_gradient_sub_combo(rt)
+
+    def _build_mode_specific_paint_controls(self, rt: QVBoxLayout) -> None:
+        """Build target, tolerance, colour, and explicit endpoint controls."""
+        self._advanced_paint_toggle = QCheckBox("Advanced")
+        self._advanced_paint_toggle.setToolTip(
+            "Show raw raster values for specialist workflows"
+        )
+        self._advanced_paint_toggle.toggled.connect(
+            self._on_advanced_paint_toggled
+        )
+        rt.addWidget(self._advanced_paint_toggle)
+
+        self._display_value_row = QWidget()
+        display_layout = QHBoxLayout(self._display_value_row)
+        display_layout.setContentsMargins(0, 0, 0, 0)
+        display_layout.addWidget(QLabel("Target:"))
+        self._display_value_spin = QDoubleSpinBox()
+        self._display_value_spin.setDecimals(3)
+        self._display_value_spin.setRange(0.0, 65535.0)
+        self._display_value_spin.valueChanged.connect(
+            self._on_display_value_changed
+        )
+        display_layout.addWidget(self._display_value_spin, 1)
+        self._display_unit_label = QLabel("raw")
+        display_layout.addWidget(self._display_unit_label)
+        rt.addWidget(self._display_value_row)
+
+        self._fill_tolerance_row = QWidget()
+        tolerance_layout = QHBoxLayout(self._fill_tolerance_row)
+        tolerance_layout.setContentsMargins(0, 0, 0, 0)
+        tolerance_layout.addWidget(QLabel("Tolerance:"))
+        self._fill_tolerance_slider = QSlider(Qt.Orientation.Horizontal)
+        self._fill_tolerance_slider.setRange(0, 100)
+        self._fill_tolerance_slider.valueChanged.connect(
+            lambda _: self._on_raster_setting_changed()
+        )
+        tolerance_layout.addWidget(self._fill_tolerance_slider, 1)
+        self._fill_tolerance_label = QLabel("0%")
+        self._fill_tolerance_slider.valueChanged.connect(
+            lambda value: self._fill_tolerance_label.setText(f"{value}%")
+        )
+        tolerance_layout.addWidget(self._fill_tolerance_label)
+        rt.addWidget(self._fill_tolerance_row)
+
+        self._rgba_color_row = QWidget()
+        color_layout = QHBoxLayout(self._rgba_color_row)
+        color_layout.setContentsMargins(0, 0, 0, 0)
+        color_layout.addWidget(QLabel("Colour:"))
+        self._rgba_color = QColor(255, 255, 255, 255)
+        self._rgba_color_button = QPushButton("#FFFFFFFF")
+        self._rgba_color_button.setAccessibleName("Paint colour")
+        self._rgba_color_button.clicked.connect(self._choose_rgba_color)
+        color_layout.addWidget(self._rgba_color_button, 1)
+        color_layout.addWidget(QLabel("Alpha:"))
+        self._rgba_alpha_spin = QSpinBox()
+        self._rgba_alpha_spin.setRange(0, 255)
+        self._rgba_alpha_spin.setValue(255)
+        self._rgba_alpha_spin.valueChanged.connect(self._on_rgba_alpha_changed)
+        color_layout.addWidget(self._rgba_alpha_spin)
+        rt.addWidget(self._rgba_color_row)
+
+        self._gradient_endpoints_row = QWidget()
+        endpoint_layout = QHBoxLayout(self._gradient_endpoints_row)
+        endpoint_layout.setContentsMargins(0, 0, 0, 0)
+        endpoint_layout.addWidget(QLabel("From:"))
+        self._gradient_from_spin = QSpinBox()
+        self._gradient_from_spin.setRange(0, 65535)
+        self._gradient_from_spin.valueChanged.connect(
+            lambda _: self._on_raster_setting_changed()
+        )
+        endpoint_layout.addWidget(self._gradient_from_spin)
+        endpoint_layout.addWidget(QLabel("To:"))
+        self._gradient_to_spin = QSpinBox()
+        self._gradient_to_spin.setRange(0, 65535)
+        self._gradient_to_spin.setValue(1)
+        self._gradient_to_spin.valueChanged.connect(
+            lambda _: self._on_raster_setting_changed()
+        )
+        endpoint_layout.addWidget(self._gradient_to_spin)
+        rt.addWidget(self._gradient_endpoints_row)
+
+        self._rgba_gradient_row = QWidget()
+        rgba_gradient_layout = QHBoxLayout(self._rgba_gradient_row)
+        rgba_gradient_layout.setContentsMargins(0, 0, 0, 0)
+        self._rgba_gradient_from = QColor(0, 0, 0, 0)
+        self._rgba_gradient_to = QColor(255, 255, 255, 255)
+        self._rgba_gradient_from_button = QPushButton("From #00000000")
+        self._rgba_gradient_to_button = QPushButton("To #FFFFFFFF")
+        self._rgba_gradient_from_button.clicked.connect(
+            lambda: self._choose_gradient_color(True)
+        )
+        self._rgba_gradient_to_button.clicked.connect(
+            lambda: self._choose_gradient_color(False)
+        )
+        rgba_gradient_layout.addWidget(self._rgba_gradient_from_button)
+        rgba_gradient_layout.addWidget(self._rgba_gradient_to_button)
+        rt.addWidget(self._rgba_gradient_row)
 
     def _build_paint_value_selector(self, rt: QVBoxLayout) -> None:
         """Build the mode-aware paint-value selector.
@@ -422,7 +547,9 @@ class MapLayerPanel(QWidget):
             rt: Raster toolbar layout to append into.
         """
         # Value scrubber spin (always visible, compact — source of truth)
-        scrub_row = QHBoxLayout()
+        self._raw_value_row = QWidget()
+        scrub_row = QHBoxLayout(self._raw_value_row)
+        scrub_row.setContentsMargins(0, 0, 0, 0)
         scrub_row.setSpacing(Spacing.COMPACT)
         lbl = QLabel("Value:")
         lbl.setFixedWidth(_LABEL_WIDTH)
@@ -445,7 +572,7 @@ class MapLayerPanel(QWidget):
             "color: rgba(255,255,255,0.55); font-style: italic;"
         )
         scrub_row.addWidget(self._paint_value_display_label, 1)
-        rt.addLayout(scrub_row)
+        rt.addWidget(self._raw_value_row)
 
         # Mode-dependent picker: swatch grid (discrete) vs gradient scrubber (continuous)
         self._paint_value_stack = QStackedWidget()
@@ -514,7 +641,9 @@ class MapLayerPanel(QWidget):
         Args:
             rt: Raster toolbar layout to append into.
         """
-        curve_row = QHBoxLayout()
+        self._falloff_curve_row = QWidget()
+        curve_row = QHBoxLayout(self._falloff_curve_row)
+        curve_row.setContentsMargins(0, 0, 0, 0)
         curve_row.setSpacing(Spacing.COMPACT)
         curve_lbl = QLabel("Curve:")
         curve_lbl.setFixedWidth(_LABEL_WIDTH)
@@ -531,7 +660,7 @@ class MapLayerPanel(QWidget):
             lambda _: self._on_raster_setting_changed()
         )
         curve_row.addWidget(self._falloff_curve_combo, 1)
-        rt.addLayout(curve_row)
+        rt.addWidget(self._falloff_curve_row)
 
     def _build_gradient_sub_combo(self, rt: QVBoxLayout) -> None:
         """Build the gradient sub-mode combo row.
@@ -539,7 +668,9 @@ class MapLayerPanel(QWidget):
         Args:
             rt: Raster toolbar layout to append into.
         """
-        gradient_row = QHBoxLayout()
+        self._gradient_sub_row = QWidget()
+        gradient_row = QHBoxLayout(self._gradient_sub_row)
+        gradient_row.setContentsMargins(0, 0, 0, 0)
         gradient_row.setSpacing(Spacing.COMPACT)
         grad_lbl = QLabel()
         grad_lbl.setPixmap(
@@ -560,7 +691,7 @@ class MapLayerPanel(QWidget):
             lambda t: self.raster_gradient_sub_mode_changed.emit(t.lower())
         )
         gradient_row.addWidget(self._gradient_sub_combo, 1)
-        rt.addLayout(gradient_row)
+        rt.addWidget(self._gradient_sub_row)
 
     def _build_edit_action_row(self, rt: QVBoxLayout) -> None:
         """Build the Edit / Palette / Stats action row (appended to the PAINT section).
@@ -571,29 +702,30 @@ class MapLayerPanel(QWidget):
         _dim = self._theme_token("text_dim")
         action_row = QHBoxLayout()
         action_row.setSpacing(Spacing.COMPACT)
-        self._btn_edit_toggle = QPushButton("✎ Edit")
+        self._btn_edit_toggle = QPushButton("Paint")
         self._btn_edit_toggle.setCheckable(True)
+        self._btn_edit_toggle.setEnabled(False)
         self._btn_edit_toggle.setToolTip("Enter/exit raster edit mode — changes are applied to the active layer")
         self._btn_edit_toggle.toggled.connect(self._on_edit_toggled)
         action_row.addWidget(self._btn_edit_toggle)
 
-        self._btn_palette = QPushButton()
+        self._btn_palette = QPushButton("Palette")
         self._btn_palette.setIcon(
             load_icon("default_assets/icons/ui_icons/palette.svg", _dim)
         )
         self._btn_palette.setIconSize(QSize(16, 16))
-        self._btn_palette.setFixedSize(QSize(28, 28))
+        self._btn_palette.setAccessibleName("Palette")
         self._btn_palette.setToolTip("Palette — Open the colour map / class palette editor")
         self._btn_palette.setStyleSheet(StyleHelper.get_icon_button_style())
         self._btn_palette.clicked.connect(self._on_palette_clicked)
         action_row.addWidget(self._btn_palette)
 
-        self._btn_stats = QPushButton()
+        self._btn_stats = QPushButton("Analyze")
         self._btn_stats.setIcon(
             load_icon("default_assets/icons/ui_icons/chart-bar.svg", _dim)
         )
         self._btn_stats.setIconSize(QSize(16, 16))
-        self._btn_stats.setFixedSize(QSize(28, 28))
+        self._btn_stats.setAccessibleName("Analyze")
         self._btn_stats.setToolTip("Stats — Show coverage statistics for this raster layer")
         self._btn_stats.setStyleSheet(StyleHelper.get_icon_button_style())
         self._btn_stats.clicked.connect(self._on_stats_clicked)
@@ -610,12 +742,12 @@ class MapLayerPanel(QWidget):
         _dim = self._theme_token("text_dim")
         snapshot_row = QHBoxLayout()
         snapshot_row.setSpacing(Spacing.COMPACT)
-        self._btn_snapshot = QPushButton()
+        self._btn_snapshot = QPushButton("Create state")
         self._btn_snapshot.setIcon(
             load_icon("default_assets/icons/ui_icons/camera.svg", _dim)
         )
         self._btn_snapshot.setIconSize(QSize(16, 16))
-        self._btn_snapshot.setFixedSize(QSize(28, 28))
+        self._btn_snapshot.setAccessibleName("Create state")
         self._btn_snapshot.setToolTip(
             "Create Editable State — branch the displayed raster at the "
             "current timeline date"
@@ -629,6 +761,14 @@ class MapLayerPanel(QWidget):
         )
         self._btn_edit_base.clicked.connect(self._on_edit_base_clicked)
         snapshot_row.addWidget(self._btn_edit_base)
+        self._btn_edit_state = QPushButton("Edit this state")
+        self._btn_edit_state.setAccessibleName("Edit this raster state")
+        self._btn_edit_state.setToolTip(
+            "Select the dated raster state shown in the layer tree as the edit target"
+        )
+        self._btn_edit_state.clicked.connect(self._on_edit_state_clicked)
+        self._btn_edit_state.setVisible(False)
+        snapshot_row.addWidget(self._btn_edit_state)
         self._snapshot_count_label = QLabel("")
         self._snapshot_count_label.setToolTip(
             "Number of dated raster states for this layer"
@@ -788,7 +928,9 @@ class MapLayerPanel(QWidget):
         Returns:
             The configured ``QSpinBox``.
         """
-        row = QHBoxLayout()
+        row_widget = QWidget()
+        row = QHBoxLayout(row_widget)
+        row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(Spacing.COMPACT)
         lbl = QLabel(label)
         lbl.setFixedWidth(_LABEL_WIDTH)
@@ -799,7 +941,7 @@ class MapLayerPanel(QWidget):
         spin.setButtonSymbols(QSpinBox.ButtonSymbols.UpDownArrows)
         spin.valueChanged.connect(on_changed)
         row.addWidget(spin, 1)
-        parent_layout.addLayout(row)
+        parent_layout.addWidget(row_widget)
         return spin
 
     @staticmethod
@@ -831,7 +973,9 @@ class MapLayerPanel(QWidget):
         Returns:
             Tuple of ``(spin, slider)``.
         """
-        row = QHBoxLayout()
+        row_widget = QWidget()
+        row = QHBoxLayout(row_widget)
+        row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(Spacing.COMPACT)
         lbl = QLabel(label)
         lbl.setFixedWidth(_LABEL_WIDTH)
@@ -852,7 +996,7 @@ class MapLayerPanel(QWidget):
         spin.valueChanged.connect(on_spin_changed)
         row.addWidget(spin)
 
-        parent_layout.addLayout(row)
+        parent_layout.addWidget(row_widget)
         return spin, slider
 
     @staticmethod
@@ -886,7 +1030,9 @@ class MapLayerPanel(QWidget):
         """
         from src.core.theme_manager import ThemeManager
 
-        row = QHBoxLayout()
+        row_widget = QWidget()
+        row = QHBoxLayout(row_widget)
+        row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(Spacing.COMPACT)
         if icon_path:
             lbl = QLabel()
@@ -916,7 +1062,7 @@ class MapLayerPanel(QWidget):
             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
         )
         row.addWidget(value_label)
-        parent_layout.addLayout(row)
+        parent_layout.addWidget(row_widget)
         return slider, value_label
 
     # ------------------------------------------------------------------
@@ -940,10 +1086,46 @@ class MapLayerPanel(QWidget):
             model: The layer model to display.
 
         """
+        if self._model is not None:
+            try:
+                self._model.layer_tree_changed.disconnect(
+                    self._reconcile_selection_with_model
+                )
+            except (RuntimeError, TypeError):
+                pass
         self._model = model
         self._tree.setModel(model)
+        model.layer_tree_changed.connect(self._reconcile_selection_with_model)
         self._tree.expandAll()
+        self._reconcile_selection_with_model()
+
+    def _reconcile_selection_with_model(self) -> None:
+        """Clear controls that refer to a node removed from the layer model."""
+        if self._model is None:
+            return
+
+        selected = (
+            self._model.find_node_by_id(self._selected_node_id)
+            if self._selected_node_id
+            else None
+        )
+        if selected is not None:
+            index = self._model.index_from_node(selected)
+            if index.isValid():
+                self._tree.setCurrentIndex(index)
+            self._update_button_state()
+            return
+
+        self._selected_node_id = None
+        self._tree.clearSelection()
+        self._tree.setCurrentIndex(QModelIndex())
         self._update_button_state()
+
+        if (
+            self._current_node_id
+            and self._model.find_node_by_id(self._current_node_id) is None
+        ):
+            self._update_raster_toolbar(self._model.root)
 
     def set_calendar_converter(self, converter: object) -> None:
         """Set the calendar converter used for snapshot date labels.
@@ -1090,11 +1272,9 @@ class MapLayerPanel(QWidget):
 
     @Slot()
     def _on_delete(self) -> None:
-        """Emit delete_layer_requested for the current selection."""
+        """Request deletion while retaining selection until success is confirmed."""
         if self._selected_node_id:
             self.delete_layer_requested.emit(self._selected_node_id)
-            self._selected_node_id = None
-            self._update_button_state()
 
     # ------------------------------------------------------------------
     # Private — tree interactions
@@ -1115,9 +1295,12 @@ class MapLayerPanel(QWidget):
         from src.app.constants import MAP_LAYER_TYPE_SNAPSHOT
 
         if node.layer_type == MAP_LAYER_TYPE_SNAPSHOT:
-            # Jump playhead but keep parent raster toolbar active.
+            # Remember the dated state so its edit action remains visible after
+            # the tree selection returns to the parent raster.
             lore_date = float(node.attributes.get("lore_date", 0.0))
             parent_id = str(node.attributes.get("parent_node_id", ""))
+            self._selected_snapshot_date_by_node[parent_id] = lore_date
+            self._refresh_edit_state_action(parent_id)
             self.raster_snapshot_selected.emit(parent_id, lore_date)
             # Restore tree selection to the parent raster.
             if self._selected_node_id:
@@ -1410,12 +1593,25 @@ class MapLayerPanel(QWidget):
         self._raster_toolbar.setVisible(is_raster)
 
         if is_raster:
+            previous_node_id = self._current_node_id
+            if (
+                self._btn_edit_toggle.isChecked()
+                and previous_node_id
+                and previous_node_id != node.id
+            ):
+                self.raster_edit_stopped.emit()
+                self.reset_edit_toggle()
             self._current_node_id = node.id
             mode = self._raster_mode_by_id.get(node.id, "discrete")
+            if previous_node_id != node.id and mode == "discrete":
+                self._advanced_paint_toggle.blockSignals(True)
+                self._advanced_paint_toggle.setChecked(False)
+                self._advanced_paint_toggle.blockSignals(False)
             self._update_sample_tool_availability(mode)
             self._show_mode_badge(mode)
             # Refresh legend and entity picker from stored metadata
             layer_meta = self._raster_meta_by_id.get(node.id)
+            self._raster_name_label.setText(node.name)
             name_map = getattr(self, "_raster_name_map_by_id", {}).get(node.id)
             self._refresh_entity_picker(layer_meta, mode, name_map)
             # Notify consumers (e.g. MapWidget) to update the floating legend
@@ -1429,26 +1625,27 @@ class MapLayerPanel(QWidget):
             self._blend_combo.blockSignals(False)
             self._update_snapshot_count_label(layer_meta)
             self._refresh_snapshot_list(node.id, layer_meta)
+            self._refresh_edit_target_state(node.id, layer_meta)
             # Show preset and query rows
             self._preset_toolbar_row.setVisible(True)
             self._query_row.setVisible(True)
+            self._apply_mode_tool_visibility()
         else:
-            old_node_id = self._current_node_id
             self._current_node_id = ""
             self._update_sample_tool_availability("discrete")
             self._raster_mode_label.setVisible(False)
+            self._edit_target_label.setVisible(False)
+            self._paint_guidance_label.setVisible(False)
             self._snapshot_count_label.setText("")
-            self._clear_snapshot_list(old_node_id)
             self._preset_toolbar_row.setVisible(False)
             self._query_row.setVisible(False)
             # Notify consumers that no raster is selected
             self.raster_layer_selected.emit(None, None)
 
         # Reset edit toggle when switching layers or switching between rasters
-        if self._btn_edit_toggle.isChecked():
-            if not is_raster or node.id != self._current_node_id:
-                self.reset_edit_toggle()
-                self.raster_edit_stopped.emit()
+        if self._btn_edit_toggle.isChecked() and not is_raster:
+            self.raster_edit_stopped.emit()
+            self.reset_edit_toggle()
 
     def reset_edit_toggle(self) -> None:
         """Reset the edit toggle button without emitting signals.
@@ -1459,18 +1656,149 @@ class MapLayerPanel(QWidget):
         """
         self._btn_edit_toggle.blockSignals(True)
         self._btn_edit_toggle.setChecked(False)
-        self._btn_edit_toggle.setText("✎ Edit")
+        self._btn_edit_toggle.setText("Paint")
+        self._save_status_label.setVisible(False)
         self._btn_edit_toggle.blockSignals(False)
+        if self._current_node_id:
+            self._refresh_edit_target_state(self._current_node_id)
+        else:
+            self._edit_target_label.setVisible(False)
+            self._paint_guidance_label.setVisible(False)
 
     def _on_edit_toggled(self, checked: bool) -> None:
         """Handle the Edit / Done toggle button."""
         if checked:
-            self._btn_edit_toggle.setText("✎ Editing…")
+            self._btn_edit_toggle.setText("Stop painting")
+            self._edit_target_label.setVisible(True)
+            self._save_status_label.setVisible(True)
             if self._selected_node_id:
                 self.raster_edit_requested.emit(self._selected_node_id)
         else:
-            self._btn_edit_toggle.setText("✎ Edit")
+            self._btn_edit_toggle.setText("Paint")
+            self._edit_target_label.setVisible(bool(self._current_node_id))
+            self._save_status_label.setVisible(False)
             self.raster_edit_stopped.emit()
+
+    def _refresh_edit_target_state(
+        self,
+        node_id: str,
+        layer_meta: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Resolve and render the safe Base/dated edit target for one raster."""
+        if node_id != self._current_node_id:
+            return
+
+        metadata_known = node_id in self._raster_meta_by_id
+        meta = (
+            layer_meta
+            if layer_meta is not None
+            else self._raster_meta_by_id.get(node_id)
+        )
+        snapshots = dict((meta or {}).get("snapshots", {}))
+        explicit_label = self._raster_edit_target_label_by_id.get(node_id)
+
+        if explicit_label:
+            target_label = explicit_label
+            target_ready = True
+        elif not metadata_known:
+            target_label = "Loading…"
+            target_ready = False
+        elif snapshots:
+            target_label = "Not selected"
+            target_ready = False
+        else:
+            target_label = "Base"
+            target_ready = True
+
+        self._edit_target_label.setText(f"Target: {target_label}")
+        self._edit_target_label.setVisible(True)
+        self._btn_edit_base.setEnabled(metadata_known)
+        self._refresh_edit_state_action(node_id)
+        self._refresh_paint_action_state(target_ready=target_ready)
+
+    def _refresh_edit_state_action(self, node_id: str) -> None:
+        """Show the dated-state edit action for the last clicked state."""
+        lore_date = self._selected_snapshot_date_by_node.get(node_id)
+        snapshots = dict(
+            (self._raster_meta_by_id.get(node_id) or {}).get("snapshots", {})
+        )
+        has_exact_state = False
+        if lore_date is not None:
+            for key in snapshots:
+                try:
+                    if float(key) == lore_date:
+                        has_exact_state = True
+                        break
+                except (TypeError, ValueError):
+                    continue
+        if not has_exact_state:
+            self._selected_snapshot_date_by_node.pop(node_id, None)
+
+        is_current = node_id == self._current_node_id
+        self._btn_edit_state.setVisible(is_current and has_exact_state)
+        self._btn_edit_state.setEnabled(is_current and has_exact_state)
+        if has_exact_state and lore_date is not None:
+            label = self._format_snapshot_label_with_converter(
+                self._calendar_converter, lore_date
+            )
+            self._btn_edit_state.setToolTip(f"Edit dated raster state: {label}")
+
+    def _refresh_paint_action_state(
+        self,
+        *,
+        target_ready: Optional[bool] = None,
+    ) -> None:
+        """Gate Paint on both a safe file target and a valid mode target."""
+        node_id = self._current_node_id
+        if not node_id:
+            self._btn_edit_toggle.setEnabled(False)
+            self._paint_guidance_label.setVisible(False)
+            return
+
+        if target_ready is None:
+            meta = self._raster_meta_by_id.get(node_id)
+            metadata_known = node_id in self._raster_meta_by_id
+            target_ready = bool(
+                self._raster_edit_target_label_by_id.get(node_id)
+                or (metadata_known and not (meta or {}).get("snapshots"))
+            )
+
+        mode = self._raster_mode_by_id.get(node_id, "discrete")
+        value_ready = True
+        if (
+            self._current_node_id
+            and mode == "discrete"
+            and not self._advanced_paint_toggle.isChecked()
+        ):
+            allowed = self._discrete_paint_values_by_id.get(node_id, set())
+            value_ready = self._paint_value_spin.value() in allowed
+
+        failed = node_id in self._raster_save_failed_nodes
+        enabled = target_ready and value_ready and not failed
+        self._btn_edit_toggle.setEnabled(enabled)
+
+        guidance = ""
+        if not target_ready:
+            if node_id not in self._raster_meta_by_id:
+                guidance = "Loading raster states…"
+            else:
+                guidance = (
+                    "Choose Edit base, or select a dated state and choose "
+                    "Edit this state."
+                )
+        elif not value_ready:
+            guidance = (
+                "Choose a class or palette swatch. Enable Manual value only "
+                "when you need to paint an unmapped class ID."
+            )
+        elif failed:
+            guidance = "Save failed — choose an edit target again to resume."
+
+        self._paint_guidance_label.setText(guidance)
+        self._paint_guidance_label.setVisible(bool(guidance))
+        if not enabled and self._btn_edit_toggle.isChecked():
+            self.raster_edit_stopped.emit()
+            self.reset_edit_toggle()
 
     def _on_palette_clicked(self) -> None:
         """Open the palette editor for the selected raster layer."""
@@ -1506,10 +1834,8 @@ class MapLayerPanel(QWidget):
         # Repopulate class combo
         self._entity_picker_combo.blockSignals(True)
         self._entity_picker_combo.clear()
-        if choices:
-            self._entity_picker_combo.addItem("— manual —", -1)
-            for label, value in choices:
-                self._entity_picker_combo.addItem(f"{label}  ({value})", value)
+        for label, value in choices:
+            self._entity_picker_combo.addItem(f"{label}  ({value})", value)
         self._entity_picker_combo.blockSignals(False)
         self._entity_picker_row.setVisible(is_discrete and bool(choices))
 
@@ -1521,9 +1847,12 @@ class MapLayerPanel(QWidget):
                 color_map = ColorMap.from_dict(cm_dict)
             except Exception:
                 color_map = None
+        self._active_color_map = color_map
+        self._configure_display_value_control(color_map)
 
         # Swatch grid (discrete).
         swatches: List[Swatch] = []
+        allowed_values = {value for _label, value in choices}
         if is_discrete and color_map is not None:
             label_by_value: Dict[int, str] = {val: lbl for lbl, val in choices}
             for idx, entry in enumerate(color_map.entries):
@@ -1533,9 +1862,20 @@ class MapLayerPanel(QWidget):
                     val = None
                 if val is None:
                     continue
+                allowed_values.add(val)
                 lbl = label_by_value.get(val, str(val))
                 hotkey = idx + 1 if idx < 9 else None
                 swatches.append(Swatch(value=val, color=entry.color, label=lbl, hotkey=hotkey))
+        if self._current_node_id:
+            self._discrete_paint_values_by_id[self._current_node_id] = allowed_values
+        if (
+            is_discrete
+            and allowed_values
+            and not self._advanced_paint_toggle.isChecked()
+            and self._paint_value_spin.value() not in allowed_values
+        ):
+            preferred_value = choices[0][1] if choices else swatches[0].value
+            self._set_paint_value(int(preferred_value))
         self._swatch_grid.set_swatches(swatches)
         self._swatch_grid.set_active_value(self._paint_value_spin.value())
 
@@ -1567,6 +1907,7 @@ class MapLayerPanel(QWidget):
         self._paint_value_display_label.setText(
             self._format_value_for_display(self._paint_value_spin.value())
         )
+        self._refresh_paint_action_state()
 
     @Slot(int)
     def _on_entity_picked(self, index: int) -> None:
@@ -1603,6 +1944,7 @@ class MapLayerPanel(QWidget):
         Signals on peer widgets are blocked to avoid feedback loops.
         """
         self._swatch_grid.set_active_value(int(value))
+        self._sync_display_value_from_raw(int(value))
         self._gradient_scrubber.blockSignals(True)
         self._gradient_scrubber.set_value(int(value))
         self._gradient_scrubber.blockSignals(False)
@@ -1618,8 +1960,8 @@ class MapLayerPanel(QWidget):
                         self._entity_picker_combo.setCurrentIndex(i)
                         matched = True
                         break
-                if not matched and self._entity_picker_combo.count() > 0:
-                    self._entity_picker_combo.setCurrentIndex(0)
+                if not matched:
+                    self._entity_picker_combo.setCurrentIndex(-1)
             finally:
                 self._entity_picker_combo.blockSignals(False)
 
@@ -1633,6 +1975,17 @@ class MapLayerPanel(QWidget):
             value: New paint value.
         """
         clamped = max(0, min(65535, int(value)))
+        mode = self._raster_mode_by_id.get(self._current_node_id, "discrete")
+        if (
+            self._current_node_id
+            and mode == "discrete"
+            and not self._advanced_paint_toggle.isChecked()
+        ):
+            allowed = self._discrete_paint_values_by_id.get(
+                self._current_node_id, set()
+            )
+            if clamped not in allowed:
+                return
         if self._paint_value_spin.value() == clamped:
             # Still sync peers in case they drifted.
             self._sync_paint_value_peers(clamped)
@@ -1689,6 +2042,9 @@ class MapLayerPanel(QWidget):
             int_val = int(value)  # type: ignore[arg-type]
         except (TypeError, ValueError):
             return
+        mode = self._raster_mode_by_id.get(self._current_node_id, "discrete")
+        if mode == "discrete" and not self._advanced_paint_toggle.isChecked():
+            return
         self._set_paint_value(int_val)
 
     def _format_value_for_display(self, value: int) -> str:
@@ -1713,6 +2069,177 @@ class MapLayerPanel(QWidget):
         except Exception:
             pass
         return str(int(value))
+
+    def _configure_display_value_control(
+        self,
+        color_map: Optional[ColorMap],
+    ) -> None:
+        """Configure the continuous target in calibrated display units."""
+        self._display_value_updating = True
+        try:
+            if (
+                color_map is not None
+                and color_map.display_min is not None
+                and color_map.display_max is not None
+            ):
+                lo = min(color_map.display_min, color_map.display_max)
+                hi = max(color_map.display_min, color_map.display_max)
+                self._display_value_spin.setRange(lo, hi)
+                self._display_unit_label.setText(color_map.unit or "display")
+            else:
+                self._display_value_spin.setRange(0.0, 65535.0)
+                self._display_unit_label.setText("raw")
+            self._sync_display_value_from_raw(self._paint_value_spin.value())
+        finally:
+            self._display_value_updating = False
+
+    def _sync_display_value_from_raw(self, raw_value: int) -> None:
+        color_map = self._active_color_map
+        display_value = float(raw_value)
+        if (
+            color_map is not None
+            and color_map.display_min is not None
+            and color_map.display_max is not None
+        ):
+            raw_min = float(color_map.stretch_min or 0)
+            raw_max = float(
+                color_map.stretch_max
+                if color_map.stretch_max is not None
+                else 65535
+            )
+            fraction = (float(raw_value) - raw_min) / max(raw_max - raw_min, 1.0)
+            display_value = color_map.display_min + fraction * (
+                color_map.display_max - color_map.display_min
+            )
+        self._display_value_spin.blockSignals(True)
+        self._display_value_spin.setValue(display_value)
+        self._display_value_spin.blockSignals(False)
+
+    @Slot(float)
+    def _on_display_value_changed(self, display_value: float) -> None:
+        if self._display_value_updating:
+            return
+        color_map = self._active_color_map
+        raw_value = display_value
+        if (
+            color_map is not None
+            and color_map.display_min is not None
+            and color_map.display_max is not None
+        ):
+            raw_min = float(color_map.stretch_min or 0)
+            raw_max = float(
+                color_map.stretch_max
+                if color_map.stretch_max is not None
+                else 65535
+            )
+            fraction = (display_value - color_map.display_min) / max(
+                color_map.display_max - color_map.display_min,
+                1e-12,
+            )
+            raw_value = raw_min + fraction * (raw_max - raw_min)
+        self._set_paint_value(int(round(raw_value)))
+
+    def _choose_rgba_color(self) -> None:
+        color = QColorDialog.getColor(
+            self._rgba_color,
+            self,
+            "Choose paint colour",
+            QColorDialog.ColorDialogOption.ShowAlphaChannel,
+        )
+        if not color.isValid():
+            return
+        self._rgba_color = color
+        self._rgba_alpha_spin.setValue(color.alpha())
+        self._refresh_rgba_button()
+        self._on_raster_setting_changed()
+
+    @Slot(int)
+    def _on_rgba_alpha_changed(self, alpha: int) -> None:
+        self._rgba_color.setAlpha(alpha)
+        self._refresh_rgba_button()
+        self._on_raster_setting_changed()
+
+    def _refresh_rgba_button(self) -> None:
+        self._rgba_color_button.setText(
+            f"#{self._rgba_color.red():02X}{self._rgba_color.green():02X}"
+            f"{self._rgba_color.blue():02X}{self._rgba_color.alpha():02X}"
+        )
+
+    def _choose_gradient_color(self, choose_from: bool) -> None:
+        current = self._rgba_gradient_from if choose_from else self._rgba_gradient_to
+        color = QColorDialog.getColor(
+            current,
+            self,
+            "Choose gradient endpoint",
+            QColorDialog.ColorDialogOption.ShowAlphaChannel,
+        )
+        if not color.isValid():
+            return
+        if choose_from:
+            self._rgba_gradient_from = color
+            self._rgba_gradient_from_button.setText(
+                f"From #{color.red():02X}{color.green():02X}"
+                f"{color.blue():02X}{color.alpha():02X}"
+            )
+        else:
+            self._rgba_gradient_to = color
+            self._rgba_gradient_to_button.setText(
+                f"To #{color.red():02X}{color.green():02X}"
+                f"{color.blue():02X}{color.alpha():02X}"
+            )
+        self._on_raster_setting_changed()
+
+    @Slot(str, str, str)
+    def set_raster_save_state(
+        self,
+        node_id: str,
+        state: str,
+        message: str = "",
+    ) -> None:
+        """Display queued raster persistence state for the active layer."""
+        if node_id != self._current_node_id:
+            return
+        labels = {
+            "saving": "Saving…",
+            "saved": "Saved",
+            "failed": "Save failed — editing paused",
+        }
+        self._save_status_label.setText(message or labels.get(state, state))
+        self._save_status_label.setVisible(self._btn_edit_toggle.isChecked())
+        if state == "failed":
+            self._raster_save_failed_nodes.add(node_id)
+            self._refresh_paint_action_state()
+
+    def set_raster_edit_target(self, node_id: str, label: str) -> None:
+        """Expose the resolved Base/dated target before Paint can begin."""
+        self._raster_edit_target_label_by_id[node_id] = label
+        self._raster_save_failed_nodes.discard(node_id)
+        if node_id != self._current_node_id:
+            return
+        self._save_status_label.setText("Saved")
+        self._refresh_edit_target_state(node_id)
+
+    def clear_raster_edit_targets(self, node_id: Optional[str] = None) -> None:
+        """Clear panel target state when the coordinator invalidates file targets."""
+        if node_id is None:
+            self._raster_edit_target_label_by_id.clear()
+        else:
+            self._raster_edit_target_label_by_id.pop(node_id, None)
+        if self._current_node_id and (
+            node_id is None or node_id == self._current_node_id
+        ):
+            self._refresh_edit_target_state(self._current_node_id)
+
+    def set_raster_paint_color(
+        self,
+        color: tuple[int, int, int, int],
+    ) -> None:
+        """Synchronize the RGBA picker after an eyedropper sample."""
+        self._rgba_color = QColor(*color)
+        self._rgba_alpha_spin.blockSignals(True)
+        self._rgba_alpha_spin.setValue(color[3])
+        self._rgba_alpha_spin.blockSignals(False)
+        self._refresh_rgba_button()
 
     def set_raster_mode_metadata(self, mode_by_id: "dict[str, str]") -> None:
         """Update the cached raster mode lookup used by the mode badge.
@@ -1754,6 +2281,10 @@ class MapLayerPanel(QWidget):
                 for resolving entity/event names in the class picker.
         """
         self._raster_meta_by_id = meta_by_id
+        for node_id, metadata in meta_by_id.items():
+            mode = str(metadata.get("mode", ""))
+            if mode in {"discrete", "continuous", "color"}:
+                self._raster_mode_by_id.setdefault(node_id, mode)
         self._raster_name_map_by_id = name_map_by_id or {}
         # Refresh legend and picker if a raster is already selected
         if self._selected_node_id and self._model is not None:
@@ -1771,6 +2302,9 @@ class MapLayerPanel(QWidget):
                     self._refresh_entity_picker(layer_meta, mode, name_map)
                     self._update_snapshot_count_label(layer_meta)
                     self._refresh_snapshot_list(self._selected_node_id, layer_meta)
+                    self._refresh_edit_target_state(
+                        self._selected_node_id, layer_meta
+                    )
                     # Notify consumers to refresh the floating legend
                     self.raster_layer_selected.emit(self._selected_node_id, layer_meta)
 
@@ -1830,15 +2364,13 @@ class MapLayerPanel(QWidget):
         Args:
             mode: Active raster mode string.
         """
-        sample_enabled = mode != "color"
-        self._btn_sample.setEnabled(sample_enabled)
-        self._btn_sample.setToolTip(
-            self._sample_tool_enabled_tooltip
-            if sample_enabled
-            else self._sample_tool_disabled_tooltip
-        )
-        if not sample_enabled and self._btn_sample.isChecked():
-            self._btn_brush.setChecked(True)
+        self._btn_sample.setEnabled(True)
+        if mode == "color":
+            self._btn_sample.setToolTip(
+                "Eyedropper — sample the stored RGBA pixel and make it active"
+            )
+        else:
+            self._btn_sample.setToolTip(self._sample_tool_enabled_tooltip)
 
     @Slot()
     def _on_falloff_changed(self) -> None:
@@ -1863,7 +2395,88 @@ class MapLayerPanel(QWidget):
         """Emit settings changed only when a tool button becomes active."""
         if not checked:
             return
+        self._apply_mode_tool_visibility()
         self.raster_settings_changed.emit()
+
+    @Slot(bool)
+    def _on_advanced_paint_toggled(self, checked: bool) -> None:
+        """Apply explicit Manual-value semantics for discrete rasters."""
+        mode = self._raster_mode_by_id.get(self._current_node_id, "discrete")
+        if mode == "discrete" and not checked:
+            allowed = self._discrete_paint_values_by_id.get(
+                self._current_node_id, set()
+            )
+            if allowed and self._paint_value_spin.value() not in allowed:
+                self._set_paint_value(min(allowed))
+        self._apply_mode_tool_visibility()
+        self._refresh_paint_action_state()
+        self.raster_settings_changed.emit()
+
+    def _apply_mode_tool_visibility(self) -> None:
+        """Show only controls meaningful for the selected mode and tool."""
+        mode = self._raster_mode_by_id.get(self._current_node_id, "discrete")
+        tool = self.raster_tool_mode
+        is_brush = tool == "brush"
+        is_fill = tool == "fill"
+        is_gradient = tool == "gradient"
+        is_sample = tool == "sample"
+        is_discrete = mode == "discrete"
+        is_continuous = mode == "continuous"
+        is_rgba = mode == "color"
+
+        self._btn_gradient.setVisible(not is_discrete)
+        if is_discrete and is_gradient:
+            self._btn_brush.setChecked(True)
+            is_brush, is_gradient = True, False
+
+        self._brush_size_row.setVisible(is_brush or is_gradient)
+        self._hardness_row.setVisible(is_brush and not is_discrete)
+        self._brush_opacity_row.setVisible(is_brush and not is_discrete)
+        self._falloff_curve_row.setVisible(is_brush and not is_discrete)
+        self._gradient_sub_row.setVisible(is_gradient)
+        self._gradient_endpoints_row.setVisible(is_gradient and is_continuous)
+        self._rgba_gradient_row.setVisible(is_gradient and is_rgba)
+        self._fill_tolerance_row.setVisible(is_fill and not is_discrete)
+        self._rgba_color_row.setVisible(is_rgba and (is_brush or is_fill))
+        self._display_value_row.setVisible(
+            is_continuous and (is_brush or is_fill)
+        )
+        self._paint_value_stack.setVisible(
+            not is_sample and not is_rgba and not is_gradient
+        )
+        self._recent_paint_values.setVisible(
+            not is_sample
+            and not is_rgba
+            and not is_gradient
+            and (
+                is_continuous
+                or (is_discrete and self._advanced_paint_toggle.isChecked())
+            )
+        )
+        self._entity_picker_row.setVisible(
+            is_discrete
+            and not is_sample
+            and self._entity_picker_combo.count() > 0
+        )
+        self._advanced_paint_toggle.setVisible(
+            is_discrete or is_continuous
+        )
+        if is_discrete:
+            self._advanced_paint_toggle.setText("Manual value")
+            self._advanced_paint_toggle.setToolTip(
+                "Allow raw class IDs that are not present in the class palette"
+            )
+        else:
+            self._advanced_paint_toggle.setText("Advanced")
+            self._advanced_paint_toggle.setToolTip(
+                "Show the raw 0–65535 raster value"
+            )
+        self._raw_value_row.setVisible(
+            not is_sample
+            and not is_rgba
+            and self._advanced_paint_toggle.isChecked()
+        )
+        self._refresh_paint_action_state()
 
     @property
     def raster_tool_mode(self) -> str:
@@ -1894,6 +2507,19 @@ class MapLayerPanel(QWidget):
         self._brush_size_slider.setValue(clamped)
         self._brush_size_slider.blockSignals(False)
 
+    @Slot(str)
+    def set_raster_tool_mode(self, mode: str) -> None:
+        """Synchronize visible tool selection after a scoped shortcut."""
+        buttons = {
+            "brush": self._btn_brush,
+            "fill": self._btn_fill,
+            "gradient": self._btn_gradient,
+            "sample": self._btn_sample,
+        }
+        button = buttons.get(mode)
+        if button is not None and button.isVisible() and button.isEnabled():
+            button.setChecked(True)
+
     @property
     def raster_paint_value(self) -> int:
         """Current paint value from the spin box."""
@@ -1901,8 +2527,8 @@ class MapLayerPanel(QWidget):
 
     @property
     def raster_falloff(self) -> float:
-        """Current falloff (0.0–1.0) from the slider."""
-        return self._falloff_slider.value() / 100.0
+        """Engine falloff derived from UI hardness (falloff = 1 - H)."""
+        return 1.0 - self._falloff_slider.value() / 100.0
 
     @property
     def raster_brush_opacity(self) -> float:
@@ -1918,6 +2544,42 @@ class MapLayerPanel(QWidget):
     def raster_gradient_sub_mode(self) -> str:
         """Current gradient sub-mode (lowercase) from the combo box."""
         return self._gradient_sub_combo.currentText().lower()
+
+    @property
+    def raster_fill_tolerance(self) -> int:
+        """Mode-aware raw connected-fill tolerance."""
+        mode = self._raster_mode_by_id.get(self._current_node_id, "discrete")
+        if mode == "discrete":
+            return 0
+        maximum = 255 if mode == "color" else 65535
+        return round(self._fill_tolerance_slider.value() / 100.0 * maximum)
+
+    @staticmethod
+    def _qcolor_rgba(color: QColor) -> tuple[int, int, int, int]:
+        return color.red(), color.green(), color.blue(), color.alpha()
+
+    @property
+    def raster_paint_color(self) -> tuple[int, int, int, int]:
+        """Active straight-alpha RGBA paint colour."""
+        return self._qcolor_rgba(self._rgba_color)
+
+    @property
+    def raster_gradient_from(
+        self,
+    ) -> int | tuple[int, int, int, int]:
+        mode = self._raster_mode_by_id.get(self._current_node_id, "discrete")
+        if mode == "color":
+            return self._qcolor_rgba(self._rgba_gradient_from)
+        return self._gradient_from_spin.value()
+
+    @property
+    def raster_gradient_to(
+        self,
+    ) -> int | tuple[int, int, int, int]:
+        mode = self._raster_mode_by_id.get(self._current_node_id, "discrete")
+        if mode == "color":
+            return self._qcolor_rgba(self._rgba_gradient_to)
+        return self._gradient_to_spin.value()
 
     def set_raster_layer_notes(self, node_id: str, has_notes: bool) -> None:
         """Update the notes indicator for a raster layer.
@@ -1955,6 +2617,14 @@ class MapLayerPanel(QWidget):
         if self._current_node_id:
             self.raster_base_edit_requested.emit(self._current_node_id)
 
+    @Slot()
+    def _on_edit_state_clicked(self) -> None:
+        """Select the visibly chosen dated raster state as the edit target."""
+        node_id = self._current_node_id
+        lore_date = self._selected_snapshot_date_by_node.get(node_id)
+        if node_id and lore_date is not None:
+            self.raster_snapshot_edit_requested.emit(node_id, lore_date)
+
     def _clear_snapshot_list(self, node_id: str = "") -> None:
         """Remove virtual snapshot children for the given raster node from the model."""
         target = node_id or self._current_node_id
@@ -1986,6 +2656,8 @@ class MapLayerPanel(QWidget):
 
         snapshots = (layer_meta or {}).get("snapshots", {})
         if not snapshots:
+            self._selected_snapshot_date_by_node.pop(node_id, None)
+            self._refresh_edit_state_action(node_id)
             self._model.set_virtual_snapshot_children(node_id, [])
             return
 
@@ -1997,6 +2669,11 @@ class MapLayerPanel(QWidget):
                 continue
 
         parsed.sort(key=lambda s: s[1], reverse=True)
+        selected_date = self._selected_snapshot_date_by_node.get(node_id)
+        if selected_date is not None and all(
+            lore_date != selected_date for _key, lore_date in parsed
+        ):
+            self._selected_snapshot_date_by_node.pop(node_id, None)
 
         virtual_nodes: List[MapLayerNode] = []
         for _key, lore_date in parsed:
@@ -2013,6 +2690,7 @@ class MapLayerPanel(QWidget):
             virtual_nodes.append(vnode)
 
         self._model.set_virtual_snapshot_children(node_id, virtual_nodes)
+        self._refresh_edit_state_action(node_id)
 
         raster_node = self._model.find_node_by_id(node_id)
         if raster_node is not None:

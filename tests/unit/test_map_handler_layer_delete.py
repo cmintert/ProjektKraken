@@ -14,16 +14,13 @@ The fix:
   unregistered as well.
 """
 
-from unittest.mock import MagicMock, call
-
-import pytest
+from unittest.mock import MagicMock
 
 from src.app.map_handler import MapHandler
 from src.commands.layer_commands import SaveLayerTreeCommand
 from src.commands.marker_commands import DeleteMarkerCommand
 from src.core.map import MapLayerNode
 from src.core.marker import Marker
-
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -144,6 +141,27 @@ class TestPendingLayerNodeSyncFlag:
 
         handler._loaded_markers_map_id = "map-1"
         handler._pending_layer_node_sync = True  # simulate on_maps_ready ran
+
+        handler.on_markers_ready("map-1", [])
+
+        mock_widget.rebuild_layer_model.assert_called_once_with(db_root)
+
+    def test_guard_fires_when_deleted_node_is_stale_in_model(self, qapp) -> None:
+        """Fresh map data must remove a successfully deleted tree node."""
+        handler, mock_widget = _make_handler()
+
+        db_root = _make_node("root")
+        model_root = _make_node("root")
+        model_root.children.append(_make_node("deleted-raster", "raster"))
+
+        mock_map = MagicMock()
+        mock_map.id = "map-1"
+        mock_map.layers = db_root
+        mock_widget.maps_data = [mock_map]
+        mock_widget.get_layer_model.return_value.root = model_root
+
+        handler._loaded_markers_map_id = "map-1"
+        handler._pending_layer_node_sync = True
 
         handler.on_markers_ready("map-1", [])
 

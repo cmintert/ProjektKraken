@@ -114,6 +114,46 @@ def test_panel_snapshot_count_clears_when_all_deleted(qtbot) -> None:
     assert len(_snap_children(model, "r-1")) == 0
 
 
+def test_selecting_non_raster_preserves_snapshot_rows(qtbot) -> None:
+    """Selection changes must not delete another layer's virtual state rows."""
+    panel = MapLayerPanel()
+    qtbot.addWidget(panel)
+    raster = MapLayerNode(
+        name="Rainfall",
+        layer_type=MAP_LAYER_TYPE_RASTER,
+        id="r-1",
+    )
+    group = MapLayerNode(
+        name="Reference",
+        layer_type=MAP_LAYER_TYPE_GROUP,
+        id="g-1",
+    )
+    root = MapLayerNode(
+        name="Root",
+        layer_type=MAP_LAYER_TYPE_GROUP,
+        id="root",
+        children=[raster, group],
+    )
+    model = MapLayerModel(root)
+    panel.set_model(model)
+    panel.set_raster_layer_metadata(
+        {
+            "r-1": {
+                "node_id": "r-1",
+                "mode": "discrete",
+                "snapshots": {"7.25": "rasters/rain_snap_7.25.png"},
+            }
+        }
+    )
+
+    panel._on_item_clicked(model.index(0, 0))
+    assert len(_snap_children(model, "r-1")) == 1
+
+    panel._on_item_clicked(model.index(1, 0))
+
+    assert len(_snap_children(model, "r-1")) == 1
+
+
 def test_panel_snapshot_row_click_emits_jump(qtbot) -> None:
     """Clicking a snapshot row should emit raster_snapshot_selected."""
     panel = MapLayerPanel()
@@ -140,6 +180,110 @@ def test_panel_snapshot_row_click_emits_jump(qtbot) -> None:
     panel._on_item_clicked(snap_index)
 
     assert received == [("r-1", 12.0)]
+
+
+def test_metadata_arrival_with_states_requires_explicit_edit_target(qtbot) -> None:
+    """Late metadata must replace the loading state with a safe target choice."""
+    panel = MapLayerPanel()
+    qtbot.addWidget(panel)
+    model = _build_raster_model()
+    panel.set_model(model)
+
+    panel._on_item_clicked(model.index(0, 0))
+
+    assert not panel._btn_edit_toggle.isEnabled()
+    assert panel._edit_target_label.text() == "Target: Loading…"
+
+    panel.set_raster_layer_metadata(
+        {
+            "r-1": {
+                "node_id": "r-1",
+                "mode": "discrete",
+                "snapshots": {"12.0": "rasters/rain_snap_12.0.png"},
+            }
+        }
+    )
+
+    assert not panel._btn_edit_toggle.isEnabled()
+    assert panel._edit_target_label.text() == "Target: Not selected"
+    assert "Choose Edit base" in panel._paint_guidance_label.text()
+
+
+def test_metadata_without_states_resolves_safe_base_target(qtbot) -> None:
+    """An unsnapshotted raster can use Base without an extra target click."""
+    panel = MapLayerPanel()
+    qtbot.addWidget(panel)
+    model = _build_raster_model()
+    panel.set_model(model)
+    panel.set_raster_layer_metadata(
+        {
+            "r-1": {
+                "node_id": "r-1",
+                "mode": "continuous",
+                "snapshots": {},
+            }
+        }
+    )
+
+    panel._on_item_clicked(model.index(0, 0))
+
+    assert panel._btn_edit_toggle.isEnabled()
+    assert panel._edit_target_label.text() == "Target: Base"
+
+
+def test_snapshot_click_exposes_visible_edit_this_state_action(qtbot) -> None:
+    """A dated row selection should reveal an ordinary, clickable edit action."""
+    panel = MapLayerPanel()
+    qtbot.addWidget(panel)
+    model = _build_raster_model()
+    panel.set_model(model)
+    panel.set_raster_layer_metadata(
+        {
+            "r-1": {
+                "node_id": "r-1",
+                "mode": "continuous",
+                "snapshots": {"12.0": "rasters/rain_snap_12.0.png"},
+            }
+        }
+    )
+    panel._on_item_clicked(model.index(0, 0))
+
+    requested: list[tuple[str, float]] = []
+    panel.raster_snapshot_edit_requested.connect(
+        lambda node_id, date: requested.append((node_id, date))
+    )
+    snapshot = _snap_children(model, "r-1")[0]
+    panel._on_item_clicked(model.index_from_node(snapshot))
+
+    assert not panel._btn_edit_state.isHidden()
+    panel._btn_edit_state.click()
+    assert requested == [("r-1", 12.0)]
+
+
+def test_clearing_explicit_target_disables_snapshotted_raster(qtbot) -> None:
+    """Panel target state must follow coordinator invalidation."""
+    panel = MapLayerPanel()
+    qtbot.addWidget(panel)
+    model = _build_raster_model()
+    panel.set_model(model)
+    panel.set_raster_layer_metadata(
+        {
+            "r-1": {
+                "node_id": "r-1",
+                "mode": "continuous",
+                "snapshots": {"12.0": "rasters/rain_snap_12.0.png"},
+            }
+        }
+    )
+    panel._on_item_clicked(model.index(0, 0))
+    panel.set_raster_edit_target("r-1", "Dated state (12.00)")
+
+    assert panel._btn_edit_toggle.isEnabled()
+
+    panel.clear_raster_edit_targets()
+
+    assert not panel._btn_edit_toggle.isEnabled()
+    assert panel._edit_target_label.text() == "Target: Not selected"
 
 
 def test_panel_snapshot_delete_click_emits_delete_request(qtbot) -> None:

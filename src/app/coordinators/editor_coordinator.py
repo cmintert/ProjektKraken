@@ -15,6 +15,7 @@ from PySide6.QtWidgets import QInputDialog, QMessageBox, QWidget
 
 from src.app.constants import SETTINGS_AUTO_RELATION_KEY
 from src.app.coordinators.base_coordinator import BaseCoordinator
+from src.commands.base_command import CommandResult
 from src.commands.composite_command import CompositeCommand
 from src.commands.entity_commands import (
     CreateEntityCommand,
@@ -31,7 +32,6 @@ from src.commands.relation_commands import (
     RemoveRelationCommand,
     UpdateRelationCommand,
 )
-from src.commands.base_command import CommandResult
 from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.core.map import Map
 

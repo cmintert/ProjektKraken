@@ -525,6 +525,14 @@ class MapLayerMixin:
         tool.brush_size = panel.raster_brush_size
         tool.paint_value = panel.raster_paint_value
         tool.falloff = panel.raster_falloff
+        tool.falloff_curve = panel.raster_falloff_curve
+        tool.brush_opacity = panel.raster_brush_opacity
+        tool.paint_color = panel.raster_paint_color
+        tool.fill_tolerance = panel.raster_fill_tolerance
+        tool.set_gradient_targets(
+            panel.raster_gradient_from,
+            panel.raster_gradient_to,
+        )
         tool.set_gradient_sub_mode(panel.raster_gradient_sub_mode)
 
         logger.debug(
@@ -588,6 +596,12 @@ class MapLayerMixin:
         tool.falloff = panel.raster_falloff
         tool.falloff_curve = panel.raster_falloff_curve
         tool.brush_opacity = panel.raster_brush_opacity
+        tool.paint_color = panel.raster_paint_color
+        tool.fill_tolerance = panel.raster_fill_tolerance
+        tool.set_gradient_targets(
+            panel.raster_gradient_from,
+            panel.raster_gradient_to,
+        )
         tool.set_gradient_sub_mode(panel.raster_gradient_sub_mode)
 
         logger.debug(

@@ -10,11 +10,28 @@ from collections import deque
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 import numpy as np
 from PySide6.QtGui import QImage
 
+from src.core.raster_paint import (
+    BrushSpec,
+    FalloffCurve,
+    FillSpec,
+    GradientSpec,
+    RasterPaintMode,
+    RasterPixelFormat,
+    connected_fill,
+    connected_region,
+    paint_continuous_brush,
+    paint_discrete_brush,
+    paint_rgba_brush,
+    sample_pixel,
+)
+from src.core.raster_paint import (
+    paint_gradient as paint_mode_gradient,
+)
 from src.gui.widgets.map.raster_mapping import normalize_value_entity_map
 
 logger = logging.getLogger(__name__)
@@ -515,6 +532,7 @@ class MapDataBuffer:
         width: int,
         height: int,
         default_value: int = 0,
+        mode: str = RasterPaintMode.CONTINUOUS.value,
     ) -> None:
         if width <= 0 or height <= 0:
             raise ValueError(f"Invalid buffer dimensions: {width}×{height}")
@@ -529,6 +547,7 @@ class MapDataBuffer:
             (height, width), default_value, dtype=np.uint16
         )
         self._rgba_data: Optional[np.ndarray] = None
+        self._raster_mode = RasterPaintMode(mode)
 
     # ------------------------------------------------------------------
     # Properties
@@ -548,6 +567,34 @@ class MapDataBuffer:
     def data(self) -> np.ndarray:
         """Raw numpy buffer (read-only access)."""
         return self._data
+
+    @property
+    def rgba_data(self) -> Optional[np.ndarray]:
+        """Stored straight-alpha RGBA pixels, when this is a visual raster."""
+        return self._rgba_data
+
+    @property
+    def editable_data(self) -> np.ndarray:
+        """Return the active pixel plane for generic paint and patch operations."""
+        if self._rgba_data is not None:
+            return self._rgba_data
+        return self._data
+
+    @property
+    def pixel_format(self) -> RasterPixelFormat:
+        """Pixel storage format used by this raster."""
+        if self._rgba_data is not None:
+            return RasterPixelFormat.RGBA8
+        return RasterPixelFormat.VALUE16
+
+    @property
+    def raster_mode(self) -> RasterPaintMode:
+        """Semantic paint mode associated with the buffer."""
+        return self._raster_mode
+
+    def set_raster_mode(self, mode: str) -> None:
+        """Update semantic paint mode after metadata is resolved."""
+        self._raster_mode = RasterPaintMode(mode)
 
     @property
     def default_value(self) -> int:
@@ -602,6 +649,11 @@ class MapDataBuffer:
         """
         col, row = self._norm_to_pixel(x_norm, y_norm)
         return int(self._data[row, col])
+
+    def sample_at(self, x_norm: float, y_norm: float) -> int | tuple[int, ...]:
+        """Sample the active value or stored RGBA pixel."""
+        col, row = self._norm_to_pixel(x_norm, y_norm)
+        return sample_pixel(self.editable_data, col, row)
 
     def set_value_at(self, x_norm: float, y_norm: float, value: int) -> None:
         """Write a raster value at normalised coordinates.
@@ -695,82 +747,126 @@ class MapDataBuffer:
 
         """
         cx, cy = self._norm_to_pixel(center_x, center_y)
-        r = max(1, radius_px)
-
-        min_col = max(0, cx - r)
-        max_col = min(self._width - 1, cx + r)
-        min_row = max(0, cy - r)
-        max_row = min(self._height - 1, cy + r)
-
-        logger.debug(
-            "paint_brush: center_px=(%d,%d) radius=%d value=%d "
-            "falloff=%.2f curve=%s dirty=(%d,%d,%d,%d)",
+        if self._raster_mode is RasterPaintMode.DISCRETE:
+            return paint_discrete_brush(
+                self._data,
+                cx,
+                cy,
+                radius_px,
+                int(value),
+            )
+        return paint_continuous_brush(
+            self._data,
             cx,
             cy,
-            r,
-            value,
-            falloff,
-            falloff_curve,
-            min_col,
-            min_row,
-            max_col,
-            max_row,
+            int(value),
+            BrushSpec(
+                radius_px=radius_px,
+                hardness=1.0 - max(0.0, min(1.0, falloff)),
+                opacity=opacity,
+                curve=cast(FalloffCurve, falloff_curve),
+            ),
+            baseline=stroke_before,
+            maximum_coverage=stroke_strength_map,
         )
 
-        # Fetch or compute the full (2r+1, 2r+1) strength kernel (cached).
-        # Slice to clamp brush against buffer edges.
-        kernel = _compute_brush_kernel(r, falloff, falloff_curve)
-        k_top = max(0, r - cy)
-        k_bottom = max(0, cy + r - (self._height - 1))
-        k_left = max(0, r - cx)
-        k_right = max(0, cx + r - (self._width - 1))
-        kh = 2 * r + 1
-        kw = 2 * r + 1
-        strength: np.ndarray = kernel[
-            k_top : kh - k_bottom if k_bottom else kh,
-            k_left : kw - k_right if k_right else kw,
-        ].copy()  # writable slice for in-place ops below
+    def paint_color_brush(
+        self,
+        center_x: float,
+        center_y: float,
+        radius_px: int,
+        color: tuple[int, int, int, int],
+        *,
+        hardness: float = 1.0,
+        opacity: float = 1.0,
+        falloff_curve: str = "cosine",
+        stroke_before: Optional[np.ndarray] = None,
+        stroke_strength_map: Optional[np.ndarray] = None,
+    ) -> Tuple[int, int, int, int]:
+        """Paint an RGBA brush using premultiplied source-over composition."""
+        if self._rgba_data is None:
+            raise ValueError("RGBA painting requires an rgba8 raster")
+        cx, cy = self._norm_to_pixel(center_x, center_y)
+        return paint_rgba_brush(
+            self._rgba_data,
+            cx,
+            cy,
+            color,
+            BrushSpec(
+                radius_px=radius_px,
+                hardness=hardness,
+                opacity=opacity,
+                curve=cast(FalloffCurve, falloff_curve),
+            ),
+            baseline=stroke_before,
+            maximum_coverage=stroke_strength_map,
+        )
 
-        # Apply global opacity: scale kernel strength before any blending.
-        # Clamped so floating-point drift never exceeds [0, 1].
-        opacity = max(0.0, min(1.0, opacity))
-        if opacity < 1.0:
-            strength = strength * opacity
+    def connected_fill_bounds(
+        self,
+        x_norm: float,
+        y_norm: float,
+        tolerance: int,
+    ) -> tuple[int, int, int, int] | None:
+        """Return the connected target region without mutating pixels."""
+        col, row = self._norm_to_pixel(x_norm, y_norm)
+        effective_tolerance = (
+            0 if self._raster_mode is RasterPaintMode.DISCRETE else tolerance
+        )
+        match = connected_region(
+            self.editable_data,
+            col,
+            row,
+            FillSpec(tolerance=effective_tolerance),
+        )
+        return match[0] if match is not None else None
 
-        # With opacity < 1.0 a hard brush (falloff=0) must use the blend
-        # path rather than binary replacement so values are mixed correctly.
-        if falloff > 0.0 or opacity < 1.0:
-            if stroke_before is not None and stroke_strength_map is not None:
-                # --- Idempotent stroke mode ---
-                region_before = stroke_before[
-                    min_row : max_row + 1, min_col : max_col + 1
-                ].astype(np.float32)
-                cur_max = stroke_strength_map[min_row : max_row + 1, min_col : max_col + 1]
-                new_max = np.maximum(cur_max, strength)
-                stroke_strength_map[min_row : max_row + 1, min_col : max_col + 1] = new_max
-                blended = region_before * (1.0 - new_max) + value * new_max
-                self._data[min_row : max_row + 1, min_col : max_col + 1] = np.clip(
-                    blended, 0, 65535
-                ).astype(np.uint16)
-            else:
-                # --- Legacy accumulation mode (backward-compatible) ---
-                region = self._data[
-                    min_row : max_row + 1, min_col : max_col + 1
-                ].astype(np.float32)
-                blended = region * (1.0 - strength) + value * strength
-                self._data[min_row : max_row + 1, min_col : max_col + 1] = np.clip(
-                    blended, 0, 65535
-                ).astype(np.uint16)
-        else:
-            # Hard brush at full opacity — binary replace (fast path).
-            mask = strength.astype(bool)
-            self._data[min_row : max_row + 1, min_col : max_col + 1] = np.where(
-                mask,
-                np.uint16(max(0, min(value, 65535))),
-                self._data[min_row : max_row + 1, min_col : max_col + 1],
-            )
+    def fill_connected(
+        self,
+        x_norm: float,
+        y_norm: float,
+        target: int | tuple[int, int, int, int],
+        tolerance: int = 0,
+    ) -> tuple[int, int, int, int] | None:
+        """Fill a connected exact/tolerance-matched region."""
+        col, row = self._norm_to_pixel(x_norm, y_norm)
+        effective_tolerance = (
+            0 if self._raster_mode is RasterPaintMode.DISCRETE else tolerance
+        )
+        return connected_fill(
+            self.editable_data,
+            col,
+            row,
+            target,
+            FillSpec(tolerance=effective_tolerance),
+        )
 
-        return (min_col, min_row, max_col, max_row)
+    def paint_explicit_gradient(
+        self,
+        start: tuple[float, float],
+        end: tuple[float, float],
+        start_target: int | tuple[int, int, int, int],
+        end_target: int | tuple[int, int, int, int],
+        *,
+        kind: str = "linear",
+        width_px: int = 0,
+    ) -> tuple[int, int, int, int] | None:
+        """Paint an explicit From/To continuous or RGBA gradient."""
+        if self._raster_mode is RasterPaintMode.DISCRETE:
+            raise ValueError("Gradients are unavailable for discrete rasters")
+        start_px = self._norm_to_pixel(*start)
+        end_px = self._norm_to_pixel(*end)
+        return paint_mode_gradient(
+            self.editable_data,
+            (float(start_px[0]), float(start_px[1])),
+            (float(end_px[0]), float(end_px[1])),
+            GradientSpec(
+                kind=kind,  # type: ignore[arg-type]
+                start=start_target,
+                end=end_target,
+                width_px=width_px,
+            ),
+        )
 
     # ------------------------------------------------------------------
     # Region snapshot (for undo)
@@ -791,7 +887,9 @@ class MapDataBuffer:
             numpy array copy of the region.
 
         """
-        return self._data[min_row : max_row + 1, min_col : max_col + 1].copy()
+        return self.editable_data[
+            min_row : max_row + 1, min_col : max_col + 1
+        ].copy()
 
     def set_region(self, min_col: int, min_row: int, region_data: np.ndarray) -> None:
         """Restore a rectangular region from a snapshot.
@@ -802,8 +900,14 @@ class MapDataBuffer:
             region_data: The data to write.
 
         """
-        h, w = region_data.shape
-        self._data[min_row : min_row + h, min_col : min_col + w] = region_data
+        h, w = region_data.shape[:2]
+        destination = self.editable_data
+        if region_data.shape[2:] != destination.shape[2:]:
+            raise ValueError(
+                f"Patch shape {region_data.shape} is incompatible with "
+                f"{destination.shape}"
+            )
+        destination[min_row : min_row + h, min_col : min_col + w] = region_data
 
     # ------------------------------------------------------------------
     # Colorisation
@@ -957,7 +1061,11 @@ class MapDataBuffer:
         logger.info("Saved raster buffer %dx%d → %s", self._width, self._height, path)
 
     @classmethod
-    def from_file(cls, path: str) -> "MapDataBuffer":
+    def from_file(
+        cls,
+        path: str,
+        mode: str | None = None,
+    ) -> "MapDataBuffer":
         """Load a PNG into a new buffer.
 
         For 8-bit RGB/RGBA images (color mode layers) the pixel data is stored
@@ -987,7 +1095,12 @@ class MapDataBuffer:
         if img.mode in ("RGB", "RGBA", "P"):
             rgba_img = img.convert("RGBA")
             rgba_arr = np.array(rgba_img, dtype=np.uint8)
-            buf = cls(width=rgba_arr.shape[1], height=rgba_arr.shape[0], default_value=0)
+            buf = cls(
+                width=rgba_arr.shape[1],
+                height=rgba_arr.shape[0],
+                default_value=0,
+                mode=RasterPaintMode.RGBA.value,
+            )
             buf._rgba_data = rgba_arr
             return buf
 
@@ -1003,7 +1116,12 @@ class MapDataBuffer:
         if arr.ndim != 2:
             raise ValueError(f"Expected 2-D grayscale image, got shape {arr.shape}")
 
-        buf = cls(width=arr.shape[1], height=arr.shape[0], default_value=0)
+        buf = cls(
+            width=arr.shape[1],
+            height=arr.shape[0],
+            default_value=0,
+            mode=mode or RasterPaintMode.CONTINUOUS.value,
+        )
         buf._data = arr
         return buf
 

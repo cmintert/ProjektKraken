@@ -107,6 +107,28 @@ def test_on_command_result_success_adds_to_undo_stack(coordinator, main_window):
     main_window.load_data.assert_called_once()
 
 
+@pytest.mark.parametrize(
+    "command_name",
+    ["StrokeRasterCommand", "PaintRasterCommand"],
+)
+def test_raster_paint_result_does_not_reload_all_data(
+    coordinator, main_window, command_name
+):
+    """Completing a paint stroke must not invalidate its active edit target."""
+    mock_command = MockCommand(command_name)
+    result = CommandResult(
+        success=True,
+        message="Stroke applied.",
+        command_name=command_name,
+        data={"command": mock_command},
+    )
+
+    coordinator.on_command_result(result)
+
+    assert coordinator.undo_stack == [mock_command]
+    main_window.data_coordinator.load_data.assert_not_called()
+
+
 def test_on_command_result_clears_redo_stack(coordinator, main_window):
     """Test that new command execution clears redo stack."""
     cmd1 = MockCommand("Cmd1")

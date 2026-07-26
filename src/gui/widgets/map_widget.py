@@ -222,10 +222,8 @@ class MapWidget(
     )  # name,w,h,mode,def,import_path,display_min,display_max,unit
     raster_edit_requested = Signal(str)  # node_id — start raster editing
     raster_edit_stopped = Signal()  # stop raster editing
-    raster_stroke_completed = Signal(
-        str, tuple, bytes, bytes
-    )  # node_id, dirty, before, after
-    raster_value_probed = Signal(str, int, float, float)  # node_id, value, x, y
+    raster_stroke_completed = Signal(str, object)  # node_id, tile patches
+    raster_value_probed = Signal(str, object, float, float)  # node_id, sample, x, y
     raster_palette_edit_requested = Signal(str)  # node_id
 
     # Emitted when inline entity/event creation is requested from the map.
@@ -524,6 +522,9 @@ class MapWidget(
         )
         self.view.raster_brush_resize_requested.connect(
             self._on_raster_brush_resize_from_view
+        )
+        self.view.raster_tool_shortcut_requested.connect(
+            self.layer_panel.set_raster_tool_mode
         )
 
         self._maps_data = []  # List of maps for selector

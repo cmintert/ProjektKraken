@@ -23,7 +23,6 @@ from src.commands.map_crud_commands import (
 from src.core.map import Map
 from src.services.repositories.map_repository import MapRepository
 
-
 # ---------------------------------------------------------------------------
 # Test helpers
 # ---------------------------------------------------------------------------

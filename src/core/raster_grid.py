@@ -37,6 +37,13 @@ def load_value_grid(path: str) -> np.ndarray:
     return values
 
 
+def load_rgba_grid(path: str) -> np.ndarray:
+    """Load an image into an independent straight-alpha RGBA array."""
+    with PilImage.open(path) as image:
+        rgba = np.array(image.convert("RGBA"), dtype=np.uint8)
+    return rgba
+
+
 def apply_value_patch(
     array: np.ndarray,
     region: tuple[int, int, int, int],
@@ -48,5 +55,20 @@ def apply_value_patch(
     height = max_row - min_row + 1
     patch = np.frombuffer(raw, dtype=np.uint16).reshape((height, width))
     result = np.asarray(array, dtype=np.uint16).copy()
+    result[min_row : max_row + 1, min_col : max_col + 1] = patch
+    return result
+
+
+def apply_rgba_patch(
+    array: np.ndarray,
+    region: tuple[int, int, int, int],
+    raw: bytes,
+) -> np.ndarray:
+    """Return a copy with one inclusive RGBA rectangle replaced."""
+    min_col, min_row, max_col, max_row = region
+    width = max_col - min_col + 1
+    height = max_row - min_row + 1
+    patch = np.frombuffer(raw, dtype=np.uint8).reshape((height, width, 4))
+    result = np.asarray(array, dtype=np.uint8).copy()
     result[min_row : max_row + 1, min_col : max_col + 1] = patch
     return result
