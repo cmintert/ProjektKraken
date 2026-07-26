@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-07-26
-**Commit:** 94f548ab
+**Commit:** 2387174e
 ---
 
 # Changelog
@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-07-26)* **Map / UX**: Added a one-shot Add Marker toolbar tool with click-to-place guidance and Escape cancellation.
 - *(2026-07-26)* **Raster / Painting**: Added mode-aware discrete, continuous, and RGBA brush, fill, gradient, sampling, and eyedropper operations with tiled stroke capture.
 - *(2026-07-26)* **Raster / UX**: Added explicit Base or dated edit targets, mode-specific controls, accessible tool labels, and visible saving, saved, and failed states.
 - *(2026-07-25)* **Map / Raster**: Added aggregate loading, raster asset and query services, reversible command artifacts, layer properties, and dated-state editing.
@@ -33,6 +34,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-07-26)* **Testing**: Added regression coverage for marker toolbar toggling, cancellation, and normalized click placement.
 - *(2026-07-26)* **Development / Workflow**: Established an incremental no-new-errors mypy ratchet with bounded cleanup thresholds for changed modules.
 - *(2026-07-26)* **Testing**: Updated connection-manager fixtures for the worker and analysis coordinator contracts.
 - *(2026-07-26)* **Raster / Architecture**: Generalized buffers, patches, commands, and PNG persistence for 16-bit value rasters and straight-alpha RGBA rasters.

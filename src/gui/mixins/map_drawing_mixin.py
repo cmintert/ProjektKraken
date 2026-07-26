@@ -22,6 +22,7 @@ class MapDrawingMixin:
 
     Requires the host class to have:
         - self.view: MapGraphicsView
+        - self.btn_add_marker: QPushButton
         - self.btn_draw_path: QPushButton
         - self.btn_draw_region: QPushButton
         - self.feature_created: Signal
@@ -33,6 +34,7 @@ class MapDrawingMixin:
     if TYPE_CHECKING:
         # Host contract supplied by MapWidget.
         view: "MapGraphicsView"
+        btn_add_marker: QPushButton
         btn_draw_path: QPushButton
         btn_draw_region: QPushButton
         feature_created: SignalProtocol
@@ -54,6 +56,9 @@ class MapDrawingMixin:
         if self.view.is_drawing:
             self.view.cancel_drawing()
             return
+        if self.view.is_placing_marker:
+            self.view.cancel_marker_placement()
+        self.btn_add_marker.setChecked(False)
         self.btn_draw_region.setChecked(False)
         self.view.start_drawing("path")
         self._update_mode_indicator()
@@ -64,6 +69,9 @@ class MapDrawingMixin:
         if self.view.is_drawing:
             self.view.cancel_drawing()
             return
+        if self.view.is_placing_marker:
+            self.view.cancel_marker_placement()
+        self.btn_add_marker.setChecked(False)
         self.btn_draw_path.setChecked(False)
         self.view.start_drawing("region")
         self._update_mode_indicator()

@@ -302,6 +302,15 @@ class MapWidget(
         self.toolbar.addSeparator()
 
         # Group 3: Drawing tools (mutually exclusive, fill when active)
+        self.btn_add_marker = QPushButton("Add Marker")
+        self.btn_add_marker.setToolTip(
+            "Add a marker to the map (click the map to choose its position)"
+        )
+        self.btn_add_marker.setCheckable(True)
+        self.btn_add_marker.setStyleSheet(drawing_style)
+        self.btn_add_marker.clicked.connect(self._on_add_marker_clicked)
+        self.toolbar.addWidget(self.btn_add_marker)
+
         self.btn_draw_path = QPushButton("Draw Path")
         self.btn_draw_path.setToolTip(
             "Draw a polyline path on the map (click vertices, double-click to finish)"
@@ -461,6 +470,7 @@ class MapWidget(
         self.view.keyframe_delete_requested.connect(self._on_keyframe_delete_requested)
         self.view.keyframe_edit_requested.connect(self._emit_keyframe_upsert)
         self.view.add_marker_requested.connect(self._on_create_marker_requested)
+        self.view.marker_placement_ended.connect(self._on_marker_placement_ended)
         self.view.delete_marker_requested.connect(self._on_delete_marker_requested)
         self.view.change_marker_icon_requested.connect(
             self.change_marker_icon_requested.emit
@@ -779,11 +789,32 @@ class MapWidget(
             self.view.cancel_footprint_edit()
         elif self.view.is_drawing:
             self.view.cancel_drawing()
+        elif self.view.is_placing_marker:
+            self.view.cancel_marker_placement()
         elif self.view.is_editing_vertices:
             self.view.finish_editing()
         elif self._transient_marker_ids:
             self._transient_marker_ids.clear()
             self._update_trajectory_positions(force_all=True)
+        self._update_mode_indicator()
+
+    @Slot()
+    def _on_add_marker_clicked(self) -> None:
+        """Toggle one-shot marker placement mode."""
+        if self.view.is_placing_marker:
+            self.view.cancel_marker_placement()
+            return
+        if self.view.is_drawing:
+            self.view.cancel_drawing()
+        self.btn_draw_path.setChecked(False)
+        self.btn_draw_region.setChecked(False)
+        self.view.start_marker_placement()
+        self._update_mode_indicator()
+
+    @Slot()
+    def _on_marker_placement_ended(self) -> None:
+        """Reset toolbar state after marker placement or cancellation."""
+        self.btn_add_marker.setChecked(False)
         self._update_mode_indicator()
 
     @Slot()
@@ -1192,6 +1223,20 @@ class MapWidget(
 
             # Normal cursor
             self.view.setCursor(Qt.CursorShape.ArrowCursor)
+
+        elif self.view.is_placing_marker:
+            self.mode_indicator.setText("🔵 PLACING MARKER")
+            self._apply_mode_indicator_style("drawing")
+
+            self.overlay_banner.setText(
+                "📍 <b>PLACE MARKER</b><br/>"
+                "Click the map to choose its position<br/>"
+                "<small>[Esc to Cancel]</small>"
+            )
+            self.overlay_banner.show()
+            self._update_overlay_position()
+            self.btn_finish_sketch.hide()
+            self.view.setCursor(Qt.CursorShape.CrossCursor)
 
         elif self.view.is_drawing:
             # Drawing Mode

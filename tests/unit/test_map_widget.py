@@ -54,6 +54,50 @@ def test_map_widget_initialization(map_widget):
     assert map_widget is not None
     assert map_widget.view is not None
     assert isinstance(map_widget.view, MapGraphicsView)
+    assert map_widget.btn_add_marker.text() == "Add Marker"
+
+
+def test_add_marker_button_toggles_placement_mode(map_widget, qtbot):
+    """The toolbar button enters and exits one-shot marker placement mode."""
+    qtbot.mouseClick(map_widget.btn_add_marker, Qt.MouseButton.LeftButton)
+
+    assert map_widget.view.is_placing_marker
+    assert map_widget.btn_add_marker.isChecked()
+
+    qtbot.mouseClick(map_widget.btn_add_marker, Qt.MouseButton.LeftButton)
+
+    assert not map_widget.view.is_placing_marker
+    assert not map_widget.btn_add_marker.isChecked()
+
+
+def test_escape_cancels_marker_placement(map_widget, qtbot):
+    """Escape exits toolbar marker placement without creating anything."""
+    qtbot.mouseClick(map_widget.btn_add_marker, Qt.MouseButton.LeftButton)
+
+    qtbot.keyClick(map_widget.view, Qt.Key.Key_Escape)
+
+    assert not map_widget.view.is_placing_marker
+    assert not map_widget.btn_add_marker.isChecked()
+
+
+def test_marker_placement_click_emits_normalized_position(map_view, qtbot):
+    """Clicking the map in placement mode requests a marker at that position."""
+    setup_map_with_pixmap(map_view)
+    requested_positions = []
+    map_view.add_marker_requested.connect(
+        lambda x, y: requested_positions.append((x, y))
+    )
+    map_view.start_marker_placement()
+
+    viewport_position = map_view.mapFromScene(QPointF(50.0, 50.0))
+    qtbot.mouseClick(
+        map_view.viewport(),
+        Qt.MouseButton.LeftButton,
+        pos=viewport_position,
+    )
+
+    assert requested_positions == [(0.5, 0.5)]
+    assert not map_view.is_placing_marker
 
 
 def test_map_view_initialization(map_view):

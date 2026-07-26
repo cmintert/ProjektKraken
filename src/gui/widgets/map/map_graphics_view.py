@@ -560,6 +560,7 @@ class MapGraphicsView(QGraphicsView):
     marker_moved = Signal(str, float, float)
     marker_clicked = Signal(str, str)  # marker_id, object_type
     add_marker_requested = Signal(float, float)  # x, y (normalized)
+    marker_placement_ended = Signal()
     delete_marker_requested = Signal(str)  # marker_id
     change_marker_icon_requested = Signal(str, str)  # marker_id, new_icon
     change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
@@ -752,6 +753,9 @@ class MapGraphicsView(QGraphicsView):
 
         # Space held-to-pan state (industry-standard painting-app shortcut)
         self._space_pressed: bool = False
+
+        # One-shot marker placement mode, activated by the map toolbar.
+        self._is_placing_marker: bool = False
 
     # ------------------------------------------------------------------
     # Backward-compatible property aliases for sub-component state
@@ -1314,6 +1318,42 @@ class MapGraphicsView(QGraphicsView):
         """
         self._drawing_tool.start_drawing(feature_type)
 
+    def start_marker_placement(self) -> None:
+        """Enter one-shot marker placement mode."""
+        self._is_placing_marker = True
+        self.setDragMode(QGraphicsView.DragMode.NoDrag)
+        self.setCursor(Qt.CursorShape.CrossCursor)
+
+    def cancel_marker_placement(self) -> None:
+        """Exit marker placement mode without creating a marker."""
+        if not self._is_placing_marker:
+            return
+        self._is_placing_marker = False
+        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+        self.setCursor(Qt.CursorShape.ArrowCursor)
+        self.marker_placement_ended.emit()
+
+    @property
+    def is_placing_marker(self) -> bool:
+        """Whether the next map click will place a marker."""
+        return self._is_placing_marker
+
+    def _handle_marker_placement_mouse_press(self, event: QMouseEvent) -> bool:
+        """Place a marker when the active one-shot mode receives a map click."""
+        if not self._is_placing_marker or not self.pixmap_item:
+            return False
+        if event.button() != Qt.MouseButton.LeftButton:
+            return True
+
+        scene_pos = self.mapToScene(event.position().toPoint())
+        item_pos = self.pixmap_item.mapFromScene(scene_pos)
+        if self.pixmap_item.contains(item_pos):
+            norm_x, norm_y = self.coord_system.to_normalized(scene_pos)
+            norm_x, norm_y = self.coord_system.clamp_normalized(norm_x, norm_y)
+            self.cancel_marker_placement()
+            self.add_marker_requested.emit(norm_x, norm_y)
+        return True
+
     def cancel_drawing(self) -> None:
         """Exits drawing mode without saving."""
         self._drawing_tool.cancel_drawing()
@@ -1369,6 +1409,8 @@ class MapGraphicsView(QGraphicsView):
         """
         if self.is_drawing:
             self.cancel_drawing()
+        if self._is_placing_marker:
+            self.cancel_marker_placement()
         if self._vertex_editor.is_editing_vertices:
             self._vertex_editor.finish_vertex_editing(
                 emit_geometry_change=commit_feature_edits
@@ -1930,6 +1972,10 @@ class MapGraphicsView(QGraphicsView):
                     self._hide_snap_indicator()
                     return
 
+        # One-shot marker placement mode
+        if self._handle_marker_placement_mouse_press(event):
+            return
+
         # Calibration mode
         if self.calibration_mode and self.pixmap_item:
             pos = event.position().toPoint()
@@ -2069,18 +2115,8 @@ class MapGraphicsView(QGraphicsView):
             if self._handle_footprint_edit_key(event, map_widget):
                 return
 
-        if event.key() == Qt.Key.Key_Escape:
-            if self._raster_edit_tool.handle_key_escape():
-                return
-            if self._drawing_tool.handle_key_escape():
-                return
-            if self._vertex_editor.handle_key_escape():
-                return
-            # Clear selection when no drawing/vertex editing is active
-            if self.scene.selectedItems():
-                self.scene.clearSelection()
-                event.accept()
-                return
+        if event.key() == Qt.Key.Key_Escape and self._handle_escape_key(event):
+            return
 
         if self._raster_edit_tool.is_active:
             shortcut_modes: dict[int, RasterEditMode] = {
@@ -2115,6 +2151,24 @@ class MapGraphicsView(QGraphicsView):
             return
 
         super().keyPressEvent(event)
+
+    def _handle_escape_key(self, event: "QKeyEvent") -> bool:
+        """Cancel the active editing mode or clear the current selection."""
+        if self._is_placing_marker:
+            self.cancel_marker_placement()
+            event.accept()
+            return True
+        if self._raster_edit_tool.handle_key_escape():
+            return True
+        if self._drawing_tool.handle_key_escape():
+            return True
+        if self._vertex_editor.handle_key_escape():
+            return True
+        if self.scene.selectedItems():
+            self.scene.clearSelection()
+            event.accept()
+            return True
+        return False
 
     def keyReleaseEvent(self, event: "QKeyEvent") -> None:
         """Restore drag mode and cursor when Space is released.
