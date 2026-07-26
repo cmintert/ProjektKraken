@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-07-26
-### Changed
-- refactor(typing): establish incremental type safety
+### Added
+- feat(map): add marker placement toolbar button
 
 
 *This changelog was automatically generated.*
