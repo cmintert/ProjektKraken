@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Development] - 2026-07-25
-### Changed
-- refactor(map): harden raster command architecture
+## [Development] - 2026-07-26
+### Added
+- feat(raster): add mode-aware paint workflow
 
 
 *This changelog was automatically generated.*
