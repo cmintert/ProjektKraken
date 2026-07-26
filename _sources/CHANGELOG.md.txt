@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Development] - 2026-07-26
-### Added
-- feat(raster): add mode-aware paint workflow
+### Changed
+- refactor(typing): establish incremental type safety
 
 
 *This changelog was automatically generated.*

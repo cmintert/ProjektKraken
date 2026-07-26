@@ -459,11 +459,51 @@ ruff format src/
 ruff check src/
 
 # Type checking
-mypy src/
+python -m mypy src/
 
 # Run tests
 pytest
 ```
+
+### Incremental Type-Checking Rule
+
+The repository carries existing mypy debt. New work must reduce or preserve
+that debt; it must never increase it.
+
+A **module** means one Python source file for the purpose of this rule. When a
+module is changed:
+
+1. Fix every mypy error introduced by the change.
+2. Fix existing mypy errors in the functions and code paths being changed.
+3. Apply the following scope threshold based on the module's error count before
+   the change:
+
+   - **0-10 errors:** leave the entire module mypy-clean.
+   - **11-30 errors:** fix all related errors and normally 3-5 additional errors
+     as a bounded cleanup batch.
+   - **More than 30 errors:** keep the feature change scoped and handle the
+     wider module cleanup as a dedicated typing task.
+
+Run a focused check for every changed source module:
+
+```bash
+python -m mypy src/path/to/changed_module.py
+```
+
+Run the repository-wide check periodically and before a typing-focused change:
+
+```bash
+python -m mypy src/
+```
+
+Until the existing debt is retired, the repository-wide command may report
+known errors. Compare it in the same environment and do not allow the total to
+increase. Once a module is clean, subsequent changes must keep it clean.
+
+Do not silence ordinary application errors with `Any`, broad mypy exclusions,
+or unqualified ignores. A narrow `# type: ignore[error-code]` is acceptable only
+for a verified third-party stub/runtime mismatch, such as PySide6 behavior that
+has been confirmed at runtime. Add a nearby comment explaining the mismatch.
 
 ---
 

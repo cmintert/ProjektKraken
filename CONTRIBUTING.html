@@ -727,12 +727,48 @@ ruff<span class="w"> </span>format<span class="w"> </span>src/
 ruff<span class="w"> </span>check<span class="w"> </span>src/
 
 <span class="c1"># Type checking</span>
-mypy<span class="w"> </span>src/
+python<span class="w"> </span>-m<span class="w"> </span>mypy<span class="w"> </span>src/
 
 <span class="c1"># Run tests</span>
 pytest
 </pre></div>
 </div>
+</section>
+<section id="incremental-type-checking-rule">
+<h3>Incremental Type-Checking Rule<a class="headerlink" href="#incremental-type-checking-rule" title="Link to this heading">¶</a></h3>
+<p>The repository carries existing mypy debt. New work must reduce or preserve
+that debt; it must never increase it.</p>
+<p>A <strong>module</strong> means one Python source file for the purpose of this rule. When a
+module is changed:</p>
+<ol class="arabic simple">
+<li><p>Fix every mypy error introduced by the change.</p></li>
+<li><p>Fix existing mypy errors in the functions and code paths being changed.</p></li>
+<li><p>Apply the following scope threshold based on the module’s error count before
+the change:</p>
+<ul class="simple">
+<li><p><strong>0-10 errors:</strong> leave the entire module mypy-clean.</p></li>
+<li><p><strong>11-30 errors:</strong> fix all related errors and normally 3-5 additional errors
+as a bounded cleanup batch.</p></li>
+<li><p><strong>More than 30 errors:</strong> keep the feature change scoped and handle the
+wider module cleanup as a dedicated typing task.</p></li>
+</ul>
+</li>
+</ol>
+<p>Run a focused check for every changed source module:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>mypy<span class="w"> </span>src/path/to/changed_module.py
+</pre></div>
+</div>
+<p>Run the repository-wide check periodically and before a typing-focused change:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>mypy<span class="w"> </span>src/
+</pre></div>
+</div>
+<p>Until the existing debt is retired, the repository-wide command may report
+known errors. Compare it in the same environment and do not allow the total to
+increase. Once a module is clean, subsequent changes must keep it clean.</p>
+<p>Do not silence ordinary application errors with <code class="docutils literal notranslate"><span class="pre">Any</span></code>, broad mypy exclusions,
+or unqualified ignores. A narrow <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">type:</span> <span class="pre">ignore[error-code]</span></code> is acceptable only
+for a verified third-party stub/runtime mismatch, such as PySide6 behavior that
+has been confirmed at runtime. Add a nearby comment explaining the mismatch.</p>
 </section>
 </section>
 <hr class="docutils" />
@@ -988,6 +1024,7 @@ pytest<span class="w"> </span>--cov<span class="o">=</span>src<span class="w"> <
 <li><a class="reference internal" href="#type-hints">Type Hints</a></li>
 <li><a class="reference internal" href="#docstrings">Docstrings</a></li>
 <li><a class="reference internal" href="#code-quality-tools">Code Quality Tools</a></li>
+<li><a class="reference internal" href="#incremental-type-checking-rule">Incremental Type-Checking Rule</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#testing-requirements">Testing Requirements</a><ul>

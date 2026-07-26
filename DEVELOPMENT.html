@@ -562,9 +562,12 @@ ruff<span class="w"> </span>format<span class="w"> </span>src/
 </pre></div>
 </div>
 <p><strong>MyPy (type checking):</strong></p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mypy<span class="w"> </span>src/
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>mypy<span class="w"> </span>src/
 </pre></div>
 </div>
+<p>Follow the incremental type-checking rule in
+<a class="reference internal" href="CONTRIBUTING.html#incremental-type-checking-rule"><span class="std std-ref"><code class="docutils literal notranslate"><span class="pre">CONTRIBUTING.md</span></code></span></a> when a
+changed module still contains legacy mypy errors.</p>
 </section>
 <section id="running-tests">
 <h3>4. Running Tests<a class="headerlink" href="#running-tests" title="Link to this heading">¶</a></h3>
