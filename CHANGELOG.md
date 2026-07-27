@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-07-26
-**Commit:** 2387174e
+**Last Updated:** 2026-07-27
+**Commit:** 74126819
 ---
 
 # Changelog
@@ -13,6 +13,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-07-27)* **Explorer**: Added an undoable Delete action to the
+  event and entity context menu.
 - *(2026-07-26)* **Map / UX**: Added a one-shot Add Marker toolbar tool with click-to-place guidance and Escape cancellation.
 - *(2026-07-26)* **Raster / Painting**: Added mode-aware discrete, continuous, and RGBA brush, fill, gradient, sampling, and eyedropper operations with tiled stroke capture.
 - *(2026-07-26)* **Raster / UX**: Added explicit Base or dated edit targets, mode-specific controls, accessible tool labels, and visible saving, saved, and failed states.
@@ -34,6 +36,14 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-07-27)* **Documentation**: Replaced the mixed legacy `docs/` tree with
+  canonical user, developer, and reference manuals; moved historical and
+  planning material out of the Sphinx source; added deterministic schema
+  checks; and made warning-free documentation builds a pull-request gate.
+- *(2026-07-27)* **Testing**: Added regression coverage for deleting events and
+  entities from the Explorer context menu.
+- *(2026-07-27)* **Cleanup**: Removed obsolete generated research documents
+  from the published documentation tree.
 - *(2026-07-26)* **Testing**: Added regression coverage for marker toolbar toggling, cancellation, and normalized click placement.
 - *(2026-07-26)* **Development / Workflow**: Established an incremental no-new-errors mypy ratchet with bounded cleanup thresholds for changed modules.
 - *(2026-07-26)* **Testing**: Updated connection-manager fixtures for the worker and analysis coordinator contracts.

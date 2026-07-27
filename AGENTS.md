@@ -43,12 +43,13 @@
   with 11-30, fix related errors plus a small bounded cleanup; with more than
   30, keep the feature scoped and schedule a dedicated typing cleanup. Use a
   narrow `# type: ignore[code]` only for a verified third-party stub/runtime
-  mismatch, with an explanatory comment. See `docs/CONTRIBUTING.md`.
+  mismatch, with an explanatory comment. See `docs/developer/contributing.md`.
 - Reuse `tests/conftest.py` fixtures (`qapp`, `db_service`, `init_theme_manager`); avoid ad-hoc Qt/DB fixture copies.
 - Watch for test pitfalls: shared `MockQSettings._storage`, teardown validity checks (`shiboken6.isValid(...)`), and debounce/timer-driven UI behavior.
 
 ## Read First
-- `README.md`, `.github/copilot-instructions.md`, `docs/ARCHITECTURE.md`
+- `README.md`, `.github/copilot-instructions.md`,
+  `docs/developer/architecture.md`
 - `src/app/worker_manager.py`, `src/app/connection_manager.py`, `src/app/coordinators/`
 - `src/commands/base_command.py`, `src/services/worker.py`, `tests/conftest.py`
 

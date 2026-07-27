@@ -1,62 +1,63 @@
-# Configuration file for the Sphinx documentation builder.
-import os
-import sys
+"""Sphinx configuration for the canonical ProjektKraken documentation."""
+
 import tomllib
-from typing import Any
+from pathlib import Path
 
-sys.path.insert(0, os.path.abspath(".."))
-sys.path.insert(0, os.path.abspath("../src"))
+REPOSITORY_ROOT = Path(__file__).resolve().parent.parent
 
-with open("../pyproject.toml", "rb") as f:
-    pyproject = tomllib.load(f)
+with (REPOSITORY_ROOT / "pyproject.toml").open("rb") as pyproject_file:
+    pyproject = tomllib.load(pyproject_file)
 
-project = "Project Kraken"
-copyright = pyproject["project"].get("copyright", "2025, Christian Mintert")
-author = ", ".join([a["name"] for a in pyproject["project"].get("authors", [])])
+project = "ProjektKraken"
+author = ", ".join(
+    entry["name"] for entry in pyproject["project"].get("authors", [])
+)
 release = pyproject["project"]["version"]
 version = release
+copyright = pyproject["project"].get("copyright", "2026, Christian Mintert")
 
-
-# -- General configuration ---------------------------------------------------
 extensions = [
+    "myst_parser",
     "sphinx.ext.autodoc",
-    "sphinx.ext.napoleon",  # Support for Google Style Docstrings
+    "sphinx.ext.autosummary",
+    "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
-    "sphinx.ext.githubpages",
-    "myst_parser",  # Support for Markdown files
-    "sphinxcontrib.mermaid",  # Support for Mermaid diagrams
+    "sphinxcontrib.mermaid",
 ]
 
-# Markdown support
+root_doc = "index"
 source_suffix = {
-    ".rst": "restructuredtext",
     ".md": "markdown",
+    ".rst": "restructuredtext",
 }
 
-templates_path = ["_templates"]
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+# Generated research is being removed separately and is deliberately never
+# part of the published manual.
+exclude_patterns = [
+    "_build",
+    "Gemini/**",
+    "Thumbs.db",
+    ".DS_Store",
+]
 
-# -- Options for Napoleon ----------------------------------------------------
+myst_heading_anchors = 4
+myst_enable_extensions = [
+    "colon_fence",
+    "deflist",
+    "fieldlist",
+]
+
+autosummary_generate = True
+autodoc_typehints = "description"
+
 napoleon_google_docstring = True
 napoleon_numpy_docstring = False
 napoleon_include_init_with_doc = True
 napoleon_include_private_with_doc = False
-napoleon_include_special_with_doc = True
-napoleon_use_admonition_for_examples = False
-napoleon_use_admonition_for_notes = False
-napoleon_use_admonition_for_references = False
-napoleon_use_ivar = False
-napoleon_use_param = True
-napoleon_use_rtype = True
-napoleon_preprocess_types = False
-napoleon_type_aliases = None
-napoleon_attr_annotations = True
+napoleon_include_special_with_doc = False
 
-# -- Options for HTML output -------------------------------------------------
 html_theme = "furo"
-html_static_path = ["_static"]
-
-# Furo theme options
+html_title = f"{project} {release}"
 html_theme_options = {
     "light_css_variables": {
         "color-brand-primary": "#7C3AED",
@@ -69,26 +70,3 @@ html_theme_options = {
     "sidebar_hide_name": False,
     "navigation_with_keys": True,
 }
-
-
-# -- Auto-generate schema documentation --------------------------------------
-def setup(app: Any) -> None:
-    """
-    Sphinx setup hook to auto-generate schema documentation.
-
-    Runs the schema extraction script before building the documentation
-    to ensure the schema reference is always up-to-date with the code.
-    """
-    import subprocess
-    from pathlib import Path
-
-    schema_script = Path(__file__).parent / "generate_schema_docs.py"
-    if schema_script.exists():
-        print("Generating database schema documentation...")
-        result = subprocess.run(
-            [sys.executable, str(schema_script)], capture_output=True, text=True
-        )
-        if result.returncode != 0:
-            print(f"Warning: Schema generation failed: {result.stderr}")
-        else:
-            print(result.stdout)

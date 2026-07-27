@@ -77,6 +77,6 @@ For styling:
 ## References
 
 - `README.md` for developer commands and product context.
-- `docs/ARCHITECTURE.md` for deeper architecture details.
-- `docs/TESTING.md` for test strategy and expectations.
+- `docs/developer/architecture.md` for deeper architecture details.
+- `docs/developer/testing.md` for test strategy and expectations.
 - `AGENTS.md` for repository-wide agent instructions and critical invariants.

@@ -619,16 +619,21 @@ class UnifiedListWidget(QWidget):
         source_index = self._proxy_model.mapToSource(index)
         item_id = self._model.data(source_index, ExplorerModel.ItemIdRole)
         item_type = self._model.data(source_index, ExplorerModel.ItemTypeRole)
+        item_name = self._model.data(source_index, ExplorerModel.ItemNameRole)
 
         if not item_id or not item_type:
             return
 
         menu = QMenu(self)
         export_action = menu.addAction("Export to Obsidian (.md)...")
+        menu.addSeparator()
+        delete_action = menu.addAction("Delete")
         action = menu.exec(self.list_widget.viewport().mapToGlobal(position))
 
         if action == export_action:
             self.export_obsidian_requested.emit(item_type, item_id)
+        elif action == delete_action:
+            self._delete_items([(item_type, item_id, item_name or "Unknown")])
 
     @Slot()
     def _on_selection_changed(self) -> None:
@@ -705,6 +710,15 @@ class UnifiedListWidget(QWidget):
         if not items_to_delete:
             return
 
+        self._delete_items(items_to_delete)
+
+    def _delete_items(self, items_to_delete: List[tuple[str, str, str]]) -> None:
+        """Emit deletion requests and show undo guidance.
+
+        Args:
+            items_to_delete: Item type, ID, and display name tuples.
+
+        """
         # Proceed with deletion immediately since it's undoable (Unblocking)
         for item_type, item_id, _ in items_to_delete:
             self.delete_requested.emit(item_type, item_id)

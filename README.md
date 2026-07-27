@@ -1,8 +1,7 @@
 ---
 project: ProjektKraken
 document: Main Project README
-last_updated: 2026-04-21
-commit: 0.18.6
+last_updated: 2026-07-27
 ---
 
 # Projekt Kraken
@@ -80,7 +79,8 @@ Backups and AI search indexes are also stored in the user data directory.
 ### Visualization
 - **Interactive Graph View**: Physics-based node graph with filtering, auto-updates, and force-directed layout
 - **Temporal Maps 2.0**: Trajectory visualization (MF-JSON), reliable playhead persistence, and "Clock Mode" for precise temporal editing
-- **Dual Timeline Views**: Lane-based graphic timeline + card-style text timeline
+- **Timeline Context**: Lane-based world timeline plus related-event summaries
+  inside entity inspectors
 - **Longform Documents**: Hierarchical document structure for narrative prose
 - **Return to Present**: Quick navigation to current timeline position
 
@@ -209,7 +209,8 @@ python -m src.cli.index rebuild --database world.kraken
 python -m src.cli.index query --database world.kraken --text "ancient wizard"
 ```
 
-See **[Semantic Search Documentation](docs/SEMANTIC_SEARCH.md)** for details.
+See the **[Search, AI, and Analysis guide](docs/user/search-ai-and-analysis.md)**
+for desktop and command-line setup guidance.
 
 For desktop AI features, open **Tools → AI Settings**, enter the LM Studio
 server address (for example `http://localhost:1234`), and select **Refresh
@@ -252,26 +253,33 @@ pytest --cov=src --cov-report=term-missing
 
 ## Documentation
 
-**📚 [Complete Documentation Index](docs/INDEX.md)**
+**📚 [Complete Documentation](docs/index.md)**
 
 ### Quick Start
-- **[Installation Guide](docs/INSTALLATION.md)** - System requirements, installation methods, and setup
-- **[User Guide](docs/USER_GUIDE.md)** - Complete guide to using ProjektKraken
-- **[Maps, Layers, and Rasters](docs/MAPS_LAYERS_AND_RASTERS.md)** - Layer
-  properties, raster purposes, timeline states, queries, and calibration
-- **[Workflows Guide](docs/WORKFLOWS.md)** - Step-by-step guides for common tasks
-- **[FAQ](docs/FAQ.md)** - Frequently asked questions and troubleshooting
+- **[Getting Started](docs/user/getting-started.md)** - Launch, worlds, and the
+  first editing workflow
+- **[User Manual](docs/user/index.md)** - Current menus, docks, and workflows
+- **[Maps, Layers, and Rasters](docs/user/maps.md)** - Drawing, nesting,
+  temporal states, queries, and calibration
+- **[Troubleshooting](docs/user/troubleshooting.md)** - Startup, layout, AI,
+  and raster guidance
 
 ### For Developers
-- **[Architecture](docs/ARCHITECTURE.md)** - System design, patterns, and data flow
-- **[Development Guide](docs/DEVELOPMENT.md)** - Setup, coding standards, and workflow
-- **[Database Schema](docs/DATABASE.md)** - Complete database documentation
-- **[API Reference](docs/API_REFERENCE.md)** - Key classes, services, and methods
-- **[Testing Guide](docs/TESTING.md)** - Testing strategy and practices
-- **[Contributing Guide](docs/CONTRIBUTING.md)** - How to contribute to the project
+- **[Architecture](docs/developer/architecture.md)** - Dependency, coordinator,
+  command, and threading contracts
+- **[Development Guide](docs/developer/development.md)** - Environment and
+  quality commands
+- **[Database and Storage](docs/developer/database-and-storage.md)** - Portable
+  worlds and persistence rules
+- **[Testing Guide](docs/developer/testing.md)** - Tests, fixtures, and Qt
+  hazards
+- **[Contributing Guide](docs/developer/contributing.md)** - Contribution
+  workflow
 
-### Legacy Documentation
-Older feature-specific documentation has been archived to `docs/archive_2026_02_08/` for reference. The new consolidated documentation above covers all features comprehensively.
+### Historical Documentation
+
+Superseded manuals and implementation notes are retained under
+`archive/documentation/` and are not published by Sphinx.
 
 ## Architecture
 
@@ -299,69 +307,11 @@ src/
 - **SQLite** for data persistence
 - **pytest** for testing
 
-## GIS Editing — User Guide
+## Map Editing
 
-### Drawing Features
-
-| Action | Shortcut |
-|--------|----------|
-| **Start Path Drawing** | Click "Draw Path" toolbar button |
-| **Start Region Drawing** | Click "Draw Region" toolbar button |
-| **Add Vertex** | Left-click on the map |
-| **Finish Drawing** | Double-click, or click "✔ Finish Sketch" |
-| **Cancel Drawing** | Press `Escape` |
-
-### Editing Vertices
-
-| Action | Shortcut |
-|--------|----------|
-| **Enter Vertex Editing** | Right-click feature → "Edit Vertices..." |
-| **Move Vertex** | Drag a red vertex handle |
-| **Add Vertex** | Drag a green midpoint ghost handle |
-| **Delete Vertex** | Right-click an existing vertex handle |
-| **Finish Editing** | Press `Escape`, or click "✔ Finish Sketch" |
-
-> **Note:** Minimum vertex counts are enforced — paths require at least 2 vertices
-> and regions require at least 3. Vertex snapping (10 px radius) is active when
-> dragging near an existing vertex.
-
-### Visual Feedback
-
-- **Crosshair cursor** during drawing and vertex creation.
-- **Dashed orange stroke** on the feature being edited.
-- **Green ghost handles** at segment midpoints for adding vertices.
-- **Toolbar mode indicator** shows the current editing state.
-- **Overlay banner** provides context-sensitive instructions.
-
-### Spatial Properties Schema
-
-The `spatialProperties` object returned by `MapFeature.spatial_properties` has the
-following structure:
-
-```json
-{
-  "feature_type": "point | path | region | multipoint",
-  "vertex_count": 4,
-  "segment_count": 3,
-  "bounding_box": [0.1, 0.1, 0.9, 0.9],
-  "length": 1.234,
-  "area": 0.36,
-  "perimeter": 2.4
-}
-```
-
-| Field | Type | Feature Types | Description |
-|-------|------|--------------|-------------|
-| `feature_type` | `string` | All | The geometry type discriminator. |
-| `vertex_count` | `int` | All | Number of coordinate vertices. |
-| `segment_count` | `int` | All | Number of line segments (edges). |
-| `bounding_box` | `tuple` | All | `(min_x, min_y, max_x, max_y)` in normalized coords. |
-| `length` | `float` | Path only | Total length of all segments (normalized units). |
-| `area` | `float` | Region only | Polygon area via Shoelace formula. |
-| `perimeter` | `float` | Region only | Sum of all closed polygon edges. |
-
-User-defined attributes from `MapFeature.attributes` (e.g. `road_quality`,
-`river_depth`) are merged into the spatial properties dict for downstream use.
+The current drawing, vertex-editing, snapping, raster, calibration, and
+master/detail-map workflows are documented in the
+**[Maps, Layers, and Rasters guide](docs/user/maps.md)**.
 
 ## Version
 

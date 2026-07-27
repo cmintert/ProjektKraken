@@ -11,6 +11,7 @@ The output is written to SCHEMA_REFERENCE.md and is automatically regenerated
 during Sphinx builds to stay synchronized with code changes.
 """
 
+import argparse
 import ast
 import re
 import sys
@@ -148,7 +149,7 @@ def generate_mermaid_diagram(
     Returns:
         str: Mermaid diagram code
     """
-    lines = ["```mermaid", "erDiagram"]
+    lines = ["```{mermaid}", "erDiagram"]
 
     # Add tables with columns
     for table_name, columns in tables.items():
@@ -210,67 +211,102 @@ def generate_markdown_tables(
     return "\n".join(lines)
 
 
-def main() -> int | None:
-    """Main function to generate schema documentation."""
+def build_document() -> str:
+    """Build the complete generated schema reference."""
+    schema_sql = extract_schema_sql()
+
+    create_table_pattern = r"CREATE TABLE IF NOT EXISTS[^;]+"
+    table_sqls = re.findall(
+        create_table_pattern, schema_sql, re.IGNORECASE | re.DOTALL
+    )
+
+    tables = {}
+    all_foreign_keys = []
+
+    for table_sql in table_sqls:
+        table_name, columns = parse_create_table(table_sql)
+        if table_name:
+            tables[table_name] = columns
+            foreign_keys = extract_foreign_keys(table_sql)
+            for foreign_key_column, target_table, target_column in foreign_keys:
+                all_foreign_keys.append(
+                    (
+                        table_name,
+                        foreign_key_column,
+                        target_table,
+                        target_column,
+                    )
+                )
+
+    indexes = extract_indexes(schema_sql)
+    mermaid = generate_mermaid_diagram(tables, all_foreign_keys)
+    markdown_tables = generate_markdown_tables(tables, indexes)
+
+    return "\n".join(
+        [
+            "# Database Schema Reference",
+            "",
+            "This file is generated from `DatabaseService._init_schema()`.",
+            "Do not edit it manually.",
+            "",
+            "## Entity Relationship Diagram",
+            "",
+            mermaid,
+            "",
+            markdown_tables,
+            "",
+        ]
+    )
+
+
+def parse_args() -> argparse.Namespace:
+    """Parse generator command-line arguments."""
+    parser = argparse.ArgumentParser(
+        description="Generate the ProjektKraken database schema reference."
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path(__file__).parent / "reference" / "database-schema.md",
+        help="Destination Markdown file.",
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Fail when the destination differs from generated content.",
+    )
+    return parser.parse_args()
+
+
+def main() -> int:
+    """Generate the schema reference or verify that it is current."""
+    args = parse_args()
+    output_path = args.output.resolve()
     print("Extracting database schema from DatabaseService...")
 
     try:
-        # Extract schema SQL
-        schema_sql = extract_schema_sql()
+        content = build_document()
+        if args.check:
+            if not output_path.exists():
+                print(f"Schema reference is missing: {output_path}", file=sys.stderr)
+                return 1
+            if output_path.read_text(encoding="utf-8") != content:
+                print(
+                    "Schema reference is out of date. "
+                    "Run docs/generate_schema_docs.py.",
+                    file=sys.stderr,
+                )
+                return 1
+            print(f"Schema reference is current: {output_path}")
+            return 0
 
-        # Parse all CREATE TABLE statements
-        create_table_pattern = r"CREATE TABLE IF NOT EXISTS[^;]+"
-        table_sqls = re.findall(
-            create_table_pattern, schema_sql, re.IGNORECASE | re.DOTALL
-        )
-
-        tables = {}
-        all_foreign_keys = []
-
-        for table_sql in table_sqls:
-            table_name, columns = parse_create_table(table_sql)
-            if table_name:
-                tables[table_name] = columns
-
-                # Extract foreign keys from this table
-                fks = extract_foreign_keys(table_sql)
-                for fk_col, target_table, target_col in fks:
-                    all_foreign_keys.append(
-                        (table_name, fk_col, target_table, target_col)
-                    )
-
-        # Extract indexes
-        indexes = extract_indexes(schema_sql)
-
-        print(f"Found {len(tables)} tables and {len(indexes)} indexes")
-
-        # Generate Mermaid diagram
-        mermaid = generate_mermaid_diagram(tables, all_foreign_keys)
-
-        # Generate markdown tables
-        md_tables = generate_markdown_tables(tables, indexes)
-
-        # Write output
-        output_path = Path(__file__).parent / "SCHEMA_REFERENCE.md"
-
-        with open(output_path, "w", encoding="utf-8") as f:
-            f.write("# Database Schema Reference\n\n")
-            f.write(
-                "**This file is auto-generated from the DatabaseService implementation.**\n\n"
-            )
-            f.write("Do not edit this file manually. ")
-            f.write("To update the schema, modify `src/services/db_service.py` ")
-            f.write("and rebuild the documentation.\n\n")
-            f.write("## Entity Relationship Diagram\n\n")
-            f.write(mermaid)
-            f.write("\n\n")
-            f.write(md_tables)
-
-        print(f"✓ Schema documentation written to {output_path}")
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(content, encoding="utf-8")
+        print(f"Schema reference written to {output_path}")
         return 0
 
     except Exception as e:
-        print(f"✗ Error generating schema documentation: {e}", file=sys.stderr)
+        print(f"Schema generation failed: {e}", file=sys.stderr)
         import traceback
 
         traceback.print_exc()
