@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-07-28
-**Commit:** 9a25b219
+**Commit:** e491cd5f
 ---
 
 # Changelog
@@ -13,6 +13,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-07-28)* **AI / Analysis**: Added cancellable, snapshot-based
+  background analysis with partial results and capture timestamps.
 - *(2026-07-27)* **Explorer**: Added an undoable Delete action to the
   event and entity context menu.
 - *(2026-07-26)* **Map / UX**: Added a one-shot Add Marker toolbar tool with click-to-place guidance and Escape cancellation.
@@ -26,6 +28,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-07-28)* **AI / Responsiveness**: Moved model requests off the
+  database worker so editing, navigation, and queued database work remain
+  available during AI Analysis.
 - *(2026-07-28)* **Editor / UX**: Kept description-editor context menus
   opaque by limiting transparent styling to the text viewport.
 - *(2026-07-28)* **Wiki / Relations**: Reconciled automatic mentions from
@@ -51,6 +56,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-07-28)* **Testing**: Added regression coverage for AI snapshot
+  isolation, cancellation, stale jobs, failure recovery, database
+  responsiveness, Qt heartbeats, and safe thread shutdown.
 - *(2026-07-28)* **Testing**: Stabilized map-nesting label-overlap coverage
   by keeping the footprint fixture clear of viewport bounds.
 - *(2026-07-28)* **Testing**: Added regression coverage for description-editor

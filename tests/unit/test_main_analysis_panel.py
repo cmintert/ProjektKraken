@@ -274,3 +274,26 @@ class TestMainAnalysisPanelStreaming:
         panel.on_intelligence_complete(report)
         assert "test-model" in panel.intelligence_panel.header_label.text()
         assert panel.status_label.text() == "AI analysis complete."
+
+    def test_ai_job_disables_only_ai_trigger_and_enables_cancel(self, qapp):
+        from src.gui.widgets.analysis.main_analysis_panel import MainAnalysisPanel
+
+        panel = MainAnalysisPanel()
+        panel.on_intelligence_analysis_started()
+
+        assert panel.intelligence_btn.isEnabled() is False
+        assert panel.cancel_intelligence_btn.isEnabled() is True
+        assert panel.validate_btn.isEnabled() is True
+        assert panel.temporal_btn.isEnabled() is True
+
+    def test_cancelled_job_restores_ai_trigger_and_clears_placeholders(self, qapp):
+        from src.gui.widgets.analysis.main_analysis_panel import MainAnalysisPanel
+
+        panel = MainAnalysisPanel()
+        panel.on_intelligence_analysis_started()
+        panel.on_intelligence_cancelled()
+
+        assert panel.intelligence_btn.isEnabled() is True
+        assert panel.cancel_intelligence_btn.isEnabled() is False
+        assert panel.intelligence_panel.plot_holes_table.rowCount() == 0
+        assert panel.status_label.text() == "AI analysis cancelled."

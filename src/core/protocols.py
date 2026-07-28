@@ -154,6 +154,7 @@ class MainWindowProtocol(Protocol):
     grouping_manager: Any
     graph_widget: Any
     import_coordinator: Any
+    intelligence_analysis_manager: Any
     longform_editor: Any
     longform_manager: Any
     map_handler: Any

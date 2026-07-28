@@ -23,7 +23,11 @@ from src.core.analysis import (
 )
 from src.core.entities import Entity
 from src.core.events import Event
-from src.services.intelligence_analyzer import IntelligenceAnalyzer
+from src.services.intelligence_analyzer import (
+    IntelligenceAnalysisCancelled,
+    IntelligenceAnalyzer,
+    build_intelligence_analysis_snapshot,
+)
 
 # ---------------------------------------------------------------------------
 # Fake Provider
@@ -677,3 +681,40 @@ class TestOnPartialCallback:
         holes, audit = received_data[0]
         assert isinstance(holes, list)
         assert isinstance(audit, list)
+
+
+@pytest.mark.unit
+class TestSnapshotAndCancellation:
+    """Regression coverage for snapshot isolation and cooperative cancellation."""
+
+    def test_snapshot_does_not_include_later_database_edits(self, db_service):
+        db_service.insert_entity(_make_entity("e1", "Alice"))
+        snapshot = build_intelligence_analysis_snapshot(
+            db_service,
+            world_id="world-1",
+            analysis_type="plot_holes",
+        )
+        db_service.insert_entity(_make_entity("e2", "Bob"))
+        provider = _FakeProvider(response=_PLOT_HOLE_RESPONSE)
+
+        report = IntelligenceAnalyzer(snapshot, provider=provider).analyze()
+
+        assert provider.call_count == 1
+        assert report.snapshot_timestamp == snapshot["captured_at"]
+        assert all("Bob" not in prompt for prompt in provider.prompts)
+
+    def test_cancellation_stops_before_the_next_model_call(self, db_service):
+        db_service.insert_entity(_make_entity("e1", "Alice"))
+        db_service.insert_entity(_make_entity("e2", "Bob"))
+        provider = _FakeProvider(response=_PLOT_HOLE_RESPONSE)
+        snapshot = build_intelligence_analysis_snapshot(
+            db_service,
+            analysis_type="plot_holes",
+        )
+
+        with pytest.raises(IntelligenceAnalysisCancelled):
+            IntelligenceAnalyzer(snapshot, provider=provider).analyze(
+                is_cancelled=lambda: provider.call_count >= 1
+            )
+
+        assert provider.call_count == 1

@@ -8,7 +8,7 @@ and accesses individual coordinators through it.
 import logging
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt
+from PySide6.QtCore import QMetaObject, QObject, Qt
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
@@ -94,20 +94,19 @@ class AppCoordinator(QObject):
         )
 
     def run_intelligence_analysis(self, analysis_type: str = "all") -> None:
-        """Request intelligence analysis on the DatabaseWorker thread.
+        """Request non-blocking intelligence analysis from a world snapshot.
 
-        The result is delivered asynchronously via the worker's
-        ``intelligence_analysis_complete`` signal. Subscribe to that signal
-        before calling this method to receive the
+        The result is delivered asynchronously via the
+        :class:`~src.app.intelligence_analysis_manager.IntelligenceAnalysisManager`.
+        Subscribe to that manager before calling this method to receive the
         :class:`~src.core.analysis.IntelligenceReport`.
 
         Args:
             analysis_type: Scope of analysis — ``"all"``, ``"plot_holes"``,
                 ``"relations"``, or ``"lore"``.  Defaults to ``"all"``.
         """
-        QMetaObject.invokeMethod(
-            self.main_window.worker,
-            "run_intelligence_analysis",
-            Qt.ConnectionType.QueuedConnection,
-            Q_ARG(str, analysis_type),
-        )
+        self.main_window.intelligence_analysis_manager.start(analysis_type)
+
+    def cancel_intelligence_analysis(self) -> None:
+        """Request cooperative cancellation of the active AI analysis."""
+        self.main_window.intelligence_analysis_manager.cancel()

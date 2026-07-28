@@ -49,6 +49,7 @@ from src.app.constants import (
 )
 from src.app.coordinators.app_coordinator import AppCoordinator
 from src.app.data_handler import DataHandler
+from src.app.intelligence_analysis_manager import IntelligenceAnalysisManager
 from src.app.longform_manager import LongformManager
 from src.app.map_handler import MapHandler
 from src.app.timeline_grouping_manager import TimelineGroupingManager
@@ -303,6 +304,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # Init Services (Worker Thread)
         self.worker_manager = WorkerManager(self)
         self.worker_manager.init_worker()
+        self.intelligence_analysis_manager = IntelligenceAnalysisManager(self)
 
         # Initialize state variables
         self.cached_event_count: Optional[int] = None
@@ -1074,6 +1076,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # Stop auto-backup timer if running
         if self.backup_service is not None:
             self.backup_service.stop_auto_backup()
+
+        self.intelligence_analysis_manager.shutdown()
 
         # Cleanup Worker
         # PySide6 requires str here at runtime although its stub declares bytes.

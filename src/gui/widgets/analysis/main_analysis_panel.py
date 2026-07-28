@@ -11,6 +11,7 @@ signal → slot) is done by :class:`~src.app.connection_manager.ConnectionManage
 
 from __future__ import annotations
 
+import datetime
 import logging
 from typing import Any
 
@@ -42,8 +43,7 @@ class MainAnalysisPanel(QWidget):
 
     Provides:
     - Three trigger buttons (Validate World / Analyze Timeline / Run AI
-      Analysis).  Buttons are disabled while an analysis is running and
-      re-enabled when a report is delivered.
+      Analysis) plus cooperative cancellation for AI analysis.
     - A status label showing the current state (idle, running, complete,
       or error).
     - A :class:`~PySide6.QtWidgets.QTabWidget` with three tabs, one per
@@ -71,6 +71,9 @@ class MainAnalysisPanel(QWidget):
             parent: Optional parent widget.
         """
         super().__init__(parent)
+        self._standard_analysis_running = False
+        self._intelligence_running = False
+        self._intelligence_cancelling = False
         self._init_ui()
 
     def _init_ui(self) -> None:
@@ -82,9 +85,16 @@ class MainAnalysisPanel(QWidget):
         self.validate_btn = QPushButton("Validate World")
         self.temporal_btn = QPushButton("Analyze Timeline")
         self.intelligence_btn = QPushButton("Run AI Analysis")
+        self.cancel_intelligence_btn = QPushButton("Cancel AI Analysis")
+        self.cancel_intelligence_btn.setEnabled(False)
         self.status_label = QLabel("")
         self.status_label.setStyleSheet(StyleHelper.get_preview_label_style())
-        for btn in (self.validate_btn, self.temporal_btn, self.intelligence_btn):
+        for btn in (
+            self.validate_btn,
+            self.temporal_btn,
+            self.intelligence_btn,
+            self.cancel_intelligence_btn,
+        ):
             btn_layout.addWidget(btn)
         btn_layout.addWidget(self.status_label, stretch=1)
         layout.addLayout(btn_layout)
@@ -114,6 +124,11 @@ class MainAnalysisPanel(QWidget):
         so the loading placeholders appear without waiting for the first
         partial result.
         """
+        self._intelligence_running = True
+        self._intelligence_cancelling = False
+        self.intelligence_btn.setEnabled(False)
+        self.cancel_intelligence_btn.setEnabled(True)
+        self._show_intelligence_status()
         self.tab_widget.setCurrentIndex(self._TAB_INTELLIGENCE)
         self.intelligence_panel.start_streaming()
 
@@ -128,17 +143,35 @@ ConnectionManager` button lambdas before invoking the coordinator, so the
             message: Short description to show in the status label while
                 running (e.g. ``"Validating world…"``).
         """
-        self._set_buttons_enabled(False)
-        self.status_label.setText(message)
+        self._standard_analysis_running = True
+        self._set_standard_buttons_enabled(False)
+        if self._intelligence_running:
+            self.status_label.setText(f"{message} AI analysis continues in background.")
+        else:
+            self.status_label.setText(message)
 
-    def _set_buttons_enabled(self, enabled: bool) -> None:
-        """Enable or disable all three trigger buttons atomically.
+    def _set_standard_buttons_enabled(self, enabled: bool) -> None:
+        """Enable or disable the local validation and temporal triggers.
 
         Args:
             enabled: ``True`` to enable; ``False`` to disable.
         """
-        for btn in (self.validate_btn, self.temporal_btn, self.intelligence_btn):
+        for btn in (self.validate_btn, self.temporal_btn):
             btn.setEnabled(enabled)
+
+    def _finish_intelligence(self) -> None:
+        """Restore the AI trigger buttons after a terminal job state."""
+        self._intelligence_running = False
+        self._intelligence_cancelling = False
+        self.intelligence_btn.setEnabled(True)
+        self.cancel_intelligence_btn.setEnabled(False)
+
+    def _show_intelligence_status(self) -> None:
+        """Show the current background AI state in the shared status label."""
+        if self._intelligence_cancelling:
+            self.status_label.setText("Cancelling AI analysis…")
+        else:
+            self.status_label.setText("Running AI analysis from world snapshot…")
 
     # ------------------------------------------------------------------
     # Report-delivery slots (connected by ConnectionManager)
@@ -155,8 +188,12 @@ ConnectionManager` button lambdas before invoking the coordinator, so the
         """
         self.validation_panel.display_report(report)
         self.tab_widget.setCurrentIndex(self._TAB_VALIDATION)
-        self.status_label.setText("Validation complete.")
-        self._set_buttons_enabled(True)
+        self._standard_analysis_running = False
+        self._set_standard_buttons_enabled(True)
+        if self._intelligence_running:
+            self._show_intelligence_status()
+        else:
+            self.status_label.setText("Validation complete.")
         logger.debug("MainAnalysisPanel: validation report received")
 
     @Slot(object)
@@ -170,17 +207,20 @@ ConnectionManager` button lambdas before invoking the coordinator, so the
         """
         self.temporal_panel.display_report(report)
         self.tab_widget.setCurrentIndex(self._TAB_TIMELINE)
-        self.status_label.setText("Timeline analysis complete.")
-        self._set_buttons_enabled(True)
+        self._standard_analysis_running = False
+        self._set_standard_buttons_enabled(True)
+        if self._intelligence_running:
+            self._show_intelligence_status()
+        else:
+            self.status_label.setText("Timeline analysis complete.")
         logger.debug("MainAnalysisPanel: temporal report received")
 
     @Slot(str, object)
     def on_intelligence_partial(self, result_type: str, data: Any) -> None:
         """Forward a completed sub-analysis to the Intelligence panel.
 
-        Called via :attr:`~src.services.worker.DatabaseWorker.\
-intelligence_partial_result` (``QueuedConnection``) as each of the three
-        concurrent sub-analyses finishes, before the full report is available.
+        Called by the dedicated intelligence analysis manager as each of the
+        three concurrent sub-analyses finishes.
 
         Args:
             result_type: One of ``"holes"``, ``"relations"``, or ``"lore"``.
@@ -200,6 +240,35 @@ intelligence_partial_result` (``QueuedConnection``) as each of the three
         """
         self.intelligence_panel.finalize_report(report)
         self.tab_widget.setCurrentIndex(self._TAB_INTELLIGENCE)
-        self.status_label.setText("AI analysis complete.")
-        self._set_buttons_enabled(True)
+        captured_at = report.snapshot_timestamp
+        if captured_at is None:
+            status = "AI analysis complete."
+        else:
+            captured = datetime.datetime.fromtimestamp(captured_at).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+            status = f"AI analysis complete — snapshot captured {captured}."
+        self.status_label.setText(status)
+        self._finish_intelligence()
         logger.debug("MainAnalysisPanel: intelligence report received")
+
+    @Slot()
+    def on_intelligence_cancelling(self) -> None:
+        """Show cooperative cancellation progress."""
+        self._intelligence_cancelling = True
+        self._show_intelligence_status()
+        self.cancel_intelligence_btn.setEnabled(False)
+
+    @Slot()
+    def on_intelligence_cancelled(self) -> None:
+        """Restore the panel after the active AI job is cancelled."""
+        self.intelligence_panel.show_terminal_message("AI Analysis — Cancelled")
+        self.status_label.setText("AI analysis cancelled.")
+        self._finish_intelligence()
+
+    @Slot(str)
+    def on_intelligence_failed(self, message: str) -> None:
+        """Restore the panel after snapshot or provider failure."""
+        self.intelligence_panel.show_terminal_message("AI Analysis — Failed")
+        self.status_label.setText(message)
+        self._finish_intelligence()

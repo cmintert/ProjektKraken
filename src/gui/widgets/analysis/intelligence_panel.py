@@ -13,7 +13,7 @@ tracks document content automatically.  Lines wrap at ≤75 characters.
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor
@@ -44,6 +44,9 @@ from src.gui.widgets.analysis._analysis_utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from src.core.calendar import CalendarConverter
 
 # Column headers for each table
 _HOLE_HEADERS = ["Severity", "Entity", "Description", "Resolution", "Confidence"]
@@ -77,7 +80,7 @@ class IntelligencePanel(QWidget):
             parent: Optional parent widget.
         """
         super().__init__(parent)
-        self._converter = None
+        self._converter: CalendarConverter | None = None
         self._init_ui()
         self._apply_styles()
         ThemeManager().theme_changed.connect(self._apply_styles)
@@ -170,12 +173,21 @@ class IntelligencePanel(QWidget):
             for col in range(1, col_count):
                 table.setItem(0, col, QTableWidgetItem(""))
 
+    def show_terminal_message(self, message: str) -> None:
+        """Clear streaming placeholders and show a terminal job message."""
+        self.header_label.setText(message)
+        for table in (
+            self.plot_holes_table,
+            self.proposals_table,
+            self.lore_table,
+        ):
+            table.setRowCount(0)
+
     def display_partial_result(self, result_type: str, data: Any) -> None:
         """Populate one table section as its sub-analysis completes.
 
-        Called via ``QueuedConnection`` from the main thread when
-        :attr:`~src.services.worker.DatabaseWorker.intelligence_partial_result`
-        fires, so it is safe to update widgets here.
+        Called from the main thread when the dedicated intelligence analysis
+        manager forwards a partial result, so it is safe to update widgets here.
 
         Args:
             result_type: ``"holes"``, ``"relations"``, or ``"lore"``.
@@ -203,12 +215,12 @@ class IntelligencePanel(QWidget):
     def finalize_report(self, report: IntelligenceReport) -> None:
         """Update the header and clear any leftover loading placeholders.
 
-        Called once :attr:`~src.services.worker.DatabaseWorker.\
-intelligence_analysis_complete` fires with the full report.  Sections
-        populated via :meth:`display_partial_result` are re-rendered from the
-        authoritative report data; sections that were skipped (because the
-        analysis type was narrower than ``"all"``, or because a sub-analysis
-        failed) are replaced with empty tables instead of stale placeholders.
+        Called once the dedicated intelligence analysis manager forwards the
+        full report. Sections populated via :meth:`display_partial_result` are
+        re-rendered from the authoritative report data; sections that were
+        skipped (because the analysis type was narrower than ``"all"``, or
+        because a sub-analysis failed) are replaced with empty tables instead
+        of stale placeholders.
 
         Args:
             report: The final :class:`~src.core.analysis.IntelligenceReport`.

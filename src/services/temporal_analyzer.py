@@ -50,11 +50,11 @@ class TemporalAnalyzer:
         gap_threshold: Minimum lore-time gap duration to flag (default 100.0).
     """
 
-    def __init__(self, db_service: "DatabaseService") -> None:
+    def __init__(self, db_service: "DatabaseService | None" = None) -> None:
         """Initialise the analyzer with a database service.
 
         Args:
-            db_service: A connected
+            db_service: An optional connected
                 :class:`~src.services.db_service.DatabaseService` instance.
         """
         self.db_service = db_service
@@ -68,11 +68,40 @@ class TemporalAnalyzer:
         Returns:
             TemporalAnalysisReport: A complete temporal analysis report.
         """
+        if self.db_service is None:
+            raise RuntimeError("DatabaseService is required for analyze()")
+
         events: list[Event] = self.db_service.get_all_events()
         entities: list[Entity] = self.db_service.get_all_entities()
         relations: list[dict[str, Any]] = self.db_service.get_all_relations()
+        calendar_config = self.db_service.get_active_calendar_config()
+        return self.analyze_data(
+            entities=entities,
+            events=events,
+            relations=relations,
+            calendar_config=calendar_config,
+        )
 
-        cal = self.db_service.get_active_calendar_config()
+    def analyze_data(
+        self,
+        *,
+        entities: list[Entity],
+        events: list[Event],
+        relations: list[dict[str, Any]],
+        calendar_config: Any | None,
+    ) -> TemporalAnalysisReport:
+        """Analyze an immutable, database-independent world snapshot.
+
+        Args:
+            entities: Entity snapshot reconstructed from serialized data.
+            events: Event snapshot reconstructed from serialized data.
+            relations: Copied relation dictionaries.
+            calendar_config: Active calendar configuration, or ``None``.
+
+        Returns:
+            TemporalAnalysisReport: A complete temporal analysis report.
+        """
+        cal = calendar_config
         using_default = False
         if cal is None:
             from src.core.calendar import CalendarConfig

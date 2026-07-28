@@ -9,15 +9,14 @@ does not prevent the others from running.  Each interaction is recorded in
 the ``audit_log`` of the returned :class:`~src.core.analysis.IntelligenceReport`.
 
 The three sub-analyses (plot_holes, relations, lore) are independent and run
-concurrently via :class:`~concurrent.futures.ThreadPoolExecutor`.  All database
-reads are pre-fetched on the calling thread so the ``DatabaseService`` SQLite
-connection is never accessed from a worker thread.  Each task receives its own
-:class:`~src.services.llm_provider.Provider` instance so that ``CircuitBreaker``
-state is not shared across threads.
+concurrently via :class:`~concurrent.futures.ThreadPoolExecutor`. The analyzer
+operates on a serialized click-time snapshot and never accesses a database
+connection while model calls are running.
 """
 
 from __future__ import annotations
 
+import copy
 import logging
 import time
 from collections import defaultdict
@@ -33,7 +32,9 @@ from src.core.analysis import (
     RelationProposal,
     SeverityLevel,
 )
-from src.core.calendar import CalendarConverter
+from src.core.calendar import CalendarConfig, CalendarConverter
+from src.core.entities import Entity
+from src.core.events import Event
 from src.services.temporal_analyzer import TemporalAnalyzer
 
 if TYPE_CHECKING:
@@ -41,6 +42,46 @@ if TYPE_CHECKING:
     from src.services.llm_provider import Provider
 
 logger = logging.getLogger(__name__)
+
+CancellationCheck = Callable[[], bool]
+
+
+class IntelligenceAnalysisCancelled(Exception):
+    """Raised when an intelligence analysis job is cooperatively cancelled."""
+
+
+def build_intelligence_analysis_snapshot(
+    db_service: DatabaseService,
+    *,
+    world_id: str = "",
+    analysis_type: str = "all",
+) -> dict[str, Any]:
+    """Capture a deep, serializable world snapshot on the database thread.
+
+    Args:
+        db_service: Worker-thread-owned database service.
+        world_id: ID of the world being captured.
+        analysis_type: Requested analysis scope.
+
+    Returns:
+        dict[str, Any]: Database-independent snapshot for the AI worker.
+    """
+    entities = [entity.to_dict() for entity in db_service.get_all_entities()]
+    events = [event.to_dict() for event in db_service.get_all_events()]
+    relations = db_service.get_all_relations()
+    calendar_config = db_service.get_active_calendar_config()
+    snapshot = {
+        "world_id": world_id,
+        "analysis_type": analysis_type,
+        "captured_at": time.time(),
+        "entities": entities,
+        "events": events,
+        "relations": relations,
+        "calendar_config": (
+            calendar_config.to_dict() if calendar_config is not None else None
+        ),
+    }
+    return copy.deepcopy(snapshot)
 
 
 def _lore_date_to_year(value: float, converter: CalendarConverter | None) -> int:
@@ -79,7 +120,7 @@ _LORE_FIELD_DESCRIPTION = "DESCRIPTION:"
 
 
 class IntelligenceAnalyzer:
-    """AI-powered world analysis using RAG + LLM.
+    """AI-powered analysis of a serialized world snapshot using RAG + LLM.
 
     Analyses the world database for three categories of insight:
 
@@ -92,8 +133,9 @@ class IntelligenceAnalyzer:
       by :class:`~src.services.temporal_analyzer.TemporalAnalyzer`.
 
     Args:
-        db_service: A connected
-            :class:`~src.services.db_service.DatabaseService` instance.
+        snapshot: A database-independent world snapshot. A ``DatabaseService``
+            is accepted temporarily for compatibility and is converted to a
+            snapshot immediately.
         provider: Optional pre-built :class:`~src.services.llm_provider.Provider`
             instance.  When ``None`` (default) the analyzer creates one from
             the application's QSettings on first use.  Pass an explicit provider
@@ -102,19 +144,33 @@ class IntelligenceAnalyzer:
 
     def __init__(
         self,
-        db_service: DatabaseService,
+        snapshot: dict[str, Any] | DatabaseService | None,
         provider: Provider | None = None,
     ) -> None:
         """Initialize the analyzer.
 
         Args:
-            db_service: A connected DatabaseService instance.
+            snapshot: Serialized world snapshot. A connected ``DatabaseService``
+                is converted eagerly for compatibility with legacy command code.
             provider: Optional injectable provider.  Pass a pre-built
                 :class:`~src.services.llm_provider.Provider` in tests to avoid
                 real LLM calls; leave ``None`` in production to auto-select from
                 application settings.
         """
-        self.db_service = db_service
+        if isinstance(snapshot, dict):
+            self._snapshot = copy.deepcopy(snapshot)
+        elif snapshot is None:
+            self._snapshot = {
+                "world_id": "",
+                "analysis_type": "all",
+                "captured_at": time.time(),
+                "entities": [],
+                "events": [],
+                "relations": [],
+                "calendar_config": None,
+            }
+        else:
+            self._snapshot = build_intelligence_analysis_snapshot(snapshot)
         self._provider = provider
 
     # ------------------------------------------------------------------
@@ -123,44 +179,62 @@ class IntelligenceAnalyzer:
 
     def analyze(
         self,
-        analysis_type: str = "all",
+        analysis_type: str | None = None,
         on_partial: Callable[[str, Any], None] | None = None,
+        is_cancelled: CancellationCheck | None = None,
     ) -> IntelligenceReport:
         """Run AI analysis and return an :class:`~src.core.analysis.IntelligenceReport`.
 
-        All database reads are performed on the calling thread before any worker
-        threads are spawned.  The three sub-analyses then run concurrently in a
+        The three sub-analyses run concurrently in a
         :class:`~concurrent.futures.ThreadPoolExecutor`; each receives its own
-        :class:`~src.services.llm_provider.Provider` instance so ``CircuitBreaker``
-        state is not shared across threads.
+        :class:`~src.services.llm_provider.Provider` instance so
+        ``CircuitBreaker`` state is not shared across threads.
 
         Args:
-            analysis_type: Controls which sub-analyses run.  One of
+            analysis_type: Optional override controlling which sub-analyses run.
+                When omitted, uses the scope stored in the snapshot. One of
                 ``"all"`` | ``"plot_holes"`` | ``"relations"`` | ``"lore"``.
-                Unknown values run all three.
             on_partial: Optional callback invoked on the calling thread as each
                 sub-analysis completes, before the final report is returned.
                 Called with ``(result_type, raw_result)`` where *result_type* is
                 ``"holes"``, ``"relations"``, or ``"lore"`` and *raw_result* is
                 the tuple returned by that sub-analyzer.  Not called for failed
                 sub-analyses.
+            is_cancelled: Thread-safe callback returning whether cancellation
+                has been requested.
 
         Returns:
             IntelligenceReport: Populated report.  Sub-sections that were not
             requested are empty lists.
         """
-        # ------------------------------------------------------------------
-        # Phase 1: pre-fetch all DB data on the calling thread.
-        # ThreadPoolExecutor workers must not touch db_service — the SQLite
-        # connection is not safe to share across threads without check_same_thread=False.
-        # ------------------------------------------------------------------
-        entities = self.db_service.get_all_entities()
-        relations = self.db_service.get_all_relations()
-        events = self.db_service.get_all_events()
+        cancellation_check = is_cancelled or (lambda: False)
+        self._raise_if_cancelled(cancellation_check)
+
+        requested_type = analysis_type or str(
+            self._snapshot.get("analysis_type", "all")
+        )
+        valid_types = {"all", "plot_holes", "relations", "lore"}
+        if requested_type not in valid_types:
+            requested_type = "all"
+
+        entities = [
+            Entity.from_dict(data) for data in self._snapshot.get("entities", [])
+        ]
+        events = [Event.from_dict(data) for data in self._snapshot.get("events", [])]
+        relations = copy.deepcopy(self._snapshot.get("relations", []))
+        calendar_data = self._snapshot.get("calendar_config")
+        snapshot_calendar_config = (
+            CalendarConfig.from_dict(calendar_data) if calendar_data is not None else None
+        )
 
         temporal_report: Any | None = None
-        if analysis_type in ("all", "lore"):
-            temporal_report = TemporalAnalyzer(self.db_service).analyze()
+        if requested_type in ("all", "lore"):
+            temporal_report = TemporalAnalyzer().analyze_data(
+                entities=entities,
+                events=events,
+                relations=relations,
+                calendar_config=snapshot_calendar_config,
+            )
 
         # ------------------------------------------------------------------
         # Phase 2: build tasks.  Each task gets its own provider so that
@@ -169,29 +243,32 @@ class IntelligenceAnalyzer:
         # ------------------------------------------------------------------
         tasks: dict[str, Any] = {}
 
-        if analysis_type in ("all", "plot_holes"):
+        if requested_type in ("all", "plot_holes"):
             tasks["holes"] = partial(
                 self._detect_plot_holes,
                 self._get_provider(),
                 entities,
                 relations,
                 events,
+                cancellation_check,
             )
 
-        if analysis_type in ("all", "relations"):
+        if requested_type in ("all", "relations"):
             tasks["relations"] = partial(
                 self._infer_relations,
                 self._get_provider(),
                 entities,
                 relations,
+                cancellation_check,
             )
 
-        if analysis_type in ("all", "lore") and temporal_report is not None:
+        if requested_type in ("all", "lore") and temporal_report is not None:
             tasks["lore"] = partial(
                 self._generate_lore,
                 self._get_provider(),
                 temporal_report,
                 events,
+                cancellation_check,
             )
 
         # Derive model name from first provider before threads start.
@@ -203,19 +280,7 @@ class IntelligenceAnalyzer:
         # ------------------------------------------------------------------
         # Phase 3: run sub-analyses concurrently.
         # ------------------------------------------------------------------
-        results: dict[str, Any] = {}
-        if tasks:
-            with ThreadPoolExecutor(max_workers=len(tasks)) as pool:
-                future_to_name = {pool.submit(fn): name for name, fn in tasks.items()}
-                for future in as_completed(future_to_name):
-                    name = future_to_name[future]
-                    try:
-                        results[name] = future.result()
-                        if on_partial is not None:
-                            on_partial(name, results[name])
-                    except Exception as exc:
-                        logger.error("Sub-analysis %r failed: %s", name, exc)
-                        results[name] = None
+        results = self._execute_tasks(tasks, on_partial, cancellation_check)
 
         # ------------------------------------------------------------------
         # Phase 4: collect results.
@@ -224,7 +289,7 @@ class IntelligenceAnalyzer:
         relation_proposals: list[RelationProposal] = []
         lore_suggestions: list[LoreGapFiller] = []
         audit_log: list[dict[str, Any]] = []
-        calendar_config: Any | None = None
+        report_calendar_config: Any | None = None
 
         if results.get("holes") is not None:
             holes, holes_audit = results["holes"]
@@ -237,7 +302,7 @@ class IntelligenceAnalyzer:
             audit_log.extend(rel_audit)
 
         if results.get("lore") is not None:
-            suggestions, lore_audit, calendar_config = results["lore"]
+            suggestions, lore_audit, report_calendar_config = results["lore"]
             lore_suggestions.extend(suggestions)
             audit_log.extend(lore_audit)
 
@@ -248,7 +313,10 @@ class IntelligenceAnalyzer:
             lore_suggestions=lore_suggestions,
             analysis_model=model_name,
             audit_log=audit_log,
-            calendar_config=calendar_config,
+            calendar_config=report_calendar_config,
+            snapshot_timestamp=float(
+                self._snapshot.get("captured_at", time.time())
+            ),
         )
 
     # ------------------------------------------------------------------
@@ -261,6 +329,7 @@ class IntelligenceAnalyzer:
         entities: list[Any],
         relations: list[dict[str, Any]],
         events: list[Any],
+        is_cancelled: CancellationCheck,
     ) -> tuple[list[PlotHole], list[dict[str, Any]]]:
         """Detect plot holes in entity narratives via LLM analysis.
 
@@ -276,6 +345,7 @@ class IntelligenceAnalyzer:
             entities: All entities in the world (pre-fetched by caller).
             relations: All relations in the world (pre-fetched by caller).
             events: All events in the world (pre-fetched by caller).
+            is_cancelled: Thread-safe cancellation check.
 
         Returns:
             tuple: ``(plot_holes, audit_log)`` where *plot_holes* is a list
@@ -308,6 +378,7 @@ class IntelligenceAnalyzer:
             relations_by_entity[rel.get("target_id", "")].append(rel)
 
         for entity in top_entities:
+            self._raise_if_cancelled(is_cancelled)
             prompt = self._build_plot_hole_prompt(
                 entity,
                 relations_by_entity[entity.id],
@@ -316,6 +387,7 @@ class IntelligenceAnalyzer:
             )
             try:
                 result = provider.generate(prompt)
+                self._raise_if_cancelled(is_cancelled)
                 response_text = result.get("text", "")
                 audit_log.append(
                     self._make_audit_entry(
@@ -327,6 +399,8 @@ class IntelligenceAnalyzer:
                     )
                 )
                 plot_holes.extend(self._parse_plot_holes(response_text, entity))
+            except IntelligenceAnalysisCancelled:
+                raise
             except Exception as exc:
                 logger.error(
                     "plot hole detection failed for entity %s: %s", entity.id, exc
@@ -346,6 +420,7 @@ class IntelligenceAnalyzer:
         provider: Provider,
         entities: list[Any],
         relations: list[dict[str, Any]],
+        is_cancelled: CancellationCheck,
     ) -> tuple[list[RelationProposal], list[dict[str, Any]]]:
         """Infer missing relations between entity pairs that share context.
 
@@ -357,6 +432,7 @@ class IntelligenceAnalyzer:
             provider: The LLM provider to use.
             entities: All entities in the world (pre-fetched by caller).
             relations: All relations in the world (pre-fetched by caller).
+            is_cancelled: Thread-safe cancellation check.
 
         Returns:
             tuple: ``(proposals, audit_log)``.
@@ -375,6 +451,7 @@ class IntelligenceAnalyzer:
         candidates = self._find_relation_candidates(entities)[:_MAX_RELATION_CANDIDATES]
 
         for source, target in candidates:
+            self._raise_if_cancelled(is_cancelled)
             if (source.id, target.id) in existing_pairs:
                 continue
             if (target.id, source.id) in existing_pairs:
@@ -383,6 +460,7 @@ class IntelligenceAnalyzer:
             prompt = self._build_relation_inference_prompt(source, target)
             try:
                 result = provider.generate(prompt)
+                self._raise_if_cancelled(is_cancelled)
                 response_text = result.get("text", "")
                 audit_log.append(
                     self._make_audit_entry(
@@ -395,6 +473,8 @@ class IntelligenceAnalyzer:
                 proposal = self._parse_relation_proposal(response_text, source, target)
                 if proposal is not None:
                     proposals.append(proposal)
+            except IntelligenceAnalysisCancelled:
+                raise
             except Exception as exc:
                 logger.error(
                     "relation inference failed for %s/%s: %s",
@@ -418,6 +498,7 @@ class IntelligenceAnalyzer:
         provider: Provider,
         temporal_report: Any,
         events: list[Any],
+        is_cancelled: CancellationCheck,
     ) -> tuple[list[LoreGapFiller], list[dict[str, Any]], Any | None]:
         """Generate bridging lore suggestions for timeline gaps.
 
@@ -430,6 +511,7 @@ class IntelligenceAnalyzer:
             temporal_report: Pre-computed temporal analysis report from the
                 calling thread (contains timeline gaps and calendar config).
             events: All events in the world (pre-fetched by caller).
+            is_cancelled: Thread-safe cancellation check.
 
         Returns:
             tuple: ``(suggestions, audit_log, calendar_config)`` where
@@ -460,6 +542,7 @@ class IntelligenceAnalyzer:
         )
 
         for gap in gaps:
+            self._raise_if_cancelled(is_cancelled)
             events_before = [e for e in sorted_events if e.lore_date <= gap.start_date]
             events_after = [e for e in sorted_events if e.lore_date >= gap.end_date]
 
@@ -471,6 +554,7 @@ class IntelligenceAnalyzer:
             )
             try:
                 result = provider.generate(prompt)
+                self._raise_if_cancelled(is_cancelled)
                 response_text = result.get("text", "")
                 audit_log.append(
                     self._make_audit_entry(
@@ -483,6 +567,8 @@ class IntelligenceAnalyzer:
                 filler = self._parse_lore_suggestions(response_text, gap)
                 if filler is not None:
                     suggestions.append(filler)
+            except IntelligenceAnalysisCancelled:
+                raise
             except Exception as exc:
                 logger.error(
                     "lore generation failed for gap %.0f-%.0f: %s",
@@ -805,6 +891,41 @@ class IntelligenceAnalyzer:
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    def _execute_tasks(
+        self,
+        tasks: dict[str, Any],
+        on_partial: Callable[[str, Any], None] | None,
+        is_cancelled: CancellationCheck,
+    ) -> dict[str, Any]:
+        """Run independent sub-analyses and stream successful results."""
+        results: dict[str, Any] = {}
+        if not tasks:
+            return results
+
+        with ThreadPoolExecutor(max_workers=len(tasks)) as pool:
+            future_to_name = {pool.submit(fn): name for name, fn in tasks.items()}
+            for future in as_completed(future_to_name):
+                name = future_to_name[future]
+                try:
+                    results[name] = future.result()
+                    self._raise_if_cancelled(is_cancelled)
+                    if on_partial is not None:
+                        on_partial(name, results[name])
+                except IntelligenceAnalysisCancelled:
+                    for pending in future_to_name:
+                        pending.cancel()
+                    raise
+                except Exception as exc:
+                    logger.error("Sub-analysis %r failed: %s", name, exc)
+                    results[name] = None
+        return results
+
+    @staticmethod
+    def _raise_if_cancelled(is_cancelled: CancellationCheck) -> None:
+        """Raise the cooperative cancellation exception when requested."""
+        if is_cancelled():
+            raise IntelligenceAnalysisCancelled()
 
     def _make_audit_entry(
         self,

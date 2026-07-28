@@ -408,6 +408,8 @@ class IntelligenceReport:
         lore_suggestions: Generated lore for timeline gaps.
         analysis_model: Identifier of the LLM used.
         audit_log: List of raw LLM interaction records.
+        snapshot_timestamp: Unix timestamp when the analyzed world snapshot
+            was captured.
     """
 
     timestamp: float
@@ -417,3 +419,4 @@ class IntelligenceReport:
     analysis_model: str
     audit_log: list[dict[str, Any]]
     calendar_config: Any | None = None
+    snapshot_timestamp: float | None = None

@@ -10,7 +10,7 @@ import subprocess
 import sys
 import traceback
 from pathlib import Path
-from typing import Any, List, Optional, Set, Tuple
+from typing import List, Optional, Set, Tuple
 
 from PySide6.QtCore import QObject, Signal, Slot
 
@@ -95,8 +95,8 @@ class DatabaseWorker(QObject):
     # Analysis signals
     validation_complete = Signal(object)  # Emits WorldValidationReport
     temporal_analysis_complete = Signal(object)  # Emits TemporalAnalysisReport
-    intelligence_analysis_complete = Signal(object)  # Emits IntelligenceReport
-    intelligence_partial_result = Signal(str, object)  # (result_type, raw_result)
+    intelligence_snapshot_ready = Signal(str, dict)  # job_id, serialized snapshot
+    intelligence_snapshot_failed = Signal(str, str)  # job_id, message
 
     def __init__(self, db_path: str) -> None:
         """Initializes the worker.
@@ -1659,39 +1659,46 @@ class DatabaseWorker(QObject):
             "Temporal analysis",
         )
 
-    @Slot(str)
-    def run_intelligence_analysis(self, analysis_type: str = "all") -> None:
-        """Run intelligence analysis in the worker thread and emit the report.
+    @Slot(str, str, str)
+    def prepare_intelligence_analysis(
+        self,
+        job_id: str,
+        world_id: str,
+        analysis_type: str = "all",
+    ) -> None:
+        """Capture a serialized click-time snapshot for the AI worker.
 
-        Calls :class:`~src.services.intelligence_analyzer.IntelligenceAnalyzer`
-        directly (bypassing the command layer) so that
-        :attr:`intelligence_partial_result` can be emitted as each sub-analysis
-        completes, before the final :attr:`intelligence_analysis_complete` fires.
-
-        On success emits :attr:`intelligence_partial_result` once per completed
-        sub-analysis, then :attr:`intelligence_analysis_complete` with the full
-        :class:`~src.core.analysis.IntelligenceReport`.
-        On failure emits :attr:`error_occurred` with an error string.
+        This slot performs only database reads and serialization. It emits the
+        snapshot and immediately returns so subsequent database work is not
+        blocked by model requests.
 
         Args:
-            analysis_type: Scope of analysis — ``"all"``, ``"plot_holes"``,
-                ``"relations"``, or ``"lore"``.  Defaults to ``"all"``.
+            job_id: Stable analysis job identifier.
+            world_id: ID of the world being captured.
+            analysis_type: Requested intelligence analysis scope.
         """
-        from src.services.intelligence_analyzer import IntelligenceAnalyzer
-
-        self.operation_started.emit(f"Running AI analysis ({analysis_type})…")
-        try:
-            def _on_partial(result_type: str, data: Any) -> None:
-                self.intelligence_partial_result.emit(result_type, data)
-
-            report = IntelligenceAnalyzer(self.db_service).analyze(
-                analysis_type, on_partial=_on_partial
+        if self.db_service is None:
+            self.intelligence_snapshot_failed.emit(
+                job_id, "Database is not ready for AI analysis."
             )
-            self.intelligence_analysis_complete.emit(report)
+            return
+
+        try:
+            from src.services.intelligence_analyzer import (
+                build_intelligence_analysis_snapshot,
+            )
+
+            self.db_service.ensure_fresh_view()
+            snapshot = build_intelligence_analysis_snapshot(
+                self.db_service,
+                world_id=world_id,
+                analysis_type=analysis_type,
+            )
+            self.intelligence_snapshot_ready.emit(job_id, snapshot)
         except Exception as exc:
             logger.error(
-                "Intelligence analysis error: %s\n%s", exc, traceback.format_exc()
+                "Intelligence snapshot error: %s\n%s",
+                exc,
+                traceback.format_exc(),
             )
-            self.error_occurred.emit(f"Intelligence analysis error: {exc!s}")
-        finally:
-            self.operation_finished.emit("Intelligence analysis complete.")
+            self.intelligence_snapshot_failed.emit(job_id, str(exc))

@@ -920,6 +920,7 @@ class ConnectionManager:
         panel = self.window.analysis_panel
         worker = self.window.worker
         coord = self.window.app_coordinator
+        intelligence_manager = self.window.intelligence_analysis_manager
         return self._connect_batch(
             [
                 # Worker → panel (cross-thread, must be queued)
@@ -937,19 +938,42 @@ class ConnectionManager:
                     "AnalysisPanel",
                     Qt.ConnectionType.QueuedConnection,
                 ),
+                # Dedicated AI manager → panel.
                 (
-                    worker,
-                    "intelligence_analysis_complete",
-                    panel.on_intelligence_complete,
+                    intelligence_manager,
+                    "started",
+                    panel.on_intelligence_analysis_started,
                     "AnalysisPanel",
-                    Qt.ConnectionType.QueuedConnection,
                 ),
                 (
-                    worker,
-                    "intelligence_partial_result",
+                    intelligence_manager,
+                    "partial_result",
                     panel.on_intelligence_partial,
                     "AnalysisPanel",
-                    Qt.ConnectionType.QueuedConnection,
+                ),
+                (
+                    intelligence_manager,
+                    "completed",
+                    panel.on_intelligence_complete,
+                    "AnalysisPanel",
+                ),
+                (
+                    intelligence_manager,
+                    "failed",
+                    panel.on_intelligence_failed,
+                    "AnalysisPanel",
+                ),
+                (
+                    intelligence_manager,
+                    "cancelling",
+                    panel.on_intelligence_cancelling,
+                    "AnalysisPanel",
+                ),
+                (
+                    intelligence_manager,
+                    "cancelled",
+                    panel.on_intelligence_cancelled,
+                    "AnalysisPanel",
                 ),
                 # Buttons → coordinator (main thread).
                 # Each lambda fires on_analysis_started first so the panel
@@ -975,11 +999,13 @@ class ConnectionManager:
                 (
                     panel.intelligence_btn,
                     "clicked",
-                    lambda _checked: (
-                        panel.on_analysis_started("Running AI analysis\u2026"),
-                        panel.on_intelligence_analysis_started(),
-                        coord.run_intelligence_analysis(),
-                    ),
+                    lambda _checked: coord.run_intelligence_analysis(),
+                    "AnalysisPanel",
+                ),
+                (
+                    panel.cancel_intelligence_btn,
+                    "clicked",
+                    lambda _checked: coord.cancel_intelligence_analysis(),
                     "AnalysisPanel",
                 ),
             ],

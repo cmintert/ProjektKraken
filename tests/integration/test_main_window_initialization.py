@@ -135,17 +135,26 @@ def mock_main_window(qapp):
     window.analysis_panel = Mock()
     window.analysis_panel.on_validation_complete = Mock()
     window.analysis_panel.on_temporal_complete = Mock()
+    window.analysis_panel.on_intelligence_analysis_started = Mock()
+    window.analysis_panel.on_intelligence_partial = Mock()
     window.analysis_panel.on_intelligence_complete = Mock()
+    window.analysis_panel.on_intelligence_failed = Mock()
+    window.analysis_panel.on_intelligence_cancelling = Mock()
+    window.analysis_panel.on_intelligence_cancelled = Mock()
     window.analysis_panel.on_analysis_started = Mock()
     window.analysis_panel.validate_btn = Mock()
     window.analysis_panel.temporal_btn = Mock()
     window.analysis_panel.intelligence_btn = Mock()
+    window.analysis_panel.cancel_intelligence_btn = Mock()
+
+    window.intelligence_analysis_manager = Mock()
 
     # App coordinator actions triggered by analysis buttons
     window.app_coordinator = Mock()
     window.app_coordinator.validate_world = Mock()
     window.app_coordinator.analyze_temporal = Mock()
     window.app_coordinator.run_intelligence_analysis = Mock()
+    window.app_coordinator.cancel_intelligence_analysis = Mock()
 
     window.load_graph_data = Mock()
     window.load_data = Mock()  # For unified_list refresh

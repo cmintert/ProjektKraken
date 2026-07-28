@@ -52,6 +52,7 @@ def mock_main_window(qapp):
     window.map_handler = Mock()
     window.analysis_panel = Mock()
     window.app_coordinator = Mock()
+    window.intelligence_analysis_manager = Mock()
 
     # Add coordinator mocks
     window.editor_coordinator = Mock()
