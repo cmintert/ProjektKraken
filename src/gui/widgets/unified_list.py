@@ -628,12 +628,20 @@ class UnifiedListWidget(QWidget):
         export_action = menu.addAction("Export to Obsidian (.md)...")
         menu.addSeparator()
         delete_action = menu.addAction("Delete")
-        action = menu.exec(self.list_widget.viewport().mapToGlobal(position))
+        action = self._execute_context_menu(
+            menu,
+            self.list_widget.viewport().mapToGlobal(position),
+        )
 
         if action == export_action:
             self.export_obsidian_requested.emit(item_type, item_id)
         elif action == delete_action:
             self._delete_items([(item_type, item_id, item_name or "Unknown")])
+
+    @staticmethod
+    def _execute_context_menu(menu: QMenu, global_position: Any) -> Any:
+        """Execute a prepared context menu and return its selected action."""
+        return menu.exec(global_position)
 
     @Slot()
     def _on_selection_changed(self) -> None:

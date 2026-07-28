@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-07-27
-**Commit:** 74126819
+**Last Updated:** 2026-07-28
+**Commit:** 0612bd90
 ---
 
 # Changelog
@@ -26,6 +26,12 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-07-28)* **Stability**: Made LanguageTool, semantic timers, theme
+  callbacks, context menus, and Qt widget teardown lifecycle-safe.
+- *(2026-07-28)* **Search**: Added accurate indexed, unchanged, and failed
+  rebuild totals with monotonic worker and CLI progress reporting.
+- *(2026-07-28)* **Map / Layers**: Kept worker-owned layer trees authoritative
+  instead of applying stale UI snapshots.
 - *(2026-07-26)* **Development / Typing**: Fixed mypy namespace-package discovery and stale window, worker, Qt, and map-mixin contracts, reducing the baseline from 1,217 to 1,017 errors.
 - *(2026-07-26)* **Raster / Stability**: Kept Paint active across successful strokes, paused safely on failed saves, and prevented editing a stale raster target.
 - *(2026-07-26)* **Map / Layers**: Removed deleted nodes from refreshed layer trees and cleared Paint controls when the selected raster no longer exists.
@@ -36,6 +42,11 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-07-28)* **Development / CI**: Made smoke and fast regression jobs use
+  cached Python 3.13 dependencies, serial execution, explicit timeouts, and
+  always-uploaded test artifacts.
+- *(2026-07-28)* **Testing**: Consolidated native INI-backed QSettings
+  isolation and expanded lifecycle, progress, styling, and teardown coverage.
 - *(2026-07-27)* **Documentation**: Replaced the mixed legacy `docs/` tree with
   canonical user, developer, and reference manuals; moved historical and
   planning material out of the Sphinx source; added deterministic schema

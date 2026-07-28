@@ -6,7 +6,7 @@ from src.gui.widgets.compact_duration_widget import CompactDurationWidget
 def test_compact_date_widget_theme_compliance(qtbot):
     """Test that CompactDateWidget input fields adhere to theme."""
     tm = ThemeManager()
-    tm.set_theme("dark_mode")
+    tm.current_theme_name = "dark_mode"
 
     widget = CompactDateWidget()
     qtbot.addWidget(widget)
@@ -17,14 +17,21 @@ def test_compact_date_widget_theme_compliance(qtbot):
     theme = tm.get_theme()
     surface = theme["surface"].lower()
     border = theme["border"].lower()
+    text = theme["text_main"].lower()
 
     assert surface in style
     assert border in style
     assert "consolas" in style
 
-    # Check other inputs
-    assert surface in widget.spin_year.styleSheet().lower()
-    assert surface in widget.combo_month.styleSheet().lower()
+    # The shared date chip owns the surface and border. Its inner controls
+    # remain transparent while inheriting the active theme's text color.
+    chip_style = widget._date_chip.styleSheet().lower()
+    assert surface in chip_style
+    assert border in chip_style
+    assert "transparent" in widget.spin_year.styleSheet().lower()
+    assert text in widget.spin_year.styleSheet().lower()
+    assert "transparent" in widget.combo_month.styleSheet().lower()
+    assert text in widget.combo_month.styleSheet().lower()
 
     # Change theme and verify update
     new_theme = {
@@ -50,24 +57,26 @@ def test_compact_date_widget_theme_compliance(qtbot):
 
     try:
         tm.themes["test_compliance"] = new_theme
-        tm.set_theme("test_compliance")
+        tm.current_theme_name = "test_compliance"
+        widget._on_theme_changed(new_theme)
 
         updated_style = widget.txt_date.styleSheet().lower()
         assert "#abcdef" in updated_style
         assert "#123456" in updated_style
 
-        # Check other inputs updated too
-        assert "#abcdef" in widget.spin_year.styleSheet().lower()
+        # The outer chip and its transparent child controls all update.
+        assert "#abcdef" in widget._date_chip.styleSheet().lower()
+        assert "#000000" in widget.spin_year.styleSheet().lower()
 
     finally:
         tm.themes = original_themes
-        tm.set_theme(initial_theme_name)
+        tm.current_theme_name = initial_theme_name
 
 
 def test_compact_duration_widget_theme_compliance(qtbot):
     """Test that CompactDurationWidget input fields adhere to theme."""
     tm = ThemeManager()
-    tm.set_theme("dark_mode")
+    tm.current_theme_name = "dark_mode"
 
     widget = CompactDurationWidget()
     qtbot.addWidget(widget)
@@ -103,7 +112,8 @@ def test_compact_duration_widget_theme_compliance(qtbot):
 
     try:
         tm.themes["test_compliance_dur"] = new_theme
-        tm.set_theme("test_compliance_dur")
+        tm.current_theme_name = "test_compliance_dur"
+        widget._on_theme_changed(new_theme)
 
         # Verify update
         updated_style = widget.spin_years.styleSheet().lower()
@@ -111,4 +121,4 @@ def test_compact_duration_widget_theme_compliance(qtbot):
 
     finally:
         tm.themes = original_themes
-        tm.set_theme(initial_theme_name)
+        tm.current_theme_name = initial_theme_name

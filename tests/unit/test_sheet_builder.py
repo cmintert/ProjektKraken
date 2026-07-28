@@ -899,7 +899,6 @@ class TestResizeHandle:
         qtbot.addWidget(parent)
 
         handle = _ResizeHandle(layout, 0, 1)
-        qtbot.addWidget(handle)
 
         handle.deleteLater()
         qtbot.wait(50)  # Allow event loop to process deleteLater

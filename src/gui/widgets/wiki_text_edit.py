@@ -8,9 +8,18 @@ import re
 from typing import Any, List, Optional, Tuple
 
 import shiboken6
-from PySide6.QtCore import QStringListModel, Qt, QThread, QTimer, Signal, Slot
+from PySide6.QtCore import (
+    QObject,
+    QStringListModel,
+    Qt,
+    QThread,
+    QTimer,
+    Signal,
+    Slot,
+)
 from PySide6.QtGui import (
     QAction,
+    QCloseEvent,
     QColor,
     QKeyEvent,
     QMouseEvent,
@@ -1518,22 +1527,12 @@ class WikiTextEditView(QTextEdit):
     # ------------------------------------------------------------------ #
 
     def _setup_spell_check(self) -> None:
-        """Initialize the LanguageTool spell/grammar check subsystem."""
+        """Configure lazy LanguageTool spell/grammar checking."""
         from PySide6.QtWidgets import QApplication
 
-        from src.services.language_tool_service import LanguageToolWorker
-
         self._lt_matches: list = []
-        self._lt_thread = QThread(self)
-        self._lt_worker = LanguageToolWorker()
-        self._lt_worker.moveToThread(self._lt_thread)
-        self._lt_worker.results_ready.connect(self._apply_lt_results)
-        # Route check requests through a queued signal so the HTTP call
-        # runs in the worker thread, not the main/UI thread.
-        self._lt_check_requested.connect(
-            self._lt_worker.check, Qt.ConnectionType.QueuedConnection
-        )
-        self._lt_thread.start()
+        self._lt_thread: Optional[QThread] = None
+        self._lt_worker: Optional[QObject] = None
 
         self._lt_timer = QTimer(self)
         self._lt_timer.setSingleShot(True)
@@ -1547,22 +1546,52 @@ class WikiTextEditView(QTextEdit):
         if app is not None:
             app.aboutToQuit.connect(self._shutdown_spell_check)
 
+    def _ensure_spell_check_worker(self) -> None:
+        """Create and start the LanguageTool worker on first use."""
+        thread = self._lt_thread
+        if thread is not None and thread.isRunning():
+            return
+
+        from src.services.language_tool_service import LanguageToolWorker
+
+        thread = QThread(self)
+        worker = LanguageToolWorker()
+        worker.moveToThread(thread)
+        worker.results_ready.connect(self._apply_lt_results)
+        self._lt_check_requested.connect(
+            worker.check,
+            Qt.ConnectionType.QueuedConnection,
+        )
+        thread.finished.connect(worker.deleteLater)
+        self._lt_thread = thread
+        self._lt_worker = worker
+        thread.start()
+
     def _shutdown_spell_check(self) -> None:
         """Stop the spell-check worker thread if still running.
 
         Safe to call multiple times. Invoked on QApplication.aboutToQuit and
         can be called explicitly by tests.
         """
-        thread = getattr(self, "_lt_thread", None)
+        self._lt_timer.stop()
+        thread = self._lt_thread
         if thread is None:
             return
         try:
             if thread.isRunning():
                 thread.quit()
-                thread.wait(1000)
+                thread.wait()
         except RuntimeError:
             # Underlying C++ object already deleted — nothing to do.
             pass
+        finally:
+            self._lt_thread = None
+            self._lt_worker = None
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """Stop background spell-check work before the editor is destroyed."""
+        self._shutdown_spell_check()
+        super().closeEvent(event)
 
     def _lt_settings(self) -> dict:
         """Read spell check settings from QSettings."""
@@ -1594,6 +1623,7 @@ class WikiTextEditView(QTextEdit):
             self._lt_matches = []
             self.setExtraSelections([])
             return
+        self._ensure_spell_check_worker()
         self._lt_check_requested.emit(
             text,
             settings["language"],
@@ -1648,7 +1678,10 @@ class WikiTextEditView(QTextEdit):
         )
 
         if not hit:
-            self.createStandardContextMenu().exec(event.globalPos())
+            self._show_context_menu(
+                self.createStandardContextMenu(),
+                event.globalPos(),
+            )
             return
 
         # Build a new menu: spell suggestions first, then standard items.
@@ -1674,7 +1707,16 @@ class WikiTextEditView(QTextEdit):
         for action in standard.actions():
             menu.addAction(action)
 
-        menu.exec(event.globalPos())
+        self._show_context_menu(menu, event.globalPos())
+
+    @staticmethod
+    def _show_context_menu(menu: QMenu, global_pos: Any) -> None:
+        """Display a context menu.
+
+        Kept as a small seam so widget tests can inspect menus without entering
+        Qt's blocking modal event loop.
+        """
+        menu.exec(global_pos)
 
     def _apply_lt_suggestion(self, replacement: str, match: Any) -> None:
         """Replace the matched span with a chosen suggestion.
@@ -1938,6 +1980,11 @@ class WikiTextEdit(QFrame):
         from src.core.theme_manager import ThemeManager
 
         ThemeManager().theme_changed.connect(self._on_theme_changed)
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """Stop the child editor's worker before closing the wrapper."""
+        self.editor._shutdown_spell_check()
+        super().closeEvent(event)
 
     def _setup_toolbar(self) -> None:
         """Configure the editor toolbar."""

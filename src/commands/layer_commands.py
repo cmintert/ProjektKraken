@@ -75,10 +75,9 @@ class SetLayerVisibilityCommand(BaseCommand):
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Execute the visibility change and persist.
 
-        When ``layer_tree_dict`` is provided, uses the snapshot (which
-        already reflects the user's change) as the source of truth and
-        writes it directly — avoiding stale-DB-read races where a
-        concurrent change on the worker thread would be undone.
+        The worker-owned database tree is always authoritative. A serialized
+        UI snapshot may be retained for command compatibility, but must not
+        overwrite newer persisted layer state.
 
         Args:
             db_service: The database service.
@@ -98,41 +97,27 @@ class SetLayerVisibilityCommand(BaseCommand):
 
             attrs = dict(map_obj.attributes) if map_obj.attributes else {}
 
-            if self.layer_tree_dict is not None:
-                # Record previous visibility from DB tree for undo
-                if map_obj.layers:
-                    db_node = _find_layer_node(map_obj.layers, self.node_id)
-                    if db_node:
-                        self._previous_visible = db_node.visible
+            if not map_obj.layers:
+                return CommandResult(
+                    success=False,
+                    message="Map layers not found.",
+                    command_name="SetLayerVisibilityCommand",
+                )
 
-                attrs["layers"] = self.layer_tree_dict
-                map_obj.attributes = attrs
-                # Clear layers so insert_map won't re-serialize the
-                # stale in-memory tree over our snapshot.
-                map_obj.layers = None
-                db_service.map_repo.insert_map(map_obj)
-            else:
-                if not map_obj.layers:
-                    return CommandResult(
-                        success=False,
-                        message="Map layers not found.",
-                        command_name="SetLayerVisibilityCommand",
-                    )
+            node = _find_layer_node(map_obj.layers, self.node_id)
+            if not node:
+                return CommandResult(
+                    success=False,
+                    message=f"Layer node {self.node_id} not found.",
+                    command_name="SetLayerVisibilityCommand",
+                )
 
-                node = _find_layer_node(map_obj.layers, self.node_id)
-                if not node:
-                    return CommandResult(
-                        success=False,
-                        message=f"Layer node {self.node_id} not found.",
-                        command_name="SetLayerVisibilityCommand",
-                    )
+            self._previous_visible = node.visible
+            node.visible = self.visible
 
-                self._previous_visible = node.visible
-                node.visible = self.visible
-
-                attrs["layers"] = map_obj.layers.to_dict()
-                map_obj.attributes = attrs
-                db_service.map_repo.insert_map(map_obj)
+            attrs["layers"] = map_obj.layers.to_dict()
+            map_obj.attributes = attrs
+            db_service.map_repo.insert_map(map_obj)
 
             self._is_executed = True
             return CommandResult(
@@ -914,9 +899,9 @@ class SetLayerOpacityCommand(BaseCommand):
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Execute the opacity change and persist.
 
-        When ``layer_tree_dict`` is provided, uses the snapshot (which
-        already reflects the user's change) as the source of truth and
-        writes it directly — avoiding stale-DB-read races.
+        The worker-owned database tree is always authoritative. A serialized
+        UI snapshot may be retained for command compatibility, but must not
+        overwrite newer persisted layer state.
 
         Args:
             db_service: The database service.
@@ -936,40 +921,29 @@ class SetLayerOpacityCommand(BaseCommand):
 
             attrs = dict(map_obj.attributes) if map_obj.attributes else {}
 
-            if self.layer_tree_dict is not None:
-                if self._previous_opacity is None and map_obj.layers:
-                    db_node = _find_layer_node(map_obj.layers, self.node_id)
-                    if db_node:
-                        self._previous_opacity = db_node.opacity
+            if not map_obj.layers:
+                return CommandResult(
+                    success=False,
+                    message="Map layers not found.",
+                    command_name="SetLayerOpacityCommand",
+                )
 
-                attrs["layers"] = self.layer_tree_dict
-                map_obj.attributes = attrs
-                map_obj.layers = None
-                db_service.map_repo.insert_map(map_obj)
-            else:
-                if not map_obj.layers:
-                    return CommandResult(
-                        success=False,
-                        message="Map layers not found.",
-                        command_name="SetLayerOpacityCommand",
-                    )
+            node = _find_layer_node(map_obj.layers, self.node_id)
+            if not node:
+                return CommandResult(
+                    success=False,
+                    message=f"Layer node {self.node_id} not found.",
+                    command_name="SetLayerOpacityCommand",
+                )
 
-                node = _find_layer_node(map_obj.layers, self.node_id)
-                if not node:
-                    return CommandResult(
-                        success=False,
-                        message=f"Layer node {self.node_id} not found.",
-                        command_name="SetLayerOpacityCommand",
-                    )
+            if self._previous_opacity is None:
+                self._previous_opacity = node.opacity
 
-                if self._previous_opacity is None:
-                    self._previous_opacity = node.opacity
+            node.opacity = max(0.0, min(1.0, self.opacity))
 
-                node.opacity = max(0.0, min(1.0, self.opacity))
-
-                attrs["layers"] = map_obj.layers.to_dict()
-                map_obj.attributes = attrs
-                db_service.map_repo.insert_map(map_obj)
+            attrs["layers"] = map_obj.layers.to_dict()
+            map_obj.attributes = attrs
+            db_service.map_repo.insert_map(map_obj)
 
             self._is_executed = True
             return CommandResult(

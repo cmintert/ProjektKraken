@@ -1,12 +1,4 @@
-"""Regression tests for layer command snapshots.
-
-The layer commands run on a serial DatabaseWorker thread, and the UI
-often mutates the in-memory tree faster than those commands can drain.
-To keep the user's latest state from being lost by a stale DB read, the
-commands now prefer ``layer_tree_dict`` (the UI snapshot) as the source
-of truth when one is provided, falling back to the DB tree only when
-the snapshot is absent.
-"""
+"""Regression tests for authoritative worker-owned layer state."""
 
 from unittest.mock import MagicMock
 
@@ -44,12 +36,10 @@ def test_opacity_command_fails_without_snapshot_if_db_stale(mock_db_service_stal
     assert "not found" in result.message
 
 
-def test_opacity_command_uses_snapshot_when_db_is_stale(mock_db_service_stale):
-    """With a snapshot, the command persists the UI tree even if the DB is stale.
-
-    The snapshot is the source of truth: it already contains the user's
-    latest edits, including the node missing from the stale DB tree.
-    """
+def test_opacity_command_rejects_snapshot_when_db_is_stale(
+    mock_db_service_stale,
+):
+    """A UI snapshot cannot introduce a node absent from worker-owned state."""
     root = MapLayerNode(name="Root", id="root-1")
     new_node = MapLayerNode(name="New Node", id="new-node-1", opacity=1.0)
     root.children.append(new_node)
@@ -62,14 +52,15 @@ def test_opacity_command_uses_snapshot_when_db_is_stale(mock_db_service_stale):
 
     result = cmd.execute(mock_db_service_stale)
 
-    assert result.success is True
-    saved_map = mock_db_service_stale.map_repo.insert_map.call_args[0][0]
-    # The persisted attributes should carry the snapshot, not the stale DB tree
-    assert saved_map.attributes["layers"] == snapshot
+    assert result.success is False
+    assert "not found" in result.message
+    mock_db_service_stale.map_repo.insert_map.assert_not_called()
 
 
-def test_visibility_command_uses_snapshot_when_db_is_stale(mock_db_service_stale):
-    """SetLayerVisibilityCommand also prefers the snapshot when provided."""
+def test_visibility_command_rejects_snapshot_when_db_is_stale(
+    mock_db_service_stale,
+):
+    """Visibility changes also require the node to exist in the DB tree."""
     root = MapLayerNode(name="Root", id="root-1")
     new_node = MapLayerNode(name="New Node", id="new-node-1", visible=True)
     root.children.append(new_node)
@@ -82,9 +73,9 @@ def test_visibility_command_uses_snapshot_when_db_is_stale(mock_db_service_stale
 
     result = cmd.execute(mock_db_service_stale)
 
-    assert result.success is True
-    saved_map = mock_db_service_stale.map_repo.insert_map.call_args[0][0]
-    assert saved_map.attributes["layers"] == snapshot
+    assert result.success is False
+    assert "not found" in result.message
+    mock_db_service_stale.map_repo.insert_map.assert_not_called()
 
 
 def test_opacity_command_succeeds_when_node_exists_in_db():

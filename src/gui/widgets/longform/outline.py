@@ -408,7 +408,12 @@ class LongformOutlineWidget(QTreeWidget):
         menu.addAction(delete_action)
 
         # Show menu at global position
-        menu.exec(self.mapToGlobal(pos))
+        self._display_context_menu(menu, self.mapToGlobal(pos))
+
+    @staticmethod
+    def _display_context_menu(menu: QMenu, global_pos: QPoint) -> None:
+        """Display a prepared outline context menu."""
+        menu.exec(global_pos)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Handle keyboard shortcuts for promote/demote operations."""

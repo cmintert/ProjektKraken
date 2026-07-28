@@ -57,7 +57,7 @@ class TestIndexDebounce:
 
         # Signal has NOT been emitted yet — it is pending.
         assert emitted == []
-        assert manager._pending_index == ("entity", "abc-123")
+        assert manager._pending_indices == {("entity", "abc-123")}
 
     @patch("src.app.worker_manager.QSettings")
     def test_emits_after_timer_fires(self, mock_qsettings, manager):
@@ -94,18 +94,21 @@ class TestIndexDebounce:
             lambda *args: emitted.append(args)
         )
 
-        # Simulate 5 rapid autosaves (only last one should survive).
+        # Simulate 5 rapid autosaves (each distinct object is retained).
         for i in range(5):
             manager._on_index_object_requested("entity", f"id-{i}")
 
-        # Only the last request should be pending.
-        assert manager._pending_index == ("entity", "id-4")
+        assert manager._pending_indices == {
+            ("entity", f"id-{i}") for i in range(5)
+        }
 
         # Flush once.
         manager._flush_pending_index()
 
-        assert len(emitted) == 1
-        assert emitted[0][1] == "id-4"
+        assert len(emitted) == 5
+        assert {(item[0], item[1]) for item in emitted} == {
+            ("entity", f"id-{i}") for i in range(5)
+        }
 
     @patch("src.app.worker_manager.QSettings")
     def test_disabled_auto_index_does_not_start_timer(
@@ -120,7 +123,7 @@ class TestIndexDebounce:
         manager._on_index_object_requested("entity", "no-go")
 
         assert not manager._index_timer.isActive()
-        assert manager._pending_index is None
+        assert manager._pending_indices == set()
 
     @patch("src.app.worker_manager.QSettings")
     def test_flush_with_no_pending_is_noop(self, mock_qsettings, manager):

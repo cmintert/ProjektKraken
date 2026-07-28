@@ -33,6 +33,7 @@ def test_command_execute_entity(manager, mock_db_service):
     )
 
     cmd = InjectTemplateCommand(entity, template, manager, overwrite=True)
+    mock_db_service.get_entity.return_value = entity
     result = cmd.execute(mock_db_service)
 
     assert result.success is True
@@ -54,6 +55,7 @@ def test_command_undo_entity(manager, mock_db_service):
     )
 
     cmd = InjectTemplateCommand(entity, template, manager, overwrite=True)
+    mock_db_service.get_entity.return_value = entity
     cmd.execute(mock_db_service)
 
     # Verify State before undo
@@ -78,6 +80,7 @@ def test_command_no_overwrite(manager, mock_db_service):
     template = FastInjectTemplate(name="Mage", attributes={"Class": "Mage"})
 
     cmd = InjectTemplateCommand(entity, template, manager, overwrite=False)
+    mock_db_service.get_entity.return_value = entity
     cmd.execute(mock_db_service)
 
     assert entity.attributes["Class"] == "Warrior"  # Unchanged
@@ -89,6 +92,7 @@ def test_command_undo_type(manager, mock_db_service):
     template = FastInjectTemplate(name="TypeSwap", type_value="NewType")
 
     cmd = InjectTemplateCommand(entity, template, manager)
+    mock_db_service.get_entity.return_value = entity
     cmd.execute(mock_db_service)
 
     assert entity.type == "NewType"

@@ -5,6 +5,8 @@ Tests that StyleHelper methods return theme-aware QSS strings and that
 styles change when ThemeManager switches themes.
 """
 
+from pathlib import Path
+
 import pytest
 
 from src.core.theme_manager import ThemeManager
@@ -147,13 +149,15 @@ def test_scrollbar_style_contains_theme_values(theme_manager):
 
 
 def test_tooltip_style_contains_theme_values(theme_manager):
-    """Test that tooltip style includes theme tool tip colors."""
+    """Test that global QSS includes theme-aware tooltip styling."""
     theme = theme_manager.get_theme()
-    style = StyleHelper.get_tooltip_style()
+    qss_path = Path(__file__).parents[2] / "src" / "resources" / "main.qss"
+    style = theme_manager.format_stylesheet(qss_path.read_text(encoding="utf-8"))
 
     assert theme["surface"] in style  # Background
     assert theme["text_main"] in style  # Text
-    assert theme["border"] in style  # Border
+    assert theme["primary"] in style  # Accent border
+    assert theme["font_size_body"] in style
     assert "QToolTip" in style
 
 

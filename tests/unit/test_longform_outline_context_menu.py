@@ -6,7 +6,6 @@ including Move up, Move down, Promote, Demote, and Delete operations.
 
 import pytest
 from PySide6.QtCore import QPoint
-from PySide6.QtWidgets import QApplication, QMenu
 
 from src.gui.widgets.longform.outline import LongformOutlineWidget
 
@@ -50,7 +49,9 @@ def sample_sequence():
     ]
 
 
-def test_context_menu_on_item(outline_widget, sample_sequence, qtbot):
+def test_context_menu_on_item(
+    outline_widget, sample_sequence, monkeypatch
+):
     """Test that context menu appears when right-clicking on an item."""
     outline_widget.load_sequence(sample_sequence)
 
@@ -62,21 +63,14 @@ def test_context_menu_on_item(outline_widget, sample_sequence, qtbot):
     rect = outline_widget.visualItemRect(item)
     pos = rect.center()
 
-    # Use QTimer to close any menu that appears, preventing exec() from blocking
-    from PySide6.QtCore import QTimer
-
-    menu_detected = False
-
-    def _close_menus():
-        nonlocal menu_detected
-        for w in QApplication.topLevelWidgets():
-            if isinstance(w, QMenu):
-                menu_detected = True
-                w.close()
-
-    QTimer.singleShot(0, _close_menus)
+    shown_menus = []
+    monkeypatch.setattr(
+        outline_widget,
+        "_display_context_menu",
+        lambda menu, _global_pos: shown_menus.append(menu),
+    )
     outline_widget._show_context_menu(pos)
-    assert menu_detected, "Context menu should be shown"
+    assert shown_menus, "Context menu should be shown"
 
 
 def test_context_menu_no_item(outline_widget, sample_sequence, qtbot):
@@ -264,7 +258,9 @@ def test_demote_first_child_no_signal(outline_widget, sample_sequence, qtbot):
     assert blocker.args[1] == "event2"
 
 
-def test_context_menu_actions_present(outline_widget, sample_sequence, qtbot):
+def test_context_menu_actions_present(
+    outline_widget, sample_sequence, monkeypatch
+):
     """Test that context menu contains all expected actions."""
     outline_widget.load_sequence(sample_sequence)
 
@@ -275,26 +271,18 @@ def test_context_menu_actions_present(outline_widget, sample_sequence, qtbot):
     rect = outline_widget.visualItemRect(item)
     pos = rect.center()
 
-    # Capture the menu via QTimer before exec() blocks
-    from PySide6.QtCore import QTimer
-
-    captured_menu = None
-
-    def _capture_and_close():
-        nonlocal captured_menu
-        for w in QApplication.topLevelWidgets():
-            if isinstance(w, QMenu):
-                captured_menu = w
-                w.close()
-                return
-
-    QTimer.singleShot(0, _capture_and_close)
+    captured_menus = []
+    monkeypatch.setattr(
+        outline_widget,
+        "_display_context_menu",
+        lambda menu, _global_pos: captured_menus.append(menu),
+    )
     outline_widget._show_context_menu(pos)
 
-    assert captured_menu is not None, "Menu should be created"
+    assert captured_menus, "Menu should be created"
 
     # Get all actions
-    actions = captured_menu.actions()
+    actions = captured_menus[0].actions()
     action_texts = [action.text() for action in actions if not action.isSeparator()]
 
     # Check that all expected actions are present

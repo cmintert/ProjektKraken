@@ -414,21 +414,28 @@ class AISearchManager(QObject):
         if dlg is not None:
             dlg.update_rebuild_progress(done, total, pct)
 
-    @Slot(int, int)
-    def on_index_rebuild_finished(self, succeeded: int, failed: int) -> None:
+    @Slot(int, int, int)
+    def on_index_rebuild_finished(
+        self,
+        indexed: int,
+        unchanged: int,
+        failed: int,
+    ) -> None:
         """Handle rebuild completion from the worker thread.
 
         Args:
-            succeeded: Number of successfully indexed items.
+            indexed: Number of newly indexed or updated items.
+            unchanged: Number of items whose existing index was current.
             failed: Number of failed items.
 
         """
         if failed:
             msg = (
-                f"Index rebuilt: {succeeded} indexed, {failed} failed"
+                f"Index rebuilt: {indexed} indexed, "
+                f"{unchanged} unchanged, {failed} failed"
             )
         else:
-            msg = f"Index rebuilt: {succeeded} objects indexed"
+            msg = f"Index rebuilt: {indexed} indexed, {unchanged} unchanged"
         self._set_status(msg)
 
         dlg = getattr(self.window, "ai_settings_dialog", None)

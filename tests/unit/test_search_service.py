@@ -578,10 +578,10 @@ def test_rebuild_index(search_service, search_db):
     search_db.commit()
 
     # Rebuild
-    counts = search_service.rebuild_index(object_types=["entity"])
+    result = search_service.rebuild_index(object_types=["entity"])
 
     # Should have indexed all entities
-    assert counts["entity"] == 3
+    assert result.per_type["entity"].indexed == 3
 
     # Verify embeddings exist
     cursor = search_db.execute("SELECT COUNT(*) FROM embeddings")
@@ -730,17 +730,19 @@ def test_create_provider_defaults_to_sentence_transformers():
 
 def test_get_llm_settings_normalises_underscore_variant():
     """Old 'sentence_transformers' (underscore) value is migrated to 'sentence-transformers'."""
-    from tests.conftest import MockQSettings
+    from PySide6.QtCore import QSettings
 
-    storage_key = "ChristianMintert/ProjektKraken/ai_embedding_provider"
-    MockQSettings._storage[storage_key] = "sentence_transformers"
-    try:
-        result = get_llm_settings_from_qsettings()
-        assert result["provider"] == "sentence-transformers"
-        # Migration should have written the corrected hyphen form back
-        assert MockQSettings._storage.get(storage_key) == "sentence-transformers"
-    finally:
-        MockQSettings._storage.pop(storage_key, None)
+    from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+
+    settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+    settings.setValue("ai_embedding_provider", "sentence_transformers")
+    settings.sync()
+
+    result = get_llm_settings_from_qsettings()
+
+    assert result["provider"] == "sentence-transformers"
+    settings.sync()
+    assert settings.value("ai_embedding_provider") == "sentence-transformers"
 
 
 def test_sentence_transformers_provider_import_error():

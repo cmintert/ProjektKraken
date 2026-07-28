@@ -343,7 +343,8 @@ class TestDataCoordinatorSemantic:
         mw.event_editor = MagicMock()
         mw.entity_editor = MagicMock()
         coord = DataCoordinator(mw)
-        return coord
+        yield coord
+        coord.stop_semantic_debounce_timer()
 
     def test_request_stores_prefix_and_starts_timer(self, coordinator):
         """request_semantic_completions stores prefix and (re)starts timer."""

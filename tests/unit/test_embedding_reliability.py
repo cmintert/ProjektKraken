@@ -24,6 +24,8 @@ from src.core.entities import Entity
 from src.core.events import Event
 from src.services.search_service import (
     EmbeddingProvider,
+    IndexRebuildCounts,
+    IndexRebuildResult,
     SearchService,
 )
 
@@ -213,9 +215,10 @@ class TestBatchEmbedding:
         _insert_entities(search_db, count)
 
         svc = SearchService(search_db, mock_provider)
-        counts = svc.rebuild_index(object_types=["entity"])
+        result = svc.rebuild_index(object_types=["entity"])
 
-        assert counts["entity"] == count
+        assert result.per_type["entity"].indexed == count
+        assert result.failed == 0
         cursor = search_db.execute("SELECT COUNT(*) FROM embeddings")
         assert cursor.fetchone()[0] == count
 
@@ -225,15 +228,18 @@ class TestBatchEmbedding:
 
         svc = SearchService(search_db, mock_provider)
         # First rebuild
-        svc.rebuild_index(object_types=["entity"])
+        first_result = svc.rebuild_index(object_types=["entity"])
+        assert first_result.indexed == 5
         len(mock_provider.embed_calls)
 
         # Reset call tracker
         mock_provider.embed_calls.clear()
 
         # Second rebuild — all unchanged, should make zero embed calls
-        svc.rebuild_index(object_types=["entity"])
+        second_result = svc.rebuild_index(object_types=["entity"])
         assert len(mock_provider.embed_calls) == 0
+        assert second_result.indexed == 0
+        assert second_result.unchanged == 5
 
     def test_rebuild_index_returns_succeeded_failed(self, search_db, mock_provider):
         """rebuild_index should return (succeeded, failed) counts per type."""
@@ -243,12 +249,11 @@ class TestBatchEmbedding:
         svc = SearchService(search_db, mock_provider)
         result = svc.rebuild_index(object_types=["entity", "event"])
 
-        # result should have counts per type
-        assert "entity" in result
-        assert "event" in result
-        # New: should include succeeded/failed breakdown
-        assert result["entity"] == 3
-        assert result["event"] == 2
+        assert result.per_type["entity"].indexed == 3
+        assert result.per_type["event"].indexed == 2
+        assert result.indexed == 5
+        assert result.unchanged == 0
+        assert result.failed == 0
 
     def test_rebuild_index_mixed_batch_events(self, search_db, mock_provider):
         """rebuild_index batches events as well as entities."""
@@ -265,6 +270,45 @@ class TestBatchEmbedding:
         assert len(mock_provider.embed_calls) <= (count // REBUILD_BATCH_SIZE) + 1
         cursor = search_db.execute("SELECT COUNT(*) FROM embeddings")
         assert cursor.fetchone()[0] == count
+
+    def test_rebuild_index_reports_monotonic_progress(
+        self, search_db, mock_provider
+    ):
+        """Progress starts at zero and reaches the total without regressing."""
+        from src.services.search_service import REBUILD_BATCH_SIZE
+
+        count = REBUILD_BATCH_SIZE + 3
+        _insert_entities(search_db, count)
+        progress = []
+
+        svc = SearchService(search_db, mock_provider)
+        result = svc.rebuild_index(
+            object_types=["entity"],
+            progress_callback=lambda done, total: progress.append((done, total)),
+        )
+
+        assert progress[0] == (0, count)
+        assert progress[-1] == (count, count)
+        assert [done for done, _total in progress] == sorted(
+            done for done, _total in progress
+        )
+        assert all(total == count for _done, total in progress)
+        assert result.processed == count
+
+    def test_empty_rebuild_reports_completion(self, search_db, mock_provider):
+        """An empty index still reports a well-defined completed state."""
+        progress = []
+        svc = SearchService(search_db, mock_provider)
+
+        result = svc.rebuild_index(
+            object_types=["entity"],
+            progress_callback=lambda done, total: progress.append((done, total)),
+        )
+
+        assert progress[0] == (0, 0)
+        assert progress[-1] == (0, 0)
+        assert result.processed == 0
+        assert result.failed == 0
 
     def test_rebuild_index_partial_failure_counts(self, search_db):
         """If some items fail embedding, succeeded/failed counts reflect that."""
@@ -292,8 +336,9 @@ class TestBatchEmbedding:
         svc = SearchService(search_db, provider)
         result = svc.rebuild_index(object_types=["entity"])
 
-        # Should report failed count — at minimum report total attempted
-        assert "entity" in result
+        assert result.per_type["entity"].indexed == 0
+        assert result.per_type["entity"].failed == 3
+        assert result.failed == 3
 
 
 # =============================================================================
@@ -336,7 +381,12 @@ class TestWorkerRebuildSignals:
         # Mock search service
         with patch("src.services.search_service.create_search_service") as mock_create:
             mock_svc = MagicMock()
-            mock_svc.rebuild_index.return_value = {"entity": 5, "event": 3}
+            mock_svc.rebuild_index.return_value = IndexRebuildResult(
+                per_type={
+                    "entity": IndexRebuildCounts(indexed=5),
+                    "event": IndexRebuildCounts(indexed=2, unchanged=1),
+                }
+            )
             mock_create.return_value = mock_svc
 
             finished_spy = MagicMock()
@@ -345,9 +395,7 @@ class TestWorkerRebuildSignals:
             worker.rebuild_search_index("all", [])
 
             finished_spy.assert_called_once()
-            args = finished_spy.call_args[0]
-            assert args[0] == 8  # succeeded
-            assert args[1] == 0  # failed
+            finished_spy.assert_called_once_with(7, 1, 0)
 
     @patch("src.services.worker.DatabaseService")
     def test_rebuild_search_index_emits_progress(self, mock_db_cls):
@@ -361,7 +409,21 @@ class TestWorkerRebuildSignals:
 
         with patch("src.services.search_service.create_search_service") as mock_create:
             mock_svc = MagicMock()
-            mock_svc.rebuild_index.return_value = {"entity": 10, "event": 5}
+            result = IndexRebuildResult(
+                per_type={
+                    "entity": IndexRebuildCounts(indexed=10),
+                    "event": IndexRebuildCounts(indexed=5),
+                }
+            )
+
+            def rebuild_with_progress(**kwargs):
+                callback = kwargs["progress_callback"]
+                callback(0, 15)
+                callback(10, 15)
+                callback(15, 15)
+                return result
+
+            mock_svc.rebuild_index.side_effect = rebuild_with_progress
             mock_create.return_value = mock_svc
 
             progress_spy = MagicMock()
@@ -369,8 +431,11 @@ class TestWorkerRebuildSignals:
 
             worker.rebuild_search_index("all", [])
 
-            # Should have emitted at least one progress signal
-            assert progress_spy.call_count >= 1
+            assert [call.args for call in progress_spy.call_args_list] == [
+                (0, 15, 0),
+                (10, 15, 66),
+                (15, 15, 100),
+            ]
 
 
 # =============================================================================
@@ -537,14 +602,15 @@ class TestAISearchManagerAsyncRebuild:
 
     def test_on_index_rebuild_finished_shows_result(self, manager, mock_window):
         """on_index_rebuild_finished should show success in status bar."""
-        manager.on_index_rebuild_finished(100, 0)
+        manager.on_index_rebuild_finished(90, 10, 0)
         mock_window.status_bar.showMessage.assert_called()
         msg = mock_window.status_bar.showMessage.call_args[0][0]
-        assert "100" in msg
+        assert "90" in msg
+        assert "10" in msg
 
     def test_on_index_rebuild_finished_shows_failures(self, manager, mock_window):
         """on_index_rebuild_finished should mention failures when present."""
-        manager.on_index_rebuild_finished(95, 5)
+        manager.on_index_rebuild_finished(90, 5, 5)
         mock_window.status_bar.showMessage.assert_called()
         msg = mock_window.status_bar.showMessage.call_args[0][0]
         assert "5" in msg  # failure count should be visible

@@ -8,6 +8,7 @@ returns ``True`` when it consumes the event.
 """
 
 import logging
+import weakref
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Optional
 
@@ -245,7 +246,14 @@ class RasterEditTool:
         # Cached theme colors — refreshed once at construction and on theme change
         self._cursor_hex: str = "#E8E8E8"
         self._refresh_theme_colors()
-        ThemeManager().theme_changed.connect(lambda _: self._refresh_theme_colors())
+        tool_ref = weakref.ref(self)
+
+        def refresh_theme_colors(_: dict) -> None:
+            tool = tool_ref()
+            if tool is not None:
+                tool._refresh_theme_colors()
+
+        ThemeManager().theme_changed.connect(refresh_theme_colors)
 
     def _refresh_theme_colors(self) -> None:
         """Update cached cursor color from the current theme.

@@ -58,6 +58,8 @@ class TestMarkdownImportRefresh:
         result.created_entities = ["e1"]
         result.created_events = []
         result.created_relations = []
+        result.ambiguous_items = []
+        result.unparsed_date_count = 0
         result.warnings = []
 
         coordinator._import_progress_dialog = MagicMock()

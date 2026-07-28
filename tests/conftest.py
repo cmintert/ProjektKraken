@@ -77,6 +77,35 @@ def qapp():
     yield app
 
 
+@pytest.fixture(autouse=True)
+def isolate_qsettings(qapp):
+    """Isolate settings and complete deferred Qt teardown for every test."""
+    if QApplication is None:
+        yield
+        return
+
+    settings_dir = tempfile.mkdtemp(
+        prefix="case-",
+        dir=_test_settings_dir,
+    )
+    _NativeQSettings.setPath(
+        _NativeQSettings.Format.IniFormat,
+        _NativeQSettings.Scope.UserScope,
+        settings_dir,
+    )
+    TestQSettings.setDefaultFormat(TestQSettings.Format.IniFormat)
+    yield
+
+    # pytest-qt schedules widgets for deferred deletion. Flush those events
+    # before the next test so singleton signals (notably ThemeManager) cannot
+    # accumulate connections to closed widgets across the full serial suite.
+    QtCore.QCoreApplication.sendPostedEvents(
+        None,
+        QtCore.QEvent.Type.DeferredDelete,
+    )
+    qapp.processEvents()
+
+
 @pytest.fixture(autouse=True, scope="session")
 def init_theme_manager():
     """
@@ -157,73 +186,6 @@ def mock_invoke_method():
             yield mock
     except (ImportError, AttributeError):
         yield None
-
-
-class MockQSettings:
-    """
-    In-memory mock for QSettings to prevent tests from overwriting real config.
-    """
-
-    _storage = {}  # Class-level storage to persist across instances if needed
-
-    def __init__(self, *args, **kwargs):
-        self.organization = args[0] if len(args) > 0 else "MockOrg"
-        self.application = args[1] if len(args) > 1 else "MockApp"
-
-    def setValue(self, key, value):
-        full_key = f"{self.organization}/{self.application}/{key}"
-        self._storage[full_key] = value
-
-    def value(self, key, default=None, type=None):
-        full_key = f"{self.organization}/{self.application}/{key}"
-        val = self._storage.get(full_key, default)
-        if type is not None and val is not None:
-            try:
-                if type is bool and isinstance(val, str):
-                    return val.lower() == "true"
-                return type(val)
-            except (ValueError, TypeError):
-                return default
-        return val
-
-    def remove(self, key):
-        full_key = f"{self.organization}/{self.application}/{key}"
-        if full_key in self._storage:
-            del self._storage[full_key]
-
-    def contains(self, key):
-        full_key = f"{self.organization}/{self.application}/{key}"
-        return full_key in self._storage
-
-    def sync(self):
-        pass
-
-    def clear(self):
-        """Clear all settings for this organization/application."""
-        prefix = f"{self.organization}/{self.application}/"
-        keys_to_remove = [k for k in self._storage.keys() if k.startswith(prefix)]
-        for key in keys_to_remove:
-            del self._storage[key]
-
-
-@pytest.fixture(autouse=True, scope="session")
-def mock_qsettings_global():
-    """
-    Globally patches QSettings for the entire test session.
-    Protects user's real settings from being overwritten by tests.
-    """
-    from unittest.mock import patch
-
-    # Patch PySide6.QtCore.QSettings
-    # We use a string reference so imports inside functions pick it up.
-    # Note: If modules import QSettings at top-level, they might need reload,
-    # but in this codebase most import inside functions or use standard imports.
-    patcher = patch("PySide6.QtCore.QSettings", MockQSettings)
-    mock_class = patcher.start()
-
-    yield mock_class
-
-    patcher.stop()
 
 
 @pytest.fixture(autouse=True)

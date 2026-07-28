@@ -54,7 +54,7 @@ class DataCoordinator(BaseCoordinator):
 
         # Semantic completion debounce
         self._pending_semantic_prefix: str = ""
-        self._semantic_debounce = QTimer()
+        self._semantic_debounce = QTimer(self)
         self._semantic_debounce.setSingleShot(True)
         self._semantic_debounce.setInterval(SEMANTIC_COMPLETION_DEBOUNCE_MS)
         self._semantic_debounce.timeout.connect(self._fire_semantic_query)
@@ -549,7 +549,7 @@ class DataCoordinator(BaseCoordinator):
     def _schedule_graph_refresh(self) -> None:
         """Schedules a debounced graph refresh to avoid double-loading."""
         if self._graph_reload_timer is None:
-            self._graph_reload_timer = QTimer()
+            self._graph_reload_timer = QTimer(self)
             self._graph_reload_timer.setSingleShot(True)
             self._graph_reload_timer.timeout.connect(self.load_graph_data)
         self._graph_reload_timer.start(100)  # 100ms debounce

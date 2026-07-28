@@ -15,7 +15,7 @@ import pytest
 from PySide6.QtCore import QSettings
 from PySide6.QtGui import QContextMenuEvent
 
-from src.gui.widgets.wiki_text_edit import WikiTextEdit
+from src.gui.widgets.wiki_text_edit import WikiTextEdit, WikiTextEditView
 from src.services.language_tool_service import LTMatch
 
 
@@ -50,6 +50,14 @@ def _enable_spellcheck(language: str = "en-US") -> None:
     s.endGroup()
 
 
+def _start_worker_without_network(view: WikiTextEditView) -> None:
+    """Start the real QThread but detach the public-API worker slot."""
+    view._ensure_spell_check_worker()
+    worker = view._lt_worker
+    assert worker is not None
+    view._lt_check_requested.disconnect(worker.check)
+
+
 def _make_match(offset: int, length: int, **kw) -> LTMatch:
     return LTMatch(
         offset=offset,
@@ -77,6 +85,7 @@ class TestTriggerGating:
         self, editor: WikiTextEdit
     ) -> None:
         _enable_spellcheck()
+        _start_worker_without_network(editor.editor)
         emissions: List[tuple] = []
         editor.editor._lt_check_requested.connect(lambda *a: emissions.append(a))
 
@@ -121,6 +130,7 @@ class TestTriggerGating:
         """
         _enable_spellcheck()
         view = editor.editor
+        _start_worker_without_network(view)
         view.set_wiki_text("Hello [[Gandalf|the wizard]] travels far.")
 
         emissions: List[tuple] = []
@@ -225,22 +235,21 @@ class TestContextMenu:
         view = editor.editor
         shown = {}
 
-        def fake_exec(self_menu, _global_pos):
-            shown["menu"] = self_menu
-            shown["actions"] = [a.text() for a in self_menu.actions()]
-            return None
+        def fake_show(menu, _global_pos):
+            shown["menu"] = menu
+            shown["actions"] = [a.text() for a in menu.actions()]
 
-        from PySide6.QtWidgets import QMenu
-
-        monkeypatch.setattr(QMenu, "exec", fake_exec)
-
-        # Convert an offset to a viewport point using the cursor rect.
         cursor = view.textCursor()
         cursor.setPosition(offset)
-        rect = view.cursorRect(cursor)
-        pos = rect.center()
+        monkeypatch.setattr(view, "cursorForPosition", lambda _pos: cursor)
 
-        event = QContextMenuEvent(QContextMenuEvent.Reason.Mouse, pos, view.mapToGlobal(pos))
+        monkeypatch.setattr(view, "_show_context_menu", fake_show)
+        pos = view.viewport().rect().center()
+        event = QContextMenuEvent(
+            QContextMenuEvent.Reason.Mouse,
+            pos,
+            view.mapToGlobal(pos),
+        )
         view.contextMenuEvent(event)
         return shown
 
@@ -301,17 +310,54 @@ class TestContextMenu:
 class TestLifecycle:
     """Tests for thread startup and clean shutdown."""
 
-    def test_worker_thread_running_after_setup(self, editor: WikiTextEdit) -> None:
-        assert editor.editor._lt_thread.isRunning()
+    def test_worker_thread_is_lazy(self, editor: WikiTextEdit) -> None:
+        assert editor.editor._lt_thread is None
 
     def test_shutdown_stops_worker_thread(self, editor: WikiTextEdit) -> None:
         view = editor.editor
-        assert view._lt_thread.isRunning()
+        _enable_spellcheck()
+        _start_worker_without_network(view)
+        thread = view._lt_thread
+        assert thread is not None
+        assert thread.isRunning()
+
         view._shutdown_spell_check()
-        assert not view._lt_thread.isRunning()
+
+        assert view._lt_thread is None
+        assert not thread.isRunning()
 
     def test_shutdown_is_idempotent(self, editor: WikiTextEdit) -> None:
         view = editor.editor
         view._shutdown_spell_check()
         # Second call must not raise.
         view._shutdown_spell_check()
+
+    def test_wrapper_close_stops_worker(
+        self,
+        editor: WikiTextEdit,
+        qapp,
+    ) -> None:
+        _enable_spellcheck()
+        _start_worker_without_network(editor.editor)
+        thread = editor.editor._lt_thread
+        assert thread is not None
+
+        editor.close()
+        qapp.processEvents()
+
+        assert editor.editor._lt_thread is None
+        assert not thread.isRunning()
+
+    def test_direct_view_close_stops_worker(self, qtbot, qapp) -> None:
+        _enable_spellcheck()
+        view = WikiTextEditView()
+        qtbot.addWidget(view)
+        _start_worker_without_network(view)
+        thread = view._lt_thread
+        assert thread is not None
+
+        view.close()
+        qapp.processEvents()
+
+        assert view._lt_thread is None
+        assert not thread.isRunning()

@@ -7,7 +7,9 @@ extracted from MainWindow into a focused coordinator.
 from unittest.mock import MagicMock, patch
 
 import pytest
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, QSettings, Signal
+
+from src.app.constants import SETTINGS_AUTO_RELATION_KEY
 
 
 class FakeMainWindow(QObject):
@@ -197,6 +199,7 @@ class TestUpdateOperations:
         self, coordinator, fake_window
     ):
         """Updating event with description should emit CompositeCommand."""
+        QSettings().setValue(SETTINGS_AUTO_RELATION_KEY, True)
         signals = []
         fake_window.command_requested.connect(lambda cmd: signals.append(cmd))
 
@@ -230,6 +233,7 @@ class TestUpdateOperations:
         self, coordinator, fake_window
     ):
         """Updating entity with description should emit CompositeCommand."""
+        QSettings().setValue(SETTINGS_AUTO_RELATION_KEY, True)
         signals = []
         fake_window.command_requested.connect(lambda cmd: signals.append(cmd))
 

@@ -90,7 +90,7 @@ class DatabaseWorker(QObject):
 
     # Index rebuild signals
     index_rebuild_progress = Signal(int, int, int)  # (done, total, pct)
-    index_rebuild_finished = Signal(int, int)  # (succeeded, failed)
+    index_rebuild_finished = Signal(int, int, int)  # (indexed, unchanged, failed)
 
     # Analysis signals
     validation_complete = Signal(object)  # Emits WorldValidationReport
@@ -1107,12 +1107,12 @@ class DatabaseWorker(QObject):
             except ImportError as e:
                 msg = str(e).split("\n")[0]
                 self.error_occurred.emit(msg)
-                self.index_rebuild_finished.emit(0, 0)
+                self.index_rebuild_finished.emit(0, 0, 1)
                 return
 
             if search_service is None:
                 self.error_occurred.emit("Search service unavailable for rebuild.")
-                self.index_rebuild_finished.emit(0, 0)
+                self.index_rebuild_finished.emit(0, 0, 1)
                 return
 
             types = (
@@ -1120,21 +1120,35 @@ class DatabaseWorker(QObject):
             )
 
             self.operation_started.emit("Rebuilding search index...")
-            counts = search_service.rebuild_index(
+
+            def report_progress(done: int, total: int) -> None:
+                percentage = 100 if total == 0 else int(done * 100 / total)
+                self.index_rebuild_progress.emit(done, total, percentage)
+
+            result = search_service.rebuild_index(
                 object_types=types,
                 excluded_attributes=excluded_attributes or [],
+                progress_callback=report_progress,
             )
 
-            total = sum(counts.values())
-            self.index_rebuild_finished.emit(total, 0)
-            self.operation_finished.emit(f"Index rebuilt: {total} objects.")
+            self.index_rebuild_finished.emit(
+                result.indexed,
+                result.unchanged,
+                result.failed,
+            )
+            self.operation_finished.emit(
+                "Index rebuilt: "
+                f"{result.indexed} indexed, "
+                f"{result.unchanged} unchanged, "
+                f"{result.failed} failed."
+            )
 
         except Exception:
             logger.error(
                 f"Index rebuild failed: {traceback.format_exc()}"
             )
             self.error_occurred.emit("Index rebuild failed.")
-            self.index_rebuild_finished.emit(0, 0)
+            self.index_rebuild_finished.emit(0, 0, 1)
 
     @Slot(dict)
     def apply_filter(self, filter_config: dict) -> None:

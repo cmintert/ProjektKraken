@@ -16,9 +16,11 @@ import sys
 import time
 import uuid
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     Iterator,
     List,
@@ -40,6 +42,47 @@ from src.app.constants import _env_bool
 logger = logging.getLogger(__name__)
 
 REBUILD_BATCH_SIZE = 32
+
+
+@dataclass(frozen=True)
+class IndexRebuildCounts:
+    """Outcome counts for one rebuilt object type."""
+
+    indexed: int = 0
+    unchanged: int = 0
+    failed: int = 0
+
+    @property
+    def processed(self) -> int:
+        """Return the number of objects considered by the rebuild."""
+        return self.indexed + self.unchanged + self.failed
+
+
+@dataclass(frozen=True)
+class IndexRebuildResult:
+    """Aggregate outcome of a semantic-index rebuild."""
+
+    per_type: Dict[str, IndexRebuildCounts]
+
+    @property
+    def indexed(self) -> int:
+        """Return the number of newly indexed or updated objects."""
+        return sum(counts.indexed for counts in self.per_type.values())
+
+    @property
+    def unchanged(self) -> int:
+        """Return the number of objects whose existing index was current."""
+        return sum(counts.unchanged for counts in self.per_type.values())
+
+    @property
+    def failed(self) -> int:
+        """Return the number of objects that could not be indexed."""
+        return sum(counts.failed for counts in self.per_type.values())
+
+    @property
+    def processed(self) -> int:
+        """Return the total number of objects considered."""
+        return sum(counts.processed for counts in self.per_type.values())
 
 
 # =============================================================================
@@ -203,7 +246,7 @@ def serialize_vector(v: np.ndarray) -> bytes:
         bytes: Serialized float32 vector.
 
     """
-    v32 = v.astype(np.float32)
+    v32: np.ndarray = v.astype(np.float32)
     return v32.tobytes()
 
 
@@ -250,7 +293,7 @@ def top_k_streaming(
         List of (score, item) tuples sorted by descending score.
 
     """
-    heap = []
+    heap: List[Tuple[float, int, Any]] = []
     counter = 0  # Add counter to ensure unique comparison for ties
     for score, item in scores_iter:
         # Use (score, counter, item) to avoid comparing items when scores are equal
@@ -333,7 +376,7 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
             timeout: Request timeout in seconds.
 
         """
-        import requests
+        import requests  # type: ignore[import-untyped]
 
         self.requests = requests
         self.url = url or os.getenv(
@@ -348,7 +391,7 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
 
         self.api_key = api_key or os.getenv("LMSTUDIO_API_KEY")
         self.timeout = timeout
-        self._dimension = None
+        self._dimension: Optional[int] = None
 
         # Configurable request/response shape
         self.input_key = os.getenv("LMSTUDIO_INPUT_KEY", "input")
@@ -403,7 +446,7 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
 
             # Cache dimension
             if self._dimension is None:
-                self._dimension = emb_array.shape[1]
+                self._dimension = int(emb_array.shape[1])
 
             logger.debug(
                 f"Generated {len(embeddings)} embeddings "
@@ -429,11 +472,13 @@ class LMStudioEmbeddingProvider(EmbeddingProvider):
             int: Embedding dimension.
 
         """
-        if self._dimension is None:
+        dimension = self._dimension
+        if dimension is None:
             # Make a test call to determine dimension
             test_emb = self.embed(["test"])
-            self._dimension = test_emb.shape[1]
-        return self._dimension
+            dimension = int(test_emb.shape[1])
+            self._dimension = dimension
+        return dimension
 
     def get_model_name(self) -> str:
         """Get the model name.
@@ -989,12 +1034,113 @@ class SearchService:
         self.conn.commit()
         return (succeeded, failed)
 
+    def _load_rebuild_ids(
+        self,
+        object_types: List[str],
+    ) -> Dict[str, List[str]]:
+        """Load object IDs for each requested rebuild type."""
+        ids_by_type: Dict[str, List[str]] = {}
+        for obj_type in object_types:
+            if obj_type not in {"entity", "event"}:
+                raise ValueError(f"Unknown object type: {obj_type}")
+            table = "entities" if obj_type == "entity" else "events"
+            cursor = self.conn.execute(f"SELECT id FROM {table}")  # noqa: S608
+            ids_by_type[obj_type] = [row[0] for row in cursor.fetchall()]
+        return ids_by_type
+
+    @staticmethod
+    def _report_rebuild_progress(
+        callback: Optional[Callable[[int, int], None]],
+        processed: int,
+        total: int,
+    ) -> None:
+        """Invoke a rebuild progress callback when one was supplied."""
+        if callback is not None:
+            callback(processed, total)
+
+    def _rebuild_object_type(
+        self,
+        obj_type: str,
+        ids: List[str],
+        excluded_attributes: Optional[List[str]],
+        processed: int,
+        total: int,
+        progress_callback: Optional[Callable[[int, int], None]],
+    ) -> Tuple[IndexRebuildCounts, int]:
+        """Rebuild one object type and return its counts and processed total."""
+        indexed = 0
+        unchanged = 0
+        failed = 0
+        batch: List[Tuple[str, str, str, Dict[str, str]]] = []
+
+        for object_id in ids:
+            try:
+                prepared = self._prepare_item_for_batch(
+                    obj_type,
+                    object_id,
+                    excluded_attributes,
+                )
+                if prepared is not None:
+                    batch.append(prepared)
+                else:
+                    unchanged += 1
+                    processed += 1
+                    self._report_rebuild_progress(
+                        progress_callback,
+                        processed,
+                        total,
+                    )
+            except Exception as e:
+                logger.error(f"Failed to prepare {obj_type} {object_id}: {e}")
+                failed += 1
+                processed += 1
+                self._report_rebuild_progress(
+                    progress_callback,
+                    processed,
+                    total,
+                )
+
+            if len(batch) >= REBUILD_BATCH_SIZE:
+                batch_size = len(batch)
+                succeeded, batch_failed = self._batch_upsert(obj_type, batch)
+                indexed += succeeded
+                failed += batch_failed
+                processed += batch_size
+                self._report_rebuild_progress(
+                    progress_callback,
+                    processed,
+                    total,
+                )
+                batch = []
+
+        if batch:
+            batch_size = len(batch)
+            succeeded, batch_failed = self._batch_upsert(obj_type, batch)
+            indexed += succeeded
+            failed += batch_failed
+            processed += batch_size
+            self._report_rebuild_progress(
+                progress_callback,
+                processed,
+                total,
+            )
+
+        return (
+            IndexRebuildCounts(
+                indexed=indexed,
+                unchanged=unchanged,
+                failed=failed,
+            ),
+            processed,
+        )
+
     def rebuild_index(
         self,
         object_types: Optional[List[str]] = None,
         model: Optional[str] = None,
         excluded_attributes: Optional[List[str]] = None,
-    ) -> Dict[str, int]:
+        progress_callback: Optional[Callable[[int, int], None]] = None,
+    ) -> IndexRebuildResult:
         """Rebuild embeddings index for specified object types.
 
         Uses batched embedding calls (REBUILD_BATCH_SIZE at a time) to avoid
@@ -1006,52 +1152,34 @@ class SearchService:
                          If None, indexes all types.
             model: Optional model filter (not currently used, for future compatibility).
             excluded_attributes: Optional list of attribute keys to exclude.
+            progress_callback: Optional callback receiving ``(processed, total)``.
 
         Returns:
-            Dict with counts of indexed objects per type.
+            Per-type indexed, unchanged, and failed counts.
 
         """
         if object_types is None:
             object_types = ["entity", "event"]
 
-        counts: Dict[str, int] = {}
+        ids_by_type = self._load_rebuild_ids(object_types)
+        total = sum(len(ids) for ids in ids_by_type.values())
+        processed = 0
+        self._report_rebuild_progress(progress_callback, processed, total)
+        counts: Dict[str, IndexRebuildCounts] = {}
 
         for obj_type in object_types:
-            table = "entities" if obj_type == "entity" else "events"
-            cursor = self.conn.execute(f"SELECT id FROM {table}")  # noqa: S608
-            ids = [row[0] for row in cursor.fetchall()]
-
-            total_succeeded = 0
-            total_failed = 0
-            batch: List[Tuple[str, str, str, Dict[str, str]]] = []
-
-            for object_id in ids:
-                try:
-                    prepared = self._prepare_item_for_batch(
-                        obj_type, object_id, excluded_attributes
-                    )
-                    if prepared is not None:
-                        batch.append(prepared)
-                except Exception as e:
-                    logger.error(f"Failed to prepare {obj_type} {object_id}: {e}")
-                    total_failed += 1
-
-                if len(batch) >= REBUILD_BATCH_SIZE:
-                    s, f = self._batch_upsert(obj_type, batch)
-                    total_succeeded += s
-                    total_failed += f
-                    batch = []
-
-            # Flush remaining items
-            if batch:
-                s, f = self._batch_upsert(obj_type, batch)
-                total_succeeded += s
-                total_failed += f
-
-            counts[obj_type] = len(ids)
+            counts[obj_type], processed = self._rebuild_object_type(
+                obj_type,
+                ids_by_type[obj_type],
+                excluded_attributes,
+                processed,
+                total,
+                progress_callback,
+            )
 
         logger.info(f"Rebuild complete. Indexed: {counts}")
-        return counts
+        self._report_rebuild_progress(progress_callback, processed, total)
+        return IndexRebuildResult(per_type=counts)
 
     def query(
         self,

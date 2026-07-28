@@ -10,6 +10,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from src.services.search_service import IndexRebuildCounts, IndexRebuildResult
 from src.services.worker import DatabaseWorker
 
 # ---------------------------------------------------------------------------
@@ -103,19 +104,26 @@ class TestRebuildSearchIndexCaching:
     """rebuild_search_index() must also reuse _get_search_service()."""
 
     def test_rebuild_uses_cached_service(self, worker, mock_search_service):
-        mock_search_service.rebuild_index.return_value = {"entity": 3, "event": 5}
+        mock_search_service.rebuild_index.return_value = IndexRebuildResult(
+            per_type={
+                "entity": IndexRebuildCounts(indexed=3),
+                "event": IndexRebuildCounts(indexed=5),
+            }
+        )
         worker._get_search_service = MagicMock(return_value=mock_search_service)
 
         finished = []
         worker.index_rebuild_finished.connect(
-            lambda total, failed: finished.append((total, failed))
+            lambda indexed, unchanged, failed: finished.append(
+                (indexed, unchanged, failed)
+            )
         )
 
         worker.rebuild_search_index("all")
 
         worker._get_search_service.assert_called_once()
         mock_search_service.rebuild_index.assert_called_once()
-        assert finished == [(8, 0)]
+        assert finished == [(8, 0, 0)]
 
     def test_rebuild_handles_import_error_from_get_service(self, worker):
         """ImportError in _get_search_service is forwarded as an error signal."""
@@ -128,11 +136,13 @@ class TestRebuildSearchIndexCaching:
         finished = []
         worker.error_occurred.connect(errors.append)
         worker.index_rebuild_finished.connect(
-            lambda t, f: finished.append((t, f))
+            lambda indexed, unchanged, failed: finished.append(
+                (indexed, unchanged, failed)
+            )
         )
 
         worker.rebuild_search_index("all")
 
         assert len(errors) == 1
         assert "sentence-transformers" in errors[0]
-        assert finished == [(0, 0)]
+        assert finished == [(0, 0, 1)]

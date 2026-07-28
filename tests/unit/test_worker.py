@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.commands.base_command import CommandResult
+from src.commands.entity_commands import CreateEntityCommand
 from src.services.worker import DatabaseWorker
 
 
@@ -103,42 +104,49 @@ def test_load_entities(worker, mock_db_service):
 def test_run_command_success(worker, mock_db_service):
     worker.db_service = mock_db_service
 
-    command = MagicMock()
-    command.__class__.__name__ = "TestCommand"
-    command.execute.return_value = True  # Returns bool success
+    command = CreateEntityCommand({"name": "Test", "type": "Concept"})
+    request = {
+        "type": command.__class__.__name__,
+        "data": command.to_dict(),
+        "base": command.base_state_dict(),
+    }
 
     finished_spy = MagicMock()
     worker.command_finished.connect(finished_spy)
 
-    worker.run_command(command)
+    worker.run_command(request)
 
-    command.execute.assert_called_once_with(mock_db_service)
+    mock_db_service.insert_entity.assert_called_once()
     finished_spy.assert_called_once()
     result = finished_spy.call_args[0][0]
     assert isinstance(result, CommandResult)
     assert result.success is True
-    assert result.command_name == "TestCommand"
+    assert result.command_name == "CreateEntityCommand"
 
 
 def test_run_command_failure(worker, mock_db_service):
     worker.db_service = mock_db_service
 
-    command = MagicMock()
-    command.__class__.__name__ = "FailCommand"
-    command.execute.side_effect = Exception("Boom")
+    command = CreateEntityCommand({"name": "Test", "type": "Concept"})
+    request = {
+        "type": command.__class__.__name__,
+        "data": command.to_dict(),
+        "base": command.base_state_dict(),
+    }
+    mock_db_service.insert_entity.side_effect = Exception("Boom")
 
     finished_spy = MagicMock()
     error_spy = MagicMock()
     worker.command_finished.connect(finished_spy)
     worker.error_occurred.connect(error_spy)
 
-    worker.run_command(command)
+    worker.run_command(request)
 
-    error_spy.assert_called_once()
+    error_spy.assert_not_called()
     finished_spy.assert_called_once()
     result = finished_spy.call_args[0][0]
     assert result.success is False
-    assert "unexpected error" in result.message
+    assert "Boom" in result.message
 
 
 def test_load_current_time(worker, mock_db_service):

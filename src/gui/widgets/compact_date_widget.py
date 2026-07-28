@@ -507,12 +507,10 @@ class CompactDateWidget(QWidget):
         """Returns the minimum size hint to prevent vertical collapse.
 
         Returns:
-            QSize: Dynamic minimum size based on whether time row is shown.
+            QSize: Minimum size reserved for the complete date control.
 
         """
-        if self._time_container.isVisible():
-            return QSize(250, 64)
-        return QSize(250, 30)
+        return QSize(250, 72)
 
     def sizeHint(self) -> QSize:
         """Returns the preferred size hint.

@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 from PySide6.QtCore import QPoint, Qt
-from PySide6.QtWidgets import QMenu, QMessageBox
+from PySide6.QtWidgets import QMessageBox
 
 from src.core.entities import Entity
 from src.core.events import Event
@@ -116,7 +116,7 @@ def test_delete_signal(unified_list, qtbot):
     ],
 )
 def test_context_menu_delete_signal(
-    unified_list, qtbot, events, entities, expected
+    unified_list, qtbot, monkeypatch, events, entities, expected
 ):
     """The context menu deletes the event or entity that was right-clicked."""
     unified_list.set_data(events, entities)
@@ -128,13 +128,18 @@ def test_context_menu_delete_signal(
         return next(action for action in menu.actions() if action.text() == "Delete")
 
     with (
-        patch.object(QMenu, "exec", choose_delete),
+        monkeypatch.context() as menu_patch,
         patch(
             "src.gui.widgets.unified_list.AutoClosingMessageBox.exec",
             return_value=QMessageBox.StandardButton.Ok,
         ),
         qtbot.waitSignal(unified_list.delete_requested) as blocker,
     ):
+        menu_patch.setattr(
+            unified_list,
+            "_execute_context_menu",
+            choose_delete,
+        )
         unified_list._show_context_menu(position)
 
     assert blocker.args == expected

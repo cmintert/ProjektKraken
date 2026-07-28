@@ -66,15 +66,18 @@ def rebuild_index(args: argparse.Namespace) -> int:
         )
 
         # Rebuild index
-        counts = search_service.rebuild_index(
+        result = search_service.rebuild_index(
             object_types=object_types, excluded_attributes=excluded
         )
 
         print("\n✓ Index rebuild complete:")
-        for obj_type, count in counts.items():
-            print(f"  {obj_type}: {count} objects indexed")
+        for obj_type, counts in result.per_type.items():
+            print(
+                f"  {obj_type}: {counts.indexed} indexed, "
+                f"{counts.unchanged} unchanged, {counts.failed} failed"
+            )
 
-        return 0
+        return 1 if result.failed else 0
 
     except Exception as e:
         logger.error(f"Failed to rebuild index: {e}")
@@ -361,7 +364,7 @@ def register_commands(subparsers: argparse._SubParsersAction) -> None:  # type: 
     )
 
 
-def main() -> None:
+def main() -> int:
     """Main entry point for the CLI."""
     parser = argparse.ArgumentParser(
         description="Semantic Search Index Management",
