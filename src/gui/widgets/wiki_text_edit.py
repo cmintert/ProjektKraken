@@ -594,10 +594,11 @@ class WikiTextEditView(QTextEdit):
             not force
             and hasattr(self, "_current_wiki_text")
             and self._current_wiki_text == text
+            and self.get_wiki_text() == text
         ):
-            # Check if we are actually fully rendered?
-            # If we just initialized, we might need to render.
-            # But usually safe to skip.
+            # The cached source can outlive direct document mutations such as
+            # clear() or user edits. Only skip when the rendered document still
+            # contains the same content.
             return
 
         # If in Source mode, just set the raw text and ignore HTML rendering

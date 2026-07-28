@@ -40,8 +40,12 @@ inserted until you explicitly apply it.
 ## Manage item summaries
 
 Expand **Summary** in an event or entity editor to generate a compact overview.
-AI summaries are limited to 30% of the description and at most 150 words. For
-descriptions under 50 words, the model is asked for a single sentence.
+For descriptions of 50 words or more, AI summaries target 22% of the source
+with a hard limit of 30% and at most 150 words. Shorter descriptions use one
+sentence of at most 20 words that must remain shorter than the source.
+Summary text uses ordinary prose; wiki-link markup is not preserved. If a
+compression retry narrowly exceeds the hard limit, complete trailing sentences
+may be removed to produce a valid summary.
 
 Use **Edit** to revise a summary inline. Once edited, it is identified as a
 manual summary rather than attributed to the model. Use **Delete** to stage its

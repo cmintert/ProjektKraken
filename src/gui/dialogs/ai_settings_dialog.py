@@ -37,7 +37,10 @@ from src.core.ai_generation import (
     TaskTemplate,
     TaskTemplateSource,
 )
-from src.core.summary_data import DEFAULT_SUMMARY_PROMPT
+from src.core.summary_data import (
+    DEFAULT_SUMMARY_PROMPT,
+    normalize_summary_prompt_template,
+)
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.prompt_editor import PromptEditorWidget
 from src.services.lmstudio_config import (
@@ -660,7 +663,9 @@ class AISettingsDialog(QDialog):
         self.summary_max_tokens_input.setValue(2048)
         self.summary_max_tokens_input.setToolTip(
             "Provider safety ceiling for summary generation. Visible summaries "
-            "are separately limited to 30% of the description and 150 words.\n"
+            "target 22% of normal descriptions, with a hard 30% / 150-word "
+            "maximum. Short descriptions use one sentence that remains shorter "
+            "than the source.\n"
             "Reasoning models (e.g. DeepSeek R1) need higher values\n"
             "because <think> tags consume part of the budget."
         )
@@ -1584,9 +1589,13 @@ class AISettingsDialog(QDialog):
             settings.value("ai_gen_system_prompt", default_prompt)
         )
 
-        self.summary_prompt_edit.setPlainText(
+        stored_summary_prompt = str(
             settings.value("ai_gen_summary_prompt", DEFAULT_SUMMARY_PROMPT)
         )
+        summary_prompt = normalize_summary_prompt_template(stored_summary_prompt)
+        if summary_prompt != stored_summary_prompt:
+            settings.setValue("ai_gen_summary_prompt", summary_prompt)
+        self.summary_prompt_edit.setPlainText(summary_prompt)
         self.summary_max_tokens_input.setValue(
             int(settings.value("ai_gen_summary_max_tokens", 2048))
         )

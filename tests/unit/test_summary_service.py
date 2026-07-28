@@ -4,7 +4,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.core.entities import Entity
-from src.core.summary_data import calculate_summary_word_limit
+from src.core.summary_data import (
+    calculate_summary_target_words,
+    calculate_summary_word_limit,
+)
 from src.services.summary_service import SummaryService
 
 LONG_DESCRIPTION = " ".join(f"source-{index}" for index in range(20))
@@ -134,7 +137,9 @@ def test_generate_summary_calls_llm_and_updates_entity(
     mock_db_service.insert_event.assert_not_called()
 
 
-def test_prompt_contains_wiki_link_instruction(summary_service, mock_llm_provider):
+def test_default_prompt_does_not_require_wiki_links(
+    summary_service, mock_llm_provider
+):
     # Ensure QSettings returns the default prompt (not one set by a prior test)
     from PySide6.QtCore import QSettings
 
@@ -153,8 +158,8 @@ def test_prompt_contains_wiki_link_instruction(summary_service, mock_llm_provide
     call_args = mock_llm_provider.generate.call_args
     prompt = call_args[0][0]  # First arg is prompt
 
-    assert "[[Wiki Links]]" in prompt
-    assert "preserve" in prompt.lower()
+    assert "[[Another Page]]" in prompt
+    assert "wiki link" not in prompt.lower()
 
 
 def test_calculate_hash_handles_missing_optional_attributes(summary_service):
@@ -298,6 +303,14 @@ def test_generate_summary_uses_configured_temperature(
 def test_calculate_summary_word_limit_uses_ratio_and_ceiling():
     assert calculate_summary_word_limit("word " * 100) == 30
     assert calculate_summary_word_limit("word " * 1000) == 150
+    assert calculate_summary_target_words("word " * 100) == 22
+    assert calculate_summary_target_words("word " * 1000) == 150
+
+
+def test_short_summary_limit_remains_shorter_than_source():
+    assert calculate_summary_word_limit("word " * 20) == 19
+    assert calculate_summary_word_limit("word " * 49) == 20
+    assert calculate_summary_word_limit("word") == 0
 
 
 def test_short_source_prompt_requires_one_sentence(summary_service):
@@ -309,14 +322,14 @@ def test_short_source_prompt_requires_one_sentence(summary_service):
 
     prompt = summary_service._build_prompt(entity)
 
-    assert "no more than 6 words" in prompt
+    assert "no more than 19 words" in prompt
     assert "exactly one sentence" in prompt
 
 
 def test_too_short_source_is_rejected_before_provider(
     summary_service, mock_llm_provider
 ):
-    entity = Entity(name="Tiny", type="concept", description="Only two")
+    entity = Entity(name="Tiny", type="concept", description="Only")
 
     with pytest.raises(RuntimeError, match="too short"):
         summary_service.generate_summary(entity)
@@ -341,8 +354,40 @@ def test_overlong_response_retries_once_and_accepts_compliant_result(
     assert result.text == compliant
     assert mock_llm_provider.generate.call_count == 2
     retry_prompt = mock_llm_provider.generate.call_args_list[1].args[0]
-    assert "CORRECTION" in retry_prompt
-    assert "30-word limit" in retry_prompt
+    assert "no more than 30 words" in retry_prompt
+    assert overlong in retry_prompt
+    assert "DRAFT TO COMPRESS" in retry_prompt
+    assert "source-0" not in retry_prompt
+
+
+def test_normal_prompt_targets_below_hard_limit(summary_service):
+    entity = Entity(
+        name="Long",
+        type="concept",
+        description=" ".join(f"source-{index}" for index in range(100)),
+    )
+
+    prompt = summary_service._build_prompt(entity)
+
+    assert "Aim for no more than 22 words" in prompt
+    assert "hard maximum is 30 words" in prompt
+
+
+def test_response_between_target_and_hard_limit_is_accepted_without_retry(
+    summary_service, mock_llm_provider
+):
+    source = " ".join(f"source-{index}" for index in range(100))
+    acceptable = " ".join(f"ok-{index}" for index in range(27))
+    mock_llm_provider.generate.return_value = {
+        "text": acceptable,
+        "model": "test-model",
+    }
+    entity = Entity(name="Long", type="concept", description=source)
+
+    result = summary_service.generate_summary(entity)
+
+    assert result.text == acceptable
+    mock_llm_provider.generate.assert_called_once()
 
 
 def test_two_overlong_responses_preserve_existing_summary(
@@ -374,6 +419,60 @@ def test_two_overlong_responses_preserve_existing_summary(
     assert mock_llm_provider.generate.call_count == 2
 
 
+def test_second_overlong_response_is_trimmed_at_sentence_boundary(
+    summary_service, mock_llm_provider
+):
+    source = " ".join(f"source-{index}" for index in range(100))
+    sentences = [
+        " ".join(f"sentence-{sentence}-{word}" for word in range(10)) + "."
+        for sentence in range(4)
+    ]
+    second_overlong = " ".join(sentences)
+    expected = " ".join(sentences[:3])
+    mock_llm_provider.generate.side_effect = [
+        {"text": second_overlong, "model": "test-model"},
+        {"text": second_overlong, "model": "test-model"},
+    ]
+    entity = Entity(name="Long", type="concept", description=source)
+
+    result = summary_service.generate_summary(entity)
+
+    assert result.text == expected
+    assert len(result.text.split()) == 30
+
+
+def test_legacy_default_prompt_is_migrated_at_runtime(summary_service):
+    from PySide6.QtCore import QSettings
+
+    from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+
+    legacy_prompt = (
+        "Summarize the following worldbuilding item neutrally, "
+        "preserving all facts and the original tone. "
+        "Crucially, PRESERVE any [[Wiki Links]] exactly as they appear.\n\n"
+        "Item Data:\n"
+        "Type: {type}\n"
+        "Name: {name}\n"
+        "Description: {description}"
+    )
+    settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+    settings.setValue("ai_gen_summary_prompt", legacy_prompt)
+    try:
+        entity = Entity(
+            name="Legacy",
+            type="concept",
+            description=LONG_DESCRIPTION,
+        )
+
+        prompt = summary_service._build_prompt(entity)
+
+        assert "preserving all facts" not in prompt
+        assert "Wiki Links" not in prompt
+        assert "essential facts" in prompt
+    finally:
+        settings.remove("ai_gen_summary_prompt")
+
+
 def test_custom_prompt_still_receives_mandatory_constraint(
     summary_service, mock_llm_provider
 ):
@@ -397,6 +496,6 @@ def test_custom_prompt_still_receives_mandatory_constraint(
         prompt = mock_llm_provider.generate.call_args.args[0]
         assert "Custom: Custom" in prompt
         assert "MANDATORY OUTPUT RULE" in prompt
-        assert "[[Wiki Link]]" in prompt
+        assert "wiki link" not in prompt.lower()
     finally:
         settings.remove("ai_gen_summary_prompt")

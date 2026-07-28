@@ -5,6 +5,7 @@ Handles LLM provider integration and summary persistence.
 """
 
 import logging
+import re
 import time
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
@@ -15,8 +16,10 @@ from src.core.summary_data import (
     SUMMARY_SHORT_SOURCE_WORDS,
     SummaryData,
     calculate_summary_source_hash,
+    calculate_summary_target_words,
     calculate_summary_word_limit,
     count_summary_words,
+    normalize_summary_prompt_template,
 )
 from src.services.llm_provider import create_provider, log_ai_interaction
 
@@ -194,11 +197,14 @@ class SummaryService:
             word_limit = calculate_summary_word_limit(item.description)
             if count_summary_words(text) > word_limit:
                 retry_prompt = (
-                    f"{prompt}\n\n"
-                    "CORRECTION: The previous response exceeded the mandatory "
-                    f"{word_limit}-word limit. Rewrite the summary from the source "
-                    f"data in no more than {word_limit} words. Do not discuss the "
-                    "correction or the limit."
+                    "Compress the draft below to no more than "
+                    f"{word_limit} words. Preserve its essential facts and any "
+                    "proper names, removing the least essential details or complete "
+                    "sentences first. Use plain names; special link markup need not "
+                    "be preserved. Return only the shortened summary.\n\n"
+                    "--- DRAFT TO COMPRESS ---\n"
+                    f"{text}\n"
+                    "--- END DRAFT ---"
                 )
                 logger.info(
                     "Summary exceeded %s words; retrying once with a stricter prompt.",
@@ -214,11 +220,20 @@ class SummaryService:
 
             actual_words = count_summary_words(text)
             if actual_words > word_limit:
-                raise RuntimeError(
-                    "The AI returned an overlong summary twice "
-                    f"({actual_words} words; limit {word_limit}). "
-                    "The existing summary was kept unchanged."
+                sentence_trimmed = self._trim_complete_sentences(text, word_limit)
+                if sentence_trimmed is None:
+                    raise RuntimeError(
+                        "The AI returned an overlong summary twice "
+                        f"({actual_words} words; limit {word_limit}), and it could "
+                        "not be shortened safely at a sentence boundary. "
+                        "The existing summary was kept unchanged."
+                    )
+                logger.warning(
+                    "Summary retry exceeded %s words; removed complete trailing "
+                    "sentences to enforce the limit.",
+                    word_limit,
                 )
+                text = sentence_trimmed
 
             summary = SummaryData(
                 text=text,
@@ -289,12 +304,13 @@ class SummaryService:
         word_limit = calculate_summary_word_limit(item.description)
         if word_limit < 1:
             raise ValueError(
-                "The description is too short to summarize under the 30% "
-                "compression rule. Add more source detail before generating."
+                "The description is too short to summarize. Add at least two "
+                "words of source detail before generating."
             )
+        target_words = calculate_summary_target_words(item.description)
 
-        template = str(
-            settings.value("ai_gen_summary_prompt", DEFAULT_SUMMARY_PROMPT)
+        template = normalize_summary_prompt_template(
+            str(settings.value("ai_gen_summary_prompt", DEFAULT_SUMMARY_PROMPT))
         )
 
         # Apply placeholder substitution
@@ -306,17 +322,22 @@ class SummaryService:
             lore_date=lore_date,
         )
 
-        format_requirement = ""
         if count_summary_words(item.description) < SUMMARY_SHORT_SOURCE_WORDS:
-            format_requirement = (
-                " Return exactly one sentence with no heading or bullet list."
+            length_requirement = (
+                f"Return exactly one sentence of no more than {word_limit} words, "
+                "with no heading or bullet list."
+            )
+        else:
+            length_requirement = (
+                f"Aim for no more than {target_words} words. The mandatory hard "
+                f"maximum is {word_limit} words."
             )
 
         return (
             f"{prompt}\n\n"
-            "MANDATORY OUTPUT RULE: Return only the summary, using no more than "
-            f"{word_limit} words.{format_requirement} Preserve every [[Wiki Link]] "
-            "that you include exactly."
+            f"MANDATORY OUTPUT RULE: Return only the summary. {length_requirement} "
+            "Use ordinary prose and plain names; special link markup need not be "
+            "preserved."
         )
 
     @staticmethod
@@ -332,3 +353,21 @@ class SummaryService:
             logger.info(f"Summary after reasoning filter:\n{text}")
 
         return text
+
+    @staticmethod
+    def _trim_complete_sentences(text: str, word_limit: int) -> str | None:
+        """Remove complete trailing sentences until text meets the hard limit."""
+        sentences = [
+            sentence.strip()
+            for sentence in re.split(r"(?<=[.!?])\s+", text.strip())
+            if sentence.strip()
+        ]
+        if len(sentences) < 2:
+            return None
+
+        while len(sentences) > 1:
+            sentences.pop()
+            candidate = " ".join(sentences)
+            if count_summary_words(candidate) <= word_limit:
+                return candidate
+        return None

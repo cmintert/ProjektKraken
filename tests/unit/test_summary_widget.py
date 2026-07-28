@@ -31,6 +31,21 @@ def test_set_summary_updates_display(summary_widget):
     assert "gpt-4" in summary_widget.metadata_label.text()
 
 
+def test_set_summary_rerenders_same_text_after_document_is_cleared(summary_widget):
+    data = SummaryData(
+        text="Summary remains visible",
+        hash="123",
+        timestamp=time.time(),
+        model="gpt-4",
+    )
+    summary_widget.set_summary(data)
+    summary_widget.clear_summary()
+
+    summary_widget.set_summary(data)
+
+    assert summary_widget.text_display.toPlainText() == "Summary remains visible"
+
+
 def test_set_stale_shows_warning(summary_widget):
     summary_widget.set_stale(True)
     assert summary_widget.stale_banner.isVisible()
