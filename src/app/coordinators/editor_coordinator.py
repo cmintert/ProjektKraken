@@ -13,7 +13,11 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 from PySide6.QtCore import QSettings, Signal, Slot
 from PySide6.QtWidgets import QInputDialog, QMessageBox, QWidget
 
-from src.app.constants import SETTINGS_AUTO_RELATION_KEY
+from src.app.constants import (
+    SETTINGS_AUTO_RELATION_KEY,
+    WINDOW_SETTINGS_APP,
+    WINDOW_SETTINGS_KEY,
+)
 from src.app.coordinators.base_coordinator import BaseCoordinator
 from src.commands.base_command import CommandResult
 from src.commands.composite_command import CompositeCommand
@@ -285,8 +289,9 @@ class EditorCoordinator(BaseCoordinator):
         self, cmds: list, source_id: str, description: str
     ) -> None:
         """Appends ProcessWikiLinksCommand to cmds if auto-relation is enabled."""
-        if QSettings().value(SETTINGS_AUTO_RELATION_KEY, False, type=bool):
-            cmds.append(ProcessWikiLinksCommand(source_id, description))
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        if settings.value(SETTINGS_AUTO_RELATION_KEY, False, type=bool):
+            cmds.append(ProcessWikiLinksCommand(source_id, description or ""))
 
     # ------------------------------------------------------------------
     # Relation Operations

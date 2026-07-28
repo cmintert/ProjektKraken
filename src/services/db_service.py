@@ -8,7 +8,11 @@ and maintainability.
 import json
 import logging
 import sqlite3
+import time
+import uuid
+from collections import defaultdict
 from contextlib import contextmanager
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple
 
 from src.core.calendar import CalendarConfig
@@ -16,6 +20,7 @@ from src.core.entities import Entity
 from src.core.events import Event
 from src.core.map import Map
 from src.core.marker import Marker
+from src.services.command_artifact_store import CommandArtifactStore
 
 # Import repositories for modular CRUD operations
 from src.services.repositories import (
@@ -29,6 +34,7 @@ from src.services.repositories import (
     TagRepository,
     TrajectoryRepository,
 )
+from src.services.text_parser import WikiLinkParser
 
 if TYPE_CHECKING:
     from src.core.trajectory import Keyframe
@@ -587,66 +593,364 @@ class DatabaseService:
                     logger.error(f"Failed to add style column to markers: {e}")
                     raise
 
-            # --- Mentions deduplication and unique expression index ---
-            cursor = self._connection.execute(
-                "SELECT COUNT(*) FROM sqlite_master"
-                " WHERE type='index' AND name='uq_mentions_src_tgt_offset'"
-            )
-            if cursor.fetchone()[0] == 0:
-                logger.info(
-                    "Applying migration: Deduplicate mentions relations "
-                    "and add unique index"
-                )
-                try:
-                    # Remove duplicate mentions keeping the oldest by rowid.
-                    # Only affects rows that have a non-NULL start_offset in
-                    # their attributes JSON.
-                    self._connection.execute(
-                        """
-                        DELETE FROM relations
-                        WHERE rel_type = 'mentions'
-                          AND json_extract(attributes, '$.start_offset') IS NOT NULL
-                          AND rowid NOT IN (
-                            SELECT MIN(rowid)
-                            FROM relations
-                            WHERE rel_type = 'mentions'
-                              AND json_extract(attributes, '$.start_offset')
-                                  IS NOT NULL
-                            GROUP BY
-                              source_id,
-                              target_id,
-                              json_extract(attributes, '$.start_offset')
-                          )
-                        """
-                    )
-                    # Partial unique expression index so future inserts are
-                    # rejected at the DB layer for rows with a start_offset.
-                    self._connection.execute(
-                        """
-                        CREATE UNIQUE INDEX IF NOT EXISTS uq_mentions_src_tgt_offset
-                        ON relations(
-                            source_id,
-                            target_id,
-                            json_extract(attributes, '$.start_offset')
-                        )
-                        WHERE rel_type = 'mentions'
-                          AND json_extract(attributes, '$.start_offset') IS NOT NULL
-                        """
-                    )
-                    self._connection.commit()
-                    logger.info(
-                        "Migration successful: Added uq_mentions_src_tgt_offset index"
-                    )
-                except sqlite3.Error as e:
-                    self._connection.rollback()
-                    logger.error(
-                        f"Failed to deduplicate/index mentions relations: {e}"
-                    )
-                    raise
+            self._migrate_wikilink_relations_v2()
 
         except sqlite3.Error as e:
             logger.critical(f"Migration check failed: {e}")
             raise
+
+    @staticmethod
+    def _install_relation_integrity_schema(conn: sqlite3.Connection) -> None:
+        """Install indexes and triggers that protect relation invariants."""
+        conn.execute("DROP INDEX IF EXISTS uq_mentions_src_tgt_offset")
+        conn.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_mentions_src_tgt
+            ON relations(source_id, target_id)
+            WHERE rel_type = 'mentions'
+            """
+        )
+
+        trigger_names = (
+            "validate_relation_endpoints_insert",
+            "validate_relation_endpoints_update",
+            "validate_mentions_attributes_insert",
+            "validate_mentions_attributes_update",
+            "cleanup_entity_relations",
+            "cleanup_event_relations",
+        )
+        for trigger_name in trigger_names:
+            conn.execute(f"DROP TRIGGER IF EXISTS {trigger_name}")
+
+        conn.execute(
+            """
+            CREATE TRIGGER validate_relation_endpoints_insert
+            BEFORE INSERT ON relations
+            WHEN (
+                NOT EXISTS (SELECT 1 FROM entities WHERE id = NEW.source_id)
+                AND NOT EXISTS (SELECT 1 FROM events WHERE id = NEW.source_id)
+            ) OR (
+                NOT EXISTS (SELECT 1 FROM entities WHERE id = NEW.target_id)
+                AND NOT EXISTS (SELECT 1 FROM events WHERE id = NEW.target_id)
+            )
+            BEGIN
+                SELECT RAISE(ABORT, 'relation endpoint does not exist');
+            END
+            """
+        )
+        conn.execute(
+            """
+            CREATE TRIGGER validate_relation_endpoints_update
+            BEFORE UPDATE OF source_id, target_id ON relations
+            WHEN (
+                NOT EXISTS (SELECT 1 FROM entities WHERE id = NEW.source_id)
+                AND NOT EXISTS (SELECT 1 FROM events WHERE id = NEW.source_id)
+            ) OR (
+                NOT EXISTS (SELECT 1 FROM entities WHERE id = NEW.target_id)
+                AND NOT EXISTS (SELECT 1 FROM events WHERE id = NEW.target_id)
+            )
+            BEGIN
+                SELECT RAISE(ABORT, 'relation endpoint does not exist');
+            END
+            """
+        )
+        mentions_validation = """
+            CASE
+                WHEN json_valid(NEW.attributes) = 0 THEN 1
+                WHEN json_extract(
+                    NEW.attributes, '$.is_auto_generated'
+                ) IS NOT 1 THEN 1
+                WHEN json_extract(
+                    NEW.attributes, '$.generator'
+                ) != 'wikilink' THEN 1
+                WHEN json_type(
+                    NEW.attributes, '$.occurrences'
+                ) != 'array' THEN 1
+                ELSE 0
+            END
+        """
+        conn.execute(
+            f"""
+            CREATE TRIGGER validate_mentions_attributes_insert
+            BEFORE INSERT ON relations
+            WHEN NEW.rel_type = 'mentions' AND ({mentions_validation}) = 1
+            BEGIN
+                SELECT RAISE(ABORT, 'invalid generated mentions attributes');
+            END
+            """
+        )
+        conn.execute(
+            f"""
+            CREATE TRIGGER validate_mentions_attributes_update
+            BEFORE UPDATE OF rel_type, attributes ON relations
+            WHEN NEW.rel_type = 'mentions' AND ({mentions_validation}) = 1
+            BEGIN
+                SELECT RAISE(ABORT, 'invalid generated mentions attributes');
+            END
+            """
+        )
+        conn.execute(
+            """
+            CREATE TRIGGER cleanup_entity_relations
+            AFTER DELETE ON entities
+            BEGIN
+                DELETE FROM relations
+                WHERE source_id = OLD.id OR target_id = OLD.id;
+            END
+            """
+        )
+        conn.execute(
+            """
+            CREATE TRIGGER cleanup_event_relations
+            AFTER DELETE ON events
+            BEGIN
+                DELETE FROM relations
+                WHERE source_id = OLD.id OR target_id = OLD.id;
+            END
+            """
+        )
+
+    def _migrate_wikilink_relations_v2(self) -> None:  # noqa: C901
+        """Normalize legacy relation endpoints and rebuild derived mentions."""
+        assert self._connection is not None
+        marker = self._connection.execute(
+            """
+            SELECT value FROM system_meta
+            WHERE key = 'wikilink_relations_schema_version'
+            """
+        ).fetchone()
+        if marker and marker["value"] == "2":
+            with self.transaction() as conn:
+                self._install_relation_integrity_schema(conn)
+            return
+
+        logger.info("Applying migration: canonical wikilink relations v2")
+        normalized_count = 0
+        deleted_count = 0
+        duplicate_count = 0
+        rebuilt_count = 0
+        history_count = 0
+
+        with self.transaction() as conn:
+            conn.execute("DROP INDEX IF EXISTS uq_mentions_src_tgt_offset")
+            conn.execute("DROP INDEX IF EXISTS uq_mentions_src_tgt")
+
+            entity_rows = conn.execute(
+                "SELECT id, name, description, attributes FROM entities"
+            ).fetchall()
+            event_rows = conn.execute(
+                "SELECT id, name, description FROM events"
+            ).fetchall()
+            valid_ids = {
+                str(row["id"]) for row in [*entity_rows, *event_rows]
+            }
+            name_to_ids: Dict[str, set[str]] = defaultdict(set)
+            for row in entity_rows:
+                item_id = str(row["id"])
+                name_to_ids[str(row["name"]).casefold()].add(item_id)
+                try:
+                    attributes = json.loads(row["attributes"] or "{}")
+                except (TypeError, json.JSONDecodeError):
+                    attributes = {}
+                aliases = attributes.get("aliases", [])
+                if isinstance(aliases, list):
+                    for alias in aliases:
+                        if isinstance(alias, str):
+                            name_to_ids[alias.casefold()].add(item_id)
+            for row in event_rows:
+                name_to_ids[str(row["name"]).casefold()].add(str(row["id"]))
+
+            def resolve_endpoint(raw_value: Any) -> Optional[str]:
+                if not isinstance(raw_value, str):
+                    return None
+                value = raw_value.strip()
+                if value in valid_ids:
+                    return value
+                if value.casefold().startswith("id:"):
+                    value = value[3:]
+                try:
+                    canonical = str(uuid.UUID(value))
+                except (ValueError, AttributeError):
+                    canonical = ""
+                if canonical in valid_ids:
+                    return canonical
+                matches = name_to_ids.get(raw_value.strip().casefold(), set())
+                if len(matches) == 1:
+                    return next(iter(matches))
+                return None
+
+            relation_rows = conn.execute(
+                "SELECT rowid, * FROM relations ORDER BY created_at, rowid"
+            ).fetchall()
+            affected_sources: set[str] = set()
+            for row in relation_rows:
+                source_id = resolve_endpoint(row["source_id"])
+                target_id = resolve_endpoint(row["target_id"])
+                if source_id is None or target_id is None:
+                    conn.execute("DELETE FROM relations WHERE id = ?", (row["id"],))
+                    deleted_count += 1
+                    continue
+                if row["rel_type"] == "mentions":
+                    affected_sources.add(source_id)
+                if (
+                    source_id != row["source_id"]
+                    or target_id != row["target_id"]
+                ):
+                    conn.execute(
+                        """
+                        UPDATE relations
+                        SET source_id = ?, target_id = ?
+                        WHERE id = ?
+                        """,
+                        (source_id, target_id, row["id"]),
+                    )
+                    normalized_count += 1
+
+            seen_exact: set[tuple[str, str, str, str]] = set()
+            relation_rows = conn.execute(
+                """
+                SELECT rowid, * FROM relations
+                WHERE rel_type != 'mentions'
+                ORDER BY created_at, rowid
+                """
+            ).fetchall()
+            for row in relation_rows:
+                raw_attributes = row["attributes"] or "{}"
+                try:
+                    canonical_attributes = json.dumps(
+                        json.loads(raw_attributes),
+                        sort_keys=True,
+                        separators=(",", ":"),
+                    )
+                except (TypeError, json.JSONDecodeError):
+                    canonical_attributes = str(raw_attributes)
+                key = (
+                    str(row["source_id"]),
+                    str(row["target_id"]),
+                    str(row["rel_type"]),
+                    canonical_attributes,
+                )
+                if key in seen_exact:
+                    conn.execute("DELETE FROM relations WHERE id = ?", (row["id"],))
+                    duplicate_count += 1
+                else:
+                    seen_exact.add(key)
+
+            descriptions = {
+                str(row["id"]): str(row["description"] or "")
+                for row in [*entity_rows, *event_rows]
+            }
+            for source_id in affected_sources:
+                existing_mentions = conn.execute(
+                    """
+                    SELECT rowid, * FROM relations
+                    WHERE source_id = ? AND rel_type = 'mentions'
+                    ORDER BY created_at, rowid
+                    """,
+                    (source_id,),
+                ).fetchall()
+                survivor_by_target = {
+                    str(row["target_id"]): row for row in existing_mentions
+                }
+                desired: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+                text_content = descriptions.get(source_id, "")
+                for candidate in WikiLinkParser.extract_links(text_content):
+                    desired_target_id: Optional[str]
+                    if candidate.is_id_based:
+                        desired_target_id = resolve_endpoint(candidate.target_id)
+                    else:
+                        desired_target_id = resolve_endpoint(candidate.name)
+                    if (
+                        desired_target_id is None
+                        or desired_target_id == source_id
+                    ):
+                        continue
+                    desired[desired_target_id].append(
+                        {
+                            "field": "description",
+                            "start_offset": candidate.span[0],
+                            "end_offset": candidate.span[1],
+                            "snippet": WikiLinkParser.extract_snippet(
+                                text_content,
+                                candidate.span[0],
+                                candidate.span[1],
+                            ),
+                        }
+                    )
+
+                conn.execute(
+                    """
+                    DELETE FROM relations
+                    WHERE source_id = ? AND rel_type = 'mentions'
+                    """,
+                    (source_id,),
+                )
+                for target_id, occurrences in desired.items():
+                    survivor = survivor_by_target.get(target_id)
+                    relation_id = (
+                        str(survivor["id"])
+                        if survivor is not None
+                        else str(uuid.uuid4())
+                    )
+                    created_at = (
+                        float(survivor["created_at"])
+                        if survivor is not None
+                        else time.time()
+                    )
+                    attributes = {
+                        "is_auto_generated": True,
+                        "generator": "wikilink",
+                        "occurrences": occurrences,
+                    }
+                    conn.execute(
+                        """
+                        INSERT INTO relations (
+                            id, source_id, target_id, rel_type,
+                            attributes, created_at
+                        )
+                        VALUES (?, ?, ?, 'mentions', ?, ?)
+                        """,
+                        (
+                            relation_id,
+                            source_id,
+                            target_id,
+                            json.dumps(attributes),
+                            created_at,
+                        ),
+                    )
+                    rebuilt_count += 1
+
+            history_count = conn.execute(
+                "SELECT COUNT(*) FROM command_history"
+            ).fetchone()[0]
+            conn.execute("DELETE FROM command_history")
+            conn.execute("DELETE FROM edit_sessions")
+
+            self._install_relation_integrity_schema(conn)
+            conn.execute(
+                """
+                INSERT INTO system_meta (key, value)
+                VALUES ('wikilink_relations_schema_version', '2')
+                ON CONFLICT(key) DO UPDATE SET value = excluded.value
+                """
+            )
+
+        if self.db_path != ":memory:":
+            try:
+                world_root = Path(self.db_path).resolve().parent
+                CommandArtifactStore(world_root).discard_all()
+            except OSError:
+                logger.exception("Failed to clear obsolete persistent undo artifacts")
+
+        logger.info(
+            "Wikilink relation migration complete: normalized=%d, deleted=%d, "
+            "duplicates=%d, rebuilt=%d, history_cleared=%d",
+            normalized_count,
+            deleted_count,
+            duplicate_count,
+            rebuilt_count,
+            history_count,
+        )
 
     def _migrate_trajectories_to_mfjson(self) -> None:
         """Migrates old-format trajectories to MF-JSON format.
@@ -839,6 +1143,23 @@ class DatabaseService:
     # Relation CRUD - Delegates to RelationRepository
     # --------------------------------------------------------------------------
 
+    def _validate_relation_endpoint(self, endpoint_id: str, role: str) -> None:
+        """Require a canonical UUID belonging to an entity or event."""
+        try:
+            canonical = str(uuid.UUID(endpoint_id))
+        except (ValueError, AttributeError, TypeError) as exc:
+            raise ValueError(
+                f"Relation {role} must be a canonical UUID: {endpoint_id!r}"
+            ) from exc
+        if endpoint_id != canonical:
+            raise ValueError(
+                f"Relation {role} must be a canonical UUID: {endpoint_id!r}"
+            )
+        if self.get_entity(endpoint_id) is None and self.get_event(endpoint_id) is None:
+            raise ValueError(
+                f"Relation {role} endpoint does not exist: {endpoint_id}"
+            )
+
     def insert_relation(
         self,
         source_id: str,
@@ -861,11 +1182,14 @@ class DatabaseService:
             sqlite3.Error: If DB fails.
 
         """
-        import time
-        import uuid
-
         if attributes is None:
             attributes = {}
+        if rel_type == "mentions":
+            raise ValueError(
+                "The 'mentions' relation type is system-managed by wikilinks."
+            )
+        self._validate_relation_endpoint(source_id, "source")
+        self._validate_relation_endpoint(target_id, "target")
 
         rel_id = str(uuid.uuid4())
         created_at = time.time()
@@ -878,6 +1202,25 @@ class DatabaseService:
             f"DB: Inserted relation {rel_id}: {source_id} -> {target_id} ({rel_type})"
         )
         return rel_id
+
+    def reconcile_mentions(
+        self,
+        source_id: str,
+        field: str,
+        occurrences_by_target: Dict[str, List[Dict[str, Any]]],
+    ) -> Dict[str, Any]:
+        """Reconcile one field's generated wikilink mentions atomically."""
+        return self._relation_repo.reconcile_mentions(
+            source_id,
+            field,
+            occurrences_by_target,
+        )
+
+    def restore_mentions(
+        self, source_id: str, relations: List[Dict[str, Any]]
+    ) -> None:
+        """Restore an exact snapshot of a source's generated mentions."""
+        self._relation_repo.restore_mentions(source_id, relations)
 
     def get_all_relations(self) -> List[Dict[str, Any]]:
         """Retrieves all relations from the database.
@@ -993,6 +1336,11 @@ class DatabaseService:
         """
         if attributes is None:
             attributes = {}
+        if rel_type == "mentions":
+            raise ValueError(
+                "The 'mentions' relation type is system-managed by wikilinks."
+            )
+        self._validate_relation_endpoint(target_id, "target")
         self._relation_repo.update(rel_id, rel_type, attributes, target_id=target_id)
 
     def get_name(self, object_id: str) -> Optional[str]:

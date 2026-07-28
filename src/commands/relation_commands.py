@@ -136,7 +136,7 @@ class RemoveRelationCommand(BaseCommand):
         """
         super().__init__()
         self.rel_id = rel_id
-        self._backup_rel = None
+        self._backup_rel: Optional[Dict[str, Any]] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Executes the command to delete the relation.
@@ -145,7 +145,21 @@ class RemoveRelationCommand(BaseCommand):
             CommandResult: Result indicating success or failure.
 
         """
-        # Backup logic would go here
+        relation = db_service.get_relation(self.rel_id)
+        if not relation:
+            return CommandResult(
+                success=False,
+                message=f"Relation {self.rel_id} not found",
+                command_name="RemoveRelationCommand",
+            )
+        if relation["rel_type"] == "mentions":
+            return CommandResult(
+                success=False,
+                message="Automatic mentions are managed from description wikilinks",
+                command_name="RemoveRelationCommand",
+            )
+
+        self._backup_rel = relation
         try:
             db_service.delete_relation(self.rel_id)
             self._is_executed = True
@@ -221,6 +235,12 @@ class UpdateRelationCommand(BaseCommand):
             return CommandResult(
                 success=False,
                 message=f"Relation {self.rel_id} not found",
+                command_name="UpdateRelationCommand",
+            )
+        if current["rel_type"] == "mentions" or self.rel_type == "mentions":
+            return CommandResult(
+                success=False,
+                message="Automatic mentions are managed from description wikilinks",
                 command_name="UpdateRelationCommand",
             )
 

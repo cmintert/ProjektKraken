@@ -1,6 +1,7 @@
 """Tests for TemporalAnalyzer service."""
 
 import time
+import uuid
 
 import pytest
 
@@ -24,14 +25,21 @@ def analyzer(db_service):
 # ---------------------------------------------------------------------------
 
 
+def test_id(label: str) -> str:
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, f"projektkraken-test:{label}"))
+
+
+test_id.__test__ = False
+
+
 def make_event(eid: str, name: str, lore_date: float) -> Event:
     """Create a minimal Event for use in tests."""
-    return Event(id=eid, name=name, lore_date=lore_date)
+    return Event(id=test_id(eid), name=name, lore_date=lore_date)
 
 
 def make_entity(eid: str, name: str, etype: str = "character") -> Entity:
     """Create a minimal Entity for use in tests."""
-    return Entity(id=eid, name=name, type=etype)
+    return Entity(id=test_id(eid), name=name, type=etype)
 
 
 # ---------------------------------------------------------------------------
@@ -128,20 +136,22 @@ class TestDetectTemporalConflicts:
         db_service.insert_entity(make_entity("e2", "Bob"))
 
     def test_relation_with_no_window_no_conflict(self, db_service, analyzer):
-        db_service.insert_relation("e1", "e2", "knows", {})
+        db_service.insert_relation(test_id("e1"), test_id("e2"), "knows", {})
         report = analyzer.analyze()
         assert report.conflicts == []
 
     def test_valid_relation_window_no_conflict(self, db_service, analyzer):
         db_service.insert_relation(
-            "e1", "e2", "allies", {"valid_from": 100.0, "valid_to": 200.0}
+            test_id("e1"), test_id("e2"), "allies",
+            {"valid_from": 100.0, "valid_to": 200.0}
         )
         report = analyzer.analyze()
         assert report.conflicts == []
 
     def test_invalid_relation_window_flagged(self, db_service, analyzer):
         db_service.insert_relation(
-            "e1", "e2", "allies", {"valid_from": 200.0, "valid_to": 100.0}
+            test_id("e1"), test_id("e2"), "allies",
+            {"valid_from": 200.0, "valid_to": 100.0}
         )
         report = analyzer.analyze()
         assert len(report.conflicts) == 1
@@ -149,21 +159,24 @@ class TestDetectTemporalConflicts:
 
     def test_equal_window_dates_flagged(self, db_service, analyzer):
         db_service.insert_relation(
-            "e1", "e2", "allies", {"valid_from": 100.0, "valid_to": 100.0}
+            test_id("e1"), test_id("e2"), "allies",
+            {"valid_from": 100.0, "valid_to": 100.0}
         )
         report = analyzer.analyze()
         assert len(report.conflicts) == 1
 
     def test_conflict_severity_is_warning(self, db_service, analyzer):
         db_service.insert_relation(
-            "e1", "e2", "allies", {"valid_from": 200.0, "valid_to": 100.0}
+            test_id("e1"), test_id("e2"), "allies",
+            {"valid_from": 200.0, "valid_to": 100.0}
         )
         report = analyzer.analyze()
         assert report.conflicts[0].severity == SeverityLevel.WARNING
 
     def test_conflict_references_relation_id(self, db_service, analyzer):
         db_service.insert_relation(
-            "e1", "e2", "allies", {"valid_from": 200.0, "valid_to": 100.0}
+            test_id("e1"), test_id("e2"), "allies",
+            {"valid_from": 200.0, "valid_to": 100.0}
         )
         relations = db_service.get_all_relations()
         rel_id = relations[0]["id"]
@@ -173,10 +186,12 @@ class TestDetectTemporalConflicts:
     def test_multiple_invalid_windows_all_flagged(self, db_service, analyzer):
         db_service.insert_entity(make_entity("e3", "Carol"))
         db_service.insert_relation(
-            "e1", "e2", "allies", {"valid_from": 200.0, "valid_to": 100.0}
+            test_id("e1"), test_id("e2"), "allies",
+            {"valid_from": 200.0, "valid_to": 100.0}
         )
         db_service.insert_relation(
-            "e2", "e3", "rivals", {"valid_from": 500.0, "valid_to": 300.0}
+            test_id("e2"), test_id("e3"), "rivals",
+            {"valid_from": 500.0, "valid_to": 300.0}
         )
         report = analyzer.analyze()
         assert len(report.conflicts) == 2
@@ -194,17 +209,29 @@ class TestAnalyzeCharacterLifespans:
         db_service.insert_entity(make_entity("e1", "Alice"))
         report = analyzer.analyze()
         lifespan = next(
-            (ls for ls in report.character_lifespans if ls.entity_id == "e1"), None
+            (
+                ls
+                for ls in report.character_lifespans
+                if ls.entity_id == test_id("e1")
+            ),
+            None,
         )
         assert lifespan is None
 
     def test_birth_date_from_relation_date_attribute(self, db_service, analyzer):
         db_service.insert_entity(make_entity("e1", "Alice"))
         db_service.insert_entity(make_entity("e2", "Midwife"))
-        db_service.insert_relation("e2", "e1", "birth", {"date": 100.0})
+        db_service.insert_relation(
+            test_id("e2"), test_id("e1"), "birth", {"date": 100.0}
+        )
         report = analyzer.analyze()
         lifespan = next(
-            (ls for ls in report.character_lifespans if ls.entity_id == "e1"), None
+            (
+                ls
+                for ls in report.character_lifespans
+                if ls.entity_id == test_id("e1")
+            ),
+            None,
         )
         assert lifespan is not None
         assert lifespan.birth_date == pytest.approx(100.0)
@@ -212,10 +239,17 @@ class TestAnalyzeCharacterLifespans:
     def test_death_date_from_relation_date_attribute(self, db_service, analyzer):
         db_service.insert_entity(make_entity("e1", "Alice"))
         db_service.insert_entity(make_entity("e2", "Grave"))
-        db_service.insert_relation("e2", "e1", "death", {"date": 500.0})
+        db_service.insert_relation(
+            test_id("e2"), test_id("e1"), "death", {"date": 500.0}
+        )
         report = analyzer.analyze()
         lifespan = next(
-            (ls for ls in report.character_lifespans if ls.entity_id == "e1"), None
+            (
+                ls
+                for ls in report.character_lifespans
+                if ls.entity_id == test_id("e1")
+            ),
+            None,
         )
         assert lifespan is not None
         assert lifespan.death_date == pytest.approx(500.0)
@@ -223,11 +257,20 @@ class TestAnalyzeCharacterLifespans:
     def test_lifespan_years_computed_from_birth_and_death(self, db_service, analyzer):
         db_service.insert_entity(make_entity("e1", "Alice"))
         db_service.insert_entity(make_entity("e2", "Source"))
-        db_service.insert_relation("e2", "e1", "birth", {"date": 100.0})
-        db_service.insert_relation("e2", "e1", "death", {"date": 500.0})
+        db_service.insert_relation(
+            test_id("e2"), test_id("e1"), "birth", {"date": 100.0}
+        )
+        db_service.insert_relation(
+            test_id("e2"), test_id("e1"), "death", {"date": 500.0}
+        )
         report = analyzer.analyze()
         lifespan = next(
-            (ls for ls in report.character_lifespans if ls.entity_id == "e1"), None
+            (
+                ls
+                for ls in report.character_lifespans
+                if ls.entity_id == test_id("e1")
+            ),
+            None,
         )
         assert lifespan is not None
         # life_span_years is in years; with no active calendar the fallback
@@ -237,10 +280,17 @@ class TestAnalyzeCharacterLifespans:
     def test_lifespan_none_when_missing_birth_or_death(self, db_service, analyzer):
         db_service.insert_entity(make_entity("e1", "Alice"))
         db_service.insert_entity(make_entity("e2", "Source"))
-        db_service.insert_relation("e2", "e1", "birth", {"date": 100.0})
+        db_service.insert_relation(
+            test_id("e2"), test_id("e1"), "birth", {"date": 100.0}
+        )
         report = analyzer.analyze()
         lifespan = next(
-            (ls for ls in report.character_lifespans if ls.entity_id == "e1"), None
+            (
+                ls
+                for ls in report.character_lifespans
+                if ls.entity_id == test_id("e1")
+            ),
+            None,
         )
         assert lifespan is not None
         assert lifespan.life_span_years is None
@@ -248,40 +298,65 @@ class TestAnalyzeCharacterLifespans:
     def test_event_after_death_is_violating(self, db_service, analyzer):
         db_service.insert_entity(make_entity("e1", "Alice"))
         db_service.insert_entity(make_entity("e2", "Source"))
-        db_service.insert_relation("e2", "e1", "birth", {"date": 100.0})
-        db_service.insert_relation("e2", "e1", "death", {"date": 200.0})
+        db_service.insert_relation(
+            test_id("e2"), test_id("e1"), "birth", {"date": 100.0}
+        )
+        db_service.insert_relation(
+            test_id("e2"), test_id("e1"), "death", {"date": 200.0}
+        )
         ev = make_event("ev1", "Ghost Sighting", 300.0)
         db_service.insert_event(ev)
         report = analyzer.analyze()
         lifespan = next(
-            (ls for ls in report.character_lifespans if ls.entity_id == "e1"), None
+            (
+                ls
+                for ls in report.character_lifespans
+                if ls.entity_id == test_id("e1")
+            ),
+            None,
         )
         assert lifespan is not None
-        assert "ev1" in lifespan.violating_events
+        assert test_id("ev1") in lifespan.violating_events
 
     def test_event_before_birth_is_violating(self, db_service, analyzer):
         db_service.insert_entity(make_entity("e1", "Alice"))
         db_service.insert_entity(make_entity("e2", "Source"))
-        db_service.insert_relation("e2", "e1", "birth", {"date": 200.0})
+        db_service.insert_relation(
+            test_id("e2"), test_id("e1"), "birth", {"date": 200.0}
+        )
         ev = make_event("ev1", "Pre-birth Mention", 100.0)
         db_service.insert_event(ev)
         report = analyzer.analyze()
         lifespan = next(
-            (ls for ls in report.character_lifespans if ls.entity_id == "e1"), None
+            (
+                ls
+                for ls in report.character_lifespans
+                if ls.entity_id == test_id("e1")
+            ),
+            None,
         )
         assert lifespan is not None
-        assert "ev1" in lifespan.violating_events
+        assert test_id("ev1") in lifespan.violating_events
 
     def test_event_within_lifespan_not_violating(self, db_service, analyzer):
         db_service.insert_entity(make_entity("e1", "Alice"))
         db_service.insert_entity(make_entity("e2", "Source"))
-        db_service.insert_relation("e2", "e1", "birth", {"date": 100.0})
-        db_service.insert_relation("e2", "e1", "death", {"date": 500.0})
+        db_service.insert_relation(
+            test_id("e2"), test_id("e1"), "birth", {"date": 100.0}
+        )
+        db_service.insert_relation(
+            test_id("e2"), test_id("e1"), "death", {"date": 500.0}
+        )
         ev = make_event("ev1", "Mid-life Event", 300.0)
         db_service.insert_event(ev)
         report = analyzer.analyze()
         lifespan = next(
-            (ls for ls in report.character_lifespans if ls.entity_id == "e1"), None
+            (
+                ls
+                for ls in report.character_lifespans
+                if ls.entity_id == test_id("e1")
+            ),
+            None,
         )
         assert lifespan is not None
         assert lifespan.violating_events == []
@@ -302,10 +377,20 @@ class TestAnalyzeCharacterLifespans:
         db_service.insert_entity(make_entity("e2", "Source"))
         birth_event = make_event("ev_birth", "Birth of Alice", 150.0)
         db_service.insert_event(birth_event)
-        db_service.insert_relation("e2", "e1", "birth", {"event_id": "ev_birth"})
+        db_service.insert_relation(
+            test_id("e2"),
+            test_id("e1"),
+            "birth",
+            {"event_id": test_id("ev_birth")},
+        )
         report = analyzer.analyze()
         lifespan = next(
-            (ls for ls in report.character_lifespans if ls.entity_id == "e1"), None
+            (
+                ls
+                for ls in report.character_lifespans
+                if ls.entity_id == test_id("e1")
+            ),
+            None,
         )
         assert lifespan is not None
         assert lifespan.birth_date == pytest.approx(150.0)

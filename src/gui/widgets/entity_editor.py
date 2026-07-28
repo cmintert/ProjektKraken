@@ -222,7 +222,6 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         self.desc_edit = WikiTextEdit()
         self.desc_edit.link_clicked.connect(self.link_clicked.emit)
-        self.desc_edit.link_added.connect(self._on_wikilink_added)
         self.desc_edit.completion_prefix_changed.connect(
             self.completion_prefix_changed.emit
         )
@@ -1211,6 +1210,10 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         menu = QMenu()
         edit_action = menu.addAction("Edit")
         remove_action = menu.addAction("Remove")
+        rel_data = item.data(Qt.ItemDataRole.UserRole) or {}
+        is_automatic = rel_data.get("rel_type") == "mentions"
+        edit_action.setEnabled(not is_automatic)
+        remove_action.setEnabled(not is_automatic)
         action = menu.exec(self.rel_list.mapToGlobal(pos))
         if action == remove_action:
             self._on_remove_relation_item(item)
@@ -1225,6 +1228,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         """
         rel_data = item.data(Qt.ItemDataRole.UserRole)
+        if rel_data.get("rel_type") == "mentions":
+            return
         target_id = rel_data.get("target_id", "?")
         target_name = rel_data.get("target_name", target_id)
 
@@ -1246,6 +1251,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         """
         rel_data = item.data(Qt.ItemDataRole.UserRole)
+        if rel_data.get("rel_type") == "mentions":
+            return
 
         from src.gui.dialogs.relation_dialog import RelationEditDialog
 
@@ -1285,9 +1292,12 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
     def _update_relation_button_states(self) -> None:
         """Updates enabled states for Edit and Remove buttons based on selection."""
-        has_selection = len(self.rel_list.selectedItems()) > 0
-        self.btn_edit_rel.setEnabled(has_selection)
-        self.btn_remove_rel.setEnabled(has_selection)
+        selected = self.rel_list.selectedItems()
+        is_editable = bool(selected) and (
+            selected[0].data(Qt.ItemDataRole.UserRole).get("rel_type") != "mentions"
+        )
+        self.btn_edit_rel.setEnabled(is_editable)
+        self.btn_remove_rel.setEnabled(is_editable)
 
     def eventFilter(self, obj: QWidget, event: Any) -> bool:
         """Event filter to handle clicks on empty space in relation lists."""
@@ -1379,49 +1389,6 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         from PySide6.QtCore import QSize
 
         return QSize(400, 600)  # Ideal size for editing
-
-    @Slot(str, str)
-    def _on_wikilink_added(self, target_id: str, target_name: str) -> None:
-        """Handles a new wikilink addition.
-
-        Checks setting and prompts for relation creation if enabled.
-        """
-        from PySide6.QtCore import QSettings
-
-        from src.app.constants import (
-            SETTINGS_AUTO_RELATION_KEY,
-            WINDOW_SETTINGS_APP,
-            WINDOW_SETTINGS_KEY,
-        )
-        from src.gui.dialogs.relation_dialog import RelationEditDialog
-
-        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        if not settings.value(SETTINGS_AUTO_RELATION_KEY, False, type=bool):
-            return
-
-        if not self._current_entity_id:
-            return  # Can't add relation if we don't exist yet
-
-        # Open Dialog
-        dialog = RelationEditDialog(
-            self,
-            target_id=target_id,
-            rel_type="mentions",
-            is_bidirectional=False,
-            known_types=getattr(self, "_suggestion_types", []),
-        )
-        # Lock target field since it comes from the link
-        dialog.target_edit.setEnabled(False)
-
-        if dialog.exec():
-            _, rel_type, is_bidirectional, attributes = dialog.get_data()
-            self.add_relation_requested.emit(
-                self._current_entity_id,
-                target_id,
-                rel_type,
-                attributes,
-                is_bidirectional,
-            )
 
     def display_temporal_state(
         self, entity_id: str, attributes: dict, playhead_time: float = None

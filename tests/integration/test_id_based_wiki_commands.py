@@ -2,9 +2,8 @@
 Integration tests for ID-based wiki links with commands.
 
 Tests the complete flow of creating ID-based links and processing them.
-ProcessWikiLinksCommand resolves ID-based and name-based wikilinks and creates
-'mentions' relations.  Deduplication is enforced per (source, target,
-start_offset) so the same span cannot produce duplicate relations.
+ProcessWikiLinksCommand resolves ID-based and name-based wikilinks and reconciles
+one ``mentions`` relation per source-target pair.
 """
 
 from src.commands.wiki_commands import ProcessWikiLinksCommand
@@ -34,7 +33,8 @@ def test_id_based_link_processing(db_service):
     result = cmd.execute(db_service)
 
     assert result.success is True
-    assert "Created 2 new links" in result.message
+    assert result.data["valid_count"] == 2
+    assert result.data["created_count"] == 2
 
     # Verify relations were created
     relations = db_service.get_relations(event.id)
@@ -62,7 +62,8 @@ def test_mixed_links_processing(db_service):
     result = cmd.execute(db_service)
 
     assert result.success is True
-    assert "Created 2 new links" in result.message
+    assert result.data["valid_count"] == 2
+    assert result.data["created_count"] == 2
 
     # Verify relations created
     relations = db_service.get_relations(event.id)
@@ -85,7 +86,7 @@ def test_broken_id_link_skipped(db_service):
     result = cmd.execute(db_service)
 
     assert result.success is True
-    assert "Created 0 new links" in result.message
+    assert result.data["valid_count"] == 0
     assert "broken link(s)" in result.message
 
     # Verify no relations were created
@@ -136,8 +137,7 @@ def test_id_link_self_reference_skipped(db_service):
 
     # Should succeed but find no valid external links
     assert result.success is True
-    # Self-reference is skipped, so 0 valid links
-    assert "Created 0 new links" in result.message
+    assert result.data["valid_count"] == 0
 
     # Verify no relations
     relations = db_service.get_relations(entity.id)

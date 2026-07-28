@@ -4,6 +4,8 @@ Handles CRUD operations for Relation entities in the database.
 """
 
 import logging
+import time
+import uuid
 from typing import Any, Dict, List, Optional
 
 from src.services.repositories.base_repository import BaseRepository
@@ -58,6 +60,197 @@ class RelationRepository(BaseRepository):
                     created_at,
                 ),
             )
+
+    @staticmethod
+    def _legacy_occurrences(attributes: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Return normalized occurrence dictionaries from relation attributes."""
+        occurrences = attributes.get("occurrences")
+        if isinstance(occurrences, list):
+            return [
+                dict(item)
+                for item in occurrences
+                if isinstance(item, dict)
+                and isinstance(item.get("field"), str)
+                and isinstance(item.get("start_offset"), int)
+                and isinstance(item.get("end_offset"), int)
+            ]
+
+        start_offset = attributes.get("start_offset")
+        end_offset = attributes.get("end_offset")
+        if isinstance(start_offset, int) and isinstance(end_offset, int):
+            return [
+                {
+                    "field": str(attributes.get("field", "description")),
+                    "start_offset": start_offset,
+                    "end_offset": end_offset,
+                    "snippet": str(attributes.get("snippet", "")),
+                }
+            ]
+        return []
+
+    def reconcile_mentions(
+        self,
+        source_id: str,
+        field: str,
+        occurrences_by_target: Dict[str, List[Dict[str, Any]]],
+    ) -> Dict[str, Any]:
+        """Atomically replace one field's derived wikilink occurrences.
+
+        One ``mentions`` relation is retained per source-target pair. Occurrences
+        belonging to fields other than ``field`` are preserved.
+        """
+        if not self._connection:
+            raise RuntimeError("Database connection not initialized")
+
+        with self.transaction() as conn:
+            cursor = conn.execute(
+                """
+                SELECT * FROM relations
+                WHERE source_id = ? AND rel_type = 'mentions'
+                ORDER BY created_at, rowid
+                """,
+                (source_id,),
+            )
+            existing: List[Dict[str, Any]] = []
+            for row in cursor.fetchall():
+                relation = dict(row)
+                relation["attributes"] = self._deserialize_json(
+                    relation.get("attributes") or "{}"
+                )
+                existing.append(relation)
+
+            existing_by_target: Dict[str, List[Dict[str, Any]]] = {}
+            for relation in existing:
+                existing_by_target.setdefault(relation["target_id"], []).append(
+                    relation
+                )
+
+            target_ids = set(existing_by_target) | set(occurrences_by_target)
+            created_count = 0
+            updated_count = 0
+            deleted_count = 0
+
+            for target_id in target_ids:
+                target_relations = existing_by_target.get(target_id, [])
+                preserved: List[Dict[str, Any]] = []
+                for relation in target_relations:
+                    attributes = relation.get("attributes", {})
+                    if isinstance(attributes, dict):
+                        preserved.extend(
+                            occurrence
+                            for occurrence in self._legacy_occurrences(attributes)
+                            if occurrence["field"] != field
+                        )
+
+                current = [
+                    dict(occurrence)
+                    for occurrence in occurrences_by_target.get(target_id, [])
+                ]
+                combined = preserved + current
+                combined.sort(
+                    key=lambda item: (
+                        str(item.get("field", "")),
+                        int(item.get("start_offset", 0)),
+                        int(item.get("end_offset", 0)),
+                    )
+                )
+
+                if not combined:
+                    for relation in target_relations:
+                        conn.execute(
+                            "DELETE FROM relations WHERE id = ?",
+                            (relation["id"],),
+                        )
+                        deleted_count += 1
+                    continue
+
+                attributes = {
+                    "is_auto_generated": True,
+                    "generator": "wikilink",
+                    "occurrences": combined,
+                }
+                if target_relations:
+                    survivor = target_relations[0]
+                    if survivor.get("attributes") != attributes:
+                        conn.execute(
+                            "UPDATE relations SET attributes = ? WHERE id = ?",
+                            (self._serialize_json(attributes), survivor["id"]),
+                        )
+                        updated_count += 1
+                    for duplicate in target_relations[1:]:
+                        conn.execute(
+                            "DELETE FROM relations WHERE id = ?",
+                            (duplicate["id"],),
+                        )
+                        deleted_count += 1
+                else:
+                    relation_id = str(uuid.uuid4())
+                    conn.execute(
+                        """
+                        INSERT INTO relations (
+                            id, source_id, target_id, rel_type, attributes, created_at
+                        )
+                        VALUES (?, ?, ?, 'mentions', ?, ?)
+                        """,
+                        (
+                            relation_id,
+                            source_id,
+                            target_id,
+                            self._serialize_json(attributes),
+                            time.time(),
+                        ),
+                    )
+                    created_count += 1
+
+            cursor = conn.execute(
+                """
+                SELECT * FROM relations
+                WHERE source_id = ? AND rel_type = 'mentions'
+                ORDER BY created_at, rowid
+                """,
+                (source_id,),
+            )
+            after: List[Dict[str, Any]] = []
+            for row in cursor.fetchall():
+                relation = dict(row)
+                relation["attributes"] = self._deserialize_json(
+                    relation.get("attributes") or "{}"
+                )
+                after.append(relation)
+
+        return {
+            "before": existing,
+            "after": after,
+            "created_count": created_count,
+            "updated_count": updated_count,
+            "deleted_count": deleted_count,
+        }
+
+    def restore_mentions(
+        self, source_id: str, relations: List[Dict[str, Any]]
+    ) -> None:
+        """Atomically restore an exact snapshot of a source's mentions rows."""
+        with self.transaction() as conn:
+            conn.execute(
+                "DELETE FROM relations WHERE source_id = ? AND rel_type = 'mentions'",
+                (source_id,),
+            )
+            for relation in relations:
+                conn.execute(
+                    """
+                    INSERT INTO relations (
+                        id, source_id, target_id, rel_type, attributes, created_at
+                    )
+                    VALUES (?, ?, ?, 'mentions', ?, ?)
+                    """,
+                    (
+                        relation["id"],
+                        relation["source_id"],
+                        relation["target_id"],
+                        self._serialize_json(relation.get("attributes", {})),
+                        relation.get("created_at", time.time()),
+                    ),
+                )
 
     def get_all(self) -> List[Dict[str, Any]]:
         """Retrieve all relations from the database.

@@ -24,8 +24,33 @@ class TestCompositePersistentUndo:
         mock_db.get_all_events.return_value = []
         mock_db.get_relations.return_value = []
 
-        # When creating relation, return a fake relation ID
-        mock_db.insert_relation.return_value = "rel_123"
+        before_relations = [
+            {
+                "id": "rel_before",
+                "source_id": "event_1",
+                "target_id": "old_target",
+                "rel_type": "mentions",
+                "attributes": {"is_auto_generated": True, "occurrences": []},
+                "created_at": 1.0,
+            }
+        ]
+        after_relations = [
+            {
+                "id": "rel_after",
+                "source_id": "event_1",
+                "target_id": "target_1",
+                "rel_type": "mentions",
+                "attributes": {"is_auto_generated": True, "occurrences": []},
+                "created_at": 2.0,
+            }
+        ]
+        mock_db.reconcile_mentions.return_value = {
+            "before": before_relations,
+            "after": after_relations,
+            "created_count": 1,
+            "updated_count": 0,
+            "deleted_count": 1,
+        }
 
         # Fake existing event to update
         existing_event = Event(id="event_1", name="Test Event", lore_date=0.0)
@@ -47,9 +72,9 @@ class TestCompositePersistentUndo:
         result = composite.execute(mock_db)
         assert result.success
 
-        # Verify relation was created
-        mock_db.insert_relation.assert_called_once()
-        assert "rel_123" in wiki_cmd._created_relations
+        mock_db.reconcile_mentions.assert_called_once()
+        assert wiki_cmd._before_relations == before_relations
+        assert wiki_cmd._after_relations == after_relations
 
         # 3. Serialize to map (simulate saving to DB and app restart)
         cmd_dict = composite.to_dict()
@@ -65,11 +90,13 @@ class TestCompositePersistentUndo:
         recon_wiki_cmd = reconstructed_composite.commands[1]
         assert isinstance(recon_wiki_cmd, ProcessWikiLinksCommand)
 
-        # This will fail before the fix because _created_relations isn't serialized
-        assert "rel_123" in recon_wiki_cmd._created_relations
+        assert recon_wiki_cmd._before_relations == before_relations
+        assert recon_wiki_cmd._after_relations == after_relations
 
         # 5. Undo the reconstructed command
         reconstructed_composite.undo(mock_db)
 
-        # Verify relation deletion was attempted
-        mock_db.delete_relation.assert_called_once_with("rel_123")
+        mock_db.restore_mentions.assert_called_once_with(
+            "event_1",
+            before_relations,
+        )

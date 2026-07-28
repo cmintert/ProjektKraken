@@ -46,28 +46,28 @@ def test_entity_state_evolution_over_time(db_service, temporal_manager):
     """
     # 1. Base Entity
     gandalf = Entity(
-        id="gandalf", name="Gandalf", type="Wizard", attributes={"color": "Grey"}
+        name="Gandalf", type="Wizard", attributes={"color": "Grey"}
     )
     db_service.insert_entity(gandalf)
 
     # 2. Events
-    fight = Event(id="fight", name="Battle of the Peak", lore_date=3019.0)
-    return_event = Event(id="return", name="Gandalf Returns", lore_date=3019.1)
+    fight = Event(name="Battle of the Peak", lore_date=3019.0)
+    return_event = Event(name="Gandalf Returns", lore_date=3019.1)
     db_service.insert_events_bulk([fight, return_event])
 
     # 3. Relations/Payloads
     # Relation 1: Fights Balrog -> Missing
     db_service.insert_relation(
-        source_id="fight",
-        target_id="gandalf",
+        source_id=fight.id,
+        target_id=gandalf.id,
         rel_type="involved",
         attributes={"valid_from": 3019.0, "payload": {"status": "Missing"}},
     )
 
     # Relation 2: Returns -> White
     db_service.insert_relation(
-        source_id="return",
-        target_id="gandalf",
+        source_id=return_event.id,
+        target_id=gandalf.id,
         rel_type="involved",
         attributes={
             "valid_from": 3019.1,
@@ -78,18 +78,18 @@ def test_entity_state_evolution_over_time(db_service, temporal_manager):
     # 4. Verify Time Travel
 
     # Before Fight (3018.9) -> Base State
-    state_early = temporal_manager.get_entity_state_at("gandalf", 3018.9)
+    state_early = temporal_manager.get_entity_state_at(gandalf.id, 3018.9)
     assert state_early["color"] == "Grey"
     assert "status" not in state_early
 
     # During Missing Period (3019.05) -> Missing, but still Grey (unless overwritten)
     # Payload only had status: Missing. Color remains Grey.
-    state_mid = temporal_manager.get_entity_state_at("gandalf", 3019.05)
+    state_mid = temporal_manager.get_entity_state_at(gandalf.id, 3019.05)
     assert state_mid["status"] == "Missing"
     assert state_mid["color"] == "Grey"
 
     # After Return (3019.2) -> White and Active
-    state_late = temporal_manager.get_entity_state_at("gandalf", 3019.2)
+    state_late = temporal_manager.get_entity_state_at(gandalf.id, 3019.2)
     assert state_late["color"] == "White"
     assert state_late["status"] == "Active"
 
@@ -103,15 +103,15 @@ def test_upstream_event_change_propagates(db_service, temporal_manager):
     3. Move Event A to t=80.
     4. Verify t=90 is now Wounded.
     """
-    hero = Entity(id="hero", name="Hero", type="Character")
+    hero = Entity(name="Hero", type="Character")
     db_service.insert_entity(hero)
 
-    event = Event(id="ambush", name="Ambush", lore_date=100.0)
+    event = Event(name="Ambush", lore_date=100.0)
     db_service.insert_event(event)
 
     db_service.insert_relation(
-        source_id="ambush",
-        target_id="hero",
+        source_id=event.id,
+        target_id=hero.id,
         rel_type="affects",
         attributes={
             "valid_from": 100.0,
@@ -121,8 +121,8 @@ def test_upstream_event_change_propagates(db_service, temporal_manager):
     )
 
     # Check initial state
-    assert "health" not in temporal_manager.get_entity_state_at("hero", 90.0)
-    assert temporal_manager.get_entity_state_at("hero", 110.0)["health"] == "Low"
+    assert "health" not in temporal_manager.get_entity_state_at(hero.id, 90.0)
+    assert temporal_manager.get_entity_state_at(hero.id, 110.0)["health"] == "Low"
 
     # Move Event to 80.0
     # Note: We must update the relation's cached valid_from or rely on dynamic
@@ -130,12 +130,12 @@ def test_upstream_event_change_propagates(db_service, temporal_manager):
     # The TemporalResolver logic (as implemented in Stage 2) joins on cache/db.
     # The `valid_from_event` flag tells resolver to use event.lore_date.
 
-    cmd = UpdateEventCommand("ambush", {"lore_date": 80.0})
+    cmd = UpdateEventCommand(event.id, {"lore_date": 80.0})
     cmd.execute(db_service)
 
     # Manually trigger invalidation (in real app, signals handle this)
-    temporal_manager.on_event_changed("ambush")
+    temporal_manager.on_event_changed(event.id)
 
     # Verify Propagation
     # t=90 should now be Low health because event happened at 80
-    assert temporal_manager.get_entity_state_at("hero", 90.0)["health"] == "Low"
+    assert temporal_manager.get_entity_state_at(hero.id, 90.0)["health"] == "Low"

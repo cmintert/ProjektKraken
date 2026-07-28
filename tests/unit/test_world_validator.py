@@ -1,6 +1,7 @@
 """Tests for WorldValidator service."""
 
 import time
+import uuid
 
 import pytest
 
@@ -8,6 +9,22 @@ from src.core.analysis import IssueType, SeverityLevel, WorldValidationReport
 from src.core.entities import Entity
 from src.core.events import Event
 from src.services.world_validator import WorldValidator
+
+
+def insert_corrupt_relation(db_service, source_id: str, target_id: str) -> None:
+    """Insert a legacy-invalid row to exercise repair diagnostics."""
+    connection = db_service.get_connection()
+    connection.execute("DROP TRIGGER IF EXISTS validate_relation_endpoints_insert")
+    connection.execute("DROP TRIGGER IF EXISTS validate_relation_endpoints_update")
+    connection.execute(
+        """
+        INSERT INTO relations (
+            id, source_id, target_id, rel_type, attributes, created_at
+        ) VALUES (?, ?, ?, 'test', '{}', ?)
+        """,
+        (str(uuid.uuid4()), source_id, target_id, time.time()),
+    )
+    connection.commit()
 
 
 @pytest.fixture
@@ -21,11 +38,11 @@ def populated_db(db_service):
     """Database with a mix of entities, events, and relations for integration tests."""
     # Entities
     e1 = Entity(
-        id="e1", name="Gandalf", type="character",
+        name="Gandalf", type="character",
         description="A wise wizard with a long history.",
     )
     e2 = Entity(
-        id="e2", name="Mordor", type="location",
+        name="Mordor", type="location",
         description="The dark land of shadow and flame.",
     )
     e3 = Entity(id="e3", name="Ring", type="artifact", description="")
@@ -35,7 +52,7 @@ def populated_db(db_service):
 
     # Events
     ev1 = Event(
-        id="ev1", name="Battle of Helm's Deep", lore_date=100.0,
+        name="Battle of Helm's Deep", lore_date=100.0,
         description="A major battle in the war.",
     )
     ev2 = Event(id="ev2", name="X", lore_date=200.0, description="")
@@ -43,7 +60,7 @@ def populated_db(db_service):
     db_service.insert_event(ev2)
 
     # Relation between e1 and e2
-    db_service.insert_relation("e1", "e2", "located_in", {})
+    db_service.insert_relation(e1.id, e2.id, "located_in", {})
 
     return db_service
 
@@ -62,11 +79,11 @@ class TestCheckOrphanedEntities:
         assert orphaned[0].severity == SeverityLevel.WARNING
 
     def test_entity_with_relation_is_not_flagged(self, db_service, validator):
-        e1 = Entity(id="e1", name="Frodo", type="character", description="The ring-bearer.")
-        e2 = Entity(id="e2", name="Mordor", type="location", description="The dark land.")
+        e1 = Entity(name="Frodo", type="character", description="The ring-bearer.")
+        e2 = Entity(name="Mordor", type="location", description="The dark land.")
         db_service.insert_entity(e1)
         db_service.insert_entity(e2)
-        db_service.insert_relation("e1", "e2", "traveled_to", {})
+        db_service.insert_relation(e1.id, e2.id, "traveled_to", {})
 
         report = validator.validate()
 
@@ -74,11 +91,11 @@ class TestCheckOrphanedEntities:
         assert len(orphaned) == 0
 
     def test_entity_as_relation_target_is_not_flagged(self, db_service, validator):
-        e1 = Entity(id="e1", name="Source", type="character", description="Has a relation.")
-        e2 = Entity(id="e2", name="Target", type="location", description="Is a target.")
+        e1 = Entity(name="Source", type="character", description="Has a relation.")
+        e2 = Entity(name="Target", type="location", description="Is a target.")
         db_service.insert_entity(e1)
         db_service.insert_entity(e2)
-        db_service.insert_relation("e1", "e2", "located_in", {})
+        db_service.insert_relation(e1.id, e2.id, "located_in", {})
 
         report = validator.validate()
 
@@ -89,46 +106,48 @@ class TestCheckOrphanedEntities:
 @pytest.mark.unit
 class TestCheckBrokenReferences:
     def test_relation_with_missing_source_is_flagged_critical(self, db_service, validator):
-        e2 = Entity(id="e2", name="Target", type="location", description="Exists.")
+        e2 = Entity(name="Target", type="location", description="Exists.")
         db_service.insert_entity(e2)
-        db_service.insert_relation("ghost-source-id", "e2", "related_to", {})
+        ghost_source = str(uuid.uuid4())
+        insert_corrupt_relation(db_service, ghost_source, e2.id)
 
         report = validator.validate()
 
         broken = report.get_issues_by_type(IssueType.BROKEN_REFERENCE)
         assert len(broken) == 1
         assert broken[0].severity == SeverityLevel.CRITICAL
-        assert "ghost-source-id" in broken[0].message
+        assert ghost_source in broken[0].message
 
     def test_relation_with_missing_target_is_flagged_critical(self, db_service, validator):
-        e1 = Entity(id="e1", name="Source", type="character", description="Exists.")
+        e1 = Entity(name="Source", type="character", description="Exists.")
         db_service.insert_entity(e1)
-        db_service.insert_relation("e1", "ghost-target-id", "related_to", {})
+        ghost_target = str(uuid.uuid4())
+        insert_corrupt_relation(db_service, e1.id, ghost_target)
 
         report = validator.validate()
 
         broken = report.get_issues_by_type(IssueType.BROKEN_REFERENCE)
         assert len(broken) == 1
         assert broken[0].severity == SeverityLevel.CRITICAL
-        assert "ghost-target-id" in broken[0].message
+        assert ghost_target in broken[0].message
 
     def test_valid_entity_to_entity_relation_not_flagged(self, db_service, validator):
-        e1 = Entity(id="e1", name="A", type="character", description="Valid entity.")
-        e2 = Entity(id="e2", name="B", type="location", description="Also valid.")
+        e1 = Entity(name="A", type="character", description="Valid entity.")
+        e2 = Entity(name="B", type="location", description="Also valid.")
         db_service.insert_entity(e1)
         db_service.insert_entity(e2)
-        db_service.insert_relation("e1", "e2", "related_to", {})
+        db_service.insert_relation(e1.id, e2.id, "related_to", {})
 
         report = validator.validate()
 
         assert len(report.get_issues_by_type(IssueType.BROKEN_REFERENCE)) == 0
 
     def test_valid_entity_to_event_relation_not_flagged(self, db_service, validator):
-        e1 = Entity(id="e1", name="Hero", type="character", description="Present at battle.")
-        ev1 = Event(id="ev1", name="Battle", lore_date=100.0, description="The big fight.")
+        e1 = Entity(name="Hero", type="character", description="Present at battle.")
+        ev1 = Event(name="Battle", lore_date=100.0, description="The big fight.")
         db_service.insert_entity(e1)
         db_service.insert_event(ev1)
-        db_service.insert_relation("e1", "ev1", "participated_in", {})
+        db_service.insert_relation(e1.id, ev1.id, "participated_in", {})
 
         report = validator.validate()
 
@@ -293,7 +312,9 @@ class TestValidateReport:
 
     def test_issues_by_severity_counts_are_correct(self, db_service, validator):
         # Insert one entity that will generate a BROKEN_REFERENCE (CRITICAL)
-        db_service.insert_relation("missing-source", "missing-target", "test", {})
+        insert_corrupt_relation(
+            db_service, str(uuid.uuid4()), str(uuid.uuid4())
+        )
 
         report = validator.validate()
 
@@ -310,7 +331,9 @@ class TestValidateReport:
         )
 
     def test_broken_references_count_matches_issues(self, db_service, validator):
-        db_service.insert_relation("ghost1", "ghost2", "test", {})
+        insert_corrupt_relation(
+            db_service, str(uuid.uuid4()), str(uuid.uuid4())
+        )
 
         report = validator.validate()
 
@@ -320,7 +343,9 @@ class TestValidateReport:
 
     def test_doubly_broken_relation_produces_two_issues(self, db_service, validator):
         """A relation with both source and target missing yields 2 broken-ref issues."""
-        db_service.insert_relation("ghost-src", "ghost-tgt", "test", {})
+        insert_corrupt_relation(
+            db_service, str(uuid.uuid4()), str(uuid.uuid4())
+        )
 
         report = validator.validate()
 

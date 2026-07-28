@@ -2,6 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from PySide6.QtCore import QSettings
+from PySide6.QtWidgets import QPlainTextEdit
 
 from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
@@ -25,9 +26,6 @@ def widget(qtbot, tmp_path):
     QSettings.setDefaultFormat(original_format)
 
 
-@pytest.mark.skip(
-    reason="Test hangs in headless environment - dialog exec() blocks despite mock"
-)
 @patch("src.gui.widgets.llm_generation_widget.RAGService")
 def test_preview_rag_success(mock_rag_cls, widget, qtbot):
     """Verify preview works correctly with RAGService."""
@@ -38,7 +36,15 @@ def test_preview_rag_success(mock_rag_cls, widget, qtbot):
 
     # 2. Setup Widget State
     widget.rag_cb.setChecked(True)
-    widget.rag_limit = 2
+    widget.rag_limit_input.setText("2")
+    widget._get_generation_context = MagicMock(
+        return_value={
+            "name": "Test Entity",
+            "type": "Character",
+            "object_type": "entity",
+            "existing_description": "Existing description",
+        }
+    )
 
     # Mock window traversal for db_path
     mock_window = MagicMock()
@@ -47,32 +53,34 @@ def test_preview_rag_success(mock_rag_cls, widget, qtbot):
 
     widget.custom_prompt_edit.setPlainText("User {{RAG_CONTEXT}}")
 
-    # 3. Global Patches for Dialog interaction
-    # Patch QDialog to prevent exec() blocking
-    with patch("PySide6.QtWidgets.QDialog") as MockDialogCls:
-        mock_dlg = MockDialogCls.return_value
-        mock_dlg.exec.return_value = 0  # Return immediately
+    captured = {}
 
-        # Patch QPlainTextEdit to capture the text set in the dialog
-        with patch("PySide6.QtWidgets.QPlainTextEdit") as MockTextEditCls:
-            mock_text_edit = MockTextEditCls.return_value
+    def capture_preview(dialog):
+        text_edits = dialog.findChildren(QPlainTextEdit)
+        assert len(text_edits) == 1
+        captured["display_text"] = text_edits[0].toPlainText()
+        return 0
 
-            # 4. Trigger Action
-            widget._on_preview_clicked()
+    # Patch only exec(), retaining a real dialog and child widgets so layout
+    # construction and preview rendering are still exercised.
+    with (
+        patch(
+            "src.gui.widgets.llm_generation_widget.QDialog.exec",
+            new=capture_preview,
+        ),
+        patch(
+            "src.gui.widgets.llm_generation_widget.QMessageBox.warning"
+        ) as mock_warning,
+    ):
+        widget._on_preview_clicked()
 
-            # 5. Verify RAG interaction
-            mock_rag_cls.assert_called_with("dummy.db")
-            mock_service.get_context.assert_called_once()
-            call_args = mock_service.get_context.call_args
-            assert call_args[0][0] == "User {{RAG_CONTEXT}}"
-            assert call_args[1]["top_k"] == 2
+        mock_warning.assert_not_called()
+        mock_rag_cls.assert_called_with("dummy.db")
+        mock_service.get_context.assert_called_once()
+        call_args = mock_service.get_context.call_args
+        assert "User {{RAG_CONTEXT}}" in call_args[0][0]
+        assert call_args[1]["top_k"] == 2
 
-            # 6. Verify Dialog Content
-            # We expect setPlainText to be called on the *newly created* QPlainTextEdit
-            # which is our mock_text_edit
-            mock_text_edit.setPlainText.assert_called()
-            args = mock_text_edit.setPlainText.call_args[0]
-            display_text = args[0]
-
-            assert "Verified RAG Context" in display_text
-            assert "{{RAG_CONTEXT}}" not in display_text
+        display_text = captured["display_text"]
+        assert "Verified RAG Context" in display_text
+        assert "{{RAG_CONTEXT}}" not in display_text

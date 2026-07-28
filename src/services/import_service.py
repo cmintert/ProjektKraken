@@ -6,6 +6,7 @@ Supports batch operations and single-item imports with recursive relation resolu
 
 import json
 import logging
+import time
 import uuid
 from collections.abc import Iterable
 from dataclasses import dataclass, field
@@ -55,13 +56,7 @@ class ImportResult:
     ambiguous_items: List[Dict[str, Any]] = field(default_factory=list)
     unparsed_date_count: int = 0
     # New field to track actions taken
-    actions: List[Dict[str, Any]] = None
-
-    def __post_init__(self) -> None:
-        """Initializes default empty list for actions if None."""
-        if self.actions is None:
-            self.actions = []
-
+    actions: List[Dict[str, Any]] = field(default_factory=list)
 
 class ImportService:
     """Service for importing data from JSON and Markdown."""
@@ -242,7 +237,11 @@ class ImportService:
             data = json_data
 
         # Normalize structure
-        result = {"entities": [], "events": [], "relations": []}
+        result: Dict[str, List[Any]] = {
+            "entities": [],
+            "events": [],
+            "relations": [],
+        }
 
         # Case 1: Batch format (root keys 'entities', 'events')
         if "entities" in data or "events" in data:
@@ -604,7 +603,7 @@ class ImportService:
         import_source_entry = {
             "source_name": source_name,
             "external_id": external_id,
-            "seen_at": logging.time.time(),
+            "seen_at": time.time(),
         }
 
         if action == ImportAction.SKIP:
@@ -617,7 +616,7 @@ class ImportService:
                 type=str(data.get("type", "generic")).strip(),
                 description=str(data.get("description", "")).strip(),
                 attributes=data.get("attributes", {}),
-                created_at=data.get("created_at") or logging.time.time(),
+                created_at=data.get("created_at") or time.time(),
             )
             # Add metadata
             self._update_import_metadata(new_entity, import_source_entry)
@@ -643,7 +642,7 @@ class ImportService:
                     description=str(data.get("description", "")).strip(),
                     attributes=data.get("attributes", {}),
                     created_at=existing_entity.created_at,  # Preserve creation
-                    modified_at=logging.time.time(),
+                    modified_at=time.time(),
                 )
                 self._update_import_metadata(overwritten, import_source_entry)
                 overwritten.tags = list(imported_tags)
@@ -738,7 +737,7 @@ class ImportService:
                 else:
                     existing.attributes[k] = v
 
-        existing.modified_at = logging.time.time()
+        existing.modified_at = time.time()
         return existing
 
     def _merge_events(self, existing: Event, data: Dict[str, Any]) -> Event:
@@ -772,7 +771,7 @@ class ImportService:
                 else:
                     existing.attributes[k] = v
 
-        existing.modified_at = logging.time.time()
+        existing.modified_at = time.time()
         return existing
 
     def _import_single_event_internal(  # noqa: C901
@@ -891,7 +890,7 @@ class ImportService:
         import_source_entry = {
             "source_name": source_name,
             "external_id": external_id,
-            "seen_at": logging.time.time(),
+            "seen_at": time.time(),
         }
 
         if action == ImportAction.SKIP:
@@ -909,7 +908,7 @@ class ImportService:
                 lore_duration=parsed_duration or parsed_duration or float(data.get("lore_duration", 0.0)),
                 description=str(data.get("description", "")).strip(),
                 attributes=data.get("attributes", {}),
-                created_at=data.get("created_at") or logging.time.time(),
+                created_at=data.get("created_at") or time.time(),
             )
             new_event.attributes["_date_parsed"] = date_was_explicit
             if not date_was_explicit:
@@ -940,7 +939,7 @@ class ImportService:
                     description=str(data.get("description", "")).strip(),
                     attributes=data.get("attributes", {}),
                     created_at=existing_event.created_at,
-                    modified_at=logging.time.time(),
+                    modified_at=time.time(),
                 )
                 overwritten.attributes["_date_parsed"] = date_was_explicit
                 if not date_was_explicit:
@@ -1032,6 +1031,16 @@ class ImportService:
             names could not be resolved and strict=False.
 
         """
+        rel_type = data.get("rel_type", "related")
+        if rel_type == "mentions":
+            msg = (
+                "Skipping imported mentions relation: automatic mentions are "
+                "rebuilt from description wikilinks"
+            )
+            result.warnings.append(msg)
+            logger.warning(msg)
+            return None, False, False
+
         source_id = data.get("source_id")
         target_id = data.get("target_id")
 
@@ -1050,7 +1059,6 @@ class ImportService:
             logger.warning(msg)
             return None, False, False
 
-        rel_type = data.get("rel_type", "related")
         attributes = data.get("attributes", {})
 
         # Check for existing relation

@@ -39,13 +39,34 @@ def test_autocompletion_resolution(relation_dialog, qtbot):
     assert not is_bi
 
 
-def test_manual_entry_fallback(relation_dialog):
-    """Test that manual entry (not in list) is preserved."""
+def test_unknown_manual_entry_is_not_returned_as_an_id(relation_dialog):
+    """Arbitrary text must never cross the dialog boundary as a target ID."""
     relation_dialog.target_edit.setText("Manual-ID-123")
 
     target_id, _, _, _ = relation_dialog.get_data()
 
-    assert target_id == "Manual-ID-123"
+    assert target_id == ""
+
+
+def test_duplicate_names_require_disambiguated_selection(qtbot):
+    dialog = RelationEditDialog(
+        suggestion_items=[
+            ("id-1", "Springfield", "Place"),
+            ("id-2", "Springfield", "Event"),
+        ]
+    )
+    qtbot.addWidget(dialog)
+
+    dialog.target_edit.setText("Springfield")
+    assert dialog.get_data()[0] == ""
+
+    display = next(
+        text
+        for text, item_id in dialog._display_to_id.items()
+        if item_id == "id-2"
+    )
+    dialog.target_edit.setText(display)
+    assert dialog.get_data()[0] == "id-2"
 
 
 def test_prefill_editing(qtbot):

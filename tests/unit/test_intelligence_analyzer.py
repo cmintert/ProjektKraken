@@ -9,6 +9,7 @@ All tests inject a _FakeProvider so no real LLM is called.  Tests cover:
 
 from __future__ import annotations
 
+import uuid
 from typing import Any
 
 import pytest
@@ -357,10 +358,12 @@ class TestInferRelations:
         assert "warrior" in report.relation_proposals[0].reasoning
 
     def test_already_related_pair_skipped(self, db_service):
-        db_service.insert_entity(_make_entity("e1", "Alice", tags=["warrior"]))
-        db_service.insert_entity(_make_entity("e2", "Bob", tags=["warrior"]))
+        alice = _make_entity(str(uuid.uuid4()), "Alice", tags=["warrior"])
+        bob = _make_entity(str(uuid.uuid4()), "Bob", tags=["warrior"])
+        db_service.insert_entity(alice)
+        db_service.insert_entity(bob)
         # Create existing relation so the pair is already related
-        db_service.insert_relation("e1", "e2", "ally", {})
+        db_service.insert_relation(alice.id, bob.id, "ally", {})
         provider = _FakeProvider(response=_RELATION_YES_RESPONSE)
         analyzer = IntelligenceAnalyzer(db_service, provider=provider)
         analyzer.analyze(analysis_type="relations")

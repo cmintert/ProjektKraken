@@ -589,7 +589,6 @@ def test_no_double_bold_in_headings(qtbot):
     assert "**" not in md, "Headings should not contain bold markers"
 
 
-@pytest.mark.skip(reason="Font size detection after Enter needs refinement")
 def test_enter_resets_heading_format(qtbot):
     """Regression: Pressing Enter after heading should reset to body text."""
     from PySide6.QtCore import Qt
@@ -607,7 +606,7 @@ def test_enter_resets_heading_format(qtbot):
     cursor = widget.textCursor()
     cursor.movePosition(QTextCursor.MoveOperation.End)
     widget.setTextCursor(cursor)
-    qtbot.keyPress(widget, Qt.Key.Key_Return)
+    qtbot.keyPress(widget.editor, Qt.Key.Key_Return)
 
     # Check new line format
     cursor = widget.textCursor()
@@ -616,8 +615,16 @@ def test_enter_resets_heading_format(qtbot):
 
     # Should be body text (heading level 0, body font size ~10pt)
     assert block_fmt.headingLevel() == 0, "New line should not be a heading"
-    assert char_fmt.fontPointSize() == 10.0, (
-        f"New line should be body size (10pt), got {char_fmt.fontPointSize()}"
+    from src.core.theme_manager import ThemeManager
+
+    body_size = float(
+        str(ThemeManager().get_theme().get("font_size_body", "10pt"))
+        .replace("pt", "")
+        .strip()
+    )
+    assert char_fmt.fontPointSize() == body_size, (
+        f"New line should be body size ({body_size}pt), "
+        f"got {char_fmt.fontPointSize()}"
     )
 
 

@@ -22,7 +22,7 @@ def mock_validate():
 def test_relation_add(mock_db, mock_validate, capsys):
     with patch("src.cli.relation.AddRelationCommand") as MockCmd:
         mock_cmd_instance = MockCmd.return_value
-        mock_cmd_instance.execute.return_value = True
+        mock_cmd_instance.execute.return_value.success = True
 
         with patch(
             "sys.argv",
@@ -72,7 +72,7 @@ def test_relation_list(mock_db, mock_validate, capsys):
 def test_relation_update(mock_db, mock_validate, capsys):
     with patch("src.cli.relation.UpdateRelationCommand") as MockCmd:
         mock_cmd_instance = MockCmd.return_value
-        mock_cmd_instance.execute.return_value = True
+        mock_cmd_instance.execute.return_value.success = True
         mock_db.get_relation.return_value = {
             "id": "r1",
             "target_id": "e2",
@@ -96,7 +96,7 @@ def test_relation_update(mock_db, mock_validate, capsys):
 def test_relation_delete(mock_db, mock_validate, capsys):
     with patch("src.cli.relation.RemoveRelationCommand") as MockCmd:
         mock_cmd_instance = MockCmd.return_value
-        mock_cmd_instance.execute.return_value = True
+        mock_cmd_instance.execute.return_value.success = True
 
         with patch(
             "sys.argv",

@@ -82,3 +82,12 @@ class CommandArtifactStore:
         if target.exists():
             shutil.rmtree(target)
             logger.info("Discarded command artifacts: %s", command_id)
+
+    def discard_all(self) -> None:
+        """Delete every artifact when the complete persistent history is cleared."""
+        history_root = self.history_root.resolve()
+        if not history_root.is_relative_to(self.world_root):
+            raise ValueError("Invalid command history path")
+        if history_root.exists():
+            shutil.rmtree(history_root)
+            logger.info("Discarded all command artifacts")

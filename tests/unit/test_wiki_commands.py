@@ -13,7 +13,13 @@ def _make_mock_db(
     mock_db.get_all_entities.return_value = entities or []
     mock_db.get_all_events.return_value = events or []
     mock_db.get_relations.return_value = existing_relations or []
-    mock_db.insert_relation.return_value = "new-rel-id"
+    mock_db.reconcile_mentions.return_value = {
+        "before": existing_relations or [],
+        "after": [],
+        "created_count": 1,
+        "updated_count": 0,
+        "deleted_count": 0,
+    }
     return mock_db
 
 
@@ -27,7 +33,7 @@ def _make_entity(entity_id: str, name: str) -> MagicMock:
 
 class TestProcessWikiLinksCommand:
     def test_creates_relations(self):
-        """Test that the command actually creates 'mentions' relations in the DB."""
+        """The command sends canonical grouped occurrences to reconciliation."""
         cmd = ProcessWikiLinksCommand("source_1", "Check [[Target Entity]] here.")
 
         source_entity = _make_entity("source_1", "Source Entity")
@@ -40,25 +46,24 @@ class TestProcessWikiLinksCommand:
         assert result.success
         assert result.data["valid_count"] == 1
 
-        mock_db.insert_relation.assert_called_once()
-        _, kwargs = mock_db.insert_relation.call_args
+        mock_db.reconcile_mentions.assert_called_once()
+        source_id, field, occurrences = mock_db.reconcile_mentions.call_args.args
+        assert source_id == "source_1"
+        assert field == "description"
+        assert set(occurrences) == {"target_1"}
+        assert occurrences["target_1"][0]["start_offset"] == 6
 
-        assert kwargs["source_id"] == "source_1"
-        assert kwargs["target_id"] == "target_1"
-        assert kwargs["rel_type"] == "mentions"
-        assert "start_offset" in kwargs["attributes"]
-
-    def test_undo_removes_relations(self):
-        """Test that undo removes the created relations."""
+    def test_undo_restores_previous_relations(self):
+        """Undo restores the complete pre-reconciliation snapshot."""
         cmd = ProcessWikiLinksCommand("source_1", "Check [[Target Entity]]")
         mock_db = MagicMock()
-
-        cmd._created_relations = ["rel_123"]
+        previous = [{"id": "rel_123", "rel_type": "mentions"}]
+        cmd._before_relations = previous
         cmd._is_executed = True
 
         cmd.undo(mock_db)
 
-        mock_db.delete_relation.assert_called_with("rel_123")
+        mock_db.restore_mentions.assert_called_once_with("source_1", previous)
 
     def test_second_execute_does_not_create_duplicates(self):
         """Executing the same command a second time must not create duplicate
@@ -81,27 +86,17 @@ class TestProcessWikiLinksCommand:
         assert result1.success
         assert result1.data["valid_count"] == 1
 
-        # Simulate the DB now returning the relation created above.
-        # The start_offset for [[Frodo]] in the text above is 9.
-        mock_db.get_relations.return_value = [
-            {
-                "target_id": "frodo-id",
-                "rel_type": "mentions",
-                "attributes": {"start_offset": 9},
-            }
-        ]
-
-        # Second execution should skip the already-existing relation.
+        # The repository owns idempotency; both commands submit the same desired set.
         result2 = cmd2.execute(mock_db)
         assert result2.success
-        assert result2.data["valid_count"] == 0
-        # insert_relation was called only once (by cmd1), not again by cmd2.
-        assert mock_db.insert_relation.call_count == 1
+        assert result2.data["valid_count"] == 1
+        assert mock_db.reconcile_mentions.call_count == 2
+        first_desired = mock_db.reconcile_mentions.call_args_list[0].args[2]
+        second_desired = mock_db.reconcile_mentions.call_args_list[1].args[2]
+        assert first_desired == second_desired
 
-    def test_two_links_same_target_different_offsets_both_created(self):
-        """Two wikilinks to the same target at different character positions
-        should each create their own 'mentions' relation.
-        """
+    def test_two_links_same_target_are_grouped_as_occurrences(self):
+        """Multiple textual occurrences produce one desired graph relation."""
         text = "[[Frodo]] went to [[Frodo]]'s house."
         cmd = ProcessWikiLinksCommand("source_1", text)
 
@@ -113,13 +108,10 @@ class TestProcessWikiLinksCommand:
         result = cmd.execute(mock_db)
 
         assert result.success
-        # Two distinct [[Frodo]] spans → two relations
-        assert result.data["valid_count"] == 2
-        assert mock_db.insert_relation.call_count == 2
-
-        # Verify the two inserts used different start_offsets
-        calls = mock_db.insert_relation.call_args_list
-        offsets = {c[1]["attributes"]["start_offset"] for c in calls}
+        assert result.data["valid_count"] == 1
+        assert result.data["occurrence_count"] == 2
+        occurrences = mock_db.reconcile_mentions.call_args.args[2]["frodo-id"]
+        offsets = {item["start_offset"] for item in occurrences}
         assert len(offsets) == 2
 
     def test_span_offset_used_for_dedup_not_hardcoded_zero(self):
@@ -133,21 +125,11 @@ class TestProcessWikiLinksCommand:
         target = _make_entity("frodo-id", "Frodo")
         source = _make_entity("source_1", "Source")
 
-        # Simulate a pre-existing 'mentions' relation at offset 0 (e.g. from
-        # a different field/run that happened to land at byte 0).
-        mock_db = _make_mock_db(
-            entities=[source, target],
-            existing_relations=[
-                {
-                    "target_id": "frodo-id",
-                    "rel_type": "mentions",
-                    "attributes": {"start_offset": 0},
-                }
-            ],
-        )
+        mock_db = _make_mock_db(entities=[source, target])
 
         result = cmd.execute(mock_db)
 
         assert result.success
-        # The link at offset 10 should still be created even though offset 0 exists.
         assert result.data["valid_count"] == 1
+        occurrence = mock_db.reconcile_mentions.call_args.args[2]["frodo-id"][0]
+        assert occurrence["start_offset"] == 10

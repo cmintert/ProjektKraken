@@ -10,6 +10,7 @@ Usage:
 import argparse
 import logging
 import sys
+from typing import Any
 
 from src.cli.utils import validate_database_path
 from src.commands.wiki_commands import ProcessWikiLinksCommand
@@ -31,7 +32,7 @@ def scan_links(args: argparse.Namespace) -> int:
         text_content = ""
 
         # Try finding as entity
-        obj = db_service.get_entity(args.source)
+        obj: Any = db_service.get_entity(args.source)
         if not obj:
             # Try finding as event
             obj = db_service.get_event(args.source)
@@ -49,11 +50,7 @@ def scan_links(args: argparse.Namespace) -> int:
             print(f"✗ Field '{args.field}' not found on object.")
             return 1
 
-        if not text_content:
-            print("No content to scan.")
-            return 0
-
-        cmd = ProcessWikiLinksCommand(args.source, text_content, args.field)
+        cmd = ProcessWikiLinksCommand(args.source, text_content or "", args.field)
         result = cmd.execute(db_service)
 
         if result.success:

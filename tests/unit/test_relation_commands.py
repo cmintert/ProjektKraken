@@ -1,3 +1,6 @@
+import time
+import uuid
+
 import pytest
 
 from src.commands.relation_commands import (
@@ -115,3 +118,46 @@ def test_add_relation_bidirectional(db_service):
     cmd.undo(db_service)
     assert len(db_service.get_relations(s.id)) == 0
     assert len(db_service.get_relations(t.id)) == 0
+
+
+def test_manual_commands_cannot_mutate_system_mentions(db_service):
+    source = Event(name="Source", lore_date=1)
+    target = Event(name="Target", lore_date=2)
+    db_service.insert_event(source)
+    db_service.insert_event(target)
+
+    add_result = AddRelationCommand(
+        source.id,
+        target.id,
+        "mentions",
+    ).execute(db_service)
+    assert add_result.success is False
+
+    normal_id = db_service.insert_relation(
+        source.id,
+        target.id,
+        "related",
+    )
+    update_result = UpdateRelationCommand(
+        normal_id,
+        target.id,
+        "mentions",
+    ).execute(db_service)
+    assert update_result.success is False
+
+    mention_id = str(uuid.uuid4())
+    db_service._relation_repo.insert(
+        mention_id,
+        source.id,
+        target.id,
+        "mentions",
+        {
+            "is_auto_generated": True,
+            "generator": "wikilink",
+            "occurrences": [],
+        },
+        time.time(),
+    )
+    remove_result = RemoveRelationCommand(mention_id).execute(db_service)
+    assert remove_result.success is False
+    assert db_service.get_relation(mention_id) is not None

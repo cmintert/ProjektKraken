@@ -139,3 +139,24 @@ class WikiLinkParser:
         if display_label:
             return f"[[{name}|{display_label}]]"
         return f"[[{name}]]"
+
+    @staticmethod
+    def extract_snippet(
+        text: str,
+        start: int,
+        end: int,
+        context_chars: int = 40,
+    ) -> str:
+        """Extract compact context around one wikilink occurrence."""
+        link_len = end - start
+        remaining = max(0, context_chars - link_len)
+        left_context = remaining // 2
+        right_context = remaining - left_context
+        snippet_start = max(0, start - left_context)
+        snippet_end = min(len(text), end + right_context)
+        snippet = text[snippet_start:snippet_end]
+        if snippet_start > 0:
+            snippet = "..." + snippet
+        if snippet_end < len(text):
+            snippet += "..."
+        return snippet

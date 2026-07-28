@@ -129,7 +129,6 @@ class WikiTextEditView(QTextEdit):
     """
 
     link_clicked = Signal(str)  # Emits the target name (e.g. "Gandalf")
-    link_added = Signal(str, str)  # Emits (target_id_or_name, display_name) on creation
     completion_prefix_changed = Signal(str)  # Emits prefix when >= 3 chars inside [[
     _lt_check_requested = Signal(str, str, str, str)  # (text, language, username, api_key)
 
@@ -942,7 +941,6 @@ class WikiTextEditView(QTextEdit):
         self.setTextCursor(tc)
 
         # Emit signal
-        self.link_added.emit(target, label)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Handles key press events for wiki link completion and formatting shortcuts.
@@ -967,26 +965,24 @@ class WikiTextEditView(QTextEdit):
                 event.ignore()
                 return
 
-        super().keyPressEvent(event)
-
-        # Handle formatting reset on Enter (only in Rich mode)
-        # If we just created a new block from a Heading,
-        # it inherits the large font size.
-        # We want to reset it to Body text size.
         is_source_mode = hasattr(self, "_view_mode") and self._view_mode == "source"
-        if not is_source_mode and event.key() in (
+        is_enter = event.key() in (
             Qt.Key.Key_Return,
             Qt.Key.Key_Enter,
-        ):
-            cursor = self.textCursor()
-            # If current font size is larger than body (roughly), reset to body
-            # We could fetch exact theme values, but > 11 is a safe heuristic for now
-            # since body is usually 10pt and H3 is 12pt+.
-            current_size = cursor.charFormat().fontPointSize()
-            # logger.info(f"Enter pressed. Current Font Size: {current_size}")
-            if current_size > 11:
-                # logger.info("Font size > 11, resetting heading to 0")
-                self._set_heading(0)
+        )
+        reset_heading_after_enter = (
+            not is_source_mode
+            and is_enter
+            and self.textCursor().blockFormat().headingLevel() > 0
+        )
+
+        super().keyPressEvent(event)
+
+        # A paragraph created from a heading can inherit its character format.
+        # Use the semantic block property rather than a theme-dependent size
+        # heuristic to decide whether the new paragraph must become body text.
+        if reset_heading_after_enter:
+            self._set_heading(0)
 
         # Check if user just closed a wiki link with ]]
         if event.text() == "]":
@@ -1213,6 +1209,11 @@ class WikiTextEditView(QTextEdit):
             fmt.setFontWeight(QFont.Weight.Normal)
 
         cursor.mergeCharFormat(fmt)
+        if not cursor.hasSelection():
+            # Empty blocks have no characters for mergeCharFormat() to update.
+            # Set the insertion format explicitly so the first typed character
+            # uses the selected body/heading style.
+            self.setCurrentCharFormat(fmt)
 
         # Force visual update by re-rendering was problematic for cursor state.
         # Since we manually applied block and char formats that match the theme,
@@ -1352,13 +1353,6 @@ class WikiTextEditView(QTextEdit):
 
         cursor.insertHtml(html)
         self.setTextCursor(cursor)
-
-        # Emit Signal if valid linked
-        if is_valid:
-            # If we know the ID, resolve it?
-            # For now just send what we have. If it's a name, receiver tries to find it.
-            # If it's ID, it's already ID.
-            self.link_added.emit(target, label)
 
     def _validate_link_target(self, target: str) -> bool:
         """Validate a link target against known items.
@@ -1909,7 +1903,6 @@ class WikiTextEdit(QFrame):
     """
 
     link_clicked = Signal(str)
-    link_added = Signal(str, str)
     completion_prefix_changed = Signal(str)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
@@ -1961,7 +1954,6 @@ class WikiTextEdit(QFrame):
 
         # Forward signals
         self.editor.link_clicked.connect(self.link_clicked.emit)
-        self.editor.link_added.connect(self.link_added.emit)
         self.editor.completion_prefix_changed.connect(
             self.completion_prefix_changed.emit
         )

@@ -4,6 +4,7 @@ Provides a consolidated dialog for adding or editing relations, featuring autoco
 for target entities/events.
 """
 
+from collections import Counter
 from typing import Any, Dict, Optional
 
 from PySide6.QtCore import Qt
@@ -19,6 +20,7 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QRadioButton,
     QTextEdit,
     QVBoxLayout,
@@ -41,12 +43,14 @@ class RelationEditDialog(QDialog):
         target_id: str = "",
         rel_type: str = "involved",
         is_bidirectional: bool = False,
-        attributes: Dict[str, Any] = None,
-        suggestion_items: list[tuple[str, str, str]] = None,  # (id, name, type)
+        attributes: Optional[Dict[str, Any]] = None,
+        suggestion_items: Optional[
+            list[tuple[str, str, str]]
+        ] = None,  # (id, name, type)
         calendar_converter: Any = None,
         source_event_date: Optional[float] = None,
         source_event_name: Optional[str] = None,
-        known_types: list[str] = None,
+        known_types: Optional[list[str]] = None,
         source_name: Optional[str] = None,
     ) -> None:
         """Initializes the dialog.
@@ -84,28 +88,34 @@ class RelationEditDialog(QDialog):
         self.target_edit.setPlaceholderText("Search for entity or event...")
 
         # Setup Completer
-        self._name_to_id = {}
-        self._id_to_name = {}
+        self._display_to_id: dict[str, str] = {}
+        self._id_to_display: dict[str, str] = {}
+        self._name_to_ids: dict[str, list[str]] = {}
 
-        display_names = []
+        display_names: list[str] = []
         if suggestion_items:
+            name_counts = Counter(name.casefold() for _, name, _ in suggestion_items)
             for item_id, name, item_type in suggestion_items:
-                self._name_to_id[name] = item_id
-                self._id_to_name[item_id] = name
-                display_names.append(name)
+                display = name
+                if name_counts[name.casefold()] > 1:
+                    display = f"{name} ({item_type}, {item_id[:8]})"
+                self._display_to_id[display] = item_id
+                self._id_to_display[item_id] = display
+                self._name_to_ids.setdefault(name.casefold(), []).append(item_id)
+                display_names.append(display)
 
             # Sort names for better UX
             display_names.sort(key=str.lower)
 
         completer = QCompleter(display_names, self)
         completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-        completer.setFilterMode(Qt.MatchContains)
+        completer.setFilterMode(Qt.MatchFlag.MatchContains)
         self.target_edit.setCompleter(completer)
 
         # Pre-fill if editing
         if target_id:
             # Try to resolve ID to name for display, otherwise fallback to ID
-            initial_text = self._id_to_name.get(target_id, target_id)
+            initial_text = self._id_to_display.get(target_id, target_id)
             self.target_edit.setText(initial_text)
 
         self.form_layout.addRow("Target:", self.target_edit)
@@ -127,7 +137,11 @@ class RelationEditDialog(QDialog):
         if known_types:
             # Use set to unique, but keep defaults if we want specific order?
             # Or just sort everything.
-            all_types = sorted(list(set(default_types + known_types)))
+            all_types = sorted(
+                relation_type
+                for relation_type in set(default_types + known_types)
+                if relation_type != "mentions"
+            )
         else:
             all_types = default_types
 
@@ -395,7 +409,7 @@ class RelationEditDialog(QDialog):
 
     def _get_attributes(self) -> Dict[str, Any]:
         """Collects attributes from UI fields."""
-        attrs = {}
+        attrs: Dict[str, Any] = {}
 
         # Standard Attributes
         # Only include non-default values to keep data clean
@@ -420,7 +434,7 @@ class RelationEditDialog(QDialog):
         standard_keys = {"weight", "confidence", "notes", "valid_from", "valid_to"}
 
         # Payload accumulator
-        payload = {}
+        payload: Dict[str, Any] = {}
 
         for k, v in custom.items():
             if k in standard_keys:
@@ -476,14 +490,42 @@ class RelationEditDialog(QDialog):
             tuple: (target_id, rel_type, is_bidirectional, attributes)
 
         """
-        text = self.target_edit.text().strip()
-
-        # Resolve name to ID if possible, else use text as ID
-        # (This handles manual ID entry or cross-project links)
-        target_id = self._name_to_id.get(text, text)
+        target_id = self._resolve_target_id(self.target_edit.text())
 
         rel_type = self.type_edit.currentText().strip()
         is_bidirectional = self.bi_check.isChecked()
         attributes = self._get_attributes()
 
-        return target_id, rel_type, is_bidirectional, attributes
+        return target_id or "", rel_type, is_bidirectional, attributes
+
+    def _resolve_target_id(self, text: str) -> Optional[str]:
+        """Resolve a displayed target without allowing arbitrary persistence values."""
+        candidate = text.strip()
+        if candidate in self._display_to_id:
+            return self._display_to_id[candidate]
+        if candidate in self._id_to_display:
+            return candidate
+
+        matching_ids = self._name_to_ids.get(candidate.casefold(), [])
+        if len(matching_ids) == 1:
+            return matching_ids[0]
+        return None
+
+    def accept(self) -> None:
+        """Accept only canonical targets and manually supported relation types."""
+        target_id, rel_type, _, _ = self.get_data()
+        if not target_id:
+            QMessageBox.warning(
+                self,
+                "Unknown relation target",
+                "Select an existing entity or event from the target suggestions.",
+            )
+            return
+        if rel_type == "mentions":
+            QMessageBox.warning(
+                self,
+                "Automatic relation",
+                "Mentions are managed from description wikilinks.",
+            )
+            return
+        super().accept()

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-07-28
-**Commit:** 0612bd90
+**Commit:** b02fcfb6
 ---
 
 # Changelog
@@ -26,6 +26,13 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-07-28)* **Wiki / Relations**: Reconciled automatic mentions from
+  saved wikilinks using canonical UUID endpoints, removing stale, malformed,
+  and duplicate relations instead of appending offset-based rows.
+- *(2026-07-28)* **Editor / Formatting**: Reset new paragraphs after headings
+  using semantic block state and explicit body insertion formatting.
+- *(2026-07-28)* **AI / Testing**: Made prompt-preview coverage headless-safe
+  without bypassing real dialog construction.
 - *(2026-07-28)* **Stability**: Made LanguageTool, semantic timers, theme
   callbacks, context menus, and Qt widget teardown lifecycle-safe.
 - *(2026-07-28)* **Search**: Added accurate indexed, unchanged, and failed
@@ -42,6 +49,14 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-07-28)* **Wiki / Architecture**: Made saved descriptions the sole
+  writer for system-owned mentions, stored multiple text occurrences in one
+  source-target relation, and made automatic rows read-only in manual flows.
+- *(2026-07-28)* **Database / Migration**: Normalized legacy relation targets,
+  rebuilt derived mentions, enforced endpoint and uniqueness integrity, and
+  cleared incompatible persistent undo history and artifacts.
+- *(2026-07-28)* **Testing**: Added reconciliation, migration, endpoint,
+  single-writer, undo, UI, CLI, and legacy-data regression coverage.
 - *(2026-07-28)* **Development / CI**: Made smoke and fast regression jobs use
   cached Python 3.13 dependencies, serial execution, explicit timeouts, and
   always-uploaded test artifacts.

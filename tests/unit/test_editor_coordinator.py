@@ -9,7 +9,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 from PySide6.QtCore import QObject, QSettings, Signal
 
-from src.app.constants import SETTINGS_AUTO_RELATION_KEY
+from src.app.constants import (
+    SETTINGS_AUTO_RELATION_KEY,
+    WINDOW_SETTINGS_APP,
+    WINDOW_SETTINGS_KEY,
+)
 
 
 class FakeMainWindow(QObject):
@@ -199,7 +203,9 @@ class TestUpdateOperations:
         self, coordinator, fake_window
     ):
         """Updating event with description should emit CompositeCommand."""
-        QSettings().setValue(SETTINGS_AUTO_RELATION_KEY, True)
+        QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP).setValue(
+            SETTINGS_AUTO_RELATION_KEY, True
+        )
         signals = []
         fake_window.command_requested.connect(lambda cmd: signals.append(cmd))
 
@@ -210,6 +216,24 @@ class TestUpdateOperations:
         from src.commands.composite_command import CompositeCommand
 
         assert isinstance(signals[0], CompositeCommand)
+        assert signals[0].commands[1].text_content == "Some text"
+
+    def test_update_event_empty_description_still_reconciles(
+        self, coordinator, fake_window
+    ):
+        """Clearing a description must remove stale derived mentions on save."""
+        QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP).setValue(
+            SETTINGS_AUTO_RELATION_KEY, True
+        )
+        signals = []
+        fake_window.command_requested.connect(lambda cmd: signals.append(cmd))
+
+        coordinator.update_event({"id": "evt_1", "description": ""})
+
+        from src.commands.composite_command import CompositeCommand
+
+        assert isinstance(signals[0], CompositeCommand)
+        assert signals[0].commands[1].text_content == ""
 
     def test_update_event_no_id_aborts(self, coordinator, fake_window):
         """Update with no ID should not emit command."""
@@ -233,7 +257,9 @@ class TestUpdateOperations:
         self, coordinator, fake_window
     ):
         """Updating entity with description should emit CompositeCommand."""
-        QSettings().setValue(SETTINGS_AUTO_RELATION_KEY, True)
+        QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP).setValue(
+            SETTINGS_AUTO_RELATION_KEY, True
+        )
         signals = []
         fake_window.command_requested.connect(lambda cmd: signals.append(cmd))
 

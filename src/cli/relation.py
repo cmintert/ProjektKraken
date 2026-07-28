@@ -54,7 +54,7 @@ def add_relation(args: argparse.Namespace) -> int:
         )
         result = cmd.execute(db_service)
 
-        if result:
+        if result.success:
             source_short = args.source[:8]
             target_short = args.target[:8]
             print("✓ Added relation:")
@@ -166,7 +166,7 @@ def delete_relation(args: argparse.Namespace) -> int:
         cmd = RemoveRelationCommand(args.id)
         result = cmd.execute(db_service)
 
-        if result:
+        if result.success:
             print(f"✓ Deleted relation: {args.id}")
             return 0
         else:
@@ -210,7 +210,7 @@ def update_relation(args: argparse.Namespace) -> int:
         cmd = UpdateRelationCommand(args.id, target_id, rel_type, attributes)
         result = cmd.execute(db_service)
 
-        if result:
+        if result.success:
             print(f"✓ Updated relation: {args.id}")
             return 0
         else:
