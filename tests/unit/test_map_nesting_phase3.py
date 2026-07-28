@@ -202,8 +202,8 @@ class TestMapGraphicsViewFootprints:
 
     def test_labels_avoid_overlap(self, view):
         data = [
-            _make_footprint_data("d1", reg=_affine(cx=0.45, cy=0.40, scale=0.22)),
-            _make_footprint_data("d2", reg=_affine(cx=0.55, cy=0.40, scale=0.22)),
+            _make_footprint_data("d1", reg=_affine(cx=0.45, cy=0.30, scale=0.22)),
+            _make_footprint_data("d2", reg=_affine(cx=0.55, cy=0.30, scale=0.22)),
         ]
         view.set_footprints(data)
 

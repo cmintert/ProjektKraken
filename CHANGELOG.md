@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-07-28
-**Commit:** b30ba376
+**Commit:** 9a25b219
 ---
 
 # Changelog
@@ -51,6 +51,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-07-28)* **Testing**: Stabilized map-nesting label-overlap coverage
+  by keeping the footprint fixture clear of viewport bounds.
 - *(2026-07-28)* **Testing**: Added regression coverage for description-editor
   context-menu styling.
 - *(2026-07-28)* **Wiki / Architecture**: Made saved descriptions the sole
