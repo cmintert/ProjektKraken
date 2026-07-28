@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-07-28
-**Commit:** e491cd5f
+**Commit:** 472b851c
 ---
 
 # Changelog
@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-07-28)* **AI / Summaries**: Added editable and deletable event and
+  entity summaries with manual attribution, undoable persistence, and enforced
+  30-percent and 150-word generation limits.
 - *(2026-07-28)* **AI / Analysis**: Added cancellable, snapshot-based
   background analysis with partial results and capture timestamps.
 - *(2026-07-27)* **Explorer**: Added an undoable Delete action to the
@@ -56,6 +59,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-07-28)* **Documentation / Testing**: Documented summary management and
+  added regression coverage for limits, retries, editing, deletion, legacy
+  data, persistence, and undo.
 - *(2026-07-28)* **Testing**: Added regression coverage for AI snapshot
   isolation, cancellation, stale jobs, failure recovery, database
   responsiveness, Qt heartbeats, and safe thread shutdown.

@@ -21,7 +21,7 @@ def entity():
     return Entity(
         id="ent_1",
         name="Test Entity",
-        description="A test entity.",
+        description=" ".join(f"source-{index}" for index in range(20)),
         type="Location",
     )
 

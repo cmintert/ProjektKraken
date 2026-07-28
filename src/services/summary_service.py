@@ -4,14 +4,20 @@ Manages AI-generated natural language summaries for Entities and Events.
 Handles LLM provider integration and summary persistence.
 """
 
-import hashlib
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from src.core.entities import Entity
 from src.core.events import Event
-from src.core.summary_data import SummaryData
+from src.core.summary_data import (
+    DEFAULT_SUMMARY_PROMPT,
+    SUMMARY_SHORT_SOURCE_WORDS,
+    SummaryData,
+    calculate_summary_source_hash,
+    calculate_summary_word_limit,
+    count_summary_words,
+)
 from src.services.llm_provider import create_provider, log_ai_interaction
 
 if TYPE_CHECKING:
@@ -34,7 +40,7 @@ class SummaryService:
         # We delay provider creation until needed or create it here.
         # For now, let's create a default provider or look up settings.
         # Ideally, this should rely on `create_provider` dynamically based on config.
-        self._llm_provider = None
+        self._llm_provider: Any | None = None
 
     def _get_provider(self) -> Any:
         """Get or create the LLM provider for text generation.
@@ -99,12 +105,7 @@ class SummaryService:
             str: SHA-256 hex digest of the item's content.
 
         """
-        content = f"{item.name}|{item.type}|{item.description}"
-        # We can add more fields later (e.g. key attributes)
-        if hasattr(item, "lore_date"):
-            content += f"|{item.lore_date}"
-
-        return hashlib.sha256(content.encode("utf-8")).hexdigest()
+        return calculate_summary_source_hash(item)
 
     def is_stale(self, item: Union[Entity, Event]) -> bool:
         """Check if the cached summary is missing or stale.
@@ -172,28 +173,52 @@ class SummaryService:
             from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-            summary_max_tokens = int(settings.value("ai_gen_summary_max_tokens", 2048))
+            summary_max_tokens = cast(
+                int,
+                settings.value("ai_gen_summary_max_tokens", 2048, type=int),
+            )
             # Retrieve temperature (0-200 int -> 0.0-2.0 float)
             # Default to 0.0 for deterministic summaries
-            summary_temp_int = int(settings.value("ai_gen_summary_temperature", 0))
+            summary_temp_int = cast(
+                int,
+                settings.value("ai_gen_summary_temperature", 0, type=int),
+            )
             summary_temp = summary_temp_int / 100.0
 
             response = provider.generate(
                 prompt, max_tokens=summary_max_tokens, temperature=summary_temp
             )
-            text = response.get("text", "").strip()
+            text = self._extract_visible_text(response, settings)
             model = response.get("model", "unknown")
-            logger.info(f"Summary generation raw response:\n{text}")
 
-            # Apply reasoning tag filter if enabled
-            filter_reasoning = settings.value(
-                "ai_gen_filter_reasoning", True, type=bool
-            )
-            if filter_reasoning:
-                from src.services.reasoning_filter import filter_reasoning_tags
+            word_limit = calculate_summary_word_limit(item.description)
+            if count_summary_words(text) > word_limit:
+                retry_prompt = (
+                    f"{prompt}\n\n"
+                    "CORRECTION: The previous response exceeded the mandatory "
+                    f"{word_limit}-word limit. Rewrite the summary from the source "
+                    f"data in no more than {word_limit} words. Do not discuss the "
+                    "correction or the limit."
+                )
+                logger.info(
+                    "Summary exceeded %s words; retrying once with a stricter prompt.",
+                    word_limit,
+                )
+                response = provider.generate(
+                    retry_prompt,
+                    max_tokens=summary_max_tokens,
+                    temperature=summary_temp,
+                )
+                text = self._extract_visible_text(response, settings)
+                model = response.get("model", model)
 
-                text = filter_reasoning_tags(text)
-                logger.info(f"Summary after reasoning filter:\n{text}")
+            actual_words = count_summary_words(text)
+            if actual_words > word_limit:
+                raise RuntimeError(
+                    "The AI returned an overlong summary twice "
+                    f"({actual_words} words; limit {word_limit}). "
+                    "The existing summary was kept unchanged."
+                )
 
             summary = SummaryData(
                 text=text,
@@ -261,19 +286,16 @@ class SummaryService:
 
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
-        # Default prompt template
-        default_template = (
-            "Summarize the following worldbuilding item neutrally, "
-            "preserving all facts and the original tone. "
-            "Crucially, PRESERVE any [[Wiki Links]] exactly as they appear.\n\n"
-            "--- DATA: ENTITY/EVENT DETAILS ---\n"
-            "Type: {type}\n"
-            "Name: {name}\n"
-            "Description: {description}\n"
-            "--- END DATA ---"
-        )
+        word_limit = calculate_summary_word_limit(item.description)
+        if word_limit < 1:
+            raise ValueError(
+                "The description is too short to summarize under the 30% "
+                "compression rule. Add more source detail before generating."
+            )
 
-        template = settings.value("ai_gen_summary_prompt", default_template)
+        template = str(
+            settings.value("ai_gen_summary_prompt", DEFAULT_SUMMARY_PROMPT)
+        )
 
         # Apply placeholder substitution
         lore_date = getattr(item, "lore_date", "")
@@ -284,4 +306,29 @@ class SummaryService:
             lore_date=lore_date,
         )
 
-        return prompt
+        format_requirement = ""
+        if count_summary_words(item.description) < SUMMARY_SHORT_SOURCE_WORDS:
+            format_requirement = (
+                " Return exactly one sentence with no heading or bullet list."
+            )
+
+        return (
+            f"{prompt}\n\n"
+            "MANDATORY OUTPUT RULE: Return only the summary, using no more than "
+            f"{word_limit} words.{format_requirement} Preserve every [[Wiki Link]] "
+            "that you include exactly."
+        )
+
+    @staticmethod
+    def _extract_visible_text(response: dict[str, Any], settings: Any) -> str:
+        """Extract visible response text after optional reasoning-tag filtering."""
+        text = response.get("text", "").strip()
+        logger.info(f"Summary generation raw response:\n{text}")
+
+        if settings.value("ai_gen_filter_reasoning", True, type=bool):
+            from src.services.reasoning_filter import filter_reasoning_tags
+
+            text = filter_reasoning_tags(text).strip()
+            logger.info(f"Summary after reasoning filter:\n{text}")
+
+        return text

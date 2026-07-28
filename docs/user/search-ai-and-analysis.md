@@ -37,6 +37,17 @@ index.
 Selecting a template does not overwrite the draft. Generated text is not
 inserted until you explicitly apply it.
 
+## Manage item summaries
+
+Expand **Summary** in an event or entity editor to generate a compact overview.
+AI summaries are limited to 30% of the description and at most 150 words. For
+descriptions under 50 words, the model is asked for a single sentence.
+
+Use **Edit** to revise a summary inline. Once edited, it is identified as a
+manual summary rather than attributed to the model. Use **Delete** to stage its
+removal. Edits, regeneration, and deletion are persisted only when you save the
+event or entity; discarding changes restores the stored summary.
+
 ## Manage task templates
 
 Open the Task Templates area in AI settings. Bundled templates are read-only;
@@ -53,4 +64,3 @@ Open **Analysis Suite** from **View**. Its tabs can:
 
 Analysis results are advisory. Review the underlying events and relations
 before changing established lore.
-

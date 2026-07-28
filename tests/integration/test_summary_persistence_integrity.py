@@ -10,9 +10,14 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from src.commands.entity_commands import UpdateEntityCommand
+from src.commands.event_commands import UpdateEventCommand
 from src.core.entities import Entity
 from src.core.events import Event
+from src.core.summary_data import calculate_summary_source_hash
 from src.services.summary_service import SummaryService
+
+LONG_DESCRIPTION = " ".join(f"source-{index}" for index in range(20))
 
 
 @pytest.fixture
@@ -50,7 +55,7 @@ class TestSummaryGenerationDoesNotDestroyData:
         entity = Entity(
             name="Knight",
             type="character",
-            description="A loyal knight.",
+            description=LONG_DESCRIPTION,
             attributes={
                 "_tags": ["warrior", "noble"],
                 "strength": 10,
@@ -75,7 +80,7 @@ class TestSummaryGenerationDoesNotDestroyData:
         event = Event(
             name="Battle",
             lore_date=500.0,
-            description="A great battle.",
+            description=LONG_DESCRIPTION,
             attributes={
                 "_tags": ["war", "decisive"],
                 "casualties": 5000,
@@ -267,7 +272,7 @@ class TestEditorSaveMergesAttributes:
         entity = Entity(
             name="Dragon",
             type="creature",
-            description="A fearsome dragon.",
+            description=LONG_DESCRIPTION,
             attributes={
                 "_tags": ["fire", "flying"],
                 "_custom_meta": {"origin": "volcanic"},
@@ -308,7 +313,7 @@ class TestEditorSaveMergesAttributes:
         event = Event(
             name="Eclipse",
             lore_date=1000.0,
-            description="A total solar eclipse.",
+            description=LONG_DESCRIPTION,
             attributes={
                 "_tags": ["celestial", "rare"],
                 "_custom_meta": {"visibility": "global"},
@@ -450,3 +455,123 @@ class TestSummaryLoadedOnEditorOpen:
 
         # Staleness check should have been called
         mock_service.is_stale.assert_called_once()
+
+
+class TestSummaryEditorMutations:
+    """Manual summary edits and deletion must use normal editor save payloads."""
+
+    def test_entity_manual_edit_is_staged_as_manual_and_saved(self, qapp, qtbot):
+        from src.gui.widgets.entity_editor import EntityEditorWidget
+
+        entity = Entity(
+            name="Archivist",
+            type="character",
+            description=LONG_DESCRIPTION,
+            attributes={
+                "_summary_data": {
+                    "text": "AI text",
+                    "hash": "old",
+                    "timestamp": 1.0,
+                    "model": "model",
+                },
+                "_custom_hidden": "keep",
+            },
+        )
+        editor = EntityEditorWidget()
+        editor.gallery = MagicMock()
+        editor.load_entity(entity)
+
+        editor._on_summary_edit_committed("Manual summary")
+
+        pending = editor._pending_summary_data
+        assert pending is not None
+        assert pending["origin"] == "manual"
+        assert pending["model"] == ""
+        assert pending["hash"] == calculate_summary_source_hash(entity)
+
+        with qtbot.waitSignal(editor.save_requested, timeout=1000) as blocker:
+            editor._on_save()
+        attributes = blocker.args[0]["attributes"]
+        assert attributes["_summary_data"] == pending
+        assert attributes["_custom_hidden"] == "keep"
+
+    def test_event_summary_delete_is_staged_and_saved(self, qapp, qtbot):
+        from src.gui.widgets.event_editor import EventEditorWidget
+
+        event = Event(
+            name="Eclipse",
+            type="event",
+            lore_date=10.0,
+            description=LONG_DESCRIPTION,
+            attributes={
+                "_summary_data": {
+                    "text": "Remove me",
+                    "hash": "old",
+                    "timestamp": 1.0,
+                    "model": "model",
+                },
+                "_custom_hidden": "keep",
+            },
+        )
+        editor = EventEditorWidget()
+        editor.gallery = MagicMock()
+        editor.load_event(event)
+
+        editor._on_summary_delete_requested()
+
+        with qtbot.waitSignal(editor.save_requested, timeout=1000) as blocker:
+            editor._on_save()
+        attributes = blocker.args[0]["attributes"]
+        assert "_summary_data" not in attributes
+        assert attributes["_custom_hidden"] == "keep"
+
+    def test_entity_summary_delete_is_restored_by_command_undo(self, db_service):
+        entity = Entity(
+            name="Archivist",
+            type="character",
+            description=LONG_DESCRIPTION,
+            attributes={
+                "_summary_data": {
+                    "text": "Restore me",
+                    "hash": "old",
+                    "timestamp": 1.0,
+                    "model": "model",
+                }
+            },
+        )
+        db_service.insert_entity(entity)
+        command = UpdateEntityCommand(entity.id, {"attributes": {}})
+
+        result = command.execute(db_service)
+        assert result.success
+        assert "_summary_data" not in db_service.get_entity(entity.id).attributes
+
+        command.undo(db_service)
+        restored = db_service.get_entity(entity.id)
+        assert restored.attributes["_summary_data"]["text"] == "Restore me"
+
+    def test_event_summary_delete_is_restored_by_command_undo(self, db_service):
+        event = Event(
+            name="Eclipse",
+            type="event",
+            lore_date=10.0,
+            description=LONG_DESCRIPTION,
+            attributes={
+                "_summary_data": {
+                    "text": "Restore me",
+                    "hash": "old",
+                    "timestamp": 1.0,
+                    "model": "model",
+                }
+            },
+        )
+        db_service.insert_event(event)
+        command = UpdateEventCommand(event.id, {"attributes": {}})
+
+        result = command.execute(db_service)
+        assert result.success
+        assert "_summary_data" not in db_service.get_event(event.id).attributes
+
+        command.undo(db_service)
+        restored = db_service.get_event(event.id)
+        assert restored.attributes["_summary_data"]["text"] == "Restore me"

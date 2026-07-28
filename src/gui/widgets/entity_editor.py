@@ -5,6 +5,7 @@ text editing, custom attributes, tags, and relationship management.
 """
 
 import logging
+import time
 import traceback
 from contextlib import suppress
 from typing import Any, Dict, Optional
@@ -27,7 +28,7 @@ from PySide6.QtWidgets import (
 
 from src.core.ai_generation import GenerationReviewResult, apply_reviewed_generation
 from src.core.entities import Entity
-from src.core.summary_data import SummaryData
+from src.core.summary_data import SummaryData, calculate_summary_source_hash
 from src.gui.mixins.autosave_mixin import AutoSaveManager
 from src.gui.mixins.editor_mixin import BaseEditorMixin
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
@@ -264,6 +265,12 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self.summary_widget.generate_requested.connect(
             self._on_summary_generate_requested
         )
+        self.summary_widget.edit_committed.connect(
+            self._on_summary_edit_committed
+        )
+        self.summary_widget.delete_requested.connect(
+            self._on_summary_delete_requested
+        )
         summary_outer_layout.addWidget(self.summary_widget)
 
         self.summary_checkbox.toggled.connect(self.summary_widget.setVisible)
@@ -427,6 +434,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self._current_created_at = 0.0
         self._is_dirty = False
         self._is_loading = False  # Guard against dirty during load
+        self._pending_summary_changed = False
+        self._pending_summary_data: dict | None = None
 
         self._connect_dirty_signals()
 
@@ -802,6 +811,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         if entity is None:
             self._current_entity_id = None
             self._current_created_at = 0.0
+            self._reset_pending_summary()
+            self.summary_widget.clear_summary()
             self._empty_state.show()
             self._content_widget.hide()
             self.set_dirty(False)
@@ -810,6 +821,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         self._is_loading = True
         try:
+            self._reset_pending_summary()
             self._current_entity_id = entity.id
             self._current_created_at = entity.created_at
 
@@ -952,6 +964,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         self.gallery.set_owner("entity", entity.id)
 
+        self.summary_widget.clear_summary()
         summary_data = entity.attributes.get("_summary_data")
         if summary_data:
             with suppress(Exception):
@@ -1094,9 +1107,11 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             # Restore hidden attributes first, then overlay pending summary
             self._merge_hidden_attributes(base_attrs)
 
-            # Pending summary takes precedence over any existing _summary_data
-            if hasattr(self, "_pending_summary_data") and self._pending_summary_data:
-                base_attrs["_summary_data"] = self._pending_summary_data
+            if self._pending_summary_changed:
+                if self._pending_summary_data is None:
+                    base_attrs.pop("_summary_data", None)
+                else:
+                    base_attrs["_summary_data"] = self._pending_summary_data
 
             # Persist the sheet layout arrangement
             sheet_layout = self.sheet_builder.get_layout()
@@ -1157,6 +1172,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         """
         self._current_entity_id = None
+        self._reset_pending_summary()
+        self.summary_widget.clear_summary()
         self.name_edit.clear()
         self.desc_edit.clear()
         self.rel_list.clear()
@@ -1534,6 +1551,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         # Disable Save/Discard
         self.btn_save.setEnabled(not readonly)
         self.btn_discard.setEnabled(not readonly)
+        self.summary_widget.set_controls_enabled(not readonly)
 
         if readonly:
             if reason == "Viewing Past/Future State":
@@ -1630,6 +1648,47 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         self.summary_generation_requested.emit(temp_entity)
 
+    @Slot(str)
+    def _on_summary_edit_committed(self, text: str) -> None:
+        """Stage a manually edited summary for the next item save."""
+        if not self._current_entity_id:
+            return
+        item = self._current_summary_entity()
+        summary = SummaryData(
+            text=text,
+            hash=calculate_summary_source_hash(item),
+            timestamp=time.time(),
+            model="",
+            origin="manual",
+        )
+        self._pending_summary_changed = True
+        self._pending_summary_data = summary.to_dict()
+        self.summary_widget.set_summary(summary)
+        self.summary_widget.set_stale(False)
+        self.set_dirty(True)
+
+    @Slot()
+    def _on_summary_delete_requested(self) -> None:
+        """Stage summary removal for the next item save."""
+        self._pending_summary_changed = True
+        self._pending_summary_data = None
+        self.set_dirty(True)
+
+    def _current_summary_entity(self) -> Entity:
+        """Build an entity snapshot from the current editor fields."""
+        return Entity(
+            name=self.name_edit.text(),
+            type=self.type_edit.currentText(),
+            description=self.desc_edit.get_wiki_text(),
+            id=self._current_entity_id or "",
+            attributes=self.attribute_editor.get_attributes(),
+        )
+
+    def _reset_pending_summary(self) -> None:
+        """Reset staged summary state after an item load or clear."""
+        self._pending_summary_changed = False
+        self._pending_summary_data = None
+
     @Slot(object)
     def on_summary_generated(self, summary_data: SummaryData) -> None:
         """Apply a freshly generated summary to the editor UI.
@@ -1648,6 +1707,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         try:
             self.summary_widget.set_summary(summary_data)
+            self._pending_summary_changed = True
             self._pending_summary_data = summary_data.to_dict()
             self.set_dirty(True)
         except Exception as e:

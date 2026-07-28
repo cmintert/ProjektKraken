@@ -6,6 +6,7 @@ attributes, and relations.
 
 import logging
 import os
+import time
 import traceback
 from contextlib import suppress
 from typing import Any, Dict, Optional
@@ -36,7 +37,7 @@ from src.app.constants import (
 )
 from src.core.ai_generation import GenerationReviewResult, apply_reviewed_generation
 from src.core.events import Event
-from src.core.summary_data import SummaryData
+from src.core.summary_data import SummaryData, calculate_summary_source_hash
 from src.gui.mixins.autosave_mixin import AutoSaveManager
 from src.gui.mixins.editor_mixin import BaseEditorMixin
 from src.gui.utils.icon_loader import load_icon
@@ -273,6 +274,12 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.summary_widget.generate_requested.connect(
             self._on_summary_generate_requested
         )
+        self.summary_widget.edit_committed.connect(
+            self._on_summary_edit_committed
+        )
+        self.summary_widget.delete_requested.connect(
+            self._on_summary_delete_requested
+        )
         summary_outer_layout.addWidget(self.summary_widget)
 
         self.summary_checkbox.toggled.connect(self.summary_widget.setVisible)
@@ -409,6 +416,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self._current_event_id = None
         self._current_created_at = 0.0
         self._is_dirty = False
+        self._pending_summary_changed = False
+        self._pending_summary_data: dict | None = None
 
         # Connect signals for dirty tracking
         self._connect_dirty_signals()
@@ -958,12 +967,15 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         if event is None:
             self._current_event_id = None
             self._current_created_at = 0.0
+            self._reset_pending_summary()
+            self.summary_widget.clear_summary()
             self._empty_state.show()
             self._content_widget.hide()
             self.set_dirty(False)
             self.gallery.set_owner("", "")
             return
 
+        self._reset_pending_summary()
         self._current_event_id = event.id
         self._current_created_at = event.created_at  # Preserve validation data
 
@@ -1096,6 +1108,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             self.sheet_builder.blockSignals(False)
 
         # Load Summary
+        self.summary_widget.clear_summary()
         summary_data = event.attributes.get("_summary_data")
         if summary_data:
             with suppress(Exception):
@@ -1229,10 +1242,12 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             base_attrs = self.attribute_editor.get_attributes()
             base_attrs["_tags"] = self.tag_editor.get_tags()
 
-            # Inject pending summary/hidden attributes
-            if hasattr(self, "_pending_summary_data") and self._pending_summary_data:
-                base_attrs["_summary_data"] = self._pending_summary_data
             self._merge_hidden_attributes(base_attrs)
+            if self._pending_summary_changed:
+                if self._pending_summary_data is None:
+                    base_attrs.pop("_summary_data", None)
+                else:
+                    base_attrs["_summary_data"] = self._pending_summary_data
 
             # Persist the sheet layout arrangement
             sheet_layout = self.sheet_builder.get_layout()
@@ -1482,6 +1497,49 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         self.summary_generation_requested.emit(temp_event)
 
+    @Slot(str)
+    def _on_summary_edit_committed(self, text: str) -> None:
+        """Stage a manually edited summary for the next item save."""
+        if not self._current_event_id:
+            return
+        item = self._current_summary_event()
+        summary = SummaryData(
+            text=text,
+            hash=calculate_summary_source_hash(item),
+            timestamp=time.time(),
+            model="",
+            origin="manual",
+        )
+        self._pending_summary_changed = True
+        self._pending_summary_data = summary.to_dict()
+        self.summary_widget.set_summary(summary)
+        self.summary_widget.set_stale(False)
+        self.set_dirty(True)
+
+    @Slot()
+    def _on_summary_delete_requested(self) -> None:
+        """Stage summary removal for the next item save."""
+        self._pending_summary_changed = True
+        self._pending_summary_data = None
+        self.set_dirty(True)
+
+    def _current_summary_event(self) -> Event:
+        """Build an event snapshot from the current editor fields."""
+        return Event(
+            name=self.name_edit.text(),
+            lore_date=self.temporal_widget.get_start(),
+            lore_duration=self.temporal_widget.get_duration(),
+            type=self.type_edit.currentText(),
+            description=self.desc_edit.get_wiki_text(),
+            id=self._current_event_id or "",
+            attributes=self.attribute_editor.get_attributes(),
+        )
+
+    def _reset_pending_summary(self) -> None:
+        """Reset staged summary state after an item load."""
+        self._pending_summary_changed = False
+        self._pending_summary_data = None
+
     @Slot(object)
     def on_summary_generated(self, summary_data: SummaryData) -> None:
         """Callback when summary is generated."""
@@ -1490,6 +1548,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         try:
             self.summary_widget.set_summary(summary_data)
+            self._pending_summary_changed = True
             self._pending_summary_data = summary_data.to_dict()
             self.set_dirty(True)
         except Exception as e:

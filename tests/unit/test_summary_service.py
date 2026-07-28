@@ -4,7 +4,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.core.entities import Entity
+from src.core.summary_data import calculate_summary_word_limit
 from src.services.summary_service import SummaryService
+
+LONG_DESCRIPTION = " ".join(f"source-{index}" for index in range(20))
 
 
 @pytest.fixture
@@ -109,7 +112,7 @@ def test_get_summary_returns_cached_if_valid(summary_service, mock_llm_provider)
 def test_generate_summary_calls_llm_and_updates_entity(
     summary_service, mock_llm_provider, mock_db_service
 ):
-    entity = Entity(name="Hero", type="character", description="A brave hero.")
+    entity = Entity(name="Hero", type="character", description=LONG_DESCRIPTION)
 
     result = summary_service.generate_summary(entity)
 
@@ -140,7 +143,11 @@ def test_prompt_contains_wiki_link_instruction(summary_service, mock_llm_provide
     settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
     settings.remove("ai_gen_summary_prompt")
 
-    entity = Entity(name="Page", type="loc", description="Links to [[Another Page]].")
+    entity = Entity(
+        name="Page",
+        type="loc",
+        description=f"Links to [[Another Page]]. {LONG_DESCRIPTION}",
+    )
     summary_service.generate_summary(entity)
 
     call_args = mock_llm_provider.generate.call_args
@@ -164,7 +171,7 @@ def test_calculate_hash_handles_missing_optional_attributes(summary_service):
 
 
 def test_get_summary_returns_none_for_malformed_data(summary_service):
-    entity = Entity(name="Test", type="char")
+    entity = Entity(name="Test", type="char", description=LONG_DESCRIPTION)
     # Missing 'hash' field
     entity.attributes["_summary_data"] = {
         "text": "Broken",
@@ -179,7 +186,7 @@ def test_get_summary_returns_none_for_malformed_data(summary_service):
 def test_generate_summary_handles_llm_error_gracefully(
     summary_service, mock_llm_provider
 ):
-    entity = Entity(name="Test", type="char")
+    entity = Entity(name="Test", type="char", description=LONG_DESCRIPTION)
     mock_llm_provider.generate.side_effect = Exception("API Error")
 
     with pytest.raises(Exception) as excinfo:
@@ -191,7 +198,7 @@ def test_generate_summary_handles_llm_error_gracefully(
 
 
 def test_generate_summary_handles_empty_response(summary_service, mock_llm_provider):
-    entity = Entity(name="Test", type="char")
+    entity = Entity(name="Test", type="char", description=LONG_DESCRIPTION)
     mock_llm_provider.generate.return_value = {"text": ""}
 
     result = summary_service.generate_summary(entity)
@@ -224,7 +231,7 @@ def test_generate_summary_uses_configured_max_tokens(
     settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
     settings.setValue("ai_gen_summary_max_tokens", 4096)
 
-    entity = Entity(name="Hero", type="character", description="A brave hero.")
+    entity = Entity(name="Hero", type="character", description=LONG_DESCRIPTION)
     summary_service.generate_summary(entity)
 
     call_args = mock_llm_provider.generate.call_args
@@ -254,7 +261,7 @@ def test_generate_summary_filters_reasoning_tags(summary_service, mock_llm_provi
         "finish_reason": "stop",
     }
 
-    entity = Entity(name="Hero", type="character", description="A brave hero.")
+    entity = Entity(name="Hero", type="character", description=LONG_DESCRIPTION)
     result = summary_service.generate_summary(entity)
 
     # The <think> block should be gone
@@ -277,7 +284,7 @@ def test_generate_summary_uses_configured_temperature(
     settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
     settings.setValue("ai_gen_summary_temperature", 25)  # 0.25
 
-    entity = Entity(name="Hero", type="character", description="A brave hero.")
+    entity = Entity(name="Hero", type="character", description=LONG_DESCRIPTION)
     summary_service.generate_summary(entity)
 
     call_args = mock_llm_provider.generate.call_args
@@ -286,3 +293,110 @@ def test_generate_summary_uses_configured_temperature(
 
     # Clean up
     settings.remove("ai_gen_summary_temperature")
+
+
+def test_calculate_summary_word_limit_uses_ratio_and_ceiling():
+    assert calculate_summary_word_limit("word " * 100) == 30
+    assert calculate_summary_word_limit("word " * 1000) == 150
+
+
+def test_short_source_prompt_requires_one_sentence(summary_service):
+    entity = Entity(
+        name="Short",
+        type="concept",
+        description=" ".join(f"word-{index}" for index in range(20)),
+    )
+
+    prompt = summary_service._build_prompt(entity)
+
+    assert "no more than 6 words" in prompt
+    assert "exactly one sentence" in prompt
+
+
+def test_too_short_source_is_rejected_before_provider(
+    summary_service, mock_llm_provider
+):
+    entity = Entity(name="Tiny", type="concept", description="Only two")
+
+    with pytest.raises(RuntimeError, match="too short"):
+        summary_service.generate_summary(entity)
+
+    mock_llm_provider.generate.assert_not_called()
+
+
+def test_overlong_response_retries_once_and_accepts_compliant_result(
+    summary_service, mock_llm_provider
+):
+    source = " ".join(f"source-{index}" for index in range(100))
+    overlong = " ".join(f"over-{index}" for index in range(31))
+    compliant = " ".join(f"ok-{index}" for index in range(30))
+    mock_llm_provider.generate.side_effect = [
+        {"text": overlong, "model": "test-model"},
+        {"text": compliant, "model": "test-model"},
+    ]
+    entity = Entity(name="Long", type="concept", description=source)
+
+    result = summary_service.generate_summary(entity)
+
+    assert result.text == compliant
+    assert mock_llm_provider.generate.call_count == 2
+    retry_prompt = mock_llm_provider.generate.call_args_list[1].args[0]
+    assert "CORRECTION" in retry_prompt
+    assert "30-word limit" in retry_prompt
+
+
+def test_two_overlong_responses_preserve_existing_summary(
+    summary_service, mock_llm_provider
+):
+    source = " ".join(f"source-{index}" for index in range(100))
+    overlong = " ".join(f"over-{index}" for index in range(31))
+    existing = {
+        "text": "Keep this",
+        "hash": "old",
+        "timestamp": 1.0,
+        "model": "old-model",
+    }
+    mock_llm_provider.generate.return_value = {
+        "text": overlong,
+        "model": "test-model",
+    }
+    entity = Entity(
+        name="Long",
+        type="concept",
+        description=source,
+        attributes={"_summary_data": existing},
+    )
+
+    with pytest.raises(RuntimeError, match="overlong summary twice"):
+        summary_service.generate_summary(entity)
+
+    assert entity.attributes["_summary_data"] == existing
+    assert mock_llm_provider.generate.call_count == 2
+
+
+def test_custom_prompt_still_receives_mandatory_constraint(
+    summary_service, mock_llm_provider
+):
+    from PySide6.QtCore import QSettings
+
+    from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+
+    settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+    settings.setValue(
+        "ai_gen_summary_prompt",
+        "Custom: {name}\nDescription: {description}",
+    )
+    try:
+        entity = Entity(
+            name="Custom",
+            type="concept",
+            description=LONG_DESCRIPTION,
+        )
+        summary_service.generate_summary(entity)
+
+        prompt = mock_llm_provider.generate.call_args.args[0]
+        assert "Custom: Custom" in prompt
+        assert "MANDATORY OUTPUT RULE" in prompt
+        assert "[[Wiki Link]]" in prompt
+    finally:
+        settings.remove("ai_gen_summary_prompt")

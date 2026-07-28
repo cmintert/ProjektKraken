@@ -37,6 +37,7 @@ from src.core.ai_generation import (
     TaskTemplate,
     TaskTemplateSource,
 )
+from src.core.summary_data import DEFAULT_SUMMARY_PROMPT
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.prompt_editor import PromptEditorWidget
 from src.services.lmstudio_config import (
@@ -644,23 +645,7 @@ class AISettingsDialog(QDialog):
         self.summary_prompt_edit.set_variables(
             ["{type}", "{name}", "{description}", "{lore_date}"]
         )
-        default_summary_prompt = (
-            "Summarize the following content in a clear, structured, and concise way. "
-            "Focus on the essential ideas, remove filler, and present the information "
-            "as a summary.\n\n"
-            "Requirements:\n"
-            "- Start with a short, high-level overview (2–3 sentences)\n"
-            "- Follow with bullet points capturing key details, decisions, "
-            "and insights\n"
-            "- Preserve factual accuracy without adding new information\n"
-            "- Use neutral, professional language\n"
-            "- Avoid repetition and avoid quoting large sections verbatim\n\n"
-            "Content Data:\n"
-            "Type: {type}\n"
-            "Name: {name}\n"
-            "Description: {description}"
-        )
-        self.summary_prompt_edit.set_default_text(default_summary_prompt)
+        self.summary_prompt_edit.set_default_text(DEFAULT_SUMMARY_PROMPT)
         summary_layout.addWidget(self.summary_prompt_edit)
         self.summary_prompt_edit.textChanged.connect(self.save_settings)
         main_layout.addWidget(summary_group)
@@ -674,7 +659,8 @@ class AISettingsDialog(QDialog):
         self.summary_max_tokens_input.setRange(100, 100000)
         self.summary_max_tokens_input.setValue(2048)
         self.summary_max_tokens_input.setToolTip(
-            "Maximum tokens for summary generation.\n"
+            "Provider safety ceiling for summary generation. Visible summaries "
+            "are separately limited to 30% of the description and 150 words.\n"
             "Reasoning models (e.g. DeepSeek R1) need higher values\n"
             "because <think> tags consume part of the budget."
         )
@@ -1598,18 +1584,8 @@ class AISettingsDialog(QDialog):
             settings.value("ai_gen_system_prompt", default_prompt)
         )
 
-        # Summary prompt with default fallback
-        default_summary_prompt = (
-            "Summarize the following worldbuilding item neutrally, "
-            "preserving all facts and the original tone. "
-            "Crucially, PRESERVE any [[Wiki Links]] exactly as they appear.\n\n"
-            "Item Data:\n"
-            "Type: {type}\n"
-            "Name: {name}\n"
-            "Description: {description}"
-        )
         self.summary_prompt_edit.setPlainText(
-            settings.value("ai_gen_summary_prompt", default_summary_prompt)
+            settings.value("ai_gen_summary_prompt", DEFAULT_SUMMARY_PROMPT)
         )
         self.summary_max_tokens_input.setValue(
             int(settings.value("ai_gen_summary_max_tokens", 2048))
