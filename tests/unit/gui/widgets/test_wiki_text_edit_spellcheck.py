@@ -228,6 +228,15 @@ class TestIgnoreAndApply:
 class TestContextMenu:
     """Tests for right-click handling over a spell-check match."""
 
+    def test_editor_styles_only_make_viewport_transparent(
+        self, editor: WikiTextEdit
+    ) -> None:
+        """Keep editor-owned context menus out of the transparent viewport rule."""
+        stylesheet = editor.editor.styleSheet()
+
+        assert "QTextEdit > QWidget#qt_scrollarea_viewport" in stylesheet
+        assert "QTextEdit > QWidget {" not in stylesheet
+
     def _menu_for_offset(
         self, editor: WikiTextEdit, offset: int, monkeypatch: pytest.MonkeyPatch
     ):

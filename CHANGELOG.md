@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-07-28
-**Commit:** b02fcfb6
+**Commit:** b30ba376
 ---
 
 # Changelog
@@ -26,6 +26,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-07-28)* **Editor / UX**: Kept description-editor context menus
+  opaque by limiting transparent styling to the text viewport.
 - *(2026-07-28)* **Wiki / Relations**: Reconciled automatic mentions from
   saved wikilinks using canonical UUID endpoints, removing stale, malformed,
   and duplicate relations instead of appending offset-based rows.
@@ -49,6 +51,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-07-28)* **Testing**: Added regression coverage for description-editor
+  context-menu styling.
 - *(2026-07-28)* **Wiki / Architecture**: Made saved descriptions the sole
   writer for system-owned mentions, stored multiple text occurrences in one
   source-target relation, and made automatic rows read-only in manual flows.

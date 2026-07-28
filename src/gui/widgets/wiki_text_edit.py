@@ -531,7 +531,7 @@ class WikiTextEditView(QTextEdit):
                 selection-background-color: {primary};
                 selection-color: {surface};
             }}
-            QTextEdit > QWidget {{
+            QTextEdit > QWidget#qt_scrollarea_viewport {{
                 border: none;
                 background-color: transparent;
             }}
