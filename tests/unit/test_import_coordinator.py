@@ -102,12 +102,14 @@ class TestImportFinished:
 
         # Set up progress dialog
         coordinator._import_progress_dialog = MagicMock()
+        progress_dialog = coordinator._import_progress_dialog
 
         with patch("src.app.coordinators.import_coordinator.QMessageBox") as mock_box:
             coordinator.on_import_finished(result)
             mock_box.information.assert_called_once()
 
         # Progress dialog should be cleaned up
+        progress_dialog.finish.assert_called_once()
         assert coordinator._import_progress_dialog is None
 
     def test_on_import_finished_failure(self, coordinator, fake_window):
@@ -179,6 +181,10 @@ class TestMarkdownBatchImport:
         self, mock_progress, mock_dialog, coordinator, fake_window
     ):
         """Multiple .md files should trigger run_markdown_batch_import."""
+        requests = []
+        coordinator.run_markdown_batch_import_requested.connect(
+            lambda contents, options: requests.append((contents, options))
+        )
         mock_dialog.getOpenFileNames.return_value = (
             ["/tmp/a.md", "/tmp/b.md"],
             "",
@@ -189,6 +195,7 @@ class TestMarkdownBatchImport:
         # Should NOT invoke the single-file methods
         fake_window.worker.run_markdown_import.assert_not_called()
         fake_window.worker.run_import.assert_not_called()
+        assert len(requests) == 1
 
     @patch("src.app.coordinators.import_coordinator.QFileDialog")
     def test_empty_selection_is_noop(self, mock_dialog, coordinator, fake_window):
@@ -249,7 +256,6 @@ class TestPastedJsonImport:
 
         mock_message_box.critical.assert_called_once()
 
-    @patch("src.app.coordinators.import_coordinator.QMetaObject")
     @patch("src.app.coordinators.import_coordinator.ImportPreviewDialog")
     @patch("src.app.coordinators.import_coordinator.ImportService")
     @patch("src.app.coordinators.import_coordinator.PasteJsonImportDialog")
@@ -262,12 +268,15 @@ class TestPastedJsonImport:
         mock_paste_dialog,
         mock_import_service,
         mock_preview_dialog,
-        mock_qmetaobject,
         coordinator,
     ):
         """Valid pasted JSON should follow preview and dispatch to worker."""
         from PySide6.QtWidgets import QDialog
 
+        requests = []
+        coordinator.run_import_requested.connect(
+            lambda parsed, options: requests.append((parsed, options))
+        )
         paste_dialog = MagicMock()
         paste_dialog.exec.return_value = QDialog.DialogCode.Accepted
         paste_dialog.get_json_text.return_value = "{}"
@@ -287,10 +296,9 @@ class TestPastedJsonImport:
 
         coordinator.import_pasted_json_requested()
 
-        mock_qmetaobject.invokeMethod.assert_called_once()
+        assert len(requests) == 1
         mock_show_progress.assert_called_once()
 
-    @patch("src.app.coordinators.import_coordinator.QMetaObject")
     @patch("src.app.coordinators.import_coordinator.ImportPreviewDialog")
     @patch("src.app.coordinators.import_coordinator.ImportService")
     @patch("src.app.coordinators.import_coordinator.PasteJsonImportDialog")
@@ -299,12 +307,15 @@ class TestPastedJsonImport:
         mock_paste_dialog,
         mock_import_service,
         mock_preview_dialog,
-        mock_qmetaobject,
         coordinator,
     ):
         """Rejecting the preview should not dispatch worker import."""
         from PySide6.QtWidgets import QDialog
 
+        requests = []
+        coordinator.run_import_requested.connect(
+            lambda parsed, options: requests.append((parsed, options))
+        )
         paste_dialog = MagicMock()
         paste_dialog.exec.return_value = QDialog.DialogCode.Accepted
         paste_dialog.get_json_text.return_value = "{}"
@@ -322,4 +333,74 @@ class TestPastedJsonImport:
 
         coordinator.import_pasted_json_requested()
 
-        mock_qmetaobject.invokeMethod.assert_not_called()
+        assert requests == []
+
+
+class TestSingleObsidianExport:
+    """Tests for worker-backed single-item Obsidian exports."""
+
+    def test_export_request_is_dispatched_without_gui_database(
+        self, coordinator, fake_window
+    ):
+        """The coordinator should request worker preparation using item identity."""
+        requests = []
+        coordinator.prepare_obsidian_export_requested.connect(
+            lambda item_type, item_id: requests.append((item_type, item_id))
+        )
+
+        coordinator.export_single_obsidian("entity", "entity-1")
+
+        assert requests == [("entity", "entity-1")]
+        fake_window.status_bar.showMessage.assert_called_with(
+            "Preparing export...", 0
+        )
+
+    @patch("src.app.coordinators.import_coordinator.QFileDialog")
+    def test_prepared_export_selects_path_and_dispatches_worker(
+        self, mock_dialog, coordinator
+    ):
+        """A prepared snapshot should lead to a worker export request."""
+        requests = []
+        coordinator.run_obsidian_export_requested.connect(
+            lambda item_type, item_id, path: requests.append(
+                (item_type, item_id, path)
+            )
+        )
+        mock_dialog.getSaveFileName.return_value = (
+            "C:/tmp/Chosen Name.md",
+            "Markdown Files (*.md)",
+        )
+
+        coordinator.on_obsidian_export_prepared(
+            {
+                "item_type": "entity",
+                "item_id": "entity-1",
+                "item_name": "The Kraken",
+                "error": "",
+            }
+        )
+
+        assert requests == [
+            ("entity", "entity-1", "C:/tmp/Chosen Name.md")
+        ]
+
+    @patch("src.app.coordinators.import_coordinator.QMessageBox")
+    def test_failed_export_reports_worker_error(
+        self, mock_message_box, coordinator, fake_window
+    ):
+        """Worker export failures should be presented by the coordinator."""
+        coordinator.on_obsidian_export_finished(
+            {
+                "success": False,
+                "item_type": "entity",
+                "item_id": "entity-1",
+                "item_name": "The Kraken",
+                "file_path": "C:/tmp/The Kraken.md",
+                "error": "disk full",
+            }
+        )
+
+        fake_window.status_bar.showMessage.assert_called_with(
+            "Export failed", 3000
+        )
+        mock_message_box.critical.assert_called_once()

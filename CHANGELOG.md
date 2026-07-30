@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-07-28
-**Commit:** 2548d26a
+**Last Updated:** 2026-07-30
+**Commit:** 6d041c3a
 ---
 
 # Changelog
@@ -31,6 +31,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-07-30)* **Import / Export**: Typed import completion, corrected
+  failure results, and moved single-item Obsidian database access and file
+  generation to queued worker-owned operations.
 - *(2026-07-28)* **AI / Summaries**: Reduced over-limit failures with lower
   generation targets, draft-only compression retries, safe sentence-boundary
   fallback, and shorter-source rules without wiki-link constraints.
@@ -65,6 +68,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-07-30)* **Testing / Typing**: Added coordinator and worker export
+  regression coverage and removed 24 mypy errors from the project baseline.
 - *(2026-07-28)* **Documentation / Testing**: Documented summary compression
   behavior and added regression coverage for targets, retries, legacy prompts,
   short descriptions, and immediate display refresh.

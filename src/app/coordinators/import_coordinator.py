@@ -12,14 +12,19 @@ Handles:
 import logging
 from typing import TYPE_CHECKING, Optional
 
-from PySide6.QtCore import Q_ARG, QMetaObject, Qt, Slot
-from PySide6.QtWidgets import QDialog, QFileDialog, QMessageBox, QProgressDialog
+from PySide6.QtCore import Signal, Slot
+from PySide6.QtWidgets import QDialog, QFileDialog, QMessageBox
 
 from src.app.coordinators.base_coordinator import BaseCoordinator
 from src.gui.dialogs.database_manager_dialog import DatabaseManagerDialog
 from src.gui.dialogs.import_preview_dialog import ImportPreviewDialog
 from src.gui.dialogs.paste_json_import_dialog import PasteJsonImportDialog
-from src.services.import_service import ImportService
+from src.gui.dialogs.progress_dialog import ProgressDialog
+from src.services.import_service import ImportResult, ImportService
+from src.services.obsidian_exporter import (
+    ObsidianExportCompletion,
+    ObsidianExportPreparation,
+)
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
@@ -34,6 +39,12 @@ class ImportCoordinator(BaseCoordinator):
     and dispatching to the worker thread for database operations.
     """
 
+    run_import_requested = Signal(str, str)
+    run_markdown_import_requested = Signal(str, str)
+    run_markdown_batch_import_requested = Signal(str, str)
+    prepare_obsidian_export_requested = Signal(str, str)
+    run_obsidian_export_requested = Signal(str, str, str)
+
     def __init__(self, main_window: "MainWindow") -> None:
         """Initialize the import coordinator.
 
@@ -42,7 +53,7 @@ class ImportCoordinator(BaseCoordinator):
 
         """
         super().__init__(main_window)
-        self._import_progress_dialog: Optional[QProgressDialog] = None
+        self._import_progress_dialog: Optional[ProgressDialog] = None
 
     @Slot()
     def import_item_requested(self) -> None:
@@ -101,22 +112,10 @@ class ImportCoordinator(BaseCoordinator):
                 options_json = json.dumps(options)
 
                 if is_markdown:
-                    QMetaObject.invokeMethod(
-                        self.main_window.worker,
-                        "run_markdown_import",
-                        Qt.ConnectionType.QueuedConnection,
-                        Q_ARG(str, content),
-                        Q_ARG(str, options_json),
-                    )
+                    self.run_markdown_import_requested.emit(content, options_json)
                 else:
                     parsed_json = json.dumps(parsed_data)
-                    QMetaObject.invokeMethod(
-                        self.main_window.worker,
-                        "run_import",
-                        Qt.ConnectionType.QueuedConnection,
-                        Q_ARG(str, parsed_json),
-                        Q_ARG(str, options_json),
-                    )
+                    self.run_import_requested.emit(parsed_json, options_json)
 
                 self._show_import_progress()
 
@@ -162,13 +161,7 @@ class ImportCoordinator(BaseCoordinator):
             options_json = json.dumps(options)
             parsed_json = json.dumps(parsed_data)
 
-            QMetaObject.invokeMethod(
-                self.main_window.worker,
-                "run_import",
-                Qt.ConnectionType.QueuedConnection,
-                Q_ARG(str, parsed_json),
-                Q_ARG(str, options_json),
-            )
+            self.run_import_requested.emit(parsed_json, options_json)
 
             self._show_import_progress()
 
@@ -186,7 +179,7 @@ class ImportCoordinator(BaseCoordinator):
                 f"An unexpected error occurred during pasted JSON import: {e}",
             )
 
-    def _import_markdown_batch(self, file_paths: list) -> None:
+    def _import_markdown_batch(self, file_paths: list[str]) -> None:
         """Read multiple Markdown files and dispatch a batch import.
 
         Args:
@@ -203,20 +196,12 @@ class ImportCoordinator(BaseCoordinator):
         contents_json = json.dumps(contents)
         options_json = json.dumps({})
 
-        QMetaObject.invokeMethod(
-            self.main_window.worker,
-            "run_markdown_batch_import",
-            Qt.ConnectionType.QueuedConnection,
-            Q_ARG(str, contents_json),
-            Q_ARG(str, options_json),
-        )
+        self.run_markdown_batch_import_requested.emit(contents_json, options_json)
 
         self._show_import_progress()
 
     def _show_import_progress(self) -> None:
         """Display a non-cancellable progress dialog during import."""
-        from src.gui.dialogs.progress_dialog import ProgressDialog
-
         self._import_progress_dialog = ProgressDialog(
             "Importing data...\n\nThis may take a moment for large files.",
             parent=self.main_window,
@@ -226,7 +211,7 @@ class ImportCoordinator(BaseCoordinator):
         self.main_window.status_bar.showMessage("Importing...", 0)
 
     @Slot(object)
-    def on_import_finished(self, result: object) -> None:
+    def on_import_finished(self, result: ImportResult) -> None:
         """Handles the completion of an import operation.
 
         Args:
@@ -302,61 +287,78 @@ class ImportCoordinator(BaseCoordinator):
             item_id: The ID of the item to export.
 
         """
-        from pathlib import Path
-
-        from src.services.obsidian_exporter import ObsidianExporter
-
-        if not self.main_window.gui_db_service:
-            self.main_window.status_bar.showMessage("No database connection", 3000)
-            return
-
-        # Get the item from the database
-        db = self.main_window.gui_db_service
-        if item_type == "entity":
-            item = db.get_entity(item_id)
-        else:
-            item = db.get_event(item_id)
-
-        if not item:
+        if item_type not in {"entity", "event"}:
+            logger.warning("Unsupported Obsidian export item type: %s", item_type)
             self.main_window.status_bar.showMessage(
-                f"Could not find {item_type} to export", 3000
+                f"Cannot export unsupported item type '{item_type}'", 3000
             )
             return
 
-        # Ask user where to save
+        self.prepare_obsidian_export_requested.emit(item_type, item_id)
+        self.main_window.status_bar.showMessage("Preparing export...", 0)
+
+    @Slot(dict)
+    def on_obsidian_export_prepared(
+        self, snapshot: ObsidianExportPreparation
+    ) -> None:
+        """Choose the output path after the worker resolves the item.
+
+        Args:
+            snapshot: Serializable item identity snapshot from the database worker.
+
+        """
+        error = snapshot["error"]
+        if error:
+            self.main_window.status_bar.showMessage(
+                error,
+                3000,
+            )
+            return
+
         file_path, _ = QFileDialog.getSaveFileName(
             self.main_window,
             "Export to Obsidian Markdown",
-            f"{item.name}.md",
+            f"{snapshot['item_name']}.md",
             "Markdown Files (*.md);;All Files (*)",
         )
 
         if not file_path:
+            self.main_window.status_bar.clearMessage()
             return
 
-        try:
-            output_dir = Path(file_path).parent
-            exporter = ObsidianExporter(db)
-            filepath = exporter.export_single_item(
-                item, output_dir, include_relations=True
-            )
+        self.run_obsidian_export_requested.emit(
+            snapshot["item_type"],
+            snapshot["item_id"],
+            file_path,
+        )
+        self.main_window.status_bar.showMessage("Exporting...", 0)
 
-            if filepath:
-                # Rename to user's chosen filename if different
-                target = Path(file_path)
-                if filepath != target:
-                    filepath.rename(target)
+    @Slot(dict)
+    def on_obsidian_export_finished(
+        self, snapshot: ObsidianExportCompletion
+    ) -> None:
+        """Present the result of a worker-thread Obsidian export.
 
-                self.main_window.status_bar.showMessage(
-                    f"Exported '{item.name}' to {target}", 5000
-                )
-                logger.info(f"Exported {item_type} '{item.name}' to {target}")
-            else:
-                self.main_window.status_bar.showMessage("Export failed", 3000)
-        except Exception as e:
-            logger.exception("Single item export error")
-            QMessageBox.critical(
-                self.main_window,
-                "Export Error",
-                f"Failed to export '{item.name}': {e}",
+        Args:
+            snapshot: Serializable export completion snapshot.
+
+        """
+        if snapshot["success"]:
+            self.main_window.status_bar.showMessage(
+                f"Exported '{snapshot['item_name']}' to {snapshot['file_path']}",
+                5000,
             )
+            logger.info(
+                "Exported %s '%s' to %s",
+                snapshot["item_type"],
+                snapshot["item_name"],
+                snapshot["file_path"],
+            )
+            return
+
+        self.main_window.status_bar.showMessage("Export failed", 3000)
+        QMessageBox.critical(
+            self.main_window,
+            "Export Error",
+            f"Failed to export '{snapshot['item_name']}': {snapshot['error']}",
+        )

@@ -9,12 +9,32 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, TypedDict, Union
 
 from src.core.entities import Entity
 from src.core.events import Event
 
 logger = logging.getLogger(__name__)
+
+
+class ObsidianExportPreparation(TypedDict):
+    """Serializable snapshot used to prepare a single-item export."""
+
+    item_type: str
+    item_id: str
+    item_name: str
+    error: str
+
+
+class ObsidianExportCompletion(TypedDict):
+    """Serializable snapshot describing a completed single-item export."""
+
+    success: bool
+    item_type: str
+    item_id: str
+    item_name: str
+    file_path: str
+    error: str
 
 
 @dataclass

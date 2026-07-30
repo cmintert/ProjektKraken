@@ -28,6 +28,11 @@ from src.services.asset_store import AssetStore
 from src.services.attachment_service import AttachmentService
 from src.services.db_service import DatabaseService
 from src.services.import_service import ImportResult
+from src.services.obsidian_exporter import (
+    ObsidianExportCompletion,
+    ObsidianExporter,
+    ObsidianExportPreparation,
+)
 from src.services.summary_service import SummaryService
 
 logger = logging.getLogger(__name__)
@@ -82,6 +87,8 @@ class DatabaseWorker(QObject):
 
     # Import signals
     import_finished = Signal(ImportResult)
+    obsidian_export_prepared = Signal(dict)
+    obsidian_export_finished = Signal(dict)
     summary_generated = Signal(str, SummaryData)
     summary_generation_failed = Signal(str)  # item_id
 
@@ -107,7 +114,7 @@ class DatabaseWorker(QObject):
         """
         super().__init__()
         self.db_path = db_path
-        self.db_service = None
+        self.db_service: Optional[DatabaseService] = None
         self.asset_store = None
         self.attachment_service = None
         self.temporal_manager = None
@@ -1373,9 +1380,14 @@ class DatabaseWorker(QObject):
 
         """
         if not self.db_service:
-            from src.services.import_service import ImportResult
-
-            result = ImportResult(success=False, errors=["Database not ready"])
+            result = ImportResult(
+                success=False,
+                created_entities=[],
+                created_events=[],
+                created_relations=[],
+                errors=["Database not ready"],
+                warnings=[],
+            )
             self.import_finished.emit(result)
             return
 
@@ -1401,9 +1413,14 @@ class DatabaseWorker(QObject):
 
         except Exception as e:
             logger.error(f"Import failed: {traceback.format_exc()}")
-            from src.services.import_service import ImportResult
-
-            result = ImportResult(success=False, errors=[str(e)])
+            result = ImportResult(
+                success=False,
+                created_entities=[],
+                created_events=[],
+                created_relations=[],
+                errors=[str(e)],
+                warnings=[],
+            )
             self.import_finished.emit(result)
 
     @Slot(str, str)
@@ -1539,6 +1556,108 @@ class DatabaseWorker(QObject):
                 warnings=[],
             )
             self.import_finished.emit(result)
+
+    def _get_obsidian_export_item(
+        self, item_type: str, item_id: str
+    ) -> Entity | Event | None:
+        """Load one exportable item through the worker-owned database service.
+
+        Args:
+            item_type: Supported item type, ``"entity"`` or ``"event"``.
+            item_id: Database ID of the requested item.
+
+        Returns:
+            The matching entity or event, or ``None`` when unavailable.
+
+        """
+        db_service = self.db_service
+        if db_service is None:
+            return None
+        if item_type == "entity":
+            return db_service.get_entity(item_id)
+        if item_type == "event":
+            return db_service.get_event(item_id)
+        return None
+
+    @Slot(str, str)
+    def prepare_single_obsidian_export(self, item_type: str, item_id: str) -> None:
+        """Resolve an export item and emit a serializable identity snapshot.
+
+        Args:
+            item_type: Supported item type, ``"entity"`` or ``"event"``.
+            item_id: Database ID of the requested item.
+
+        """
+        item = self._get_obsidian_export_item(item_type, item_id)
+
+        if self.db_service is None:
+            error = "No database connection"
+        elif item_type not in {"entity", "event"}:
+            error = f"Cannot export unsupported item type '{item_type}'"
+        elif item is None:
+            error = f"Could not find {item_type} to export"
+        else:
+            error = ""
+
+        snapshot: ObsidianExportPreparation = {
+            "item_type": item_type,
+            "item_id": item_id,
+            "item_name": item.name if item is not None else "",
+            "error": error,
+        }
+        self.obsidian_export_prepared.emit(snapshot)
+
+    @Slot(str, str, str)
+    def run_single_obsidian_export(
+        self,
+        item_type: str,
+        item_id: str,
+        file_path: str,
+    ) -> None:
+        """Export one item using the worker-owned database service.
+
+        Args:
+            item_type: Supported item type, ``"entity"`` or ``"event"``.
+            item_id: Database ID of the requested item.
+            file_path: User-selected output Markdown path.
+
+        """
+        item = self._get_obsidian_export_item(item_type, item_id)
+        item_name = item.name if item is not None else ""
+        target_path = Path(file_path).resolve()
+        error = ""
+
+        if self.db_service is None:
+            error = "No database connection"
+        elif item_type not in {"entity", "event"}:
+            error = f"Cannot export unsupported item type '{item_type}'"
+        elif item is None:
+            error = f"Could not find {item_type} to export"
+        else:
+            try:
+                exporter = ObsidianExporter(self.db_service)
+                exported_path = exporter.export_single_item(
+                    item,
+                    target_path.parent,
+                    include_relations=True,
+                )
+                if exported_path is None:
+                    error = "The exporter did not create a file"
+                elif exported_path != target_path:
+                    exported_path.replace(target_path)
+            except Exception as exc:
+                logger.exception("Single item export error")
+                error = str(exc)
+
+        snapshot: ObsidianExportCompletion = {
+            "success": not error,
+            "item_type": item_type,
+            "item_id": item_id,
+            "item_name": item_name,
+            "file_path": str(target_path),
+            "error": error,
+        }
+        self.obsidian_export_finished.emit(snapshot)
 
     @Slot(object)  # Union[Entity, Event] - use object for union types
     def generate_summary(self, item: object) -> None:

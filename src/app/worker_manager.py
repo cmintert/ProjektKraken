@@ -209,6 +209,14 @@ class WorkerManager(QObject):
         self.window.worker.import_finished.connect(
             self.window.import_coordinator.on_import_finished, connection_type
         )
+        self.window.worker.obsidian_export_prepared.connect(
+            self.window.import_coordinator.on_obsidian_export_prepared,
+            connection_type,
+        )
+        self.window.worker.obsidian_export_finished.connect(
+            self.window.import_coordinator.on_obsidian_export_finished,
+            connection_type,
+        )
         self.window.worker.summary_generated.connect(
             self.window.data_coordinator.on_summary_generated_result, connection_type
         )
@@ -231,6 +239,26 @@ class WorkerManager(QObject):
         )
         self.initialize_history_requested.connect(
             self.window.worker.initialize_history,
+            connection_type,
+        )
+        self.window.import_coordinator.run_import_requested.connect(
+            self.window.worker.run_import,
+            connection_type,
+        )
+        self.window.import_coordinator.run_markdown_import_requested.connect(
+            self.window.worker.run_markdown_import,
+            connection_type,
+        )
+        self.window.import_coordinator.run_markdown_batch_import_requested.connect(
+            self.window.worker.run_markdown_batch_import,
+            connection_type,
+        )
+        self.window.import_coordinator.prepare_obsidian_export_requested.connect(
+            self.window.worker.prepare_single_obsidian_export,
+            connection_type,
+        )
+        self.window.import_coordinator.run_obsidian_export_requested.connect(
+            self.window.worker.run_single_obsidian_export,
             connection_type,
         )
 
