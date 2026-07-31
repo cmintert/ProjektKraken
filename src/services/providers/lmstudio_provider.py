@@ -11,7 +11,7 @@ import time
 from typing import Any, AsyncIterator, Dict, List, Optional
 
 import numpy as np
-import requests
+import requests  # type: ignore[import-untyped]  # No bundled typing metadata.
 
 from src.services.llm_provider import Provider
 from src.services.resilience import CircuitBreaker
@@ -102,7 +102,7 @@ class LMStudioProvider(Provider):
         self.api_key = api_key
         self.timeout = timeout
         self.max_retries = max_retries
-        self._dimension = None
+        self._dimension: Optional[int] = None
         self._active_response: Optional[requests.Response] = None
         self.circuit_breaker = CircuitBreaker(failure_threshold=5, timeout=60.0)
 
@@ -500,7 +500,7 @@ class LMStudioProvider(Provider):
 
                             finish_reason = choice.get("finish_reason")
 
-                            chunk = {"delta": delta}
+                            chunk: Dict[str, Any] = {"delta": delta}
                             if reasoning_delta:
                                 chunk["reasoning_delta"] = reasoning_delta
                             if tool_calls_delta:

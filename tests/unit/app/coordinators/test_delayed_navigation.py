@@ -75,3 +75,20 @@ def test_selection_cancelled_by_drag(qtbot, mock_main_window):
     # Since we used QTimer.singleShot(0, ...), we simply wait for the event loop
     qtbot.wait(10)
     mock_main_window.unified_list.select_item.assert_called_with("entity", "id_1")
+
+
+def test_drag_restore_captures_validated_selection(qtbot, mock_main_window):
+    """Queued restoration uses the selection valid when the drag started."""
+    coordinator = NavigationCoordinator(mock_main_window)
+    coordinator._last_selected_type = "entity"
+    coordinator._last_selected_id = "id_1"
+
+    coordinator.on_drag_started()
+    coordinator._last_selected_type = None
+    coordinator._last_selected_id = None
+
+    qtbot.wait(10)
+
+    mock_main_window.unified_list.select_item.assert_called_once_with(
+        "entity", "id_1"
+    )

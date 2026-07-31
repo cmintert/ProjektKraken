@@ -234,7 +234,9 @@ class NavigationCoordinator(BaseCoordinator):
 
         # Revert list selection to the currently active global selection
         # This ensures the dragged item doesn't appear selected in the UI
-        if self._last_selected_id and self._last_selected_type:
+        selected_id = self._last_selected_id
+        selected_type = self._last_selected_type
+        if selected_id and selected_type:
             # We must use a slight delay or QMetaObject.invokeMethod because
             # dragging might still be processing mouse events
             from PySide6.QtCore import QTimer
@@ -242,7 +244,7 @@ class NavigationCoordinator(BaseCoordinator):
             QTimer.singleShot(
                 0,
                 lambda: self.main_window.unified_list.select_item(
-                    self._last_selected_type, self._last_selected_id
+                    selected_type, selected_id
                 ),
             )
         else:

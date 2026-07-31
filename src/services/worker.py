@@ -10,9 +10,9 @@ import subprocess
 import sys
 import traceback
 from pathlib import Path
-from typing import List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, List, Optional, Set, Tuple, Union
 
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QObject, Signal, SignalInstance, Slot
 
 from src.app.constants import (
     SEMANTIC_COMPLETION_ENABLE_EMBEDDING,
@@ -34,6 +34,11 @@ from src.services.obsidian_exporter import (
     ObsidianExportPreparation,
 )
 from src.services.summary_service import SummaryService
+
+if TYPE_CHECKING:
+    from src.core.temporal_manager import TemporalManager
+    from src.services.history_service import HistoryService
+    from src.services.search_service import SearchService
 
 logger = logging.getLogger(__name__)
 
@@ -115,14 +120,17 @@ class DatabaseWorker(QObject):
         super().__init__()
         self.db_path = db_path
         self.db_service: Optional[DatabaseService] = None
-        self.asset_store = None
-        self.attachment_service = None
-        self.temporal_manager = None
-        self.history_service = None
-        self._search_service = None
+        self.asset_store: Optional[AssetStore] = None
+        self.attachment_service: Optional[AttachmentService] = None
+        self.temporal_manager: Optional["TemporalManager"] = None
+        self.history_service: Optional["HistoryService"] = None
+        self.summary_service: Optional[SummaryService] = None
+        self._search_service: Optional["SearchService"] = None
         # Embedding queue to prevent concurrent embedding operations
         self._embedding_in_progress = False
-        self._pending_embeddings: Set[Tuple[str, str, Optional[List[str]]]] = set()
+        self._pending_embeddings: Set[
+            Tuple[str, str, Optional[Tuple[str, ...]]]
+        ] = set()
         self._semantic_probe_ran = False
         self._semantic_probe_ok = True
 
@@ -1277,7 +1285,7 @@ class DatabaseWorker(QObject):
             logger.error(f"Failed to load graph data: {traceback.format_exc()}")
             self.error_occurred.emit("Failed to load graph data.")
 
-    def _get_search_service(self) -> Optional[object]:
+    def _get_search_service(self) -> Optional["SearchService"]:
         """Return a cached SearchService, creating it lazily on first use.
 
         Returns:
@@ -1660,7 +1668,7 @@ class DatabaseWorker(QObject):
         self.obsidian_export_finished.emit(snapshot)
 
     @Slot(object)  # Union[Entity, Event] - use object for union types
-    def generate_summary(self, item: object) -> None:
+    def generate_summary(self, item: Union[Entity, Event]) -> None:
         """Generates a summary for the given item using LLM.
 
         Args:
@@ -1707,7 +1715,7 @@ class DatabaseWorker(QObject):
     def _run_analysis_command(
         self,
         cmd: "BaseCommand",
-        result_signal: "Signal",
+        result_signal: SignalInstance,
         start_msg: str,
         done_msg: str,
         error_prefix: str,
@@ -1731,7 +1739,15 @@ class DatabaseWorker(QObject):
         """
         self.operation_started.emit(start_msg)
         try:
-            result = cmd.execute(self.db_service)
+            db_service = self.db_service
+            if db_service is None:
+                logger.error("Database not ready for %s", error_prefix.lower())
+                self.error_occurred.emit(
+                    f"Database not ready for {error_prefix.lower()}."
+                )
+                return
+
+            result = cmd.execute(db_service)
             if result.success:
                 result_signal.emit(result.data["report"])
             else:

@@ -12,7 +12,7 @@ import time
 from typing import Any, AsyncIterator, Callable, Dict, List, Optional
 
 import numpy as np
-import requests
+import requests  # type: ignore[import-untyped]  # No bundled typing metadata.
 
 from src.services.llm_provider import Provider
 from src.services.resilience import CircuitBreaker
@@ -137,7 +137,7 @@ class AnthropicProvider(Provider):
 
         """
 
-        def _generate_impl() -> str:
+        def _generate_impl() -> Dict[str, Any]:
             """Inner implementation for retry wrapper."""
             payload = {
                 "model": self.model,

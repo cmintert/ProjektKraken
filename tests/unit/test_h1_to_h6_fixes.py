@@ -418,6 +418,30 @@ class TestH5MoveLayerCloneBeforePersist:
             "Original layer tree was mutated even though persist failed"
         )
 
+    def test_missing_layer_tree_in_clone_returns_failure(self):
+        """A malformed deepcopy must fail before persisting any mutation."""
+        from src.commands.layer_commands import MoveLayerCommand
+        from src.core.map import Map
+
+        map_obj, _ = self._make_map()
+        malformed_clone = Map(
+            id="map-1", name="M", image_path="p", layers=None
+        )
+        db = MagicMock()
+        db.map_repo.get_map.return_value = map_obj
+
+        with patch(
+            "src.commands.layer_commands.copy.deepcopy",
+            return_value=malformed_clone,
+        ):
+            result = MoveLayerCommand(
+                "map-1", "child-1", "group-b", 0
+            ).execute(db)
+
+        assert result.success is False
+        assert result.message == "Layer tree missing from cloned map."
+        db.map_repo.insert_map.assert_not_called()
+
 
 # ---------------------------------------------------------------------------
 # H6 — SetRasterBlendModeCommand fetches old_mode from DB

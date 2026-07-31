@@ -41,6 +41,17 @@ def test_parse_only_single_event():
     assert result["events"][0]["name"] == "Single Event"
 
 
+def test_update_import_metadata_accepts_events():
+    """Import provenance is recorded for events as well as entities."""
+    service = ImportService(MagicMock())
+    event = Event(name="Imported Event", lore_date=1.0)
+    entry = {"source_name": "fixture.json", "imported_at": 123.0}
+
+    service._update_import_metadata(event, entry)
+
+    assert event.attributes["_import_sources"] == [entry]
+
+
 def test_import_batch_creates_items():
     """Test that import_batch calls DB insert methods."""
     mock_db = MagicMock()

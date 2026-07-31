@@ -701,7 +701,9 @@ class ImportService:
         data["id"] = final_id
         return final_id
 
-    def _update_import_metadata(self, entity: Entity, entry: Dict[str, Any]) -> None:
+    def _update_import_metadata(
+        self, entity: Union[Entity, Event], entry: Dict[str, Any]
+    ) -> None:
         """Updates the _import_sources attribute list."""
         sources = entity.attributes.get("_import_sources", [])
         # Remove existing entry for this source if present

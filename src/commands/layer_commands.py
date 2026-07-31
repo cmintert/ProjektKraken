@@ -244,7 +244,15 @@ class MoveLayerCommand(BaseCommand):
             # Clone the tree before mutating so that a persist failure
             # does not leave the original map_obj in an inconsistent state.
             cloned_map = copy.deepcopy(map_obj)
-            cloned_node = _find_layer_node(cloned_map.layers, self.node_id)
+            cloned_layers = cloned_map.layers
+            if cloned_layers is None:
+                return CommandResult(
+                    success=False,
+                    message="Layer tree missing from cloned map.",
+                    command_name="MoveLayerCommand",
+                )
+
+            cloned_node = _find_layer_node(cloned_layers, self.node_id)
             if cloned_node is None:
                 # Should never happen since we already found the node above,
                 # but guard against deepcopy edge cases.
@@ -253,7 +261,7 @@ class MoveLayerCommand(BaseCommand):
                     message=f"Layer node {self.node_id} not found in clone.",
                     command_name="MoveLayerCommand",
                 )
-            cloned_old_parent = self._find_parent(cloned_map.layers, cloned_node)
+            cloned_old_parent = self._find_parent(cloned_layers, cloned_node)
             if cloned_old_parent is None:
                 return CommandResult(
                     success=False,
@@ -265,7 +273,7 @@ class MoveLayerCommand(BaseCommand):
             cloned_old_parent.children.remove(cloned_node)
 
             # Find new parent and insert in the clone
-            cloned_new_parent = _find_layer_node(cloned_map.layers, self.new_parent_id)
+            cloned_new_parent = _find_layer_node(cloned_layers, self.new_parent_id)
             if not cloned_new_parent:
                 return CommandResult(
                     success=False,
@@ -278,7 +286,7 @@ class MoveLayerCommand(BaseCommand):
 
             # Persist the clone — original map_obj is untouched until this succeeds
             attrs = dict(cloned_map.attributes) if cloned_map.attributes else {}
-            attrs["layers"] = cloned_map.layers.to_dict()
+            attrs["layers"] = cloned_layers.to_dict()
             cloned_map.attributes = attrs
             db_service.map_repo.insert_map(cloned_map)
 

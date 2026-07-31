@@ -77,6 +77,32 @@ def test_initialization_failure(worker):
         error_spy.assert_called_once()
 
 
+def test_analysis_command_requires_initialized_database(worker):
+    """Analysis reports a lifecycle error without executing the command."""
+    command = MagicMock()
+    result_signal = MagicMock()
+    start_spy = MagicMock()
+    finish_spy = MagicMock()
+    error_spy = MagicMock()
+    worker.operation_started.connect(start_spy)
+    worker.operation_finished.connect(finish_spy)
+    worker.error_occurred.connect(error_spy)
+
+    worker._run_analysis_command(
+        command,
+        result_signal,
+        "Validating world…",
+        "Validation complete.",
+        "Validation",
+    )
+
+    command.execute.assert_not_called()
+    result_signal.emit.assert_not_called()
+    start_spy.assert_called_once_with("Validating world…")
+    error_spy.assert_called_once_with("Database not ready for validation.")
+    finish_spy.assert_called_once_with("Validation complete.")
+
+
 def test_load_events(worker, mock_db_service):
     worker.db_service = mock_db_service  # Inject mocked service manually
 
