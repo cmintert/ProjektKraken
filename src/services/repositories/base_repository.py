@@ -42,6 +42,20 @@ class BaseRepository:
         """
         self._connection = connection
 
+    def _require_connection(self) -> sqlite3.Connection:
+        """Return the active connection or fail with a stable lifecycle error.
+
+        Returns:
+            The initialized SQLite connection.
+
+        Raises:
+            RuntimeError: If the repository has not received a connection.
+
+        """
+        if self._connection is None:
+            raise RuntimeError("Database connection not initialized")
+        return self._connection
+
     @contextmanager
     def transaction(self) -> Iterator[sqlite3.Connection]:
         """Context manager for safe transaction handling.
@@ -53,19 +67,17 @@ class BaseRepository:
             sqlite3.Error: If the transaction fails.
 
         """
-        if not self._connection:
-            raise RuntimeError("Database connection not initialized")
-
-        owns_transaction = not self._connection.in_transaction
+        connection = self._require_connection()
+        owns_transaction = not connection.in_transaction
         try:
             if owns_transaction:
-                self._connection.execute("BEGIN")
-            yield self._connection
+                connection.execute("BEGIN")
+            yield connection
             if owns_transaction:
-                self._connection.commit()
+                connection.commit()
         except Exception as e:
             if owns_transaction:
-                self._connection.rollback()
+                connection.rollback()
             logger.error(f"Transaction rolled back due to error: {e}")
             raise
 

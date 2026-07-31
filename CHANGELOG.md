@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-07-30
-**Commit:** 6d041c3a
+**Last Updated:** 2026-07-31
+**Commit:** 79207a02
 ---
 
 # Changelog
@@ -31,6 +31,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-07-31)* **Startup / Stability**: Validated persisted active-world
+  settings before path construction and standardized disconnected repository
+  failures through a checked connection accessor.
 - *(2026-07-30)* **Import / Export**: Typed import completion, corrected
   failure results, and moved single-item Obsidian database access and file
   generation to queued worker-owned operations.
@@ -68,6 +71,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-07-31)* **Testing / Typing**: Added malformed-setting and repository
+  lifecycle regression coverage and reduced the mypy baseline from 955 to 940
+  errors.
 - *(2026-07-30)* **Testing / Typing**: Added coordinator and worker export
   regression coverage and removed 24 mypy errors from the project baseline.
 - *(2026-07-28)* **Documentation / Testing**: Documented summary compression

@@ -60,6 +60,7 @@ DEFAULT_WINDOW_WIDTH = 1280
 DEFAULT_WINDOW_HEIGHT = 720
 WINDOW_SETTINGS_KEY = "ChristianMintert"
 WINDOW_SETTINGS_APP = "ProjektKraken"
+DEFAULT_WORLD_NAME = "Default World"
 SETTINGS_ACTIVE_DB_KEY = "active_world"  # Now stores world name, not filename
 SETTINGS_LAYOUTS_KEY = "saved_layouts"
 SETTINGS_LAST_ITEM_ID_KEY = "last_selected_item_id"

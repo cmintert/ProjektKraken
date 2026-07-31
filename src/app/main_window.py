@@ -36,6 +36,7 @@ from src.app.connection_manager import ConnectionManager
 from src.app.constants import (
     DEFAULT_WINDOW_HEIGHT,
     DEFAULT_WINDOW_WIDTH,
+    DEFAULT_WORLD_NAME,
     SETTINGS_ACTIVE_DB_KEY,
     SETTINGS_AUTO_RELATION_KEY,
     SETTINGS_FILTER_CONFIG_KEY,
@@ -76,6 +77,35 @@ if TYPE_CHECKING:
     from src.services.worker import DatabaseWorker
 
 logger = get_logger(__name__)
+
+
+def _normalize_active_world_name(value: object) -> str:
+    """Return a safe world-folder name from a persisted settings value.
+
+    Args:
+        value: Raw value returned by ``QSettings.value()``.
+
+    Returns:
+        A non-empty world name that cannot escape the worlds directory.
+
+    """
+    if isinstance(value, str):
+        world_name = value.strip()
+        if (
+            world_name
+            and world_name not in {".", ".."}
+            and "/" not in world_name
+            and "\\" not in world_name
+            and "\x00" not in world_name
+        ):
+            return world_name
+
+    logger.warning(
+        "Invalid active-world setting %r; using %s",
+        value,
+        DEFAULT_WORLD_NAME,
+    )
+    return DEFAULT_WORLD_NAME
 
 
 class GlobalShortcutFilter(QObject):
@@ -271,7 +301,9 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         """
         # Load active world name for title
         settings = QSettings()
-        active_world_name = settings.value(SETTINGS_ACTIVE_DB_KEY, "Default World")
+        active_world_name = _normalize_active_world_name(
+            settings.value(SETTINGS_ACTIVE_DB_KEY, DEFAULT_WORLD_NAME)
+        )
 
         self.setWindowTitle(f"{WINDOW_TITLE} - {active_world_name}")
         self.resize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
@@ -413,7 +445,9 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # Initialize Fast Inject Manager
         # We need the world path.
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        active_world = settings.value(SETTINGS_ACTIVE_DB_KEY, "Default World")
+        active_world = _normalize_active_world_name(
+            settings.value(SETTINGS_ACTIVE_DB_KEY, DEFAULT_WORLD_NAME)
+        )
         world_path = get_worlds_dir() / active_world
         self.fast_inject_manager = FastInjectManager(world_path)
 

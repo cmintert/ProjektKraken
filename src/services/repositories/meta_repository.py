@@ -30,7 +30,7 @@ class MetaRepository(BaseRepository):
         """
         sql = "SELECT value FROM system_meta WHERE key = 'current_time'"
 
-        cursor = self._connection.execute(sql)
+        cursor = self._require_connection().execute(sql)
         row = cursor.fetchone()
 
         if row and row["value"]:
@@ -102,7 +102,7 @@ class MetaRepository(BaseRepository):
                                       or None if not set.
 
         """
-        cursor = self._connection.execute(
+        cursor = self._require_connection().execute(
             "SELECT value FROM system_meta WHERE key = 'timeline_grouping_config'"
         )
         result = cursor.fetchone()
@@ -131,7 +131,7 @@ class MetaRepository(BaseRepository):
                 'edges' keys, or None if not configured.
 
         """
-        cursor = self._connection.execute(
+        cursor = self._require_connection().execute(
             "SELECT value FROM system_meta WHERE key = 'graph_lexicon_config'"
         )
         result = cursor.fetchone()
@@ -184,7 +184,7 @@ class MetaRepository(BaseRepository):
             Optional[str]: The theme name string, or None if not set.
 
         """
-        cursor = self._connection.execute(
+        cursor = self._require_connection().execute(
             "SELECT value FROM system_meta WHERE key = 'world_theme'"
         )
         row = cursor.fetchone()
@@ -215,7 +215,7 @@ class MetaRepository(BaseRepository):
 
     def get_ai_generation_preferences(self) -> Optional[Dict[str, Any]]:
         """Retrieve portable AI creative preferences for this world."""
-        cursor = self._connection.execute(
+        cursor = self._require_connection().execute(
             "SELECT value FROM system_meta WHERE key = 'ai_generation_preferences'"
         )
         row = cursor.fetchone()
@@ -253,7 +253,8 @@ class MetaRepository(BaseRepository):
 
         """
         # Try Entity
-        cursor = self._connection.execute(
+        connection = self._require_connection()
+        cursor = connection.execute(
             "SELECT name FROM entities WHERE id = ?", (object_id,)
         )
         row = cursor.fetchone()
@@ -261,7 +262,7 @@ class MetaRepository(BaseRepository):
             return row["name"]
 
         # Try Event
-        cursor = self._connection.execute(
+        cursor = connection.execute(
             "SELECT name FROM events WHERE id = ?", (object_id,)
         )
         row = cursor.fetchone()

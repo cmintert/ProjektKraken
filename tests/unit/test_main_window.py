@@ -3,6 +3,21 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.app.main import MainWindow
+from src.app.main_window import _normalize_active_world_name
+
+
+@pytest.mark.parametrize(
+    "value",
+    [None, 42, [], "", "   ", ".", "..", "../escape", r"..\escape"],
+)
+def test_normalize_active_world_name_rejects_invalid_settings(value):
+    """Malformed or unsafe settings should fall back to the default world."""
+    assert _normalize_active_world_name(value) == "Default World"
+
+
+def test_normalize_active_world_name_trims_valid_setting():
+    """A valid persisted world name should be normalized to a folder name."""
+    assert _normalize_active_world_name("  My World  ") == "My World"
 
 
 @pytest.fixture

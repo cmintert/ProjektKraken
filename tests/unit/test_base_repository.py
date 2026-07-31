@@ -8,6 +8,7 @@ import sqlite3
 import pytest
 
 from src.services.repositories.base_repository import BaseRepository
+from src.services.repositories.meta_repository import MetaRepository
 
 
 @pytest.fixture
@@ -46,6 +47,29 @@ def test_set_connection(in_memory_db):
     repo.set_connection(in_memory_db)
 
     assert repo._connection is in_memory_db
+
+
+def test_require_connection_returns_initialized_connection(in_memory_db):
+    """The checked accessor should preserve the configured connection."""
+    repo = BaseRepository(connection=in_memory_db)
+
+    assert repo._require_connection() is in_memory_db
+
+
+def test_require_connection_without_connection_raises_stable_error():
+    """Disconnected repositories should fail with an explicit lifecycle error."""
+    repo = BaseRepository()
+
+    with pytest.raises(RuntimeError, match="Database connection not initialized"):
+        repo._require_connection()
+
+
+def test_meta_repository_read_without_connection_raises_stable_error():
+    """Metadata reads should use the checked base-repository invariant."""
+    repo = MetaRepository()
+
+    with pytest.raises(RuntimeError, match="Database connection not initialized"):
+        repo.get_current_time()
 
 
 def test_transaction_success(repository):
