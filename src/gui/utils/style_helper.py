@@ -46,7 +46,7 @@ class TooltipEventFilter(QObject):
     """Event filter to override tooltip duration globally."""
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
-        if event.type() == QEvent.ToolTip:
+        if event.type() == QEvent.Type.ToolTip:
             if isinstance(obj, QWidget):
                 tooltip = obj.toolTip()
                 if tooltip:

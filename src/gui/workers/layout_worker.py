@@ -38,7 +38,7 @@ class LayoutWorker(QRunnable):
         self,
         events: List[Event],
         scale_factor: float,
-        grouping_config: dict = None,
+        grouping_config: dict | None = None,
     ) -> None:
         """Initialize the layout worker.
 

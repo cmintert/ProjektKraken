@@ -4,20 +4,25 @@ Provides the EventItem class for rendering individual events on the timeline.
 """
 
 import logging
-from typing import Any, Optional
+from collections.abc import Callable
+from typing import Any, Optional, cast
 
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import (
     QBrush,
     QColor,
     QCursor,
-    QMouseEvent,
     QPainter,
     QPainterPath,
     QPen,
     QPolygonF,
 )
-from PySide6.QtWidgets import QGraphicsItem, QStyleOptionGraphicsItem, QWidget
+from PySide6.QtWidgets import (
+    QGraphicsItem,
+    QGraphicsSceneMouseEvent,
+    QStyleOptionGraphicsItem,
+    QWidget,
+)
 
 from src.app.constants import (
     TEMPORAL_FUTURE_LIGHTNESS_BOOST,
@@ -46,7 +51,7 @@ class EventItem(QGraphicsItem):
     POINT_EVENT_HEIGHT = 40  # Diamond + text to right
 
     # Class-level calendar converter (shared across all event items)
-    _calendar_converter = None
+    _calendar_converter: CalendarConverter | None = None
 
     @classmethod
     def get_event_height(cls, event: Event) -> int:
@@ -91,13 +96,13 @@ class EventItem(QGraphicsItem):
         self.setFlags(
             QGraphicsItem.GraphicsItemFlag.ItemIsSelectable
             | QGraphicsItem.GraphicsItemFlag.ItemIsFocusable
-            | QGraphicsItem.ItemIgnoresTransformations
+            | QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations
             | QGraphicsItem.GraphicsItemFlag.ItemIsMovable
             | QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges
         )
 
         # Enable caching for improved rendering performance
-        self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
+        self.setCacheMode(QGraphicsItem.CacheMode.DeviceCoordinateCache)
 
         # Set pointing hand cursor to indicate clickability
         self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
@@ -106,7 +111,7 @@ class EventItem(QGraphicsItem):
         self._initial_y = 0.0
 
         # Callback for when drag completes: fn(event_id, new_lore_date)
-        self.on_drag_complete = None
+        self.on_drag_complete: Callable[[str, float], None] | None = None
 
         # Track if we're currently dragging
         self._is_dragging = False
@@ -154,7 +159,9 @@ class EventItem(QGraphicsItem):
 
         if self.is_future:
             # Desaturate significantly for future state
-            h, s, lightness, a = color.getHslF()
+            h, s, lightness, a = cast(
+                tuple[float, float, float, float], color.getHslF()
+            )
             # Reduce saturation by 20% (keep 80%) for a subtle fade
             s = max(0.0, s * TEMPORAL_FUTURE_SATURATION_FACTOR)
             lightness = min(1.0, lightness + TEMPORAL_FUTURE_LIGHTNESS_BOOST)
@@ -240,7 +247,7 @@ class EventItem(QGraphicsItem):
 
         return path
 
-    def mousePressEvent(self, event: QMouseEvent) -> None:
+    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """Handles mouse press to track drag state.
 
         Args:
@@ -266,7 +273,7 @@ class EventItem(QGraphicsItem):
             The constrained value.
 
         """
-        if change == QGraphicsItem.ItemPositionChange:
+        if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange:
             new_pos = value
 
             # Only constrain Y during user-initiated drags
@@ -283,7 +290,7 @@ class EventItem(QGraphicsItem):
             return new_pos
         return super().itemChange(change, value)
 
-    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+    def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """Handles mouse release to emit drag completion callback.
 
         Args:
@@ -310,7 +317,7 @@ class EventItem(QGraphicsItem):
 
         Draws a diamond shape and a text label.
         """
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         if self.event.lore_duration > 0:
             self._paint_duration_bar(painter)

@@ -5,7 +5,6 @@ overlaps using a greedy "First Fit" approach.
 """
 
 import logging
-from typing import Dict, List, Tuple
 
 from PySide6.QtGui import QFont, QFontMetrics
 
@@ -36,17 +35,18 @@ class TimelineLanePacker:
 
         """
         self.scale_factor = scale_factor
-        self.font = None
-        self.fm = None
+        self.font: QFont | None = None
+        self.fm: QFontMetrics | None = None
 
     def _ensure_font_metrics(self) -> None:
         """Ensures font metrics are initialized (requires QApplication)."""
         if self.fm is None:
-            self.font = QFont()
-            self.font.setBold(True)
-            self.fm = QFontMetrics(self.font)
+            font = QFont()
+            font.setBold(True)
+            self.font = font
+            self.fm = QFontMetrics(font)
 
-    def pack_events(self, events: List[Event]) -> Tuple[Dict[str, int], List[int]]:
+    def pack_events(self, events: list[Event]) -> tuple[dict[str, int], list[int]]:
         """Packs events into lanes using the First Fit algorithm.
 
         Args:
@@ -61,9 +61,9 @@ class TimelineLanePacker:
         """
         self._ensure_font_metrics()
 
-        lanes_end_times = []  # Stores end time (in lore date units) per lane
-        lanes_heights = []  # Stores max height (in pixels) per lane
-        event_lane_assignments = {}
+        lanes_end_times: list[float] = []
+        lanes_heights: list[int] = []
+        event_lane_assignments: dict[str, int] = {}
 
         logger.debug(f"Packing {len(events)} events. Scale: {self.scale_factor}")
 
@@ -125,8 +125,8 @@ class TimelineLanePacker:
 
     def _find_available_lane(
         self,
-        lanes_end_times: List[float],
-        lanes_heights: List[int],
+        lanes_end_times: list[float],
+        lanes_heights: list[int],
         start_time: float,
         end_time: float,
         event_height: int,

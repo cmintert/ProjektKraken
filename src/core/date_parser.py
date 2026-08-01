@@ -455,7 +455,10 @@ class DateParser:
             day = int(groupdict["day_num_us"])
         else:
             day_str = next(g for g in groups if re.match(r"^\d{1,2}(?:st|nd|rd|th)?$", g))
-            day = int(re.match(r"\d+", day_str).group())
+            day_match = re.match(r"\d+", day_str)
+            if day_match is None:
+                raise ValueError(f"Invalid day: {day_str}")
+            day = int(day_match.group())
 
         if not self._validate_date(year, month, day):
             raise ValueError(f"Invalid date: day {day} month {month} year {year}")
@@ -560,7 +563,10 @@ class DateParser:
         day = None
         for g in groups:
             if re.match(r"^\d{1,2}(?:st|nd|rd|th)?$", g):
-                day = int(re.match(r"\d+", g).group())
+                day_match = re.match(r"\d+", g)
+                if day_match is None:
+                    raise ValueError(f"Invalid day: {g}")
+                day = int(day_match.group())
                 break
 
         confidence = 0.5 if "sometime" in match.re.pattern.lower() else 0.8
@@ -584,11 +590,14 @@ class DateParser:
         year = int(next(g for g in reversed(groups) if re.match(r"^-?\d+$", g)))
 
         months = [self.month_lookup[g.lower()] for g in groups if g.lower() in self.month_lookup]
-        days = [
-            int(re.match(r"\d+", g).group())
-            for g in groups
-            if re.match(r"^\d{1,2}(?:st|nd|rd|th)?$", g)
-        ]
+        days: list[int] = []
+        for group in groups:
+            if not re.match(r"^\d{1,2}(?:st|nd|rd|th)?$", group):
+                continue
+            day_match = re.match(r"\d+", group)
+            if day_match is None:
+                raise ValueError(f"Invalid day: {group}")
+            days.append(int(day_match.group()))
 
         if len(days) == 2 and len(months) >= 2:
             # Cross-month: "23 AUG–6 SEP 1895"

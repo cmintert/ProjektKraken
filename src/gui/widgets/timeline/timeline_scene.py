@@ -4,6 +4,7 @@ Provides scene and playhead components for the timeline visualization.
 """
 
 import logging
+from collections.abc import Callable
 from typing import Any, Optional
 
 from PySide6.QtCore import QObject, Qt
@@ -63,13 +64,13 @@ class PlayheadItem(QGraphicsLineItem):
         self.setAcceptHoverEvents(True)  # Enable hover for visual feedback
 
         # Cursor hint
-        self.setCursor(QCursor(Qt.SizeHorCursor))
+        self.setCursor(QCursor(Qt.CursorShape.SizeHorCursor))
 
         # Set high Z value to appear on top
         self.setZValue(100)
 
         # Callback for movement
-        self.on_moved = None
+        self.on_moved: Callable[[float], None] | None = None
 
         # Track vertical extent
         self._top = -100000.0
@@ -121,7 +122,7 @@ class PlayheadItem(QGraphicsLineItem):
             The constrained value.
 
         """
-        if change == QGraphicsItem.ItemPositionChange:
+        if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange:
             # Constrain to horizontal movement only
             new_pos = value
             new_pos.setY(0)

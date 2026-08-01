@@ -11,7 +11,7 @@ import time
 from typing import Any, AsyncIterator, Callable, Dict, List, Optional
 
 import numpy as np
-import requests
+import requests  # type: ignore[import-untyped]  # Package has no py.typed marker.
 
 from src.services.llm_provider import Provider
 from src.services.resilience import CircuitBreaker
@@ -72,7 +72,7 @@ class GoogleProvider(Provider):
         self.embed_model = embed_model
         self.timeout = timeout
         self.max_retries = max_retries
-        self._dimension = None
+        self._dimension: int | None = None
         self.circuit_breaker = CircuitBreaker(failure_threshold=5, timeout=60.0)
 
         # Initialize credentials
@@ -246,7 +246,7 @@ class GoogleProvider(Provider):
         def _generate_impl() -> Dict[str, Any]:
             """Inner implementation for retry wrapper."""
             # Vertex AI text generation format
-            payload = {
+            payload: dict[str, Any] = {
                 "instances": [{"prompt": prompt}],
                 "parameters": {
                     "temperature": temperature,

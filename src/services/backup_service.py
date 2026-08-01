@@ -104,7 +104,7 @@ class BackupMetadata:
 
 if HAS_QT:
 
-    class BackupWorker(QThread):
+    class QtBackupWorker(QThread):
         """Background worker thread for backup operations.
 
         Prevents blocking the UI during backup/restore operations.
@@ -203,9 +203,16 @@ if HAS_QT:
                     temp_path.unlink()
                 raise
 
+    BackupWorker: Any = QtBackupWorker
+
 else:
-    # Stub class when Qt is not available
-    BackupWorker = None
+    class UnavailableBackupWorker:
+        """Unavailable worker placeholder for installations without Qt."""
+
+        def __init__(self, *args: object, **kwargs: object) -> None:
+            raise RuntimeError("Qt is required to create a BackupWorker")
+
+    BackupWorker = UnavailableBackupWorker
 
 
 class BackupService:

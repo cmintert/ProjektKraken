@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import markdown
+import markdown  # type: ignore[import-untyped]  # Package has no py.typed marker.
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles

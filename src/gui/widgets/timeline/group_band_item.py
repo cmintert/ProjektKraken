@@ -12,16 +12,16 @@ from PySide6.QtCore import QRectF, Qt, Signal
 from PySide6.QtGui import (
     QBrush,
     QColor,
-    QContextMenuEvent,
     QCursor,
-    QMouseEvent,
     QPainter,
     QPen,
 )
 from PySide6.QtWidgets import (
     QGraphicsItem,
     QGraphicsObject,
+    QGraphicsSceneContextMenuEvent,
     QGraphicsSceneHoverEvent,
+    QGraphicsSceneMouseEvent,
     QStyleOptionGraphicsItem,
     QWidget,
 )
@@ -85,7 +85,7 @@ class GroupBandItem(QGraphicsObject):
         self.is_collapsed = is_collapsed
 
         # Event positions for tick marks
-        self.event_dates = []  # List of lore_dates for events in this group
+        self.event_dates: list[float] = []
 
         # Visual settings
         self.setAcceptHoverEvents(True)
@@ -151,7 +151,7 @@ class GroupBandItem(QGraphicsObject):
             widget: The widget being painted on (unused)
 
         """
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         height = (
             self.BAND_HEIGHT_COLLAPSED
@@ -182,7 +182,7 @@ class GroupBandItem(QGraphicsObject):
         # Draw background
         painter.setBrush(QBrush(bg_color))
         painter.setPen(Qt.PenStyle.NoPen)
-        painter.drawRect(scene_rect.left(), 0, scene_rect.width(), height)
+        painter.drawRect(QRectF(scene_rect.left(), 0, scene_rect.width(), height))
 
         # Draw border
         border_color = QColor(self._color).darker(120)
@@ -219,7 +219,7 @@ class GroupBandItem(QGraphicsObject):
                     if scene_rect.left() <= x_pos <= scene_rect.right():
                         painter.drawLine(int(x_pos), 0, int(x_pos), int(height))
 
-    def mousePressEvent(self, event: QMouseEvent) -> None:
+    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """Handle mouse press."""
         if event.button() == Qt.MouseButton.LeftButton:
             self._pressed = True
@@ -227,7 +227,7 @@ class GroupBandItem(QGraphicsObject):
         else:
             super().mousePressEvent(event)
 
-    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+    def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """Handle mouse release to toggle collapse state."""
         if event.button() == Qt.MouseButton.LeftButton and self._pressed:
             self._pressed = False
@@ -240,7 +240,7 @@ class GroupBandItem(QGraphicsObject):
         else:
             super().mouseReleaseEvent(event)
 
-    def contextMenuEvent(self, event: QContextMenuEvent) -> None:
+    def contextMenuEvent(self, event: QGraphicsSceneContextMenuEvent) -> None:
         """Handle context menu request."""
         self.context_menu_requested.emit(self.tag_name, event.screenPos())
         event.accept()

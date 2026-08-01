@@ -65,7 +65,10 @@ def _get_current_meta(
     # This minimal helper is needed because meta isn't exposed in logic yet.
     # longform_builder has no simple 'get item' returning meta dict.
     # Direct SQL query via db_service connection for now.
-    cursor = db_service._connection.cursor()
+    connection = db_service._connection
+    if connection is None:
+        raise RuntimeError("Database is not connected")
+    cursor = connection.cursor()
     cursor.execute(
         "SELECT position, parent_id, depth, title_override FROM longform_structure "
         "WHERE table_name = ? AND row_id = ? AND doc_id = ?",

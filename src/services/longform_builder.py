@@ -293,7 +293,7 @@ def build_longform_sequence(
     # Recursively build sequence
     def _walk(parent_id: Optional[str], current_depth: int = 0) -> List[Dict]:
         """Walk the tree and build ordered sequence."""
-        result = []
+        result: list[Dict] = []
         if parent_id not in children_map:
             return result
 

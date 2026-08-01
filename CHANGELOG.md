@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-01
-**Commit:** b4774026
+**Commit:** f90f34c6
 ---
 
 # Changelog
@@ -31,6 +31,11 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-01)* **Editor / Stability**: Made splitter tab drops transactional,
+  gave Explorer rows explicit event and entity types, and replaced ambiguous
+  timeline graphics-item state with typed ownership.
+- *(2026-08-01)* **Production / Typing**: Corrected editor-mixin, parsing,
+  backup, provider, raster, command, CLI, and webserver boundary contracts.
 - *(2026-08-01)* **AI / Settings Stability**: Validated persisted AI and backup
   settings plus generation prompts at their runtime boundaries, falling back
   safely when stored values are malformed.
@@ -87,6 +92,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-01)* **Testing / Typing**: Added splitter and Explorer regression
+  coverage and reduced the mypy baseline from 306 to 175 errors, leaving no
+  errors outside GUI and test modules.
 - *(2026-08-01)* **Testing / Typing**: Cleared 196 errors from the selected
   application paths, reducing the mypy baseline from 553 to 357 errors.
 - *(2026-08-01)* **Testing / Typing**: Cleared 197 errors from the selected

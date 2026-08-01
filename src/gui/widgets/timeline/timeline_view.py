@@ -5,10 +5,11 @@ Provides the TimelineView class for rendering and interacting with the timeline.
 
 import logging
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 from PySide6.QtCore import (
     QPointF,
+    QRect,
     QRectF,
     QSettings,
     QSize,
@@ -28,8 +29,9 @@ from PySide6.QtGui import (
     QTransform,
     QWheelEvent,
 )
-from PySide6.QtWidgets import QGraphicsView, QSizePolicy, QWidget
+from PySide6.QtWidgets import QGraphicsLineItem, QGraphicsView, QSizePolicy, QWidget
 
+from src.core.events import Event
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.timeline.event_item import EventItem
@@ -41,6 +43,9 @@ from src.gui.widgets.timeline.timeline_scene import (
     TimelineScene,
 )
 from src.gui.widgets.timeline_ruler import TimelineRuler
+
+if TYPE_CHECKING:
+    from src.gui.workers.layout_worker import LayoutWorker
 
 # Import TimelineLanePacker inside __init__ to avoid circular import
 # from src.gui.widgets.timeline_lane_packer import TimelineLanePacker
@@ -85,7 +90,7 @@ class TimelineView(QGraphicsView):
     ALL_EVENTS_GROUP_NAME = "All events"
     ALL_EVENTS_COLOR = "#808080"  # Neutral gray
 
-    def __init__(self, parent: QWidget = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initializes the TimelineView.
 
         Args:
@@ -100,6 +105,13 @@ class TimelineView(QGraphicsView):
 
         self._graphics_scene = TimelineScene(self)
         self.setScene(self._graphics_scene)
+
+        axis_pen = QPen(QColor(100, 100, 100))
+        axis_pen.setCosmetic(True)
+        self._axis_line = self.graphics_scene.addLine(
+            -1e12, 0, 1e12, 0, axis_pen
+        )
+        self._drop_lines: dict[str, QGraphicsLineItem] = {}
 
         # Import here to avoid circular import
         from src.gui.widgets.timeline_lane_packer import TimelineLanePacker
@@ -122,17 +134,19 @@ class TimelineView(QGraphicsView):
         )
 
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
-        self.setRenderHint(QPainter.Antialiasing)
+        self.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
 
         # Force full viewport updates to prevent ruler distortion during panning
-        self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
+        self.setViewportUpdateMode(
+            QGraphicsView.ViewportUpdateMode.FullViewportUpdate
+        )
 
         # Viewport alignment
         self.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
 
-        self.events = []
+        self.events: list[Event] = []
         self.scale_factor = 20.0
         self._initial_fit_pending = False
         self._has_done_initial_fit = False  # Only fit_all on first load
@@ -164,7 +178,9 @@ class TimelineView(QGraphicsView):
         # Restore persisted playhead time
         settings = QSettings()
         # Default to 0.0 only if not set
-        persisted_time = settings.value("timeline/playhead_time", 0.0, type=float)
+        persisted_time = cast(
+            float, settings.value("timeline/playhead_time", 0.0, type=float)
+        )
 
         # Apply restoration
         if persisted_time != 0.0:
@@ -173,15 +189,15 @@ class TimelineView(QGraphicsView):
         # Async layout worker infrastructure
         self._thread_pool = QThreadPool.globalInstance()
         self._layout_in_progress = False
-        self._layout_worker = None
-        self._pending_layout_request = None  # Track if a new layout is needed
-        self._layout_start_time = 0.0
+        self._layout_worker: LayoutWorker | None = None
+        self._pending_layout_request: float | None = None
+        self._layout_start_time: float = 0.0
 
         # Threshold for using async layout (number of events)
         self.ASYNC_LAYOUT_THRESHOLD = 50
 
         # Group band manager (will be initialized when data provider is set)
-        self._band_manager = None
+        self._band_manager: GroupBandManager | None = None
         self._data_provider = None
 
         # Group label overlay for fixed lane labels
@@ -192,10 +208,10 @@ class TimelineView(QGraphicsView):
         self._label_overlay.raise_()  # Ensure overlay is on top
 
         # Track duplicate event items created for "All events" group
-        self._duplicate_event_items = []
+        self._duplicate_event_items: list[EventItem] = []
 
         # Initialize grouping state (will be set by set_grouping_config)
-        self._grouping_tag_order = []
+        self._grouping_tag_order: list[str] = []
         self._grouping_mode = "DUPLICATE"
 
         # Set corner widget for themed scrollbar corner
@@ -305,7 +321,7 @@ class TimelineView(QGraphicsView):
     # Height allocated for sticky parent context tier
     CONTEXT_TIER_HEIGHT = 14
 
-    def drawForeground(self, painter: QPainter, rect: QRectF) -> None:
+    def drawForeground(self, painter: QPainter, rect: QRectF | QRect) -> None:
         """Draws a semantic zoom ruler at the top of the viewport.
 
         Features:
@@ -434,7 +450,7 @@ class TimelineView(QGraphicsView):
             )
 
         # 8. Draw Playhead Handle (on top of everything else)
-        self._draw_playhead_handle(painter, rect)
+        self._draw_playhead_handle(painter, QRectF(rect))
 
         # 9. Clean up
         painter.restore()
@@ -512,7 +528,7 @@ class TimelineView(QGraphicsView):
         self._ruler.set_calendar_converter(converter)
         self.viewport().update()
 
-    def set_events(self, events: list) -> None:  # noqa: C901
+    def set_events(self, events: list[Event]) -> None:  # noqa: C901
         """Updates the scene with event items using smart lane packing. Reuses existing
         EventItem instances where possible for performance.
 
@@ -537,26 +553,14 @@ class TimelineView(QGraphicsView):
         self.events = sorted_events
 
         # Build a map of existing items by event ID
-        existing_items = {}
-        drop_lines = {}
+        existing_items: dict[str, EventItem] = {}
+        drop_lines = self._drop_lines
         for item in self.graphics_scene.items():
             if isinstance(item, EventItem):
                 existing_items[item.event.id] = item
-            elif hasattr(item, "event_id"):  # Drop lines marked with event_id
-                drop_lines[item.event_id] = item
 
         # Track which items we've reused
-        reused_ids = set()
-
-        # Draw Infinite Axis Line if not present
-        axis_exists = any(
-            not isinstance(item, EventItem) and not hasattr(item, "event_id")
-            for item in self.graphics_scene.items()
-        )
-        if not axis_exists:
-            axis_pen = QPen(QColor(100, 100, 100))
-            axis_pen.setCosmetic(True)
-            self.graphics_scene.addLine(-1e12, 0, 1e12, 0, axis_pen)
+        reused_ids: set[str] = set()
 
         # NOTE: Don't call repack_events() here - items don't exist yet.
         # Items are created below, then repack_events() is called at line 470.
@@ -602,7 +606,7 @@ class TimelineView(QGraphicsView):
                     QPen(QColor(80, 80, 80), 1, Qt.PenStyle.DashLine),
                 )
                 line.setZValue(-1)
-                line.event_id = event.id  # Mark for tracking
+                drop_lines[event.id] = line
 
         # Clean up removed items
         current_ids = {e.id for e in sorted_events}
@@ -614,6 +618,7 @@ class TimelineView(QGraphicsView):
         for event_id, line in list(drop_lines.items()):
             if event_id not in current_ids:
                 self.graphics_scene.removeItem(line)
+                del drop_lines[event_id]
 
         # Now Repack
         self.repack_events()
@@ -834,12 +839,10 @@ class TimelineView(QGraphicsView):
         try:
             # Collect existing items
             existing_items = {}
-            drop_lines = {}
+            drop_lines = self._drop_lines
             for item in self.graphics_scene.items():
                 if isinstance(item, EventItem):
                     existing_items[item.event.id] = item
-                elif hasattr(item, "event_id"):
-                    drop_lines[item.event_id] = item
 
             max_y = 80
             for event in self.events:
@@ -965,21 +968,19 @@ class TimelineView(QGraphicsView):
         self.events.sort(key=lambda e: e.lore_date)
 
         # Build map of existing items (now clean of duplicates)
-        event_items = {}
-        drop_lines = {}
+        event_items: dict[str, EventItem] = {}
+        drop_lines = self._drop_lines
         for item in self.graphics_scene.items():
             if isinstance(item, EventItem):
                 event_items[item.event.id] = item
-            elif hasattr(item, "setLine") and hasattr(item, "event_id"):
-                drop_lines[item.event_id] = item
 
         # 1. Partition events
         groups, ungrouped = self._partition_events(
             self.events, self._grouping_tag_order, self._grouping_mode
         )
 
-        current_y = 60  # Start below ruler
-        placed_event_ids = set()
+        current_y = 60.0  # Start below ruler
+        placed_event_ids: set[str] = set()
 
         # 2. Position tag group bands and their events
         current_y = self._position_tag_group_events(
@@ -1004,8 +1005,8 @@ class TimelineView(QGraphicsView):
         self,
         groups: dict,
         event_items: dict,
-        drop_lines: dict,
-        placed_event_ids: set,
+        drop_lines: dict[str, QGraphicsLineItem],
+        placed_event_ids: set[str],
         current_y: float,
     ) -> float:
         """Positions events within their tag group bands.
@@ -1101,8 +1102,8 @@ class TimelineView(QGraphicsView):
     def _position_all_events_group(
         self,
         event_items: dict,
-        drop_lines: dict,
-        placed_event_ids: set,
+        drop_lines: dict[str, QGraphicsLineItem],
+        placed_event_ids: set[str],
         current_y: float,
     ) -> float:
         """Positions the 'All Events' summary group.
@@ -1513,7 +1514,10 @@ class TimelineView(QGraphicsView):
         return major_font, minor_font
 
     def _position_event_item(
-        self, item: EventItem, y: float, drop_lines: dict | None = None
+        self,
+        item: EventItem,
+        y: float,
+        drop_lines: dict[str, QGraphicsLineItem] | None = None,
     ) -> None:
         """Positions an event item and updates its associated drop line."""
         item.setY(y)
@@ -1644,23 +1648,24 @@ class TimelineView(QGraphicsView):
 
         # Initialize band manager if not already done
         if self._band_manager is None and provider is not None:
-            self._band_manager = GroupBandManager(
+            band_manager = GroupBandManager(
                 self.graphics_scene,
                 get_group_metadata_callback=provider.get_group_metadata,
                 get_events_for_group_callback=provider.get_events_for_group,
                 parent=self,
             )
+            self._band_manager = band_manager
 
             # Connect band manager signals
-            self._band_manager.band_expanded.connect(self._on_band_expanded)
-            self._band_manager.band_collapsed.connect(self._on_band_collapsed)
-            self._band_manager.tag_color_change_requested.connect(
+            band_manager.band_expanded.connect(self._on_band_expanded)
+            band_manager.band_collapsed.connect(self._on_band_collapsed)
+            band_manager.tag_color_change_requested.connect(
                 self._on_tag_color_change_requested
             )
-            self._band_manager.tag_rename_requested.connect(
+            band_manager.tag_rename_requested.connect(
                 self._on_tag_rename_requested
             )
-            self._band_manager.remove_from_grouping_requested.connect(
+            band_manager.remove_from_grouping_requested.connect(
                 self._on_remove_from_grouping_requested
             )
 
@@ -1841,7 +1846,7 @@ class TimelineView(QGraphicsView):
         # This should be handled by the main window/controller
         # This should be handled by the main window/controller
 
-    def _update_scene_rect_from_events(self, sorted_events: list) -> None:
+    def _update_scene_rect_from_events(self, sorted_events: list[Event]) -> None:
         """Updates the scene rectangle based on event bounds."""
         # Calculate content bounds (Events + Playhead + Current Time)
         min_date = sorted_events[0].lore_date
@@ -1875,7 +1880,7 @@ class TimelineView(QGraphicsView):
         end_x = center_x + buffer_padding
 
         # Y bounds - inspect items to find max Y
-        max_y_found = 60
+        max_y_found = 60.0
         for item in self.graphics_scene.items():
             if isinstance(item, EventItem):
                 max_y_found = max(max_y_found, item.y())

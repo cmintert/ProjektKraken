@@ -349,7 +349,7 @@ class PromptLoader:
             Dict[str, Any]: A mapping of metadata keys to values. Values are strings or lists of strings for bracketed lists.
 
         """
-        metadata = {}
+        metadata: dict[str, str | list[str]] = {}
 
         for line in yaml_text.split("\n"):
             line = line.strip()

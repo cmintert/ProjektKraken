@@ -15,7 +15,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
-import frontmatter
+import frontmatter  # type: ignore[import-untyped]  # Package has no py.typed marker.
 
 logger = logging.getLogger(__name__)
 

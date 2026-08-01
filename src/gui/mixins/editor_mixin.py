@@ -5,11 +5,19 @@ Centralizes dirty-state tracking, drag-drop acceptance, and hidden-attribute han
 so that both editors stay consistent without code duplication.
 """
 
+from __future__ import annotations
+
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, cast
 
 from PySide6.QtCore import QPoint
 from PySide6.QtGui import QDragEnterEvent, QDragLeaveEvent, QDragMoveEvent
+from PySide6.QtWidgets import QAbstractButton, QWidget
+
+from src.gui.mixins.autosave_mixin import AutoSaveManager
+
+if TYPE_CHECKING:
+    from src.gui.widgets.relation_type_picker import RelationTypePicker
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +44,19 @@ class BaseEditorMixin:
         _get_editor_label() -> str: Returns a label for logging (e.g., "EventEditor").
     """
 
+    _is_loading: bool
+    _is_dirty: bool
+    _is_drag_over: bool
+    _selected_relation_type: str
+    _type_picker: RelationTypePicker | None
+    _hidden_attributes: dict[str, Any]
+    _suggestion_types: list[str]
     _initiated_relation_drop: Optional[Dict[str, Any]]
+    btn_save: QAbstractButton
+    btn_discard: QAbstractButton
+    autosave_manager: AutoSaveManager
+    dirty_changed: Any
+    desc_edit: Any
 
     def _get_current_item_id(self) -> Optional[str]:
         """Returns the current item ID or None if no item is loaded.
@@ -50,6 +70,24 @@ class BaseEditorMixin:
 
         Must be implemented by subclasses.
         """
+        raise NotImplementedError
+
+    def _show_drop_hint(self, relation_type: str) -> None:
+        """Show the concrete editor's relation-drop affordance."""
+        raise NotImplementedError
+
+    def _hide_drop_hint(self) -> None:
+        """Hide the concrete editor's relation-drop affordance."""
+        raise NotImplementedError
+
+    def _create_relation(
+        self,
+        source_id: str,
+        source_type: str,
+        source_name: str,
+        relation_type: str,
+    ) -> None:
+        """Create a relation through the concrete editor implementation."""
         raise NotImplementedError
 
     def set_dirty(self, dirty: bool) -> None:
@@ -236,7 +274,7 @@ class BaseEditorMixin:
             all_types.update(self._suggestion_types)
 
         self._type_picker.set_relation_types(list(all_types))
-        global_pos = self.mapToGlobal(position)
+        global_pos = cast(QWidget, self).mapToGlobal(position)
         self._type_picker.show_at_position(global_pos)
         self._hide_drop_hint()
 

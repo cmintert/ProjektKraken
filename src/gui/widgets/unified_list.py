@@ -5,9 +5,10 @@ color-coded differentiation.
 """
 
 import json
+import logging
 from typing import Any, Dict, List, Optional, Union
 
-from PySide6.QtCore import QMimeData, QSize, Qt, Signal, Slot
+from PySide6.QtCore import QMimeData, QSize, QSortFilterProxyModel, Qt, Signal, Slot
 from PySide6.QtGui import QDrag, QMouseEvent
 from PySide6.QtWidgets import (
     QComboBox,
@@ -25,13 +26,14 @@ from src.core.calendar import CalendarConverter
 from src.core.entities import Entity
 from src.core.events import Event
 from src.gui.models.explorer_filter_proxy import ExplorerFilterProxyModel
-from src.gui.models.explorer_model import ExplorerModel
+from src.gui.models.explorer_model import ExplorerItem, ExplorerModel
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.auto_closing_message_box import AutoClosingMessageBox
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.standard_buttons import DestructiveButton
 
 KRAKEN_ITEM_MIME_TYPE = "application/x-kraken-item"
+logger = logging.getLogger(__name__)
 
 
 class DraggableListView(QListView):
@@ -41,11 +43,11 @@ class DraggableListView(QListView):
     Name"}
     """
 
-    def __init__(self, parent: QWidget = None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize with drag enabled."""
         super().__init__(parent)
         self.setDragEnabled(True)
-        self.setDragDropMode(QListView.DragOnly)
+        self.setDragDropMode(QListView.DragDropMode.DragOnly)
         self._drag_pill = None  # Will be created during drag
         self.setMouseTracking(True)  # Enable mouse tracking for hover effects
 
@@ -89,11 +91,13 @@ class DraggableListView(QListView):
 
         # Need to map to source model if using proxy
         source_index = index
-        if hasattr(model, "mapToSource"):
+        if isinstance(model, QSortFilterProxyModel):
             source_index = model.mapToSource(index)
             source_model = model.sourceModel()
         else:
             source_model = model
+        if source_model is None:
+            return
 
         # Extract item data using custom roles
         item_id = source_model.data(source_index, ExplorerModel.ItemIdRole)
@@ -132,7 +136,7 @@ class DraggableListView(QListView):
         # This aligns the cursor with the defined hotspot on the pill
         drag.setHotSpot(pill.cursor_offset)
 
-        drag.exec(Qt.CopyAction)
+        drag.exec(Qt.DropAction.CopyAction)
 
         # Clean up
         pill.deleteLater()
@@ -165,7 +169,7 @@ class UnifiedListWidget(QWidget):
     drag_started = Signal()
     export_obsidian_requested = Signal(str, str)  # type, id
 
-    def __init__(self, parent: QWidget = None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the UnifiedListWidget.
 
         Args:
@@ -482,7 +486,7 @@ class UnifiedListWidget(QWidget):
         show_events = filter_mode in ["All Items", "Events Only"]
         show_entities = filter_mode in ["All Items", "Entities Only"]
 
-        items_to_display = []
+        items_to_display: list[ExplorerItem] = []
         if show_entities:
             items_to_display.extend([("entity", e) for e in self._entities])
         if show_events:
@@ -493,7 +497,7 @@ class UnifiedListWidget(QWidget):
         reverse = not self._sort_ascending
 
         def get_sort_key(
-            item_tuple: tuple[str, Union[Event, Entity]],
+            item_tuple: ExplorerItem,
         ) -> Union[str, float]:
             """Get sort key for an item based on current sort field.
 
@@ -690,18 +694,25 @@ class UnifiedListWidget(QWidget):
 
         # Try checked items first for multi-select
         checked_items = self._model.get_checked_items()
-        items_to_delete = []
+        items_to_delete: list[tuple[str, str, str]] = []
 
         if checked_items:
             for item_type, item_id in checked_items:
                 # Find in cache to get name
                 name = "Unknown"
                 if item_type == "event":
-                    obj = next((e for e in self._events if e.id == item_id), None)
+                    event = next((e for e in self._events if e.id == item_id), None)
+                    if event is not None:
+                        name = event.name
+                elif item_type == "entity":
+                    entity = next(
+                        (e for e in self._entities if e.id == item_id), None
+                    )
+                    if entity is not None:
+                        name = entity.name
                 else:
-                    obj = next((e for e in self._entities if e.id == item_id), None)
-                if obj:
-                    name = obj.name
+                    logger.warning("Ignoring unknown checked item type %r", item_type)
+                    continue
                 items_to_delete.append((item_type, item_id, name))
         else:
             # Fallback to selection

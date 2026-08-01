@@ -96,6 +96,7 @@ def quantize_discrete_rgb(
     unique_colours = np.unique(pixels, axis=0)
 
     palette_entries: list[dict] = []
+    arr16: np.ndarray
 
     if len(unique_colours) <= 256:
         colour_to_val = {tuple(c): i + 1 for i, c in enumerate(unique_colours)}

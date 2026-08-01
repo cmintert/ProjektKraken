@@ -4,9 +4,15 @@ Provides a virtualized QAbstractListModel for the project explorer list view.
 """
 
 import logging
-from typing import Any, List, Optional, Union
+from typing import Any, Literal, Optional, TypeAlias
 
-from PySide6.QtCore import QAbstractListModel, QModelIndex, Qt
+from PySide6.QtCore import (
+    QAbstractListModel,
+    QModelIndex,
+    QObject,
+    QPersistentModelIndex,
+    Qt,
+)
 from PySide6.QtGui import QBrush, QColor
 
 from src.core.calendar import CalendarConverter
@@ -15,6 +21,10 @@ from src.core.events import Event
 from src.gui.utils.color_utils import get_hashed_color
 
 logger = logging.getLogger(__name__)
+
+ExplorerItem: TypeAlias = (
+    tuple[Literal["event"], Event] | tuple[Literal["entity"], Entity]
+)
 
 
 class ExplorerModel(QAbstractListModel):
@@ -31,16 +41,16 @@ class ExplorerModel(QAbstractListModel):
     ItemNameRole = Qt.ItemDataRole.UserRole + 3
     ItemObjectRole = Qt.ItemDataRole.UserRole + 4
 
-    def __init__(self, parent: Optional[Any] = None) -> None:
+    def __init__(self, parent: Optional[QObject] = None) -> None:
         """Initialize the explorer model.
 
         Args:
             parent: Parent QObject.
         """
         super().__init__(parent)
-        self._items: List[tuple[str, Union[Event, Entity]]] = []
+        self._items: list[ExplorerItem] = []
         self._calendar_converter: Optional[CalendarConverter] = None
-        self._checked_ids = set()  # Set of (item_type, item_id) tuples
+        self._checked_ids: set[tuple[str, str]] = set()
         self._use_hashed_colors: bool = False
 
         # Theme colors
@@ -96,17 +106,28 @@ class ExplorerModel(QAbstractListModel):
                 top_left, bottom_right, [Qt.ItemDataRole.ForegroundRole]
             )
 
-    def set_items(self, items: List[tuple[str, Union[Event, Entity]]]) -> None:
+    def set_items(self, items: list[ExplorerItem]) -> None:
         """Set the items to display in the model.
 
         Args:
             items: List of (item_type, object) tuples.
         """
+        for item_type, obj in items:
+            if (item_type == "event" and not isinstance(obj, Event)) or (
+                item_type == "entity" and not isinstance(obj, Entity)
+            ):
+                raise TypeError(
+                    f"Explorer item type {item_type!r} does not match "
+                    f"{type(obj).__name__}"
+                )
+
         self.beginResetModel()
-        self._items = items
+        self._items = list(items)
         self.endResetModel()
 
-    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
+    def rowCount(
+        self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()
+    ) -> int:
         """Return the number of items in the model.
 
         Args:
@@ -119,7 +140,11 @@ class ExplorerModel(QAbstractListModel):
             return 0
         return len(self._items)
 
-    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
+    def data(
+        self,
+        index: QModelIndex | QPersistentModelIndex,
+        role: int = Qt.ItemDataRole.DisplayRole,
+    ) -> Any:
         """Return data for the given index and role.
 
         Args:
@@ -137,8 +162,10 @@ class ExplorerModel(QAbstractListModel):
         if role == Qt.ItemDataRole.DisplayRole:
             # Return display text
             if item_type == "entity":
+                assert isinstance(obj, Entity)
                 return f"{obj.name} ({obj.type})"
             else:
+                assert isinstance(obj, Event)
                 # Format lore date
                 if self._calendar_converter and obj.lore_date is not None:
                     date_str = self._format_compact_date(obj.lore_date)
@@ -182,7 +209,10 @@ class ExplorerModel(QAbstractListModel):
         return None
 
     def setData(
-        self, index: QModelIndex, value: Any, role: int = Qt.ItemDataRole.EditRole
+        self,
+        index: QModelIndex | QPersistentModelIndex,
+        value: Any,
+        role: int = Qt.ItemDataRole.EditRole,
     ) -> bool:
         """Set data for the given index and role.
 
@@ -217,7 +247,7 @@ class ExplorerModel(QAbstractListModel):
 
         return False
 
-    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
+    def flags(self, index: QModelIndex | QPersistentModelIndex) -> Qt.ItemFlag:
         """Return item flags for the given index.
 
         Args:
@@ -266,7 +296,7 @@ class ExplorerModel(QAbstractListModel):
 
         return date_part
 
-    def get_checked_items(self) -> List[tuple[str, str]]:
+    def get_checked_items(self) -> list[tuple[str, str]]:
         """Return a list of (type, id) for all checked items.
 
         Returns:
@@ -275,8 +305,8 @@ class ExplorerModel(QAbstractListModel):
         return list(self._checked_ids)
 
     def get_item(
-        self, index: QModelIndex
-    ) -> Optional[tuple[str, Union[Event, Entity]]]:
+        self, index: QModelIndex | QPersistentModelIndex
+    ) -> Optional[ExplorerItem]:
         """Get the item at the given index.
 
         Args:

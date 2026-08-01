@@ -261,7 +261,7 @@ class WorldManager:
             List of World instances found in the directory.
 
         """
-        worlds = []
+        worlds: list[World] = []
 
         if not self.worlds_dir.exists():
             return worlds

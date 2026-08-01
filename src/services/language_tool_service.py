@@ -8,7 +8,7 @@ import json
 import logging
 from dataclasses import dataclass
 
-import requests
+import requests  # type: ignore[import-untyped]  # Package has no py.typed marker.
 from PySide6.QtCore import QObject, Signal, Slot
 
 logger = logging.getLogger(__name__)

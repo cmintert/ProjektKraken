@@ -363,7 +363,7 @@ class CreateRasterLayerCommand(BaseCommand):
             if self.import_path:
                 from PIL import Image as PilImage
 
-                img = PilImage.open(self.import_path)
+                img: PilImage.Image = PilImage.open(self.import_path)
                 # Normalise I;16 (raw 16-bit mode) to I before resize so PIL
                 # handles it correctly on all platforms.
                 if img.mode == "I;16":

@@ -294,8 +294,10 @@ class NavigationCoordinator(BaseCoordinator):
                 return
 
             # Use target name as default
-            cmd = CreateEntityCommand({"name": target_name, "type": "Concept"})
-            self.main_window.command_requested.emit(cmd)
+            entity_command = CreateEntityCommand(
+                {"name": target_name, "type": "Concept"}
+            )
+            self.main_window.command_requested.emit(entity_command)
 
         elif clicked == btn_event:
             # Create Event
@@ -304,5 +306,7 @@ class NavigationCoordinator(BaseCoordinator):
             ):
                 return
 
-            cmd = CreateEventCommand({"name": target_name, "lore_date": 0.0})
-            self.main_window.command_requested.emit(cmd)
+            event_command = CreateEventCommand(
+                {"name": target_name, "lore_date": 0.0}
+            )
+            self.main_window.command_requested.emit(event_command)

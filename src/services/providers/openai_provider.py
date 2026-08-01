@@ -11,7 +11,7 @@ import time
 from typing import Any, AsyncIterator, Callable, Dict, List, Optional
 
 import numpy as np
-import requests
+import requests  # type: ignore[import-untyped]  # Package has no py.typed marker.
 
 from src.services.llm_provider import Provider
 from src.services.resilience import CircuitBreaker
@@ -57,7 +57,7 @@ class OpenAIProvider(Provider):
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.max_retries = max_retries
-        self._dimension = None
+        self._dimension: int | None = None
         self.circuit_breaker = CircuitBreaker(failure_threshold=5, timeout=60.0)
 
         logger.info(f"OpenAIProvider initialized with model: {self.model}")

@@ -9,7 +9,7 @@ All commands support undo/redo operations and return CommandResult objects.
 """
 
 import logging
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from src.commands.base_command import BaseCommand, CommandResult
 from src.services.db_service import DatabaseService
@@ -31,7 +31,7 @@ class SetTimelineGroupingCommand(BaseCommand):
         super().__init__()
         self.tag_order = tag_order
         self.mode = mode
-        self._previous_config = None
+        self._previous_config: dict[str, Any] | None = None
 
     def to_dict(self) -> Dict:
         """Serialize command to dictionary.
@@ -140,7 +140,7 @@ class ClearTimelineGroupingCommand(BaseCommand):
     def __init__(self) -> None:
         """Initializes the ClearTimelineGroupingCommand."""
         super().__init__()
-        self._previous_config = None
+        self._previous_config: dict[str, Any] | None = None
 
     def to_dict(self) -> Dict:
         """Serialize command to dictionary.

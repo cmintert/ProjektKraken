@@ -36,7 +36,7 @@ class GroupLabelOverlay(QWidget):
         super().__init__(parent)
 
         # Make the widget transparent to mouse events except for labels
-        self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
         # Labels data: list of dicts with 'tag_name', 'y_pos', 'color', 'is_collapsed'
         self._labels: List[Dict] = []
@@ -80,7 +80,7 @@ class GroupLabelOverlay(QWidget):
             return
 
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         # Draw each label
         for label_data in self._labels:
@@ -141,7 +141,7 @@ class GroupLabelOverlay(QWidget):
             if painter.fontMetrics().horizontalAdvance(display_name) > max_width:
                 # Truncate with ellipsis
                 display_name = painter.fontMetrics().elidedText(
-                    display_name, Qt.ElideRight, max_width
+                    display_name, Qt.TextElideMode.ElideRight, max_width
                 )
 
             painter.drawText(

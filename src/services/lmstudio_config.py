@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from urllib.parse import urlsplit, urlunsplit
 
-import requests
+import requests  # type: ignore[import-untyped]  # Package has no py.typed marker.
 
 DEFAULT_LMSTUDIO_BASE_URL = "http://localhost:1234"
 
