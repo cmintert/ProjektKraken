@@ -171,7 +171,7 @@ def test_summary_service_passes_audit_path():
 
     # Mock provider
     mock_provider = MagicMock()
-    mock_provider.generate.return_value = {"text": "A brave knight.", "model": "mock"}
+    mock_provider.generate.return_value = {"text": "Knight.", "model": "mock"}
     service._llm_provider = mock_provider
 
     with patch("src.services.summary_service.log_ai_interaction") as mock_log, patch(

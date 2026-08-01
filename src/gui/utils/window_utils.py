@@ -6,7 +6,7 @@ Provides platform-specific window styling utilities, particularly for Windows ti
 import ctypes
 import logging
 from ctypes import byref, c_int, sizeof
-from typing import Optional
+from typing import Any, Optional
 
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QWidget
@@ -33,16 +33,19 @@ def apply_windows_title_bar_style(
         title_color: Custom background color for the title bar (Windows 11+).
         text_color: Custom text color for the title bar (Windows 11+).
     """
+    hresult_type: Any
     try:
         from ctypes import HRESULT
+
+        hresult_type = HRESULT
     except ImportError:
-        HRESULT = c_int
+        hresult_type = c_int
 
     try:
         hwnd = int(window.winId())
         dwm = ctypes.windll.dwmapi
         # Define argtypes/restype for proper 64-bit handling and HRESULT checking
-        dwm.DwmSetWindowAttribute.restype = HRESULT
+        dwm.DwmSetWindowAttribute.restype = hresult_type
         dwm.DwmSetWindowAttribute.argtypes = [
             c_int,
             c_int,

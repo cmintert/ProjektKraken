@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.analysis import TemporalAnalysisReport
+from src.core.calendar import CalendarConverter
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.analysis._analysis_utils import (
@@ -153,7 +154,7 @@ class TemporalPanel(QWidget):
         )
 
     def _populate_gaps_table(
-        self, report: TemporalAnalysisReport, converter: object | None
+        self, report: TemporalAnalysisReport, converter: CalendarConverter | None
     ) -> None:
         """Fill the gaps table from the report's timeline_gaps list.
 
@@ -185,7 +186,7 @@ class TemporalPanel(QWidget):
         self.gaps_table.resizeRowsToContents()
 
     def _populate_conflicts_table(
-        self, report: TemporalAnalysisReport, converter: object | None
+        self, report: TemporalAnalysisReport, converter: CalendarConverter | None
     ) -> None:
         """Fill the conflicts table from the report's conflicts list.
 
@@ -214,7 +215,7 @@ class TemporalPanel(QWidget):
         self.conflicts_table.resizeRowsToContents()
 
     def _populate_lifespans_table(
-        self, report: TemporalAnalysisReport, converter: object | None
+        self, report: TemporalAnalysisReport, converter: CalendarConverter | None
     ) -> None:
         """Fill the lifespans table from the report's character_lifespans list.
 

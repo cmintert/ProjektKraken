@@ -9,6 +9,7 @@ import textwrap
 from typing import Any, Optional
 
 from PySide6.QtCore import QEvent, QObject
+from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QTextEdit, QToolTip, QVBoxLayout, QWidget
 
 
@@ -316,7 +317,11 @@ class TimelineDisplayWidget(QWidget):
             bool: True if event was handled, False otherwise.
 
         """
-        if obj is self._text_display.viewport() and event.type() == QEvent.Type.MouseMove:
+        if (
+            obj is self._text_display.viewport()
+            and event.type() == QEvent.Type.MouseMove
+            and isinstance(event, QMouseEvent)
+        ):
             pos = event.position().toPoint()
             anchor = self._text_display.anchorAt(pos)
             if anchor and anchor in self._description_map:

@@ -41,7 +41,7 @@ class LoreDurationWidget(QWidget):
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
-        self._converter: CalendarConverter = None
+        self._converter: CalendarConverter | None = None
         self._start_date_float: float = 1.0  # Default to Year 1 Day 1
         self._updating = False
 
@@ -134,7 +134,7 @@ class LoreDurationWidget(QWidget):
         if not self._converter:
             # Fallback for no calendar: assume 365/30/1 standard?
             # Or just return days + fraction
-            days = self.spin_days.value()
+            days = float(self.spin_days.value())
             days += self.spin_years.value() * 365
             days += self.spin_months.value() * 30
             days += self.spin_hours.value() / 24.0
@@ -247,7 +247,7 @@ class LoreDurationWidget(QWidget):
         intermediate_float = self._converter.to_float(intermediate_date)
 
         # Add remaining days/time
-        additional_days = days_delta
+        additional_days = float(days_delta)
         additional_days += hours / 24.0
         additional_days += minutes / (24.0 * 60.0)
 

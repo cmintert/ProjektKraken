@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.app.ui_constants import Spacing
+from src.core.calendar import CalendarConverter
 from src.core.map import MapLayerNode
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
@@ -146,7 +147,7 @@ class MapLayerPanel(QWidget):
         self._committed_opacity: Optional[float] = None
         # Full raster layer metadata keyed by node_id (set by MapHandler)
         self._raster_meta_by_id: Dict[str, Dict[str, Any]] = {}
-        self._calendar_converter: Optional[Any] = None
+        self._calendar_converter: Optional[CalendarConverter] = None
         # Internal lookup: node_id → mode string (populated by MapHandler)
         self._raster_mode_by_id: dict[str, str] = {}
         self._raster_edit_target_label_by_id: dict[str, str] = {}
@@ -1134,7 +1135,7 @@ class MapLayerPanel(QWidget):
         ):
             self._update_raster_toolbar(self._model.root)
 
-    def set_calendar_converter(self, converter: object) -> None:
+    def set_calendar_converter(self, converter: CalendarConverter) -> None:
         """Set the calendar converter used for snapshot date labels.
 
         Args:

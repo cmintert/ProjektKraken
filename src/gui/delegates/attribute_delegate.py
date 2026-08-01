@@ -4,7 +4,7 @@ Provides type-aware editing widgets for the attribute editor table.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -34,7 +34,7 @@ class AttributeDelegate(QStyledItemDelegate):
             parent: Parent widget.
         """
         super().__init__(parent)
-        self._attribute_widget = None  # Reference to AttributeEditorWidget
+        self._attribute_widget: Any = None
 
     def set_attribute_widget(self, widget: QWidget) -> None:
         """Set reference to the AttributeEditorWidget for accessing type info.
@@ -49,7 +49,7 @@ class AttributeDelegate(QStyledItemDelegate):
         parent: QWidget,
         option: QStyleOptionViewItem,
         index: Any,
-    ) -> Optional[QWidget]:
+    ) -> QWidget:
         """Create the appropriate editor widget based on attribute type.
 
         Args:
@@ -159,4 +159,4 @@ class AttributeDelegate(QStyledItemDelegate):
             option: Style options.
             index: Model index.
         """
-        editor.setGeometry(option.rect)
+        editor.setGeometry(cast(Any, option).rect)

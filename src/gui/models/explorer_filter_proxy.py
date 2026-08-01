@@ -6,7 +6,12 @@ Provides sorting and filtering for the Explorer model.
 import logging
 from typing import Optional, Union
 
-from PySide6.QtCore import QModelIndex, QSortFilterProxyModel, Qt
+from PySide6.QtCore import (
+    QModelIndex,
+    QPersistentModelIndex,
+    QSortFilterProxyModel,
+    Qt,
+)
 from PySide6.QtWidgets import QWidget
 
 from src.core.entities import Entity
@@ -64,7 +69,11 @@ class ExplorerFilterProxyModel(QSortFilterProxyModel):
         self._advanced_filter_config = config or {}
         self.invalidate()  # Use invalidate() instead of deprecated invalidateFilter()
 
-    def filterAcceptsRow(self, source_row: int, source_parent: QModelIndex) -> bool:
+    def filterAcceptsRow(
+        self,
+        source_row: int,
+        source_parent: QModelIndex | QPersistentModelIndex,
+    ) -> bool:
         """Determine if a row passes the current filters.
 
         Args:
@@ -102,7 +111,11 @@ class ExplorerFilterProxyModel(QSortFilterProxyModel):
 
         return True
 
-    def lessThan(self, left: QModelIndex, right: QModelIndex) -> bool:
+    def lessThan(
+        self,
+        left: QModelIndex | QPersistentModelIndex,
+        right: QModelIndex | QPersistentModelIndex,
+    ) -> bool:
         """Compare two items for sorting.
 
         Args:

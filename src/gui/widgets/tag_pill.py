@@ -89,7 +89,7 @@ class TagPill(QFrame):
         self.btn_delete = QToolButton()
         self.btn_delete.setObjectName("TagPillDeleteButton")
         self.btn_delete.setText("✕")
-        self.btn_delete.setCursor(Qt.PointingHandCursor)
+        self.btn_delete.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_delete.setToolTip(f"Remove tag: {self.text}")
         self.btn_delete.clicked.connect(self._on_delete_clicked)
         # Note: Styling is now handled in StyleHelper via get_tag_pill_style

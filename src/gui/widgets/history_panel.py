@@ -256,10 +256,10 @@ class HistoryPanelWidget(QWidget):
             ts_str = ""
             timestamp = command_snapshot.get("timestamp")
 
-            if timestamp:
+            if isinstance(timestamp, (int, float)):
                 import datetime
 
-                dt = datetime.datetime.fromtimestamp(timestamp)
+                dt = datetime.datetime.fromtimestamp(float(timestamp))
                 ts_str = dt.strftime("%Y-%m-%d %H:%M:%S")
 
             # Build display text

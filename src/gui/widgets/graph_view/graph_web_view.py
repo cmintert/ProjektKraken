@@ -115,7 +115,8 @@ class GraphWebView(QWidget):
         try:
             page = self._web_view.page()
             if page:
-                page.setWebChannel(None)
+                # Qt accepts None to detach the channel; the stub omits this overload.
+                page.setWebChannel(None)  # type: ignore[arg-type]
                 # Load blank to stop any pending loads
                 self._web_view.setHtml("")
             # Remove from layout so Qt doesn't try to manage it

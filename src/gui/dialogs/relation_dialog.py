@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QAbstractButton,
     QButtonGroup,
     QCheckBox,
     QComboBox,
@@ -360,9 +361,15 @@ class RelationEditDialog(QDialog):
             f"{self._source_name} --{rel}--> {target_text}"
         )
 
-    def _on_logic_changed(self, button: QRadioButton, checked: bool) -> None:
+    def _on_logic_changed(
+        self, button: QAbstractButton | None, checked: bool
+    ) -> None:
         """Handle logic radio button changes."""
         if not checked:
+            return
+
+        event_date = self.source_event_date
+        if button != self.rb_absolute and event_date is None:
             return
 
         if button == self.rb_absolute:
@@ -375,36 +382,39 @@ class RelationEditDialog(QDialog):
                 self.valid_to.setEnabled(True)
 
         elif button == self.rb_starts:
+            assert event_date is not None
             # Hide Temporal Settings (managed automatically)
             self.temporal_group.setVisible(False)
             # Starts at Event
             # Force Valid From = Checked, Value = Event Date, Disabled
             self.check_from.setChecked(True)
-            self.valid_from.set_value(self.source_event_date)
+            self.valid_from.set_value(event_date)
             self.valid_from.setEnabled(False)
             # Clear Valid To (indefinite)
             self.check_to.setChecked(False)
 
         elif button == self.rb_ends:
+            assert event_date is not None
             # Hide Temporal Settings (managed automatically)
             self.temporal_group.setVisible(False)
             # Ends at Event
             # Force Valid To = Checked, Value = Event Date, Disabled
             self.check_to.setChecked(True)
-            self.valid_to.set_value(self.source_event_date)
+            self.valid_to.set_value(event_date)
             self.valid_to.setEnabled(False)
             # Clear Valid From (from beginning)
             self.check_from.setChecked(False)
 
         elif button == self.rb_at_event:
+            assert event_date is not None
             # Hide Temporal Settings (managed automatically)
             self.temporal_group.setVisible(False)
             # Only valid at Event (both start and end at event date)
             self.check_from.setChecked(True)
-            self.valid_from.set_value(self.source_event_date)
+            self.valid_from.set_value(event_date)
             self.valid_from.setEnabled(False)
             self.check_to.setChecked(True)
-            self.valid_to.set_value(self.source_event_date)
+            self.valid_to.set_value(event_date)
             self.valid_to.setEnabled(False)
 
     def _get_attributes(self) -> Dict[str, Any]:

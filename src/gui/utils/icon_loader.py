@@ -6,12 +6,12 @@ Provides utilities for loading and recoloring SVG icons.
 import os
 
 from PySide6.QtCore import QByteArray
-from PySide6.QtGui import QIcon, QPixmap
+from PySide6.QtGui import QIcon, QImageReader, QPixmap
 
 from src.core.paths import get_resource_path
 
 
-def load_icon(relative_path: str, color: str = None) -> QIcon:
+def load_icon(relative_path: str, color: str | None = None) -> QIcon:
     """Loads an SVG icon and optionally recolors it (replacing 'currentColor').
 
     Args:
@@ -52,7 +52,7 @@ def load_icon(relative_path: str, color: str = None) -> QIcon:
 
             logging.getLogger(__name__).warning(
                 f"Failed to load SVG from data for {relative_path}. "
-                f"Supported formats: {QPixmap().activeFormats()}"
+                f"Supported formats: {QImageReader.supportedImageFormats()}"
             )
         except Exception as e:
             import logging

@@ -106,16 +106,22 @@ class TestRequestMethods:
 
     def test_request_calendar_config(self, coordinator, fake_window):
         """Should invoke worker.load_calendar_config."""
-        with patch("src.app.coordinators.time_coordinator.QMetaObject") as mock_meta:
+        with patch(
+            "src.app.coordinators.time_coordinator.invoke_queued"
+        ) as mock_invoke:
             coordinator.request_calendar_config()
-            mock_meta.invokeMethod.assert_called_once()
-            args = mock_meta.invokeMethod.call_args
-            assert args[0][1] == "load_calendar_config"
+            mock_invoke.assert_called_once_with(
+                fake_window.worker,
+                "load_calendar_config",
+            )
 
     def test_request_current_time(self, coordinator, fake_window):
         """Should invoke worker.load_current_time."""
-        with patch("src.app.coordinators.time_coordinator.QMetaObject") as mock_meta:
+        with patch(
+            "src.app.coordinators.time_coordinator.invoke_queued"
+        ) as mock_invoke:
             coordinator.request_current_time()
-            mock_meta.invokeMethod.assert_called_once()
-            args = mock_meta.invokeMethod.call_args
-            assert args[0][1] == "load_current_time"
+            mock_invoke.assert_called_once_with(
+                fake_window.worker,
+                "load_current_time",
+            )

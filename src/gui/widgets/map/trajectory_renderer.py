@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.app.constants import MAP_LAYER_Z_TRAJECTORIES
+from src.core.calendar import CalendarConverter
 from src.core.theme_manager import ThemeManager
 from src.core.trajectory import KEYFRAME_TIME_EPSILON
 
@@ -117,7 +118,7 @@ class TrajectoryRenderer:
         self.trajectory_path_item: Optional[QGraphicsPathItem] = None
         self.keyframe_items: list["KeyframeItem"] = []
         self.keyframe_label_items: list[KeyframeLabelItem] = []
-        self._calendar_converter: Optional[object] = None
+        self._calendar_converter: Optional[CalendarConverter] = None
         self.trigger_first_use_animation: bool = False
         self._animations: list[QPropertyAnimation] = []
 
@@ -239,7 +240,7 @@ class TrajectoryRenderer:
 
         self._view._schedule_label_layout()
 
-    def set_calendar_converter(self, converter: object) -> None:
+    def set_calendar_converter(self, converter: CalendarConverter) -> None:
         """Sets the calendar converter for formatting keyframe date labels.
 
         Args:

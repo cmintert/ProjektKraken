@@ -7,7 +7,7 @@ public interface for the graph view functionality.
 from typing import Any, Optional
 
 from PySide6.QtCore import QEvent, QSize, QTimer, Signal
-from PySide6.QtGui import QCloseEvent
+from PySide6.QtGui import QCloseEvent, QResizeEvent
 from PySide6.QtWidgets import QSizePolicy, QVBoxLayout, QWidget
 
 from src.core.logging_config import get_logger
@@ -667,7 +667,7 @@ class GraphWidget(QWidget):
         """
         self._logger.info("GraphWidget.hideEvent — hidden")
 
-    def resizeEvent(self, event: QEvent) -> None:
+    def resizeEvent(self, event: QResizeEvent) -> None:
         """Handle widget resize event.
 
         Args:

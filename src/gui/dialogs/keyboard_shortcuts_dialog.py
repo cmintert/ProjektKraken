@@ -25,7 +25,7 @@ class KeyboardShortcutsDialog(QDialog):
     Shows shortcuts organized by category with descriptions.
     """
 
-    def __init__(self, parent: QWidget = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the keyboard shortcuts dialog.
 
         Args:

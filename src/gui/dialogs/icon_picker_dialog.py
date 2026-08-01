@@ -10,6 +10,7 @@ Used by both the Lexicon Editor and Map Editor.
 
 import logging
 import os
+from functools import partial
 from pathlib import Path
 from typing import Callable, List, Optional
 
@@ -344,7 +345,8 @@ class IconPickerDialog(QDialog):
         grid.setSpacing(8)
         grid.setContentsMargins(8, 8, 8, 8)
 
-        icons = get_project_icons(self._world_root) if self._world_root else []
+        world_root = self._world_root
+        icons = get_project_icons(world_root) if world_root else []
         if not icons:
             label = QLabel("No project icons found.")
             label.setStyleSheet(StyleHelper.get_empty_state_style())
@@ -353,17 +355,16 @@ class IconPickerDialog(QDialog):
             cols = 5
             for i, rel_path in enumerate(icons):
                 grid_row, col = divmod(i, cols)
-                abs_path = os.path.join(self._world_root, rel_path)
+                assert world_root is not None
+                abs_path = os.path.join(world_root, rel_path)
 
                 # Create ProjectIconCard with callbacks
                 card = ProjectIconCard(
                     icon_path=abs_path,
                     relative_path=rel_path,
-                    on_select_callback=lambda checked=False, rp=rel_path: (
-                        self._on_icon_selected(rp)
-                    ),
-                    on_delete_callback=lambda checked=False, rp=rel_path: (
-                        self._on_remove_project_icon(rp)
+                    on_select_callback=partial(self._on_icon_selected, rel_path),
+                    on_delete_callback=partial(
+                        self._on_remove_project_icon, rel_path
                     ),
                 )
                 grid.addWidget(card, grid_row, col)
@@ -467,5 +468,7 @@ class IconPickerDialog(QDialog):
         if reply != QMessageBox.StandardButton.Yes:
             return
 
+        if self._world_root is None:
+            return
         if remove_project_icon(self._world_root, rel_path):
             self._rebuild_project_icons_tab()

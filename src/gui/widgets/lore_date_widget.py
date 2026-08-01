@@ -49,7 +49,7 @@ class LoreDateWidget(QWidget):
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
-        self._converter: CalendarConverter = None
+        self._converter: CalendarConverter | None = None
         self._updating = False  # Prevents signal loops during updates
 
         self._setup_ui()

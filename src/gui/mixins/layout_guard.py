@@ -7,6 +7,8 @@ Protects against:
 3. Corrupted state data.
 """
 
+from typing import cast
+
 from PySide6.QtCore import QSettings, QTimer
 from PySide6.QtWidgets import QDockWidget, QMainWindow
 
@@ -37,12 +39,13 @@ class LayoutGuardMixin:
 
         # Attempt standard restore first to get the rect into the object
         # Note: restoreGeometry calls move/resize internally
-        if not self.restoreGeometry(geometry_data):
+        window = cast(QMainWindow, self)
+        if not window.restoreGeometry(geometry_data):
             logger.warning("Standard restoreGeometry failed")
             return False
 
         # Now validate the resulting geometry
-        current_geo = self.geometry()
+        current_geo = window.geometry()
         safe_geo = GeometryUtils.ensure_on_screen(current_geo)
 
         if current_geo != safe_geo:
@@ -50,7 +53,7 @@ class LayoutGuardMixin:
                 f"Geometry restored to unsafe position {current_geo}. "
                 f"Forcing safe position {safe_geo}."
             )
-            self.setGeometry(safe_geo)
+            window.setGeometry(safe_geo)
 
         return True
 
@@ -120,8 +123,9 @@ class LayoutGuardMixin:
 
         # 2. Trigger layout update
         dock.updateGeometry()
-        if dock.parentWidget():
-            dock.parentWidget().updateGeometry()
+        parent = dock.parentWidget()
+        if parent is not None:
+            parent.updateGeometry()
 
         # 3. Schedule reset of constraints (allow user to resize later)
         # We need the event loop to process the layout change first

@@ -14,7 +14,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, Optional
 
-from pyvis.network import Network
+from pyvis.network import Network  # type: ignore[import-untyped]
 
 from src.core import style_constants as SC
 from src.core.paths import get_resource_path
@@ -328,7 +328,11 @@ class GraphBuilder:
             Tuple of (js_content, css_content, utils_content) strings.
 
         """
-        if cls._vis_js_content is None or cls._vis_css_content is None:
+        if (
+            cls._vis_js_content is None
+            or cls._vis_css_content is None
+            or cls._vis_utils_content is None
+        ):
             try:
                 vis_js_path = get_resource_path(
                     os.path.join("lib", "vis-9.1.2", "vis-network.min.js")
@@ -361,6 +365,9 @@ class GraphBuilder:
                 cls._vis_css_content = ""
                 cls._vis_utils_content = ""
 
+        assert cls._vis_js_content is not None
+        assert cls._vis_css_content is not None
+        assert cls._vis_utils_content is not None
         return cls._vis_js_content, cls._vis_css_content, cls._vis_utils_content
 
     def build_html(
@@ -369,7 +376,7 @@ class GraphBuilder:
         edges: list[dict[str, Any]],
         height: str = "100%",
         width: str = "100%",
-        theme_config: dict[str, str] = None,
+        theme_config: dict[str, str] | None = None,
         focus_node_id: str | None = None,
         view_state: dict[str, Any] | None = None,
         lexicon_config: dict[str, Any] | None = None,
@@ -843,7 +850,7 @@ class GraphBuilder:
             "</body>", f"{qwebchannel_script}\n{interaction_script}\n</body>"
         )
 
-    def build_empty_html(self, theme_config: dict[str, str] = None) -> str:
+    def build_empty_html(self, theme_config: dict[str, str] | None = None) -> str:
         """Returns HTML for an empty state message.
 
         Args:

@@ -4,6 +4,7 @@ import pytest
 from PySide6.QtCore import QRect, Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import QDockWidget, QMainWindow
+from pytestqt.qtbot import QtBot
 
 from src.gui.mixins.layout_guard import LayoutGuardMixin
 from src.gui.utils.geometry_utils import GeometryUtils
@@ -21,7 +22,9 @@ class MockScreen:
 # --- GeometryUtils Tests ---
 
 
-def test_geometry_utils_ensure_on_screen_fully_visible(monkeypatch: object) -> None:
+def test_geometry_utils_ensure_on_screen_fully_visible(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test that a fully visible rect is returned as is."""
     # Mock screens: 1920x1080
     screen_rect = QRect(0, 0, 1920, 1080)
@@ -36,7 +39,7 @@ def test_geometry_utils_ensure_on_screen_fully_visible(monkeypatch: object) -> N
     assert result == target
 
 
-def test_geometry_utils_clamp_off_screen(monkeypatch: object) -> None:
+def test_geometry_utils_clamp_off_screen(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that an off-screen rect is clamped back to the screen."""
     screen_rect = QRect(0, 0, 1920, 1080)
     mock_screens = [MockScreen(screen_rect)]
@@ -56,7 +59,9 @@ def test_geometry_utils_clamp_off_screen(monkeypatch: object) -> None:
     assert result.width() == 400
 
 
-def test_geometry_utils_multi_monitor_ghost(monkeypatch: object) -> None:
+def test_geometry_utils_multi_monitor_ghost(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test the 'Ghost' scenario: Window was on 2nd monitor, now 2nd monitor is gone.
 
     Should move to primary monitor.
@@ -89,7 +94,7 @@ class TestWindow(QMainWindow, LayoutGuardMixin):
     pass
 
 
-def test_guard_validate_dock_sizes(qtbot: object) -> None:
+def test_guard_validate_dock_sizes(qtbot: QtBot) -> None:
     """Test that collapsed docks are expanded."""
     window = TestWindow()
     qtbot.addWidget(window)

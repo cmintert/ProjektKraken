@@ -8,7 +8,7 @@ for keyboard entry.  Shift speeds up scrubbing; Ctrl slows it down.
 from typing import Optional
 
 from PySide6.QtCore import QPoint, Qt
-from PySide6.QtGui import QCursor, QMouseEvent
+from PySide6.QtGui import QCursor, QEnterEvent, QMouseEvent
 from PySide6.QtWidgets import QSpinBox, QWidget
 
 _SCRUB_THRESHOLD_PX = 3
@@ -81,7 +81,7 @@ class NumericScrubberSpinBox(QSpinBox):
             return
         super().mouseReleaseEvent(event)
 
-    def enterEvent(self, event: object) -> None:  # type: ignore[override]
+    def enterEvent(self, event: QEnterEvent) -> None:
         QCursor.setPos(QCursor.pos())  # no-op; keeps API symmetric
         super().enterEvent(event)
 

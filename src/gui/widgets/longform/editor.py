@@ -70,7 +70,7 @@ class LongformEditorWidget(QWidget):
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         # Store current sequence
-        self._sequence = []
+        self._sequence: list[dict[str, Any]] = []
 
         # Web Service Manager
         self.web_manager = WebServiceManager(self)

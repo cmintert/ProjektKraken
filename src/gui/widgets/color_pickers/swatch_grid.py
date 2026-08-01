@@ -8,7 +8,7 @@ flow-layout: tiles wrap to fill the available width.
 from dataclasses import dataclass
 from typing import List, Optional
 
-from PySide6.QtCore import QRect, QSize, Qt, Signal
+from PySide6.QtCore import QEvent, QRect, QSize, Qt, Signal
 from PySide6.QtGui import (
     QColor,
     QFontMetrics,
@@ -17,6 +17,7 @@ from PySide6.QtGui import (
     QPainter,
     QPaintEvent,
     QPen,
+    QResizeEvent,
 )
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
@@ -238,7 +239,7 @@ class SwatchGridWidget(QWidget):
             return
         super().mousePressEvent(event)
 
-    def leaveEvent(self, event: object) -> None:  # type: ignore[override]
+    def leaveEvent(self, event: QEvent) -> None:
         if self._hover_index != -1:
             self._hover_index = -1
             self.update()
@@ -254,6 +255,6 @@ class SwatchGridWidget(QWidget):
                 return
         super().keyPressEvent(event)
 
-    def resizeEvent(self, event: object) -> None:  # type: ignore[override]
+    def resizeEvent(self, event: QResizeEvent) -> None:
         self.updateGeometry()
         super().resizeEvent(event)

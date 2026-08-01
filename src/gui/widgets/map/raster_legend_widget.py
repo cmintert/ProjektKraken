@@ -174,8 +174,9 @@ class RasterLegendWidget(QWidget):
     def _clear_content(self) -> None:
         while self._content_layout.count() > 1:  # keep trailing stretch
             item = self._content_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
 
     def _build_discrete_legend(  # noqa: C901
         self,
@@ -344,9 +345,10 @@ class RasterLegendWidget(QWidget):
             delta = current_global - self._drag_last_global
             self._drag_last_global = current_global
             new_pos = self.pos() + delta
-            if self.parent():
-                pw = self.parent().width()
-                ph = self.parent().height()
+            parent = self.parentWidget()
+            if parent is not None:
+                pw = parent.width()
+                ph = parent.height()
                 new_pos.setX(max(0, min(new_pos.x(), pw - self.width())))
                 new_pos.setY(max(0, min(new_pos.y(), ph - self.height())))
             self.move(new_pos)

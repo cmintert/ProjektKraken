@@ -69,7 +69,9 @@ class AttributeEditorWidget(QWidget):
         self.table.horizontalHeader().setSectionResizeMode(
             2, QHeaderView.ResizeMode.ResizeToContents
         )
-        self.table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.table.setSelectionBehavior(
+            QTableWidget.SelectionBehavior.SelectRows
+        )
         self.table.itemChanged.connect(self._on_item_changed)
         self.table.itemSelectionChanged.connect(self._update_button_states)
 
@@ -102,7 +104,11 @@ class AttributeEditorWidget(QWidget):
             val_item = self.table.item(row, 1)
             type_widget = self.table.cellWidget(row, 2)
 
-            if not key_item or not val_item or not type_widget:
+            if (
+                not key_item
+                or not val_item
+                or not isinstance(type_widget, QComboBox)
+            ):
                 continue
 
             key = key_item.text().strip()

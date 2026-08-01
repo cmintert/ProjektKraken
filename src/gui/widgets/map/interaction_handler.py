@@ -587,7 +587,7 @@ class InteractionHandler:
         btn_layout.addWidget(cancel_btn)
         layout.addLayout(btn_layout)
 
-        if dialog.exec() == QDialog.Accepted:
+        if dialog.exec() == QDialog.DialogCode.Accepted:
             try:
                 new_x = float(x_input.text())
                 new_y = float(y_input.text())
@@ -633,7 +633,7 @@ class InteractionHandler:
 
         try:
             data_bytes = event.mimeData().data(KRAKEN_ITEM_MIME_TYPE).data()
-            data = json.loads(data_bytes.decode("utf-8"))
+            data = json.loads(bytes(data_bytes).decode("utf-8"))
 
             item_id = data.get("id")
             item_type = data.get("type")

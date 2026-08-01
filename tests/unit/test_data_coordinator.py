@@ -70,44 +70,64 @@ class TestDataLoading:
     """Tests for data loading methods."""
 
     def test_load_events_invokes_worker(self, coordinator, fake_window):
-        """load_events should invoke worker.load_events via QMetaObject."""
-        with patch("src.app.coordinators.data_coordinator.QMetaObject") as mock_meta:
+        """load_events should queue worker.load_events."""
+        with patch(
+            "src.app.coordinators.data_coordinator.invoke_queued"
+        ) as mock_invoke:
             coordinator.load_events()
-            mock_meta.invokeMethod.assert_called_once()
-            args = mock_meta.invokeMethod.call_args
-            assert args[0][1] == "load_events"
+            mock_invoke.assert_called_once()
+            assert mock_invoke.call_args.args[:2] == (
+                fake_window.worker,
+                "load_events",
+            )
 
     def test_load_entities_invokes_worker(self, coordinator, fake_window):
-        """load_entities should invoke worker.load_entities via QMetaObject."""
-        with patch("src.app.coordinators.data_coordinator.QMetaObject") as mock_meta:
+        """load_entities should queue worker.load_entities."""
+        with patch(
+            "src.app.coordinators.data_coordinator.invoke_queued"
+        ) as mock_invoke:
             coordinator.load_entities()
-            mock_meta.invokeMethod.assert_called_once()
-            args = mock_meta.invokeMethod.call_args
-            assert args[0][1] == "load_entities"
+            mock_invoke.assert_called_once()
+            assert mock_invoke.call_args.args[:2] == (
+                fake_window.worker,
+                "load_entities",
+            )
 
     def test_load_event_details_invokes_worker(self, coordinator, fake_window):
         """load_event_details should invoke worker with event_id."""
-        with patch("src.app.coordinators.data_coordinator.QMetaObject") as mock_meta:
+        with patch(
+            "src.app.coordinators.data_coordinator.invoke_queued"
+        ) as mock_invoke:
             coordinator.load_event_details("evt-123")
-            mock_meta.invokeMethod.assert_called_once()
-            args = mock_meta.invokeMethod.call_args
-            assert args[0][1] == "load_event_details"
+            mock_invoke.assert_called_once()
+            assert mock_invoke.call_args.args[:2] == (
+                fake_window.worker,
+                "load_event_details",
+            )
 
     def test_load_entity_details_invokes_worker(self, coordinator, fake_window):
         """load_entity_details should invoke worker with entity_id."""
-        with patch("src.app.coordinators.data_coordinator.QMetaObject") as mock_meta:
+        with patch(
+            "src.app.coordinators.data_coordinator.invoke_queued"
+        ) as mock_invoke:
             coordinator.load_entity_details("ent-456")
-            mock_meta.invokeMethod.assert_called_once()
-            args = mock_meta.invokeMethod.call_args
-            assert args[0][1] == "load_entity_details"
+            mock_invoke.assert_called_once()
+            assert mock_invoke.call_args.args[:2] == (
+                fake_window.worker,
+                "load_entity_details",
+            )
 
     def test_load_completer_data_invokes_worker(self, coordinator, fake_window):
         """load_completer_data should invoke worker.load_completer_data."""
-        with patch("src.app.coordinators.data_coordinator.QMetaObject") as mock_meta:
+        with patch(
+            "src.app.coordinators.data_coordinator.invoke_queued"
+        ) as mock_invoke:
             coordinator.load_completer_data()
-            mock_meta.invokeMethod.assert_called_once()
-            args = mock_meta.invokeMethod.call_args
-            assert args[0][1] == "load_completer_data"
+            mock_invoke.assert_called_once()
+            assert mock_invoke.call_args.args[:2] == (
+                fake_window.worker,
+                "load_completer_data",
+            )
 
     def test_load_data_calls_all_loaders(self, coordinator, fake_window):
         """load_data should refresh all data and reload active editors."""

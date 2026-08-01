@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-01
-**Commit:** f90f34c6
+**Commit:** 77b47595
 ---
 
 # Changelog
@@ -31,6 +31,12 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-01)* **GUI / Typing**: Corrected dialog, widget, model, graph,
+  longform, map, raster, and Qt utility contracts without changing valid UI
+  behavior.
+- *(2026-08-01)* **Testing / Stability**: Updated coordinator tests for the
+  queued invocation helper, isolated embedding tests from their optional
+  dependency, and corrected the summary audit fixture.
 - *(2026-08-01)* **Editor / Stability**: Made splitter tab drops transactional,
   gave Explorer rows explicit event and entity types, and replaced ambiguous
   timeline graphics-item state with typed ownership.
@@ -92,6 +98,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-01)* **Testing / Typing**: Cleared the final 175 mypy errors,
+  reaching zero errors across 315 source files, and restored all 4,325
+  non-slow tests.
 - *(2026-08-01)* **Testing / Typing**: Added splitter and Explorer regression
   coverage and reduced the mypy baseline from 306 to 175 errors, leaving no
   errors outside GUI and test modules.

@@ -6,7 +6,25 @@ on the background QThread where the embedding model runs.
 """
 
 import os
+import sys
+import types
+from collections.abc import Iterator
+from contextlib import contextmanager
 from unittest.mock import MagicMock, patch
+
+
+@contextmanager
+def _fake_sentence_transformers() -> Iterator[MagicMock]:
+    """Provide the optional dependency without requiring it to be installed."""
+    constructor = MagicMock()
+    model = MagicMock()
+    model.get_sentence_embedding_dimension.return_value = 384
+    constructor.return_value = model
+
+    module = types.ModuleType("sentence_transformers")
+    setattr(module, "SentenceTransformer", constructor)
+    with patch.dict(sys.modules, {"sentence_transformers": module}):
+        yield constructor
 
 
 class TestSentenceTransformersThreadSafety:
@@ -21,13 +39,7 @@ class TestSentenceTransformersThreadSafety:
                 SentenceTransformersProvider,
             )
 
-            with patch(
-                "sentence_transformers.SentenceTransformer"
-            ) as mock_st:
-                mock_model = MagicMock()
-                mock_model.get_sentence_embedding_dimension.return_value = 384
-                mock_st.return_value = mock_model
-
+            with _fake_sentence_transformers():
                 SentenceTransformersProvider(model="test-model")
 
                 assert os.environ.get("TOKENIZERS_PARALLELISM") == "false"
@@ -44,11 +56,7 @@ class TestSentenceTransformersThreadSafety:
         try:
             from src.services.search_service import SentenceTransformersProvider
 
-            with patch("sentence_transformers.SentenceTransformer") as mock_st:
-                mock_model = MagicMock()
-                mock_model.get_sentence_embedding_dimension.return_value = 384
-                mock_st.return_value = mock_model
-
+            with _fake_sentence_transformers():
                 SentenceTransformersProvider(model="test-model")
 
                 assert os.environ.get("OMP_NUM_THREADS") == "1"
@@ -66,11 +74,7 @@ class TestSentenceTransformersThreadSafety:
 
             from src.services.search_service import SentenceTransformersProvider
 
-            with patch("sentence_transformers.SentenceTransformer") as mock_st:
-                mock_model = MagicMock()
-                mock_model.get_sentence_embedding_dimension.return_value = 384
-                mock_st.return_value = mock_model
-
+            with _fake_sentence_transformers():
                 SentenceTransformersProvider(model="test-model")
 
                 # Must NOT have overwritten the user's custom value
@@ -85,11 +89,7 @@ class TestSentenceTransformersThreadSafety:
         """SentenceTransformer must be initialized with explicit CPU device."""
         from src.services.search_service import SentenceTransformersProvider
 
-        with patch("sentence_transformers.SentenceTransformer") as mock_st:
-            mock_model = MagicMock()
-            mock_model.get_sentence_embedding_dimension.return_value = 384
-            mock_st.return_value = mock_model
-
+        with _fake_sentence_transformers() as mock_st:
             SentenceTransformersProvider(model="test-model")
 
             mock_st.assert_called_once_with("test-model", device="cpu")

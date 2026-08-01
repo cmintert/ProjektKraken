@@ -9,6 +9,7 @@ Worlds are stored in the worlds/ directory next to the executable.
 
 import logging
 import os
+from pathlib import Path
 from typing import Optional
 
 from PySide6.QtCore import QSettings, Qt, Signal, Slot
@@ -56,6 +57,8 @@ class DatabaseManagerDialog(QDialog):
         main_layout = QVBoxLayout(self)
 
         # Initialize worlds directory
+        self.worlds_dir: Path | None
+        self.world_manager: WorldManager | None
         try:
             self.worlds_dir = ensure_worlds_directory()
             self.world_manager = WorldManager(self.worlds_dir)

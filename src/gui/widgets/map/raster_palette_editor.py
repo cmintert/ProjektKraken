@@ -720,8 +720,9 @@ class RasterPaletteEditor(QDialog):
         count = self._stops_layout.count()
         for i in range(count):
             item = self._stops_layout.itemAt(i)
-            if item and item.widget():
-                del_btn = item.widget().findChild(QPushButton, "del_btn")
+            row = item.widget() if item is not None else None
+            if row is not None:
+                del_btn = row.findChild(QPushButton, "del_btn")
                 if del_btn:
                     del_btn.setEnabled(count > 2)
 
@@ -730,9 +731,11 @@ class RasterPaletteEditor(QDialog):
         stops: List[GradientStop] = []
         for i in range(self._stops_layout.count()):
             item = self._stops_layout.itemAt(i)
-            if not item or not item.widget():
+            if item is None:
                 continue
             row = item.widget()
+            if row is None:
+                continue
             pos_spin = row.findChild(QSpinBox, "pos_spin")
             color_btn = row.findChild(_ColorButton, "color_btn")
             if pos_spin and color_btn:
@@ -750,8 +753,9 @@ class RasterPaletteEditor(QDialog):
         # Clear existing rows
         while self._stops_layout.count():
             item = self._stops_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
         for stop in preset_stops:
             self._add_stop_row(stop.position, stop.color)
         self._update_stop_delete_buttons()

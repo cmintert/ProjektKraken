@@ -26,9 +26,9 @@ class GraphFilterDialog(QDialog):
     def __init__(
         self,
         parent: Optional[QWidget] = None,
-        available_tags: List[str] = None,
-        available_rel_types: List[str] = None,
-        current_config: Dict[str, Any] = None,
+        available_tags: Optional[List[str]] = None,
+        available_rel_types: Optional[List[str]] = None,
+        current_config: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Initialize the graph filter dialog.
 

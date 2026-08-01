@@ -4,6 +4,8 @@ Provides a custom QLayout that arranges widgets horizontally and wraps them to t
 line if they exceed the available width.
 """
 
+from typing import cast
+
 from PySide6.QtCore import QPoint, QRect, QSize, Qt
 from PySide6.QtWidgets import QLayout, QLayoutItem, QSizePolicy, QWidget
 
@@ -15,7 +17,7 @@ class FlowLayout(QLayout):
     """
 
     def __init__(
-        self, parent: QWidget = None, margin: int = -1, spacing: int = -1
+        self, parent: QWidget | None = None, margin: int = -1, spacing: int = -1
     ) -> None:
         """Create a FlowLayout with optional parent and spacing.
 
@@ -43,7 +45,7 @@ class FlowLayout(QLayout):
         """
         return len(self._items)
 
-    def itemAt(self, index: int) -> QLayoutItem:
+    def itemAt(self, index: int) -> QLayoutItem | None:
         """
         Retrieve the layout item at the specified index.
 
@@ -54,8 +56,10 @@ class FlowLayout(QLayout):
             return self._items[index]
         return None
 
-    def takeAt(self, index: int) -> QLayoutItem:
+    def takeAt(self, index: int) -> QLayoutItem | None:  # type: ignore[override]
         """Remove and return the layout item at the specified index.
+
+        Qt returns ``None`` for an invalid index despite the non-optional stub.
 
         Parameters:
             index (int): Position of the item to remove.
@@ -137,7 +141,9 @@ class FlowLayout(QLayout):
         Returns:
             int: Total height consumed.
         """
-        left, top, right, bottom = self.getContentsMargins()
+        left, top, right, bottom = cast(
+            tuple[int, int, int, int], self.getContentsMargins()
+        )
         effective_rect = rect.adjusted(+left, +top, -right, -bottom)
         x = effective_rect.x()
         y = effective_rect.y()
@@ -149,14 +155,18 @@ class FlowLayout(QLayout):
             if space_x == -1 and widget is not None:
                 style = widget.style()
                 space_x = style.layoutSpacing(
-                    QSizePolicy.PushButton, QSizePolicy.PushButton, Qt.Horizontal
+                    QSizePolicy.ControlType.PushButton,
+                    QSizePolicy.ControlType.PushButton,
+                    Qt.Orientation.Horizontal,
                 )
 
             space_y = self.spacing()
             if space_y == -1 and widget is not None:
                 style = widget.style()
                 space_y = style.layoutSpacing(
-                    QSizePolicy.PushButton, QSizePolicy.PushButton, Qt.Vertical
+                    QSizePolicy.ControlType.PushButton,
+                    QSizePolicy.ControlType.PushButton,
+                    Qt.Orientation.Vertical,
                 )
 
             next_x = x + item.sizeHint().width() + space_x

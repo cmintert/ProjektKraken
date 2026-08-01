@@ -670,7 +670,7 @@ class RegionItem(_FeatureItemBase):
             sel_pen = QPen(QColor(SELECTION_PEN_COLOR), SELECTION_PEN_WIDTH + 2)
             sel_pen.setCosmetic(True)
             painter.setPen(sel_pen)
-            painter.setBrush(Qt.NoBrush)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawPolygon(self._polygon)
 
         # Fill + stroke

@@ -30,7 +30,7 @@ class RelationItemWidget(QWidget):
         label: str,
         target_id: str,
         target_name: str,
-        attributes: Dict[str, Any] = None,
+        attributes: Optional[Dict[str, Any]] = None,
         parent: Optional[QWidget] = None,
     ) -> None:
         """Initializes the relation item widget.

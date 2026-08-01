@@ -313,4 +313,5 @@ class RasterLayerItem(QGraphicsPixmapItem):
             widget: Optional widget (passed through to super).
         """
         painter.setCompositionMode(self._scene_blend_mode)
-        super().paint(painter, option, widget)
+        # Qt permits None when painting without an associated widget.
+        super().paint(painter, option, widget)  # type: ignore[arg-type]

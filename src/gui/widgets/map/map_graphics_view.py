@@ -75,6 +75,7 @@ from src.app.constants import (
     MAP_SNAP_INDICATOR_VERTEX_COLOR,
     MAP_ZOOM_IN_FACTOR,
 )
+from src.core.calendar import CalendarConverter
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.map.coordinate_system import MapCoordinateSystem
 from src.gui.widgets.map.detail_map_footprint_item import DetailMapFootprintItem
@@ -1443,7 +1444,7 @@ class MapGraphicsView(QGraphicsView):
         """Clears the rendered trajectory path, keyframes, and labels."""
         self._trajectory.clear_trajectory()
 
-    def set_calendar_converter(self, converter: object) -> None:
+    def set_calendar_converter(self, converter: CalendarConverter) -> None:
         """Sets the calendar converter for formatting keyframe labels."""
         self._trajectory.set_calendar_converter(converter)
 

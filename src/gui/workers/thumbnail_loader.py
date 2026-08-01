@@ -50,9 +50,9 @@ class ThumbnailLoader(QRunnable):
         try:
             # Check if already in cache
             cache_key = f"thumb_{self.attachment_id}"
-            cached_pixmap = QPixmapCache.find(cache_key)
+            cached_pixmap = QPixmap()
 
-            if cached_pixmap:
+            if QPixmapCache.find(cache_key, cached_pixmap):
                 # Use cached version
                 icon = QIcon(cached_pixmap)
                 self.signals.loaded.emit(self.attachment_id, icon)

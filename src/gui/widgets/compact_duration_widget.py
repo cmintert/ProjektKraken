@@ -50,7 +50,7 @@ class CompactDurationWidget(QWidget):
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
-        self._converter = None
+        self._converter: CalendarConverter | None = None
         self._start_date_float = 0.0
         self._updating = False
 

@@ -8,6 +8,7 @@ import logging
 from typing import List, Optional
 
 from PySide6.QtCore import QEvent, QObject, QPoint, Qt, Signal
+from PySide6.QtGui import QKeyEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -122,7 +123,11 @@ class RelationTypePicker(QWidget):
         self.combo_box.setCurrentText("related")
 
         # Install event filter on the line edit to capture keys
-        self.combo_box.lineEdit().installEventFilter(self)
+        line_edit = self.combo_box.lineEdit()
+        if line_edit is None:
+            raise RuntimeError("Editable relation type picker requires a line edit")
+        self._line_edit = line_edit
+        self._line_edit.installEventFilter(self)
 
         input_layout.addWidget(self.combo_box, 1)
 
@@ -141,7 +146,7 @@ class RelationTypePicker(QWidget):
         layout.addLayout(input_layout)
 
         # Connect signals
-        self.combo_box.lineEdit().returnPressed.connect(self._on_confirmed)
+        self._line_edit.returnPressed.connect(self._on_confirmed)
         self.ok_button.clicked.connect(self._on_confirmed)
         self.cancel_button.clicked.connect(self.hide)
 
@@ -237,7 +242,7 @@ class RelationTypePicker(QWidget):
 
         # Set focus to combo box and select all text for easy replacement
         self.combo_box.setFocus()
-        self.combo_box.lineEdit().selectAll()
+        self._line_edit.selectAll()
 
         logger.debug(f"RelationTypePicker shown at ({position.x()}, {position.y()})")
 
@@ -271,7 +276,7 @@ class RelationTypePicker(QWidget):
         """
         from PySide6.QtCore import QEvent
 
-        if event.type() == QEvent.Type.KeyPress:
+        if event.type() == QEvent.Type.KeyPress and isinstance(event, QKeyEvent):
             if event.key() == Qt.Key.Key_Escape:
                 self.hide()
                 return True

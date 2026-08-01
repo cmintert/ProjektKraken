@@ -17,7 +17,7 @@ from src.gui.utils.style_helper import StyleHelper
 class CalibrationDistanceDialog(QDialog):
     """Dialog to enter real-world distance for a measured segment."""
 
-    def __init__(self, parent: QWidget = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the calibration distance dialog.
 
         Args:

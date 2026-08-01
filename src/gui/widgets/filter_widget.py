@@ -26,8 +26,8 @@ class FilterWidget(QWidget):
     def __init__(
         self,
         parent: Optional[QWidget] = None,
-        available_items: List[str] = None,
-        current_config: Dict[str, Any] = None,
+        available_items: Optional[List[str]] = None,
+        current_config: Optional[Dict[str, Any]] = None,
         title_include: str = "Include:",
         title_exclude: str = "Exclude:",
     ) -> None:

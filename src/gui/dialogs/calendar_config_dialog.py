@@ -121,7 +121,9 @@ class CalendarConfigDialog(QDialog):
         self.month_table.horizontalHeader().setSectionResizeMode(
             2, QHeaderView.ResizeMode.ResizeToContents
         )
-        self.month_table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.month_table.setSelectionBehavior(
+            QTableWidget.SelectionBehavior.SelectRows
+        )
         self.month_table.itemChanged.connect(self._on_month_changed)
         month_layout.addWidget(self.month_table)
 
@@ -174,7 +176,9 @@ class CalendarConfigDialog(QDialog):
         self.leap_table.horizontalHeader().setSectionResizeMode(
             QHeaderView.ResizeMode.Stretch
         )
-        self.leap_table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.leap_table.setSelectionBehavior(
+            QTableWidget.SelectionBehavior.SelectRows
+        )
         self.leap_table.itemChanged.connect(self._update_preview)
         leap_layout.addWidget(self.leap_table)
 
@@ -372,13 +376,26 @@ class CalendarConfigDialog(QDialog):
         # Build leap rules
         rules = []
         for row in range(self.leap_table.rowCount()):
+            interval_item = self.leap_table.item(row, 0)
+            skip_item = self.leap_table.item(row, 1)
+            reset_item = self.leap_table.item(row, 2)
+            month_item = self.leap_table.item(row, 3)
+            days_item = self.leap_table.item(row, 4)
+            if (
+                interval_item is None
+                or skip_item is None
+                or reset_item is None
+                or month_item is None
+                or days_item is None
+            ):
+                continue
             try:
-                interval = int(self.leap_table.item(row, 0).text())
-                skip = int(self.leap_table.item(row, 1).text())
-                reset = int(self.leap_table.item(row, 2).text())
+                interval = int(interval_item.text())
+                skip = int(skip_item.text())
+                reset = int(reset_item.text())
                 # UI is 1-based, internal is 0-based
-                month_idx = int(self.leap_table.item(row, 3).text()) - 1
-                days = int(self.leap_table.item(row, 4).text())
+                month_idx = int(month_item.text()) - 1
+                days = int(days_item.text())
 
                 # Basic validation
                 if interval > 0:

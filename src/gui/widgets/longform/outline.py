@@ -17,6 +17,7 @@ from PySide6.QtGui import (
     QKeyEvent,
 )
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QMenu,
     QTreeWidget,
     QTreeWidgetItem,
@@ -46,12 +47,12 @@ class LongformOutlineWidget(QTreeWidget):
         """Initialize the outline widget."""
         super().__init__(parent)
         self.setHeaderLabel("Document Outline")
-        self.setDragDropMode(QTreeWidget.InternalMove)
-        self.setSelectionMode(QTreeWidget.SingleSelection)
+        self.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
+        self.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
 
         # Store item metadata
-        self._item_meta = {}  # Map item -> (table, id, meta)
+        self._item_meta: dict[int, tuple[str, str, dict[str, Any]]] = {}
 
         # Connect signals
         self.itemSelectionChanged.connect(self._on_selection_changed)
@@ -91,7 +92,7 @@ class LongformOutlineWidget(QTreeWidget):
                     item.setForeground(0, QBrush(self.color_entity))
             iterator += 1
 
-    def startDrag(self, supportedActions: Qt.DropActions) -> None:
+    def startDrag(self, supportedActions: Qt.DropAction) -> None:
         """Override to provide custom MIME data for external drags.
 
         Supports both internal reordering and external drag to map. Uses the same MIME
@@ -129,7 +130,7 @@ class LongformOutlineWidget(QTreeWidget):
         drag.setMimeData(mime_data)
 
         # Execute drag - CopyAction for external, MoveAction for internal
-        drag.exec(Qt.CopyAction | Qt.MoveAction)
+        drag.exec(Qt.DropAction.CopyAction | Qt.DropAction.MoveAction)
 
     def dropEvent(self, event: QDropEvent) -> None:
         """Handle drop event to reorder items.

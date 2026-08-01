@@ -67,7 +67,7 @@ class CompactDateWidget(QWidget):
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
-        self._converter = None
+        self._converter: CalendarConverter | None = None
         self._parser: Optional[DateParser] = None
         self._updating = False
 
@@ -256,8 +256,9 @@ class CompactDateWidget(QWidget):
         """
         self._time_container.setVisible(checked)
         self.updateGeometry()
-        if self.parentWidget():
-            self.parentWidget().updateGeometry()
+        parent = self.parentWidget()
+        if parent is not None:
+            parent.updateGeometry()
 
     def set_calendar_converter(self, converter: CalendarConverter) -> None:
         """Sets the calendar converter for date calculations.
@@ -407,7 +408,7 @@ class CompactDateWidget(QWidget):
             minute = self.spin_minute.value()
 
             # Rough estimate: 365 days/year, 30 days/month
-            days = (year - 1) * 365 + (month - 1) * 30 + (day - 1)
+            days = float((year - 1) * 365 + (month - 1) * 30 + (day - 1))
             days += (hour * 60 + minute) / (24 * 60)
             return days
 

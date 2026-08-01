@@ -8,7 +8,7 @@ import logging
 import re
 from typing import Any, Dict, List, Optional
 
-import markdown
+import markdown  # type: ignore[import-untyped]  # Package has no py.typed marker.
 from PySide6.QtCore import QUrl, Signal, Slot
 from PySide6.QtGui import (
     QDesktopServices,
@@ -38,7 +38,7 @@ class LongformContentWidget(QTextBrowser):
         super().__init__(parent)
         self.setOpenLinks(False)  # We handle links manually
         self.anchorClicked.connect(self._on_anchor_clicked)
-        self._sequence = []
+        self._sequence: list[dict[str, Any]] = []
         self._calendar_converter = None
 
         # Connect to theme changes

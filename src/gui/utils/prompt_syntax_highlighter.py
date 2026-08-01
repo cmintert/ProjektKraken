@@ -29,7 +29,7 @@ class PromptSyntaxHighlighter(QSyntaxHighlighter):
         # Define the format for variables
         variable_format = QTextCharFormat()
         variable_format.setForeground(QColor("#FF8C00"))  # Dark Orange for standout
-        variable_format.setFontWeight(QFont.Bold)
+        variable_format.setFontWeight(QFont.Weight.Bold)
 
         # Simple rule: anything inside { }
         # We use a lazy match to capture {var} without eating too much

@@ -11,7 +11,7 @@ class SearchUtils:
     """Helper class for text-based object searching."""
 
     @staticmethod
-    def matches_search(obj: Any, search_term: str) -> bool:
+    def matches_search(obj: Any, search_term: str | None) -> bool:
         """Checks if an object or dictionary matches the search term. Performs full text
         search on name, type, description, tags, and attributes.
 

@@ -107,12 +107,13 @@ class CreateTemplateDialog(QDialog):
             hbox_tools = QHBoxLayout()
             btn_all = StandardButton("Select All")
             btn_none = StandardButton("Select None")
-            btn_all.clicked.connect(
-                lambda: [c.setChecked(True) for c in self.tag_checks]
-            )
-            btn_none.clicked.connect(
-                lambda: [c.setChecked(False) for c in self.tag_checks]
-            )
+
+            def set_all_tags(checked: bool) -> None:
+                for checkbox in self.tag_checks:
+                    checkbox.setChecked(checked)
+
+            btn_all.clicked.connect(lambda: set_all_tags(True))
+            btn_none.clicked.connect(lambda: set_all_tags(False))
             hbox_tools.addWidget(btn_all)
             hbox_tools.addWidget(btn_none)
             hbox_tools.addStretch()
@@ -145,12 +146,13 @@ class CreateTemplateDialog(QDialog):
             hbox_tools_attr = QHBoxLayout()
             btn_all_a = StandardButton("Select All")
             btn_none_a = StandardButton("Select None")
-            btn_all_a.clicked.connect(
-                lambda: [c.setChecked(True) for c in self.attr_checks.values()]
-            )
-            btn_none_a.clicked.connect(
-                lambda: [c.setChecked(False) for c in self.attr_checks.values()]
-            )
+
+            def set_all_attributes(checked: bool) -> None:
+                for checkbox in self.attr_checks.values():
+                    checkbox.setChecked(checked)
+
+            btn_all_a.clicked.connect(lambda: set_all_attributes(True))
+            btn_none_a.clicked.connect(lambda: set_all_attributes(False))
             hbox_tools_attr.addWidget(btn_all_a)
             hbox_tools_attr.addWidget(btn_none_a)
             hbox_tools_attr.addStretch()
@@ -222,9 +224,9 @@ class CreateTemplateDialog(QDialog):
             and self.chk_layout.isChecked()
             and self.source_layout
         ):
-            pruned_layout = []
+            pruned_layout: list[list[Any]] = []
             for row in self.source_layout:
-                new_row = []
+                new_row: list[Any] = []
                 for item in row:
                     if isinstance(item, str):
                         if item in attrs:

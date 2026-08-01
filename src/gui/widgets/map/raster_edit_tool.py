@@ -963,7 +963,7 @@ class RasterEditTool:
                 value[2],
                 value[3],
             )
-        else:
+        elif isinstance(value, int):
             self._paint_value = value
         logger.debug(
             "_apply_sample: pos=(%.3f,%.3f) value=%s node_id=%s",

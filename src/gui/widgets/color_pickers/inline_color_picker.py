@@ -14,11 +14,12 @@ accepts the hex input.  Callers typically connect to :pyattr:`color_chosen`
 and/or :pyattr:`color_changed`.
 """
 
-from typing import Optional
+from typing import Optional, cast
 
 from PySide6.QtCore import QPoint, Qt, Signal
 from PySide6.QtGui import (
     QColor,
+    QKeyEvent,
     QLinearGradient,
     QMouseEvent,
     QPainter,
@@ -294,7 +295,9 @@ class InlineColorPickerPopover(QFrame):
         )
 
     def _sync_from_color(self) -> None:
-        h, s, v, _ = self._color.getHsvF()
+        h, s, v, _ = cast(
+            tuple[float, float, float, float], self._color.getHsvF()
+        )
         self._sv.set_hue(h if h >= 0 else 0.0)
         self._sv.set_sv(s, v)
         self._hue.set_hue(h if h >= 0 else 0.0)
@@ -321,14 +324,18 @@ class InlineColorPickerPopover(QFrame):
     # Signal handlers
 
     def _on_sv_changed(self, s: float, v: float) -> None:
-        h, _, _, _ = self._color.getHsvF()
+        h, _, _, _ = cast(
+            tuple[float, float, float, float], self._color.getHsvF()
+        )
         if h < 0:
             h = 0.0
         self._color = QColor.fromHsvF(h, s, v)
         self._emit_live()
 
     def _on_hue_changed(self, h: float) -> None:
-        _, s, v, _ = self._color.getHsvF()
+        _, s, v, _ = cast(
+            tuple[float, float, float, float], self._color.getHsvF()
+        )
         self._color = QColor.fromHsvF(h, s, v)
         self._sv.set_hue(h)
         self._emit_live()
@@ -354,8 +361,8 @@ class InlineColorPickerPopover(QFrame):
         self.color_chosen.emit(hex_str)
         self.close()
 
-    def keyPressEvent(self, event: object) -> None:  # type: ignore[override]
-        key = getattr(event, "key", lambda: None)()
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        key = event.key()
         if key == Qt.Key.Key_Escape:
             self.close()
             event.accept()

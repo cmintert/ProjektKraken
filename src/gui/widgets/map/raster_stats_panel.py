@@ -233,6 +233,7 @@ class RasterStatsPanel(QDialog):
 
         # Histogram
         layout.addWidget(QLabel("Value distribution (32 buckets):"))
+        hist_widget: QWidget
         if stats.histogram_counts and stats.histogram_edges:
             hist_widget = _HistogramWidget(
                 stats.histogram_counts,

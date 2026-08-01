@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -34,6 +34,11 @@ def graph_widget(qapp: Any) -> GraphWidget:
     return widget
 
 
+def _builder_mock(widget: GraphWidget) -> MagicMock:
+    """Return the deliberately mocked graph-builder collaborator."""
+    return cast(MagicMock, widget._builder)
+
+
 def test_view_state_caching(graph_widget: GraphWidget) -> None:
     """Test that view state from the bridge is cached in the widget."""
     test_state = {"scale": 1.5, "position": {"x": 100, "y": 200}}
@@ -58,14 +63,15 @@ def test_display_graph_same_focus_id_preserves_state(graph_widget: GraphWidget) 
     graph_widget._last_focus_node_id = "1"
 
     nodes = [{"id": "1", "name": "Entity 1"}]
-    edges = []
+    edges: list[dict[str, Any]] = []
 
     # 2. Action: Refresh data for Node 1 (Simulated Save)
     graph_widget.display_graph(nodes, edges, focus_node_id="1")
 
     # 3. Verify: Builder receives the PRESERVED view state
-    graph_widget._builder.build_html.assert_called()
-    call_args = graph_widget._builder.build_html.call_args
+    builder = _builder_mock(graph_widget)
+    builder.build_html.assert_called()
+    call_args = builder.build_html.call_args
     assert call_args.kwargs.get("view_state") == test_state
 
     # Verify we updated the tracking (it remains "1")
@@ -80,14 +86,15 @@ def test_display_graph_diff_focus_id_resets_state(graph_widget: GraphWidget) -> 
     graph_widget._last_focus_node_id = "1"
 
     nodes = [{"id": "1"}, {"id": "2"}]
-    edges = []
+    edges: list[dict[str, Any]] = []
 
     # 2. Action: Navigate to Node 2
     graph_widget.display_graph(nodes, edges, focus_node_id="2")
 
     # 3. Verify: Builder receives NONE for view_state (Reset)
-    graph_widget._builder.build_html.assert_called()
-    call_args = graph_widget._builder.build_html.call_args
+    builder = _builder_mock(graph_widget)
+    builder.build_html.assert_called()
+    call_args = builder.build_html.call_args
     assert call_args.kwargs.get("view_state") is None
 
     # Verify we updated the tracking
@@ -103,12 +110,13 @@ def test_display_graph_no_focus_id_resets_state(graph_widget: GraphWidget) -> No
 
     # 2. Action: Clear selection but keep data -> should reset view to default layout
     nodes = [{"id": "1"}, {"id": "2"}]
-    edges = []
+    edges: list[dict[str, Any]] = []
     graph_widget.display_graph(nodes, edges, focus_node_id=None)
 
     # 3. Verify: Builder receives NONE
-    graph_widget._builder.build_html.assert_called()
-    call_args = graph_widget._builder.build_html.call_args
+    builder = _builder_mock(graph_widget)
+    builder.build_html.assert_called()
+    call_args = builder.build_html.call_args
     assert call_args.kwargs.get("view_state") is None
 
     # Verify we updated the tracking

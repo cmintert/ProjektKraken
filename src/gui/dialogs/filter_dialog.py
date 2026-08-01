@@ -24,8 +24,8 @@ class FilterDialog(QDialog):
     def __init__(
         self,
         parent: Optional[QWidget] = None,
-        available_tags: List[str] = None,
-        current_config: Dict[str, Any] = None,
+        available_tags: Optional[List[str]] = None,
+        current_config: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Initialize the filter dialog."""
         super().__init__(parent)

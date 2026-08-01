@@ -37,6 +37,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.calendar import CalendarConverter
 from src.core.map import Map
 from src.core.paths import get_resource_path
 from src.core.theme_manager import ThemeManager
@@ -1319,7 +1320,7 @@ class MapWidget(
 
     # -- Clock-mode visuals / keyframe delete provided by MapTrajectoryMixin --
 
-    def set_calendar_converter(self, converter: object) -> None:
+    def set_calendar_converter(self, converter: CalendarConverter) -> None:
         """Sets the calendar converter for formatting keyframe date labels."""
         self.view.set_calendar_converter(converter)
         self.layer_panel.set_calendar_converter(converter)

@@ -20,7 +20,7 @@ from src.gui.utils.style_helper import StyleHelper
 class AboutDialog(QDialog):
     """Themed about dialog."""
 
-    def __init__(self, parent: QWidget = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         """Initialize the about dialog.
 
         Args:

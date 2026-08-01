@@ -26,7 +26,9 @@ class ImportPreviewDialog(QDialog):
     """Dialog to preview and confirm import data."""
 
     def __init__(
-        self, parent: Optional[Any] = None, parsed_data: Dict[str, List[Any]] = None
+        self,
+        parent: Optional[Any] = None,
+        parsed_data: Optional[Dict[str, List[Any]]] = None,
     ) -> None:
         """Initialize the dialog.
 

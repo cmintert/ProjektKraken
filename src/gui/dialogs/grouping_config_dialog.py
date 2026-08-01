@@ -180,7 +180,7 @@ class GroupingConfigDialog(QDialog):
         self.resize(500, 600)
 
         # Tag items keyed by tag name
-        self.tag_items = {}
+        self.tag_items: dict[str, tuple[QListWidgetItem, TagListItem]] = {}
 
         self._setup_ui()
         self._load_tags()

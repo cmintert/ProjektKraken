@@ -38,7 +38,8 @@ class ProgressDialog(QProgressDialog):
             title: Window title. Default "Please Wait".
         """
         # Create indeterminate progress (0, 0 range)
-        super().__init__(label_text, "Cancel" if cancelable else None, 0, 0, parent)
+        cancel_text = "Cancel" if cancelable else ""
+        super().__init__(label_text, cancel_text, 0, 0, parent)
 
         self.setWindowTitle(title)
         self.setWindowModality(Qt.WindowModality.WindowModal)

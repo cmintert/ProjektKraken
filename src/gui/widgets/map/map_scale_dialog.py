@@ -21,7 +21,10 @@ class MapScaleDialog(QDialog):
     calibrate_requested = Signal()
 
     def __init__(
-        self, current_width: float, parent: QWidget = None, map_name: str = "Map"
+        self,
+        current_width: float,
+        parent: QWidget | None = None,
+        map_name: str = "Map",
     ) -> None:
         """Initialize the map scale dialog.
 

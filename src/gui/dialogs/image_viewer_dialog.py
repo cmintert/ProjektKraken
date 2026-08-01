@@ -12,6 +12,7 @@ from PySide6.QtCore import Qt, Slot
 from PySide6.QtGui import QPixmap, QResizeEvent, QShowEvent
 from PySide6.QtWidgets import (
     QDialog,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -31,7 +32,7 @@ class ImageViewerDialog(QDialog):
     def __init__(
         self,
         parent: Optional[QWidget] = None,
-        attachments: List[ImageAttachment] = None,
+        attachments: Optional[List[ImageAttachment]] = None,
         current_index: int = 0,
         project_root: Optional[Path] = None,
     ) -> None:
@@ -51,6 +52,7 @@ class ImageViewerDialog(QDialog):
         self.attachments = attachments or []
         self.current_index = current_index
         self.project_root = project_root
+        self._base_pixmap: QPixmap | None = None
 
         self.init_ui()
         self.load_current_image()
@@ -73,7 +75,7 @@ class ImageViewerDialog(QDialog):
         self.scroll_area.setVerticalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff
         )
-        self.scroll_area.setFrameShape(QScrollArea.NoFrame)
+        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
 
         # Style the scroll area background to match
         self.scroll_area.setStyleSheet("background-color: #2b2b2b;")
