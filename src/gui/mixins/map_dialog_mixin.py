@@ -6,15 +6,18 @@ creation/deletion confirmation dialogs for the MapWidget.
 
 import logging
 import uuid
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
-from PySide6.QtCore import Slot
-from PySide6.QtWidgets import QFileDialog, QInputDialog, QMessageBox
+from PySide6.QtCore import SignalInstance, Slot
+from PySide6.QtWidgets import (
+    QComboBox,
+    QFileDialog,
+    QInputDialog,
+    QMessageBox,
+    QWidget,
+)
 
 from src.app.constants import IMAGE_FILE_FILTER
-
-if TYPE_CHECKING:
-    pass
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +40,19 @@ class MapDialogMixin:
 
     _NEW_ENTITY_SENTINEL = "<New Entity...>"
     _NEW_EVENT_SENTINEL = "<New Event...>"
+
+    if TYPE_CHECKING:
+        map_selector: QComboBox
+        map_created: SignalInstance
+        map_deleted: SignalInstance
+        marker_created: SignalInstance
+        marker_delete_confirmed: SignalInstance
+        create_entity_requested: SignalInstance
+        create_event_requested: SignalInstance
+        _cached_entities: list[Any]
+        _cached_events: list[Any]
+
+        def get_selected_map_id(self) -> str | None: ...
 
     def set_cached_items(self, entities: list, events: list) -> None:
         """Stores the entity/event caches for the object-selection dialog.
@@ -82,7 +98,7 @@ class MapDialogMixin:
         items = sentinels + existing
 
         item_text, ok = QInputDialog.getItem(
-            self, dialog_title, dialog_label, items, 0, False
+            cast(QWidget, self), dialog_title, dialog_label, items, 0, False
         )
         if not ok or not item_text:
             return None
@@ -112,7 +128,9 @@ class MapDialogMixin:
             Tuple of (new_id, 'entity', name) or None if cancelled.
 
         """
-        name, ok = QInputDialog.getText(self, "New Entity", "Entity Name:")
+        name, ok = QInputDialog.getText(
+            cast(QWidget, self), "New Entity", "Entity Name:"
+        )
         if not ok or not name.strip():
             return None
         name = name.strip()
@@ -128,7 +146,9 @@ class MapDialogMixin:
             Tuple of (new_id, 'event', name) or None if cancelled.
 
         """
-        name, ok = QInputDialog.getText(self, "New Event", "Event Name:")
+        name, ok = QInputDialog.getText(
+            cast(QWidget, self), "New Event", "Event Name:"
+        )
         if not ok or not name.strip():
             return None
         name = name.strip()
@@ -141,11 +161,13 @@ class MapDialogMixin:
     def _on_create_map_clicked(self) -> None:
         """Shows file/name dialogs and emits ``map_created``."""
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "Select Map Image", "", IMAGE_FILE_FILTER
+            cast(QWidget, self), "Select Map Image", "", IMAGE_FILE_FILTER
         )
         if not file_path:
             return
-        name, ok = QInputDialog.getText(self, "New Map", "Map Name:")
+        name, ok = QInputDialog.getText(
+            cast(QWidget, self), "New Map", "Map Name:"
+        )
         if not ok or not name.strip():
             return
         self.map_created.emit(file_path, name.strip())
@@ -157,7 +179,7 @@ class MapDialogMixin:
         if not map_id:
             return
         confirm = QMessageBox.question(
-            self,
+            cast(QWidget, self),
             "Delete Map",
             "Are you sure you want to delete this map and all its markers?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
@@ -170,7 +192,11 @@ class MapDialogMixin:
         """Shows object-selection dialog and emits ``marker_created``."""
         map_id = self.get_selected_map_id()
         if not map_id:
-            QMessageBox.warning(self, "No Map", "Please create or select a map first.")
+            QMessageBox.warning(
+                cast(QWidget, self),
+                "No Map",
+                "Please create or select a map first.",
+            )
             return
         result = self._select_or_create_object("Add Marker", "Select Object:")
         if not result:
@@ -182,7 +208,7 @@ class MapDialogMixin:
     def _on_delete_marker_requested(self, marker_id: str) -> None:
         """Shows confirmation dialog and emits ``marker_delete_confirmed``."""
         confirm = QMessageBox.question(
-            self,
+            cast(QWidget, self),
             "Delete Marker",
             "Remove this marker?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,

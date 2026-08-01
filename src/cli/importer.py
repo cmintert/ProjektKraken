@@ -5,7 +5,7 @@ Handles command-line triggering of the import process.
 
 import argparse
 from pathlib import Path
-from typing import List
+from typing import List, cast
 
 from PySide6.QtCore import QSettings
 
@@ -58,7 +58,9 @@ def run_import_cli(args: List[str]) -> int:
     # 1. Setup Database Connection
     # We need to know which world to use. For now, use the active one from settings.
     settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-    active_world = settings.value(SETTINGS_ACTIVE_DB_KEY, "Default World")
+    active_world = cast(
+        str, settings.value(SETTINGS_ACTIVE_DB_KEY, "Default World")
+    )
 
     # Check if world exists
     world_dir = get_worlds_dir() / active_world
@@ -118,8 +120,8 @@ def run_import_cli(args: List[str]) -> int:
             return 0
         else:
             print("\nImport Failed!")
-            for e in result.errors:
-                print(f"  - {e}")
+            for error in result.errors:
+                print(f"  - {error}")
             return 1
 
     except Exception as e:

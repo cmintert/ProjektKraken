@@ -36,6 +36,8 @@ class BaseEditorMixin:
         _get_editor_label() -> str: Returns a label for logging (e.g., "EventEditor").
     """
 
+    _initiated_relation_drop: Optional[Dict[str, Any]]
+
     def _get_current_item_id(self) -> Optional[str]:
         """Returns the current item ID or None if no item is loaded.
 

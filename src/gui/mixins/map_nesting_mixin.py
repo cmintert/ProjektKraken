@@ -10,16 +10,16 @@ signals that ``MapHandler`` translates into commands.
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
-from PySide6.QtCore import Slot
-from PySide6.QtWidgets import QDialog, QInputDialog, QMessageBox
+from PySide6.QtCore import SignalInstance, Slot
+from PySide6.QtWidgets import QComboBox, QDialog, QInputDialog, QMessageBox, QWidget
 
 from src.app.constants import MAP_ROLE_DETAIL, MAP_ROLE_MASTER
 from src.gui.dialogs.register_detail_map_dialog import RegisterDetailMapDialog
 
 if TYPE_CHECKING:
-    pass
+    from src.core.map import Map
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +35,18 @@ class MapNestingMixin:
         - ``self.edit_footprint_requested``: ``Signal(str)``
         - ``self.get_selected_map_id()`` method
     """
+
+    if TYPE_CHECKING:
+        map_selector: QComboBox
+        maps_data: list[Map]
+        set_master_map_requested: SignalInstance
+        register_detail_map_requested: SignalInstance
+        edit_footprint_requested: SignalInstance
+        _pending_footprint_edit_id: str | None
+
+        def get_selected_map_id(self) -> str | None: ...
+
+        def _update_mode_indicator(self) -> None: ...
 
     @Slot()
     def _on_set_master_map_clicked(self) -> None:
@@ -72,7 +84,7 @@ class MapNestingMixin:
         )
         if not candidates:
             QMessageBox.information(
-                self,
+                cast(QWidget, self),
                 "No Parent Available",
                 "Designate a master map before registering a detail map.",
             )
@@ -83,7 +95,7 @@ class MapNestingMixin:
             detail_map=detail_map,
             candidate_parents=candidates,
             resolve_image_path=resolver,
-            parent=self,
+            parent=cast(QWidget, self),
         )
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
@@ -112,7 +124,7 @@ class MapNestingMixin:
             return
         if not getattr(view, "footprints_visible", True):
             QMessageBox.information(
-                self,
+                cast(QWidget, self),
                 "Footprints Hidden",
                 "Footprints are currently hidden. Enable Show Footprints "
                 "to edit placements.",
@@ -131,7 +143,7 @@ class MapNestingMixin:
                     for k in id_list
                 ]
                 chosen, ok = QInputDialog.getItem(
-                    self,
+                    cast(QWidget, self),
                     "Edit Footprint",
                     "Select a footprint to edit:",
                     display,

@@ -205,7 +205,7 @@ class FastInjectManager:
         name: str,
         description: str = "",
         include_tags: bool = True,
-        include_attributes: List[str] = None,
+        include_attributes: Optional[List[str]] = None,
         include_type: bool = False,
         include_layout: bool = True,
     ) -> FastInjectTemplate:
@@ -310,7 +310,7 @@ class FastInjectManager:
         target: Union[Entity, Event],
         template: FastInjectTemplate,
         overwrite: bool = False,
-        variables: Dict[str, str] = None,
+        variables: Optional[Dict[str, str]] = None,
     ) -> None:
         """Apply tags and attributes to a target object.
         NOTE: This modifies the object in memory. Database save must be called
@@ -390,11 +390,11 @@ class FastInjectManager:
                 target_layout = copy.deepcopy(target.attributes["_sheet_layout"])
 
                 def _remove_keys_from_layout(
-                    layout: List[List[Any]], keys_to_remove: set
+                    layout: List[List[Any]], keys_to_remove: set[str]
                 ) -> List[List[Any]]:
-                    new_layout = []
+                    new_layout: List[List[Any]] = []
                     for row in layout:
-                        new_row = []
+                        new_row: List[Any] = []
                         for item in row:
                             if isinstance(item, str):
                                 if item not in keys_to_remove:

@@ -6,15 +6,25 @@ events and entities.
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Protocol, cast
 
-from PySide6.QtCore import Q_ARG, QObject, QPoint, QSize, Qt, QThreadPool, Slot
+from PySide6.QtCore import (
+    Q_ARG,
+    QObject,
+    QPoint,
+    QSize,
+    Qt,
+    QThreadPool,
+    SignalInstance,
+    Slot,
+)
 from PySide6.QtGui import QDragEnterEvent, QDropEvent, QIcon
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QFileDialog,
     QHBoxLayout,
     QInputDialog,
+    QListView,
     QListWidget,
     QListWidgetItem,
     QMenu,
@@ -25,6 +35,7 @@ from PySide6.QtWidgets import (
 
 from src.app.constants import IMAGE_FILE_FILTER
 from src.app.qt_invocation import invoke_queued
+from src.commands.base_command import CommandResult
 from src.commands.image_commands import (
     AddImagesCommand,
     RemoveImageCommand,
@@ -39,6 +50,13 @@ from src.gui.workers.thumbnail_loader import ThumbnailLoader
 logger = logging.getLogger(__name__)
 
 
+class GalleryHost(Protocol):
+    """Main-window surface used by the attachment gallery."""
+
+    worker: Any
+    command_requested: SignalInstance
+
+
 class GalleryWidget(QWidget):
     """Widget for managing and displaying image attachments.
 
@@ -47,7 +65,7 @@ class GalleryWidget(QWidget):
 
     # Needs access to main_window to emit commands
 
-    def __init__(self, main_window: QWidget) -> None:
+    def __init__(self, main_window: QWidget | None) -> None:
         """Initialize the gallery widget.
 
         Args:
@@ -55,7 +73,7 @@ class GalleryWidget(QWidget):
 
         """
         super().__init__()
-        self.main_window = main_window
+        self.main_window = cast(GalleryHost, main_window)
         self.owner_type: Optional[str] = None
         self.owner_id: Optional[str] = None
 
@@ -128,9 +146,9 @@ class GalleryWidget(QWidget):
 
         # File List (Icon Mode)
         self.list_widget = QListWidget()
-        self.list_widget.setViewMode(QListWidget.IconMode)
+        self.list_widget.setViewMode(QListView.ViewMode.IconMode)
         self.list_widget.setIconSize(QSize(128, 128))
-        self.list_widget.setResizeMode(QListWidget.Adjust)
+        self.list_widget.setResizeMode(QListView.ResizeMode.Adjust)
         self.list_widget.setSpacing(10)
         self.list_widget.setSelectionMode(
             QAbstractItemView.SelectionMode.SingleSelection
@@ -274,6 +292,8 @@ class GalleryWidget(QWidget):
     @Slot(object)
     def on_command_finished(self, result: object) -> None:
         """Handles command completion signals to auto-refresh the gallery."""
+        if not isinstance(result, CommandResult):
+            return
         if not result.success:
             return
 
@@ -300,7 +320,10 @@ class GalleryWidget(QWidget):
                 f"GalleryWidget: Refreshing due to command {result.command_name}"
             )
             # Re-fetch data
-            self.set_owner(self.owner_type, self.owner_id)
+            self.set_owner(
+                cast(str, self.owner_type),
+                cast(str, self.owner_id),
+            )
 
     @Slot()
     def on_add_clicked(self) -> None:
@@ -313,7 +336,11 @@ class GalleryWidget(QWidget):
         )
         if files:
             logger.info(f"GalleryWidget: Adding images: {files}")
-            cmd = AddImagesCommand(self.owner_type, self.owner_id, files)
+            cmd = AddImagesCommand(
+                cast(str, self.owner_type),
+                self.owner_id,
+                files,
+            )
             self.main_window.command_requested.emit(cmd)
             # Auto-refresh handled by listing to command_finished signal.
             # MainWindow doesn't auto-trigger 'load_attachments' on command finish.
@@ -390,7 +417,7 @@ class GalleryWidget(QWidget):
         att_id = item.data(Qt.ItemDataRole.UserRole)
         # Find current caption
         att = next((a for a in self.attachments if a.id == att_id), None)
-        current = att.caption if att else ""
+        current = (att.caption or "") if att else ""
 
         text, ok = QInputDialog.getText(self, "Edit Caption", "Caption:", text=current)
         if ok:
@@ -443,7 +470,11 @@ class GalleryWidget(QWidget):
                     (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp")
                 )
             ]:
-                cmd = AddImagesCommand(self.owner_type, self.owner_id, valid_files)
+                cmd = AddImagesCommand(
+                    cast(str, self.owner_type),
+                    self.owner_id,
+                    valid_files,
+                )
                 self.main_window.command_requested.emit(cmd)
                 event.acceptProposedAction()
 

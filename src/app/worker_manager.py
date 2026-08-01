@@ -4,7 +4,7 @@ This module contains all worker thread initialization and status management
 functionality extracted from MainWindow to reduce its size and improve maintainability.
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from PySide6.QtCore import (
     QObject,
@@ -101,7 +101,10 @@ class WorkerManager(QObject):
 
         # Load active world name from settings
         settings = QSettings()
-        active_world_name = settings.value(SETTINGS_ACTIVE_DB_KEY, None, type=str)
+        active_world_name = cast(
+            str | None,
+            settings.value(SETTINGS_ACTIVE_DB_KEY, None, type=str),
+        )
 
         # Get or create default world
         world = None
@@ -362,8 +365,9 @@ class WorkerManager(QObject):
             return
 
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        excluded_text = settings.value(
-            "ai_search_excluded_attrs", "", type=str
+        excluded_text = cast(
+            str,
+            settings.value("ai_search_excluded_attrs", "", type=str),
         )
         excluded = [
             attr.strip() for attr in excluded_text.split(",") if attr.strip()

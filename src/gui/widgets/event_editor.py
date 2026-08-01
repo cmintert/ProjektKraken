@@ -9,9 +9,9 @@ import os
 import time
 import traceback
 from contextlib import suppress
-from typing import Any, Dict, Optional
+from typing import Any, Dict, cast
 
-from PySide6.QtCore import QPoint, QSize, Qt, Signal, Slot
+from PySide6.QtCore import QObject, QPoint, QSize, Qt, Signal, Slot
 from PySide6.QtGui import QDropEvent
 from PySide6.QtWidgets import (
     QComboBox,
@@ -156,8 +156,12 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.header_form = QFormLayout()
 
         self.header_form.setVerticalSpacing(EDITOR_FORM_VERTICAL_SPACING)
-        self.header_form.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
-        self.header_form.setRowWrapPolicy(QFormLayout.DontWrapRows)
+        self.header_form.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
+        )
+        self.header_form.setRowWrapPolicy(
+            QFormLayout.RowWrapPolicy.DontWrapRows
+        )
         self.header_form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         # Inject Button Header
@@ -234,8 +238,12 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         self.form_layout = QFormLayout()
         self.form_layout.setVerticalSpacing(EDITOR_FORM_VERTICAL_SPACING)
-        self.form_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
-        self.form_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
+        self.form_layout.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
+        )
+        self.form_layout.setRowWrapPolicy(
+            QFormLayout.RowWrapPolicy.DontWrapRows
+        )
         self.form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         self.desc_edit = WikiTextEdit()
@@ -413,7 +421,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         main_layout.addLayout(btn_layout)
 
         # Internal State
-        self._current_event_id = None
+        self._current_event_id: str | None = None
         self._current_created_at = 0.0
         self._is_dirty = False
         self._pending_summary_changed = False
@@ -428,11 +436,11 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.setAcceptDrops(True)
 
         # Create drop hint label (Sprint 1 - visual feedback)
-        self._drop_hint_label = None
+        self._drop_hint_label: QLabel | None = None
         self._is_drag_over = False
 
         # Type picker for relation type selection (activated by Shift key)
-        self._type_picker = None
+        self._type_picker: Any = None
         self._selected_relation_type = "related"  # Default type
 
     def _get_current_item_id(self) -> str | None:
@@ -500,7 +508,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         try:
             # Parse MIME data
             mime_data = event.mimeData().data(KRAKEN_ITEM_MIME_TYPE)
-            data = json.loads(bytes(mime_data).decode("utf-8"))
+            data = json.loads(bytes(mime_data.data()).decode("utf-8"))
 
             dropped_id = data.get("id")
             dropped_type = data.get("type")
@@ -793,7 +801,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.btn_edit_rel.setEnabled(is_editable)
         self.btn_remove_rel.setEnabled(is_editable)
 
-    def eventFilter(self, obj: QWidget, event: Any) -> bool:
+    def eventFilter(self, obj: QObject, event: Any) -> bool:
         """Event filter to handle clicks on empty space in relation lists."""
         from PySide6.QtCore import QEvent
         from PySide6.QtGui import QMouseEvent
@@ -816,12 +824,12 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
                         if item is None:
                             # Clicked on empty space - clear selection
                             parent.clearSelection()
-                            parent.setCurrentItem(None)
+                            parent.setCurrentItem(cast(QListWidgetItem, None))
                             return False  # Let Qt handle the event normally
                         elif item.isSelected():
                             # Clicked on already-selected item - deselect it
                             parent.clearSelection()
-                            parent.setCurrentItem(None)
+                            parent.setCurrentItem(cast(QListWidgetItem, None))
                             return True  # Prevent re-selection
         except RuntimeError:
             return False
@@ -891,9 +899,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             # If removed from table, remove from sheet
             for key in list(sheet_attrs.keys()):
                 if key not in attr_attrs:
-                    self.sheet_builder._block_signals = True
+                    setattr(self.sheet_builder, "_block_signals", True)
                     self.sheet_builder.remove_attribute(key)
-                    self.sheet_builder._block_signals = False
+                    setattr(self.sheet_builder, "_block_signals", False)
 
     def set_calendar_converter(self, converter: Any) -> None:
         """Sets the calendar converter for date formatting.
@@ -906,7 +914,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.temporal_widget.set_calendar_converter(converter)
 
     def update_suggestions(
-        self, items: list[tuple[str, str, str]] = None, names: list[str] = None
+        self,
+        items: list[tuple[str, str, str]] | None = None,
+        names: list[str] | None = None,
     ) -> None:
         """Updates the autocomplete suggestions for the description field.
 
@@ -951,9 +961,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
     def load_event(
         self,
         event: Event | None,
-        relations: list = None,
-        incoming_relations: list = None,
-        maps_data: Optional[list] = None,
+        relations: list[Any] | None = None,
+        incoming_relations: list[Any] | None = None,
+        maps_data: list[Any] | None = None,
     ) -> None:
         """Populates the form with event data and relationships.
 
@@ -1021,7 +1031,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             maps_data: List of :class:`~src.core.map.Map` objects from the
                 current project.  Pass an empty list to clear the panel.
         """
-        if not getattr(self, "_current_event_id", None):
+        current_event_id = self._current_event_id
+        if not current_event_id:
             return
 
         from src.gui.widgets.map.raster_mapping import (
@@ -1034,7 +1045,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             for m in maps_data
         ]
         index = build_item_raster_index(maps_dicts)
-        refs = index.get(self._current_event_id, [])
+        refs = index.get(current_event_id, [])
 
         if not refs:
             self.raster_appearances_label.setText("Not linked to any raster map.")
@@ -1156,7 +1167,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
                 label=label,
                 target_id=other_id,
                 target_name=target_display,
-                attributes=rel.get("attributes"),
+                attributes=cast(dict[str, Any], rel.get("attributes")),
             )
             widget.go_to_clicked.connect(
                 lambda tid, tn: self.navigate_to_relation.emit(tid)
@@ -1398,7 +1409,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
                     is_bidirectional,
                 )
 
-    def _show_rel_menu(self, pos: QPoint, list_widget: QListWidget = None) -> None:
+    def _show_rel_menu(
+        self, pos: QPoint, list_widget: QListWidget | None = None
+    ) -> None:
         """Shows context menu for relation items."""
         # Check if list_widget is passed (from new lambda) or use default (legacy/safe)
         target_list = list_widget or self.rel_list

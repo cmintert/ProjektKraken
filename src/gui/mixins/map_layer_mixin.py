@@ -5,10 +5,10 @@ for the MapWidget.
 """
 
 import logging
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Optional, Tuple, cast
 
-from PySide6.QtCore import Qt, Slot
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtCore import Qt, SignalInstance, Slot
+from PySide6.QtWidgets import QMessageBox, QWidget
 
 from src.app.constants import (
     MAP_LAYER_BASEMAP_NODE_ID,
@@ -23,7 +23,8 @@ from src.core.map import MapLayerNode
 from src.gui.widgets.map.map_layer_model import MapLayerModel
 
 if TYPE_CHECKING:
-    pass
+    from src.gui.widgets.map.map_graphics_view import MapGraphicsView
+    from src.gui.widgets.map.map_layer_panel import MapLayerPanel
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,17 @@ class MapLayerMixin:
         - self.layer_rename_requested: Signal(str, str)
         - self.layer_opacity_change_requested: Signal(str, float, float)
     """
+
+    if TYPE_CHECKING:
+        view: MapGraphicsView
+        layer_panel: MapLayerPanel
+        layer_tree_changed: SignalInstance
+        layer_delete_feature_requested: SignalInstance
+        layer_rename_requested: SignalInstance
+        layer_opacity_change_requested: SignalInstance
+        create_raster_layer_requested: SignalInstance
+        raster_edit_requested: SignalInstance
+        raster_edit_stopped: SignalInstance
 
     def rebuild_layer_model(self, root: Optional[MapLayerNode] = None) -> MapLayerModel:
         """Create (or replace) the layer model and wire it to the view.
@@ -352,7 +364,7 @@ class MapLayerMixin:
                 "The complete operation can be undone."
             )
             answer = QMessageBox.question(
-                self,
+                cast(QWidget, self),
                 "Delete layer",
                 details,
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,

@@ -7,7 +7,7 @@ Undo/Redo operations.
 import copy
 import logging
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from src.commands.base_command import BaseCommand, CommandResult
 from src.core.entities import Entity
@@ -30,7 +30,7 @@ class InjectTemplateCommand(BaseCommand):
         template: FastInjectTemplate,
         manager: Optional[FastInjectManager],
         overwrite: bool = False,
-        variables: Dict[str, str] = None,
+        variables: Optional[Dict[str, str]] = None,
         target_id: str = "",
         target_type: str = "",
     ) -> None:
@@ -55,9 +55,9 @@ class InjectTemplateCommand(BaseCommand):
         self.variables = variables or {}
 
         # Undo State
-        self._previous_tags = []
-        self._previous_attributes = {}
-        self._previous_type = None
+        self._previous_tags: List[str] = []
+        self._previous_attributes: Dict[str, object] = {}
+        self._previous_type: Optional[str] = None
         # We only need to backup attributes that are going to be changed or added
         # But for simplicity and robustness, creating a snapshot of attributes
         # that overlap with the template + all tags is safer.

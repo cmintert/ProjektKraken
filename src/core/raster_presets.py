@@ -3,7 +3,7 @@
 import json
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any, Dict, List, cast
 
 from PySide6.QtCore import QSettings
 
@@ -68,7 +68,9 @@ class PresetStore:
             List of :class:`BrushPreset` objects (may be empty).
         """
         settings = QSettings(_SETTINGS_APP, _SETTINGS_KEY)
-        raw = settings.value(SETTINGS_RASTER_BRUSH_PRESETS_KEY, "[]")
+        raw = cast(
+            str, settings.value(SETTINGS_RASTER_BRUSH_PRESETS_KEY, "[]")
+        )
         try:
             data = json.loads(raw)
             if isinstance(data, list):

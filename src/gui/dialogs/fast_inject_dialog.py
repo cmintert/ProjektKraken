@@ -5,7 +5,7 @@ Provides the UI for listing, previewing, and applying Fast Inject templates.
 
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -296,8 +296,9 @@ class FastInjectDialog(QDialog):
         self.lbl_desc.setText("")
         while self.form_layout.count():
             item = self.form_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
 
         # Reset all row stretches to prevent accumulation when switching templates
         for i in range(self.form_layout.rowCount()):
@@ -320,7 +321,9 @@ class FastInjectDialog(QDialog):
         self.lbl_name.setText(template.name)
         self.lbl_desc.setText(template.description)
 
-        self._form_widgets = []  # List of (Type, Key, Checkbox, InputWidget, OriginalType)
+        self._form_widgets: list[
+            tuple[str, str, QCheckBox, QComboBox | QLineEdit, type[Any]]
+        ] = []
 
         row = 0
 
@@ -381,7 +384,7 @@ class FastInjectDialog(QDialog):
         lbl = QLabel(f"{key}:")
 
         # Determine input widget type
-        input_widget = None
+        input_widget: QComboBox | QLineEdit
         has_sub_controls = False
 
         if match:
@@ -392,8 +395,8 @@ class FastInjectDialog(QDialog):
                 # Variable with choices -> Dropdown
                 input_widget = QComboBox()
                 input_widget.setStyleSheet(StyleHelper.get_input_field_style())
-                opts = [o.strip() for o in options.split("|")]
-                input_widget.addItems(opts)
+                choice_items = [o.strip() for o in options.split("|")]
+                input_widget.addItems(choice_items)
             else:
                 # Variable without choices -> Text input with placeholder
                 input_widget = QLineEdit()
@@ -424,30 +427,33 @@ class FastInjectDialog(QDialog):
 
         # Add sub-controls for mixed content
         if has_sub_controls:
-            sub_vars = {}  # VarName -> Widget
+            result_field = cast(QLineEdit, input_widget)
+            sub_vars: dict[str, QComboBox | QLineEdit] = {}
 
             # Extract unique variables
-            unique_vars = {}
+            unique_vars: dict[str, str | None] = {}
             for m in matches:
                 v_name = m.group(1)
-                opts = m.group(2)
+                option_text = m.group(2)
                 if v_name not in unique_vars:
-                    unique_vars[v_name] = opts
-                elif opts and not unique_vars.get(v_name):
-                    unique_vars[v_name] = opts
+                    unique_vars[v_name] = option_text
+                elif option_text and not unique_vars.get(v_name):
+                    unique_vars[v_name] = option_text
 
             # Create sub-rows for each variable
-            for v_name, opts in unique_vars.items():
+            for v_name, option_text in unique_vars.items():
                 row += 1
 
                 sub_lbl = QLabel(f"  ↳ {v_name}:")
                 sub_lbl.setStyleSheet("color: #888888; font-style: italic;")
 
-                sub_inp = None
-                if opts:
+                sub_inp: QComboBox | QLineEdit
+                if option_text:
                     sub_inp = QComboBox()
                     sub_inp.setStyleSheet(StyleHelper.get_input_field_style())
-                    sub_inp.addItems([o.strip() for o in opts.split("|")])
+                    sub_inp.addItems(
+                        [o.strip() for o in option_text.split("|")]
+                    )
                 else:
                     sub_inp = QLineEdit()
                     sub_inp.setPlaceholderText(f"Value for {v_name}")
@@ -462,26 +468,29 @@ class FastInjectDialog(QDialog):
                 # Connect signal to update main input
                 if isinstance(sub_inp, QComboBox):
                     sub_inp.currentTextChanged.connect(
-                        lambda _, m=input_widget, t=display_value, s=sub_vars: (
+                        lambda _, m=result_field, t=display_value, s=sub_vars: (
                             self._update_result_field(m, t, s)
                         )
                     )
                 else:
                     sub_inp.textChanged.connect(
-                        lambda _, m=input_widget, t=display_value, s=sub_vars: (
+                        lambda _, m=result_field, t=display_value, s=sub_vars: (
                             self._update_result_field(m, t, s)
                         )
                     )
 
             # Store the sub-controls reference on the main widget for later retrieval
-            input_widget.setProperty("sub_vars", sub_vars)
-            input_widget.setProperty("template_str", display_value)
+            result_field.setProperty("sub_vars", sub_vars)
+            result_field.setProperty("template_str", display_value)
 
             # Initial update to show resolved result
-            self._update_result_field(input_widget, display_value, sub_vars)
+            self._update_result_field(result_field, display_value, sub_vars)
 
     def _update_result_field(
-        self, result_field: QLineEdit, template_str: str, sub_vars: Dict[str, QWidget]
+        self,
+        result_field: QLineEdit,
+        template_str: str,
+        sub_vars: Dict[str, QComboBox | QLineEdit],
     ) -> None:
         """Update result field based on sub-variable values."""
         import re
@@ -515,8 +524,8 @@ class FastInjectDialog(QDialog):
             return
 
         # Collect all values first
-        flat_attrs = {}  # key -> value
-        new_tags = []
+        flat_attrs: dict[str, Any] = {}
+        new_tags: list[str] = []
 
         for type_, key, chk, widget, orig_type in self._form_widgets:
             if not chk.isChecked():
@@ -530,7 +539,7 @@ class FastInjectDialog(QDialog):
                 val_str = widget.text().strip()
 
             # Attempt to restore type
-            final_val = val_str
+            final_val: Any = val_str
             if orig_type is int:
                 try:
                     final_val = int(val_str)
@@ -545,7 +554,7 @@ class FastInjectDialog(QDialog):
                     new_tags.append(val_str)
 
         # Reconstruct nested structures from flat keys
-        new_attrs = {}
+        new_attrs: dict[str, Any] = {}
         for key, value in flat_attrs.items():
             # Check if key indicates nested structure
             if "." in key:

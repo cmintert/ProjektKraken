@@ -3,7 +3,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from PySide6.QtCore import QSettings, QTimer, Slot
 from PySide6.QtWidgets import (
@@ -285,31 +285,53 @@ class BackupCoordinator(BaseCoordinator):
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
             # Build config from QSettings
-            custom_dir = settings.value(BACKUP_CUSTOM_DIR_KEY, "")
-            external_path = settings.value(BACKUP_EXTERNAL_PATH_KEY, "")
+            custom_dir = cast(str, settings.value(BACKUP_CUSTOM_DIR_KEY, ""))
+            external_path = cast(
+                str, settings.value(BACKUP_EXTERNAL_PATH_KEY, "")
+            )
 
             config = BackupConfig(
-                enabled=settings.value(BACKUP_ENABLED_KEY, True, type=bool),
+                enabled=cast(
+                    bool,
+                    settings.value(BACKUP_ENABLED_KEY, True, type=bool),
+                ),
                 auto_save_interval_minutes=int(
-                    settings.value(BACKUP_AUTO_SAVE_INTERVAL_KEY, 5)
+                    cast(
+                        int | str,
+                        settings.value(BACKUP_AUTO_SAVE_INTERVAL_KEY, 5),
+                    )
                 ),
                 auto_save_retention_count=int(
-                    settings.value(BACKUP_AUTO_SAVE_RETENTION_KEY, 12)
+                    cast(
+                        int | str,
+                        settings.value(BACKUP_AUTO_SAVE_RETENTION_KEY, 12),
+                    )
                 ),
                 daily_retention_count=int(
-                    settings.value(BACKUP_DAILY_RETENTION_KEY, 7)
+                    cast(
+                        int | str,
+                        settings.value(BACKUP_DAILY_RETENTION_KEY, 7),
+                    )
                 ),
                 weekly_retention_count=int(
-                    settings.value(BACKUP_WEEKLY_RETENTION_KEY, 4)
+                    cast(
+                        int | str,
+                        settings.value(BACKUP_WEEKLY_RETENTION_KEY, 4),
+                    )
                 ),
                 manual_retention_count=int(
-                    settings.value(BACKUP_MANUAL_RETENTION_KEY, -1)
+                    cast(
+                        int | str,
+                        settings.value(BACKUP_MANUAL_RETENTION_KEY, -1),
+                    )
                 ),
-                verify_after_backup=settings.value(
-                    BACKUP_VERIFY_AFTER_KEY, True, type=bool
+                verify_after_backup=cast(
+                    bool,
+                    settings.value(BACKUP_VERIFY_AFTER_KEY, True, type=bool),
                 ),
-                vacuum_before_backup=settings.value(
-                    BACKUP_VACUUM_BEFORE_KEY, False, type=bool
+                vacuum_before_backup=cast(
+                    bool,
+                    settings.value(BACKUP_VACUUM_BEFORE_KEY, False, type=bool),
                 ),
                 backup_dir=Path(custom_dir) if custom_dir else None,
                 external_backup_path=Path(external_path) if external_path else None,

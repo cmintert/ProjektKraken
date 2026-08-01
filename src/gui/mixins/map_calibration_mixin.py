@@ -5,16 +5,16 @@ for the MapWidget.
 """
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
-from PySide6.QtCore import Slot
-from PySide6.QtWidgets import QDialog
+from PySide6.QtCore import SignalInstance, Slot
+from PySide6.QtWidgets import QComboBox, QDialog, QLabel, QWidget
 
 from src.gui.widgets.map.calibration_distance_dialog import CalibrationDistanceDialog
 from src.gui.widgets.map.map_scale_dialog import MapScaleDialog
 
 if TYPE_CHECKING:
-    pass
+    from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +30,14 @@ class MapCalibrationMixin:
         - self.get_selected_map_id(): method
     """
 
+    if TYPE_CHECKING:
+        view: MapGraphicsView
+        map_selector: QComboBox
+        overlay_banner: QLabel
+        map_scale_changed: SignalInstance
+
+        def get_selected_map_id(self) -> str | None: ...
+
     @Slot()
     def _configure_map_width(self) -> None:
         """Opens dialog to configure the map's total real-world width."""
@@ -41,7 +49,7 @@ class MapCalibrationMixin:
         map_name = self.map_selector.currentText()
         current_width = self.view.map_width_meters
 
-        dialog = MapScaleDialog(current_width, self, map_name)
+        dialog = MapScaleDialog(current_width, cast(QWidget, self), map_name)
 
         # Determine behavior on result
         dialog.calibrate_requested.connect(self._handle_calibration_request)
@@ -87,7 +95,7 @@ class MapCalibrationMixin:
             logger.warning("Measured distance too small, ignoring.")
             return
 
-        dialog = CalibrationDistanceDialog(self)
+        dialog = CalibrationDistanceDialog(cast(QWidget, self))
         if dialog.exec() == QDialog.DialogCode.Accepted:
             segment_meters = dialog.get_distance_meters()
 
@@ -113,7 +121,7 @@ class MapCalibrationMixin:
             from PySide6.QtWidgets import QMessageBox
 
             QMessageBox.information(
-                self,
+                cast(QWidget, self),
                 "Calibration Complete",
                 f"Map scale updated.\n\n"
                 f"Segment: {segment_meters:.1f} m ({px_distance:.1f} px)\n"

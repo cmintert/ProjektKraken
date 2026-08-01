@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-01
-**Commit:** 5e884f01
+**Commit:** b4c6e5ae
 ---
 
 # Changelog
@@ -31,6 +31,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-01)* **Stability / Typing**: Typed persisted settings,
+  worker-result, editor/gallery, Fast Inject, and map-mixin boundaries without
+  changing valid runtime flows.
 - *(2026-08-01)* **Qt / Typing**: Restored the native graphics-view scene API,
   centralized typed cross-thread slot invocation, and corrected timeline return
   contracts without changing queued delivery behavior.
@@ -79,6 +82,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-01)* **Testing / Typing**: Cleared 197 errors from the selected
+  application paths, reducing the mypy baseline from 750 to 553 errors.
 - *(2026-08-01)* **Testing / Typing**: Added regression coverage for native
   scene access, real queued Qt invocation, and attachment statistics, reducing
   the mypy baseline from 908 to 750 errors.

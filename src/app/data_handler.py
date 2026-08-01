@@ -5,7 +5,7 @@ the main window class.
 """
 
 import logging
-from typing import Any, List, Optional, Tuple
+from typing import Any, Iterable, List, Optional, Tuple, cast
 
 from PySide6.QtCore import QObject, Signal, Slot
 
@@ -330,10 +330,10 @@ class DataHandler(QObject):
         try:
             if command_name == "CreateEventCommand" and result.data.get("id"):
                 self._pending_select_type = "event"
-                self._pending_select_id = result.data["id"]
+                self._pending_select_id = cast(str, result.data["id"])
             elif command_name == "CreateEntityCommand" and result.data.get("id"):
                 self._pending_select_type = "entity"
-                self._pending_select_id = result.data["id"]
+                self._pending_select_id = cast(str, result.data["id"])
 
             # These layer/map commands only update metadata that is already
             # applied optimistically in the UI — a full map+marker+raster
@@ -435,7 +435,12 @@ class DataHandler(QObject):
             # the worker-produced serializable request. The object fallback is
             # retained only for compatibility with older callers and tests.
             if command_name == "CompositeCommand":
-                requests = list(result.data.get("index_requests", []))
+                requests = list(
+                    cast(
+                        Iterable[dict[str, object]],
+                        result.data.get("index_requests", []),
+                    )
+                )
                 if requests:
                     request = requests[0]
                     self.index_object_requested.emit(
