@@ -6,9 +6,10 @@ exclusion.
 
 import logging
 import uuid
-from typing import Optional
+from typing import Optional, cast
 
 from PySide6.QtCore import Qt, QThread, QTimer, Signal, Slot
+from PySide6.QtGui import QStandardItemModel
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -40,6 +41,11 @@ from src.core.ai_generation import (
 from src.core.summary_data import (
     DEFAULT_SUMMARY_PROMPT,
     normalize_summary_prompt_template,
+)
+from src.gui.utils.settings_reader import (
+    read_bool_setting,
+    read_int_setting,
+    read_str_setting,
 )
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.prompt_editor import PromptEditorWidget
@@ -253,8 +259,9 @@ class AISettingsDialog(QDialog):
         self.gen_provider_combo.addItems(
             ["LM Studio", "OpenAI", "Google Vertex AI", "Anthropic Claude"]
         )
+        provider_model = cast(QStandardItemModel, self.gen_provider_combo.model())
         for index in range(1, self.gen_provider_combo.count()):
-            item = self.gen_provider_combo.model().item(index)
+            item = provider_model.item(index)
             if item is not None:
                 item.setEnabled(False)
                 item.setToolTip("Cloud providers are not enabled in this release")
@@ -302,10 +309,9 @@ class AISettingsDialog(QDialog):
         self.lm_gen_model_input = QComboBox()
         self.lm_gen_model_input.setEditable(True)
         self.lm_gen_model_input.setPlaceholderText("e.g. mistral-7b-instruct")
-        if self.lm_gen_model_input.lineEdit() is not None:
-            self.lm_gen_model_input.lineEdit().editingFinished.connect(
-                self.save_settings
-            )
+        lm_gen_model_edit = self.lm_gen_model_input.lineEdit()
+        if lm_gen_model_edit is not None:
+            lm_gen_model_edit.editingFinished.connect(self.save_settings)
         self.lm_gen_model_input.currentIndexChanged.connect(self.save_settings)
         lm_gen_form.addRow("Model:", self.lm_gen_model_input)
         lm_gen_help = QLabel(
@@ -497,8 +503,9 @@ class AISettingsDialog(QDialog):
         self.lm_model_input = QComboBox()
         self.lm_model_input.setEditable(True)
         self.lm_model_input.setPlaceholderText("e.g. nomic-embed-text-v1.5")
-        if self.lm_model_input.lineEdit() is not None:
-            self.lm_model_input.lineEdit().editingFinished.connect(self.save_settings)
+        lm_model_edit = self.lm_model_input.lineEdit()
+        if lm_model_edit is not None:
+            lm_model_edit.editingFinished.connect(self.save_settings)
         self.lm_model_input.currentIndexChanged.connect(self.save_settings)
         lm_studio_form.addRow("Embedding Model:", self.lm_model_input)
         lm_model_help = QLabel(
@@ -1459,17 +1466,17 @@ class AISettingsDialog(QDialog):
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
         # Load excluded attributes
-        excluded = settings.value("ai_search_excluded_attrs", "")
+        excluded = read_str_setting(settings, "ai_search_excluded_attrs", "")
         self.excluded_attrs_input.setText(excluded)
 
         # Load auto-index on save setting
-        auto_index = settings.value("ai_auto_index_on_save", False)
-        if isinstance(auto_index, str):
-            auto_index = auto_index.lower() == "true"
-        self.chk_auto_index.setChecked(bool(auto_index))
+        auto_index = read_bool_setting(settings, "ai_auto_index_on_save", False)
+        self.chk_auto_index.setChecked(auto_index)
 
         # Load embedding provider settings
-        provider = settings.value("ai_embedding_provider", "sentence-transformers")
+        provider = read_str_setting(
+            settings, "ai_embedding_provider", "sentence-transformers"
+        )
         # Migrate old underscore variant saved by a previous dialog bug
         if provider == "sentence_transformers":
             provider = "sentence-transformers"
@@ -1477,20 +1484,20 @@ class AISettingsDialog(QDialog):
 
         # LM Studio connection settings. Endpoint-shaped legacy values are
         # normalized automatically to the new canonical base URL.
-        legacy_url = str(
-            settings.value(
-                "ai_lmstudio_base_url",
-                settings.value(
-                    "ai_gen_lmstudio_url",
-                    settings.value("ai_lmstudio_url", DEFAULT_LMSTUDIO_BASE_URL),
-                ),
-            )
+        legacy_url_fallback = read_str_setting(
+            settings, "ai_lmstudio_url", DEFAULT_LMSTUDIO_BASE_URL
+        )
+        generation_url_fallback = read_str_setting(
+            settings, "ai_gen_lmstudio_url", legacy_url_fallback
+        )
+        legacy_url = read_str_setting(
+            settings, "ai_lmstudio_base_url", generation_url_fallback
         )
         base_url = normalize_lmstudio_base_url(legacy_url)
         self.lm_url_input.setText(base_url)
         self.lm_gen_url_input.setText(base_url)
         self.lm_model_input.setCurrentText(
-            str(settings.value("ai_lmstudio_model", ""))
+            read_str_setting(settings, "ai_lmstudio_model", "")
         )
         from src.services.secret_store import migrate_qsettings_secret
 
@@ -1501,26 +1508,30 @@ class AISettingsDialog(QDialog):
                 "lmstudio",
             )
         )
-        self.lm_timeout_input.setValue(int(settings.value("ai_lmstudio_timeout", 30)))
+        self.lm_timeout_input.setValue(
+            read_int_setting(settings, "ai_lmstudio_timeout", 30)
+        )
 
         # Sentence Transformers settings
-        self.st_model_input.setText(settings.value("ai_st_model", "all-MiniLM-L6-v2"))
+        self.st_model_input.setText(
+            read_str_setting(settings, "ai_st_model", "all-MiniLM-L6-v2")
+        )
 
         # Load generation provider settings
         # LM Studio generation
         self.lm_gen_enabled.setChecked(
-            settings.value("ai_gen_lmstudio_enabled", True, type=bool)
+            read_bool_setting(settings, "ai_gen_lmstudio_enabled", True)
         )
         self.lm_gen_use_chat_api.setChecked(
-            settings.value("ai_gen_lmstudio_use_chat_api", True, type=bool)
+            read_bool_setting(settings, "ai_gen_lmstudio_use_chat_api", True)
         )
         self.lm_gen_model_input.setCurrentText(
-            str(settings.value("ai_gen_lmstudio_model", ""))
+            read_str_setting(settings, "ai_gen_lmstudio_model", "")
         )
 
         # OpenAI
         self.openai_gen_enabled.setChecked(
-            settings.value("ai_gen_openai_enabled", False, type=bool)
+            read_bool_setting(settings, "ai_gen_openai_enabled", False)
         )
         self.openai_api_key_input.setText(
             migrate_qsettings_secret(
@@ -1530,29 +1541,35 @@ class AISettingsDialog(QDialog):
             )
         )
         self.openai_model_input.setText(
-            settings.value("ai_gen_openai_model", "gpt-3.5-turbo")
+            read_str_setting(
+                settings, "ai_gen_openai_model", "gpt-3.5-turbo"
+            )
         )
 
         # Google Vertex AI
         self.google_gen_enabled.setChecked(
-            settings.value("ai_gen_google_enabled", False, type=bool)
+            read_bool_setting(settings, "ai_gen_google_enabled", False)
         )
         self.google_project_input.setText(
-            settings.value("ai_gen_google_project_id", "")
+            read_str_setting(settings, "ai_gen_google_project_id", "")
         )
         self.google_location_input.setText(
-            settings.value("ai_gen_google_location", "us-central1")
+            read_str_setting(
+                settings, "ai_gen_google_location", "us-central1"
+            )
         )
         self.google_model_input.setText(
-            settings.value("ai_gen_google_model", "text-bison@001")
+            read_str_setting(
+                settings, "ai_gen_google_model", "text-bison@001"
+            )
         )
         self.google_creds_input.setText(
-            settings.value("ai_gen_google_credentials_path", "")
+            read_str_setting(settings, "ai_gen_google_credentials_path", "")
         )
 
         # Anthropic
         self.anthropic_gen_enabled.setChecked(
-            settings.value("ai_gen_anthropic_enabled", False, type=bool)
+            read_bool_setting(settings, "ai_gen_anthropic_enabled", False)
         )
         self.anthropic_api_key_input.setText(
             migrate_qsettings_secret(
@@ -1562,17 +1579,25 @@ class AISettingsDialog(QDialog):
             )
         )
         self.anthropic_model_input.setText(
-            settings.value("ai_gen_anthropic_model", "claude-3-haiku-20240307")
+            read_str_setting(
+                settings,
+                "ai_gen_anthropic_model",
+                "claude-3-haiku-20240307",
+            )
         )
 
         # Generation options
         self.enable_audit_log.setChecked(
-            settings.value("ai_gen_audit_log", False, type=bool)
+            read_bool_setting(settings, "ai_gen_audit_log", False)
         )
-        self.max_tokens_input.setValue(int(settings.value("ai_gen_max_tokens", 512)))
-        self.temperature_input.setValue(int(settings.value("ai_gen_temperature", 70)))
+        self.max_tokens_input.setValue(
+            read_int_setting(settings, "ai_gen_max_tokens", 512)
+        )
+        self.temperature_input.setValue(
+            read_int_setting(settings, "ai_gen_temperature", 70)
+        )
         self.filter_reasoning_cb.setChecked(
-            settings.value("ai_gen_filter_reasoning", True, type=bool)
+            read_bool_setting(settings, "ai_gen_filter_reasoning", True)
         )
 
         # System prompt with default fallback
@@ -1586,21 +1611,21 @@ class AISettingsDialog(QDialog):
             "that event dates and durations use this numeric format."
         )
         self.system_prompt_edit.setPlainText(
-            settings.value("ai_gen_system_prompt", default_prompt)
+            read_str_setting(settings, "ai_gen_system_prompt", default_prompt)
         )
 
-        stored_summary_prompt = str(
-            settings.value("ai_gen_summary_prompt", DEFAULT_SUMMARY_PROMPT)
+        stored_summary_prompt = read_str_setting(
+            settings, "ai_gen_summary_prompt", DEFAULT_SUMMARY_PROMPT
         )
         summary_prompt = normalize_summary_prompt_template(stored_summary_prompt)
         if summary_prompt != stored_summary_prompt:
             settings.setValue("ai_gen_summary_prompt", summary_prompt)
         self.summary_prompt_edit.setPlainText(summary_prompt)
         self.summary_max_tokens_input.setValue(
-            int(settings.value("ai_gen_summary_max_tokens", 2048))
+            read_int_setting(settings, "ai_gen_summary_max_tokens", 2048)
         )
         self.summary_temperature_input.setValue(
-            int(settings.value("ai_gen_summary_temperature", 0))
+            read_int_setting(settings, "ai_gen_summary_temperature", 0)
         )
 
     def export_world_preferences(self) -> AIGenerationPreferences:
@@ -1614,10 +1639,10 @@ class AISettingsDialog(QDialog):
             persona=self.system_prompt_edit.toPlainText(),
             max_tokens=self.max_tokens_input.value(),
             temperature_percent=self.temperature_input.value(),
-            rag_enabled=settings.value("ai_gen_rag_enabled", True, type=bool),
-            rag_limit=int(settings.value("ai_gen_rag_limit", 3)),
-            spatial_enabled=settings.value(
-                "ai_gen_spatial_enabled", False, type=bool
+            rag_enabled=read_bool_setting(settings, "ai_gen_rag_enabled", True),
+            rag_limit=read_int_setting(settings, "ai_gen_rag_limit", 3),
+            spatial_enabled=read_bool_setting(
+                settings, "ai_gen_spatial_enabled", False
             ),
             filter_reasoning=self.filter_reasoning_cb.isChecked(),
             audit_enabled=self.enable_audit_log.isChecked(),

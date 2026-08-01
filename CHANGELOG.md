@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-01
-**Commit:** b89784d8
+**Commit:** b4774026
 ---
 
 # Changelog
@@ -31,6 +31,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-01)* **AI / Settings Stability**: Validated persisted AI and backup
+  settings plus generation prompts at their runtime boundaries, falling back
+  safely when stored values are malformed.
 - *(2026-08-01)* **Qt / Typing**: Corrected command-history, map-editing,
   sheet-builder, and wiki-editor contracts while preserving runtime behavior.
 - *(2026-08-01)* **Stability / Typing**: Typed persisted settings,

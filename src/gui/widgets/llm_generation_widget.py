@@ -8,10 +8,10 @@ import asyncio
 import hashlib
 import logging
 from dataclasses import replace
-from typing import Any, Dict, Optional, Protocol, runtime_checkable
+from typing import Any, Dict, Optional, Protocol, cast, runtime_checkable
 
-from PySide6.QtCore import QSettings, Qt, QThread, Signal, Slot
-from PySide6.QtGui import QCloseEvent, QIntValidator
+from PySide6.QtCore import QObject, QSettings, Qt, QThread, Signal, Slot
+from PySide6.QtGui import QCloseEvent, QIntValidator, QStandardItemModel
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -38,15 +38,49 @@ from src.core.ai_generation import (
     TaskIntent,
     TaskTemplate,
 )
+from src.gui.utils.settings_reader import (
+    read_bool_setting,
+    read_int_setting,
+    read_str_setting,
+)
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.prompt_editor import PromptEditorWidget
-from src.services.llm_provider import create_provider
+from src.services.llm_provider import Provider, create_provider
 from src.services.prompt_builder import DEFAULT_SYSTEM_PROMPT, PromptBuilder
 from src.services.rag_service import RAGService
 from src.services.reasoning_filter import filter_reasoning_tags
 from src.services.spatial_context_builder import lookup_spatial_context
 
 logger = logging.getLogger(__name__)
+
+GenerationPrompt = str | dict[str, str]
+
+
+def _normalize_generation_prompt(prompt: object) -> GenerationPrompt:
+    """Validate and copy a prompt crossing into the generation worker.
+
+    Args:
+        prompt: Legacy string prompt or structured prompt object.
+
+    Returns:
+        A string prompt or a detached ``system``/``user`` prompt dictionary.
+
+    Raises:
+        TypeError: If the prompt does not match the supported contract.
+
+    """
+    if isinstance(prompt, str):
+        return prompt
+    if not isinstance(prompt, dict):
+        raise TypeError("Generation prompt must be a string or dictionary")
+
+    system_prompt = prompt.get("system", "")
+    user_prompt = prompt.get("user")
+    if not isinstance(system_prompt, str) or not isinstance(user_prompt, str):
+        raise TypeError(
+            "Structured generation prompts require string 'system' and 'user' values"
+        )
+    return {"system": system_prompt, "user": user_prompt}
 
 
 @runtime_checkable
@@ -79,7 +113,7 @@ class GenerationWorker(QThread):
     def __init__(
         self,
         provider: Any,
-        prompt: Any,  # str or dict with system/user keys
+        prompt: GenerationPrompt,
         max_tokens: int,
         temperature: float,
         db_path: Optional[str] = None,
@@ -113,8 +147,9 @@ class GenerationWorker(QThread):
         """
         super().__init__()
         self.provider = provider
+        raw_prompt: object = request.prompt if request is not None else prompt
+        self.prompt = _normalize_generation_prompt(raw_prompt)
         if request is not None:
-            self.prompt = dict(request.prompt)
             self.max_tokens = request.max_tokens
             self.temperature = request.temperature
             self.db_path = request.db_path
@@ -125,7 +160,6 @@ class GenerationWorker(QThread):
             self.active_map_id = request.active_map_id
             self.spatial_enabled = request.spatial_enabled
         else:
-            self.prompt = prompt
             self.max_tokens = max_tokens
             self.temperature = temperature
             self.db_path = db_path
@@ -148,13 +182,13 @@ class GenerationWorker(QThread):
 
         rag_context = ""
         user_msg = ""
-        is_dict = isinstance(self.prompt, dict)
+        prompt = self.prompt
 
         # Extract user message for context key
-        if is_dict:
-            user_msg = self.prompt.get("user", "")
+        if isinstance(prompt, dict):
+            user_msg = prompt.get("user", "")
         else:
-            user_msg = str(self.prompt)
+            user_msg = prompt
 
         # Only perform RAG if placeholder exists OR forced
         # (though we usually rely on placeholder)
@@ -188,24 +222,26 @@ class GenerationWorker(QThread):
                 rag_context = ""
 
         # Inject logic
-        if is_dict:
-            if "{{RAG_CONTEXT}}" in self.prompt["user"]:
+        if isinstance(prompt, dict):
+            if "{{RAG_CONTEXT}}" in prompt["user"]:
                 replacement = f"[Context]\n{rag_context}" if rag_context else ""
-                self.prompt["user"] = self.prompt["user"].replace(
+                prompt["user"] = prompt["user"].replace(
                     "{{RAG_CONTEXT}}", replacement
                 )
             elif rag_context:
                 # Prepend if no placeholder but content found
-                self.prompt["user"] = (
-                    f"[Context]\n{rag_context}\n\n" + self.prompt["user"]
+                prompt["user"] = (
+                    f"[Context]\n{rag_context}\n\n" + prompt["user"]
                 )
         else:
             # String prompt
-            if "{{RAG_CONTEXT}}" in self.prompt:
+            if "{{RAG_CONTEXT}}" in prompt:
                 replacement = f"[Context]\n{rag_context}" if rag_context else ""
-                self.prompt = self.prompt.replace("{{RAG_CONTEXT}}", replacement)
+                prompt = prompt.replace("{{RAG_CONTEXT}}", replacement)
             elif rag_context:
-                self.prompt = f"[Context]\n{rag_context}\n\n" + self.prompt
+                prompt = f"[Context]\n{rag_context}\n\n" + prompt
+
+        self.prompt = prompt
 
         if rag_context:
             logger.debug(f"Applied RAG context: {len(rag_context)} chars")
@@ -220,8 +256,8 @@ class GenerationWorker(QThread):
         gate fails.
         """
         placeholder = "{{SPATIAL_CONTEXT}}"
-        is_dict = isinstance(self.prompt, dict)
-        user_msg = self.prompt.get("user", "") if is_dict else str(self.prompt)
+        prompt = self.prompt
+        user_msg = prompt.get("user", "") if isinstance(prompt, dict) else prompt
         if placeholder not in user_msg:
             return
 
@@ -242,10 +278,11 @@ class GenerationWorker(QThread):
 
         self.spatial_context_used = context_text
         replacement = context_text if context_text else ""
-        if is_dict:
-            self.prompt["user"] = self.prompt["user"].replace(placeholder, replacement)
+        if isinstance(prompt, dict):
+            prompt["user"] = prompt["user"].replace(placeholder, replacement)
         else:
-            self.prompt = self.prompt.replace(placeholder, replacement)
+            prompt = prompt.replace(placeholder, replacement)
+        self.prompt = prompt
 
         if context_text:
             logger.debug(
@@ -401,7 +438,7 @@ class LLMGenerationWidget(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         self._worker: Optional[GenerationWorker] = None
-        self._current_provider = None
+        self._current_provider: Provider | None = None
         self._context_provider = context_provider
         self._current_db_path: Optional[str] = None
         self._task_templates: tuple[TaskTemplate, ...] = ()
@@ -449,8 +486,9 @@ class LLMGenerationWidget(QWidget):
         self.provider_combo.addItems(
             ["LM Studio", "OpenAI", "Google Vertex AI", "Anthropic"]
         )
+        provider_model = cast(QStandardItemModel, self.provider_combo.model())
         for index in range(1, self.provider_combo.count()):
-            item = self.provider_combo.model().item(index)
+            item = provider_model.item(index)
             if item is not None:
                 item.setEnabled(False)
                 item.setToolTip("Cloud generation is not enabled in this release")
@@ -748,7 +786,9 @@ class LLMGenerationWidget(QWidget):
 
             # Load last used provider
             self.provider_combo.blockSignals(True)
-            provider = settings.value("ai_gen_last_provider", "LM Studio")
+            provider = read_str_setting(
+                settings, "ai_gen_last_provider", "LM Studio"
+            )
             if provider != "LM Studio":
                 provider = "LM Studio"
                 settings.setValue("ai_gen_last_provider", provider)
@@ -759,32 +799,34 @@ class LLMGenerationWidget(QWidget):
 
             # Load generation options
             self.max_tokens_spin.blockSignals(True)
-            self.max_tokens_spin.setValue(int(settings.value("ai_gen_max_tokens", 512)))
+            self.max_tokens_spin.setValue(
+                read_int_setting(settings, "ai_gen_max_tokens", 512)
+            )
             self.max_tokens_spin.blockSignals(False)
 
             self.temperature_spin.blockSignals(True)
             self.temperature_spin.setValue(
-                int(settings.value("ai_gen_temperature", 70))
+                read_int_setting(settings, "ai_gen_temperature", 70)
             )
             self.temperature_spin.blockSignals(False)
 
             # Load RAG settings
             self.rag_cb.blockSignals(True)
             self.rag_cb.setChecked(
-                settings.value("ai_gen_rag_enabled", True, type=bool)
+                read_bool_setting(settings, "ai_gen_rag_enabled", True)
             )
             self.rag_cb.blockSignals(False)
 
             # Load spatial-context setting (opt-in; defaults off)
             self.spatial_cb.blockSignals(True)
             self.spatial_cb.setChecked(
-                settings.value("ai_gen_spatial_enabled", False, type=bool)
+                read_bool_setting(settings, "ai_gen_spatial_enabled", False)
             )
             self.spatial_cb.blockSignals(False)
 
             # rag_limit_input only saves on editingFinished, but for consistency:
             self.rag_limit_input.blockSignals(True)
-            limit = str(settings.value("ai_gen_rag_limit", 3))
+            limit = str(read_int_setting(settings, "ai_gen_rag_limit", 3))
             self.rag_limit_input.setText(limit)
             self.rag_limit_input.setVisible(self.rag_cb.isChecked())
             self.rag_limit_input.blockSignals(False)
@@ -970,7 +1012,9 @@ class LLMGenerationWidget(QWidget):
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
             # Load from settings (was "Basic Assistant Prompt", now "Persona")
-            custom_prompt = settings.value("ai_gen_system_prompt", None)
+            custom_prompt = read_str_setting(
+                settings, "ai_gen_system_prompt", ""
+            )
 
             if custom_prompt:
                 logger.debug("Using configured Persona from QSettings")
@@ -1044,7 +1088,7 @@ class LLMGenerationWidget(QWidget):
         description = str(context.get("existing_description") or "")
         return hashlib.sha256(description.encode("utf-8")).hexdigest()
 
-    def _construct_prompt(self, context_str: str, user_prompt: str) -> Dict[str, Any]:
+    def _construct_prompt(self, context_str: str, user_prompt: str) -> Dict[str, str]:
         """Construct the final prompt with persona and delimited context.
 
         .. deprecated::
@@ -1056,7 +1100,7 @@ class LLMGenerationWidget(QWidget):
             user_prompt: User's custom prompt/task.
 
         Returns:
-            Dict[str, Any]: Structured prompt dictionary.
+            Dict[str, str]: Structured prompt dictionary.
 
         """
         builder = PromptBuilder(system_prompt=self._get_system_prompt())
@@ -1069,7 +1113,7 @@ class LLMGenerationWidget(QWidget):
 
     def _start_generation(
         self,
-        prompt: dict,
+        prompt: dict[str, str],
         temperature: float,
         db_path: Optional[str] = None,
         object_id: Optional[str] = None,
@@ -1455,7 +1499,7 @@ class LLMGenerationWidget(QWidget):
         db_path = None
         if self.rag_cb.isChecked():
             # Robust lookup: Traverse up to find db_path or gui_db_service
-            curr = self
+            curr: QObject | None = self
             while curr:
                 # Direct db_path attribute
                 if hasattr(curr, "db_path") and curr.db_path:
@@ -1485,10 +1529,11 @@ class LLMGenerationWidget(QWidget):
                     # as last resort? Or just rely on what we found.
                     # Try accessing .window() just in case we started mid-hierarchy
                     # and parent() traversal failure
-                    w = curr.window()
-                    if w and w != curr:
-                        curr = w
-                        continue
+                    if isinstance(curr, QWidget):
+                        window = curr.window()
+                        if window != curr:
+                            curr = window
+                            continue
                     break
                 curr = parent
 

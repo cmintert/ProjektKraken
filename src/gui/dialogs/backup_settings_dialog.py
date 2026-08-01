@@ -27,6 +27,11 @@ from PySide6.QtWidgets import (
 
 from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 from src.core.paths import get_backup_directory
+from src.gui.utils.settings_reader import (
+    read_bool_setting,
+    read_int_setting,
+    read_str_setting,
+)
 from src.gui.utils.style_helper import StyleHelper
 
 logger = logging.getLogger(__name__)
@@ -323,29 +328,35 @@ class BackupSettingsDialog(QDialog):
         """Load settings from QSettings."""
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
-        self.chk_enabled.setChecked(settings.value(BACKUP_ENABLED_KEY, True, type=bool))
+        self.chk_enabled.setChecked(
+            read_bool_setting(settings, BACKUP_ENABLED_KEY, True)
+        )
         self.spin_interval.setValue(
-            int(settings.value(BACKUP_AUTO_SAVE_INTERVAL_KEY, 5))
+            read_int_setting(settings, BACKUP_AUTO_SAVE_INTERVAL_KEY, 5)
         )
         self.spin_auto_retention.setValue(
-            int(settings.value(BACKUP_AUTO_SAVE_RETENTION_KEY, 12))
+            read_int_setting(settings, BACKUP_AUTO_SAVE_RETENTION_KEY, 12)
         )
         self.spin_daily_retention.setValue(
-            int(settings.value(BACKUP_DAILY_RETENTION_KEY, 7))
+            read_int_setting(settings, BACKUP_DAILY_RETENTION_KEY, 7)
         )
         self.spin_weekly_retention.setValue(
-            int(settings.value(BACKUP_WEEKLY_RETENTION_KEY, 4))
+            read_int_setting(settings, BACKUP_WEEKLY_RETENTION_KEY, 4)
         )
         self.spin_manual_retention.setValue(
-            int(settings.value(BACKUP_MANUAL_RETENTION_KEY, -1))
+            read_int_setting(settings, BACKUP_MANUAL_RETENTION_KEY, -1)
         )
         self.chk_verify.setChecked(
-            settings.value(BACKUP_VERIFY_AFTER_KEY, True, type=bool)
+            read_bool_setting(settings, BACKUP_VERIFY_AFTER_KEY, True)
         )
         self.chk_vacuum.setChecked(
-            settings.value(BACKUP_VACUUM_BEFORE_KEY, False, type=bool)
+            read_bool_setting(settings, BACKUP_VACUUM_BEFORE_KEY, False)
         )
-        self.edit_custom_dir.setText(settings.value(BACKUP_CUSTOM_DIR_KEY, ""))
-        self.edit_external_path.setText(settings.value(BACKUP_EXTERNAL_PATH_KEY, ""))
+        self.edit_custom_dir.setText(
+            read_str_setting(settings, BACKUP_CUSTOM_DIR_KEY, "")
+        )
+        self.edit_external_path.setText(
+            read_str_setting(settings, BACKUP_EXTERNAL_PATH_KEY, "")
+        )
 
         self._update_path_label()

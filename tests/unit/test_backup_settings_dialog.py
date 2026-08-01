@@ -14,7 +14,11 @@ from src.gui.dialogs.backup_settings_dialog import (
     BACKUP_CUSTOM_DIR_KEY,
     BACKUP_DAILY_RETENTION_KEY,
     BACKUP_ENABLED_KEY,
+    BACKUP_EXTERNAL_PATH_KEY,
+    BACKUP_MANUAL_RETENTION_KEY,
+    BACKUP_VACUUM_BEFORE_KEY,
     BACKUP_VERIFY_AFTER_KEY,
+    BACKUP_WEEKLY_RETENTION_KEY,
     BackupSettingsDialog,
 )
 
@@ -162,6 +166,39 @@ class TestBackupSettingsDialogSaveLoad:
             assert dlg.edit_custom_dir.text() == "/test/path"
 
             dlg.close()
+
+    def test_malformed_settings_fall_back_to_safe_defaults(self, qapp):
+        """Invalid persisted values must not prevent the dialog from opening."""
+        malformed_values = {
+            BACKUP_ENABLED_KEY: "sometimes",
+            BACKUP_AUTO_SAVE_INTERVAL_KEY: "not-a-number",
+            BACKUP_AUTO_SAVE_RETENTION_KEY: None,
+            BACKUP_DAILY_RETENTION_KEY: [],
+            BACKUP_WEEKLY_RETENTION_KEY: True,
+            BACKUP_MANUAL_RETENTION_KEY: object(),
+            BACKUP_VERIFY_AFTER_KEY: "unknown",
+            BACKUP_VACUUM_BEFORE_KEY: 7,
+            BACKUP_CUSTOM_DIR_KEY: 42,
+            BACKUP_EXTERNAL_PATH_KEY: None,
+        }
+
+        def mock_value(key, default=None, type=None):
+            return malformed_values.get(key, default)
+
+        with patch.object(QSettings, "value", side_effect=mock_value):
+            dlg = BackupSettingsDialog()
+
+        assert dlg.chk_enabled.isChecked() is True
+        assert dlg.spin_interval.value() == 5
+        assert dlg.spin_auto_retention.value() == 12
+        assert dlg.spin_daily_retention.value() == 7
+        assert dlg.spin_weekly_retention.value() == 4
+        assert dlg.spin_manual_retention.value() == -1
+        assert dlg.chk_verify.isChecked() is True
+        assert dlg.chk_vacuum.isChecked() is False
+        assert dlg.edit_custom_dir.text() == ""
+        assert dlg.edit_external_path.text() == ""
+        dlg.close()
 
 
 @pytest.mark.unit

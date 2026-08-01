@@ -21,7 +21,7 @@ if "src.gui.widgets.llm_generation_widget" in sys.modules:
 
     importlib.reload(src.gui.widgets.llm_generation_widget)
 
-from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
+from src.gui.widgets.llm_generation_widget import GenerationWorker, LLMGenerationWidget
 
 
 @pytest.fixture
@@ -54,6 +54,32 @@ def test_initial_state(widget):
     assert not widget.cancel_btn.isEnabled()
     assert not widget.custom_prompt_edit.isHidden()
     assert widget.rag_cb.isChecked() is True  # RAG defaults to True
+
+
+def test_malformed_generation_settings_fall_back(qtbot, clean_settings):
+    """Malformed generation settings must not prevent widget construction."""
+    malformed_values = {
+        "ai_gen_last_provider": [],
+        "ai_gen_max_tokens": "many",
+        "ai_gen_temperature": False,
+        "ai_gen_rag_enabled": "unknown",
+        "ai_gen_spatial_enabled": 7,
+        "ai_gen_rag_limit": None,
+    }
+
+    def mock_value(key, default=None, type=None):
+        return malformed_values.get(key, default)
+
+    with patch.object(QSettings, "value", side_effect=mock_value):
+        generation_widget = LLMGenerationWidget()
+        qtbot.addWidget(generation_widget)
+
+    assert generation_widget.provider_combo.currentText() == "LM Studio"
+    assert generation_widget.max_tokens_spin.value() == 512
+    assert generation_widget.temperature_spin.value() == 70
+    assert generation_widget.rag_cb.isChecked() is True
+    assert generation_widget.spatial_cb.isChecked() is False
+    assert generation_widget.rag_limit_input.text() == "3"
 
 
 @patch("src.gui.widgets.llm_generation_widget.GenerationWorker")
@@ -166,6 +192,35 @@ def test_rag_service_called(mock_rag_cls, widget, qtbot):
     # Verify prompt modification
     assert "[Context]" in worker.prompt
     assert "Retrieved Context" in worker.prompt
+
+
+def test_generation_worker_rejects_malformed_structured_prompt():
+    """Malformed structured prompts fail at the worker boundary."""
+    with pytest.raises(TypeError, match="string 'system' and 'user' values"):
+        GenerationWorker(
+            provider=MagicMock(),
+            prompt={"system": "Valid", "user": {"invalid": "value"}},  # type: ignore[dict-item]
+            max_tokens=100,
+            temperature=0.7,
+        )
+
+
+def test_generation_worker_copies_structured_prompt():
+    """Worker prompt mutation must not alter the caller's request object."""
+    prompt = {"system": "System", "user": "User {{RAG_CONTEXT}}"}
+    worker = GenerationWorker(
+        provider=MagicMock(),
+        prompt=prompt,
+        max_tokens=100,
+        temperature=0.7,
+    )
+
+    prompt["user"] = "Changed"
+
+    assert worker.prompt == {
+        "system": "System",
+        "user": "User {{RAG_CONTEXT}}",
+    }
 
 
 def test_empty_custom_prompt_error(widget):
