@@ -9,6 +9,8 @@ from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QImage, QKeyEvent, QPixmap
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsPixmapItem
 
+from src.core.theme_manager import ThemeManager
+from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.map.marker_item import MarkerItem
 from src.gui.widgets.map_widget import (
     MapGraphicsView,
@@ -55,6 +57,44 @@ def test_map_widget_initialization(map_widget):
     assert map_widget.view is not None
     assert isinstance(map_widget.view, MapGraphicsView)
     assert map_widget.btn_add_marker.text() == "Add Marker"
+
+
+def test_map_widget_refreshes_local_styles_after_theme_change(
+    map_widget, monkeypatch
+):
+    """Theme changes refresh every locally styled map-button group."""
+    monkeypatch.setattr(
+        StyleHelper,
+        "get_tool_button_style",
+        staticmethod(lambda: "QPushButton { color: #111111; }"),
+    )
+    monkeypatch.setattr(
+        StyleHelper,
+        "get_raster_tool_button_style",
+        staticmethod(lambda: "QPushButton { color: #222222; }"),
+    )
+    monkeypatch.setattr(
+        StyleHelper,
+        "get_toggle_button_style",
+        staticmethod(lambda: "QPushButton { color: #333333; }"),
+    )
+    monkeypatch.setattr(
+        StyleHelper,
+        "get_primary_button_style",
+        staticmethod(lambda: "QPushButton { color: #444444; }"),
+    )
+
+    theme_manager = ThemeManager()
+    theme_manager.theme_changed.emit(theme_manager.get_theme())
+
+    assert "#111111" in map_widget.btn_new_map.styleSheet()
+    assert "#111111" in map_widget.btn_fit_view.styleSheet()
+    assert "#111111" in map_widget.btn_add_keyframe.styleSheet()
+    assert "#222222" in map_widget.btn_add_marker.styleSheet()
+    assert "#222222" in map_widget.btn_draw_region.styleSheet()
+    assert "#333333" in map_widget.btn_snap.styleSheet()
+    assert "#333333" in map_widget.btn_legend_toggle.styleSheet()
+    assert "#444444" in map_widget.btn_finish_sketch.styleSheet()
 
 
 def test_add_marker_button_toggles_placement_mode(map_widget, qtbot):

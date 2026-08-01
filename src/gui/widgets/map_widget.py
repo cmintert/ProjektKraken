@@ -267,22 +267,15 @@ class MapWidget(
         self.map_selector.currentIndexChanged.connect(self._on_map_selected)
         self.toolbar.addWidget(self.map_selector)
 
-        # Buttons (themed via StyleHelper)
-        tool_style = StyleHelper.get_tool_button_style()
-        drawing_style = StyleHelper.get_raster_tool_button_style()
-        toggle_style = StyleHelper.get_toggle_button_style()
-
         # Group 1: Map management
         self.btn_new_map = QPushButton("New Map")
         self.btn_new_map.setToolTip("Create a new map in this world")
-        self.btn_new_map.setStyleSheet(tool_style)
         self.btn_new_map.clicked.connect(self._on_create_map_clicked)
         self.toolbar.addWidget(self.btn_new_map)
 
         self.btn_map_overflow = QPushButton("⋯")
         self.btn_map_overflow.setFixedWidth(28)
         self.btn_map_overflow.setToolTip("Map options (delete, etc.)")
-        self.btn_map_overflow.setStyleSheet(tool_style)
         self.btn_map_overflow.clicked.connect(self._show_map_overflow_menu)
         self.toolbar.addWidget(self.btn_map_overflow)
 
@@ -291,13 +284,11 @@ class MapWidget(
         # Group 2: Viewport
         self.btn_fit_view = QPushButton("Fit to View")
         self.btn_fit_view.setToolTip("Zoom and pan to fit all content in view")
-        self.btn_fit_view.setStyleSheet(tool_style)
         self.btn_fit_view.clicked.connect(self.view.fit_to_view)
         self.toolbar.addWidget(self.btn_fit_view)
 
         self.btn_settings = QPushButton("Settings")
         self.btn_settings.setToolTip("Configure Map Properties (Scale)")
-        self.btn_settings.setStyleSheet(tool_style)
         self.btn_settings.clicked.connect(self._configure_map_width)
         self.toolbar.addWidget(self.btn_settings)
 
@@ -309,7 +300,6 @@ class MapWidget(
             "Add a marker to the map (click the map to choose its position)"
         )
         self.btn_add_marker.setCheckable(True)
-        self.btn_add_marker.setStyleSheet(drawing_style)
         self.btn_add_marker.clicked.connect(self._on_add_marker_clicked)
         self.toolbar.addWidget(self.btn_add_marker)
 
@@ -318,7 +308,6 @@ class MapWidget(
             "Draw a polyline path on the map (click vertices, double-click to finish)"
         )
         self.btn_draw_path.setCheckable(True)
-        self.btn_draw_path.setStyleSheet(drawing_style)
         self.btn_draw_path.clicked.connect(self._on_draw_path_clicked)
         self.toolbar.addWidget(self.btn_draw_path)
 
@@ -327,7 +316,6 @@ class MapWidget(
             "Draw a polygon region on the map (click vertices, double-click to finish)"
         )
         self.btn_draw_region.setCheckable(True)
-        self.btn_draw_region.setStyleSheet(drawing_style)
         self.btn_draw_region.clicked.connect(self._on_draw_region_clicked)
         self.toolbar.addWidget(self.btn_draw_region)
 
@@ -338,7 +326,6 @@ class MapWidget(
         self.btn_snap.setToolTip("Toggle snapping to nearby feature vertices and edges")
         self.btn_snap.setCheckable(True)
         self.btn_snap.setChecked(True)  # enabled by default
-        self.btn_snap.setStyleSheet(toggle_style)
         self.btn_snap.clicked.connect(self._on_snap_toggled)
         self.toolbar.addWidget(self.btn_snap)
 
@@ -346,7 +333,6 @@ class MapWidget(
         self.btn_legend_toggle.setToolTip("Show / hide the raster layer legend overlay")
         self.btn_legend_toggle.setCheckable(True)
         self.btn_legend_toggle.setChecked(False)
-        self.btn_legend_toggle.setStyleSheet(toggle_style)
         self.btn_legend_toggle.toggled.connect(self._on_legend_toggle)
         self.toolbar.addWidget(self.btn_legend_toggle)
 
@@ -355,7 +341,6 @@ class MapWidget(
         # Add Keyframe — hidden by default; shown only in draft mode
         self.btn_add_keyframe = QPushButton("Add Keyframe")
         self.btn_add_keyframe.setToolTip("Save current marker position at current time")
-        self.btn_add_keyframe.setStyleSheet(tool_style)
         self.btn_add_keyframe.setVisible(False)
         self.btn_add_keyframe.clicked.connect(self._on_add_keyframe)
         self.toolbar.addWidget(self.btn_add_keyframe)
@@ -370,6 +355,7 @@ class MapWidget(
         self.mode_indicator = QPushButton("● Normal")
         self.mode_indicator.setToolTip("Current editing mode — click to exit")
         self.mode_indicator.clicked.connect(self._on_mode_indicator_clicked)
+        self._mode_indicator_mode = "normal"
         self._apply_mode_indicator_style("normal")
         self.toolbar.addWidget(self.mode_indicator)
 
@@ -385,7 +371,6 @@ class MapWidget(
         self.btn_parent = QPushButton("↑")
         self.btn_parent.setFixedWidth(24)
         self.btn_parent.setToolTip("Navigate to parent map")
-        self.btn_parent.setStyleSheet(StyleHelper.get_tool_button_style())
         self.btn_parent.clicked.connect(self._on_navigate_to_parent)
         self.btn_parent.hide()
         breadcrumb_layout.addWidget(self.btn_parent)
@@ -464,6 +449,9 @@ class MapWidget(
             QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed
         )
         layout.addWidget(self.coord_label)
+
+        self._apply_theme_styles()
+        ThemeManager().theme_changed.connect(self._on_theme_changed)
 
         # Connect signals
         self.view.marker_moved.connect(self._on_marker_moved)
@@ -1168,6 +1156,43 @@ class MapWidget(
 
     # -- Keyframe / clock-mode methods provided by MapTrajectoryMixin --
 
+    def _apply_theme_styles(self) -> None:
+        """Apply current theme styles to map controls with local QSS."""
+        tool_style = StyleHelper.get_tool_button_style()
+        for button in (
+            self.btn_new_map,
+            self.btn_map_overflow,
+            self.btn_fit_view,
+            self.btn_settings,
+            self.btn_add_keyframe,
+            self.btn_parent,
+        ):
+            button.setStyleSheet(tool_style)
+
+        drawing_style = StyleHelper.get_raster_tool_button_style()
+        for button in (
+            self.btn_add_marker,
+            self.btn_draw_path,
+            self.btn_draw_region,
+        ):
+            button.setStyleSheet(drawing_style)
+
+        toggle_style = StyleHelper.get_toggle_button_style()
+        for button in (self.btn_snap, self.btn_legend_toggle):
+            button.setStyleSheet(toggle_style)
+
+        self.btn_finish_sketch.setStyleSheet(
+            StyleHelper.get_primary_button_style()
+        )
+        self.overlay_banner.setStyleSheet(StyleHelper.get_overlay_banner_style())
+        self.legend_overlay.setStyleSheet(StyleHelper.get_legend_overlay_style())
+        self._apply_mode_indicator_style(self._mode_indicator_mode)
+
+    @Slot(dict)
+    def _on_theme_changed(self, _theme: dict) -> None:
+        """Refresh locally styled map controls after a theme change."""
+        self._apply_theme_styles()
+
     def _apply_mode_indicator_style(self, mode: str) -> None:
         """Applies themed style to the mode indicator label.
 
@@ -1175,6 +1200,7 @@ class MapWidget(
             mode: One of 'normal', 'clock', 'draft', 'drawing', 'vertex'.
 
         """
+        self._mode_indicator_mode = mode
         theme = ThemeManager().get_theme()
         color_map = {
             "clock": theme.get("error", "#e74c3c"),

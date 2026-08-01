@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-01
-**Commit:** 77b47595
+**Commit:** e4d8b7f9
 ---
 
 # Changelog
@@ -31,6 +31,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-01)* **Map / Theme**: Refreshed locally styled map controls and
+  overlays when the active theme changes, with regression coverage.
 - *(2026-08-01)* **GUI / Typing**: Corrected dialog, widget, model, graph,
   longform, map, raster, and Qt utility contracts without changing valid UI
   behavior.
