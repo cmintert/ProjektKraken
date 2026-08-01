@@ -21,7 +21,7 @@ def map_view(qtbot):
     img = QImage(1000, 1000, QImage.Format.Format_RGB32)
     img.fill(Qt.GlobalColor.white)
     view.pixmap_item = QGraphicsPixmapItem(QPixmap.fromImage(img))
-    view.scene.addItem(view.pixmap_item)
+    view.graphics_scene.addItem(view.pixmap_item)
     view.coord_system.set_scene_rect(QRectF(0, 0, 1000, 1000))
 
     # We need a mock calendar converter or TrajectoryRenderer won't make labels!

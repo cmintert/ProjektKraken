@@ -6,9 +6,9 @@ events and entities.
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, cast
 
-from PySide6.QtCore import QPoint, QSize, Qt, QThreadPool, Slot
+from PySide6.QtCore import Q_ARG, QObject, QPoint, QSize, Qt, QThreadPool, Slot
 from PySide6.QtGui import QDragEnterEvent, QDropEvent, QIcon
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.app.constants import IMAGE_FILE_FILTER
+from src.app.qt_invocation import invoke_queued
 from src.commands.image_commands import (
     AddImagesCommand,
     RemoveImageCommand,
@@ -173,12 +174,9 @@ class GalleryWidget(QWidget):
         # or expose a slot on main_window that calls worker.
         # But connecting signal directly is easier but we are in UI thread,
         # invoking slot on worker (in bg thread) is safe via queues.
-        from PySide6.QtCore import Q_ARG, QMetaObject
-
-        QMetaObject.invokeMethod(
-            self.main_window.worker,
+        invoke_queued(
+            cast(QObject, getattr(self.main_window, "worker")),
             "load_attachments",
-            Qt.ConnectionType.QueuedConnection,
             Q_ARG(str, self.owner_type),
             Q_ARG(str, self.owner_id),
         )

@@ -363,7 +363,7 @@ class TestSnapIndicator:
         pm.fill(Qt.GlobalColor.blue)
         view.pixmap_item = QGraphicsPixmapItem(pm)
         view.pixmap_item.setZValue(0)
-        view.scene.addItem(view.pixmap_item)
+        view.graphics_scene.addItem(view.pixmap_item)
         view.coord_system.set_scene_rect(view.pixmap_item.boundingRect())
         qtbot.addWidget(view)
         return view

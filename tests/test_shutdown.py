@@ -88,7 +88,7 @@ def test_mainwindow_close_calls_worker_cleanup_logic(qapp):
         patch("src.app.worker_manager.DatabaseWorker"),
         patch("src.app.worker_manager.QThread"),
         patch("src.app.main_window.QTimer"),
-        patch("src.app.main_window.QMetaObject.invokeMethod") as mock_invoke,
+        patch("src.app.main_window.invoke_method") as mock_invoke,
         patch("src.app.main_window.QSettings") as MockSettings,
     ):
         # Configure QSettings mock to return None to avoid restoreGeometry TypeError

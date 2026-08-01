@@ -8,7 +8,9 @@ and accesses individual coordinators through it.
 import logging
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QMetaObject, QObject, Qt
+from PySide6.QtCore import QObject
+
+from src.app.qt_invocation import invoke_queued
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
@@ -73,10 +75,9 @@ class AppCoordinator(QObject):
         calling this method to receive the
         :class:`~src.core.analysis.WorldValidationReport`.
         """
-        QMetaObject.invokeMethod(
+        invoke_queued(
             self.main_window.worker,
             "validate_world",
-            Qt.ConnectionType.QueuedConnection,
         )
 
     def analyze_temporal(self) -> None:
@@ -87,10 +88,9 @@ class AppCoordinator(QObject):
         calling this method to receive the
         :class:`~src.core.analysis.TemporalAnalysisReport`.
         """
-        QMetaObject.invokeMethod(
+        invoke_queued(
             self.main_window.worker,
             "analyze_temporal",
-            Qt.ConnectionType.QueuedConnection,
         )
 
     def run_intelligence_analysis(self, analysis_type: str = "all") -> None:

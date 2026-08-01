@@ -166,11 +166,15 @@ def db_service():
 
 
 @pytest.fixture(autouse=True)
-def mock_invoke_method():
+def mock_invoke_method(request):
     """
     Mocks QMetaObject.invokeMethod to prevent TypeErrors when called with
     MagicMocks and to allow verifying thread-safe calls.
     """
+    if request.node.get_closest_marker("real_qt_invoke") is not None:
+        yield None
+        return
+
     import sys
     from unittest.mock import patch
 
@@ -179,10 +183,7 @@ def mock_invoke_method():
         return
 
     try:
-        with (
-            patch("PySide6.QtCore.QMetaObject.invokeMethod") as mock,
-            patch("src.app.main_window.QMetaObject.invokeMethod"),
-        ):
+        with patch("PySide6.QtCore.QMetaObject.invokeMethod") as mock:
             yield mock
     except (ImportError, AttributeError):
         yield None

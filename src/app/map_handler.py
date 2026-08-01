@@ -13,14 +13,12 @@ import uuid
 from collections import OrderedDict
 from io import BytesIO
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Set
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Set, cast
 
 import numpy as np
 from PySide6.QtCore import (
     Q_ARG,
-    QMetaObject,
     QObject,
-    Qt,
     QThreadPool,
     QTimer,
     Signal,
@@ -33,6 +31,7 @@ from src.app.constants import (
     MAP_ROLE_MASTER,
     TEMPORAL_SNAPSHOT_CACHE_MAX,
 )
+from src.app.qt_invocation import invoke_queued
 from src.commands.layer_commands import UpdateLayerTreeCommand
 from src.commands.map_commands import (
     CreateMapCommand,
@@ -55,6 +54,7 @@ from src.services.map_nesting_service import MapNestingService, NestingValidatio
 from src.services.repositories.map_repository import MapRepository
 
 if TYPE_CHECKING:
+    from src.gui.widgets.map.map_graphics_view import MapGraphicsView
     from src.gui.widgets.map_widget import MapWidget
 
 logger = get_logger(__name__)
@@ -95,7 +95,7 @@ class MapHandler(QObject):
     def __init__(
         self,
         map_widget: "MapWidget",
-        worker: object,
+        worker: QObject,
         db_path_accessor: Callable[[], str],
         navigation_set_selection: Callable[[str, str], None],
     ) -> None:
@@ -172,9 +172,7 @@ class MapHandler(QObject):
 
     def load_maps(self) -> None:
         """Requests loading of all maps from the worker thread."""
-        QMetaObject.invokeMethod(
-            self._worker, "load_maps", Qt.ConnectionType.QueuedConnection
-        )
+        invoke_queued(self._worker, "load_maps")
 
     @Slot(str)
     def on_map_selected(self, map_id: str) -> None:
@@ -215,18 +213,16 @@ class MapHandler(QObject):
                 self._map_widget.view.clear_map_scale()
 
             # Request markers
-            QMetaObject.invokeMethod(
+            invoke_queued(
                 self._worker,
                 "load_markers",
-                Qt.ConnectionType.QueuedConnection,
                 Q_ARG(str, map_id),
             )
 
             # Request trajectories
-            QMetaObject.invokeMethod(
+            invoke_queued(
                 self._worker,
                 "load_trajectories",
-                Qt.ConnectionType.QueuedConnection,
                 Q_ARG(str, map_id),
             )
 
@@ -245,10 +241,9 @@ class MapHandler(QObject):
 
         """
         logger.info(f"Reloading markers for map: {map_id}")
-        QMetaObject.invokeMethod(
+        invoke_queued(
             self._worker,
             "load_markers",
-            Qt.ConnectionType.QueuedConnection,
             Q_ARG(str, map_id),
         )
 
@@ -721,7 +716,7 @@ class MapHandler(QObject):
 
         # Preserve selection state across clear-and-rebuild
         selected_marker_id: str | None = None
-        selected_items = view.scene.selectedItems()
+        selected_items = view.graphics_scene.selectedItems()
         if selected_items:
             from src.gui.widgets.map.marker_item import MarkerItem
 
@@ -762,7 +757,7 @@ class MapHandler(QObject):
         self._loaded_markers_map_id = map_id
         self._loaded_marker_data = {m["object_id"]: m for m in processed_markers}
 
-    def _add_single_marker(self, view: object, marker_data: dict) -> None:
+    def _add_single_marker(self, view: "MapGraphicsView", marker_data: dict) -> None:
         """Add one marker and update bookkeeping."""
         self._map_widget.add_marker(
             marker_id=marker_data["object_id"],
@@ -1185,7 +1180,7 @@ class MapHandler(QObject):
         # Always clear old raster items first to avoid stale duplicates on reload
         old_count = len(view._raster_items)
         for old_item in list(view._raster_items.values()):
-            view.scene.removeItem(old_item)
+            view.graphics_scene.removeItem(old_item)
         view._raster_items.clear()
         if old_count:
             logger.debug(
@@ -1266,7 +1261,7 @@ class MapHandler(QObject):
             if not hasattr(view, "_raster_items"):
                 view._raster_items = {}
             view._raster_items[node_id] = item
-            view.scene.addItem(item)
+            view.graphics_scene.addItem(item)
 
             # Record base file as the currently displayed snapshot
             self._current_snapshot_by_node[node_id] = abs_path
@@ -1420,8 +1415,18 @@ class MapHandler(QObject):
                     region=region,
                     shape=tuple(int(value) for value in payload["shape"]),
                     dtype=str(payload["dtype"]),
-                    before_data=bytes(payload["before_bytes"]),
-                    after_data=bytes(payload["after_bytes"]),
+                    before_data=bytes(
+                        cast(
+                            "bytes | bytearray | memoryview | tuple[int, ...]",
+                            payload["before_bytes"],
+                        )
+                    ),
+                    after_data=bytes(
+                        cast(
+                            "bytes | bytearray | memoryview | tuple[int, ...]",
+                            payload["after_bytes"],
+                        )
+                    ),
                 )
             )
         patches = raster_patches
@@ -1998,7 +2003,7 @@ class MapHandler(QObject):
         )
         if rgba_value is None and not isinstance(value, int):
             return
-        raw_value = 0 if rgba_value is not None else int(value)
+        raw_value = 0 if rgba_value is not None else int(cast(int, value))
         if rgba_value is not None and len(rgba_value) == 4:
             self._map_widget.layer_panel.set_raster_paint_color(rgba_value)
 
@@ -2243,7 +2248,7 @@ class MapHandler(QObject):
                 # Ensure composition modes work correctly (OpenGL ignores them).
                 view.ensure_software_rendering()
             item.set_blend_mode(new_mode)
-            view.scene.update()
+            view.graphics_scene.update()
 
         map_id = self._find_map_id_for_node(node_id)
         if map_id:

@@ -426,7 +426,7 @@ def _make_map_widget(qtbot):
     pixmap = QPixmap.fromImage(test_image)
 
     widget.view.pixmap_item = QGraphicsPixmapItem(pixmap)
-    widget.view.scene.addItem(widget.view.pixmap_item)
+    widget.view.graphics_scene.addItem(widget.view.pixmap_item)
     widget.view.coord_system.set_scene_rect(QRectF(0, 0, 100, 100))
 
     return widget

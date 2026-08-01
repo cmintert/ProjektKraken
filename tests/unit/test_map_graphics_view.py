@@ -35,7 +35,7 @@ def _setup_view_with_pixmap(qtbot, width: int = 100, height: int = 100):
 
     # Add pixmap to scene
     view.pixmap_item = QGraphicsPixmapItem(pixmap)
-    view.scene.addItem(view.pixmap_item)
+    view.graphics_scene.addItem(view.pixmap_item)
 
     # Update coordinate system with map bounds
     view.coord_system.set_scene_rect(QRectF(0, 0, width, height))

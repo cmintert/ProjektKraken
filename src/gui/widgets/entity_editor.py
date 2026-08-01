@@ -1408,7 +1408,10 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         return QSize(400, 600)  # Ideal size for editing
 
     def display_temporal_state(
-        self, entity_id: str, attributes: dict, playhead_time: float = None
+        self,
+        entity_id: str,
+        attributes: dict,
+        playhead_time: float | None = None,
     ) -> None:
         """Displays the resolved temporal state for the current entity. Sets the editor
         to read-only mode.

@@ -655,8 +655,8 @@ class MapGraphicsView(QGraphicsView):
                 "OpenGL disabled via KRAKEN_NO_OPENGL. Using software rendering."
             )
 
-        self.scene = QGraphicsScene(self)
-        self.setScene(self.scene)
+        self._graphics_scene = QGraphicsScene(self)
+        self.setScene(self._graphics_scene)
 
         # View settings
         self.setRenderHint(QPainter.Antialiasing)
@@ -704,7 +704,7 @@ class MapGraphicsView(QGraphicsView):
         self._current_time: float = 0.0
 
         # -- Sub-components --
-        self._snapping_manager = SnappingManager(self.scene)
+        self._snapping_manager = SnappingManager(self.graphics_scene)
         self._snap_indicator: Optional[QGraphicsEllipseItem] = None
 
         self._drawing_tool = DrawingTool(self, self._snapping_manager)
@@ -760,6 +760,11 @@ class MapGraphicsView(QGraphicsView):
     # ------------------------------------------------------------------
     # Backward-compatible property aliases for sub-component state
     # ------------------------------------------------------------------
+
+    @property
+    def graphics_scene(self) -> QGraphicsScene:
+        """Return the scene without shadowing ``QGraphicsView.scene``."""
+        return self._graphics_scene
 
     @property
     def markers(self) -> Dict[str, MarkerItem]:
@@ -982,12 +987,12 @@ class MapGraphicsView(QGraphicsView):
         self._query_overlay_item = QGraphicsPixmapItem(pm)
         self._query_overlay_item.setPos(scene_rect.topLeft())
         self._query_overlay_item.setZValue(MAP_LAYER_Z_RASTER + 1)
-        self.scene.addItem(self._query_overlay_item)
+        self.graphics_scene.addItem(self._query_overlay_item)
 
     def clear_query_overlay(self) -> None:
         """Remove the spatial query overlay from the scene."""
         if self._query_overlay_item is not None:
-            self.scene.removeItem(self._query_overlay_item)
+            self.graphics_scene.removeItem(self._query_overlay_item)
             self._query_overlay_item = None
 
     # ------------------------------------------------------------------
@@ -1004,7 +1009,7 @@ class MapGraphicsView(QGraphicsView):
 
     def _update_theme(self, theme: dict) -> None:
         """Updates the scene background."""
-        self.scene.setBackgroundBrush(QBrush(QColor(theme["app_bg"])))
+        self.graphics_scene.setBackgroundBrush(QBrush(QColor(theme["app_bg"])))
 
         # Scale Bar
         self.scale_bar_painter = ScaleBarPainter()
@@ -1043,17 +1048,17 @@ class MapGraphicsView(QGraphicsView):
                 return False
 
             if self.pixmap_item:
-                self.scene.removeItem(self.pixmap_item)
+                self.graphics_scene.removeItem(self.pixmap_item)
 
             self.pixmap_item = QGraphicsPixmapItem(pixmap)
             self.pixmap_item.setZValue(LAYER_MAP_BG)
-            self.scene.addItem(self.pixmap_item)
+            self.graphics_scene.addItem(self.pixmap_item)
 
             self.coord_system.set_scene_rect(self.pixmap_item.boundingRect())
 
             self.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
             self._fit_zoom_level = max(self.transform().m11(), 1e-9)
-            self.scene.setSceneRect(self.pixmap_item.boundingRect())
+            self.graphics_scene.setSceneRect(self.pixmap_item.boundingRect())
 
             self.current_image_path = image_path
 
@@ -1498,12 +1503,12 @@ class MapGraphicsView(QGraphicsView):
         )
         self._snap_indicator.setZValue(LAYER_UI_OVERLAY + 2)
         self._snap_indicator.setPos(pos)
-        self.scene.addItem(self._snap_indicator)
+        self.graphics_scene.addItem(self._snap_indicator)
 
     def _hide_snap_indicator(self) -> None:
         """Removes the snap indicator from the scene."""
         if self._snap_indicator is not None:
-            self.scene.removeItem(self._snap_indicator)
+            self.graphics_scene.removeItem(self._snap_indicator)
             self._snap_indicator = None
 
     # ------------------------------------------------------------------
@@ -1678,7 +1683,7 @@ class MapGraphicsView(QGraphicsView):
             item.registration_changed.connect(self._on_footprint_registration_changed)
             item.setVisible(self._footprints_visible)
             item.setEnabled(self._footprints_visible)
-            self.scene.addItem(item)
+            self.graphics_scene.addItem(item)
             self._footprint_items[data["id"]] = item
 
         self._layout_footprint_labels()
@@ -1686,7 +1691,7 @@ class MapGraphicsView(QGraphicsView):
     def clear_footprints(self) -> None:
         """Remove all footprint overlay items from the scene."""
         for item in list(self._footprint_items.values()):
-            self.scene.removeItem(item)
+            self.graphics_scene.removeItem(item)
         self._footprint_items.clear()
         self._editing_footprint_id = None
 
@@ -2164,8 +2169,8 @@ class MapGraphicsView(QGraphicsView):
             return True
         if self._vertex_editor.handle_key_escape():
             return True
-        if self.scene.selectedItems():
-            self.scene.clearSelection()
+        if self.graphics_scene.selectedItems():
+            self.graphics_scene.clearSelection()
             event.accept()
             return True
         return False

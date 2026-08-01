@@ -27,7 +27,7 @@ def setup_map_with_pixmap(map_view, width=100, height=100):
     """Helper to set up a map view with a test pixmap."""
     pixmap = create_test_pixmap(width, height)
     map_view.pixmap_item = QGraphicsPixmapItem(pixmap)
-    map_view.scene.addItem(map_view.pixmap_item)
+    map_view.graphics_scene.addItem(map_view.pixmap_item)
     # Ensure coordinate system knows about the map bounds
     map_view.coord_system.set_scene_rect(map_view.pixmap_item.boundingRect())
     return map_view
@@ -103,7 +103,8 @@ def test_marker_placement_click_emits_normalized_position(map_view, qtbot):
 def test_map_view_initialization(map_view):
     """Test that MapGraphicsView initializes correctly."""
     assert map_view is not None
-    assert map_view.scene is not None
+    assert map_view.graphics_scene is not None
+    assert map_view.scene() is map_view.graphics_scene
     assert map_view.pixmap_item is None
     assert len(map_view.markers) == 0
 
@@ -506,7 +507,7 @@ def test_esc_in_view_without_clock_mode_clears_selection(map_widget, qtbot):
     map_widget.view.add_marker("m1", "entity", "Test", 0.5, 0.5)
     marker = map_widget.view.markers["m1"]
     marker.setSelected(True)
-    assert len(map_widget.view.scene.selectedItems()) > 0
+    assert len(map_widget.view.graphics_scene.selectedItems()) > 0
 
     # Simulate ESC key press on the VIEW
     esc_event = QKeyEvent(
@@ -515,7 +516,7 @@ def test_esc_in_view_without_clock_mode_clears_selection(map_widget, qtbot):
     map_widget.view.keyPressEvent(esc_event)
 
     # Selection should be cleared
-    assert len(map_widget.view.scene.selectedItems()) == 0
+    assert len(map_widget.view.graphics_scene.selectedItems()) == 0
 
 
 def test_esc_cancels_draft_mode_via_view(map_widget, qtbot):

@@ -32,7 +32,7 @@ class TestH1RasterEditToolThemeCache:
         view = MagicMock()
         view._raster_items = {}
         view.pixmap_item = MagicMock()
-        view.scene = MagicMock()
+        view.graphics_scene = MagicMock()
 
         tool = RasterEditTool(view)
         tool._active = True
@@ -115,9 +115,9 @@ class TestH2MarkerManagerShibokenGuards:
         from src.gui.widgets.map.marker_manager import MarkerManager
 
         view = MagicMock()
-        view.scene = MagicMock()
+        view.graphics_scene = MagicMock()
         # Make removeItem raise RuntimeError as Qt does for deleted C++ objects
-        view.scene.removeItem.side_effect = RuntimeError("Internal C++ object deleted")
+        view.graphics_scene.removeItem.side_effect = RuntimeError("Internal C++ object deleted")
 
         manager = MarkerManager(view)
 
@@ -138,8 +138,8 @@ class TestH2MarkerManagerShibokenGuards:
         from src.gui.widgets.map.marker_manager import MarkerManager
 
         view = MagicMock()
-        view.scene = MagicMock()
-        view.scene.removeItem.side_effect = RuntimeError("deleted")
+        view.graphics_scene = MagicMock()
+        view.graphics_scene.removeItem.side_effect = RuntimeError("deleted")
 
         manager = MarkerManager(view)
         manager.markers["a"] = MagicMock()

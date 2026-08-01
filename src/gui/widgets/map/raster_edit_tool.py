@@ -1009,7 +1009,7 @@ class RasterEditTool:
             self._cursor_item.setPen(pen)
             self._cursor_item.setBrush(brush)
             self._cursor_item.setZValue(MAP_LAYER_Z_UI_OVERLAY + 2)
-            self._view.scene.addItem(self._cursor_item)
+            self._view.graphics_scene.addItem(self._cursor_item)
 
         self._cursor_item.setRect(
             QRectF(
@@ -1024,7 +1024,7 @@ class RasterEditTool:
     def _remove_cursor(self) -> None:
         """Remove the brush cursor overlay from the scene."""
         if self._cursor_item is not None:
-            scene = self._view.scene
+            scene = self._view.graphics_scene
             if scene is not None:
                 scene.removeItem(self._cursor_item)
             self._cursor_item = None

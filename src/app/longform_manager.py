@@ -7,9 +7,10 @@ MainWindow to reduce its size and improve maintainability.
 import json
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Q_ARG, QMetaObject, QObject, Qt, Slot
+from PySide6.QtCore import Q_ARG, QObject, Slot
 from PySide6.QtWidgets import QDialog, QFileDialog
 
+from src.app.qt_invocation import invoke_queued
 from src.commands.entity_commands import DeleteEntityCommand
 from src.commands.event_commands import DeleteEventCommand
 from src.commands.longform_commands import (
@@ -55,10 +56,9 @@ class LongformManager(QObject):
             else ""
         )
 
-        QMetaObject.invokeMethod(
+        invoke_queued(
             self.window.worker,
             "load_longform_sequence",
-            Qt.ConnectionType.QueuedConnection,
             Q_ARG(str, "default"),
             Q_ARG(str, filter_json),
         )
@@ -149,15 +149,16 @@ class LongformManager(QObject):
             row_id: ID of the item to delete.
 
         """
+        command: DeleteEventCommand | DeleteEntityCommand
         if table == "events":
-            cmd = DeleteEventCommand(row_id)
+            command = DeleteEventCommand(row_id)
         elif table == "entities":
-            cmd = DeleteEntityCommand(row_id)
+            command = DeleteEntityCommand(row_id)
         else:
             logger.error(f"Unknown table type for deletion: {table}")
             return
 
-        self.window.command_requested.emit(cmd)
+        self.window.command_requested.emit(command)
 
     def move_up_longform_entry(self, table: str, row_id: str, old_meta: dict) -> None:
         """Move a longform entry up in its sibling list.

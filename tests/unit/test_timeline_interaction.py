@@ -21,7 +21,7 @@ def timeline(qtbot):
 
 
 def test_timeline_init(timeline):
-    assert timeline.view.scene is not None
+    assert timeline.view.graphics_scene is not None
     assert timeline.view.LANE_HEIGHT == 60
 
 
@@ -32,7 +32,7 @@ def test_set_events_creates_items(timeline):
     ]
     timeline.set_events(events)
 
-    items = [i for i in timeline.view.scene.items() if isinstance(i, EventItem)]
+    items = [i for i in timeline.view.graphics_scene.items() if isinstance(i, EventItem)]
     # Sort by X to match date order
     items.sort(key=lambda i: i.x())
     assert len(items) == 2
@@ -48,7 +48,7 @@ def test_fit_view(timeline):
 def test_selection_signal(timeline, qtbot):
     events = [Event(id="1", name="E1", lore_date=100.0, type="generic")]
     timeline.set_events(events)
-    # items = [i for i in timeline.view.scene.items() if isinstance(i, EventItem)]
+    # items = [i for i in timeline.view.graphics_scene.items() if isinstance(i, EventItem)]
 
     with qtbot.waitSignal(timeline.event_selected) as blocker:
         # Simulate logic trace:
@@ -62,7 +62,7 @@ def test_focus_event(timeline):
     timeline.set_events(events)
 
     timeline.focus_event("1")
-    items = [i for i in timeline.view.scene.items() if isinstance(i, EventItem)]
+    items = [i for i in timeline.view.graphics_scene.items() if isinstance(i, EventItem)]
     assert items[0].isSelected()
 
 
@@ -141,7 +141,7 @@ def test_event_drag_date_change(timeline, qtbot):
     timeline.set_events(events)
 
     # 2. Find the event item
-    items = [i for i in timeline.view.scene.items() if isinstance(i, EventItem)]
+    items = [i for i in timeline.view.graphics_scene.items() if isinstance(i, EventItem)]
     assert len(items) == 1
     item = items[0]
 
@@ -185,7 +185,7 @@ def test_event_drag_constrained_to_horizontal(timeline):
     events = [Event(id="h-test", name="Horizontal", lore_date=100.0, type="generic")]
     timeline.set_events(events)
 
-    items = [i for i in timeline.view.scene.items() if isinstance(i, EventItem)]
+    items = [i for i in timeline.view.graphics_scene.items() if isinstance(i, EventItem)]
     item = items[0]
 
     initial_y = item.y()

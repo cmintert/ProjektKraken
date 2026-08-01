@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-07-31
-**Commit:** a230782f
+**Last Updated:** 2026-08-01
+**Commit:** 5e884f01
 ---
 
 # Changelog
@@ -31,6 +31,11 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-01)* **Qt / Typing**: Restored the native graphics-view scene API,
+  centralized typed cross-thread slot invocation, and corrected timeline return
+  contracts without changing queued delivery behavior.
+- *(2026-08-01)* **CLI / Typing**: Updated backup and attachment commands to use
+  the current service and domain-model contracts.
 - *(2026-07-31)* **Stability / Typing**: Guarded analysis commands against
   unavailable databases, captured queued navigation selections, and validated
   copied layer trees before mutation.
@@ -74,6 +79,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-01)* **Testing / Typing**: Added regression coverage for native
+  scene access, real queued Qt invocation, and attachment statistics, reducing
+  the mypy baseline from 908 to 750 errors.
 - *(2026-07-31)* **Testing / Typing**: Corrected provider and import contracts,
   added focused lifecycle regressions, and reduced the mypy baseline from 940
   to 908 errors.

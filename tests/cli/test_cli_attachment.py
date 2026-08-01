@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.cli.attachment import main as attachment_main
+from src.core.image_attachment import ImageAttachment
 
 
 @pytest.fixture
@@ -50,12 +51,15 @@ def test_attachment_add(mock_db, mock_validate, capsys):
 
 
 def test_attachment_list(mock_db, mock_validate, capsys):
-    mock_att = MagicMock()
-    mock_att.id = "a1"
-    mock_att.filename = "img.png"
-    mock_att.caption = "Cap"
-    mock_att.position = 0
-    mock_db.attachment_service.get_attachments.return_value = [mock_att]
+    attachment = ImageAttachment(
+        id="a1",
+        owner_type="entities",
+        owner_id="e1",
+        image_rel_path="assets/images/img.png",
+        caption="Cap",
+        order_index=0,
+    )
+    mock_db.attachment_service.get_attachments.return_value = [attachment]
 
     with patch(
         "sys.argv",

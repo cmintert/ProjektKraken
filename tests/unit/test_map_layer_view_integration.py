@@ -33,7 +33,7 @@ def _setup_view_with_marker(qtbot):
     pixmap = QPixmap.fromImage(test_image)
 
     view.pixmap_item = QGraphicsPixmapItem(pixmap)
-    view.scene.addItem(view.pixmap_item)
+    view.graphics_scene.addItem(view.pixmap_item)
     view.coord_system.set_scene_rect(QRectF(0, 0, 100, 100))
 
     # Add a marker

@@ -168,7 +168,7 @@ class TrajectoryRenderer:
             dot.setBrush(QBrush(QColor(_theme.get("accent_secondary", KEYFRAME_COLOR_DEFAULT))))
             dot.setPen(QPen(Qt.PenStyle.NoPen))
             dot.setZValue(base_z - 0.2)
-            self._view.scene.addItem(dot)
+            self._view.graphics_scene.addItem(dot)
             self.keyframe_items.append(dot)
 
             # Add date label
@@ -189,7 +189,7 @@ class TrajectoryRenderer:
             label.setTransform(
                 QTransform().translate(KEYFRAME_LABEL_OFFSET_X, KEYFRAME_LABEL_OFFSET_Y)
             )
-            self._view.scene.addItem(label)
+            self._view.graphics_scene.addItem(label)
             self.keyframe_label_items.append(label)
 
         self._update_trajectory_path(base_z)
@@ -226,15 +226,15 @@ class TrajectoryRenderer:
     def clear_trajectory(self) -> None:
         """Clears the rendered trajectory path, keyframes, and labels."""
         if self.trajectory_path_item:
-            self._view.scene.removeItem(self.trajectory_path_item)
+            self._view.graphics_scene.removeItem(self.trajectory_path_item)
             self.trajectory_path_item = None
 
         for item in self.keyframe_items:
-            self._view.scene.removeItem(item)
+            self._view.graphics_scene.removeItem(item)
         self.keyframe_items.clear()
 
         for label in self.keyframe_label_items:
-            self._view.scene.removeItem(label)
+            self._view.graphics_scene.removeItem(label)
         self.keyframe_label_items.clear()
 
         self._view._schedule_label_layout()
@@ -342,7 +342,7 @@ class TrajectoryRenderer:
         """Re-draws the trajectory path based on current keyframe positions."""
         if not self.keyframe_items or len(self.keyframe_items) < 2:
             if self.trajectory_path_item:
-                self._view.scene.removeItem(self.trajectory_path_item)
+                self._view.graphics_scene.removeItem(self.trajectory_path_item)
                 self.trajectory_path_item = None
             return
 
@@ -357,7 +357,7 @@ class TrajectoryRenderer:
 
         if not self.trajectory_path_item:
             self.trajectory_path_item = self._create_trajectory_item(path, base_z)
-            self._view.scene.addItem(self.trajectory_path_item)
+            self._view.graphics_scene.addItem(self.trajectory_path_item)
         else:
             self.trajectory_path_item.setPath(path)
 

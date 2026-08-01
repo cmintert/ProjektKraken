@@ -224,7 +224,7 @@ class VertexEditor:
             handle = _VertexHandle(i, self._on_vertex_moved, self._on_vertex_deleted)
             handle.setPos(sx, sy)
             handle.setZValue(MAP_LAYER_Z_UI_OVERLAY + 1)
-            self._view.scene.addItem(handle)
+            self._view.graphics_scene.addItem(handle)
             self._vertex_handles.append(handle)
 
         self._rebuild_midpoint_handles()
@@ -266,10 +266,10 @@ class VertexEditor:
         # is called from the connected slot.
         self._editing_feature_id = None
         for handle in self._vertex_handles:
-            self._view.scene.removeItem(handle)
+            self._view.graphics_scene.removeItem(handle)
         self._vertex_handles.clear()
         for mh in self._midpoint_handles:
-            self._view.scene.removeItem(mh)
+            self._view.graphics_scene.removeItem(mh)
         self._midpoint_handles.clear()
         self._view._hide_snap_indicator()
         if not self._view.is_drawing:
@@ -498,7 +498,7 @@ class VertexEditor:
     def _rebuild_midpoint_handles(self) -> None:
         """Rebuilds ghost midpoint handles between each pair of vertices."""
         for mh in self._midpoint_handles:
-            self._view.scene.removeItem(mh)
+            self._view.graphics_scene.removeItem(mh)
         self._midpoint_handles.clear()
 
         item = self._view.feature_items.get(self._editing_feature_id or "")
@@ -522,7 +522,7 @@ class VertexEditor:
 
             mh = _MidpointHandle(i, self._on_midpoint_insert)
             mh.setPos(sx, sy)
-            self._view.scene.addItem(mh)
+            self._view.graphics_scene.addItem(mh)
             self._midpoint_handles.append(mh)
 
     def _update_midpoint_positions(self) -> None:
@@ -556,7 +556,7 @@ class VertexEditor:
             item: The feature item whose handles need rebuilding.
         """
         for handle in self._vertex_handles:
-            self._view.scene.removeItem(handle)
+            self._view.graphics_scene.removeItem(handle)
         self._vertex_handles.clear()
 
         if not item._geometry or not self._view.pixmap_item:
@@ -569,5 +569,5 @@ class VertexEditor:
             handle = _VertexHandle(i, self._on_vertex_moved, self._on_vertex_deleted)
             handle.setPos(sx, sy)
             handle.setZValue(MAP_LAYER_Z_UI_OVERLAY + 1)
-            self._view.scene.addItem(handle)
+            self._view.graphics_scene.addItem(handle)
             self._vertex_handles.append(handle)

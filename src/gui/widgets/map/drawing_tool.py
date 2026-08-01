@@ -239,7 +239,7 @@ class DrawingTool:
         dot.setBrush(QBrush(QColor(_t.get("error", "#e74c3c"))))
         dot.setPen(QPen(QColor(_t.get("surface", "#1A1A1A")), 1))
         dot.setZValue(MAP_LAYER_Z_UI_OVERLAY)
-        self._view.scene.addItem(dot)
+        self._view.graphics_scene.addItem(dot)
         self._drawing_dots.append(dot)
 
         self._update_drawing_preview(scene_pos)
@@ -255,7 +255,7 @@ class DrawingTool:
 
         # Remove old preview
         if self._drawing_preview_item:
-            self._view.scene.removeItem(self._drawing_preview_item)
+            self._view.graphics_scene.removeItem(self._drawing_preview_item)
             self._drawing_preview_item = None
 
         path = QPainterPath()
@@ -280,13 +280,13 @@ class DrawingTool:
             _fill.setAlpha(40)
             self._drawing_preview_item.setBrush(QBrush(_fill))
         self._drawing_preview_item.setZValue(MAP_LAYER_Z_UI_OVERLAY)
-        self._view.scene.addItem(self._drawing_preview_item)
+        self._view.graphics_scene.addItem(self._drawing_preview_item)
 
     def _clear_drawing_preview(self) -> None:
         """Removes all drawing preview items from the scene."""
         if self._drawing_preview_item:
-            self._view.scene.removeItem(self._drawing_preview_item)
+            self._view.graphics_scene.removeItem(self._drawing_preview_item)
             self._drawing_preview_item = None
         for dot in self._drawing_dots:
-            self._view.scene.removeItem(dot)
+            self._view.graphics_scene.removeItem(dot)
         self._drawing_dots.clear()

@@ -109,10 +109,10 @@ class MapTrajectoryMixin:
 
     def _update_marker_indicators(self) -> None:
         """Updates the has_keyframes state for all markers."""
-        if not self.view.scene:
+        if not self.view.graphics_scene:
             return
 
-        for item in self.view.scene.items():
+        for item in self.view.graphics_scene.items():
             if isinstance(item, MarkerItem):
                 has_traj = item.marker_id in self._active_trajectories
                 item.set_has_keyframes(has_traj)
@@ -122,7 +122,7 @@ class MapTrajectoryMixin:
         """Captures the current position of the selected marker and saves it as a
         keyframe.
         """
-        selected_items = self.view.scene.selectedItems()
+        selected_items = self.view.graphics_scene.selectedItems()
         if not selected_items:
             logger.warning("Cannot add keyframe: No marker selected.")
             return

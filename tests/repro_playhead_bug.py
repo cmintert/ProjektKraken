@@ -32,7 +32,7 @@ def test_playhead_drag_does_not_move_selected_events(timeline, qtbot):
     timeline.set_events(events)
 
     # 2. Get the event item and initial position
-    items = [i for i in timeline.view.scene.items() if isinstance(i, EventItem)]
+    items = [i for i in timeline.view.graphics_scene.items() if isinstance(i, EventItem)]
     assert len(items) == 1
     event_item = items[0]
     initial_x = event_item.x()

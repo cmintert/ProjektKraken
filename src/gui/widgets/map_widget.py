@@ -492,7 +492,7 @@ class MapWidget(
         self.view.feature_style_changed.connect(self.feature_style_changed.emit)
         self.view.feature_geometry_changed.connect(self.feature_geometry_changed.emit)
         self.view.feature_geometry_changed.connect(self._on_geometry_changed)
-        self.view.scene.selectionChanged.connect(self._on_selection_changed)
+        self.view.graphics_scene.selectionChanged.connect(self._on_selection_changed)
         # Bi-directional selection: marker click → highlight in layer panel
         self.view.marker_clicked.connect(self._on_marker_clicked_select_layer)
         self.layer_panel.layer_selected.connect(self._on_layer_panel_selected)
@@ -698,7 +698,7 @@ class MapWidget(
             self._update_trajectory_positions(force_all=True)
             self._update_mode_indicator()
 
-        selected_items = self.view.scene.selectedItems()
+        selected_items = self.view.graphics_scene.selectedItems()
         should_enable = False
         if selected_items:
             item = selected_items[0]
@@ -1344,9 +1344,9 @@ class MapWidget(
                 event.accept()
                 return
             # Deselect all items in the scene
-            if self.view.scene.selectedItems():
+            if self.view.graphics_scene.selectedItems():
                 logger.debug("Esc pressed: Clearing selection")
-                self.view.scene.clearSelection()
+                self.view.graphics_scene.clearSelection()
                 event.accept()
                 return
 

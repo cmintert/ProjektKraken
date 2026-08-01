@@ -4,11 +4,12 @@ This module contains all timeline grouping-related functionality extracted from
 MainWindow to reduce its size and improve maintainability.
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from PySide6.QtCore import QMetaObject, QObject, Qt, Slot
+from PySide6.QtCore import QObject, Slot
 from PySide6.QtWidgets import QColorDialog
 
+from src.app.qt_invocation import invoke_queued
 from src.commands.timeline_grouping_commands import (
     ClearTimelineGroupingCommand,
     SetTimelineGroupingCommand,
@@ -53,7 +54,7 @@ class TimelineGroupingManager(QObject):
         except Exception as e:
             logger.warning(f"Failed to load grouping config: {e}")
 
-    def on_grouping_config_loaded(self, config: dict) -> None:
+    def on_grouping_config_loaded(self, config: dict[str, Any] | None) -> None:
         """Handler for grouping config loaded.
 
         Args:
@@ -75,15 +76,14 @@ class TimelineGroupingManager(QObject):
     def on_configure_grouping_requested(self) -> None:
         """Opens grouping configuration dialog by requesting data from worker thread."""
         # Request data from worker thread (thread-safe)
-        QMetaObject.invokeMethod(
+        invoke_queued(
             self.window.worker,
             "load_grouping_dialog_data",
-            Qt.ConnectionType.QueuedConnection,
         )
 
     @Slot(list, object)
     def on_grouping_dialog_data_loaded(
-        self, tags_data: list, current_config: dict
+        self, tags_data: list, current_config: dict[str, Any] | None
     ) -> None:
         """Handler for grouping dialog data loaded from worker.
 
@@ -96,10 +96,11 @@ class TimelineGroupingManager(QObject):
 
         try:
             # Create dialog with pre-loaded data
+            command_coordinator = getattr(self.window, "command_coordinator")
             dialog = GroupingConfigDialog(
                 tags_data,
                 current_config,
-                self.window.command_coordinator,
+                command_coordinator,
                 self.window,
             )
             dialog.grouping_applied.connect(self.on_grouping_applied)

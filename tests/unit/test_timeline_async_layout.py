@@ -37,7 +37,7 @@ class TestAsyncLayoutIntegration:
         # Verify all events are positioned
         from src.gui.widgets.timeline import EventItem
 
-        items = [i for i in widget.view.scene.items() if isinstance(i, EventItem)]
+        items = [i for i in widget.view.graphics_scene.items() if isinstance(i, EventItem)]
         assert len(items) == 30
 
     def test_large_dataset_uses_async_worker(self, qapp, qtbot):
@@ -60,7 +60,7 @@ class TestAsyncLayoutIntegration:
         # Verify all events are positioned
         from src.gui.widgets.timeline import EventItem
 
-        items = [i for i in widget.view.scene.items() if isinstance(i, EventItem)]
+        items = [i for i in widget.view.graphics_scene.items() if isinstance(i, EventItem)]
         assert len(items) == 100
 
         # Verify proper lane assignments
@@ -93,7 +93,7 @@ class TestAsyncLayoutIntegration:
         # Verify completion
         from src.gui.widgets.timeline import EventItem
 
-        items = [i for i in widget.view.scene.items() if isinstance(i, EventItem)]
+        items = [i for i in widget.view.graphics_scene.items() if isinstance(i, EventItem)]
         assert len(items) == 500
 
         # Performance check - should complete within reasonable time
@@ -129,7 +129,7 @@ class TestAsyncLayoutIntegration:
         # Verify events are still properly positioned
         from src.gui.widgets.timeline import EventItem
 
-        items = [i for i in widget.view.scene.items() if isinstance(i, EventItem)]
+        items = [i for i in widget.view.graphics_scene.items() if isinstance(i, EventItem)]
         assert len(items) == 100
 
     def test_concurrent_repack_requests_handled(self, qapp, qtbot):
@@ -156,7 +156,7 @@ class TestAsyncLayoutIntegration:
         # Verify scene is still valid and events positioned
         from src.gui.widgets.timeline import EventItem
 
-        items = [i for i in widget.view.scene.items() if isinstance(i, EventItem)]
+        items = [i for i in widget.view.graphics_scene.items() if isinstance(i, EventItem)]
         assert len(items) == 100
 
 
@@ -225,7 +225,7 @@ class TestBatchSceneUpdates:
         # Verify all items are visible and positioned
         from src.gui.widgets.timeline import EventItem
 
-        items = [i for i in widget.view.scene.items() if isinstance(i, EventItem)]
+        items = [i for i in widget.view.graphics_scene.items() if isinstance(i, EventItem)]
         assert len(items) == 100
 
         for item in items:
@@ -327,7 +327,7 @@ class TestPerformanceMetrics:
         # Verify events are processed
         from src.gui.widgets.timeline import EventItem
 
-        items = [i for i in widget.view.scene.items() if isinstance(i, EventItem)]
+        items = [i for i in widget.view.graphics_scene.items() if isinstance(i, EventItem)]
         assert len(items) == 300
 
 
@@ -351,7 +351,7 @@ class TestErrorHandling:
         assert widget.isVisible()
         from src.gui.widgets.timeline import EventItem
 
-        items = [i for i in widget.view.scene.items() if isinstance(i, EventItem)]
+        items = [i for i in widget.view.graphics_scene.items() if isinstance(i, EventItem)]
         assert len(items) == 50
 
     def test_threadpool_cleanup(self, qapp, qtbot):

@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Any, Optional, cast
 # NOTE: Uses fully qualified PySide6 enum paths. See docs/PYSIDE6_ENUM_SOLUTION.md.
 from PySide6.QtCore import (
     QEvent,
-    QMetaObject,
     QObject,
     QSettings,
     Qt,
@@ -53,6 +52,7 @@ from src.app.data_handler import DataHandler
 from src.app.intelligence_analysis_manager import IntelligenceAnalysisManager
 from src.app.longform_manager import LongformManager
 from src.app.map_handler import MapHandler
+from src.app.qt_invocation import invoke_method, invoke_queued
 from src.app.timeline_grouping_manager import TimelineGroupingManager
 from src.app.ui_manager import UIManager
 from src.app.worker_manager import WorkerManager
@@ -238,6 +238,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     db_path: str
     gui_db_service: DatabaseService
     filter_config: dict[str, Any]
+    command_coordinator: CommandCoordinator
+    coordinator: CommandCoordinator
 
     def __init__(self, capture_layout_on_exit: bool = False) -> None:
         """Initializes the MainWindow using three-phase initialization.
@@ -632,10 +634,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         )
 
         # Initialize Database
-        # PySide6 requires str here at runtime although its stub declares bytes.
-        QMetaObject.invokeMethod(
-            self.worker, "initialize_db", Qt.ConnectionType.QueuedConnection
-        )  # type: ignore[call-overload]
+        invoke_queued(self.worker, "initialize_db")
 
         # Apply initial Windows Title Bar Style (deferred until window is ready)
         try:
@@ -666,7 +665,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             QDockWidget: The dock widget containing the unified list.
 
         """
-        return self.ui_manager.docks.get("list")
+        return cast(QDockWidget, self.ui_manager.docks.get("list"))
 
     @property
     def editor_dock(self) -> QDockWidget:
@@ -676,7 +675,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             QDockWidget: The dock widget containing the event editor.
 
         """
-        return self.ui_manager.docks.get("event")
+        return cast(QDockWidget, self.ui_manager.docks.get("event"))
 
     @property
     def entity_editor_dock(self) -> QDockWidget:
@@ -686,7 +685,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             QDockWidget: The dock widget containing the entity editor.
 
         """
-        return self.ui_manager.docks.get("entity")
+        return cast(QDockWidget, self.ui_manager.docks.get("entity"))
 
     @property
     def timeline_dock(self) -> QDockWidget:
@@ -696,7 +695,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             QDockWidget: The dock widget containing the timeline.
 
         """
-        return self.ui_manager.docks.get("timeline")
+        return cast(QDockWidget, self.ui_manager.docks.get("timeline"))
 
     @property
     def longform_dock(self) -> QDockWidget:
@@ -706,7 +705,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             QDockWidget: The dock widget containing the longform editor.
 
         """
-        return self.ui_manager.docks.get("longform")
+        return cast(QDockWidget, self.ui_manager.docks.get("longform"))
 
     @property
     def map_dock(self) -> QDockWidget:
@@ -716,7 +715,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             QDockWidget: The dock widget containing the map.
 
         """
-        return self.ui_manager.docks.get("map")
+        return cast(QDockWidget, self.ui_manager.docks.get("map"))
 
     def _restore_window_state(self) -> None:
         """Restores window geometry and state using staged approach.
@@ -1114,10 +1113,9 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.intelligence_analysis_manager.shutdown()
 
         # Cleanup Worker
-        # PySide6 requires str here at runtime although its stub declares bytes.
-        QMetaObject.invokeMethod(
+        invoke_method(
             self.worker, "cleanup", Qt.ConnectionType.BlockingQueuedConnection
-        )  # type: ignore[call-overload]
+        )
 
         self.worker_thread.quit()
         if not self.worker_thread.wait(2000):  # 2000ms timeout

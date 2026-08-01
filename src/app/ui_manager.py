@@ -46,6 +46,7 @@ from src.app.constants import (
     WINDOW_SETTINGS_APP,
     WINDOW_SETTINGS_KEY,
 )
+from src.app.qt_invocation import invoke_queued
 from src.core.protocols import MainWindowProtocol
 
 logger = logging.getLogger(__name__)
@@ -1071,15 +1072,10 @@ class UIManager:
 
     def _request_calendar_config(self) -> None:
         """Queue a calendar-config load on the database worker thread."""
-        from PySide6.QtCore import QMetaObject
-
-        # PySide6's runtime requires a str member name, while its current type
-        # stub declares bytes. Keep the mismatch isolated at this Qt boundary.
-        QMetaObject.invokeMethod(
+        invoke_queued(
             cast(QObject, self.main_window.worker),
             "load_calendar_config",
-            Qt.ConnectionType.QueuedConnection,
-        )  # type: ignore[call-overload]
+        )
 
     def show_calendar_dialog(self, current_config: Optional[Any]) -> None:
         """Shows the calendar configuration dialog.

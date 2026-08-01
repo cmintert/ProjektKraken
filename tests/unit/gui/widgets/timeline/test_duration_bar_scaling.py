@@ -37,7 +37,7 @@ class TestDurationBarScaling:
         )
         view.set_events([event])
 
-        item = next(i for i in view.scene.items() if isinstance(i, EventItem))
+        item = next(i for i in view.graphics_scene.items() if isinstance(i, EventItem))
 
         # 2. Apply Zoom (2.0x)
         # Expected: The 10-day event should now cover 400px on screen.

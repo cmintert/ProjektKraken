@@ -38,7 +38,7 @@ def _make_view(qtbot: QtBot, width: int = 200, height: int = 200) -> MapGraphics
     pixmap = QPixmap.fromImage(img)
 
     view.pixmap_item = QGraphicsPixmapItem(pixmap)
-    view.scene.addItem(view.pixmap_item)
+    view.graphics_scene.addItem(view.pixmap_item)
     view.coord_system.set_scene_rect(QRectF(0, 0, width, height))
     return view
 
@@ -59,7 +59,7 @@ def _make_raster_item(
     item = RasterLayerItem(
         buffer=buf, color_map=cmap, scene_rect=scene_rect, node_id=node_id
     )
-    view.scene.addItem(item)
+    view.graphics_scene.addItem(item)
     view._raster_items[node_id] = item
     return item, buf
 
@@ -314,7 +314,7 @@ class TestMapDeleteStopsRasterEditing:
         pixmap = QPixmap.fromImage(img)
 
         widget.view.pixmap_item = QGraphicsPixmapItem(pixmap)
-        widget.view.scene.addItem(widget.view.pixmap_item)
+        widget.view.graphics_scene.addItem(widget.view.pixmap_item)
         widget.view.coord_system.set_scene_rect(QRectF(0, 0, 200, 200))
         _make_raster_item(widget.view, node_id="delete-map-raster")
 
@@ -2129,7 +2129,7 @@ class TestSpatialQuery:
         scene_rect = QRectF(0, 0, 200, 200)
         view.set_query_overlay(mask, scene_rect)
         assert view._query_overlay_item is not None
-        assert view._query_overlay_item.scene() is view.scene
+        assert view._query_overlay_item.scene() is view.graphics_scene
 
         view.clear_query_overlay()
         assert view._query_overlay_item is None
@@ -2660,7 +2660,7 @@ class TestPassiveSampleMode:
         img = QImage(200, 200, QImage.Format.Format_RGB32)
         img.fill(Qt.GlobalColor.white)
         widget.view.pixmap_item = QGraphicsPixmapItem(QPixmap.fromImage(img))
-        widget.view.scene.addItem(widget.view.pixmap_item)
+        widget.view.graphics_scene.addItem(widget.view.pixmap_item)
         widget.view.coord_system.set_scene_rect(QRectF(0, 0, 200, 200))
 
         tool = widget.view._raster_edit_tool
@@ -2769,7 +2769,7 @@ class TestGradientSubModeSyncOnEditStart:
         img = QImage(200, 200, QImage.Format.Format_RGB32)
         img.fill(Qt.GlobalColor.white)
         widget.view.pixmap_item = QGraphicsPixmapItem(QPixmap.fromImage(img))
-        widget.view.scene.addItem(widget.view.pixmap_item)
+        widget.view.graphics_scene.addItem(widget.view.pixmap_item)
         widget.view.coord_system.set_scene_rect(QRectF(0, 0, 200, 200))
         _make_raster_item(widget.view, node_id="grad1")
 
@@ -2840,7 +2840,7 @@ class TestFocusTransferOnEditStart:
         img = QImage(200, 200, QImage.Format.Format_RGB32)
         img.fill(Qt.GlobalColor.white)
         widget.view.pixmap_item = QGraphicsPixmapItem(QPixmap.fromImage(img))
-        widget.view.scene.addItem(widget.view.pixmap_item)
+        widget.view.graphics_scene.addItem(widget.view.pixmap_item)
         widget.view.coord_system.set_scene_rect(QRectF(0, 0, 200, 200))
         _make_raster_item(widget.view, node_id="focus1")
 

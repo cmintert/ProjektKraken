@@ -67,7 +67,7 @@ def _make_handler_with_markers(
     mock_view = MagicMock()
     markers_store: dict = {}
     mock_view.markers = markers_store
-    mock_view.scene.selectedItems.return_value = []
+    mock_view.graphics_scene.selectedItems.return_value = []
     mock_widget.view = mock_view
     mock_widget.layer_panel.selected_node_id = None
 

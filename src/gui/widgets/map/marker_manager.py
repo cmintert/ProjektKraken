@@ -78,10 +78,10 @@ class MarkerManager:
 
         # Remove existing marker/feature if present
         if marker_id in self.markers:
-            self._view.scene.removeItem(self.markers[marker_id])
+            self._view.graphics_scene.removeItem(self.markers[marker_id])
             del self.markers[marker_id]
         if marker_id in self.feature_items:
-            self._view.scene.removeItem(self.feature_items[marker_id])
+            self._view.graphics_scene.removeItem(self.feature_items[marker_id])
             del self.feature_items[marker_id]
 
         # Factory: route by feature_type
@@ -99,7 +99,7 @@ class MarkerManager:
                 lore_date=lore_date,
                 map_width_meters=self._view.map_width_meters,
             )
-            self._view.scene.addItem(item)
+            self._view.graphics_scene.addItem(item)
             self.feature_items[marker_id] = item
             item.clicked.connect(self._view.marker_clicked.emit)
             return
@@ -118,7 +118,7 @@ class MarkerManager:
                 lore_date=lore_date,
                 map_width_meters=self._view.map_width_meters,
             )
-            self._view.scene.addItem(item)
+            self._view.graphics_scene.addItem(item)
             self.feature_items[marker_id] = item
             item.clicked.connect(self._view.marker_clicked.emit)
             return
@@ -140,7 +140,7 @@ class MarkerManager:
         marker.setPos(scene_pos)
         marker.setZValue(MAP_LAYER_Z_MARKERS)
 
-        self._view.scene.addItem(marker)
+        self._view.graphics_scene.addItem(marker)
         self.markers[marker_id] = marker
         marker.clicked.connect(self._view.marker_clicked.emit)
 
@@ -170,7 +170,7 @@ class MarkerManager:
             item = self.markers[marker_id]
             if shiboken6.isValid(item):
                 try:
-                    self._view.scene.removeItem(item)
+                    self._view.graphics_scene.removeItem(item)
                 except RuntimeError:
                     logger.debug(
                         "remove_marker: C++ object already deleted for %s", marker_id
@@ -181,7 +181,7 @@ class MarkerManager:
             item = self.feature_items[marker_id]
             if shiboken6.isValid(item):
                 try:
-                    self._view.scene.removeItem(item)
+                    self._view.graphics_scene.removeItem(item)
                 except RuntimeError:
                     logger.debug(
                         "remove_marker: feature C++ object already deleted for %s",
@@ -195,14 +195,14 @@ class MarkerManager:
         for marker in list(self.markers.values()):
             if shiboken6.isValid(marker):
                 try:
-                    self._view.scene.removeItem(marker)
+                    self._view.graphics_scene.removeItem(marker)
                 except RuntimeError:
                     pass
         self.markers.clear()
         for item in list(self.feature_items.values()):
             if shiboken6.isValid(item):
                 try:
-                    self._view.scene.removeItem(item)
+                    self._view.graphics_scene.removeItem(item)
                 except RuntimeError:
                     pass
         self.feature_items.clear()

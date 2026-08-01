@@ -47,7 +47,7 @@ class TestSmartLanePacking:
         timeline_widget.set_events(events)
 
         items = [
-            i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)
+            i for i in timeline_widget.view.graphics_scene.items() if isinstance(i, EventItem)
         ]
         items.sort(key=lambda i: i.event.lore_date)
 
@@ -64,7 +64,7 @@ class TestSmartLanePacking:
         timeline_widget.set_events(events)
 
         items = [
-            i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)
+            i for i in timeline_widget.view.graphics_scene.items() if isinstance(i, EventItem)
         ]
         items.sort(key=lambda i: i.event.lore_date)
 
@@ -84,7 +84,7 @@ class TestSmartLanePacking:
         timeline_widget.set_events(events)
 
         items = [
-            i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)
+            i for i in timeline_widget.view.graphics_scene.items() if isinstance(i, EventItem)
         ]
         items.sort(key=lambda i: i.event.lore_date)
 
@@ -103,7 +103,7 @@ class TestSmartLanePacking:
         timeline_widget.set_events(events)
 
         items = [
-            i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)
+            i for i in timeline_widget.view.graphics_scene.items() if isinstance(i, EventItem)
         ]
         items.sort(key=lambda i: i.event.lore_date)
 
@@ -121,7 +121,7 @@ class TestSmartLanePacking:
         timeline_widget.set_events(events)
 
         items = [
-            i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)
+            i for i in timeline_widget.view.graphics_scene.items() if isinstance(i, EventItem)
         ]
         items.sort(key=lambda i: i.event.lore_date)
 
@@ -273,7 +273,7 @@ class TestEventItemUpdate:
 
         # Get initial items
         items_before = [
-            i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)
+            i for i in timeline_widget.view.graphics_scene.items() if isinstance(i, EventItem)
         ]
         item_ids_before = {id(item) for item in items_before}
 
@@ -289,7 +289,7 @@ class TestEventItemUpdate:
 
         # Get items after update
         items_after = [
-            i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)
+            i for i in timeline_widget.view.graphics_scene.items() if isinstance(i, EventItem)
         ]
         item_ids_after = {id(item) for item in items_after}
 
@@ -305,7 +305,7 @@ class TestEventItemUpdate:
 
         # Should have 2 event items
         items = [
-            i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)
+            i for i in timeline_widget.view.graphics_scene.items() if isinstance(i, EventItem)
         ]
         assert len(items) == 2
 
@@ -314,7 +314,7 @@ class TestEventItemUpdate:
 
         # Should only have 1 event item now
         items = [
-            i for i in timeline_widget.view.scene.items() if isinstance(i, EventItem)
+            i for i in timeline_widget.view.graphics_scene.items() if isinstance(i, EventItem)
         ]
         assert len(items) == 1
         assert items[0].event.id == "keep"
@@ -326,7 +326,7 @@ class TestScrubberPlayhead:
     def test_playhead_exists_in_scene(self, timeline_view):
         """Playhead should be present in the scene."""
         playhead_items = [
-            i for i in timeline_view.scene.items() if isinstance(i, PlayheadItem)
+            i for i in timeline_view.graphics_scene.items() if isinstance(i, PlayheadItem)
         ]
         assert len(playhead_items) == 1
 
@@ -469,7 +469,7 @@ class TestCurrentTimeLine:
         from src.gui.widgets.timeline import CurrentTimeLineItem
 
         current_time_items = [
-            i for i in timeline_view.scene.items() if isinstance(i, CurrentTimeLineItem)
+            i for i in timeline_view.graphics_scene.items() if isinstance(i, CurrentTimeLineItem)
         ]
         assert len(current_time_items) == 1
 
@@ -494,7 +494,7 @@ class TestCurrentTimeLine:
         from src.gui.widgets.timeline import CurrentTimeLineItem
 
         current_time_items = [
-            i for i in timeline_view.scene.items() if isinstance(i, CurrentTimeLineItem)
+            i for i in timeline_view.graphics_scene.items() if isinstance(i, CurrentTimeLineItem)
         ]
         assert len(current_time_items) == 1
         assert not current_time_items[0].flags() & QGraphicsItem.ItemIsMovable

@@ -13,6 +13,7 @@ import json
 import logging
 import sys
 from pathlib import Path
+from typing import Any
 
 from src.cli.utils import validate_database_path
 from src.services.db_service import DatabaseService
@@ -22,7 +23,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def gather_stats(db_service: DatabaseService) -> dict:
+def gather_stats(db_service: DatabaseService) -> dict[str, Any]:
     """Gather database statistics.
 
     Args:
@@ -32,7 +33,7 @@ def gather_stats(db_service: DatabaseService) -> dict:
         Dictionary containing all statistics.
 
     """
-    stats = {
+    stats: dict[str, Any] = {
         "objects": {
             "entities": 0,
             "events": 0,
@@ -73,12 +74,15 @@ def gather_stats(db_service: DatabaseService) -> dict:
         all_attachments = attachment_repo.list_all()
         attachment_count = len(all_attachments)
         total_size = 0
-        for att in all_attachments:
-            if att.file_path:
-                try:
-                    total_size += Path(att.file_path).stat().st_size
-                except (OSError, TypeError):
-                    pass
+        world_root = Path(db_service.get_db_file_path()).resolve().parent
+        for attachment in all_attachments:
+            asset_path = Path(attachment.image_rel_path)
+            if not asset_path.is_absolute():
+                asset_path = world_root / asset_path
+            try:
+                total_size += asset_path.stat().st_size
+            except (OSError, TypeError):
+                pass
 
         stats["attachments"]["count"] = attachment_count
         stats["attachments"]["total_size_mb"] = round(total_size / (1024 * 1024), 2)

@@ -136,7 +136,7 @@ def test_timeline_view_updates_future_events(timeline_view):
     timeline_view.update_events_temporal_state()
 
     # Get event items
-    event_items = [i for i in timeline_view.scene.items() if isinstance(i, EventItem)]
+    event_items = [i for i in timeline_view.graphics_scene.items() if isinstance(i, EventItem)]
 
     # Find each event
     past_item = next((i for i in event_items if i.event.id == "e1"), None)
@@ -169,7 +169,7 @@ def test_timeline_view_updates_on_playhead_change(timeline_view):
     # Set playhead to 75 (e1 is past, e2 and e3 are future)
     timeline_view.set_playhead_time(75.0)
 
-    event_items = [i for i in timeline_view.scene.items() if isinstance(i, EventItem)]
+    event_items = [i for i in timeline_view.graphics_scene.items() if isinstance(i, EventItem)]
     e1_item = next((i for i in event_items if i.event.id == "e1"), None)
     e2_item = next((i for i in event_items if i.event.id == "e2"), None)
     e3_item = next((i for i in event_items if i.event.id == "e3"), None)

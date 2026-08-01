@@ -35,7 +35,7 @@ class TestTimelineVisibility:
         event = Event(name="Visible Event", lore_date=100.0)
         timeline_view.set_events([event])
 
-        items = [i for i in timeline_view.scene.items() if isinstance(i, EventItem)]
+        items = [i for i in timeline_view.graphics_scene.items() if isinstance(i, EventItem)]
         # Default view also triggers 'All events' logic if we don't control it,
         # but without grouping_active it uses standard packing.
         # repack_events check: if grouping_active ... else: pack_events.
@@ -52,12 +52,12 @@ class TestTimelineVisibility:
         # Mock bands
         mock_band = GroupBandItem("tag1", "#FF0000", 1, 100, 100)
         # We must add it to scene manually as the manager usually does this
-        view.scene.addItem(mock_band)
+        view.graphics_scene.addItem(mock_band)
 
         all_events_band = GroupBandItem(
             "All events", "#808080", 1, 100, 100, is_collapsed=True
         )
-        view.scene.addItem(all_events_band)
+        view.graphics_scene.addItem(all_events_band)
 
         def get_band(tag):
             if tag == "tag1":
@@ -75,7 +75,7 @@ class TestTimelineVisibility:
         view.set_events([event])
 
         # Verify band is in scene and visible
-        assert mock_band in view.scene.items()
+        assert mock_band in view.graphics_scene.items()
         assert mock_band.isVisible()
 
     def test_events_hidden_when_band_collapsed(self, timeline_view):
@@ -86,13 +86,13 @@ class TestTimelineVisibility:
 
         # Mock collapsed band for tag1
         mock_band = GroupBandItem("tag1", "#FF0000", 1, 100, 100, is_collapsed=True)
-        view.scene.addItem(mock_band)
+        view.graphics_scene.addItem(mock_band)
 
         # Mock collapsed "All events" to avoid duplicates polluting check
         all_events_band = GroupBandItem(
             "All events", "#808080", 1, 100, 100, is_collapsed=True
         )
-        view.scene.addItem(all_events_band)
+        view.graphics_scene.addItem(all_events_band)
 
         def get_band(tag):
             if tag == "tag1":
@@ -114,7 +114,7 @@ class TestTimelineVisibility:
         # Check logic: if all_events_band.is_collapsed -> hide ungrouped.
         # It does NOT generate duplicates.
         # So we expect 1 item (Original) and it should be hidden.
-        items = [i for i in view.scene.items() if isinstance(i, EventItem)]
+        items = [i for i in view.graphics_scene.items() if isinstance(i, EventItem)]
         assert len(items) == 1
         assert not items[0].isVisible()
 
@@ -126,13 +126,13 @@ class TestTimelineVisibility:
 
         # Mock expanded band
         mock_band = GroupBandItem("tag1", "#FF0000", 1, 100, 100, is_collapsed=False)
-        view.scene.addItem(mock_band)
+        view.graphics_scene.addItem(mock_band)
 
         # Collapse "All events" to simplify
         all_events_band = GroupBandItem(
             "All events", "#808080", 1, 100, 100, is_collapsed=True
         )
-        view.scene.addItem(all_events_band)
+        view.graphics_scene.addItem(all_events_band)
 
         def get_band(tag):
             if tag == "tag1":
@@ -149,7 +149,7 @@ class TestTimelineVisibility:
         view.set_events([event])
 
         # Event item should be visible
-        items = [i for i in view.scene.items() if isinstance(i, EventItem)]
+        items = [i for i in view.graphics_scene.items() if isinstance(i, EventItem)]
         assert len(items) == 1
         assert items[0].isVisible()
 
@@ -166,9 +166,9 @@ class TestTimelineVisibility:
         band2 = GroupBandItem("tag2", "#00FF00", 1, 100, 100, is_collapsed=False)
         all_evt = GroupBandItem("All events", "#8080", 1, 100, 100, is_collapsed=True)
 
-        view.scene.addItem(band1)
-        view.scene.addItem(band2)
-        view.scene.addItem(all_evt)
+        view.graphics_scene.addItem(band1)
+        view.graphics_scene.addItem(band2)
+        view.graphics_scene.addItem(all_evt)
 
         def get_band(tag):
             if tag == "tag1":
@@ -189,7 +189,7 @@ class TestTimelineVisibility:
         # When tag1 is collapsed, the event is skipped in that group loop (not placed).
         # So when it reaches tag2, it uses the ORIGINAL item (not a duplicate).
         # So we have 1 item total, and it is visible (in tag2).
-        items = [i for i in view.scene.items() if isinstance(i, EventItem)]
+        items = [i for i in view.graphics_scene.items() if isinstance(i, EventItem)]
         assert len(items) == 1
         assert items[0].isVisible()
 
@@ -206,7 +206,7 @@ class TestTimelineVisibility:
         # Setting _grouping_tag_order is not enough.
         # But we also need bands to exist in manager
         mock_band = GroupBandItem("tag1", "#FF", 1, 100, 100)
-        view.scene.addItem(mock_band)
+        view.graphics_scene.addItem(mock_band)
         mock_band.setVisible(True)  # Explicitly ensure visible
         mock_band.setY(100)  # Ensure it has a position
 

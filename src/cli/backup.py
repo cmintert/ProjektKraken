@@ -29,12 +29,12 @@ def create_backup(args: argparse.Namespace) -> int:
         service.set_database_path(args.database)
 
         desc = args.description or "Manual backup via CLI"
-        backup_path = service.create_backup(
+        backup = service.create_backup(
             backup_type=BackupType.MANUAL, description=desc
         )
 
-        if backup_path:
-            print(f"✓ Backup created successfully: {backup_path}")
+        if backup:
+            print(f"✓ Backup created successfully: {backup.backup_path}")
             return 0
         else:
             print("✗ Backup creation failed.")
@@ -53,27 +53,7 @@ def list_backups(args: argparse.Namespace) -> int:
         service = BackupService()
         service.set_database_path(args.database)
 
-        # Build list of all backups
-        backups = []
-        for backup_type in [
-            BackupType.MANUAL,
-            BackupType.AUTO_SAVE,
-            BackupType.DAILY,
-            BackupType.WEEKLY,
-        ]:
-            type_dir = service.backup_root / backup_type.value
-            if type_dir.exists():
-                for f in type_dir.glob("*.kraken"):
-                    backups.append(
-                        {
-                            "type": backup_type.value,
-                            "path": f,
-                            "time": f.stat().st_mtime,
-                            "size": f.stat().st_size,
-                        }
-                    )
-
-        backups.sort(key=lambda x: x["time"], reverse=True)
+        backups = service.list_backups()
 
         if not backups:
             print("No backups found.")
@@ -83,14 +63,13 @@ def list_backups(args: argparse.Namespace) -> int:
         print(f"{'Type':<10} {'Date':<20} {'Size':<10} {'Filename'}")
         print("-" * 60)
 
-        import datetime
-
-        for b in backups:
-            dt = datetime.datetime.fromtimestamp(b["time"]).strftime(
-                "%Y-%m-%d %H:%M:%S"
+        for backup in backups:
+            date_text = backup.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+            size_mb = backup.size / (1024 * 1024)
+            print(
+                f"{backup.backup_type.value:<10} {date_text:<20} "
+                f"{size_mb:>6.2f} MB  {backup.backup_path.name}"
             )
-            size_mb = b["size"] / (1024 * 1024)
-            print(f"{b['type']:<10} {dt:<20} {size_mb:>6.2f} MB  {b['path'].name}")
         print()
         return 0
 

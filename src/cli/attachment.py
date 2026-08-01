@@ -3,6 +3,7 @@
 import argparse
 import logging
 import sys
+from pathlib import Path
 
 from src.cli.utils import validate_database_path
 from src.commands.image_commands import (
@@ -78,11 +79,12 @@ def list_attachments(args: argparse.Namespace) -> int:
         db_service = DatabaseService(args.database)
         db_service.connect()
 
-        if not hasattr(db_service, "attachment_service"):
+        attachment_service = db_service.attachment_service
+        if attachment_service is None:
             print("✗ AttachmentService not available in DatabaseService")
             return 1
 
-        attachments = db_service.attachment_service.get_attachments(args.type, args.id)
+        attachments = attachment_service.get_attachments(args.type, args.id)
 
         if args.json:
             import json
@@ -94,10 +96,10 @@ def list_attachments(args: argparse.Namespace) -> int:
             )
             for a in attachments:
                 print(f"ID: {a.id}")
-                print(f"  Filename: {a.filename}")
+                print(f"  Filename: {Path(a.image_rel_path).name}")
                 if a.caption:
                     print(f"  Caption: {a.caption}")
-                print(f"  Position: {a.position}")
+                print(f"  Position: {a.order_index}")
                 print()
 
         return 0

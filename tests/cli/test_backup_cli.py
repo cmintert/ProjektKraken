@@ -1,11 +1,12 @@
 import argparse
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
 from src.cli.backup import create_backup, list_backups, restore_backup
-from src.services.backup_service import BackupType
+from src.services.backup_service import BackupMetadata, BackupType
 
 
 @pytest.fixture
@@ -26,7 +27,13 @@ def test_create_backup_success(mock_backup_service, mock_db_path):
     )
 
     service_instance = mock_backup_service.return_value
-    service_instance.create_backup.return_value = Path("backup.kraken")
+    service_instance.create_backup.return_value = BackupMetadata(
+        backup_path=Path("backup.kraken"),
+        backup_type=BackupType.MANUAL,
+        timestamp=datetime.now(),
+        size=1,
+        checksum="checksum",
+    )
 
     assert create_backup(args) == 0
 
@@ -53,11 +60,9 @@ def test_list_backups_empty(mock_backup_service, mock_db_path):
     args = argparse.Namespace(database=str(mock_db_path), verbose=False)
 
     service_instance = mock_backup_service.return_value
-    service_instance.backup_root = Path("/tmp/backups")
+    service_instance.list_backups.return_value = []
 
-    # Mock glob to return nothing
-    with patch("pathlib.Path.glob", return_value=[]):
-        assert list_backups(args) == 0
+    assert list_backups(args) == 0
 
 
 def test_restore_backup_success(mock_backup_service, mock_db_path):

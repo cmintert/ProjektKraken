@@ -245,7 +245,7 @@ class MapLayerMixin:
         # Select the graphics item on the map
         item = self.view.find_item_by_id(node_id)
         if item is not None:
-            self.view.scene.clearSelection()
+            self.view.graphics_scene.clearSelection()
             item.setSelected(True)
 
     @Slot(str)

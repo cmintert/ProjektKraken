@@ -284,7 +284,7 @@ class TestMapGraphicsViewFactory:
         pm.fill(Qt.GlobalColor.blue)
         view.pixmap_item = QGraphicsPixmapItem(pm)
         view.pixmap_item.setZValue(0)
-        view.scene.addItem(view.pixmap_item)
+        view.graphics_scene.addItem(view.pixmap_item)
         view.coord_system.set_scene_rect(view.pixmap_item.boundingRect())
         qtbot.addWidget(view)
         return view
@@ -430,7 +430,7 @@ class TestDrawingMode:
         pm.fill(Qt.GlobalColor.blue)
         view.pixmap_item = QGraphicsPixmapItem(pm)
         view.pixmap_item.setZValue(0)
-        view.scene.addItem(view.pixmap_item)
+        view.graphics_scene.addItem(view.pixmap_item)
         view.coord_system.set_scene_rect(view.pixmap_item.boundingRect())
         qtbot.addWidget(view)
         return view
@@ -641,7 +641,7 @@ class TestVertexEditing:
         pm.fill(Qt.GlobalColor.blue)
         view.pixmap_item = QGraphicsPixmapItem(pm)
         view.pixmap_item.setZValue(0)
-        view.scene.addItem(view.pixmap_item)
+        view.graphics_scene.addItem(view.pixmap_item)
         view.coord_system.set_scene_rect(view.pixmap_item.boundingRect())
         qtbot.addWidget(view)
 
@@ -733,7 +733,7 @@ class TestFeatureItemStyle:
         pm.fill(Qt.GlobalColor.blue)
         view.pixmap_item = QGraphicsPixmapItem(pm)
         view.pixmap_item.setZValue(0)
-        view.scene.addItem(view.pixmap_item)
+        view.graphics_scene.addItem(view.pixmap_item)
         view.coord_system.set_scene_rect(view.pixmap_item.boundingRect())
         qtbot.addWidget(view)
 
@@ -794,7 +794,7 @@ class TestVertexManagement:
         pm.fill(Qt.GlobalColor.blue)
         view.pixmap_item = QGraphicsPixmapItem(pm)
         view.pixmap_item.setZValue(0)
-        view.scene.addItem(view.pixmap_item)
+        view.graphics_scene.addItem(view.pixmap_item)
         view.coord_system.set_scene_rect(view.pixmap_item.boundingRect())
         qtbot.addWidget(view)
 
@@ -824,7 +824,7 @@ class TestVertexManagement:
         pm.fill(Qt.GlobalColor.blue)
         view.pixmap_item = QGraphicsPixmapItem(pm)
         view.pixmap_item.setZValue(0)
-        view.scene.addItem(view.pixmap_item)
+        view.graphics_scene.addItem(view.pixmap_item)
         view.coord_system.set_scene_rect(view.pixmap_item.boundingRect())
         qtbot.addWidget(view)
 
@@ -1206,7 +1206,7 @@ class TestVertexHandleScaling:
         pm.fill(Qt.GlobalColor.blue)
         view.pixmap_item = QGraphicsPixmapItem(pm)
         view.pixmap_item.setZValue(0)
-        view.scene.addItem(view.pixmap_item)
+        view.graphics_scene.addItem(view.pixmap_item)
         view.coord_system.set_scene_rect(view.pixmap_item.boundingRect())
         qtbot.addWidget(view)
 
@@ -1256,7 +1256,7 @@ class TestMidpointPositionUpdate:
         pm.fill(Qt.GlobalColor.blue)
         view.pixmap_item = QGraphicsPixmapItem(pm)
         view.pixmap_item.setZValue(0)
-        view.scene.addItem(view.pixmap_item)
+        view.graphics_scene.addItem(view.pixmap_item)
         view.coord_system.set_scene_rect(view.pixmap_item.boundingRect())
         qtbot.addWidget(view)
 
@@ -1310,7 +1310,7 @@ class TestVertexEditingEscFix:
         pm.fill(Qt.GlobalColor.blue)
         view.pixmap_item = QGraphicsPixmapItem(pm)
         view.pixmap_item.setZValue(0)
-        view.scene.addItem(view.pixmap_item)
+        view.graphics_scene.addItem(view.pixmap_item)
         view.coord_system.set_scene_rect(view.pixmap_item.boundingRect())
         qtbot.addWidget(view)
 
@@ -1379,7 +1379,7 @@ class TestEditStrokeWidth:
         pm.fill(Qt.GlobalColor.blue)
         view.pixmap_item = QGraphicsPixmapItem(pm)
         view.pixmap_item.setZValue(0)
-        view.scene.addItem(view.pixmap_item)
+        view.graphics_scene.addItem(view.pixmap_item)
         view.coord_system.set_scene_rect(view.pixmap_item.boundingRect())
         qtbot.addWidget(view)
 

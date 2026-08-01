@@ -109,7 +109,7 @@ def test_timeline_view_set_events_empty(timeline_view):
     timeline_view.set_events([])
 
     # Should have at least the axis line
-    items = timeline_view.scene.items()
+    items = timeline_view.graphics_scene.items()
     assert len(items) >= 1
 
 
@@ -117,7 +117,7 @@ def test_timeline_view_set_events_with_data(timeline_view, sample_events):
     """Test setting events creates all items."""
     timeline_view.set_events(sample_events)
 
-    event_items = [i for i in timeline_view.scene.items() if isinstance(i, EventItem)]
+    event_items = [i for i in timeline_view.graphics_scene.items() if isinstance(i, EventItem)]
     assert len(event_items) == 3
 
     # Check all events are in scene
@@ -141,7 +141,7 @@ def test_timeline_view_fit_all(timeline_view, sample_events):
     timeline_view.fit_all()
 
     # Scene rect should be set
-    assert timeline_view.scene.sceneRect().isValid()
+    assert timeline_view.graphics_scene.sceneRect().isValid()
 
 
 def test_timeline_view_focus_event_found(timeline_view):
@@ -152,7 +152,7 @@ def test_timeline_view_focus_event_found(timeline_view):
     timeline_view.focus_event("target")
 
     # Find the EventItem
-    items = [i for i in timeline_view.scene.items() if isinstance(i, EventItem)]
+    items = [i for i in timeline_view.graphics_scene.items() if isinstance(i, EventItem)]
     assert len(items) == 1
     assert items[0].isSelected()
 
@@ -165,7 +165,7 @@ def test_timeline_view_focus_event_not_found(timeline_view, sample_events):
     timeline_view.focus_event("nonexistent-id")
 
     # No item should be selected
-    items = [i for i in timeline_view.scene.items() if isinstance(i, EventItem)]
+    items = [i for i in timeline_view.graphics_scene.items() if isinstance(i, EventItem)]
     assert not any(item.isSelected() for item in items)
 
 
@@ -200,7 +200,7 @@ def test_timeline_view_scene_rect_updates(timeline_view, sample_events):
     """Test scene rect updates when events are set."""
     timeline_view.set_events(sample_events)
 
-    scene_rect = timeline_view.scene.sceneRect()
+    scene_rect = timeline_view.graphics_scene.sceneRect()
     assert scene_rect.width() > 0
     assert scene_rect.height() > 0
 
@@ -237,7 +237,7 @@ def test_timeline_scene_rect_is_unconstrained(timeline_view):
 
     timeline_view.set_events(events)
 
-    scene_rect = timeline_view.scene.sceneRect()
+    scene_rect = timeline_view.graphics_scene.sceneRect()
 
     # Check width is massive (buffer is 100M on each side)
     assert scene_rect.width() > 10_000_000, (
@@ -258,7 +258,7 @@ def test_timeline_scene_rect_is_unconstrained_empty(timeline_view):
     """Test that the scene rect is infinite even when no events are present."""
     timeline_view.set_events([])
 
-    scene_rect = timeline_view.scene.sceneRect()
+    scene_rect = timeline_view.graphics_scene.sceneRect()
 
     # Check width is massive
     assert scene_rect.width() > 10_000_000, (

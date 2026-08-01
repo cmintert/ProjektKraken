@@ -7,9 +7,10 @@ from MainWindow to reduce its size and improve maintainability.
 import datetime
 from typing import TYPE_CHECKING, cast
 
-from PySide6.QtCore import QMetaObject, QObject, QSettings, Qt, QTimer, Slot
+from PySide6.QtCore import QObject, QSettings, Qt, QTimer, Slot
 
 from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+from src.app.qt_invocation import invoke_queued
 from src.core.ai_generation import AIGenerationPreferences, TaskTemplate
 from src.core.logging_config import get_logger
 from src.services.prompt_builder import DEFAULT_SYSTEM_PROMPT
@@ -108,10 +109,9 @@ class AISearchManager(QObject):
 
         # Refresh worker-thread services (cross-thread call)
         if hasattr(self.window, "worker") and self.window.worker:
-            QMetaObject.invokeMethod(
+            invoke_queued(
                 self.window.worker,
                 "refresh_ai_settings",
-                Qt.ConnectionType.QueuedConnection,
             )
 
         # Refresh entity editor's LLM generation widget
@@ -377,8 +377,8 @@ class AISearchManager(QObject):
 
             # Get excluded attributes from QSettings
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-            excluded_text = settings.value(
-                "ai_search_excluded_attrs", "", type=str
+            excluded_text = str(
+                settings.value("ai_search_excluded_attrs", "", type=str) or ""
             )
             excluded = [
                 attr.strip()
@@ -454,11 +454,9 @@ class AISearchManager(QObject):
 
         """
         # Select the item in the unified list via the dock widget
-        if (
-            hasattr(self.window, "ui_manager")
-            and "list" in self.window.ui_manager.docks
-        ):
-            list_dock = self.window.ui_manager.docks["list"]
+        ui_manager = getattr(self.window, "ui_manager", None)
+        if ui_manager is not None and "list" in ui_manager.docks:
+            list_dock = ui_manager.docks["list"]
             list_widget = list_dock.widget()
             if list_widget and hasattr(list_widget, "select_item"):
                 list_widget.select_item(object_type, object_id)

@@ -13,9 +13,9 @@ Handles:
 """
 
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, cast
 
-from PySide6.QtCore import Q_ARG, QMetaObject, Qt, QTimer, Slot
+from PySide6.QtCore import Q_ARG, QTimer, Slot
 from PySide6.QtWidgets import QMessageBox
 
 from src.app.constants import (
@@ -25,9 +25,12 @@ from src.app.constants import (
     SEMANTIC_COMPLETION_TOP_K,
 )
 from src.app.coordinators.base_coordinator import BaseCoordinator
+from src.app.qt_invocation import invoke_queued
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
+    from src.core.entities import Entity
+    from src.core.events import Event
 
 logger = logging.getLogger(__name__)
 
@@ -110,18 +113,16 @@ class DataCoordinator(BaseCoordinator):
 
     def load_events(self) -> None:
         """Requests loading of all events from the worker thread."""
-        QMetaObject.invokeMethod(
+        invoke_queued(
             self.main_window.worker,
             "load_events",
-            Qt.ConnectionType.QueuedConnection,
         )
 
     def load_entities(self) -> None:
         """Requests loading of all entities from the worker thread."""
-        QMetaObject.invokeMethod(
+        invoke_queued(
             self.main_window.worker,
             "load_entities",
-            Qt.ConnectionType.QueuedConnection,
         )
 
     def load_event_details(self, event_id: str) -> None:
@@ -131,10 +132,9 @@ class DataCoordinator(BaseCoordinator):
             event_id: The ID of the event to load.
 
         """
-        QMetaObject.invokeMethod(
+        invoke_queued(
             self.main_window.worker,
             "load_event_details",
-            Qt.ConnectionType.QueuedConnection,
             Q_ARG(str, event_id),
         )
 
@@ -145,19 +145,17 @@ class DataCoordinator(BaseCoordinator):
             entity_id: The ID of the entity to load.
 
         """
-        QMetaObject.invokeMethod(
+        invoke_queued(
             self.main_window.worker,
             "load_entity_details",
-            Qt.ConnectionType.QueuedConnection,
             Q_ARG(str, entity_id),
         )
 
     def load_completer_data(self) -> None:
         """Requests loading of completer data from the worker thread."""
-        QMetaObject.invokeMethod(
+        invoke_queued(
             self.main_window.worker,
             "load_completer_data",
-            Qt.ConnectionType.QueuedConnection,
         )
 
     def load_graph_data(self, filter_config: Optional[dict] = None) -> None:
@@ -244,7 +242,7 @@ class DataCoordinator(BaseCoordinator):
         map_widget = getattr(self.main_window, "map_widget", None)
         maps_data = map_widget.maps_data if map_widget is not None else []
         self.main_window.event_editor.load_event(
-            event, relations, incoming, maps_data=maps_data
+            cast("Event | None", event), relations, incoming, maps_data=maps_data
         )
 
     @Slot(object, list, list)
@@ -262,7 +260,7 @@ class DataCoordinator(BaseCoordinator):
         map_widget = getattr(self.main_window, "map_widget", None)
         maps_data = map_widget.maps_data if map_widget is not None else []
         self.main_window.entity_editor.load_entity(
-            entity, relations, incoming, maps_data=maps_data
+            cast("Entity | None", entity), relations, incoming, maps_data=maps_data
         )
 
     @Slot(list, list)
@@ -366,8 +364,9 @@ class DataCoordinator(BaseCoordinator):
             dock_name: Name of the dock to raise ("event", "entity", etc).
 
         """
-        if dock_name in self.main_window.ui_manager.docks:
-            self.main_window.ui_manager.docks[dock_name].raise_()
+        ui_manager = getattr(self.main_window, "ui_manager")
+        if dock_name in ui_manager.docks:
+            ui_manager.docks[dock_name].raise_()
 
     @Slot(str, str)
     def on_selection_requested(self, item_type: str, item_id: str) -> None:
@@ -516,10 +515,9 @@ class DataCoordinator(BaseCoordinator):
         prefix = self._pending_semantic_prefix
         if not prefix:
             return
-        QMetaObject.invokeMethod(
+        invoke_queued(
             self.main_window.worker,
             "query_semantic_suggestions",
-            Qt.ConnectionType.QueuedConnection,
             Q_ARG(str, prefix),
             Q_ARG(int, SEMANTIC_COMPLETION_TOP_K),
             Q_ARG(float, SEMANTIC_COMPLETION_MIN_SCORE),

@@ -1,9 +1,11 @@
 import logging
 from typing import TYPE_CHECKING, Optional
 
-from PySide6.QtCore import Q_ARG, QMetaObject, Qt, Slot
+from PySide6.QtCore import Q_ARG, Slot
 
 from src.app.coordinators.base_coordinator import BaseCoordinator
+from src.app.qt_invocation import invoke_queued
+from src.core.calendar import CalendarConfig, CalendarConverter
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
@@ -38,10 +40,9 @@ class TimeCoordinator(BaseCoordinator):
             time (float): The new current time in lore_date units.
 
         """
-        QMetaObject.invokeMethod(
+        invoke_queued(
             self.main_window.worker,
             "save_current_time",
-            Qt.ConnectionType.QueuedConnection,
             Q_ARG(float, time),
         )
         logger.debug(f"Current time changed to: {time}")
@@ -52,19 +53,21 @@ class TimeCoordinator(BaseCoordinator):
 
         self.update_world_time_label(time)
 
-    @Slot(str)
+    @Slot(float)
     def update_playhead_time_label(self, time_val: float) -> None:
         """Updates the red playhead time label."""
         text = self._format_time_string(time_val)
-        if hasattr(self.main_window, "lbl_playhead_time"):
-            self.main_window.lbl_playhead_time.setText(f"Playhead: {text}")
+        label = getattr(self.main_window, "lbl_playhead_time", None)
+        if label is not None:
+            label.setText(f"Playhead: {text}")
 
     @Slot(float)
     def update_world_time_label(self, time_val: float) -> None:
         """Updates the blue world time label."""
         text = self._format_time_string(time_val)
-        if hasattr(self.main_window, "lbl_world_time"):
-            self.main_window.lbl_world_time.setText(f"World: {text}")
+        label = getattr(self.main_window, "lbl_world_time", None)
+        if label is not None:
+            label.setText(f"World: {text}")
 
     @Slot()
     def on_return_to_present(self) -> None:
@@ -102,10 +105,9 @@ class TimeCoordinator(BaseCoordinator):
         entity_editor = self.main_window.entity_editor
 
         if entity_editor.isVisible() and entity_editor._current_entity_id:
-            QMetaObject.invokeMethod(
+            invoke_queued(
                 self.main_window.worker,
                 "resolve_entity_state",
-                Qt.ConnectionType.QueuedConnection,
                 Q_ARG(str, entity_editor._current_entity_id),
                 Q_ARG(float, time),
             )
@@ -124,22 +126,20 @@ class TimeCoordinator(BaseCoordinator):
 
     def request_calendar_config(self) -> None:
         """Requests loading of the active calendar config from the worker."""
-        QMetaObject.invokeMethod(
+        invoke_queued(
             self.main_window.worker,
             "load_calendar_config",
-            Qt.ConnectionType.QueuedConnection,
         )
 
     def request_current_time(self) -> None:
         """Requests loading of the current time from the worker."""
-        QMetaObject.invokeMethod(
+        invoke_queued(
             self.main_window.worker,
             "load_current_time",
-            Qt.ConnectionType.QueuedConnection,
         )
 
     @Slot(object)
-    def on_calendar_config_loaded(self, config: object) -> None:
+    def on_calendar_config_loaded(self, config: CalendarConfig | None) -> None:
         """Handler for calendar config loaded from worker.
 
         Creates a CalendarConverter and distributes it to all widgets
@@ -150,8 +150,6 @@ class TimeCoordinator(BaseCoordinator):
 
         """
         try:
-            from src.core.calendar import CalendarConfig, CalendarConverter
-
             if config:
                 converter = CalendarConverter(config)
             else:
@@ -172,10 +170,11 @@ class TimeCoordinator(BaseCoordinator):
             TimelineDisplayWidget.set_calendar_converter(converter)
 
             # Check if UIManager has a pending calendar dialog
-            self.main_window.ui_manager.show_calendar_dialog(config)
+            ui_manager = getattr(self.main_window, "ui_manager")
+            ui_manager.show_calendar_dialog(config)
 
             # Save converter for status bar formatting
-            self.main_window.calendar_converter = converter
+            setattr(self.main_window, "calendar_converter", converter)
 
             # Refresh status bar labels now that we have a converter
             if hasattr(self.main_window, "timeline") and hasattr(

@@ -24,7 +24,7 @@ def drawing_tool(qapp):
     """DrawingTool wired to a real QGraphicsScene via a mock view."""
     scene = QGraphicsScene()
     view = MagicMock()
-    view.scene = scene
+    view.graphics_scene = scene
     snapping = MagicMock()
     tool = DrawingTool(view, snapping)
     yield tool
@@ -47,7 +47,7 @@ def test_drawing_vertex_dot_fill_uses_theme_error(drawing_tool):
 
     dots = [
         it
-        for it in drawing_tool._view.scene.items()
+        for it in drawing_tool._view.graphics_scene.items()
         if isinstance(it, QGraphicsEllipseItem)
     ]
     assert dots, "Expected at least one ellipse item (vertex dot) in scene"
@@ -67,7 +67,7 @@ def test_drawing_vertex_dot_outline_uses_theme_surface(drawing_tool):
 
     dots = [
         it
-        for it in drawing_tool._view.scene.items()
+        for it in drawing_tool._view.graphics_scene.items()
         if isinstance(it, QGraphicsEllipseItem)
     ]
     assert dots, "Expected at least one ellipse item (vertex dot) in scene"
@@ -94,7 +94,7 @@ def test_drawing_preview_pen_uses_theme_error(drawing_tool):
 
     paths = [
         it
-        for it in drawing_tool._view.scene.items()
+        for it in drawing_tool._view.graphics_scene.items()
         if isinstance(it, QGraphicsPathItem)
     ]
     assert paths, "Expected a QGraphicsPathItem preview in scene"
@@ -116,7 +116,7 @@ def test_drawing_region_fill_uses_theme_error_with_alpha(drawing_tool):
 
     paths = [
         it
-        for it in drawing_tool._view.scene.items()
+        for it in drawing_tool._view.graphics_scene.items()
         if isinstance(it, QGraphicsPathItem)
     ]
     assert paths, "Expected a QGraphicsPathItem region preview in scene"

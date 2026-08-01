@@ -5,7 +5,8 @@ from src.gui.widgets.timeline import EventItem, TimelineWidget
 def test_timeline_init(qapp):
     """Test that TimelineWidget initializes correctly."""
     widget = TimelineWidget()
-    assert widget.view.scene is not None
+    assert widget.view.graphics_scene is not None
+    assert widget.view.scene() is widget.view.graphics_scene
     assert widget.view.scale_factor == 20.0
 
 
@@ -21,7 +22,7 @@ def test_set_events(qapp):
     widget.set_events(events)
 
     # Check items in scene. At least axis, events, lines
-    items = widget.view.scene.items()
+    items = widget.view.graphics_scene.items()
     assert len(items) >= 5
 
     # Verify EventItems
@@ -50,7 +51,7 @@ def test_lane_layout_logic(qapp):
 
     widget.set_events(events)
 
-    items = [i for i in widget.view.scene.items() if isinstance(i, EventItem)]
+    items = [i for i in widget.view.graphics_scene.items() if isinstance(i, EventItem)]
     items.sort(key=lambda i: i.event.lore_date)
 
     # With smart packing:
@@ -76,7 +77,7 @@ def test_focus_event(qapp):
     widget.set_events([event])
 
     # Pre-condition
-    items = [i for i in widget.view.scene.items() if isinstance(i, EventItem)]
+    items = [i for i in widget.view.graphics_scene.items() if isinstance(i, EventItem)]
     assert not items[0].isSelected()
 
     # Action
@@ -118,7 +119,7 @@ def test_gravity_packing(qapp):
 
     widget.set_events(events)
 
-    items = [i for i in widget.view.scene.items() if isinstance(i, EventItem)]
+    items = [i for i in widget.view.graphics_scene.items() if isinstance(i, EventItem)]
     items.sort(key=lambda i: i.event.name)  # E1, E2, E3
 
     e1_y = items[0].y()

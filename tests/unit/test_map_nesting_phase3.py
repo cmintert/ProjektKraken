@@ -67,9 +67,9 @@ def view(qtbot):
     img.fill(Qt.GlobalColor.white)
     pixmap = QPixmap.fromImage(img)
     v.pixmap_item = QGraphicsPixmapItem(pixmap)
-    v.scene.addItem(v.pixmap_item)
+    v.graphics_scene.addItem(v.pixmap_item)
     v.coord_system.set_scene_rect(QRectF(0, 0, 200, 100))
-    v.scene.setSceneRect(QRectF(0, 0, 200, 100))
+    v.graphics_scene.setSceneRect(QRectF(0, 0, 200, 100))
     return v
 
 
@@ -188,7 +188,7 @@ class TestMapGraphicsViewFootprints:
     def test_set_footprints_items_in_scene(self, view):
         view.set_footprints([_make_footprint_data("d1")])
         item = view._footprint_items["d1"]
-        assert item.scene() is view.scene
+        assert item.scene() is view.graphics_scene
 
     def test_labels_render_below_footprints(self, view):
         view.set_footprints([_make_footprint_data("d1")])

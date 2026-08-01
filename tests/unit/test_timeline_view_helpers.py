@@ -101,7 +101,7 @@ class TestPositionEventItem:
         """Test that _position_event_item sets the item's Y position."""
         event = Event(id="test", name="Test", lore_date=100.0, type="generic")
         item = EventItem(event, timeline_view.scale_factor)
-        timeline_view.scene.addItem(item)
+        timeline_view.graphics_scene.addItem(item)
 
         timeline_view._position_event_item(item, 150.0)
 
@@ -112,7 +112,7 @@ class TestPositionEventItem:
         event = Event(id="test", name="Test", lore_date=100.0, type="generic")
         item = EventItem(event, timeline_view.scale_factor)
         item.setVisible(False)
-        timeline_view.scene.addItem(item)
+        timeline_view.graphics_scene.addItem(item)
 
         timeline_view._position_event_item(item, 100.0)
 
@@ -122,7 +122,7 @@ class TestPositionEventItem:
         """Test that _position_event_item updates _initial_y."""
         event = Event(id="test", name="Test", lore_date=100.0, type="generic")
         item = EventItem(event, timeline_view.scale_factor)
-        timeline_view.scene.addItem(item)
+        timeline_view.graphics_scene.addItem(item)
 
         timeline_view._position_event_item(item, 200.0)
 
@@ -139,7 +139,7 @@ class TestUpdateSceneRectFromEvents:
         # Call directly to test the method
         timeline_view._update_scene_rect_from_events(sample_events)
 
-        rect = timeline_view.scene.sceneRect()
+        rect = timeline_view.graphics_scene.sceneRect()
         assert rect.width() > 0
         assert rect.height() > 0
 
@@ -150,7 +150,7 @@ class TestUpdateSceneRectFromEvents:
 
         timeline_view._update_scene_rect_from_events(events)
 
-        rect = timeline_view.scene.sceneRect()
+        rect = timeline_view.graphics_scene.sceneRect()
         assert rect.width() > 0  # Should have some width even with single event
 
     def test_update_scene_rect_includes_margin(self, timeline_view, sample_events):
@@ -158,7 +158,7 @@ class TestUpdateSceneRectFromEvents:
         timeline_view.set_events(sample_events)
         timeline_view._update_scene_rect_from_events(sample_events)
 
-        rect = timeline_view.scene.sceneRect()
+        rect = timeline_view.graphics_scene.sceneRect()
         scale = timeline_view.scale_factor
 
         # Min event is at 100, max at 300
@@ -177,7 +177,7 @@ class TestEventUpdatePreview:
 
         timeline_view.update_event_preview({"id": "upd", "name": "Updated"})
 
-        items = [i for i in timeline_view.scene.items() if isinstance(i, EventItem)]
+        items = [i for i in timeline_view.graphics_scene.items() if isinstance(i, EventItem)]
         assert items[0].event.name == "Updated"
 
     def test_update_event_preview_changes_lore_date(self, timeline_view):
@@ -187,7 +187,7 @@ class TestEventUpdatePreview:
 
         timeline_view.update_event_preview({"id": "upd", "lore_date": 250.0})
 
-        items = [i for i in timeline_view.scene.items() if isinstance(i, EventItem)]
+        items = [i for i in timeline_view.graphics_scene.items() if isinstance(i, EventItem)]
         assert items[0].event.lore_date == 250.0
 
     def test_update_event_preview_nonexistent_id(self, timeline_view, sample_events):
@@ -198,7 +198,7 @@ class TestEventUpdatePreview:
         timeline_view.update_event_preview({"id": "nonexistent", "name": "New"})
 
         # Original events unchanged
-        items = [i for i in timeline_view.scene.items() if isinstance(i, EventItem)]
+        items = [i for i in timeline_view.graphics_scene.items() if isinstance(i, EventItem)]
         assert len(items) == 3
 
 
