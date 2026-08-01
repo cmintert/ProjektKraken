@@ -7,7 +7,7 @@ and reordering via drag-and-drop.  Integrates with the application's
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
 
 from PySide6.QtCore import QModelIndex, QPoint, QSize, Qt, Signal, Slot
 from PySide6.QtGui import QColor
@@ -136,6 +136,11 @@ class MapLayerPanel(QWidget):
         self._slider_updating = False  # guard against feedback loops
         self._start_opacity: Optional[float] = None  # Opacity at drag start
         self._slider_dragging = False  # True while mouse is on the slider handle
+        # Created dynamically by _build_tool_mode_buttons via setattr.
+        self._btn_brush: QPushButton
+        self._btn_fill: QPushButton
+        self._btn_gradient: QPushButton
+        self._btn_sample: QPushButton
         # Last committed opacity for the selected node — used as the
         # "old" value when a discrete change (keyboard) is committed.
         self._committed_opacity: Optional[float] = None
@@ -403,7 +408,7 @@ class MapLayerPanel(QWidget):
                 self._on_brush_size_spin_changed,
             )
         )
-        self._brush_size_row = self._brush_size_spin.parentWidget()
+        self._brush_size_row = cast(QWidget, self._brush_size_spin.parentWidget())
 
         self._build_paint_value_selector(rt)
         self._build_entity_picker(rt)
@@ -420,7 +425,7 @@ class MapLayerPanel(QWidget):
             self._on_falloff_changed,
             icon_path="default_assets/icons/ui_icons/drop.svg",
         )
-        self._hardness_row = self._falloff_slider.parentWidget()
+        self._hardness_row = cast(QWidget, self._falloff_slider.parentWidget())
 
         self._brush_opacity_slider, self._brush_opacity_label = self._make_labeled_slider(
             rt,
@@ -432,7 +437,9 @@ class MapLayerPanel(QWidget):
             self._on_brush_opacity_changed,
             icon_path="default_assets/icons/ui_icons/circle-half.svg",
         )
-        self._brush_opacity_row = self._brush_opacity_slider.parentWidget()
+        self._brush_opacity_row = cast(
+            QWidget, self._brush_opacity_slider.parentWidget()
+        )
 
         self._build_falloff_curve_combo(rt)
         self._build_gradient_sub_combo(rt)
@@ -1875,7 +1882,7 @@ class MapLayerPanel(QWidget):
             and self._paint_value_spin.value() not in allowed_values
         ):
             preferred_value = choices[0][1] if choices else swatches[0].value
-            self._set_paint_value(int(preferred_value))
+            self._set_paint_value(int(cast(Any, preferred_value)))
         self._swatch_grid.set_swatches(swatches)
         self._swatch_grid.set_active_value(self._paint_value_spin.value())
 
@@ -2016,7 +2023,7 @@ class MapLayerPanel(QWidget):
     def _on_swatch_clicked(self, value: object) -> None:
         """Set the paint value from a swatch tile click."""
         try:
-            int_val = int(value)  # type: ignore[arg-type]
+            int_val = int(cast(Any, value))
         except (TypeError, ValueError):
             return
         self._set_paint_value(int_val)
@@ -2039,7 +2046,7 @@ class MapLayerPanel(QWidget):
     def _on_recent_value_chosen(self, value: object) -> None:
         """A recent-values tile was clicked — restore its value."""
         try:
-            int_val = int(value)  # type: ignore[arg-type]
+            int_val = int(cast(Any, value))
         except (TypeError, ValueError):
             return
         mode = self._raster_mode_by_id.get(self._current_node_id, "discrete")

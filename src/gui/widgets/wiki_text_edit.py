@@ -5,7 +5,7 @@ A specialized QTextEdit that supports WikiLink navigation via Ctrl+Click.
 
 import logging
 import re
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple, cast
 
 import shiboken6
 from PySide6.QtCore import (
@@ -141,8 +141,8 @@ class WikiTextEditView(QTextEdit):
         """
         super().__init__(parent)
         self._hovered_link = None
-        self._completer = None
-        self._completion_map = {}  # Maps display names to IDs
+        self._completer: Optional[QCompleter] = None
+        self._completion_map: dict[str, tuple[str, str]] = {}
         self._last_completion_prefix: str = ""
         self._link_resolver = None  # Will be set later
         self._section_manager = SectionManager(self.document())
@@ -157,7 +157,7 @@ class WikiTextEditView(QTextEdit):
         tm.theme_changed.connect(self._on_theme_changed)
 
         # Remove frame from view as it's handled by wrapper
-        self.setFrameShape(QTextEdit.NoFrame)
+        self.setFrameShape(QFrame.Shape.NoFrame)
 
         # Force viewport transparency via Palette
         p = self.viewport().palette()
@@ -322,10 +322,10 @@ class WikiTextEditView(QTextEdit):
 
     def set_completer(
         self,
-        items_or_names: Optional[List[str]] = None,
+        items_or_names: Optional[list[Any]] = None,
         *,
-        items: list[tuple[str, str, str]] = None,
-        names: list[str] = None,
+        items: Optional[list[tuple[str, str, str]]] = None,
+        names: Optional[list[str]] = None,
     ) -> None:
         """Initializes or updates the completer with items.
 
@@ -347,9 +347,9 @@ class WikiTextEditView(QTextEdit):
         if items_or_names and isinstance(items_or_names, list):
             # Check if it's a list of tuples (new format) or strings (legacy)
             if isinstance(items_or_names[0], tuple):
-                items = items_or_names
+                items = cast(list[tuple[str, str, str]], items_or_names)
             else:
-                names = items_or_names
+                names = cast(list[str], items_or_names)
 
         if items is not None:
             # Build completion map: name -> (id, type)
@@ -372,11 +372,12 @@ class WikiTextEditView(QTextEdit):
             return
 
         if self._completer is None:
-            self._completer = QCompleter(display_names, self)
-            self._completer.setWidget(self)
-            self._completer.setCompletionMode(QCompleter.PopupCompletion)
-            self._completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-            self._completer.activated.connect(self.insert_completion)
+            completer = QCompleter(display_names, self)
+            completer.setWidget(self)
+            completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+            completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+            completer.activated.connect(self.insert_completion)
+            self._completer = completer
         else:
             model = QStringListModel(display_names, self._completer)
             self._completer.setModel(model)
@@ -399,7 +400,7 @@ class WikiTextEditView(QTextEdit):
         """
         if not self._completer or not names:
             return
-        model = self._completer.model()
+        model = cast(QStringListModel, self._completer.model())
         current = model.stringList()
         existing = set(current)
         new_names = [n for n in names if n not in existing]
@@ -583,7 +584,7 @@ class WikiTextEditView(QTextEdit):
 
         Uses the 'markdown' library for rich text rendering.
         """
-        import markdown
+        import markdown  # type: ignore[import-untyped]  # Package has no typing marker
 
         if text is None:
             text = ""
@@ -916,18 +917,28 @@ class WikiTextEditView(QTextEdit):
         # We need to remove the "[[" that triggered this + prefix
         # We assume cursor is after "[[Prefix"
         # Move left prefix_len
-        tc.movePosition(QTextCursor.Left, QTextCursor.KeepAnchor, prefix_len)
+        tc.movePosition(
+            QTextCursor.MoveOperation.Left,
+            QTextCursor.MoveMode.KeepAnchor,
+            prefix_len,
+        )
         tc.removeSelectedText()
 
         # Check for "[[" to left
-        tc.movePosition(QTextCursor.Left, QTextCursor.KeepAnchor, 2)
+        tc.movePosition(
+            QTextCursor.MoveOperation.Left, QTextCursor.MoveMode.KeepAnchor, 2
+        )
         if tc.selectedText() == "[[":
             tc.removeSelectedText()
         else:
             # Logic fallback: maybe user didn't type [[ ?
             # But our trigger logic ensures it.
             # Restore position if check failed (unlikely)
-            tc.movePosition(QTextCursor.Right, QTextCursor.MoveAnchor, 2)
+            tc.movePosition(
+                QTextCursor.MoveOperation.Right,
+                QTextCursor.MoveMode.MoveAnchor,
+                2,
+            )
 
         # Resolve ID
         item_id = None
@@ -1344,7 +1355,7 @@ class WikiTextEditView(QTextEdit):
 
         # Select the [[...]] text
         cursor.setPosition(abs_start)
-        cursor.setPosition(abs_end, QTextCursor.KeepAnchor)
+        cursor.setPosition(abs_end, QTextCursor.MoveMode.KeepAnchor)
 
         # Build the anchor HTML
         if is_valid:
@@ -1473,14 +1484,17 @@ class WikiTextEditView(QTextEdit):
 
     def _show_completion_popup(self, popup: QAbstractItemView, prefix: str) -> None:
         """Helper to position and show completion popup."""
-        self._completer.setCompletionPrefix(prefix)
+        completer = self._completer
+        if completer is None:
+            return
+        completer.setCompletionPrefix(prefix)
         curr_rect = self.cursorRect()
 
         scroll_bar = popup.verticalScrollBar()
         sb_width = scroll_bar.sizeHint().width() if scroll_bar else 0
 
         curr_rect.setWidth(popup.sizeHintForColumn(0) + sb_width)
-        self._completer.complete(curr_rect)
+        completer.complete(curr_rect)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         """Handles mouse move events to show pointer cursor over links.
@@ -1494,7 +1508,7 @@ class WikiTextEditView(QTextEdit):
         ):
             self.viewport().setCursor(Qt.CursorShape.PointingHandCursor)
             return
-        self.viewport().setCursor(Qt.IBeamCursor)
+        self.viewport().setCursor(Qt.CursorShape.IBeamCursor)
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
@@ -1649,8 +1663,8 @@ class WikiTextEditView(QTextEdit):
             cursor.setPosition(m.offset)
             cursor.setPosition(m.offset + m.length, QTextCursor.MoveMode.KeepAnchor)
             sel = QTextEdit.ExtraSelection()
-            sel.cursor = cursor
-            sel.format = fmt
+            setattr(sel, "cursor", cursor)
+            setattr(sel, "format", fmt)
             selections.append(sel)
         self.setExtraSelections(selections)
 
@@ -1864,15 +1878,15 @@ class SpellCheckSettingsDialog(QDialog):
         # Load current settings
         s = QSettings()
         s.beginGroup("SpellCheck")
-        self._enabled_cb.setChecked(s.value("enabled", False, type=bool))
-        lang = s.value("language", "auto")
+        self._enabled_cb.setChecked(cast(bool, s.value("enabled", False, type=bool)))
+        lang = cast(str, s.value("language", "auto"))
         idx = self._language_combo.findText(lang)
         if idx >= 0:
             self._language_combo.setCurrentIndex(idx)
         else:
             self._language_combo.setCurrentText(lang)
-        self._username_edit.setText(s.value("username", ""))
-        self._apikey_edit.setText(s.value("api_key", ""))
+        self._username_edit.setText(cast(str, s.value("username", "")))
+        self._apikey_edit.setText(cast(str, s.value("api_key", "")))
         s.endGroup()
 
     def _apply_style(self) -> None:
@@ -2028,7 +2042,9 @@ class WikiTextEdit(QFrame):
         from PySide6.QtCore import QSettings
 
         s = QSettings()
-        self.action_spell_check.setChecked(s.value("SpellCheck/enabled", False, type=bool))
+        self.action_spell_check.setChecked(
+            cast(bool, s.value("SpellCheck/enabled", False, type=bool))
+        )
 
     def _open_spell_settings(self, _checked: bool = False) -> None:
         """Show the SpellCheckSettingsDialog and sync the toolbar button state on close."""
@@ -2037,13 +2053,15 @@ class WikiTextEdit(QFrame):
         # Restore the button's visual state before opening — triggered() may
         # have toggled it, but the dialog owns the enabled/disabled decision.
         s = QSettings()
-        self.action_spell_check.setChecked(s.value("SpellCheck/enabled", False, type=bool))
+        self.action_spell_check.setChecked(
+            cast(bool, s.value("SpellCheck/enabled", False, type=bool))
+        )
 
         dlg = SpellCheckSettingsDialog(self)
 
         def _on_close() -> None:
             s2 = QSettings()
-            enabled = s2.value("SpellCheck/enabled", False, type=bool)
+            enabled = cast(bool, s2.value("SpellCheck/enabled", False, type=bool))
             self.action_spell_check.setChecked(enabled)
             if enabled:
                 self.editor._trigger_lt_check()
@@ -2212,10 +2230,10 @@ class WikiTextEdit(QFrame):
 
     def set_completer(
         self,
-        items_or_names: Optional[list] = None,
+        items_or_names: Optional[list[Any]] = None,
         *,
-        items: Optional[list] = None,
-        names: Optional[list] = None,
+        items: Optional[list[tuple[str, str, str]]] = None,
+        names: Optional[list[str]] = None,
     ) -> None:
         """Set the autocompleter for wiki links.
 

@@ -37,6 +37,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.map import Map
 from src.core.paths import get_resource_path
 from src.core.theme_manager import ThemeManager
 from src.gui.mixins.map_calibration_mixin import MapCalibrationMixin
@@ -360,7 +361,9 @@ class MapWidget(
 
         # Mode Pill (right side) — clickable to exit the current mode
         spacer = QWidget()
-        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        spacer.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+        )
         self.toolbar.addWidget(spacer)
 
         self.mode_indicator = QPushButton("● Normal")
@@ -433,7 +436,7 @@ class MapWidget(
 
         # Overlay Banner (Child of view, positioned at top)
         self.overlay_banner = QLabel(self.view)
-        self.overlay_banner.setAlignment(Qt.AlignCenter)
+        self.overlay_banner.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.overlay_banner.setStyleSheet(StyleHelper.get_overlay_banner_style())
         self.overlay_banner.hide()
 
@@ -537,7 +540,7 @@ class MapWidget(
             self.layer_panel.set_raster_tool_mode
         )
 
-        self._maps_data = []  # List of maps for selector
+        self._maps_data: list[Map] = []  # List of maps for selector
         self._playhead_time: float = 0.0  # Current playhead time from Timeline
         self._current_time: float = 0.0  # Story's "Now" time from Timeline
 
@@ -640,7 +643,7 @@ class MapWidget(
             self.view._raster_edit_tool.set_preview_node_id(
                 str(node_id) if node_id else None
             )
-        if not node_id or not layer_meta:
+        if not node_id or not isinstance(layer_meta, dict) or not layer_meta:
             overlay.hide()
             self.btn_legend_toggle.blockSignals(True)
             self.btn_legend_toggle.setChecked(False)
@@ -1326,15 +1329,15 @@ class MapWidget(
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Handle keyboard shortcuts for MapWidget."""
         if self._pinned_marker_id:
-            if event.key() == Qt.Key_Escape:
+            if event.key() == Qt.Key.Key_Escape:
                 self._cancel_clock_mode()
                 event.accept()
                 return
-            elif event.key() in (Qt.Key_Return, Qt.Key_Enter):
+            elif event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
                 self._commit_clock_mode()
                 event.accept()
                 return
-        elif event.key() == Qt.Key_Escape:
+        elif event.key() == Qt.Key.Key_Escape:
             # Draft Mode: discard unsaved marker positions
             if self._transient_marker_ids:
                 logger.debug("Esc pressed: Discarding draft marker positions")

@@ -8,16 +8,15 @@ import os
 from pathlib import Path
 
 # Forward declaration to avoid circular import
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional, cast
 
-from PySide6.QtCore import QByteArray, QRectF, Qt, Signal
+from PySide6.QtCore import QByteArray, QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import (
     QBrush,
     QColor,
     QCursor,
     QFont,
     QFontMetrics,
-    QMouseEvent,
     QPainter,
     QPen,
 )
@@ -26,6 +25,7 @@ from PySide6.QtWidgets import (
     QGraphicsItem,
     QGraphicsObject,
     QGraphicsPixmapItem,
+    QGraphicsSceneMouseEvent,
     QStyleOptionGraphicsItem,
     QWidget,
 )
@@ -34,6 +34,9 @@ from src.core.style_constants import BASE_SIZE
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.svg_utils import apply_svg_inline_styles, svg_file_to_string
 from src.services.visual_resolver import VisualResolver
+
+if TYPE_CHECKING:
+    from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 
 # Resolve marker icons path
 MARKER_ICONS_PATH = os.path.join(
@@ -196,7 +199,7 @@ class MarkerItem(QGraphicsObject):
 
         # Drag tracking
         self._is_dragging = False
-        self._drag_start_pos = None
+        self._drag_start_pos: Optional[QPointF] = None
 
         # Lore priority – set externally before a layout pass.
         self.connection_count: int = 0
@@ -368,7 +371,9 @@ class MarkerItem(QGraphicsObject):
 
         if self.is_future:
             # Desaturate significantly for future state
-            h, s, lightness, a = color.getHslF()
+            h, s, lightness, a = cast(
+                tuple[float, float, float, float], color.getHslF()
+            )
             # Reduce saturation by 20% (keep 80%) for a subtle fade
             # without becoming grey
             s = max(0.0, s * 0.8)
@@ -436,7 +441,7 @@ class MarkerItem(QGraphicsObject):
             option: Style options.
             widget: The widget being painted on.
         """
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect = self.boundingRect()
 
         if self._svg_renderer and self._svg_renderer.isValid():
@@ -452,7 +457,8 @@ class MarkerItem(QGraphicsObject):
             rect: The rectangle to draw into.
         """
         # SVG already has inline fill/stroke styles applied via _apply_and_load_svg
-        self._svg_renderer.render(painter, rect)
+        renderer = cast(QSvgRenderer, self._svg_renderer)
+        renderer.render(painter, rect)
 
         if self.has_keyframes:
             self._draw_keyframe_indicator(painter)
@@ -460,7 +466,7 @@ class MarkerItem(QGraphicsObject):
         # Draw selection highlight
         if self.isSelected():
             painter.setPen(QPen(QColor(255, 255, 255), 2))
-            painter.setBrush(Qt.NoBrush)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.drawRect(rect)
 
     def _draw_fallback_circle(self, painter: QPainter, rect: QRectF) -> None:
@@ -516,7 +522,7 @@ class MarkerItem(QGraphicsObject):
         indicator_size = 8.0
         y_pos = -(size / 2) - 4 - (indicator_size / 2)
 
-        painter.setPen(Qt.NoPen)
+        painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QBrush(primary_color))
         painter.drawEllipse(
             QRectF(
@@ -527,7 +533,7 @@ class MarkerItem(QGraphicsObject):
             )
         )
 
-    def mousePressEvent(self, event: QMouseEvent) -> None:
+    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """Track drag start.
 
         Args:
@@ -541,7 +547,7 @@ class MarkerItem(QGraphicsObject):
             )
         super().mousePressEvent(event)
 
-    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+    def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """Emit position change on drag end, or clicked signal if distance small.
 
         Args:
@@ -574,7 +580,9 @@ class MarkerItem(QGraphicsObject):
                 view = self.scene().views()[0]
                 # Use string check to avoid circular import
                 if view.__class__.__name__ == "MapGraphicsView":
-                    view.marker_moved.emit(self.marker_id, norm_x, norm_y)
+                    cast("MapGraphicsView", view).marker_moved.emit(
+                        self.marker_id, norm_x, norm_y
+                    )
                     logger.debug(
                         f"Marker {self.marker_id} drag ended at normalized "
                         f"({norm_x:.3f}, {norm_y:.3f})"

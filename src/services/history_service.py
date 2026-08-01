@@ -40,7 +40,7 @@ class HistoryService:
         self.db_service = db_service
         self.world_id = world_id
         self.session_id = self._generate_session_id()
-        self._command_registry: Dict[str, type] = {}
+        self._command_registry: Dict[str, type["BaseCommand"]] = {}
 
         # Start a new session
         self._start_session()
@@ -90,7 +90,9 @@ class HistoryService:
         except Exception as e:
             logger.error(f"Failed to end session: {e}")
 
-    def register_command_type(self, command_type: str, command_class: type) -> None:
+    def register_command_type(
+        self, command_type: str, command_class: type["BaseCommand"]
+    ) -> None:
         """Register a command class for deserialization.
 
         Args:
@@ -398,7 +400,7 @@ class HistoryService:
             Dictionary with stats (command_count, session_count, etc.)
         """
         try:
-            stats = {}
+            stats: Dict[str, int] = {}
 
             if not self.db_service._connection:
                 return stats

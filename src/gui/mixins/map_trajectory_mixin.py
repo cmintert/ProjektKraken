@@ -5,10 +5,10 @@ and clock-mode temporal editing for the MapWidget.
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, Iterator, Tuple, cast
+from typing import TYPE_CHECKING, Any, Iterator, Protocol, Tuple, cast
 
 from PySide6.QtCore import QSettings, Slot
-from PySide6.QtWidgets import QComboBox, QLabel, QWidget
+from PySide6.QtWidgets import QComboBox, QWidget
 
 from src.core.protocols import SignalProtocol
 from src.core.trajectory import KEYFRAME_TIME_EPSILON, interpolate_position
@@ -18,6 +18,14 @@ if TYPE_CHECKING:
     from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 
 logger = logging.getLogger(__name__)
+
+
+class _CoordinateLabel(Protocol):
+    """Text API required from the map widget's lightweight status label."""
+
+    def text(self) -> str: ...
+
+    def setText(self, text: str) -> None: ...
 
 
 class MapTrajectoryMixin:
@@ -58,7 +66,7 @@ class MapTrajectoryMixin:
         jump_to_time_requested: SignalProtocol
         delete_keyframe_requested: SignalProtocol
         map_selector: QComboBox
-        coord_label: QLabel
+        coord_label: _CoordinateLabel
 
         def _update_mode_indicator(self) -> None:
             ...

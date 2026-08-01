@@ -12,12 +12,13 @@ Implements a ``QAbstractItemModel`` that manages a tree of
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, cast
 
 from PySide6.QtCore import (
     QAbstractItemModel,
     QMimeData,
     QModelIndex,
+    QPersistentModelIndex,
     Qt,
     Signal,
     Slot,
@@ -43,6 +44,7 @@ logger = logging.getLogger(__name__)
 
 # Internal MIME type for drag-and-drop reordering
 _LAYER_MIME_TYPE = "application/x-kraken-layer-node-id"
+ModelIndex = QModelIndex | QPersistentModelIndex
 
 # Icons are now handled via DecorationRole with themes (LOW-11)
 
@@ -109,7 +111,7 @@ class MapLayerModel(QAbstractItemModel):
         """The invisible root node."""
         return self._root
 
-    def node_from_index(self, index: QModelIndex) -> MapLayerNode:
+    def node_from_index(self, index: ModelIndex) -> MapLayerNode:
         """Return the :class:`MapLayerNode` for a given model index.
 
         Args:
@@ -162,7 +164,7 @@ class MapLayerModel(QAbstractItemModel):
         self,
         row: int,
         column: int,
-        parent: QModelIndex = QModelIndex(),
+        parent: ModelIndex = QModelIndex(),
     ) -> QModelIndex:
         """Return a model index for the item at (*row*, *column*) under *parent*.
 
@@ -183,7 +185,8 @@ class MapLayerModel(QAbstractItemModel):
             return self.createIndex(row, column, child)
         return QModelIndex()
 
-    def parent(self, index: QModelIndex) -> QModelIndex:  # type: ignore[override]
+    # PySide6 stubs merge the model overload with QObject.parent().
+    def parent(self, index: ModelIndex) -> QModelIndex:  # type: ignore[override]
         """Return the parent index of *index*.
 
         Args:
@@ -205,7 +208,7 @@ class MapLayerModel(QAbstractItemModel):
         row = grandparent.children.index(parent_node)
         return self.createIndex(row, 0, parent_node)
 
-    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
+    def rowCount(self, parent: ModelIndex = QModelIndex()) -> int:
         """Return the number of children under *parent*.
 
         Args:
@@ -218,7 +221,7 @@ class MapLayerModel(QAbstractItemModel):
         node = self.node_from_index(parent)
         return len(node.children)
 
-    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
+    def columnCount(self, parent: ModelIndex = QModelIndex()) -> int:
         """Return the column count (always 1).
 
         Args:
@@ -230,7 +233,7 @@ class MapLayerModel(QAbstractItemModel):
         """
         return self.COLUMN_COUNT
 
-    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
+    def data(self, index: ModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         """Return data for the requested role.
 
         Args:
@@ -266,7 +269,7 @@ class MapLayerModel(QAbstractItemModel):
             return node.id
         return None
 
-    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
+    def flags(self, index: ModelIndex) -> Qt.ItemFlag:
         """Return item flags (checkable, drag/drop enabled).
 
         Args:
@@ -294,7 +297,7 @@ class MapLayerModel(QAbstractItemModel):
 
     def setData(
         self,
-        index: QModelIndex,
+        index: ModelIndex,
         value: Any,
         role: int = Qt.ItemDataRole.EditRole,
     ) -> bool:
@@ -369,7 +372,7 @@ class MapLayerModel(QAbstractItemModel):
         action: Qt.DropAction,
         row: int,
         column: int,
-        parent: QModelIndex,
+        parent: ModelIndex,
     ) -> bool:
         """Handle a drop operation (reorder layers).
 
@@ -389,7 +392,7 @@ class MapLayerModel(QAbstractItemModel):
         if not data.hasFormat(_LAYER_MIME_TYPE):
             return False
 
-        raw = bytes(data.data(_LAYER_MIME_TYPE)).decode("utf-8")
+        raw = bytes(data.data(_LAYER_MIME_TYPE).data()).decode("utf-8")
         node_ids = [nid for nid in raw.split("\n") if nid]
 
         target_parent = self.node_from_index(parent)
@@ -803,31 +806,33 @@ class MapLayerModel(QAbstractItemModel):
 
         if layer_type == MAP_LAYER_TYPE_GROUP:
             icon = load_icon(
-                "default_assets/icons/ui_icons/folder.svg", theme.get("text_main")
+                "default_assets/icons/ui_icons/folder.svg",
+                cast(str, theme.get("text_main")),
             )
         elif layer_type == MAP_LAYER_TYPE_MARKER:
             icon = load_icon(
-                "default_assets/icons/markers/map-pin.svg", theme.get("primary")
+                "default_assets/icons/markers/map-pin.svg",
+                cast(str, theme.get("primary")),
             )
         elif layer_type == MAP_LAYER_TYPE_PATH:
             icon = load_icon(
                 "default_assets/icons/markers/polyline.svg",
-                theme.get("accent_secondary"),
+                cast(str, theme.get("accent_secondary")),
             )
         elif layer_type == MAP_LAYER_TYPE_REGION:
             icon = load_icon(
                 "default_assets/icons/markers/polygon.svg",
-                theme.get("accent_secondary"),
+                cast(str, theme.get("accent_secondary")),
             )
         elif layer_type == MAP_LAYER_TYPE_RASTER:
             icon = load_icon(
                 "default_assets/icons/markers/grid-raster.svg",
-                theme.get("accent_secondary"),
+                cast(str, theme.get("accent_secondary")),
             )
         elif layer_type == MAP_LAYER_TYPE_BASEMAP:
             icon = load_icon(
                 "default_assets/icons/markers/mountain.svg",
-                theme.get("text_main"),
+                cast(str, theme.get("text_main")),
             )
 
         if icon:

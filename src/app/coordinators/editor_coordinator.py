@@ -19,7 +19,7 @@ from src.app.constants import (
     WINDOW_SETTINGS_KEY,
 )
 from src.app.coordinators.base_coordinator import BaseCoordinator
-from src.commands.base_command import CommandResult
+from src.commands.base_command import BaseCommand, CommandResult
 from src.commands.composite_command import CompositeCommand
 from src.commands.entity_commands import (
     CreateEntityCommand,
@@ -186,16 +186,16 @@ class EditorCoordinator(BaseCoordinator):
                             if m.get("entity_id") != entity_id
                         ],
                     }
-                    cmd = SetRasterMappingCommand(
+                    raster_cmd = SetRasterMappingCommand(
                         map_id=ref.map_id,
                         node_id=ref.node_id,
                         new_mapping=new_vem,
                         old_mapping=old_vem if isinstance(old_vem, dict) else {},
                     )
-                    self.command_requested.emit(cmd)
+                    self.command_requested.emit(raster_cmd)
 
-        cmd = DeleteEntityCommand(entity_id)
-        self.command_requested.emit(cmd)
+        delete_cmd = DeleteEntityCommand(entity_id)
+        self.command_requested.emit(delete_cmd)
 
     @Slot(str, str)
     def on_item_delete_requested(self, item_type: str, item_id: str) -> None:
@@ -234,7 +234,7 @@ class EditorCoordinator(BaseCoordinator):
             logger.error("[EditorCoordinator] update_event aborted - no ID")
             return
 
-        cmds = []
+        cmds: list[BaseCommand] = []
         cmds.append(UpdateEventCommand(event_id, event_data))
 
         if "description" in event_data:
@@ -242,13 +242,15 @@ class EditorCoordinator(BaseCoordinator):
 
         if len(cmds) > 1:
             desc = f"Update Event '{event_data.get('name', '?')}'"
-            cmd = CompositeCommand(cmds, description=desc)
+            command: BaseCommand = CompositeCommand(cmds, description=desc)
             logger.debug("[EditorCoordinator] Emitting CompositeCommand (Update+Wiki)")
         else:
-            cmd = cmds[0]
-            logger.debug(f"[EditorCoordinator] Emitting {cmd.__class__.__name__}")
+            command = cmds[0]
+            logger.debug(
+                f"[EditorCoordinator] Emitting {command.__class__.__name__}"
+            )
 
-        self.command_requested.emit(cmd)
+        self.command_requested.emit(command)
 
     def update_entity(self, entity_data: dict) -> None:
         """Updates an entity with the provided data.
@@ -269,7 +271,7 @@ class EditorCoordinator(BaseCoordinator):
             logger.error("[EditorCoordinator] update_entity aborted - no ID")
             return
 
-        cmds = []
+        cmds: list[BaseCommand] = []
         cmds.append(UpdateEntityCommand(entity_id, entity_data))
 
         if "description" in entity_data:
@@ -277,16 +279,18 @@ class EditorCoordinator(BaseCoordinator):
 
         if len(cmds) > 1:
             desc = f"Update Entity '{entity_data.get('name', '?')}'"
-            cmd = CompositeCommand(cmds, description=desc)
+            command: BaseCommand = CompositeCommand(cmds, description=desc)
             logger.debug("[EditorCoordinator] Emitting CompositeCommand (Update+Wiki)")
         else:
-            cmd = cmds[0]
-            logger.debug(f"[EditorCoordinator] Emitting {cmd.__class__.__name__}")
+            command = cmds[0]
+            logger.debug(
+                f"[EditorCoordinator] Emitting {command.__class__.__name__}"
+            )
 
-        self.command_requested.emit(cmd)
+        self.command_requested.emit(command)
 
     def _append_wiki_cmd_if_enabled(
-        self, cmds: list, source_id: str, description: str
+        self, cmds: list[BaseCommand], source_id: str, description: str
     ) -> None:
         """Appends ProcessWikiLinksCommand to cmds if auto-relation is enabled."""
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)

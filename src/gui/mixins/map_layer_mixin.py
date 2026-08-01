@@ -45,6 +45,7 @@ class MapLayerMixin:
     if TYPE_CHECKING:
         view: MapGraphicsView
         layer_panel: MapLayerPanel
+        _layer_model: Optional[MapLayerModel]
         layer_tree_changed: SignalInstance
         layer_delete_feature_requested: SignalInstance
         layer_rename_requested: SignalInstance

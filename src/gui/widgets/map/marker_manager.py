@@ -8,7 +8,7 @@ import logging
 from typing import TYPE_CHECKING, Dict, Optional
 
 import shiboken6
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsObject
+from PySide6.QtWidgets import QGraphicsItem
 
 from src.app.constants import MAP_LAYER_Z_MARKERS
 from src.core.marker import FEATURE_TYPE_PATH, FEATURE_TYPE_REGION
@@ -34,7 +34,7 @@ class MarkerManager:
     def __init__(self, view: "MapGraphicsView") -> None:
         self._view = view
         self.markers: Dict[str, MarkerItem] = {}
-        self.feature_items: Dict[str, QGraphicsObject] = {}
+        self.feature_items: Dict[str, PathItem | RegionItem] = {}
 
     def add_marker(
         self,
@@ -86,7 +86,7 @@ class MarkerManager:
 
         # Factory: route by feature_type
         if feature_type == FEATURE_TYPE_PATH and geometry:
-            item = PathItem(
+            path_item = PathItem(
                 marker_id=marker_id,
                 object_type=object_type,
                 label=label,
@@ -99,13 +99,13 @@ class MarkerManager:
                 lore_date=lore_date,
                 map_width_meters=self._view.map_width_meters,
             )
-            self._view.graphics_scene.addItem(item)
-            self.feature_items[marker_id] = item
-            item.clicked.connect(self._view.marker_clicked.emit)
+            self._view.graphics_scene.addItem(path_item)
+            self.feature_items[marker_id] = path_item
+            path_item.clicked.connect(self._view.marker_clicked.emit)
             return
 
         if feature_type == FEATURE_TYPE_REGION and geometry:
-            item = RegionItem(
+            region_item = RegionItem(
                 marker_id=marker_id,
                 object_type=object_type,
                 label=label,
@@ -118,9 +118,9 @@ class MarkerManager:
                 lore_date=lore_date,
                 map_width_meters=self._view.map_width_meters,
             )
-            self._view.graphics_scene.addItem(item)
-            self.feature_items[marker_id] = item
-            item.clicked.connect(self._view.marker_clicked.emit)
+            self._view.graphics_scene.addItem(region_item)
+            self.feature_items[marker_id] = region_item
+            region_item.clicked.connect(self._view.marker_clicked.emit)
             return
 
         # Default: point marker
@@ -178,10 +178,10 @@ class MarkerManager:
             del self.markers[marker_id]
             logger.debug(f"Removed marker {marker_id}")
         if marker_id in self.feature_items:
-            item = self.feature_items[marker_id]
-            if shiboken6.isValid(item):
+            feature_item = self.feature_items[marker_id]
+            if shiboken6.isValid(feature_item):
                 try:
-                    self._view.graphics_scene.removeItem(item)
+                    self._view.graphics_scene.removeItem(feature_item)
                 except RuntimeError:
                     logger.debug(
                         "remove_marker: feature C++ object already deleted for %s",

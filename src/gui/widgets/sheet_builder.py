@@ -9,7 +9,7 @@ import logging
 import math
 import uuid
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 
 import shiboken6
 from PySide6.QtCore import QMimeData, QPoint, QSize, Qt, Signal
@@ -862,8 +862,9 @@ class _ResizeHandle(QWidget):
                     final = s // row_gcd
                     self._hlayout.setStretch(i, final)
                     item = self._hlayout.itemAt(i)
-                    if item and item.widget() and hasattr(item.widget(), "weight"):
-                        item.widget().weight = final
+                    widget = item.widget() if item else None
+                    if widget is not None and hasattr(widget, "weight"):
+                        widget.weight = final
 
             except RuntimeError:
                 return
@@ -1149,7 +1150,7 @@ class SheetBuilderWidget(QWidget):
             row_layout = self._grid_layout.itemAt(row_idx)
             if row_layout is None or row_layout.layout() is None:
                 continue
-            hlayout = row_layout.layout()
+            hlayout = cast(QHBoxLayout, row_layout.layout())
             row_items: List[Any] = []
             for col_idx in range(hlayout.count()):
                 item = hlayout.itemAt(col_idx)
@@ -1223,7 +1224,7 @@ class SheetBuilderWidget(QWidget):
             row_item = self._grid_layout.itemAt(row_idx)
             if row_item is None or row_item.layout() is None:
                 continue
-            hlayout = row_item.layout()
+            hlayout = cast(QHBoxLayout, row_item.layout())
             for col_idx in range(hlayout.count()):
                 item = hlayout.itemAt(col_idx)
                 if item is not None and item.widget() is pair:
@@ -1252,7 +1253,9 @@ class SheetBuilderWidget(QWidget):
         """Accept drags carrying the sheet MIME type and show ghost preview."""
         if event.mimeData().hasFormat(_SHEET_DRAG_MIME):
             event.acceptProposedAction()
-            key = bytes(event.mimeData().data(_SHEET_DRAG_MIME)).decode("utf-8")
+            key = bytes(event.mimeData().data(_SHEET_DRAG_MIME).data()).decode(
+                "utf-8"
+            )
             # Show a friendly label for spacers instead of the raw spacer_id
             label = "⬜ Spacer" if key.startswith("__spacer_") else key
             self._ghost = _GhostWidget(label)
@@ -1292,7 +1295,7 @@ class SheetBuilderWidget(QWidget):
             event.ignore()
             return
 
-        key = bytes(mime.data(_SHEET_DRAG_MIME)).decode("utf-8")
+        key = bytes(mime.data(_SHEET_DRAG_MIME).data()).decode("utf-8")
         # Look up the dragged widget: attribute pairs take priority, then spacers
         dragged: Optional[QWidget] = self._pairs.get(key) or self._spacers.get(key)
         if dragged is None:
@@ -1320,7 +1323,7 @@ class SheetBuilderWidget(QWidget):
                 # Insert into existing row
                 row_item = self._grid_layout.itemAt(drop_row)
                 if row_item and row_item.layout():
-                    hlayout = row_item.layout()
+                    hlayout = cast(QHBoxLayout, row_item.layout())
                     idx = min(insert_col, hlayout.count())
                     hlayout.insertWidget(idx, dragged, stretch=w_weight)
                     self._strip_resize_handles(hlayout)
@@ -1450,8 +1453,8 @@ class SheetBuilderWidget(QWidget):
             if item.layout():
                 while item.layout().count():
                     child = item.layout().takeAt(0)
-                    if child.widget():
-                        w = child.widget()
+                    w = child.widget()
+                    if w is not None:
                         logger.debug(f"Removing widget from layout: {type(w).__name__}")
                         w.setParent(None)
                         w.deleteLater()
@@ -2018,7 +2021,7 @@ class SheetBuilderWidget(QWidget):
         if self._grid_layout.count() > 0:
             last_item = self._grid_layout.itemAt(self._grid_layout.count() - 1)
             if last_item and last_item.layout():
-                hlayout = last_item.layout()
+                hlayout = cast(QHBoxLayout, last_item.layout())
                 sw = SpacerWidget()
                 sw.weight = 1
                 sw.drag_started.connect(self._on_child_drag_started)
@@ -2084,17 +2087,14 @@ class SheetBuilderWidget(QWidget):
             row_item = self._grid_layout.itemAt(row_idx)
             if row_item is None or row_item.layout() is None:
                 continue
-            hlayout = row_item.layout()
+            hlayout = cast(QHBoxLayout, row_item.layout())
             if hlayout.geometry().contains(pos):
                 clicked_row = row_idx
                 for col_idx in range(hlayout.count()):
                     item = hlayout.itemAt(col_idx)
-                    if (
-                        item
-                        and item.widget()
-                        and item.widget().geometry().contains(pos)
-                    ):
-                        clicked_widget = item.widget()
+                    candidate = item.widget() if item else None
+                    if candidate is not None and candidate.geometry().contains(pos):
+                        clicked_widget = candidate
                         clicked_col = col_idx
                         break
                 break
@@ -2110,7 +2110,11 @@ class SheetBuilderWidget(QWidget):
     ) -> None:
         """Build context menu actions for a clicked row."""
         row_item = self._grid_layout.itemAt(row_idx)
-        hlayout = row_item.layout() if row_item else None
+        hlayout = (
+            cast(QHBoxLayout, row_item.layout())
+            if row_item and row_item.layout()
+            else None
+        )
 
         act = menu.addAction("⬆ Insert Row Above")
         act.triggered.connect(lambda: self._ctx_insert_row(row_idx))
@@ -2193,7 +2197,7 @@ class SheetBuilderWidget(QWidget):
         """Append a spacer to the given row."""
         row_item = self._grid_layout.itemAt(row_idx)
         if row_item and row_item.layout():
-            hlayout = row_item.layout()
+            hlayout = cast(QHBoxLayout, row_item.layout())
             sw = SpacerWidget()
             sw.weight = 1
             sw.drag_started.connect(self._on_child_drag_started)
@@ -2210,14 +2214,13 @@ class SheetBuilderWidget(QWidget):
         row_item = self._grid_layout.itemAt(row_idx)
         if not row_item or not row_item.layout():
             return
-        hlayout = row_item.layout()
+        hlayout = cast(QHBoxLayout, row_item.layout())
         # Iterate backwards to safely remove
         for i in range(hlayout.count() - 1, -1, -1):
             item = hlayout.itemAt(i)
-            if item and item.widget() and isinstance(item.widget(), SpacerWidget):
-                widget = item.widget()
-                if isinstance(widget, SpacerWidget):
-                    self._spacers.pop(widget.spacer_id, None)
+            widget = item.widget() if item else None
+            if isinstance(widget, SpacerWidget):
+                self._spacers.pop(widget.spacer_id, None)
                 hlayout.removeWidget(widget)
                 widget.setParent(None)
                 widget.deleteLater()
@@ -2232,7 +2235,7 @@ class SheetBuilderWidget(QWidget):
         row_item = self._grid_layout.itemAt(row_idx)
         if not row_item or not row_item.layout():
             return
-        hlayout = row_item.layout()
+        hlayout = cast(QHBoxLayout, row_item.layout())
         # Remove widgets and their pair/spacer entries
         while hlayout.count():
             child = hlayout.takeAt(0)
@@ -2292,8 +2295,8 @@ class SheetBuilderWidget(QWidget):
         """
         for i in range(hlayout.count() - 1, -1, -1):
             item = hlayout.itemAt(i)
-            if item and isinstance(item.widget(), _ResizeHandle):
-                w = item.widget()
+            w = item.widget() if item else None
+            if isinstance(w, _ResizeHandle):
                 hlayout.removeWidget(w)
                 w.setParent(None)
                 w.deleteLater()

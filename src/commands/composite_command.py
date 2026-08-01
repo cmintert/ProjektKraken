@@ -20,7 +20,9 @@ class CompositeCommand(BaseCommand):
     """
 
     def __init__(
-        self, commands: List[BaseCommand] = None, description: str = "Composite Command"
+        self,
+        commands: List[BaseCommand] | None = None,
+        description: str = "Composite Command",
     ) -> None:
         """Initializes the composite command.
 
@@ -49,7 +51,7 @@ class CompositeCommand(BaseCommand):
                 result = cmd.execute(db_service)
 
                 # Check for boolean or CommandResult failure
-                success = result
+                success: CommandResult | bool = result
                 message = ""
                 if isinstance(result, CommandResult):
                     success = result.success

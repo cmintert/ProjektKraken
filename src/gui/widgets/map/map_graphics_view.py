@@ -13,11 +13,12 @@ focused sub-components:
 
 import logging
 import math
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, cast
 
 from PySide6.QtCore import (
     Property,
     QPointF,
+    QRect,
     QRectF,
     QSettings,
     QSize,
@@ -92,6 +93,7 @@ from src.gui.widgets.map.vertex_editor import VertexEditor
 
 if TYPE_CHECKING:
     from src.gui.widgets.map.map_layer_model import MapLayerModel
+    from src.gui.widgets.map_widget import MapWidget
 
 logger = logging.getLogger(__name__)
 
@@ -161,8 +163,8 @@ class KeyframeGizmo(QGraphicsItemGroup):
         # Background rect (smaller)
         size = GIZMO_SIZE
         rect = QGraphicsRectItem(x_offset, 0, size, size)
-        rect.setBrush(Qt.NoBrush)
-        rect.setPen(Qt.NoPen)
+        rect.setBrush(Qt.BrushStyle.NoBrush)
+        rect.setPen(Qt.PenStyle.NoPen)
         rect.setZValue(LAYER_UI_OVERLAY)
 
         # Icon text (smaller font)
@@ -333,7 +335,7 @@ class KeyframeItem(QGraphicsObject):
             option: Style options for the graphics item.
             widget: Optional widget being painted on.
         """
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setBrush(self._brush)
         painter.setPen(self._pen)
         painter.drawEllipse(self._rect)
@@ -364,7 +366,7 @@ class KeyframeItem(QGraphicsObject):
         """
         return self.scale()
 
-    @scale_val.setter
+    @scale_val.setter  # type: ignore[no-redef]  # PySide6 Property stub mismatch
     def scale_val(self, value: float) -> None:
         """Set the scale value for animation.
 
@@ -496,7 +498,7 @@ class KeyframeItem(QGraphicsObject):
         # Attempt cleanup when leaving the keyframe dot
         self._cleanup_gizmo()
 
-    def mousePressEvent(self, event: QMouseEvent) -> None:
+    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """Clear any existing selection before starting drag.
 
         Args:
@@ -509,15 +511,14 @@ class KeyframeItem(QGraphicsObject):
             self.gizmo.setVisible(False)
         super().mousePressEvent(event)
 
-    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+    def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """Handle drop event after dragging.
 
         Args:
             event: The mouse release event.
         """
         super().mouseReleaseEvent(event)
-        if self.on_drop_callback:
-            self.on_drop_callback(self)
+        self.on_drop_callback(self)
 
     def itemChange(
         self, change: QGraphicsEllipseItem.GraphicsItemChange, value: Any
@@ -659,8 +660,8 @@ class MapGraphicsView(QGraphicsView):
         self.setScene(self._graphics_scene)
 
         # View settings
-        self.setRenderHint(QPainter.Antialiasing)
-        self.setRenderHint(QPainter.SmoothPixmapTransform)
+        self.setRenderHint(QPainter.RenderHint.Antialiasing)
+        self.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
@@ -772,7 +773,7 @@ class MapGraphicsView(QGraphicsView):
         return self._marker_manager.markers
 
     @property
-    def feature_items(self) -> Dict[str, QGraphicsObject]:
+    def feature_items(self) -> Dict[str, PathItem | RegionItem]:
         """Feature items dictionary (delegated to MarkerManager)."""
         return self._marker_manager.feature_items
 
@@ -928,7 +929,7 @@ class MapGraphicsView(QGraphicsView):
 
     def _show_color_picker(self, marker_item: MarkerItem) -> None:
         """Backward-compatible alias for InteractionHandler."""
-        self._interaction.show_color_picker(marker_item)
+        self._interaction.show_fill_color_picker(marker_item)
 
     # ------------------------------------------------------------------
     # Raster editing public API
@@ -1019,7 +1020,7 @@ class MapGraphicsView(QGraphicsView):
         # Calibration State
         if not hasattr(self, "calibration_mode"):
             self.calibration_mode = False
-            self.calibration_points: list[QPointF] = []
+            self.calibration_points = []
 
     def cleanup(self) -> None:
         """Stop all owned timers and release sub-component resources.
@@ -1127,10 +1128,12 @@ class MapGraphicsView(QGraphicsView):
                 "ensure_software_rendering: switching to software "
                 "rendering for correct blend-mode compositing."
             )
-            self.setViewport(None)  # None → default QWidget (software)
+            # Qt accepts None here to restore its default software viewport;
+            # the PySide6 stub incorrectly requires QWidget.
+            self.setViewport(None)  # type: ignore[arg-type]
             # Re-apply render hints; setViewport() resets the viewport widget
-            self.setRenderHint(QPainter.Antialiasing)
-            self.setRenderHint(QPainter.SmoothPixmapTransform)
+            self.setRenderHint(QPainter.RenderHint.Antialiasing)
+            self.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
 
     def setupViewport(self, viewport: QWidget) -> None:
         """Reparent floating overlays whenever the viewport is replaced.
@@ -1520,7 +1523,7 @@ class MapGraphicsView(QGraphicsView):
         self.calibration_mode = True
         self.calibration_points.clear()
         self.setDragMode(QGraphicsView.DragMode.NoDrag)
-        self.setCursor(Qt.CrossCursor)
+        self.setCursor(Qt.CursorShape.CrossCursor)
         self.viewport().update()
 
     def cancel_calibration(self) -> None:
@@ -1528,7 +1531,7 @@ class MapGraphicsView(QGraphicsView):
         self.calibration_mode = False
         self.calibration_points.clear()
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
-        self.setCursor(Qt.ArrowCursor)
+        self.setCursor(Qt.CursorShape.ArrowCursor)
         self.viewport().update()
 
     # ------------------------------------------------------------------
@@ -2001,7 +2004,7 @@ class MapGraphicsView(QGraphicsView):
 
                     self.calibration_mode = False
                     self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
-                    self.setCursor(Qt.ArrowCursor)
+                    self.setCursor(Qt.CursorShape.ArrowCursor)
                     self.calibration_completed.emit(dist)
 
                 return
@@ -2064,7 +2067,7 @@ class MapGraphicsView(QGraphicsView):
 
         # Calibration cursor
         if self.calibration_mode:
-            self.setCursor(Qt.CrossCursor)
+            self.setCursor(Qt.CursorShape.CrossCursor)
             self.viewport().update()
 
         # Coordinate tracking
@@ -2195,7 +2198,7 @@ class MapGraphicsView(QGraphicsView):
         super().keyReleaseEvent(event)
 
     def _handle_footprint_edit_key(
-        self, event: "QKeyEvent", map_widget: "Optional[QWidget]"
+        self, event: "QKeyEvent", map_widget: "Optional[MapWidget]"
     ) -> bool:
         """Process a key event while footprint edit mode is active.
 
@@ -2239,7 +2242,7 @@ class MapGraphicsView(QGraphicsView):
         )
         shift = bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)
         step = 10.0 if shift else 1.0
-        nudge_map = {
+        nudge_map: dict[int, tuple[float, float]] = {
             Qt.Key.Key_Left: (-step / iw, 0.0),
             Qt.Key.Key_Right: (step / iw, 0.0),
             Qt.Key.Key_Up: (0.0, -step / ih),
@@ -2259,7 +2262,7 @@ class MapGraphicsView(QGraphicsView):
             return True
         return False
 
-    def _find_map_widget(self) -> "Optional[QWidget]":
+    def _find_map_widget(self) -> "Optional[MapWidget]":
         """Walks up the parent chain to find the owning MapWidget.
 
         Returns:
@@ -2270,7 +2273,7 @@ class MapGraphicsView(QGraphicsView):
         widget = self.parentWidget()
         while widget is not None:
             if hasattr(widget, "_pinned_marker_id"):
-                return widget
+                return cast("MapWidget", widget)
             widget = widget.parentWidget()
         return None
 
@@ -2355,7 +2358,7 @@ class MapGraphicsView(QGraphicsView):
         """Handle drop of item from Project Explorer."""
         self._interaction.handle_drop(event)
 
-    def drawForeground(self, painter: QPainter, rect: QRectF) -> None:
+    def drawForeground(self, painter: QPainter, rect: QRectF | QRect) -> None:
         """Draw overlay elements on top of the scene."""
         super().drawForeground(painter, rect)
 
@@ -2366,7 +2369,7 @@ class MapGraphicsView(QGraphicsView):
             theme = self.tm.get_theme()
             pen = QPen(QColor(theme.get("destructive", "#e74c3c")))
             pen.setWidth(2)
-            pen.setStyle(Qt.DashLine)
+            pen.setStyle(Qt.PenStyle.DashLine)
             painter.setPen(pen)
 
             start_pos = self.calibration_points[0]
@@ -2381,7 +2384,10 @@ class MapGraphicsView(QGraphicsView):
             if start_pos and end_pos:
                 painter.drawLine(start_pos, end_pos)
 
-                mid = (start_pos + end_pos) / 2
+                mid = QPointF(
+                    (start_pos.x() + end_pos.x()) / 2.0,
+                    (start_pos.y() + end_pos.y()) / 2.0,
+                )
 
                 dx = end_pos.x() - start_pos.x()
                 dy = end_pos.y() - start_pos.y()
@@ -2397,11 +2403,11 @@ class MapGraphicsView(QGraphicsView):
                 t_rect.adjust(-4, -2, 4, 2)
 
                 painter.setBrush(QColor(0, 0, 0, 180))
-                painter.setPen(Qt.NoPen)
+                painter.setPen(Qt.PenStyle.NoPen)
                 painter.drawRoundedRect(t_rect, 4, 4)
 
-                painter.setPen(Qt.white)
-                painter.drawText(t_rect, Qt.AlignCenter, text)
+                painter.setPen(Qt.GlobalColor.white)
+                painter.drawText(t_rect, Qt.AlignmentFlag.AlignCenter, text)
 
             painter.restore()
 

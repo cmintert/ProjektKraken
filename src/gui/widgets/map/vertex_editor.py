@@ -164,8 +164,8 @@ class VertexEditor:
 
         # Editing state
         self._editing_feature_id: Optional[str] = None
-        self._vertex_handles: list[QGraphicsEllipseItem] = []
-        self._midpoint_handles: list[QGraphicsEllipseItem] = []
+        self._vertex_handles: list[_VertexHandle] = []
+        self._midpoint_handles: list[_MidpointHandle] = []
         self._editing_original_style: Optional[Dict[str, Any]] = None
 
     # ------------------------------------------------------------------

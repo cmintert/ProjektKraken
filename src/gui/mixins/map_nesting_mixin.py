@@ -38,7 +38,8 @@ class MapNestingMixin:
 
     if TYPE_CHECKING:
         map_selector: QComboBox
-        maps_data: list[Map]
+        @property
+        def maps_data(self) -> list[Map]: ...
         set_master_map_requested: SignalInstance
         register_detail_map_requested: SignalInstance
         edit_footprint_requested: SignalInstance

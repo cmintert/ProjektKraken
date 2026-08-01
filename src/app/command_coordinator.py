@@ -296,17 +296,17 @@ class CommandCoordinator(QObject):
             pending = self._pending_history_action
             self._pending_history_action = None
             if result.success and pending is not None:
-                action, command = pending
+                action, pending_command = pending
                 canonical = self._restore_command(
                     result.data.get("command_state"),
-                    command,
+                    pending_command,
                 )
                 if canonical is None:
-                    canonical = command
-                if action == "undo" and self.undo_stack[-1:] == [command]:
+                    canonical = pending_command
+                if action == "undo" and self.undo_stack[-1:] == [pending_command]:
                     self.undo_stack.pop()
                     self.redo_stack.append(canonical)
-                elif action == "redo" and self.redo_stack[-1:] == [command]:
+                elif action == "redo" and self.redo_stack[-1:] == [pending_command]:
                     self.redo_stack.pop()
                     self.undo_stack.append(canonical)
                 self._emit_history_changed()
@@ -411,8 +411,8 @@ class CommandCoordinator(QObject):
             message: Error message to display.
 
         """
-        from PySide6.QtWidgets import QMessageBox
+        from PySide6.QtWidgets import QMessageBox, QWidget
 
         QMessageBox.critical(
-            self.window, "Command Error", f"Operation failed:\n{message}"
+            cast(QWidget, self.window), "Command Error", f"Operation failed:\n{message}"
         )
