@@ -57,6 +57,82 @@ def test_map_widget_initialization(map_widget):
     assert map_widget.view is not None
     assert isinstance(map_widget.view, MapGraphicsView)
     assert map_widget.btn_add_marker.text() == "Add Marker"
+    assert not map_widget._add_keyframe_action.isVisible()
+    assert not map_widget._add_keyframe_action.isEnabled()
+
+
+def _show_map_with_marker(map_widget, qtbot, object_type="entity"):
+    """Show a laid-out map widget containing one clickable marker."""
+    map_widget.resize(1200, 700)
+    map_widget.show()
+    setup_map_with_pixmap(map_widget.view, 800, 600)
+    map_widget.add_marker("marker1", object_type, "Test Marker", 0.5, 0.5)
+    map_widget.view.fit_to_view()
+    qtbot.waitUntil(map_widget.isVisible)
+    return map_widget.view.markers["marker1"]
+
+
+def _click_marker(map_widget, marker, qtbot):
+    """Click a marker through the graphics-view viewport."""
+    viewport_pos = map_widget.view.mapFromScene(marker.scenePos())
+    qtbot.mouseClick(
+        map_widget.view.viewport(),
+        Qt.MouseButton.LeftButton,
+        pos=viewport_pos,
+    )
+    qtbot.waitUntil(marker.isSelected)
+
+
+def test_entity_marker_selection_exposes_first_keyframe_action(map_widget, qtbot):
+    """An entity marker can create its first trajectory keyframe."""
+    marker = _show_map_with_marker(map_widget, qtbot)
+
+    _click_marker(map_widget, marker, qtbot)
+
+    assert map_widget._add_keyframe_action.isVisible()
+    assert map_widget._add_keyframe_action.isEnabled()
+    assert map_widget.btn_add_keyframe.isEnabled()
+
+
+def test_event_marker_selection_disables_keyframe_action(map_widget, qtbot):
+    """Event markers remain ineligible for spatial trajectories."""
+    marker = _show_map_with_marker(map_widget, qtbot, object_type="event")
+
+    _click_marker(map_widget, marker, qtbot)
+
+    assert map_widget._add_keyframe_action.isVisible()
+    assert not map_widget._add_keyframe_action.isEnabled()
+    assert not map_widget.btn_add_keyframe.isEnabled()
+    assert map_widget.btn_add_keyframe.toolTip() == "Events cannot have trajectories"
+
+
+def test_first_keyframe_action_emits_current_marker_state(map_widget, qtbot):
+    """The newly exposed action records position at the current playhead."""
+    marker = _show_map_with_marker(map_widget, qtbot)
+    map_widget._playhead_time = 42.5
+    map_widget.get_selected_map_id = MagicMock(return_value="map1")
+    map_widget._show_onboarding_dialog = MagicMock()
+    emissions = []
+    map_widget.add_keyframe_requested.connect(lambda *args: emissions.append(args))
+    _click_marker(map_widget, marker, qtbot)
+
+    qtbot.mouseClick(map_widget.btn_add_keyframe, Qt.MouseButton.LeftButton)
+
+    assert emissions == [("map1", "marker1", 42.5, 0.5, 0.5)]
+
+
+def test_layer_selection_exposes_first_keyframe_action(map_widget, qtbot):
+    """Selecting an entity marker in Layers exposes the same action."""
+    marker = _show_map_with_marker(map_widget, qtbot)
+    model = map_widget.get_layer_model()
+    node = model.find_node_by_id("marker1")
+    assert node is not None
+
+    map_widget.layer_panel._on_item_clicked(model.index_from_node(node))
+    qtbot.waitUntil(marker.isSelected)
+
+    assert map_widget._add_keyframe_action.isVisible()
+    assert map_widget._add_keyframe_action.isEnabled()
 
 
 def test_map_widget_refreshes_local_styles_after_theme_change(

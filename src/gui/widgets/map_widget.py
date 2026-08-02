@@ -338,12 +338,14 @@ class MapWidget(
 
         self.toolbar.addSeparator()
 
-        # Add Keyframe — hidden by default; shown only in draft mode
+        # Add Keyframe — shown when a marker is selected. QToolBar wraps
+        # widgets in QWidgetAction, so the wrapper must own visibility state.
         self.btn_add_keyframe = QPushButton("Add Keyframe")
         self.btn_add_keyframe.setToolTip("Save current marker position at current time")
-        self.btn_add_keyframe.setVisible(False)
         self.btn_add_keyframe.clicked.connect(self._on_add_keyframe)
-        self.toolbar.addWidget(self.btn_add_keyframe)
+        self._add_keyframe_action = self.toolbar.addWidget(self.btn_add_keyframe)
+        self._add_keyframe_action.setEnabled(False)
+        self._add_keyframe_action.setVisible(False)
 
         # Mode Pill (right side) — clickable to exit the current mode
         spacer = QWidget()
@@ -690,31 +692,36 @@ class MapWidget(
             self._update_trajectory_positions(force_all=True)
             self._update_mode_indicator()
 
-        selected_items = self.view.graphics_scene.selectedItems()
-        should_enable = False
-        if selected_items:
-            item = selected_items[0]
-            if isinstance(item, MarkerItem):
-                # EVENTS cannot have keyframes (trajectories)
-                should_enable = item.object_type != "event"
+        self._update_add_keyframe_action()
 
-        self.btn_add_keyframe.setEnabled(should_enable)
-        if hasattr(self, "btn_add_keyframe"):
-            # Update tooltip to explain why disabled if needed
-            if (
-                not should_enable
-                and selected_items
-                and isinstance(selected_items[0], MarkerItem)
-            ):
-                self.btn_add_keyframe.setToolTip("Events cannot have trajectories")
-            elif not should_enable:
-                self.btn_add_keyframe.setToolTip(
-                    "Select a marker in the map to enable keyframe recording"
-                )
-            else:
-                self.btn_add_keyframe.setToolTip(
-                    "Save current marker position at current time"
-                )
+    def _update_add_keyframe_action(self) -> None:
+        """Update keyframe-action visibility for the current marker selection."""
+        selected_items = self.view.graphics_scene.selectedItems()
+        selected_marker = (
+            selected_items[0]
+            if selected_items and isinstance(selected_items[0], MarkerItem)
+            else None
+        )
+        is_event = selected_marker is not None and selected_marker.object_type == "event"
+        can_record = selected_marker is not None and not is_event
+
+        self._add_keyframe_action.setVisible(
+            selected_marker is not None and self._pinned_marker_id is None
+        )
+        self._add_keyframe_action.setEnabled(
+            can_record and self._pinned_marker_id is None
+        )
+
+        if is_event:
+            self.btn_add_keyframe.setToolTip("Events cannot have trajectories")
+        elif selected_marker is None:
+            self.btn_add_keyframe.setToolTip(
+                "Select a marker in the map to enable keyframe recording"
+            )
+        else:
+            self.btn_add_keyframe.setToolTip(
+                "Save current marker position at current time"
+            )
 
     # -- Trajectory / drawing / dialog methods provided by mixins ------
 
@@ -1339,10 +1346,7 @@ class MapWidget(
             # Normal cursor
             self.view.setCursor(Qt.CursorShape.ArrowCursor)
 
-        # Add Keyframe is only relevant in draft mode
-        self.btn_add_keyframe.setVisible(
-            bool(self._transient_marker_ids) and not self._pinned_marker_id
-        )
+        self._update_add_keyframe_action()
 
     # -- Clock-mode visuals / keyframe delete provided by MapTrajectoryMixin --
 

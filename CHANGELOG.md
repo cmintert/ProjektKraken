@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-08-01
-**Commit:** e4d8b7f9
+**Last Updated:** 2026-08-02
+**Commit:** e8dbcbe9
 ---
 
 # Changelog
@@ -31,6 +31,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-02)* **Map / Keyframes**: Exposed the first-keyframe action for
+  selected entity markers while keeping event markers ineligible, with
+  regression coverage for canvas and Layers selections.
 - *(2026-08-01)* **Map / Theme**: Refreshed locally styled map controls and
   overlays when the active theme changes, with regression coverage.
 - *(2026-08-01)* **GUI / Typing**: Corrected dialog, widget, model, graph,
