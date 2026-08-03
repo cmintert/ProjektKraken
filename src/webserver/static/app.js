@@ -49,6 +49,8 @@ const state = {
     dropdownIndex: -1,
     filteredCandidates: [],
     tocObserver: null,
+    lanAccess: window.__LAN_ACCESS__ || false,
+    accessCode: '',
 };
 
 const dom = {};
@@ -60,6 +62,20 @@ document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
     cacheDom();
+    attachAccessGate();
+    if (state.lanAccess) {
+        state.accessCode = sessionStorage.getItem('krakenLanAccessCode') || '';
+        if (!state.accessCode) {
+            showAccessGate();
+            return;
+        }
+        const authenticated = await verifyAccessCode();
+        if (!authenticated) return;
+    }
+    await loadApplication();
+}
+
+async function loadApplication() {
     await fetchTheme();
     applyTheme(state.activeTheme);
     populateThemeSwitcher();
@@ -96,6 +112,80 @@ function cacheDom() {
     dom.searchNext = document.getElementById('search-next');
     dom.searchClose = document.getElementById('search-close');
     dom.searchCount = document.getElementById('search-count');
+    dom.accessGate = document.getElementById('access-gate');
+    dom.accessForm = document.getElementById('access-form');
+    dom.accessCode = document.getElementById('access-code');
+    dom.accessError = document.getElementById('access-error');
+}
+
+/* =========================================================================
+   LAN access
+   ========================================================================= */
+function attachAccessGate() {
+    if (!dom.accessForm) return;
+    dom.accessForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const code = (dom.accessCode.value || '').replace(/\s/g, '');
+        if (!/^\d{8}$/.test(code)) {
+            setAccessError('Enter the complete eight-digit access code.');
+            return;
+        }
+        state.accessCode = code;
+        setAccessError('Checking code…');
+        const authenticated = await verifyAccessCode();
+        if (!authenticated) return;
+        sessionStorage.setItem('krakenLanAccessCode', code);
+        hideAccessGate();
+        await loadApplication();
+    });
+}
+
+async function verifyAccessCode() {
+    try {
+        const resp = await apiFetch('/api/theme');
+        if (resp.status === 429) {
+            const retryAfter = resp.headers.get('Retry-After') || '60';
+            setAccessError(`Too many attempts. Try again in ${retryAfter} seconds.`);
+            showAccessGate();
+            return false;
+        }
+        if (!resp.ok) {
+            setAccessError('That access code is not valid.');
+            state.accessCode = '';
+            sessionStorage.removeItem('krakenLanAccessCode');
+            showAccessGate();
+            return false;
+        }
+        return true;
+    } catch (error) {
+        console.error('Could not verify LAN access:', error);
+        setAccessError('Could not reach the ProjektKraken server.');
+        showAccessGate();
+        return false;
+    }
+}
+
+function showAccessGate() {
+    if (!dom.accessGate) return;
+    dom.accessGate.classList.remove('hidden');
+    if (dom.accessCode) dom.accessCode.focus();
+}
+
+function hideAccessGate() {
+    if (dom.accessGate) dom.accessGate.classList.add('hidden');
+    setAccessError('');
+}
+
+function setAccessError(message) {
+    if (dom.accessError) dom.accessError.textContent = message;
+}
+
+async function apiFetch(url, options = {}) {
+    const headers = new Headers(options.headers || {});
+    if (state.lanAccess && state.accessCode) {
+        headers.set('Authorization', `Bearer ${state.accessCode}`);
+    }
+    return fetch(url, { ...options, headers });
 }
 
 /* =========================================================================
@@ -103,7 +193,8 @@ function cacheDom() {
    ========================================================================= */
 async function fetchTheme() {
     try {
-        const resp = await fetch('/api/theme');
+        const resp = await apiFetch('/api/theme');
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data = await resp.json();
         state.allThemes = data.themes || {};
         if (data.active_theme) state.activeTheme = data.active_theme;
@@ -421,7 +512,8 @@ function resetFilters() {
    ========================================================================= */
 async function fetchTags() {
     try {
-        const resp = await fetch('/api/tags');
+        const resp = await apiFetch('/api/tags');
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data = await resp.json();
         state.availableTags = data.tags || [];
     } catch (e) {
@@ -452,7 +544,7 @@ async function fetchLongform() {
     if (filterJson) params.append('filter_json', filterJson);
 
     try {
-        const resp = await fetch(`/api/longform?${params.toString()}`);
+        const resp = await apiFetch(`/api/longform?${params.toString()}`);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data = await resp.json();
         renderSections(data.sections || []);

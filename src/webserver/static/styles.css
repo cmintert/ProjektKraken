@@ -896,3 +896,50 @@ mark.search-hit.active-hit {
     padding: 1rem 1.25rem;
   }
 }
+/* Authenticated LAN access gate */
+.access-gate {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: var(--app-bg, #181a1f);
+}
+
+.access-gate.hidden {
+    display: none;
+}
+
+.access-card {
+    width: min(420px, 100%);
+    padding: 28px;
+    border: 1px solid var(--border, #3a3f4b);
+    border-radius: 10px;
+    background: var(--surface, #242832);
+    color: var(--text-main, #f0f1f3);
+}
+
+.access-card label,
+.access-card input,
+.access-card button {
+    display: block;
+    width: 100%;
+}
+
+.access-card input {
+    box-sizing: border-box;
+    margin: 8px 0 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--border, #3a3f4b);
+    border-radius: 6px;
+    background: var(--app-bg, #181a1f);
+    color: var(--text-main, #f0f1f3);
+    font: inherit;
+    letter-spacing: 0.16em;
+}
+
+.access-error {
+    min-height: 1.4em;
+    color: var(--error, #ef6b73);
+}

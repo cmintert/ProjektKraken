@@ -567,6 +567,8 @@ class DatabaseWorker(QObject):
                 raise RuntimeError("Failed to establish database connection")
             self.db_service.ensure_fresh_view()
 
+            if allowed_ids is None:
+                longform_builder.ensure_all_items_indexed(connection, doc_id)
             sequence = longform_builder.build_longform_sequence(
                 connection, doc_id=doc_id, allowed_ids=allowed_ids
             )

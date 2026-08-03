@@ -18,6 +18,7 @@ in Python layer to maintain SQLite compatibility.
 
 import json
 import logging
+import re
 from sqlite3 import Connection
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -25,10 +26,33 @@ logger = logging.getLogger(__name__)
 
 # Constants
 DOC_ID_DEFAULT = "default"
+DOC_ID_MAX_LENGTH = 64
 DEFAULT_POSITION_GAP = 100.0
+_DOC_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
 
 # Security: Whitelist of valid table names to prevent SQL injection
 VALID_TABLES = ("events", "entities")
+
+
+def validate_doc_id(doc_id: str) -> str:
+    """Validate and return a bounded longform document identifier.
+
+    Args:
+        doc_id: Document identifier supplied by an internal or external caller.
+
+    Returns:
+        The validated document identifier.
+
+    Raises:
+        ValueError: If the identifier is empty, too long, or contains unsupported
+            characters.
+
+    """
+    if len(doc_id) > DOC_ID_MAX_LENGTH or not _DOC_ID_PATTERN.fullmatch(doc_id):
+        raise ValueError(
+            "doc_id must be 1-64 ASCII letters, digits, underscores, or hyphens"
+        )
+    return doc_id
 
 
 def _validate_table_name(table: str) -> None:
@@ -83,6 +107,7 @@ def _get_longform_meta(
         Optional[dict]: Longform metadata dict or None if not present.
 
     """
+    validate_doc_id(doc_id)
     lf_data = attributes.get("_longform")
     if not isinstance(lf_data, dict):
         return None
@@ -103,6 +128,7 @@ def _set_longform_meta(
         dict: Updated attributes dictionary.
 
     """
+    validate_doc_id(doc_id)
     if "_longform" not in attributes or not isinstance(attributes["_longform"], dict):
         attributes["_longform"] = {}
     attributes["_longform"][doc_id] = meta
@@ -125,6 +151,7 @@ def read_all_longform_items(
                     attributes (dict), meta (dict).
 
     """
+    validate_doc_id(doc_id)
     items = []
 
     # Read events
@@ -260,7 +287,8 @@ def build_longform_sequence(
     Computes heading_level based on parent-child relationships and depth.
     Returns items in reading order.
 
-    Automatically adds missing DB items to the end of the document.
+    This function is read-only. Call :func:`ensure_all_items_indexed` explicitly
+    from a trusted mutation path when the document should be auto-populated.
 
     Args:
         conn: SQLite connection.
@@ -271,11 +299,6 @@ def build_longform_sequence(
                     Each item includes: table, id, name, content, meta, heading_level.
 
     """
-    # 0. Sync check: ensure everything is in the doc
-    # Skip this if we are filtering, as we don't want to auto-add items
-    if allowed_ids is None:
-        ensure_all_items_indexed(conn, doc_id)
-
     items = read_all_longform_items(conn, doc_id, allowed_ids=allowed_ids)
 
     # Build parent-child map
@@ -497,6 +520,7 @@ def reindex_document_positions(conn: Connection, doc_id: str = DOC_ID_DEFAULT) -
         doc_id: Document ID.
 
     """
+    ensure_all_items_indexed(conn, doc_id)
     sequence = build_longform_sequence(conn, doc_id)
 
     for idx, item in enumerate(sequence):
@@ -694,6 +718,7 @@ def export_longform_to_markdown(conn: Connection, doc_id: str = DOC_ID_DEFAULT) 
         str: Markdown-formatted document.
 
     """
+    ensure_all_items_indexed(conn, doc_id)
     sequence = build_longform_sequence(conn, doc_id)
 
     lines = []
