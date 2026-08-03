@@ -1,11 +1,13 @@
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QMessageBox
 
 from src.gui.widgets.longform.content import LongformContentWidget
 from src.gui.widgets.longform.editor import LongformEditorWidget
 from src.gui.widgets.longform.outline import LongformOutlineWidget
+from src.webserver.config import ServerConfig
 
 
 @pytest.fixture
@@ -196,6 +198,54 @@ def test_editor_initialization(editor_widget):
     assert editor_widget.content is not None
     assert editor_widget.findChild(LongformOutlineWidget) is not None
     assert editor_widget.findChild(LongformContentWidget) is not None
+
+
+def test_editor_exposes_separate_local_and_lan_actions(editor_widget):
+    assert editor_widget.btn_publish.text() == "Publish Locally"
+    assert editor_widget.btn_share_lan.text() == "Share on LAN..."
+
+
+def test_editor_starts_local_publishing_without_auth_prompt(editor_widget):
+    with patch.object(editor_widget.web_manager, "start_server") as start_server:
+        editor_widget._toggle_publish(True)
+
+    start_server.assert_called_once_with(
+        db_path=editor_widget.db_path,
+        share_on_lan=False,
+    )
+
+
+def test_editor_confirms_and_starts_lan_sharing(editor_widget):
+    with (
+        patch(
+            "src.gui.widgets.longform.editor.QMessageBox.question",
+            return_value=QMessageBox.StandardButton.Yes,
+        ),
+        patch.object(editor_widget.web_manager, "start_server") as start_server,
+    ):
+        editor_widget._toggle_lan_share(True)
+
+    start_server.assert_called_once_with(
+        db_path=editor_widget.db_path,
+        share_on_lan=True,
+    )
+
+
+def test_editor_displays_formatted_lan_access_code(editor_widget):
+    editor_widget.web_manager._thread = MagicMock()
+    editor_widget.web_manager._config = ServerConfig(
+        host="0.0.0.0",
+        lan_access=True,
+        access_code="01234567",
+    )
+
+    editor_widget._on_server_status_changed(
+        True,
+        "http://192.168.1.20:8000/longform",
+    )
+
+    assert editor_widget.btn_share_lan.isChecked()
+    assert editor_widget.access_code_label.text() == "Access code: 0123 4567"
 
 
 def test_editor_refresh_signal(editor_widget, qtbot):

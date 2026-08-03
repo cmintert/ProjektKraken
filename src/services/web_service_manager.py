@@ -4,6 +4,7 @@ Handles the lifecycle of the embedded Uvicorn server within a QThread.
 """
 
 import logging
+import secrets
 import socket
 import threading
 from typing import Optional
@@ -106,6 +107,16 @@ class WebServiceManager(QObject):
         """
         return self._thread is not None and self._thread.isRunning()
 
+    @property
+    def is_lan_shared(self) -> bool:
+        """Return whether the active server is accepting authenticated LAN access."""
+        return self._thread is not None and self._config.lan_access
+
+    @property
+    def access_code(self) -> Optional[str]:
+        """Return the active ephemeral LAN access code, if one exists."""
+        return self._config.access_code if self.is_lan_shared else None
+
     def get_local_ip(self) -> str:
         """Get the local IP address for LAN access."""
         try:
@@ -120,23 +131,39 @@ class WebServiceManager(QObject):
             # Network unavailable or other error - use localhost
             return "127.0.0.1"
 
-    def start_server(self, port: int = 8000, db_path: Optional[str] = None) -> None:
-        """Start the web server."""
+    def start_server(
+        self,
+        port: int = 8000,
+        db_path: Optional[str] = None,
+        *,
+        share_on_lan: bool = False,
+    ) -> None:
+        """Start a localhost-only server or an authenticated LAN server."""
         if self.is_running:
             return
 
-        self._config.port = port
-        if db_path:
-            self._config.db_path = db_path
+        target_db_path = db_path or self._config.db_path
 
         # Capture active theme from Qt main thread before handing off to the
         # background uvicorn thread (ThemeManager is a Qt singleton).
         try:
             from src.core.theme_manager import ThemeManager
 
-            self._config.theme_name = ThemeManager().current_theme_name
+            theme_name = ThemeManager().current_theme_name
         except Exception:
-            self._config.theme_name = "dark_mode"
+            theme_name = "dark_mode"
+
+        access_code = (
+            f"{secrets.randbelow(100_000_000):08d}" if share_on_lan else None
+        )
+        self._config = ServerConfig(
+            host="0.0.0.0" if share_on_lan else "127.0.0.1",
+            port=port,
+            db_path=target_db_path,
+            theme_name=theme_name,
+            lan_access=share_on_lan,
+            access_code=access_code,
+        )
 
         self._thread = WebServerThread(self._config)
         self._thread.error_occurred.connect(self._on_thread_error)
@@ -147,10 +174,15 @@ class WebServiceManager(QObject):
         # Wait a moment to check if it crashes immediately?
         # No, async signals will handle it.
 
-        ip = self.get_local_ip()
+        ip = self.get_local_ip() if share_on_lan else "127.0.0.1"
         url = f"http://{ip}:{port}/longform"
         self.status_changed.emit(True, url)
-        logger.info(f"Web server started at {url}")
+        logger.info(
+            "Web server started on %s:%s (%s mode)",
+            self._config.host,
+            port,
+            "LAN" if share_on_lan else "local",
+        )
 
     def stop_server(self) -> None:
         """Stop the web server."""
@@ -158,6 +190,7 @@ class WebServiceManager(QObject):
             logger.info("Stopping web server...")
             self._thread.stop()
             self._thread = None
+            self._clear_access_code()
             self.status_changed.emit(False, "")
 
     def toggle_server(self) -> None:
@@ -189,3 +222,12 @@ class WebServiceManager(QObject):
         if self._thread:  # If finished unexpectedly
             self.status_changed.emit(False, "")
             self._thread = None
+            self._clear_access_code()
+
+    def _clear_access_code(self) -> None:
+        """Discard LAN credentials while retaining the last database selection."""
+        self._config = ServerConfig(
+            db_path=self._config.db_path,
+            port=self._config.port,
+            theme_name=self._config.theme_name,
+        )

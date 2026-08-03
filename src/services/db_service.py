@@ -58,6 +58,7 @@ class DatabaseService:
         self,
         db_path: str = ":memory:",
         *,
+        read_only: bool = False,
         event_repo: Optional[EventRepository] = None,
         entity_repo: Optional[EntityRepository] = None,
         relation_repo: Optional[RelationRepository] = None,
@@ -73,6 +74,8 @@ class DatabaseService:
         Args:
             db_path: Path to the .kraken database file.
                      Defaults to :memory: for testing.
+            read_only: Open an existing database without permitting writes or
+                running schema initialization and migrations.
             event_repo: Optional EventRepository instance (injected for testing).
             entity_repo: Optional EntityRepository instance.
             relation_repo: Optional RelationRepository instance.
@@ -85,6 +88,7 @@ class DatabaseService:
 
         """
         self.db_path = db_path
+        self.read_only = read_only
         self._connection: Optional[sqlite3.Connection] = None
         self._backup_service = None
 
@@ -104,17 +108,25 @@ class DatabaseService:
     def connect(self) -> None:
         """Establishes connection to the database."""
         try:
-            self._connection = sqlite3.connect(self.db_path)
+            if self.read_only:
+                if self.db_path == ":memory:":
+                    raise ValueError("Read-only databases must use a file path")
+                database_uri = f"{Path(self.db_path).resolve().as_uri()}?mode=ro"
+                self._connection = sqlite3.connect(database_uri, uri=True)
+                self._connection.execute("PRAGMA query_only = ON;")
+            else:
+                self._connection = sqlite3.connect(self.db_path)
             self._connection.execute("PRAGMA foreign_keys = ON;")
-            if self.db_path != ":memory:":
+            if not self.read_only and self.db_path != ":memory:":
                 # WAL enables concurrent reads during background writes
                 self._connection.execute("PRAGMA journal_mode=WAL;")
                 logger.debug("WAL mode enabled for database.")
             self._connection.row_factory = sqlite3.Row
             logger.debug("Database connection established.")
 
-            self._init_schema()
-            self._run_migrations()
+            if not self.read_only:
+                self._init_schema()
+                self._run_migrations()
 
             # Connect repositories to the database connection
             self._event_repo.set_connection(self._connection)

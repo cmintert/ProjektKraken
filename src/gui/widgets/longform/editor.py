@@ -5,6 +5,7 @@ Provides a split-view interface for editing longform documents:
 - Right: Continuous document view (from content.py)
 """
 
+import html
 import logging
 import os
 from typing import Any, Dict, List, Optional
@@ -128,18 +129,25 @@ class LongformEditorWidget(QWidget):
         btn_export_vault.clicked.connect(self.export_vault_requested.emit)
         toolbar.addWidget(btn_export_vault)
 
-        # Publish Button
-        self.btn_publish = QPushButton("Publish to Web")
+        # Local publishing is the safe, frictionless default. LAN sharing is a
+        # separate action because it changes the server's network exposure.
+        self.btn_publish = QPushButton("Publish Locally")
         self.btn_publish.setCheckable(True)
         self.btn_publish.clicked.connect(self._toggle_publish)
         toolbar.addWidget(self.btn_publish)
 
+        self.btn_share_lan = QPushButton("Share on LAN...")
+        self.btn_share_lan.setCheckable(True)
+        self.btn_share_lan.clicked.connect(self._toggle_lan_share)
+        toolbar.addWidget(self.btn_share_lan)
+
         self.url_label = QLabel("")
-        self.url_label.setStyleSheet(
-            "color: #FF9900; margin-left: 10px; font-weight: bold;"
-        )
+        self.url_label.setStyleSheet(StyleHelper.get_wiki_link_style())
         self.url_label.setOpenExternalLinks(True)
         toolbar.addWidget(self.url_label)
+
+        self.access_code_label = QLabel("")
+        toolbar.addWidget(self.access_code_label)
 
         # Spacer to push Find button to far right
         spacer = QWidget()
@@ -329,32 +337,75 @@ class LongformEditorWidget(QWidget):
 
     @Slot(bool)
     def _toggle_publish(self, checked: bool) -> None:
-        """Handle publish toggle."""
+        """Handle localhost-only publishing."""
         if checked:
-            self.web_manager.start_server(db_path=self.db_path)
-        else:
+            if self.web_manager.is_running:
+                self.web_manager.stop_server()
+            self.web_manager.start_server(db_path=self.db_path, share_on_lan=False)
+        elif self.web_manager.is_running and not self.web_manager.is_lan_shared:
             self.web_manager.stop_server()
+
+    @Slot(bool)
+    def _toggle_lan_share(self, checked: bool) -> None:
+        """Start or stop explicit authenticated LAN sharing."""
+        if not checked:
+            if self.web_manager.is_lan_shared:
+                self.web_manager.stop_server()
+            return
+
+        answer = QMessageBox.question(
+            self,
+            "Share Longform on LAN",
+            "Other devices on this local network can open the published longform "
+            "after entering the generated access code. Continue?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            self.btn_share_lan.setChecked(False)
+            return
+
+        if self.web_manager.is_running:
+            self.web_manager.stop_server()
+        self.web_manager.start_server(db_path=self.db_path, share_on_lan=True)
 
     @Slot(bool, str)
     def _on_server_status_changed(self, is_running: bool, url: str) -> None:
         """Update UI based on server status."""
-        self.btn_publish.setChecked(is_running)
+        is_lan_shared = is_running and self.web_manager.is_lan_shared
+        self.btn_publish.setChecked(is_running and not is_lan_shared)
+        self.btn_share_lan.setChecked(is_lan_shared)
         if is_running:
-            self.btn_publish.setText("Stop Publishing")
+            self.btn_publish.setText(
+                "Stop Local Publishing" if not is_lan_shared else "Publish Locally"
+            )
+            self.btn_share_lan.setText(
+                "Stop LAN Sharing" if is_lan_shared else "Share on LAN..."
+            )
             # Create a clickable link
+            escaped_url = html.escape(url, quote=True)
             self.url_label.setText(
-                f'<a href="{url}" style="color: #FF9900; text-decoration: none;">'
-                f"{url}</a>"
+                f'<a href="{escaped_url}">{escaped_url}</a>'
             )
             self.url_label.setToolTip("Click to open in browser")
+            access_code = self.web_manager.access_code
+            if access_code:
+                formatted_code = f"{access_code[:4]} {access_code[4:]}"
+                self.access_code_label.setText(f"Access code: {formatted_code}")
+            else:
+                self.access_code_label.setText("")
         else:
-            self.btn_publish.setText("Publish to Web")
+            self.btn_publish.setText("Publish Locally")
+            self.btn_share_lan.setText("Share on LAN...")
             self.url_label.setText("")
+            self.access_code_label.setText("")
 
     @Slot(str)
     def _on_server_error(self, msg: str) -> None:
         """Handle server error manually."""
         self.btn_publish.setChecked(False)
+        self.btn_share_lan.setChecked(False)
+        self.access_code_label.setText("")
         self.url_label.setText("Error starting server")
         QMessageBox.warning(self, "Web Server Error", msg)
 

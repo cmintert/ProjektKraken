@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-03
-**Commit:** 3c46f49b
+**Commit:** a3eb5949
 ---
 
 # Changelog
@@ -11,8 +11,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- *(2026-08-03)* **Longform / LAN Sharing**: Added explicit authenticated LAN
+  publishing with ephemeral eight-digit access codes and brute-force limits.
+
+### Fixed
+
+- *(2026-08-03)* **Longform / Security**: Restricted default publishing to
+  localhost and made HTTP longform reads unable to modify world databases.
+
 ### Changed
 
+- *(2026-08-03)* **Testing / Security**: Added authentication, binding,
+  read-only database, identifier-validation, and publishing UI regressions.
 - *(2026-08-03)* **Release**: Bumped project and application metadata to
   version 0.18.7.
 

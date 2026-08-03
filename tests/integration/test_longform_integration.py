@@ -350,10 +350,10 @@ def test_mixed_events_and_entities(db_service, sample_events, sample_entities):
         conn, "events", "event-2", position=300.0, parent_id=None, depth=0
     )
 
+    longform_builder.ensure_all_items_indexed(conn)
     sequence = longform_builder.build_longform_sequence(conn)
 
-    # Note: ensure_all_items_indexed() adds all DB items to longform
-    # automatically, so we expect all 3 events + 2 entities = 5 total
+    # Explicit indexing adds all 3 events + 2 entities to the live document.
     assert len(sequence) == 5
 
     # Verify that the items we explicitly added are in the right order

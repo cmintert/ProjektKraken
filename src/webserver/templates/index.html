@@ -7,11 +7,24 @@ But, basically that changes <!doctype html>
   <title>ProjektKraken Longform</title>
   <script>
     window.__INITIAL_THEME__ = "{{ initial_theme }}";
+    window.__LAN_ACCESS__ = {{ "true" if lan_access else "false" }};
   </script>
   <link rel="stylesheet" href="/static/styles.css?v=3" />
 </head>
 
 <body>
+  <div id="access-gate" class="access-gate hidden" role="dialog" aria-modal="true"
+    aria-labelledby="access-title">
+    <form id="access-form" class="access-card">
+      <h2 id="access-title">LAN access required</h2>
+      <p>Enter the eight-digit code shown in ProjektKraken.</p>
+      <label for="access-code">Access code</label>
+      <input id="access-code" type="text" inputmode="numeric" autocomplete="one-time-code"
+        maxlength="9" placeholder="1234 5678" />
+      <p id="access-error" class="access-error" role="alert"></p>
+      <button class="btn btn-primary" type="submit">Open longform</button>
+    </form>
+  </div>
   <div id="app">
     <header>
       <div class="header-row">

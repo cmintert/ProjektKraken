@@ -69,26 +69,21 @@ def test_read_all_longform_items_with_allowed_ids(mock_conn):
     assert "e2" not in ids
 
 
-def test_build_longform_sequence_skips_ensure_indexed_when_filtered(mock_conn):
-    """Test that build_longform_sequence skips ensure_all_items_indexed when allowed_ids is set."""
+def test_build_longform_sequence_never_indexes_items(mock_conn):
+    """Sequence construction remains read-only with or without filters."""
     with patch("src.services.longform_builder.ensure_all_items_indexed") as mock_ensure:
         with patch(
             "src.services.longform_builder.read_all_longform_items"
         ) as mock_read:
             mock_read.return_value = []
 
-            # Case 1: No filter -> Should call ensure
             longform_builder.build_longform_sequence(
                 mock_conn, "default", allowed_ids=None
             )
-            mock_ensure.assert_called_once()
-
-            mock_ensure.reset_mock()
-
-            # Case 2: Filter -> Should NOT call ensure
             longform_builder.build_longform_sequence(
                 mock_conn, "default", allowed_ids={"x"}
             )
+
             mock_ensure.assert_not_called()
 
 
