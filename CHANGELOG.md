@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-08-03
-**Commit:** a3eb5949
+**Last Updated:** 2026-08-06
+**Commit:** ab089148
 ---
 
 # Changelog
@@ -20,6 +20,9 @@ All notable changes to this project will be documented in this file.
 
 - *(2026-08-03)* **Longform / Security**: Restricted default publishing to
   localhost and made HTTP longform reads unable to modify world databases.
+- *(2026-08-06)* **Longform / Security**: Hardened embedded longform publishing
+  with Content-Security-Policy headers, sanitized markdown rendering, and
+  removed direct LAN shell access token exposure.
 
 ### Changed
 
