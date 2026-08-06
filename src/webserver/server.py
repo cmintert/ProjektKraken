@@ -4,11 +4,9 @@ Provides FastAPI-based REST API for serving longform documents and health checks
 server is designed to run embedded within the main application via QThread.
 """
 
-import html
 import json
 import logging
 import os
-import re
 import secrets
 import sys
 import threading
@@ -17,7 +15,6 @@ from collections import defaultdict, deque
 from pathlib import Path
 from typing import Annotated, Any
 
-import markdown  # type: ignore[import-untyped]  # Package has no py.typed marker.
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -30,10 +27,24 @@ from src.services.longform_builder import (
     build_longform_sequence,
 )
 from src.webserver.config import ServerConfig
+from src.webserver.markdown_renderer import render_longform_markdown
 
 logger = logging.getLogger(__name__)
 
 logging.getLogger("MARKDOWN").setLevel(logging.WARNING)
+
+_CONTENT_SECURITY_POLICY = (
+    "default-src 'self'; "
+    "script-src 'self'; "
+    "style-src 'self'; "
+    "connect-src 'self'; "
+    "img-src 'self'; "
+    "font-src 'self'; "
+    "object-src 'none'; "
+    "base-uri 'none'; "
+    "frame-ancestors 'none'; "
+    "form-action 'self'"
+)
 
 _DOC_ID_QUERY_PATTERN = r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
 DocId = Annotated[
@@ -149,31 +160,6 @@ def _resolve_filter(filter_json: str | None, db: DatabaseService) -> set[str] | 
         return None
 
 
-def _resolve_wikilinks(text: str) -> str:
-    """Convert wiki-style links to HTML anchors with data-target for JS resolution.
-
-    Args:
-        text: Raw markdown text containing ``[[Target]]`` or ``[[Target|Label]]``.
-
-    Returns:
-        Text with wiki links replaced by ``<a class="wikilink" data-target=...>``.
-
-    """
-
-    def _piped(match: re.Match[str]) -> str:
-        target = html.escape(match.group(1).strip(), quote=True)
-        label = html.escape(match.group(2).strip(), quote=True)
-        return f'<a class="wikilink" data-target="{target}">{label}</a>'
-
-    def _plain(match: re.Match[str]) -> str:
-        target = html.escape(match.group(1).strip(), quote=True)
-        return f'<a class="wikilink" data-target="{target}">{target}</a>'
-
-    text = re.sub(r"\[\[([^]|]+)\|([^]]+)\]\]", _piped, text)
-    text = re.sub(r"\[\[([^]]+)\]\]", _plain, text)
-    return text
-
-
 def _install_lan_authentication(app: FastAPI, config: ServerConfig) -> None:
     """Install API authentication when the server is explicitly shared on LAN."""
     rate_limiter = _AccessCodeRateLimiter()
@@ -216,10 +202,31 @@ def _install_lan_authentication(app: FastAPI, config: ServerConfig) -> None:
         )
 
 
+def _install_security_headers(app: FastAPI) -> None:
+    """Apply browser security headers to successful and failed responses."""
+
+    @app.middleware("http")
+    async def add_security_headers(request: Request, call_next: Any) -> Any:
+        """Add security headers, including when an endpoint raises unexpectedly."""
+        try:
+            response = await call_next(request)
+        except Exception:
+            logger.exception("Unhandled longform server request failure")
+            response = JSONResponse(
+                status_code=500,
+                content={"detail": "Internal server error"},
+            )
+        response.headers["Content-Security-Policy"] = _CONTENT_SECURITY_POLICY
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        return response
+
+
 def create_app(config: ServerConfig) -> FastAPI:
     """Factory function to create the FastAPI app with the given configuration."""
     app = FastAPI(title="ProjektKraken Longform Server")
     _install_lan_authentication(app, config)
+    _install_security_headers(app)
 
     static_dir = os.path.join(os.path.dirname(__file__), "static")
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
@@ -295,13 +302,8 @@ def create_app(config: ServerConfig) -> FastAPI:
                 header_md = f"{'#' * heading_level} {title}\n\n"
 
                 raw_content = item.get("content", "")
-                processed_body = _resolve_wikilinks(raw_content)
-
-                full_markdown = header_md + processed_body
-
-                html_content = markdown.markdown(
-                    full_markdown, extensions=["extra", "nl2br"]
-                )
+                full_markdown = header_md + raw_content
+                html_content = render_longform_markdown(full_markdown)
 
                 data.append(
                     {

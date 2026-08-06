@@ -2,6 +2,7 @@
 
 import json
 import sqlite3
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -9,9 +10,14 @@ from fastapi.testclient import TestClient
 
 from src.core.events import Event
 from src.services.db_service import DatabaseService
+from src.services.import_service import ImportService
 from src.services.longform_builder import insert_or_update_longform_meta
 from src.webserver.config import ServerConfig
-from src.webserver.server import _AccessCodeRateLimiter, create_app
+from src.webserver.server import (
+    _CONTENT_SECURITY_POLICY,
+    _AccessCodeRateLimiter,
+    create_app,
+)
 
 
 @pytest.fixture
@@ -96,6 +102,10 @@ def test_lan_mode_protects_every_api_endpoint(
     assert missing.status_code == 401
     assert wrong.status_code == 401
     assert valid.status_code == 200
+    for response in (missing, wrong, valid):
+        assert response.headers["Content-Security-Policy"] == (
+            _CONTENT_SECURITY_POLICY
+        )
 
 
 def test_lan_viewer_shell_and_health_remain_public(published_db_path: str) -> None:
@@ -110,7 +120,8 @@ def test_lan_viewer_shell_and_health_remain_public(published_db_path: str) -> No
     viewer = client.get("/longform")
     assert viewer.status_code == 200
     assert "LAN access required" in viewer.text
-    assert "window.__LAN_ACCESS__ = true" in viewer.text
+    assert 'data-lan-access="true"' in viewer.text
+    assert "window.__LAN_ACCESS__" not in viewer.text
     assert "01234567" not in viewer.text
     assert client.get("/static/app.js").status_code == 200
     assert client.get("/health").status_code == 200
@@ -141,6 +152,7 @@ def test_failed_access_codes_are_rate_limited(published_db_path: str) -> None:
     assert successful.status_code == 200
     assert limited.status_code == 429
     assert int(limited.headers["Retry-After"]) > 0
+    assert limited.headers["Content-Security-Policy"] == _CONTENT_SECURITY_POLICY
 
 
 def test_rate_limiter_has_a_global_failure_bound() -> None:
@@ -200,6 +212,137 @@ def test_maximum_length_doc_id_is_accepted(published_db_path: str) -> None:
     response = client.get("/api/longform", params={"doc_id": "a" * 64})
 
     assert response.status_code == 200
+
+
+def test_markdown_and_json_imports_are_sanitized_when_published(tmp_path) -> None:
+    path = str(tmp_path / "imported.kraken")
+    service = DatabaseService(path)
+    service.connect()
+    importer = ImportService(service)
+
+    markdown_result = importer.import_markdown(
+        """---
+uid: markdown-hostile
+title: '<img src=x onerror="globalThis.__titleXss=true">Markdown title'
+type: note
+---
+# Description
+
+<script>globalThis.__bodyXss = true</script>
+<img src="https://attacker.invalid/markdown" onerror="alert(1)">
+**Markdown formatting** and [[json-hostile|JSON entry]].
+""",
+        {"filename": "hostile.md"},
+    )
+    json_result = importer.import_batch(
+        {
+            "entities": [
+                {
+                    "id": "json-hostile",
+                    "name": "JSON entry",
+                    "type": "note",
+                    "description": (
+                        '<svg><script>alert(1)</script></svg><a '
+                        'href="java&#115;cript:alert(2)" data-any="x">bad</a> '
+                        "[Safe](https://example.com)"
+                    ),
+                }
+            ],
+            "events": [],
+            "relations": [],
+        },
+        {"source_name": "security-test"},
+    )
+    assert markdown_result.success
+    assert json_result.success
+    assert service._connection is not None
+    insert_or_update_longform_meta(
+        service._connection, "entities", "markdown-hostile", position=100.0
+    )
+    insert_or_update_longform_meta(
+        service._connection, "entities", "json-hostile", position=200.0
+    )
+    service.close()
+
+    response = TestClient(create_app(ServerConfig(db_path=path))).get("/api/longform")
+
+    assert response.status_code == 200
+    sections = {section["id"]: section for section in response.json()["sections"]}
+    combined_html = "".join(section["html"] for section in sections.values())
+    lowered = combined_html.lower()
+    for forbidden in (
+        "<script",
+        "<img",
+        "<svg",
+        "onerror",
+        "javascript:",
+        "data-any",
+        "attacker.invalid",
+    ):
+        assert forbidden not in lowered
+    assert "<strong>Markdown formatting</strong>" in sections["markdown-hostile"][
+        "html"
+    ]
+    assert (
+        '<a class="wikilink" data-target="json-hostile">JSON entry</a>'
+        in sections["markdown-hostile"]["html"]
+    )
+    assert '<a href="https://example.com">Safe</a>' in sections["json-hostile"][
+        "html"
+    ]
+
+
+@pytest.mark.parametrize(
+    ("path", "follow_redirects"),
+    [
+        ("/", False),
+        ("/longform", True),
+        ("/api/longform", True),
+        ("/static/app.js", True),
+        ("/missing", True),
+        ("/api/longform?doc_id=bad/id", True),
+    ],
+)
+def test_security_headers_cover_success_and_error_responses(
+    published_db_path: str, path: str, follow_redirects: bool
+) -> None:
+    client = TestClient(create_app(ServerConfig(db_path=published_db_path)))
+
+    response = client.get(path, follow_redirects=follow_redirects)
+
+    assert response.headers["Content-Security-Policy"] == _CONTENT_SECURITY_POLICY
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert response.headers["Referrer-Policy"] == "no-referrer"
+
+
+def test_security_headers_cover_unhandled_server_errors(
+    published_db_path: str,
+) -> None:
+    app = create_app(ServerConfig(db_path=published_db_path))
+    client = TestClient(app, raise_server_exceptions=False)
+
+    with patch("src.webserver.server.get_db_service", side_effect=RuntimeError("boom")):
+        response = client.get("/api/longform")
+
+    assert response.status_code == 500
+    assert response.json() == {"detail": "Internal server error"}
+    assert response.headers["Content-Security-Policy"] == _CONTENT_SECURITY_POLICY
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert response.headers["Referrer-Policy"] == "no-referrer"
+
+
+def test_viewer_has_no_live_dom_html_sinks() -> None:
+    script_path = Path(__file__).parents[2] / "src" / "webserver" / "static" / "app.js"
+    source = script_path.read_text(encoding="utf-8")
+
+    for forbidden_sink in (
+        ".innerHTML",
+        ".outerHTML",
+        "insertAdjacentHTML",
+        "createContextualFragment",
+    ):
+        assert forbidden_sink not in source
+    assert "tocLink.textContent = titleText" in source
 
 
 def _event_attributes(db_path: str, event_id: str) -> dict:

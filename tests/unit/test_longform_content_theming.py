@@ -59,6 +59,11 @@ def test_theme_change_reloads_content_with_new_colors(content_widget):
         assert "#333333" in html  # Surface color (card bg)
 
 
+def test_content_uses_compact_reading_line_height(content_widget):
+    """The in-app longform stylesheet keeps paragraph leading compact."""
+    assert "line-height: 1.35" in content_widget._get_theme_css()
+
+
 def test_scroll_position_preserved_on_theme_change(content_widget):
     """Test that scroll position is preserved when content is reloaded for theme change."""
     # Create enough content to scroll

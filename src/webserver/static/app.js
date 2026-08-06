@@ -33,6 +33,8 @@ const THEME_LABELS = {
     muted_light_mode: 'Muted Light',
 };
 
+const viewerConfig = document.body ? document.body.dataset : {};
+
 const state = {
     availableTags: [],
     includeTags: new Set(),
@@ -44,12 +46,12 @@ const state = {
     searchMatches: [],
     searchCursor: -1,
     allThemes: {},
-    activeTheme: window.__INITIAL_THEME__ || 'dark_mode',
+    activeTheme: viewerConfig.initialTheme || 'dark_mode',
     activeCombo: null,          // 'include' | 'exclude' | null
     dropdownIndex: -1,
     filteredCandidates: [],
     tocObserver: null,
-    lanAccess: window.__LAN_ACCESS__ || false,
+    lanAccess: viewerConfig.lanAccess === 'true',
     accessCode: '',
 };
 
@@ -218,7 +220,7 @@ function applyTheme(themeName) {
 
 function populateThemeSwitcher() {
     if (!dom.themeSwitcher) return;
-    dom.themeSwitcher.innerHTML = '';
+    dom.themeSwitcher.replaceChildren();
     const names = Object.keys(state.allThemes);
     if (names.length === 0) {
         const opt = document.createElement('option');
@@ -384,7 +386,7 @@ function showDropdown(filterText = '') {
 
     state.filteredCandidates = candidates;
     state.dropdownIndex = 0;
-    dropdown.innerHTML = '';
+    dropdown.replaceChildren();
     candidates.forEach((tag, index) => {
         const div = document.createElement('div');
         div.className = `tag-option${index === 0 ? ' highlighted' : ''}`;
@@ -453,7 +455,7 @@ function renderChips(wrapper, input, tagSet, kind) {
         chip.textContent = tag;
         const close = document.createElement('span');
         close.className = 'close-btn';
-        close.innerHTML = '&times;';
+        close.textContent = '\u00d7';
         close.addEventListener('mousedown', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -553,7 +555,7 @@ async function fetchLongform() {
     } catch (e) {
         console.error('Error fetching longform:', e);
         setStatus('Error', 'error');
-        if (dom.content) dom.content.innerHTML = '';
+        if (dom.content) dom.content.replaceChildren();
         showEmptyState('Could not load content. Check the server log.');
     }
 }
@@ -593,8 +595,8 @@ function renderSections(sections) {
     if (!dom.content || !dom.toc) return;
 
     if (!sections || sections.length === 0) {
-        dom.content.innerHTML = '';
-        dom.toc.innerHTML = '';
+        dom.content.replaceChildren();
+        dom.toc.replaceChildren();
         if (dom.itemCount) dom.itemCount.textContent = '0 items';
         const hasFilter = state.includeTags.size > 0 ||
             state.excludeTags.size > 0 || state.caseSensitive;
@@ -605,49 +607,51 @@ function renderSections(sections) {
     }
     hideEmptyState();
 
-    // Build title → anchor map for WikiLink resolution
-    const titleToAnchor = {};
+    // Build canonical title/ID → anchor map for WikiLink resolution.
+    const targetToAnchor = {};
     sections.forEach((s, i) => {
-        if (s.title) titleToAnchor[s.title.toLowerCase()] = `section-${i}`;
+        const anchor = `section-${i}`;
+        if (s.title) targetToAnchor[s.title.toLowerCase()] = anchor;
+        if (s.id) targetToAnchor[`id:${s.id}`.toLowerCase()] = anchor;
     });
 
-    // Build content
-    const contentParts = [];
-    const tocParts = ['<ul>'];
+    const contentFragment = document.createDocumentFragment();
+    const tocList = document.createElement('ul');
     sections.forEach((section, i) => {
         const sectionId = `section-${i}`;
         const typeClass = section.table ? `type-${section.table}` : '';
         const levelClass = `toc-level-${section.heading_level || 1}`;
-        const titleText = escapeHtml(section.title || `Section ${i + 1}`);
+        const titleText = String(section.title || `Section ${i + 1}`);
 
-        tocParts.push(
-            `<li><a href="#${sectionId}" class="${levelClass}" ` +
-            `data-section="${i}">${titleText}</a></li>`
-        );
+        const tocItem = document.createElement('li');
+        const tocLink = document.createElement('a');
+        tocLink.href = `#${sectionId}`;
+        tocLink.className = levelClass;
+        tocLink.dataset.section = String(i);
+        tocLink.textContent = titleText;
+        tocItem.appendChild(tocLink);
+        tocList.appendChild(tocItem);
 
-        let dateHtml = '';
-        if (section.table === 'events' &&
-            section.lore_date !== null && section.lore_date !== undefined) {
-            const start = Number(section.lore_date).toFixed(1);
-            const dur = Number(section.lore_duration || 0);
-            let label = `Day ${start}`;
-            if (dur > 0) {
-                const end = (Number(section.lore_date) + dur).toFixed(1);
-                label += ` \u2013 Day ${end}`;
-            }
-            dateHtml = `<p class="event-date-subtitle">${escapeHtml(label)}</p>`;
-        }
+        const sectionElement = document.createElement('div');
+        sectionElement.id = sectionId;
+        sectionElement.classList.add('story-section');
+        if (typeClass) sectionElement.classList.add(typeClass);
 
-        const resolvedHtml = resolveWikilinks(section.html || '', titleToAnchor);
-        const combined = injectDateAfterHeading(resolvedHtml, dateHtml);
-        contentParts.push(
-            `<div id="${sectionId}" class="story-section ${typeClass}">${combined}</div>`
-        );
+        const sectionDocument = new DOMParser().parseFromString(
+            String(section.html || ''), 'text/html');
+        resolveWikilinks(sectionDocument.body, targetToAnchor);
+        injectEventDate(sectionDocument.body, section);
+
+        const sectionFragment = document.createDocumentFragment();
+        Array.from(sectionDocument.body.childNodes).forEach(node => {
+            sectionFragment.appendChild(document.importNode(node, true));
+        });
+        sectionElement.appendChild(sectionFragment);
+        contentFragment.appendChild(sectionElement);
     });
-    tocParts.push('</ul>');
 
-    dom.content.innerHTML = contentParts.join('');
-    dom.toc.innerHTML = tocParts.join('');
+    dom.content.replaceChildren(contentFragment);
+    dom.toc.replaceChildren(tocList);
 
     if (dom.itemCount) {
         const n = sections.length;
@@ -658,37 +662,43 @@ function renderSections(sections) {
     setupTocObserver();
 }
 
-function injectDateAfterHeading(html, dateHtml) {
-    if (!dateHtml) return html;
-    const match = html.match(/<h[1-6][^>]*>[\s\S]*?<\/h[1-6]>/);
-    if (!match) return dateHtml + html;
-    const idx = match.index + match[0].length;
-    return html.slice(0, idx) + dateHtml + html.slice(idx);
+function injectEventDate(root, section) {
+    if (section.table !== 'events' || section.lore_date === null ||
+        section.lore_date === undefined) return;
+
+    const start = Number(section.lore_date).toFixed(1);
+    const duration = Number(section.lore_duration || 0);
+    let label = `Day ${start}`;
+    if (duration > 0) {
+        const end = (Number(section.lore_date) + duration).toFixed(1);
+        label += ` \u2013 Day ${end}`;
+    }
+
+    const subtitle = root.ownerDocument.createElement('p');
+    subtitle.className = 'event-date-subtitle';
+    subtitle.textContent = label;
+    const heading = root.querySelector('h1, h2, h3, h4, h5, h6');
+    if (heading) heading.after(subtitle);
+    else root.prepend(subtitle);
 }
 
-function resolveWikilinks(html, titleToAnchor) {
-    if (!html.includes('wikilink')) return html;
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(`<div id="root">${html}</div>`, 'text/html');
-    const root = doc.getElementById('root');
-    if (!root) return html;
+function resolveWikilinks(root, targetToAnchor) {
     root.querySelectorAll('a.wikilink').forEach(el => {
         const target = (el.getAttribute('data-target') || '').trim();
         const label = el.textContent;
-        const anchor = titleToAnchor[target.toLowerCase()];
+        const anchor = targetToAnchor[target.toLowerCase()];
         if (anchor) {
             el.setAttribute('href', `#${anchor}`);
             el.removeAttribute('data-target');
             el.classList.remove('wikilink');
             el.classList.add('wikilink-anchor');
         } else {
-            const span = doc.createElement('span');
+            const span = root.ownerDocument.createElement('span');
             span.className = 'wikilink-no-target';
             span.textContent = label;
             el.replaceWith(span);
         }
     });
-    return root.innerHTML;
 }
 
 function attachTocClickHandlers() {
@@ -871,17 +881,4 @@ function clearSearchHighlights() {
     });
     state.searchMatches = [];
     state.searchCursor = -1;
-}
-
-/* =========================================================================
-   Utilities
-   ========================================================================= */
-function escapeHtml(s) {
-    if (s == null) return '';
-    return String(s)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
 }

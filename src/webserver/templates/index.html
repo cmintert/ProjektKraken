@@ -5,14 +5,11 @@ But, basically that changes <!doctype html>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ProjektKraken Longform</title>
-  <script>
-    window.__INITIAL_THEME__ = "{{ initial_theme }}";
-    window.__LAN_ACCESS__ = {{ "true" if lan_access else "false" }};
-  </script>
-  <link rel="stylesheet" href="/static/styles.css?v=3" />
+  <link rel="stylesheet" href="/static/styles.css?v=4" />
 </head>
 
-<body>
+<body data-initial-theme="{{ initial_theme }}"
+  data-lan-access="{{ 'true' if lan_access else 'false' }}">
   <div id="access-gate" class="access-gate hidden" role="dialog" aria-modal="true"
     aria-labelledby="access-title">
     <form id="access-form" class="access-card">
@@ -125,7 +122,7 @@ But, basically that changes <!doctype html>
       </div>
     </div>
   </div>
-  <script src="/static/app.js?v=3"></script>
+  <script src="/static/app.js?v=4"></script>
 </body>
 
 </html>

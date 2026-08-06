@@ -209,20 +209,19 @@ def test_longform_page_embeds_initial_theme(web_server):
     port = web_server._test_port
     code, body = http_get(f"http://127.0.0.1:{port}/longform")
     assert code == 200
-    # The template renders window.__INITIAL_THEME__ = "dark_mode" by default.
-    assert "__INITIAL_THEME__" in body
-    assert "dark_mode" in body
+    assert 'data-initial-theme="dark_mode"' in body
+    assert "window.__INITIAL_THEME__" not in body
 
 
 def test_wikilink_target_is_escaped():
-    """Verify attribute escaping in _resolve_wikilinks — defense against injection."""
-    from src.webserver.server import _resolve_wikilinks
+    """Verify native wiki-link rendering cannot break out of safe attributes."""
+    from src.webserver.markdown_renderer import render_longform_markdown
 
     # Target containing a quote must not break out of the attribute
-    result = _resolve_wikilinks('See [[bad"name|Label]] for details')
+    result = render_longform_markdown('See [[bad"name|Label]] for details')
     assert 'data-target="bad"name"' not in result
     assert "&quot;" in result
-    # Plain form also escaped
-    result2 = _resolve_wikilinks('[[<script>alert(1)</script>]]')
+    # Raw HTML inside a wiki expression is removed at the Markdown boundary.
+    result2 = render_longform_markdown('[[<script>alert(1)</script>]]')
     assert "<script>" not in result2
-    assert "&lt;script&gt;" in result2
+    assert "javascript:" not in result2.lower()

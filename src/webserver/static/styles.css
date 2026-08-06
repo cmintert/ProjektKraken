@@ -648,6 +648,7 @@ header {
 .story-section p {
   margin: 0 0 1rem;
   color: var(--text-main);
+  line-height: 1.5;
 }
 
 .story-section p:last-child {

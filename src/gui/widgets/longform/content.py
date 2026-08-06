@@ -247,7 +247,7 @@ class LongformContentWidget(QTextBrowser):
                 color: {text_color};
                 font-family: "Segoe UI", sans-serif;
                 font-size: {fs_body};
-                line-height: 1.6;
+                line-height: 1.35;
                 margin: 0;
                 padding: 20px;
                 background-color: transparent;

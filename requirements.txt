@@ -22,6 +22,7 @@ Pillow==12.1.1
 # Markdown Support
 Markdown==3.10
 python-frontmatter==1.1.0
+bleach==6.2.0
 
 # Packaging (optional, for building executables)
 pyinstaller==6.17.0
