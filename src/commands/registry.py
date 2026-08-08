@@ -82,7 +82,6 @@ def _init_registry() -> None:
     )
     from src.commands.marker_commands import (
         CreateMarkerCommand,
-        DeleteKeyframeCommand,
         DeleteMarkerCommand,
         UpdateMarkerAttributeCommand,
         UpdateMarkerColorCommand,
@@ -151,7 +150,6 @@ def _init_registry() -> None:
             "UpdateMarkerIconCommand": UpdateMarkerIconCommand,
             "UpdateMarkerColorCommand": UpdateMarkerColorCommand,
             "UpdateMarkerAttributeCommand": UpdateMarkerAttributeCommand,
-            "DeleteKeyframeCommand": DeleteKeyframeCommand,
             "UpdateTrajectoryCommand": UpdateTrajectoryCommand,
             # Layer commands
             "SetLayerVisibilityCommand": SetLayerVisibilityCommand,

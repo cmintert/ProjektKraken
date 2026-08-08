@@ -19,7 +19,6 @@ def _session() -> TrajectoryEditSession:
             Keyframe(t=0.0, x=0.1, y=0.2),
             Keyframe(t=10.0, x=0.9, y=0.8),
         ],
-        playhead=4.0,
     )
 
 
@@ -33,7 +32,6 @@ def _speed_session() -> TrajectoryEditSession:
             Keyframe(t=12.0, x=0.25, y=0.0),
             Keyframe(t=20.0, x=1.0, y=0.0),
         ],
-        playhead=4.0,
     )
 
 
@@ -93,7 +91,6 @@ def test_midpoint_insertion_rejects_timestamp_collision() -> None:
             Keyframe(t=0.0, x=0.1, y=0.2),
             Keyframe(t=KEYFRAME_TIME_EPSILON, x=0.9, y=0.8),
         ],
-        playhead=0.0,
     )
     start, end = session.working_keyframes
 
@@ -149,31 +146,43 @@ def test_date_edit_reorders_by_stable_identity_and_tracks_feedback() -> None:
     session = _session()
     edit_id = session.working_keyframes[0].edit_id
 
-    jump_time = session.begin_date_edit(edit_id, current_playhead=4.0)
+    session.begin_date_edit(edit_id)
     session.update_active_date(12.0)
     snapshot = session.to_snapshot()
 
-    assert jump_time == 0.0
     assert session.working_keyframes[1].edit_id == edit_id
     assert session.working_keyframes[1].x == 0.1
     assert snapshot["date_edit_original_t"] == 0.0
     assert snapshot["date_edit_proposed_t"] == 12.0
     assert snapshot["date_edit_delta"] == 12.0
-    assert session.finish_date_edit() == 12.0
+    assert session.finish_date_edit()
     assert session.active_date_edit_id is None
+
+
+def test_explicit_time_assignment_reorders_without_detaching_position() -> None:
+    """One-step playhead copying uses the same stable date mutation."""
+    session = _session()
+    edit_id = session.working_keyframes[0].edit_id
+
+    session.set_keyframe_time(edit_id, 12.0)
+
+    moved = session.working_keyframes[-1]
+    assert moved.edit_id == edit_id
+    assert (moved.t, moved.x, moved.y) == (12.0, 0.1, 0.2)
+    assert session.selected_keyframe_id == edit_id
+    assert session.can_apply
 
 
 def test_repeated_begin_preserves_date_edit_cancel_baseline() -> None:
     session = _session()
     edit_id = session.working_keyframes[0].edit_id
-    session.begin_date_edit(edit_id, current_playhead=4.0)
+    session.begin_date_edit(edit_id)
     session.update_active_date(3.0)
 
-    jump_time = session.begin_date_edit(edit_id, current_playhead=8.0)
-    restore_playhead = session.cancel_date_edit()
+    session.begin_date_edit(edit_id)
+    cancelled = session.cancel_date_edit()
 
-    assert jump_time == 3.0
-    assert restore_playhead == 4.0
+    assert cancelled
     assert session.working_keyframes[0].t == 0.0
 
 
@@ -181,7 +190,7 @@ def test_date_edit_collision_remains_visible_and_blocks_apply() -> None:
     """An invalid proposed date is preserved for correction, not overwritten."""
     session = _session()
     edit_id = session.working_keyframes[0].edit_id
-    session.begin_date_edit(edit_id, current_playhead=4.0)
+    session.begin_date_edit(edit_id)
 
     session.update_active_date(10.0)
 
@@ -194,22 +203,22 @@ def test_date_edit_collision_remains_visible_and_blocks_apply() -> None:
     ) == 10.0
 
 
-def test_cancel_date_edit_restores_prior_working_date_and_playhead() -> None:
+def test_cancel_date_edit_restores_prior_working_date() -> None:
     """Temporal cancel preserves earlier spatial edits in the same session."""
     session = _session()
     edit_id = session.working_keyframes[0].edit_id
     session.move_keyframe(edit_id, 0.3, 0.4)
-    session.begin_date_edit(edit_id, current_playhead=4.0)
+    session.begin_date_edit(edit_id)
     session.update_active_date(6.0)
 
-    restore_playhead = session.cancel_date_edit()
+    cancelled = session.cancel_date_edit()
 
     restored = next(
         keyframe
         for keyframe in session.working_keyframes
         if keyframe.edit_id == edit_id
     )
-    assert restore_playhead == 4.0
+    assert cancelled
     assert restored.t == 0.0
     assert restored.x == 0.3
     assert restored.y == 0.4
@@ -332,7 +341,7 @@ def test_equalization_rejects_adjacent_already_equal_and_zero_distance() -> None
             middle_id, TrajectoryDistanceContext(1.0, 1.0)
         )
 
-    session.begin_date_edit(middle_id, current_playhead=0.0)
+    session.begin_date_edit(middle_id)
     session.update_active_date(5.0)
     session.finish_date_edit()
     with pytest.raises(ValueError, match="already"):
@@ -349,7 +358,6 @@ def test_equalization_rejects_adjacent_already_equal_and_zero_distance() -> None
             Keyframe(10.0, 0.5, 0.5),
             Keyframe(20.0, 0.5, 0.5),
         ],
-        0.0,
     )
     zero.set_speed_anchor(zero.working_keyframes[0].edit_id)
     with pytest.raises(ValueError, match="zero-distance"):
@@ -373,4 +381,4 @@ def test_equalization_preview_blocks_other_working_mutations() -> None:
     with pytest.raises(ValueError, match="preview"):
         session.move_keyframe(start_id, 0.1, 0.1)
     with pytest.raises(ValueError, match="preview"):
-        session.begin_date_edit(start_id, 0.0)
+        session.begin_date_edit(start_id)

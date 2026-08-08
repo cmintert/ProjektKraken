@@ -25,7 +25,6 @@ def _snapshot():
             Keyframe(t=10.0, x=0.5, y=0.6),
             Keyframe(t=20.0, x=0.9, y=0.8),
         ],
-        playhead=5.0,
     )
     return session.to_snapshot()
 
@@ -51,7 +50,6 @@ def test_normal_renderer_keyframes_are_passive(qtbot, monkeypatch):
     )
 
     assert len(view.keyframe_items) == 2
-    assert all(not item.interactive for item in view.keyframe_items)
     assert all(
         not item.flags() & item.GraphicsItemFlag.ItemIsMovable
         for item in view.keyframe_items
@@ -84,10 +82,9 @@ def test_date_edit_highlights_adjacent_affected_segments(qtbot, monkeypatch):
             Keyframe(t=10.0, x=0.5, y=0.6),
             Keyframe(t=20.0, x=0.9, y=0.8),
         ],
-        playhead=5.0,
     )
     middle_id = session.working_keyframes[1].edit_id
-    session.begin_date_edit(middle_id, current_playhead=5.0)
+    session.begin_date_edit(middle_id)
 
     view.trajectory_edit_overlay.show(session.to_snapshot())
 
@@ -108,10 +105,9 @@ def test_temporal_highlight_is_removed_after_date_edit_finishes(
             Keyframe(t=0.0, x=0.1, y=0.2),
             Keyframe(t=10.0, x=0.5, y=0.6),
         ],
-        playhead=5.0,
     )
     edit_id = session.working_keyframes[0].edit_id
-    session.begin_date_edit(edit_id, current_playhead=5.0)
+    session.begin_date_edit(edit_id)
     view.trajectory_edit_overlay.show(session.to_snapshot())
     session.finish_date_edit()
 
@@ -133,7 +129,6 @@ def test_speed_anchor_remains_visibly_marked_when_selection_moves(
             Keyframe(t=12.0, x=0.25, y=0.0),
             Keyframe(t=20.0, x=1.0, y=0.0),
         ],
-        playhead=5.0,
     )
     start_id = session.working_keyframes[0].edit_id
     end_id = session.working_keyframes[-1].edit_id
@@ -160,7 +155,6 @@ def test_equalization_preview_highlights_range_and_locks_handles(
             Keyframe(t=12.0, x=0.25, y=0.0),
             Keyframe(t=20.0, x=1.0, y=0.0),
         ],
-        playhead=5.0,
     )
     session.set_speed_anchor(session.working_keyframes[0].edit_id)
     session.preview_speed_equalization(

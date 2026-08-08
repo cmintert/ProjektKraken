@@ -165,65 +165,6 @@ class TestTrajectoryRepository:
         assert row["t_start"] == 10.0
         assert row["t_end"] == 50.0
 
-    def test_update_keyframe_time_and_resort(self, repo, setup_data):
-        """Test updating a keyframe time and verifying re-sort."""
-        marker_id = setup_data["marker_id"]
-        # Initial: t=10, t=50, t=90
-        trajectory = [
-            Keyframe(t=10.0, x=0.1, y=0.1),
-            Keyframe(t=50.0, x=0.5, y=0.5),
-            Keyframe(t=90.0, x=0.9, y=0.9),
-        ]
-        repo.insert(marker_id, trajectory)
-
-        # Move middle keyframe (t=50) to t=5 (should become first)
-        repo.update_keyframe_time("map1", marker_id, 50.0, 5.0)
-
-        # Verify new order
-        fetched = repo.get_by_marker_db_id(marker_id)[0][1]
-        assert len(fetched) == 3
-        # Should be sorted: 5.0, 10.0, 90.0
-        assert fetched[0].t == 5.0
-        assert fetched[0].x == 0.5  # Moved item
-        assert fetched[1].t == 10.0
-        assert fetched[2].t == 90.0
-
-    def test_update_keyframe_time_not_found(self, repo, setup_data):
-        """Test updating a non-existent keyframe raises ValueError."""
-        marker_id = setup_data["marker_id"]
-        trajectory = [Keyframe(t=10.0, x=0.0, y=0.0)]
-        repo.insert(marker_id, trajectory)
-
-        # Try to update t=999 (doesn't exist)
-        with pytest.raises(ValueError, match="Keyframe at t=999.0 not found"):
-            repo.update_keyframe_time("map1", marker_id, 999.0, 50.0)
-
-        fetched = repo.get_by_marker_db_id(marker_id)[0][1]
-        assert len(fetched) == 1
-        assert fetched[0].t == 10.0
-
-    def test_add_keyframe_creates_new_trajectory(self, repo, setup_data):
-        """Test adding a keyframe to a marker with no existing trajectory."""
-        marker_id = setup_data["marker_id"]
-        # Ensure no trajectory exists initially
-        assert len(repo.get_by_marker_db_id(marker_id)) == 0
-
-        kf = Keyframe(t=15.0, x=0.2, y=0.2)
-        repo.add_keyframe("map1", marker_id, kf)
-
-        results = repo.get_by_marker_db_id(marker_id)
-        assert len(results) == 1
-        fetched_traj = results[0][1]
-        assert len(fetched_traj) == 1
-        assert fetched_traj[0].t == 15.0
-
-    def test_add_keyframe_raises_error_for_missing_marker(self, repo):
-        """Test that adding a keyframe for a non-existent marker fails."""
-        kf = Keyframe(t=10.0, x=0.5, y=0.5)
-        # Repo logic apparently checks for marker existence explicitly
-        with pytest.raises(ValueError, match="Marker not found"):
-            repo.add_keyframe("map1", "non_existent_marker", kf)
-
     def test_backward_compat_parses_old_format(self, repo, db_connection, setup_data):
         """Test that old [[t,x,y],...] format is correctly parsed."""
         marker_id = setup_data["marker_id"]
@@ -342,21 +283,6 @@ class TestTrajectoryRepository:
         assert after is None
         assert repo.get_marker_trajectory_snapshot("map1", "marker1") is None
 
-    def test_granular_delete_preserves_one_remaining_keyframe(
-        self, repo, setup_data
-    ):
-        """Legacy deletion follows the corrected one-keyframe contract."""
-        trajectory_id = repo.insert(
-            setup_data["marker_id"],
-            [Keyframe(t=0.0, x=0.1, y=0.1), Keyframe(t=10.0, x=0.9, y=0.9)],
-        )
-
-        result = repo.delete_keyframe("map1", "marker1", 10.0)
-
-        assert result == trajectory_id
-        persisted = repo.get_by_marker_db_id(setup_data["marker_id"])
-        assert persisted[0][1] == [Keyframe(t=0.0, x=0.1, y=0.1)]
-
     @pytest.mark.parametrize(
         "invalid_keyframes",
         [
@@ -441,8 +367,10 @@ class TestTrajectoryRepository:
         with pytest.raises(AmbiguousTrajectoryError, match="2 trajectory rows"):
             repo.get_marker_trajectory_snapshot("map1", "marker1")
         with pytest.raises(AmbiguousTrajectoryError, match="2 trajectory rows"):
-            repo.add_keyframe(
-                "map1", "marker1", Keyframe(t=3.0, x=0.3, y=0.3)
+            repo.set_marker_trajectory(
+                "map1",
+                "marker1",
+                [Keyframe(t=3.0, x=0.3, y=0.3)],
             )
 
     def test_failed_update_rolls_back_exact_prior_row(

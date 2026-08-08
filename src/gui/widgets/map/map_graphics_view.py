@@ -13,14 +13,13 @@ focused sub-components:
 
 import logging
 import math
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, cast
 
 from PySide6.QtCore import (
     Property,
     QPointF,
     QRect,
     QRectF,
-    QSettings,
     QSize,
     Qt,
     QTimer,
@@ -34,7 +33,6 @@ from PySide6.QtGui import (
     QDragLeaveEvent,
     QDragMoveEvent,
     QDropEvent,
-    QFont,
     QKeyEvent,
     QMouseEvent,
     QPainter,
@@ -46,15 +44,10 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QGraphicsEllipseItem,
     QGraphicsItem,
-    QGraphicsItemGroup,
     QGraphicsObject,
     QGraphicsPathItem,
     QGraphicsPixmapItem,
-    QGraphicsRectItem,
     QGraphicsScene,
-    QGraphicsSceneHoverEvent,
-    QGraphicsSceneMouseEvent,
-    QGraphicsSimpleTextItem,
     QGraphicsView,
     QLabel,
     QSizePolicy,
@@ -107,165 +100,10 @@ LAYER_UI_OVERLAY = MAP_LAYER_Z_UI_OVERLAY
 
 # Colors — resolved from ThemeManager at runtime; these are fallback defaults only
 KEYFRAME_COLOR_DEFAULT = "#f1c40f"  # Yellow (fallback)
-KEYFRAME_COLOR_SELECTED = "#e74c3c"  # Red (fallback)
-
-# Layout Constants
-GIZMO_SIZE = 6
-GIZMO_FONT_FAMILY = "Segoe UI"
-GIZMO_FONT_SIZE = 6
-
-
-class KeyframeGizmo(QGraphicsItemGroup):
-    """Hover gizmo for keyframe actions: Clock Mode and Delete.
-    Shows clickable icons for temporal editing (clock) and deletion (red X).
-    """
-
-    def __init__(
-        self, keyframe_item: "KeyframeItem", parent: Optional[QGraphicsItem] = None
-    ) -> None:
-        """Initialize the keyframe gizmo.
-
-        Args:
-            keyframe_item: The parent keyframe item this gizmo belongs to.
-            parent: Optional parent graphics item.
-        """
-        super().__init__(parent)
-        self.keyframe_item = keyframe_item
-        self.setZValue(LAYER_UI_OVERLAY)
-        self.setAcceptHoverEvents(True)
-
-        _theme = ThemeManager().get_theme()
-        _gizmo_text_color = _theme.get("text_main", "#ffffff")
-        _delete_color = _theme.get("error", "#e74c3c")
-
-        # Create Clock icon (left)
-        self.clock_icon = self._create_icon("🕐", 0, _gizmo_text_color)
-        self.addToGroup(self.clock_icon)
-
-        # Create Delete icon (right) - red X
-        self.delete_icon = self._create_icon("✕", GIZMO_SIZE + 4, _delete_color)
-        self.addToGroup(self.delete_icon)
-
-        # Position gizmo to Northeast of keyframe (Right and Up)
-        self.setPos(3, -8)
-
-    def _create_icon(self, text: str, x_offset: float, color: str) -> QGraphicsRectItem:
-        """Create a clickable icon button.
-
-        Args:
-            text: Unicode character to display as icon.
-            x_offset: Horizontal offset in pixels.
-            color: Hex color code for the icon.
-
-        Returns:
-            QGraphicsRectItem containing the styled icon.
-        """
-        from PySide6.QtCore import Qt
-
-        # Background rect (smaller)
-        size = GIZMO_SIZE
-        rect = QGraphicsRectItem(x_offset, 0, size, size)
-        rect.setBrush(Qt.BrushStyle.NoBrush)
-        rect.setPen(Qt.PenStyle.NoPen)
-        rect.setZValue(LAYER_UI_OVERLAY)
-
-        # Icon text (smaller font)
-        label = QGraphicsSimpleTextItem(text, rect)
-        label.setPos(x_offset + 1, -3)
-        label.setBrush(QBrush(QColor(color)))
-        font = QFont(GIZMO_FONT_FAMILY, GIZMO_FONT_SIZE)
-        label.setFont(font)
-
-        # Make clickable
-        rect.setAcceptHoverEvents(True)
-        rect.setCursor(Qt.CursorShape.PointingHandCursor)
-
-        return rect
-
-    def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
-        """Keep gizmo visible while hovering over it.
-
-        Args:
-            event: The hover enter event.
-        """
-        super().hoverEnterEvent(event)
-        self.keyframe_item._gizmo_hovered = True
-
-    def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
-        """Remove gizmo when mouse leaves.
-
-        Args:
-            event: The hover leave event.
-        """
-        super().hoverLeaveEvent(event)
-        self.keyframe_item._gizmo_hovered = False
-        if not self.keyframe_item.isUnderMouse():
-            self.keyframe_item._cleanup_gizmo()
-
-    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
-        """Handle icon clicks - clock for Clock Mode, X for delete.
-
-        Uses hit-testing on child items / geometry instead of a fixed
-        x-threshold so that font/DPI/layout changes don't break behavior.
-
-        Args:
-            event: The mouse press event.
-        """
-        scene_pos = event.scenePos()
-        handled = False
-
-        if self.clock_icon.contains(self.clock_icon.mapFromScene(scene_pos)):
-            logger.info(f"Clock icon clicked for marker {self.keyframe_item.marker_id}")
-            self.keyframe_item.set_mode("clock")
-            handled = True
-        elif self.delete_icon.contains(self.delete_icon.mapFromScene(scene_pos)):
-            logger.info(
-                f"Delete icon clicked for keyframe {self.keyframe_item.marker_id} "
-                f"at t={self.keyframe_item.t}"
-            )
-            self.keyframe_item.request_delete()
-            handled = True
-        else:
-            # Fallback: use generic scene hit-testing if explicit bounds missed
-            # e.g., for overflowing child text items
-            scene = self.scene()
-            if scene is not None:
-                from PySide6.QtGui import QTransform
-
-                clicked_item = scene.itemAt(scene_pos, QTransform())
-                if clicked_item is not None:
-                    if (
-                        clicked_item is self.clock_icon
-                        or clicked_item.parentItem() is self.clock_icon
-                    ):
-                        logger.info(
-                            f"Clock icon clicked for marker {self.keyframe_item.marker_id}"
-                        )
-                        self.keyframe_item.set_mode("clock")
-                        handled = True
-                    elif (
-                        clicked_item is self.delete_icon
-                        or clicked_item.parentItem() is self.delete_icon
-                    ):
-                        logger.info(
-                            f"Delete icon clicked for keyframe {self.keyframe_item.marker_id} "
-                            f"at t={self.keyframe_item.t}"
-                        )
-                        self.keyframe_item.request_delete()
-                        handled = True
-
-        if handled:
-            event.accept()
-        else:
-            super().mousePressEvent(event)
 
 
 class KeyframeItem(QGraphicsObject):
-    """A draggable keyframe dot on the trajectory.
-
-    Represents a temporal keyframe for a marker's position on the map.
-    Supports transform and clock modes for editing position and time.
-    """
+    """Passive playback dot for a trajectory keyframe."""
 
     def __init__(
         self,
@@ -274,60 +112,21 @@ class KeyframeItem(QGraphicsObject):
         x: float,
         y: float,
         rect: QRectF,
-        on_drop_callback: Callable[["KeyframeItem"], None],
-        on_drag_callback: Optional[Callable[[], None]] = None,
-        *,
-        interactive: bool = True,
     ) -> None:
-        """Initialize the keyframe item.
-
-        Args:
-            marker_id: Unique identifier for the associated marker.
-            t: Time value for this keyframe (normalized).
-            x: X coordinate (normalized 0-1).
-            y: Y coordinate (normalized 0-1).
-            rect: Bounding rectangle for the keyframe dot.
-            on_drop_callback: Callback invoked when keyframe is dropped after drag.
-            on_drag_callback: Optional callback invoked during dragging.
-        """
         super().__init__()
         self._rect = rect
         self.marker_id = marker_id
         self.t = t
-        self.original_x = x  # Normalized X
-        self.original_y = y  # Normalized Y
-        self.on_drop_callback = on_drop_callback
-        self.on_drag_callback = on_drag_callback
-        self.interactive = interactive
+        self.original_x = x
+        self.original_y = y
 
-        # Mode state
-        self.mode: str = "transform"  # "transform" or "clock"
-        self.is_pinned: bool = False
-
-        # Visuals — resolve color from theme at creation time
-        _theme = ThemeManager().get_theme()
-        _default_color = _theme.get("accent_secondary", KEYFRAME_COLOR_DEFAULT)
-        self._brush = QBrush(QColor(_default_color))
+        theme = ThemeManager().get_theme()
+        color = theme.get("accent_secondary", KEYFRAME_COLOR_DEFAULT)
+        self._brush = QBrush(QColor(color))
         self._pen = QPen(Qt.PenStyle.NoPen)
 
-        # Gizmo (mode selector)
-        self.gizmo: Optional[KeyframeGizmo] = None
-        self._gizmo_hovered: bool = False
-
-        # Enable interaction
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, interactive)
-        self.setFlag(
-            QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges,
-            interactive,
-        )
-        self.setAcceptHoverEvents(interactive)
-
     def boundingRect(self) -> QRectF:
-        """Return the bounding rectangle for the keyframe dot.
-
-        Returns:
-            QRectF defining the bounds of this graphics item.
-        """
+        """Return the keyframe dot bounds."""
         return self._rect
 
     def paint(
@@ -336,219 +135,40 @@ class KeyframeItem(QGraphicsObject):
         option: QStyleOptionGraphicsItem,
         widget: Optional[QWidget] = None,
     ) -> None:
-        """Paint the keyframe dot.
-
-        Args:
-            painter: QPainter to use for drawing.
-            option: Style options for the graphics item.
-            widget: Optional widget being painted on.
-        """
+        """Paint the keyframe dot."""
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setBrush(self._brush)
         painter.setPen(self._pen)
         painter.drawEllipse(self._rect)
 
     def setBrush(self, brush: QBrush) -> None:
-        """Set the brush for the keyframe dot.
-
-        Args:
-            brush: QBrush to use for filling the dot.
-        """
+        """Set the dot fill."""
         self._brush = brush
         self.update()
 
     def brush(self) -> QBrush:
-        """Get the current brush.
-
-        Returns:
-            QBrush used for filling the dot.
-        """
+        """Return the dot fill."""
         return self._brush
 
-    @Property(float)
-    def scale_val(self) -> float:
-        """Get the scale value for animation.
-
-        Returns:
-            Current scale factor.
-        """
-        return self.scale()
-
-    @scale_val.setter  # type: ignore[no-redef]  # PySide6 Property stub mismatch
-    def scale_val(self, value: float) -> None:
-        """Set the scale value for animation.
-
-        Args:
-            value: New scale factor.
-        """
-        self.setScale(value)
-        self.update()
-
     def setPen(self, pen: QPen) -> None:
-        """Set the pen for the keyframe dot border.
-
-        Args:
-            pen: QPen to use for drawing the dot border.
-        """
+        """Set the dot outline."""
         self._pen = pen
         self.update()
 
     def pen(self) -> QPen:
-        """Get the current pen.
-
-        Returns:
-            QPen used for drawing the dot border.
-        """
+        """Return the dot outline."""
         return self._pen
 
-    def set_mode(self, mode: str) -> None:
-        """Switch between transform and clock modes.
+    @Property(float)
+    def scale_val(self) -> float:
+        """Return the animation scale."""
+        return self.scale()
 
-        Args:
-            mode: Mode to switch to ('transform' or 'clock').
-        """
-        logger.info(f"Keyframe {self.marker_id} mode set to: {mode}")
-        self.mode = mode
-        if mode == "clock":
-            # Emit signal to enter Clock Mode
-            view = self.scene().views()[0] if self.scene() else None
-            if view and hasattr(view, "keyframe_clock_mode_requested"):
-                view.keyframe_clock_mode_requested.emit(self.marker_id, self.t)
-        # Hide gizmo after selection
-        self._cleanup_gizmo()
-
-    def set_pinned(self, pinned: bool) -> None:
-        """Set visual state for pinned keyframe (Clock Mode).
-
-        Args:
-            pinned: True if keyframe is pinned in Clock Mode.
-        """
-        self.is_pinned = pinned
-        _theme = ThemeManager().get_theme()
-        color = (
-            _theme.get("error", KEYFRAME_COLOR_SELECTED)
-            if pinned
-            else _theme.get("accent_secondary", KEYFRAME_COLOR_DEFAULT)
-        )
-        pen_width = 3 if pinned else 1
-
-        self.setPen(QPen(QColor(color), pen_width))
-        self.setBrush(QBrush(QColor(color)))
-
-    def request_delete(self) -> None:
-        """Request deletion of this keyframe by emitting signal to view."""
-        view = self.scene().views()[0] if self.scene() else None
-        if view and hasattr(view, "keyframe_delete_requested"):
-            logger.info(
-                f"Requesting delete for keyframe {self.marker_id} at t={self.t}"
-            )
-            view.keyframe_delete_requested.emit(self.marker_id, self.t)
-        # Cleanup gizmo after action
-        self._cleanup_gizmo()
-
-    def hoverEnterEvent(self, event: QGraphicsSceneHoverEvent) -> None:
-        """Show gizmo when hovering over keyframe.
-
-        Args:
-            event: The hover enter event.
-        """
-        if not self.interactive:
-            return
-        super().hoverEnterEvent(event)
-        if not self.gizmo and not self.is_pinned:
-            self.gizmo = KeyframeGizmo(self)
-            self.gizmo.setParentItem(self)  # Auto-cleanup when parent deleted
-            self.gizmo.setVisible(True)
-        elif self.gizmo:
-            self.gizmo.setVisible(True)
-
-        if self.mode == "transform":
-            self.setCursor(Qt.CursorShape.SizeAllCursor)
-
-        # Show Hint Tooltip if first-use
-        self._show_hover_hint()
-
-    def _show_hover_hint(self) -> None:
-        """Show a one-time hint tooltip for first-time users."""
-        settings = QSettings()
-        if not settings.value("map/onboarding_hover_hint_shown", False, type=bool):
-            self.setToolTip(
-                "<div style='width: 150px;'>"
-                "💡 Tip: Hover keyframes to edit position or time"
-                "</div>"
-            )
-            # We can't easily dismiss it with "Don't show again" inside a native
-            # tooltip, but we can mark it as shown if it stays for a while.
-            # Using QToolTip.showText or similar might be better for floating UI.
-            # For now, let's use the standard tooltip and mark it as seen.
-            settings.setValue("map/onboarding_hover_hint_shown", True)
-
-    def _cleanup_gizmo(self) -> None:
-        """Remove gizmo if not being hovered."""
-        # Additional guard: check if gizmo itself thinks it's under mouse
-        # This handles the race condition where we leave keyframe but enter gizmo
-        gizmo_under_mouse = self.gizmo and self.gizmo.isUnderMouse()
-
-        if (
-            self.gizmo
-            and not self._gizmo_hovered
-            and not self.is_pinned
-            and not gizmo_under_mouse
-        ):
-            self.gizmo.setVisible(False)
-
-    def hoverLeaveEvent(self, event: QGraphicsSceneHoverEvent) -> None:
-        """Hide gizmo when leaving keyframe.
-
-        Args:
-            event: The hover leave event.
-        """
-        super().hoverLeaveEvent(event)
-        self.unsetCursor()
-        # Attempt cleanup when leaving the keyframe dot
-        self._cleanup_gizmo()
-
-    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
-        """Clear any existing selection before starting drag.
-
-        Args:
-            event: The mouse press event.
-        """
-        if self.scene():
-            self.scene().clearSelection()
-        # Hide gizmo immediately when starting drag
-        if self.gizmo and self.mode == "transform":
-            self.gizmo.setVisible(False)
-        super().mousePressEvent(event)
-
-    def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent) -> None:
-        """Handle drop event after dragging.
-
-        Args:
-            event: The mouse release event.
-        """
-        super().mouseReleaseEvent(event)
-        if self.interactive:
-            self.on_drop_callback(self)
-
-    def itemChange(
-        self, change: QGraphicsEllipseItem.GraphicsItemChange, value: Any
-    ) -> Any:
-        """Handle position changes during drag.
-
-        Args:
-            change: The type of change occurring.
-            value: The new value for the change.
-
-        Returns:
-            The processed value for the change.
-        """
-        if (
-            change == QGraphicsEllipseItem.GraphicsItemChange.ItemPositionHasChanged
-            and self.on_drag_callback
-        ):
-            self.on_drag_callback()
-        return super().itemChange(change, value)
+    @scale_val.setter  # type: ignore[no-redef]  # PySide6 Property stub mismatch
+    def scale_val(self, value: float) -> None:
+        """Set the animation scale."""
+        self.setScale(value)
+        self.update()
 
 
 class MapGraphicsView(QGraphicsView):
@@ -580,12 +200,6 @@ class MapGraphicsView(QGraphicsView):
 
     # -- Coordinate signal --
     mouse_coordinates_changed = Signal(float, float, bool)
-
-    # -- Keyframe signals --
-    keyframe_moved = Signal(str, float, float, float)
-    keyframe_clock_mode_requested = Signal(str, float)
-    keyframe_delete_requested = Signal(str, float)
-    keyframe_edit_requested = Signal(str, float, float, float)
 
     # -- Direct trajectory editing signals --
     trajectory_edit_requested = Signal(str)
@@ -935,10 +549,6 @@ class MapGraphicsView(QGraphicsView):
     def _rebuild_midpoint_handles(self) -> None:
         """Backward-compatible alias for VertexEditor._rebuild_midpoint_handles."""
         self._vertex_editor._rebuild_midpoint_handles()
-
-    def _show_edit_keyframe_dialog(self, item: Any) -> None:
-        """Backward-compatible alias for InteractionHandler."""
-        self._interaction.show_edit_keyframe_dialog(item)
 
     def _show_feature_style_dialog(self, item: "PathItem | RegionItem") -> None:
         """Backward-compatible alias for InteractionHandler."""
@@ -1477,14 +1087,6 @@ class MapGraphicsView(QGraphicsView):
     def set_calendar_converter(self, converter: CalendarConverter) -> None:
         """Sets the calendar converter for formatting keyframe labels."""
         self._trajectory.set_calendar_converter(converter)
-
-    def set_keyframe_pinned(self, marker_id: str, t: float, pinned: bool) -> None:
-        """Set visual pinned state for a specific keyframe."""
-        self._trajectory.set_keyframe_pinned(marker_id, t, pinned)
-
-    def update_keyframe_label(self, marker_id: str, t: float, new_time: float) -> None:
-        """Updates the label of a specific keyframe."""
-        self._trajectory.update_keyframe_label(marker_id, t, new_time)
 
     # ------------------------------------------------------------------
     # Snapping
@@ -2124,30 +1726,25 @@ class MapGraphicsView(QGraphicsView):
         super().mouseDoubleClickEvent(event)
 
     def keyPressEvent(self, event: "QKeyEvent") -> None:
-        """Handle key presses for drawing/editing, clock, and draft modes.
-
-        Clock-mode ESC/Enter and Draft-mode ESC are forwarded to the
-        parent ``MapWidget`` because the view typically has keyboard
-        focus during map interaction, but modal state lives in the widget.
+        """Handle key presses for map interactions.
 
         Args:
             event: The key press event.
         """
-        # Forward modal-mode keys to the owning MapWidget.
         map_widget = self._find_map_widget()
-        if map_widget is not None:
-            in_clock = getattr(map_widget, "_pinned_marker_id", None) is not None
-            in_draft = bool(getattr(map_widget, "_transient_marker_ids", None))
-            if in_clock and event.key() in (
+        if (
+            map_widget is not None
+            and getattr(map_widget, "_trajectory_edit_marker_id", None) is not None
+            and event.key()
+            in (
                 Qt.Key.Key_Escape,
                 Qt.Key.Key_Return,
                 Qt.Key.Key_Enter,
-            ):
-                map_widget.keyPressEvent(event)
-                return
-            if in_draft and event.key() == Qt.Key.Key_Escape:
-                map_widget.keyPressEvent(event)
-                return
+                Qt.Key.Key_Delete,
+            )
+        ):
+            map_widget.keyPressEvent(event)
+            return
 
         # Footprint edit mode — consume keys before general handlers.
         if self.is_editing_footprint:
@@ -2299,11 +1896,10 @@ class MapGraphicsView(QGraphicsView):
         Returns:
             The MapWidget ancestor, or None.
         """
-        # Avoid circular import – check for the duck-type attribute
-        # that only MapWidget carries.
+        # Avoid a circular import by checking a MapWidget-specific method.
         widget = self.parentWidget()
         while widget is not None:
-            if hasattr(widget, "_pinned_marker_id"):
+            if hasattr(widget, "get_selected_map_id"):
                 return cast("MapWidget", widget)
             widget = widget.parentWidget()
         return None

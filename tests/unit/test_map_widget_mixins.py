@@ -84,7 +84,6 @@ class TestTrajectoryMixinMethods:
     EXPECTED_METHODS = [
         "set_trajectories",
         "_update_marker_indicators",
-        "_on_add_keyframe",
         "_iter_trajectory_positions",
         "_update_trajectory_positions",
         "on_time_changed",
@@ -92,16 +91,9 @@ class TestTrajectoryMixinMethods:
         "_update_time_display",
         "_on_marker_clicked_internal",
         "_update_trajectory_visualization",
-        "_emit_keyframe_upsert",
-        "_show_onboarding_dialog",
-        "_on_keyframe_moved",
-        "_enter_clock_mode",
-        "_commit_clock_mode",
-        "_cancel_clock_mode",
-        "_clear_clock_mode_visuals",
-        "_handle_clock_mode_time_change",
-        "_on_clock_mode_requested",
-        "_on_keyframe_delete_requested",
+        "show_trajectory_edit",
+        "clear_trajectory_edit",
+        "get_trajectory_distance_context",
     ]
 
     @pytest.mark.parametrize("method_name", EXPECTED_METHODS)

@@ -33,22 +33,6 @@ class SignalProtocol(Protocol):
 class DatabaseWorkerProtocol(Protocol):
     """Worker operations invoked directly by application coordinators."""
 
-    def add_keyframe(
-        self, map_id: str, marker_id: str, t: float, x: float, y: float
-    ) -> None:
-        """Add a trajectory keyframe."""
-        ...
-
-    def update_keyframe_time(
-        self, map_id: str, marker_id: str, old_t: float, new_t: float
-    ) -> None:
-        """Move a trajectory keyframe in time."""
-        ...
-
-    def delete_keyframe(self, map_id: str, marker_id: str, t: float) -> None:
-        """Delete a trajectory keyframe."""
-        ...
-
     def load_calendar_config(self) -> None:
         """Load the active calendar configuration."""
         ...

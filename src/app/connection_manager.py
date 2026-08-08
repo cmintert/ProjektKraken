@@ -576,7 +576,6 @@ class ConnectionManager:
         map_widget = self.window.map_widget
         map_handler = self.window.map_handler
         timeline = self.window.timeline
-        queued = Qt.ConnectionType.QueuedConnection
         return self._connect_batch(
             [
                 (
@@ -684,27 +683,6 @@ class ConnectionManager:
                     "current_time_changed",
                     map_widget.on_current_time_changed,
                     "Timeline->MapWidget",
-                ),
-                (
-                    map_widget,
-                    "add_keyframe_requested",
-                    self.window.worker.add_keyframe,
-                    "MapWidget",
-                    queued,
-                ),
-                (
-                    map_widget,
-                    "update_keyframe_time_requested",
-                    self.window.worker.update_keyframe_time,
-                    "MapWidget",
-                    queued,
-                ),
-                (
-                    map_widget,
-                    "delete_keyframe_requested",
-                    self.window.worker.delete_keyframe,
-                    "MapWidget",
-                    queued,
                 ),
                 (
                     map_widget,

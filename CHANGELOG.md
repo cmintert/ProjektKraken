@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-08
-**Commit:** caccd4e4
+**Commit:** c4d4ef72
 ---
 
 # Changelog
@@ -17,8 +17,9 @@ All notable changes to this project will be documented in this file.
   speed equalization with distance-weighted date previews, calibrated or
   relative speed feedback, and reversible working-copy confirmation.
 - *(2026-08-08)* **Map / Trajectories**: Added direct temporal keyframe
-  editing through compact calendar controls and timeline scrubbing, with live
-  reordering, date feedback, affected-segment highlighting, and scoped cancel.
+  editing through compact calendar controls and explicit playhead copying,
+  with live reordering, date feedback, affected-segment highlighting, and
+  scoped cancel.
 - *(2026-08-08)* **Map / Trajectories**: Added direct spatial trajectory
   editing with draggable keyframes, midpoint insertion, snapping, compact
   Apply and Cancel controls, and focus-independent shortcuts.
@@ -47,12 +48,18 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-08)* **Cleanup / Trajectories**: Removed legacy Draft and Clock
+  modes, hover keyframe gizmos, granular mutation pathways, and obsolete
+  command compatibility in favor of the atomic direct editor.
+- *(2026-08-08)* **Documentation / Trajectories**: Documented direct route
+  editing, explicit playhead date assignment, speed equalization, cancellation,
+  and keyboard behavior.
 - *(2026-08-08)* **Testing / Trajectories**: Added speed calculation,
   100-keyframe, anchor lifecycle, preview, keyboard, calibrated display, and
   compact-layout regression coverage.
 - *(2026-08-08)* **Testing / Trajectories**: Added temporal edit-session,
-  coordinator, overlay, shortcut, playhead restoration, and map-widget
-  regression coverage.
+  coordinator, overlay, shortcut, explicit playhead-copy, cancellation, and
+  map-widget regression coverage.
 - *(2026-08-08)* **Architecture / Trajectories**: Added isolated edit sessions,
   playback-marker protection, targeted authoritative reloads, and conflict
   handling that prevents external refreshes from overwriting working edits.

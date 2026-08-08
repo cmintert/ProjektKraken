@@ -75,6 +75,9 @@ class TrajectoryEditCoordinator(QObject):
             self.discard_and_reload
         )
         widget.trajectory_date_edit_requested.connect(self.begin_date_edit)
+        widget.trajectory_date_use_playhead_requested.connect(
+            self.set_selected_date_from_playhead
+        )
         widget.trajectory_date_value_changed.connect(self.set_date_value)
         widget.trajectory_date_step_requested.connect(self.step_date)
         widget.trajectory_date_edit_done_requested.connect(self.finish_date_edit)
@@ -94,9 +97,6 @@ class TrajectoryEditCoordinator(QObject):
         )
         widget.trajectory_speed_equalization_cancel_requested.connect(
             self.cancel_speed_equalization
-        )
-        self._window.timeline.playhead_time_changed.connect(
-            self.on_playhead_time_changed
         )
         self.command_requested.connect(self._window.command_requested.emit)
         self._window.worker.command_finished.connect(
@@ -184,7 +184,6 @@ class TrajectoryEditCoordinator(QObject):
             marker_id=marker_id,
             trajectory_id=str(record["trajectory_id"]),
             keyframes=keyframes,
-            playhead=self._window.map_widget._playhead_time,
         )
         self._before_snapshot = copy.deepcopy(record.get("row_snapshot"))
         self._active_record_at_start = copy.deepcopy(record)
@@ -212,7 +211,7 @@ class TrajectoryEditCoordinator(QObject):
 
     @Slot(str)
     def begin_date_edit(self, edit_id: str) -> None:
-        """Start retiming a keyframe and jump the global playhead to it."""
+        """Start retiming a keyframe without changing the timeline."""
         session = self._session
         if session is None or self._pending_command_id is not None:
             return
@@ -222,20 +221,53 @@ class TrajectoryEditCoordinator(QObject):
                 and session.active_date_edit_id != edit_id
             ):
                 session.finish_date_edit()
-            jump_time = session.begin_date_edit(
-                edit_id, self._window.timeline.get_playhead_time()
-            )
+            session.begin_date_edit(edit_id)
         except ValueError as exc:
             self._show_status(str(exc))
             return
-        self._window.timeline.set_playhead_time(jump_time)
+        self._render()
 
     @Slot(float)
     def set_date_value(self, proposed_time: float) -> None:
-        """Route direct calendar input through the shared playhead preview."""
-        if not self.is_date_editing or self._pending_command_id is not None:
+        """Update the active date proposal without moving the timeline."""
+        session = self._session
+        if (
+            session is None
+            or session.active_date_edit_id is None
+            or self._pending_command_id is not None
+        ):
             return
-        self._window.timeline.set_playhead_time(proposed_time)
+        try:
+            session.update_active_date(proposed_time)
+        except ValueError as exc:
+            self._show_status(str(exc))
+            return
+        self._render()
+
+    @Slot()
+    def set_selected_date_from_playhead(self) -> None:
+        """Set the selected keyframe date without moving the playhead."""
+        session = self._session
+        if (
+            session is None
+            or session.selected_keyframe_id is None
+            or session.is_equalization_previewing
+            or self._pending_command_id is not None
+        ):
+            return
+        playhead = self._window.timeline.get_playhead_time()
+        try:
+            if session.active_date_edit_id is not None:
+                session.update_active_date(playhead)
+            else:
+                session.set_keyframe_time(
+                    session.selected_keyframe_id,
+                    playhead,
+                )
+        except ValueError as exc:
+            self._show_status(str(exc))
+            return
+        self._render()
 
     @Slot(float)
     def step_date(self, delta_days: float) -> None:
@@ -247,35 +279,20 @@ class TrajectoryEditCoordinator(QObject):
         if current is not None:
             self.set_date_value(current + delta_days)
 
-    @Slot(float)
-    def on_playhead_time_changed(self, proposed_time: float) -> None:
-        """Preview timeline movement as the active keyframe's proposed date."""
-        session = self._session
-        if session is None or session.active_date_edit_id is None:
-            return
-        try:
-            session.update_active_date(proposed_time)
-        except ValueError as exc:
-            self._show_status(str(exc))
-            return
-        self._render()
-
     @Slot()
     def finish_date_edit(self) -> None:
         """Keep the proposed date and leave the temporal sub-operation."""
         if self._session is None:
             return
-        if self._session.finish_date_edit() is not None:
+        if self._session.finish_date_edit():
             self._render()
 
     @Slot()
     def cancel_date_edit(self) -> None:
-        """Restore only the current keyframe's prior working date/playhead."""
+        """Restore only the current keyframe's prior working date."""
         if self._session is None or self._pending_command_id is not None:
             return
-        restore_playhead = self._session.cancel_date_edit()
-        if restore_playhead is not None:
-            self._window.timeline.set_playhead_time(restore_playhead)
+        if self._session.cancel_date_edit():
             self._render()
 
     @Slot(str)
@@ -416,10 +433,8 @@ class TrajectoryEditCoordinator(QObject):
         """Discard the working copy without persistence or history."""
         if self._session is None or self._pending_command_id is not None:
             return
-        restore_playhead = self._session.playhead_at_session_start
         latest = self._latest_deferred or self._current_authoritative()
         self._finish_session(latest)
-        self._window.timeline.set_playhead_time(restore_playhead)
 
     @Slot()
     def discard_and_reload(self) -> None:

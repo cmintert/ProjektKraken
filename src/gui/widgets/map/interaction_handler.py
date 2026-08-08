@@ -35,7 +35,7 @@ from src.gui.widgets.map.marker_item import MarkerItem
 if TYPE_CHECKING:
     from PySide6.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent
 
-    from src.gui.widgets.map.map_graphics_view import KeyframeItem, MapGraphicsView
+    from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 
 logger = logging.getLogger(__name__)
 
@@ -564,66 +564,6 @@ class InteractionHandler:
 
         if not self._handle_drop_data(event, norm_x, norm_y):
             event.ignore()
-
-    def show_edit_keyframe_dialog(self, item: "KeyframeItem") -> None:
-        """Shows a dialog to edit keyframe properties manually.
-
-        Args:
-            item: The keyframe item to edit.
-        """
-        from PySide6.QtWidgets import (
-            QHBoxLayout,
-            QLabel,
-            QLineEdit,
-            QVBoxLayout,
-        )
-
-        dialog = QDialog(self._view)
-        dialog.setWindowTitle("Edit Keyframe")
-        layout = QVBoxLayout(dialog)
-
-        x_layout = QHBoxLayout()
-        x_layout.addWidget(QLabel("Position X:"))
-        x_input = QLineEdit(f"{item.original_x:.3f}")
-        x_layout.addWidget(x_input)
-        layout.addLayout(x_layout)
-
-        y_layout = QHBoxLayout()
-        y_layout.addWidget(QLabel("Position Y:"))
-        y_input = QLineEdit(f"{item.original_y:.3f}")
-        y_layout.addWidget(y_input)
-        layout.addLayout(y_layout)
-
-        t_layout = QHBoxLayout()
-        t_layout.addWidget(QLabel("Time:"))
-        t_input = QLineEdit(f"{item.t:.1f}")
-        t_layout.addWidget(t_input)
-        layout.addLayout(t_layout)
-
-        btn_layout = QHBoxLayout()
-        save_btn = QPushButton("Save")
-        save_btn.clicked.connect(dialog.accept)
-        btn_layout.addWidget(save_btn)
-
-        cancel_btn = QPushButton("Cancel")
-        cancel_btn.clicked.connect(dialog.reject)
-        btn_layout.addWidget(cancel_btn)
-        layout.addLayout(btn_layout)
-
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            try:
-                new_x = float(x_input.text())
-                new_y = float(y_input.text())
-                new_t = float(t_input.text())
-                self._view.keyframe_edit_requested.emit(
-                    item.marker_id, new_t, new_x, new_y
-                )
-            except ValueError:
-                logger.error("Invalid input for keyframe edit")
-
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
 
     def _show_drop_hint(self) -> None:
         """Show the drag-and-drop overlay."""

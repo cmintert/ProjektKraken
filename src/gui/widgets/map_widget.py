@@ -25,7 +25,6 @@ from PySide6.QtCore import QSize, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QKeyEvent, QPaintEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QComboBox,
-    QDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -195,13 +194,6 @@ class MapWidget(
     feature_created = Signal(str, str, str, str, str, list)
     feature_style_changed = Signal(str, dict)  # marker_id, new style
     feature_geometry_changed = Signal(str, list)  # marker_id, new geometry
-    add_keyframe_requested = Signal(
-        str, str, float, float, float
-    )  # map_id, marker_id, t, x, y
-    update_keyframe_time_requested = Signal(
-        str, str, float, float
-    )  # map_id, marker_id, old_t, new_t
-    delete_keyframe_requested = Signal(str, str, float)  # map_id, marker_id, t
     trajectory_edit_requested = Signal(str)
     trajectory_keyframe_selected = Signal(str)
     trajectory_keyframe_moved = Signal(str, float, float)
@@ -211,6 +203,7 @@ class MapWidget(
     trajectory_cancel_requested = Signal()
     trajectory_discard_reload_requested = Signal()
     trajectory_date_edit_requested = Signal(str)
+    trajectory_date_use_playhead_requested = Signal()
     trajectory_date_value_changed = Signal(float)
     trajectory_date_step_requested = Signal(float)
     trajectory_date_edit_done_requested = Signal()
@@ -223,7 +216,6 @@ class MapWidget(
     trajectory_speed_equalization_cancel_requested = Signal()
     jump_to_time_requested = Signal(float)  # target_time
     map_scale_changed = Signal(float)  # For persisting map scale
-    show_onboarding_requested = Signal()  # To trigger animation or hints
     # Map nesting (master / detail) signals
     set_master_map_requested = Signal(str)  # map_id
     register_detail_map_requested = Signal(
@@ -267,9 +259,6 @@ class MapWidget(
 
         # Create view
         self.view = MapGraphicsView(self)
-
-        self._pinned_marker_id: Optional[str] = None
-        self._pinned_original_t: Optional[float] = None
 
         # Layout
         layout = QVBoxLayout(self)
@@ -358,15 +347,6 @@ class MapWidget(
         self.toolbar.addWidget(self.btn_legend_toggle)
 
         self.toolbar.addSeparator()
-
-        # Add Keyframe — shown when a marker is selected. QToolBar wraps
-        # widgets in QWidgetAction, so the wrapper must own visibility state.
-        self.btn_add_keyframe = QPushButton("Add Keyframe")
-        self.btn_add_keyframe.setToolTip("Save current marker position at current time")
-        self.btn_add_keyframe.clicked.connect(self._on_add_keyframe)
-        self._add_keyframe_action = self.toolbar.addWidget(self.btn_add_keyframe)
-        self._add_keyframe_action.setEnabled(False)
-        self._add_keyframe_action.setVisible(False)
 
         self.btn_edit_trajectory = QPushButton("Edit Trajectory")
         self.btn_edit_trajectory.setToolTip(
@@ -512,6 +492,17 @@ class MapWidget(
             self._request_selected_trajectory_date_edit
         )
         date_panel_layout.addWidget(self.btn_edit_trajectory_date)
+        self.btn_trajectory_date_use_playhead = QPushButton("Use Playhead")
+        self.btn_trajectory_date_use_playhead.setToolTip(
+            "Set this keyframe's date to the current timeline playhead"
+        )
+        self.btn_trajectory_date_use_playhead.setStyleSheet(
+            StyleHelper.get_secondary_button_style()
+        )
+        self.btn_trajectory_date_use_playhead.clicked.connect(
+            self.trajectory_date_use_playhead_requested.emit
+        )
+        date_panel_layout.addWidget(self.btn_trajectory_date_use_playhead)
         self.btn_finish_trajectory_date = QPushButton("Done")
         self.btn_finish_trajectory_date.setStyleSheet(
             StyleHelper.get_primary_button_style()
@@ -684,10 +675,6 @@ class MapWidget(
         self.view.marker_moved.connect(self._on_marker_moved)
         self.view.marker_clicked.connect(self.marker_clicked.emit)
         self.view.marker_clicked.connect(self._on_marker_clicked_internal)
-        self.view.keyframe_moved.connect(self._on_keyframe_moved)
-        self.view.keyframe_clock_mode_requested.connect(self._on_clock_mode_requested)
-        self.view.keyframe_delete_requested.connect(self._on_keyframe_delete_requested)
-        self.view.keyframe_edit_requested.connect(self._emit_keyframe_upsert)
         self.view.trajectory_edit_requested.connect(
             self.trajectory_edit_requested.emit
         )
@@ -780,7 +767,6 @@ class MapWidget(
         self._trajectory_edit_marker_id: str | None = None
         self._trajectory_edit_keyframes: list = []
         self._selected_marker_id: Optional[str] = None
-        self._transient_marker_ids: set[str] = set()  # Markers currently being dragged
 
         # Entity/event caches for the object-selection dialog
         self._cached_entities: list = []
@@ -928,14 +914,7 @@ class MapWidget(
 
     def _on_selection_changed(self) -> None:
         """Updates UI state based on selection."""
-        # Clear transient states on selection change to ensure markers snap back
-        if self._transient_marker_ids:
-            logger.debug("Selection changed: clearing transient marker states")
-            self._transient_marker_ids.clear()
-            self._update_trajectory_positions(force_all=True)
-            self._update_mode_indicator()
-
-        self._update_add_keyframe_action()
+        self._update_trajectory_edit_action()
 
     def _request_selected_trajectory_edit(self) -> None:
         """Request editing for the currently selected trajectory owner."""
@@ -965,8 +944,8 @@ class MapWidget(
         if selected_id is not None:
             self.trajectory_speed_equalize_requested.emit(selected_id)
 
-    def _update_add_keyframe_action(self) -> None:
-        """Update keyframe-action visibility for the current marker selection."""
+    def _update_trajectory_edit_action(self) -> None:
+        """Expose direct editing only for a selected entity trajectory."""
         selected_items = self.view.graphics_scene.selectedItems()
         selected_marker = (
             selected_items[0]
@@ -976,16 +955,6 @@ class MapWidget(
         is_event = selected_marker is not None and selected_marker.object_type == "event"
         can_record = selected_marker is not None and not is_event
 
-        self._add_keyframe_action.setVisible(
-            selected_marker is not None
-            and self._pinned_marker_id is None
-            and self._trajectory_edit_marker_id is None
-        )
-        self._add_keyframe_action.setEnabled(
-            can_record
-            and self._pinned_marker_id is None
-            and self._trajectory_edit_marker_id is None
-        )
         can_edit = (
             can_record
             and selected_marker is not None
@@ -994,17 +963,6 @@ class MapWidget(
         )
         self._edit_trajectory_action.setVisible(can_edit)
         self._edit_trajectory_action.setEnabled(can_edit)
-
-        if is_event:
-            self.btn_add_keyframe.setToolTip("Events cannot have trajectories")
-        elif selected_marker is None:
-            self.btn_add_keyframe.setToolTip(
-                "Select a marker in the map to enable keyframe recording"
-            )
-        else:
-            self.btn_add_keyframe.setToolTip(
-                "Save current marker position at current time"
-            )
 
     # -- Trajectory / drawing / dialog methods provided by mixins ------
 
@@ -1064,10 +1022,7 @@ class MapWidget(
     @Slot()
     def _on_mode_indicator_clicked(self) -> None:
         """Exits the current editing mode when the mode pill is clicked."""
-        if self._pinned_marker_id:
-            self._cancel_clock_mode()  # already calls _update_mode_indicator internally
-            return
-        elif self.view.is_editing_footprint:
+        if self.view.is_editing_footprint:
             self.view.cancel_footprint_edit()
         elif self.view.is_drawing:
             self.view.cancel_drawing()
@@ -1075,9 +1030,6 @@ class MapWidget(
             self.view.cancel_marker_placement()
         elif self.view.is_editing_vertices:
             self.view.finish_editing()
-        elif self._transient_marker_ids:
-            self._transient_marker_ids.clear()
-            self._update_trajectory_positions(force_all=True)
         self._update_mode_indicator()
 
     @Slot()
@@ -1257,14 +1209,13 @@ class MapWidget(
             y: New normalized Y coordinate.
 
         """
-        # If marker has a trajectory, we enter "Transient State" instead of persisting
+        # A trajectory marker is a playback preview, never a construction handle.
         if marker_id in self._active_trajectories:
-            self._transient_marker_ids.add(marker_id)
-            self.update_marker_position(marker_id, x, y)
-            self._update_mode_indicator()
-            logger.info(
-                f"Marker {marker_id} in Transient State (Draft Mode). "
-                "Click 'Add Keyframe' to save."
+            self._update_trajectory_positions()
+            logger.warning(
+                "Ignored direct movement of trajectory marker %s; "
+                "use Edit Trajectory instead.",
+                marker_id,
             )
             return
 
@@ -1444,7 +1395,7 @@ class MapWidget(
 
     # -- Calibration provided by MapCalibrationMixin -------------------
 
-    # -- Keyframe / clock-mode methods provided by MapTrajectoryMixin --
+    # -- Trajectory methods provided by MapTrajectoryMixin ------------
 
     def _apply_theme_styles(self) -> None:
         """Apply current theme styles to map controls with local QSS."""
@@ -1454,7 +1405,6 @@ class MapWidget(
             self.btn_map_overflow,
             self.btn_fit_view,
             self.btn_settings,
-            self.btn_add_keyframe,
             self.btn_parent,
         ):
             button.setStyleSheet(tool_style)
@@ -1493,8 +1443,6 @@ class MapWidget(
         self._mode_indicator_mode = mode
         theme = ThemeManager().get_theme()
         color_map = {
-            "clock": theme.get("error", "#e74c3c"),
-            "draft": theme.get("primary", "#f39c12"),
             "drawing": theme.get("accent_secondary", "#3498db"),
             "vertex": theme.get("primary", "#e67e22"),
             "normal": theme.get("success", "#2ecc71"),
@@ -1505,46 +1453,7 @@ class MapWidget(
 
     def _update_mode_indicator(self) -> None:
         """Updates the toolbar status, map overlay, and Finish Sketch button."""
-        if self._pinned_marker_id:
-            # Clock Mode (Priority)
-            marker_id = self._pinned_marker_id
-            self.mode_indicator.setText(f'🔴 CLOCK MODE: Editing "{marker_id}"')
-            self._apply_mode_indicator_style("clock")
-
-            # Overlay Banner
-            banner_text = (
-                "⏱ <b>CLOCK MODE ACTIVE</b><br/>"
-                "Scrub timeline to adjust keyframe timestamp<br/>"
-                "<small>[Esc to Cancel] [Enter to Commit]</small>"
-            )
-            self.overlay_banner.setText(banner_text)
-            self.overlay_banner.show()
-            self._update_overlay_position()
-            self.btn_finish_sketch.hide()
-
-            # Cursor Change
-            self.view.setCursor(Qt.CursorShape.WaitCursor)
-
-        elif self._transient_marker_ids:
-            # Draft Mode — Add Keyframe shown below via consolidated visibility call
-            self.mode_indicator.setText("🟠 DRAFT MODE: Unsaved keys")
-            self._apply_mode_indicator_style("draft")
-
-            # Overlay Banner
-            banner_text = (
-                "✍️ <b>DRAFT MODE ACTIVE</b><br/>"
-                "You have unsaved marker positions.<br/>"
-                "<small>[Add Keyframe to Save] [Esc to Discard]</small>"
-            )
-            self.overlay_banner.setText(banner_text)
-            self.overlay_banner.show()
-            self._update_overlay_position()
-            self.btn_finish_sketch.hide()
-
-            # Normal cursor
-            self.view.setCursor(Qt.CursorShape.ArrowCursor)
-
-        elif self.view.is_placing_marker:
+        if self.view.is_placing_marker:
             self.mode_indicator.setText("🔵 PLACING MARKER")
             self._apply_mode_indicator_style("drawing")
 
@@ -1629,9 +1538,7 @@ class MapWidget(
             # Normal cursor
             self.view.setCursor(Qt.CursorShape.ArrowCursor)
 
-        self._update_add_keyframe_action()
-
-    # -- Clock-mode visuals / keyframe delete provided by MapTrajectoryMixin --
+        self._update_trajectory_edit_action()
 
     def set_calendar_converter(self, converter: CalendarConverter) -> None:
         """Sets the calendar converter for formatting keyframe date labels."""
@@ -1640,29 +1547,28 @@ class MapWidget(
         self.layer_panel.set_calendar_converter(converter)
         self.trajectory_date_input.set_calendar_converter(converter)
 
-    # -- Keyframe delete provided by MapTrajectoryMixin ----------------
-
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Handle keyboard shortcuts for MapWidget."""
-        if self._pinned_marker_id:
+        if self._trajectory_edit_marker_id is not None:
             if event.key() == Qt.Key.Key_Escape:
-                self._cancel_clock_mode()
+                if self.trajectory_date_input.isVisible():
+                    self.trajectory_date_edit_cancel_requested.emit()
+                elif self.btn_cancel_speed_equalization.isVisible():
+                    self.trajectory_speed_equalization_cancel_requested.emit()
+                else:
+                    self.trajectory_cancel_requested.emit()
                 event.accept()
                 return
-            elif event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-                self._commit_clock_mode()
+            if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+                if self.btn_apply_trajectory.isEnabled():
+                    self.trajectory_apply_requested.emit()
+                    event.accept()
+                    return
+            if event.key() == Qt.Key.Key_Delete:
+                self.trajectory_delete_selected_requested.emit()
                 event.accept()
                 return
-        elif event.key() == Qt.Key.Key_Escape:
-            # Draft Mode: discard unsaved marker positions
-            if self._transient_marker_ids:
-                logger.debug("Esc pressed: Discarding draft marker positions")
-                self._transient_marker_ids.clear()
-                self._update_trajectory_positions(force_all=True)
-                self._update_mode_indicator()
-                event.accept()
-                return
-            # Deselect all items in the scene
+        if event.key() == Qt.Key.Key_Escape:
             if self.view.graphics_scene.selectedItems():
                 logger.debug("Esc pressed: Clearing selection")
                 self.view.graphics_scene.clearSelection()
@@ -1700,62 +1606,3 @@ class MapWidget(
         logger.debug(
             f"MapWidget Resized: {event.size().width()}x{event.size().height()} (Old: {event.oldSize().width()}x{event.oldSize().height()})"
         )
-
-
-class OnboardingDialog(QDialog):
-    """Onboarding dialog shown when the first keyframe is created."""
-
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """Initialize the onboarding dialog.
-
-        Args:
-            parent: Optional parent widget.
-        """
-        super().__init__(parent)
-        self.setWindowTitle("✨ Keyframe Created!")
-        self.setFixedWidth(400)
-
-        # Apply theme-aware styling
-        self.setStyleSheet(StyleHelper.get_dialog_base_style())
-
-        layout = QVBoxLayout(self)
-        StyleHelper.apply_standard_list_spacing(layout)
-        layout.setSpacing(15)
-
-        title = QLabel("✨ Keyframe Created!")
-        title.setStyleSheet(
-            f"font-size: 18px; {StyleHelper.get_section_header_style()}"
-        )
-        layout.addWidget(title)
-
-        # Get theme for specific text colors not covered by base style
-        from src.core.theme_manager import ThemeManager
-
-        theme = ThemeManager().get_theme()
-
-        body = QLabel(
-            "Hover over yellow dots to reveal editing tools:<br/>"
-            "• <b>Drag</b> to adjust position<br/>"
-            "• Click 🕐 to adjust <b>timing</b> (Clock Mode)<br/>"
-            "• Click ✕ to <b>delete</b>"
-        )
-        body.setWordWrap(True)
-        # Ensure body text matches theme standard
-        body.setStyleSheet(f"color: {theme['text_main']}; font-size: 13px;")
-        layout.addWidget(body)
-
-        btn_layout = QHBoxLayout()
-        btn_layout.addStretch()
-
-        from src.gui.widgets.standard_buttons import PrimaryButton, StandardButton
-
-        self.btn_tutorial = StandardButton("Show Tutorial Video")
-        # In a real app, this would open a URL
-        self.btn_tutorial.clicked.connect(self.accept)
-        btn_layout.addWidget(self.btn_tutorial)
-
-        self.btn_got_it = PrimaryButton("Got it!")
-        self.btn_got_it.clicked.connect(self.accept)
-        btn_layout.addWidget(self.btn_got_it)
-
-        layout.addLayout(btn_layout)
