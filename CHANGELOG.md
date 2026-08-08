@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-08
-**Commit:** 0d7885c0
+**Commit:** caccd4e4
 ---
 
 # Changelog
@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-08-08)* **Map / Trajectories**: Added anchored and whole-trajectory
+  speed equalization with distance-weighted date previews, calibrated or
+  relative speed feedback, and reversible working-copy confirmation.
 - *(2026-08-08)* **Map / Trajectories**: Added direct temporal keyframe
   editing through compact calendar controls and timeline scrubbing, with live
   reordering, date feedback, affected-segment highlighting, and scoped cancel.
@@ -30,6 +33,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-08)* **Map / Trajectories**: Kept trajectory editing controls at
+  their content height and collapsed inactive calendar controls so the map
+  retains the available workspace.
 - *(2026-08-08)* **Map / Trajectories**: Preserved one-keyframe trajectories
   and rejected ambiguous duplicate trajectory rows instead of silently choosing
   or deleting data.
@@ -41,6 +47,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-08)* **Testing / Trajectories**: Added speed calculation,
+  100-keyframe, anchor lifecycle, preview, keyboard, calibrated display, and
+  compact-layout regression coverage.
 - *(2026-08-08)* **Testing / Trajectories**: Added temporal edit-session,
   coordinator, overlay, shortcut, playhead restoration, and map-widget
   regression coverage.

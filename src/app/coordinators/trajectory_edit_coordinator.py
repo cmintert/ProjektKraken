@@ -49,6 +49,14 @@ class TrajectoryEditCoordinator(QObject):
             and self._session.active_date_edit_id is not None
         )
 
+    @property
+    def is_equalization_previewing(self) -> bool:
+        """Whether speed redistribution awaits preview confirmation."""
+        return (
+            self._session is not None
+            and self._session.is_equalization_previewing
+        )
+
     def bind_ui(self) -> None:
         """Connect map intents after the MainWindow widget skeleton exists."""
         if self._bound:
@@ -71,6 +79,22 @@ class TrajectoryEditCoordinator(QObject):
         widget.trajectory_date_step_requested.connect(self.step_date)
         widget.trajectory_date_edit_done_requested.connect(self.finish_date_edit)
         widget.trajectory_date_edit_cancel_requested.connect(self.cancel_date_edit)
+        widget.trajectory_speed_anchor_requested.connect(self.set_speed_anchor)
+        widget.trajectory_speed_anchor_clear_requested.connect(
+            self.clear_speed_anchor
+        )
+        widget.trajectory_speed_equalize_requested.connect(
+            self.preview_speed_equalization
+        )
+        widget.trajectory_speed_equalize_whole_requested.connect(
+            self.preview_whole_speed_equalization
+        )
+        widget.trajectory_speed_equalization_apply_requested.connect(
+            self.confirm_speed_equalization
+        )
+        widget.trajectory_speed_equalization_cancel_requested.connect(
+            self.cancel_speed_equalization
+        )
         self._window.timeline.playhead_time_changed.connect(
             self.on_playhead_time_changed
         )
@@ -172,6 +196,8 @@ class TrajectoryEditCoordinator(QObject):
         """Select one session-local keyframe identity."""
         if self._session is None:
             return
+        if self._session.is_equalization_previewing:
+            return
         try:
             if (
                 self._session.active_date_edit_id is not None
@@ -252,6 +278,75 @@ class TrajectoryEditCoordinator(QObject):
             self._window.timeline.set_playhead_time(restore_playhead)
             self._render()
 
+    @Slot(str)
+    def set_speed_anchor(self, edit_id: str) -> None:
+        """Set the selected keyframe as the explicit equalization start."""
+        if self._session is None or self._pending_command_id is not None:
+            return
+        try:
+            self._session.set_speed_anchor(edit_id)
+        except ValueError as exc:
+            self._show_status(str(exc))
+            return
+        self._render()
+
+    @Slot()
+    def clear_speed_anchor(self) -> None:
+        """Clear the pending start anchor without changing working dates."""
+        if self._session is None or self._pending_command_id is not None:
+            return
+        try:
+            self._session.clear_speed_anchor()
+        except ValueError as exc:
+            self._show_status(str(exc))
+            return
+        self._render()
+
+    @Slot(str)
+    def preview_speed_equalization(self, end_id: str) -> None:
+        """Preview distance-weighted dates between explicit anchors."""
+        if self._session is None or self._pending_command_id is not None:
+            return
+        try:
+            self._session.preview_speed_equalization(
+                end_id,
+                self._window.map_widget.get_trajectory_distance_context(),
+            )
+        except ValueError as exc:
+            self._show_status(str(exc))
+            return
+        self._render()
+
+    @Slot()
+    def preview_whole_speed_equalization(self) -> None:
+        """Preview distance-weighted dates across the complete trajectory."""
+        if self._session is None or self._pending_command_id is not None:
+            return
+        try:
+            self._session.preview_whole_speed_equalization(
+                self._window.map_widget.get_trajectory_distance_context()
+            )
+        except ValueError as exc:
+            self._show_status(str(exc))
+            return
+        self._render()
+
+    @Slot()
+    def confirm_speed_equalization(self) -> None:
+        """Keep previewed dates in the working copy until trajectory Apply."""
+        if self._session is None or self._pending_command_id is not None:
+            return
+        if self._session.confirm_speed_equalization():
+            self._render()
+
+    @Slot()
+    def cancel_speed_equalization(self) -> None:
+        """Restore the dates captured before the equalization preview."""
+        if self._session is None or self._pending_command_id is not None:
+            return
+        if self._session.cancel_speed_equalization():
+            self._render()
+
     @Slot(str, float, float)
     def move_keyframe(self, edit_id: str, x: float, y: float) -> None:
         """Update only the working spatial coordinates during a drag."""
@@ -283,7 +378,12 @@ class TrajectoryEditCoordinator(QObject):
         """Delete exactly the selected working keyframe."""
         if self._session is None or self._pending_command_id is not None:
             return
-        if self._session.delete_selected_keyframe():
+        try:
+            deleted = self._session.delete_selected_keyframe()
+        except ValueError as exc:
+            self._show_status(str(exc))
+            return
+        if deleted:
             self._render()
 
     @Slot()
@@ -294,6 +394,9 @@ class TrajectoryEditCoordinator(QObject):
             return
         if not session.is_dirty:
             self._finish_session(self._current_authoritative())
+            return
+        if session.is_equalization_previewing:
+            self._show_status("Apply or cancel the equalization preview first.")
             return
         if not session.can_apply:
             self._show_status("Resolve trajectory validation or reload conflicts first.")

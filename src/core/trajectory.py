@@ -7,7 +7,8 @@ binary search (bisect) for O(log N) keyframe lookup.
 import bisect
 import math
 from dataclasses import dataclass
-from typing import Any, Iterable, TypeVar, cast
+from dataclasses import replace as dataclass_replace
+from typing import Any, Iterable, Sequence, TypeVar, cast
 
 
 @dataclass
@@ -55,6 +56,36 @@ KEYFRAME_TIME_EPSILON: float = 0.01
 
 KeyframeValue = Keyframe | EditableKeyframe
 _KeyframeT = TypeVar("_KeyframeT", Keyframe, EditableKeyframe)
+
+
+@dataclass(frozen=True)
+class TrajectoryDistanceContext:
+    """Physical or relative dimensions used for trajectory distances.
+
+    Normalized map coordinates only become geometrically meaningful after
+    scaling each axis. Calibrated callers supply meters; uncalibrated callers
+    supply aspect-corrected relative dimensions.
+
+    Attributes:
+        width: Distance represented by the normalized X axis.
+        height: Distance represented by the normalized Y axis.
+        unit: Display unit for the dimensions, or ``None`` for relative units.
+
+    """
+
+    width: float
+    height: float
+    unit: str | None = None
+
+    def __post_init__(self) -> None:
+        """Reject unusable dimensions at the calculation boundary."""
+        if (
+            not _is_finite_number(self.width)
+            or not _is_finite_number(self.height)
+            or self.width <= 0.0
+            or self.height <= 0.0
+        ):
+            raise ValueError("Trajectory distance dimensions must be positive.")
 
 
 def clone_keyframes(keyframes: Iterable[_KeyframeT]) -> list[_KeyframeT]:
@@ -160,6 +191,110 @@ def infer_midpoint_time(start: KeyframeValue, end: KeyframeValue) -> float:
     if end.t <= start.t:
         raise ValueError("Midpoint end time must be later than start time.")
     return start.t / 2.0 + end.t / 2.0
+
+
+def trajectory_segment_distance(
+    start: KeyframeValue,
+    end: KeyframeValue,
+    context: TrajectoryDistanceContext,
+) -> float:
+    """Return aspect-corrected distance between two keyframes.
+
+    Args:
+        start: First spatial point.
+        end: Second spatial point.
+        context: Dimensions represented by the two normalized map axes.
+
+    Returns:
+        Segment distance in the context's physical or relative unit.
+
+    Raises:
+        ValueError: If either point has invalid normalized coordinates.
+
+    """
+    for keyframe in (start, end):
+        if (
+            not _is_finite_number(keyframe.x)
+            or not _is_finite_number(keyframe.y)
+            or not 0.0 <= keyframe.x <= 1.0
+            or not 0.0 <= keyframe.y <= 1.0
+        ):
+            raise ValueError("Trajectory distance requires normalized coordinates.")
+    dx = (end.x - start.x) * context.width
+    dy = (end.y - start.y) * context.height
+    return math.hypot(dx, dy)
+
+
+def cumulative_trajectory_distances(
+    keyframes: Sequence[KeyframeValue],
+    context: TrajectoryDistanceContext,
+) -> list[float]:
+    """Return cumulative aspect-corrected distance at every keyframe."""
+    if not keyframes:
+        return []
+    distances = [0.0]
+    for start, end in zip(keyframes, keyframes[1:]):
+        distances.append(
+            distances[-1] + trajectory_segment_distance(start, end, context)
+        )
+    return distances
+
+
+def equalize_keyframe_times(
+    keyframes: Sequence[_KeyframeT],
+    start_index: int,
+    end_index: int,
+    context: TrajectoryDistanceContext,
+) -> list[_KeyframeT]:
+    """Redistribute intermediate dates for constant polyline speed.
+
+    Anchor dates and every spatial coordinate remain unchanged. Dates outside
+    the inclusive anchor range are also left untouched.
+
+    Args:
+        keyframes: Chronologically ordered trajectory values.
+        start_index: Inclusive start-anchor index.
+        end_index: Inclusive end-anchor index.
+        context: Aspect-corrected physical or relative dimensions.
+
+    Returns:
+        Independent keyframe values with redistributed intermediate dates.
+
+    Raises:
+        ValueError: If the trajectory or anchor range is invalid, or the
+            selected polyline has zero total distance.
+
+    """
+    if not 0 <= start_index < end_index < len(keyframes):
+        raise ValueError("Speed anchors must be in chronological order.")
+    errors = validate_keyframes(keyframes)
+    if errors:
+        raise ValueError(errors[0])
+
+    start = keyframes[start_index]
+    end = keyframes[end_index]
+    if end.t <= start.t:
+        raise ValueError("The end anchor date must be later than the start anchor.")
+
+    anchor_range = keyframes[start_index : end_index + 1]
+    cumulative = cumulative_trajectory_distances(anchor_range, context)
+    total_distance = cumulative[-1]
+    if math.isclose(total_distance, 0.0, abs_tol=1e-12):
+        raise ValueError("Cannot equalize speed across a zero-distance route.")
+
+    equalized = clone_keyframes(keyframes)
+    duration = end.t - start.t
+    for relative_index in range(1, len(anchor_range) - 1):
+        fraction = cumulative[relative_index] / total_distance
+        index = start_index + relative_index
+        equalized[index] = cast(
+            _KeyframeT,
+            dataclass_replace(
+                equalized[index],
+                t=start.t + fraction * duration,
+            ),
+        )
+    return equalized
 
 
 def _is_finite_number(value: object) -> bool:

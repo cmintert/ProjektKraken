@@ -213,12 +213,17 @@ class GlobalShortcutFilter(QObject):
             if key == Qt.Key.Key_Escape:
                 if trajectory_edit.is_date_editing:
                     trajectory_edit.cancel_date_edit()
+                elif trajectory_edit.is_equalization_previewing:
+                    trajectory_edit.cancel_speed_equalization()
                 else:
                     trajectory_edit.cancel()
                 return True
             if key in {Qt.Key.Key_Return, Qt.Key.Key_Enter}:
                 if not self._focus_is_editable(obj):
-                    trajectory_edit.apply()
+                    if trajectory_edit.is_equalization_previewing:
+                        trajectory_edit.confirm_speed_equalization()
+                    else:
+                        trajectory_edit.apply()
                     return True
             if key == Qt.Key.Key_Delete and not self._focus_is_editable(obj):
                 trajectory_edit.delete_selected_keyframe()

@@ -10,9 +10,13 @@ from src.core.trajectory import (
     KEYFRAME_TIME_EPSILON,
     EditableKeyframe,
     Keyframe,
+    TrajectoryDistanceContext,
     clone_keyframes,
+    cumulative_trajectory_distances,
+    equalize_keyframe_times,
     infer_midpoint_time,
     interpolate_position,
+    trajectory_segment_distance,
     validate_keyframes,
 )
 
@@ -168,6 +172,159 @@ class TestInferMidpointTime:
 
         with pytest.raises(ValueError, match="non-finite"):
             infer_midpoint_time(start, end)
+
+
+class TestTrajectoryDistances:
+    """Tests for aspect-corrected polyline distance calculations."""
+
+    def test_segment_distance_uses_both_map_dimensions(self) -> None:
+        """Normalized X and Y use their respective real dimensions."""
+        context = TrajectoryDistanceContext(1000.0, 500.0, "m")
+        start = Keyframe(t=0.0, x=0.0, y=0.0)
+        end = Keyframe(t=1.0, x=0.3, y=0.8)
+
+        distance = trajectory_segment_distance(start, end, context)
+
+        assert distance == pytest.approx(500.0)
+
+    def test_cumulative_distances_retain_every_vertex(self) -> None:
+        """Each output entry measures distance from the first point."""
+        context = TrajectoryDistanceContext(2.0, 1.0)
+        keyframes = [
+            Keyframe(t=0.0, x=0.0, y=0.0),
+            Keyframe(t=1.0, x=0.5, y=0.0),
+            Keyframe(t=2.0, x=0.5, y=1.0),
+        ]
+
+        assert cumulative_trajectory_distances(keyframes, context) == [
+            0.0,
+            1.0,
+            2.0,
+        ]
+
+    @pytest.mark.parametrize(
+        ("width", "height"),
+        [(0.0, 1.0), (1.0, -1.0), (math.inf, 1.0)],
+    )
+    def test_distance_context_rejects_invalid_dimensions(
+        self, width: float, height: float
+    ) -> None:
+        """Distance calculations require positive finite axis dimensions."""
+        with pytest.raises(ValueError, match="positive"):
+            TrajectoryDistanceContext(width, height)
+
+
+class TestEqualizeKeyframeTimes:
+    """Tests for constant-speed date redistribution."""
+
+    def test_redistributes_dates_by_cumulative_distance(self) -> None:
+        """Longer segments receive proportionally more elapsed time."""
+        keyframes = [
+            Keyframe(t=0.0, x=0.0, y=0.0),
+            Keyframe(t=5.0, x=0.25, y=0.0),
+            Keyframe(t=20.0, x=1.0, y=0.0),
+        ]
+
+        result = equalize_keyframe_times(
+            keyframes,
+            0,
+            2,
+            TrajectoryDistanceContext(1.0, 1.0),
+        )
+
+        assert [keyframe.t for keyframe in result] == [0.0, 5.0, 20.0]
+        keyframes[1].t = 12.0
+        result = equalize_keyframe_times(
+            keyframes,
+            0,
+            2,
+            TrajectoryDistanceContext(1.0, 1.0),
+        )
+        assert [keyframe.t for keyframe in result] == [0.0, 5.0, 20.0]
+
+    def test_preserves_anchor_dates_positions_and_edit_identities(self) -> None:
+        """Equalization changes only intermediate dates in copied values."""
+        keyframes = [
+            EditableKeyframe("a", 0.0, 0.0, 0.0),
+            EditableKeyframe("b", 10.0, 0.5, 0.0),
+            EditableKeyframe("c", 30.0, 0.5, 1.0),
+            EditableKeyframe("d", 40.0, 1.0, 1.0),
+        ]
+
+        result = equalize_keyframe_times(
+            keyframes,
+            0,
+            3,
+            TrajectoryDistanceContext(2.0, 1.0),
+        )
+
+        assert result[0].t == 0.0
+        assert result[-1].t == 40.0
+        assert result[1].t == pytest.approx(40.0 / 3.0)
+        assert result[2].t == pytest.approx(80.0 / 3.0)
+        assert [(item.x, item.y) for item in result] == [
+            (item.x, item.y) for item in keyframes
+        ]
+        assert [item.edit_id for item in result] == ["a", "b", "c", "d"]
+        assert all(after is not before for after, before in zip(result, keyframes))
+
+    def test_equalizes_only_the_selected_anchor_range(self) -> None:
+        """Dates outside the anchors remain untouched."""
+        keyframes = [
+            Keyframe(t=-5.0, x=0.0, y=0.0),
+            Keyframe(t=0.0, x=0.0, y=0.2),
+            Keyframe(t=9.0, x=0.25, y=0.2),
+            Keyframe(t=20.0, x=1.0, y=0.2),
+            Keyframe(t=25.0, x=1.0, y=1.0),
+        ]
+
+        result = equalize_keyframe_times(
+            keyframes,
+            1,
+            3,
+            TrajectoryDistanceContext(1.0, 1.0),
+        )
+
+        assert [item.t for item in result] == [-5.0, 0.0, 5.0, 20.0, 25.0]
+
+    def test_rejects_reversed_and_zero_distance_ranges(self) -> None:
+        """Anchors must be ordered and span a non-zero polyline."""
+        keyframes = [
+            Keyframe(t=0.0, x=0.5, y=0.5),
+            Keyframe(t=10.0, x=0.5, y=0.5),
+            Keyframe(t=20.0, x=0.5, y=0.5),
+        ]
+        context = TrajectoryDistanceContext(1.0, 1.0)
+
+        with pytest.raises(ValueError, match="chronological"):
+            equalize_keyframe_times(keyframes, 2, 0, context)
+        with pytest.raises(ValueError, match="zero-distance"):
+            equalize_keyframe_times(keyframes, 0, 2, context)
+
+    def test_handles_one_hundred_keyframes_without_changing_positions(self) -> None:
+        """The active-trajectory calculation stays linear at target scale."""
+        keyframes = [
+            Keyframe(
+                t=float(index * index),
+                x=index / 99.0,
+                y=(index % 5) / 4.0,
+            )
+            for index in range(100)
+        ]
+
+        result = equalize_keyframe_times(
+            keyframes,
+            0,
+            99,
+            TrajectoryDistanceContext(2.0, 1.0),
+        )
+
+        assert len(result) == 100
+        assert result[0].t == keyframes[0].t
+        assert result[-1].t == keyframes[-1].t
+        assert [(item.x, item.y) for item in result] == [
+            (item.x, item.y) for item in keyframes
+        ]
 
 
 class TestInterpolatePosition:

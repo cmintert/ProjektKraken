@@ -16,8 +16,11 @@ class _Window(QObject):
         self.trajectory_edit = SimpleNamespace(
             is_active=True,
             is_date_editing=False,
+            is_equalization_previewing=False,
             cancel=MagicMock(),
             cancel_date_edit=MagicMock(),
+            cancel_speed_equalization=MagicMock(),
+            confirm_speed_equalization=MagicMock(),
             apply=MagicMock(),
             delete_selected_keyframe=MagicMock(),
         )
@@ -71,4 +74,32 @@ def test_enter_is_left_to_active_text_field(qtbot):
     handled = shortcut_filter.eventFilter(editor, _key(Qt.Key.Key_Return))
 
     assert not handled
+    window.trajectory_edit.apply.assert_not_called()
+
+
+def test_escape_cancels_only_equalization_preview(qtbot):
+    window = _Window()
+    window.trajectory_edit.is_equalization_previewing = True
+    widget = QWidget()
+    qtbot.addWidget(widget)
+    shortcut_filter = GlobalShortcutFilter(window)  # type: ignore[arg-type]
+
+    handled = shortcut_filter.eventFilter(widget, _key(Qt.Key.Key_Escape))
+
+    assert handled
+    window.trajectory_edit.cancel_speed_equalization.assert_called_once()
+    window.trajectory_edit.cancel.assert_not_called()
+
+
+def test_enter_confirms_equalization_preview_before_trajectory_apply(qtbot):
+    window = _Window()
+    window.trajectory_edit.is_equalization_previewing = True
+    widget = QWidget()
+    qtbot.addWidget(widget)
+    shortcut_filter = GlobalShortcutFilter(window)  # type: ignore[arg-type]
+
+    handled = shortcut_filter.eventFilter(widget, _key(Qt.Key.Key_Return))
+
+    assert handled
+    window.trajectory_edit.confirm_speed_equalization.assert_called_once()
     window.trajectory_edit.apply.assert_not_called()

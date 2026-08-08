@@ -9,6 +9,7 @@ from src.app.coordinators.trajectory_edit_coordinator import (
 )
 from src.commands.base_command import CommandResult
 from src.commands.trajectory_commands import UpdateTrajectoryCommand
+from src.core.trajectory import TrajectoryDistanceContext
 
 
 class _Worker(QObject):
@@ -20,6 +21,9 @@ class _MapWidget:
         self._playhead_time = 5.0
         self.show_trajectory_edit = MagicMock()
         self.clear_trajectory_edit = MagicMock()
+        self.get_trajectory_distance_context = MagicMock(
+            return_value=TrajectoryDistanceContext(1.0, 1.0)
+        )
 
     def get_selected_map_id(self) -> str:
         return "map-1"
@@ -74,11 +78,21 @@ def _record(*, x: float = 0.1) -> dict:
     }
 
 
-def _coordinator():
+def _coordinator(record=None):
     window = _Window()
     coordinator = TrajectoryEditCoordinator(window)  # type: ignore[arg-type]
-    coordinator.on_trajectories_ready("map-1", [_record()])
+    coordinator.on_trajectories_ready("map-1", [record or _record()])
     return coordinator, window
+
+
+def _speed_record() -> dict:
+    record = _record()
+    record["keyframes"] = [
+        {"t": 0.0, "x": 0.0, "y": 0.0},
+        {"t": 12.0, "x": 0.25, "y": 0.0},
+        {"t": 20.0, "x": 1.0, "y": 0.0},
+    ]
+    return record
 
 
 def test_cancel_discards_preview_without_command():
@@ -251,3 +265,74 @@ def test_apply_keeps_proposed_date_on_playhead():
 
     assert len(commands) == 1
     assert window.timeline.get_playhead_time() == 7.0
+
+
+def test_speed_equalization_preview_has_no_persistence_side_effect():
+    coordinator, window = _coordinator(_speed_record())
+    commands = []
+    coordinator.command_requested.connect(commands.append)
+    coordinator.start_edit("marker-1")
+    session = coordinator._session
+    assert session is not None
+    start_id = session.working_keyframes[0].edit_id
+    end_id = session.working_keyframes[-1].edit_id
+
+    coordinator.set_speed_anchor(start_id)
+    coordinator.preview_speed_equalization(end_id)
+
+    assert session.is_equalization_previewing
+    assert [item.t for item in session.working_keyframes] == [0.0, 5.0, 20.0]
+    assert commands == []
+    window.map_widget.get_trajectory_distance_context.assert_called_once()
+
+
+def test_cancel_speed_equalization_restores_dates_without_command():
+    coordinator, _window = _coordinator(_speed_record())
+    commands = []
+    coordinator.command_requested.connect(commands.append)
+    coordinator.start_edit("marker-1")
+    session = coordinator._session
+    assert session is not None
+    start_id = session.working_keyframes[0].edit_id
+    end_id = session.working_keyframes[-1].edit_id
+    coordinator.set_speed_anchor(start_id)
+    coordinator.preview_speed_equalization(end_id)
+
+    coordinator.cancel_speed_equalization()
+
+    assert [item.t for item in session.working_keyframes] == [0.0, 12.0, 20.0]
+    assert not session.is_equalization_previewing
+    assert commands == []
+
+
+def test_confirm_then_trajectory_apply_emits_one_atomic_command():
+    coordinator, _window = _coordinator(_speed_record())
+    commands = []
+    coordinator.command_requested.connect(commands.append)
+    coordinator.start_edit("marker-1")
+    session = coordinator._session
+    assert session is not None
+    coordinator.set_speed_anchor(session.working_keyframes[0].edit_id)
+    coordinator.preview_speed_equalization(session.working_keyframes[-1].edit_id)
+
+    coordinator.apply()
+    assert commands == []
+
+    coordinator.confirm_speed_equalization()
+    coordinator.apply()
+
+    assert len(commands) == 1
+    command = commands[0]
+    assert isinstance(command, UpdateTrajectoryCommand)
+    assert [item.t for item in command.after_keyframes] == [0.0, 5.0, 20.0]
+
+
+def test_whole_speed_equalization_uses_map_distance_context():
+    coordinator, window = _coordinator(_speed_record())
+    coordinator.start_edit("marker-1")
+
+    coordinator.preview_whole_speed_equalization()
+
+    assert coordinator._session is not None
+    assert coordinator._session.is_equalization_previewing
+    window.map_widget.get_trajectory_distance_context.assert_called_once()

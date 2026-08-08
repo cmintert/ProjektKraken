@@ -27,6 +27,10 @@ class TrajectoryEditOverlay:
         self._marker_id: str | None = None
         self._selected_keyframe_id: str | None = None
         self._active_date_edit_id: str | None = None
+        self._speed_anchor_id: str | None = None
+        self._equalization_start_id: str | None = None
+        self._equalization_end_id: str | None = None
+        self._equalized_keyframe_ids: set[str] = set()
         self._path_item: QGraphicsPathItem | None = None
         self._temporal_path_item: QGraphicsPathItem | None = None
         self._keyframe_handles: list[DraggableEditHandle[str]] = []
@@ -69,28 +73,40 @@ class TrajectoryEditOverlay:
         selected_id = snapshot["selected_keyframe_id"]
         self._selected_keyframe_id = selected_id
         self._active_date_edit_id = snapshot["active_date_edit_id"]
+        self._speed_anchor_id = snapshot["speed_anchor_id"]
+        self._equalization_start_id = snapshot["equalization_start_id"]
+        self._equalization_end_id = snapshot["equalization_end_id"]
+        self._equalized_keyframe_ids = {
+            change["edit_id"] for change in snapshot["equalization_changes"]
+        }
+        previewing = snapshot["is_equalization_previewing"]
 
         for keyframe in snapshot["keyframes"]:
             edit_id = keyframe["edit_id"]
-            selected = edit_id == selected_id
             handle = DraggableEditHandle(
                 edit_id,
                 self._on_keyframe_moved,
                 self._on_keyframe_deleted,
                 select_callback=self._on_keyframe_selected,
-                fill_color=theme.get(
-                    "error" if selected else "accent_secondary",
-                    "#e74c3c" if selected else "#f1c40f",
-                ),
+                fill_color=theme.get("accent_secondary", "#f1c40f"),
                 border_color=theme.get("text_main", "#ffffff"),
             )
             handle.setPos(
                 self._view.coord_system.to_scene(keyframe["x"], keyframe["y"])
             )
-            handle.setToolTip(f"Keyframe at {keyframe['t']:g}")
+            tooltip_parts = [f"Keyframe at {keyframe['t']:g}"]
+            if edit_id == self._speed_anchor_id:
+                tooltip_parts.append("Speed start anchor")
+            if edit_id == self._equalization_end_id:
+                tooltip_parts.append("Speed end anchor")
+            if edit_id in self._equalized_keyframe_ids:
+                tooltip_parts.append("Equalized date preview")
+            handle.setToolTip(" | ".join(tooltip_parts))
+            handle.setEnabled(not previewing)
             handle.set_notifications_enabled(True)
             self._view.graphics_scene.addItem(handle)
             self._keyframe_handles.append(handle)
+            self._style_handle(handle, theme)
 
         keyframes = snapshot["keyframes"]
         for start, end in zip(keyframes, keyframes[1:]):
@@ -111,10 +127,15 @@ class TrajectoryEditOverlay:
             error = snapshot["midpoint_errors"].get(
                 TrajectoryEditSession.midpoint_key(*segment_id)
             )
-            if error:
+            if error or previewing:
                 midpoint_handle.setEnabled(False)
                 midpoint_handle.setCursor(Qt.CursorShape.ForbiddenCursor)
-                midpoint_handle.setToolTip(error)
+                if error:
+                    midpoint_handle.setToolTip(error)
+                else:
+                    midpoint_handle.setToolTip(
+                        "Apply or cancel the equalization preview first."
+                    )
             self._view.graphics_scene.addItem(midpoint_handle)
             self._midpoint_handles.append(midpoint_handle)
 
@@ -125,17 +146,7 @@ class TrajectoryEditOverlay:
         self._selected_keyframe_id = edit_id
         theme = ThemeManager().get_theme()
         for handle in self._keyframe_handles:
-            selected = handle.handle_id == edit_id
-            handle.setBrush(
-                QBrush(
-                    QColor(
-                    theme.get(
-                        "error" if selected else "accent_secondary",
-                        "#e74c3c" if selected else "#f1c40f",
-                    )
-                    )
-                )
-            )
+            self._style_handle(handle, theme)
 
     def clear(self) -> None:
         """Remove only trajectory edit overlay items from the scene."""
@@ -155,6 +166,10 @@ class TrajectoryEditOverlay:
         self._marker_id = None
         self._selected_keyframe_id = None
         self._active_date_edit_id = None
+        self._speed_anchor_id = None
+        self._equalization_start_id = None
+        self._equalization_end_id = None
+        self._equalized_keyframe_ids.clear()
 
     def _on_keyframe_selected(self, edit_id: str) -> None:
         self.select(edit_id)
@@ -274,6 +289,15 @@ class TrajectoryEditOverlay:
 
     def _rebuild_temporal_path(self) -> None:
         """Highlight segments affected by the active retiming target."""
+        if (
+            self._equalization_start_id is not None
+            and self._equalization_end_id is not None
+        ):
+            start_index = self._handle_index(self._equalization_start_id)
+            end_index = self._handle_index(self._equalization_end_id)
+            if start_index is not None and end_index is not None:
+                self._set_temporal_range_path(start_index, end_index)
+                return
         active_id = self._active_date_edit_id
         if active_id is None:
             if self._temporal_path_item is not None:
@@ -308,3 +332,59 @@ class TrajectoryEditOverlay:
             self._temporal_path_item.setZValue(MAP_LAYER_Z_UI_OVERLAY - 0.5)
             self._view.graphics_scene.addItem(self._temporal_path_item)
         self._temporal_path_item.setPath(affected)
+
+    def _set_temporal_range_path(self, start_index: int, end_index: int) -> None:
+        """Highlight the complete equalization anchor range."""
+        affected = QPainterPath()
+        affected.moveTo(self._keyframe_handles[start_index].pos())
+        for handle in self._keyframe_handles[start_index + 1 : end_index + 1]:
+            affected.lineTo(handle.pos())
+        if self._temporal_path_item is None:
+            self._temporal_path_item = QGraphicsPathItem()
+            theme = ThemeManager().get_theme()
+            pen = QPen(QColor(theme.get("success", "#2ecc71")), 5.0)
+            pen.setStyle(Qt.PenStyle.SolidLine)
+            self._temporal_path_item.setPen(pen)
+            self._temporal_path_item.setZValue(MAP_LAYER_Z_UI_OVERLAY - 0.5)
+            self._view.graphics_scene.addItem(self._temporal_path_item)
+        self._temporal_path_item.setPath(affected)
+
+    def _handle_index(self, edit_id: str) -> int | None:
+        return next(
+            (
+                index
+                for index, handle in enumerate(self._keyframe_handles)
+                if handle.handle_id == edit_id
+            ),
+            None,
+        )
+
+    def _style_handle(
+        self,
+        handle: DraggableEditHandle[str],
+        theme: dict[str, str],
+    ) -> None:
+        """Keep selection, anchors, and preview changes visually distinct."""
+        edit_id = handle.handle_id
+        if edit_id == self._selected_keyframe_id:
+            fill = theme.get("error", "#e74c3c")
+        elif edit_id in self._equalized_keyframe_ids:
+            fill = theme.get("warning", "#e67e22")
+        elif edit_id == self._speed_anchor_id:
+            fill = theme.get("success", "#2ecc71")
+        else:
+            fill = theme.get("accent_secondary", "#f1c40f")
+
+        is_start = edit_id in {
+            self._speed_anchor_id,
+            self._equalization_start_id,
+        }
+        is_end = edit_id == self._equalization_end_id
+        if is_start:
+            border = theme.get("success", "#2ecc71")
+        elif is_end:
+            border = theme.get("accent_primary", "#3498db")
+        else:
+            border = theme.get("text_main", "#ffffff")
+        handle.setBrush(QBrush(QColor(fill)))
+        handle.setPen(QPen(QColor(border), 3.0 if is_start or is_end else 1.0))

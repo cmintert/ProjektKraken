@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QImage, QKeyEvent, QPixmap
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsPixmapItem
+from PySide6.QtWidgets import QGraphicsItem, QGraphicsPixmapItem, QSizePolicy
 
 from src.core.theme_manager import ThemeManager
 from src.core.trajectory import Keyframe
@@ -107,6 +107,22 @@ def test_edit_trajectory_action_and_compact_strip(map_widget, qtbot):
     assert map_widget.trajectory_date_panel.isVisible()
     assert map_widget.btn_edit_trajectory_date.isVisible()
     assert not map_widget.trajectory_date_input.isEnabled()
+    assert not map_widget.trajectory_date_input.isVisible()
+    assert (
+        map_widget.trajectory_edit_strip.sizePolicy().verticalPolicy()
+        == QSizePolicy.Policy.Fixed
+    )
+    assert (
+        map_widget.trajectory_date_panel.sizePolicy().verticalPolicy()
+        == QSizePolicy.Policy.Fixed
+    )
+    assert (
+        map_widget.trajectory_speed_panel.sizePolicy().verticalPolicy()
+        == QSizePolicy.Policy.Fixed
+    )
+    root_layout = map_widget.layout()
+    assert root_layout is not None
+    assert root_layout.stretch(root_layout.indexOf(map_widget._splitter)) == 1
 
     requested_ids = []
     map_widget.trajectory_date_edit_requested.connect(requested_ids.append)
@@ -121,6 +137,7 @@ def test_edit_trajectory_action_and_compact_strip(map_widget, qtbot):
     map_widget.show_trajectory_edit(session.to_snapshot())
 
     assert map_widget.trajectory_date_input.isEnabled()
+    assert map_widget.trajectory_date_input.isVisible()
     assert map_widget.btn_finish_trajectory_date.isVisible()
     assert map_widget.btn_cancel_trajectory_date.isVisible()
     assert "Original:" in map_widget.trajectory_date_feedback.text()
@@ -130,6 +147,83 @@ def test_edit_trajectory_action_and_compact_strip(map_widget, qtbot):
     map_widget.clear_trajectory_edit()
 
     assert marker.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsMovable
+
+
+def test_speed_equalization_anchor_and_preview_controls(map_widget, qtbot):
+    """The compact speed workflow exposes an inspectable working preview."""
+    _show_map_with_marker(map_widget, qtbot)
+    map_widget.view.set_map_width_meters(1000.0)
+    session = TrajectoryEditSession.create(
+        "map-1",
+        "marker1",
+        "trajectory-1",
+        [
+            Keyframe(t=0.0, x=0.0, y=0.0),
+            Keyframe(t=12.0, x=0.25, y=0.0),
+            Keyframe(t=20.0, x=1.0, y=0.0),
+        ],
+        playhead=0.0,
+    )
+    start_id = session.working_keyframes[0].edit_id
+    end_id = session.working_keyframes[-1].edit_id
+    session.select_keyframe(start_id)
+    map_widget.show_trajectory_edit(session.to_snapshot())
+
+    assert map_widget.trajectory_speed_panel.isVisible()
+    assert map_widget.btn_set_trajectory_speed_anchor.isVisible()
+    anchor_requests = []
+    map_widget.trajectory_speed_anchor_requested.connect(anchor_requests.append)
+    qtbot.mouseClick(
+        map_widget.btn_set_trajectory_speed_anchor,
+        Qt.MouseButton.LeftButton,
+    )
+    assert anchor_requests == [start_id]
+
+    session.set_speed_anchor(start_id)
+    session.select_keyframe(end_id)
+    map_widget.show_trajectory_edit(session.to_snapshot())
+    assert map_widget.btn_equalize_trajectory_speed.isEnabled()
+    equalize_requests = []
+    map_widget.trajectory_speed_equalize_requested.connect(
+        equalize_requests.append
+    )
+    qtbot.mouseClick(
+        map_widget.btn_equalize_trajectory_speed,
+        Qt.MouseButton.LeftButton,
+    )
+    assert equalize_requests == [end_id]
+
+    session.preview_speed_equalization(
+        end_id,
+        map_widget.get_trajectory_distance_context(),
+    )
+    map_widget.show_trajectory_edit(session.to_snapshot())
+
+    assert map_widget.btn_apply_speed_equalization.isVisible()
+    assert map_widget.btn_cancel_speed_equalization.isVisible()
+    assert "1 changed" in map_widget.trajectory_speed_feedback.text()
+    assert "m/day" in map_widget.trajectory_speed_feedback.text()
+    assert "K2:" in map_widget.trajectory_speed_changes.text()
+    assert not map_widget.btn_apply_trajectory.isEnabled()
+    assert not map_widget.btn_edit_trajectory_date.isEnabled()
+
+
+def test_trajectory_distance_context_uses_map_aspect_and_calibration(
+    map_widget,
+):
+    """Speed math receives calibrated meters or aspect-corrected units."""
+    setup_map_with_pixmap(map_widget.view, 800, 400)
+
+    relative = map_widget.get_trajectory_distance_context()
+    map_widget.view.set_map_width_meters(1000.0)
+    calibrated = map_widget.get_trajectory_distance_context()
+
+    assert (relative.width, relative.height, relative.unit) == (2.0, 1.0, None)
+    assert (calibrated.width, calibrated.height, calibrated.unit) == (
+        1000.0,
+        500.0,
+        "m",
+    )
 
 
 def _show_map_with_marker(map_widget, qtbot, object_type="entity"):

@@ -215,6 +215,12 @@ class MapWidget(
     trajectory_date_step_requested = Signal(float)
     trajectory_date_edit_done_requested = Signal()
     trajectory_date_edit_cancel_requested = Signal()
+    trajectory_speed_anchor_requested = Signal(str)
+    trajectory_speed_anchor_clear_requested = Signal()
+    trajectory_speed_equalize_requested = Signal(str)
+    trajectory_speed_equalize_whole_requested = Signal()
+    trajectory_speed_equalization_apply_requested = Signal()
+    trajectory_speed_equalization_cancel_requested = Signal()
     jump_to_time_requested = Signal(float)  # target_time
     map_scale_changed = Signal(float)  # For persisting map scale
     show_onboarding_requested = Signal()  # To trigger animation or hints
@@ -422,6 +428,10 @@ class MapWidget(
         layout.addWidget(self._breadcrumb_row)
 
         self.trajectory_edit_strip = QFrame(self)
+        self.trajectory_edit_strip.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
         self.trajectory_edit_strip.setStyleSheet(StyleHelper.get_frame_style())
         edit_strip_layout = QHBoxLayout(self.trajectory_edit_strip)
         edit_strip_layout.setContentsMargins(8, 4, 8, 4)
@@ -469,6 +479,10 @@ class MapWidget(
         layout.addWidget(self.trajectory_edit_strip)
 
         self.trajectory_date_panel = QFrame(self)
+        self.trajectory_date_panel.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
         self.trajectory_date_panel.setStyleSheet(StyleHelper.get_frame_style())
         date_panel_layout = QHBoxLayout(self.trajectory_date_panel)
         date_panel_layout.setContentsMargins(8, 4, 8, 4)
@@ -517,6 +531,93 @@ class MapWidget(
         self.trajectory_date_panel.hide()
         layout.addWidget(self.trajectory_date_panel)
 
+        self.trajectory_speed_panel = QFrame(self)
+        self.trajectory_speed_panel.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
+        self.trajectory_speed_panel.setStyleSheet(StyleHelper.get_frame_style())
+        speed_panel_layout = QVBoxLayout(self.trajectory_speed_panel)
+        speed_panel_layout.setContentsMargins(8, 4, 8, 4)
+        speed_panel_layout.setSpacing(4)
+        speed_controls_layout = QHBoxLayout()
+        speed_controls_layout.setSpacing(8)
+        self.trajectory_speed_feedback = QLabel()
+        speed_controls_layout.addWidget(self.trajectory_speed_feedback, 1)
+        self.btn_set_trajectory_speed_anchor = QPushButton("Set Start Anchor")
+        self.btn_set_trajectory_speed_anchor.setToolTip(
+            "Keep this keyframe fixed as the start of a speed-equalization range."
+        )
+        self.btn_set_trajectory_speed_anchor.setStyleSheet(
+            StyleHelper.get_secondary_button_style()
+        )
+        self.btn_set_trajectory_speed_anchor.clicked.connect(
+            self._request_selected_trajectory_speed_anchor
+        )
+        speed_controls_layout.addWidget(self.btn_set_trajectory_speed_anchor)
+        self.btn_equalize_trajectory_speed = QPushButton("Equalize Speed to Here")
+        self.btn_equalize_trajectory_speed.setToolTip(
+            "Preview constant speed between the fixed start and this keyframe."
+        )
+        self.btn_equalize_trajectory_speed.setStyleSheet(
+            StyleHelper.get_primary_button_style()
+        )
+        self.btn_equalize_trajectory_speed.clicked.connect(
+            self._request_equalize_trajectory_speed_to_selected
+        )
+        speed_controls_layout.addWidget(self.btn_equalize_trajectory_speed)
+        self.btn_equalize_whole_trajectory = QPushButton("Equalize Whole")
+        self.btn_equalize_whole_trajectory.setToolTip(
+            "Preview constant speed between the trajectory endpoints."
+        )
+        self.btn_equalize_whole_trajectory.setStyleSheet(
+            StyleHelper.get_secondary_button_style()
+        )
+        self.btn_equalize_whole_trajectory.clicked.connect(
+            self.trajectory_speed_equalize_whole_requested.emit
+        )
+        speed_controls_layout.addWidget(self.btn_equalize_whole_trajectory)
+        self.btn_clear_trajectory_speed_anchor = QPushButton("Clear Anchor")
+        self.btn_clear_trajectory_speed_anchor.setToolTip(
+            "Remove the selected speed start anchor without changing dates."
+        )
+        self.btn_clear_trajectory_speed_anchor.setStyleSheet(
+            StyleHelper.get_secondary_button_style()
+        )
+        self.btn_clear_trajectory_speed_anchor.clicked.connect(
+            self.trajectory_speed_anchor_clear_requested.emit
+        )
+        speed_controls_layout.addWidget(self.btn_clear_trajectory_speed_anchor)
+        self.btn_apply_speed_equalization = QPushButton("Apply Equalization")
+        self.btn_apply_speed_equalization.setToolTip(
+            "Keep these previewed dates in the working trajectory. "
+            "Use trajectory Apply to save them."
+        )
+        self.btn_apply_speed_equalization.setStyleSheet(
+            StyleHelper.get_primary_button_style()
+        )
+        self.btn_apply_speed_equalization.clicked.connect(
+            self.trajectory_speed_equalization_apply_requested.emit
+        )
+        speed_controls_layout.addWidget(self.btn_apply_speed_equalization)
+        self.btn_cancel_speed_equalization = QPushButton("Cancel Equalization")
+        self.btn_cancel_speed_equalization.setToolTip(
+            "Restore the working dates from before this preview."
+        )
+        self.btn_cancel_speed_equalization.setStyleSheet(
+            StyleHelper.get_secondary_button_style()
+        )
+        self.btn_cancel_speed_equalization.clicked.connect(
+            self.trajectory_speed_equalization_cancel_requested.emit
+        )
+        speed_controls_layout.addWidget(self.btn_cancel_speed_equalization)
+        speed_panel_layout.addLayout(speed_controls_layout)
+        self.trajectory_speed_changes = QLabel()
+        self.trajectory_speed_changes.setWordWrap(True)
+        speed_panel_layout.addWidget(self.trajectory_speed_changes)
+        self.trajectory_speed_panel.hide()
+        layout.addWidget(self.trajectory_speed_panel)
+
         self._splitter = QSplitter(Qt.Orientation.Horizontal, self)
 
         self._splitter.addWidget(self.view)
@@ -529,7 +630,7 @@ class MapWidget(
         self._splitter.setStretchFactor(0, 4)
         self._splitter.setStretchFactor(1, 1)
 
-        layout.addWidget(self._splitter)
+        layout.addWidget(self._splitter, 1)
 
         # Empty State
         self.empty_state = EmptyStateWidget(
@@ -851,6 +952,18 @@ class MapWidget(
         selected_id = self.view.trajectory_edit_overlay.selected_keyframe_id
         if selected_id is not None:
             self.trajectory_date_edit_requested.emit(selected_id)
+
+    def _request_selected_trajectory_speed_anchor(self) -> None:
+        """Request the selected keyframe as the speed start anchor."""
+        selected_id = self.view.trajectory_edit_overlay.selected_keyframe_id
+        if selected_id is not None:
+            self.trajectory_speed_anchor_requested.emit(selected_id)
+
+    def _request_equalize_trajectory_speed_to_selected(self) -> None:
+        """Request equalization from the anchor to the selected keyframe."""
+        selected_id = self.view.trajectory_edit_overlay.selected_keyframe_id
+        if selected_id is not None:
+            self.trajectory_speed_equalize_requested.emit(selected_id)
 
     def _update_add_keyframe_action(self) -> None:
         """Update keyframe-action visibility for the current marker selection."""

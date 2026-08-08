@@ -11,7 +11,12 @@ from PySide6.QtCore import QSettings, Slot
 from PySide6.QtWidgets import QComboBox, QGraphicsItem, QWidget
 
 from src.core.protocols import SignalProtocol
-from src.core.trajectory import KEYFRAME_TIME_EPSILON, Keyframe, interpolate_position
+from src.core.trajectory import (
+    KEYFRAME_TIME_EPSILON,
+    Keyframe,
+    TrajectoryDistanceContext,
+    interpolate_position,
+)
 from src.core.trajectory_edit import TrajectoryEditSnapshot
 from src.gui.widgets.map.marker_item import MarkerItem
 
@@ -87,6 +92,15 @@ class MapTrajectoryMixin:
         btn_edit_trajectory_date: Any
         btn_finish_trajectory_date: Any
         btn_cancel_trajectory_date: Any
+        trajectory_speed_panel: Any
+        trajectory_speed_feedback: Any
+        trajectory_speed_changes: Any
+        btn_set_trajectory_speed_anchor: Any
+        btn_equalize_trajectory_speed: Any
+        btn_equalize_whole_trajectory: Any
+        btn_clear_trajectory_speed_anchor: Any
+        btn_apply_speed_equalization: Any
+        btn_cancel_speed_equalization: Any
 
         def _update_mode_indicator(self) -> None:
             ...
@@ -189,6 +203,7 @@ class MapTrajectoryMixin:
             f"Edit Trajectory | {count} keyframe{'s' if count != 1 else ''}"
         )
         selected_index = snapshot["selected_keyframe_index"]
+        is_equalization_previewing = snapshot["is_equalization_previewing"]
         if selected_index is None:
             self.trajectory_keyframe_label.setText("Select a keyframe")
             self.trajectory_date_panel.hide()
@@ -218,27 +233,37 @@ class MapTrajectoryMixin:
                     f"Date: {self._format_trajectory_date(keyframe['t'])}"
                 )
             self.trajectory_date_input.setEnabled(is_date_editing and not pending)
+            self.trajectory_date_input.setVisible(is_date_editing)
             self.btn_trajectory_date_previous.setEnabled(
                 is_date_editing and not pending
             )
+            self.btn_trajectory_date_previous.setVisible(is_date_editing)
             self.btn_trajectory_date_next.setEnabled(
                 is_date_editing and not pending
             )
+            self.btn_trajectory_date_next.setVisible(is_date_editing)
             self.btn_edit_trajectory_date.setVisible(not is_date_editing)
-            self.btn_edit_trajectory_date.setEnabled(not pending)
+            self.btn_edit_trajectory_date.setEnabled(
+                not pending and not is_equalization_previewing
+            )
             self.btn_finish_trajectory_date.setVisible(is_date_editing)
             self.btn_finish_trajectory_date.setEnabled(not pending)
             self.btn_cancel_trajectory_date.setVisible(is_date_editing)
             self.btn_cancel_trajectory_date.setEnabled(not pending)
             self.trajectory_date_panel.show()
 
+        self._show_trajectory_speed_controls(snapshot, pending=pending)
+
         messages = list(snapshot["validation_errors"])
         if snapshot["is_conflicted"]:
             messages.insert(0, "Trajectory changed externally; Apply is blocked.")
+        if is_equalization_previewing:
+            messages.insert(0, "Apply or cancel the equalization preview.")
         self.trajectory_validation_label.setText(" ".join(messages))
         self.btn_delete_trajectory_keyframe.setEnabled(
             snapshot["selected_keyframe_id"] is not None
             and not snapshot["is_date_editing"]
+            and not is_equalization_previewing
             and not pending
         )
         self.btn_reload_trajectory.setVisible(snapshot["is_conflicted"])
@@ -263,6 +288,7 @@ class MapTrajectoryMixin:
         self._trajectory_edit_keyframes = []
         self.trajectory_edit_strip.hide()
         self.trajectory_date_panel.hide()
+        self.trajectory_speed_panel.hide()
         self._update_trajectory_positions(force_all=True)
         if marker_id == self._selected_marker_id and marker_id is not None:
             self._update_trajectory_visualization(marker_id)
@@ -278,6 +304,126 @@ class MapTrajectoryMixin:
             except Exception:
                 logger.warning("Could not format trajectory date %s", value)
         return f"T {value:g}"
+
+    def get_trajectory_distance_context(self) -> TrajectoryDistanceContext:
+        """Return calibrated or aspect-corrected relative map dimensions."""
+        aspect_ratio = 1.0
+        pixmap_item = getattr(self.view, "pixmap_item", None)
+        if pixmap_item is not None:
+            rect = pixmap_item.boundingRect()
+        else:
+            rect = self.view.sceneRect()
+        if rect.width() > 0.0 and rect.height() > 0.0:
+            aspect_ratio = rect.width() / rect.height()
+
+        width_meters = float(getattr(self.view, "map_width_meters", 0.0))
+        if width_meters > 0.0:
+            return TrajectoryDistanceContext(
+                width=width_meters,
+                height=width_meters / aspect_ratio,
+                unit="m",
+            )
+        return TrajectoryDistanceContext(
+            width=aspect_ratio,
+            height=1.0,
+        )
+
+    def _show_trajectory_speed_controls(
+        self,
+        snapshot: TrajectoryEditSnapshot,
+        *,
+        pending: bool,
+    ) -> None:
+        """Render the compact start-anchor and equalization preview workflow."""
+        previewing = snapshot["is_equalization_previewing"]
+        has_anchor = snapshot["speed_anchor_id"] is not None
+        has_selection = snapshot["selected_keyframe_id"] is not None
+        is_date_editing = snapshot["is_date_editing"]
+
+        self.btn_set_trajectory_speed_anchor.setVisible(not previewing)
+        self.btn_set_trajectory_speed_anchor.setEnabled(
+            has_selection and not is_date_editing and not pending
+        )
+        self.btn_equalize_trajectory_speed.setVisible(not previewing and has_anchor)
+        self.btn_equalize_trajectory_speed.setEnabled(
+            snapshot["can_equalize_to_selected"] and not pending
+        )
+        self.btn_equalize_whole_trajectory.setVisible(not previewing)
+        self.btn_equalize_whole_trajectory.setEnabled(
+            snapshot["can_equalize_whole"] and not pending
+        )
+        self.btn_clear_trajectory_speed_anchor.setVisible(
+            not previewing and has_anchor
+        )
+        self.btn_clear_trajectory_speed_anchor.setEnabled(not pending)
+        self.btn_apply_speed_equalization.setVisible(previewing)
+        self.btn_apply_speed_equalization.setEnabled(not pending)
+        self.btn_cancel_speed_equalization.setVisible(previewing)
+        self.btn_cancel_speed_equalization.setEnabled(not pending)
+
+        if previewing:
+            changed_count = len(snapshot["equalization_changes"])
+            distance = self._format_equalization_distance(
+                snapshot["equalization_total_distance"],
+                snapshot["equalization_distance_unit"],
+            )
+            speed = self._format_equalization_speed(
+                snapshot["equalization_average_speed"],
+                snapshot["equalization_distance_unit"],
+            )
+            self.trajectory_speed_feedback.setText(
+                f"Equalize Speed preview | {changed_count} changed | "
+                f"Distance: {distance} | Average: {speed}"
+            )
+            all_changes = " | ".join(
+                f"K{change['keyframe_number']}: "
+                f"{self._format_trajectory_date(change['original_t'])} → "
+                f"{self._format_trajectory_date(change['proposed_t'])}"
+                for change in snapshot["equalization_changes"]
+            )
+            visible_changes = " | ".join(all_changes.split(" | ")[:4])
+            if changed_count > 4:
+                visible_changes += f" | … {changed_count - 4} more"
+            self.trajectory_speed_changes.setText(visible_changes)
+            self.trajectory_speed_changes.setToolTip(all_changes)
+            self.trajectory_speed_changes.show()
+        else:
+            anchor_index = snapshot["speed_anchor_index"]
+            if anchor_index is None:
+                feedback = "Equalize dates by cumulative path distance."
+            else:
+                feedback = (
+                    f"Start anchor: Keyframe {anchor_index + 1}. "
+                    "Select a later keyframe."
+                )
+            self.trajectory_speed_feedback.setText(feedback)
+            self.trajectory_speed_changes.clear()
+            self.trajectory_speed_changes.setToolTip("")
+            self.trajectory_speed_changes.hide()
+
+        self.trajectory_speed_panel.setVisible(
+            snapshot["keyframe_count"] >= 3 or previewing
+        )
+
+    @staticmethod
+    def _format_equalization_distance(value: float | None, unit: str | None) -> str:
+        if value is None:
+            return "—"
+        if unit == "m":
+            return f"{value / 1000.0:.2f} km" if value >= 1000.0 else f"{value:.1f} m"
+        return f"{value:.3g} relative units"
+
+    @staticmethod
+    def _format_equalization_speed(value: float | None, unit: str | None) -> str:
+        if value is None:
+            return "—"
+        if unit == "m":
+            return (
+                f"{value / 1000.0:.2f} km/day"
+                if value >= 1000.0
+                else f"{value:.1f} m/day"
+            )
+        return f"{value:.3g} relative units/day"
 
     def _update_marker_indicators(self) -> None:
         """Updates the has_keyframes state for all markers."""

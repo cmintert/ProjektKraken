@@ -8,7 +8,10 @@ from typing import Sequence, TypedDict
 from src.core.trajectory import (
     EditableKeyframe,
     Keyframe,
+    TrajectoryDistanceContext,
     clone_keyframes,
+    cumulative_trajectory_distances,
+    equalize_keyframe_times,
     infer_midpoint_time,
     validate_keyframes,
 )
@@ -21,6 +24,15 @@ class EditableKeyframeSnapshot(TypedDict):
     t: float
     x: float
     y: float
+
+
+class EqualizationChangeSnapshot(TypedDict):
+    """One intermediate date changed by an equalization preview."""
+
+    edit_id: str
+    keyframe_number: int
+    original_t: float
+    proposed_t: float
 
 
 class TrajectoryEditSnapshot(TypedDict):
@@ -37,12 +49,33 @@ class TrajectoryEditSnapshot(TypedDict):
     date_edit_original_t: float | None
     date_edit_proposed_t: float | None
     date_edit_delta: float | None
+    speed_anchor_id: str | None
+    speed_anchor_index: int | None
+    equalization_start_id: str | None
+    equalization_end_id: str | None
+    is_equalization_previewing: bool
+    equalization_changes: list[EqualizationChangeSnapshot]
+    equalization_total_distance: float | None
+    equalization_average_speed: float | None
+    equalization_distance_unit: str | None
+    can_equalize_to_selected: bool
+    can_equalize_whole: bool
     keyframe_count: int
     is_dirty: bool
     is_conflicted: bool
     validation_errors: list[str]
     midpoint_errors: dict[str, str]
     can_apply: bool
+
+
+@dataclass(frozen=True)
+class EqualizationDateChange:
+    """Independent before-and-proposed date for one intermediate keyframe."""
+
+    edit_id: str
+    keyframe_number: int
+    original_t: float
+    proposed_t: float
 
 
 @dataclass
@@ -59,6 +92,14 @@ class TrajectoryEditSession:
     playhead_at_session_start: float
     playhead_before_date_edit: float | None
     date_edit_original_t: float | None
+    speed_anchor_id: str | None
+    equalization_before: tuple[EditableKeyframe, ...] | None
+    equalization_start_id: str | None
+    equalization_end_id: str | None
+    equalization_changes: tuple[EqualizationDateChange, ...]
+    equalization_total_distance: float | None
+    equalization_average_speed: float | None
+    equalization_distance_unit: str | None
     is_dirty: bool
     is_conflicted: bool
     validation_errors: list[str]
@@ -106,6 +147,14 @@ class TrajectoryEditSession:
             playhead_at_session_start=playhead,
             playhead_before_date_edit=None,
             date_edit_original_t=None,
+            speed_anchor_id=None,
+            equalization_before=None,
+            equalization_start_id=None,
+            equalization_end_id=None,
+            equalization_changes=(),
+            equalization_total_distance=None,
+            equalization_average_speed=None,
+            equalization_distance_unit=None,
             is_dirty=False,
             is_conflicted=False,
             validation_errors=validate_keyframes(working),
@@ -114,7 +163,17 @@ class TrajectoryEditSession:
     @property
     def can_apply(self) -> bool:
         """Whether the working trajectory can be persisted."""
-        return self.is_dirty and not self.is_conflicted and not self.validation_errors
+        return (
+            self.is_dirty
+            and not self.is_conflicted
+            and not self.validation_errors
+            and self.equalization_before is None
+        )
+
+    @property
+    def is_equalization_previewing(self) -> bool:
+        """Whether redistributed dates await preview confirmation."""
+        return self.equalization_before is not None
 
     @property
     def active_date_value(self) -> float | None:
@@ -150,6 +209,7 @@ class TrajectoryEditSession:
             ValueError: If the identity or coordinates are invalid.
 
         """
+        self._require_no_equalization_preview()
         self._validate_position(x, y)
         index = self._index_of(edit_id)
         current = self.working_keyframes[index]
@@ -171,6 +231,7 @@ class TrajectoryEditSession:
             ValueError: If the identity or playhead value is invalid.
 
         """
+        self._require_no_equalization_preview()
         if not math.isfinite(current_playhead):
             raise ValueError("Playhead time must be finite.")
         index = self._index_of(edit_id)
@@ -198,6 +259,7 @@ class TrajectoryEditSession:
             ValueError: If no date edit is active or the value is non-finite.
 
         """
+        self._require_no_equalization_preview()
         if self.active_date_edit_id is None:
             raise ValueError("No keyframe date edit is active.")
         if not math.isfinite(proposed_time):
@@ -261,6 +323,7 @@ class TrajectoryEditSession:
             ValueError: If endpoints are not adjacent or insertion is invalid.
 
         """
+        self._require_no_equalization_preview()
         self._validate_position(x, y)
         start_index = self._index_of(start_id)
         end_index = self._index_of(end_id)
@@ -288,6 +351,7 @@ class TrajectoryEditSession:
 
     def delete_selected_keyframe(self) -> bool:
         """Delete only the selected working keyframe, including the final one."""
+        self._require_no_equalization_preview()
         if self.selected_keyframe_id is None:
             return False
         index = self._index_of(self.selected_keyframe_id)
@@ -296,11 +360,67 @@ class TrajectoryEditSession:
             self.active_date_edit_id = None
             self.playhead_before_date_edit = None
             self.date_edit_original_t = None
+        if self.speed_anchor_id == self.selected_keyframe_id:
+            self.speed_anchor_id = None
         if self.working_keyframes:
             next_index = min(index, len(self.working_keyframes) - 1)
             self.selected_keyframe_id = self.working_keyframes[next_index].edit_id
         else:
             self.selected_keyframe_id = None
+        self._refresh_state()
+        return True
+
+    def set_speed_anchor(self, edit_id: str) -> None:
+        """Mark one stable keyframe as the equalization start anchor."""
+        self._require_no_equalization_preview()
+        if self.active_date_edit_id is not None:
+            raise ValueError("Finish editing the keyframe date first.")
+        self._index_of(edit_id)
+        self.speed_anchor_id = edit_id
+        self.selected_keyframe_id = edit_id
+
+    def clear_speed_anchor(self) -> None:
+        """Clear an uncommitted equalization anchor."""
+        self._require_no_equalization_preview()
+        self.speed_anchor_id = None
+
+    def preview_speed_equalization(
+        self,
+        end_id: str,
+        context: TrajectoryDistanceContext,
+    ) -> None:
+        """Preview constant-speed dates from the start anchor to ``end_id``."""
+        if self.speed_anchor_id is None:
+            raise ValueError("Set a start anchor first.")
+        self._preview_equalization(self.speed_anchor_id, end_id, context)
+
+    def preview_whole_speed_equalization(
+        self, context: TrajectoryDistanceContext
+    ) -> None:
+        """Preview constant speed across the complete working trajectory."""
+        if len(self.working_keyframes) < 3:
+            raise ValueError(
+                "Whole-trajectory equalization needs an intermediate keyframe."
+            )
+        start_id = self.working_keyframes[0].edit_id
+        end_id = self.working_keyframes[-1].edit_id
+        self._preview_equalization(start_id, end_id, context)
+        self.speed_anchor_id = start_id
+
+    def confirm_speed_equalization(self) -> bool:
+        """Keep previewed dates in the working copy without persisting them."""
+        if self.equalization_before is None:
+            return False
+        self._clear_equalization_state(clear_anchor=True)
+        self._refresh_state()
+        return True
+
+    def cancel_speed_equalization(self) -> bool:
+        """Restore the working dates captured before equalization preview."""
+        if self.equalization_before is None:
+            return False
+        self.working_keyframes = clone_keyframes(self.equalization_before)
+        self._clear_equalization_state(clear_anchor=True)
         self._refresh_state()
         return True
 
@@ -315,6 +435,8 @@ class TrajectoryEditSession:
         self.active_date_edit_id = None
         self.playhead_before_date_edit = None
         self.date_edit_original_t = None
+        self.speed_anchor_id = None
+        self._clear_equalization_state(clear_anchor=True)
         self.is_conflicted = False
         self._refresh_state()
 
@@ -340,6 +462,16 @@ class TrajectoryEditSession:
             if proposed_time is not None and self.date_edit_original_t is not None
             else None
         )
+        speed_anchor_index: int | None = None
+        if self.speed_anchor_id is not None:
+            speed_anchor_index = self._index_of(self.speed_anchor_id)
+        can_equalize_to_selected = (
+            self.equalization_before is None
+            and self.active_date_edit_id is None
+            and speed_anchor_index is not None
+            and selected_index is not None
+            and selected_index - speed_anchor_index >= 2
+        )
         return {
             "map_id": self.map_id,
             "marker_id": self.marker_id,
@@ -360,6 +492,29 @@ class TrajectoryEditSession:
             "date_edit_original_t": self.date_edit_original_t,
             "date_edit_proposed_t": proposed_time,
             "date_edit_delta": date_delta,
+            "speed_anchor_id": self.speed_anchor_id,
+            "speed_anchor_index": speed_anchor_index,
+            "equalization_start_id": self.equalization_start_id,
+            "equalization_end_id": self.equalization_end_id,
+            "is_equalization_previewing": self.equalization_before is not None,
+            "equalization_changes": [
+                {
+                    "edit_id": change.edit_id,
+                    "keyframe_number": change.keyframe_number,
+                    "original_t": change.original_t,
+                    "proposed_t": change.proposed_t,
+                }
+                for change in self.equalization_changes
+            ],
+            "equalization_total_distance": self.equalization_total_distance,
+            "equalization_average_speed": self.equalization_average_speed,
+            "equalization_distance_unit": self.equalization_distance_unit,
+            "can_equalize_to_selected": can_equalize_to_selected,
+            "can_equalize_whole": (
+                self.equalization_before is None
+                and self.active_date_edit_id is None
+                and len(self.working_keyframes) >= 3
+            ),
             "keyframe_count": len(self.working_keyframes),
             "is_dirty": self.is_dirty,
             "is_conflicted": self.is_conflicted,
@@ -367,6 +522,79 @@ class TrajectoryEditSession:
             "midpoint_errors": self._midpoint_errors(),
             "can_apply": self.can_apply,
         }
+
+    def _preview_equalization(
+        self,
+        start_id: str,
+        end_id: str,
+        context: TrajectoryDistanceContext,
+    ) -> None:
+        self._require_no_equalization_preview()
+        if self.active_date_edit_id is not None:
+            raise ValueError("Finish editing the keyframe date first.")
+        start_index = self._index_of(start_id)
+        end_index = self._index_of(end_id)
+        if end_index - start_index < 2:
+            raise ValueError(
+                "Equalize Speed needs at least one intermediate keyframe."
+            )
+
+        before = tuple(clone_keyframes(self.working_keyframes))
+        equalized = equalize_keyframe_times(
+            self.working_keyframes,
+            start_index,
+            end_index,
+            context,
+        )
+        changes = tuple(
+            EqualizationDateChange(
+                edit_id=proposed.edit_id,
+                keyframe_number=index + 1,
+                original_t=original.t,
+                proposed_t=proposed.t,
+            )
+            for index, (original, proposed) in enumerate(
+                zip(self.working_keyframes, equalized)
+            )
+            if start_index < index < end_index
+            and not math.isclose(original.t, proposed.t, abs_tol=1e-9)
+        )
+        if not changes:
+            raise ValueError("The selected range already has equalized speed.")
+
+        anchor_range = self.working_keyframes[start_index : end_index + 1]
+        total_distance = cumulative_trajectory_distances(
+            anchor_range, context
+        )[-1]
+        duration = (
+            self.working_keyframes[end_index].t
+            - self.working_keyframes[start_index].t
+        )
+        self.equalization_before = before
+        self.equalization_start_id = start_id
+        self.equalization_end_id = end_id
+        self.equalization_changes = changes
+        self.equalization_total_distance = total_distance
+        self.equalization_average_speed = total_distance / duration
+        self.equalization_distance_unit = context.unit
+        self.working_keyframes = equalized
+        self.selected_keyframe_id = end_id
+        self._refresh_state()
+
+    def _clear_equalization_state(self, *, clear_anchor: bool) -> None:
+        self.equalization_before = None
+        self.equalization_start_id = None
+        self.equalization_end_id = None
+        self.equalization_changes = ()
+        self.equalization_total_distance = None
+        self.equalization_average_speed = None
+        self.equalization_distance_unit = None
+        if clear_anchor:
+            self.speed_anchor_id = None
+
+    def _require_no_equalization_preview(self) -> None:
+        if self.equalization_before is not None:
+            raise ValueError("Apply or cancel the equalization preview first.")
 
     @staticmethod
     def midpoint_key(start_id: str, end_id: str) -> str:
