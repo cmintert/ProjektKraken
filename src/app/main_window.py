@@ -21,6 +21,7 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QCloseEvent, QKeyEvent
 from PySide6.QtWidgets import (
     QAbstractSpinBox,
+    QComboBox,
     QDialog,
     QDockWidget,
     QLabel,
@@ -210,7 +211,10 @@ class GlobalShortcutFilter(QObject):
         trajectory_edit = self.main_window.app_coordinator.trajectory_edit
         if trajectory_edit.is_active:
             if key == Qt.Key.Key_Escape:
-                trajectory_edit.cancel()
+                if trajectory_edit.is_date_editing:
+                    trajectory_edit.cancel_date_edit()
+                else:
+                    trajectory_edit.cancel()
                 return True
             if key in {Qt.Key.Key_Return, Qt.Key.Key_Enter}:
                 if not self._focus_is_editable(obj):
@@ -231,7 +235,14 @@ class GlobalShortcutFilter(QObject):
         while candidate is not None:
             if isinstance(
                 candidate,
-                (QLineEdit, QTextEdit, QPlainTextEdit, QAbstractSpinBox),
+                (
+                    QLineEdit,
+                    QTextEdit,
+                    QPlainTextEdit,
+                    QAbstractSpinBox,
+                    QComboBox,
+                    QDialog,
+                ),
             ):
                 return True
             candidate = candidate.parent()

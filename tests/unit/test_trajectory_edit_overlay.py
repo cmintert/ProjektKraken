@@ -71,3 +71,50 @@ def test_equal_time_segment_disables_midpoint(qtbot, monkeypatch):
     assert "Dates must differ" in view.trajectory_edit_overlay.midpoint_handles[
         0
     ].toolTip()
+
+
+def test_date_edit_highlights_adjacent_affected_segments(qtbot, monkeypatch):
+    view = _view(qtbot, monkeypatch)
+    session = TrajectoryEditSession.create(
+        "map-1",
+        "marker-1",
+        "trajectory-1",
+        [
+            Keyframe(t=0.0, x=0.1, y=0.2),
+            Keyframe(t=10.0, x=0.5, y=0.6),
+            Keyframe(t=20.0, x=0.9, y=0.8),
+        ],
+        playhead=5.0,
+    )
+    middle_id = session.working_keyframes[1].edit_id
+    session.begin_date_edit(middle_id, current_playhead=5.0)
+
+    view.trajectory_edit_overlay.show(session.to_snapshot())
+
+    temporal_path = view.trajectory_edit_overlay.temporal_path_item
+    assert temporal_path is not None
+    assert not temporal_path.path().isEmpty()
+
+
+def test_temporal_highlight_is_removed_after_date_edit_finishes(
+    qtbot, monkeypatch
+):
+    view = _view(qtbot, monkeypatch)
+    session = TrajectoryEditSession.create(
+        "map-1",
+        "marker-1",
+        "trajectory-1",
+        [
+            Keyframe(t=0.0, x=0.1, y=0.2),
+            Keyframe(t=10.0, x=0.5, y=0.6),
+        ],
+        playhead=5.0,
+    )
+    edit_id = session.working_keyframes[0].edit_id
+    session.begin_date_edit(edit_id, current_playhead=5.0)
+    view.trajectory_edit_overlay.show(session.to_snapshot())
+    session.finish_date_edit()
+
+    view.trajectory_edit_overlay.show(session.to_snapshot())
+
+    assert view.trajectory_edit_overlay.temporal_path_item is None

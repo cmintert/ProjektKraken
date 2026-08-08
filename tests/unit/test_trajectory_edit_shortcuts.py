@@ -15,7 +15,9 @@ class _Window(QObject):
         super().__init__()
         self.trajectory_edit = SimpleNamespace(
             is_active=True,
+            is_date_editing=False,
             cancel=MagicMock(),
+            cancel_date_edit=MagicMock(),
             apply=MagicMock(),
             delete_selected_keyframe=MagicMock(),
         )
@@ -42,6 +44,20 @@ def test_escape_cancels_when_focus_is_outside_map(qtbot):
 
     assert handled
     window.trajectory_edit.cancel.assert_called_once()
+
+
+def test_escape_cancels_only_active_date_suboperation(qtbot):
+    window = _Window()
+    window.trajectory_edit.is_date_editing = True
+    widget = QWidget()
+    qtbot.addWidget(widget)
+    shortcut_filter = GlobalShortcutFilter(window)  # type: ignore[arg-type]
+
+    handled = shortcut_filter.eventFilter(widget, _key(Qt.Key.Key_Escape))
+
+    assert handled
+    window.trajectory_edit.cancel_date_edit.assert_called_once()
+    window.trajectory_edit.cancel.assert_not_called()
 
 
 def test_enter_is_left_to_active_text_field(qtbot):

@@ -41,6 +41,14 @@ class TrajectoryEditCoordinator(QObject):
         """Whether a direct trajectory edit session is active."""
         return self._session is not None
 
+    @property
+    def is_date_editing(self) -> bool:
+        """Whether the active session is retiming one selected keyframe."""
+        return (
+            self._session is not None
+            and self._session.active_date_edit_id is not None
+        )
+
     def bind_ui(self) -> None:
         """Connect map intents after the MainWindow widget skeleton exists."""
         if self._bound:
@@ -57,6 +65,14 @@ class TrajectoryEditCoordinator(QObject):
         widget.trajectory_cancel_requested.connect(self.cancel)
         widget.trajectory_discard_reload_requested.connect(
             self.discard_and_reload
+        )
+        widget.trajectory_date_edit_requested.connect(self.begin_date_edit)
+        widget.trajectory_date_value_changed.connect(self.set_date_value)
+        widget.trajectory_date_step_requested.connect(self.step_date)
+        widget.trajectory_date_edit_done_requested.connect(self.finish_date_edit)
+        widget.trajectory_date_edit_cancel_requested.connect(self.cancel_date_edit)
+        self._window.timeline.playhead_time_changed.connect(
+            self.on_playhead_time_changed
         )
         self.command_requested.connect(self._window.command_requested.emit)
         self._window.worker.command_finished.connect(
@@ -157,11 +173,84 @@ class TrajectoryEditCoordinator(QObject):
         if self._session is None:
             return
         try:
+            if (
+                self._session.active_date_edit_id is not None
+                and self._session.active_date_edit_id != edit_id
+            ):
+                self._session.finish_date_edit()
             self._session.select_keyframe(edit_id)
         except ValueError as exc:
             self._show_status(str(exc))
             return
         self._render(rebuild_overlay=False)
+
+    @Slot(str)
+    def begin_date_edit(self, edit_id: str) -> None:
+        """Start retiming a keyframe and jump the global playhead to it."""
+        session = self._session
+        if session is None or self._pending_command_id is not None:
+            return
+        try:
+            if (
+                session.active_date_edit_id is not None
+                and session.active_date_edit_id != edit_id
+            ):
+                session.finish_date_edit()
+            jump_time = session.begin_date_edit(
+                edit_id, self._window.timeline.get_playhead_time()
+            )
+        except ValueError as exc:
+            self._show_status(str(exc))
+            return
+        self._window.timeline.set_playhead_time(jump_time)
+
+    @Slot(float)
+    def set_date_value(self, proposed_time: float) -> None:
+        """Route direct calendar input through the shared playhead preview."""
+        if not self.is_date_editing or self._pending_command_id is not None:
+            return
+        self._window.timeline.set_playhead_time(proposed_time)
+
+    @Slot(float)
+    def step_date(self, delta_days: float) -> None:
+        """Move the active proposed date by a small lore-day increment."""
+        session = self._session
+        if session is None or session.active_date_edit_id is None:
+            return
+        current = session.active_date_value
+        if current is not None:
+            self.set_date_value(current + delta_days)
+
+    @Slot(float)
+    def on_playhead_time_changed(self, proposed_time: float) -> None:
+        """Preview timeline movement as the active keyframe's proposed date."""
+        session = self._session
+        if session is None or session.active_date_edit_id is None:
+            return
+        try:
+            session.update_active_date(proposed_time)
+        except ValueError as exc:
+            self._show_status(str(exc))
+            return
+        self._render()
+
+    @Slot()
+    def finish_date_edit(self) -> None:
+        """Keep the proposed date and leave the temporal sub-operation."""
+        if self._session is None:
+            return
+        if self._session.finish_date_edit() is not None:
+            self._render()
+
+    @Slot()
+    def cancel_date_edit(self) -> None:
+        """Restore only the current keyframe's prior working date/playhead."""
+        if self._session is None or self._pending_command_id is not None:
+            return
+        restore_playhead = self._session.cancel_date_edit()
+        if restore_playhead is not None:
+            self._window.timeline.set_playhead_time(restore_playhead)
+            self._render()
 
     @Slot(str, float, float)
     def move_keyframe(self, edit_id: str, x: float, y: float) -> None:
@@ -224,8 +313,10 @@ class TrajectoryEditCoordinator(QObject):
         """Discard the working copy without persistence or history."""
         if self._session is None or self._pending_command_id is not None:
             return
+        restore_playhead = self._session.playhead_at_session_start
         latest = self._latest_deferred or self._current_authoritative()
         self._finish_session(latest)
+        self._window.timeline.set_playhead_time(restore_playhead)
 
     @Slot()
     def discard_and_reload(self) -> None:

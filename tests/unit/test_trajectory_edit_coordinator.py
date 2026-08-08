@@ -30,11 +30,27 @@ class _MapHandler:
         self.on_trajectories_ready = MagicMock()
 
 
+class _Timeline(QObject):
+    playhead_time_changed = Signal(float)
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._playhead_time = 5.0
+
+    def get_playhead_time(self) -> float:
+        return self._playhead_time
+
+    def set_playhead_time(self, value: float) -> None:
+        self._playhead_time = value
+        self.playhead_time_changed.emit(value)
+
+
 class _Window(QObject):
     def __init__(self) -> None:
         super().__init__()
         self.map_widget = _MapWidget()
         self.map_handler = _MapHandler()
+        self.timeline = _Timeline()
         self.worker = _Worker()
 
 
@@ -141,3 +157,97 @@ def test_conflicting_reload_preserves_working_copy_and_blocks_apply():
 
     coordinator.discard_and_reload()
     assert not coordinator.is_active
+
+
+def test_date_edit_jumps_playhead_and_reorders_without_persisting():
+    coordinator, window = _coordinator()
+    commands = []
+    coordinator.command_requested.connect(commands.append)
+    coordinator.start_edit("marker-1")
+    session = coordinator._session
+    assert session is not None
+    first_id = session.working_keyframes[0].edit_id
+    window.timeline.playhead_time_changed.connect(
+        coordinator.on_playhead_time_changed
+    )
+
+    coordinator.begin_date_edit(first_id)
+    window.timeline.set_playhead_time(12.0)
+
+    assert coordinator.is_date_editing
+    assert window.timeline.get_playhead_time() == 12.0
+    assert session.working_keyframes[-1].edit_id == first_id
+    assert session.working_keyframes[-1].t == 12.0
+    assert commands == []
+
+
+def test_direct_date_input_uses_shared_playhead_preview():
+    coordinator, window = _coordinator()
+    coordinator.start_edit("marker-1")
+    session = coordinator._session
+    assert session is not None
+    first_id = session.working_keyframes[0].edit_id
+    window.timeline.playhead_time_changed.connect(
+        coordinator.on_playhead_time_changed
+    )
+
+    coordinator.begin_date_edit(first_id)
+    coordinator.set_date_value(7.0)
+
+    assert window.timeline.get_playhead_time() == 7.0
+    assert session.active_date_value == 7.0
+
+
+def test_cancel_date_restores_date_and_playhead_but_keeps_spatial_edit():
+    coordinator, window = _coordinator()
+    coordinator.start_edit("marker-1")
+    session = coordinator._session
+    assert session is not None
+    first_id = session.working_keyframes[0].edit_id
+    coordinator.move_keyframe(first_id, 0.3, 0.4)
+    window.timeline.set_playhead_time(4.0)
+    coordinator.begin_date_edit(first_id)
+    coordinator.on_playhead_time_changed(7.0)
+
+    coordinator.cancel_date_edit()
+
+    restored = next(
+        keyframe
+        for keyframe in session.working_keyframes
+        if keyframe.edit_id == first_id
+    )
+    assert not coordinator.is_date_editing
+    assert restored.t == 0.0
+    assert (restored.x, restored.y) == (0.3, 0.4)
+    assert window.timeline.get_playhead_time() == 4.0
+
+
+def test_full_cancel_restores_session_start_playhead():
+    coordinator, window = _coordinator()
+    coordinator.start_edit("marker-1")
+    window.timeline.set_playhead_time(8.0)
+
+    coordinator.cancel()
+
+    assert window.timeline.get_playhead_time() == 5.0
+    assert not coordinator.is_active
+
+
+def test_apply_keeps_proposed_date_on_playhead():
+    coordinator, window = _coordinator()
+    commands = []
+    coordinator.command_requested.connect(commands.append)
+    coordinator.start_edit("marker-1")
+    session = coordinator._session
+    assert session is not None
+    first_id = session.working_keyframes[0].edit_id
+    window.timeline.playhead_time_changed.connect(
+        coordinator.on_playhead_time_changed
+    )
+    coordinator.begin_date_edit(first_id)
+    coordinator.set_date_value(7.0)
+
+    coordinator.apply()
+
+    assert len(commands) == 1
+    assert window.timeline.get_playhead_time() == 7.0

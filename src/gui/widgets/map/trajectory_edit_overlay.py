@@ -25,7 +25,10 @@ class TrajectoryEditOverlay:
     def __init__(self, view: "MapGraphicsView") -> None:
         self._view = view
         self._marker_id: str | None = None
+        self._selected_keyframe_id: str | None = None
+        self._active_date_edit_id: str | None = None
         self._path_item: QGraphicsPathItem | None = None
+        self._temporal_path_item: QGraphicsPathItem | None = None
         self._keyframe_handles: list[DraggableEditHandle[str]] = []
         self._midpoint_handles: list[
             MidpointEditHandle[tuple[str, str]]
@@ -48,12 +51,24 @@ class TrajectoryEditOverlay:
         """Return active midpoint handles for tests and view coordination."""
         return list(self._midpoint_handles)
 
+    @property
+    def temporal_path_item(self) -> QGraphicsPathItem | None:
+        """Return the temporal preview path for diagnostics and tests."""
+        return self._temporal_path_item
+
+    @property
+    def selected_keyframe_id(self) -> str | None:
+        """Return the selected stable identity, if any."""
+        return self._selected_keyframe_id
+
     def show(self, snapshot: TrajectoryEditSnapshot) -> None:
         """Rebuild the active overlay from serialized session state."""
         self.clear()
         self._marker_id = snapshot["marker_id"]
         theme = ThemeManager().get_theme()
         selected_id = snapshot["selected_keyframe_id"]
+        self._selected_keyframe_id = selected_id
+        self._active_date_edit_id = snapshot["active_date_edit_id"]
 
         for keyframe in snapshot["keyframes"]:
             edit_id = keyframe["edit_id"]
@@ -107,6 +122,7 @@ class TrajectoryEditOverlay:
 
     def select(self, edit_id: str | None) -> None:
         """Update selected-handle styling without rebuilding geometry."""
+        self._selected_keyframe_id = edit_id
         theme = ThemeManager().get_theme()
         for handle in self._keyframe_handles:
             selected = handle.handle_id == edit_id
@@ -126,6 +142,9 @@ class TrajectoryEditOverlay:
         if self._path_item is not None:
             self._view.graphics_scene.removeItem(self._path_item)
             self._path_item = None
+        if self._temporal_path_item is not None:
+            self._view.graphics_scene.removeItem(self._temporal_path_item)
+            self._temporal_path_item = None
         for handle in self._keyframe_handles:
             self._view.graphics_scene.removeItem(handle)
         self._keyframe_handles.clear()
@@ -134,6 +153,8 @@ class TrajectoryEditOverlay:
         self._midpoint_handles.clear()
         self._view._hide_snap_indicator()
         self._marker_id = None
+        self._selected_keyframe_id = None
+        self._active_date_edit_id = None
 
     def _on_keyframe_selected(self, edit_id: str) -> None:
         self.select(edit_id)
@@ -153,6 +174,8 @@ class TrajectoryEditOverlay:
         }
         if self._path_item is not None:
             excluded.add(self._path_item)
+        if self._temporal_path_item is not None:
+            excluded.add(self._temporal_path_item)
         snap_result = self._view._snapping_manager.snap_point(
             scene_pos,
             self._view.transform(),
@@ -194,6 +217,8 @@ class TrajectoryEditOverlay:
         }
         if self._path_item is not None:
             excluded.add(self._path_item)
+        if self._temporal_path_item is not None:
+            excluded.add(self._temporal_path_item)
         snap_result = self._view._snapping_manager.snap_point(
             scene_pos,
             self._view.transform(),
@@ -226,6 +251,9 @@ class TrajectoryEditOverlay:
             if self._path_item is not None:
                 self._view.graphics_scene.removeItem(self._path_item)
                 self._path_item = None
+            if self._temporal_path_item is not None:
+                self._view.graphics_scene.removeItem(self._temporal_path_item)
+                self._temporal_path_item = None
             return
 
         path = QPainterPath()
@@ -242,3 +270,41 @@ class TrajectoryEditOverlay:
             self._path_item.setZValue(MAP_LAYER_Z_UI_OVERLAY - 1)
             self._view.graphics_scene.addItem(self._path_item)
         self._path_item.setPath(path)
+        self._rebuild_temporal_path()
+
+    def _rebuild_temporal_path(self) -> None:
+        """Highlight segments affected by the active retiming target."""
+        active_id = self._active_date_edit_id
+        if active_id is None:
+            if self._temporal_path_item is not None:
+                self._view.graphics_scene.removeItem(self._temporal_path_item)
+                self._temporal_path_item = None
+            return
+        active_index = next(
+            (
+                index
+                for index, handle in enumerate(self._keyframe_handles)
+                if handle.handle_id == active_id
+            ),
+            None,
+        )
+        if active_index is None:
+            return
+
+        affected = QPainterPath()
+        if active_index > 0:
+            affected.moveTo(self._keyframe_handles[active_index - 1].pos())
+            affected.lineTo(self._keyframe_handles[active_index].pos())
+        if active_index < len(self._keyframe_handles) - 1:
+            affected.moveTo(self._keyframe_handles[active_index].pos())
+            affected.lineTo(self._keyframe_handles[active_index + 1].pos())
+
+        if self._temporal_path_item is None:
+            self._temporal_path_item = QGraphicsPathItem()
+            theme = ThemeManager().get_theme()
+            pen = QPen(QColor(theme.get("error", "#e74c3c")), 5.0)
+            pen.setStyle(Qt.PenStyle.SolidLine)
+            self._temporal_path_item.setPen(pen)
+            self._temporal_path_item.setZValue(MAP_LAYER_Z_UI_OVERLAY - 0.5)
+            self._view.graphics_scene.addItem(self._temporal_path_item)
+        self._temporal_path_item.setPath(affected)

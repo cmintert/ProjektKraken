@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-08
-**Commit:** 1571209d
+**Commit:** 0d7885c0
 ---
 
 # Changelog
@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-08-08)* **Map / Trajectories**: Added direct temporal keyframe
+  editing through compact calendar controls and timeline scrubbing, with live
+  reordering, date feedback, affected-segment highlighting, and scoped cancel.
 - *(2026-08-08)* **Map / Trajectories**: Added direct spatial trajectory
   editing with draggable keyframes, midpoint insertion, snapping, compact
   Apply and Cancel controls, and focus-independent shortcuts.
@@ -38,6 +41,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-08)* **Testing / Trajectories**: Added temporal edit-session,
+  coordinator, overlay, shortcut, playhead restoration, and map-widget
+  regression coverage.
 - *(2026-08-08)* **Architecture / Trajectories**: Added isolated edit sessions,
   playback-marker protection, targeted authoritative reloads, and conflict
   handling that prevents external refreshes from overwriting working edits.

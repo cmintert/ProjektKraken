@@ -96,12 +96,36 @@ def test_edit_trajectory_action_and_compact_strip(map_widget, qtbot):
         ],
         playhead=0.0,
     )
+    edit_id = session.working_keyframes[0].edit_id
+    session.select_keyframe(edit_id)
     map_widget.show_trajectory_edit(session.to_snapshot())
 
     assert map_widget.trajectory_edit_strip.isVisible()
     assert "2 keyframes" in map_widget.trajectory_edit_label.text()
     assert not map_widget.btn_apply_trajectory.isEnabled()
     assert not marker.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsMovable
+    assert map_widget.trajectory_date_panel.isVisible()
+    assert map_widget.btn_edit_trajectory_date.isVisible()
+    assert not map_widget.trajectory_date_input.isEnabled()
+
+    requested_ids = []
+    map_widget.trajectory_date_edit_requested.connect(requested_ids.append)
+    qtbot.mouseClick(
+        map_widget.btn_edit_trajectory_date,
+        Qt.MouseButton.LeftButton,
+    )
+    assert requested_ids == [edit_id]
+
+    session.begin_date_edit(edit_id, current_playhead=5.0)
+    session.update_active_date(2.0)
+    map_widget.show_trajectory_edit(session.to_snapshot())
+
+    assert map_widget.trajectory_date_input.isEnabled()
+    assert map_widget.btn_finish_trajectory_date.isVisible()
+    assert map_widget.btn_cancel_trajectory_date.isVisible()
+    assert "Original:" in map_widget.trajectory_date_feedback.text()
+    assert "Proposed:" in map_widget.trajectory_date_feedback.text()
+    assert "Change: +2 days" in map_widget.trajectory_date_feedback.text()
 
     map_widget.clear_trajectory_edit()
 

@@ -124,3 +124,75 @@ def test_restore_original_discards_changes_and_conflict() -> None:
     assert session.is_conflicted is False
     assert session.working_keyframes == list(session.original_keyframes)
     assert session.working_keyframes[0] is not session.original_keyframes[0]
+
+
+def test_date_edit_reorders_by_stable_identity_and_tracks_feedback() -> None:
+    """Retiming may reorder points without detaching their spatial values."""
+    session = _session()
+    edit_id = session.working_keyframes[0].edit_id
+
+    jump_time = session.begin_date_edit(edit_id, current_playhead=4.0)
+    session.update_active_date(12.0)
+    snapshot = session.to_snapshot()
+
+    assert jump_time == 0.0
+    assert session.working_keyframes[1].edit_id == edit_id
+    assert session.working_keyframes[1].x == 0.1
+    assert snapshot["date_edit_original_t"] == 0.0
+    assert snapshot["date_edit_proposed_t"] == 12.0
+    assert snapshot["date_edit_delta"] == 12.0
+    assert session.finish_date_edit() == 12.0
+    assert session.active_date_edit_id is None
+
+
+def test_repeated_begin_preserves_date_edit_cancel_baseline() -> None:
+    session = _session()
+    edit_id = session.working_keyframes[0].edit_id
+    session.begin_date_edit(edit_id, current_playhead=4.0)
+    session.update_active_date(3.0)
+
+    jump_time = session.begin_date_edit(edit_id, current_playhead=8.0)
+    restore_playhead = session.cancel_date_edit()
+
+    assert jump_time == 3.0
+    assert restore_playhead == 4.0
+    assert session.working_keyframes[0].t == 0.0
+
+
+def test_date_edit_collision_remains_visible_and_blocks_apply() -> None:
+    """An invalid proposed date is preserved for correction, not overwritten."""
+    session = _session()
+    edit_id = session.working_keyframes[0].edit_id
+    session.begin_date_edit(edit_id, current_playhead=4.0)
+
+    session.update_active_date(10.0)
+
+    assert session.can_apply is False
+    assert session.validation_errors
+    assert next(
+        keyframe.t
+        for keyframe in session.working_keyframes
+        if keyframe.edit_id == edit_id
+    ) == 10.0
+
+
+def test_cancel_date_edit_restores_prior_working_date_and_playhead() -> None:
+    """Temporal cancel preserves earlier spatial edits in the same session."""
+    session = _session()
+    edit_id = session.working_keyframes[0].edit_id
+    session.move_keyframe(edit_id, 0.3, 0.4)
+    session.begin_date_edit(edit_id, current_playhead=4.0)
+    session.update_active_date(6.0)
+
+    restore_playhead = session.cancel_date_edit()
+
+    restored = next(
+        keyframe
+        for keyframe in session.working_keyframes
+        if keyframe.edit_id == edit_id
+    )
+    assert restore_playhead == 4.0
+    assert restored.t == 0.0
+    assert restored.x == 0.3
+    assert restored.y == 0.4
+    assert session.is_dirty is True

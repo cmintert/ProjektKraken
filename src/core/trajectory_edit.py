@@ -32,6 +32,11 @@ class TrajectoryEditSnapshot(TypedDict):
     keyframes: list[EditableKeyframeSnapshot]
     selected_keyframe_id: str | None
     selected_keyframe_index: int | None
+    active_date_edit_id: str | None
+    is_date_editing: bool
+    date_edit_original_t: float | None
+    date_edit_proposed_t: float | None
+    date_edit_delta: float | None
     keyframe_count: int
     is_dirty: bool
     is_conflicted: bool
@@ -53,6 +58,7 @@ class TrajectoryEditSession:
     active_date_edit_id: str | None
     playhead_at_session_start: float
     playhead_before_date_edit: float | None
+    date_edit_original_t: float | None
     is_dirty: bool
     is_conflicted: bool
     validation_errors: list[str]
@@ -99,6 +105,7 @@ class TrajectoryEditSession:
             active_date_edit_id=None,
             playhead_at_session_start=playhead,
             playhead_before_date_edit=None,
+            date_edit_original_t=None,
             is_dirty=False,
             is_conflicted=False,
             validation_errors=validate_keyframes(working),
@@ -108,6 +115,15 @@ class TrajectoryEditSession:
     def can_apply(self) -> bool:
         """Whether the working trajectory can be persisted."""
         return self.is_dirty and not self.is_conflicted and not self.validation_errors
+
+    @property
+    def active_date_value(self) -> float | None:
+        """Return the active keyframe's proposed date, if retiming."""
+        if self.active_date_edit_id is None:
+            return None
+        return self.working_keyframes[
+            self._index_of(self.active_date_edit_id)
+        ].t
 
     def select_keyframe(self, edit_id: str) -> None:
         """Select a keyframe by stable edit identity.
@@ -140,6 +156,88 @@ class TrajectoryEditSession:
         self.working_keyframes[index] = replace(current, x=x, y=y)
         self.selected_keyframe_id = edit_id
         self._refresh_state()
+
+    def begin_date_edit(self, edit_id: str, current_playhead: float) -> float:
+        """Begin retiming one stable keyframe and capture playhead state.
+
+        Args:
+            edit_id: Session-local keyframe identity.
+            current_playhead: Global playhead value before retiming begins.
+
+        Returns:
+            The keyframe date that the playhead should jump to.
+
+        Raises:
+            ValueError: If the identity or playhead value is invalid.
+
+        """
+        if not math.isfinite(current_playhead):
+            raise ValueError("Playhead time must be finite.")
+        index = self._index_of(edit_id)
+        if self.active_date_edit_id == edit_id:
+            return self.working_keyframes[index].t
+        if self.active_date_edit_id is not None:
+            raise ValueError("Finish the active keyframe date edit first.")
+        keyframe = self.working_keyframes[index]
+        self.selected_keyframe_id = edit_id
+        self.active_date_edit_id = edit_id
+        self.playhead_before_date_edit = current_playhead
+        self.date_edit_original_t = keyframe.t
+        return keyframe.t
+
+    def update_active_date(self, proposed_time: float) -> None:
+        """Update the active keyframe date while retaining invalid previews.
+
+        Timestamp collisions remain in the working state so the UI can explain
+        and correct them, while :attr:`can_apply` stays false.
+
+        Args:
+            proposed_time: Proposed lore-date value.
+
+        Raises:
+            ValueError: If no date edit is active or the value is non-finite.
+
+        """
+        if self.active_date_edit_id is None:
+            raise ValueError("No keyframe date edit is active.")
+        if not math.isfinite(proposed_time):
+            raise ValueError("Keyframe time must be finite.")
+        index = self._index_of(self.active_date_edit_id)
+        current = self.working_keyframes[index]
+        self.working_keyframes[index] = replace(current, t=proposed_time)
+        self.selected_keyframe_id = current.edit_id
+        self._refresh_state()
+
+    def finish_date_edit(self) -> float | None:
+        """Keep the proposed date and end only the temporal sub-operation."""
+        if self.active_date_edit_id is None:
+            return None
+        proposed_time = self.working_keyframes[
+            self._index_of(self.active_date_edit_id)
+        ].t
+        self.active_date_edit_id = None
+        self.playhead_before_date_edit = None
+        self.date_edit_original_t = None
+        return proposed_time
+
+    def cancel_date_edit(self) -> float | None:
+        """Restore the pre-edit working date and return the prior playhead."""
+        if self.active_date_edit_id is None:
+            return None
+        edit_id = self.active_date_edit_id
+        index = self._index_of(edit_id)
+        current = self.working_keyframes[index]
+        if self.date_edit_original_t is not None:
+            self.working_keyframes[index] = replace(
+                current, t=self.date_edit_original_t
+            )
+        playhead = self.playhead_before_date_edit
+        self.active_date_edit_id = None
+        self.playhead_before_date_edit = None
+        self.date_edit_original_t = None
+        self.selected_keyframe_id = edit_id
+        self._refresh_state()
+        return playhead
 
     def insert_between(
         self,
@@ -194,6 +292,10 @@ class TrajectoryEditSession:
             return False
         index = self._index_of(self.selected_keyframe_id)
         del self.working_keyframes[index]
+        if self.active_date_edit_id == self.selected_keyframe_id:
+            self.active_date_edit_id = None
+            self.playhead_before_date_edit = None
+            self.date_edit_original_t = None
         if self.working_keyframes:
             next_index = min(index, len(self.working_keyframes) - 1)
             self.selected_keyframe_id = self.working_keyframes[next_index].edit_id
@@ -212,6 +314,7 @@ class TrajectoryEditSession:
         self.selected_keyframe_id = None
         self.active_date_edit_id = None
         self.playhead_before_date_edit = None
+        self.date_edit_original_t = None
         self.is_conflicted = False
         self._refresh_state()
 
@@ -227,6 +330,16 @@ class TrajectoryEditSession:
         selected_index: int | None = None
         if self.selected_keyframe_id is not None:
             selected_index = self._index_of(self.selected_keyframe_id)
+        proposed_time: float | None = None
+        if self.active_date_edit_id is not None:
+            proposed_time = self.working_keyframes[
+                self._index_of(self.active_date_edit_id)
+            ].t
+        date_delta = (
+            proposed_time - self.date_edit_original_t
+            if proposed_time is not None and self.date_edit_original_t is not None
+            else None
+        )
         return {
             "map_id": self.map_id,
             "marker_id": self.marker_id,
@@ -242,6 +355,11 @@ class TrajectoryEditSession:
             ],
             "selected_keyframe_id": self.selected_keyframe_id,
             "selected_keyframe_index": selected_index,
+            "active_date_edit_id": self.active_date_edit_id,
+            "is_date_editing": self.active_date_edit_id is not None,
+            "date_edit_original_t": self.date_edit_original_t,
+            "date_edit_proposed_t": proposed_time,
+            "date_edit_delta": date_delta,
             "keyframe_count": len(self.working_keyframes),
             "is_dirty": self.is_dirty,
             "is_conflicted": self.is_conflicted,

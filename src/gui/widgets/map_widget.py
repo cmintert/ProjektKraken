@@ -49,6 +49,7 @@ from src.gui.mixins.map_layer_mixin import MapLayerMixin
 from src.gui.mixins.map_nesting_mixin import MapNestingMixin
 from src.gui.mixins.map_trajectory_mixin import MapTrajectoryMixin
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.compact_date_widget import CompactDateWidget
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 from src.gui.widgets.map.map_layer_model import MapLayerModel
@@ -209,6 +210,11 @@ class MapWidget(
     trajectory_apply_requested = Signal()
     trajectory_cancel_requested = Signal()
     trajectory_discard_reload_requested = Signal()
+    trajectory_date_edit_requested = Signal(str)
+    trajectory_date_value_changed = Signal(float)
+    trajectory_date_step_requested = Signal(float)
+    trajectory_date_edit_done_requested = Signal()
+    trajectory_date_edit_cancel_requested = Signal()
     jump_to_time_requested = Signal(float)  # target_time
     map_scale_changed = Signal(float)  # For persisting map scale
     show_onboarding_requested = Signal()  # To trigger animation or hints
@@ -462,6 +468,55 @@ class MapWidget(
         self.trajectory_edit_strip.hide()
         layout.addWidget(self.trajectory_edit_strip)
 
+        self.trajectory_date_panel = QFrame(self)
+        self.trajectory_date_panel.setStyleSheet(StyleHelper.get_frame_style())
+        date_panel_layout = QHBoxLayout(self.trajectory_date_panel)
+        date_panel_layout.setContentsMargins(8, 4, 8, 4)
+        date_panel_layout.setSpacing(8)
+        self.trajectory_date_feedback = QLabel()
+        date_panel_layout.addWidget(self.trajectory_date_feedback)
+        self.trajectory_date_input = CompactDateWidget(self.trajectory_date_panel)
+        self.trajectory_date_input.value_changed.connect(
+            self.trajectory_date_value_changed.emit
+        )
+        date_panel_layout.addWidget(self.trajectory_date_input)
+        self.btn_trajectory_date_previous = QPushButton("−1 day")
+        self.btn_trajectory_date_previous.clicked.connect(
+            lambda: self.trajectory_date_step_requested.emit(-1.0)
+        )
+        date_panel_layout.addWidget(self.btn_trajectory_date_previous)
+        self.btn_trajectory_date_next = QPushButton("+1 day")
+        self.btn_trajectory_date_next.clicked.connect(
+            lambda: self.trajectory_date_step_requested.emit(1.0)
+        )
+        date_panel_layout.addWidget(self.btn_trajectory_date_next)
+        self.btn_edit_trajectory_date = QPushButton("Edit Date")
+        self.btn_edit_trajectory_date.setStyleSheet(
+            StyleHelper.get_primary_button_style()
+        )
+        self.btn_edit_trajectory_date.clicked.connect(
+            self._request_selected_trajectory_date_edit
+        )
+        date_panel_layout.addWidget(self.btn_edit_trajectory_date)
+        self.btn_finish_trajectory_date = QPushButton("Done")
+        self.btn_finish_trajectory_date.setStyleSheet(
+            StyleHelper.get_primary_button_style()
+        )
+        self.btn_finish_trajectory_date.clicked.connect(
+            self.trajectory_date_edit_done_requested.emit
+        )
+        date_panel_layout.addWidget(self.btn_finish_trajectory_date)
+        self.btn_cancel_trajectory_date = QPushButton("Cancel Date")
+        self.btn_cancel_trajectory_date.setStyleSheet(
+            StyleHelper.get_secondary_button_style()
+        )
+        self.btn_cancel_trajectory_date.clicked.connect(
+            self.trajectory_date_edit_cancel_requested.emit
+        )
+        date_panel_layout.addWidget(self.btn_cancel_trajectory_date)
+        self.trajectory_date_panel.hide()
+        layout.addWidget(self.trajectory_date_panel)
+
         self._splitter = QSplitter(Qt.Orientation.Horizontal, self)
 
         self._splitter.addWidget(self.view)
@@ -618,6 +673,7 @@ class MapWidget(
         self._maps_data: list[Map] = []  # List of maps for selector
         self._playhead_time: float = 0.0  # Current playhead time from Timeline
         self._current_time: float = 0.0  # Story's "Now" time from Timeline
+        self._calendar_converter: CalendarConverter | None = None
 
         self._active_trajectories: dict[str, list] = {}  # marker_id -> list[Keyframe]
         self._trajectory_edit_marker_id: str | None = None
@@ -789,6 +845,12 @@ class MapWidget(
         )
         if selected_marker is not None:
             self.trajectory_edit_requested.emit(selected_marker.marker_id)
+
+    def _request_selected_trajectory_date_edit(self) -> None:
+        """Request temporal editing for the selected stable keyframe."""
+        selected_id = self.view.trajectory_edit_overlay.selected_keyframe_id
+        if selected_id is not None:
+            self.trajectory_date_edit_requested.emit(selected_id)
 
     def _update_add_keyframe_action(self) -> None:
         """Update keyframe-action visibility for the current marker selection."""
@@ -1460,8 +1522,10 @@ class MapWidget(
 
     def set_calendar_converter(self, converter: CalendarConverter) -> None:
         """Sets the calendar converter for formatting keyframe date labels."""
+        self._calendar_converter = converter
         self.view.set_calendar_converter(converter)
         self.layer_panel.set_calendar_converter(converter)
+        self.trajectory_date_input.set_calendar_converter(converter)
 
     # -- Keyframe delete provided by MapTrajectoryMixin ----------------
 

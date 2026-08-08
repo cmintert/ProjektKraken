@@ -60,6 +60,7 @@ class MapTrajectoryMixin:
         _trajectory_edit_keyframes: list[Keyframe]
         _playhead_time: float
         _current_time: float
+        _calendar_converter: Any
         _selected_marker_id: str | None
         _pinned_marker_id: str | None
         _pinned_original_t: float | None
@@ -78,6 +79,14 @@ class MapTrajectoryMixin:
         btn_reload_trajectory: Any
         btn_apply_trajectory: Any
         btn_cancel_trajectory: Any
+        trajectory_date_panel: Any
+        trajectory_date_feedback: Any
+        trajectory_date_input: Any
+        btn_trajectory_date_previous: Any
+        btn_trajectory_date_next: Any
+        btn_edit_trajectory_date: Any
+        btn_finish_trajectory_date: Any
+        btn_cancel_trajectory_date: Any
 
         def _update_mode_indicator(self) -> None:
             ...
@@ -182,18 +191,55 @@ class MapTrajectoryMixin:
         selected_index = snapshot["selected_keyframe_index"]
         if selected_index is None:
             self.trajectory_keyframe_label.setText("Select a keyframe")
+            self.trajectory_date_panel.hide()
         else:
             keyframe = snapshot["keyframes"][selected_index]
             self.trajectory_keyframe_label.setText(
-                f"Keyframe {selected_index + 1} of {count} | T {keyframe['t']:g}"
+                f"Keyframe {selected_index + 1} of {count} | "
+                f"{self._format_trajectory_date(keyframe['t'])}"
             )
+            self.trajectory_date_input.set_value(keyframe["t"])
+            is_date_editing = snapshot["is_date_editing"]
+            if is_date_editing:
+                original = snapshot["date_edit_original_t"]
+                proposed = snapshot["date_edit_proposed_t"]
+                delta = snapshot["date_edit_delta"]
+                feedback = "Editing keyframe date"
+                if delta is not None:
+                    feedback = (
+                        "Original: "
+                        f"{self._format_trajectory_date(original)} | Proposed: "
+                        f"{self._format_trajectory_date(proposed)} | Change: "
+                        f"{delta:+g} days"
+                    )
+                self.trajectory_date_feedback.setText(feedback)
+            else:
+                self.trajectory_date_feedback.setText(
+                    f"Date: {self._format_trajectory_date(keyframe['t'])}"
+                )
+            self.trajectory_date_input.setEnabled(is_date_editing and not pending)
+            self.btn_trajectory_date_previous.setEnabled(
+                is_date_editing and not pending
+            )
+            self.btn_trajectory_date_next.setEnabled(
+                is_date_editing and not pending
+            )
+            self.btn_edit_trajectory_date.setVisible(not is_date_editing)
+            self.btn_edit_trajectory_date.setEnabled(not pending)
+            self.btn_finish_trajectory_date.setVisible(is_date_editing)
+            self.btn_finish_trajectory_date.setEnabled(not pending)
+            self.btn_cancel_trajectory_date.setVisible(is_date_editing)
+            self.btn_cancel_trajectory_date.setEnabled(not pending)
+            self.trajectory_date_panel.show()
 
         messages = list(snapshot["validation_errors"])
         if snapshot["is_conflicted"]:
             messages.insert(0, "Trajectory changed externally; Apply is blocked.")
         self.trajectory_validation_label.setText(" ".join(messages))
         self.btn_delete_trajectory_keyframe.setEnabled(
-            snapshot["selected_keyframe_id"] is not None and not pending
+            snapshot["selected_keyframe_id"] is not None
+            and not snapshot["is_date_editing"]
+            and not pending
         )
         self.btn_reload_trajectory.setVisible(snapshot["is_conflicted"])
         self.btn_apply_trajectory.setEnabled(snapshot["can_apply"] and not pending)
@@ -216,10 +262,22 @@ class MapTrajectoryMixin:
         self._trajectory_edit_marker_id = None
         self._trajectory_edit_keyframes = []
         self.trajectory_edit_strip.hide()
+        self.trajectory_date_panel.hide()
         self._update_trajectory_positions(force_all=True)
         if marker_id == self._selected_marker_id and marker_id is not None:
             self._update_trajectory_visualization(marker_id)
         self._update_add_keyframe_action()
+
+    def _format_trajectory_date(self, value: float | None) -> str:
+        """Format a lore date through the active calendar when available."""
+        if value is None:
+            return "—"
+        if self._calendar_converter is not None:
+            try:
+                return str(self._calendar_converter.format_date(value))
+            except Exception:
+                logger.warning("Could not format trajectory date %s", value)
+        return f"T {value:g}"
 
     def _update_marker_indicators(self) -> None:
         """Updates the has_keyframes state for all markers."""
