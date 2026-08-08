@@ -12,7 +12,11 @@ from src.services.repositories.map_repository import MapRepository
 from src.services.repositories.meta_repository import MetaRepository
 from src.services.repositories.relation_repository import RelationRepository
 from src.services.repositories.tag_repository import TagRepository
-from src.services.repositories.trajectory_repository import TrajectoryRepository
+from src.services.repositories.trajectory_repository import (
+    AmbiguousTrajectoryError,
+    TrajectoryConflictError,
+    TrajectoryRepository,
+)
 
 __all__ = [
     "EventRepository",
@@ -23,5 +27,7 @@ __all__ = [
     "AttachmentRepository",
     "TagRepository",
     "TrajectoryRepository",
+    "AmbiguousTrajectoryError",
+    "TrajectoryConflictError",
     "MetaRepository",
 ]

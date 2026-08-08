@@ -6,18 +6,52 @@ managing temporal trajectories for map markers.
 
 import json
 import logging
+import sqlite3
+import time
 import uuid
-from typing import List, Optional, Tuple
+from typing import Final, List, Optional, Tuple, TypedDict, cast
 
 from src.core.trajectory import (
     KEYFRAME_TIME_EPSILON,
     Keyframe,
+    clone_keyframes,
     keyframes_to_mfjson,
     mfjson_to_keyframes,
+    validate_keyframes,
 )
 from src.services.repositories.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
+
+
+class AmbiguousTrajectoryError(ValueError):
+    """Raised when a marker has more than one trajectory row."""
+
+
+class TrajectoryConflictError(ValueError):
+    """Raised when persisted trajectory state differs from an expected snapshot."""
+
+
+class TrajectorySnapshot(TypedDict):
+    """JSON-safe, exact snapshot of one ``moving_features`` row."""
+
+    id: str
+    marker_id: str
+    t_start: float
+    t_end: float
+    trajectory: str
+    properties: str | None
+    created_at: float | None
+
+
+class _ExpectedSnapshotUnset:
+    """Sentinel type for callers that do not request conflict detection."""
+
+
+_EXPECTED_SNAPSHOT_UNSET: Final = _ExpectedSnapshotUnset()
+_SNAPSHOT_COLUMNS: Final = (
+    "id, marker_id, t_start, t_end, trajectory, properties, created_at"
+)
 
 
 class TrajectoryRepository(BaseRepository):
@@ -44,16 +78,17 @@ class TrajectoryRepository(BaseRepository):
             The ID of the inserted trajectory record.
 
         """
-        if not trajectory:
+        keyframes = clone_keyframes(trajectory)
+        if not keyframes:
             raise ValueError("Cannot insert empty trajectory")
 
-        # Sort trajectory by time to ensure t_start/t_end are correct
-        trajectory.sort(key=lambda kf: kf.t)
-        t_start = trajectory[0].t
-        t_end = trajectory[-1].t
+        self._validate_complete_trajectory(keyframes)
+        keyframes.sort(key=lambda kf: kf.t)
+        t_start = keyframes[0].t
+        t_end = keyframes[-1].t
 
         # Serialize trajectory to MF-JSON format
-        traj_json = json.dumps(keyframes_to_mfjson(trajectory))
+        traj_json = json.dumps(keyframes_to_mfjson(keyframes))
         props_json = self._serialize_json(properties or {})
 
         feature_id = str(uuid.uuid4())
@@ -70,6 +105,304 @@ class TrajectoryRepository(BaseRepository):
 
         logger.info(f"Inserted trajectory {feature_id} for marker {marker_id}")
         return feature_id
+
+    def get_marker_trajectory_snapshot(
+        self, map_id: str, object_id: str
+    ) -> TrajectorySnapshot | None:
+        """Return the marker's one exact trajectory row, if present.
+
+        Args:
+            map_id: ID of the containing map.
+            object_id: Entity or event ID associated with the marker.
+
+        Returns:
+            An independent JSON-safe row snapshot, or ``None``.
+
+        Raises:
+            ValueError: If the marker does not exist.
+            AmbiguousTrajectoryError: If more than one trajectory row exists.
+
+        """
+        connection = self._require_connection()
+        marker_db_id = self._resolve_marker_db_id(connection, map_id, object_id)
+        return self._get_single_snapshot(connection, marker_db_id, object_id)
+
+    def set_marker_trajectory(
+        self,
+        map_id: str,
+        object_id: str,
+        keyframes: list[Keyframe],
+        *,
+        expected_snapshot: (
+            TrajectorySnapshot | None | _ExpectedSnapshotUnset
+        ) = _EXPECTED_SNAPSHOT_UNSET,
+    ) -> TrajectorySnapshot | None:
+        """Atomically replace a marker's complete trajectory.
+
+        Existing row identity, properties, and creation time are preserved.
+        One-keyframe trajectories remain stored; only an empty replacement
+        deletes the row.
+
+        Args:
+            map_id: ID of the containing map.
+            object_id: Entity or event ID associated with the marker.
+            keyframes: Complete desired trajectory state.
+            expected_snapshot: Exact state the caller expects to replace. Pass
+                ``None`` to require that no row exists. Omitting this argument
+                disables conflict detection for compatibility callers.
+
+        Returns:
+            The exact persisted row snapshot, or ``None`` after deletion.
+
+        Raises:
+            ValueError: If the marker or replacement data is invalid.
+            AmbiguousTrajectoryError: If more than one trajectory row exists.
+            TrajectoryConflictError: If the current row is not the expected row.
+
+        """
+        replacement = clone_keyframes(keyframes)
+        self._validate_complete_trajectory(replacement)
+        replacement.sort(key=lambda keyframe: keyframe.t)
+
+        trajectory_json = (
+            json.dumps(keyframes_to_mfjson(replacement)) if replacement else None
+        )
+
+        with self.transaction() as connection:
+            marker_db_id = self._resolve_marker_db_id(
+                connection, map_id, object_id
+            )
+            current = self._get_single_snapshot(
+                connection, marker_db_id, object_id
+            )
+            self._check_expected_snapshot(current, expected_snapshot)
+
+            if not replacement:
+                if current is not None:
+                    connection.execute(
+                        "DELETE FROM moving_features WHERE id = ?", (current["id"],)
+                    )
+                return None
+
+            if current is None:
+                trajectory_id = str(uuid.uuid4())
+                properties = "{}"
+                created_at = time.time()
+                connection.execute(
+                    f"""
+                    INSERT INTO moving_features ({_SNAPSHOT_COLUMNS})
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        trajectory_id,
+                        marker_db_id,
+                        replacement[0].t,
+                        replacement[-1].t,
+                        trajectory_json,
+                        properties,
+                        created_at,
+                    ),
+                )
+            else:
+                trajectory_id = current["id"]
+                connection.execute(
+                    """
+                    UPDATE moving_features
+                    SET t_start = ?, t_end = ?, trajectory = ?
+                    WHERE id = ?
+                    """,
+                    (
+                        replacement[0].t,
+                        replacement[-1].t,
+                        trajectory_json,
+                        trajectory_id,
+                    ),
+                )
+
+            row = connection.execute(
+                f"SELECT {_SNAPSHOT_COLUMNS} FROM moving_features WHERE id = ?",
+                (trajectory_id,),
+            ).fetchone()
+            if row is None:
+                raise RuntimeError("Trajectory replacement did not persist a row")
+            return self._snapshot_from_row(row)
+
+    def restore_marker_trajectory_snapshot(
+        self,
+        map_id: str,
+        object_id: str,
+        snapshot: TrajectorySnapshot | None,
+        *,
+        expected_snapshot: TrajectorySnapshot | None,
+    ) -> TrajectorySnapshot | None:
+        """Atomically restore an exact row snapshot for undo or redo.
+
+        Args:
+            map_id: ID of the containing map.
+            object_id: Entity or event ID associated with the marker.
+            snapshot: Exact row to restore, or ``None`` to delete the row.
+            expected_snapshot: Exact state that must currently be persisted.
+
+        Returns:
+            An independent copy of the restored snapshot, or ``None``.
+
+        Raises:
+            ValueError: If the marker or snapshot is invalid.
+            AmbiguousTrajectoryError: If more than one trajectory row exists.
+            TrajectoryConflictError: If persisted state changed unexpectedly.
+
+        """
+        replacement = self._copy_snapshot(snapshot) if snapshot is not None else None
+        expected = (
+            self._copy_snapshot(expected_snapshot)
+            if expected_snapshot is not None
+            else None
+        )
+
+        with self.transaction() as connection:
+            marker_db_id = self._resolve_marker_db_id(
+                connection, map_id, object_id
+            )
+            current = self._get_single_snapshot(
+                connection, marker_db_id, object_id
+            )
+            self._check_expected_snapshot(current, expected)
+
+            if replacement is not None and replacement["marker_id"] != marker_db_id:
+                raise ValueError("Trajectory snapshot belongs to a different marker")
+
+            if current is not None:
+                connection.execute(
+                    "DELETE FROM moving_features WHERE id = ?", (current["id"],)
+                )
+
+            if replacement is not None:
+                connection.execute(
+                    f"""
+                    INSERT INTO moving_features ({_SNAPSHOT_COLUMNS})
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        replacement["id"],
+                        replacement["marker_id"],
+                        replacement["t_start"],
+                        replacement["t_end"],
+                        replacement["trajectory"],
+                        replacement["properties"],
+                        replacement["created_at"],
+                    ),
+                )
+
+            return self._copy_snapshot(replacement) if replacement is not None else None
+
+    @staticmethod
+    def _snapshot_keys() -> tuple[str, ...]:
+        """Return snapshot keys in database column order."""
+        return (
+            "id",
+            "marker_id",
+            "t_start",
+            "t_end",
+            "trajectory",
+            "properties",
+            "created_at",
+        )
+
+    @classmethod
+    def _snapshot_from_row(cls, row: sqlite3.Row) -> TrajectorySnapshot:
+        """Create an independent typed snapshot from a SQLite row."""
+        return cast(
+            TrajectorySnapshot,
+            {key: row[key] for key in cls._snapshot_keys()},
+        )
+
+    @classmethod
+    def _copy_snapshot(cls, snapshot: TrajectorySnapshot) -> TrajectorySnapshot:
+        """Validate and copy a snapshot received across a command boundary."""
+        missing = [key for key in cls._snapshot_keys() if key not in snapshot]
+        if missing:
+            raise ValueError(
+                f"Trajectory snapshot is missing fields: {', '.join(missing)}"
+            )
+        return TrajectorySnapshot(
+            id=snapshot["id"],
+            marker_id=snapshot["marker_id"],
+            t_start=snapshot["t_start"],
+            t_end=snapshot["t_end"],
+            trajectory=snapshot["trajectory"],
+            properties=snapshot["properties"],
+            created_at=snapshot["created_at"],
+        )
+
+    @staticmethod
+    def _resolve_marker_db_id(
+        connection: sqlite3.Connection, map_id: str, object_id: str
+    ) -> str:
+        """Resolve one marker database ID from its map and object identity."""
+        rows = connection.execute(
+            "SELECT id FROM markers WHERE map_id = ? AND object_id = ?",
+            (map_id, object_id),
+        ).fetchall()
+        if not rows:
+            raise ValueError(f"Marker not found: map={map_id}, obj={object_id}")
+        if len(rows) > 1:
+            raise ValueError(
+                f"Multiple markers found: map={map_id}, obj={object_id}"
+            )
+        return str(rows[0]["id"])
+
+    def _get_single_snapshot(
+        self,
+        connection: sqlite3.Connection,
+        marker_db_id: str,
+        object_id: str,
+    ) -> TrajectorySnapshot | None:
+        """Return one exact row or report unsupported duplicate rows."""
+        rows = connection.execute(
+            f"""
+            SELECT {_SNAPSHOT_COLUMNS}
+            FROM moving_features
+            WHERE marker_id = ?
+            ORDER BY t_start, id
+            """,
+            (marker_db_id,),
+        ).fetchall()
+        if len(rows) > 1:
+            raise AmbiguousTrajectoryError(
+                f"Marker {object_id} has {len(rows)} trajectory rows"
+            )
+        return self._snapshot_from_row(rows[0]) if rows else None
+
+    @staticmethod
+    def _check_expected_snapshot(
+        current: TrajectorySnapshot | None,
+        expected: TrajectorySnapshot | None | _ExpectedSnapshotUnset,
+    ) -> None:
+        """Reject replacement when the persisted row changed after capture."""
+        if isinstance(expected, _ExpectedSnapshotUnset):
+            return
+        if current != expected:
+            raise TrajectoryConflictError(
+                "Trajectory changed after the edit snapshot was captured"
+            )
+
+    @staticmethod
+    def _validate_complete_trajectory(keyframes: list[Keyframe]) -> None:
+        """Raise one stable repository error for invalid trajectory values."""
+        errors = validate_keyframes(keyframes)
+        if errors:
+            raise ValueError("Invalid trajectory: " + " ".join(errors))
+
+    @staticmethod
+    def _require_single_trajectory(
+        trajectories: List[Tuple[str, List[Keyframe]]], object_id: str
+    ) -> Tuple[str, List[Keyframe]] | None:
+        """Return one legacy trajectory tuple without silently picking a row."""
+        if len(trajectories) > 1:
+            raise AmbiguousTrajectoryError(
+                f"Marker {object_id} has {len(trajectories)} trajectory rows"
+            )
+        return trajectories[0] if trajectories else None
 
     def get_by_marker_db_id(
         self, marker_db_id: str
@@ -214,9 +547,10 @@ class TrajectoryRepository(BaseRepository):
         # 2. Get existing trajectories
         trajectories = self.get_by_marker_db_id(marker_db_id)
 
-        if trajectories:
-            # Update existing (pick the last one based on t_start if multiple, or just first)
-            traj_id, keyframes = trajectories[0]
+        existing = self._require_single_trajectory(trajectories, object_id)
+
+        if existing:
+            traj_id, keyframes = existing
 
             # Remove any existing keyframe at exactly this time (or within small epsilon)
             keyframes = [
@@ -272,7 +606,10 @@ class TrajectoryRepository(BaseRepository):
         if not trajectories:
             raise ValueError(f"No trajectory found for marker {object_id}")
 
-        traj_id, keyframes = trajectories[0]
+        existing = self._require_single_trajectory(trajectories, object_id)
+        if existing is None:
+            raise ValueError(f"No trajectory found for marker {object_id}")
+        traj_id, keyframes = existing
 
         # 3. Find keyframe at old_t (within epsilon)
         target_kf = None
@@ -331,7 +668,10 @@ class TrajectoryRepository(BaseRepository):
         if not trajectories:
             raise ValueError(f"No trajectory found for marker {object_id}")
 
-        traj_id, keyframes = trajectories[0]
+        existing = self._require_single_trajectory(trajectories, object_id)
+        if existing is None:
+            raise ValueError(f"No trajectory found for marker {object_id}")
+        traj_id, keyframes = existing
 
         # 3. Find and remove keyframe at t (within epsilon)
         original_count = len(keyframes)
@@ -342,11 +682,9 @@ class TrajectoryRepository(BaseRepository):
 
         logger.info(f"Deleted keyframe at t={t:.2f} for {object_id}")
 
-        # 4. If trajectory now has less than 2 keyframes, delete the entire trajectory
-        if len(keyframes) < 2:
-            logger.info(
-                f"Trajectory {traj_id} has <2 keyframes, deleting entire trajectory"
-            )
+        # 4. Delete the row only after its final keyframe is removed.
+        if not keyframes:
+            logger.info(f"Trajectory {traj_id} is empty; deleting trajectory row")
             with self.transaction() as conn:
                 conn.execute("DELETE FROM moving_features WHERE id = ?", (traj_id,))
             return None
@@ -362,9 +700,12 @@ class TrajectoryRepository(BaseRepository):
         if not keyframes:
             return
 
-        t_start = keyframes[0].t
-        t_end = keyframes[-1].t
-        traj_json = json.dumps(keyframes_to_mfjson(keyframes))
+        replacement = clone_keyframes(keyframes)
+        self._validate_complete_trajectory(replacement)
+        replacement.sort(key=lambda keyframe: keyframe.t)
+        t_start = replacement[0].t
+        t_end = replacement[-1].t
+        traj_json = json.dumps(keyframes_to_mfjson(replacement))
 
         sql = """
             UPDATE moving_features

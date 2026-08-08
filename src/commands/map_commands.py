@@ -52,6 +52,7 @@ from src.commands.raster_commands import (  # noqa: F401
     SetRasterMappingCommand,
     StrokeRasterCommand,
 )
+from src.commands.trajectory_commands import UpdateTrajectoryCommand  # noqa: F401
 
 __all__ = [
     # Map CRUD
@@ -70,6 +71,7 @@ __all__ = [
     "UpdateMarkerColorCommand",
     "UpdateMarkerAttributeCommand",
     "DeleteKeyframeCommand",
+    "UpdateTrajectoryCommand",
     # Layer hierarchy
     "SetLayerVisibilityCommand",
     "MoveLayerCommand",

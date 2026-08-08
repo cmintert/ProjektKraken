@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-08
-**Commit:** 193e08e6
+**Commit:** b95f574b
 ---
 
 # Changelog
@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-08-08)* **Architecture / Trajectories**: Added atomic complete-row
+  trajectory replacement, stale-snapshot conflict detection, and persistent
+  exact undo and redo through `UpdateTrajectoryCommand`.
 - *(2026-08-08)* **Map / Trajectories**: Added stable editable-keyframe values,
   independent snapshot cloning, midpoint-time inference, and validation for
   finite dates, normalized coordinates, and timestamp collisions.
@@ -21,6 +24,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-08)* **Map / Trajectories**: Preserved one-keyframe trajectories
+  and rejected ambiguous duplicate trajectory rows instead of silently choosing
+  or deleting data.
 - *(2026-08-03)* **Longform / Security**: Restricted default publishing to
   localhost and made HTTP longform reads unable to modify world databases.
 - *(2026-08-06)* **Longform / Security**: Hardened embedded longform publishing
@@ -29,6 +35,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-08)* **Testing / Trajectories**: Added repository and command
+  coverage for metadata preservation, zero- and one-point states, conflicts,
+  rollback, snapshot isolation, and persistent history reconstruction.
 - *(2026-08-08)* **Testing / Trajectories**: Added focused coverage for
   trajectory snapshot independence, validation boundaries, midpoint inference,
   and documented interpolation clamping behavior.
