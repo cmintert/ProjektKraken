@@ -164,6 +164,26 @@ def test_edit_trajectory_action_and_compact_strip(map_widget, qtbot):
     assert not marker.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsMovable
 
 
+def test_duplicate_trajectory_rows_are_not_used_for_playback(map_widget, qtbot):
+    """Ambiguous marker trajectories are suppressed instead of overwritten."""
+    _show_map_with_marker(map_widget, qtbot)
+    row = {
+        "marker_id": "marker1",
+        "trajectory_id": "trajectory-1",
+        "keyframes": [
+            {"t": 0.0, "x": 0.2, "y": 0.3},
+            {"t": 10.0, "x": 0.8, "y": 0.7},
+        ],
+        "row_snapshot": {},
+    }
+
+    map_widget.set_trajectories(
+        [row, {**row, "trajectory_id": "trajectory-2"}]
+    )
+
+    assert "marker1" not in map_widget._active_trajectories
+
+
 def test_speed_equalization_anchor_and_preview_controls(map_widget, qtbot):
     """The compact speed workflow exposes an inspectable working preview."""
     _show_map_with_marker(map_widget, qtbot)

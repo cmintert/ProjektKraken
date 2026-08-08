@@ -101,11 +101,29 @@ class MapTrajectoryMixin:
 
         """
         self._active_trajectories.clear()
+        marker_counts: dict[str, int] = {}
+        for trajectory in trajectories:
+            marker_id = str(trajectory["marker_id"])
+            marker_counts[marker_id] = marker_counts.get(marker_id, 0) + 1
+
+        ambiguous_marker_ids = {
+            marker_id
+            for marker_id, count in marker_counts.items()
+            if count > 1
+        }
+        for marker_id in sorted(ambiguous_marker_ids):
+            logger.warning(
+                "Ignoring ambiguous duplicate trajectories for marker %s",
+                marker_id,
+            )
+
         count = 0
         from src.core.trajectory import Keyframe
 
         for trajectory in trajectories:
             marker_id = str(trajectory["marker_id"])
+            if marker_id in ambiguous_marker_ids:
+                continue
             keyframes = [
                 Keyframe(
                     t=float(keyframe["t"]),

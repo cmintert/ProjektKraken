@@ -62,6 +62,7 @@ class TrajectoryEditCoordinator(QObject):
         if self._bound:
             return
         widget = self._window.map_widget
+        widget.map_selected.connect(self.on_map_selected)
         widget.trajectory_edit_requested.connect(self.start_edit)
         widget.trajectory_keyframe_selected.connect(self.select_keyframe)
         widget.trajectory_keyframe_moved.connect(self.move_keyframe)
@@ -104,6 +105,12 @@ class TrajectoryEditCoordinator(QObject):
             Qt.ConnectionType.QueuedConnection,
         )
         self._bound = True
+
+    @Slot(str)
+    def on_map_selected(self, map_id: str) -> None:
+        """Discard an active edit when the user changes map context."""
+        if self._session is not None and self._session.map_id != map_id:
+            self.cancel()
 
     @Slot(str, list)
     def on_trajectories_ready(

@@ -110,6 +110,16 @@ def test_cancel_discards_preview_without_command():
     window.map_widget.clear_trajectory_edit.assert_called_once()
 
 
+def test_switching_maps_discards_active_edit():
+    coordinator, window = _coordinator()
+    coordinator.start_edit("marker-1")
+
+    coordinator.on_map_selected("map-2")
+
+    assert not coordinator.is_active
+    window.map_widget.clear_trajectory_edit.assert_called_once()
+
+
 def test_apply_emits_one_atomic_command_and_waits_for_reload():
     coordinator, window = _coordinator()
     commands = []

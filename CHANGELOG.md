@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-08
-**Commit:** c4d4ef72
+**Commit:** 84793129
 ---
 
 # Changelog
@@ -34,6 +34,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-08)* **Map / Trajectories**: Discarded active trajectory edits
+  when switching maps and suppressed ambiguous duplicate trajectory rows from
+  playback instead of silently overwriting them.
 - *(2026-08-08)* **Map / Trajectories**: Kept trajectory editing controls at
   their content height and collapsed inactive calendar controls so the map
   retains the available workspace.
