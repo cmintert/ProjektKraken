@@ -2,9 +2,19 @@
 Unit tests for trajectory interpolation logic.
 """
 
+import math
+
 import pytest
 
-from src.core.trajectory import Keyframe, interpolate_position
+from src.core.trajectory import (
+    KEYFRAME_TIME_EPSILON,
+    EditableKeyframe,
+    Keyframe,
+    clone_keyframes,
+    infer_midpoint_time,
+    interpolate_position,
+    validate_keyframes,
+)
 
 
 class TestKeyframe:
@@ -16,6 +26,148 @@ class TestKeyframe:
         assert kf.t == 10.0
         assert kf.x == 0.5
         assert kf.y == 0.75
+
+
+class TestCloneKeyframes:
+    """Tests for independent trajectory snapshots."""
+
+    def test_clones_mutable_keyframes_without_sharing_values(self) -> None:
+        """Mutating a clone does not mutate the original keyframe."""
+        original = [Keyframe(t=10.0, x=0.25, y=0.75)]
+
+        cloned = clone_keyframes(original)
+        cloned[0].x = 0.9
+
+        assert cloned is not original
+        assert cloned[0] is not original[0]
+        assert original[0].x == 0.25
+
+    def test_clones_editable_keyframes_and_preserves_identity(self) -> None:
+        """Editable snapshots retain stable IDs but not object identity."""
+        original = [
+            EditableKeyframe(
+                edit_id="edit-1",
+                t=10.0,
+                x=0.25,
+                y=0.75,
+            )
+        ]
+
+        cloned = clone_keyframes(original)
+
+        assert cloned == original
+        assert cloned[0] is not original[0]
+        assert cloned[0].edit_id == "edit-1"
+
+
+class TestValidateKeyframes:
+    """Tests for trajectory-domain validation."""
+
+    def test_empty_and_single_keyframe_trajectories_are_valid(self) -> None:
+        """Partial trajectories remain valid edit-session states."""
+        assert validate_keyframes([]) == []
+        assert validate_keyframes([Keyframe(t=1.0, x=0.5, y=0.5)]) == []
+
+    @pytest.mark.parametrize("invalid_time", [math.nan, math.inf, -math.inf])
+    def test_rejects_non_finite_times(self, invalid_time: float) -> None:
+        """Lore dates must be finite."""
+        errors = validate_keyframes(
+            [Keyframe(t=invalid_time, x=0.5, y=0.5)]
+        )
+
+        assert errors == ["Keyframe 1 time must be a finite number."]
+
+    @pytest.mark.parametrize(
+        ("x", "y", "coordinate_name"),
+        [
+            (math.nan, 0.5, "x-coordinate"),
+            (0.5, math.inf, "y-coordinate"),
+            (-0.01, 0.5, "x-coordinate"),
+            (0.5, 1.01, "y-coordinate"),
+        ],
+    )
+    def test_rejects_non_finite_or_out_of_range_coordinates(
+        self,
+        x: float,
+        y: float,
+        coordinate_name: str,
+    ) -> None:
+        """Coordinates must be finite and normalized."""
+        errors = validate_keyframes([Keyframe(t=1.0, x=x, y=y)])
+
+        assert len(errors) == 1
+        assert coordinate_name in errors[0]
+
+    def test_accepts_coordinate_boundaries(self) -> None:
+        """Zero and one are valid normalized coordinate values."""
+        keyframes = [
+            Keyframe(t=0.0, x=0.0, y=1.0),
+            Keyframe(t=1.0, x=1.0, y=0.0),
+        ]
+
+        assert validate_keyframes(keyframes) == []
+
+    @pytest.mark.parametrize(
+        "time_difference",
+        [0.0, KEYFRAME_TIME_EPSILON / 2, KEYFRAME_TIME_EPSILON],
+    )
+    def test_rejects_duplicate_times_within_epsilon(
+        self, time_difference: float
+    ) -> None:
+        """Timestamp collisions include the configured epsilon boundary."""
+        keyframes = [
+            Keyframe(t=5.0 + time_difference, x=0.0, y=0.0),
+            Keyframe(t=5.0, x=1.0, y=1.0),
+        ]
+
+        errors = validate_keyframes(keyframes)
+
+        assert len(errors) == 1
+        assert "times within" in errors[0]
+
+    def test_accepts_times_beyond_epsilon(self) -> None:
+        """Dates separated by more than epsilon do not collide."""
+        keyframes = [
+            Keyframe(t=5.0, x=0.0, y=0.0),
+            Keyframe(t=5.0 + KEYFRAME_TIME_EPSILON * 1.01, x=1.0, y=1.0),
+        ]
+
+        assert validate_keyframes(keyframes) == []
+
+
+class TestInferMidpointTime:
+    """Tests for midpoint insertion time inference."""
+
+    def test_returns_temporal_midpoint(self) -> None:
+        """The midpoint uses the surrounding keyframes' lore dates."""
+        start = Keyframe(t=-10.0, x=0.0, y=0.0)
+        end = Keyframe(t=30.0, x=1.0, y=1.0)
+
+        assert infer_midpoint_time(start, end) == 10.0
+
+    def test_rejects_equal_times(self) -> None:
+        """An equal-time segment cannot supply a meaningful midpoint."""
+        start = Keyframe(t=10.0, x=0.0, y=0.0)
+        end = Keyframe(t=10.0, x=1.0, y=1.0)
+
+        with pytest.raises(ValueError, match="later than start"):
+            infer_midpoint_time(start, end)
+
+    def test_rejects_reversed_times(self) -> None:
+        """Neighbouring segment arguments must be chronological."""
+        start = Keyframe(t=20.0, x=0.0, y=0.0)
+        end = Keyframe(t=10.0, x=1.0, y=1.0)
+
+        with pytest.raises(ValueError, match="later than start"):
+            infer_midpoint_time(start, end)
+
+    def test_rejects_non_finite_times(self) -> None:
+        """Non-finite dates cannot produce a usable midpoint."""
+        start = Keyframe(t=0.0, x=0.0, y=0.0)
+        end = Keyframe(t=math.inf, x=1.0, y=1.0)
+
+        with pytest.raises(ValueError, match="non-finite"):
+            infer_midpoint_time(start, end)
 
 
 class TestInterpolatePosition:

@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-08-06
-**Commit:** ab089148
+**Last Updated:** 2026-08-08
+**Commit:** 193e08e6
 ---
 
 # Changelog
@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-08-08)* **Map / Trajectories**: Added stable editable-keyframe values,
+  independent snapshot cloning, midpoint-time inference, and validation for
+  finite dates, normalized coordinates, and timestamp collisions.
 - *(2026-08-03)* **Longform / LAN Sharing**: Added explicit authenticated LAN
   publishing with ephemeral eight-digit access codes and brute-force limits.
 
@@ -26,6 +29,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-08)* **Testing / Trajectories**: Added focused coverage for
+  trajectory snapshot independence, validation boundaries, midpoint inference,
+  and documented interpolation clamping behavior.
 - *(2026-08-03)* **Testing / Security**: Added authentication, binding,
   read-only database, identifier-validation, and publishing UI regressions.
 - *(2026-08-03)* **Release**: Bumped project and application metadata to

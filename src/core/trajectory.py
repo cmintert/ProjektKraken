@@ -5,8 +5,9 @@ binary search (bisect) for O(log N) keyframe lookup.
 """
 
 import bisect
+import math
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any, Iterable, TypeVar, cast
 
 
 @dataclass
@@ -25,9 +26,149 @@ class Keyframe:
     y: float
 
 
+@dataclass(frozen=True)
+class EditableKeyframe:
+    """A keyframe with stable, edit-session-local identity.
+
+    ``edit_id`` exists only while editing and is not persisted in MF-JSON. The
+    immutable value object makes working-copy updates explicit and prevents a
+    selected keyframe from losing its identity when temporal edits re-sort the
+    trajectory.
+
+    Attributes:
+        edit_id: Stable identifier within one trajectory edit session.
+        t: Time in lore-date units.
+        x: Normalized X coordinate in the inclusive range ``[0.0, 1.0]``.
+        y: Normalized Y coordinate in the inclusive range ``[0.0, 1.0]``.
+
+    """
+
+    edit_id: str
+    t: float
+    x: float
+    y: float
+
+
 # Shared tolerance for comparing keyframe timestamps
 # (e.g. for UI selection vs DB lookup)
 KEYFRAME_TIME_EPSILON: float = 0.01
+
+KeyframeValue = Keyframe | EditableKeyframe
+_KeyframeT = TypeVar("_KeyframeT", Keyframe, EditableKeyframe)
+
+
+def clone_keyframes(keyframes: Iterable[_KeyframeT]) -> list[_KeyframeT]:
+    """Return independent copies of all supplied keyframe values.
+
+    The concrete keyframe type is preserved. For editable keyframes this also
+    preserves ``edit_id`` so selection remains stable across snapshots.
+
+    Args:
+        keyframes: Keyframe values to copy.
+
+    Returns:
+        A new list containing newly constructed keyframe instances.
+
+    """
+    clones: list[_KeyframeT] = []
+    for keyframe in keyframes:
+        if isinstance(keyframe, EditableKeyframe):
+            clone = cast(
+                _KeyframeT,
+                EditableKeyframe(
+                    edit_id=keyframe.edit_id,
+                    t=keyframe.t,
+                    x=keyframe.x,
+                    y=keyframe.y,
+                ),
+            )
+        else:
+            clone = cast(
+                _KeyframeT,
+                Keyframe(t=keyframe.t, x=keyframe.x, y=keyframe.y),
+            )
+        clones.append(clone)
+    return clones
+
+
+def validate_keyframes(keyframes: Iterable[KeyframeValue]) -> list[str]:
+    """Validate trajectory values without mutating or reordering them.
+
+    Empty and one-keyframe trajectories are valid domain states. Errors are
+    returned together so an editor can present complete feedback in one pass.
+
+    Args:
+        keyframes: Keyframes in any iterable container.
+
+    Returns:
+        Human-readable validation errors. An empty list means the trajectory
+        is valid.
+
+    """
+    values = tuple(keyframes)
+    errors: list[str] = []
+    finite_times: list[tuple[float, int]] = []
+
+    for index, keyframe in enumerate(values, start=1):
+        if _is_finite_number(keyframe.t):
+            finite_times.append((float(keyframe.t), index))
+        else:
+            errors.append(f"Keyframe {index} time must be a finite number.")
+
+        for coordinate_name, coordinate in (("x", keyframe.x), ("y", keyframe.y)):
+            if not _is_finite_number(coordinate):
+                errors.append(
+                    f"Keyframe {index} {coordinate_name}-coordinate must be a "
+                    "finite number."
+                )
+            elif not 0.0 <= float(coordinate) <= 1.0:
+                errors.append(
+                    f"Keyframe {index} {coordinate_name}-coordinate must be "
+                    "between 0.0 and 1.0."
+                )
+
+    finite_times.sort(key=lambda item: item[0])
+    for (first_time, first_index), (second_time, second_index) in zip(
+        finite_times, finite_times[1:]
+    ):
+        if second_time - first_time <= KEYFRAME_TIME_EPSILON:
+            errors.append(
+                f"Keyframes {first_index} and {second_index} have times within "
+                f"{KEYFRAME_TIME_EPSILON:g} days of each other."
+            )
+
+    return errors
+
+
+def infer_midpoint_time(start: KeyframeValue, end: KeyframeValue) -> float:
+    """Infer the fixed temporal midpoint between neighbouring keyframes.
+
+    Args:
+        start: Earlier keyframe in the segment.
+        end: Later keyframe in the segment.
+
+    Returns:
+        The arithmetic midpoint between the two lore dates.
+
+    Raises:
+        ValueError: If either time is non-finite or the segment is not ordered
+            from an earlier time to a later time.
+
+    """
+    if not _is_finite_number(start.t) or not _is_finite_number(end.t):
+        raise ValueError("Cannot infer a midpoint from non-finite times.")
+    if end.t <= start.t:
+        raise ValueError("Midpoint end time must be later than start time.")
+    return start.t / 2.0 + end.t / 2.0
+
+
+def _is_finite_number(value: object) -> bool:
+    """Return whether *value* is a finite, non-boolean real number."""
+    return (
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(value)
+    )
 
 
 def interpolate_position(
@@ -43,8 +184,9 @@ def interpolate_position(
         t: The time at which to calculate the position.
 
     Returns:
-        Tuple of (x, y) normalized coordinates, or None if t is outside
-        the keyframe range or there are fewer than 2 keyframes.
+        Tuple of (x, y) normalized coordinates. Times outside the keyframe
+        range clamp to the nearest endpoint. Returns ``None`` only when there
+        are fewer than two keyframes.
 
     Example:
         >>> keyframes = [Keyframe(0, 0.0, 0.0), Keyframe(100, 1.0, 1.0)]
@@ -95,7 +237,7 @@ def interpolate_position(
     return (x, y)
 
 
-def keyframes_to_mfjson(keyframes: List[Keyframe]) -> Dict[str, Any]:
+def keyframes_to_mfjson(keyframes: list[Keyframe]) -> dict[str, Any]:
     """Serialize a list of Keyframes to an OGC MF-JSON MovingPoint structure.
 
     Args:
