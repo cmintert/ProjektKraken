@@ -383,6 +383,7 @@ class CommandCoordinator(QObject):
         if result.command_name in {
             "PaintRasterCommand",
             "StrokeRasterCommand",
+            "UpdateTrajectoryCommand",
         }:
             return
 

@@ -10,6 +10,8 @@ from PySide6.QtGui import QImage, QKeyEvent, QPixmap
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsPixmapItem
 
 from src.core.theme_manager import ThemeManager
+from src.core.trajectory import Keyframe
+from src.core.trajectory_edit import TrajectoryEditSession
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.map.marker_item import MarkerItem
 from src.gui.widgets.map_widget import (
@@ -59,6 +61,51 @@ def test_map_widget_initialization(map_widget):
     assert map_widget.btn_add_marker.text() == "Add Marker"
     assert not map_widget._add_keyframe_action.isVisible()
     assert not map_widget._add_keyframe_action.isEnabled()
+
+
+def test_edit_trajectory_action_and_compact_strip(map_widget, qtbot):
+    """A selected entity trajectory exposes the explicit spatial editor."""
+    marker = _show_map_with_marker(map_widget, qtbot)
+    map_widget.set_trajectories(
+        [
+            {
+                "marker_id": "marker1",
+                "trajectory_id": "trajectory-1",
+                "keyframes": [
+                    {"t": 0.0, "x": 0.2, "y": 0.3},
+                    {"t": 10.0, "x": 0.8, "y": 0.7},
+                ],
+                "row_snapshot": {},
+            }
+        ]
+    )
+    marker.setSelected(True)
+    map_widget._on_marker_clicked_internal("marker1", "entity")
+    map_widget._update_add_keyframe_action()
+
+    assert map_widget._edit_trajectory_action.isVisible()
+    assert map_widget._edit_trajectory_action.isEnabled()
+
+    session = TrajectoryEditSession.create(
+        "map-1",
+        "marker1",
+        "trajectory-1",
+        [
+            Keyframe(t=0.0, x=0.2, y=0.3),
+            Keyframe(t=10.0, x=0.8, y=0.7),
+        ],
+        playhead=0.0,
+    )
+    map_widget.show_trajectory_edit(session.to_snapshot())
+
+    assert map_widget.trajectory_edit_strip.isVisible()
+    assert "2 keyframes" in map_widget.trajectory_edit_label.text()
+    assert not map_widget.btn_apply_trajectory.isEnabled()
+    assert not marker.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsMovable
+
+    map_widget.clear_trajectory_edit()
+
+    assert marker.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsMovable
 
 
 def _show_map_with_marker(map_widget, qtbot, object_type="entity"):

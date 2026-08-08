@@ -124,6 +124,29 @@ class TestTrajectoryRepository:
         assert fetched_marker_id == marker_id
         assert len(fetched_traj) == 2
 
+    def test_map_snapshots_are_json_safe_and_include_exact_row(
+        self, repo, setup_data
+    ):
+        """Worker payloads contain values rather than mutable domain objects."""
+        trajectory_id = repo.insert(
+            setup_data["marker_id"],
+            [Keyframe(t=0.0, x=0.1, y=0.2), Keyframe(t=10.0, x=0.8, y=0.9)],
+            properties={"stroke": "dashed"},
+        )
+
+        snapshots = repo.get_snapshots_by_map_id(setup_data["map_id"])
+
+        assert len(snapshots) == 1
+        snapshot = snapshots[0]
+        assert snapshot["marker_id"] == setup_data["marker_id"]
+        assert snapshot["trajectory_id"] == trajectory_id
+        assert snapshot["keyframes"] == [
+            {"t": 0.0, "x": 0.1, "y": 0.2},
+            {"t": 10.0, "x": 0.8, "y": 0.9},
+        ]
+        assert snapshot["row_snapshot"]["properties"] == '{"stroke": "dashed"}'
+        json.dumps(snapshots)
+
     def test_trajectory_columns_populated_correctly(self, repo, setup_data):
         """Verify t_start and t_end are stored correctly in DB columns."""
         marker_id = setup_data["marker_id"]

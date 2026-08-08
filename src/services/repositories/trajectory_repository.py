@@ -52,6 +52,11 @@ _EXPECTED_SNAPSHOT_UNSET: Final = _ExpectedSnapshotUnset()
 _SNAPSHOT_COLUMNS: Final = (
     "id, marker_id, t_start, t_end, trajectory, properties, created_at"
 )
+_QUALIFIED_SNAPSHOT_COLUMNS: Final = (
+    "mf.id AS id, mf.marker_id AS marker_id, mf.t_start AS t_start, "
+    "mf.t_end AS t_end, mf.trajectory AS trajectory, "
+    "mf.properties AS properties, mf.created_at AS created_at"
+)
 
 
 class TrajectoryRepository(BaseRepository):
@@ -515,6 +520,52 @@ class TrajectoryRepository(BaseRepository):
                 logger.error(f"Failed to parse trajectory {traj_id}: {e}")
 
         return results
+
+    def get_snapshots_by_map_id(self, map_id: str) -> list[dict[str, object]]:
+        """Return map-scoped, JSON-safe trajectory snapshots for the GUI.
+
+        Args:
+            map_id: ID of the map whose trajectories should be loaded.
+
+        Returns:
+            Serializable dictionaries containing public marker identity,
+            keyframe values, and the exact persistence row snapshot.
+
+        """
+        connection = self._require_connection()
+        rows = connection.execute(
+            f"""
+            SELECT m.object_id, {_QUALIFIED_SNAPSHOT_COLUMNS}
+            FROM moving_features AS mf
+            JOIN markers AS m ON mf.marker_id = m.id
+            WHERE m.map_id = ?
+            ORDER BY mf.t_start, mf.id
+            """,
+            (map_id,),
+        ).fetchall()
+
+        snapshots: list[dict[str, object]] = []
+        for row in rows:
+            trajectory_id = str(row["id"])
+            try:
+                keyframes = self._parse_trajectory_json(
+                    json.loads(row["trajectory"])
+                )
+            except (json.JSONDecodeError, IndexError, TypeError, ValueError) as exc:
+                logger.error("Failed to parse trajectory %s: %s", trajectory_id, exc)
+                continue
+            snapshots.append(
+                {
+                    "marker_id": str(row["object_id"]),
+                    "trajectory_id": trajectory_id,
+                    "keyframes": [
+                        {"t": keyframe.t, "x": keyframe.x, "y": keyframe.y}
+                        for keyframe in keyframes
+                    ],
+                    "row_snapshot": self._snapshot_from_row(row),
+                }
+            )
+        return snapshots
 
     def add_keyframe(self, map_id: str, object_id: str, keyframe: Keyframe) -> str:
         """Adds or updates a keyframe for the given marker (identified by map+object).

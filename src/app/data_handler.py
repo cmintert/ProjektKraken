@@ -59,7 +59,7 @@ class DataHandler(QObject):
     longform_sequence_ready = Signal(list)  # Emitted when longform data is processed
     maps_ready = Signal(list)  # Emitted when maps are processed
     markers_ready = Signal(str, list)  # (map_id, markers)
-    trajectories_ready = Signal(list)  # (trajectories)
+    trajectories_ready = Signal(str, list)  # (map_id, trajectory snapshots)
     entity_state_resolved = Signal(str, dict)  # (entity_id, attributes)
     graph_data_ready = Signal(list, list)  # (nodes, edges)
     graph_metadata_ready = Signal(list, list)  # (tags, rel_types)
@@ -292,10 +292,12 @@ class DataHandler(QObject):
 
         self.markers_ready.emit(map_id, processed_markers)
 
-    @Slot(list)
-    def on_trajectories_loaded(self, trajectories: List[Any]) -> None:
-        """Emits signal for map widget to be updated with trajectories."""
-        self.trajectories_ready.emit(trajectories)
+    @Slot(str, list)
+    def on_trajectories_loaded(
+        self, map_id: str, trajectories: List[Any]
+    ) -> None:
+        """Forward map-scoped serializable trajectory snapshots."""
+        self.trajectories_ready.emit(map_id, trajectories)
 
     @Slot(CommandResult)
     def on_command_finished(self, result: CommandResult) -> None:  # noqa: C901
@@ -328,6 +330,15 @@ class DataHandler(QObject):
             return
 
         try:
+            if command_name in {
+                "UpdateTrajectoryCommand",
+                "Undo_UpdateTrajectoryCommand",
+                "Redo_UpdateTrajectoryCommand",
+            }:
+                # Direct trajectory editing owns one map-scoped reload after
+                # persistence; generic undo reloads would duplicate it.
+                return
+
             if command_name == "CreateEventCommand" and result.data.get("id"):
                 self._pending_select_type = "event"
                 self._pending_select_id = cast(str, result.data["id"])

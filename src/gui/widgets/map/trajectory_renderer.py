@@ -105,6 +105,14 @@ class KeyframeLabelItem(QGraphicsObject):
         painter.drawText(self._rect, Qt.AlignmentFlag.AlignCenter, self._text)
 
 
+class TrajectoryPathItem(QGraphicsPathItem):
+    """Passive playback path carrying its owning marker identity."""
+
+    def __init__(self, marker_id: str, path: QPainterPath) -> None:
+        super().__init__(path)
+        self.marker_id = marker_id
+
+
 class TrajectoryRenderer:
     """Manages trajectory path, keyframes, labels, and animations.
 
@@ -121,6 +129,7 @@ class TrajectoryRenderer:
         self._calendar_converter: Optional[CalendarConverter] = None
         self.trigger_first_use_animation: bool = False
         self._animations: list[QPropertyAnimation] = []
+        self._marker_id: str | None = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -136,6 +145,7 @@ class TrajectoryRenderer:
         from src.gui.widgets.map.map_graphics_view import KeyframeItem
 
         self.clear_trajectory()
+        self._marker_id = marker_id
         if not keyframes or len(keyframes) < 2:
             return
 
@@ -163,10 +173,17 @@ class TrajectoryRenderer:
                 ),
                 self._on_keyframe_dropped,
                 self._update_trajectory_path,
+                interactive=False,
             )
             dot.setPos(pos)
             _theme = ThemeManager().get_theme()
-            dot.setBrush(QBrush(QColor(_theme.get("accent_secondary", KEYFRAME_COLOR_DEFAULT))))
+            dot.setBrush(
+                QBrush(
+                    QColor(
+                        _theme.get("accent_secondary", KEYFRAME_COLOR_DEFAULT)
+                    )
+                )
+            )
             dot.setPen(QPen(Qt.PenStyle.NoPen))
             dot.setZValue(base_z - 0.2)
             self._view.graphics_scene.addItem(dot)
@@ -237,6 +254,8 @@ class TrajectoryRenderer:
         for label in self.keyframe_label_items:
             self._view.graphics_scene.removeItem(label)
         self.keyframe_label_items.clear()
+
+        self._marker_id = None
 
         self._view._schedule_label_layout()
 
@@ -366,7 +385,7 @@ class TrajectoryRenderer:
         self, path: QPainterPath, base_z: float
     ) -> QGraphicsPathItem:
         """Creates and configures the trajectory path item."""
-        item = QGraphicsPathItem(path)
+        item = TrajectoryPathItem(self._marker_id or "", path)
         _theme = ThemeManager().get_theme()
         pen = QPen(QColor(_theme.get("primary", TRAJECTORY_PATH_COLOR)), 1)
         pen.setStyle(Qt.PenStyle.DashLine)

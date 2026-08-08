@@ -63,6 +63,17 @@ class InteractionHandler:
         """
         menu = QMenu(self._view)
 
+        if (
+            item.object_type != "event"
+            and item.marker_id in self._view._trajectory_marker_ids
+        ):
+            edit_trajectory_action = QAction("Edit Trajectory", self._view)
+            edit_trajectory_action.triggered.connect(
+                lambda: self._view.trajectory_edit_requested.emit(item.marker_id)
+            )
+            menu.addAction(edit_trajectory_action)
+            menu.addSeparator()
+
         change_icon_action = QAction(self._view)
         change_icon_action.setText("Change Icon...")
         change_icon_action.triggered.connect(lambda: self.show_icon_picker(item))
@@ -109,6 +120,18 @@ class InteractionHandler:
             lambda: self._view.delete_marker_requested.emit(item.marker_id)
         )
         menu.addAction(delete_action)
+        menu.exec(global_pos)
+
+    def show_trajectory_context_menu(
+        self, marker_id: str, global_pos: QPoint
+    ) -> None:
+        """Show actions for a passive trajectory path."""
+        menu = QMenu(self._view)
+        edit_action = QAction("Edit Trajectory", self._view)
+        edit_action.triggered.connect(
+            lambda: self._view.trajectory_edit_requested.emit(marker_id)
+        )
+        menu.addAction(edit_action)
         menu.exec(global_pos)
 
     def show_map_background_context_menu(

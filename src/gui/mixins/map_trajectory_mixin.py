@@ -8,10 +8,11 @@ import logging
 from typing import TYPE_CHECKING, Any, Iterator, Protocol, Tuple, cast
 
 from PySide6.QtCore import QSettings, Slot
-from PySide6.QtWidgets import QComboBox, QWidget
+from PySide6.QtWidgets import QComboBox, QGraphicsItem, QWidget
 
 from src.core.protocols import SignalProtocol
-from src.core.trajectory import KEYFRAME_TIME_EPSILON, interpolate_position
+from src.core.trajectory import KEYFRAME_TIME_EPSILON, Keyframe, interpolate_position
+from src.core.trajectory_edit import TrajectoryEditSnapshot
 from src.gui.widgets.map.marker_item import MarkerItem
 
 if TYPE_CHECKING:
@@ -55,6 +56,8 @@ class MapTrajectoryMixin:
         # independently type-checkable without adding runtime base classes.
         view: "MapGraphicsView"
         _active_trajectories: dict[str, list[Any]]
+        _trajectory_edit_marker_id: str | None
+        _trajectory_edit_keyframes: list[Keyframe]
         _playhead_time: float
         _current_time: float
         _selected_marker_id: str | None
@@ -67,6 +70,14 @@ class MapTrajectoryMixin:
         delete_keyframe_requested: SignalProtocol
         map_selector: QComboBox
         coord_label: _CoordinateLabel
+        trajectory_edit_label: Any
+        trajectory_keyframe_label: Any
+        trajectory_validation_label: Any
+        trajectory_edit_strip: Any
+        btn_delete_trajectory_keyframe: Any
+        btn_reload_trajectory: Any
+        btn_apply_trajectory: Any
+        btn_cancel_trajectory: Any
 
         def _update_mode_indicator(self) -> None:
             ...
@@ -74,18 +85,34 @@ class MapTrajectoryMixin:
         def get_selected_map_id(self) -> str | None:
             ...
 
+        def _update_add_keyframe_action(self) -> None:
+            ...
+
     def set_trajectories(self, trajectories: list) -> None:
         """Sets the active trajectories for the current map.
 
         Args:
-            trajectories: List of (marker_id, trajectory_id, keyframes) tuples.
+            trajectories: JSON-safe trajectory snapshot dictionaries.
 
         """
         self._active_trajectories.clear()
         count = 0
-        for marker_id, _, keyframes in trajectories:
+        from src.core.trajectory import Keyframe
+
+        for trajectory in trajectories:
+            marker_id = str(trajectory["marker_id"])
+            keyframes = [
+                Keyframe(
+                    t=float(keyframe["t"]),
+                    x=float(keyframe["x"]),
+                    y=float(keyframe["y"]),
+                )
+                for keyframe in trajectory["keyframes"]
+            ]
             self._active_trajectories[marker_id] = keyframes
             count += 1
+
+        self.view.set_trajectory_marker_ids(set(self._active_trajectories))
 
         # Detect first trajectory use for animation
         settings = QSettings()
@@ -114,6 +141,85 @@ class MapTrajectoryMixin:
 
         # Update marker indicators
         self._update_marker_indicators()
+        self._update_add_keyframe_action()
+
+    def show_trajectory_edit(
+        self,
+        snapshot: TrajectoryEditSnapshot,
+        *,
+        pending: bool = False,
+        rebuild_overlay: bool = True,
+    ) -> None:
+        """Render an isolated trajectory edit-session snapshot."""
+        marker_id = snapshot["marker_id"]
+        self._trajectory_edit_marker_id = marker_id
+        self._trajectory_edit_keyframes = [
+            Keyframe(
+                t=float(keyframe["t"]),
+                x=float(keyframe["x"]),
+                y=float(keyframe["y"]),
+            )
+            for keyframe in snapshot["keyframes"]
+        ]
+        marker = self.view.markers.get(marker_id)
+        if marker is not None:
+            marker.setFlag(
+                QGraphicsItem.GraphicsItemFlag.ItemIsMovable,
+                False,
+            )
+        self.view.clear_trajectory()
+        if rebuild_overlay:
+            self.view.trajectory_edit_overlay.show(snapshot)
+        else:
+            self.view.trajectory_edit_overlay.select(
+                snapshot["selected_keyframe_id"]
+            )
+
+        count = snapshot["keyframe_count"]
+        self.trajectory_edit_label.setText(
+            f"Edit Trajectory | {count} keyframe{'s' if count != 1 else ''}"
+        )
+        selected_index = snapshot["selected_keyframe_index"]
+        if selected_index is None:
+            self.trajectory_keyframe_label.setText("Select a keyframe")
+        else:
+            keyframe = snapshot["keyframes"][selected_index]
+            self.trajectory_keyframe_label.setText(
+                f"Keyframe {selected_index + 1} of {count} | T {keyframe['t']:g}"
+            )
+
+        messages = list(snapshot["validation_errors"])
+        if snapshot["is_conflicted"]:
+            messages.insert(0, "Trajectory changed externally; Apply is blocked.")
+        self.trajectory_validation_label.setText(" ".join(messages))
+        self.btn_delete_trajectory_keyframe.setEnabled(
+            snapshot["selected_keyframe_id"] is not None and not pending
+        )
+        self.btn_reload_trajectory.setVisible(snapshot["is_conflicted"])
+        self.btn_apply_trajectory.setEnabled(snapshot["can_apply"] and not pending)
+        self.btn_cancel_trajectory.setEnabled(not pending)
+        self.trajectory_edit_strip.show()
+        self._update_trajectory_positions(force_all=True)
+        self._update_add_keyframe_action()
+
+    def clear_trajectory_edit(self) -> None:
+        """Remove the working overlay and restore authoritative playback."""
+        marker_id = self._trajectory_edit_marker_id
+        self.view.trajectory_edit_overlay.clear()
+        if marker_id is not None:
+            marker = self.view.markers.get(marker_id)
+            if marker is not None:
+                marker.setFlag(
+                    QGraphicsItem.GraphicsItemFlag.ItemIsMovable,
+                    True,
+                )
+        self._trajectory_edit_marker_id = None
+        self._trajectory_edit_keyframes = []
+        self.trajectory_edit_strip.hide()
+        self._update_trajectory_positions(force_all=True)
+        if marker_id == self._selected_marker_id and marker_id is not None:
+            self._update_trajectory_visualization(marker_id)
+        self._update_add_keyframe_action()
 
     def _update_marker_indicators(self) -> None:
         """Updates the has_keyframes state for all markers."""
@@ -159,6 +265,8 @@ class MapTrajectoryMixin:
     def _iter_trajectory_positions(self) -> Iterator[Tuple[str, float, float]]:
         """Yield (marker_id, x, y) for markers with trajectories at current time."""
         for marker_id, keyframes in self._active_trajectories.items():
+            if marker_id == self._trajectory_edit_marker_id:
+                keyframes = self._trajectory_edit_keyframes
             position = interpolate_position(keyframes, self._playhead_time)
             if position:
                 x, y = position
@@ -277,6 +385,8 @@ class MapTrajectoryMixin:
 
     def _update_trajectory_visualization(self, marker_id: str) -> None:
         """Updates the view to show the trajectory for the given marker."""
+        if self._trajectory_edit_marker_id is not None:
+            return
         keyframes = self._active_trajectories.get(marker_id, [])
         if keyframes:
             self.view.show_trajectory(marker_id, keyframes)

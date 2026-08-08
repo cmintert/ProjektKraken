@@ -15,6 +15,9 @@ def mock_db_service():
         mock_instance.get_all_entities.return_value = ["entity1"]
         mock_instance.get_all_maps.return_value = ["map1"]
         mock_instance.get_markers_for_map.return_value = ["marker1"]
+        mock_instance.get_trajectory_snapshots_by_map.return_value = [
+            {"marker_id": "marker1", "trajectory_id": "trajectory1"}
+        ]
         mock_instance.get_current_time.return_value = 100.5
         mock_instance._attachment_repo = MagicMock()
         yield mock_instance
@@ -125,6 +128,20 @@ def test_load_entities(worker, mock_db_service):
 
     mock_db_service.get_all_entities.assert_called_once()
     spy.assert_called_once_with(["entity1"])
+
+
+def test_load_trajectories_emits_map_scoped_snapshots(worker, mock_db_service):
+    """Trajectory loads cross threads as map-scoped serializable values."""
+    worker.db_service = mock_db_service
+    spy = MagicMock()
+    worker.trajectories_loaded.connect(spy)
+
+    worker.load_trajectories("map1")
+
+    mock_db_service.get_trajectory_snapshots_by_map.assert_called_once_with("map1")
+    spy.assert_called_once_with(
+        "map1", [{"marker_id": "marker1", "trajectory_id": "trajectory1"}]
+    )
 
 
 def test_run_command_success(worker, mock_db_service):

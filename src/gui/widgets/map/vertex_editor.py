@@ -6,31 +6,21 @@ style overlay during editing.
 """
 
 import logging
-import math
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from PySide6.QtCore import QPointF, Qt
-from PySide6.QtGui import QBrush, QColor, QPen
-from PySide6.QtWidgets import (
-    QGraphicsEllipseItem,
-    QGraphicsItem,
-    QGraphicsView,
-)
+from PySide6.QtWidgets import QGraphicsItem, QGraphicsView
 
 from src.app.constants import (
     MAP_EDIT_DASH_PATTERN,
     MAP_EDIT_STROKE_COLOR,
     MAP_EDIT_STROKE_WIDTH,
     MAP_LAYER_Z_UI_OVERLAY,
-    MAP_MIDPOINT_GHOST_OPACITY,
-    MAP_MIDPOINT_HANDLE_BORDER_COLOR,
-    MAP_MIDPOINT_HANDLE_COLOR,
-    MAP_MIDPOINT_HANDLE_RADIUS,
-    MAP_MIDPOINT_HOVER_OPACITY,
-    MAP_SNAP_RADIUS_PX,
-    MAP_VERTEX_HANDLE_BORDER_COLOR,
-    MAP_VERTEX_HANDLE_COLOR,
-    MAP_VERTEX_HANDLE_RADIUS,
+)
+from src.gui.widgets.map.edit_handles import (
+    DraggableEditHandle,
+    MidpointEditHandle,
+    snap_to_edit_handles,
 )
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.snapping_manager import SnappingManager
@@ -42,100 +32,6 @@ logger = logging.getLogger(__name__)
 
 # Normalized coordinate precision (decimal places)
 NORMALIZED_COORD_PRECISION = 6
-
-
-class _VertexHandle(QGraphicsEllipseItem):
-    """A draggable handle for a single vertex during editing.
-
-    Styled as a red dot with white border. Supports:
-    - Left-drag to move the vertex
-    - Right-click to delete the vertex
-
-    Args:
-        index: The vertex index in the geometry array.
-        move_callback: Called with (index, new_scene_pos) on drag.
-        delete_callback: Called with (index) on right-click.
-    """
-
-    def __init__(
-        self,
-        index: int,
-        move_callback: Callable[[int, QPointF], None],
-        delete_callback: Callable[[int], None],
-    ) -> None:
-        r = MAP_VERTEX_HANDLE_RADIUS
-        super().__init__(-r, -r, r * 2, r * 2)
-        self.index = index
-        self._move_callback = move_callback
-        self._delete_callback = delete_callback
-        self.setBrush(QBrush(QColor(MAP_VERTEX_HANDLE_COLOR)))
-        self.setPen(QPen(QColor(MAP_VERTEX_HANDLE_BORDER_COLOR), 1))
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True)
-        self.setCursor(Qt.CursorShape.SizeAllCursor)
-        self.setAcceptedMouseButtons(
-            Qt.MouseButton.LeftButton | Qt.MouseButton.RightButton
-        )
-        self.setZValue(MAP_LAYER_Z_UI_OVERLAY + 1)
-
-    def itemChange(self, change: QGraphicsItem.GraphicsItemChange, value: Any) -> Any:
-        """Notify parent when the handle is dragged."""
-        if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
-            self._move_callback(self.index, self.pos())
-        return super().itemChange(change, value)
-
-    def mousePressEvent(self, event: Any) -> None:
-        """Right-click to delete vertex."""
-        if event.button() == Qt.MouseButton.RightButton:
-            self._delete_callback(self.index)
-            return
-        super().mousePressEvent(event)
-
-
-class _MidpointHandle(QGraphicsEllipseItem):
-    """A ghost handle at the midpoint of a segment for vertex insertion.
-
-    Styled as a semi-transparent green dot. Becomes fully opaque on hover
-    and inserts a new vertex when dragged.
-
-    Args:
-        segment_index: The segment index (vertex before this midpoint).
-        insert_callback: Called with (segment_index, scene_pos) on drag.
-    """
-
-    def __init__(
-        self,
-        segment_index: int,
-        insert_callback: Callable[[int, QPointF], None],
-    ) -> None:
-        r = MAP_MIDPOINT_HANDLE_RADIUS
-        super().__init__(-r, -r, r * 2, r * 2)
-        self.segment_index = segment_index
-        self._insert_callback = insert_callback
-        self.setBrush(QBrush(QColor(MAP_MIDPOINT_HANDLE_COLOR)))
-        self.setPen(QPen(QColor(MAP_MIDPOINT_HANDLE_BORDER_COLOR), 1))
-        self.setOpacity(MAP_MIDPOINT_GHOST_OPACITY)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, True)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True)
-        self.setAcceptHoverEvents(True)
-        self.setCursor(Qt.CursorShape.CrossCursor)
-        self.setZValue(MAP_LAYER_Z_UI_OVERLAY)
-
-    def hoverEnterEvent(self, event: Any) -> None:
-        """Highlight on hover."""
-        self.setOpacity(MAP_MIDPOINT_HOVER_OPACITY)
-        super().hoverEnterEvent(event)
-
-    def hoverLeaveEvent(self, event: Any) -> None:
-        """Restore opacity on leave."""
-        self.setOpacity(MAP_MIDPOINT_GHOST_OPACITY)
-        super().hoverLeaveEvent(event)
-
-    def mouseReleaseEvent(self, event: Any) -> None:
-        """Insert a vertex at the drop position."""
-        super().mouseReleaseEvent(event)
-        self._insert_callback(self.segment_index, self.scenePos())
 
 
 class VertexEditor:
@@ -164,8 +60,8 @@ class VertexEditor:
 
         # Editing state
         self._editing_feature_id: Optional[str] = None
-        self._vertex_handles: list[_VertexHandle] = []
-        self._midpoint_handles: list[_MidpointHandle] = []
+        self._vertex_handles: list[DraggableEditHandle[int]] = []
+        self._midpoint_handles: list[MidpointEditHandle[int]] = []
         self._editing_original_style: Optional[Dict[str, Any]] = None
 
     # ------------------------------------------------------------------
@@ -221,8 +117,11 @@ class VertexEditor:
         for i, pt in enumerate(geometry):
             sx = rect.left() + pt["x"] * rect.width()
             sy = rect.top() + pt["y"] * rect.height()
-            handle = _VertexHandle(i, self._on_vertex_moved, self._on_vertex_deleted)
+            handle = DraggableEditHandle(
+                i, self._on_vertex_moved, self._on_vertex_deleted
+            )
             handle.setPos(sx, sy)
+            handle.set_notifications_enabled(True)
             handle.setZValue(MAP_LAYER_Z_UI_OVERLAY + 1)
             self._view.graphics_scene.addItem(handle)
             self._vertex_handles.append(handle)
@@ -293,7 +192,7 @@ class VertexEditor:
             return False
 
         item_under = self._view.itemAt(pos)
-        if isinstance(item_under, (_VertexHandle, _MidpointHandle)):
+        if isinstance(item_under, (DraggableEditHandle, MidpointEditHandle)):
             pass  # Handle sets its own cursor
         elif (
             item_under
@@ -359,15 +258,9 @@ class VertexEditor:
         # Synchronize the vertex handle to the snap position
         if index < len(self._vertex_handles):
             handle = self._vertex_handles[index]
-            handle.setFlag(
-                QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges,
-                False,
-            )
+            handle.set_notifications_enabled(False)
             handle.setPos(snap_pos)
-            handle.setFlag(
-                QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges,
-                True,
-            )
+            handle.set_notifications_enabled(True)
 
         # Convert scene pos → normalized
         rect = self._view.pixmap_item.sceneBoundingRect()
@@ -401,25 +294,12 @@ class VertexEditor:
         Returns:
             Snapped scene position, or the original if no snap.
         """
-        view_scale = (
-            self._view.transform().m11() if self._view.transform().m11() > 0 else 1.0
+        return snap_to_edit_handles(
+            moving_index,
+            scene_pos,
+            self._vertex_handles,
+            self._view.transform().m11(),
         )
-        snap_radius_scene = MAP_SNAP_RADIUS_PX / view_scale
-
-        best_dist = snap_radius_scene
-        best_pos = scene_pos
-
-        for handle in self._vertex_handles:
-            if handle.index == moving_index:
-                continue
-            dx = handle.pos().x() - scene_pos.x()
-            dy = handle.pos().y() - scene_pos.y()
-            dist = math.sqrt(dx * dx + dy * dy)
-            if dist < best_dist:
-                best_dist = dist
-                best_pos = handle.pos()
-
-        return best_pos
 
     def _on_vertex_deleted(self, index: int) -> None:
         """Removes a vertex from the feature being edited.
@@ -520,7 +400,7 @@ class VertexEditor:
             sx = rect.left() + mx * rect.width()
             sy = rect.top() + my * rect.height()
 
-            mh = _MidpointHandle(i, self._on_midpoint_insert)
+            mh = MidpointEditHandle(i, self._on_midpoint_insert)
             mh.setPos(sx, sy)
             self._view.graphics_scene.addItem(mh)
             self._midpoint_handles.append(mh)
@@ -566,8 +446,11 @@ class VertexEditor:
         for i, pt in enumerate(item._geometry):
             sx = rect.left() + pt["x"] * rect.width()
             sy = rect.top() + pt["y"] * rect.height()
-            handle = _VertexHandle(i, self._on_vertex_moved, self._on_vertex_deleted)
+            handle = DraggableEditHandle(
+                i, self._on_vertex_moved, self._on_vertex_deleted
+            )
             handle.setPos(sx, sy)
+            handle.set_notifications_enabled(True)
             handle.setZValue(MAP_LAYER_Z_UI_OVERLAY + 1)
             self._view.graphics_scene.addItem(handle)
             self._vertex_handles.append(handle)

@@ -55,7 +55,7 @@ class DatabaseWorker(QObject):
     entities_loaded = Signal(list)  # List[Entity]
     maps_loaded = Signal(list)  # List[Map]
     markers_loaded = Signal(str, list)  # map_id, List[Marker]
-    trajectories_loaded = Signal(list)  # List[Tuple[str, str, List[Keyframe]]]
+    trajectories_loaded = Signal(str, list)  # map_id, JSON-safe trajectory snapshots
     longform_sequence_loaded = Signal(list)  # List[dict]
     calendar_config_loaded = Signal(
         object
@@ -366,8 +366,8 @@ class DatabaseWorker(QObject):
         try:
             # self.operation_started.emit(f"Loading Trajectories for Map {map_id}...")
             # (Quiet operation)
-            trajectories = self.db_service.get_trajectories_by_map(map_id)
-            self.trajectories_loaded.emit(trajectories)
+            trajectories = self.db_service.get_trajectory_snapshots_by_map(map_id)
+            self.trajectories_loaded.emit(map_id, trajectories)
             # self.operation_finished.emit("Trajectories Loaded.")
         except Exception:
             logger.error(f"Failed to load trajectories: {traceback.format_exc()}")

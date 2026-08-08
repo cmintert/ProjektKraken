@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-08
-**Commit:** b95f574b
+**Commit:** 1571209d
 ---
 
 # Changelog
@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-08-08)* **Map / Trajectories**: Added direct spatial trajectory
+  editing with draggable keyframes, midpoint insertion, snapping, compact
+  Apply and Cancel controls, and focus-independent shortcuts.
 - *(2026-08-08)* **Architecture / Trajectories**: Added atomic complete-row
   trajectory replacement, stale-snapshot conflict detection, and persistent
   exact undo and redo through `UpdateTrajectoryCommand`.
@@ -35,6 +38,11 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-08)* **Architecture / Trajectories**: Added isolated edit sessions,
+  playback-marker protection, targeted authoritative reloads, and conflict
+  handling that prevents external refreshes from overwriting working edits.
+- *(2026-08-08)* **Testing / Trajectories**: Added spatial overlay, edit-session,
+  coordinator, shortcut, map-widget, worker, and reload regression coverage.
 - *(2026-08-08)* **Testing / Trajectories**: Added repository and command
   coverage for metadata preservation, zero- and one-point states, conflicts,
   rollback, snapshot isolation, and persistent history reconstruction.

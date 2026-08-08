@@ -26,6 +26,7 @@ from PySide6.QtGui import QKeyEvent, QPaintEvent, QResizeEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QMenu,
@@ -200,6 +201,14 @@ class MapWidget(
         str, str, float, float
     )  # map_id, marker_id, old_t, new_t
     delete_keyframe_requested = Signal(str, str, float)  # map_id, marker_id, t
+    trajectory_edit_requested = Signal(str)
+    trajectory_keyframe_selected = Signal(str)
+    trajectory_keyframe_moved = Signal(str, float, float)
+    trajectory_midpoint_insert_requested = Signal(str, str, float, float)
+    trajectory_delete_selected_requested = Signal()
+    trajectory_apply_requested = Signal()
+    trajectory_cancel_requested = Signal()
+    trajectory_discard_reload_requested = Signal()
     jump_to_time_requested = Signal(float)  # target_time
     map_scale_changed = Signal(float)  # For persisting map scale
     show_onboarding_requested = Signal()  # To trigger animation or hints
@@ -347,6 +356,19 @@ class MapWidget(
         self._add_keyframe_action.setEnabled(False)
         self._add_keyframe_action.setVisible(False)
 
+        self.btn_edit_trajectory = QPushButton("Edit Trajectory")
+        self.btn_edit_trajectory.setToolTip(
+            "Edit this entity's trajectory directly on the map"
+        )
+        self.btn_edit_trajectory.clicked.connect(
+            self._request_selected_trajectory_edit
+        )
+        self._edit_trajectory_action = self.toolbar.addWidget(
+            self.btn_edit_trajectory
+        )
+        self._edit_trajectory_action.setEnabled(False)
+        self._edit_trajectory_action.setVisible(False)
+
         # Mode Pill (right side) — clickable to exit the current mode
         spacer = QWidget()
         spacer.setSizePolicy(
@@ -392,6 +414,53 @@ class MapWidget(
         self._breadcrumb_row = breadcrumb_row
         self._breadcrumb_row.hide()
         layout.addWidget(self._breadcrumb_row)
+
+        self.trajectory_edit_strip = QFrame(self)
+        self.trajectory_edit_strip.setStyleSheet(StyleHelper.get_frame_style())
+        edit_strip_layout = QHBoxLayout(self.trajectory_edit_strip)
+        edit_strip_layout.setContentsMargins(8, 4, 8, 4)
+        edit_strip_layout.setSpacing(8)
+        self.trajectory_edit_label = QLabel("Edit Trajectory")
+        self.trajectory_keyframe_label = QLabel()
+        self.trajectory_validation_label = QLabel()
+        edit_strip_layout.addWidget(self.trajectory_edit_label)
+        edit_strip_layout.addWidget(self.trajectory_keyframe_label)
+        edit_strip_layout.addWidget(self.trajectory_validation_label, 1)
+        self.btn_delete_trajectory_keyframe = QPushButton("Delete")
+        self.btn_delete_trajectory_keyframe.setStyleSheet(
+            StyleHelper.get_ghost_destructive_button_style()
+        )
+        self.btn_delete_trajectory_keyframe.clicked.connect(
+            self.trajectory_delete_selected_requested.emit
+        )
+        edit_strip_layout.addWidget(self.btn_delete_trajectory_keyframe)
+        self.btn_reload_trajectory = QPushButton("Discard & Reload")
+        self.btn_reload_trajectory.setStyleSheet(
+            StyleHelper.get_secondary_button_style()
+        )
+        self.btn_reload_trajectory.clicked.connect(
+            self.trajectory_discard_reload_requested.emit
+        )
+        self.btn_reload_trajectory.hide()
+        edit_strip_layout.addWidget(self.btn_reload_trajectory)
+        self.btn_apply_trajectory = QPushButton("Apply")
+        self.btn_apply_trajectory.setStyleSheet(
+            StyleHelper.get_primary_button_style()
+        )
+        self.btn_apply_trajectory.clicked.connect(
+            self.trajectory_apply_requested.emit
+        )
+        edit_strip_layout.addWidget(self.btn_apply_trajectory)
+        self.btn_cancel_trajectory = QPushButton("Cancel")
+        self.btn_cancel_trajectory.setStyleSheet(
+            StyleHelper.get_secondary_button_style()
+        )
+        self.btn_cancel_trajectory.clicked.connect(
+            self.trajectory_cancel_requested.emit
+        )
+        edit_strip_layout.addWidget(self.btn_cancel_trajectory)
+        self.trajectory_edit_strip.hide()
+        layout.addWidget(self.trajectory_edit_strip)
 
         self._splitter = QSplitter(Qt.Orientation.Horizontal, self)
 
@@ -463,6 +532,21 @@ class MapWidget(
         self.view.keyframe_clock_mode_requested.connect(self._on_clock_mode_requested)
         self.view.keyframe_delete_requested.connect(self._on_keyframe_delete_requested)
         self.view.keyframe_edit_requested.connect(self._emit_keyframe_upsert)
+        self.view.trajectory_edit_requested.connect(
+            self.trajectory_edit_requested.emit
+        )
+        self.view.trajectory_keyframe_selected.connect(
+            self.trajectory_keyframe_selected.emit
+        )
+        self.view.trajectory_keyframe_moved.connect(
+            self.trajectory_keyframe_moved.emit
+        )
+        self.view.trajectory_midpoint_insert_requested.connect(
+            self.trajectory_midpoint_insert_requested.emit
+        )
+        self.view.trajectory_delete_selected_requested.connect(
+            self.trajectory_delete_selected_requested.emit
+        )
         self.view.add_marker_requested.connect(self._on_create_marker_requested)
         self.view.marker_placement_ended.connect(self._on_marker_placement_ended)
         self.view.delete_marker_requested.connect(self._on_delete_marker_requested)
@@ -536,6 +620,8 @@ class MapWidget(
         self._current_time: float = 0.0  # Story's "Now" time from Timeline
 
         self._active_trajectories: dict[str, list] = {}  # marker_id -> list[Keyframe]
+        self._trajectory_edit_marker_id: str | None = None
+        self._trajectory_edit_keyframes: list = []
         self._selected_marker_id: Optional[str] = None
         self._transient_marker_ids: set[str] = set()  # Markers currently being dragged
 
@@ -694,6 +780,16 @@ class MapWidget(
 
         self._update_add_keyframe_action()
 
+    def _request_selected_trajectory_edit(self) -> None:
+        """Request editing for the currently selected trajectory owner."""
+        selected_items = self.view.graphics_scene.selectedItems()
+        selected_marker = next(
+            (item for item in selected_items if isinstance(item, MarkerItem)),
+            None,
+        )
+        if selected_marker is not None:
+            self.trajectory_edit_requested.emit(selected_marker.marker_id)
+
     def _update_add_keyframe_action(self) -> None:
         """Update keyframe-action visibility for the current marker selection."""
         selected_items = self.view.graphics_scene.selectedItems()
@@ -706,11 +802,23 @@ class MapWidget(
         can_record = selected_marker is not None and not is_event
 
         self._add_keyframe_action.setVisible(
-            selected_marker is not None and self._pinned_marker_id is None
+            selected_marker is not None
+            and self._pinned_marker_id is None
+            and self._trajectory_edit_marker_id is None
         )
         self._add_keyframe_action.setEnabled(
-            can_record and self._pinned_marker_id is None
+            can_record
+            and self._pinned_marker_id is None
+            and self._trajectory_edit_marker_id is None
         )
+        can_edit = (
+            can_record
+            and selected_marker is not None
+            and selected_marker.marker_id in self._active_trajectories
+            and self._trajectory_edit_marker_id is None
+        )
+        self._edit_trajectory_action.setVisible(can_edit)
+        self._edit_trajectory_action.setEnabled(can_edit)
 
         if is_event:
             self.btn_add_keyframe.setToolTip("Events cannot have trajectories")

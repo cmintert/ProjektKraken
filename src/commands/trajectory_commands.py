@@ -81,7 +81,8 @@ class UpdateTrajectoryCommand(BaseCommand):
                 data={
                     "trajectory_id": (
                         persisted["id"] if persisted is not None else None
-                    )
+                    ),
+                    "effects": [self._trajectory_changed_effect()],
                 },
             )
         except Exception as exc:
@@ -124,7 +125,8 @@ class UpdateTrajectoryCommand(BaseCommand):
                 data={
                     "trajectory_id": (
                         restored["id"] if restored is not None else None
-                    )
+                    ),
+                    "effects": [self._trajectory_changed_effect()],
                 },
             )
         except Exception as exc:
@@ -147,6 +149,14 @@ class UpdateTrajectoryCommand(BaseCommand):
             ],
             "after_snapshot": copy.deepcopy(self.after_snapshot),
             "after_snapshot_resolved": self._after_snapshot_resolved,
+        }
+
+    def _trajectory_changed_effect(self) -> dict[str, str]:
+        """Return the targeted UI-refresh effect for this trajectory."""
+        return {
+            "kind": "trajectory_changed",
+            "map_id": self.map_id,
+            "marker_id": self.marker_id,
         }
 
     @classmethod

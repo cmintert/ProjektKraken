@@ -89,6 +89,7 @@ from src.gui.widgets.map.raster_edit_tool import RasterEditMode
 from src.gui.widgets.map.scale_bar_overlay import ScaleBarOverlay
 from src.gui.widgets.map.scale_bar_painter import ScaleBarPainter
 from src.gui.widgets.map.snapping_manager import SnappingManager, SnapType
+from src.gui.widgets.map.trajectory_edit_overlay import TrajectoryEditOverlay
 from src.gui.widgets.map.trajectory_renderer import TrajectoryRenderer
 from src.gui.widgets.map.vertex_editor import VertexEditor
 
@@ -275,6 +276,8 @@ class KeyframeItem(QGraphicsObject):
         rect: QRectF,
         on_drop_callback: Callable[["KeyframeItem"], None],
         on_drag_callback: Optional[Callable[[], None]] = None,
+        *,
+        interactive: bool = True,
     ) -> None:
         """Initialize the keyframe item.
 
@@ -295,6 +298,7 @@ class KeyframeItem(QGraphicsObject):
         self.original_y = y  # Normalized Y
         self.on_drop_callback = on_drop_callback
         self.on_drag_callback = on_drag_callback
+        self.interactive = interactive
 
         # Mode state
         self.mode: str = "transform"  # "transform" or "clock"
@@ -311,9 +315,12 @@ class KeyframeItem(QGraphicsObject):
         self._gizmo_hovered: bool = False
 
         # Enable interaction
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges)
-        self.setAcceptHoverEvents(True)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, interactive)
+        self.setFlag(
+            QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges,
+            interactive,
+        )
+        self.setAcceptHoverEvents(interactive)
 
     def boundingRect(self) -> QRectF:
         """Return the bounding rectangle for the keyframe dot.
@@ -445,6 +452,8 @@ class KeyframeItem(QGraphicsObject):
         Args:
             event: The hover enter event.
         """
+        if not self.interactive:
+            return
         super().hoverEnterEvent(event)
         if not self.gizmo and not self.is_pinned:
             self.gizmo = KeyframeGizmo(self)
@@ -519,7 +528,8 @@ class KeyframeItem(QGraphicsObject):
             event: The mouse release event.
         """
         super().mouseReleaseEvent(event)
-        self.on_drop_callback(self)
+        if self.interactive:
+            self.on_drop_callback(self)
 
     def itemChange(
         self, change: QGraphicsEllipseItem.GraphicsItemChange, value: Any
@@ -576,6 +586,13 @@ class MapGraphicsView(QGraphicsView):
     keyframe_clock_mode_requested = Signal(str, float)
     keyframe_delete_requested = Signal(str, float)
     keyframe_edit_requested = Signal(str, float, float, float)
+
+    # -- Direct trajectory editing signals --
+    trajectory_edit_requested = Signal(str)
+    trajectory_keyframe_selected = Signal(str)
+    trajectory_keyframe_moved = Signal(str, float, float)
+    trajectory_midpoint_insert_requested = Signal(str, str, float, float)
+    trajectory_delete_selected_requested = Signal()
 
     # -- Calibration --
     calibration_completed = Signal(float)
@@ -713,7 +730,9 @@ class MapGraphicsView(QGraphicsView):
         self._vertex_editor = VertexEditor(self, self._snapping_manager)
         self._marker_manager = MarkerManager(self)
         self._trajectory = TrajectoryRenderer(self)
+        self._trajectory_edit_overlay = TrajectoryEditOverlay(self)
         self._interaction = InteractionHandler(self)
+        self._trajectory_marker_ids: set[str] = set()
 
         from src.gui.widgets.map.raster_edit_tool import RasterEditTool
 
@@ -792,6 +811,15 @@ class MapGraphicsView(QGraphicsView):
     def keyframe_label_items(self) -> list:
         """Keyframe label items (delegated to TrajectoryRenderer)."""
         return self._trajectory.keyframe_label_items
+
+    @property
+    def trajectory_edit_overlay(self) -> TrajectoryEditOverlay:
+        """Return the direct trajectory editing overlay."""
+        return self._trajectory_edit_overlay
+
+    def set_trajectory_marker_ids(self, marker_ids: set[str]) -> None:
+        """Record which visible markers currently own trajectories."""
+        self._trajectory_marker_ids = set(marker_ids)
 
     @property
     def trigger_first_use_animation(self) -> bool:
@@ -1033,6 +1061,8 @@ class MapGraphicsView(QGraphicsView):
         self._layout_debounce_timer.stop()
         if hasattr(self, "_trajectory"):
             self._trajectory.cleanup()
+        if hasattr(self, "_trajectory_edit_overlay"):
+            self._trajectory_edit_overlay.clear()
 
     def load_map(self, image_path: str) -> bool:
         """Loads a map image into the view.
@@ -2326,8 +2356,18 @@ class MapGraphicsView(QGraphicsView):
 
         pos = event.pos()
         item = self.itemAt(pos)
-        if isinstance(item, MarkerItem):
+        from src.gui.widgets.map.trajectory_renderer import TrajectoryPathItem
+
+        if isinstance(item, KeyframeItem):
+            self._interaction.show_trajectory_context_menu(
+                item.marker_id, event.globalPos()
+            )
+        elif isinstance(item, MarkerItem):
             self._interaction.show_marker_context_menu(item, event.globalPos())
+        elif isinstance(item, TrajectoryPathItem):
+            self._interaction.show_trajectory_context_menu(
+                item.marker_id, event.globalPos()
+            )
         elif isinstance(item, (PathItem, RegionItem)):
             self._interaction.show_feature_context_menu(item, event.globalPos())
         else:

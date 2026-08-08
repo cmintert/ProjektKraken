@@ -1813,6 +1813,22 @@ class DatabaseService:
             self.connect()
         return self._trajectory_repo.get_by_map_id(map_id)
 
+    def get_trajectory_snapshots_by_map(
+        self, map_id: str
+    ) -> list[dict[str, object]]:
+        """Return map-scoped serializable trajectory snapshots.
+
+        Args:
+            map_id: UUID of the map.
+
+        Returns:
+            JSON-safe trajectory records with exact row snapshots.
+
+        """
+        if not self._connection:
+            self.connect()
+        return self._trajectory_repo.get_snapshots_by_map_id(map_id)
+
     def get_trajectories_by_marker(
         self, marker_id: str
     ) -> List[Tuple[str, List["Keyframe"]]]:

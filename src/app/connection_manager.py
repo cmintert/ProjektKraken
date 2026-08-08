@@ -212,7 +212,7 @@ class ConnectionManager:
                 (
                     dh,
                     "trajectories_ready",
-                    self.window.map_handler.on_trajectories_ready,
+                    self.window.app_coordinator.trajectory_edit.on_trajectories_ready,
                     "DataHandler",
                 ),
                 (
