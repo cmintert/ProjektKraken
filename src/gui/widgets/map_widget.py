@@ -519,6 +519,9 @@ class MapWidget(
             self.trajectory_date_edit_cancel_requested.emit
         )
         date_panel_layout.addWidget(self.btn_cancel_trajectory_date)
+        self.trajectory_date_panel.setMinimumHeight(
+            self.trajectory_date_panel.sizeHint().height()
+        )
         self.trajectory_date_panel.hide()
         layout.addWidget(self.trajectory_date_panel)
 

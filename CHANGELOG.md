@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-08
-**Commit:** 84793129
+**Commit:** cfa2e20b
 ---
 
 # Changelog
@@ -34,6 +34,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-08)* **Map / Trajectories**: Prevented the first keyframe selection
+  from resizing the map viewport and visually shifting trajectory nodes, with
+  regression coverage for stable edit-session geometry.
 - *(2026-08-08)* **Map / Trajectories**: Discarded active trajectory edits
   when switching maps and suppressed ambiguous duplicate trajectory rows from
   playback instead of silently overwriting them.

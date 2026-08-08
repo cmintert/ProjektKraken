@@ -205,7 +205,17 @@ class MapTrajectoryMixin:
         is_equalization_previewing = snapshot["is_equalization_previewing"]
         if selected_index is None:
             self.trajectory_keyframe_label.setText("Select a keyframe")
-            self.trajectory_date_panel.hide()
+            self.trajectory_date_feedback.setText(
+                "Select a keyframe to edit its date."
+            )
+            self.trajectory_date_input.hide()
+            self.btn_trajectory_date_previous.hide()
+            self.btn_trajectory_date_next.hide()
+            self.btn_edit_trajectory_date.hide()
+            self.btn_trajectory_date_use_playhead.hide()
+            self.btn_finish_trajectory_date.hide()
+            self.btn_cancel_trajectory_date.hide()
+            self.trajectory_date_panel.show()
         else:
             keyframe = snapshot["keyframes"][selected_index]
             self.trajectory_keyframe_label.setText(

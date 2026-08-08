@@ -164,6 +164,32 @@ def test_edit_trajectory_action_and_compact_strip(map_widget, qtbot):
     assert not marker.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsMovable
 
 
+def test_first_keyframe_selection_keeps_map_viewport_stable(map_widget, qtbot):
+    """Selecting the first keyframe must not resize the map beneath it."""
+    _show_map_with_marker(map_widget, qtbot)
+    session = TrajectoryEditSession.create(
+        "map-1",
+        "marker1",
+        "trajectory-1",
+        [
+            Keyframe(t=0.0, x=0.2, y=0.3),
+            Keyframe(t=10.0, x=0.8, y=0.7),
+        ],
+    )
+    map_widget.show_trajectory_edit(session.to_snapshot())
+    qtbot.waitUntil(map_widget.trajectory_edit_strip.isVisible)
+    initial_viewport_size = map_widget.view.viewport().size()
+
+    session.select_keyframe(session.working_keyframes[0].edit_id)
+    map_widget.show_trajectory_edit(
+        session.to_snapshot(),
+        rebuild_overlay=False,
+    )
+    qtbot.waitUntil(map_widget.trajectory_date_panel.isVisible)
+
+    assert map_widget.view.viewport().size() == initial_viewport_size
+
+
 def test_duplicate_trajectory_rows_are_not_used_for_playback(map_widget, qtbot):
     """Ambiguous marker trajectories are suppressed instead of overwritten."""
     _show_map_with_marker(map_widget, qtbot)
