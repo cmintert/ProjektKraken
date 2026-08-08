@@ -7,9 +7,11 @@ from unittest.mock import MagicMock
 import pytest
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QImage, QKeyEvent, QPixmap
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsPixmapItem
+from PySide6.QtWidgets import QGraphicsItem, QGraphicsPixmapItem, QSizePolicy
 
 from src.core.theme_manager import ThemeManager
+from src.core.trajectory import Keyframe
+from src.core.trajectory_edit import TrajectoryEditSession
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.map.marker_item import MarkerItem
 from src.gui.widgets.map_widget import (
@@ -57,8 +59,319 @@ def test_map_widget_initialization(map_widget):
     assert map_widget.view is not None
     assert isinstance(map_widget.view, MapGraphicsView)
     assert map_widget.btn_add_marker.text() == "Add Marker"
-    assert not map_widget._add_keyframe_action.isVisible()
-    assert not map_widget._add_keyframe_action.isEnabled()
+    assert not map_widget._edit_trajectory_action.isVisible()
+    assert not map_widget._edit_trajectory_action.isEnabled()
+
+
+def test_edit_trajectory_action_and_compact_strip(map_widget, qtbot):
+    """A selected entity trajectory exposes the explicit spatial editor."""
+    marker = _show_map_with_marker(map_widget, qtbot)
+    map_widget.set_trajectories(
+        [
+            {
+                "marker_id": "marker1",
+                "trajectory_id": "trajectory-1",
+                "keyframes": [
+                    {"t": 0.0, "x": 0.2, "y": 0.3},
+                    {"t": 10.0, "x": 0.8, "y": 0.7},
+                ],
+                "row_snapshot": {},
+            }
+        ]
+    )
+    marker.setSelected(True)
+    map_widget._on_marker_clicked_internal("marker1", "entity")
+    map_widget._update_trajectory_edit_action()
+
+    assert map_widget._edit_trajectory_action.isVisible()
+    assert map_widget._edit_trajectory_action.isEnabled()
+
+    session = TrajectoryEditSession.create(
+        "map-1",
+        "marker1",
+        "trajectory-1",
+        [
+            Keyframe(t=0.0, x=0.2, y=0.3),
+            Keyframe(t=10.0, x=0.8, y=0.7),
+        ],
+    )
+    edit_id = session.working_keyframes[0].edit_id
+    session.select_keyframe(edit_id)
+    map_widget.show_trajectory_edit(session.to_snapshot())
+
+    assert map_widget.trajectory_edit_strip.isVisible()
+    assert "2 keyframes" in map_widget.trajectory_edit_label.text()
+    assert not map_widget.btn_apply_trajectory.isEnabled()
+    assert not marker.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsMovable
+    assert map_widget.trajectory_date_panel.isVisible()
+    assert map_widget.btn_edit_trajectory_date.isVisible()
+    assert not map_widget.trajectory_date_input.isEnabled()
+    assert not map_widget.trajectory_date_input.isVisible()
+    assert (
+        map_widget.trajectory_edit_strip.sizePolicy().verticalPolicy()
+        == QSizePolicy.Policy.Fixed
+    )
+    assert (
+        map_widget.trajectory_date_panel.sizePolicy().verticalPolicy()
+        == QSizePolicy.Policy.Fixed
+    )
+    assert (
+        map_widget.trajectory_speed_panel.sizePolicy().verticalPolicy()
+        == QSizePolicy.Policy.Fixed
+    )
+    root_layout = map_widget.layout()
+    assert root_layout is not None
+    assert root_layout.stretch(root_layout.indexOf(map_widget._splitter)) == 1
+
+    requested_ids = []
+    playhead_requests = []
+    map_widget.trajectory_date_edit_requested.connect(requested_ids.append)
+    map_widget.trajectory_date_use_playhead_requested.connect(
+        lambda: playhead_requests.append(True)
+    )
+    assert map_widget.btn_trajectory_date_use_playhead.isVisible()
+    qtbot.mouseClick(
+        map_widget.btn_trajectory_date_use_playhead,
+        Qt.MouseButton.LeftButton,
+    )
+    assert playhead_requests == [True]
+    qtbot.mouseClick(
+        map_widget.btn_edit_trajectory_date,
+        Qt.MouseButton.LeftButton,
+    )
+    assert requested_ids == [edit_id]
+
+    session.begin_date_edit(edit_id)
+    session.update_active_date(2.0)
+    map_widget.show_trajectory_edit(session.to_snapshot())
+
+    assert map_widget.trajectory_date_input.isEnabled()
+    assert map_widget.trajectory_date_input.isVisible()
+    assert map_widget.btn_finish_trajectory_date.isVisible()
+    assert map_widget.btn_cancel_trajectory_date.isVisible()
+    assert map_widget.btn_trajectory_date_use_playhead.isVisible()
+    qtbot.mouseClick(
+        map_widget.btn_trajectory_date_use_playhead,
+        Qt.MouseButton.LeftButton,
+    )
+    assert playhead_requests == [True, True]
+    assert "Original:" in map_widget.trajectory_date_feedback.text()
+    assert "Proposed:" in map_widget.trajectory_date_feedback.text()
+    assert "Change: +2 days" in map_widget.trajectory_date_feedback.text()
+
+    map_widget.clear_trajectory_edit()
+
+    assert not marker.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsMovable
+
+
+def test_first_keyframe_selection_keeps_map_viewport_stable(map_widget, qtbot):
+    """Selecting the first keyframe must not resize the map beneath it."""
+    _show_map_with_marker(map_widget, qtbot)
+    session = TrajectoryEditSession.create(
+        "map-1",
+        "marker1",
+        "trajectory-1",
+        [
+            Keyframe(t=0.0, x=0.2, y=0.3),
+            Keyframe(t=10.0, x=0.8, y=0.7),
+        ],
+    )
+    map_widget.show_trajectory_edit(session.to_snapshot())
+    qtbot.waitUntil(map_widget.trajectory_edit_strip.isVisible)
+    initial_viewport_size = map_widget.view.viewport().size()
+
+    session.select_keyframe(session.working_keyframes[0].edit_id)
+    map_widget.show_trajectory_edit(
+        session.to_snapshot(),
+        rebuild_overlay=False,
+    )
+    qtbot.waitUntil(map_widget.trajectory_date_panel.isVisible)
+
+    assert map_widget.view.viewport().size() == initial_viewport_size
+
+
+def test_duplicate_trajectory_rows_are_not_used_for_playback(map_widget, qtbot):
+    """Ambiguous marker trajectories are suppressed instead of overwritten."""
+    _show_map_with_marker(map_widget, qtbot)
+    row = {
+        "marker_id": "marker1",
+        "trajectory_id": "trajectory-1",
+        "keyframes": [
+            {"t": 0.0, "x": 0.2, "y": 0.3},
+            {"t": 10.0, "x": 0.8, "y": 0.7},
+        ],
+        "row_snapshot": {},
+    }
+
+    map_widget.set_trajectories(
+        [row, {**row, "trajectory_id": "trajectory-2"}]
+    )
+
+    assert "marker1" not in map_widget._active_trajectories
+
+
+def test_speed_equalization_anchor_and_preview_controls(map_widget, qtbot):
+    """The compact speed workflow exposes an inspectable working preview."""
+    _show_map_with_marker(map_widget, qtbot)
+    map_widget.view.set_map_width_meters(1000.0)
+    session = TrajectoryEditSession.create(
+        "map-1",
+        "marker1",
+        "trajectory-1",
+        [
+            Keyframe(t=0.0, x=0.0, y=0.0),
+            Keyframe(t=12.0, x=0.25, y=0.0),
+            Keyframe(t=20.0, x=1.0, y=0.0),
+        ],
+    )
+    start_id = session.working_keyframes[0].edit_id
+    end_id = session.working_keyframes[-1].edit_id
+    session.select_keyframe(start_id)
+    map_widget.show_trajectory_edit(session.to_snapshot())
+
+    assert map_widget.trajectory_speed_panel.isVisible()
+    assert map_widget.btn_set_trajectory_speed_anchor.isVisible()
+    anchor_requests = []
+    map_widget.trajectory_speed_anchor_requested.connect(anchor_requests.append)
+    qtbot.mouseClick(
+        map_widget.btn_set_trajectory_speed_anchor,
+        Qt.MouseButton.LeftButton,
+    )
+    assert anchor_requests == [start_id]
+
+    session.set_speed_anchor(start_id)
+    session.select_keyframe(end_id)
+    map_widget.show_trajectory_edit(session.to_snapshot())
+    assert map_widget.btn_equalize_trajectory_speed.isEnabled()
+    equalize_requests = []
+    map_widget.trajectory_speed_equalize_requested.connect(
+        equalize_requests.append
+    )
+    qtbot.mouseClick(
+        map_widget.btn_equalize_trajectory_speed,
+        Qt.MouseButton.LeftButton,
+    )
+    assert equalize_requests == [end_id]
+
+    session.preview_speed_equalization(
+        end_id,
+        map_widget.get_trajectory_distance_context(),
+    )
+    map_widget.show_trajectory_edit(session.to_snapshot())
+
+    assert map_widget.btn_apply_speed_equalization.isVisible()
+    assert map_widget.btn_cancel_speed_equalization.isVisible()
+    assert "1 changed" in map_widget.trajectory_speed_feedback.text()
+    assert "m/day" in map_widget.trajectory_speed_feedback.text()
+    assert "K2:" in map_widget.trajectory_speed_changes.text()
+    assert not map_widget.btn_apply_trajectory.isEnabled()
+    assert not map_widget.btn_edit_trajectory_date.isEnabled()
+    assert not map_widget.btn_trajectory_date_use_playhead.isEnabled()
+
+
+def test_direct_editor_keyboard_shortcuts_follow_nested_state(map_widget, qtbot):
+    """Map focus routes shortcuts to the active direct-edit operation."""
+    _show_map_with_marker(map_widget, qtbot)
+    session = TrajectoryEditSession.create(
+        "map-1",
+        "marker1",
+        "trajectory-1",
+        [
+            Keyframe(t=0.0, x=0.2, y=0.3),
+            Keyframe(t=10.0, x=0.8, y=0.7),
+        ],
+    )
+    edit_id = session.working_keyframes[0].edit_id
+    session.select_keyframe(edit_id)
+
+    deleted = []
+    cancelled_dates = []
+    cancelled_sessions = []
+    applied = []
+    map_widget.trajectory_delete_selected_requested.connect(
+        lambda: deleted.append(True)
+    )
+    map_widget.trajectory_date_edit_cancel_requested.connect(
+        lambda: cancelled_dates.append(True)
+    )
+    map_widget.trajectory_cancel_requested.connect(
+        lambda: cancelled_sessions.append(True)
+    )
+    map_widget.trajectory_apply_requested.connect(lambda: applied.append(True))
+
+    map_widget.show_trajectory_edit(session.to_snapshot())
+    qtbot.keyClick(map_widget.view, Qt.Key.Key_Delete)
+    assert deleted == [True]
+
+    session.begin_date_edit(edit_id)
+    map_widget.show_trajectory_edit(session.to_snapshot())
+    qtbot.keyClick(map_widget.view, Qt.Key.Key_Escape)
+    assert cancelled_dates == [True]
+    assert cancelled_sessions == []
+
+    session.cancel_date_edit()
+    session.move_keyframe(edit_id, 0.3, 0.4)
+    map_widget.show_trajectory_edit(session.to_snapshot())
+    qtbot.keyClick(map_widget.view, Qt.Key.Key_Return)
+    assert applied == [True]
+
+    qtbot.keyClick(map_widget.view, Qt.Key.Key_Escape)
+    assert cancelled_sessions == [True]
+
+
+def test_trajectory_distance_context_uses_map_aspect_and_calibration(
+    map_widget,
+):
+    """Speed math receives calibrated meters or aspect-corrected units."""
+    setup_map_with_pixmap(map_widget.view, 800, 400)
+
+    relative = map_widget.get_trajectory_distance_context()
+    map_widget.view.set_map_width_meters(1000.0)
+    calibrated = map_widget.get_trajectory_distance_context()
+
+    assert (relative.width, relative.height, relative.unit) == (2.0, 1.0, None)
+    assert (calibrated.width, calibrated.height, calibrated.unit) == (
+        1000.0,
+        500.0,
+        "m",
+    )
+
+
+def test_playhead_navigation_previews_working_trajectory_position(
+    map_widget,
+    qtbot,
+):
+    """Timeline navigation moves the marker without owning keyframe dates."""
+    marker = _show_map_with_marker(map_widget, qtbot)
+    map_widget.set_trajectories(
+        [
+            {
+                "marker_id": "marker1",
+                "trajectory_id": "trajectory-1",
+                "keyframes": [
+                    {"t": 0.0, "x": 0.1, "y": 0.2},
+                    {"t": 10.0, "x": 0.9, "y": 0.8},
+                ],
+                "row_snapshot": {},
+            }
+        ]
+    )
+    session = TrajectoryEditSession.create(
+        "map-1",
+        "marker1",
+        "trajectory-1",
+        [
+            Keyframe(t=0.0, x=0.1, y=0.2),
+            Keyframe(t=10.0, x=0.5, y=0.6),
+        ],
+    )
+    map_widget.show_trajectory_edit(session.to_snapshot())
+
+    map_widget.on_time_changed(5.0)
+
+    x, y = map_widget.view.coord_system.to_normalized(marker.pos())
+    assert (x, y) == pytest.approx((0.3, 0.4))
+    assert [keyframe.t for keyframe in session.working_keyframes] == [0.0, 10.0]
 
 
 def _show_map_with_marker(map_widget, qtbot, object_type="entity"):
@@ -81,58 +394,6 @@ def _click_marker(map_widget, marker, qtbot):
         pos=viewport_pos,
     )
     qtbot.waitUntil(marker.isSelected)
-
-
-def test_entity_marker_selection_exposes_first_keyframe_action(map_widget, qtbot):
-    """An entity marker can create its first trajectory keyframe."""
-    marker = _show_map_with_marker(map_widget, qtbot)
-
-    _click_marker(map_widget, marker, qtbot)
-
-    assert map_widget._add_keyframe_action.isVisible()
-    assert map_widget._add_keyframe_action.isEnabled()
-    assert map_widget.btn_add_keyframe.isEnabled()
-
-
-def test_event_marker_selection_disables_keyframe_action(map_widget, qtbot):
-    """Event markers remain ineligible for spatial trajectories."""
-    marker = _show_map_with_marker(map_widget, qtbot, object_type="event")
-
-    _click_marker(map_widget, marker, qtbot)
-
-    assert map_widget._add_keyframe_action.isVisible()
-    assert not map_widget._add_keyframe_action.isEnabled()
-    assert not map_widget.btn_add_keyframe.isEnabled()
-    assert map_widget.btn_add_keyframe.toolTip() == "Events cannot have trajectories"
-
-
-def test_first_keyframe_action_emits_current_marker_state(map_widget, qtbot):
-    """The newly exposed action records position at the current playhead."""
-    marker = _show_map_with_marker(map_widget, qtbot)
-    map_widget._playhead_time = 42.5
-    map_widget.get_selected_map_id = MagicMock(return_value="map1")
-    map_widget._show_onboarding_dialog = MagicMock()
-    emissions = []
-    map_widget.add_keyframe_requested.connect(lambda *args: emissions.append(args))
-    _click_marker(map_widget, marker, qtbot)
-
-    qtbot.mouseClick(map_widget.btn_add_keyframe, Qt.MouseButton.LeftButton)
-
-    assert emissions == [("map1", "marker1", 42.5, 0.5, 0.5)]
-
-
-def test_layer_selection_exposes_first_keyframe_action(map_widget, qtbot):
-    """Selecting an entity marker in Layers exposes the same action."""
-    marker = _show_map_with_marker(map_widget, qtbot)
-    model = map_widget.get_layer_model()
-    node = model.find_node_by_id("marker1")
-    assert node is not None
-
-    map_widget.layer_panel._on_item_clicked(model.index_from_node(node))
-    qtbot.waitUntil(marker.isSelected)
-
-    assert map_widget._add_keyframe_action.isVisible()
-    assert map_widget._add_keyframe_action.isEnabled()
 
 
 def test_map_widget_refreshes_local_styles_after_theme_change(
@@ -165,7 +426,6 @@ def test_map_widget_refreshes_local_styles_after_theme_change(
 
     assert "#111111" in map_widget.btn_new_map.styleSheet()
     assert "#111111" in map_widget.btn_fit_view.styleSheet()
-    assert "#111111" in map_widget.btn_add_keyframe.styleSheet()
     assert "#222222" in map_widget.btn_add_marker.styleSheet()
     assert "#222222" in map_widget.btn_draw_region.styleSheet()
     assert "#333333" in map_widget.btn_snap.styleSheet()
@@ -468,155 +728,8 @@ def test_mouse_coordinates_display(map_widget):
     assert "RW: 0.50 km, 0.50 km" in args[0]
 
 
-def test_clock_mode_logic(map_widget, qtbot):
-    """Test the Clock Mode state machine in MapWidget."""
-    # Mock specific internal state variables that aren't public
-    map_widget._pinned_marker_id = None
-    map_widget._pinned_original_t = None
-
-    # Spy on signals
-    update_spy = []
-    map_widget.update_keyframe_time_requested.connect(
-        lambda mid, mkid, ot, nt: update_spy.append((mid, mkid, ot, nt))
-    )
-
-    # 1. Enter Clock Mode
-    map_widget._on_clock_mode_requested("marker1", 100.0)
-
-    assert map_widget._pinned_marker_id == "marker1"
-    assert map_widget._pinned_original_t == 100.0
-
-    # 2. Simulate Timeline Change (Scrubbing)
-    # verify positions NOT updated when pinned (internal logic check)
-    map_widget.view._update_trajectory_positions = MagicMock()
-    map_widget.on_time_changed(150.0)
-
-    # In Clock Mode, _update_trajectory_positions should NOT be called
-    # (because we're editing time, not moving spatial markers)
-    # map_widget.view._update_trajectory_positions.assert_not_called()
-    # Note: Accessing private view state is brittle, but necessary for unit test
-
-    # 3. Commit Change (Click again)
-    # Mock getting selected map id
-    map_widget.get_selected_map_id = MagicMock(return_value="map1")
-
-    map_widget._on_clock_mode_requested("marker1", 100.0)  # Click again on same
-
-    assert len(update_spy) == 1
-    mid, mkid, ot, nt = update_spy[0]
-    assert mid == "map1"
-    assert mkid == "marker1"
-    assert ot == 100.0
-    assert nt == 150.0  # The dragged time
-
-    # Should be unpinned
-    assert map_widget._pinned_marker_id is None
-
-
-def test_clock_mode_jumps_time(map_widget, qtbot):
-    """Test that entering Clock Mode emits jump_to_time_requested."""
-    # Spy on the signal
-    signal_spy = []
-
-    def on_jump(t):
-        signal_spy.append(t)
-
-    map_widget.jump_to_time_requested.connect(on_jump)
-
-    # Trigger Clock Mode
-    marker_id = "marker_1"
-    t = 123.45
-
-    # Mock view method to prevent errors during call
-    map_widget.view.set_keyframe_pinned = MagicMock()
-
-    map_widget._on_clock_mode_requested(marker_id, t)
-
-    # Verify signal emitted with correct time
-    assert len(signal_spy) == 1
-    assert signal_spy[0] == t
-
-
-def test_mode_indicator_ui(map_widget, qtbot):
-    """Test that the mode indicator and overlay banner update correctly."""
-    # 1. Initial State
-    assert map_widget.mode_indicator.text() == "\u25cf Normal"
-    # isVisible() might be False if the widget isn't fully shown yet in headless CI,
-    # but the explicit visibility bit should be correct.
-    assert not map_widget.overlay_banner.isVisible()
-
-    # 2. Enter Clock Mode
-    map_widget._on_clock_mode_requested("marker1", 100.0)
-
-    assert "CLOCK MODE" in map_widget.mode_indicator.text()
-    assert "marker1" in map_widget.mode_indicator.text()
-    # Manual show() sets the visibility bit
-    assert (
-        map_widget.overlay_banner.isVisible()
-        or not map_widget.overlay_banner.isHidden()
-    )
-    assert "CLOCK MODE ACTIVE" in map_widget.overlay_banner.text()
-
-    # 3. Exit Clock Mode (Cancel)
-    map_widget._cancel_clock_mode()
-
-    assert map_widget.mode_indicator.text() == "\u25cf Normal"
-    assert not map_widget.overlay_banner.isVisible()
-
-
-def test_esc_cancels_clock_mode_via_view(map_widget, qtbot):
-    """Test that ESC pressed in MapGraphicsView cancels clock mode.
-
-    The view typically has focus during map interaction, so ESC events
-    arrive at the view first.  The view must forward clock-mode ESC
-    to the parent MapWidget so that _cancel_clock_mode() is called.
-    """
-    # Enter Clock Mode
-    map_widget.view.set_keyframe_pinned = MagicMock()
-    map_widget._on_clock_mode_requested("marker1", 100.0)
-    assert map_widget._pinned_marker_id == "marker1"
-
-    # Simulate ESC key press on the VIEW (where focus actually is)
-    esc_event = QKeyEvent(
-        QKeyEvent.Type.KeyPress, Qt.Key.Key_Escape, Qt.KeyboardModifier.NoModifier
-    )
-    map_widget.view.keyPressEvent(esc_event)
-
-    # Clock mode should be cancelled
-    assert map_widget._pinned_marker_id is None
-    assert map_widget.mode_indicator.text() == "\u25cf Normal"
-
-
-def test_enter_commits_clock_mode_via_view(map_widget, qtbot):
-    """Test that Enter pressed in MapGraphicsView commits clock mode."""
-    map_widget.view.set_keyframe_pinned = MagicMock()
-    map_widget._on_clock_mode_requested("marker1", 100.0)
-    assert map_widget._pinned_marker_id == "marker1"
-
-    # Simulate scrubbing
-    map_widget.on_time_changed(200.0)
-    map_widget.get_selected_map_id = MagicMock(return_value="map1")
-
-    commit_spy = []
-    map_widget.update_keyframe_time_requested.connect(
-        lambda mid, mkid, ot, nt: commit_spy.append((mid, mkid, ot, nt))
-    )
-
-    # Simulate Enter key press on the VIEW
-    enter_event = QKeyEvent(
-        QKeyEvent.Type.KeyPress, Qt.Key.Key_Return, Qt.KeyboardModifier.NoModifier
-    )
-    map_widget.view.keyPressEvent(enter_event)
-
-    # Clock mode should be committed
-    assert map_widget._pinned_marker_id is None
-    assert len(commit_spy) == 1
-
-
-def test_esc_in_view_without_clock_mode_clears_selection(map_widget, qtbot):
-    """Test that ESC in normal mode (no clock mode) clears selection."""
-    # Make sure we're NOT in clock mode
-    assert map_widget._pinned_marker_id is None
+def test_esc_in_view_clears_selection(map_widget, qtbot):
+    """Escape in normal map mode clears selection."""
 
     # Add a mock selected item to the scene
     setup_map_with_pixmap(map_widget.view)
@@ -633,46 +746,6 @@ def test_esc_in_view_without_clock_mode_clears_selection(map_widget, qtbot):
 
     # Selection should be cleared
     assert len(map_widget.view.graphics_scene.selectedItems()) == 0
-
-
-def test_esc_cancels_draft_mode_via_view(map_widget, qtbot):
-    """Test that ESC cancels Draft Mode (unsaved marker positions).
-
-    Draft Mode activates when markers are moved but not yet saved as
-    keyframes.  ESC should discard the draft and return to Normal Mode.
-    """
-    # Enter Draft Mode by adding a transient marker
-    map_widget._transient_marker_ids.add("marker1")
-    map_widget._update_mode_indicator()
-    assert "DRAFT MODE" in map_widget.mode_indicator.text()
-
-    # Simulate ESC key press on the VIEW
-    esc_event = QKeyEvent(
-        QKeyEvent.Type.KeyPress, Qt.Key.Key_Escape, Qt.KeyboardModifier.NoModifier
-    )
-    map_widget.view.keyPressEvent(esc_event)
-
-    # Draft mode should be cleared
-    assert len(map_widget._transient_marker_ids) == 0
-    assert map_widget.mode_indicator.text() == "\u25cf Normal"
-
-
-def test_esc_cancels_draft_mode_via_widget(map_widget, qtbot):
-    """Test that ESC sent directly to MapWidget cancels Draft Mode."""
-    # Enter Draft Mode
-    map_widget._transient_marker_ids.add("marker1")
-    map_widget._update_mode_indicator()
-    assert "DRAFT MODE" in map_widget.mode_indicator.text()
-
-    # Simulate ESC key press directly on MapWidget
-    esc_event = QKeyEvent(
-        QKeyEvent.Type.KeyPress, Qt.Key.Key_Escape, Qt.KeyboardModifier.NoModifier
-    )
-    map_widget.keyPressEvent(esc_event)
-
-    # Draft mode should be cleared
-    assert len(map_widget._transient_marker_ids) == 0
-    assert map_widget.mode_indicator.text() == "\u25cf Normal"
 
 
 def test_configure_map_width_emits_signal(map_widget, monkeypatch):

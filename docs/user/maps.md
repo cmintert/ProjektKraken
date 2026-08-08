@@ -24,6 +24,42 @@ temporal trajectories, nested detail maps, and optional editable raster layers.
 Snapping helps align new or edited vertices with existing geometry. Paths need
 at least two vertices; regions need at least three.
 
+## Edit a trajectory
+
+Select an entity that already has a trajectory, then choose **Edit Trajectory**.
+The map shows a working copy of the route while the saved trajectory remains
+unchanged.
+
+- Drag a dated point to change its position.
+- Drag a midpoint handle to insert a new dated point between two existing
+  points.
+- Select a point and choose **Edit Date** to change when the entity reaches it.
+  Opening the date controls does not move the timeline.
+- Choose **Use Playhead** before or during date editing to copy the current
+  timeline position into the selected point. Moving the timeline by itself
+  never changes a keyframe date.
+- Select a point and choose **Set Start Anchor**, then select a later point and
+  choose **Equalize** to preview evenly timed travel over that section.
+- Choose **Equalize Whole** to preview even timing across the complete route.
+
+Review the proposed dates before applying speed equalization. Choose **Apply**
+to save the complete trajectory as one undoable change, or **Cancel** to discard
+the working copy. Applying or cancelling an equalization preview returns you to
+the trajectory session; it does not save or close the session by itself.
+
+The ordinary entity marker shows its position at the current playhead time. It
+cannot be dragged to reshape a trajectory; open **Edit Trajectory** and move the
+dated points instead.
+
+If a date would overlap another point, ProjektKraken keeps the working copy
+open and explains the conflict. Correct the date or cancel the date edit before
+applying the trajectory. Moving a date past another point is allowed; the route
+reorders the points by date while keeping each point's map position attached.
+
+**Cancel Date** restores the date from before that date edit and leaves the
+timeline where it is. Cancelling the complete trajectory likewise discards the
+route changes without moving the timeline.
+
 ## Work with layers
 
 The layer panel groups markers, features, and rasters. You can:
@@ -80,6 +116,7 @@ result.
 - Map coordinates are normalized so content remains aligned when the view is
   resized.
 - A detail map can have its own markers independently of the parent map.
+- Trajectories are edited as a complete route, so one undo restores the whole
+  route rather than only its last point.
 - Deleting a map, group, or raster can affect nested content; read the
   confirmation summary carefully.
-

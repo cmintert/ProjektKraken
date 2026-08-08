@@ -28,7 +28,6 @@ from PySide6.QtWidgets import (
 from src.app.constants import MAP_LAYER_Z_TRAJECTORIES
 from src.core.calendar import CalendarConverter
 from src.core.theme_manager import ThemeManager
-from src.core.trajectory import KEYFRAME_TIME_EPSILON
 
 if TYPE_CHECKING:
     from src.gui.widgets.map.map_graphics_view import KeyframeItem, MapGraphicsView
@@ -105,6 +104,14 @@ class KeyframeLabelItem(QGraphicsObject):
         painter.drawText(self._rect, Qt.AlignmentFlag.AlignCenter, self._text)
 
 
+class TrajectoryPathItem(QGraphicsPathItem):
+    """Passive playback path carrying its owning marker identity."""
+
+    def __init__(self, marker_id: str, path: QPainterPath) -> None:
+        super().__init__(path)
+        self.marker_id = marker_id
+
+
 class TrajectoryRenderer:
     """Manages trajectory path, keyframes, labels, and animations.
 
@@ -121,6 +128,7 @@ class TrajectoryRenderer:
         self._calendar_converter: Optional[CalendarConverter] = None
         self.trigger_first_use_animation: bool = False
         self._animations: list[QPropertyAnimation] = []
+        self._marker_id: str | None = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -136,6 +144,7 @@ class TrajectoryRenderer:
         from src.gui.widgets.map.map_graphics_view import KeyframeItem
 
         self.clear_trajectory()
+        self._marker_id = marker_id
         if not keyframes or len(keyframes) < 2:
             return
 
@@ -161,12 +170,16 @@ class TrajectoryRenderer:
                     dot_radius * 2,
                     dot_radius * 2,
                 ),
-                self._on_keyframe_dropped,
-                self._update_trajectory_path,
             )
             dot.setPos(pos)
             _theme = ThemeManager().get_theme()
-            dot.setBrush(QBrush(QColor(_theme.get("accent_secondary", KEYFRAME_COLOR_DEFAULT))))
+            dot.setBrush(
+                QBrush(
+                    QColor(
+                        _theme.get("accent_secondary", KEYFRAME_COLOR_DEFAULT)
+                    )
+                )
+            )
             dot.setPen(QPen(Qt.PenStyle.NoPen))
             dot.setZValue(base_z - 0.2)
             self._view.graphics_scene.addItem(dot)
@@ -238,6 +251,8 @@ class TrajectoryRenderer:
             self._view.graphics_scene.removeItem(label)
         self.keyframe_label_items.clear()
 
+        self._marker_id = None
+
         self._view._schedule_label_layout()
 
     def set_calendar_converter(self, converter: CalendarConverter) -> None:
@@ -247,57 +262,6 @@ class TrajectoryRenderer:
             converter: A calendar converter with format_date(t) method.
         """
         self._calendar_converter = converter
-
-    def set_keyframe_pinned(self, marker_id: str, t: float, pinned: bool) -> None:
-        """Set visual pinned state for a specific keyframe.
-
-        Args:
-            marker_id: The marker ID.
-            t: The keyframe time.
-            pinned: Whether to pin the keyframe.
-        """
-        from src.gui.widgets.map.map_graphics_view import KeyframeItem
-
-        for item in self.keyframe_items:
-            if (
-                isinstance(item, KeyframeItem)
-                and item.marker_id == marker_id
-                and abs(item.t - t) < KEYFRAME_TIME_EPSILON
-            ):
-                item.set_pinned(pinned)
-                logger.debug(f"Set keyframe {marker_id} at t={t} pinned={pinned}")
-                return
-
-    def update_keyframe_label(self, marker_id: str, t: float, new_time: float) -> None:
-        """Updates the label of a specific keyframe to show a new time/date.
-
-        Args:
-            marker_id: The marker ID.
-            t: The keyframe time to find.
-            new_time: The new time value to display.
-        """
-        from src.gui.widgets.map.map_graphics_view import KeyframeItem
-
-        for i, item in enumerate(self.keyframe_items):
-            if (
-                isinstance(item, KeyframeItem)
-                and item.marker_id == marker_id
-                and abs(item.t - t) < KEYFRAME_TIME_EPSILON
-            ):
-                if i < len(self.keyframe_label_items):
-                    label = self.keyframe_label_items[i]
-                    if self._calendar_converter:
-                        try:
-                            text = self._calendar_converter.format_date(new_time)
-                        except Exception as e:
-                            logger.warning(
-                                f"Calendar formatting failed for time {new_time}: {e}"
-                            )
-                            text = f"{new_time:.0f}"
-                    else:
-                        text = f"{new_time:.0f}"
-                    label.setText(text)
-                return
 
     def update_label_scales(self) -> None:
         """Updates the scale of keyframe labels based on current zoom level."""
@@ -366,7 +330,7 @@ class TrajectoryRenderer:
         self, path: QPainterPath, base_z: float
     ) -> QGraphicsPathItem:
         """Creates and configures the trajectory path item."""
-        item = QGraphicsPathItem(path)
+        item = TrajectoryPathItem(self._marker_id or "", path)
         _theme = ThemeManager().get_theme()
         pen = QPen(QColor(_theme.get("primary", TRAJECTORY_PATH_COLOR)), 1)
         pen.setStyle(Qt.PenStyle.DashLine)
@@ -395,14 +359,3 @@ class TrajectoryRenderer:
             self._animations.remove(animation)
         except ValueError:
             pass  # already removed by cleanup()
-
-    def _on_keyframe_dropped(self, item: "KeyframeItem") -> None:
-        """Callback when a keyframe dot is released after dragging."""
-        scene_pos = item.scenePos()
-        norm_pos = self._view.coord_system.to_normalized(scene_pos)
-        x, y = norm_pos
-
-        logger.info(
-            f"Keyframe dropped for {item.marker_id} at t={item.t}: ({x:.3f}, {y:.3f})"
-        )
-        self._view.keyframe_moved.emit(item.marker_id, item.t, x, y)

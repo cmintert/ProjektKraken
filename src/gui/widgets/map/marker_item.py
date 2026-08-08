@@ -331,6 +331,7 @@ class MarkerItem(QGraphicsObject):
         Args:
             state: True if trajectory exists, False otherwise.
         """
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, not state)
         if self.has_keyframes != state:
             self.has_keyframes = state
             self.update()

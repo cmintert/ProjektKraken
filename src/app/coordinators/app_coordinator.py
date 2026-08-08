@@ -55,6 +55,9 @@ class AppCoordinator(QObject):
             NavigationCoordinator,
         )
         from src.app.coordinators.time_coordinator import TimeCoordinator
+        from src.app.coordinators.trajectory_edit_coordinator import (
+            TrajectoryEditCoordinator,
+        )
 
         self.data = DataCoordinator(main_window)
         self.time = TimeCoordinator(main_window)
@@ -63,9 +66,10 @@ class AppCoordinator(QObject):
         self.backup = BackupCoordinator(main_window)
         self.fast_inject = FastInjectCoordinator(main_window)
         self.import_coord = ImportCoordinator(main_window)
+        self.trajectory_edit = TrajectoryEditCoordinator(main_window)
 
         self.main_window = main_window
-        logger.debug("AppCoordinator initialized with 7 coordinators")
+        logger.debug("AppCoordinator initialized with 8 coordinators")
 
     def validate_world(self) -> None:
         """Request world validation on the DatabaseWorker thread.

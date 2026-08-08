@@ -78,7 +78,7 @@ Backups and AI search indexes are also stored in the user data directory.
 
 ### Visualization
 - **Interactive Graph View**: Physics-based node graph with filtering, auto-updates, and force-directed layout
-- **Temporal Maps 2.0**: Trajectory visualization (MF-JSON), reliable playhead persistence, and "Clock Mode" for precise temporal editing
+- **Temporal Maps 2.0**: Direct spatial and date editing, atomic undo, speed equalization, and reliable playhead persistence
 - **Timeline Context**: Lane-based world timeline plus related-event summaries
   inside entity inspectors
 - **Longform Documents**: Hierarchical document structure for narrative prose

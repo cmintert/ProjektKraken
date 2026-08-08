@@ -21,7 +21,11 @@ The current shortcuts are also available from
 | Demote Longform item | Ctrl+] |
 | Cancel or deselect | Escape |
 | Pan a map | Hold Space and drag |
+| Delete selected trajectory point | Delete, while editing a trajectory |
+| Apply trajectory changes | Enter, while editing a trajectory |
+| Cancel trajectory changes | Escape, while editing a trajectory |
 
 Some shortcuts apply only when the corresponding editor or map has keyboard
-focus.
-
+focus. While changing a trajectory date or previewing equalized timing,
+**Escape** cancels that smaller operation first and keeps the trajectory editor
+open.

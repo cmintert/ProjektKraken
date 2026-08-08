@@ -82,7 +82,6 @@ def _init_registry() -> None:
     )
     from src.commands.marker_commands import (
         CreateMarkerCommand,
-        DeleteKeyframeCommand,
         DeleteMarkerCommand,
         UpdateMarkerAttributeCommand,
         UpdateMarkerColorCommand,
@@ -109,6 +108,7 @@ def _init_registry() -> None:
         SetTimelineGroupingCommand,
         UpdateTagColorCommand,
     )
+    from src.commands.trajectory_commands import UpdateTrajectoryCommand
     from src.commands.wiki_commands import ProcessWikiLinksCommand
 
     _COMMAND_TYPES.update(
@@ -150,7 +150,7 @@ def _init_registry() -> None:
             "UpdateMarkerIconCommand": UpdateMarkerIconCommand,
             "UpdateMarkerColorCommand": UpdateMarkerColorCommand,
             "UpdateMarkerAttributeCommand": UpdateMarkerAttributeCommand,
-            "DeleteKeyframeCommand": DeleteKeyframeCommand,
+            "UpdateTrajectoryCommand": UpdateTrajectoryCommand,
             # Layer commands
             "SetLayerVisibilityCommand": SetLayerVisibilityCommand,
             "MoveLayerCommand": MoveLayerCommand,

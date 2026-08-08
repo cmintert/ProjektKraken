@@ -782,14 +782,17 @@ class MapHandler(QObject):
             )
         self._marker_object_to_id[marker_data["object_id"]] = marker_data["id"]
 
-    @Slot(list)
-    def on_trajectories_ready(self, trajectories: list) -> None:
+    @Slot(str, list)
+    def on_trajectories_ready(self, map_id: str, trajectories: list) -> None:
         """Handle trajectories ready signal from DataHandler.
 
         Args:
-            trajectories: List of (marker_id, trajectory_id, keyframes) tuples.
+            map_id: ID of the map that produced the snapshots.
+            trajectories: JSON-safe trajectory snapshot dictionaries.
 
         """
+        if map_id != self._map_widget.get_selected_map_id():
+            return
         self._map_widget.set_trajectories(trajectories)
 
     @Slot(float)

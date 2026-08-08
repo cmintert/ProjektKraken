@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-08-06
-**Commit:** ab089148
+**Last Updated:** 2026-08-08
+**Commit:** cfa2e20b
 ---
 
 # Changelog
@@ -13,11 +13,39 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-08-08)* **Map / Trajectories**: Added anchored and whole-trajectory
+  speed equalization with distance-weighted date previews, calibrated or
+  relative speed feedback, and reversible working-copy confirmation.
+- *(2026-08-08)* **Map / Trajectories**: Added direct temporal keyframe
+  editing through compact calendar controls and explicit playhead copying,
+  with live reordering, date feedback, affected-segment highlighting, and
+  scoped cancel.
+- *(2026-08-08)* **Map / Trajectories**: Added direct spatial trajectory
+  editing with draggable keyframes, midpoint insertion, snapping, compact
+  Apply and Cancel controls, and focus-independent shortcuts.
+- *(2026-08-08)* **Architecture / Trajectories**: Added atomic complete-row
+  trajectory replacement, stale-snapshot conflict detection, and persistent
+  exact undo and redo through `UpdateTrajectoryCommand`.
+- *(2026-08-08)* **Map / Trajectories**: Added stable editable-keyframe values,
+  independent snapshot cloning, midpoint-time inference, and validation for
+  finite dates, normalized coordinates, and timestamp collisions.
 - *(2026-08-03)* **Longform / LAN Sharing**: Added explicit authenticated LAN
   publishing with ephemeral eight-digit access codes and brute-force limits.
 
 ### Fixed
 
+- *(2026-08-08)* **Map / Trajectories**: Prevented the first keyframe selection
+  from resizing the map viewport and visually shifting trajectory nodes, with
+  regression coverage for stable edit-session geometry.
+- *(2026-08-08)* **Map / Trajectories**: Discarded active trajectory edits
+  when switching maps and suppressed ambiguous duplicate trajectory rows from
+  playback instead of silently overwriting them.
+- *(2026-08-08)* **Map / Trajectories**: Kept trajectory editing controls at
+  their content height and collapsed inactive calendar controls so the map
+  retains the available workspace.
+- *(2026-08-08)* **Map / Trajectories**: Preserved one-keyframe trajectories
+  and rejected ambiguous duplicate trajectory rows instead of silently choosing
+  or deleting data.
 - *(2026-08-03)* **Longform / Security**: Restricted default publishing to
   localhost and made HTTP longform reads unable to modify world databases.
 - *(2026-08-06)* **Longform / Security**: Hardened embedded longform publishing
@@ -26,6 +54,29 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-08)* **Cleanup / Trajectories**: Removed legacy Draft and Clock
+  modes, hover keyframe gizmos, granular mutation pathways, and obsolete
+  command compatibility in favor of the atomic direct editor.
+- *(2026-08-08)* **Documentation / Trajectories**: Documented direct route
+  editing, explicit playhead date assignment, speed equalization, cancellation,
+  and keyboard behavior.
+- *(2026-08-08)* **Testing / Trajectories**: Added speed calculation,
+  100-keyframe, anchor lifecycle, preview, keyboard, calibrated display, and
+  compact-layout regression coverage.
+- *(2026-08-08)* **Testing / Trajectories**: Added temporal edit-session,
+  coordinator, overlay, shortcut, explicit playhead-copy, cancellation, and
+  map-widget regression coverage.
+- *(2026-08-08)* **Architecture / Trajectories**: Added isolated edit sessions,
+  playback-marker protection, targeted authoritative reloads, and conflict
+  handling that prevents external refreshes from overwriting working edits.
+- *(2026-08-08)* **Testing / Trajectories**: Added spatial overlay, edit-session,
+  coordinator, shortcut, map-widget, worker, and reload regression coverage.
+- *(2026-08-08)* **Testing / Trajectories**: Added repository and command
+  coverage for metadata preservation, zero- and one-point states, conflicts,
+  rollback, snapshot isolation, and persistent history reconstruction.
+- *(2026-08-08)* **Testing / Trajectories**: Added focused coverage for
+  trajectory snapshot independence, validation boundaries, midpoint inference,
+  and documented interpolation clamping behavior.
 - *(2026-08-03)* **Testing / Security**: Added authentication, binding,
   read-only database, identifier-validation, and publishing UI regressions.
 - *(2026-08-03)* **Release**: Bumped project and application metadata to

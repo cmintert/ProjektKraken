@@ -34,7 +34,7 @@ EXPECTED_COMMANDS = [
     "UpdateMarkerIconCommand",
     "UpdateMarkerColorCommand",
     "UpdateMarkerAttributeCommand",
-    "DeleteKeyframeCommand",
+    "UpdateTrajectoryCommand",
     # Layer commands
     "SetLayerVisibilityCommand",
     "MoveLayerCommand",

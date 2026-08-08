@@ -39,6 +39,7 @@ from src.services.text_parser import WikiLinkParser
 if TYPE_CHECKING:
     from src.core.trajectory import Keyframe
     from src.services.attachment_service import AttachmentService
+    from src.services.repositories.trajectory_repository import TrajectorySnapshot
 
 logger = logging.getLogger(__name__)
 
@@ -1812,6 +1813,22 @@ class DatabaseService:
             self.connect()
         return self._trajectory_repo.get_by_map_id(map_id)
 
+    def get_trajectory_snapshots_by_map(
+        self, map_id: str
+    ) -> list[dict[str, object]]:
+        """Return map-scoped serializable trajectory snapshots.
+
+        Args:
+            map_id: UUID of the map.
+
+        Returns:
+            JSON-safe trajectory records with exact row snapshots.
+
+        """
+        if not self._connection:
+            self.connect()
+        return self._trajectory_repo.get_snapshots_by_map_id(map_id)
+
     def get_trajectories_by_marker(
         self, marker_id: str
     ) -> List[Tuple[str, List["Keyframe"]]]:
@@ -1828,58 +1845,82 @@ class DatabaseService:
             self.connect()
         return self._trajectory_repo.get_by_marker_db_id(marker_id)
 
-    def add_keyframe(self, map_id: str, object_id: str, keyframe: "Keyframe") -> str:
-        """Adds a keyframe to the marker's trajectory.
+    def get_marker_trajectory_snapshot(
+        self, map_id: str, object_id: str
+    ) -> Optional["TrajectorySnapshot"]:
+        """Return one marker's exact trajectory row snapshot.
 
         Args:
-            map_id: The ID of the map.
-            object_id: The object ID (Entity/Event ID).
-            keyframe: The Keyframe object.
+            map_id: ID of the containing map.
+            object_id: Entity or event ID associated with the marker.
 
         Returns:
-            The ID of the updated/created trajectory.
+            Exact trajectory row state, or ``None`` when no row exists.
 
         """
         if not self._connection:
             self.connect()
-        return self._trajectory_repo.add_keyframe(map_id, object_id, keyframe)
-
-    def update_keyframe_time(
-        self, map_id: str, object_id: str, old_t: float, new_t: float
-    ) -> str:
-        """Updates a keyframe's timestamp (Clock Mode editing).
-
-        Args:
-            map_id: The ID of the map.
-            object_id: The object ID (Entity/Event ID).
-            old_t: Original timestamp.
-            new_t: New timestamp.
-
-        Returns:
-            The ID of the updated trajectory.
-
-        """
-        if not self._connection:
-            self.connect()
-        return self._trajectory_repo.update_keyframe_time(
-            map_id, object_id, old_t, new_t
+        return self._trajectory_repo.get_marker_trajectory_snapshot(
+            map_id, object_id
         )
 
-    def delete_keyframe(self, map_id: str, object_id: str, t: float) -> Optional[str]:
-        """Deletes a keyframe from a marker's trajectory.
+    def set_marker_trajectory(
+        self,
+        map_id: str,
+        object_id: str,
+        keyframes: List["Keyframe"],
+        *,
+        expected_snapshot: Optional["TrajectorySnapshot"],
+    ) -> Optional["TrajectorySnapshot"]:
+        """Atomically replace a marker's complete trajectory.
 
         Args:
-            map_id: The ID of the map.
-            object_id: The object ID (Entity/Event ID).
-            t: The timestamp of the keyframe to delete.
+            map_id: ID of the containing map.
+            object_id: Entity or event ID associated with the marker.
+            keyframes: Complete desired keyframe state.
+            expected_snapshot: Exact state expected before replacement.
 
         Returns:
-            The ID of the updated trajectory, or None if trajectory was deleted.
+            Exact persisted row state, or ``None`` after deletion.
 
         """
         if not self._connection:
             self.connect()
-        return self._trajectory_repo.delete_keyframe(map_id, object_id, t)
+        return self._trajectory_repo.set_marker_trajectory(
+            map_id,
+            object_id,
+            keyframes,
+            expected_snapshot=expected_snapshot,
+        )
+
+    def restore_marker_trajectory_snapshot(
+        self,
+        map_id: str,
+        object_id: str,
+        snapshot: Optional["TrajectorySnapshot"],
+        *,
+        expected_snapshot: Optional["TrajectorySnapshot"],
+    ) -> Optional["TrajectorySnapshot"]:
+        """Restore an exact trajectory row for undo or redo.
+
+        Args:
+            map_id: ID of the containing map.
+            object_id: Entity or event ID associated with the marker.
+            snapshot: Exact desired row, or ``None`` for no trajectory.
+            expected_snapshot: Exact state expected before restoration.
+
+        Returns:
+            Restored row state, or ``None`` after deletion.
+
+        """
+        if not self._connection:
+            self.connect()
+        return self._trajectory_repo.restore_marker_trajectory_snapshot(
+            map_id,
+            object_id,
+            snapshot,
+            expected_snapshot=expected_snapshot,
+        )
 
     def register_backup_service(self, backup_service: Any) -> None:
         """Registers a backup service for integration with database operations.

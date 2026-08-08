@@ -20,12 +20,17 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import QCloseEvent, QKeyEvent
 from PySide6.QtWidgets import (
+    QAbstractSpinBox,
+    QComboBox,
     QDialog,
     QDockWidget,
     QLabel,
+    QLineEdit,
     QMainWindow,
     QMessageBox,
+    QPlainTextEdit,
     QStatusBar,
+    QTextEdit,
     QWidget,
 )
 
@@ -203,6 +208,49 @@ class GlobalShortcutFilter(QObject):
         if handler is not None:
             return handler()
 
+        trajectory_edit = self.main_window.app_coordinator.trajectory_edit
+        if trajectory_edit.is_active:
+            if key == Qt.Key.Key_Escape:
+                if trajectory_edit.is_date_editing:
+                    trajectory_edit.cancel_date_edit()
+                elif trajectory_edit.is_equalization_previewing:
+                    trajectory_edit.cancel_speed_equalization()
+                else:
+                    trajectory_edit.cancel()
+                return True
+            if key in {Qt.Key.Key_Return, Qt.Key.Key_Enter}:
+                if not self._focus_is_editable(obj):
+                    if trajectory_edit.is_equalization_previewing:
+                        trajectory_edit.confirm_speed_equalization()
+                    else:
+                        trajectory_edit.apply()
+                    return True
+            if key == Qt.Key.Key_Delete and not self._focus_is_editable(obj):
+                trajectory_edit.delete_selected_keyframe()
+                return True
+
+        return False
+
+    @staticmethod
+    def _focus_is_editable(receiver: QObject | None = None) -> bool:
+        """Whether keyboard input belongs to an active text/value editor."""
+        from PySide6.QtWidgets import QApplication
+
+        candidate: QObject | None = receiver or QApplication.focusWidget()
+        while candidate is not None:
+            if isinstance(
+                candidate,
+                (
+                    QLineEdit,
+                    QTextEdit,
+                    QPlainTextEdit,
+                    QAbstractSpinBox,
+                    QComboBox,
+                    QDialog,
+                ),
+            ):
+                return True
+            candidate = candidate.parent()
         return False
 
 
@@ -480,6 +528,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # Status Bar
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
+        self.app_coordinator.trajectory_edit.bind_ui()
 
         # Setup UI Layout via UIManager
         self.ui_manager = UIManager(self)

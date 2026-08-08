@@ -4,7 +4,7 @@ The commands have been split into three focused modules:
 
 * ``map_crud_commands`` — CreateMapCommand, UpdateMapCommand, DeleteMapCommand
 * ``marker_commands`` — CreateMarkerCommand, UpdateMarkerCommand, DeleteMarkerCommand,
-  UpdateMarkerIconCommand, UpdateMarkerColorCommand, DeleteKeyframeCommand
+  UpdateMarkerIconCommand, UpdateMarkerColorCommand
 * ``layer_commands`` — SetLayerVisibilityCommand, MoveLayerCommand,
   SaveLayerTreeCommand, SetLayerOpacityCommand, RenameLayerCommand,
   ``_find_layer_node``
@@ -36,7 +36,6 @@ from src.commands.map_crud_commands import (  # noqa: F401
 # Marker / Feature
 from src.commands.marker_commands import (  # noqa: F401
     CreateMarkerCommand,
-    DeleteKeyframeCommand,
     DeleteMarkerCommand,
     UpdateMarkerAttributeCommand,
     UpdateMarkerColorCommand,
@@ -52,6 +51,7 @@ from src.commands.raster_commands import (  # noqa: F401
     SetRasterMappingCommand,
     StrokeRasterCommand,
 )
+from src.commands.trajectory_commands import UpdateTrajectoryCommand  # noqa: F401
 
 __all__ = [
     # Map CRUD
@@ -69,7 +69,7 @@ __all__ = [
     "UpdateMarkerIconCommand",
     "UpdateMarkerColorCommand",
     "UpdateMarkerAttributeCommand",
-    "DeleteKeyframeCommand",
+    "UpdateTrajectoryCommand",
     # Layer hierarchy
     "SetLayerVisibilityCommand",
     "MoveLayerCommand",
