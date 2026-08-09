@@ -6,11 +6,63 @@ import contextlib
 
 import pytest
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QTextOption
 
+from src.app.constants import WIKI_EDITOR_MAX_LINE_LENGTH
 from src.core.theme_manager import ThemeManager
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
 # Requires qtbot to interact with widgets
+
+
+def test_visual_line_length_wraps_at_words_without_changing_text(qtbot):
+    """Wiki editors use their capped viewport without splitting or changing text."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+    long_line = "x" * (WIKI_EDITOR_MAX_LINE_LENGTH + 30)
+
+    widget.editor.setPlainText(long_line)
+
+    assert widget.editor.lineWrapMode() == widget.editor.LineWrapMode.WidgetWidth
+    assert (
+        widget.editor.document().defaultTextOption().wrapMode()
+        == QTextOption.WrapMode.WordWrap
+    )
+    assert widget.editor.toPlainText() == long_line
+
+
+def test_visual_wrap_does_not_split_normal_words(qtbot):
+    """Rendered line boundaries should fall between words in ordinary prose."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+    prose = ("readable words remain intact across visual lines " * 30).strip()
+    widget.editor.setPlainText(prose)
+    widget.resize(widget.maximumWidth(), 300)
+    widget.show()
+    qtbot.wait(10)
+
+    block = widget.editor.document().firstBlock()
+    layout = block.layout()
+    assert layout.lineCount() > 1
+
+    for line_index in range(layout.lineCount() - 1):
+        line = layout.lineAt(line_index)
+        boundary = line.textStart() + line.textLength()
+        assert not (prose[boundary - 1].isalpha() and prose[boundary].isalpha())
+
+
+def test_editor_frame_width_tracks_wrap_column_and_toc(qtbot):
+    """The frame fits the text column and expands when its TOC is visible."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+    character_width = widget.editor.fontMetrics().averageCharWidth()
+    width_without_toc = widget.maximumWidth()
+
+    assert width_without_toc >= character_width * WIKI_EDITOR_MAX_LINE_LENGTH
+
+    widget._toggle_toc()
+
+    assert widget.maximumWidth() == width_without_toc + widget.toc_widget.width()
 
 
 def test_ctrl_click_emits_signal(qtbot):

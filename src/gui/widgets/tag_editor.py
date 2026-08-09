@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.theme_manager import ThemeManager
 from src.gui.widgets.flow_layout import FlowLayout
 from src.gui.widgets.tag_pill import TagPill
 
@@ -77,6 +78,15 @@ class TagEditorWidget(QWidget):
 
         # Initial state: just the input
         self.flow_layout.addWidget(self.tag_input)
+        ThemeManager().theme_changed.connect(self._on_theme_changed)
+
+    @Slot(dict)
+    def _on_theme_changed(self, _: dict) -> None:
+        """Refresh styles that were generated from the previous theme."""
+        from src.gui.utils.style_helper import StyleHelper
+
+        self.tag_input.setStyleSheet(StyleHelper.get_transparent_input_style())
+        self.container_frame.setStyleSheet(StyleHelper.get_input_field_style())
 
     def set_base_color(self, color: str) -> None:
         """Set the base color for tag pills and update existing pills.

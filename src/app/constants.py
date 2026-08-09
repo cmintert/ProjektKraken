@@ -116,6 +116,9 @@ IMAGE_FILE_FILTER = (
 # Autosave Configuration
 AUTOSAVE_DELAY_MS = 2000  # 2 seconds
 
+# Editor Configuration
+WIKI_EDITOR_MAX_LINE_LENGTH = 90
+
 # Semantic Completion Constants
 SEMANTIC_COMPLETION_MIN_SCORE = 0.85  # Minimum cosine similarity to surface a suggestion
 SEMANTIC_COMPLETION_TOP_K = 5  # Max candidates fetched from the semantic index

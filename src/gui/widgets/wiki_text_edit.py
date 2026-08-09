@@ -30,6 +30,7 @@ from PySide6.QtGui import (
     QTextCursor,
     QTextDocument,
     QTextFragment,
+    QTextOption,
 )
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -44,7 +45,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.constants import SEMANTIC_COMPLETION_MIN_PREFIX_LEN
+from src.app.constants import (
+    SEMANTIC_COMPLETION_MIN_PREFIX_LEN,
+    WIKI_EDITOR_MAX_LINE_LENGTH,
+)
 from src.core.theme_manager import ThemeManager
 from src.core.wiki_ast import CursorMapper, WikiASTParser, WikiASTSerializer
 
@@ -158,6 +162,13 @@ class WikiTextEditView(QTextEdit):
 
         # Remove frame from view as it's handled by wrapper
         self.setFrameShape(QFrame.Shape.NoFrame)
+
+        # The wrapper limits the viewport to the configured reading width;
+        # wrap within that viewport without splitting words at an exact column.
+        self.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
+        text_option = self.document().defaultTextOption()
+        text_option.setWrapMode(QTextOption.WrapMode.WordWrap)
+        self.document().setDefaultTextOption(text_option)
 
         # Force viewport transparency via Palette
         p = self.viewport().palette()
@@ -1919,6 +1930,7 @@ class WikiTextEdit(QFrame):
 
     link_clicked = Signal(str)
     completion_prefix_changed = Signal(str)
+    maximum_width_changed = Signal(int)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the wiki text edit wrapper widget.
@@ -1987,6 +1999,26 @@ class WikiTextEdit(QFrame):
         from src.core.theme_manager import ThemeManager
 
         ThemeManager().theme_changed.connect(self._on_theme_changed)
+        self._apply_editor_width_limit()
+
+    def _apply_editor_width_limit(self) -> None:
+        """Size the frame to the configured text column and visible editor chrome."""
+        character_width = self.editor.fontMetrics().averageCharWidth()
+        text_width = character_width * WIKI_EDITOR_MAX_LINE_LENGTH
+        document_margins = round(self.editor.document().documentMargin() * 2)
+        scrollbar_width = self.editor.verticalScrollBar().sizeHint().width()
+        frame_padding = 6
+        toc_width = self.toc_widget.width() if not self.toc_widget.isHidden() else 0
+        maximum_width = (
+            text_width
+            + document_margins
+            + scrollbar_width
+            + frame_padding
+            + toc_width
+        )
+        if maximum_width != self.maximumWidth():
+            self.setMaximumWidth(maximum_width)
+            self.maximum_width_changed.emit(maximum_width)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Stop the child editor's worker before closing the wrapper."""
@@ -2080,6 +2112,7 @@ class WikiTextEdit(QFrame):
         else:
             self.action_toggle_mode.setText("HTML")
             self.action_toggle_mode.setToolTip("Switch to Rendered HTML View")
+        self._apply_editor_width_limit()
 
     def _apply_style(self) -> None:
         """Apply the current theme styling to the widget."""
@@ -2100,6 +2133,7 @@ class WikiTextEdit(QFrame):
             theme: The new theme dictionary.
         """
         self._apply_style()
+        self._apply_editor_width_limit()
 
     @Slot()
     def _toggle_toc(self) -> None:
@@ -2109,6 +2143,7 @@ class WikiTextEdit(QFrame):
             self._update_toc()
         else:
             self.toc_widget.hide()
+        self._apply_editor_width_limit()
 
     @Slot()
     def _update_toc(self) -> None:

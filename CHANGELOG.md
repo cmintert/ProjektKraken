@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-09
-**Commit:** 9207dad9
+**Commit:** bc49ac3c
 ---
 
 # Changelog
@@ -21,6 +21,12 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-09)* **Editor / UX**: Improved reading-width wrapping and timeline
+  cards, hid internal attributes while preserving them, and refreshed editor,
+  tag, and generation styles on live theme changes.
+- *(2026-08-09)* **Testing / UI**: Added regression coverage for readable text
+  wrapping, timeline navigation, hidden attributes, checked indicators, and
+  theme-aware editor controls.
 - *(2026-08-09)* **AI / Audit Logging**: Replaced plaintext prompt-response logs
   with versioned per-world JSONL events that link exact prompts and raw model
   replies to review actions, ratings, comments, automatic filtering, and user

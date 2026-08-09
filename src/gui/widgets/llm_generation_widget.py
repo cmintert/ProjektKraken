@@ -40,6 +40,7 @@ from src.core.ai_generation import (
     TaskTemplate,
 )
 from src.core.logging_config import get_world_audit_log_path
+from src.core.theme_manager import ThemeManager
 from src.gui.utils.settings_reader import (
     read_bool_setting,
     read_int_setting,
@@ -464,11 +465,10 @@ class LLMGenerationWidget(QWidget):
         StyleHelper.apply_compact_spacing(main_layout)
 
         # Main Separator line (Top)
-        top_sep = QFrame()
-        top_sep.setFrameShape(QFrame.Shape.HLine)
-        top_sep.setFrameShadow(QFrame.Shadow.Sunken)
-        top_sep.setStyleSheet("color: #444444; margin-bottom: 4px;")
-        main_layout.addWidget(top_sep)
+        self.top_sep = QFrame()
+        self.top_sep.setFrameShape(QFrame.Shape.HLine)
+        self.top_sep.setFrameShadow(QFrame.Shadow.Sunken)
+        main_layout.addWidget(self.top_sep)
 
         # Controls grid layout (Revised to QGridLayout for alignment)
         # Col 0: Labels, Col 1: Inputs, Col 2: Labels/Checkboxes, Col 3: Inputs
@@ -576,11 +576,8 @@ class LLMGenerationWidget(QWidget):
         main_layout.addLayout(grid_layout)
 
         # Header for prompt section
-        lbl_instruction = QLabel("Prompt Instructions")
-        lbl_instruction.setStyleSheet(
-            "font-weight: bold; font-size: 10px; color: #888888; margin-top: 4px;"
-        )
-        main_layout.addWidget(lbl_instruction)
+        self.lbl_instruction = QLabel("Prompt Instructions")
+        main_layout.addWidget(self.lbl_instruction)
 
         # Custom prompt input
         self.custom_prompt_edit = PromptEditorWidget()
@@ -597,11 +594,10 @@ class LLMGenerationWidget(QWidget):
         main_layout.addWidget(self.custom_prompt_edit)
 
         # Separator line before buttons
-        sep2 = QFrame()
-        sep2.setFrameShape(QFrame.Shape.HLine)
-        sep2.setFrameShadow(QFrame.Shadow.Sunken)
-        sep2.setStyleSheet("color: #444444; margin-top: 8px;")
-        main_layout.addWidget(sep2)
+        self.sep2 = QFrame()
+        self.sep2.setFrameShape(QFrame.Shape.HLine)
+        self.sep2.setFrameShadow(QFrame.Shadow.Sunken)
+        main_layout.addWidget(self.sep2)
 
         # Action Buttons Layout (Below text field)
         buttons_layout = QHBoxLayout()
@@ -632,7 +628,6 @@ class LLMGenerationWidget(QWidget):
 
         # Status label
         self.status_label = QLabel("")
-        self.status_label.setStyleSheet("color: #95a5a6; font-size: 11px;")
         main_layout.addWidget(self.status_label)
 
         # Post-generation transparency line for spatial context. Hidden until
@@ -641,15 +636,10 @@ class LLMGenerationWidget(QWidget):
         spatial_row = QHBoxLayout()
         spatial_row.setContentsMargins(0, 0, 0, 0)
         self.spatial_used_label = QLabel("")
-        self.spatial_used_label.setStyleSheet("color: #888888; font-size: 11px;")
         spatial_row.addWidget(self.spatial_used_label)
         self.spatial_show_btn = QPushButton("Show")
         self.spatial_show_btn.setFlat(True)
         self.spatial_show_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.spatial_show_btn.setStyleSheet(
-            "QPushButton { color: #5dade2; border: none; font-size: 11px; "
-            "padding: 0px 4px; } QPushButton:hover { text-decoration: underline; }"
-        )
         self.spatial_show_btn.clicked.connect(self._on_show_spatial_context_clicked)
         spatial_row.addWidget(self.spatial_show_btn)
         spatial_row.addStretch()
@@ -663,6 +653,31 @@ class LLMGenerationWidget(QWidget):
 
         # Load settings
         self._load_settings()
+        theme_manager = ThemeManager()
+        theme_manager.theme_changed.connect(self._on_theme_changed)
+        self._on_theme_changed(theme_manager.get_theme())
+
+    @Slot(dict)
+    def _on_theme_changed(self, theme: dict) -> None:
+        """Refresh local LLM panel styles after a live theme switch."""
+        border = theme["border"]
+        text_dim = theme["text_dim"]
+        accent = theme["accent_secondary"]
+        self.top_sep.setStyleSheet(f"color: {border}; margin-bottom: 4px;")
+        self.lbl_instruction.setStyleSheet(
+            "font-weight: bold; font-size: 10px; "
+            f"color: {text_dim}; margin-top: 4px;"
+        )
+        self.sep2.setStyleSheet(f"color: {border}; margin-top: 8px;")
+        self.status_label.setStyleSheet(f"color: {text_dim}; font-size: 11px;")
+        self.spatial_used_label.setStyleSheet(
+            f"color: {text_dim}; font-size: 11px;"
+        )
+        self.spatial_show_btn.setStyleSheet(
+            f"QPushButton {{ color: {accent}; border: none; font-size: 11px; "
+            "padding: 0px 4px; } "
+            "QPushButton:hover { text-decoration: underline; }"
+        )
 
     def _populate_template_combo(self) -> None:
         """Populate the selector from the coordinator-provided snapshot."""

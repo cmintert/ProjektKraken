@@ -85,20 +85,48 @@ class AttributeEditorWidget(QWidget):
         main_layout.addWidget(self.table)
 
         self._block_signals = False
+        self._hidden_attributes: Dict[str, Any] = {}
 
-    def load_attributes(self, attributes: Dict[str, Any]) -> None:
-        """Populates the table with the given attributes dictionary."""
+    def load_attributes(
+        self,
+        attributes: Dict[str, Any],
+        *,
+        show_hidden: bool = False,
+    ) -> None:
+        """Populate the table, hiding underscore-prefixed keys by default.
+
+        Hidden values remain preserved by :meth:`get_attributes` even though
+        their rows are not displayed.
+        """
         self._block_signals = True
         self.table.setRowCount(0)
+        self._hidden_attributes = (
+            {}
+            if show_hidden
+            else {
+                key: value
+                for key, value in attributes.items()
+                if key.startswith("_")
+            }
+        )
+        display_attributes = (
+            attributes
+            if show_hidden
+            else {
+                key: value
+                for key, value in attributes.items()
+                if not key.startswith("_")
+            }
+        )
 
-        for key, value in attributes.items():
+        for key, value in display_attributes.items():
             self._add_row(key, value)
 
         self._block_signals = False
 
     def get_attributes(self) -> Dict[str, Any]:
         """Returns a dictionary representing the current table state."""
-        attrs = {}
+        attrs = dict(self._hidden_attributes)
         for row in range(self.table.rowCount()):
             key_item = self.table.item(row, 0)
             val_item = self.table.item(row, 1)

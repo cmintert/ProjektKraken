@@ -1115,6 +1115,7 @@ class StyleHelper:
             f"QListView::indicator:checked, "
             f"QTreeView::indicator:checked {{ "
             f"border: 1px solid {theme['primary']}; "
+            f"background-color: {theme['primary']}; "
             f"image: url({icon_url}); }}"
         )
 

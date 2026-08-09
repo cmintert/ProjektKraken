@@ -59,6 +59,15 @@ class TestPromptEditorWidget:
 
         assert widget.toPlainText() == default_text
 
+    def test_theme_change_refreshes_editor_and_toolbar(self, widget):
+        """An open prompt editor should follow a live theme switch."""
+        from src.core.theme_manager import ThemeManager
+
+        ThemeManager().set_theme("light_mode")
+
+        assert "#FFFFFF" in widget.editor.styleSheet()
+        assert "#FFFFFF" in widget.btn_restore.styleSheet()
+
     def test_popout_mode(self, widget, qtbot):
         """Test that pop-out mode opens a dialog (smoke test)."""
         # This is hard to test fully without blocking, but we can check if the method exists

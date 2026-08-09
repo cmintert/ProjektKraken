@@ -173,3 +173,14 @@ class TestTagEditorWidget:
         tag_editor.update_suggestions(["bar", "baz"])
         assert completer.caseSensitivity() == Qt.CaseSensitivity.CaseInsensitive
         assert completer.filterMode() == Qt.MatchFlag.MatchContains
+
+    def test_theme_change_refreshes_tag_input_and_pills(self, tag_editor):
+        """Open inspector tag controls should follow a live theme switch."""
+        from src.core.theme_manager import ThemeManager
+
+        tag_editor.load_tags(["themed"])
+        ThemeManager().set_theme("light_mode")
+
+        assert "#FFFFFF" in tag_editor.container_frame.styleSheet()
+        pill = tag_editor.flow_layout.itemAt(0).widget()
+        assert pill._painter_data["hex"] == "#005A9E"

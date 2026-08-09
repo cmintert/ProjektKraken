@@ -8,7 +8,7 @@ import re
 import textwrap
 from typing import Any, Optional
 
-from PySide6.QtCore import QEvent, QObject
+from PySide6.QtCore import QEvent, QObject, Qt, Signal
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QTextEdit, QToolTip, QVBoxLayout, QWidget
 
@@ -22,6 +22,7 @@ class TimelineDisplayWidget(QWidget):
 
     # Class-level calendar converter for date formatting
     _calendar_converter: Any = None
+    event_clicked = Signal(str)
 
     @classmethod
     def set_calendar_converter(cls, converter: Any) -> None:
@@ -41,6 +42,7 @@ class TimelineDisplayWidget(QWidget):
         self._playhead_time: Optional[float] = None
         self._current_time: Optional[float] = None  # Story's "current time"
         self._description_map: dict[str, str] = {}  # anchor_id -> description
+        self._event_id_map: dict[str, str] = {}  # anchor_id -> source event ID
 
         # Setup UI
         layout = QVBoxLayout(self)
@@ -118,6 +120,7 @@ class TimelineDisplayWidget(QWidget):
 
         # Clear description map for new display
         self._description_map = {}
+        self._event_id_map = {}
 
         # Sort relations by date
         sorted_relations = sorted(
@@ -141,6 +144,9 @@ class TimelineDisplayWidget(QWidget):
 
             # Extract description and build anchor ID
             anchor_id = rel.get("id") or f"card_{i}"
+            event_id = rel.get("source_id") or rel.get("source_event_id")
+            if event_id:
+                self._event_id_map[anchor_id] = str(event_id)
             raw_desc = rel.get("source_event_description") or ""
             self._extract_and_map_description(anchor_id, raw_desc)
 
@@ -171,9 +177,12 @@ class TimelineDisplayWidget(QWidget):
             )
             html_parts.append("<tr><td>")
 
-            # Wrap content in anchor if description is available
+            # Anchors support navigation and, when available, description tooltips.
             has_desc = anchor_id in self._description_map
-            self._wrap_card_with_anchor(html_parts, anchor_id, has_desc)
+            has_event = anchor_id in self._event_id_map
+            self._wrap_card_with_anchor(
+                html_parts, anchor_id, has_desc or has_event
+            )
 
             # Header: date + event name
             html_parts.append(
@@ -197,8 +206,9 @@ class TimelineDisplayWidget(QWidget):
                         f"<span class='payload-value'>{display_val}</span>"
                     )
 
-            # Close anchor if description is available
-            self._close_card_anchor(html_parts, anchor_id, has_desc)
+            self._close_card_anchor(
+                html_parts, anchor_id, has_desc or has_event
+            )
 
             html_parts.append("</td></tr></table>")
 
@@ -243,31 +253,31 @@ class TimelineDisplayWidget(QWidget):
                 self._description_map[anchor_id] = wrapped
 
     def _wrap_card_with_anchor(
-        self, html_parts: list[str], anchor_id: str, has_description: bool
+        self, html_parts: list[str], anchor_id: str, has_anchor: bool
     ) -> None:
-        """Conditionally wrap card content in anchor tags for hover tooltip.
+        """Conditionally wrap card content for navigation or hover tooltip.
 
         Args:
             html_parts: HTML parts list to append opening anchor (if needed).
             anchor_id: The anchor ID (relation ID).
-            has_description: Whether this card has a description to display.
+            has_anchor: Whether this card supports navigation or a tooltip.
 
         """
-        if has_description:
+        if has_anchor:
             html_parts.append(f"<a href='{anchor_id}' style='text-decoration: none;'>")
 
     def _close_card_anchor(
-        self, html_parts: list[str], anchor_id: str, has_description: bool
+        self, html_parts: list[str], anchor_id: str, has_anchor: bool
     ) -> None:
-        """Conditionally close anchor tags for hover tooltip.
+        """Conditionally close a card's navigation or tooltip anchor.
 
         Args:
             html_parts: HTML parts list to append closing anchor (if needed).
             anchor_id: The anchor ID (relation ID).
-            has_description: Whether this card has a description to display.
+            has_anchor: Whether this card supports navigation or a tooltip.
 
         """
-        if has_description:
+        if has_anchor:
             html_parts.append("</a>")
 
     def _get_event_date(self, rel: dict[str, Any]) -> float:
@@ -304,10 +314,20 @@ class TimelineDisplayWidget(QWidget):
         """Clear the timeline display."""
         self._relations = []
         self._playhead_time = None
+        self._description_map = {}
+        self._event_id_map = {}
         self._text_display.clear()
 
+    def _activate_anchor(self, anchor_id: str) -> bool:
+        """Navigate to the event represented by an anchor, when available."""
+        event_id = self._event_id_map.get(anchor_id)
+        if not event_id:
+            return False
+        self.event_clicked.emit(event_id)
+        return True
+
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
-        """Handle mouse move events to show description tooltips.
+        """Handle card hover tooltips and event navigation clicks.
 
         Args:
             obj: The object that received the event.
@@ -332,6 +352,15 @@ class TimelineDisplayWidget(QWidget):
                 )
             else:
                 QToolTip.hideText()
+        elif (
+            obj is self._text_display.viewport()
+            and event.type() == QEvent.Type.MouseButtonRelease
+            and isinstance(event, QMouseEvent)
+            and event.button() == Qt.MouseButton.LeftButton
+        ):
+            anchor = self._text_display.anchorAt(event.position().toPoint())
+            if anchor and self._activate_anchor(anchor):
+                return True
         return super().eventFilter(obj, event)
 
     def _apply_widget_style(self) -> None:

@@ -23,6 +23,21 @@ def test_editor_init(editor):
     assert not editor._empty_state.isHidden()  # Empty state shown on init
 
 
+def test_timeline_card_width_tracks_description_editor(editor):
+    assert editor.timeline_display.maximumWidth() == editor.desc_edit.maximumWidth()
+
+    editor.desc_edit._toggle_toc()
+
+    assert editor.timeline_display.maximumWidth() == editor.desc_edit.maximumWidth()
+
+
+def test_timeline_card_forwards_event_navigation(editor, qtbot):
+    with qtbot.waitSignal(editor.navigate_to_relation) as blocker:
+        editor.timeline_display.event_clicked.emit("event-1")
+
+    assert blocker.args == ["event-1"]
+
+
 def test_load_entity(editor):
     ent = Entity(id="1", name="Test Entity", type="Character", description="Desc")
     editor.load_entity(ent)
@@ -31,6 +46,20 @@ def test_load_entity(editor):
     assert editor.type_edit.currentText() == "Character"
     assert editor.desc_edit.toPlainText() == "Desc"
     assert editor.isEnabled() is True
+
+
+def test_temporal_state_hides_internal_attributes(editor):
+    entity = Entity(id="1", name="Test Entity", type="Character")
+    editor.load_entity(entity)
+
+    editor.display_temporal_state(
+        entity.id,
+        {"visible": "shown", "_internal": "preserved"},
+    )
+
+    assert editor.attribute_editor.table.rowCount() == 1
+    assert editor.attribute_editor.table.item(0, 0).text() == "visible"
+    assert editor.attribute_editor.get_attributes()["_internal"] == "preserved"
 
 
 def test_save_clicked(editor, qtbot):

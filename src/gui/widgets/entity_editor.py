@@ -250,6 +250,13 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         timeline_outer_layout.addWidget(self.timeline_checkbox)
 
         self.timeline_display = TimelineDisplayWidget()
+        self.timeline_display.setMaximumWidth(self.desc_edit.maximumWidth())
+        self.desc_edit.maximum_width_changed.connect(
+            self.timeline_display.setMaximumWidth
+        )
+        self.timeline_display.event_clicked.connect(
+            self.navigate_to_relation.emit
+        )
         self.timeline_display.setVisible(False)
         timeline_outer_layout.addWidget(self.timeline_display)
 

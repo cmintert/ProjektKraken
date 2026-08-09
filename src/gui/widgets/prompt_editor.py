@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.theme_manager import ThemeManager
 from src.gui.utils.prompt_syntax_highlighter import PromptSyntaxHighlighter
 from src.gui.utils.style_helper import StyleHelper
 
@@ -94,6 +95,14 @@ class PromptEditorWidget(QWidget):
 
         # Syntax Highlighter
         self.highlighter = PromptSyntaxHighlighter(self.editor.document())
+        ThemeManager().theme_changed.connect(self._on_theme_changed)
+
+    @Slot(dict)
+    def _on_theme_changed(self, _: dict) -> None:
+        """Refresh styles generated from the active theme."""
+        self.btn_restore.setStyleSheet(StyleHelper.get_tool_button_style())
+        self.btn_popout.setStyleSheet(StyleHelper.get_tool_button_style())
+        self.editor.setStyleSheet(StyleHelper.get_input_field_style())
 
     def setPlainText(self, text: str) -> None:
         """Set the editor text content.

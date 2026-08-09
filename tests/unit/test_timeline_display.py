@@ -5,6 +5,7 @@ Tests the chronological event display with payload attributes.
 """
 
 import pytest
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
 from src.gui.widgets.timeline_display_widget import TimelineDisplayWidget
@@ -158,3 +159,33 @@ def test_event_without_payload(widget):
 
     assert "Simple Event" in html
     # Should show rel_type or graceful empty
+
+
+def test_card_click_emits_source_event_id(widget, qtbot, monkeypatch):
+    """Activating a timeline card should request navigation to its event."""
+    widget.set_relations(
+        [
+            {
+                "id": "relation-1",
+                "source_id": "event-1",
+                "source_event_name": "Clickable Event",
+                "source_event_date": 100.0,
+                "attributes": {},
+            }
+        ]
+    )
+
+    assert "href=\"relation-1\"" in widget.get_display_text()
+    qtbot.addWidget(widget)
+    monkeypatch.setattr(
+        widget._text_display,
+        "anchorAt",
+        lambda _position: "relation-1",
+    )
+    with qtbot.waitSignal(widget.event_clicked) as blocker:
+        qtbot.mouseClick(
+            widget._text_display.viewport(),
+            Qt.MouseButton.LeftButton,
+        )
+
+    assert blocker.args == ["event-1"]

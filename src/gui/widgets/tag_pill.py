@@ -5,7 +5,7 @@ Provides a rounded rectangular component for displaying a tag with a delete butt
 
 from typing import Optional
 
-from PySide6.QtCore import QEvent, Qt, Signal
+from PySide6.QtCore import QEvent, Qt, Signal, Slot
 from PySide6.QtGui import (
     QBrush,
     QColor,
@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 
 
@@ -69,6 +70,7 @@ class TagPill(QFrame):
 
         # Cache painter data once (avoids repeated lookups in paintEvent)
         self._painter_data = StyleHelper.get_pill_painter_data(self.base_color)
+        ThemeManager().theme_changed.connect(self._on_theme_changed)
 
     def _setup_ui(self) -> None:
         """
@@ -107,6 +109,13 @@ class TagPill(QFrame):
             has_delete=True,
         )
         self.setStyleSheet(style)
+
+    @Slot(dict)
+    def _on_theme_changed(self, _: dict) -> None:
+        """Regenerate theme-derived styling and paint data."""
+        self._apply_style()
+        self._painter_data = StyleHelper.get_pill_painter_data(self.base_color)
+        self.update()
 
     def enterEvent(self, event: QEnterEvent) -> None:
         """Trigger repaint on hover enter."""

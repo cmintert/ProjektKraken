@@ -53,6 +53,29 @@ def test_get_attributes_parsing(editor):
     assert attrs["bool_key"] is True
 
 
+def test_hidden_attributes_are_hidden_by_default_and_preserved(editor):
+    editor.load_attributes(
+        {"visible": "shown", "_summary_data": {"text": "preserve"}}
+    )
+
+    assert editor.table.rowCount() == 1
+    assert editor.table.item(0, 0).text() == "visible"
+    assert editor.get_attributes() == {
+        "visible": "shown",
+        "_summary_data": {"text": "preserve"},
+    }
+
+
+def test_hidden_attributes_can_be_shown_explicitly(editor):
+    editor.load_attributes(
+        {"visible": "shown", "_internal": "value"},
+        show_hidden=True,
+    )
+
+    assert editor.table.rowCount() == 2
+    assert editor.get_attributes()["_internal"] == "value"
+
+
 def test_parse_value_logic(editor):
     # Test internal parsing logic
     assert editor._parse_value("123", "Number") == 123

@@ -56,6 +56,17 @@ def test_initial_state(widget):
     assert widget.rag_cb.isChecked() is True  # RAG defaults to True
 
 
+def test_theme_change_refreshes_local_panel_styles(widget):
+    """An open LLM panel should refresh its theme-derived local styles."""
+    from src.core.theme_manager import ThemeManager
+
+    ThemeManager().set_theme("light_mode")
+
+    assert "#E0E0E0" in widget.top_sep.styleSheet()
+    assert "#757575" in widget.lbl_instruction.styleSheet()
+    assert "#005A9E" in widget.spatial_show_btn.styleSheet()
+
+
 def test_malformed_generation_settings_fall_back(qtbot, clean_settings):
     """Malformed generation settings must not prevent widget construction."""
     malformed_values = {
