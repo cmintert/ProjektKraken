@@ -150,14 +150,3 @@ def test_drag_pill_caches_painter_data():
     assert "r" in pill._painter_data
     assert "g" in pill._painter_data
     assert "b" in pill._painter_data
-
-
-def test_tag_pill_caches_painter_data():
-    """Test that TagPill caches painter data for paintEvent."""
-    from src.gui.widgets.tag_pill import TagPill
-
-    pill = TagPill("test-tag")
-    assert hasattr(pill, "_painter_data")
-    assert "r" in pill._painter_data
-    assert "g" in pill._painter_data
-    assert "b" in pill._painter_data

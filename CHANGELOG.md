@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-09
-**Commit:** bc49ac3c
+**Commit:** 7528d44c
 ---
 
 # Changelog
@@ -21,6 +21,13 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-09)* **Editor / Tags**: Replaced per-tag widgets and the custom
+  flow layout with a theme-aware, wrapping model/view chip editor that supports
+  keyboard removal, bounded long tags, and scalable bulk loading.
+- *(2026-08-09)* **Graph / Accessibility**: Clarified the graph tag filter label
+  and added accessible naming and non-mutating filter guidance.
+- *(2026-08-09)* **Testing / UI**: Reworked tag-editor regression coverage for
+  chip layout, interaction, autocomplete, theme updates, and large tag sets.
 - *(2026-08-09)* **Editor / UX**: Improved reading-width wrapping and timeline
   cards, hid internal attributes while preserving them, and refreshed editor,
   tag, and generation styles on live theme changes.

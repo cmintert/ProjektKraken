@@ -66,11 +66,19 @@ class GraphFilterBar(QWidget):
         self._adv_filter_btn.clicked.connect(self.show_advanced_filter_requested.emit)
         layout.addWidget(self._adv_filter_btn)
 
-        # Simple Tag filter (Quick access)
-        layout.addWidget(QLabel("Quick Tag:"))
+        # Simple single-tag graph filter
+        self._tag_filter_label = QLabel("Tag Filter:")
+        self._tag_filter_label.setToolTip(
+            "Show only graph nodes with the selected tag. Tags are not changed."
+        )
+        layout.addWidget(self._tag_filter_label)
         self._tag_combo = QComboBox()
         self._tag_combo.setMinimumWidth(150)
         self._tag_combo.setEditable(False)
+        self._tag_combo.setAccessibleName("Graph tag filter")
+        self._tag_combo.setToolTip(
+            "Show only graph nodes with the selected tag. Tags are not changed."
+        )
         self._tag_combo.addItem("All Tags", None)
         self._tag_combo.currentIndexChanged.connect(self._on_filter_changed)
         layout.addWidget(self._tag_combo)

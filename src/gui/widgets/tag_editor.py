@@ -1,205 +1,148 @@
-"""Tag Editor Widget Module.
+"""Modern model/view tag editor used by entity and event inspectors."""
 
-Provides a list-based interface for managing tags on entities and events.
-"""
-
-from typing import List, Optional
+from typing import Optional
 
 from PySide6.QtCore import QStringListModel, Qt, Signal, Slot
-from PySide6.QtWidgets import (
-    QCompleter,
-    QLineEdit,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtWidgets import QCompleter, QHBoxLayout, QLineEdit, QVBoxLayout, QWidget
 
 from src.core.theme_manager import ThemeManager
-from src.gui.widgets.flow_layout import FlowLayout
-from src.gui.widgets.tag_pill import TagPill
+from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.standard_buttons import StandardButton
+from src.gui.widgets.tag_chip_view import TagChipDelegate, TagChipView, TagListModel
 
 
 class TagEditorWidget(QWidget):
-    """A widget for managing tags using a modern flow-based pill interface.
-
-    Tags are displayed as rounded pills in a row, wrapping automatically.
-    A text input field is integrated into the flow for adding new tags.
-
-    Signals:
-        tags_changed: Emitted when tags are added or removed.
-    """
+    """Fast tag input with a dedicated entry row and wrapping painted chips."""
 
     tags_changed = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        """Create a tag editor widget with a flow of pills and an integrated input.
-
-        Sets up the flow container, an inline QLineEdit for adding tags,
-        a completer for suggestions, and a styled frame around the flow.
-        The widget starts with only the input present.
-
-        Parameters:
-            parent: Optional parent widget.
-        """
         super().__init__(parent)
         self._base_color: Optional[str] = None
+        self._suggestions: list[str] = []
 
         main_layout = QVBoxLayout(self)
-        from src.gui.utils.style_helper import StyleHelper
+        main_layout.setContentsMargins(8, 8, 8, 8)
+        main_layout.setSpacing(6)
+        main_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        StyleHelper.apply_compact_spacing(main_layout)
+        input_layout = QHBoxLayout()
+        input_layout.setContentsMargins(0, 0, 0, 0)
+        input_layout.setSpacing(6)
 
-        # Flow container for pills and input
-        self.flow_container = QWidget()
-        self.flow_layout = FlowLayout(self.flow_container)
-        self.flow_layout.setSpacing(6)
-
-        # Tag input - integrated into flow
         self.tag_input = QLineEdit()
-        self.tag_input.setPlaceholderText("Add tag...")
-        self.tag_input.setMinimumWidth(100)
-        self.tag_input.setStyleSheet(StyleHelper.get_transparent_input_style())
+        self.tag_input.setPlaceholderText("Type a tag and press Enter…")
+        self.tag_input.setClearButtonEnabled(True)
         self.tag_input.returnPressed.connect(self._on_add)
+        self.tag_input.textChanged.connect(self._update_add_button)
+        input_layout.addWidget(self.tag_input, stretch=1)
 
-        # Persistent completer + model (avoids QObject churn on each update)
+        self.btn_add = StandardButton("Add")
+        self.btn_add.setEnabled(False)
+        self.btn_add.setToolTip("Add tag")
+        self.btn_add.clicked.connect(self._on_add)
+        input_layout.addWidget(self.btn_add)
+        main_layout.addLayout(input_layout)
+
         self._completer_model = QStringListModel(self)
         self._completer = QCompleter(self._completer_model, self)
         self._completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self._completer.setFilterMode(Qt.MatchFlag.MatchContains)
+        self._completer.activated.connect(self._on_completion_activated)
         self.tag_input.setCompleter(self._completer)
 
-        # We'll wrap the flow container in a styled frame to look like an input box
-        self.container_frame = QWidget()
-        self.container_frame.setStyleSheet(StyleHelper.get_input_field_style())
-        frame_layout = QVBoxLayout(self.container_frame)
-        frame_layout.setContentsMargins(4, 4, 4, 4)
-        frame_layout.addWidget(self.flow_container)
+        self._model = TagListModel(self)
+        self._delegate = TagChipDelegate(self)
+        self.tag_view = TagChipView(self)
+        self.tag_view.setModel(self._model)
+        self.tag_view.setItemDelegate(self._delegate)
+        self._delegate.remove_requested.connect(self._remove_row)
+        self.tag_view.remove_requested.connect(self._remove_row)
+        main_layout.addWidget(self.tag_view)
+        main_layout.addStretch(1)
 
-        main_layout.addWidget(self.container_frame)
-
-        # Initial state: just the input
-        self.flow_layout.addWidget(self.tag_input)
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
-
-    @Slot(dict)
-    def _on_theme_changed(self, _: dict) -> None:
-        """Refresh styles that were generated from the previous theme."""
-        from src.gui.utils.style_helper import StyleHelper
-
-        self.tag_input.setStyleSheet(StyleHelper.get_transparent_input_style())
-        self.container_frame.setStyleSheet(StyleHelper.get_input_field_style())
+        theme_manager = ThemeManager()
+        theme_manager.theme_changed.connect(self._on_theme_changed)
+        self._on_theme_changed(theme_manager.get_theme())
 
     def set_base_color(self, color: str) -> None:
-        """Set the base color for tag pills and update existing pills.
-
-        Parameters:
-            color: Hex color string (e.g., "#RRGGBB") to apply.
-        """
+        """Set the chip accent without rebuilding tag items."""
         self._base_color = color
-        # Refresh existing pills
-        self.load_tags(self.get_tags())
+        self._delegate.set_base_color(color)
+        self.tag_view.viewport().update()
 
-    def load_tags(self, tags: List[str]) -> None:
-        """Replace displayed tags with the provided list.
+    def load_tags(self, tags: list[str]) -> None:
+        """Replace tags in one model reset without emitting ``tags_changed``."""
+        self._model.set_tags(tags)
+        self._refresh_completer()
+        self._update_add_button()
 
-        This clears existing tag pills and adds new ones in the provided order,
-        ensuring the input remains at the end.
+    def get_tags(self) -> list[str]:
+        """Return current tags in display order."""
+        return self._model.tags()
 
-        Parameters:
-            tags: List of tag strings to display.
-        """
-        import shiboken6
+    def update_suggestions(self, tags: list[str]) -> None:
+        """Replace autocomplete candidates while reusing the completer."""
+        self._suggestions = list(tags)
+        self._refresh_completer()
 
-        # Clear existing pills (everything except the input)
-        for i in reversed(range(self.flow_layout.count())):
-            item = self.flow_layout.itemAt(i)
-            if not item:
-                continue
+    def _refresh_completer(self) -> None:
+        selected = set(self._model.tags())
+        self._completer_model.setStringList(
+            [tag for tag in self._suggestions if tag not in selected]
+        )
 
-            # Safely check if widget exists and isn't deleted
-            if not shiboken6.isValid(item):
-                continue
+    def _candidate(self) -> str:
+        return self.tag_input.text().strip()
 
-            try:
-                widget = item.widget()
-                if widget and shiboken6.isValid(widget) and widget != self.tag_input:
-                    self.flow_layout.takeAt(i)
-                    widget.deleteLater()
-            except RuntimeError:
-                pass
+    @Slot()
+    def _update_add_button(self, *_args: object) -> None:
+        candidate = self._candidate()
+        self.btn_add.setEnabled(
+            self.isEnabled()
+            and bool(candidate)
+            and candidate not in self._model.tags()
+        )
 
-        for tag in tags:
-            self._add_pill(tag)
-
-    def _add_pill(self, tag: str) -> None:
-        """Add a TagPill widget for the tag before the input field."""
-        pill = TagPill(tag, base_color=self._base_color)
-        pill.deleted.connect(self._on_pill_deleted)
-
-        # Insert before the input field
-        self.flow_layout.takeAt(self.flow_layout.count() - 1)
-        self.flow_layout.addWidget(pill)
-        self.flow_layout.addWidget(self.tag_input)
-
-    def get_tags(self) -> List[str]:
-        """Get current tag texts in display order."""
-        import shiboken6
-
-        tags = []
-        for i in range(self.flow_layout.count()):
-            item = self.flow_layout.itemAt(i)
-            if not item or not shiboken6.isValid(item):
-                continue
-            try:
-                widget = item.widget()
-                if widget and shiboken6.isValid(widget) and isinstance(widget, TagPill):
-                    tags.append(widget.text)
-            except RuntimeError:
-                pass
-        return tags
-
-    def update_suggestions(self, tags: List[str]) -> None:
-        """Update autocomplete suggestions for the tag input."""
-        self._completer_model.setStringList(tags)
+    @Slot(str)
+    def _on_completion_activated(self, tag: str) -> None:
+        self.tag_input.setText(tag)
+        self._on_add()
 
     @Slot()
     def _on_add(self) -> None:
-        """Add the entered tag to the widget if valid and new."""
-        raw_tag = self.tag_input.text().strip()
-        if not raw_tag:
+        """Append a valid tag and keep keyboard focus in the input."""
+        tag = self._candidate()
+        if not tag:
             return
-
-        # Check for duplicates
-        existing = self.get_tags()
-        if raw_tag in existing:
+        if tag in self._model.tags():
             self.tag_input.clear()
+            self.tag_input.setFocus()
             return
 
-        # Add the tag
-        self._add_pill(raw_tag)
-
+        self._model.add_tag(tag)
         self.tag_input.clear()
+        self._refresh_completer()
+        self.tag_input.setFocus()
         self.tags_changed.emit()
 
-    @Slot(str)
-    def _on_pill_deleted(self, tag: str) -> None:
-        """Remove matching tag pill and emit tags_changed."""
-        import shiboken6
+    @Slot(int)
+    def _remove_row(self, row: int) -> None:
+        """Remove one tag by model row."""
+        if not self.isEnabled() or self._model.remove_tag(row) is None:
+            return
+        self._refresh_completer()
+        self._update_add_button()
+        self.tags_changed.emit()
 
-        for i in range(self.flow_layout.count()):
-            item = self.flow_layout.itemAt(i)
-            if not item or not shiboken6.isValid(item):
-                continue
-            try:
-                widget = item.widget()
-                if (
-                    widget
-                    and shiboken6.isValid(widget)
-                    and isinstance(widget, TagPill)
-                    and widget.text == tag
-                ):
-                    self.flow_layout.takeAt(i)
-                    widget.deleteLater()
-                    self.tags_changed.emit()
-                    break
-            except RuntimeError:
-                pass
+    @Slot(dict)
+    def _on_theme_changed(self, theme: dict) -> None:
+        """Refresh shared controls and repaint all chips once."""
+        self.tag_input.setStyleSheet(StyleHelper.get_input_field_style())
+        self.tag_view.setStyleSheet(
+            "QListView { background: transparent; border: none; outline: none; }"
+        )
+        self._delegate.set_theme(theme)
+        self._delegate.set_base_color(self._base_color)
+        self.tag_view.viewport().update()
+        self.tag_view.schedule_height_refresh()

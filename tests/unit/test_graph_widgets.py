@@ -71,6 +71,8 @@ class TestGraphFilterBar:
 
         bar = GraphFilterBar()
         assert bar is not None
+        assert bar._tag_filter_label.text() == "Tag Filter:"
+        assert "Tags are not changed" in bar._tag_combo.toolTip()
 
     def test_set_available_tags(self, qapp):
         """set_available_tags populates the combo box."""
