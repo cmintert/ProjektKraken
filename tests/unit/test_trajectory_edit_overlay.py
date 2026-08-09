@@ -2,7 +2,11 @@
 
 from PySide6.QtCore import QRectF
 
-from src.core.trajectory import Keyframe, TrajectoryDistanceContext
+from src.core.trajectory import (
+    SEGMENT_MODE_STEP,
+    Keyframe,
+    TrajectoryDistanceContext,
+)
 from src.core.trajectory_edit import TrajectoryEditSession
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 
@@ -69,6 +73,31 @@ def test_equal_time_segment_disables_midpoint(qtbot, monkeypatch):
     assert "Dates must differ" in view.trajectory_edit_overlay.midpoint_handles[
         0
     ].toolTip()
+
+
+def test_relocation_uses_broken_connector_and_disables_midpoint(qtbot, monkeypatch):
+    view = _view(qtbot, monkeypatch)
+    session = TrajectoryEditSession.create(
+        "map-1",
+        "marker-1",
+        "trajectory-1",
+        [
+            Keyframe(t=0.0, x=0.1, y=0.2),
+            Keyframe(t=10.0, x=0.8, y=0.7),
+        ],
+    )
+    destination_id = session.working_keyframes[1].edit_id
+    session.select_keyframe(destination_id)
+    session.set_arrival_mode(destination_id, SEGMENT_MODE_STEP)
+
+    view.trajectory_edit_overlay.show(session.to_snapshot())
+
+    assert len(view.trajectory_edit_overlay._relocation_path_items) == 1
+    assert not view.trajectory_edit_overlay.midpoint_handles[0].isEnabled()
+    assert (
+        "relocation"
+        in view.trajectory_edit_overlay.midpoint_handles[0].toolTip().lower()
+    )
 
 
 def test_date_edit_highlights_adjacent_affected_segments(qtbot, monkeypatch):

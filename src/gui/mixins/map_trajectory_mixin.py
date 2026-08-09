@@ -7,9 +7,14 @@ from PySide6.QtCore import QSettings, Slot
 from PySide6.QtWidgets import QComboBox, QGraphicsItem
 
 from src.core.trajectory import (
+    SEGMENT_MODE_LINEAR,
+    SEGMENT_MODE_STEP,
     Keyframe,
+    SegmentKey,
+    SegmentMode,
     TrajectoryDistanceContext,
     interpolate_position,
+    trajectory_segment_distance,
 )
 from src.core.trajectory_edit import TrajectoryEditSnapshot
 from src.gui.widgets.map.marker_item import MarkerItem
@@ -49,8 +54,11 @@ class MapTrajectoryMixin:
         # independently type-checkable without adding runtime base classes.
         view: "MapGraphicsView"
         _active_trajectories: dict[str, list[Any]]
+        _active_trajectory_segment_modes: dict[str, dict[SegmentKey, SegmentMode]]
+        _base_marker_positions: dict[str, tuple[float, float]]
         _trajectory_edit_marker_id: str | None
         _trajectory_edit_keyframes: list[Keyframe]
+        _trajectory_edit_segment_modes: dict[SegmentKey, SegmentMode]
         _playhead_time: float
         _current_time: float
         _calendar_converter: Any
@@ -65,6 +73,7 @@ class MapTrajectoryMixin:
         btn_reload_trajectory: Any
         btn_apply_trajectory: Any
         btn_cancel_trajectory: Any
+        btn_add_trajectory_location: Any
         trajectory_date_panel: Any
         trajectory_date_feedback: Any
         trajectory_date_input: Any
@@ -74,6 +83,11 @@ class MapTrajectoryMixin:
         btn_trajectory_date_use_playhead: Any
         btn_finish_trajectory_date: Any
         btn_cancel_trajectory_date: Any
+        chk_trajectory_allow_reorder: Any
+        btn_shift_trajectory_later: Any
+        trajectory_segment_panel: Any
+        trajectory_arrival_mode: Any
+        trajectory_segment_metrics: Any
         trajectory_speed_panel: Any
         trajectory_speed_feedback: Any
         trajectory_speed_changes: Any
@@ -101,6 +115,7 @@ class MapTrajectoryMixin:
 
         """
         self._active_trajectories.clear()
+        self._active_trajectory_segment_modes.clear()
         marker_counts: dict[str, int] = {}
         for trajectory in trajectories:
             marker_id = str(trajectory["marker_id"])
@@ -129,10 +144,21 @@ class MapTrajectoryMixin:
                     t=float(keyframe["t"]),
                     x=float(keyframe["x"]),
                     y=float(keyframe["y"]),
+                    keyframe_id=str(
+                        keyframe.get("id") or f"legacy-{index}"
+                    ),
                 )
-                for keyframe in trajectory["keyframes"]
+                for index, keyframe in enumerate(trajectory["keyframes"])
             ]
             self._active_trajectories[marker_id] = keyframes
+            self._active_trajectory_segment_modes[marker_id] = {
+                (str(item["from_id"]), str(item["to_id"])): item["mode"]
+                for item in trajectory.get("segment_modes", [])
+                if item.get("mode") in {
+                    SEGMENT_MODE_LINEAR,
+                    SEGMENT_MODE_STEP,
+                }
+            }
             count += 1
 
         self.view.set_trajectory_marker_ids(set(self._active_trajectories))
@@ -180,9 +206,18 @@ class MapTrajectoryMixin:
                 t=float(keyframe["t"]),
                 x=float(keyframe["x"]),
                 y=float(keyframe["y"]),
+                keyframe_id=str(keyframe["edit_id"]),
             )
             for keyframe in snapshot["keyframes"]
         ]
+        self._trajectory_edit_segment_modes = {
+            (
+                snapshot["keyframes"][index - 1]["edit_id"],
+                keyframe["edit_id"],
+            ): keyframe["arrival_mode"]
+            for index, keyframe in enumerate(snapshot["keyframes"])
+            if index > 0 and keyframe["arrival_mode"] is not None
+        }
         marker = self.view.markers.get(marker_id)
         if marker is not None:
             marker.setFlag(
@@ -215,6 +250,13 @@ class MapTrajectoryMixin:
             self.btn_trajectory_date_use_playhead.hide()
             self.btn_finish_trajectory_date.hide()
             self.btn_cancel_trajectory_date.hide()
+            self.chk_trajectory_allow_reorder.hide()
+            self.btn_shift_trajectory_later.hide()
+            self.trajectory_arrival_mode.setEnabled(False)
+            self.trajectory_segment_metrics.setText(
+                "Select a location after the first to inspect its arrival."
+            )
+            self.trajectory_segment_panel.show()
             self.trajectory_date_panel.show()
         else:
             keyframe = snapshot["keyframes"][selected_index]
@@ -236,6 +278,20 @@ class MapTrajectoryMixin:
                         f"{self._format_trajectory_date(proposed)} | Change: "
                         f"{delta:+g} days"
                     )
+                if not snapshot["allow_reorder"]:
+                    bounds: list[str] = []
+                    if snapshot["date_min_t"] is not None:
+                        bounds.append(
+                            "after "
+                            + self._format_trajectory_date(snapshot["date_min_t"])
+                        )
+                    if snapshot["date_max_t"] is not None:
+                        bounds.append(
+                            "before "
+                            + self._format_trajectory_date(snapshot["date_max_t"])
+                        )
+                    if bounds:
+                        feedback += " | Keep order: " + " and ".join(bounds)
                 self.trajectory_date_feedback.setText(feedback)
             else:
                 self.trajectory_date_feedback.setText(
@@ -263,7 +319,44 @@ class MapTrajectoryMixin:
             self.btn_finish_trajectory_date.setEnabled(not pending)
             self.btn_cancel_trajectory_date.setVisible(is_date_editing)
             self.btn_cancel_trajectory_date.setEnabled(not pending)
+            self.chk_trajectory_allow_reorder.blockSignals(True)
+            self.chk_trajectory_allow_reorder.setChecked(
+                snapshot["allow_reorder"]
+            )
+            self.chk_trajectory_allow_reorder.blockSignals(False)
+            self.chk_trajectory_allow_reorder.setVisible(is_date_editing)
+            self.chk_trajectory_allow_reorder.setEnabled(not pending)
+            self.btn_shift_trajectory_later.setVisible(
+                is_date_editing and snapshot["can_shift_later"]
+            )
+            self.btn_shift_trajectory_later.setEnabled(
+                not pending
+                and snapshot["date_edit_delta"] is not None
+                and snapshot["date_edit_delta"] != 0.0
+            )
             self.trajectory_date_panel.show()
+
+            segment = snapshot["selected_segment"]
+            if segment is not None:
+                mode_index = self.trajectory_arrival_mode.findData(segment["mode"])
+                self.trajectory_arrival_mode.blockSignals(True)
+                self.trajectory_arrival_mode.setCurrentIndex(max(0, mode_index))
+                self.trajectory_arrival_mode.blockSignals(False)
+                self.trajectory_arrival_mode.setEnabled(
+                    not pending
+                    and not is_equalization_previewing
+                    and not is_date_editing
+                )
+                self.trajectory_segment_metrics.setText(
+                    self._format_selected_segment(snapshot)
+                )
+                self.trajectory_segment_panel.show()
+            else:
+                self.trajectory_arrival_mode.setEnabled(False)
+                self.trajectory_segment_metrics.setText(
+                    "The first location has no arrival segment."
+                )
+                self.trajectory_segment_panel.show()
 
         self._show_trajectory_speed_controls(snapshot, pending=pending)
 
@@ -276,6 +369,11 @@ class MapTrajectoryMixin:
         self.btn_delete_trajectory_keyframe.setEnabled(
             snapshot["selected_keyframe_id"] is not None
             and not snapshot["is_date_editing"]
+            and not is_equalization_previewing
+            and not pending
+        )
+        self.btn_add_trajectory_location.setEnabled(
+            not snapshot["is_date_editing"]
             and not is_equalization_previewing
             and not pending
         )
@@ -299,8 +397,10 @@ class MapTrajectoryMixin:
                 )
         self._trajectory_edit_marker_id = None
         self._trajectory_edit_keyframes = []
+        self._trajectory_edit_segment_modes = {}
         self.trajectory_edit_strip.hide()
         self.trajectory_date_panel.hide()
+        self.trajectory_segment_panel.hide()
         self.trajectory_speed_panel.hide()
         self._update_trajectory_positions()
         if marker_id == self._selected_marker_id and marker_id is not None:
@@ -339,6 +439,29 @@ class MapTrajectoryMixin:
         return TrajectoryDistanceContext(
             width=aspect_ratio,
             height=1.0,
+        )
+
+    def _format_selected_segment(self, snapshot: TrajectoryEditSnapshot) -> str:
+        """Format duration, distance, and average speed for one arrival."""
+        segment = snapshot["selected_segment"]
+        if segment is None:
+            return ""
+        duration = segment["duration_days"]
+        if segment["is_stay"]:
+            return f"Stay | Duration: {duration:g} days | Speed: 0"
+        if segment["mode"] == SEGMENT_MODE_STEP:
+            return f"Relocation | Duration: {duration:g} days | Speed: —"
+        context = self.get_trajectory_distance_context()
+        start = Keyframe(
+            t=0.0, x=segment["start_x"], y=segment["start_y"]
+        )
+        end = Keyframe(t=duration, x=segment["end_x"], y=segment["end_y"])
+        distance = trajectory_segment_distance(start, end, context)
+        speed = distance / duration
+        return (
+            f"Travel | Duration: {duration:g} days | Distance: "
+            f"{self._format_equalization_distance(distance, context.unit)} | "
+            f"Average: {self._format_equalization_speed(speed, context.unit)}"
         )
 
     def _show_trajectory_speed_controls(
@@ -447,21 +570,67 @@ class MapTrajectoryMixin:
             if isinstance(item, MarkerItem):
                 has_traj = item.marker_id in self._active_trajectories
                 item.set_has_keyframes(has_traj)
+        self._update_trajectory_marker_mobility()
+
+    def _can_move_trajectory_marker(self, marker_id: str) -> bool:
+        """Return whether a trajectory marker is still in its free pre-track state."""
+        if marker_id == self._trajectory_edit_marker_id:
+            return False
+        keyframes = self._active_trajectories.get(marker_id)
+        return bool(keyframes and self._playhead_time < keyframes[0].t)
+
+    def _update_trajectory_marker_mobility(self) -> None:
+        """Keep marker dragging aligned with trajectory playback ownership."""
+        for marker_id, marker in self.view.markers.items():
+            if marker_id in self._active_trajectories:
+                movable = self._can_move_trajectory_marker(marker_id)
+            else:
+                movable = marker_id != self._trajectory_edit_marker_id
+            marker.setFlag(
+                QGraphicsItem.GraphicsItemFlag.ItemIsMovable,
+                movable,
+            )
 
     def _iter_trajectory_positions(self) -> Iterator[Tuple[str, float, float]]:
         """Yield (marker_id, x, y) for markers with trajectories at current time."""
-        for marker_id, keyframes in self._active_trajectories.items():
+        tracks = dict(self._active_trajectories)
+        if (
+            self._trajectory_edit_marker_id is not None
+            and self._trajectory_edit_marker_id not in tracks
+        ):
+            tracks[self._trajectory_edit_marker_id] = self._trajectory_edit_keyframes
+        for marker_id, keyframes in tracks.items():
             if marker_id == self._trajectory_edit_marker_id:
                 keyframes = self._trajectory_edit_keyframes
-            position = interpolate_position(keyframes, self._playhead_time)
+            segment_modes = self._active_trajectory_segment_modes.get(
+                marker_id, {}
+            )
+            if marker_id == self._trajectory_edit_marker_id:
+                segment_modes = self._trajectory_edit_segment_modes
+            position = interpolate_position(
+                keyframes,
+                self._playhead_time,
+                segment_modes=segment_modes,
+                base_position=self._base_marker_positions.get(marker_id),
+            )
             if position:
                 x, y = position
                 yield marker_id, x, y
 
     def _update_trajectory_positions(self) -> None:
         """Update all trajectory markers for the current playhead time."""
+        resolved: set[str] = set()
         for marker_id, x, y in self._iter_trajectory_positions():
             self.view.update_marker_position(marker_id, x, y)
+            resolved.add(marker_id)
+        marker_ids = set(self._active_trajectories)
+        if self._trajectory_edit_marker_id is not None:
+            marker_ids.add(self._trajectory_edit_marker_id)
+        for marker_id in marker_ids - resolved:
+            base_position = self._base_marker_positions.get(marker_id)
+            if base_position is not None:
+                self.view.update_marker_position(marker_id, *base_position)
+        self._update_trajectory_marker_mobility()
 
     @Slot(float)
     def on_time_changed(self, time: float) -> None:
@@ -527,6 +696,10 @@ class MapTrajectoryMixin:
             return
         keyframes = self._active_trajectories.get(marker_id, [])
         if keyframes:
-            self.view.show_trajectory(marker_id, keyframes)
+            self.view.show_trajectory(
+                marker_id,
+                keyframes,
+                self._active_trajectory_segment_modes.get(marker_id, {}),
+            )
         else:
             self.view.clear_trajectory()

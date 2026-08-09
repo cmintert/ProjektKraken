@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-08-08
-**Commit:** cfa2e20b
+**Last Updated:** 2026-08-09
+**Commit:** 4f1994cb
 ---
 
 # Changelog
@@ -13,6 +13,17 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-08-09)* **Map / Trajectories**: Allowed an entity's ordinary marker
+  position to be moved before its first trajectory date, while retaining
+  trajectory ownership from the first date onward and holding the final
+  location indefinitely.
+- *(2026-08-09)* **Map / Trajectories**: Added entity trajectory creation,
+  playhead-based locations, Travel, derived Stay, explicit Relocation, safe
+  route-preserving retiming, opt-in reordering, shift-later timing, and segment
+  duration, distance, and average-speed feedback.
+- *(2026-08-09)* **Architecture / Trajectories**: Added backward-compatible,
+  lazily persisted keyframe UUID and segment-mode metadata while retaining the
+  OGC MF-JSON `MovingPoint` payload and preserving unknown properties.
 - *(2026-08-08)* **Map / Trajectories**: Added anchored and whole-trajectory
   speed equalization with distance-weighted date previews, calibrated or
   relative speed feedback, and reversible working-copy confirmation.
@@ -34,6 +45,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-09)* **Map / Trajectories**: Prevented the first arrival-node
+  selection from resizing the map viewport and visually displacing the marker
+  and trajectory by reserving the segment-information row throughout editing.
 - *(2026-08-08)* **Map / Trajectories**: Prevented the first keyframe selection
   from resizing the map viewport and visually shifting trajectory nodes, with
   regression coverage for stable edit-session geometry.
@@ -54,6 +68,10 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-09)* **Documentation / Trajectories**: Expanded trajectory
+  authoring and playback guidance, clarified Escape priority, and corrected the
+  database reference from legacy `[t, x, y]` arrays to MF-JSON plus versioned
+  properties metadata.
 - *(2026-08-08)* **Cleanup / Trajectories**: Removed legacy Draft and Clock
   modes, hover keyframe gizmos, granular mutation pathways, and obsolete
   command compatibility in favor of the atomic direct editor.

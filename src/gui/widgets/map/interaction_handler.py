@@ -63,11 +63,12 @@ class InteractionHandler:
         """
         menu = QMenu(self._view)
 
-        if (
-            item.object_type != "event"
-            and item.marker_id in self._view._trajectory_marker_ids
-        ):
-            edit_trajectory_action = QAction("Edit Trajectory", self._view)
+        if item.object_type != "event":
+            has_trajectory = item.marker_id in self._view._trajectory_marker_ids
+            edit_trajectory_action = QAction(
+                "Edit Trajectory" if has_trajectory else "Create Trajectory",
+                self._view,
+            )
             edit_trajectory_action.triggered.connect(
                 lambda: self._view.trajectory_edit_requested.emit(item.marker_id)
             )

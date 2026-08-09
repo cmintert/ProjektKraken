@@ -3,16 +3,24 @@
 import math
 import uuid
 from dataclasses import dataclass, replace
-from typing import Sequence, TypedDict
+from typing import Any, Sequence, TypedDict
 
 from src.core.trajectory import (
+    KEYFRAME_TIME_EPSILON,
+    SEGMENT_MODE_LINEAR,
+    SEGMENT_MODE_STEP,
     EditableKeyframe,
     Keyframe,
+    SegmentKey,
+    SegmentMode,
     TrajectoryDistanceContext,
+    build_trajectory_properties,
     clone_keyframes,
     cumulative_trajectory_distances,
     equalize_keyframe_times,
     infer_midpoint_time,
+    is_stay_segment,
+    segment_mode,
     validate_keyframes,
 )
 
@@ -24,6 +32,7 @@ class EditableKeyframeSnapshot(TypedDict):
     t: float
     x: float
     y: float
+    arrival_mode: SegmentMode | None
 
 
 class EqualizationChangeSnapshot(TypedDict):
@@ -33,6 +42,20 @@ class EqualizationChangeSnapshot(TypedDict):
     keyframe_number: int
     original_t: float
     proposed_t: float
+
+
+class SelectedSegmentSnapshot(TypedDict):
+    """Serializable details for the selected arrival segment."""
+
+    from_id: str
+    to_id: str
+    mode: SegmentMode
+    duration_days: float
+    start_x: float
+    start_y: float
+    end_x: float
+    end_y: float
+    is_stay: bool
 
 
 class TrajectoryEditSnapshot(TypedDict):
@@ -49,6 +72,11 @@ class TrajectoryEditSnapshot(TypedDict):
     date_edit_original_t: float | None
     date_edit_proposed_t: float | None
     date_edit_delta: float | None
+    date_min_t: float | None
+    date_max_t: float | None
+    allow_reorder: bool
+    can_shift_later: bool
+    selected_segment: SelectedSegmentSnapshot | None
     speed_anchor_id: str | None
     speed_anchor_index: int | None
     equalization_start_id: str | None
@@ -87,9 +115,15 @@ class TrajectoryEditSession:
     trajectory_id: str | None
     original_keyframes: tuple[EditableKeyframe, ...]
     working_keyframes: list[EditableKeyframe]
+    original_segment_modes: dict[SegmentKey, SegmentMode]
+    working_segment_modes: dict[SegmentKey, SegmentMode]
+    base_properties: dict[str, Any]
+    metadata_needs_repair: bool
     selected_keyframe_id: str | None
     active_date_edit_id: str | None
     date_edit_original_t: float | None
+    date_edit_segment_modes_before: dict[SegmentKey, SegmentMode] | None
+    allow_reorder: bool
     speed_anchor_id: str | None
     equalization_before: tuple[EditableKeyframe, ...] | None
     equalization_start_id: str | None
@@ -109,6 +143,10 @@ class TrajectoryEditSession:
         marker_id: str,
         trajectory_id: str | None,
         keyframes: Sequence[Keyframe],
+        segment_modes: dict[SegmentKey, SegmentMode] | None = None,
+        properties: dict[str, Any] | None = None,
+        metadata_needs_repair: bool = False,
+        is_new: bool = False,
     ) -> "TrajectoryEditSession":
         """Create a session with independent original and working values.
 
@@ -124,7 +162,7 @@ class TrajectoryEditSession:
         """
         original = tuple(
             EditableKeyframe(
-                edit_id=str(uuid.uuid4()),
+                edit_id=keyframe.keyframe_id or str(uuid.uuid4()),
                 t=keyframe.t,
                 x=keyframe.x,
                 y=keyframe.y,
@@ -132,15 +170,27 @@ class TrajectoryEditSession:
             for keyframe in keyframes
         )
         working = clone_keyframes(original)
+        original_values = () if is_new else original
+        modes = dict(segment_modes or {})
+        for start, end in zip(working, working[1:]):
+            modes.setdefault(
+                (start.edit_id, end.edit_id), SEGMENT_MODE_LINEAR
+            )
         return cls(
             map_id=map_id,
             marker_id=marker_id,
             trajectory_id=trajectory_id,
-            original_keyframes=original,
+            original_keyframes=original_values,
             working_keyframes=working,
+            original_segment_modes={} if is_new else dict(modes),
+            working_segment_modes=modes,
+            base_properties=dict(properties or {}),
+            metadata_needs_repair=metadata_needs_repair,
             selected_keyframe_id=None,
             active_date_edit_id=None,
             date_edit_original_t=None,
+            date_edit_segment_modes_before=None,
+            allow_reorder=False,
             speed_anchor_id=None,
             equalization_before=None,
             equalization_start_id=None,
@@ -149,7 +199,7 @@ class TrajectoryEditSession:
             equalization_total_distance=None,
             equalization_average_speed=None,
             equalization_distance_unit=None,
-            is_dirty=False,
+            is_dirty=is_new or metadata_needs_repair,
             is_conflicted=False,
             validation_errors=validate_keyframes(working),
         )
@@ -234,6 +284,16 @@ class TrajectoryEditSession:
         ):
             raise ValueError("Finish the active keyframe date edit first.")
         index = self._index_of(edit_id)
+        if not self.allow_reorder:
+            minimum, maximum = self._date_bounds(index)
+            if minimum is not None and proposed_time <= minimum:
+                raise ValueError(
+                    f"Date must be later than {minimum:g} to keep route order."
+                )
+            if maximum is not None and proposed_time >= maximum:
+                raise ValueError(
+                    f"Date must be earlier than {maximum:g} to keep route order."
+                )
         current = self.working_keyframes[index]
         self.working_keyframes[index] = replace(current, t=proposed_time)
         self.selected_keyframe_id = edit_id
@@ -259,6 +319,14 @@ class TrajectoryEditSession:
         self.selected_keyframe_id = edit_id
         self.active_date_edit_id = edit_id
         self.date_edit_original_t = keyframe.t
+        self.date_edit_segment_modes_before = dict(self.working_segment_modes)
+        self.allow_reorder = False
+
+    def set_allow_reorder(self, allow: bool) -> None:
+        """Allow one active date edit to cross neighbouring locations."""
+        if self.active_date_edit_id is None:
+            raise ValueError("Start editing a keyframe date first.")
+        self.allow_reorder = allow
 
     def update_active_date(self, proposed_time: float) -> None:
         """Update the active keyframe date while retaining invalid previews.
@@ -284,6 +352,8 @@ class TrajectoryEditSession:
             return False
         self.active_date_edit_id = None
         self.date_edit_original_t = None
+        self.date_edit_segment_modes_before = None
+        self.allow_reorder = False
         return True
 
     def cancel_date_edit(self) -> bool:
@@ -297,11 +367,89 @@ class TrajectoryEditSession:
             self.working_keyframes[index] = replace(
                 current, t=self.date_edit_original_t
             )
+        if self.date_edit_segment_modes_before is not None:
+            self.working_segment_modes = dict(self.date_edit_segment_modes_before)
         self.active_date_edit_id = None
         self.date_edit_original_t = None
+        self.date_edit_segment_modes_before = None
+        self.allow_reorder = False
         self.selected_keyframe_id = edit_id
         self._refresh_state()
         return True
+
+    def add_location(self, t: float, x: float, y: float) -> str:
+        """Add a dated location at an explicit time and position."""
+        self._require_no_equalization_preview()
+        self._validate_position(x, y)
+        if not math.isfinite(t):
+            raise ValueError("Location date must be finite.")
+        inserted = EditableKeyframe(
+            edit_id=str(uuid.uuid4()), t=t, x=x, y=y
+        )
+        candidate = [*self.working_keyframes, inserted]
+        candidate.sort(key=lambda keyframe: keyframe.t)
+        errors = validate_keyframes(candidate)
+        if errors:
+            raise ValueError(errors[0])
+        self.working_keyframes = candidate
+        self._normalize_segment_modes()
+        self.selected_keyframe_id = inserted.edit_id
+        self._refresh_state()
+        return inserted.edit_id
+
+    def shift_selected_and_later(self, delta_days: float) -> None:
+        """Shift the selected location and all later dates by one delta."""
+        self._require_no_equalization_preview()
+        if self.selected_keyframe_id is None:
+            raise ValueError("Select a keyframe first.")
+        if not math.isfinite(delta_days):
+            raise ValueError("Date shift must be finite.")
+        index = self._index_of(self.selected_keyframe_id)
+        if index > 0:
+            shifted = self.working_keyframes[index].t + delta_days
+            minimum = (
+                self.working_keyframes[index - 1].t + KEYFRAME_TIME_EPSILON
+            )
+            if shifted <= minimum:
+                raise ValueError(
+                    "Shift would move this location before the previous one."
+                )
+        for item_index in range(index, len(self.working_keyframes)):
+            current = self.working_keyframes[item_index]
+            self.working_keyframes[item_index] = replace(
+                current, t=current.t + delta_days
+            )
+        self._refresh_state()
+
+    def shift_later_by_active_delta(self) -> None:
+        """Apply the active selected-date delta to every later location."""
+        if self.active_date_edit_id is None or self.date_edit_original_t is None:
+            raise ValueError("Start editing a keyframe date first.")
+        index = self._index_of(self.active_date_edit_id)
+        current = self.working_keyframes[index]
+        delta = current.t - self.date_edit_original_t
+        if math.isclose(delta, 0.0, abs_tol=1e-12):
+            raise ValueError("Change the selected date before shifting later dates.")
+        for item_index in range(index + 1, len(self.working_keyframes)):
+            later = self.working_keyframes[item_index]
+            self.working_keyframes[item_index] = replace(
+                later, t=later.t + delta
+            )
+        self._refresh_state()
+
+    def set_arrival_mode(self, edit_id: str, mode: SegmentMode) -> None:
+        """Set how the selected location is reached from its predecessor."""
+        self._require_no_equalization_preview()
+        if mode not in {SEGMENT_MODE_LINEAR, SEGMENT_MODE_STEP}:
+            raise ValueError(f"Unsupported trajectory segment mode: {mode}")
+        index = self._index_of(edit_id)
+        if index == 0:
+            raise ValueError("The first location has no arrival segment.")
+        start = self.working_keyframes[index - 1]
+        end = self.working_keyframes[index]
+        self.working_segment_modes[(start.edit_id, end.edit_id)] = mode
+        self.selected_keyframe_id = edit_id
+        self._refresh_state()
 
     def insert_between(
         self,
@@ -334,6 +482,8 @@ class TrajectoryEditSession:
 
         start = self.working_keyframes[start_index]
         end = self.working_keyframes[end_index]
+        if self._mode_between(start, end) == SEGMENT_MODE_STEP:
+            raise ValueError("A relocation segment has no travel midpoint.")
         inserted = EditableKeyframe(
             edit_id=str(uuid.uuid4()),
             t=infer_midpoint_time(start, end),
@@ -347,6 +497,8 @@ class TrajectoryEditSession:
             raise ValueError(errors[0])
 
         self.working_keyframes = candidate
+        self.working_segment_modes.pop((start_id, end_id), None)
+        self._normalize_segment_modes()
         self.selected_keyframe_id = inserted.edit_id
         self._refresh_state()
         return inserted.edit_id
@@ -358,9 +510,11 @@ class TrajectoryEditSession:
             return False
         index = self._index_of(self.selected_keyframe_id)
         del self.working_keyframes[index]
+        self._normalize_segment_modes()
         if self.active_date_edit_id == self.selected_keyframe_id:
             self.active_date_edit_id = None
             self.date_edit_original_t = None
+            self.date_edit_segment_modes_before = None
         if self.speed_anchor_id == self.selected_keyframe_id:
             self.speed_anchor_id = None
         if self.working_keyframes:
@@ -432,9 +586,12 @@ class TrajectoryEditSession:
     def restore_original(self) -> None:
         """Discard all working changes while preserving independent values."""
         self.working_keyframes = clone_keyframes(self.original_keyframes)
+        self.working_segment_modes = dict(self.original_segment_modes)
         self.selected_keyframe_id = None
         self.active_date_edit_id = None
         self.date_edit_original_t = None
+        self.date_edit_segment_modes_before = None
+        self.allow_reorder = False
         self.speed_anchor_id = None
         self._clear_equalization_state(clear_anchor=True)
         self.is_conflicted = False
@@ -443,9 +600,22 @@ class TrajectoryEditSession:
     def to_keyframes(self) -> list[Keyframe]:
         """Return an independent persistence-ready working trajectory."""
         return [
-            Keyframe(t=keyframe.t, x=keyframe.x, y=keyframe.y)
+            Keyframe(
+                t=keyframe.t,
+                x=keyframe.x,
+                y=keyframe.y,
+                keyframe_id=keyframe.edit_id,
+            )
             for keyframe in self.working_keyframes
         ]
+
+    def to_properties(self) -> dict[str, Any]:
+        """Return complete properties with current trajectory metadata."""
+        return build_trajectory_properties(
+            self.base_properties,
+            self.to_keyframes(),
+            self.working_segment_modes,
+        )
 
     def to_snapshot(self) -> TrajectoryEditSnapshot:
         """Return immutable-by-convention serialized state for the GUI."""
@@ -457,6 +627,10 @@ class TrajectoryEditSession:
             proposed_time = self.working_keyframes[
                 self._index_of(self.active_date_edit_id)
             ].t
+        date_min: float | None = None
+        date_max: float | None = None
+        if selected_index is not None:
+            date_min, date_max = self._date_bounds(selected_index)
         date_delta = (
             proposed_time - self.date_edit_original_t
             if proposed_time is not None and self.date_edit_original_t is not None
@@ -472,6 +646,21 @@ class TrajectoryEditSession:
             and selected_index is not None
             and selected_index - speed_anchor_index >= 2
         )
+        selected_segment: SelectedSegmentSnapshot | None = None
+        if selected_index is not None and selected_index > 0:
+            segment_start = self.working_keyframes[selected_index - 1]
+            segment_end = self.working_keyframes[selected_index]
+            selected_segment = {
+                "from_id": segment_start.edit_id,
+                "to_id": segment_end.edit_id,
+                "mode": self._mode_between(segment_start, segment_end),
+                "duration_days": segment_end.t - segment_start.t,
+                "start_x": segment_start.x,
+                "start_y": segment_start.y,
+                "end_x": segment_end.x,
+                "end_y": segment_end.y,
+                "is_stay": is_stay_segment(segment_start, segment_end),
+            }
         return {
             "map_id": self.map_id,
             "marker_id": self.marker_id,
@@ -482,8 +671,15 @@ class TrajectoryEditSession:
                     "t": keyframe.t,
                     "x": keyframe.x,
                     "y": keyframe.y,
+                    "arrival_mode": (
+                        None
+                        if index == 0
+                        else self._mode_between(
+                            self.working_keyframes[index - 1], keyframe
+                        )
+                    ),
                 }
-                for keyframe in self.working_keyframes
+                for index, keyframe in enumerate(self.working_keyframes)
             ],
             "selected_keyframe_id": self.selected_keyframe_id,
             "selected_keyframe_index": selected_index,
@@ -492,6 +688,14 @@ class TrajectoryEditSession:
             "date_edit_original_t": self.date_edit_original_t,
             "date_edit_proposed_t": proposed_time,
             "date_edit_delta": date_delta,
+            "date_min_t": date_min,
+            "date_max_t": date_max,
+            "allow_reorder": self.allow_reorder,
+            "can_shift_later": (
+                selected_index is not None
+                and selected_index < len(self.working_keyframes) - 1
+            ),
+            "selected_segment": selected_segment,
             "speed_anchor_id": self.speed_anchor_id,
             "speed_anchor_index": speed_anchor_index,
             "equalization_start_id": self.equalization_start_id,
@@ -538,6 +742,18 @@ class TrajectoryEditSession:
             raise ValueError(
                 "Equalize Speed needs at least one intermediate keyframe."
             )
+        for start, end in zip(
+            self.working_keyframes[start_index:end_index],
+            self.working_keyframes[start_index + 1 : end_index + 1],
+        ):
+            if self._mode_between(start, end) == SEGMENT_MODE_STEP:
+                raise ValueError(
+                    "Speed equalization is unavailable across a relocation."
+                )
+            if is_stay_segment(start, end):
+                raise ValueError(
+                    "Speed equalization is unavailable across a stay."
+                )
 
         before = tuple(clone_keyframes(self.working_keyframes))
         equalized = equalize_keyframe_times(
@@ -606,6 +822,11 @@ class TrajectoryEditSession:
         for start, end in zip(
             self.working_keyframes, self.working_keyframes[1:]
         ):
+            if self._mode_between(start, end) == SEGMENT_MODE_STEP:
+                errors[self.midpoint_key(start.edit_id, end.edit_id)] = (
+                    "A relocation segment has no travel midpoint."
+                )
+                continue
             try:
                 inserted = EditableKeyframe(
                     edit_id="midpoint-preview",
@@ -637,13 +858,48 @@ class TrajectoryEditSession:
 
     def _refresh_state(self) -> None:
         self.working_keyframes.sort(key=lambda keyframe: keyframe.t)
+        self._normalize_segment_modes()
         self.validation_errors = validate_keyframes(self.working_keyframes)
         original_values = [
-            (keyframe.t, keyframe.x, keyframe.y)
+            (keyframe.edit_id, keyframe.t, keyframe.x, keyframe.y)
             for keyframe in self.original_keyframes
         ]
         working_values = [
-            (keyframe.t, keyframe.x, keyframe.y)
+            (keyframe.edit_id, keyframe.t, keyframe.x, keyframe.y)
             for keyframe in self.working_keyframes
         ]
-        self.is_dirty = working_values != original_values
+        self.is_dirty = (
+            working_values != original_values
+            or self.working_segment_modes != self.original_segment_modes
+            or self.metadata_needs_repair
+        )
+
+    def _date_bounds(self, index: int) -> tuple[float | None, float | None]:
+        minimum = (
+            self.working_keyframes[index - 1].t + KEYFRAME_TIME_EPSILON
+            if index > 0
+            else None
+        )
+        maximum = (
+            self.working_keyframes[index + 1].t - KEYFRAME_TIME_EPSILON
+            if index < len(self.working_keyframes) - 1
+            else None
+        )
+        return minimum, maximum
+
+    def _mode_between(
+        self, start: EditableKeyframe, end: EditableKeyframe
+    ) -> SegmentMode:
+        return segment_mode(start, end, self.working_segment_modes)
+
+    def _normalize_segment_modes(self) -> None:
+        adjacent = {
+            (start.edit_id, end.edit_id)
+            for start, end in zip(
+                self.working_keyframes, self.working_keyframes[1:]
+            )
+        }
+        self.working_segment_modes = {
+            pair: self.working_segment_modes.get(pair, SEGMENT_MODE_LINEAR)
+            for pair in adjacent
+        }

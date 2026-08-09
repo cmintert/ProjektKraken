@@ -28,6 +28,9 @@ class _MapWidget:
     def get_selected_map_id(self) -> str:
         return "map-1"
 
+    def get_marker_base_position(self, marker_id: str) -> tuple[float, float]:
+        return (0.4, 0.6)
+
 
 class _MapHandler:
     def __init__(self) -> None:
@@ -108,6 +111,40 @@ def test_cancel_discards_preview_without_command():
     assert commands == []
     assert not coordinator.is_active
     window.map_widget.clear_trajectory_edit.assert_called_once()
+
+
+def test_create_trajectory_seeds_playhead_and_cancel_persists_nothing():
+    window = _Window()
+    coordinator = TrajectoryEditCoordinator(window)  # type: ignore[arg-type]
+    coordinator.on_trajectories_ready("map-1", [])
+    commands = []
+    coordinator.command_requested.connect(commands.append)
+
+    coordinator.start_edit("marker-1")
+
+    assert coordinator._session is not None
+    seed = coordinator._session.working_keyframes[0]
+    assert (seed.t, seed.x, seed.y) == (5.0, 0.4, 0.6)
+    coordinator.cancel()
+    assert commands == []
+
+
+def test_create_trajectory_apply_emits_atomic_creation_command():
+    window = _Window()
+    coordinator = TrajectoryEditCoordinator(window)  # type: ignore[arg-type]
+    coordinator.on_trajectories_ready("map-1", [])
+    commands = []
+    coordinator.command_requested.connect(commands.append)
+    coordinator.start_edit("marker-1")
+
+    coordinator.apply()
+
+    assert len(commands) == 1
+    command = commands[0]
+    assert isinstance(command, UpdateTrajectoryCommand)
+    assert command.before_snapshot is None
+    assert command.after_keyframes[0].t == 5.0
+    assert command.after_properties["kraken_trajectory"]["schema_version"] == 1
 
 
 def test_switching_maps_discards_active_edit():

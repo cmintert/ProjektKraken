@@ -8,6 +8,7 @@ import pytest
 
 from src.core.trajectory import (
     KEYFRAME_TIME_EPSILON,
+    SEGMENT_MODE_STEP,
     EditableKeyframe,
     Keyframe,
     TrajectoryDistanceContext,
@@ -334,16 +335,35 @@ class TestInterpolatePosition:
         """Empty keyframe list returns None."""
         assert interpolate_position([], 50.0) is None
 
-    def test_single_keyframe_returns_none(self) -> None:
-        """Single keyframe is insufficient for interpolation."""
-        keyframes = [Keyframe(t=0.0, x=0.5, y=0.5)]
-        assert interpolate_position(keyframes, 0.0) is None
+    def test_single_keyframe_activates_at_its_date(self) -> None:
+        """A single dated location holds from its date onward."""
+        keyframes = [Keyframe(t=10.0, x=0.5, y=0.5)]
+        assert interpolate_position(keyframes, 9.0) is None
+        assert interpolate_position(keyframes, 10.0) == (0.5, 0.5)
+        assert interpolate_position(keyframes, 20.0) == (0.5, 0.5)
 
-    def test_before_first_keyframe_clamps_to_start(self) -> None:
-        """Time before first keyframe returns the first keyframe position."""
+    def test_before_first_keyframe_uses_base_position(self) -> None:
+        """Time before the first dated location uses the ordinary marker."""
         keyframes = [Keyframe(t=10.0, x=0.0, y=0.0), Keyframe(t=20.0, x=1.0, y=1.0)]
-        result = interpolate_position(keyframes, 5.0)
-        assert result == (0.0, 0.0)
+        assert interpolate_position(keyframes, 5.0) is None
+        assert interpolate_position(
+            keyframes, 5.0, base_position=(0.25, 0.75)
+        ) == (0.25, 0.75)
+
+    def test_step_segment_holds_then_relocates(self) -> None:
+        """A relocation does not interpolate through intervening space."""
+        keyframes = [
+            Keyframe(0.0, 0.1, 0.2, "a"),
+            Keyframe(10.0, 0.9, 0.8, "b"),
+        ]
+        modes = {("a", "b"): SEGMENT_MODE_STEP}
+
+        assert interpolate_position(
+            keyframes, 9.99, segment_modes=modes
+        ) == (0.1, 0.2)
+        assert interpolate_position(
+            keyframes, 10.0, segment_modes=modes
+        ) == (0.9, 0.8)
 
     def test_after_last_keyframe_clamps_to_end(self) -> None:
         """Time after last keyframe returns the last keyframe position."""

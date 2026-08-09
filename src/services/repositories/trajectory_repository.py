@@ -13,6 +13,9 @@ from typing import Final, List, Optional, Tuple, TypedDict, cast
 
 from src.core.trajectory import (
     Keyframe,
+    SegmentKey,
+    SegmentMode,
+    apply_trajectory_metadata,
     clone_keyframes,
     keyframes_to_mfjson,
     mfjson_to_keyframes,
@@ -137,6 +140,7 @@ class TrajectoryRepository(BaseRepository):
         object_id: str,
         keyframes: list[Keyframe],
         *,
+        properties: dict | None = None,
         expected_snapshot: (
             TrajectorySnapshot | None | _ExpectedSnapshotUnset
         ) = _EXPECTED_SNAPSHOT_UNSET,
@@ -151,6 +155,8 @@ class TrajectoryRepository(BaseRepository):
             map_id: ID of the containing map.
             object_id: Entity or event ID associated with the marker.
             keyframes: Complete desired trajectory state.
+            properties: Complete desired trajectory properties. ``None``
+                preserves the current row's properties.
             expected_snapshot: Exact state the caller expects to replace. Pass
                 ``None`` to require that no row exists. Omitting this argument
                 disables conflict detection for compatibility callers.
@@ -171,6 +177,7 @@ class TrajectoryRepository(BaseRepository):
         trajectory_json = (
             json.dumps(keyframes_to_mfjson(replacement)) if replacement else None
         )
+        properties_json: str | None
 
         with self.transaction() as connection:
             marker_db_id = self._resolve_marker_db_id(
@@ -190,7 +197,7 @@ class TrajectoryRepository(BaseRepository):
 
             if current is None:
                 trajectory_id = str(uuid.uuid4())
-                properties = "{}"
+                properties_json = self._serialize_json(properties or {})
                 created_at = time.time()
                 connection.execute(
                     f"""
@@ -203,22 +210,28 @@ class TrajectoryRepository(BaseRepository):
                         replacement[0].t,
                         replacement[-1].t,
                         trajectory_json,
-                        properties,
+                        properties_json,
                         created_at,
                     ),
                 )
             else:
-                trajectory_id = current["id"]
+                trajectory_id = str(current["id"])
+                properties_json = (
+                    self._serialize_json(properties)
+                    if properties is not None
+                    else current["properties"]
+                )
                 connection.execute(
                     """
                     UPDATE moving_features
-                    SET t_start = ?, t_end = ?, trajectory = ?
+                    SET t_start = ?, t_end = ?, trajectory = ?, properties = ?
                     WHERE id = ?
                     """,
                     (
                         replacement[0].t,
                         replacement[-1].t,
                         trajectory_json,
+                        properties_json,
                         trajectory_id,
                     ),
                 )
@@ -550,6 +563,15 @@ class TrajectoryRepository(BaseRepository):
                 keyframes = self._parse_trajectory_json(
                     json.loads(row["trajectory"])
                 )
+                keyframes, segment_modes, properties, repaired = (
+                    self._decode_metadata(keyframes, row["properties"])
+                )
+                if repaired:
+                    logger.warning(
+                        "Trajectory %s uses legacy or invalid editor metadata; "
+                        "it will be repaired on the next edit.",
+                        trajectory_id,
+                    )
             except (json.JSONDecodeError, IndexError, TypeError, ValueError) as exc:
                 logger.error("Failed to parse trajectory %s: %s", trajectory_id, exc)
                 continue
@@ -558,13 +580,47 @@ class TrajectoryRepository(BaseRepository):
                     "marker_id": str(row["object_id"]),
                     "trajectory_id": trajectory_id,
                     "keyframes": [
-                        {"t": keyframe.t, "x": keyframe.x, "y": keyframe.y}
+                        {
+                            "id": keyframe.keyframe_id,
+                            "t": keyframe.t,
+                            "x": keyframe.x,
+                            "y": keyframe.y,
+                        }
                         for keyframe in keyframes
                     ],
+                    "segment_modes": [
+                        {
+                            "from_id": start_id,
+                            "to_id": end_id,
+                            "mode": mode,
+                        }
+                        for (start_id, end_id), mode in segment_modes.items()
+                    ],
+                    "properties": properties,
+                    "metadata_needs_repair": repaired,
                     "row_snapshot": self._snapshot_from_row(row),
                 }
             )
         return snapshots
+
+    @staticmethod
+    def _decode_metadata(
+        keyframes: list[Keyframe], properties_json: str | None
+    ) -> tuple[
+        list[Keyframe],
+        dict[SegmentKey, SegmentMode],
+        dict[str, object],
+        bool,
+    ]:
+        """Decode optional editor metadata without rejecting valid positions."""
+        properties: object = {}
+        if properties_json:
+            try:
+                properties = json.loads(properties_json)
+            except (json.JSONDecodeError, TypeError):
+                logger.warning("Trajectory properties are not valid JSON.")
+                properties = {}
+        return apply_trajectory_metadata(keyframes, properties)
 
     def _update_trajectory_record(
         self, traj_id: str, keyframes: List[Keyframe]

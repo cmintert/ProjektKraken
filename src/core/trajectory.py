@@ -5,10 +5,12 @@ binary search (bisect) for O(log N) keyframe lookup.
 """
 
 import bisect
+import copy
 import math
+import uuid
 from dataclasses import dataclass
 from dataclasses import replace as dataclass_replace
-from typing import Any, Iterable, Sequence, TypeVar, cast
+from typing import Any, Iterable, Literal, Mapping, Sequence, TypeVar, cast
 
 
 @dataclass
@@ -25,16 +27,16 @@ class Keyframe:
     t: float
     x: float
     y: float
+    keyframe_id: str | None = None
 
 
 @dataclass(frozen=True)
 class EditableKeyframe:
-    """A keyframe with stable, edit-session-local identity.
+    """A keyframe with stable persisted identity.
 
-    ``edit_id`` exists only while editing and is not persisted in MF-JSON. The
-    immutable value object makes working-copy updates explicit and prevents a
-    selected keyframe from losing its identity when temporal edits re-sort the
-    trajectory.
+    ``edit_id`` is stored beside MF-JSON in trajectory metadata. The immutable
+    value object makes working-copy updates explicit and prevents a selected
+    keyframe from losing its identity when temporal edits re-sort the track.
 
     Attributes:
         edit_id: Stable identifier within one trajectory edit session.
@@ -53,6 +55,12 @@ class EditableKeyframe:
 # Shared tolerance for comparing keyframe timestamps
 # (e.g. for UI selection vs DB lookup)
 KEYFRAME_TIME_EPSILON: float = 0.01
+SEGMENT_MODE_LINEAR: Literal["linear"] = "linear"
+SEGMENT_MODE_STEP: Literal["step"] = "step"
+SegmentMode = Literal["linear", "step"]
+SegmentKey = tuple[str, str]
+TRAJECTORY_METADATA_KEY = "kraken_trajectory"
+TRAJECTORY_METADATA_VERSION = 1
 
 KeyframeValue = Keyframe | EditableKeyframe
 _KeyframeT = TypeVar("_KeyframeT", Keyframe, EditableKeyframe)
@@ -116,7 +124,12 @@ def clone_keyframes(keyframes: Iterable[_KeyframeT]) -> list[_KeyframeT]:
         else:
             clone = cast(
                 _KeyframeT,
-                Keyframe(t=keyframe.t, x=keyframe.x, y=keyframe.y),
+                Keyframe(
+                    t=keyframe.t,
+                    x=keyframe.x,
+                    y=keyframe.y,
+                    keyframe_id=keyframe.keyframe_id,
+                ),
             )
         clones.append(clone)
     return clones
@@ -307,7 +320,11 @@ def _is_finite_number(value: object) -> bool:
 
 
 def interpolate_position(
-    keyframes: list[Keyframe], t: float
+    keyframes: list[Keyframe],
+    t: float,
+    *,
+    segment_modes: Mapping[SegmentKey, SegmentMode] | None = None,
+    base_position: tuple[float, float] | None = None,
 ) -> tuple[float, float] | None:
     """Returns the interpolated (x, y) position at time t.
 
@@ -319,9 +336,10 @@ def interpolate_position(
         t: The time at which to calculate the position.
 
     Returns:
-        Tuple of (x, y) normalized coordinates. Times outside the keyframe
-        range clamp to the nearest endpoint. Returns ``None`` only when there
-        are fewer than two keyframes.
+        Tuple of normalized coordinates. Before the first keyframe the
+        ordinary marker position is returned when supplied. After the first
+        keyframe, single-point tracks hold that point. Step segments hold the
+        earlier point until the later timestamp.
 
     Example:
         >>> keyframes = [Keyframe(0, 0.0, 0.0), Keyframe(100, 1.0, 1.0)]
@@ -329,7 +347,7 @@ def interpolate_position(
         (0.5, 0.5)
 
     """
-    if not keyframes or len(keyframes) < 2:
+    if not keyframes:
         return None
 
     # Extract times for binary search
@@ -337,6 +355,9 @@ def interpolate_position(
 
     # Use bisect_left to find first keyframe at or after t
     idx_left = bisect.bisect_left(times, t)
+
+    if idx_left == 0 and t < times[0]:
+        return base_position
 
     # Check for exact match on a keyframe
     if idx_left < len(keyframes) and times[idx_left] == t:
@@ -346,9 +367,6 @@ def interpolate_position(
     # Use bisect_right to find insertion point for interpolation
     idx = bisect.bisect_right(times, t)
 
-    if idx == 0:
-        # Before first keyframe: clamp to start
-        return (keyframes[0].x, keyframes[0].y)
     if idx >= len(keyframes):
         # After last keyframe: clamp to end
         return (keyframes[-1].x, keyframes[-1].y)
@@ -356,6 +374,9 @@ def interpolate_position(
     # Get surrounding keyframes
     kf_start = keyframes[idx - 1]
     kf_end = keyframes[idx]
+
+    if segment_mode(kf_start, kf_end, segment_modes) == SEGMENT_MODE_STEP:
+        return (kf_start.x, kf_start.y)
 
     # Calculate interpolation factor (alpha: 0.0 to 1.0)
     dt = kf_end.t - kf_start.t
@@ -370,6 +391,132 @@ def interpolate_position(
     y = kf_start.y + (kf_end.y - kf_start.y) * alpha
 
     return (x, y)
+
+
+def segment_mode(
+    start: KeyframeValue,
+    end: KeyframeValue,
+    segment_modes: Mapping[SegmentKey, SegmentMode] | None,
+) -> SegmentMode:
+    """Return the stored movement mode for one adjacent pair."""
+    if segment_modes is None:
+        return SEGMENT_MODE_LINEAR
+    start_id = _keyframe_identity(start)
+    end_id = _keyframe_identity(end)
+    if start_id is None or end_id is None:
+        return SEGMENT_MODE_LINEAR
+    return segment_modes.get((start_id, end_id), SEGMENT_MODE_LINEAR)
+
+
+def is_stay_segment(start: KeyframeValue, end: KeyframeValue) -> bool:
+    """Return whether two dated locations occupy the same map position."""
+    return math.isclose(start.x, end.x, abs_tol=1e-12) and math.isclose(
+        start.y, end.y, abs_tol=1e-12
+    )
+
+
+def _keyframe_identity(keyframe: KeyframeValue) -> str | None:
+    if isinstance(keyframe, EditableKeyframe):
+        return keyframe.edit_id
+    return keyframe.keyframe_id
+
+
+def apply_trajectory_metadata(
+    keyframes: Sequence[Keyframe], properties: object
+) -> tuple[list[Keyframe], dict[SegmentKey, SegmentMode], dict[str, Any], bool]:
+    """Attach durable identities and segment modes from stored properties.
+
+    Malformed or legacy metadata falls back to fresh identities and linear
+    segments while preserving unrelated property values.
+    """
+    preserved = copy.deepcopy(properties) if isinstance(properties, dict) else {}
+    metadata = preserved.get(TRAJECTORY_METADATA_KEY)
+    repaired = False
+    if not isinstance(metadata, dict) or metadata.get("schema_version") != (
+        TRAJECTORY_METADATA_VERSION
+    ):
+        metadata = None
+        repaired = bool(keyframes)
+    ids: list[str] = []
+    if isinstance(metadata, dict):
+        raw_ids = metadata.get("keyframe_ids")
+        if (
+            isinstance(raw_ids, list)
+            and len(raw_ids) == len(keyframes)
+            and all(isinstance(value, str) and value for value in raw_ids)
+            and len(set(raw_ids)) == len(raw_ids)
+        ):
+            ids = list(raw_ids)
+    if not ids:
+        ids = [str(uuid.uuid4()) for _ in keyframes]
+        repaired = bool(keyframes)
+
+    enriched = [
+        Keyframe(
+            t=keyframe.t,
+            x=keyframe.x,
+            y=keyframe.y,
+            keyframe_id=keyframe_id,
+        )
+        for keyframe, keyframe_id in zip(keyframes, ids)
+    ]
+    adjacent = {
+        (start.keyframe_id, end.keyframe_id)
+        for start, end in zip(enriched, enriched[1:])
+        if start.keyframe_id is not None and end.keyframe_id is not None
+    }
+    modes: dict[SegmentKey, SegmentMode] = {
+        cast(SegmentKey, pair): SEGMENT_MODE_LINEAR for pair in adjacent
+    }
+    if isinstance(metadata, dict):
+        raw_segments = metadata.get("segments")
+        if isinstance(raw_segments, list):
+            for item in raw_segments:
+                if not isinstance(item, dict):
+                    repaired = True
+                    continue
+                pair = (item.get("from_id"), item.get("to_id"))
+                mode = item.get("mode")
+                if pair in adjacent and mode in {
+                    SEGMENT_MODE_LINEAR,
+                    SEGMENT_MODE_STEP,
+                }:
+                    modes[cast(SegmentKey, pair)] = cast(SegmentMode, mode)
+                else:
+                    repaired = True
+        elif "segments" in metadata:
+            repaired = True
+    return enriched, modes, preserved, repaired
+
+
+def build_trajectory_properties(
+    base_properties: object,
+    keyframes: Sequence[Keyframe],
+    segment_modes: Mapping[SegmentKey, SegmentMode],
+) -> dict[str, Any]:
+    """Merge versioned editor metadata into independent base properties."""
+    properties = (
+        copy.deepcopy(base_properties) if isinstance(base_properties, dict) else {}
+    )
+    ids = [
+        keyframe.keyframe_id or str(uuid.uuid4()) for keyframe in keyframes
+    ]
+    pairs = list(zip(ids, ids[1:]))
+    properties[TRAJECTORY_METADATA_KEY] = {
+        "schema_version": TRAJECTORY_METADATA_VERSION,
+        "keyframe_ids": ids,
+        "segments": [
+            {
+                "from_id": start_id,
+                "to_id": end_id,
+                "mode": segment_modes.get(
+                    (start_id, end_id), SEGMENT_MODE_LINEAR
+                ),
+            }
+            for start_id, end_id in pairs
+        ],
+    }
+    return properties
 
 
 def keyframes_to_mfjson(keyframes: list[Keyframe]) -> dict[str, Any]:

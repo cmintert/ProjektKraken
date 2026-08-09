@@ -9,7 +9,14 @@ from PySide6.QtCore import Q_ARG, QObject, Qt, Signal, Slot
 from src.app.qt_invocation import invoke_queued
 from src.commands.base_command import CommandResult
 from src.commands.trajectory_commands import UpdateTrajectoryCommand
-from src.core.trajectory import Keyframe
+from src.core.trajectory import (
+    SEGMENT_MODE_LINEAR,
+    SEGMENT_MODE_STEP,
+    Keyframe,
+    SegmentKey,
+    SegmentMode,
+    interpolate_position,
+)
 from src.core.trajectory_edit import TrajectoryEditSession
 
 if TYPE_CHECKING:
@@ -67,6 +74,7 @@ class TrajectoryEditCoordinator(QObject):
         widget.trajectory_keyframe_selected.connect(self.select_keyframe)
         widget.trajectory_keyframe_moved.connect(self.move_keyframe)
         widget.trajectory_midpoint_insert_requested.connect(self.insert_midpoint)
+        widget.trajectory_add_location_requested.connect(self.add_location_at_playhead)
         widget.trajectory_delete_selected_requested.connect(
             self.delete_selected_keyframe
         )
@@ -83,6 +91,9 @@ class TrajectoryEditCoordinator(QObject):
         widget.trajectory_date_step_requested.connect(self.step_date)
         widget.trajectory_date_edit_done_requested.connect(self.finish_date_edit)
         widget.trajectory_date_edit_cancel_requested.connect(self.cancel_date_edit)
+        widget.trajectory_allow_reorder_changed.connect(self.set_allow_reorder)
+        widget.trajectory_shift_later_requested.connect(self.shift_later)
+        widget.trajectory_arrival_mode_changed.connect(self.set_arrival_mode)
         widget.trajectory_speed_anchor_requested.connect(self.set_speed_anchor)
         widget.trajectory_speed_anchor_clear_requested.connect(
             self.clear_speed_anchor
@@ -140,7 +151,12 @@ class TrajectoryEditCoordinator(QObject):
                 self._render()
             return
 
-        if len(matching) != 1 or incoming_row != self._before_snapshot:
+        authoritative_matches = (
+            len(matching) == 0 and self._before_snapshot is None
+        ) or (
+            len(matching) == 1 and incoming_row == self._before_snapshot
+        )
+        if not authoritative_matches:
             session.mark_conflicted()
 
         # Apply harmless changes to unrelated trajectories, retaining the
@@ -169,28 +185,65 @@ class TrajectoryEditCoordinator(QObject):
             for row in self._authoritative_by_map.get(map_id, [])
             if row.get("marker_id") == marker_id
         ]
-        if len(records) != 1:
-            message = (
+        if len(records) > 1:
+            self._show_status(
                 "This marker has multiple trajectory rows and cannot be edited."
-                if len(records) > 1
-                else "No trajectory is available for this marker."
             )
-            self._show_status(message)
             return
+        if not records:
+            position = self._window.map_widget.get_marker_base_position(marker_id)
+            if position is None:
+                self._show_status("The selected marker has no usable map position.")
+                return
+            playhead = self._window.timeline.get_playhead_time()
+            seed = Keyframe(
+                t=playhead,
+                x=position[0],
+                y=position[1],
+            )
+            self._session = TrajectoryEditSession.create(
+                map_id=map_id,
+                marker_id=marker_id,
+                trajectory_id=None,
+                keyframes=[seed],
+                is_new=True,
+            )
+            self._before_snapshot = None
+            self._active_record_at_start = None
+            self._latest_deferred = None
+            self._window.map_widget.show_trajectory_edit(
+                self._session.to_snapshot()
+            )
+            return
+
         record = records[0]
         keyframes = [
             Keyframe(
                 t=float(item["t"]),
                 x=float(item["x"]),
                 y=float(item["y"]),
+                keyframe_id=str(item.get("id") or f"legacy-{index}"),
             )
-            for item in record.get("keyframes", [])
+            for index, item in enumerate(record.get("keyframes", []))
         ]
+        segment_modes: dict[SegmentKey, SegmentMode] = {}
+        for item in record.get("segment_modes", []):
+            if not isinstance(item, dict):
+                continue
+            mode = item.get("mode")
+            if mode not in {SEGMENT_MODE_LINEAR, SEGMENT_MODE_STEP}:
+                continue
+            segment_modes[(str(item["from_id"]), str(item["to_id"]))] = cast(
+                "SegmentMode", mode
+            )
         self._session = TrajectoryEditSession.create(
             map_id=map_id,
             marker_id=marker_id,
             trajectory_id=str(record["trajectory_id"]),
             keyframes=keyframes,
+            segment_modes=segment_modes,
+            properties=cast(dict[str, Any], record.get("properties", {})),
+            metadata_needs_repair=bool(record.get("metadata_needs_repair", False)),
         )
         self._before_snapshot = copy.deepcopy(record.get("row_snapshot"))
         self._active_record_at_start = copy.deepcopy(record)
@@ -302,6 +355,49 @@ class TrajectoryEditCoordinator(QObject):
         if self._session.cancel_date_edit():
             self._render()
 
+    @Slot(bool)
+    def set_allow_reorder(self, allow: bool) -> None:
+        """Toggle deliberate reordering for the active date edit."""
+        if self._session is None or self._pending_command_id is not None:
+            return
+        try:
+            self._session.set_allow_reorder(allow)
+        except ValueError as exc:
+            self._show_status(str(exc))
+            return
+        self._render()
+
+    @Slot()
+    def shift_later(self) -> None:
+        """Apply the active date delta to all later locations."""
+        if self._session is None or self._pending_command_id is not None:
+            return
+        try:
+            self._session.shift_later_by_active_delta()
+        except ValueError as exc:
+            self._show_status(str(exc))
+            return
+        self._render()
+
+    @Slot(str)
+    def set_arrival_mode(self, mode: str) -> None:
+        """Set the selected location's arrival behavior."""
+        session = self._session
+        if (
+            session is None
+            or session.selected_keyframe_id is None
+            or self._pending_command_id is not None
+        ):
+            return
+        try:
+            session.set_arrival_mode(
+                session.selected_keyframe_id, cast("SegmentMode", mode)
+            )
+        except ValueError as exc:
+            self._show_status(str(exc))
+            return
+        self._render()
+
     @Slot(str)
     def set_speed_anchor(self, edit_id: str) -> None:
         """Set the selected keyframe as the explicit equalization start."""
@@ -398,6 +494,35 @@ class TrajectoryEditCoordinator(QObject):
         self._render()
 
     @Slot()
+    def add_location_at_playhead(self) -> None:
+        """Add a dated location at the current playhead and resolved position."""
+        session = self._session
+        if session is None or self._pending_command_id is not None:
+            return
+        playhead = self._window.timeline.get_playhead_time()
+        keyframes = session.to_keyframes()
+        base_position = self._window.map_widget.get_marker_base_position(
+            session.marker_id
+        )
+        position = interpolate_position(
+            keyframes,
+            playhead,
+            segment_modes=session.working_segment_modes,
+            base_position=base_position,
+        )
+        if position is None:
+            position = base_position
+        if position is None:
+            self._show_status("The marker has no position to copy.")
+            return
+        try:
+            session.add_location(playhead, position[0], position[1])
+        except ValueError as exc:
+            self._show_status(str(exc))
+            return
+        self._render()
+
+    @Slot()
     def delete_selected_keyframe(self) -> None:
         """Delete exactly the selected working keyframe."""
         if self._session is None or self._pending_command_id is not None:
@@ -430,6 +555,7 @@ class TrajectoryEditCoordinator(QObject):
             session.marker_id,
             cast("TrajectorySnapshot | None", copy.deepcopy(self._before_snapshot)),
             session.to_keyframes(),
+            session.to_properties(),
         )
         self._pending_command_id = command.command_id
         self._render(pending=True)

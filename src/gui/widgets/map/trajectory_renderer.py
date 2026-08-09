@@ -7,7 +7,7 @@ calendar integration, and pulsing animations.
 import logging
 from typing import TYPE_CHECKING, Optional
 
-from PySide6.QtCore import QPropertyAnimation, QRectF, Qt
+from PySide6.QtCore import QPointF, QPropertyAnimation, QRectF, Qt
 from PySide6.QtGui import (
     QBrush,
     QColor,
@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
 from src.app.constants import MAP_LAYER_Z_TRAJECTORIES
 from src.core.calendar import CalendarConverter
 from src.core.theme_manager import ThemeManager
+from src.core.trajectory import SEGMENT_MODE_STEP, SegmentKey, SegmentMode
 
 if TYPE_CHECKING:
     from src.gui.widgets.map.map_graphics_view import KeyframeItem, MapGraphicsView
@@ -123,18 +124,26 @@ class TrajectoryRenderer:
         self._view = view
 
         self.trajectory_path_item: Optional[QGraphicsPathItem] = None
+        self.relocation_path_items: list[QGraphicsPathItem] = []
         self.keyframe_items: list["KeyframeItem"] = []
         self.keyframe_label_items: list[KeyframeLabelItem] = []
         self._calendar_converter: Optional[CalendarConverter] = None
         self.trigger_first_use_animation: bool = False
         self._animations: list[QPropertyAnimation] = []
         self._marker_id: str | None = None
+        self._keyframes: list = []
+        self._segment_modes: dict[SegmentKey, SegmentMode] = {}
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
-    def show_trajectory(self, marker_id: str, keyframes: list) -> None:
+    def show_trajectory(
+        self,
+        marker_id: str,
+        keyframes: list,
+        segment_modes: dict[SegmentKey, SegmentMode] | None = None,
+    ) -> None:
         """Visualizes the trajectory path and keyframes.
 
         Args:
@@ -145,6 +154,8 @@ class TrajectoryRenderer:
 
         self.clear_trajectory()
         self._marker_id = marker_id
+        self._keyframes = list(keyframes)
+        self._segment_modes = dict(segment_modes or {})
         if not keyframes or len(keyframes) < 2:
             return
 
@@ -231,6 +242,9 @@ class TrajectoryRenderer:
         if self.trajectory_path_item:
             self.trajectory_path_item.setZValue(base_z - 0.3)
 
+        for item in self.relocation_path_items:
+            item.setZValue(base_z - 0.25)
+
         for dot in self.keyframe_items:
             dot.setZValue(base_z - 0.2)
 
@@ -243,8 +257,12 @@ class TrajectoryRenderer:
             self._view.graphics_scene.removeItem(self.trajectory_path_item)
             self.trajectory_path_item = None
 
-        for item in self.keyframe_items:
-            self._view.graphics_scene.removeItem(item)
+        for relocation_item in self.relocation_path_items:
+            self._view.graphics_scene.removeItem(relocation_item)
+        self.relocation_path_items.clear()
+
+        for keyframe_item in self.keyframe_items:
+            self._view.graphics_scene.removeItem(keyframe_item)
         self.keyframe_items.clear()
 
         for label in self.keyframe_label_items:
@@ -252,6 +270,8 @@ class TrajectoryRenderer:
         self.keyframe_label_items.clear()
 
         self._marker_id = None
+        self._keyframes = []
+        self._segment_modes = {}
 
         self._view._schedule_label_layout()
 
@@ -311,20 +331,55 @@ class TrajectoryRenderer:
                 self.trajectory_path_item = None
             return
 
-        sorted_items = sorted(self.keyframe_items, key=lambda item: item.t)
+        sorted_pairs = sorted(
+            zip(self._keyframes, self.keyframe_items),
+            key=lambda pair: pair[0].t,
+        )
 
         path = QPainterPath()
-        start = sorted_items[0].scenePos()
+        start = sorted_pairs[0][1].scenePos()
         path.moveTo(start)
 
-        for i in range(1, len(sorted_items)):
-            path.lineTo(sorted_items[i].scenePos())
+        for (start_keyframe, start_item), (end_keyframe, end_item) in zip(
+            sorted_pairs, sorted_pairs[1:]
+        ):
+            pair = (start_keyframe.keyframe_id, end_keyframe.keyframe_id)
+            if (
+                None not in pair
+                and self._segment_modes.get(pair) == SEGMENT_MODE_STEP
+            ):
+                path.moveTo(end_item.scenePos())
+                self._add_relocation_connector(
+                    start_item.scenePos(), end_item.scenePos(), base_z
+                )
+            else:
+                path.lineTo(end_item.scenePos())
 
         if not self.trajectory_path_item:
             self.trajectory_path_item = self._create_trajectory_item(path, base_z)
             self._view.graphics_scene.addItem(self.trajectory_path_item)
         else:
             self.trajectory_path_item.setPath(path)
+
+    def _add_relocation_connector(
+        self, start: QPointF, end: QPointF, base_z: float
+    ) -> None:
+        """Draw two separated strokes so relocation never reads as travel."""
+        delta = end - start
+        path = QPainterPath()
+        path.moveTo(start)
+        path.lineTo(start + delta * 0.38)
+        path.moveTo(start + delta * 0.62)
+        path.lineTo(end)
+        item = QGraphicsPathItem(path)
+        theme = ThemeManager().get_theme()
+        pen = QPen(QColor(theme.get("warning", "#e67e22")), 2)
+        pen.setStyle(Qt.PenStyle.DashDotLine)
+        item.setPen(pen)
+        item.setToolTip("Relocation — no travel route is implied")
+        item.setZValue(base_z - 0.25)
+        self._view.graphics_scene.addItem(item)
+        self.relocation_path_items.append(item)
 
     def _create_trajectory_item(
         self, path: QPainterPath, base_z: float

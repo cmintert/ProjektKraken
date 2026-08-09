@@ -24,6 +24,7 @@ from typing import List, Optional
 from PySide6.QtCore import QSize, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QKeyEvent, QPaintEvent, QResizeEvent
 from PySide6.QtWidgets import (
+    QCheckBox,
     QComboBox,
     QFrame,
     QHBoxLayout,
@@ -198,6 +199,7 @@ class MapWidget(
     trajectory_keyframe_selected = Signal(str)
     trajectory_keyframe_moved = Signal(str, float, float)
     trajectory_midpoint_insert_requested = Signal(str, str, float, float)
+    trajectory_add_location_requested = Signal()
     trajectory_delete_selected_requested = Signal()
     trajectory_apply_requested = Signal()
     trajectory_cancel_requested = Signal()
@@ -208,6 +210,9 @@ class MapWidget(
     trajectory_date_step_requested = Signal(float)
     trajectory_date_edit_done_requested = Signal()
     trajectory_date_edit_cancel_requested = Signal()
+    trajectory_allow_reorder_changed = Signal(bool)
+    trajectory_shift_later_requested = Signal()
+    trajectory_arrival_mode_changed = Signal(str)
     trajectory_speed_anchor_requested = Signal(str)
     trajectory_speed_anchor_clear_requested = Signal()
     trajectory_speed_equalize_requested = Signal(str)
@@ -430,6 +435,14 @@ class MapWidget(
             self.trajectory_delete_selected_requested.emit
         )
         edit_strip_layout.addWidget(self.btn_delete_trajectory_keyframe)
+        self.btn_add_trajectory_location = QPushButton("Add Location")
+        self.btn_add_trajectory_location.setToolTip(
+            "Add a dated location at the current playhead."
+        )
+        self.btn_add_trajectory_location.clicked.connect(
+            self.trajectory_add_location_requested.emit
+        )
+        edit_strip_layout.addWidget(self.btn_add_trajectory_location)
         self.btn_reload_trajectory = QPushButton("Discard & Reload")
         self.btn_reload_trajectory.setStyleSheet(
             StyleHelper.get_secondary_button_style()
@@ -484,6 +497,22 @@ class MapWidget(
             lambda: self.trajectory_date_step_requested.emit(1.0)
         )
         date_panel_layout.addWidget(self.btn_trajectory_date_next)
+        self.chk_trajectory_allow_reorder = QCheckBox("Allow route reorder")
+        self.chk_trajectory_allow_reorder.setToolTip(
+            "Temporarily allow this location to cross neighbouring dates."
+        )
+        self.chk_trajectory_allow_reorder.toggled.connect(
+            self.trajectory_allow_reorder_changed.emit
+        )
+        date_panel_layout.addWidget(self.chk_trajectory_allow_reorder)
+        self.btn_shift_trajectory_later = QPushButton("Shift Later")
+        self.btn_shift_trajectory_later.setToolTip(
+            "Apply this date change to all later locations."
+        )
+        self.btn_shift_trajectory_later.clicked.connect(
+            self.trajectory_shift_later_requested.emit
+        )
+        date_panel_layout.addWidget(self.btn_shift_trajectory_later)
         self.btn_edit_trajectory_date = QPushButton("Edit Date")
         self.btn_edit_trajectory_date.setStyleSheet(
             StyleHelper.get_primary_button_style()
@@ -524,6 +553,28 @@ class MapWidget(
         )
         self.trajectory_date_panel.hide()
         layout.addWidget(self.trajectory_date_panel)
+
+        self.trajectory_segment_panel = QFrame(self)
+        self.trajectory_segment_panel.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
+        self.trajectory_segment_panel.setStyleSheet(StyleHelper.get_frame_style())
+        segment_layout = QHBoxLayout(self.trajectory_segment_panel)
+        segment_layout.setContentsMargins(8, 4, 8, 4)
+        segment_layout.setSpacing(8)
+        segment_layout.addWidget(QLabel("Arrival from previous:"))
+        self.trajectory_arrival_mode = QComboBox()
+        self.trajectory_arrival_mode.addItem("Travel", "linear")
+        self.trajectory_arrival_mode.addItem("Relocation", "step")
+        self.trajectory_arrival_mode.currentIndexChanged.connect(
+            self._on_trajectory_arrival_mode_changed
+        )
+        segment_layout.addWidget(self.trajectory_arrival_mode)
+        self.trajectory_segment_metrics = QLabel()
+        segment_layout.addWidget(self.trajectory_segment_metrics, 1)
+        self.trajectory_segment_panel.hide()
+        layout.addWidget(self.trajectory_segment_panel)
 
         self.trajectory_speed_panel = QFrame(self)
         self.trajectory_speed_panel.setSizePolicy(
@@ -767,8 +818,11 @@ class MapWidget(
         self._calendar_converter: CalendarConverter | None = None
 
         self._active_trajectories: dict[str, list] = {}  # marker_id -> list[Keyframe]
+        self._active_trajectory_segment_modes: dict[str, dict] = {}
+        self._base_marker_positions: dict[str, tuple[float, float]] = {}
         self._trajectory_edit_marker_id: str | None = None
         self._trajectory_edit_keyframes: list = []
+        self._trajectory_edit_segment_modes: dict = {}
         self._selected_marker_id: Optional[str] = None
 
         # Entity/event caches for the object-selection dialog
@@ -935,6 +989,12 @@ class MapWidget(
         if selected_id is not None:
             self.trajectory_date_edit_requested.emit(selected_id)
 
+    def _on_trajectory_arrival_mode_changed(self, index: int) -> None:
+        """Forward a user-selected arrival mode."""
+        mode = self.trajectory_arrival_mode.itemData(index)
+        if isinstance(mode, str):
+            self.trajectory_arrival_mode_changed.emit(mode)
+
     def _request_selected_trajectory_speed_anchor(self) -> None:
         """Request the selected keyframe as the speed start anchor."""
         selected_id = self.view.trajectory_edit_overlay.selected_keyframe_id
@@ -961,9 +1021,13 @@ class MapWidget(
         can_edit = (
             can_record
             and selected_marker is not None
-            and selected_marker.marker_id in self._active_trajectories
             and self._trajectory_edit_marker_id is None
         )
+        if selected_marker is not None:
+            has_trajectory = selected_marker.marker_id in self._active_trajectories
+            self.btn_edit_trajectory.setText(
+                "Edit Trajectory" if has_trajectory else "Create Trajectory"
+            )
         self._edit_trajectory_action.setVisible(can_edit)
         self._edit_trajectory_action.setEnabled(can_edit)
 
@@ -1212,17 +1276,21 @@ class MapWidget(
             y: New normalized Y coordinate.
 
         """
-        # A trajectory marker is a playback preview, never a construction handle.
-        if marker_id in self._active_trajectories:
+        # A trajectory owns its marker from the first dated location onward.
+        if (
+            marker_id in self._active_trajectories
+            and not self._can_move_trajectory_marker(marker_id)
+        ):
             self._update_trajectory_positions()
             logger.warning(
                 "Ignored direct movement of trajectory marker %s; "
-                "use Edit Trajectory instead.",
+                "the trajectory owns it at the current playhead time.",
                 marker_id,
             )
             return
 
-        # No trajectory: update marker position in widget and persist
+        # No active trajectory yet: update the ordinary marker position and persist.
+        self._base_marker_positions[marker_id] = (x, y)
         self.update_marker_position(marker_id, x, y)
 
         # Emit signal so app layer can persist the change
@@ -1361,6 +1429,7 @@ class MapWidget(
             style,
             visual_attributes,
         )
+        self._base_marker_positions[marker_id] = (x, y)
         # Auto-register in layer hierarchy
         self._register_layer_node(marker_id, label, feature_type)
 
@@ -1384,6 +1453,7 @@ class MapWidget(
         """
         self._unregister_layer_node(marker_id)
         self.view.remove_marker(marker_id)
+        self._base_marker_positions.pop(marker_id, None)
 
     def exit_editing_modes(self) -> None:
         """Exit active map and layer editing modes without committing edits."""
@@ -1393,8 +1463,15 @@ class MapWidget(
     def clear_markers(self) -> None:
         """Removes all markers from the map and resets the layer model."""
         self.view.clear_markers()
+        self._base_marker_positions.clear()
         # Reset layer model — will be recreated when new markers load
         self._layer_model = None
+
+    def get_marker_base_position(
+        self, marker_id: str
+    ) -> tuple[float, float] | None:
+        """Return the marker's persisted ordinary map position."""
+        return self._base_marker_positions.get(marker_id)
 
     # -- Calibration provided by MapCalibrationMixin -------------------
 

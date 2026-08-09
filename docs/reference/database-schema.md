@@ -264,9 +264,19 @@ erDiagram
 | `marker_id` | TEXT | NOT NULL |
 | `t_start` | REAL | NOT NULL |
 | `t_end` | REAL | NOT NULL |
-| `trajectory` | JSON | NOT NULL, -- List of [t, x, y] |
-| `properties` | JSON | DEFAULT '{}', -- Changing properties over time |
+| `trajectory` | JSON | NOT NULL, -- OGC MF-JSON MovingPoint |
+| `properties` | JSON | DEFAULT '{}', -- Versioned editor metadata and extensions |
 | `created_at` | REAL |  |
+
+`trajectory` stores an OGC MF-JSON `MovingPoint` with parallel `coordinates` and `datetimes` arrays. For example:
+
+```json
+{"type":"MovingPoint","coordinates":[[0.25,0.5],[0.75,0.5]],"datetimes":[10.0,20.0],"interpolation":"Linear"}
+```
+
+The parallel `properties` object may contain unrelated extension data. Its `kraken_trajectory` member is versioned authoring metadata with `schema_version`, UUIDs in `keyframe_ids`, and adjacent `segments` identified by `from_id`, `to_id`, and a `linear` or `step` mode.
+
+Rows without this member remain valid and are read as all-linear. Metadata is written lazily on the next trajectory edit. If the member is malformed or mismatched, ProjektKraken repairs that member without discarding other properties.
 
 ### `image_attachments`
 

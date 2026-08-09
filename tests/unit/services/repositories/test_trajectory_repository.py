@@ -8,7 +8,12 @@ import sqlite3
 
 import pytest
 
-from src.core.trajectory import Keyframe
+from src.core.trajectory import (
+    SEGMENT_MODE_LINEAR,
+    SEGMENT_MODE_STEP,
+    Keyframe,
+    build_trajectory_properties,
+)
 from src.services.repositories.trajectory_repository import (
     AmbiguousTrajectoryError,
     TrajectoryConflictError,
@@ -140,10 +145,10 @@ class TestTrajectoryRepository:
         snapshot = snapshots[0]
         assert snapshot["marker_id"] == setup_data["marker_id"]
         assert snapshot["trajectory_id"] == trajectory_id
-        assert snapshot["keyframes"] == [
-            {"t": 0.0, "x": 0.1, "y": 0.2},
-            {"t": 10.0, "x": 0.8, "y": 0.9},
-        ]
+        assert [item["t"] for item in snapshot["keyframes"]] == [0.0, 10.0]
+        assert all(item["id"] for item in snapshot["keyframes"])
+        assert snapshot["segment_modes"][0]["mode"] == "linear"
+        assert snapshot["metadata_needs_repair"] is True
         assert snapshot["row_snapshot"]["properties"] == '{"stroke": "dashed"}'
         json.dumps(snapshots)
 
@@ -164,6 +169,73 @@ class TestTrajectoryRepository:
         assert row["t_start"] == 10.0
         assert row["t_start"] == 10.0
         assert row["t_end"] == 50.0
+
+    def test_editor_metadata_round_trip_preserves_unknown_properties(
+        self, repo, setup_data
+    ):
+        trajectory_id = repo.insert(
+            setup_data["marker_id"],
+            [Keyframe(0.0, 0.1, 0.2), Keyframe(10.0, 0.9, 0.8)],
+            properties={"stroke": "dashed"},
+        )
+        before = repo.get_marker_trajectory_snapshot("map1", "marker1")
+        first = repo.get_snapshots_by_map_id("map1")[0]
+        keyframes = [
+            Keyframe(
+                item["t"], item["x"], item["y"], keyframe_id=item["id"]
+            )
+            for item in first["keyframes"]
+        ]
+        pair = (keyframes[0].keyframe_id, keyframes[1].keyframe_id)
+        properties = build_trajectory_properties(
+            first["properties"], keyframes, {pair: SEGMENT_MODE_STEP}
+        )
+
+        after = repo.set_marker_trajectory(
+            "map1",
+            "marker1",
+            keyframes,
+            properties=properties,
+            expected_snapshot=before,
+        )
+        loaded = repo.get_snapshots_by_map_id("map1")[0]
+
+        assert after["id"] == trajectory_id
+        assert loaded["properties"]["stroke"] == "dashed"
+        assert loaded["segment_modes"][0]["mode"] == "step"
+        assert loaded["metadata_needs_repair"] is False
+
+    def test_malformed_editor_metadata_falls_back_without_losing_extensions(
+        self, repo, setup_data, caplog
+    ):
+        """Mismatched editor metadata repairs IDs and preserves unknown data."""
+        repo.insert(
+            setup_data["marker_id"],
+            [
+                Keyframe(t=10.0, x=0.1, y=0.2),
+                Keyframe(t=20.0, x=0.8, y=0.9),
+            ],
+            properties={
+                "worldbuilder_extension": {"certainty": "rumour"},
+                "kraken_trajectory": {
+                    "schema_version": 1,
+                    "keyframe_ids": ["only-one-id"],
+                    "segments": [{"mode": "unknown"}],
+                },
+            },
+        )
+
+        loaded = repo.get_snapshots_by_map_id(setup_data["map_id"])[0]
+
+        assert loaded["metadata_needs_repair"] is True
+        assert loaded["properties"]["worldbuilder_extension"] == {
+            "certainty": "rumour"
+        }
+        assert len({item["id"] for item in loaded["keyframes"]}) == 2
+        assert [item["mode"] for item in loaded["segment_modes"]] == [
+            SEGMENT_MODE_LINEAR
+        ]
+        assert "invalid editor metadata" in caplog.text.lower()
 
     def test_backward_compat_parses_old_format(self, repo, db_connection, setup_data):
         """Test that old [[t,x,y],...] format is correctly parsed."""

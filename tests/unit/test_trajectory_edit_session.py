@@ -4,6 +4,7 @@ import pytest
 
 from src.core.trajectory import (
     KEYFRAME_TIME_EPSILON,
+    SEGMENT_MODE_STEP,
     Keyframe,
     TrajectoryDistanceContext,
 )
@@ -147,6 +148,7 @@ def test_date_edit_reorders_by_stable_identity_and_tracks_feedback() -> None:
     edit_id = session.working_keyframes[0].edit_id
 
     session.begin_date_edit(edit_id)
+    session.set_allow_reorder(True)
     session.update_active_date(12.0)
     snapshot = session.to_snapshot()
 
@@ -159,18 +161,15 @@ def test_date_edit_reorders_by_stable_identity_and_tracks_feedback() -> None:
     assert session.active_date_edit_id is None
 
 
-def test_explicit_time_assignment_reorders_without_detaching_position() -> None:
-    """One-step playhead copying uses the same stable date mutation."""
+def test_explicit_time_assignment_keeps_route_order_by_default() -> None:
+    """One-step playhead copying cannot silently reorder locations."""
     session = _session()
     edit_id = session.working_keyframes[0].edit_id
 
-    session.set_keyframe_time(edit_id, 12.0)
-
-    moved = session.working_keyframes[-1]
-    assert moved.edit_id == edit_id
-    assert (moved.t, moved.x, moved.y) == (12.0, 0.1, 0.2)
-    assert session.selected_keyframe_id == edit_id
-    assert session.can_apply
+    with pytest.raises(ValueError, match="keep route order"):
+        session.set_keyframe_time(edit_id, 12.0)
+    assert session.working_keyframes[0].edit_id == edit_id
+    assert session.working_keyframes[0].t == 0.0
 
 
 def test_repeated_begin_preserves_date_edit_cancel_baseline() -> None:
@@ -186,21 +185,16 @@ def test_repeated_begin_preserves_date_edit_cancel_baseline() -> None:
     assert session.working_keyframes[0].t == 0.0
 
 
-def test_date_edit_collision_remains_visible_and_blocks_apply() -> None:
-    """An invalid proposed date is preserved for correction, not overwritten."""
+def test_date_edit_collision_is_rejected_without_losing_valid_state() -> None:
+    """Keep-order retiming rejects a colliding date immediately."""
     session = _session()
     edit_id = session.working_keyframes[0].edit_id
     session.begin_date_edit(edit_id)
 
-    session.update_active_date(10.0)
-
-    assert session.can_apply is False
-    assert session.validation_errors
-    assert next(
-        keyframe.t
-        for keyframe in session.working_keyframes
-        if keyframe.edit_id == edit_id
-    ) == 10.0
+    with pytest.raises(ValueError, match="keep route order"):
+        session.update_active_date(10.0)
+    assert session.validation_errors == []
+    assert session.working_keyframes[0].t == 0.0
 
 
 def test_cancel_date_edit_restores_prior_working_date() -> None:
@@ -360,9 +354,42 @@ def test_equalization_rejects_adjacent_already_equal_and_zero_distance() -> None
         ],
     )
     zero.set_speed_anchor(zero.working_keyframes[0].edit_id)
-    with pytest.raises(ValueError, match="zero-distance"):
+    with pytest.raises(ValueError, match="stay"):
         zero.preview_speed_equalization(
             zero.working_keyframes[-1].edit_id,
+            TrajectoryDistanceContext(1.0, 1.0),
+        )
+
+
+def test_add_location_records_stay_and_shift_later_preserves_spacing() -> None:
+    session = _session()
+    session.add_location(20.0, 0.9, 0.8)
+    snapshot = session.to_snapshot()
+
+    assert snapshot["selected_segment"]["is_stay"] is True
+    middle_id = session.working_keyframes[1].edit_id
+    session.begin_date_edit(middle_id)
+    session.update_active_date(12.0)
+    session.shift_later_by_active_delta()
+    assert [item.t for item in session.working_keyframes] == [0.0, 12.0, 22.0]
+
+
+def test_relocation_blocks_midpoint_and_equalization() -> None:
+    session = _speed_session()
+    destination = session.working_keyframes[1]
+    session.set_arrival_mode(destination.edit_id, SEGMENT_MODE_STEP)
+
+    with pytest.raises(ValueError, match="relocation segment"):
+        session.insert_between(
+            session.working_keyframes[0].edit_id,
+            destination.edit_id,
+            0.1,
+            0.0,
+        )
+    session.set_speed_anchor(session.working_keyframes[0].edit_id)
+    with pytest.raises(ValueError, match="relocation"):
+        session.preview_speed_equalization(
+            session.working_keyframes[-1].edit_id,
             TrajectoryDistanceContext(1.0, 1.0),
         )
 

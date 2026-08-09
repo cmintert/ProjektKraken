@@ -26,6 +26,7 @@ The current shortcuts are also available from
 | Cancel trajectory changes | Escape, while editing a trajectory |
 
 Some shortcuts apply only when the corresponding editor or map has keyboard
-focus. While changing a trajectory date or previewing equalized timing,
-**Escape** cancels that smaller operation first and keeps the trajectory editor
-open.
+focus. **Escape** always cancels the most local active operation first. In the
+trajectory editor it cancels an equalization preview, then an active date edit,
+then the complete unsaved trajectory session. Reordering and shifting are
+controls within the active date edit and do not add separate shortcuts.

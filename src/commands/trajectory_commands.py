@@ -20,6 +20,7 @@ class UpdateTrajectoryCommand(BaseCommand):
         marker_id: str,
         before_snapshot: TrajectorySnapshot | None,
         after_keyframes: list[Keyframe],
+        after_properties: dict | None = None,
     ) -> None:
         """Initialize a complete trajectory update.
 
@@ -28,6 +29,7 @@ class UpdateTrajectoryCommand(BaseCommand):
             marker_id: Entity or event ID associated with the map marker.
             before_snapshot: Exact row state captured when editing began.
             after_keyframes: Complete desired keyframe state.
+            after_properties: Complete desired trajectory properties.
 
         """
         super().__init__()
@@ -35,6 +37,7 @@ class UpdateTrajectoryCommand(BaseCommand):
         self.marker_id = marker_id
         self.before_snapshot = copy.deepcopy(before_snapshot)
         self.after_keyframes = clone_keyframes(after_keyframes)
+        self.after_properties = copy.deepcopy(after_properties)
         self.after_snapshot: TrajectorySnapshot | None = None
         self._after_snapshot_resolved = False
 
@@ -68,6 +71,7 @@ class UpdateTrajectoryCommand(BaseCommand):
                     self.map_id,
                     self.marker_id,
                     clone_keyframes(self.after_keyframes),
+                    properties=copy.deepcopy(self.after_properties),
                     expected_snapshot=copy.deepcopy(self.before_snapshot),
                 )
                 self.after_snapshot = copy.deepcopy(persisted)
@@ -144,9 +148,15 @@ class UpdateTrajectoryCommand(BaseCommand):
             "marker_id": self.marker_id,
             "before_snapshot": copy.deepcopy(self.before_snapshot),
             "after_keyframes": [
-                {"t": keyframe.t, "x": keyframe.x, "y": keyframe.y}
+                {
+                    "id": keyframe.keyframe_id,
+                    "t": keyframe.t,
+                    "x": keyframe.x,
+                    "y": keyframe.y,
+                }
                 for keyframe in self.after_keyframes
             ],
+            "after_properties": copy.deepcopy(self.after_properties),
             "after_snapshot": copy.deepcopy(self.after_snapshot),
             "after_snapshot_resolved": self._after_snapshot_resolved,
         }
@@ -175,6 +185,11 @@ class UpdateTrajectoryCommand(BaseCommand):
                 t=float(keyframe["t"]),
                 x=float(keyframe["x"]),
                 y=float(keyframe["y"]),
+                keyframe_id=(
+                    str(keyframe["id"])
+                    if keyframe.get("id") is not None
+                    else None
+                ),
             )
             for keyframe in data["after_keyframes"]
         ]
@@ -183,6 +198,7 @@ class UpdateTrajectoryCommand(BaseCommand):
             marker_id=str(data["marker_id"]),
             before_snapshot=copy.deepcopy(data.get("before_snapshot")),
             after_keyframes=after_keyframes,
+            after_properties=copy.deepcopy(data.get("after_properties")),
         )
         command.after_snapshot = copy.deepcopy(data.get("after_snapshot"))
         command._after_snapshot_resolved = bool(

@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QGraphicsItem, QGraphicsPathItem
 
 from src.app.constants import MAP_LAYER_Z_UI_OVERLAY
 from src.core.theme_manager import ThemeManager
+from src.core.trajectory import SEGMENT_MODE_STEP, SegmentKey, SegmentMode
 from src.core.trajectory_edit import TrajectoryEditSession, TrajectoryEditSnapshot
 from src.gui.widgets.map.edit_handles import (
     DraggableEditHandle,
@@ -32,6 +33,8 @@ class TrajectoryEditOverlay:
         self._equalization_end_id: str | None = None
         self._equalized_keyframe_ids: set[str] = set()
         self._path_item: QGraphicsPathItem | None = None
+        self._relocation_path_items: list[QGraphicsPathItem] = []
+        self._segment_modes: dict[SegmentKey, SegmentMode] = {}
         self._temporal_path_item: QGraphicsPathItem | None = None
         self._keyframe_handles: list[DraggableEditHandle[str]] = []
         self._midpoint_handles: list[
@@ -80,6 +83,14 @@ class TrajectoryEditOverlay:
             change["edit_id"] for change in snapshot["equalization_changes"]
         }
         previewing = snapshot["is_equalization_previewing"]
+        self._segment_modes = {
+            (
+                snapshot["keyframes"][index - 1]["edit_id"],
+                keyframe["edit_id"],
+            ): keyframe["arrival_mode"]
+            for index, keyframe in enumerate(snapshot["keyframes"])
+            if index > 0 and keyframe["arrival_mode"] is not None
+        }
 
         for keyframe in snapshot["keyframes"]:
             edit_id = keyframe["edit_id"]
@@ -156,6 +167,9 @@ class TrajectoryEditOverlay:
         if self._temporal_path_item is not None:
             self._view.graphics_scene.removeItem(self._temporal_path_item)
             self._temporal_path_item = None
+        for item in self._relocation_path_items:
+            self._view.graphics_scene.removeItem(item)
+        self._relocation_path_items.clear()
         for handle in self._keyframe_handles:
             self._view.graphics_scene.removeItem(handle)
         self._keyframe_handles.clear()
@@ -170,6 +184,7 @@ class TrajectoryEditOverlay:
         self._equalization_start_id = None
         self._equalization_end_id = None
         self._equalized_keyframe_ids.clear()
+        self._segment_modes = {}
 
     def _on_keyframe_selected(self, edit_id: str) -> None:
         self.select(edit_id)
@@ -262,6 +277,9 @@ class TrajectoryEditOverlay:
             )
 
     def _rebuild_path(self) -> None:
+        for item in self._relocation_path_items:
+            self._view.graphics_scene.removeItem(item)
+        self._relocation_path_items.clear()
         if len(self._keyframe_handles) < 2:
             if self._path_item is not None:
                 self._view.graphics_scene.removeItem(self._path_item)
@@ -273,8 +291,15 @@ class TrajectoryEditOverlay:
 
         path = QPainterPath()
         path.moveTo(self._keyframe_handles[0].pos())
-        for handle in self._keyframe_handles[1:]:
-            path.lineTo(handle.pos())
+        for start, end in zip(
+            self._keyframe_handles, self._keyframe_handles[1:]
+        ):
+            pair = (start.handle_id, end.handle_id)
+            if self._segment_modes.get(pair) == SEGMENT_MODE_STEP:
+                path.moveTo(end.pos())
+                self._add_relocation_connector(start.pos(), end.pos())
+            else:
+                path.lineTo(end.pos())
 
         if self._path_item is None:
             self._path_item = QGraphicsPathItem()
@@ -286,6 +311,24 @@ class TrajectoryEditOverlay:
             self._view.graphics_scene.addItem(self._path_item)
         self._path_item.setPath(path)
         self._rebuild_temporal_path()
+
+    def _add_relocation_connector(self, start: QPointF, end: QPointF) -> None:
+        """Render one broken connector for a non-travel relocation."""
+        delta = end - start
+        path = QPainterPath()
+        path.moveTo(start)
+        path.lineTo(start + delta * 0.38)
+        path.moveTo(start + delta * 0.62)
+        path.lineTo(end)
+        item = QGraphicsPathItem(path)
+        theme = ThemeManager().get_theme()
+        pen = QPen(QColor(theme.get("warning", "#e67e22")), 3.0)
+        pen.setStyle(Qt.PenStyle.DashDotLine)
+        item.setPen(pen)
+        item.setToolTip("Relocation — no travel route is implied")
+        item.setZValue(MAP_LAYER_Z_UI_OVERLAY - 0.75)
+        self._view.graphics_scene.addItem(item)
+        self._relocation_path_items.append(item)
 
     def _rebuild_temporal_path(self) -> None:
         """Highlight segments affected by the active retiming target."""

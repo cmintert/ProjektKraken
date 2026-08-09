@@ -10,7 +10,7 @@ from PySide6.QtGui import QImage, QKeyEvent, QPixmap
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsPixmapItem, QSizePolicy
 
 from src.core.theme_manager import ThemeManager
-from src.core.trajectory import Keyframe
+from src.core.trajectory import SEGMENT_MODE_STEP, Keyframe
 from src.core.trajectory_edit import TrajectoryEditSession
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.map.marker_item import MarkerItem
@@ -164,8 +164,8 @@ def test_edit_trajectory_action_and_compact_strip(map_widget, qtbot):
     assert not marker.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsMovable
 
 
-def test_first_keyframe_selection_keeps_map_viewport_stable(map_widget, qtbot):
-    """Selecting the first keyframe must not resize the map beneath it."""
+def test_first_segment_selection_keeps_map_viewport_stable(map_widget, qtbot):
+    """First arrival selection must not resize the map beneath it."""
     _show_map_with_marker(map_widget, qtbot)
     session = TrajectoryEditSession.create(
         "map-1",
@@ -180,7 +180,7 @@ def test_first_keyframe_selection_keeps_map_viewport_stable(map_widget, qtbot):
     qtbot.waitUntil(map_widget.trajectory_edit_strip.isVisible)
     initial_viewport_size = map_widget.view.viewport().size()
 
-    session.select_keyframe(session.working_keyframes[0].edit_id)
+    session.select_keyframe(session.working_keyframes[1].edit_id)
     map_widget.show_trajectory_edit(
         session.to_snapshot(),
         rebuild_overlay=False,
@@ -188,6 +188,34 @@ def test_first_keyframe_selection_keeps_map_viewport_stable(map_widget, qtbot):
     qtbot.waitUntil(map_widget.trajectory_date_panel.isVisible)
 
     assert map_widget.view.viewport().size() == initial_viewport_size
+    assert map_widget.trajectory_segment_panel.isVisible()
+
+
+def test_selected_segment_shows_metrics_and_emits_relocation(map_widget, qtbot):
+    """A non-first point exposes its arrival mode and segment facts."""
+    _show_map_with_marker(map_widget, qtbot)
+    session = TrajectoryEditSession.create(
+        "map-1",
+        "marker1",
+        "trajectory-1",
+        [
+            Keyframe(t=0.0, x=0.2, y=0.3),
+            Keyframe(t=10.0, x=0.8, y=0.7),
+        ],
+    )
+    session.select_keyframe(session.working_keyframes[1].edit_id)
+    map_widget.show_trajectory_edit(session.to_snapshot())
+
+    assert map_widget.trajectory_segment_panel.isVisible()
+    assert "10 days" in map_widget.trajectory_segment_metrics.text()
+    modes = []
+    map_widget.trajectory_arrival_mode_changed.connect(modes.append)
+
+    map_widget.trajectory_arrival_mode.setCurrentIndex(
+        map_widget.trajectory_arrival_mode.findData(SEGMENT_MODE_STEP)
+    )
+
+    assert modes == [SEGMENT_MODE_STEP]
 
 
 def test_duplicate_trajectory_rows_are_not_used_for_playback(map_widget, qtbot):
@@ -372,6 +400,51 @@ def test_playhead_navigation_previews_working_trajectory_position(
     x, y = map_widget.view.coord_system.to_normalized(marker.pos())
     assert (x, y) == pytest.approx((0.3, 0.4))
     assert [keyframe.t for keyframe in session.working_keyframes] == [0.0, 10.0]
+
+
+def test_trajectory_marker_is_movable_only_before_first_keyframe(
+    map_widget, qtbot
+):
+    """The ordinary marker is editable until trajectory playback begins."""
+    marker = _show_map_with_marker(map_widget, qtbot)
+    map_widget.set_trajectories(
+        [
+            {
+                "marker_id": "marker1",
+                "trajectory_id": "trajectory-1",
+                "keyframes": [
+                    {"t": 10.0, "x": 0.2, "y": 0.3},
+                    {"t": 20.0, "x": 0.8, "y": 0.7},
+                ],
+                "row_snapshot": {},
+            }
+        ]
+    )
+    moved = []
+    map_widget.marker_position_changed.connect(
+        lambda marker_id, x, y: moved.append((marker_id, x, y))
+    )
+
+    map_widget.on_time_changed(5.0)
+    assert marker.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsMovable
+    map_widget._on_marker_moved("marker1", 0.4, 0.6)
+    assert moved == [("marker1", 0.4, 0.6)]
+    assert map_widget.get_marker_base_position("marker1") == (0.4, 0.6)
+
+    map_widget.on_time_changed(10.0)
+    assert not marker.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsMovable
+    assert map_widget.view.coord_system.to_normalized(marker.pos()) == pytest.approx(
+        (0.2, 0.3)
+    )
+
+    map_widget.on_time_changed(21.0)
+    assert not marker.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsMovable
+    assert map_widget.view.coord_system.to_normalized(marker.pos()) == pytest.approx(
+        (0.8, 0.7)
+    )
+    map_widget._on_marker_moved("marker1", 0.1, 0.1)
+    assert moved == [("marker1", 0.4, 0.6)]
+    assert map_widget.get_marker_base_position("marker1") == (0.4, 0.6)
 
 
 def _show_map_with_marker(map_widget, qtbot, object_type="entity"):

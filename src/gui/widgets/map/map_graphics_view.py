@@ -1071,14 +1071,16 @@ class MapGraphicsView(QGraphicsView):
     # Trajectory (delegated to TrajectoryRenderer)
     # ------------------------------------------------------------------
 
-    def show_trajectory(self, marker_id: str, keyframes: list) -> None:
+    def show_trajectory(
+        self, marker_id: str, keyframes: list, segment_modes: dict | None = None
+    ) -> None:
         """Visualizes the trajectory path and keyframes.
 
         Args:
             marker_id: The ID of the marker owning this trajectory.
             keyframes: List of Keyframe objects.
         """
-        self._trajectory.show_trajectory(marker_id, keyframes)
+        self._trajectory.show_trajectory(marker_id, keyframes, segment_modes)
 
     def clear_trajectory(self) -> None:
         """Clears the rendered trajectory path, keyframes, and labels."""

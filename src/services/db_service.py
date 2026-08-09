@@ -343,8 +343,8 @@ class DatabaseService:
             marker_id TEXT NOT NULL,
             t_start REAL NOT NULL,
             t_end REAL NOT NULL,
-            trajectory JSON NOT NULL, -- List of [t, x, y]
-            properties JSON DEFAULT '{}', -- Changing properties over time
+            trajectory JSON NOT NULL, -- OGC MF-JSON MovingPoint
+            properties JSON DEFAULT '{}', -- Versioned editor metadata and extensions
             created_at REAL,
             FOREIGN KEY(marker_id) REFERENCES markers(id) ON DELETE CASCADE
         );
@@ -1870,6 +1870,7 @@ class DatabaseService:
         object_id: str,
         keyframes: List["Keyframe"],
         *,
+        properties: Optional[dict] = None,
         expected_snapshot: Optional["TrajectorySnapshot"],
     ) -> Optional["TrajectorySnapshot"]:
         """Atomically replace a marker's complete trajectory.
@@ -1878,6 +1879,8 @@ class DatabaseService:
             map_id: ID of the containing map.
             object_id: Entity or event ID associated with the marker.
             keyframes: Complete desired keyframe state.
+            properties: Complete desired trajectory properties, or ``None``
+                to preserve the current row properties.
             expected_snapshot: Exact state expected before replacement.
 
         Returns:
@@ -1890,6 +1893,7 @@ class DatabaseService:
             map_id,
             object_id,
             keyframes,
+            properties=properties,
             expected_snapshot=expected_snapshot,
         )
 
