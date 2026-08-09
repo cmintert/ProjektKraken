@@ -190,6 +190,72 @@ class TestDataHandlerVisualAttributes:
         processed = received[0]
         assert processed["color"] == "#LEGACY_BLUE"
 
+    @pytest.mark.parametrize("object_type", ["entity", "event"])
+    def test_marker_uses_summary_instead_of_description(
+        self, data_handler, object_type
+    ):
+        """Marker tooltip data should contain the stored item summary."""
+        marker = MagicMock()
+        marker.id = "m-summary"
+        marker.object_id = "obj-summary"
+        marker.object_type = object_type
+        marker.x = 0.5
+        marker.y = 0.5
+        marker.attributes = {}
+        marker.feature_type = "point"
+        marker.geometry = None
+        marker.style = None
+
+        item = MagicMock()
+        item.id = marker.object_id
+        item.name = "North Star"
+        item.description = "The full description must not be used."
+        item.attributes = {"_summary_data": {"text": "  A concise summary.  "}}
+        item.lore_date = 12.0
+        data_handler._cached_entities = [item] if object_type == "entity" else []
+        data_handler._cached_events = [item] if object_type == "event" else []
+
+        received = []
+        data_handler.markers_ready.connect(
+            lambda map_id, markers: received.extend(markers)
+        )
+
+        data_handler.on_markers_loaded("map1", [marker])
+
+        assert received[0]["summary"] == "A concise summary."
+        assert "description" not in received[0]
+
+    def test_marker_without_summary_leaves_name_fallback(self, data_handler):
+        """Missing or blank summaries should let the marker display its name."""
+        marker = MagicMock()
+        marker.id = "m-name"
+        marker.object_id = "obj-name"
+        marker.object_type = "entity"
+        marker.x = 0.5
+        marker.y = 0.5
+        marker.attributes = {}
+        marker.feature_type = "point"
+        marker.geometry = None
+        marker.style = None
+
+        entity = MagicMock()
+        entity.id = marker.object_id
+        entity.name = "North Star"
+        entity.description = "The full description must not be used."
+        entity.attributes = {"_summary_data": {"text": "   "}}
+        data_handler._cached_entities = [entity]
+        data_handler._cached_events = []
+
+        received = []
+        data_handler.markers_ready.connect(
+            lambda map_id, markers: received.extend(markers)
+        )
+
+        data_handler.on_markers_loaded("map1", [marker])
+
+        assert received[0]["label"] == "North Star"
+        assert received[0]["summary"] == ""
+
 
 # ---------------------------------------------------------------------------
 # MarkerManager – visual_attributes passthrough

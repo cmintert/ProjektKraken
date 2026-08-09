@@ -42,6 +42,50 @@ def test_overlay_creates_one_handle_per_keyframe_and_segment(qtbot, monkeypatch)
     assert len(view.trajectory_edit_overlay.midpoint_handles) == 2
 
 
+def test_node_and_midpoint_tooltips_use_calendar_formatter(qtbot, monkeypatch):
+    view = _view(qtbot, monkeypatch)
+    snapshot = _snapshot()
+
+    view.trajectory_edit_overlay.show(
+        snapshot,
+        date_formatter=lambda value: f"Calendar date {value:.1f}",
+    )
+
+    assert (
+        view.trajectory_edit_overlay.keyframe_handles[0]
+        .toolTip()
+        .startswith("Timed location at Calendar date 0.0")
+    )
+    assert view.trajectory_edit_overlay.midpoint_handles[0].toolTip() == (
+        "Insert Route point at Calendar date 5.0"
+    )
+
+
+def test_route_point_tooltip_labels_calculated_calendar_date(qtbot, monkeypatch):
+    view = _view(qtbot, monkeypatch)
+    session = TrajectoryEditSession.create(
+        "map-1",
+        "marker-1",
+        "trajectory-1",
+        [
+            Keyframe(t=0.0, x=0.1, y=0.2),
+            Keyframe(t=10.0, x=0.5, y=0.6, point_kind="route"),
+            Keyframe(t=20.0, x=0.9, y=0.8),
+        ],
+    )
+
+    view.trajectory_edit_overlay.show(
+        session.to_snapshot(),
+        date_formatter=lambda value: f"Calendar date {value:.1f}",
+    )
+
+    assert (
+        view.trajectory_edit_overlay.keyframe_handles[1]
+        .toolTip()
+        .startswith("Route point (calculated) at Calendar date 10.0")
+    )
+
+
 def test_normal_renderer_keyframes_are_passive(qtbot, monkeypatch):
     view = _view(qtbot, monkeypatch)
 
@@ -70,9 +114,10 @@ def test_equal_time_segment_disables_midpoint(qtbot, monkeypatch):
     view.trajectory_edit_overlay.show(snapshot)
 
     assert not view.trajectory_edit_overlay.midpoint_handles[0].isEnabled()
-    assert "Dates must differ" in view.trajectory_edit_overlay.midpoint_handles[
-        0
-    ].toolTip()
+    assert (
+        "Dates must differ"
+        in view.trajectory_edit_overlay.midpoint_handles[0].toolTip()
+    )
 
 
 def test_relocation_uses_broken_connector_and_disables_midpoint(qtbot, monkeypatch):
@@ -122,9 +167,7 @@ def test_date_edit_highlights_adjacent_affected_segments(qtbot, monkeypatch):
     assert not temporal_path.path().isEmpty()
 
 
-def test_temporal_highlight_is_removed_after_date_edit_finishes(
-    qtbot, monkeypatch
-):
+def test_temporal_highlight_is_removed_after_date_edit_finishes(qtbot, monkeypatch):
     view = _view(qtbot, monkeypatch)
     session = TrajectoryEditSession.create(
         "map-1",
@@ -145,9 +188,7 @@ def test_temporal_highlight_is_removed_after_date_edit_finishes(
     assert view.trajectory_edit_overlay.temporal_path_item is None
 
 
-def test_speed_anchor_remains_visibly_marked_when_selection_moves(
-    qtbot, monkeypatch
-):
+def test_speed_anchor_remains_visibly_marked_when_selection_moves(qtbot, monkeypatch):
     view = _view(qtbot, monkeypatch)
     session = TrajectoryEditSession.create(
         "map-1",
@@ -171,9 +212,7 @@ def test_speed_anchor_remains_visibly_marked_when_selection_moves(
     assert "Speed start anchor" in start_handle.toolTip()
 
 
-def test_equalization_preview_highlights_range_and_locks_handles(
-    qtbot, monkeypatch
-):
+def test_equalization_preview_highlights_range_and_locks_handles(qtbot, monkeypatch):
     view = _view(qtbot, monkeypatch)
     session = TrajectoryEditSession.create(
         "map-1",

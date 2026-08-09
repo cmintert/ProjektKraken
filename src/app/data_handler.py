@@ -110,6 +110,8 @@ class DataHandler(QObject):
         self._cached_entities: List[Entity] = []
         self._pending_select_type: Optional[str] = None
         self._pending_select_id: Optional[str] = None
+        self._reload_markers_after_events = False
+        self._reload_markers_after_entities = False
         logger.debug("DataHandler initialized")
 
     @Slot(list)
@@ -124,6 +126,10 @@ class DataHandler(QObject):
         self.events_ready.emit(events)
         self.status_message.emit(f"Loaded {len(events)} events.")
         self._update_editor_suggestions()
+
+        if self._reload_markers_after_events:
+            self._reload_markers_after_events = False
+            self.reload_markers_for_current_map.emit()
 
         if self._pending_select_type == "event" and self._pending_select_id:
             self.selection_requested.emit("event", self._pending_select_id)
@@ -142,6 +148,10 @@ class DataHandler(QObject):
         self.entities_ready.emit(entities)
         self.status_message.emit(f"Loaded {len(entities)} entities.")
         self._update_editor_suggestions()
+
+        if self._reload_markers_after_entities:
+            self._reload_markers_after_entities = False
+            self.reload_markers_for_current_map.emit()
 
         if self._pending_select_type == "entity" and self._pending_select_id:
             self.selection_requested.emit("entity", self._pending_select_id)
@@ -237,12 +247,12 @@ class DataHandler(QObject):
             markers: List of Marker objects.
 
         """
-        # Process markers to add labels from cached data
+        # Process markers to add labels and summaries from cached data
         processed_markers = []
         for marker in markers:
-            # Determine label and description from cached data
+            # Determine label and summary from cached data
             label = "Unknown"
-            description = ""
+            summary = ""
             lore_date = None
 
             if marker.object_type == "entity" and self._cached_entities:
@@ -251,7 +261,7 @@ class DataHandler(QObject):
                     None,
                 ):
                     label = getattr(entity, "name", "Unknown Entity")
-                    description = getattr(entity, "description", "") or ""
+                    summary = self._marker_summary(entity)
                     # Entities don't have a single specific date usually,
                     # but could check attributes if needed. For now None.
                     lore_date = None
@@ -262,7 +272,7 @@ class DataHandler(QObject):
                     None,
                 ):
                     label = getattr(event, "name", "Unknown Event")
-                    description = getattr(event, "description", "") or ""
+                    summary = self._marker_summary(event)
                     lore_date = getattr(event, "lore_date", None)
 
             # Create marker data dict
@@ -276,7 +286,7 @@ class DataHandler(QObject):
                     "object_id": marker.object_id,
                     "object_type": marker.object_type,
                     "label": label,
-                    "description": description,
+                    "summary": summary,
                     "x": marker.x,
                     "y": marker.y,
                     "icon": marker.attributes.get("icon"),
@@ -291,6 +301,34 @@ class DataHandler(QObject):
             )
 
         self.markers_ready.emit(map_id, processed_markers)
+
+    @staticmethod
+    def _marker_summary(item: Any) -> str:
+        """Return an item's stored summary text for use in map tooltips."""
+        attributes = getattr(item, "attributes", {})
+        if not isinstance(attributes, dict):
+            return ""
+
+        summary_data = attributes.get("_summary_data")
+        if not isinstance(summary_data, dict):
+            return ""
+
+        text = summary_data.get("text")
+        return text.strip() if isinstance(text, str) else ""
+
+    def _reload_lore_cache_then_markers(self, object_type: str) -> None:
+        """Reload lore data before rebuilding marker tooltip content."""
+        if object_type == "event":
+            self._reload_markers_after_events = True
+            self.reload_events.emit()
+        elif object_type == "entity":
+            self._reload_markers_after_entities = True
+            self.reload_entities.emit()
+        else:
+            logger.warning("Unknown lore object type for reload: %s", object_type)
+            return
+
+        self.reload_longform.emit()
 
     @Slot(str, list)
     def on_trajectories_loaded(
@@ -411,18 +449,16 @@ class DataHandler(QObject):
                 self.reload_markers_for_current_map.emit()
 
             if "Event" in command_name:
-                logger.debug("[DataHandler] Emitting reload_events (Event command)")
-                self.reload_events.emit()
-                self.reload_markers_for_current_map.emit()
-                # Also reload longform as it might contain this event
-                self.reload_longform.emit()
+                logger.debug(
+                    "[DataHandler] Reloading event cache before map markers"
+                )
+                self._reload_lore_cache_then_markers("event")
 
             if "Entity" in command_name:
-                logger.debug("[DataHandler] Emitting reload_entities (Entity command)")
-                self.reload_entities.emit()
-                self.reload_markers_for_current_map.emit()
-                # Also reload longform as it might contain this entity
-                self.reload_longform.emit()
+                logger.debug(
+                    "[DataHandler] Reloading entity cache before map markers"
+                )
+                self._reload_lore_cache_then_markers("entity")
             if "Relation" in command_name or "WikiLinks" in command_name:
                 logger.debug(
                     "[DataHandler] Emitting reload signals (WikiLinks/Relation)"
@@ -454,10 +490,12 @@ class DataHandler(QObject):
                 )
                 if requests:
                     request = requests[0]
+                    object_type = str(request["object_type"])
                     self.index_object_requested.emit(
-                        str(request["object_type"]),
+                        object_type,
                         str(request["object_id"]),
                     )
+                    self._reload_lore_cache_then_markers(object_type)
                 else:
                     cmd_obj = result.data.get("command")
                     for sub in getattr(cmd_obj, "commands", []):
@@ -467,9 +505,11 @@ class DataHandler(QObject):
                                 sub, "event_id", None
                             )
                             if obj_id:
+                                object_type = _INDEX_COMMANDS[sub_name]
                                 self.index_object_requested.emit(
-                                    _INDEX_COMMANDS[sub_name], obj_id
+                                    object_type, obj_id
                                 )
+                                self._reload_lore_cache_then_markers(object_type)
                                 break
 
             logger.debug(f"[DataHandler] on_command_finished completed: {command_name}")

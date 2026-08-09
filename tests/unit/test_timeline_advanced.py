@@ -47,7 +47,9 @@ class TestSmartLanePacking:
         timeline_widget.set_events(events)
 
         items = [
-            i for i in timeline_widget.view.graphics_scene.items() if isinstance(i, EventItem)
+            i
+            for i in timeline_widget.view.graphics_scene.items()
+            if isinstance(i, EventItem)
         ]
         items.sort(key=lambda i: i.event.lore_date)
 
@@ -64,7 +66,9 @@ class TestSmartLanePacking:
         timeline_widget.set_events(events)
 
         items = [
-            i for i in timeline_widget.view.graphics_scene.items() if isinstance(i, EventItem)
+            i
+            for i in timeline_widget.view.graphics_scene.items()
+            if isinstance(i, EventItem)
         ]
         items.sort(key=lambda i: i.event.lore_date)
 
@@ -84,7 +88,9 @@ class TestSmartLanePacking:
         timeline_widget.set_events(events)
 
         items = [
-            i for i in timeline_widget.view.graphics_scene.items() if isinstance(i, EventItem)
+            i
+            for i in timeline_widget.view.graphics_scene.items()
+            if isinstance(i, EventItem)
         ]
         items.sort(key=lambda i: i.event.lore_date)
 
@@ -103,7 +109,9 @@ class TestSmartLanePacking:
         timeline_widget.set_events(events)
 
         items = [
-            i for i in timeline_widget.view.graphics_scene.items() if isinstance(i, EventItem)
+            i
+            for i in timeline_widget.view.graphics_scene.items()
+            if isinstance(i, EventItem)
         ]
         items.sort(key=lambda i: i.event.lore_date)
 
@@ -121,7 +129,9 @@ class TestSmartLanePacking:
         timeline_widget.set_events(events)
 
         items = [
-            i for i in timeline_widget.view.graphics_scene.items() if isinstance(i, EventItem)
+            i
+            for i in timeline_widget.view.graphics_scene.items()
+            if isinstance(i, EventItem)
         ]
         items.sort(key=lambda i: i.event.lore_date)
 
@@ -273,7 +283,9 @@ class TestEventItemUpdate:
 
         # Get initial items
         items_before = [
-            i for i in timeline_widget.view.graphics_scene.items() if isinstance(i, EventItem)
+            i
+            for i in timeline_widget.view.graphics_scene.items()
+            if isinstance(i, EventItem)
         ]
         item_ids_before = {id(item) for item in items_before}
 
@@ -289,7 +301,9 @@ class TestEventItemUpdate:
 
         # Get items after update
         items_after = [
-            i for i in timeline_widget.view.graphics_scene.items() if isinstance(i, EventItem)
+            i
+            for i in timeline_widget.view.graphics_scene.items()
+            if isinstance(i, EventItem)
         ]
         item_ids_after = {id(item) for item in items_after}
 
@@ -305,7 +319,9 @@ class TestEventItemUpdate:
 
         # Should have 2 event items
         items = [
-            i for i in timeline_widget.view.graphics_scene.items() if isinstance(i, EventItem)
+            i
+            for i in timeline_widget.view.graphics_scene.items()
+            if isinstance(i, EventItem)
         ]
         assert len(items) == 2
 
@@ -314,7 +330,9 @@ class TestEventItemUpdate:
 
         # Should only have 1 event item now
         items = [
-            i for i in timeline_widget.view.graphics_scene.items() if isinstance(i, EventItem)
+            i
+            for i in timeline_widget.view.graphics_scene.items()
+            if isinstance(i, EventItem)
         ]
         assert len(items) == 1
         assert items[0].event.id == "keep"
@@ -326,7 +344,9 @@ class TestScrubberPlayhead:
     def test_playhead_exists_in_scene(self, timeline_view):
         """Playhead should be present in the scene."""
         playhead_items = [
-            i for i in timeline_view.graphics_scene.items() if isinstance(i, PlayheadItem)
+            i
+            for i in timeline_view.graphics_scene.items()
+            if isinstance(i, PlayheadItem)
         ]
         assert len(playhead_items) == 1
 
@@ -448,6 +468,57 @@ class TestPlaybackControls:
         assert blocker.args[0] == 42.0
 
 
+class TestPlayheadEventSnapping:
+    """Tests for opt-in, screen-space playhead snapping."""
+
+    def test_manual_playhead_time_snaps_within_screen_threshold(self, timeline_view):
+        timeline_view.set_events([Event(name="Anchor", lore_date=100.0)])
+        timeline_view.set_playhead_event_snapping(True)
+        event_x = 100.0 * timeline_view.scale_factor
+
+        assert timeline_view._manual_playhead_time(event_x + 11.0) == 100.0
+        assert timeline_view._manual_playhead_time(event_x + 13.0) == 100.65
+
+        timeline_view._current_zoom = 2.0
+        assert timeline_view._manual_playhead_time(event_x + 5.5) == 100.0
+        assert timeline_view._manual_playhead_time(event_x + 6.5) == 100.325
+
+    def test_programmatic_playhead_jump_does_not_snap(self, timeline_view):
+        timeline_view.set_events([Event(name="Anchor", lore_date=100.0)])
+        timeline_view.set_playhead_event_snapping(True)
+
+        timeline_view.set_playhead_time(100.25)
+
+        assert timeline_view.get_playhead_time() == 100.25
+
+    def test_toolbar_option_persists_and_controls_view(self, qtbot, monkeypatch):
+        import src.gui.widgets.timeline as timeline_module
+
+        stored: dict[str, object] = {}
+
+        class FakeSettings:
+            def value(self, key, default=None, type=None):
+                del type
+                return stored.get(key, default)
+
+            def setValue(self, key, value):
+                stored[key] = value
+
+        monkeypatch.setattr(timeline_module, "QSettings", FakeSettings)
+        widget = timeline_module.TimelineWidget()
+        qtbot.addWidget(widget)
+
+        assert not widget.chk_snap_playhead_to_events.isChecked()
+        widget.chk_snap_playhead_to_events.setChecked(True)
+        assert widget.view.is_playhead_event_snapping_enabled()
+        assert stored["timeline/snap_playhead_to_events"] is True
+
+        restored = timeline_module.TimelineWidget()
+        qtbot.addWidget(restored)
+        assert restored.chk_snap_playhead_to_events.isChecked()
+        assert restored.view.is_playhead_event_snapping_enabled()
+
+
 class TestEventItemCaching:
     """Tests for QGraphicsItem caching."""
 
@@ -469,7 +540,9 @@ class TestCurrentTimeLine:
         from src.gui.widgets.timeline import CurrentTimeLineItem
 
         current_time_items = [
-            i for i in timeline_view.graphics_scene.items() if isinstance(i, CurrentTimeLineItem)
+            i
+            for i in timeline_view.graphics_scene.items()
+            if isinstance(i, CurrentTimeLineItem)
         ]
         assert len(current_time_items) == 1
 
@@ -494,7 +567,9 @@ class TestCurrentTimeLine:
         from src.gui.widgets.timeline import CurrentTimeLineItem
 
         current_time_items = [
-            i for i in timeline_view.graphics_scene.items() if isinstance(i, CurrentTimeLineItem)
+            i
+            for i in timeline_view.graphics_scene.items()
+            if isinstance(i, CurrentTimeLineItem)
         ]
         assert len(current_time_items) == 1
         assert not current_time_items[0].flags() & QGraphicsItem.ItemIsMovable

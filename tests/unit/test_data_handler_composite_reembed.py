@@ -110,6 +110,33 @@ class TestCompositeCommandReEmbed:
         handler.on_command_finished(result)
         assert ("event", "event-99") in index_calls
 
+    def test_serialized_composite_refreshes_markers_after_entity_cache(
+        self, handler, index_calls
+    ):
+        """Production composite results refresh marker summaries in order."""
+        entity_reloads: list[bool] = []
+        marker_reloads: list[bool] = []
+        handler.reload_entities.connect(lambda: entity_reloads.append(True))
+        handler.reload_markers_for_current_map.connect(
+            lambda: marker_reloads.append(True)
+        )
+        result = _make_result(
+            "CompositeCommand",
+            {
+                "index_requests": [
+                    {"object_type": "entity", "object_id": "entity-42"}
+                ]
+            },
+        )
+
+        handler.on_command_finished(result)
+
+        assert entity_reloads == [True]
+        assert marker_reloads == []
+        handler.on_entities_loaded([])
+        assert marker_reloads == [True]
+        assert ("entity", "entity-42") in index_calls
+
     def test_composite_with_non_index_sub_does_not_emit(self, handler, index_calls):
         """ProcessWikiLinksCommand alone (no Update* sub) must not emit."""
         from src.commands.wiki_commands import ProcessWikiLinksCommand

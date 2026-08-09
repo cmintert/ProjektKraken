@@ -195,7 +195,7 @@ class TestDataHandlerSignals:
         assert selection_signal[0] == ("event", "new_event_id")
 
     def test_update_event_reloads_markers(self, data_handler, qtbot):
-        """Test that updating an event triggers marker reload."""
+        """Updating an event reloads markers after the event cache."""
         reload_markers_signal = []
         data_handler.reload_markers_for_current_map.connect(
             lambda: reload_markers_signal.append(True)
@@ -211,11 +211,12 @@ class TestDataHandlerSignals:
 
         data_handler.on_command_finished(result)
 
-        # Verify markers reload signal was emitted
+        assert reload_markers_signal == []
+        data_handler.on_events_loaded([])
         assert len(reload_markers_signal) == 1
 
     def test_update_entity_reloads_markers(self, data_handler, qtbot):
-        """Test that updating an entity triggers marker reload."""
+        """Updating an entity reloads markers after the entity cache."""
         reload_markers_signal = []
         data_handler.reload_markers_for_current_map.connect(
             lambda: reload_markers_signal.append(True)
@@ -231,7 +232,8 @@ class TestDataHandlerSignals:
 
         data_handler.on_command_finished(result)
 
-        # Verify markers reload signal was emitted
+        assert reload_markers_signal == []
+        data_handler.on_entities_loaded([])
         assert len(reload_markers_signal) == 1
 
     def test_update_marker_does_not_reload(self, data_handler, qtbot):

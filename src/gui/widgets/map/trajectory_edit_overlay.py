@@ -1,6 +1,6 @@
 """Interactive spatial overlay for one trajectory edit session."""
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from PySide6.QtCore import QPointF, Qt
 from PySide6.QtGui import QBrush, QColor, QPainterPath, QPen
@@ -67,9 +67,15 @@ class TrajectoryEditOverlay:
         """Return the selected stable identity, if any."""
         return self._selected_keyframe_id
 
-    def show(self, snapshot: TrajectoryEditSnapshot) -> None:
+    def show(
+        self,
+        snapshot: TrajectoryEditSnapshot,
+        *,
+        date_formatter: Callable[[float], str] | None = None,
+    ) -> None:
         """Rebuild the active overlay from serialized session state."""
         self.clear()
+        format_date = date_formatter or (lambda value: f"T {value:g}")
         self._marker_id = snapshot["marker_id"]
         theme = ThemeManager().get_theme()
         selected_id = snapshot["selected_keyframe_id"]
@@ -114,7 +120,7 @@ class TrajectoryEditOverlay:
                 if keyframe["point_kind"] == "route"
                 else "Timed location"
             )
-            tooltip_parts = [f"{point_label} at {keyframe['t']:g}"]
+            tooltip_parts = [f"{point_label} at {format_date(keyframe['t'])}"]
             if edit_id == self._speed_anchor_id:
                 tooltip_parts.append("Speed start anchor")
             if edit_id == self._equalization_end_id:
@@ -141,7 +147,9 @@ class TrajectoryEditOverlay:
                 )
             )
             midpoint_time = start["t"] + (end["t"] - start["t"]) / 2.0
-            midpoint_handle.setToolTip(f"Insert keyframe at {midpoint_time:g}")
+            midpoint_handle.setToolTip(
+                f"Insert Route point at {format_date(midpoint_time)}"
+            )
             error = snapshot["midpoint_errors"].get(
                 TrajectoryEditSession.midpoint_key(*segment_id)
             )

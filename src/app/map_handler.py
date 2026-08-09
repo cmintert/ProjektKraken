@@ -665,7 +665,7 @@ class MapHandler(QObject):
             "label": marker_data["label"],
             "icon": marker_data["icon"],
             "color": marker_data["color"],
-            "description": marker_data.get("description", ""),
+            "summary": marker_data.get("summary", ""),
             "feature_type": marker_data.get("feature_type", "point"),
             "connection_count": marker_data.get("connection_count", 0),
         }
@@ -767,7 +767,7 @@ class MapHandler(QObject):
             y=marker_data["y"],
             icon=marker_data["icon"],
             color=marker_data["color"],
-            description=marker_data.get("description", ""),
+            description=marker_data.get("summary", ""),
             lore_date=marker_data.get("lore_date"),
             feature_type=marker_data.get("feature_type", "point"),
             geometry=marker_data.get("geometry"),

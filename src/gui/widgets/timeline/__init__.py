@@ -10,10 +10,11 @@ maintainability:
 - timeline/timeline_view.py - Main view with zoom/pan and interaction
 """
 
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
-from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtCore import QSettings, QSize, Qt, Signal
 from PySide6.QtWidgets import (
+    QCheckBox,
     QHBoxLayout,
     QPushButton,
     QSizePolicy,
@@ -91,7 +92,6 @@ class TimelineWidget(QWidget):
             "Set the current time in the world to the playhead position"
         )
         self.btn_set_current_time.clicked.connect(self.set_current_time_to_playhead)
-        self.btn_set_current_time.clicked.connect(self.set_current_time_to_playhead)
         self.toolbar_layout.addWidget(self.btn_set_current_time)
 
         self.btn_return_present = QPushButton("Return to Present")
@@ -100,6 +100,18 @@ class TimelineWidget(QWidget):
         )
         self.btn_return_present.clicked.connect(self.return_to_present)
         self.toolbar_layout.addWidget(self.btn_return_present)
+
+        settings = QSettings()
+        snap_to_events = cast(
+            bool,
+            settings.value("timeline/snap_playhead_to_events", False, type=bool),
+        )
+        self.chk_snap_playhead_to_events = QCheckBox("Snap to Events")
+        self.chk_snap_playhead_to_events.setToolTip(
+            "Snap manual playhead drags and ruler clicks to nearby event dates."
+        )
+        self.chk_snap_playhead_to_events.setChecked(snap_to_events)
+        self.toolbar_layout.addWidget(self.chk_snap_playhead_to_events)
 
         self.toolbar_layout.addStretch()
 
@@ -111,6 +123,10 @@ class TimelineWidget(QWidget):
 
         # View
         self.view = TimelineView()
+        self.view.set_playhead_event_snapping(snap_to_events)
+        self.chk_snap_playhead_to_events.toggled.connect(
+            self.set_playhead_event_snapping
+        )
         self.view.event_selected.connect(self.event_selected.emit)
         self.view.playhead_time_changed.connect(self.playhead_time_changed.emit)
         self.view.current_time_changed.connect(self.current_time_changed.emit)
@@ -158,6 +174,11 @@ class TimelineWidget(QWidget):
         """Steps the playhead backward."""
         self.view.step_backward()
 
+    def set_playhead_event_snapping(self, enabled: bool) -> None:
+        """Apply and persist the manual playhead event-snapping preference."""
+        self.view.set_playhead_event_snapping(enabled)
+        QSettings().setValue("timeline/snap_playhead_to_events", enabled)
+
     def set_playhead_time(self, time: float) -> None:
         """Sets the playhead to a specific time.
 
@@ -199,7 +220,6 @@ class TimelineWidget(QWidget):
 
         This is the typical workflow: move playhead, then set as current time.
         """
-        playhead_time = self.get_playhead_time()
         playhead_time = self.get_playhead_time()
         self.set_current_time(playhead_time)
 

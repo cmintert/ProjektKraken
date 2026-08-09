@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-09
-**Commit:** c5382732
+**Commit:** 36ecfef1
 ---
 
 # Changelog
@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-08-09)* **Timeline**: Added optional, persisted event snapping for
+  manual playhead drags and ruler clicks using a zoom-independent screen
+  distance.
 - *(2026-08-09)* **Map / Trajectories**: Added authoritative Timed Locations,
   distance-timed Route points, bulk automatic conversion, and endpoint-driven
   route recalculation.
@@ -48,6 +51,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-09)* **Map / Lore**: Used refreshed stored summaries for marker
+  tooltips after event and entity changes, and formatted trajectory edit dates
+  with the active calendar.
 - *(2026-08-09)* **Map / Trajectories**: Reworked the date editor into readable
   summary, constraint, and control rows, with visible playhead dates, inline
   errors, and disabled invalid playhead assignment.
@@ -74,6 +80,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-09)* **Documentation / Testing**: Documented timeline event
+  snapping and expanded regression coverage for snapping, marker refreshes,
+  summary tooltips, calendar-aware trajectory labels, and visual styling.
 - *(2026-08-09)* **Architecture / Trajectories**: Replaced compatibility repair
   with strict trajectory metadata v2 and logged removal of incompatible rows.
 - *(2026-08-09)* **Documentation / Testing / Trajectories**: Documented automatic

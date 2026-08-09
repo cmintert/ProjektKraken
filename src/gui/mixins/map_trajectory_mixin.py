@@ -232,7 +232,10 @@ class MapTrajectoryMixin:
             )
         self.view.clear_trajectory()
         if rebuild_overlay:
-            self.view.trajectory_edit_overlay.show(snapshot)
+            self.view.trajectory_edit_overlay.show(
+                snapshot,
+                date_formatter=self._format_trajectory_date,
+            )
         else:
             self.view.trajectory_edit_overlay.select(snapshot["selected_keyframe_id"])
 

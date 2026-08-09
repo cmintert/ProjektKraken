@@ -82,6 +82,7 @@ class TimelineView(QGraphicsView):
     PLAYHEAD_HANDLE_WIDTH = 20
     PLAYHEAD_HANDLE_RECT_HEIGHT = 12
     PLAYHEAD_HANDLE_TRI_HEIGHT = 8
+    PLAYHEAD_EVENT_SNAP_DISTANCE_PX = 12.0
 
     MAJOR_TICK_HEIGHT = 12
     MINOR_TICK_HEIGHT = 8
@@ -108,9 +109,7 @@ class TimelineView(QGraphicsView):
 
         axis_pen = QPen(QColor(100, 100, 100))
         axis_pen.setCosmetic(True)
-        self._axis_line = self.graphics_scene.addLine(
-            -1e12, 0, 1e12, 0, axis_pen
-        )
+        self._axis_line = self.graphics_scene.addLine(-1e12, 0, 1e12, 0, axis_pen)
         self._drop_lines: dict[str, QGraphicsLineItem] = {}
 
         # Import here to avoid circular import
@@ -139,9 +138,7 @@ class TimelineView(QGraphicsView):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
 
         # Force full viewport updates to prevent ruler distortion during panning
-        self.setViewportUpdateMode(
-            QGraphicsView.ViewportUpdateMode.FullViewportUpdate
-        )
+        self.setViewportUpdateMode(QGraphicsView.ViewportUpdateMode.FullViewportUpdate)
 
         # Viewport alignment
         self.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
@@ -153,6 +150,7 @@ class TimelineView(QGraphicsView):
 
         # Track current zoom level
         self._current_zoom = 1.0
+        self._snap_playhead_to_events = False
 
         # Playhead/scrubber setup
         self._playhead = PlayheadItem()
@@ -259,11 +257,32 @@ class TimelineView(QGraphicsView):
 
         Updates the internal time and emits signal.
         """
-        # Round to 4 decimal places to prevent float precision drift
-        new_time = round(x_pos / self.scale_factor, 4)
+        new_time = self._manual_playhead_time(x_pos)
         self._playhead._time = new_time  # Directly update internal state
         self.playhead_time_changed.emit(new_time)
         self.update_events_temporal_state()
+
+    def set_playhead_event_snapping(self, enabled: bool) -> None:
+        """Enable or disable manual playhead snapping to nearby event dates."""
+        self._snap_playhead_to_events = enabled
+
+    def is_playhead_event_snapping_enabled(self) -> bool:
+        """Return whether manual playhead movement snaps to event dates."""
+        return self._snap_playhead_to_events
+
+    def _manual_playhead_time(self, scene_x: float) -> float:
+        """Resolve one manual playhead position, applying screen-space snapping."""
+        candidate = scene_x / self.scale_factor
+        if not self._snap_playhead_to_events or not self.events:
+            return round(candidate, 4)
+
+        nearest = min(self.events, key=lambda event: abs(event.lore_date - candidate))
+        distance_px = (
+            abs(nearest.lore_date - candidate) * self.scale_factor * self._current_zoom
+        )
+        if distance_px <= self.PLAYHEAD_EVENT_SNAP_DISTANCE_PX:
+            return float(nearest.lore_date)
+        return round(candidate, 4)
 
     def _on_event_drag_complete(self, event_id: str, new_lore_date: float) -> None:
         """Called when an event item is dragged to a new position. Emits the
@@ -1355,7 +1374,7 @@ class TimelineView(QGraphicsView):
 
             # Move playhead to clicked position
             # We want to use the scene X coordinate directly for the move
-            scene_x = mapped_pos.x()
+            scene_x = self._manual_playhead_time(mapped_pos.x()) * self.scale_factor
             self._playhead.setPos(scene_x, 0)
             self._on_playhead_moved(scene_x)
 
@@ -1443,7 +1462,8 @@ class TimelineView(QGraphicsView):
             scene_delta = delta_x / self._current_zoom
 
             # Update playhead position
-            new_x = self._playhead_start_x + scene_delta
+            candidate_x = self._playhead_start_x + scene_delta
+            new_x = self._manual_playhead_time(candidate_x) * self.scale_factor
             self._playhead.setPos(new_x, 0)
 
             # Notify view of position change
@@ -1465,7 +1485,7 @@ class TimelineView(QGraphicsView):
             self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
 
             # Emit final authoritative signal with rounded playhead time
-            new_time = round(self._playhead.get_time(self.scale_factor), 4)
+            new_time = self._manual_playhead_time(self._playhead.x())
             self.playhead_time_changed.emit(new_time)
             self._dragging_playhead = False
 
@@ -1662,9 +1682,7 @@ class TimelineView(QGraphicsView):
             band_manager.tag_color_change_requested.connect(
                 self._on_tag_color_change_requested
             )
-            band_manager.tag_rename_requested.connect(
-                self._on_tag_rename_requested
-            )
+            band_manager.tag_rename_requested.connect(self._on_tag_rename_requested)
             band_manager.remove_from_grouping_requested.connect(
                 self._on_remove_from_grouping_requested
             )
@@ -1889,9 +1907,7 @@ class TimelineView(QGraphicsView):
         min_y = 0
 
         # Set Scene Rect explicitly
-        self.graphics_scene.setSceneRect(
-            start_x, min_y, end_x - start_x, max_y - min_y
-        )
+        self.graphics_scene.setSceneRect(start_x, min_y, end_x - start_x, max_y - min_y)
 
     def _update_scene_rect_default(self) -> None:
         """Sets a default infinite scene rect when no events are present."""
@@ -1908,6 +1924,4 @@ class TimelineView(QGraphicsView):
         max_y = 200
         min_y = 0
 
-        self.graphics_scene.setSceneRect(
-            start_x, min_y, end_x - start_x, max_y - min_y
-        )
+        self.graphics_scene.setSceneRect(start_x, min_y, end_x - start_x, max_y - min_y)

@@ -12,6 +12,10 @@ the current lore time and also controls time-sensitive map content.
 - Select an event to open its inspector.
 - Move supported event items to update their date.
 - Use the playhead controls to inspect another point in history.
+- Enable **Snap to Events** to make manual playhead drags and ruler clicks land
+  exactly on a nearby event date. Snapping uses a small on-screen distance, so
+  it remains predictable at every zoom level. Playback and scripted jumps do
+  not snap.
 
 ## Group events
 
@@ -36,4 +40,3 @@ the interface.
 - Changing the playhead can change which map trajectory or dated raster state
   is visible.
 - Timeline grouping organizes the view; it does not duplicate or delete events.
-
