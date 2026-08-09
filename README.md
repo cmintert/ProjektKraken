@@ -8,7 +8,7 @@ last_updated: 2026-07-27
 
 ## Version
 
-**v0.18.7 (Beta)**
+**v0.18.8 (Beta)**
 **Projekt Kraken** is a desktop worldbuilding environment designed for the "Architect" persona. It treats history as the primary axis of the world, offering a timeline-first approach to lore creation.
 
 ## Screenshot
@@ -315,7 +315,7 @@ master/detail-map workflows are documented in the
 
 ## Version
 
-**v0.18.7 (Beta)**
+**v0.18.8 (Beta)**
 
 ## License
 

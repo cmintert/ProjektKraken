@@ -1,0 +1,4 @@
+interface:
+  display_name: "Bump Version"
+  short_description: "Bump ProjektKraken releases safely"
+  default_prompt: "Use $bump-version to bump ProjektKraken to a specified version, prepare the release commit, and tag it."
