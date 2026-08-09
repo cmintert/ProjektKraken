@@ -58,6 +58,8 @@ napoleon_include_special_with_doc = False
 
 html_theme = "furo"
 html_title = f"{project} {release}"
+html_logo = "_static/kraken.webp"
+html_static_path = ["_static"]
 html_theme_options = {
     "light_css_variables": {
         "color-brand-primary": "#7C3AED",

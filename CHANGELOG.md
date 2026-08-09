@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-09
-**Commit:** d01e433f
+**Commit:** 8cfc1e20
 ---
 
 # Changelog
@@ -21,6 +21,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-09)* **Documentation / Branding**: Replaced the project logo and
+  added it to the generated documentation sidebar.
 - *(2026-08-09)* **World Storage**: Added complete world-folder registration,
   advanced external database linking, persisted approval, and revocation.
 - *(2026-08-09)* **Documentation / Testing**: Documented portable and external
