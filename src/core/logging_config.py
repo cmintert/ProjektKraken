@@ -17,11 +17,11 @@ from src.core.paths import get_log_directory
 # the portable project/executable log directory through ``get_log_directory``.
 LOG_DIR: str | None = None
 LOG_FILENAME = "kraken.log"
-AUDIT_LOG_FILENAME = "ai_audit_log.txt"
+AUDIT_LOG_FILENAME = "ai_audit_log.jsonl"
 MAX_BYTES = 5 * 1024 * 1024  # 5 MB
 BACKUP_COUNT = 5
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-AUDIT_LOG_FORMAT = "%(asctime)s - %(message)s"
+AUDIT_LOG_FORMAT = "%(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
@@ -156,8 +156,8 @@ def _make_audit_handler(path: str) -> SafeRotatingFileHandler:
 def setup_audit_logging() -> None:
     """Configure the dedicated AI audit logger.
 
-    Creates a separate rotating file handler that writes AI prompts and
-    responses to ``logs/ai_audit_log.txt``.  The logger does **not**
+    Creates a separate rotating file handler that writes structured AI audit
+    events to ``logs/ai_audit_log.jsonl``. The logger does **not**
     propagate to the root logger so audit entries stay in their own file.
     """
     audit_logger = logging.getLogger("ai_audit")
@@ -232,7 +232,7 @@ def get_world_audit_log_path(db_path: Optional[str]) -> Optional[str]:
             ``None`` / ``":memory:"`` for in-memory databases.
 
     Returns:
-        Optional[str]: Absolute path to ``ai_audit_log.txt`` in the same
+        Optional[str]: Absolute path to ``ai_audit_log.jsonl`` in the same
         directory as the database, or ``None`` when no persistent path is
         available.
 

@@ -148,6 +148,72 @@ def test_generation_flow_custom_prompt(
     assert widget.generate_btn.isEnabled()
 
 
+def test_generation_review_audit_preserves_raw_and_edited_text(widget):
+    """Generation and review events should retain distinct text snapshots."""
+    context = {
+        "name": "Test",
+        "object_type": "entity",
+        "object_id": "entity-1",
+        "existing_description": "Old description",
+    }
+    widget._generation_target_id = "entity-1"
+    widget._generation_source_hash = widget._hash_source_description(context)
+    widget._audit_interaction_id = "interaction-1"
+    widget._audit_provider_id = "lmstudio"
+    widget._audit_template = {"template_id": "revise"}
+
+    worker = MagicMock()
+    worker.prompt = {"system": "System", "user": "Exact prompt"}
+    worker.rag_context_used = "Relevant lore"
+    worker.spatial_context_used = None
+    worker.spatial_enabled = False
+    worker.max_tokens = 512
+    worker.temperature = 0.7
+    worker.rag_limit = 3
+    worker.db_path = "world.kraken"
+    worker.object_type = "entity"
+    worker.active_map_id = None
+    worker.provider.get_model_name.return_value = "configured-model"
+    widget._worker = worker
+
+    review_result = GenerationReviewResult(
+        action=GenerationApplyMode.REPLACE,
+        text="User-edited response",
+        rating=-1,
+        comment="Missed the requested tone",
+    )
+    with patch.object(
+        widget, "_get_generation_context", return_value=context
+    ), patch(
+        "src.gui.dialogs.generation_review_dialog.GenerationReviewDialog"
+    ) as dialog_cls, patch(
+        "src.gui.widgets.llm_generation_widget.log_generation_event"
+    ) as generation_log, patch(
+        "src.gui.widgets.llm_generation_widget.log_review_event"
+    ) as review_log:
+        dialog = dialog_cls.return_value
+        dialog.action = GenerationApplyMode.REPLACE
+        dialog.get_review_result.return_value = review_result
+
+        widget._on_generation_complete(
+            ModelReply(content="Raw model response", model="reply-model")
+        )
+
+    generation_kwargs = generation_log.call_args.kwargs
+    review_kwargs = review_log.call_args.kwargs
+    assert generation_kwargs["interaction_id"] == "interaction-1"
+    assert generation_kwargs["prompt"]["user"] == "Exact prompt"
+    assert generation_kwargs["response"]["content"] == "Raw model response"
+    assert generation_kwargs["context"]["rag"] == "Relevant lore"
+    assert review_kwargs["interaction_id"] == "interaction-1"
+    assert review_kwargs["action"] == "replace"
+    assert review_kwargs["raw_text"] == "Raw model response"
+    assert review_kwargs["presented_text"] == "Raw model response"
+    assert review_kwargs["reviewed_text"] == "User-edited response"
+    assert review_kwargs["rating"] == -1
+    assert review_kwargs["comment"] == "Missed the requested tone"
+
+
 @patch("src.gui.widgets.llm_generation_widget.RAGService")
 def test_rag_service_called(mock_rag_cls, widget, qtbot):
     """Test that RAG service is instantiated and called when enabled."""

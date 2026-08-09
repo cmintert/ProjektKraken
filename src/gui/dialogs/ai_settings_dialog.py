@@ -418,7 +418,8 @@ class AISettingsDialog(QDialog):
 
         self.enable_audit_log = QCheckBox("Enable audit logging")
         self.enable_audit_log.setToolTip(
-            "Log all generation requests and responses for auditing"
+            "Store structured prompts, raw responses, review decisions, feedback, "
+            "and edits in the active world folder"
         )
         self.enable_audit_log.toggled.connect(self.save_settings)
         params_layout.addRow("Audit Log:", self.enable_audit_log)

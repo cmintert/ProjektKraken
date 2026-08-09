@@ -21,7 +21,12 @@ from src.core.summary_data import (
     count_summary_words,
     normalize_summary_prompt_template,
 )
-from src.services.llm_provider import create_provider, log_ai_interaction
+from src.services.ai_audit_service import (
+    log_generation_event,
+    log_review_event,
+    new_interaction_id,
+)
+from src.services.llm_provider import create_provider
 
 if TYPE_CHECKING:
     from src.services.db_service import DatabaseService
@@ -168,6 +173,9 @@ class SummaryService:
         try:
             provider = self._get_provider()
             prompt = self._build_prompt(item)
+            effective_prompt = prompt
+            generation_started_at = time.monotonic()
+            retry_count = 0
             logger.info(f"Generating summary for {item.name}. Prompt:\n{prompt}")
 
             # Read configured summary max tokens from settings
@@ -210,6 +218,9 @@ class SummaryService:
                     "Summary exceeded %s words; retrying once with a stricter prompt.",
                     word_limit,
                 )
+                effective_prompt = retry_prompt
+                generation_started_at = time.monotonic()
+                retry_count = 1
                 response = provider.generate(
                     retry_prompt,
                     max_tokens=summary_max_tokens,
@@ -217,6 +228,8 @@ class SummaryService:
                 )
                 text = self._extract_visible_text(response, settings)
                 model = response.get("model", model)
+
+            presented_text = text
 
             actual_words = count_summary_words(text)
             if actual_words > word_limit:
@@ -242,15 +255,54 @@ class SummaryService:
                 model=model,
             )
 
-            # Audit log prompt and response (per-world file when available)
+            # Audit the final model attempt and any deterministic post-processing.
             from src.core.logging_config import get_world_audit_log_path
 
             audit_path = get_world_audit_log_path(self.db_service.db_path)
-
-            log_ai_interaction(
-                prompt=prompt,
-                response_text=text,
+            interaction_id = new_interaction_id()
+            provider_metadata: dict[str, Any] = {}
+            try:
+                provider_metadata = dict(provider.metadata() or {})
+            except Exception:
+                pass
+            provider_id = str(
+                provider_metadata.get("provider_id")
+                or provider_metadata.get("id")
+                or provider.__class__.__name__
+            )
+            reply_snapshot = dict(response)
+            reply_snapshot.setdefault("content", reply_snapshot.get("text", ""))
+            log_generation_event(
+                interaction_id=interaction_id,
+                prompt=effective_prompt,
+                source="SummaryService",
+                provider=provider_id,
                 model=model,
+                status="success",
+                response=reply_snapshot,
+                parameters={
+                    "max_tokens": summary_max_tokens,
+                    "temperature": summary_temp,
+                    "retry_count": retry_count,
+                    "word_limit": word_limit,
+                },
+                target={
+                    "target_id": str(item.id),
+                    "object_type": item.__class__.__name__.lower(),
+                    "source_hash": summary.hash,
+                },
+                duration_ms=int(
+                    (time.monotonic() - generation_started_at) * 1000
+                ),
+                audit_path=audit_path,
+            )
+            raw_text = str(response.get("text") or response.get("content") or "")
+            log_review_event(
+                interaction_id=interaction_id,
+                action="automatic",
+                raw_text=raw_text,
+                presented_text=presented_text,
+                reviewed_text=text,
                 source="SummaryService",
                 audit_path=audit_path,
             )

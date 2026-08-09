@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-09
-**Commit:** 8cfc1e20
+**Commit:** 9207dad9
 ---
 
 # Changelog
@@ -21,6 +21,12 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-09)* **AI / Audit Logging**: Replaced plaintext prompt-response logs
+  with versioned per-world JSONL events that link exact prompts and raw model
+  replies to review actions, ratings, comments, automatic filtering, and user
+  edits for prompt-quality analysis.
+- *(2026-08-09)* **Testing / AI**: Added regression coverage for structured
+  generation, review, feedback, edit, summary, and per-world audit events.
 - *(2026-08-09)* **Documentation / Branding**: Replaced the project logo and
   added it to the generated documentation sidebar.
 - *(2026-08-09)* **World Storage**: Added complete world-folder registration,

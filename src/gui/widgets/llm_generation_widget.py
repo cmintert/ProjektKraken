@@ -7,6 +7,7 @@ streaming output and appending to existing text.
 import asyncio
 import hashlib
 import logging
+import time
 from dataclasses import replace
 from typing import Any, Dict, Optional, Protocol, cast, runtime_checkable
 
@@ -38,6 +39,7 @@ from src.core.ai_generation import (
     TaskIntent,
     TaskTemplate,
 )
+from src.core.logging_config import get_world_audit_log_path
 from src.gui.utils.settings_reader import (
     read_bool_setting,
     read_int_setting,
@@ -45,6 +47,11 @@ from src.gui.utils.settings_reader import (
 )
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.prompt_editor import PromptEditorWidget
+from src.services.ai_audit_service import (
+    log_generation_event,
+    log_review_event,
+    new_interaction_id,
+)
 from src.services.llm_provider import Provider, create_provider
 from src.services.prompt_builder import DEFAULT_SYSTEM_PROMPT, PromptBuilder
 from src.services.rag_service import RAGService
@@ -171,6 +178,7 @@ class GenerationWorker(QThread):
             self.spatial_enabled = spatial_enabled
         # Populated during run() when spatial context is actually injected;
         # read by the widget to drive the post-generation transparency label.
+        self.rag_context_used: Optional[str] = None
         self.spatial_context_used: Optional[str] = None
         self._cancelled = False
 
@@ -242,6 +250,7 @@ class GenerationWorker(QThread):
                 prompt = f"[Context]\n{rag_context}\n\n" + prompt
 
         self.prompt = prompt
+        self.rag_context_used = rag_context or None
 
         if rag_context:
             logger.debug(f"Applied RAG context: {len(rag_context)} chars")
@@ -432,6 +441,11 @@ class LLMGenerationWidget(QWidget):
         super().__init__(parent)
         self._generation_target_id: str | None = None
         self._generation_source_hash: str | None = None
+        self._audit_interaction_id: str | None = None
+        self._audit_started_at: float | None = None
+        self._audit_provider_id = "unknown"
+        self._audit_template: dict[str, Any] | None = None
+        self._audit_generation_logged = False
         app = QApplication.instance()
         if app is not None:
             app.aboutToQuit.connect(self._shutdown_worker)
@@ -1088,6 +1102,31 @@ class LLMGenerationWidget(QWidget):
         description = str(context.get("existing_description") or "")
         return hashlib.sha256(description.encode("utf-8")).hexdigest()
 
+    def _get_audit_template_snapshot(self) -> dict[str, Any]:
+        """Return the selected task identity and a stable content hash."""
+        template = self._find_task_template(self.template_combo.currentData())
+        if template is None:
+            content = self.custom_prompt_edit.toPlainText()
+            return {
+                "template_id": None,
+                "name": "Custom task",
+                "intent": TaskIntent.GENERAL.value,
+                "source": "custom",
+                "content_hash": hashlib.sha256(
+                    content.encode("utf-8")
+                ).hexdigest(),
+            }
+
+        return {
+            "template_id": template.template_id,
+            "name": template.name,
+            "intent": template.intent.value,
+            "source": template.source.value,
+            "content_hash": hashlib.sha256(
+                template.content.encode("utf-8")
+            ).hexdigest(),
+        }
+
     def _construct_prompt(self, context_str: str, user_prompt: str) -> Dict[str, str]:
         """Construct the final prompt with persona and delimited context.
 
@@ -1120,6 +1159,12 @@ class LLMGenerationWidget(QWidget):
         object_type: Optional[str] = None,
     ) -> None:
         """Start generation in worker thread."""
+        self._audit_interaction_id = new_interaction_id()
+        self._audit_started_at = time.monotonic()
+        self._audit_provider_id = self._get_provider_id()
+        self._audit_template = self._get_audit_template_snapshot()
+        self._audit_generation_logged = False
+
         # Update UI
         self.generate_btn.setEnabled(False)
         self.cancel_btn.setEnabled(True)
@@ -1233,6 +1278,67 @@ class LLMGenerationWidget(QWidget):
         self.generate_btn.setEnabled(True)
         self.cancel_btn.setEnabled(False)
 
+        worker_prompt: GenerationPrompt | None = None
+        worker_model = "unknown"
+        worker_rag_context: Optional[str] = None
+        worker_spatial_context: Optional[str] = None
+        worker_spatial_requested = False
+        parameters: dict[str, Any] = {}
+        target: dict[str, Any] = {
+            "target_id": self._generation_target_id,
+            "source_hash": self._generation_source_hash,
+        }
+        if self._worker:
+            worker_prompt = self._worker.prompt
+            worker_rag_context = self._worker.rag_context_used
+            worker_spatial_context = self._worker.spatial_context_used
+            worker_spatial_requested = self._worker.spatial_enabled
+            parameters = {
+                "max_tokens": self._worker.max_tokens,
+                "temperature": self._worker.temperature,
+                "rag_limit": self._worker.rag_limit,
+                "rag_enabled": self._worker.db_path is not None,
+                "spatial_enabled": self._worker.spatial_enabled,
+            }
+            target.update(
+                {
+                    "object_type": self._worker.object_type,
+                    "active_map_id": self._worker.active_map_id,
+                }
+            )
+            try:
+                worker_model = self._worker.provider.get_model_name()
+            except Exception:
+                pass
+
+        audit_path = get_world_audit_log_path(self._current_db_path)
+        interaction_id = self._audit_interaction_id or new_interaction_id()
+        if worker_prompt is not None:
+            duration_ms = None
+            if self._audit_started_at is not None:
+                duration_ms = int(
+                    (time.monotonic() - self._audit_started_at) * 1000
+                )
+            log_generation_event(
+                interaction_id=interaction_id,
+                prompt=worker_prompt,
+                source="LLMGenerationWidget",
+                provider=self._audit_provider_id,
+                model=reply.model or worker_model,
+                status="success",
+                response=reply.to_dict(),
+                parameters=parameters,
+                template=self._audit_template,
+                target=target,
+                context={
+                    "rag": worker_rag_context,
+                    "spatial": worker_spatial_context,
+                },
+                duration_ms=duration_ms,
+                audit_path=audit_path,
+            )
+            self._audit_generation_logged = True
+
         current_context = self._get_generation_context() or {}
         current_target_id = str(current_context.get("object_id") or "") or None
         current_source_hash = self._hash_source_description(current_context)
@@ -1240,6 +1346,15 @@ class LLMGenerationWidget(QWidget):
             current_target_id != self._generation_target_id
             or current_source_hash != self._generation_source_hash
         ):
+            log_review_event(
+                interaction_id=interaction_id,
+                action="context_changed",
+                raw_text=text,
+                presented_text=text,
+                reviewed_text=text,
+                source="LLMGenerationWidget",
+                audit_path=audit_path,
+            )
             self.status_label.setText("Result discarded: editor context changed")
             QMessageBox.warning(
                 self,
@@ -1249,20 +1364,6 @@ class LLMGenerationWidget(QWidget):
                 "current editor state.",
             )
             return
-
-        # Capture audit data before cleaning up worker
-        worker_prompt = None
-        worker_model = "unknown"
-        worker_spatial_context: Optional[str] = None
-        worker_spatial_requested = False
-        if self._worker:
-            worker_prompt = self._worker.prompt
-            worker_spatial_context = self._worker.spatial_context_used
-            worker_spatial_requested = self._worker.spatial_enabled
-            try:
-                worker_model = self._worker.provider.get_model_name()
-            except Exception:
-                pass
 
         # Update the post-generation spatial-context transparency row.
         self._update_spatial_used_label(
@@ -1302,30 +1403,78 @@ class LLMGenerationWidget(QWidget):
             source_hash=self._generation_source_hash,
         )
         final_text = result.text
-
-        # Audit log the interaction (post-dialog so rating is known)
-        if worker_prompt is not None:
-            from src.core.logging_config import get_world_audit_log_path
-            from src.services.llm_provider import log_ai_interaction
-
-            audit_path = get_world_audit_log_path(self._current_db_path)
-
-            log_ai_interaction(
-                prompt=worker_prompt,
-                response_text=final_text,
-                model=reply.model or worker_model,
-                source="LLMGenerationWidget",
-                rating=result.rating or None,
-                rating_comment=result.comment or None,
-                audit_path=audit_path,
-            )
+        audit_action = dialog.action.value if dialog.action else "closed"
+        log_review_event(
+            interaction_id=interaction_id,
+            action=audit_action,
+            raw_text=text,
+            presented_text=filtered_text,
+            reviewed_text=final_text,
+            source="LLMGenerationWidget",
+            rating=result.rating or None,
+            comment=result.comment or None,
+            audit_path=audit_path,
+        )
 
         if result.action != GenerationApplyMode.DISCARD:
             self.text_generated.emit(result)
 
+    def _audit_unsuccessful_generation(
+        self, status: str, error: str | None = None
+    ) -> None:
+        """Record an error or cancellation once for the active generation."""
+        worker = self._worker
+        if (
+            worker is None
+            or self._audit_generation_logged
+            or self._audit_interaction_id is None
+        ):
+            return
+
+        model = "unknown"
+        try:
+            model = worker.provider.get_model_name()
+        except Exception:
+            pass
+
+        duration_ms = None
+        if self._audit_started_at is not None:
+            duration_ms = int((time.monotonic() - self._audit_started_at) * 1000)
+        log_generation_event(
+            interaction_id=self._audit_interaction_id,
+            prompt=worker.prompt,
+            source="LLMGenerationWidget",
+            provider=self._audit_provider_id,
+            model=model,
+            status=status,
+            error=error,
+            parameters={
+                "max_tokens": worker.max_tokens,
+                "temperature": worker.temperature,
+                "rag_limit": worker.rag_limit,
+                "rag_enabled": worker.db_path is not None,
+                "spatial_enabled": worker.spatial_enabled,
+            },
+            template=self._audit_template,
+            target={
+                "target_id": self._generation_target_id,
+                "source_hash": self._generation_source_hash,
+                "object_type": worker.object_type,
+                "active_map_id": worker.active_map_id,
+            },
+            context={
+                "rag": worker.rag_context_used,
+                "spatial": worker.spatial_context_used,
+            },
+            duration_ms=duration_ms,
+            audit_path=get_world_audit_log_path(self._current_db_path),
+        )
+        self._audit_generation_logged = True
+
     @Slot(str)
     def _on_generation_error(self, error: str) -> None:
         """Handle generation error."""
+        self._audit_unsuccessful_generation("error", error)
         logger.error(f"Generation error: {error}")
         self.status_label.setText(f"Error: {error}")
         self.generate_btn.setEnabled(True)
@@ -1337,6 +1486,7 @@ class LLMGenerationWidget(QWidget):
         worker = self.sender()
         if isinstance(worker, GenerationWorker):
             if worker._cancelled:
+                self._audit_unsuccessful_generation("cancelled")
                 self.status_label.setText("Generation cancelled")
                 self.generate_btn.setEnabled(True)
             worker.deleteLater()
