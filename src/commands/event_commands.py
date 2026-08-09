@@ -232,6 +232,12 @@ class UpdateEventCommand(BaseCommand):
                 f"Undoing UpdateEvent: Reverting to {self._previous_event.name}"
             )
             db_service.insert_event(self._previous_event)
+            self._sync_tags(
+                db_service,
+                self.event_id,
+                set(self._previous_event.tags),
+                "event",
+            )
             self._is_executed = False
 
     def to_dict(self) -> dict:

@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
@@ -294,8 +294,16 @@ class NavigationCoordinator(BaseCoordinator):
                 return
 
             # Use target name as default
-            entity_command = CreateEntityCommand(
-                {"name": target_name, "type": "Concept"}
+            app_coordinator = getattr(self.main_window, "app_coordinator", None)
+            context = getattr(app_coordinator, "context_tags", None)
+            entity_data: dict[str, Any] = {
+                "name": target_name,
+                "type": "Concept",
+            }
+            entity_command = (
+                context.create_entity_command(entity_data)
+                if context
+                else CreateEntityCommand(entity_data)
             )
             self.main_window.command_requested.emit(entity_command)
 
@@ -306,7 +314,15 @@ class NavigationCoordinator(BaseCoordinator):
             ):
                 return
 
-            event_command = CreateEventCommand(
-                {"name": target_name, "lore_date": 0.0}
+            app_coordinator = getattr(self.main_window, "app_coordinator", None)
+            context = getattr(app_coordinator, "context_tags", None)
+            event_data: dict[str, Any] = {
+                "name": target_name,
+                "lore_date": 0.0,
+            }
+            event_command = (
+                context.create_event_command(event_data)
+                if context
+                else CreateEventCommand(event_data)
             )
             self.main_window.command_requested.emit(event_command)

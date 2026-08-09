@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-09
-**Commit:** 7528d44c
+**Commit:** 0ff6aed5
 ---
 
 # Changelog
@@ -11,7 +11,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- *(2026-08-09)* **Editor / Context Tags**: Added per-world remembered session
+  context tags for interactive entity and event creation, with autocomplete,
+  persistent active-state reminders, and explicit enable and disable controls.
+- *(2026-08-09)* **Editor / Recovery**: Added a local recovery ledger and
+  selective, undoable cleanup for records affected by context tags without
+  changing autosave or portable world formats.
+
 ### Fixed
+
+- *(2026-08-09)* **Editor / Tags**: Restored normalized tags during entity and
+  event update undo, and prevented deferred chip-layout callbacks from outliving
+  closed editors and dialogs.
 
 - *(2026-08-09)* **Security / Storage**: Prevented ordinary world manifests
   from redirecting databases through traversal, absolute, drive, UNC, or
@@ -20,6 +33,10 @@ All notable changes to this project will be documented in this file.
   databases from being silently recreated and added explicit recovery warnings.
 
 ### Changed
+
+- *(2026-08-09)* **Testing / Maintenance**: Added context creation, persistence,
+  cleanup, database round-trip, and MainWindow coverage, and clarified Pillow
+  thumbnail image typing.
 
 - *(2026-08-09)* **Editor / Tags**: Replaced per-tag widgets and the custom
   flow layout with a theme-aware, wrapping model/view chip editor that supports

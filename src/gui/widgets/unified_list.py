@@ -168,6 +168,10 @@ class UnifiedListWidget(QWidget):
     status_message_requested = Signal(str, int)  # message, timeout_ms (Toast-like)
     drag_started = Signal()
     export_obsidian_requested = Signal(str, str)  # type, id
+    context_tags_edit_requested = Signal()
+    context_tags_enable_requested = Signal()
+    context_tags_disable_requested = Signal()
+    context_tags_review_requested = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the UnifiedListWidget.
@@ -247,6 +251,23 @@ class UnifiedListWidget(QWidget):
         top_bar.addWidget(self.btn_delete)
 
         main_layout.addLayout(top_bar)
+
+        from src.gui.widgets.context_tag_bar import ContextTagBar
+
+        self.context_tag_bar = ContextTagBar()
+        self.context_tag_bar.edit_requested.connect(
+            self.context_tags_edit_requested.emit
+        )
+        self.context_tag_bar.enable_requested.connect(
+            self.context_tags_enable_requested.emit
+        )
+        self.context_tag_bar.disable_requested.connect(
+            self.context_tags_disable_requested.emit
+        )
+        self.context_tag_bar.review_requested.connect(
+            self.context_tags_review_requested.emit
+        )
+        main_layout.addWidget(self.context_tag_bar)
 
         # Search Bar (Live filtering)
         self.search_bar = QLineEdit()

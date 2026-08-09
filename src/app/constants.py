@@ -69,6 +69,7 @@ SETTINGS_AUTO_RELATION_KEY = "wiki/auto_create_relations"
 SETTINGS_FILTER_CONFIG_KEY = "tag_filter_config"
 SETTINGS_LAYOUT_VERSION_KEY = "layout_version"
 SETTINGS_RASTER_BRUSH_PRESETS_KEY = "raster/brush_presets"
+SETTINGS_CONTEXT_TAGS_PREFIX = "worlds/{world_id}/context_tags/v1"
 
 # Layout Version (increment when layout structure changes incompatibly)
 LAYOUT_VERSION = "1.0.0"

@@ -39,16 +39,19 @@ def test_create_entity(main_window, qtbot):
     ) as mock_input:
         mock_input.return_value = ("Test Entity", True)
 
-        with patch(
-            "src.app.coordinators.editor_coordinator.CreateEntityCommand"
-        ) as MockCmd:
+        context = main_window.app_coordinator.context_tags
+        with patch.object(
+            context,
+            "create_entity_command",
+            wraps=context.create_entity_command,
+        ) as create_command:
             with qtbot.waitSignal(
                 main_window.editor_coordinator.command_requested, timeout=1000
             ):
                 main_window.editor_coordinator.create_entity()
 
-            MockCmd.assert_called_once()
-            args, _ = MockCmd.call_args
+            create_command.assert_called_once()
+            args, _ = create_command.call_args
             assert args[0] == {"name": "Test Entity", "type": "Concept"}
 
 

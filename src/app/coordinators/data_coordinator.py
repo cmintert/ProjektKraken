@@ -195,6 +195,7 @@ class DataCoordinator(BaseCoordinator):
         self.main_window.map_widget.set_cached_items(
             self._cached_entities, self._cached_events
         )
+        self._reconcile_context_tags()
 
         self._schedule_graph_refresh()
 
@@ -213,6 +214,7 @@ class DataCoordinator(BaseCoordinator):
         self.main_window.map_widget.set_cached_items(
             self._cached_entities, self._cached_events
         )
+        self._reconcile_context_tags()
 
         self._schedule_graph_refresh()
 
@@ -443,6 +445,17 @@ class DataCoordinator(BaseCoordinator):
         self.main_window.event_editor.update_tag_suggestions(tags)
         self.main_window.event_editor.update_attribute_suggestions(attr_keys)
         self.main_window.event_editor.update_relation_type_suggestions(rel_types)
+        app_coordinator = getattr(self.main_window, "app_coordinator", None)
+        context_tags = getattr(app_coordinator, "context_tags", None)
+        if context_tags is not None:
+            context_tags.set_available_tags(tags)
+
+    def _reconcile_context_tags(self) -> None:
+        """Update context recovery when the host exposes that coordinator."""
+        app_coordinator = getattr(self.main_window, "app_coordinator", None)
+        context_tags = getattr(app_coordinator, "context_tags", None)
+        if context_tags is not None:
+            context_tags.reconcile(self._cached_events, self._cached_entities)
 
     @Slot(str, object)
     def on_summary_generated_result(self, item_id: str, summary_data: object) -> None:

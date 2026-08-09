@@ -31,6 +31,7 @@ from PySide6.QtWidgets import (
     QPlainTextEdit,
     QStatusBar,
     QTextEdit,
+    QToolButton,
     QWidget,
 )
 
@@ -440,6 +441,37 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.status_bar.addPermanentWidget(lbl)
         return lbl
 
+    @Slot(dict)
+    def _update_context_tag_status(self, state: dict[str, object]) -> None:
+        """Render the persistent status reminder for active context tags."""
+        active = bool(state.get("active", False))
+        self.btn_context_tags_status.setVisible(active)
+        if not active:
+            return
+        raw_tags = state.get("tags", [])
+        tags = [str(tag) for tag in raw_tags] if isinstance(raw_tags, list) else []
+        raw_count = state.get("affected_count", 0)
+        affected = raw_count if isinstance(raw_count, int) else 0
+        summary = ", ".join(tags[:2])
+        if len(tags) > 2:
+            summary += f" +{len(tags) - 2}"
+        self.btn_context_tags_status.setText(
+            f"Context: {summary} · {affected} item{'s' if affected != 1 else ''}"
+        )
+        self.btn_context_tags_status.setToolTip(
+            "Active context tags: " + ", ".join(tags) + "\nClick to edit."
+        )
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+        self.btn_context_tags_status.setStyleSheet(
+            "QToolButton {"
+            f"color: {theme['text_main']}; background: {theme['surface']};"
+            f"border: 2px solid {theme['primary']}; border-radius: 4px;"
+            "padding: 3px 7px; font-weight: bold;"
+            "}"
+        )
+
     def _init_widgets_skeleton(self) -> None:
         """Phase 2: Create UI skeleton without data dependencies.
 
@@ -554,6 +586,21 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         # Status Bar Time Labels
         self.lbl_world_time = self._create_status_label("World: --", "#3498db")
         self.lbl_playhead_time = self._create_status_label("Playhead: --", "#e74c3c")
+        self.btn_context_tags_status = QToolButton()
+        self.btn_context_tags_status.setAccessibleName("Active context tags")
+        self.btn_context_tags_status.setToolTip("Edit active context tags")
+        self.btn_context_tags_status.clicked.connect(
+            self.app_coordinator.context_tags.show_editor
+        )
+        self.btn_context_tags_status.hide()
+        self.status_bar.addPermanentWidget(self.btn_context_tags_status)
+        from src.core.theme_manager import ThemeManager
+
+        ThemeManager().theme_changed.connect(
+            lambda _theme: self._update_context_tag_status(
+                self.app_coordinator.context_tags.snapshot()
+            )
+        )
 
         # Create Menus
         self.ui_manager.create_file_menu(self.menuBar())
@@ -626,6 +673,22 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             self.command_coordinator.on_command_result,
             Qt.ConnectionType.QueuedConnection,
         )
+        self.worker.command_finished.connect(
+            self.app_coordinator.context_tags.on_command_finished,
+            Qt.ConnectionType.QueuedConnection,
+        )
+        self.app_coordinator.context_tags.command_requested.connect(
+            self.command_requested.emit
+        )
+        self.app_coordinator.context_tags.state_changed.connect(
+            self.unified_list.context_tag_bar.set_state
+        )
+        self.app_coordinator.context_tags.state_changed.connect(
+            self._update_context_tag_status
+        )
+        initial_context_state = self.app_coordinator.context_tags.snapshot()
+        self.unified_list.context_tag_bar.set_state(initial_context_state)
+        self._update_context_tag_status(initial_context_state)
 
         # Connect undo/redo menu actions (deferred from Phase 2)
         self.ui_manager.connect_undo_redo_actions()

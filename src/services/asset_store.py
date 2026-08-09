@@ -140,11 +140,11 @@ class AssetStore:
         target_thumb_path = owner_thumb_dir / filename
 
         try:
-            with Image.open(source) as img:
+            with Image.open(source) as opened_image:
                 # Normalize orientation (EXIF)
                 from PIL import ImageOps
 
-                img = ImageOps.exif_transpose(img)
+                img: Image.Image = ImageOps.exif_transpose(opened_image)
 
                 # Convert to RGB if necessary (e.g. for RGBA -> JPEG,
                 # though WebP supports alpha)

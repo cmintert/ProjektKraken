@@ -269,6 +269,7 @@ class ConnectionManager:
         ul = self.window.unified_list
         ec = self.window.editor_coordinator
         dc = self.window.data_coordinator
+        context = self.window.app_coordinator.context_tags
         specs: list[ConnectionSpec] = [
             (ul, "refresh_requested", dc.load_data, "UnifiedList"),
             (ul, "create_event_requested", ec.create_event, "UnifiedList"),
@@ -280,6 +281,30 @@ class ConnectionManager:
                 "UnifiedList",
             ),
             (ul, "delete_requested", ec.on_item_delete_requested, "UnifiedList"),
+            (
+                ul,
+                "context_tags_edit_requested",
+                context.show_editor,
+                "UnifiedList",
+            ),
+            (
+                ul,
+                "context_tags_enable_requested",
+                context.enable,
+                "UnifiedList",
+            ),
+            (
+                ul,
+                "context_tags_disable_requested",
+                context.disable,
+                "UnifiedList",
+            ),
+            (
+                ul,
+                "context_tags_review_requested",
+                context.show_review,
+                "UnifiedList",
+            ),
             (
                 ul,
                 "item_selected",

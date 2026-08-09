@@ -26,6 +26,7 @@ class AppCoordinator(QObject):
 
     Attributes:
         data: DataCoordinator for data loading orchestration.
+        context_tags: ContextTagCoordinator for session creation tags and recovery.
         time: TimeCoordinator for time/playhead management.
         editor: EditorCoordinator for editor state management.
         navigation: NavigationCoordinator for item selection/navigation.
@@ -45,6 +46,7 @@ class AppCoordinator(QObject):
         super().__init__(parent=main_window)
 
         from src.app.coordinators.backup_coordinator import BackupCoordinator
+        from src.app.coordinators.context_tag_coordinator import ContextTagCoordinator
         from src.app.coordinators.data_coordinator import DataCoordinator
         from src.app.coordinators.editor_coordinator import EditorCoordinator
         from src.app.coordinators.fast_inject_coordinator import (
@@ -59,6 +61,7 @@ class AppCoordinator(QObject):
             TrajectoryEditCoordinator,
         )
 
+        self.context_tags = ContextTagCoordinator(main_window)
         self.data = DataCoordinator(main_window)
         self.time = TimeCoordinator(main_window)
         self.editor = EditorCoordinator(main_window)
@@ -69,7 +72,7 @@ class AppCoordinator(QObject):
         self.trajectory_edit = TrajectoryEditCoordinator(main_window)
 
         self.main_window = main_window
-        logger.debug("AppCoordinator initialized with 8 coordinators")
+        logger.debug("AppCoordinator initialized with 9 coordinators")
 
     def validate_world(self) -> None:
         """Request world validation on the DatabaseWorker thread.

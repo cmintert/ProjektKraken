@@ -36,6 +36,15 @@ from src.core.theme_manager import ThemeManager
 ModelIndex = QModelIndex | QPersistentModelIndex
 
 
+def tag_color_for_theme(tag: str, theme: dict[str, Any]) -> QColor:
+    """Return a stable content-hash color adjusted for a theme surface."""
+    digest = hashlib.sha256(tag.encode("utf-8")).digest()
+    hue = int.from_bytes(digest[:2], byteorder="big") % 360
+    surface = QColor(theme.get("surface", "#FFFFFF"))
+    lightness = 160 if surface.lightness() < 128 else 100
+    return QColor.fromHsl(hue, 185, lightness)
+
+
 class TagListModel(QAbstractListModel):
     """Ordered, mutable tag list used by :class:`TagChipView`."""
 
@@ -130,11 +139,7 @@ class TagChipDelegate(QStyledItemDelegate):
 
     def color_for_tag(self, tag: str) -> QColor:
         """Return a stable, theme-adjusted color derived from the tag text."""
-        digest = hashlib.sha256(tag.encode("utf-8")).digest()
-        hue = int.from_bytes(digest[:2], byteorder="big") % 360
-        surface = QColor(self._theme.get("surface", "#FFFFFF"))
-        lightness = 160 if surface.lightness() < 128 else 100
-        return QColor.fromHsl(hue, 185, lightness)
+        return tag_color_for_theme(tag, self._theme)
 
     def sizeHint(
         self,
@@ -288,6 +293,9 @@ class TagChipView(QListView):
         super().__init__(parent)
         self._height_refresh_pending = False
         self._hovered_close_row: int | None = None
+        self._height_timer = QTimer(self)
+        self._height_timer.setSingleShot(True)
+        self._height_timer.timeout.connect(self.refresh_height)
         self.setViewMode(QListView.ViewMode.IconMode)
         self.setFlow(QListView.Flow.LeftToRight)
         self.setWrapping(True)
@@ -329,7 +337,7 @@ class TagChipView(QListView):
         if self._height_refresh_pending:
             return
         self._height_refresh_pending = True
-        QTimer.singleShot(0, self.refresh_height)
+        self._height_timer.start(0)
 
     def _row_count_for_width(self, width: int) -> int:
         model = self.model()

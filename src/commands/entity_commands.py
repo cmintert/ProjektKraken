@@ -186,6 +186,12 @@ class UpdateEntityCommand(BaseCommand):
         """
         if self._is_executed and self._previous_entity:
             db_service.insert_entity(self._previous_entity)
+            self._sync_tags(
+                db_service,
+                self.entity_id,
+                set(self._previous_entity.tags),
+                "entity",
+            )
             self._is_executed = False
             logger.info(f"Undid update of entity: {self._previous_entity.id}")
 

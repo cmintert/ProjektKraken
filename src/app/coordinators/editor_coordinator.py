@@ -73,6 +73,24 @@ class EditorCoordinator(BaseCoordinator):
     # Create Operations
     # ------------------------------------------------------------------
 
+    def _create_event_command(self, data: dict) -> CreateEventCommand:
+        context = getattr(
+            getattr(self.main_window, "app_coordinator", None),
+            "context_tags",
+            None,
+        )
+        return context.create_event_command(data) if context else CreateEventCommand(data)
+
+    def _create_entity_command(self, data: dict) -> CreateEntityCommand:
+        context = getattr(
+            getattr(self.main_window, "app_coordinator", None),
+            "context_tags",
+            None,
+        )
+        return (
+            context.create_entity_command(data) if context else CreateEntityCommand(data)
+        )
+
     def create_event(self) -> None:
         """Creates a new event by prompting for a name and emitting a command."""
         if not self.check_unsaved_changes(self.main_window.event_editor):
@@ -82,7 +100,7 @@ class EditorCoordinator(BaseCoordinator):
         if not ok or not name.strip():
             return
 
-        cmd = CreateEventCommand({"name": name.strip(), "lore_date": 0.0})
+        cmd = self._create_event_command({"name": name.strip(), "lore_date": 0.0})
         self.command_requested.emit(cmd)
 
     def create_entity(self) -> None:
@@ -94,7 +112,7 @@ class EditorCoordinator(BaseCoordinator):
         if not ok or not name.strip():
             return
 
-        cmd = CreateEntityCommand({"name": name.strip(), "type": "Concept"})
+        cmd = self._create_entity_command({"name": name.strip(), "type": "Concept"})
         self.command_requested.emit(cmd)
 
     # ------------------------------------------------------------------
@@ -453,7 +471,9 @@ class EditorCoordinator(BaseCoordinator):
             name: Name of the new entity.
 
         """
-        cmd = CreateEntityCommand({"id": new_id, "name": name, "type": "Location"})
+        cmd = self._create_entity_command(
+            {"id": new_id, "name": name, "type": "Location"}
+        )
         self.command_requested.emit(cmd)
 
     @Slot(str, str)
@@ -465,7 +485,9 @@ class EditorCoordinator(BaseCoordinator):
             name: Name of the new event.
 
         """
-        cmd = CreateEventCommand({"id": new_id, "name": name, "lore_date": 0.0})
+        cmd = self._create_event_command(
+            {"id": new_id, "name": name, "lore_date": 0.0}
+        )
         self.command_requested.emit(cmd)
 
     # ------------------------------------------------------------------
