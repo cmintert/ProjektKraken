@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-09
-**Commit:** 60c1bb4b
+**Commit:** d01e433f
 ---
 
 # Changelog
@@ -11,8 +11,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- *(2026-08-09)* **Security / Storage**: Prevented ordinary world manifests
+  from redirecting databases through traversal, absolute, drive, UNC, or
+  symlink paths, and required local approval for external databases.
+- *(2026-08-09)* **Stability / Storage**: Prevented missing approved external
+  databases from being silently recreated and added explicit recovery warnings.
+
 ### Changed
 
+- *(2026-08-09)* **World Storage**: Added complete world-folder registration,
+  advanced external database linking, persisted approval, and revocation.
+- *(2026-08-09)* **Documentation / Testing**: Documented portable and external
+  storage behavior and added path-redirection, trust, startup, and World Manager
+  regression coverage.
 - *(2026-08-09)* **Release**: Bumped project and application metadata to
   version 0.18.8.
 - *(2026-08-09)* **Tooling**: Added a validated project version-bump skill

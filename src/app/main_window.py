@@ -494,11 +494,11 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
         # Initialize Fast Inject Manager
         # We need the world path.
-        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
-        active_world = _normalize_active_world_name(
-            settings.value(SETTINGS_ACTIVE_DB_KEY, DEFAULT_WORLD_NAME)
+        world_path = (
+            self.current_world.path
+            if self.current_world is not None
+            else get_worlds_dir() / DEFAULT_WORLD_NAME
         )
-        world_path = get_worlds_dir() / active_world
         self.fast_inject_manager = FastInjectManager(world_path)
 
         # Pass project root to editors for proper gallery path resolution

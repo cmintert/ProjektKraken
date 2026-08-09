@@ -3,13 +3,21 @@ Tests for the World module (WorldManifest, World, WorldManager).
 """
 
 import json
+import os
+import subprocess
 import tempfile
 import time
 from pathlib import Path
 
 import pytest
 
-from src.core.world import World, WorldManager, WorldManifest
+from src.core.world import (
+    EXTERNAL_DATABASE_STORAGE,
+    InvalidDatabasePathError,
+    World,
+    WorldManager,
+    WorldManifest,
+)
 
 
 def test_world_manifest_creation():
@@ -299,6 +307,218 @@ def test_world_load_invalid_json():
         world = World.load(world_path)
 
         assert world is None
+
+
+@pytest.mark.parametrize(
+    "db_filename",
+    [
+        "../outside.kraken",
+        r"..\outside.kraken",
+        "/tmp/outside.kraken",
+        r"C:\Users\Public\outside.kraken",
+        r"C:outside.kraken",
+        r"\\server\share\outside.kraken",
+    ],
+)
+def test_world_load_rejects_self_contained_path_redirection(tmp_path, db_filename):
+    """Ordinary manifests cannot redirect SQLite outside the world folder."""
+    world_path = tmp_path / "world"
+    world_path.mkdir()
+    (world_path / "world.json").write_text(
+        json.dumps(
+            {
+                "id": "unsafe",
+                "name": "Unsafe",
+                "db_filename": db_filename,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert World.load(world_path) is None
+
+
+def test_world_load_rejects_wrong_database_extension(tmp_path):
+    """Manifest database paths must retain the expected file extension."""
+    world_path = tmp_path / "world"
+    world_path.mkdir()
+    (world_path / "world.json").write_text(
+        json.dumps(
+            {
+                "id": "wrong-extension",
+                "name": "Wrong Extension",
+                "db_filename": "world.sqlite",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (world_path / "world.sqlite").touch()
+
+    assert World.load(world_path) is None
+
+
+def test_world_load_rejects_non_string_storage_mode(tmp_path):
+    """Malformed storage-mode data cannot crash world discovery."""
+    world_path = tmp_path / "world"
+    world_path.mkdir()
+    (world_path / "world.json").write_text(
+        json.dumps(
+            {
+                "id": "malformed-mode",
+                "name": "Malformed Mode",
+                "db_filename": "world.kraken",
+                "storage_mode": ["external_database"],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (world_path / "world.kraken").touch()
+
+    assert World.load(world_path) is None
+
+
+def test_world_discovery_ignores_non_string_manifest_identity(tmp_path):
+    """Malformed display metadata cannot crash sorting during discovery."""
+    world_path = tmp_path / "world"
+    world_path.mkdir()
+    (world_path / "world.json").write_text(
+        json.dumps(
+            {
+                "id": ["not", "a", "string"],
+                "name": {"not": "a string"},
+                "db_filename": "world.kraken",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (world_path / "world.kraken").touch()
+
+    manager = WorldManager(tmp_path / "other-worlds", [world_path])
+
+    assert manager.inspect_worlds() == []
+
+
+def test_world_load_rejects_symlink_escape(tmp_path):
+    """An in-folder symlink cannot redirect the database outside the world."""
+    world_path = tmp_path / "world"
+    world_path.mkdir()
+    outside_directory = tmp_path / "outside"
+    outside_directory.mkdir()
+    outside = outside_directory / "outside.kraken"
+    outside.touch()
+    link = world_path / "linked"
+    try:
+        link.symlink_to(outside_directory, target_is_directory=True)
+    except OSError as exc:
+        if os.name != "nt":
+            pytest.skip(f"Symlink creation is unavailable: {exc}")
+        junction = subprocess.run(
+            [
+                "cmd.exe",
+                "/c",
+                "mklink",
+                "/J",
+                str(link),
+                str(outside_directory),
+            ],
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+        if junction.returncode != 0:
+            pytest.skip(f"Junction creation is unavailable: {junction.stderr}")
+    (world_path / "world.json").write_text(
+        json.dumps(
+            {
+                "id": "symlink",
+                "name": "Symlink",
+                "db_filename": f"{link.name}/outside.kraken",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert World.load(world_path) is None
+
+
+def test_external_database_requires_exact_local_approval(tmp_path):
+    """External mode does not open until the resolved path is approved."""
+    world_path = tmp_path / "world"
+    world_path.mkdir()
+    external_database = tmp_path / "external" / "world.kraken"
+    external_database.parent.mkdir()
+    external_database.touch()
+    (world_path / "world.json").write_text(
+        json.dumps(
+            {
+                "id": "external",
+                "name": "External",
+                "db_filename": str(external_database),
+                "storage_mode": EXTERNAL_DATABASE_STORAGE,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert World.load(world_path) is None
+    assert World.load(world_path, [tmp_path / "different.kraken"]) is None
+
+    loaded = World.load(world_path, [external_database])
+
+    assert loaded is not None
+    assert loaded.db_path == external_database.resolve()
+
+
+def test_missing_approved_external_database_is_not_created(tmp_path):
+    """An approved external target must exist before a world can load."""
+    world_path = tmp_path / "world"
+    world_path.mkdir()
+    external_database = tmp_path / "missing.kraken"
+    (world_path / "world.json").write_text(
+        json.dumps(
+            {
+                "id": "missing-external",
+                "name": "Missing External",
+                "db_filename": str(external_database),
+                "storage_mode": EXTERNAL_DATABASE_STORAGE,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert World.load(world_path, [external_database]) is None
+    assert not external_database.exists()
+
+
+def test_complete_world_folder_loads_from_registered_location(tmp_path):
+    """A self-contained world remains valid outside the default worlds root."""
+    default_root = tmp_path / "default-worlds"
+    shared_root = tmp_path / "shared-location"
+    world = World.create(shared_root, "Shared World")
+    manager = WorldManager(
+        default_root,
+        additional_world_paths=[world.path],
+    )
+
+    assert [candidate.name for candidate in manager.discover_worlds()] == [
+        "Shared World"
+    ]
+
+
+def test_resolver_rejects_external_mode_with_relative_path(tmp_path):
+    """External mode cannot disguise a relative or traversal path."""
+    world = World(
+        path=tmp_path,
+        manifest=WorldManifest(
+            id="external-relative",
+            name="External Relative",
+            db_filename="../outside.kraken",
+            storage_mode=EXTERNAL_DATABASE_STORAGE,
+        ),
+    )
+
+    with pytest.raises(InvalidDatabasePathError, match="must be absolute"):
+        world.resolve_database_path()
 
 
 def test_world_create():

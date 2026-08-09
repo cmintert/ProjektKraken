@@ -15,7 +15,7 @@ from PySide6.QtCore import (
     Signal,
     Slot,
 )
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QMessageBox
 
 from src.app.constants import (
     SETTINGS_ACTIVE_DB_KEY,
@@ -27,9 +27,11 @@ from src.app.constants import (
 )
 from src.core.logging_config import get_logger
 from src.core.paths import ensure_worlds_directory
-from src.core.world import WorldManager
+from src.core.world import World, WorldManager
+from src.gui.dialogs.external_database_warning import external_database_warning
 from src.services.db_service import DatabaseService
 from src.services.worker import DatabaseWorker
+from src.services.world_storage_settings import WorldStorageSettings
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
@@ -75,12 +77,65 @@ class WorkerManager(QObject):
         self._index_timer.setSingleShot(True)
         self._index_timer.timeout.connect(self._flush_pending_index)
 
+    def _load_active_world(
+        self,
+        world_manager: WorldManager,
+        storage_settings: WorldStorageSettings,
+        active_world_name: str | None,
+    ) -> World | None:
+        """Load the active world, prompting before an untrusted external path."""
+        active_world_path = storage_settings.active_world_path()
+        if active_world_path is not None:
+            inspected = World.inspect(active_world_path)
+            if inspected is not None and inspected.is_external_database:
+                database_path = inspected.db_path
+                if not database_path.is_file():
+                    QMessageBox.warning(
+                        self.window,
+                        "External Database Missing",
+                        "The approved external database is unavailable:\n\n"
+                        f"{database_path}\n\n"
+                        "Projekt Kraken will not create a replacement database. "
+                        "Reconnect or restore the database, or select another "
+                        "complete world folder in World Manager.",
+                    )
+                    storage_settings.clear_active_world_path()
+                    return None
+
+                if not storage_settings.is_external_path_approved(inspected):
+                    response = QMessageBox.question(
+                        self.window,
+                        "Approve External World Database?",
+                        external_database_warning(database_path),
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                        QMessageBox.StandardButton.No,
+                    )
+                    if response != QMessageBox.StandardButton.Yes:
+                        storage_settings.clear_active_world_path()
+                        return None
+                    storage_settings.approve_external_path(inspected)
+
+            approved_path = (
+                storage_settings.approved_external_path(inspected)
+                if inspected is not None
+                else None
+            )
+            approvals = [approved_path] if approved_path is not None else []
+            world = World.load(active_world_path, approvals)
+            if world is not None:
+                return world
+            storage_settings.clear_active_world_path()
+
+        if active_world_name:
+            return world_manager.get_world(active_world_name)
+        return None
+
     def init_worker(self) -> None:
         """Initializes the DatabaseWorker and moves it to a separate thread. Connects
         all worker signals to MainWindow slots.
 
-        Uses portable-only mode: worlds are stored in worlds/ directory
-        next to the executable.
+        Uses complete portable world folders by default and locally approved
+        external database links when configured.
         """
         self.window.worker_thread = QThread()
 
@@ -96,8 +151,12 @@ class WorkerManager(QObject):
             )
             return
 
-        # Initialize world manager
-        world_manager = WorldManager(worlds_dir)
+        storage_settings = WorldStorageSettings()
+        world_manager = WorldManager(
+            worlds_dir,
+            additional_world_paths=storage_settings.registered_world_paths(),
+            approved_external_paths=storage_settings.external_approvals(),
+        )
 
         # Load active world name from settings
         settings = QSettings()
@@ -106,10 +165,11 @@ class WorkerManager(QObject):
             settings.value(SETTINGS_ACTIVE_DB_KEY, None, type=str),
         )
 
-        # Get or create default world
-        world = None
-        if active_world_name:
-            world = world_manager.get_world(active_world_name)
+        world = self._load_active_world(
+            world_manager,
+            storage_settings,
+            active_world_name,
+        )
 
         if world is None:
             # No active world or world not found - discover or create default
@@ -120,12 +180,21 @@ class WorkerManager(QObject):
             else:
                 # Create default world
                 logger.info("No worlds found, creating default world")
+                default_name = "Default World"
+                suffix = 2
+                while (worlds_dir / default_name).exists():
+                    default_name = f"Default World {suffix}"
+                    suffix += 1
                 world = world_manager.create_world(
-                    name="Default World", description="Default worldbuilding workspace"
+                    name=default_name,
+                    description="Default worldbuilding workspace",
                 )
 
             # Save as active world
             settings.setValue(SETTINGS_ACTIVE_DB_KEY, world.name)
+
+        storage_settings.register_world_path(world.path)
+        storage_settings.set_active_world_path(world.path)
 
         # Get database path from world
         db_path = str(world.db_path)
@@ -315,9 +384,7 @@ class WorkerManager(QObject):
         logger.error(message)
 
     @Slot(str, str)
-    def _on_index_object_requested(
-        self, object_type: str, object_id: str
-    ) -> None:
+    def _on_index_object_requested(self, object_type: str, object_id: str) -> None:
         """Queue a re-embed request with debounce.
 
         Called when DataHandler emits ``index_object_requested`` after a
@@ -369,9 +436,7 @@ class WorkerManager(QObject):
             str,
             settings.value("ai_search_excluded_attrs", "", type=str),
         )
-        excluded = [
-            attr.strip() for attr in excluded_text.split(",") if attr.strip()
-        ]
+        excluded = [attr.strip() for attr in excluded_text.split(",") if attr.strip()]
 
         for object_type, object_id in pending:
             logger.debug(
@@ -457,9 +522,7 @@ class WorkerManager(QObject):
                 self.window.backup_service = None
 
             world_id = (
-                self.window.current_world.id
-                if self.window.current_world
-                else "default"
+                self.window.current_world.id if self.window.current_world else "default"
             )
             self.initialize_history_requested.emit(world_id)
 

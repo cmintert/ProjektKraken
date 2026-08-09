@@ -1,10 +1,7 @@
 """Database Manager Dialog Module.
 
-Provides a dialog for managing multiple worlds in portable-only mode. Each world is a
-self-contained folder with its own .kraken database, world.json manifest, and assets/
-directory.
-
-Worlds are stored in the worlds/ directory next to the executable.
+Provides a dialog for managing portable world folders and explicitly approved
+external database links.
 """
 
 import logging
@@ -16,6 +13,7 @@ from PySide6.QtCore import QSettings, Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QDialog,
+    QFileDialog,
     QHBoxLayout,
     QInputDialog,
     QLabel,
@@ -29,16 +27,18 @@ from PySide6.QtWidgets import (
 
 from src.app.constants import SETTINGS_ACTIVE_DB_KEY
 from src.core.paths import ensure_worlds_directory
-from src.core.world import WorldManager
+from src.core.world import EXTERNAL_DATABASE_STORAGE, World, WorldManager
+from src.gui.dialogs.external_database_warning import external_database_warning
+from src.services.world_storage_settings import WorldStorageSettings
 
 logger = logging.getLogger(__name__)
 
 
 class DatabaseManagerDialog(QDialog):
-    """Dialog to manage worlds in portable-only mode.
+    """Dialog to manage portable world folders and external database approvals.
 
-    Manages worlds stored in worlds/ directory next to the executable. Each world is a
-    self-contained folder with database, manifest, and assets.
+    New worlds use the default worlds directory. Existing complete world folders may
+    be registered from other locations.
     """
 
     # Signal to indicate a restart is requested
@@ -53,15 +53,17 @@ class DatabaseManagerDialog(QDialog):
         """
         super().__init__(parent)
         self.setWindowTitle("World Manager")
-        self.resize(500, 400)
+        self.resize(720, 440)
         main_layout = QVBoxLayout(self)
+
+        self.storage_settings = WorldStorageSettings()
 
         # Initialize worlds directory
         self.worlds_dir: Path | None
         self.world_manager: WorldManager | None
         try:
             self.worlds_dir = ensure_worlds_directory()
-            self.world_manager = WorldManager(self.worlds_dir)
+            self.world_manager = self._build_world_manager()
         except OSError as e:
             logger.critical(f"Cannot access worlds directory: {e}")
             QMessageBox.critical(
@@ -97,13 +99,19 @@ class DatabaseManagerDialog(QDialog):
         # Buttons
         btn_layout = QHBoxLayout()
         self.btn_create = QPushButton("Create New")
+        self.btn_add_folder = QPushButton("Add World Folder")
         self.btn_open_folder = QPushButton("Open Folder")
+        self.btn_link_external = QPushButton("Link External DB")
+        self.btn_revoke_external = QPushButton("Revoke External DB")
         self.btn_delete = QPushButton("Delete")
         self.btn_select = QPushButton("Select && Restart")  # && escapes to &
         self.btn_close = QPushButton("Cancel")
 
         btn_layout.addWidget(self.btn_create)
+        btn_layout.addWidget(self.btn_add_folder)
         btn_layout.addWidget(self.btn_open_folder)
+        btn_layout.addWidget(self.btn_link_external)
+        btn_layout.addWidget(self.btn_revoke_external)
         btn_layout.addWidget(self.btn_delete)
         btn_layout.addWidget(self.btn_select)
         btn_layout.addStretch()
@@ -113,7 +121,10 @@ class DatabaseManagerDialog(QDialog):
 
         # Connections
         self.btn_create.clicked.connect(self._create_world)
+        self.btn_add_folder.clicked.connect(self._add_world_folder)
         self.btn_open_folder.clicked.connect(self._open_folder)
+        self.btn_link_external.clicked.connect(self._link_external_database)
+        self.btn_revoke_external.clicked.connect(self._revoke_external_database)
         self.btn_delete.clicked.connect(self._delete_world)
         self.btn_select.clicked.connect(self._select_world)
         self.btn_close.clicked.connect(self.reject)
@@ -121,11 +132,35 @@ class DatabaseManagerDialog(QDialog):
         # Disable buttons if world manager couldn't be initialized
         if not self.world_manager:
             self.btn_create.setEnabled(False)
+            self.btn_add_folder.setEnabled(False)
+            self.btn_open_folder.setEnabled(False)
+            self.btn_link_external.setEnabled(False)
+            self.btn_revoke_external.setEnabled(False)
             self.btn_delete.setEnabled(False)
             self.btn_select.setEnabled(False)
 
         # Initial Refresh
         self._refresh_list()
+
+    def _build_world_manager(self) -> WorldManager:
+        """Build a manager using locally registered folders and approvals."""
+        if self.worlds_dir is None:
+            raise OSError("Worlds directory is unavailable")
+        return WorldManager(
+            self.worlds_dir,
+            additional_world_paths=self.storage_settings.registered_world_paths(),
+            approved_external_paths=self.storage_settings.external_approvals(),
+        )
+
+    def _selected_world(self) -> World | None:
+        """Return the inspected world represented by the selected row."""
+        item = self.db_list.currentItem()
+        if item is None:
+            return None
+        raw_path = item.data(Qt.ItemDataRole.UserRole)
+        if not isinstance(raw_path, str):
+            return None
+        return World.inspect(Path(raw_path))
 
     def _refresh_list(self) -> None:
         """Refresh the list of worlds from the worlds directory."""
@@ -136,13 +171,27 @@ class DatabaseManagerDialog(QDialog):
 
         settings = QSettings()
         active_world_name = settings.value(SETTINGS_ACTIVE_DB_KEY, None)
+        active_world_path = self.storage_settings.active_world_path()
 
-        worlds = self.world_manager.discover_worlds()
+        worlds = self.world_manager.inspect_worlds()
 
         for world in worlds:
-            item = QListWidgetItem(world.name)
-            if world.name == active_world_name:
-                item.setText(f"{world.name} (Active)")
+            label = world.name
+            if world.is_external_database:
+                if not world.db_path.is_file():
+                    label += " [External database missing]"
+                elif not self.storage_settings.is_external_path_approved(world):
+                    label += " [External approval required]"
+                else:
+                    label += " [External]"
+
+            is_active = (
+                active_world_path is not None and world.path == active_world_path
+            ) or (active_world_path is None and world.name == active_world_name)
+            item = QListWidgetItem(label)
+            item.setData(Qt.ItemDataRole.UserRole, str(world.path))
+            if is_active:
+                item.setText(f"{label} (Active)")
                 font = item.font()
                 font.setBold(True)
                 item.setFont(font)
@@ -153,26 +202,160 @@ class DatabaseManagerDialog(QDialog):
 
     @Slot()
     def _open_folder(self) -> None:
-        """Open the worlds directory in the system file explorer."""
+        """Open the selected world folder or the default worlds directory."""
         import subprocess
         import sys
 
-        if not self.worlds_dir:
+        selected_world = self._selected_world()
+        folder = selected_world.path if selected_world else self.worlds_dir
+        if not folder:
             return
 
         try:
             if sys.platform == "win32":
                 # Use os.startfile on Windows - more reliable than subprocess
-                os.startfile(str(self.worlds_dir))
+                os.startfile(str(folder))
             elif sys.platform == "darwin":
-                subprocess.run(["open", str(self.worlds_dir)], check=False)
+                subprocess.run(["open", str(folder)], check=False)
             else:  # Linux
-                subprocess.run(["xdg-open", str(self.worlds_dir)], check=False)
+                subprocess.run(["xdg-open", str(folder)], check=False)
         except Exception as e:
             logger.error(f"Failed to open worlds directory: {e}")
             QMessageBox.information(
-                self, "Worlds Location", f"Worlds directory:\n{self.worlds_dir}"
+                self, "World Location", f"World directory:\n{folder}"
             )
+
+    @Slot()
+    def _add_world_folder(self) -> None:
+        """Register a complete world folder from any supported location."""
+        selected = QFileDialog.getExistingDirectory(
+            self,
+            "Select Complete World Folder",
+            str(self.worlds_dir or Path.home()),
+        )
+        if not selected:
+            return
+
+        world = World.inspect(Path(selected))
+        if world is None:
+            QMessageBox.warning(
+                self,
+                "Invalid World Folder",
+                "The selected folder does not contain a valid world.json and "
+                ".kraken database configuration.",
+            )
+            return
+        if not world.db_path.is_file():
+            QMessageBox.warning(
+                self,
+                "Database Missing",
+                f"The configured database does not exist:\n\n{world.db_path}",
+            )
+            return
+        if not self._approve_external_world_if_needed(world):
+            return
+
+        self.storage_settings.register_world_path(world.path)
+        self.world_manager = self._build_world_manager()
+        self._refresh_list()
+
+    def _approve_external_world_if_needed(self, world: World) -> bool:
+        """Request and persist approval for an external database when needed."""
+        if not world.is_external_database:
+            return True
+        if self.storage_settings.is_external_path_approved(world):
+            return True
+        response = QMessageBox.question(
+            self,
+            "Approve External World Database?",
+            external_database_warning(world.db_path),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if response != QMessageBox.StandardButton.Yes:
+            return False
+        self.storage_settings.approve_external_path(world)
+        return True
+
+    @Slot()
+    def _link_external_database(self) -> None:
+        """Configure the selected world to use an explicitly chosen database."""
+        world = self._selected_world()
+        if world is None:
+            QMessageBox.information(
+                self,
+                "Select a World",
+                "Select the world whose database you want to link.",
+            )
+            return
+
+        selected, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select External Projekt Kraken Database",
+            str(world.path),
+            "Projekt Kraken databases (*.kraken)",
+        )
+        if not selected:
+            return
+        database_path = Path(selected).resolve(strict=False)
+        if database_path.suffix.lower() != ".kraken" or not database_path.is_file():
+            QMessageBox.warning(
+                self,
+                "Invalid External Database",
+                "Select an existing database with the .kraken extension.",
+            )
+            return
+
+        response = QMessageBox.question(
+            self,
+            "Link External World Database?",
+            external_database_warning(database_path),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if response != QMessageBox.StandardButton.Yes:
+            return
+
+        world.manifest.storage_mode = EXTERNAL_DATABASE_STORAGE
+        world.manifest.db_filename = str(database_path)
+        world.save_manifest()
+        self.storage_settings.approve_external_path(world)
+        self.storage_settings.register_world_path(world.path)
+        self.world_manager = self._build_world_manager()
+        self._refresh_list()
+
+        QMessageBox.information(
+            self,
+            "External Database Linked",
+            "The external database is approved on this installation. Select "
+            "the world and restart to open it.",
+        )
+
+    @Slot()
+    def _revoke_external_database(self) -> None:
+        """Revoke the selected world's locally stored external-path approval."""
+        world = self._selected_world()
+        if world is None or not world.is_external_database:
+            QMessageBox.information(
+                self,
+                "No External Database",
+                "Select a world configured with an external database.",
+            )
+            return
+
+        self.storage_settings.revoke_external_path(world)
+        if self.storage_settings.active_world_path() == world.path:
+            self.storage_settings.clear_active_world_path()
+            QSettings().remove(SETTINGS_ACTIVE_DB_KEY)
+        self.world_manager = self._build_world_manager()
+        self._refresh_list()
+        QMessageBox.information(
+            self,
+            "External Approval Revoked",
+            "Projekt Kraken will not open this external database again until "
+            "you explicitly approve its resolved path. The current session "
+            "continues until you restart the application.",
+        )
 
     @Slot()
     def _create_world(self) -> None:
@@ -222,18 +405,19 @@ class DatabaseManagerDialog(QDialog):
         if not self.world_manager:
             return
 
-        item = self.db_list.currentItem()
-        if not item:
+        world = self._selected_world()
+        if world is None:
             QMessageBox.information(self, "Info", "Please select a world to delete.")
             return
-
-        world_name = item.text().replace(" (Active)", "")
 
         # Check if active
         settings = QSettings()
         active_world_name = settings.value(SETTINGS_ACTIVE_DB_KEY, None)
+        active_world_path = self.storage_settings.active_world_path()
 
-        if world_name == active_world_name:
+        if active_world_path == world.path or (
+            active_world_path is None and world.name == active_world_name
+        ):
             QMessageBox.warning(
                 self,
                 "Warning",
@@ -242,13 +426,19 @@ class DatabaseManagerDialog(QDialog):
             )
             return
 
+        database_line = (
+            "- The external database approval (the external database file "
+            "will not be deleted)\n"
+            if world.is_external_database
+            else "- The world database\n"
+        )
         confirm = QMessageBox.question(
             self,
             "Confirm Delete",
-            f"Are you sure you want to delete '{world_name}'?\n\n"
+            f"Are you sure you want to delete '{world.name}'?\n\n"
             "This will permanently delete:\n"
-            "- The world database\n"
-            "- All assets (images, maps)\n"
+            + database_line
+            + "- All assets (images, maps)\n"
             "- The world manifest\n\n"
             "This action cannot be undone!",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
@@ -256,15 +446,12 @@ class DatabaseManagerDialog(QDialog):
 
         if confirm == QMessageBox.StandardButton.Yes:
             try:
-                world = self.world_manager.get_world(world_name)
-                if world:
-                    self.world_manager.delete_world(world)
-                    logger.info(f"Deleted world: {world_name}")
-                    self._refresh_list()
-                else:
-                    QMessageBox.warning(
-                        self, "Error", f"World '{world_name}' not found."
-                    )
+                self.storage_settings.revoke_external_path(world)
+                self.storage_settings.unregister_world_path(world.path)
+                self.world_manager.delete_world(world)
+                logger.info(f"Deleted world: {world.name}")
+                self.world_manager = self._build_world_manager()
+                self._refresh_list()
             except Exception as e:
                 logger.error(f"Failed to delete world: {e}")
                 QMessageBox.critical(self, "Error", f"Failed to delete world:\n{e}")
@@ -275,25 +462,40 @@ class DatabaseManagerDialog(QDialog):
         if not self.world_manager:
             return
 
-        item = self.db_list.currentItem()
-        if not item:
+        world = self._selected_world()
+        if world is None:
             return
 
-        world_name = item.text().replace(" (Active)", "")
         settings = QSettings()
         active_world_name = settings.value(SETTINGS_ACTIVE_DB_KEY, None)
+        active_world_path = self.storage_settings.active_world_path()
 
-        if world_name == active_world_name:
+        if active_world_path == world.path or (
+            active_world_path is None and world.name == active_world_name
+        ):
             QMessageBox.information(self, "Info", "This world is already active.")
             return
 
-        settings.setValue(SETTINGS_ACTIVE_DB_KEY, world_name)
-        logger.info(f"Switched active world to: {world_name}")
+        if not world.db_path.is_file():
+            QMessageBox.warning(
+                self,
+                "Database Missing",
+                "The configured database is unavailable and will not be "
+                f"recreated:\n\n{world.db_path}",
+            )
+            return
+        if not self._approve_external_world_if_needed(world):
+            return
+
+        self.storage_settings.register_world_path(world.path)
+        self.storage_settings.set_active_world_path(world.path)
+        settings.setValue(SETTINGS_ACTIVE_DB_KEY, world.name)
+        logger.info(f"Switched active world to: {world.name}")
 
         QMessageBox.information(
             self,
             "Restart Required",
-            f"Successfully switched to '{world_name}'.\n\n"
+            f"Successfully switched to '{world.name}'.\n\n"
             "Please restart the application to load the new world.",
         )
         self.accept()

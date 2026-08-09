@@ -20,7 +20,8 @@ ProjektKraken requires Python 3.13 or newer.
 ## Create or open a world
 
 1. Open **File → Manage Databases…**.
-2. Create a world or select an existing world folder.
+2. Create a world, or choose **Add World Folder** to register an existing complete
+   world folder from a local, removable, network, or synchronized location.
 3. Confirm the selection.
 4. The active world name appears in the application title.
 
@@ -45,9 +46,13 @@ worlds/
 ## Tips and gotchas
 
 - Copy the entire world folder when transferring a world.
+- **Link External DB** is an advanced option for an existing `.kraken` file outside
+  the world folder. It reduces portability, separates backup locations, and is not
+  suitable for simultaneous multi-user editing. ProjektKraken asks you to confirm
+  the resolved path and lets you revoke that approval later.
+- A missing linked external database is never replaced with an empty database.
 - Do not edit the `.kraken` file while the world is open.
 - Use **File → Backup & Restore** before imports or large restructuring work.
 - Use `start-kraken.cmd --reset-settings` when a damaged saved layout prevents
   the application from opening normally. This resets interface preferences,
   not the contents of your world.
-

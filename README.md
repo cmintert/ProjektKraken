@@ -15,9 +15,12 @@ last_updated: 2026-07-27
 
 ![Layout](<Screenshot 2026-02-08 174625.png>)
 
-## Portable-Only Architecture
+## Portable World Architecture
 
-ProjektKraken uses a **portable-only architecture** where all worlds are stored next to the executable in a `worlds/` directory. Each world is completely self-contained.
+ProjektKraken creates worlds in the `worlds/` directory next to the executable by
+default. You can also register a complete world folder on a local or removable
+drive, mapped drive, UNC share, or synchronized folder. Keeping the manifest,
+database, and assets together is the recommended and fully portable model.
 
 ### World Structure
 
@@ -64,6 +67,18 @@ User preferences (window layouts, settings) remain stored in the system's standa
 - **Linux**: `~/.local/share/ProjektKraken/`
 
 Backups and AI search indexes are also stored in the user data directory.
+
+### Advanced External Databases
+
+World Manager can deliberately link a manifest to an existing `.kraken` database
+outside its world folder. This advanced configuration requires confirmation of the
+fully resolved path. Approval is stored in local application settings and can be
+revoked; it is not trusted merely because it appears in a transferable manifest.
+
+External databases reduce portability and can separate assets from backups. A
+missing external database is never recreated automatically. File synchronization
+can cause conflicts, and SQLite databases on network storage must not be edited by
+multiple users simultaneously.
 
 ## Key Features
 
