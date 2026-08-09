@@ -24,7 +24,6 @@ from typing import List, Optional
 from PySide6.QtCore import QSize, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QKeyEvent, QPaintEvent, QResizeEvent
 from PySide6.QtWidgets import (
-    QCheckBox,
     QComboBox,
     QFrame,
     QHBoxLayout,
@@ -42,6 +41,7 @@ from src.core.calendar import CalendarConverter
 from src.core.map import Map
 from src.core.paths import get_resource_path
 from src.core.theme_manager import ThemeManager
+from src.core.trajectory_edit import TrajectoryEditSnapshot
 from src.gui.mixins.map_calibration_mixin import MapCalibrationMixin
 from src.gui.mixins.map_dialog_mixin import MapDialogMixin
 from src.gui.mixins.map_drawing_mixin import MapDrawingMixin
@@ -210,7 +210,6 @@ class MapWidget(
     trajectory_date_step_requested = Signal(float)
     trajectory_date_edit_done_requested = Signal()
     trajectory_date_edit_cancel_requested = Signal()
-    trajectory_allow_reorder_changed = Signal(bool)
     trajectory_shift_later_requested = Signal()
     trajectory_arrival_mode_changed = Signal(str)
     trajectory_speed_anchor_requested = Signal(str)
@@ -219,6 +218,9 @@ class MapWidget(
     trajectory_speed_equalize_whole_requested = Signal()
     trajectory_speed_equalization_apply_requested = Signal()
     trajectory_speed_equalization_cancel_requested = Signal()
+    trajectory_make_route_point_requested = Signal()
+    trajectory_make_timed_location_requested = Signal()
+    trajectory_make_intermediate_automatic_requested = Signal(str)
     jump_to_time_requested = Signal(float)  # target_time
     map_scale_changed = Signal(float)  # For persisting map scale
     # Map nesting (master / detail) signals
@@ -357,20 +359,14 @@ class MapWidget(
         self.btn_edit_trajectory.setToolTip(
             "Edit this entity's trajectory directly on the map"
         )
-        self.btn_edit_trajectory.clicked.connect(
-            self._request_selected_trajectory_edit
-        )
-        self._edit_trajectory_action = self.toolbar.addWidget(
-            self.btn_edit_trajectory
-        )
+        self.btn_edit_trajectory.clicked.connect(self._request_selected_trajectory_edit)
+        self._edit_trajectory_action = self.toolbar.addWidget(self.btn_edit_trajectory)
         self._edit_trajectory_action.setEnabled(False)
         self._edit_trajectory_action.setVisible(False)
 
         # Mode Pill (right side) — clickable to exit the current mode
         spacer = QWidget()
-        spacer.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
-        )
+        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.toolbar.addWidget(spacer)
 
         self.mode_indicator = QPushButton("● Normal")
@@ -453,12 +449,8 @@ class MapWidget(
         self.btn_reload_trajectory.hide()
         edit_strip_layout.addWidget(self.btn_reload_trajectory)
         self.btn_apply_trajectory = QPushButton("Apply")
-        self.btn_apply_trajectory.setStyleSheet(
-            StyleHelper.get_primary_button_style()
-        )
-        self.btn_apply_trajectory.clicked.connect(
-            self.trajectory_apply_requested.emit
-        )
+        self.btn_apply_trajectory.setStyleSheet(StyleHelper.get_primary_button_style())
+        self.btn_apply_trajectory.clicked.connect(self.trajectory_apply_requested.emit)
         edit_strip_layout.addWidget(self.btn_apply_trajectory)
         self.btn_cancel_trajectory = QPushButton("Cancel")
         self.btn_cancel_trajectory.setStyleSheet(
@@ -477,34 +469,39 @@ class MapWidget(
             QSizePolicy.Policy.Fixed,
         )
         self.trajectory_date_panel.setStyleSheet(StyleHelper.get_frame_style())
-        date_panel_layout = QHBoxLayout(self.trajectory_date_panel)
-        date_panel_layout.setContentsMargins(8, 4, 8, 4)
-        date_panel_layout.setSpacing(8)
+        date_panel_layout = QVBoxLayout(self.trajectory_date_panel)
+        date_panel_layout.setContentsMargins(8, 6, 8, 6)
+        date_panel_layout.setSpacing(4)
         self.trajectory_date_feedback = QLabel()
+        self.trajectory_date_feedback.setWordWrap(True)
         date_panel_layout.addWidget(self.trajectory_date_feedback)
+        self.trajectory_date_constraints = QLabel()
+        self.trajectory_date_constraints.setWordWrap(True)
+        date_panel_layout.addWidget(self.trajectory_date_constraints)
+
+        date_controls_layout = QHBoxLayout()
+        date_controls_layout.setContentsMargins(0, 0, 0, 0)
+        date_controls_layout.setSpacing(8)
         self.trajectory_date_input = CompactDateWidget(self.trajectory_date_panel)
+        self.trajectory_date_input.setMinimumWidth(460)
+        self.trajectory_date_input.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
         self.trajectory_date_input.value_changed.connect(
             self.trajectory_date_value_changed.emit
         )
-        date_panel_layout.addWidget(self.trajectory_date_input)
+        date_controls_layout.addWidget(self.trajectory_date_input, 1)
         self.btn_trajectory_date_previous = QPushButton("−1 day")
         self.btn_trajectory_date_previous.clicked.connect(
             lambda: self.trajectory_date_step_requested.emit(-1.0)
         )
-        date_panel_layout.addWidget(self.btn_trajectory_date_previous)
+        date_controls_layout.addWidget(self.btn_trajectory_date_previous)
         self.btn_trajectory_date_next = QPushButton("+1 day")
         self.btn_trajectory_date_next.clicked.connect(
             lambda: self.trajectory_date_step_requested.emit(1.0)
         )
-        date_panel_layout.addWidget(self.btn_trajectory_date_next)
-        self.chk_trajectory_allow_reorder = QCheckBox("Allow route reorder")
-        self.chk_trajectory_allow_reorder.setToolTip(
-            "Temporarily allow this location to cross neighbouring dates."
-        )
-        self.chk_trajectory_allow_reorder.toggled.connect(
-            self.trajectory_allow_reorder_changed.emit
-        )
-        date_panel_layout.addWidget(self.chk_trajectory_allow_reorder)
+        date_controls_layout.addWidget(self.btn_trajectory_date_next)
         self.btn_shift_trajectory_later = QPushButton("Shift Later")
         self.btn_shift_trajectory_later.setToolTip(
             "Apply this date change to all later locations."
@@ -512,7 +509,7 @@ class MapWidget(
         self.btn_shift_trajectory_later.clicked.connect(
             self.trajectory_shift_later_requested.emit
         )
-        date_panel_layout.addWidget(self.btn_shift_trajectory_later)
+        date_controls_layout.addWidget(self.btn_shift_trajectory_later)
         self.btn_edit_trajectory_date = QPushButton("Edit Date")
         self.btn_edit_trajectory_date.setStyleSheet(
             StyleHelper.get_primary_button_style()
@@ -520,7 +517,12 @@ class MapWidget(
         self.btn_edit_trajectory_date.clicked.connect(
             self._request_selected_trajectory_date_edit
         )
-        date_panel_layout.addWidget(self.btn_edit_trajectory_date)
+        date_controls_layout.addWidget(self.btn_edit_trajectory_date)
+        self.trajectory_playhead_value = QLabel()
+        self.trajectory_playhead_value.setToolTip(
+            "The current date represented by the timeline playhead."
+        )
+        date_controls_layout.addWidget(self.trajectory_playhead_value)
         self.btn_trajectory_date_use_playhead = QPushButton("Use Playhead")
         self.btn_trajectory_date_use_playhead.setToolTip(
             "Set this keyframe's date to the current timeline playhead"
@@ -531,7 +533,7 @@ class MapWidget(
         self.btn_trajectory_date_use_playhead.clicked.connect(
             self.trajectory_date_use_playhead_requested.emit
         )
-        date_panel_layout.addWidget(self.btn_trajectory_date_use_playhead)
+        date_controls_layout.addWidget(self.btn_trajectory_date_use_playhead)
         self.btn_finish_trajectory_date = QPushButton("Done")
         self.btn_finish_trajectory_date.setStyleSheet(
             StyleHelper.get_primary_button_style()
@@ -539,7 +541,7 @@ class MapWidget(
         self.btn_finish_trajectory_date.clicked.connect(
             self.trajectory_date_edit_done_requested.emit
         )
-        date_panel_layout.addWidget(self.btn_finish_trajectory_date)
+        date_controls_layout.addWidget(self.btn_finish_trajectory_date)
         self.btn_cancel_trajectory_date = QPushButton("Cancel Date")
         self.btn_cancel_trajectory_date.setStyleSheet(
             StyleHelper.get_secondary_button_style()
@@ -547,7 +549,24 @@ class MapWidget(
         self.btn_cancel_trajectory_date.clicked.connect(
             self.trajectory_date_edit_cancel_requested.emit
         )
-        date_panel_layout.addWidget(self.btn_cancel_trajectory_date)
+        date_controls_layout.addWidget(self.btn_cancel_trajectory_date)
+        self.btn_make_trajectory_route_point = QPushButton("Make Route Point")
+        self.btn_make_trajectory_route_point.setToolTip(
+            "Calculate this point's date automatically from its travel leg."
+        )
+        self.btn_make_trajectory_route_point.clicked.connect(
+            self.trajectory_make_route_point_requested.emit
+        )
+        date_controls_layout.addWidget(self.btn_make_trajectory_route_point)
+        self.btn_make_trajectory_timed_location = QPushButton("Make Timed Location")
+        self.btn_make_trajectory_timed_location.setToolTip(
+            "Keep this point's calculated date as an independently editable date."
+        )
+        self.btn_make_trajectory_timed_location.clicked.connect(
+            self.trajectory_make_timed_location_requested.emit
+        )
+        date_controls_layout.addWidget(self.btn_make_trajectory_timed_location)
+        date_panel_layout.addLayout(date_controls_layout)
         self.trajectory_date_panel.setMinimumHeight(
             self.trajectory_date_panel.sizeHint().height()
         )
@@ -611,6 +630,16 @@ class MapWidget(
             self._request_equalize_trajectory_speed_to_selected
         )
         speed_controls_layout.addWidget(self.btn_equalize_trajectory_speed)
+        self.btn_make_intermediate_automatic = QPushButton(
+            "Make Intermediate Automatic"
+        )
+        self.btn_make_intermediate_automatic.setToolTip(
+            "Keep the timed endpoints and calculate every point between them."
+        )
+        self.btn_make_intermediate_automatic.clicked.connect(
+            self._request_make_intermediate_automatic
+        )
+        speed_controls_layout.addWidget(self.btn_make_intermediate_automatic)
         self.btn_equalize_whole_trajectory = QPushButton("Equalize Whole")
         self.btn_equalize_whole_trajectory.setToolTip(
             "Preview constant speed between the trajectory endpoints."
@@ -729,15 +758,11 @@ class MapWidget(
         self.view.marker_moved.connect(self._on_marker_moved)
         self.view.marker_clicked.connect(self.marker_clicked.emit)
         self.view.marker_clicked.connect(self._on_marker_clicked_internal)
-        self.view.trajectory_edit_requested.connect(
-            self.trajectory_edit_requested.emit
-        )
+        self.view.trajectory_edit_requested.connect(self.trajectory_edit_requested.emit)
         self.view.trajectory_keyframe_selected.connect(
             self.trajectory_keyframe_selected.emit
         )
-        self.view.trajectory_keyframe_moved.connect(
-            self.trajectory_keyframe_moved.emit
-        )
+        self.view.trajectory_keyframe_moved.connect(self.trajectory_keyframe_moved.emit)
         self.view.trajectory_midpoint_insert_requested.connect(
             self.trajectory_midpoint_insert_requested.emit
         )
@@ -802,9 +827,7 @@ class MapWidget(
         self.view.raster_edit_externally_stopped.connect(
             self.layer_panel.reset_edit_toggle
         )
-        self.view.raster_edit_externally_stopped.connect(
-            self._on_raster_edit_stopped
-        )
+        self.view.raster_edit_externally_stopped.connect(self._on_raster_edit_stopped)
         self.view.raster_brush_resize_requested.connect(
             self._on_raster_brush_resize_from_view
         )
@@ -823,6 +846,8 @@ class MapWidget(
         self._trajectory_edit_marker_id: str | None = None
         self._trajectory_edit_keyframes: list = []
         self._trajectory_edit_segment_modes: dict = {}
+        self._trajectory_edit_snapshot: TrajectoryEditSnapshot | None = None
+        self._trajectory_edit_pending = False
         self._selected_marker_id: Optional[str] = None
 
         # Entity/event caches for the object-selection dialog
@@ -1007,6 +1032,12 @@ class MapWidget(
         if selected_id is not None:
             self.trajectory_speed_equalize_requested.emit(selected_id)
 
+    def _request_make_intermediate_automatic(self) -> None:
+        """Request automatic timing between the range anchor and selection."""
+        selected_id = self.view.trajectory_edit_overlay.selected_keyframe_id
+        if selected_id is not None:
+            self.trajectory_make_intermediate_automatic_requested.emit(selected_id)
+
     def _update_trajectory_edit_action(self) -> None:
         """Expose direct editing only for a selected entity trajectory."""
         selected_items = self.view.graphics_scene.selectedItems()
@@ -1015,7 +1046,9 @@ class MapWidget(
             if selected_items and isinstance(selected_items[0], MarkerItem)
             else None
         )
-        is_event = selected_marker is not None and selected_marker.object_type == "event"
+        is_event = (
+            selected_marker is not None and selected_marker.object_type == "event"
+        )
         can_record = selected_marker is not None and not is_event
 
         can_edit = (
@@ -1057,9 +1090,7 @@ class MapWidget(
             register_action.setToolTip(
                 "Designate a master map first before registering a detail map."
             )
-        register_action.triggered.connect(
-            self._on_register_detail_map_clicked
-        )
+        register_action.triggered.connect(self._on_register_detail_map_clicked)
 
         show_footprints_action = menu.addAction("Show Footprints")
         show_footprints_action.setCheckable(True)
@@ -1076,14 +1107,14 @@ class MapWidget(
             self.view.footprints_visible
             and (bool(self.view._footprint_items) or active_role == "detail")
         )
-        edit_footprint_action.triggered.connect(
-            self._on_edit_footprint_clicked
-        )
+        edit_footprint_action.triggered.connect(self._on_edit_footprint_clicked)
 
         menu.addSeparator()
         delete_action = menu.addAction("Delete Map...")
         delete_action.triggered.connect(self._on_delete_map_clicked)
-        pos = self.btn_map_overflow.mapToGlobal(self.btn_map_overflow.rect().bottomLeft())
+        pos = self.btn_map_overflow.mapToGlobal(
+            self.btn_map_overflow.rect().bottomLeft()
+        )
         menu.exec(pos)
 
     @Slot()
@@ -1206,9 +1237,7 @@ class MapWidget(
         for i, (mid, mname) in enumerate(chain):
             is_last = i == len(chain) - 1
             if is_last:
-                parts.append(
-                    f'<span style="color:{dim_color};">{mname}</span>'
-                )
+                parts.append(f'<span style="color:{dim_color};">{mname}</span>')
             else:
                 parts.append(
                     f'<a href="{mid}" style="color:{link_color};'
@@ -1467,9 +1496,7 @@ class MapWidget(
         # Reset layer model — will be recreated when new markers load
         self._layer_model = None
 
-    def get_marker_base_position(
-        self, marker_id: str
-    ) -> tuple[float, float] | None:
+    def get_marker_base_position(self, marker_id: str) -> tuple[float, float] | None:
         """Return the marker's persisted ordinary map position."""
         return self._base_marker_positions.get(marker_id)
 
@@ -1501,9 +1528,7 @@ class MapWidget(
         for button in (self.btn_snap, self.btn_legend_toggle):
             button.setStyleSheet(toggle_style)
 
-        self.btn_finish_sketch.setStyleSheet(
-            StyleHelper.get_primary_button_style()
-        )
+        self.btn_finish_sketch.setStyleSheet(StyleHelper.get_primary_button_style())
         self.overlay_banner.setStyleSheet(StyleHelper.get_overlay_banner_style())
         self.legend_overlay.setStyleSheet(StyleHelper.get_legend_overlay_style())
         self._apply_mode_indicator_style(self._mode_indicator_mode)
@@ -1529,7 +1554,9 @@ class MapWidget(
         }
         bg = color_map.get(mode, theme.get("text_dim", "#aaaaaa"))
         active = mode != "normal"
-        self.mode_indicator.setStyleSheet(StyleHelper.get_mode_pill_style(bg, active=active))
+        self.mode_indicator.setStyleSheet(
+            StyleHelper.get_mode_pill_style(bg, active=active)
+        )
 
     def _update_mode_indicator(self) -> None:
         """Updates the toolbar status, map overlay, and Finish Sketch button."""

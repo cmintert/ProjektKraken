@@ -44,6 +44,26 @@ def test_session_snapshots_do_not_share_keyframe_instances() -> None:
     assert session.original_keyframes[0].edit_id == session.working_keyframes[0].edit_id
 
 
+def test_session_creation_preserves_authoring_point_roles() -> None:
+    """Strictly loaded route points remain automatic in the working copy."""
+    session = TrajectoryEditSession.create(
+        map_id="map-1",
+        marker_id="marker-1",
+        trajectory_id="trajectory-1",
+        keyframes=[
+            Keyframe(t=0.0, x=0.0, y=0.0),
+            Keyframe(t=5.0, x=0.5, y=0.0, point_kind="route"),
+            Keyframe(t=10.0, x=1.0, y=0.0),
+        ],
+    )
+
+    assert [point.point_kind for point in session.working_keyframes] == [
+        "timed",
+        "route",
+        "timed",
+    ]
+
+
 def test_move_changes_only_position_and_marks_dirty() -> None:
     """Spatial dragging preserves time and stable selection identity."""
     session = _session()
@@ -60,8 +80,8 @@ def test_move_changes_only_position_and_marks_dirty() -> None:
     assert session.original_keyframes[0].x == 0.1
 
 
-def test_midpoint_insertion_assigns_fixed_temporal_midpoint() -> None:
-    """Inserted time does not depend on the spatial drop position."""
+def test_midpoint_insertion_creates_distance_timed_route_point() -> None:
+    """Inserted route-point timing follows its spatial position."""
     session = _session()
     start, end = session.working_keyframes
 
@@ -71,14 +91,16 @@ def test_midpoint_insertion_assigns_fixed_temporal_midpoint() -> None:
         for keyframe in session.working_keyframes
         if keyframe.edit_id == inserted_id
     )
+    original_time = inserted.t
     session.move_keyframe(inserted_id, 0.2, 0.9)
-
-    assert inserted.t == 5.0
-    assert next(
-        keyframe.t
+    moved = next(
+        keyframe
         for keyframe in session.working_keyframes
         if keyframe.edit_id == inserted_id
-    ) == 5.0
+    )
+
+    assert inserted.point_kind == "route"
+    assert moved.t != original_time
     assert session.selected_keyframe_id == inserted_id
 
 
@@ -95,7 +117,7 @@ def test_midpoint_insertion_rejects_timestamp_collision() -> None:
     )
     start, end = session.working_keyframes
 
-    with pytest.raises(ValueError, match="times within"):
+    with pytest.raises(ValueError, match="distinct ordered dates"):
         session.insert_between(start.edit_id, end.edit_id, 0.5, 0.5)
 
     assert len(session.working_keyframes) == 2
@@ -140,25 +162,6 @@ def test_restore_original_discards_changes_and_conflict() -> None:
     assert session.is_conflicted is False
     assert session.working_keyframes == list(session.original_keyframes)
     assert session.working_keyframes[0] is not session.original_keyframes[0]
-
-
-def test_date_edit_reorders_by_stable_identity_and_tracks_feedback() -> None:
-    """Retiming may reorder points without detaching their spatial values."""
-    session = _session()
-    edit_id = session.working_keyframes[0].edit_id
-
-    session.begin_date_edit(edit_id)
-    session.set_allow_reorder(True)
-    session.update_active_date(12.0)
-    snapshot = session.to_snapshot()
-
-    assert session.working_keyframes[1].edit_id == edit_id
-    assert session.working_keyframes[1].x == 0.1
-    assert snapshot["date_edit_original_t"] == 0.0
-    assert snapshot["date_edit_proposed_t"] == 12.0
-    assert snapshot["date_edit_delta"] == 12.0
-    assert session.finish_date_edit()
-    assert session.active_date_edit_id is None
 
 
 def test_explicit_time_assignment_keeps_route_order_by_default() -> None:
@@ -240,9 +243,7 @@ def test_speed_anchor_exposes_only_valid_later_range() -> None:
 def test_speed_equalization_preview_reports_changed_dates_and_speed() -> None:
     """Preview changes only working dates and blocks final trajectory Apply."""
     session = _speed_session()
-    start_id, _, end_id = (
-        keyframe.edit_id for keyframe in session.working_keyframes
-    )
+    start_id, _, end_id = (keyframe.edit_id for keyframe in session.working_keyframes)
     session.set_speed_anchor(start_id)
 
     session.preview_speed_equalization(
@@ -313,9 +314,7 @@ def test_whole_trajectory_equalization_uses_endpoints() -> None:
     """Whole equalization chooses the first and last keyframes as anchors."""
     session = _speed_session()
 
-    session.preview_whole_speed_equalization(
-        TrajectoryDistanceContext(1.0, 1.0)
-    )
+    session.preview_whole_speed_equalization(TrajectoryDistanceContext(1.0, 1.0))
     snapshot = session.to_snapshot()
 
     assert snapshot["equalization_start_id"] == session.working_keyframes[0].edit_id
@@ -339,9 +338,7 @@ def test_equalization_rejects_adjacent_already_equal_and_zero_distance() -> None
     session.update_active_date(5.0)
     session.finish_date_edit()
     with pytest.raises(ValueError, match="already"):
-        session.preview_speed_equalization(
-            end_id, TrajectoryDistanceContext(1.0, 1.0)
-        )
+        session.preview_speed_equalization(end_id, TrajectoryDistanceContext(1.0, 1.0))
 
     zero = TrajectoryEditSession.create(
         "map-1",
@@ -409,3 +406,48 @@ def test_equalization_preview_blocks_other_working_mutations() -> None:
         session.move_keyframe(start_id, 0.1, 0.1)
     with pytest.raises(ValueError, match="preview"):
         session.begin_date_edit(start_id)
+
+
+def test_bulk_automatic_conversion_and_endpoint_retiming() -> None:
+    """One endpoint edit recalculates every route point and holds arrival."""
+    session = TrajectoryEditSession.create(
+        "map-1",
+        "marker-1",
+        "trajectory-1",
+        [
+            Keyframe(0.0, 0.0, 0.0),
+            Keyframe(3.0, 0.1, 0.0),
+            Keyframe(12.0, 0.4, 0.0),
+            Keyframe(20.0, 1.0, 0.0),
+        ],
+    )
+    start_id = session.working_keyframes[0].edit_id
+    end_id = session.working_keyframes[-1].edit_id
+    session.set_speed_anchor(start_id)
+
+    assert session.make_intermediate_points_automatic(end_id) == 2
+    assert [point.point_kind for point in session.working_keyframes] == [
+        "timed",
+        "route",
+        "route",
+        "timed",
+    ]
+    assert [point.t for point in session.working_keyframes] == pytest.approx(
+        [0.0, 2.0, 8.0, 20.0]
+    )
+
+    session.begin_date_edit(start_id)
+    session.update_active_date(10.0)
+
+    assert [point.t for point in session.working_keyframes] == pytest.approx(
+        [10.0, 11.0, 14.0, 20.0]
+    )
+
+
+def test_route_point_date_is_not_independently_editable() -> None:
+    session = _session()
+    start, end = session.working_keyframes
+    route_id = session.insert_between(start.edit_id, end.edit_id, 0.5, 0.1)
+
+    with pytest.raises(ValueError, match="timed location"):
+        session.begin_date_edit(route_id)

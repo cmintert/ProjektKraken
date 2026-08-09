@@ -20,6 +20,7 @@ class _MapWidget:
     def __init__(self) -> None:
         self._playhead_time = 5.0
         self.show_trajectory_edit = MagicMock()
+        self.show_trajectory_date_error = MagicMock()
         self.clear_trajectory_edit = MagicMock()
         self.get_trajectory_distance_context = MagicMock(
             return_value=TrajectoryDistanceContext(1.0, 1.0)
@@ -74,8 +75,8 @@ def _record(*, x: float = 0.1) -> dict:
         "marker_id": "marker-1",
         "trajectory_id": "trajectory-1",
         "keyframes": [
-            {"t": 0.0, "x": x, "y": 0.2},
-            {"t": 10.0, "x": 0.9, "y": 0.8},
+            {"t": 0.0, "x": x, "y": 0.2, "point_kind": "timed"},
+            {"t": 10.0, "x": 0.9, "y": 0.8, "point_kind": "timed"},
         ],
         "row_snapshot": row,
     }
@@ -91,9 +92,9 @@ def _coordinator(record=None):
 def _speed_record() -> dict:
     record = _record()
     record["keyframes"] = [
-        {"t": 0.0, "x": 0.0, "y": 0.0},
-        {"t": 12.0, "x": 0.25, "y": 0.0},
-        {"t": 20.0, "x": 1.0, "y": 0.0},
+        {"t": 0.0, "x": 0.0, "y": 0.0, "point_kind": "timed"},
+        {"t": 12.0, "x": 0.25, "y": 0.0, "point_kind": "timed"},
+        {"t": 20.0, "x": 1.0, "y": 0.0, "point_kind": "timed"},
     ]
     return record
 
@@ -144,7 +145,7 @@ def test_create_trajectory_apply_emits_atomic_creation_command():
     assert isinstance(command, UpdateTrajectoryCommand)
     assert command.before_snapshot is None
     assert command.after_keyframes[0].t == 5.0
-    assert command.after_properties["kraken_trajectory"]["schema_version"] == 1
+    assert command.after_properties["kraken_trajectory"]["schema_version"] == 2
 
 
 def test_switching_maps_discards_active_edit():
@@ -225,6 +226,7 @@ def test_date_edit_does_not_move_playhead_or_follow_navigation():
     commands = []
     coordinator.command_requested.connect(commands.append)
     coordinator.start_edit("marker-1")
+    window.map_widget.get_trajectory_distance_context.reset_mock()
     session = coordinator._session
     assert session is not None
     first_id = session.working_keyframes[0].edit_id
@@ -289,6 +291,23 @@ def test_use_playhead_inside_date_edit_keeps_suboperation_open():
     assert window.timeline.get_playhead_time() == 7.0
 
 
+def test_invalid_playhead_date_is_shown_inline():
+    coordinator, window = _coordinator()
+    coordinator.start_edit("marker-1")
+    session = coordinator._session
+    assert session is not None
+    first_id = session.working_keyframes[0].edit_id
+    coordinator.begin_date_edit(first_id)
+    window.timeline.set_playhead_time(12.0)
+
+    coordinator.set_selected_date_from_playhead()
+
+    assert session.active_date_value == 0.0
+    window.map_widget.show_trajectory_date_error.assert_called_once_with(
+        "Date must be earlier than 9.99 to keep route order."
+    )
+
+
 def test_cancel_date_restores_date_but_keeps_spatial_edit_and_playhead():
     coordinator, window = _coordinator()
     coordinator.start_edit("marker-1")
@@ -346,6 +365,7 @@ def test_speed_equalization_preview_has_no_persistence_side_effect():
     commands = []
     coordinator.command_requested.connect(commands.append)
     coordinator.start_edit("marker-1")
+    window.map_widget.get_trajectory_distance_context.reset_mock()
     session = coordinator._session
     assert session is not None
     start_id = session.working_keyframes[0].edit_id
@@ -404,6 +424,7 @@ def test_confirm_then_trajectory_apply_emits_one_atomic_command():
 def test_whole_speed_equalization_uses_map_distance_context():
     coordinator, window = _coordinator(_speed_record())
     coordinator.start_edit("marker-1")
+    window.map_widget.get_trajectory_distance_context.reset_mock()
 
     coordinator.preview_whole_speed_equalization()
 

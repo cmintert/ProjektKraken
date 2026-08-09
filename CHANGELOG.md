@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-09
-**Commit:** 4f1994cb
+**Commit:** c5382732
 ---
 
 # Changelog
@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-08-09)* **Map / Trajectories**: Added authoritative Timed Locations,
+  distance-timed Route points, bulk automatic conversion, and endpoint-driven
+  route recalculation.
 - *(2026-08-09)* **Map / Trajectories**: Allowed an entity's ordinary marker
   position to be moved before its first trajectory date, while retaining
   trajectory ownership from the first date onward and holding the final
@@ -45,6 +48,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-09)* **Map / Trajectories**: Reworked the date editor into readable
+  summary, constraint, and control rows, with visible playhead dates, inline
+  errors, and disabled invalid playhead assignment.
 - *(2026-08-09)* **Map / Trajectories**: Prevented the first arrival-node
   selection from resizing the map viewport and visually displacing the marker
   and trajectory by reserving the segment-information row throughout editing.
@@ -68,6 +74,11 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-09)* **Architecture / Trajectories**: Replaced compatibility repair
+  with strict trajectory metadata v2 and logged removal of incompatible rows.
+- *(2026-08-09)* **Documentation / Testing / Trajectories**: Documented automatic
+  route timing and strict loading, regenerated schema guidance, and expanded
+  domain, repository, coordinator, and map UI regression coverage.
 - *(2026-08-09)* **Documentation / Trajectories**: Expanded trajectory
   authoring and playback guidance, clarified Escape priority, and corrected the
   database reference from legacy `[t, x, y]` arrays to MF-JSON plus versioned

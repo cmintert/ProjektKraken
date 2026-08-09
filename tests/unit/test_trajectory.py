@@ -12,14 +12,58 @@ from src.core.trajectory import (
     EditableKeyframe,
     Keyframe,
     TrajectoryDistanceContext,
+    apply_trajectory_metadata,
+    build_trajectory_properties,
     clone_keyframes,
     cumulative_trajectory_distances,
     equalize_keyframe_times,
     infer_midpoint_time,
     interpolate_position,
+    materialize_route_point_times,
     trajectory_segment_distance,
     validate_keyframes,
 )
+
+
+def test_many_route_points_fit_inside_short_timed_leg() -> None:
+    """Automatic geometry points do not impose the timed-location epsilon."""
+    points = [
+        Keyframe(0.0, 0.0, 0.0, point_kind="timed"),
+        Keyframe(0.0, 0.2, 0.0, point_kind="route"),
+        Keyframe(0.0, 0.4, 0.0, point_kind="route"),
+        Keyframe(0.0, 0.6, 0.0, point_kind="route"),
+        Keyframe(0.0, 0.8, 0.0, point_kind="route"),
+        Keyframe(0.02, 1.0, 0.0, point_kind="timed"),
+    ]
+
+    materialized = materialize_route_point_times(
+        points, TrajectoryDistanceContext(1.0, 1.0)
+    )
+
+    assert [point.t for point in materialized] == pytest.approx(
+        [0.0, 0.004, 0.008, 0.012, 0.016, 0.02]
+    )
+    assert validate_keyframes(materialized) == []
+
+
+def test_schema_v2_round_trip_preserves_authoring_point_roles() -> None:
+    authored = [
+        Keyframe(0.0, 0.0, 0.0, "a", "timed"),
+        Keyframe(5.0, 0.5, 0.0, "route", "route"),
+        Keyframe(10.0, 1.0, 0.0, "b", "timed"),
+    ]
+    modes = {("a", "route"): "linear", ("route", "b"): "linear"}
+    properties = build_trajectory_properties({}, authored, modes)
+    playback = [Keyframe(point.t, point.x, point.y) for point in authored]
+
+    decoded, decoded_modes, _ = apply_trajectory_metadata(playback, properties)
+
+    assert [point.point_kind for point in decoded] == [
+        "timed",
+        "route",
+        "timed",
+    ]
+    assert decoded_modes == modes
 
 
 class TestKeyframe:
@@ -76,9 +120,7 @@ class TestValidateKeyframes:
     @pytest.mark.parametrize("invalid_time", [math.nan, math.inf, -math.inf])
     def test_rejects_non_finite_times(self, invalid_time: float) -> None:
         """Lore dates must be finite."""
-        errors = validate_keyframes(
-            [Keyframe(t=invalid_time, x=0.5, y=0.5)]
-        )
+        errors = validate_keyframes([Keyframe(t=invalid_time, x=0.5, y=0.5)])
 
         assert errors == ["Keyframe 1 time must be a finite number."]
 
@@ -346,9 +388,10 @@ class TestInterpolatePosition:
         """Time before the first dated location uses the ordinary marker."""
         keyframes = [Keyframe(t=10.0, x=0.0, y=0.0), Keyframe(t=20.0, x=1.0, y=1.0)]
         assert interpolate_position(keyframes, 5.0) is None
-        assert interpolate_position(
-            keyframes, 5.0, base_position=(0.25, 0.75)
-        ) == (0.25, 0.75)
+        assert interpolate_position(keyframes, 5.0, base_position=(0.25, 0.75)) == (
+            0.25,
+            0.75,
+        )
 
     def test_step_segment_holds_then_relocates(self) -> None:
         """A relocation does not interpolate through intervening space."""
@@ -358,12 +401,8 @@ class TestInterpolatePosition:
         ]
         modes = {("a", "b"): SEGMENT_MODE_STEP}
 
-        assert interpolate_position(
-            keyframes, 9.99, segment_modes=modes
-        ) == (0.1, 0.2)
-        assert interpolate_position(
-            keyframes, 10.0, segment_modes=modes
-        ) == (0.9, 0.8)
+        assert interpolate_position(keyframes, 9.99, segment_modes=modes) == (0.1, 0.2)
+        assert interpolate_position(keyframes, 10.0, segment_modes=modes) == (0.9, 0.8)
 
     def test_after_last_keyframe_clamps_to_end(self) -> None:
         """Time after last keyframe returns the last keyframe position."""

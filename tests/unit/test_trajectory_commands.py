@@ -31,22 +31,21 @@ def test_update_command_execute_undo_redo_restore_exact_rows(db_service) -> None
         [Keyframe(t=0.0, x=0.1, y=0.1), Keyframe(t=10.0, x=0.9, y=0.9)],
         properties={"stroke": "dashed"},
     )
-    legacy_json = json.dumps([[0.0, 0.1, 0.1], [10.0, 0.9, 0.9]])
     with db_service.transaction() as connection:
         connection.execute(
             """
             UPDATE moving_features
-            SET trajectory = ?, created_at = ?
+            SET created_at = ?
             WHERE id = ?
             """,
-            (legacy_json, 1234.5, trajectory_id),
+            (1234.5, trajectory_id),
         )
     before = db_service.get_marker_trajectory_snapshot(map_id, marker.object_id)
     assert before is not None
 
     supplied = [
-        Keyframe(t=30.0, x=0.8, y=0.7),
         Keyframe(t=20.0, x=0.2, y=0.3),
+        Keyframe(t=30.0, x=0.8, y=0.7),
     ]
     command = UpdateTrajectoryCommand(map_id, marker.object_id, before, supplied)
     supplied[0].x = 0.0
@@ -56,7 +55,7 @@ def test_update_command_execute_undo_redo_restore_exact_rows(db_service) -> None
     after = db_service.get_marker_trajectory_snapshot(map_id, marker.object_id)
     assert after is not None
     assert after["id"] == before["id"]
-    assert after["properties"] == before["properties"]
+    assert json.loads(after["properties"])["stroke"] == "dashed"
     assert after["created_at"] == before["created_at"]
     persisted_keyframes = mfjson_to_keyframes(json.loads(after["trajectory"]))
     assert persisted_keyframes == [
@@ -76,9 +75,7 @@ def test_update_command_execute_undo_redo_restore_exact_rows(db_service) -> None
 def test_update_command_serialization_preserves_undo_state(db_service) -> None:
     """A history round-trip can undo to the exact legacy row snapshot."""
     map_id, marker = _create_marker(db_service)
-    db_service.insert_trajectory(
-        marker.id, [Keyframe(t=1.0, x=0.1, y=0.1)]
-    )
+    db_service.insert_trajectory(marker.id, [Keyframe(t=1.0, x=0.1, y=0.1)])
     before = db_service.get_marker_trajectory_snapshot(map_id, marker.object_id)
     command = UpdateTrajectoryCommand(
         map_id,

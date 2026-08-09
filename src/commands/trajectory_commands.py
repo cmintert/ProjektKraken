@@ -2,9 +2,10 @@
 
 import copy
 import logging
+from typing import cast
 
 from src.commands.base_command import BaseCommand, CommandResult
-from src.core.trajectory import Keyframe, clone_keyframes
+from src.core.trajectory import Keyframe, TrajectoryPointKind, clone_keyframes
 from src.services.db_service import DatabaseService
 from src.services.repositories.trajectory_repository import TrajectorySnapshot
 
@@ -127,9 +128,7 @@ class UpdateTrajectoryCommand(BaseCommand):
                 message="Trajectory update undone.",
                 command_name="Undo_UpdateTrajectoryCommand",
                 data={
-                    "trajectory_id": (
-                        restored["id"] if restored is not None else None
-                    ),
+                    "trajectory_id": (restored["id"] if restored is not None else None),
                     "effects": [self._trajectory_changed_effect()],
                 },
             )
@@ -153,6 +152,7 @@ class UpdateTrajectoryCommand(BaseCommand):
                     "t": keyframe.t,
                     "x": keyframe.x,
                     "y": keyframe.y,
+                    "point_kind": keyframe.point_kind,
                 }
                 for keyframe in self.after_keyframes
             ],
@@ -186,9 +186,11 @@ class UpdateTrajectoryCommand(BaseCommand):
                 x=float(keyframe["x"]),
                 y=float(keyframe["y"]),
                 keyframe_id=(
-                    str(keyframe["id"])
-                    if keyframe.get("id") is not None
-                    else None
+                    str(keyframe["id"]) if keyframe.get("id") is not None else None
+                ),
+                point_kind=cast(
+                    TrajectoryPointKind,
+                    str(keyframe.get("point_kind", "timed")),
                 ),
             )
             for keyframe in data["after_keyframes"]

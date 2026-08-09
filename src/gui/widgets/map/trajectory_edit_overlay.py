@@ -32,14 +32,13 @@ class TrajectoryEditOverlay:
         self._equalization_start_id: str | None = None
         self._equalization_end_id: str | None = None
         self._equalized_keyframe_ids: set[str] = set()
+        self._route_point_ids: set[str] = set()
         self._path_item: QGraphicsPathItem | None = None
         self._relocation_path_items: list[QGraphicsPathItem] = []
         self._segment_modes: dict[SegmentKey, SegmentMode] = {}
         self._temporal_path_item: QGraphicsPathItem | None = None
         self._keyframe_handles: list[DraggableEditHandle[str]] = []
-        self._midpoint_handles: list[
-            MidpointEditHandle[tuple[str, str]]
-        ] = []
+        self._midpoint_handles: list[MidpointEditHandle[tuple[str, str]]] = []
 
     @property
     def is_active(self) -> bool:
@@ -91,6 +90,11 @@ class TrajectoryEditOverlay:
             for index, keyframe in enumerate(snapshot["keyframes"])
             if index > 0 and keyframe["arrival_mode"] is not None
         }
+        self._route_point_ids = {
+            keyframe["edit_id"]
+            for keyframe in snapshot["keyframes"]
+            if keyframe["point_kind"] == "route"
+        }
 
         for keyframe in snapshot["keyframes"]:
             edit_id = keyframe["edit_id"]
@@ -105,7 +109,12 @@ class TrajectoryEditOverlay:
             handle.setPos(
                 self._view.coord_system.to_scene(keyframe["x"], keyframe["y"])
             )
-            tooltip_parts = [f"Keyframe at {keyframe['t']:g}"]
+            point_label = (
+                "Route point (calculated)"
+                if keyframe["point_kind"] == "route"
+                else "Timed location"
+            )
+            tooltip_parts = [f"{point_label} at {keyframe['t']:g}"]
             if edit_id == self._speed_anchor_id:
                 tooltip_parts.append("Speed start anchor")
             if edit_id == self._equalization_end_id:
@@ -117,14 +126,14 @@ class TrajectoryEditOverlay:
             handle.set_notifications_enabled(True)
             self._view.graphics_scene.addItem(handle)
             self._keyframe_handles.append(handle)
+            if keyframe["point_kind"] == "route":
+                handle.setScale(0.72)
             self._style_handle(handle, theme)
 
         keyframes = snapshot["keyframes"]
         for start, end in zip(keyframes, keyframes[1:]):
             segment_id = (start["edit_id"], end["edit_id"])
-            midpoint_handle = MidpointEditHandle(
-                segment_id, self._on_midpoint_inserted
-            )
+            midpoint_handle = MidpointEditHandle(segment_id, self._on_midpoint_inserted)
             midpoint_handle.setPos(
                 self._view.coord_system.to_scene(
                     (start["x"] + end["x"]) / 2.0,
@@ -132,9 +141,7 @@ class TrajectoryEditOverlay:
                 )
             )
             midpoint_time = start["t"] + (end["t"] - start["t"]) / 2.0
-            midpoint_handle.setToolTip(
-                f"Insert keyframe at {midpoint_time:g}"
-            )
+            midpoint_handle.setToolTip(f"Insert keyframe at {midpoint_time:g}")
             error = snapshot["midpoint_errors"].get(
                 TrajectoryEditSession.midpoint_key(*segment_id)
             )
@@ -184,6 +191,7 @@ class TrajectoryEditOverlay:
         self._equalization_start_id = None
         self._equalization_end_id = None
         self._equalized_keyframe_ids.clear()
+        self._route_point_ids.clear()
         self._segment_modes = {}
 
     def _on_keyframe_selected(self, edit_id: str) -> None:
@@ -213,9 +221,7 @@ class TrajectoryEditOverlay:
         )
         if snap_result.snapped:
             final_position = snap_result.pos
-            self._view._show_snap_indicator(
-                final_position, snap_result.snap_type
-            )
+            self._view._show_snap_indicator(final_position, snap_result.snap_type)
         else:
             final_position = snap_to_edit_handles(
                 edit_id,
@@ -291,9 +297,7 @@ class TrajectoryEditOverlay:
 
         path = QPainterPath()
         path.moveTo(self._keyframe_handles[0].pos())
-        for start, end in zip(
-            self._keyframe_handles, self._keyframe_handles[1:]
-        ):
+        for start, end in zip(self._keyframe_handles, self._keyframe_handles[1:]):
             pair = (start.handle_id, end.handle_id)
             if self._segment_modes.get(pair) == SEGMENT_MODE_STEP:
                 path.moveTo(end.pos())
@@ -415,6 +419,8 @@ class TrajectoryEditOverlay:
             fill = theme.get("warning", "#e67e22")
         elif edit_id == self._speed_anchor_id:
             fill = theme.get("success", "#2ecc71")
+        elif edit_id in self._route_point_ids:
+            fill = theme.get("text_muted", "#95a5a6")
         else:
             fill = theme.get("accent_secondary", "#f1c40f")
 

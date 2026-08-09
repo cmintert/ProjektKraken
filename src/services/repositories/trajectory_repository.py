@@ -16,6 +16,7 @@ from src.core.trajectory import (
     SegmentKey,
     SegmentMode,
     apply_trajectory_metadata,
+    build_trajectory_properties,
     clone_keyframes,
     keyframes_to_mfjson,
     mfjson_to_keyframes,
@@ -96,7 +97,10 @@ class TrajectoryRepository(BaseRepository):
 
         # Serialize trajectory to MF-JSON format
         traj_json = json.dumps(keyframes_to_mfjson(keyframes))
-        props_json = self._serialize_json(properties or {})
+        complete_properties = build_trajectory_properties(
+            properties or {}, keyframes, {}
+        )
+        props_json = self._serialize_json(complete_properties)
 
         feature_id = str(uuid.uuid4())
 
@@ -180,12 +184,8 @@ class TrajectoryRepository(BaseRepository):
         properties_json: str | None
 
         with self.transaction() as connection:
-            marker_db_id = self._resolve_marker_db_id(
-                connection, map_id, object_id
-            )
-            current = self._get_single_snapshot(
-                connection, marker_db_id, object_id
-            )
+            marker_db_id = self._resolve_marker_db_id(connection, map_id, object_id)
+            current = self._get_single_snapshot(connection, marker_db_id, object_id)
             self._check_expected_snapshot(current, expected_snapshot)
 
             if not replacement:
@@ -197,7 +197,10 @@ class TrajectoryRepository(BaseRepository):
 
             if current is None:
                 trajectory_id = str(uuid.uuid4())
-                properties_json = self._serialize_json(properties or {})
+                complete_properties = properties or build_trajectory_properties(
+                    {}, replacement, {}
+                )
+                properties_json = self._serialize_json(complete_properties)
                 created_at = time.time()
                 connection.execute(
                     f"""
@@ -216,11 +219,15 @@ class TrajectoryRepository(BaseRepository):
                 )
             else:
                 trajectory_id = str(current["id"])
-                properties_json = (
-                    self._serialize_json(properties)
-                    if properties is not None
-                    else current["properties"]
-                )
+                if properties is None:
+                    try:
+                        base_properties = json.loads(current["properties"] or "{}")
+                    except (json.JSONDecodeError, TypeError):
+                        base_properties = {}
+                    properties = build_trajectory_properties(
+                        base_properties, replacement, {}
+                    )
+                properties_json = self._serialize_json(properties)
                 connection.execute(
                     """
                     UPDATE moving_features
@@ -277,12 +284,8 @@ class TrajectoryRepository(BaseRepository):
         )
 
         with self.transaction() as connection:
-            marker_db_id = self._resolve_marker_db_id(
-                connection, map_id, object_id
-            )
-            current = self._get_single_snapshot(
-                connection, marker_db_id, object_id
-            )
+            marker_db_id = self._resolve_marker_db_id(connection, map_id, object_id)
+            current = self._get_single_snapshot(connection, marker_db_id, object_id)
             self._check_expected_snapshot(current, expected)
 
             if replacement is not None and replacement["marker_id"] != marker_db_id:
@@ -363,9 +366,7 @@ class TrajectoryRepository(BaseRepository):
         if not rows:
             raise ValueError(f"Marker not found: map={map_id}, obj={object_id}")
         if len(rows) > 1:
-            raise ValueError(
-                f"Multiple markers found: map={map_id}, obj={object_id}"
-            )
+            raise ValueError(f"Multiple markers found: map={map_id}, obj={object_id}")
         return str(rows[0]["id"])
 
     def _get_single_snapshot(
@@ -437,7 +438,7 @@ class TrajectoryRepository(BaseRepository):
             raise RuntimeError("Database connection not initialized")
 
         sql = """
-            SELECT id, trajectory FROM moving_features
+            SELECT id, trajectory, properties FROM moving_features
             WHERE marker_id = ?
             ORDER BY t_start
         """
@@ -445,16 +446,30 @@ class TrajectoryRepository(BaseRepository):
         rows = cursor.fetchall()
 
         results = []
+        rejected_ids: list[str] = []
         for row in rows:
             traj_id = row["id"]
-            traj_json = row["trajectory"]
             try:
-                traj_data = json.loads(traj_json)
-                # Backward compatibility: detect old [[t,x,y],...] format
+                traj_data = json.loads(row["trajectory"])
                 keyframes = self._parse_trajectory_json(traj_data)
-                results.append((traj_id, keyframes))
+                enriched, _, _ = self._decode_metadata(keyframes, row["properties"])
+                results.append((traj_id, enriched))
             except (json.JSONDecodeError, IndexError, TypeError, ValueError) as e:
-                logger.error(f"Failed to parse trajectory {traj_id}: {e}")
+                logger.error(
+                    "Removing incompatible trajectory: trajectory=%s "
+                    "marker=%s reason=%s",
+                    traj_id,
+                    marker_db_id,
+                    e,
+                )
+                rejected_ids.append(traj_id)
+
+        if rejected_ids:
+            with self.transaction() as cleanup_connection:
+                cleanup_connection.executemany(
+                    "DELETE FROM moving_features WHERE id = ?",
+                    [(trajectory_id,) for trajectory_id in rejected_ids],
+                )
 
         return results
 
@@ -509,7 +524,8 @@ class TrajectoryRepository(BaseRepository):
             raise RuntimeError("Database connection not initialized")
 
         sql = """
-            SELECT mf.id as traj_id, m.object_id as marker_id, mf.trajectory
+            SELECT mf.id as traj_id, m.object_id as marker_id,
+                   mf.trajectory, mf.properties
             FROM moving_features mf
             JOIN markers m ON mf.marker_id = m.id
             WHERE m.map_id = ?
@@ -519,17 +535,32 @@ class TrajectoryRepository(BaseRepository):
         rows = cursor.fetchall()
 
         results = []
+        rejected_ids: list[str] = []
         for row in rows:
             marker_id = row["marker_id"]
             traj_id = row["traj_id"]
-            traj_json = row["trajectory"]
             try:
-                traj_data = json.loads(traj_json)
-                # Backward compatibility: detect old [[t,x,y],...] format
+                traj_data = json.loads(row["trajectory"])
                 keyframes = self._parse_trajectory_json(traj_data)
-                results.append((marker_id, traj_id, keyframes))
+                enriched, _, _ = self._decode_metadata(keyframes, row["properties"])
+                results.append((marker_id, traj_id, enriched))
             except (json.JSONDecodeError, IndexError, TypeError, ValueError) as e:
-                logger.error(f"Failed to parse trajectory {traj_id}: {e}")
+                logger.error(
+                    "Removing incompatible trajectory: trajectory=%s "
+                    "marker=%s map=%s reason=%s",
+                    traj_id,
+                    marker_id,
+                    map_id,
+                    e,
+                )
+                rejected_ids.append(traj_id)
+
+        if rejected_ids:
+            with self.transaction() as cleanup_connection:
+                cleanup_connection.executemany(
+                    "DELETE FROM moving_features WHERE id = ?",
+                    [(trajectory_id,) for trajectory_id in rejected_ids],
+                )
 
         return results
 
@@ -557,23 +588,24 @@ class TrajectoryRepository(BaseRepository):
         ).fetchall()
 
         snapshots: list[dict[str, object]] = []
+        rejected_ids: list[str] = []
         for row in rows:
             trajectory_id = str(row["id"])
             try:
-                keyframes = self._parse_trajectory_json(
-                    json.loads(row["trajectory"])
+                keyframes = self._parse_trajectory_json(json.loads(row["trajectory"]))
+                keyframes, segment_modes, properties = self._decode_metadata(
+                    keyframes, row["properties"]
                 )
-                keyframes, segment_modes, properties, repaired = (
-                    self._decode_metadata(keyframes, row["properties"])
-                )
-                if repaired:
-                    logger.warning(
-                        "Trajectory %s uses legacy or invalid editor metadata; "
-                        "it will be repaired on the next edit.",
-                        trajectory_id,
-                    )
             except (json.JSONDecodeError, IndexError, TypeError, ValueError) as exc:
-                logger.error("Failed to parse trajectory %s: %s", trajectory_id, exc)
+                logger.error(
+                    "Removing incompatible trajectory: trajectory=%s marker=%s "
+                    "map=%s reason=%s",
+                    trajectory_id,
+                    row["object_id"],
+                    map_id,
+                    exc,
+                )
+                rejected_ids.append(trajectory_id)
                 continue
             snapshots.append(
                 {
@@ -585,6 +617,7 @@ class TrajectoryRepository(BaseRepository):
                             "t": keyframe.t,
                             "x": keyframe.x,
                             "y": keyframe.y,
+                            "point_kind": keyframe.point_kind,
                         }
                         for keyframe in keyframes
                     ],
@@ -597,10 +630,15 @@ class TrajectoryRepository(BaseRepository):
                         for (start_id, end_id), mode in segment_modes.items()
                     ],
                     "properties": properties,
-                    "metadata_needs_repair": repaired,
                     "row_snapshot": self._snapshot_from_row(row),
                 }
             )
+        if rejected_ids:
+            with self.transaction() as cleanup_connection:
+                cleanup_connection.executemany(
+                    "DELETE FROM moving_features WHERE id = ?",
+                    [(trajectory_id,) for trajectory_id in rejected_ids],
+                )
         return snapshots
 
     @staticmethod
@@ -610,7 +648,6 @@ class TrajectoryRepository(BaseRepository):
         list[Keyframe],
         dict[SegmentKey, SegmentMode],
         dict[str, object],
-        bool,
     ]:
         """Decode optional editor metadata without rejecting valid positions."""
         properties: object = {}
@@ -654,12 +691,6 @@ class TrajectoryRepository(BaseRepository):
             List of Keyframe objects.
 
         """
-        # New MF-JSON format: {'type': 'MovingPoint', 'coordinates': [...], 'datetimes': [...]}
         if isinstance(data, dict) and data.get("type") == "MovingPoint":
             return mfjson_to_keyframes(data)
-
-        # Old format: [[t, x, y], ...]
-        if isinstance(data, list):
-            return [Keyframe(t=item[0], x=item[1], y=item[2]) for item in data]
-
-        raise ValueError(f"Unknown trajectory format: {type(data)}")
+        raise ValueError("trajectory is not an OGC MF-JSON MovingPoint")

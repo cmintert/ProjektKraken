@@ -72,8 +72,8 @@ def test_edit_trajectory_action_and_compact_strip(map_widget, qtbot):
                 "marker_id": "marker1",
                 "trajectory_id": "trajectory-1",
                 "keyframes": [
-                    {"t": 0.0, "x": 0.2, "y": 0.3},
-                    {"t": 10.0, "x": 0.8, "y": 0.7},
+                    {"t": 0.0, "x": 0.2, "y": 0.3, "point_kind": "timed"},
+                    {"t": 10.0, "x": 0.8, "y": 0.7, "point_kind": "timed"},
                 ],
                 "row_snapshot": {},
             }
@@ -100,7 +100,7 @@ def test_edit_trajectory_action_and_compact_strip(map_widget, qtbot):
     map_widget.show_trajectory_edit(session.to_snapshot())
 
     assert map_widget.trajectory_edit_strip.isVisible()
-    assert "2 keyframes" in map_widget.trajectory_edit_label.text()
+    assert "2 points" in map_widget.trajectory_edit_label.text()
     assert not map_widget.btn_apply_trajectory.isEnabled()
     assert not marker.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsMovable
     assert map_widget.trajectory_date_panel.isVisible()
@@ -191,6 +191,38 @@ def test_first_segment_selection_keeps_map_viewport_stable(map_widget, qtbot):
     assert map_widget.trajectory_segment_panel.isVisible()
 
 
+def test_use_playhead_disables_itself_and_explains_invalid_date(map_widget, qtbot):
+    """An out-of-range playhead is explained beside the date controls."""
+    _show_map_with_marker(map_widget, qtbot)
+    session = TrajectoryEditSession.create(
+        "map-1",
+        "marker1",
+        "trajectory-1",
+        [
+            Keyframe(t=0.0, x=0.2, y=0.3),
+            Keyframe(t=10.0, x=0.8, y=0.7),
+        ],
+    )
+    session.select_keyframe(session.working_keyframes[0].edit_id)
+    map_widget.show_trajectory_edit(session.to_snapshot())
+
+    map_widget.on_time_changed(10.0)
+
+    assert not map_widget.btn_trajectory_date_use_playhead.isEnabled()
+    assert "Playhead:" in map_widget.trajectory_playhead_value.text()
+    assert "Move the playhead before" in map_widget.trajectory_date_constraints.text()
+    assert "Move the playhead before" in (
+        map_widget.btn_trajectory_date_use_playhead.toolTip()
+    )
+
+    map_widget.on_time_changed(9.0)
+
+    assert map_widget.btn_trajectory_date_use_playhead.isEnabled()
+    assert "Automatic Route points will recalculate" in (
+        map_widget.trajectory_date_constraints.text()
+    )
+
+
 def test_selected_segment_shows_metrics_and_emits_relocation(map_widget, qtbot):
     """A non-first point exposes its arrival mode and segment facts."""
     _show_map_with_marker(map_widget, qtbot)
@@ -225,15 +257,13 @@ def test_duplicate_trajectory_rows_are_not_used_for_playback(map_widget, qtbot):
         "marker_id": "marker1",
         "trajectory_id": "trajectory-1",
         "keyframes": [
-            {"t": 0.0, "x": 0.2, "y": 0.3},
-            {"t": 10.0, "x": 0.8, "y": 0.7},
+            {"t": 0.0, "x": 0.2, "y": 0.3, "point_kind": "timed"},
+            {"t": 10.0, "x": 0.8, "y": 0.7, "point_kind": "timed"},
         ],
         "row_snapshot": {},
     }
 
-    map_widget.set_trajectories(
-        [row, {**row, "trajectory_id": "trajectory-2"}]
-    )
+    map_widget.set_trajectories([row, {**row, "trajectory_id": "trajectory-2"}])
 
     assert "marker1" not in map_widget._active_trajectories
 
@@ -272,9 +302,7 @@ def test_speed_equalization_anchor_and_preview_controls(map_widget, qtbot):
     map_widget.show_trajectory_edit(session.to_snapshot())
     assert map_widget.btn_equalize_trajectory_speed.isEnabled()
     equalize_requests = []
-    map_widget.trajectory_speed_equalize_requested.connect(
-        equalize_requests.append
-    )
+    map_widget.trajectory_speed_equalize_requested.connect(equalize_requests.append)
     qtbot.mouseClick(
         map_widget.btn_equalize_trajectory_speed,
         Qt.MouseButton.LeftButton,
@@ -377,8 +405,8 @@ def test_playhead_navigation_previews_working_trajectory_position(
                 "marker_id": "marker1",
                 "trajectory_id": "trajectory-1",
                 "keyframes": [
-                    {"t": 0.0, "x": 0.1, "y": 0.2},
-                    {"t": 10.0, "x": 0.9, "y": 0.8},
+                    {"t": 0.0, "x": 0.1, "y": 0.2, "point_kind": "timed"},
+                    {"t": 10.0, "x": 0.9, "y": 0.8, "point_kind": "timed"},
                 ],
                 "row_snapshot": {},
             }
@@ -402,9 +430,7 @@ def test_playhead_navigation_previews_working_trajectory_position(
     assert [keyframe.t for keyframe in session.working_keyframes] == [0.0, 10.0]
 
 
-def test_trajectory_marker_is_movable_only_before_first_keyframe(
-    map_widget, qtbot
-):
+def test_trajectory_marker_is_movable_only_before_first_keyframe(map_widget, qtbot):
     """The ordinary marker is editable until trajectory playback begins."""
     marker = _show_map_with_marker(map_widget, qtbot)
     map_widget.set_trajectories(
@@ -413,8 +439,8 @@ def test_trajectory_marker_is_movable_only_before_first_keyframe(
                 "marker_id": "marker1",
                 "trajectory_id": "trajectory-1",
                 "keyframes": [
-                    {"t": 10.0, "x": 0.2, "y": 0.3},
-                    {"t": 20.0, "x": 0.8, "y": 0.7},
+                    {"t": 10.0, "x": 0.2, "y": 0.3, "point_kind": "timed"},
+                    {"t": 20.0, "x": 0.8, "y": 0.7, "point_kind": "timed"},
                 ],
                 "row_snapshot": {},
             }
@@ -469,9 +495,7 @@ def _click_marker(map_widget, marker, qtbot):
     qtbot.waitUntil(marker.isSelected)
 
 
-def test_map_widget_refreshes_local_styles_after_theme_change(
-    map_widget, monkeypatch
-):
+def test_map_widget_refreshes_local_styles_after_theme_change(map_widget, monkeypatch):
     """Theme changes refresh every locally styled map-button group."""
     monkeypatch.setattr(
         StyleHelper,

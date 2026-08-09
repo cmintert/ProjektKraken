@@ -28,6 +28,7 @@ class Keyframe:
     x: float
     y: float
     keyframe_id: str | None = None
+    point_kind: "TrajectoryPointKind" = "timed"
 
 
 @dataclass(frozen=True)
@@ -50,6 +51,7 @@ class EditableKeyframe:
     t: float
     x: float
     y: float
+    point_kind: "TrajectoryPointKind" = "timed"
 
 
 # Shared tolerance for comparing keyframe timestamps
@@ -59,8 +61,11 @@ SEGMENT_MODE_LINEAR: Literal["linear"] = "linear"
 SEGMENT_MODE_STEP: Literal["step"] = "step"
 SegmentMode = Literal["linear", "step"]
 SegmentKey = tuple[str, str]
+POINT_KIND_TIMED: Literal["timed"] = "timed"
+POINT_KIND_ROUTE: Literal["route"] = "route"
+TrajectoryPointKind = Literal["timed", "route"]
 TRAJECTORY_METADATA_KEY = "kraken_trajectory"
-TRAJECTORY_METADATA_VERSION = 1
+TRAJECTORY_METADATA_VERSION = 2
 
 KeyframeValue = Keyframe | EditableKeyframe
 _KeyframeT = TypeVar("_KeyframeT", Keyframe, EditableKeyframe)
@@ -119,6 +124,7 @@ def clone_keyframes(keyframes: Iterable[_KeyframeT]) -> list[_KeyframeT]:
                     t=keyframe.t,
                     x=keyframe.x,
                     y=keyframe.y,
+                    point_kind=keyframe.point_kind,
                 ),
             )
         else:
@@ -129,6 +135,7 @@ def clone_keyframes(keyframes: Iterable[_KeyframeT]) -> list[_KeyframeT]:
                     x=keyframe.x,
                     y=keyframe.y,
                     keyframe_id=keyframe.keyframe_id,
+                    point_kind=keyframe.point_kind,
                 ),
             )
         clones.append(clone)
@@ -171,14 +178,21 @@ def validate_keyframes(keyframes: Iterable[KeyframeValue]) -> list[str]:
                     "between 0.0 and 1.0."
                 )
 
-    finite_times.sort(key=lambda item: item[0])
     for (first_time, first_index), (second_time, second_index) in zip(
         finite_times, finite_times[1:]
     ):
-        if second_time - first_time <= KEYFRAME_TIME_EPSILON:
+        first = values[first_index - 1]
+        second = values[second_index - 1]
+        minimum_gap = (
+            KEYFRAME_TIME_EPSILON
+            if first.point_kind == POINT_KIND_TIMED
+            and second.point_kind == POINT_KIND_TIMED
+            else 0.0
+        )
+        if second_time - first_time <= minimum_gap:
             errors.append(
                 f"Keyframes {first_index} and {second_index} have times within "
-                f"{KEYFRAME_TIME_EPSILON:g} days of each other."
+                f"{minimum_gap:g} days of each other."
             )
 
     return errors
@@ -310,6 +324,59 @@ def equalize_keyframe_times(
     return equalized
 
 
+def materialize_route_point_times(
+    keyframes: Sequence[_KeyframeT],
+    context: TrajectoryDistanceContext,
+) -> list[_KeyframeT]:
+    """Calculate all route-point dates between authoritative timed locations.
+
+    Timed locations retain their dates. Route points are distributed by
+    cumulative path distance within the surrounding timed-location leg.
+    """
+    if not keyframes:
+        return []
+    if keyframes[0].point_kind != POINT_KIND_TIMED:
+        raise ValueError("A trajectory must start with a timed location.")
+    if keyframes[-1].point_kind != POINT_KIND_TIMED:
+        raise ValueError("A trajectory must end with a timed location.")
+
+    materialized = clone_keyframes(keyframes)
+    timed_indices = [
+        index
+        for index, point in enumerate(materialized)
+        if point.point_kind == POINT_KIND_TIMED
+    ]
+    for start_index, end_index in zip(timed_indices, timed_indices[1:]):
+        start = materialized[start_index]
+        end = materialized[end_index]
+        if end.t - start.t <= KEYFRAME_TIME_EPSILON:
+            raise ValueError("Timed locations must have distinct ordered dates.")
+        if end_index == start_index + 1:
+            continue
+        leg = materialized[start_index : end_index + 1]
+        cumulative = cumulative_trajectory_distances(leg, context)
+        total_distance = cumulative[-1]
+        if math.isclose(total_distance, 0.0, abs_tol=1e-12):
+            raise ValueError("A travel leg with route points must have distance.")
+        for offset in range(1, len(leg) - 1):
+            segment_distance = cumulative[offset] - cumulative[offset - 1]
+            if math.isclose(segment_distance, 0.0, abs_tol=1e-12):
+                raise ValueError("Consecutive route points must change location.")
+            fraction = cumulative[offset] / total_distance
+            index = start_index + offset
+            materialized[index] = cast(
+                _KeyframeT,
+                dataclass_replace(
+                    materialized[index],
+                    t=start.t + fraction * (end.t - start.t),
+                ),
+            )
+    errors = validate_keyframes(materialized)
+    if errors:
+        raise ValueError(errors[0])
+    return materialized
+
+
 def _is_finite_number(value: object) -> bool:
     """Return whether *value* is a finite, non-boolean real number."""
     return (
@@ -421,72 +488,107 @@ def _keyframe_identity(keyframe: KeyframeValue) -> str | None:
     return keyframe.keyframe_id
 
 
-def apply_trajectory_metadata(
-    keyframes: Sequence[Keyframe], properties: object
-) -> tuple[list[Keyframe], dict[SegmentKey, SegmentMode], dict[str, Any], bool]:
-    """Attach durable identities and segment modes from stored properties.
-
-    Malformed or legacy metadata falls back to fresh identities and linear
-    segments while preserving unrelated property values.
-    """
-    preserved = copy.deepcopy(properties) if isinstance(properties, dict) else {}
-    metadata = preserved.get(TRAJECTORY_METADATA_KEY)
-    repaired = False
-    if not isinstance(metadata, dict) or metadata.get("schema_version") != (
-        TRAJECTORY_METADATA_VERSION
-    ):
-        metadata = None
-        repaired = bool(keyframes)
+def _decode_authoring_points(
+    keyframes: Sequence[Keyframe], raw_points: object
+) -> list[Keyframe]:
+    """Attach and validate schema-v2 point identities and roles."""
+    if not isinstance(raw_points, list) or len(raw_points) != len(keyframes):
+        raise ValueError("trajectory point metadata does not match MF-JSON")
     ids: list[str] = []
-    if isinstance(metadata, dict):
-        raw_ids = metadata.get("keyframe_ids")
-        if (
-            isinstance(raw_ids, list)
-            and len(raw_ids) == len(keyframes)
-            and all(isinstance(value, str) and value for value in raw_ids)
-            and len(set(raw_ids)) == len(raw_ids)
-        ):
-            ids = list(raw_ids)
-    if not ids:
-        ids = [str(uuid.uuid4()) for _ in keyframes]
-        repaired = bool(keyframes)
-
-    enriched = [
+    kinds: list[TrajectoryPointKind] = []
+    for item in raw_points:
+        if not isinstance(item, dict):
+            raise ValueError("trajectory point metadata must be objects")
+        point_id = item.get("id")
+        kind = item.get("kind")
+        if not isinstance(point_id, str) or not point_id:
+            raise ValueError("trajectory point IDs must be non-empty strings")
+        if kind not in {POINT_KIND_TIMED, POINT_KIND_ROUTE}:
+            raise ValueError(f"unsupported trajectory point kind {kind!r}")
+        ids.append(point_id)
+        kinds.append(cast(TrajectoryPointKind, kind))
+    if len(set(ids)) != len(ids):
+        raise ValueError("trajectory point IDs must be unique")
+    if keyframes and (kinds[0] != POINT_KIND_TIMED or kinds[-1] != POINT_KIND_TIMED):
+        raise ValueError("trajectory endpoints must be timed locations")
+    return [
         Keyframe(
             t=keyframe.t,
             x=keyframe.x,
             y=keyframe.y,
-            keyframe_id=keyframe_id,
+            keyframe_id=point_id,
+            point_kind=kind,
         )
-        for keyframe, keyframe_id in zip(keyframes, ids)
+        for keyframe, point_id, kind in zip(keyframes, ids, kinds)
     ]
-    adjacent = {
-        (start.keyframe_id, end.keyframe_id)
-        for start, end in zip(enriched, enriched[1:])
-        if start.keyframe_id is not None and end.keyframe_id is not None
+
+
+def _decode_authoring_legs(
+    enriched: Sequence[Keyframe], raw_legs: object
+) -> dict[SegmentKey, SegmentMode]:
+    """Validate schema-v2 legs and project their modes onto adjacent points."""
+    timed = [point for point in enriched if point.point_kind == POINT_KIND_TIMED]
+    if not isinstance(raw_legs, list) or len(raw_legs) != max(0, len(timed) - 1):
+        raise ValueError("trajectory legs do not match timed locations")
+    modes: dict[SegmentKey, SegmentMode] = {}
+    point_index = {
+        cast(str, point.keyframe_id): index for index, point in enumerate(enriched)
     }
-    modes: dict[SegmentKey, SegmentMode] = {
-        cast(SegmentKey, pair): SEGMENT_MODE_LINEAR for pair in adjacent
-    }
-    if isinstance(metadata, dict):
-        raw_segments = metadata.get("segments")
-        if isinstance(raw_segments, list):
-            for item in raw_segments:
-                if not isinstance(item, dict):
-                    repaired = True
-                    continue
-                pair = (item.get("from_id"), item.get("to_id"))
-                mode = item.get("mode")
-                if pair in adjacent and mode in {
-                    SEGMENT_MODE_LINEAR,
-                    SEGMENT_MODE_STEP,
-                }:
-                    modes[cast(SegmentKey, pair)] = cast(SegmentMode, mode)
-                else:
-                    repaired = True
-        elif "segments" in metadata:
-            repaired = True
-    return enriched, modes, preserved, repaired
+    for leg_index, (start, end) in enumerate(zip(timed, timed[1:])):
+        item = raw_legs[leg_index]
+        if not isinstance(item, dict):
+            raise ValueError("trajectory leg metadata must be objects")
+        if (
+            item.get("from_id") != start.keyframe_id
+            or item.get("to_id") != end.keyframe_id
+        ):
+            raise ValueError("trajectory leg endpoints are inconsistent")
+        mode = item.get("mode")
+        if mode not in {SEGMENT_MODE_LINEAR, SEGMENT_MODE_STEP}:
+            raise ValueError(f"unsupported trajectory leg mode {mode!r}")
+        if item.get("timing") != "distance":
+            raise ValueError("unsupported trajectory leg timing policy")
+        start_index = point_index[cast(str, start.keyframe_id)]
+        end_index = point_index[cast(str, end.keyframe_id)]
+        if mode == SEGMENT_MODE_STEP and end_index != start_index + 1:
+            raise ValueError("a relocation leg cannot contain route points")
+        for first, second in zip(
+            enriched[start_index:end_index],
+            enriched[start_index + 1 : end_index + 1],
+        ):
+            pair = cast(SegmentKey, (first.keyframe_id, second.keyframe_id))
+            modes[pair] = cast(SegmentMode, mode)
+    return modes
+
+
+def apply_trajectory_metadata(
+    keyframes: Sequence[Keyframe], properties: object
+) -> tuple[list[Keyframe], dict[SegmentKey, SegmentMode], dict[str, Any]]:
+    """Decode the one supported authoring schema without compatibility repair.
+
+    Raises:
+        ValueError: If metadata is absent, unsupported, or inconsistent with
+            the MF-JSON playback projection.
+    """
+    if not isinstance(properties, dict):
+        raise ValueError("trajectory properties must be a JSON object")
+    preserved = copy.deepcopy(properties)
+    metadata = preserved.get(TRAJECTORY_METADATA_KEY)
+    if not isinstance(metadata, dict):
+        raise ValueError("missing kraken_trajectory metadata")
+    version = metadata.get("schema_version")
+    if version != TRAJECTORY_METADATA_VERSION:
+        raise ValueError(
+            f"unsupported trajectory metadata schema {version!r}; "
+            f"expected {TRAJECTORY_METADATA_VERSION}"
+        )
+
+    enriched = _decode_authoring_points(keyframes, metadata.get("points"))
+    errors = validate_keyframes(enriched)
+    if errors:
+        raise ValueError(errors[0])
+    modes = _decode_authoring_legs(enriched, metadata.get("legs"))
+    return enriched, modes, preserved
 
 
 def build_trajectory_properties(
@@ -498,23 +600,43 @@ def build_trajectory_properties(
     properties = (
         copy.deepcopy(base_properties) if isinstance(base_properties, dict) else {}
     )
-    ids = [
-        keyframe.keyframe_id or str(uuid.uuid4()) for keyframe in keyframes
+    ids = [keyframe.keyframe_id or str(uuid.uuid4()) for keyframe in keyframes]
+    if keyframes and (
+        keyframes[0].point_kind != POINT_KIND_TIMED
+        or keyframes[-1].point_kind != POINT_KIND_TIMED
+    ):
+        raise ValueError("Trajectory endpoints must be timed locations.")
+    timed_indices = [
+        index
+        for index, keyframe in enumerate(keyframes)
+        if keyframe.point_kind == POINT_KIND_TIMED
     ]
-    pairs = list(zip(ids, ids[1:]))
+    legs: list[dict[str, str]] = []
+    for start_index, end_index in zip(timed_indices, timed_indices[1:]):
+        adjacent_modes = {
+            segment_modes.get((ids[index], ids[index + 1]), SEGMENT_MODE_LINEAR)
+            for index in range(start_index, end_index)
+        }
+        if len(adjacent_modes) != 1:
+            raise ValueError("Every travel leg must use one movement mode.")
+        mode = adjacent_modes.pop()
+        if mode == SEGMENT_MODE_STEP and end_index != start_index + 1:
+            raise ValueError("A relocation leg cannot contain route points.")
+        legs.append(
+            {
+                "from_id": ids[start_index],
+                "to_id": ids[end_index],
+                "mode": mode,
+                "timing": "distance",
+            }
+        )
     properties[TRAJECTORY_METADATA_KEY] = {
         "schema_version": TRAJECTORY_METADATA_VERSION,
-        "keyframe_ids": ids,
-        "segments": [
-            {
-                "from_id": start_id,
-                "to_id": end_id,
-                "mode": segment_modes.get(
-                    (start_id, end_id), SEGMENT_MODE_LINEAR
-                ),
-            }
-            for start_id, end_id in pairs
+        "points": [
+            {"id": point_id, "kind": keyframe.point_kind}
+            for point_id, keyframe in zip(ids, keyframes)
         ],
+        "legs": legs,
     }
     return properties
 

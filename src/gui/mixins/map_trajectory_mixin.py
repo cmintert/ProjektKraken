@@ -1,7 +1,7 @@
 """Trajectory playback and direct-edit presentation for the map."""
 
 import logging
-from typing import TYPE_CHECKING, Any, Iterator, Protocol, Tuple
+from typing import TYPE_CHECKING, Any, Iterator, Protocol, Tuple, cast
 
 from PySide6.QtCore import QSettings, Slot
 from PySide6.QtWidgets import QComboBox, QGraphicsItem
@@ -13,10 +13,12 @@ from src.core.trajectory import (
     SegmentKey,
     SegmentMode,
     TrajectoryDistanceContext,
+    TrajectoryPointKind,
     interpolate_position,
     trajectory_segment_distance,
 )
 from src.core.trajectory_edit import TrajectoryEditSnapshot
+from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.map.marker_item import MarkerItem
 
 if TYPE_CHECKING:
@@ -59,6 +61,8 @@ class MapTrajectoryMixin:
         _trajectory_edit_marker_id: str | None
         _trajectory_edit_keyframes: list[Keyframe]
         _trajectory_edit_segment_modes: dict[SegmentKey, SegmentMode]
+        _trajectory_edit_snapshot: TrajectoryEditSnapshot | None
+        _trajectory_edit_pending: bool
         _playhead_time: float
         _current_time: float
         _calendar_converter: Any
@@ -76,6 +80,8 @@ class MapTrajectoryMixin:
         btn_add_trajectory_location: Any
         trajectory_date_panel: Any
         trajectory_date_feedback: Any
+        trajectory_date_constraints: Any
+        trajectory_playhead_value: Any
         trajectory_date_input: Any
         btn_trajectory_date_previous: Any
         btn_trajectory_date_next: Any
@@ -83,7 +89,8 @@ class MapTrajectoryMixin:
         btn_trajectory_date_use_playhead: Any
         btn_finish_trajectory_date: Any
         btn_cancel_trajectory_date: Any
-        chk_trajectory_allow_reorder: Any
+        btn_make_trajectory_route_point: Any
+        btn_make_trajectory_timed_location: Any
         btn_shift_trajectory_later: Any
         trajectory_segment_panel: Any
         trajectory_arrival_mode: Any
@@ -93,19 +100,17 @@ class MapTrajectoryMixin:
         trajectory_speed_changes: Any
         btn_set_trajectory_speed_anchor: Any
         btn_equalize_trajectory_speed: Any
+        btn_make_intermediate_automatic: Any
         btn_equalize_whole_trajectory: Any
         btn_clear_trajectory_speed_anchor: Any
         btn_apply_speed_equalization: Any
         btn_cancel_speed_equalization: Any
 
-        def _update_mode_indicator(self) -> None:
-            ...
+        def _update_mode_indicator(self) -> None: ...
 
-        def get_selected_map_id(self) -> str | None:
-            ...
+        def get_selected_map_id(self) -> str | None: ...
 
-        def _update_trajectory_edit_action(self) -> None:
-            ...
+        def _update_trajectory_edit_action(self) -> None: ...
 
     def set_trajectories(self, trajectories: list) -> None:
         """Sets the active trajectories for the current map.
@@ -122,9 +127,7 @@ class MapTrajectoryMixin:
             marker_counts[marker_id] = marker_counts.get(marker_id, 0) + 1
 
         ambiguous_marker_ids = {
-            marker_id
-            for marker_id, count in marker_counts.items()
-            if count > 1
+            marker_id for marker_id, count in marker_counts.items() if count > 1
         }
         for marker_id in sorted(ambiguous_marker_ids):
             logger.warning(
@@ -144,9 +147,8 @@ class MapTrajectoryMixin:
                     t=float(keyframe["t"]),
                     x=float(keyframe["x"]),
                     y=float(keyframe["y"]),
-                    keyframe_id=str(
-                        keyframe.get("id") or f"legacy-{index}"
-                    ),
+                    keyframe_id=str(keyframe.get("id") or f"legacy-{index}"),
+                    point_kind=cast(TrajectoryPointKind, str(keyframe["point_kind"])),
                 )
                 for index, keyframe in enumerate(trajectory["keyframes"])
             ]
@@ -154,7 +156,8 @@ class MapTrajectoryMixin:
             self._active_trajectory_segment_modes[marker_id] = {
                 (str(item["from_id"]), str(item["to_id"])): item["mode"]
                 for item in trajectory.get("segment_modes", [])
-                if item.get("mode") in {
+                if item.get("mode")
+                in {
                     SEGMENT_MODE_LINEAR,
                     SEGMENT_MODE_STEP,
                 }
@@ -199,6 +202,8 @@ class MapTrajectoryMixin:
         rebuild_overlay: bool = True,
     ) -> None:
         """Render an isolated trajectory edit-session snapshot."""
+        self._trajectory_edit_snapshot = snapshot
+        self._trajectory_edit_pending = pending
         marker_id = snapshot["marker_id"]
         self._trajectory_edit_marker_id = marker_id
         self._trajectory_edit_keyframes = [
@@ -207,6 +212,7 @@ class MapTrajectoryMixin:
                 x=float(keyframe["x"]),
                 y=float(keyframe["y"]),
                 keyframe_id=str(keyframe["edit_id"]),
+                point_kind=cast(TrajectoryPointKind, str(keyframe["point_kind"])),
             )
             for keyframe in snapshot["keyframes"]
         ]
@@ -228,21 +234,20 @@ class MapTrajectoryMixin:
         if rebuild_overlay:
             self.view.trajectory_edit_overlay.show(snapshot)
         else:
-            self.view.trajectory_edit_overlay.select(
-                snapshot["selected_keyframe_id"]
-            )
+            self.view.trajectory_edit_overlay.select(snapshot["selected_keyframe_id"])
 
         count = snapshot["keyframe_count"]
         self.trajectory_edit_label.setText(
-            f"Edit Trajectory | {count} keyframe{'s' if count != 1 else ''}"
+            f"Edit Trajectory | {count} point{'s' if count != 1 else ''}"
         )
         selected_index = snapshot["selected_keyframe_index"]
         is_equalization_previewing = snapshot["is_equalization_previewing"]
         if selected_index is None:
             self.trajectory_keyframe_label.setText("Select a keyframe")
-            self.trajectory_date_feedback.setText(
-                "Select a keyframe to edit its date."
-            )
+            self.trajectory_date_feedback.setText("Select a keyframe to edit its date.")
+            self.trajectory_date_constraints.setText("")
+            self.trajectory_date_constraints.setStyleSheet("")
+            self.trajectory_playhead_value.hide()
             self.trajectory_date_input.hide()
             self.btn_trajectory_date_previous.hide()
             self.btn_trajectory_date_next.hide()
@@ -250,7 +255,8 @@ class MapTrajectoryMixin:
             self.btn_trajectory_date_use_playhead.hide()
             self.btn_finish_trajectory_date.hide()
             self.btn_cancel_trajectory_date.hide()
-            self.chk_trajectory_allow_reorder.hide()
+            self.btn_make_trajectory_route_point.hide()
+            self.btn_make_trajectory_timed_location.hide()
             self.btn_shift_trajectory_later.hide()
             self.trajectory_arrival_mode.setEnabled(False)
             self.trajectory_segment_metrics.setText(
@@ -260,8 +266,10 @@ class MapTrajectoryMixin:
             self.trajectory_date_panel.show()
         else:
             keyframe = snapshot["keyframes"][selected_index]
+            is_timed = keyframe["point_kind"] == "timed"
+            point_label = "Timed location" if is_timed else "Route point"
             self.trajectory_keyframe_label.setText(
-                f"Keyframe {selected_index + 1} of {count} | "
+                f"{point_label} {selected_index + 1} of {count} | "
                 f"{self._format_trajectory_date(keyframe['t'])}"
             )
             self.trajectory_date_input.set_value(keyframe["t"])
@@ -273,29 +281,16 @@ class MapTrajectoryMixin:
                 feedback = "Editing keyframe date"
                 if delta is not None:
                     feedback = (
-                        "Original: "
-                        f"{self._format_trajectory_date(original)} | Proposed: "
-                        f"{self._format_trajectory_date(proposed)} | Change: "
-                        f"{delta:+g} days"
+                        "Editing date — Original: "
+                        f"{self._format_trajectory_date(original)} → Proposed: "
+                        f"{self._format_trajectory_date(proposed)} "
+                        f"(Change: {delta:+g} days)"
                     )
-                if not snapshot["allow_reorder"]:
-                    bounds: list[str] = []
-                    if snapshot["date_min_t"] is not None:
-                        bounds.append(
-                            "after "
-                            + self._format_trajectory_date(snapshot["date_min_t"])
-                        )
-                    if snapshot["date_max_t"] is not None:
-                        bounds.append(
-                            "before "
-                            + self._format_trajectory_date(snapshot["date_max_t"])
-                        )
-                    if bounds:
-                        feedback += " | Keep order: " + " and ".join(bounds)
                 self.trajectory_date_feedback.setText(feedback)
             else:
                 self.trajectory_date_feedback.setText(
-                    f"Date: {self._format_trajectory_date(keyframe['t'])}"
+                    ("Timed Location: " if is_timed else "Calculated Route point: ")
+                    + self._format_trajectory_date(keyframe["t"])
                 )
             self.trajectory_date_input.setEnabled(is_date_editing and not pending)
             self.trajectory_date_input.setVisible(is_date_editing)
@@ -303,29 +298,26 @@ class MapTrajectoryMixin:
                 is_date_editing and not pending
             )
             self.btn_trajectory_date_previous.setVisible(is_date_editing)
-            self.btn_trajectory_date_next.setEnabled(
-                is_date_editing and not pending
-            )
+            self.btn_trajectory_date_next.setEnabled(is_date_editing and not pending)
             self.btn_trajectory_date_next.setVisible(is_date_editing)
-            self.btn_edit_trajectory_date.setVisible(not is_date_editing)
+            self.btn_edit_trajectory_date.setVisible(is_timed and not is_date_editing)
             self.btn_edit_trajectory_date.setEnabled(
                 not pending and not is_equalization_previewing
             )
-            self.btn_trajectory_date_use_playhead.setVisible(True)
-            self.btn_trajectory_date_use_playhead.setEnabled(
-                not pending and not is_equalization_previewing
-            )
+            self.btn_trajectory_date_use_playhead.setVisible(is_timed)
+            self.trajectory_playhead_value.setVisible(is_timed)
             self.btn_finish_trajectory_date.setVisible(is_date_editing)
             self.btn_finish_trajectory_date.setEnabled(not pending)
             self.btn_cancel_trajectory_date.setVisible(is_date_editing)
             self.btn_cancel_trajectory_date.setEnabled(not pending)
-            self.chk_trajectory_allow_reorder.blockSignals(True)
-            self.chk_trajectory_allow_reorder.setChecked(
-                snapshot["allow_reorder"]
+            self.btn_make_trajectory_route_point.setVisible(
+                snapshot["can_make_route_point"] and not is_date_editing
             )
-            self.chk_trajectory_allow_reorder.blockSignals(False)
-            self.chk_trajectory_allow_reorder.setVisible(is_date_editing)
-            self.chk_trajectory_allow_reorder.setEnabled(not pending)
+            self.btn_make_trajectory_route_point.setEnabled(not pending)
+            self.btn_make_trajectory_timed_location.setVisible(
+                snapshot["can_make_timed_location"] and not is_date_editing
+            )
+            self.btn_make_trajectory_timed_location.setEnabled(not pending)
             self.btn_shift_trajectory_later.setVisible(
                 is_date_editing and snapshot["can_shift_later"]
             )
@@ -335,6 +327,7 @@ class MapTrajectoryMixin:
                 and snapshot["date_edit_delta"] != 0.0
             )
             self.trajectory_date_panel.show()
+            self._update_trajectory_playhead_date_action()
 
             segment = snapshot["selected_segment"]
             if segment is not None:
@@ -353,9 +346,14 @@ class MapTrajectoryMixin:
                 self.trajectory_segment_panel.show()
             else:
                 self.trajectory_arrival_mode.setEnabled(False)
-                self.trajectory_segment_metrics.setText(
-                    "The first location has no arrival segment."
-                )
+                if keyframe["point_kind"] == "route":
+                    self.trajectory_segment_metrics.setText(
+                        "Automatic Route point in the surrounding Travel leg."
+                    )
+                else:
+                    self.trajectory_segment_metrics.setText(
+                        "The first timed location has no arrival leg."
+                    )
                 self.trajectory_segment_panel.show()
 
         self._show_trajectory_speed_controls(snapshot, pending=pending)
@@ -384,6 +382,87 @@ class MapTrajectoryMixin:
         self._update_trajectory_positions()
         self._update_trajectory_edit_action()
 
+    def _update_trajectory_playhead_date_action(self) -> None:
+        """Explain whether the current playhead can become the selected date."""
+        snapshot = self._trajectory_edit_snapshot
+        if snapshot is None or snapshot["selected_keyframe_index"] is None:
+            self.btn_trajectory_date_use_playhead.setEnabled(False)
+            self.trajectory_playhead_value.hide()
+            return
+
+        selected_index = snapshot["selected_keyframe_index"]
+        keyframe = snapshot["keyframes"][selected_index]
+        if keyframe["point_kind"] != "timed":
+            self.btn_trajectory_date_use_playhead.setEnabled(False)
+            self.trajectory_playhead_value.hide()
+            self.trajectory_date_constraints.setStyleSheet("")
+            self.trajectory_date_constraints.setText(
+                "This Route point is timed automatically from its surrounding leg."
+            )
+            return
+
+        playhead = self._playhead_time
+        formatted_playhead = self._format_trajectory_date(playhead)
+        self.trajectory_playhead_value.setText(f"Playhead: {formatted_playhead}")
+        self.trajectory_playhead_value.show()
+
+        minimum = snapshot["date_min_t"]
+        maximum = snapshot["date_max_t"]
+        bounds: list[str] = []
+        if minimum is not None:
+            bounds.append("after " + self._format_trajectory_date(minimum))
+        if maximum is not None:
+            bounds.append("before " + self._format_trajectory_date(maximum))
+        allowed_text = (
+            "Allowed date: " + " and ".join(bounds) + "."
+            if bounds
+            else "Any date is allowed."
+        )
+
+        invalid_reason: str | None = None
+        if minimum is not None and playhead <= minimum:
+            invalid_reason = (
+                "Move the playhead after "
+                + self._format_trajectory_date(minimum)
+                + " to use it."
+            )
+        elif maximum is not None and playhead >= maximum:
+            invalid_reason = (
+                "Move the playhead before "
+                + self._format_trajectory_date(maximum)
+                + " to use it."
+            )
+
+        can_copy = (
+            invalid_reason is None
+            and not self._trajectory_edit_pending
+            and not snapshot["is_equalization_previewing"]
+        )
+        self.btn_trajectory_date_use_playhead.setEnabled(can_copy)
+        if invalid_reason is not None:
+            message = f"{allowed_text} {invalid_reason}"
+            self.trajectory_date_constraints.setStyleSheet(
+                StyleHelper.get_error_label_style()
+            )
+            self.btn_trajectory_date_use_playhead.setToolTip(message)
+            self.trajectory_date_constraints.setText(message)
+            return
+
+        self.trajectory_date_constraints.setStyleSheet("")
+        self.btn_trajectory_date_use_playhead.setToolTip(
+            "Set this Timed Location to the displayed playhead date."
+        )
+        self.trajectory_date_constraints.setText(
+            allowed_text + " Automatic Route points will recalculate."
+        )
+
+    def show_trajectory_date_error(self, message: str) -> None:
+        """Show a rejected date operation beside the controls that caused it."""
+        self.trajectory_date_constraints.setStyleSheet(
+            StyleHelper.get_error_label_style()
+        )
+        self.trajectory_date_constraints.setText(message)
+
     def clear_trajectory_edit(self) -> None:
         """Remove the working overlay and restore authoritative playback."""
         marker_id = self._trajectory_edit_marker_id
@@ -398,6 +477,8 @@ class MapTrajectoryMixin:
         self._trajectory_edit_marker_id = None
         self._trajectory_edit_keyframes = []
         self._trajectory_edit_segment_modes = {}
+        self._trajectory_edit_snapshot = None
+        self._trajectory_edit_pending = False
         self.trajectory_edit_strip.hide()
         self.trajectory_date_panel.hide()
         self.trajectory_segment_panel.hide()
@@ -452,9 +533,7 @@ class MapTrajectoryMixin:
         if segment["mode"] == SEGMENT_MODE_STEP:
             return f"Relocation | Duration: {duration:g} days | Speed: —"
         context = self.get_trajectory_distance_context()
-        start = Keyframe(
-            t=0.0, x=segment["start_x"], y=segment["start_y"]
-        )
+        start = Keyframe(t=0.0, x=segment["start_x"], y=segment["start_y"])
         end = Keyframe(t=duration, x=segment["end_x"], y=segment["end_y"])
         distance = trajectory_segment_distance(start, end, context)
         speed = distance / duration
@@ -484,13 +563,15 @@ class MapTrajectoryMixin:
         self.btn_equalize_trajectory_speed.setEnabled(
             snapshot["can_equalize_to_selected"] and not pending
         )
+        self.btn_make_intermediate_automatic.setVisible(not previewing and has_anchor)
+        self.btn_make_intermediate_automatic.setEnabled(
+            snapshot["can_make_intermediate_automatic"] and not pending
+        )
         self.btn_equalize_whole_trajectory.setVisible(not previewing)
         self.btn_equalize_whole_trajectory.setEnabled(
             snapshot["can_equalize_whole"] and not pending
         )
-        self.btn_clear_trajectory_speed_anchor.setVisible(
-            not previewing and has_anchor
-        )
+        self.btn_clear_trajectory_speed_anchor.setVisible(not previewing and has_anchor)
         self.btn_clear_trajectory_speed_anchor.setEnabled(not pending)
         self.btn_apply_speed_equalization.setVisible(previewing)
         self.btn_apply_speed_equalization.setEnabled(not pending)
@@ -602,9 +683,7 @@ class MapTrajectoryMixin:
         for marker_id, keyframes in tracks.items():
             if marker_id == self._trajectory_edit_marker_id:
                 keyframes = self._trajectory_edit_keyframes
-            segment_modes = self._active_trajectory_segment_modes.get(
-                marker_id, {}
-            )
+            segment_modes = self._active_trajectory_segment_modes.get(marker_id, {})
             if marker_id == self._trajectory_edit_marker_id:
                 segment_modes = self._trajectory_edit_segment_modes
             position = interpolate_position(
@@ -649,6 +728,9 @@ class MapTrajectoryMixin:
 
         self._playhead_time = time
         self._update_time_display()
+
+        if self._trajectory_edit_snapshot is not None:
+            self._update_trajectory_playhead_date_action()
 
         self._update_trajectory_positions()
 

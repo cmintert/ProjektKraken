@@ -15,6 +15,7 @@ from src.core.trajectory import (
     Keyframe,
     SegmentKey,
     SegmentMode,
+    TrajectoryPointKind,
     interpolate_position,
 )
 from src.core.trajectory_edit import TrajectoryEditSession
@@ -52,17 +53,13 @@ class TrajectoryEditCoordinator(QObject):
     def is_date_editing(self) -> bool:
         """Whether the active session is retiming one selected keyframe."""
         return (
-            self._session is not None
-            and self._session.active_date_edit_id is not None
+            self._session is not None and self._session.active_date_edit_id is not None
         )
 
     @property
     def is_equalization_previewing(self) -> bool:
         """Whether speed redistribution awaits preview confirmation."""
-        return (
-            self._session is not None
-            and self._session.is_equalization_previewing
-        )
+        return self._session is not None and self._session.is_equalization_previewing
 
     def bind_ui(self) -> None:
         """Connect map intents after the MainWindow widget skeleton exists."""
@@ -80,9 +77,7 @@ class TrajectoryEditCoordinator(QObject):
         )
         widget.trajectory_apply_requested.connect(self.apply)
         widget.trajectory_cancel_requested.connect(self.cancel)
-        widget.trajectory_discard_reload_requested.connect(
-            self.discard_and_reload
-        )
+        widget.trajectory_discard_reload_requested.connect(self.discard_and_reload)
         widget.trajectory_date_edit_requested.connect(self.begin_date_edit)
         widget.trajectory_date_use_playhead_requested.connect(
             self.set_selected_date_from_playhead
@@ -91,13 +86,10 @@ class TrajectoryEditCoordinator(QObject):
         widget.trajectory_date_step_requested.connect(self.step_date)
         widget.trajectory_date_edit_done_requested.connect(self.finish_date_edit)
         widget.trajectory_date_edit_cancel_requested.connect(self.cancel_date_edit)
-        widget.trajectory_allow_reorder_changed.connect(self.set_allow_reorder)
         widget.trajectory_shift_later_requested.connect(self.shift_later)
         widget.trajectory_arrival_mode_changed.connect(self.set_arrival_mode)
         widget.trajectory_speed_anchor_requested.connect(self.set_speed_anchor)
-        widget.trajectory_speed_anchor_clear_requested.connect(
-            self.clear_speed_anchor
-        )
+        widget.trajectory_speed_anchor_clear_requested.connect(self.clear_speed_anchor)
         widget.trajectory_speed_equalize_requested.connect(
             self.preview_speed_equalization
         )
@@ -109,6 +101,15 @@ class TrajectoryEditCoordinator(QObject):
         )
         widget.trajectory_speed_equalization_cancel_requested.connect(
             self.cancel_speed_equalization
+        )
+        widget.trajectory_make_route_point_requested.connect(
+            self.make_selected_route_point
+        )
+        widget.trajectory_make_timed_location_requested.connect(
+            self.make_selected_timed_location
+        )
+        widget.trajectory_make_intermediate_automatic_requested.connect(
+            self.make_intermediate_points_automatic
         )
         self.command_requested.connect(self._window.command_requested.emit)
         self._window.worker.command_finished.connect(
@@ -153,17 +154,13 @@ class TrajectoryEditCoordinator(QObject):
 
         authoritative_matches = (
             len(matching) == 0 and self._before_snapshot is None
-        ) or (
-            len(matching) == 1 and incoming_row == self._before_snapshot
-        )
+        ) or (len(matching) == 1 and incoming_row == self._before_snapshot)
         if not authoritative_matches:
             session.mark_conflicted()
 
         # Apply harmless changes to unrelated trajectories, retaining the
         # session-start row for the active trajectory under the edit overlay.
-        merged = [
-            row for row in incoming if row.get("marker_id") != session.marker_id
-        ]
+        merged = [row for row in incoming if row.get("marker_id") != session.marker_id]
         if self._active_record_at_start is not None:
             merged.append(copy.deepcopy(self._active_record_at_start))
         self._window.map_handler.on_trajectories_ready(map_id, merged)
@@ -207,13 +204,14 @@ class TrajectoryEditCoordinator(QObject):
                 trajectory_id=None,
                 keyframes=[seed],
                 is_new=True,
+                distance_context=(
+                    self._window.map_widget.get_trajectory_distance_context()
+                ),
             )
             self._before_snapshot = None
             self._active_record_at_start = None
             self._latest_deferred = None
-            self._window.map_widget.show_trajectory_edit(
-                self._session.to_snapshot()
-            )
+            self._window.map_widget.show_trajectory_edit(self._session.to_snapshot())
             return
 
         record = records[0]
@@ -223,6 +221,7 @@ class TrajectoryEditCoordinator(QObject):
                 x=float(item["x"]),
                 y=float(item["y"]),
                 keyframe_id=str(item.get("id") or f"legacy-{index}"),
+                point_kind=cast("TrajectoryPointKind", str(item["point_kind"])),
             )
             for index, item in enumerate(record.get("keyframes", []))
         ]
@@ -243,7 +242,9 @@ class TrajectoryEditCoordinator(QObject):
             keyframes=keyframes,
             segment_modes=segment_modes,
             properties=cast(dict[str, Any], record.get("properties", {})),
-            metadata_needs_repair=bool(record.get("metadata_needs_repair", False)),
+            distance_context=(
+                self._window.map_widget.get_trajectory_distance_context()
+            ),
         )
         self._before_snapshot = copy.deepcopy(record.get("row_snapshot"))
         self._active_record_at_start = copy.deepcopy(record)
@@ -283,7 +284,7 @@ class TrajectoryEditCoordinator(QObject):
                 session.finish_date_edit()
             session.begin_date_edit(edit_id)
         except ValueError as exc:
-            self._show_status(str(exc))
+            self._show_date_error(str(exc))
             return
         self._render()
 
@@ -300,7 +301,7 @@ class TrajectoryEditCoordinator(QObject):
         try:
             session.update_active_date(proposed_time)
         except ValueError as exc:
-            self._show_status(str(exc))
+            self._show_date_error(str(exc))
             return
         self._render()
 
@@ -325,7 +326,7 @@ class TrajectoryEditCoordinator(QObject):
                     playhead,
                 )
         except ValueError as exc:
-            self._show_status(str(exc))
+            self._show_date_error(str(exc))
             return
         self._render()
 
@@ -355,18 +356,6 @@ class TrajectoryEditCoordinator(QObject):
         if self._session.cancel_date_edit():
             self._render()
 
-    @Slot(bool)
-    def set_allow_reorder(self, allow: bool) -> None:
-        """Toggle deliberate reordering for the active date edit."""
-        if self._session is None or self._pending_command_id is not None:
-            return
-        try:
-            self._session.set_allow_reorder(allow)
-        except ValueError as exc:
-            self._show_status(str(exc))
-            return
-        self._render()
-
     @Slot()
     def shift_later(self) -> None:
         """Apply the active date delta to all later locations."""
@@ -375,7 +364,7 @@ class TrajectoryEditCoordinator(QObject):
         try:
             self._session.shift_later_by_active_delta()
         except ValueError as exc:
-            self._show_status(str(exc))
+            self._show_date_error(str(exc))
             return
         self._render()
 
@@ -467,6 +456,43 @@ class TrajectoryEditCoordinator(QObject):
         if self._session.cancel_speed_equalization():
             self._render()
 
+    @Slot()
+    def make_selected_route_point(self) -> None:
+        """Convert the selected interior timed location to a route point."""
+        if self._session is None or self._pending_command_id is not None:
+            return
+        try:
+            self._session.make_selected_route_point()
+        except ValueError as exc:
+            self._show_status(str(exc))
+            return
+        self._render()
+
+    @Slot()
+    def make_selected_timed_location(self) -> None:
+        """Promote the selected route point to a dated location."""
+        if self._session is None or self._pending_command_id is not None:
+            return
+        try:
+            self._session.make_selected_timed_location()
+        except ValueError as exc:
+            self._show_status(str(exc))
+            return
+        self._render()
+
+    @Slot(str)
+    def make_intermediate_points_automatic(self, end_id: str) -> None:
+        """Convert a selected timed range's interior points to route points."""
+        if self._session is None or self._pending_command_id is not None:
+            return
+        try:
+            changed = self._session.make_intermediate_points_automatic(end_id)
+        except ValueError as exc:
+            self._show_status(str(exc))
+            return
+        self._show_status(f"Made {changed} intermediate points automatic.")
+        self._render()
+
     @Slot(str, float, float)
     def move_keyframe(self, edit_id: str, x: float, y: float) -> None:
         """Update only the working spatial coordinates during a drag."""
@@ -480,9 +506,7 @@ class TrajectoryEditCoordinator(QObject):
         self._render(rebuild_overlay=False)
 
     @Slot(str, str, float, float)
-    def insert_midpoint(
-        self, start_id: str, end_id: str, x: float, y: float
-    ) -> None:
+    def insert_midpoint(self, start_id: str, end_id: str, x: float, y: float) -> None:
         """Promote one midpoint handle into a fixed-date working keyframe."""
         if self._session is None or self._pending_command_id is not None:
             return
@@ -548,7 +572,9 @@ class TrajectoryEditCoordinator(QObject):
             self._show_status("Apply or cancel the equalization preview first.")
             return
         if not session.can_apply:
-            self._show_status("Resolve trajectory validation or reload conflicts first.")
+            self._show_status(
+                "Resolve trajectory validation or reload conflicts first."
+            )
             return
         command = UpdateTrajectoryCommand(
             session.map_id,
@@ -594,7 +620,9 @@ class TrajectoryEditCoordinator(QObject):
                 self._render()
                 return
             command_state = result.data.get("command_state", {})
-            data = command_state.get("data", {}) if isinstance(command_state, dict) else {}
+            data = (
+                command_state.get("data", {}) if isinstance(command_state, dict) else {}
+            )
             self._expected_after_snapshot = copy.deepcopy(
                 data.get("after_snapshot") if isinstance(data, dict) else None
             )
@@ -633,9 +661,7 @@ class TrajectoryEditCoordinator(QObject):
     def _current_authoritative(self) -> list[dict[str, Any]]:
         if self._session is None:
             return []
-        return copy.deepcopy(
-            self._authoritative_by_map.get(self._session.map_id, [])
-        )
+        return copy.deepcopy(self._authoritative_by_map.get(self._session.map_id, []))
 
     def _request_reload(self, map_id: str) -> None:
         invoke_queued(
@@ -658,3 +684,8 @@ class TrajectoryEditCoordinator(QObject):
         logger.warning(message)
         if hasattr(self._window, "status_bar"):
             self._window.status_bar.showMessage(message, 5000)
+
+    def _show_date_error(self, message: str) -> None:
+        """Keep a rejected date operation visible beside the date controls."""
+        self._window.map_widget.show_trajectory_date_error(message)
+        self._show_status(message)

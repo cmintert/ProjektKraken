@@ -9,7 +9,6 @@ import sqlite3
 import pytest
 
 from src.core.trajectory import (
-    SEGMENT_MODE_LINEAR,
     SEGMENT_MODE_STEP,
     Keyframe,
     build_trajectory_properties,
@@ -129,9 +128,7 @@ class TestTrajectoryRepository:
         assert fetched_marker_id == marker_id
         assert len(fetched_traj) == 2
 
-    def test_map_snapshots_are_json_safe_and_include_exact_row(
-        self, repo, setup_data
-    ):
+    def test_map_snapshots_are_json_safe_and_include_exact_row(self, repo, setup_data):
         """Worker payloads contain values rather than mutable domain objects."""
         trajectory_id = repo.insert(
             setup_data["marker_id"],
@@ -148,8 +145,7 @@ class TestTrajectoryRepository:
         assert [item["t"] for item in snapshot["keyframes"]] == [0.0, 10.0]
         assert all(item["id"] for item in snapshot["keyframes"])
         assert snapshot["segment_modes"][0]["mode"] == "linear"
-        assert snapshot["metadata_needs_repair"] is True
-        assert snapshot["row_snapshot"]["properties"] == '{"stroke": "dashed"}'
+        assert snapshot["properties"]["stroke"] == "dashed"
         json.dumps(snapshots)
 
     def test_trajectory_columns_populated_correctly(self, repo, setup_data):
@@ -181,9 +177,7 @@ class TestTrajectoryRepository:
         before = repo.get_marker_trajectory_snapshot("map1", "marker1")
         first = repo.get_snapshots_by_map_id("map1")[0]
         keyframes = [
-            Keyframe(
-                item["t"], item["x"], item["y"], keyframe_id=item["id"]
-            )
+            Keyframe(item["t"], item["x"], item["y"], keyframe_id=item["id"])
             for item in first["keyframes"]
         ]
         pair = (keyframes[0].keyframe_id, keyframes[1].keyframe_id)
@@ -203,42 +197,41 @@ class TestTrajectoryRepository:
         assert after["id"] == trajectory_id
         assert loaded["properties"]["stroke"] == "dashed"
         assert loaded["segment_modes"][0]["mode"] == "step"
-        assert loaded["metadata_needs_repair"] is False
 
-    def test_malformed_editor_metadata_falls_back_without_losing_extensions(
-        self, repo, setup_data, caplog
+    def test_incompatible_editor_metadata_is_logged_and_deleted(
+        self, repo, db_connection, setup_data, caplog
     ):
-        """Mismatched editor metadata repairs IDs and preserves unknown data."""
-        repo.insert(
+        """Unsupported authoring metadata is removed during strict loading."""
+        trajectory_id = repo.insert(
             setup_data["marker_id"],
             [
                 Keyframe(t=10.0, x=0.1, y=0.2),
                 Keyframe(t=20.0, x=0.8, y=0.9),
             ],
-            properties={
-                "worldbuilder_extension": {"certainty": "rumour"},
-                "kraken_trajectory": {
-                    "schema_version": 1,
-                    "keyframe_ids": ["only-one-id"],
-                    "segments": [{"mode": "unknown"}],
-                },
-            },
+            properties={"worldbuilder_extension": {"certainty": "rumour"}},
         )
+        db_connection.execute(
+            "UPDATE moving_features SET properties = ? WHERE id = ?",
+            (
+                json.dumps(
+                    {
+                        "kraken_trajectory": {
+                            "schema_version": 1,
+                            "keyframe_ids": ["only-one-id"],
+                        }
+                    }
+                ),
+                trajectory_id,
+            ),
+        )
+        db_connection.commit()
 
-        loaded = repo.get_snapshots_by_map_id(setup_data["map_id"])[0]
+        assert repo.get_snapshots_by_map_id(setup_data["map_id"]) == []
+        assert repo.get_marker_trajectory_snapshot("map1", "marker1") is None
+        assert "removing incompatible trajectory" in caplog.text.lower()
 
-        assert loaded["metadata_needs_repair"] is True
-        assert loaded["properties"]["worldbuilder_extension"] == {
-            "certainty": "rumour"
-        }
-        assert len({item["id"] for item in loaded["keyframes"]}) == 2
-        assert [item["mode"] for item in loaded["segment_modes"]] == [
-            SEGMENT_MODE_LINEAR
-        ]
-        assert "invalid editor metadata" in caplog.text.lower()
-
-    def test_backward_compat_parses_old_format(self, repo, db_connection, setup_data):
-        """Test that old [[t,x,y],...] format is correctly parsed."""
+    def test_old_format_is_logged_and_deleted(self, repo, db_connection, setup_data):
+        """Pre-MF-JSON trajectory rows are deliberately unsupported."""
         marker_id = setup_data["marker_id"]
         # Insert old-format trajectory directly into DB
         old_format = [[10.0, 0.1, 0.1], [50.0, 0.5, 0.5]]
@@ -251,33 +244,19 @@ class TestTrajectoryRepository:
         )
         db_connection.commit()
 
-        # Verify repo can parse it
-        results = repo.get_by_marker_db_id(marker_id)
-        assert len(results) == 1
-        traj_id, keyframes = results[0]
-        assert traj_id == "old-traj-id"
-        assert len(keyframes) == 2
-        assert keyframes[0].t == 10.0
-        assert keyframes[0].x == 0.1
-        assert keyframes[1].t == 50.0
-        assert keyframes[1].x == 0.5
+        assert repo.get_snapshots_by_map_id("map1") == []
+        assert repo.get_marker_trajectory_snapshot("map1", "marker1") is None
 
-    def test_insert_does_not_sort_or_reuse_caller_values(self, repo, setup_data):
-        """Repository insertion owns an independent sorted snapshot."""
+    def test_insert_rejects_points_outside_authoritative_route_order(
+        self, repo, setup_data
+    ):
+        """Persistence never silently reorders the authored path."""
         first = Keyframe(t=20.0, x=0.8, y=0.8)
         second = Keyframe(t=10.0, x=0.2, y=0.2)
         supplied = [first, second]
 
-        repo.insert(setup_data["marker_id"], supplied)
-        first.x = 0.1
-
-        assert supplied == [first, second]
-        assert [keyframe.t for keyframe in supplied] == [20.0, 10.0]
-        persisted = repo.get_by_marker_db_id(setup_data["marker_id"])[0][1]
-        assert [(keyframe.t, keyframe.x) for keyframe in persisted] == [
-            (10.0, 0.2),
-            (20.0, 0.8),
-        ]
+        with pytest.raises(ValueError, match="Invalid trajectory"):
+            repo.insert(setup_data["marker_id"], supplied)
 
     def test_complete_replacement_preserves_row_metadata(
         self, repo, db_connection, setup_data
@@ -300,8 +279,8 @@ class TestTrajectoryRepository:
         assert before is not None
 
         supplied = [
-            Keyframe(t=30.0, x=0.7, y=0.8),
             Keyframe(t=20.0, x=0.3, y=0.4),
+            Keyframe(t=30.0, x=0.7, y=0.8),
         ]
         after = repo.set_marker_trajectory(
             "map1",
@@ -313,11 +292,11 @@ class TestTrajectoryRepository:
         assert after is not None
         assert after["id"] == before["id"]
         assert after["marker_id"] == before["marker_id"]
-        assert after["properties"] == before["properties"]
+        assert json.loads(after["properties"])["stroke"] == "dashed"
         assert after["created_at"] == before["created_at"]
         assert after["t_start"] == 20.0
         assert after["t_end"] == 30.0
-        assert [keyframe.t for keyframe in supplied] == [30.0, 20.0]
+        assert [keyframe.t for keyframe in supplied] == [20.0, 30.0]
 
     def test_complete_replacement_preserves_one_keyframe(self, repo, setup_data):
         """A one-point trajectory remains a persisted domain state."""
@@ -339,13 +318,14 @@ class TestTrajectoryRepository:
         assert after["t_end"] == 5.0
         persisted = repo.get_by_marker_db_id(setup_data["marker_id"])
         assert len(persisted) == 1
-        assert persisted[0][1] == [Keyframe(t=5.0, x=0.4, y=0.6)]
+        assert [
+            (point.t, point.x, point.y, point.point_kind) for point in persisted[0][1]
+        ] == [(5.0, 0.4, 0.6, "timed")]
+        assert persisted[0][1][0].keyframe_id is not None
 
     def test_complete_replacement_deletes_only_at_zero(self, repo, setup_data):
         """An empty complete state deletes the trajectory row."""
-        repo.insert(
-            setup_data["marker_id"], [Keyframe(t=5.0, x=0.4, y=0.6)]
-        )
+        repo.insert(setup_data["marker_id"], [Keyframe(t=5.0, x=0.4, y=0.6)])
         before = repo.get_marker_trajectory_snapshot("map1", "marker1")
 
         after = repo.set_marker_trajectory(
@@ -410,9 +390,7 @@ class TestTrajectoryRepository:
         self, repo, db_connection, setup_data
     ):
         """Single-trajectory operations never choose a duplicate row."""
-        repo.insert(
-            setup_data["marker_id"], [Keyframe(t=1.0, x=0.1, y=0.1)]
-        )
+        repo.insert(setup_data["marker_id"], [Keyframe(t=1.0, x=0.1, y=0.1)])
         db_connection.execute(
             """
             INSERT INTO moving_features
@@ -449,9 +427,7 @@ class TestTrajectoryRepository:
         self, repo, db_connection, setup_data
     ):
         """A database failure leaves the complete prior row untouched."""
-        repo.insert(
-            setup_data["marker_id"], [Keyframe(t=1.0, x=0.1, y=0.1)]
-        )
+        repo.insert(setup_data["marker_id"], [Keyframe(t=1.0, x=0.1, y=0.1)])
         before = repo.get_marker_trajectory_snapshot("map1", "marker1")
         db_connection.execute(
             """

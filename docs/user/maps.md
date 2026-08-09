@@ -40,7 +40,8 @@ shows a working copy while the saved track remains unchanged.
   entity's resolved position at that date. Leave it there to record a stay, or
   drag it to a new place.
 - Drag a midpoint handle to insert a new dated point between two existing
-  travel points when you want to shape the route.
+  travel locations when you want to shape the route. Midpoint handles create
+  **Route points** whose dates are calculated automatically from path distance.
 - Select a point and choose **Edit Date** to change when the entity reaches it.
   Opening the date controls does not move the timeline.
 - Choose **Use Playhead** before or during date editing to copy the current
@@ -49,6 +50,23 @@ shows a working copy while the saved track remains unchanged.
 - Select a point and choose **Set Start Anchor**, then select a later point and
   choose **Equalize** to preview evenly timed travel over that section.
 - Choose **Equalize Whole** to preview even timing across the complete route.
+
+### Timed locations and route points
+
+**Timed locations** carry authoritative dates. Departures, arrivals, stops,
+and other historically meaningful positions should remain timed locations.
+Editing either end of a Travel leg automatically recalculates every Route point
+between them while preserving the path and the opposite endpoint.
+
+**Route points** shape a Travel leg without creating dates that must be edited
+individually. Moving a Route point recalculates its date and the other Route
+points in that leg by cumulative distance. Choose **Make Timed Location** when
+a calculated point becomes historically significant.
+
+To simplify an existing densely timed route, set a timed start location,
+select a later timed location, and choose **Make Intermediate Automatic**.
+ProjektKraken keeps the endpoints and converts every point between them into
+automatically timed Route points. Relocations cannot contain Route points.
 
 ### Travel, stays, and relocation
 
@@ -77,16 +95,16 @@ instead of inventing timing.
 
 ### Change dates without changing the route
 
-**Keep route order** is the default. During **Edit Date**, the allowed dates
+Route order is explicit. During **Edit Date**, the allowed dates
 between the previous and next points are shown, and a value outside those
 bounds is rejected. This lets you change segment speeds without accidentally
 changing which locations come first.
 
-Turn on **Allow route reorder** only for the active date edit when the entity
-really visits the locations in a different order. The working route previews
-the new order before **Done**. Arrival settings are retained for point pairs
-that remain together; newly formed pairs default to Travel so a relocation is
-never inferred silently.
+The date editor shows the original date, proposed date, allowed range, and
+current timeline playhead separately. **Use Playhead** is available only when
+the displayed playhead date fits the allowed range. If it does not, the editor
+explains which boundary the playhead must cross instead of silently rejecting
+the button press.
 
 Choose **Shift this and later** after changing a date to move that point and
 every later point by the same amount. Later journey and stay durations remain
