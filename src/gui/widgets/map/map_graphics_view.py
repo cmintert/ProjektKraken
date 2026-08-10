@@ -226,6 +226,9 @@ class MapGraphicsView(QGraphicsView):
     # -- Feature editing signals --
     feature_style_changed = Signal(str, dict)
     feature_geometry_changed = Signal(str, list)
+    feature_geometry_edit_requested = Signal(str)
+    feature_geometry_manage_requested = Signal(str)
+    feature_geometry_cancel_requested = Signal()
 
     # -- Visual styling signal (marker_id, style_overrides_dict) --
     marker_visual_style_changed = Signal(str, dict)
@@ -926,6 +929,19 @@ class MapGraphicsView(QGraphicsView):
             y: New Y coordinate (normalized 0-1).
         """
         self._marker_manager.update_marker_position(marker_id, x, y)
+        self._schedule_label_layout()
+
+    def update_feature_geometry(
+        self,
+        marker_id: str,
+        geometry: list[dict[str, float]],
+        anchor_x: float,
+        anchor_y: float,
+    ) -> None:
+        """Replace a rendered path or region without recreating it."""
+        self._marker_manager.update_feature_geometry(
+            marker_id, geometry, anchor_x, anchor_y
+        )
         self._schedule_label_layout()
 
     def remove_marker(self, marker_id: str) -> None:

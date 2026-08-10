@@ -233,6 +233,7 @@ class DeleteMarkerCommand(BaseCommand):
         self.marker_id = marker_id
         self._deleted_marker: Optional[Marker] = None
         self._deleted_trajectories: list[dict] = []
+        self._deleted_geometry_states: list[dict] = []
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Executes the deletion.
@@ -256,6 +257,9 @@ class DeleteMarkerCommand(BaseCommand):
 
             self._deleted_trajectories = (
                 db_service.trajectory_repo.snapshot_by_marker(self.marker_id)
+            )
+            self._deleted_geometry_states = (
+                db_service.feature_geometry_repo.snapshot_by_marker(self.marker_id)
             )
             rows_deleted = db_service.delete_marker(self.marker_id)
             if rows_deleted == 0:
@@ -291,6 +295,8 @@ class DeleteMarkerCommand(BaseCommand):
                 db_service.insert_marker(self._deleted_marker)
                 for trajectory in self._deleted_trajectories:
                     db_service.trajectory_repo.restore_snapshot(trajectory)
+                for state in self._deleted_geometry_states:
+                    db_service.feature_geometry_repo.restore_snapshot(state)
             self._is_executed = False
             logger.info(f"Undid deletion of marker: {self.marker_id}")
 
@@ -306,6 +312,7 @@ class DeleteMarkerCommand(BaseCommand):
                 self._deleted_marker.to_dict() if self._deleted_marker else None
             ),
             "deleted_trajectories": self._deleted_trajectories,
+            "deleted_geometry_states": self._deleted_geometry_states,
             "is_executed": self._is_executed,
         }
 
@@ -325,6 +332,9 @@ class DeleteMarkerCommand(BaseCommand):
             command._deleted_marker = Marker.from_dict(marker_data)
         command._deleted_trajectories = list(
             data.get("deleted_trajectories", [])
+        )
+        command._deleted_geometry_states = list(
+            data.get("deleted_geometry_states", [])
         )
         command._is_executed = bool(data.get("is_executed", marker_data))
         return command

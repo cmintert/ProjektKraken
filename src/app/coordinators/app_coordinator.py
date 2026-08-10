@@ -52,6 +52,9 @@ class AppCoordinator(QObject):
         from src.app.coordinators.fast_inject_coordinator import (
             FastInjectCoordinator,
         )
+        from src.app.coordinators.feature_geometry_coordinator import (
+            FeatureGeometryCoordinator,
+        )
         from src.app.coordinators.import_coordinator import ImportCoordinator
         from src.app.coordinators.navigation_coordinator import (
             NavigationCoordinator,
@@ -70,9 +73,10 @@ class AppCoordinator(QObject):
         self.fast_inject = FastInjectCoordinator(main_window)
         self.import_coord = ImportCoordinator(main_window)
         self.trajectory_edit = TrajectoryEditCoordinator(main_window)
+        self.feature_geometry = FeatureGeometryCoordinator(main_window)
 
         self.main_window = main_window
-        logger.debug("AppCoordinator initialized with 9 coordinators")
+        logger.debug("AppCoordinator initialized with 10 coordinators")
 
     def validate_world(self) -> None:
         """Request world validation on the DatabaseWorker thread.

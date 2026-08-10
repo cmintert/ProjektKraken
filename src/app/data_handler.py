@@ -60,6 +60,7 @@ class DataHandler(QObject):
     maps_ready = Signal(list)  # Emitted when maps are processed
     markers_ready = Signal(str, list)  # (map_id, markers)
     trajectories_ready = Signal(str, list)  # (map_id, trajectory snapshots)
+    feature_geometry_states_ready = Signal(str, list)
     entity_state_resolved = Signal(str, dict)  # (entity_id, attributes)
     graph_data_ready = Signal(list, list)  # (nodes, edges)
     graph_metadata_ready = Signal(list, list)  # (tags, rel_types)
@@ -283,6 +284,7 @@ class DataHandler(QObject):
             processed_markers.append(
                 {
                     "id": marker.id,
+                    "map_id": marker.map_id,
                     "object_id": marker.object_id,
                     "object_type": marker.object_type,
                     "label": label,
@@ -336,6 +338,13 @@ class DataHandler(QObject):
     ) -> None:
         """Forward map-scoped serializable trajectory snapshots."""
         self.trajectories_ready.emit(map_id, trajectories)
+
+    @Slot(str, list)
+    def on_feature_geometry_states_loaded(
+        self, map_id: str, states: List[Any]
+    ) -> None:
+        """Forward map-scoped dated geometry snapshots."""
+        self.feature_geometry_states_ready.emit(map_id, states)
 
     @Slot(CommandResult)
     def on_command_finished(self, result: CommandResult) -> None:  # noqa: C901

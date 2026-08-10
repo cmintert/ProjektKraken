@@ -37,6 +37,9 @@ from src.core.map import Map, MapLayerNode
 from src.core.marker import Marker
 from src.services.map_nesting_service import MapNestingService
 from src.services.raster_image_analysis import sample_raster_semantic
+from src.services.repositories.feature_geometry_repository import (
+    FeatureGeometryRepository,
+)
 from src.services.repositories.map_repository import MapRepository
 
 logger = logging.getLogger(__name__)
@@ -76,6 +79,7 @@ class SpatialContextBuilder:
         world_root: Optional[Path] = None,
         name_lookup: Optional[NameLookup] = None,
         nesting_service: Optional[MapNestingService] = None,
+        feature_geometry_repo: Optional[FeatureGeometryRepository] = None,
     ) -> None:
         """Initialise the builder.
 
@@ -97,12 +101,14 @@ class SpatialContextBuilder:
         self._world_root = Path(world_root) if world_root is not None else None
         self._name_lookup = name_lookup
         self._nesting_service = nesting_service
+        self._feature_geometry_repo = feature_geometry_repo
 
     def build(
         self,
         object_id: str,
         object_type: str,
         active_map_id: Optional[str],
+        lore_date: Optional[float] = None,
     ) -> Optional[str]:
         """Return a formatted spatial context string, or ``None`` if unavailable.
 
@@ -126,6 +132,7 @@ class SpatialContextBuilder:
         )
         if marker is None:
             return None
+        marker = self._resolve_marker_geometry(marker, lore_date)
 
         map_obj = self._map_repo.get_map(active_map_id)
         if map_obj is None:
@@ -137,7 +144,7 @@ class SpatialContextBuilder:
         layer_name, layer_notes = self._resolve_layer(map_obj, marker)
         raster_facts = self._resolve_raster_facts(map_obj, marker)
         nearby = self._resolve_nearby(
-            active_map_id, marker, width_m, suppress_distance
+            active_map_id, marker, width_m, suppress_distance, lore_date
         )
 
         has_notes = bool(layer_notes)
@@ -273,6 +280,7 @@ class SpatialContextBuilder:
         marker: Marker,
         width_m: Optional[float],
         suppress_distance: bool,
+        lore_date: Optional[float] = None,
     ) -> List[Tuple[str, str]]:
         """Find up to :data:`_MAX_NEARBY` named markers on the same map.
 
@@ -288,6 +296,7 @@ class SpatialContextBuilder:
 
         candidates: List[Tuple[float, Marker]] = []
         for other in all_markers:
+            other = self._resolve_marker_geometry(other, lore_date)
             if other.id == marker.id:
                 continue
             if other.object_id == marker.object_id and other.object_type == marker.object_type:
@@ -315,6 +324,38 @@ class SpatialContextBuilder:
             )
             results.append((name, phrase))
         return results
+
+    def _resolve_marker_geometry(
+        self, marker: Marker, lore_date: Optional[float]
+    ) -> Marker:
+        """Return a copy using its dated geometry anchor when requested."""
+        if lore_date is None or self._feature_geometry_repo is None:
+            return marker
+        if not marker.is_path and not marker.is_region:
+            return marker
+        try:
+            from dataclasses import replace
+
+            from src.core.feature_geometry_state import resolve_feature_geometry
+
+            resolved = resolve_feature_geometry(
+                marker,
+                self._feature_geometry_repo.get_states(marker.id),
+                lore_date,
+            )
+            return replace(
+                marker,
+                x=resolved.anchor_x,
+                y=resolved.anchor_y,
+                geometry=resolved.geometry,
+            )
+        except Exception:
+            logger.warning(
+                "Could not resolve dated geometry for marker %s",
+                marker.id,
+                exc_info=True,
+            )
+            return marker
 
     def _lookup_name(self, marker: Marker) -> Optional[str]:
         """Resolve a marker's display name via injected lookup or ``label``."""
@@ -491,6 +532,7 @@ def lookup_spatial_context(
     object_id: str,
     object_type: str,
     active_map_id: str,
+    lore_date: Optional[float] = None,
 ) -> Optional[str]:
     """Open a short-lived SQLite connection and build a spatial-context block.
 
@@ -514,12 +556,16 @@ def lookup_spatial_context(
         conn.row_factory = sqlite3.Row
         try:
             repo = MapRepository(conn)
+            feature_geometry_repo = FeatureGeometryRepository(conn)
             builder = SpatialContextBuilder(
                 repo,
                 world_root=Path(db_path).parent,
                 nesting_service=MapNestingService(),
+                feature_geometry_repo=feature_geometry_repo,
             )
-            return builder.build(object_id, object_type, active_map_id)
+            return builder.build(
+                object_id, object_type, active_map_id, lore_date
+            )
         finally:
             conn.close()
     except Exception:

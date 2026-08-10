@@ -189,11 +189,18 @@ class InteractionHandler:
         menu.addAction(edit_style_action)
 
         edit_vertices_action = QAction(self._view)
-        edit_vertices_action.setText("Edit Vertices...")
+        edit_vertices_action.setText("Edit Geometry at Playhead...")
         edit_vertices_action.triggered.connect(
-            lambda: self._view._vertex_editor.start_vertex_editing(item)
+            lambda: self._view.feature_geometry_edit_requested.emit(item.marker_id)
         )
         menu.addAction(edit_vertices_action)
+
+        manage_states_action = QAction(self._view)
+        manage_states_action.setText("Manage Geometry States...")
+        manage_states_action.triggered.connect(
+            lambda: self._view.feature_geometry_manage_requested.emit(item.marker_id)
+        )
+        menu.addAction(manage_states_action)
 
         menu.addSeparator()
 

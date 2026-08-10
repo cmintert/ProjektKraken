@@ -15,6 +15,7 @@ import pytest
 from PIL import Image as PilImage
 
 from src.app.constants import MAP_DEFAULT_WIDTH_METERS
+from src.core.feature_geometry_state import FeatureGeometryState
 from src.core.map import Map, MapLayerNode
 from src.core.marker import Marker
 from src.services.spatial_context_builder import SpatialContextBuilder
@@ -387,6 +388,75 @@ def test_raster_vem_hit_appears_in_context(tmp_path: Path) -> None:
     assert result is not None
     assert "Biome: Forest" in result
     assert "WWF" in result  # raster-level notes inlined
+
+
+def test_raster_sampling_uses_dated_vector_anchor(tmp_path: Path) -> None:
+    raster_path = _write_discrete_raster(tmp_path, "biome.png")
+    marker = Marker(
+        id="region",
+        map_id="map-1",
+        object_id="entity-1",
+        object_type="entity",
+        x=0.1,
+        y=0.5,
+        label="Border",
+        feature_type="region",
+        geometry=[
+            {"x": 0.05, "y": 0.4},
+            {"x": 0.15, "y": 0.4},
+            {"x": 0.1, "y": 0.6},
+        ],
+    )
+    raster_meta = {
+        "node_id": "raster-1",
+        "file_path": raster_path.name,
+        "mode": "discrete",
+        "value_entity_map": {
+            "mode": "exact",
+            "mappings": [
+                {"id": "a", "label": "Tundra", "value": 1},
+                {"id": "b", "label": "Forest", "value": 2},
+                {"id": "c", "label": "Desert", "value": 3},
+            ],
+        },
+    }
+    tree = _layer_tree_with_marker(marker.id)
+    tree.children.append(
+        MapLayerNode(name="Biome", layer_type="raster", id="raster-1")
+    )
+    map_obj = _make_map(
+        layers=tree, attributes={"raster_layers": [raster_meta]}
+    )
+    repo = MagicMock()
+    repo.get_marker_by_composite.return_value = marker
+    repo.get_map.return_value = map_obj
+    repo.get_markers_by_map.return_value = [marker]
+    state = FeatureGeometryState(
+        marker_id=marker.id,
+        effective_date=100.0,
+        geometry=[
+            {"x": 0.75, "y": 0.4},
+            {"x": 0.85, "y": 0.4},
+            {"x": 0.8, "y": 0.6},
+        ],
+        anchor_x=0.8,
+        anchor_y=0.5,
+    )
+    geometry_repo = MagicMock()
+    geometry_repo.get_states.return_value = [state]
+
+    builder = SpatialContextBuilder(
+        repo,
+        world_root=tmp_path,
+        feature_geometry_repo=geometry_repo,
+    )
+    base_result = builder.build(marker.object_id, marker.object_type, "map-1")
+    dated_result = builder.build(
+        marker.object_id, marker.object_type, "map-1", lore_date=100.0
+    )
+
+    assert base_result is not None and "Biome: Tundra" in base_result
+    assert dated_result is not None and "Biome: Desert" in dated_result
 
 
 def test_raster_layer_with_empty_vem_is_skipped(tmp_path: Path) -> None:

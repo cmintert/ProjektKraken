@@ -604,9 +604,13 @@ class DeleteLayerSubtreeCommand(BaseCommand):
             if marker.id in node_ids
         ]
         trajectories: list[dict[str, Any]] = []
+        geometry_states: list[dict[str, Any]] = []
         for marker in markers:
             trajectories.extend(
                 db_service.trajectory_repo.snapshot_by_marker(marker.id)
+            )
+            geometry_states.extend(
+                db_service.feature_geometry_repo.snapshot_by_marker(marker.id)
             )
 
         all_rasters = list(
@@ -631,6 +635,7 @@ class DeleteLayerSubtreeCommand(BaseCommand):
             node=node.to_dict(),
             markers=[marker.to_dict() for marker in markers],
             trajectories=trajectories,
+            geometry_states=geometry_states,
             raster_layers=deleted_rasters,
             raster_files=raster_files,
         )
@@ -698,6 +703,8 @@ class DeleteLayerSubtreeCommand(BaseCommand):
                     db_service.insert_marker(Marker.from_dict(marker_data))
                 for trajectory in self._snapshot.trajectories:
                     db_service.trajectory_repo.restore_snapshot(trajectory)
+                for state in self._snapshot.geometry_states:
+                    db_service.feature_geometry_repo.restore_snapshot(state)
         except Exception:
             self._artifact_manifest = artifacts.stash(
                 self.command_id, self._snapshot.raster_files

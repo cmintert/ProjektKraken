@@ -89,6 +89,7 @@ class GenerationRequest:
     source_hash: str | None = None
     object_type: str | None = None
     active_map_id: str | None = None
+    playhead_date: float | None = None
     spatial_enabled: bool = False
 
     def to_dict(self) -> dict[str, Any]:
@@ -104,6 +105,7 @@ class GenerationRequest:
             "source_hash": self.source_hash,
             "object_type": self.object_type,
             "active_map_id": self.active_map_id,
+            "playhead_date": self.playhead_date,
             "spatial_enabled": self.spatial_enabled,
         }
 

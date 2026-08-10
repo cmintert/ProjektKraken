@@ -51,6 +51,9 @@ def _init_registry() -> None:
         DeleteEventCommand,
         UpdateEventCommand,
     )
+    from src.commands.feature_geometry_commands import (
+        ReplaceFeatureGeometryStatesCommand,
+    )
     from src.commands.image_commands import (
         AddImagesCommand,
         RemoveImageCommand,
@@ -151,6 +154,9 @@ def _init_registry() -> None:
             "UpdateMarkerColorCommand": UpdateMarkerColorCommand,
             "UpdateMarkerAttributeCommand": UpdateMarkerAttributeCommand,
             "UpdateTrajectoryCommand": UpdateTrajectoryCommand,
+            "ReplaceFeatureGeometryStatesCommand": (
+                ReplaceFeatureGeometryStatesCommand
+            ),
             # Layer commands
             "SetLayerVisibilityCommand": SetLayerVisibilityCommand,
             "MoveLayerCommand": MoveLayerCommand,

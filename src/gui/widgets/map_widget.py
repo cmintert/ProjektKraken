@@ -195,6 +195,10 @@ class MapWidget(
     feature_created = Signal(str, str, str, str, str, list)
     feature_style_changed = Signal(str, dict)  # marker_id, new style
     feature_geometry_changed = Signal(str, list)  # marker_id, new geometry
+    feature_geometry_edit_requested = Signal(str)
+    feature_geometry_manage_requested = Signal(str)
+    feature_geometry_apply_requested = Signal()
+    feature_geometry_cancel_requested = Signal()
     trajectory_edit_requested = Signal(str)
     trajectory_keyframe_selected = Signal(str)
     trajectory_keyframe_moved = Signal(str, float, float)
@@ -462,6 +466,27 @@ class MapWidget(
         edit_strip_layout.addWidget(self.btn_cancel_trajectory)
         self.trajectory_edit_strip.hide()
         layout.addWidget(self.trajectory_edit_strip)
+
+        self.feature_geometry_edit_strip = QFrame(self)
+        self.feature_geometry_edit_strip.setStyleSheet(StyleHelper.get_frame_style())
+        geometry_strip_layout = QHBoxLayout(self.feature_geometry_edit_strip)
+        geometry_strip_layout.setContentsMargins(8, 4, 8, 4)
+        self.feature_geometry_edit_label = QLabel("Edit Geometry")
+        self.feature_geometry_edit_source = QLabel("")
+        geometry_strip_layout.addWidget(self.feature_geometry_edit_label)
+        geometry_strip_layout.addWidget(self.feature_geometry_edit_source, 1)
+        self.btn_apply_feature_geometry = QPushButton("Apply")
+        self.btn_cancel_feature_geometry = QPushButton("Cancel")
+        self.btn_apply_feature_geometry.clicked.connect(
+            self.feature_geometry_apply_requested.emit
+        )
+        self.btn_cancel_feature_geometry.clicked.connect(
+            self.feature_geometry_cancel_requested.emit
+        )
+        geometry_strip_layout.addWidget(self.btn_apply_feature_geometry)
+        geometry_strip_layout.addWidget(self.btn_cancel_feature_geometry)
+        self.feature_geometry_edit_strip.hide()
+        layout.addWidget(self.feature_geometry_edit_strip)
 
         self.trajectory_date_panel = QFrame(self)
         self.trajectory_date_panel.setSizePolicy(
@@ -791,6 +816,15 @@ class MapWidget(
         self.view.drawing_cancelled.connect(self._on_drawing_cancelled)
         self.view.feature_style_changed.connect(self.feature_style_changed.emit)
         self.view.feature_geometry_changed.connect(self.feature_geometry_changed.emit)
+        self.view.feature_geometry_edit_requested.connect(
+            self.feature_geometry_edit_requested.emit
+        )
+        self.view.feature_geometry_manage_requested.connect(
+            self.feature_geometry_manage_requested.emit
+        )
+        self.view.feature_geometry_cancel_requested.connect(
+            self.feature_geometry_cancel_requested.emit
+        )
         self.view.feature_geometry_changed.connect(self._on_geometry_changed)
         self.view.graphics_scene.selectionChanged.connect(self._on_selection_changed)
         # Bi-directional selection: marker click → highlight in layer panel
@@ -1472,6 +1506,36 @@ class MapWidget(
 
         """
         self.view.update_marker_position(marker_id, x, y)
+
+    def update_feature_geometry(
+        self,
+        marker_id: str,
+        geometry: list[dict[str, float]],
+        anchor_x: float,
+        anchor_y: float,
+    ) -> None:
+        """Replace the rendered geometry for one path or region."""
+        self.view.update_feature_geometry(
+            marker_id, geometry, anchor_x, anchor_y
+        )
+
+    def show_feature_geometry_edit(self, label: str, source: str) -> None:
+        """Show the working-copy controls for a feature geometry edit."""
+        self.feature_geometry_edit_label.setText(label)
+        self.feature_geometry_edit_source.setText(source)
+        self.feature_geometry_edit_strip.show()
+        self.btn_apply_feature_geometry.setEnabled(True)
+
+    def set_feature_geometry_edit_pending(self, pending: bool) -> None:
+        """Disable Apply while a geometry command is running."""
+        self.btn_apply_feature_geometry.setEnabled(not pending)
+        self.btn_cancel_feature_geometry.setEnabled(not pending)
+
+    def hide_feature_geometry_edit(self) -> None:
+        """Hide working-copy controls after apply or cancellation."""
+        self.feature_geometry_edit_strip.hide()
+        self.btn_apply_feature_geometry.setEnabled(True)
+        self.btn_cancel_feature_geometry.setEnabled(True)
 
     def remove_marker(self, marker_id: str) -> None:
         """Removes a marker from the map and its layer node (MEDIUM-7).

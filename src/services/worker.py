@@ -56,6 +56,7 @@ class DatabaseWorker(QObject):
     maps_loaded = Signal(list)  # List[Map]
     markers_loaded = Signal(str, list)  # map_id, List[Marker]
     trajectories_loaded = Signal(str, list)  # map_id, JSON-safe trajectory snapshots
+    feature_geometry_states_loaded = Signal(str, list)
     longform_sequence_loaded = Signal(list)  # List[dict]
     calendar_config_loaded = Signal(
         object
@@ -372,6 +373,23 @@ class DatabaseWorker(QObject):
         except Exception:
             logger.error(f"Failed to load trajectories: {traceback.format_exc()}")
             self.error_occurred.emit(f"Failed to load trajectories for map {map_id}.")
+
+    @Slot(str)
+    def load_feature_geometry_states(self, map_id: str) -> None:
+        """Load every dated vector-geometry state for one map."""
+        if not self.db_service:
+            return
+        try:
+            states = self.db_service.feature_geometry_repo.get_states_for_map(map_id)
+            self.feature_geometry_states_loaded.emit(map_id, states)
+        except Exception:
+            logger.error(
+                "Failed to load feature geometry states: %s",
+                traceback.format_exc(),
+            )
+            self.error_occurred.emit(
+                f"Failed to load dated geometry for map {map_id}."
+            )
 
     @Slot(str)
     def load_event_details(self, event_id: str) -> None:

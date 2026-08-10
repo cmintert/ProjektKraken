@@ -166,6 +166,7 @@ class GenerationWorker(QThread):
             self.object_id = request.target_id
             self.object_type = request.object_type
             self.active_map_id = request.active_map_id
+            self.playhead_date = request.playhead_date
             self.spatial_enabled = request.spatial_enabled
         else:
             self.max_tokens = max_tokens
@@ -176,6 +177,7 @@ class GenerationWorker(QThread):
             self.object_id = object_id
             self.object_type = object_type
             self.active_map_id = active_map_id
+            self.playhead_date = None
             self.spatial_enabled = spatial_enabled
         # Populated during run() when spatial context is actually injected;
         # read by the widget to drive the post-generation transparency label.
@@ -284,6 +286,7 @@ class GenerationWorker(QThread):
                 self.object_id,
                 self.object_type,
                 self.active_map_id,
+                self.playhead_date,
             )
 
         self.spatial_context_used = context_text
@@ -1195,6 +1198,7 @@ class LLMGenerationWidget(QWidget):
 
         spatial_enabled = self.spatial_cb.isChecked()
         active_map_id = self._resolve_active_map_id() if spatial_enabled else None
+        playhead_date = self._resolve_playhead_date() if spatial_enabled else None
 
         # Create worker
         request = GenerationRequest(
@@ -1208,6 +1212,7 @@ class LLMGenerationWidget(QWidget):
             source_hash=self._generation_source_hash,
             object_type=object_type,
             active_map_id=active_map_id,
+            playhead_date=playhead_date,
             spatial_enabled=spatial_enabled,
         )
         self._worker = GenerationWorker(
@@ -1236,8 +1241,23 @@ class LLMGenerationWidget(QWidget):
         if not (object_id and object_type and active_map_id):
             return None
         return lookup_spatial_context(
-            db_path, object_id, object_type, active_map_id
+            db_path,
+            object_id,
+            object_type,
+            active_map_id,
+            self._resolve_playhead_date(),
         )
+
+    def _resolve_playhead_date(self) -> Optional[float]:
+        """Return the active timeline playhead when embedded in MainWindow."""
+        try:
+            timeline = getattr(self.window(), "timeline", None)
+            if timeline is None:
+                return None
+            return float(timeline.get_playhead_time())
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.debug("Failed to resolve playhead date: %s", exc)
+            return None
 
     def _resolve_active_map_id(self) -> Optional[str]:
         """Walk the widget tree to find the MainWindow's active map id.

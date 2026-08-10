@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-08-09
-**Commit:** 0ff6aed5
+**Last Updated:** 2026-08-10
+**Commit:** 9e319f79
 ---
 
 # Changelog
@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-08-10)* **Map / Temporal Geometry**: Added Base plus dated replacement
+  geometry for paths and regions, with cached playhead playback,
+  calendar-aware state management, working-copy editing, persistent undo, and
+  historical spatial-context resolution.
 
 - *(2026-08-09)* **Editor / Context Tags**: Added per-world remembered session
   context tags for interactive entity and event creation, with autocomplete,
@@ -33,6 +38,10 @@ All notable changes to this project will be documented in this file.
   databases from being silently recreated and added explicit recovery warnings.
 
 ### Changed
+
+- *(2026-08-10)* **Documentation / Testing**: Documented temporal path and
+  region editing, regenerated schema references, and added domain, repository,
+  command, coordinator, deletion, playback, and spatial-context coverage.
 
 - *(2026-08-09)* **Testing / Maintenance**: Added context creation, persistence,
   cleanup, database round-trip, and MainWindow coverage, and clarified Pillow

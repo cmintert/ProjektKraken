@@ -257,6 +257,10 @@ class WorkerManager(QObject):
         self.window.worker.trajectories_loaded.connect(
             self.window.data_handler.on_trajectories_loaded, connection_type
         )
+        self.window.worker.feature_geometry_states_loaded.connect(
+            self.window.data_handler.on_feature_geometry_states_loaded,
+            connection_type,
+        )
         self.window.worker.filter_results_ready.connect(
             self.window.data_coordinator.on_filter_results_ready, connection_type
         )

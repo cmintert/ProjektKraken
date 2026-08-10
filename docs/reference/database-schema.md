@@ -78,6 +78,17 @@ erDiagram
         TEXT style
     }
 
+    feature_geometry_states {
+        TEXT id PK
+        TEXT marker_id
+        REAL effective_date
+        TEXT geometry
+        REAL anchor_x
+        REAL anchor_y
+        REAL created_at
+        REAL modified_at
+    }
+
     moving_features {
         TEXT id PK
         TEXT marker_id
@@ -156,6 +167,7 @@ erDiagram
     }
 
     markers }o--|| maps : "map_id"
+    feature_geometry_states }o--|| markers : "marker_id"
     moving_features }o--|| markers : "marker_id"
     event_tags }o--|| events : "event_id"
     event_tags }o--|| tags : "tag_id"
@@ -254,7 +266,24 @@ erDiagram
 | `geometry` | TEXT |  |
 | `style` | TEXT |  |
 
-**Indexes:** `idx_markers_map`
+**Indexes:** `idx_markers_map`, `idx_markers_object`
+
+### `feature_geometry_states`
+
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `id` | TEXT | PRIMARY KEY |
+| `marker_id` | TEXT | NOT NULL |
+| `effective_date` | REAL | NOT NULL |
+| `geometry` | TEXT | NOT NULL |
+| `anchor_x` | REAL | NOT NULL |
+| `anchor_y` | REAL | NOT NULL |
+| `created_at` | REAL | NOT NULL |
+| `modified_at` | REAL | NOT NULL |
+
+Each row replaces a path or region's Base Geometry from `effective_date` until a later row becomes applicable. The stored anchor is recalculated from `geometry`; styles and labels remain properties of the parent marker.
+
+**Indexes:** `uq_feature_geometry_state_date`
 
 ### `moving_features`
 
@@ -278,6 +307,8 @@ The parallel `properties` object may contain unrelated extension data. Its `krak
 
 MF-JSON remains the fully dated playback projection. Missing, unsupported, malformed, or inconsistent authoring metadata makes the trajectory incompatible; it is logged and deleted during map trajectory load.
 
+**Indexes:** `idx_moving_features_marker`, `idx_moving_features_time`
+
 ### `image_attachments`
 
 | Column | Type | Constraints |
@@ -292,6 +323,8 @@ MF-JSON remains the fully dated playback projection. Missing, unsupported, malfo
 | `created_at` | REAL |  |
 | `resolution` | TEXT |  |
 | `source` | TEXT |  |
+
+**Indexes:** `idx_attachments_owner`
 
 ### `tags`
 
@@ -339,6 +372,8 @@ MF-JSON remains the fully dated playback projection. Missing, unsupported, malfo
 | `metadata` | JSON | DEFAULT '{}' |
 | `created_at` | REAL | NOT NULL |
 
+**Indexes:** `uq_embeddings_obj_model`, `idx_embeddings_model_dim`, `idx_embeddings_object`, `idx_embeddings_created_at`
+
 ### `command_history`
 
 | Column | Type | Constraints |
@@ -354,6 +389,8 @@ MF-JSON remains the fully dated playback projection. Missing, unsupported, malfo
 | `aggregate_id` | TEXT |  |
 | `aggregate_type` | TEXT |  |
 | `is_snapshot` | BOOLEAN | DEFAULT 0 |
+
+**Indexes:** `idx_ch_world_time`, `idx_ch_session`, `idx_ch_aggregate`
 
 ### `edit_sessions`
 

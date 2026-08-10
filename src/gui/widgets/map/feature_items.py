@@ -443,6 +443,18 @@ class PathItem(_FeatureItemBase):
         label_rect = self._label_item.boundingRect()
         self._label_item.setPos(ax - label_rect.width() / 2, ay + 4)
 
+    def set_geometry(
+        self, geometry: List[Dict[str, float]], anchor_x: float, anchor_y: float
+    ) -> None:
+        """Replace geometry safely without recreating the graphics item."""
+        self.prepareGeometryChange()
+        self._geometry = [dict(point) for point in geometry]
+        self._anchor_x = anchor_x
+        self._anchor_y = anchor_y
+        self._build_path()
+        self._position_label()
+        self.update()
+
     # ------------------------------------------------------------------
     # QGraphicsItem interface
     # ------------------------------------------------------------------
@@ -617,6 +629,18 @@ class RegionItem(_FeatureItemBase):
         self._label_item.setPos(
             ax - label_rect.width() / 2, ay - label_rect.height() / 2
         )
+
+    def set_geometry(
+        self, geometry: List[Dict[str, float]], anchor_x: float, anchor_y: float
+    ) -> None:
+        """Replace geometry safely without recreating the graphics item."""
+        self.prepareGeometryChange()
+        self._geometry = [dict(point) for point in geometry]
+        self._anchor_x = anchor_x
+        self._anchor_y = anchor_y
+        self._build_polygon()
+        self._position_label()
+        self.update()
 
     # ------------------------------------------------------------------
     # QGraphicsItem interface

@@ -160,6 +160,19 @@ class MarkerManager:
         scene_pos = self._view.coord_system.to_scene(x, y)
         marker.setPos(scene_pos)
 
+    def update_feature_geometry(
+        self,
+        marker_id: str,
+        geometry: list[dict[str, float]],
+        anchor_x: float,
+        anchor_y: float,
+    ) -> None:
+        """Update one path or region in place."""
+        item = self.feature_items.get(marker_id)
+        if item is None:
+            return
+        item.set_geometry(geometry, anchor_x, anchor_y)
+
     def remove_marker(self, marker_id: str) -> None:
         """Remove a marker or feature from the map.
 

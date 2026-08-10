@@ -28,6 +28,7 @@ from src.services.repositories import (
     CalendarRepository,
     EntityRepository,
     EventRepository,
+    FeatureGeometryRepository,
     MapRepository,
     MetaRepository,
     RelationRepository,
@@ -67,6 +68,7 @@ class DatabaseService:
         calendar_repo: Optional[CalendarRepository] = None,
         attachment_repo: Optional[AttachmentRepository] = None,
         trajectory_repo: Optional[TrajectoryRepository] = None,
+        feature_geometry_repo: Optional[FeatureGeometryRepository] = None,
         tag_repo: Optional[TagRepository] = None,
         meta_repo: Optional[MetaRepository] = None,
     ) -> None:
@@ -100,6 +102,9 @@ class DatabaseService:
         self._calendar_repo = calendar_repo or CalendarRepository()
         self._attachment_repo = attachment_repo or AttachmentRepository()
         self._trajectory_repo = trajectory_repo or TrajectoryRepository()
+        self._feature_geometry_repo = (
+            feature_geometry_repo or FeatureGeometryRepository()
+        )
         self._tag_repo = tag_repo or TagRepository()
         self._meta_repo = meta_repo or MetaRepository()
         self.attachment_service: Optional["AttachmentService"] = None
@@ -137,6 +142,7 @@ class DatabaseService:
             self._calendar_repo.set_connection(self._connection)
             self._attachment_repo.set_connection(self._connection)
             self._trajectory_repo.set_connection(self._connection)
+            self._feature_geometry_repo.set_connection(self._connection)
             self._tag_repo.set_connection(self._connection)
             self._meta_repo.set_connection(self._connection)
 
@@ -193,6 +199,11 @@ class DatabaseService:
         if not self._trajectory_repo:
             raise RuntimeError("Trajectory repository not initialized")
         return self._trajectory_repo
+
+    @property
+    def feature_geometry_repo(self) -> FeatureGeometryRepository:
+        """Get the dated feature-geometry repository."""
+        return self._feature_geometry_repo
 
     def get_attachment_repo(self) -> AttachmentRepository:
         """Gets the attachment repository.
@@ -336,6 +347,21 @@ class DatabaseService:
         CREATE INDEX IF NOT EXISTS idx_markers_map ON markers(map_id);
         CREATE INDEX IF NOT EXISTS idx_markers_object
             ON markers(object_id, object_type);
+
+        -- Dated replacement geometry for paths and regions
+        CREATE TABLE IF NOT EXISTS feature_geometry_states (
+            id TEXT PRIMARY KEY,
+            marker_id TEXT NOT NULL,
+            effective_date REAL NOT NULL,
+            geometry TEXT NOT NULL,
+            anchor_x REAL NOT NULL,
+            anchor_y REAL NOT NULL,
+            created_at REAL NOT NULL,
+            modified_at REAL NOT NULL,
+            FOREIGN KEY(marker_id) REFERENCES markers(id) ON DELETE CASCADE
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_feature_geometry_state_date
+            ON feature_geometry_states(marker_id, effective_date);
 
         -- Moving Features Table (Temporal Trajectories)
         CREATE TABLE IF NOT EXISTS moving_features (

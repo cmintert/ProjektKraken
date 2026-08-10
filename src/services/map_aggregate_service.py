@@ -24,9 +24,13 @@ class MapAggregateService:
         markers = self.db_service.get_markers_for_map(map_id)
         marker_data = [marker.to_dict() for marker in markers]
         trajectories: list[dict[str, object]] = []
+        geometry_states: list[dict[str, object]] = []
         for marker in markers:
             trajectories.extend(
                 self.db_service.trajectory_repo.snapshot_by_marker(marker.id)
+            )
+            geometry_states.extend(
+                self.db_service.feature_geometry_repo.snapshot_by_marker(marker.id)
             )
 
         raster_metadata = (map_obj.attributes or {}).get("raster_layers", [])
@@ -46,6 +50,7 @@ class MapAggregateService:
             map_data=map_obj.to_dict(),
             markers=marker_data,
             trajectories=trajectories,
+            geometry_states=geometry_states,
             raster_files=raster_files,
         )
 

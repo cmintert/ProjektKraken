@@ -561,6 +561,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
         self.app_coordinator.trajectory_edit.bind_ui()
+        self.app_coordinator.feature_geometry.bind_ui()
 
         # Setup UI Layout via UIManager
         self.ui_manager = UIManager(self)

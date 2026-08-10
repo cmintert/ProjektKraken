@@ -130,7 +130,9 @@ def extract_indexes(schema_sql: str) -> List[Tuple[str, str]]:
     Returns:
         List of (index_name, table_name)
     """
-    index_pattern = r"CREATE INDEX IF NOT EXISTS (\w+) ON (\w+)\s*\("
+    index_pattern = (
+        r"CREATE (?:UNIQUE )?INDEX IF NOT EXISTS (\w+)\s+ON\s+(\w+)\s*\("
+    )
     matches = re.findall(index_pattern, schema_sql, re.IGNORECASE)
     return matches
 
@@ -222,6 +224,17 @@ def generate_markdown_tables(
                     "unsupported, malformed, or inconsistent authoring metadata "
                     "makes the trajectory incompatible; it is logged and deleted "
                     "during map trajectory load.",
+                ]
+            )
+
+        if table_name == "feature_geometry_states":
+            lines.extend(
+                [
+                    "",
+                    "Each row replaces a path or region's Base Geometry from "
+                    "`effective_date` until a later row becomes applicable. The "
+                    "stored anchor is recalculated from `geometry`; styles and "
+                    "labels remain properties of the parent marker.",
                 ]
             )
 

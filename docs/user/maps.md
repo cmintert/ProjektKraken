@@ -18,11 +18,34 @@ temporal trajectories, nested detail maps, and optional editable raster layers.
 - Use **Draw Path** or **Draw Region** to create a feature.
 - Double-click or use **Finish Sketch** to complete a drawing.
 - Press **Escape** to cancel the current tool.
-- Right-click a feature and choose **Edit Vertices…** to move, insert, or
-  remove vertices.
+- Right-click a feature and choose **Edit Geometry at Playhead…** to move,
+  insert, or remove vertices in a working copy.
 
 Snapping helps align new or edited vertices with existing geometry. Paths need
 at least two vertices; regions need at least three.
+
+## Dated path and region geometry
+
+Every path and region has Base Geometry and may have dated geometry states.
+Before the first dated state, ProjektKraken draws Base Geometry. On a state's
+exact date and until the next state, it draws the latest applicable state.
+Geometry switches immediately; shapes are not interpolated or morphed.
+
+Choose **Edit Geometry at Playhead…** from a feature's context menu. On the
+exact date of an existing state, this edits that state. At any other date,
+ProjektKraken clones the currently resolved geometry into a new state at the
+playhead, so editing a later border never silently changes earlier history.
+Choose **Apply** to save the working copy as one undoable operation, or
+**Cancel** to restore the geometry appropriate for the playhead.
+
+Choose **Manage Geometry States…** to edit Base Geometry explicitly, edit a
+dated state, change its calendar-aware date, or delete it. Base Geometry cannot
+be deleted, and two states cannot share a date. Deleting a dated state reveals
+the preceding state or Base Geometry at affected dates.
+
+Feature style, label, and layer assignment remain global. Event-date
+future/past presentation is separate from geometry-state resolution. Point
+markers continue to use their ordinary positions or trajectories.
 
 ## Create or edit a trajectory
 

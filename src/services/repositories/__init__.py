@@ -8,6 +8,10 @@ from src.services.repositories.attachment_repository import AttachmentRepository
 from src.services.repositories.calendar_repository import CalendarRepository
 from src.services.repositories.entity_repository import EntityRepository
 from src.services.repositories.event_repository import EventRepository
+from src.services.repositories.feature_geometry_repository import (
+    FeatureGeometryConflictError,
+    FeatureGeometryRepository,
+)
 from src.services.repositories.map_repository import MapRepository
 from src.services.repositories.meta_repository import MetaRepository
 from src.services.repositories.relation_repository import RelationRepository
@@ -20,6 +24,8 @@ from src.services.repositories.trajectory_repository import (
 
 __all__ = [
     "EventRepository",
+    "FeatureGeometryRepository",
+    "FeatureGeometryConflictError",
     "EntityRepository",
     "RelationRepository",
     "MapRepository",

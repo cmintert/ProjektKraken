@@ -225,6 +225,11 @@ class MapHandler(QObject):
                 "load_trajectories",
                 Q_ARG(str, map_id),
             )
+            invoke_queued(
+                self._worker,
+                "load_feature_geometry_states",
+                Q_ARG(str, map_id),
+            )
 
             # Load footprint overlays for detail-map children.
             self._load_footprints_for_map(selected_map, maps)

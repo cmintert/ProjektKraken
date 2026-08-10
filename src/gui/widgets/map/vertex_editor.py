@@ -63,6 +63,7 @@ class VertexEditor:
         self._vertex_handles: list[DraggableEditHandle[int]] = []
         self._midpoint_handles: list[MidpointEditHandle[int]] = []
         self._editing_original_style: Optional[Dict[str, Any]] = None
+        self._managed_session = False
 
     # ------------------------------------------------------------------
     # Properties
@@ -90,7 +91,9 @@ class VertexEditor:
     # Public API
     # ------------------------------------------------------------------
 
-    def start_vertex_editing(self, item: "PathItem | RegionItem") -> None:
+    def start_vertex_editing(
+        self, item: "PathItem | RegionItem", *, managed_session: bool = False
+    ) -> None:
         """Enters vertex editing mode for a feature.
 
         Shows draggable handles on each vertex and ghost midpoint handles
@@ -101,6 +104,7 @@ class VertexEditor:
         """
         self.finish_vertex_editing()  # Clean up any previous session
         self._editing_feature_id = item.marker_id
+        self._managed_session = managed_session
 
         geometry = item._geometry
         if not geometry or not self._view.pixmap_item:
@@ -164,6 +168,7 @@ class VertexEditor:
         # is_editing_vertices returns False when _update_mode_indicator
         # is called from the connected slot.
         self._editing_feature_id = None
+        self._managed_session = False
         for handle in self._vertex_handles:
             self._view.graphics_scene.removeItem(handle)
         self._vertex_handles.clear()
@@ -211,7 +216,10 @@ class VertexEditor:
             True if the event was consumed.
         """
         if self._editing_feature_id:
-            self.finish_vertex_editing()
+            if self._managed_session:
+                self._view.feature_geometry_cancel_requested.emit()
+            else:
+                self.finish_vertex_editing()
             return True
         return False
 

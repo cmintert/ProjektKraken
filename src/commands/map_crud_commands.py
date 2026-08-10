@@ -386,6 +386,8 @@ class DeleteMapCommand(BaseCommand):
                     db_service.insert_marker(Marker.from_dict(marker_data))
                 for trajectory in snapshot.trajectories:
                     db_service.trajectory_repo.restore_snapshot(trajectory)
+                for state in snapshot.geometry_states:
+                    db_service.feature_geometry_repo.restore_snapshot(state)
         except Exception:
             self._artifact_manifest = artifacts.stash(
                 self.command_id, snapshot.raster_files

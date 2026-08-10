@@ -204,6 +204,7 @@ class LayerSubtreeSnapshot:
     node: dict[str, Any]
     markers: list[dict[str, Any]] = field(default_factory=list)
     trajectories: list[dict[str, Any]] = field(default_factory=list)
+    geometry_states: list[dict[str, Any]] = field(default_factory=list)
     raster_layers: list[dict[str, Any]] = field(default_factory=list)
     raster_files: list[str] = field(default_factory=list)
 
@@ -215,6 +216,7 @@ class LayerSubtreeSnapshot:
             "node": self.node,
             "markers": self.markers,
             "trajectories": self.trajectories,
+            "geometry_states": self.geometry_states,
             "raster_layers": self.raster_layers,
             "raster_files": self.raster_files,
         }
@@ -228,6 +230,7 @@ class LayerSubtreeSnapshot:
             node=dict(data["node"]),
             markers=list(data.get("markers", [])),
             trajectories=list(data.get("trajectories", [])),
+            geometry_states=list(data.get("geometry_states", [])),
             raster_layers=list(data.get("raster_layers", [])),
             raster_files=[str(path) for path in data.get("raster_files", [])],
         )
@@ -240,6 +243,7 @@ class MapAggregateSnapshot:
     map_data: dict[str, Any]
     markers: list[dict[str, Any]] = field(default_factory=list)
     trajectories: list[dict[str, Any]] = field(default_factory=list)
+    geometry_states: list[dict[str, Any]] = field(default_factory=list)
     raster_files: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
@@ -248,6 +252,7 @@ class MapAggregateSnapshot:
             "map_data": self.map_data,
             "markers": self.markers,
             "trajectories": self.trajectories,
+            "geometry_states": self.geometry_states,
             "raster_files": self.raster_files,
         }
 
@@ -258,5 +263,6 @@ class MapAggregateSnapshot:
             map_data=dict(data["map_data"]),
             markers=list(data.get("markers", [])),
             trajectories=list(data.get("trajectories", [])),
+            geometry_states=list(data.get("geometry_states", [])),
             raster_files=[str(path) for path in data.get("raster_files", [])],
         )
