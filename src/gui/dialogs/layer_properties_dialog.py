@@ -10,26 +10,50 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QDoubleSpinBox,
     QFormLayout,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
     QPlainTextEdit,
+    QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
+from src.core.calendar import CalendarConverter
 from src.core.map import MapLayerNode
-from src.core.map_constants import MAP_LAYER_TYPE_GROUP
+from src.core.map_constants import (
+    MAP_LAYER_TYPE_GROUP,
+    MAP_LAYER_TYPE_MARKER,
+    MAP_LAYER_TYPE_PATH,
+    MAP_LAYER_TYPE_REGION,
+)
 from src.gui.utils.style_helper import StyleHelper
+from src.gui.widgets.compact_date_widget import CompactDateWidget
+
+_TEMPORAL_LAYER_TYPES = {
+    MAP_LAYER_TYPE_GROUP,
+    MAP_LAYER_TYPE_MARKER,
+    MAP_LAYER_TYPE_PATH,
+    MAP_LAYER_TYPE_REGION,
+}
 
 
 class LayerPropertiesDialog(QDialog):
     """Edit common and advanced properties without mutating the layer model."""
 
     def __init__(
-        self, node: MapLayerNode, parent: Optional[QWidget] = None
+        self,
+        node: MapLayerNode,
+        parent: Optional[QWidget] = None,
+        *,
+        calendar_converter: Optional[CalendarConverter] = None,
+        playhead_time: float = 0.0,
+        focus_temporal: bool = False,
     ) -> None:
         super().__init__(parent)
         self._node = node
+        self._calendar_converter = calendar_converter
+        self._playhead_time = float(playhead_time)
         self.setWindowTitle("Layer Properties")
         self.setMinimumWidth(420)
         self.setStyleSheet(StyleHelper.get_dialog_base_style())
@@ -57,14 +81,20 @@ class LayerPropertiesDialog(QDialog):
         self._exclusive.setVisible(node.layer_type == MAP_LAYER_TYPE_GROUP)
         form.addRow("Group:", self._exclusive)
 
-        self._start_enabled, self._start = self._optional_date(
-            "Visible from", node.start_date
+        temporal_supported = node.layer_type in _TEMPORAL_LAYER_TYPES
+        prefix = "Visible" if node.layer_type == MAP_LAYER_TYPE_GROUP else "Exists"
+        self._start_enabled, self._start, start_row = self._optional_date(
+            f"{prefix} from", node.start_date
         )
-        self._end_enabled, self._end = self._optional_date(
-            "Visible until", node.end_date
+        self._end_enabled, self._end, end_row = self._optional_date(
+            f"{prefix} until", node.end_date
         )
-        form.addRow(self._start_enabled, self._start)
-        form.addRow(self._end_enabled, self._end)
+        self._start_enabled.setVisible(temporal_supported)
+        self._end_enabled.setVisible(temporal_supported)
+        start_row.setVisible(temporal_supported)
+        end_row.setVisible(temporal_supported)
+        form.addRow(self._start_enabled, start_row)
+        form.addRow(self._end_enabled, end_row)
 
         self._min_zoom = QDoubleSpinBox()
         self._min_zoom.setRange(0.01, 100.0)
@@ -85,6 +115,16 @@ class LayerPropertiesDialog(QDialog):
         form.addRow(self._max_zoom_enabled, self._max_zoom)
         layout.addLayout(form)
 
+        self._temporal_summary = QLabel()
+        self._temporal_summary.setWordWrap(True)
+        self._temporal_summary.setVisible(temporal_supported)
+        layout.addWidget(self._temporal_summary)
+        self._temporal_error = QLabel()
+        self._temporal_error.setWordWrap(True)
+        self._temporal_error.setStyleSheet(StyleHelper.get_error_label_style())
+        self._temporal_error.setVisible(False)
+        layout.addWidget(self._temporal_error)
+
         hint = QLabel(
             "Zoom ratios are relative to Fit to Map; 1.0 is the fitted view."
         )
@@ -94,23 +134,114 @@ class LayerPropertiesDialog(QDialog):
             QDialogButtonBox.StandardButton.Ok
             | QDialogButtonBox.StandardButton.Cancel
         )
-        buttons.accepted.connect(self.accept)
+        self._buttons = buttons
+        buttons.accepted.connect(self._accept_if_valid)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
-    @staticmethod
+        for signal in (
+            self._start_enabled.toggled,
+            self._end_enabled.toggled,
+            self._start.value_changed,
+            self._end.value_changed,
+        ):
+            signal.connect(self._update_temporal_feedback)
+        self._update_temporal_feedback()
+        if focus_temporal and temporal_supported:
+            self._start.setFocus()
+
     def _optional_date(
-        label: str, value: Optional[float]
-    ) -> tuple[QCheckBox, QDoubleSpinBox]:
+        self, label: str, value: Optional[float]
+    ) -> tuple[QCheckBox, CompactDateWidget, QWidget]:
         enabled = QCheckBox(label)
         enabled.setChecked(value is not None)
-        editor = QDoubleSpinBox()
-        editor.setRange(-1_000_000_000.0, 1_000_000_000.0)
-        editor.setDecimals(4)
-        editor.setValue(float(value or 0.0))
+        editor = CompactDateWidget(self)
+        if self._calendar_converter is not None:
+            editor.set_calendar_converter(self._calendar_converter)
+        editor.set_value(float(value if value is not None else self._playhead_time))
+        editor.setProperty(
+            "exact_lore_value",
+            float(value) if value is not None else self._playhead_time,
+        )
+        editor.value_changed.connect(
+            lambda _value: editor.setProperty("exact_lore_value", None)
+        )
         editor.setEnabled(value is not None)
         enabled.toggled.connect(editor.setEnabled)
-        return enabled, editor
+        row = QWidget(self)
+        row_layout = QHBoxLayout(row)
+        row_layout.setContentsMargins(0, 0, 0, 0)
+        row_layout.addWidget(editor, 1)
+        use_playhead = QPushButton("Use Playhead", row)
+        use_playhead.clicked.connect(
+            lambda: self._copy_playhead(enabled, editor)
+        )
+        row_layout.addWidget(use_playhead)
+        return enabled, editor, row
+
+    def _copy_playhead(
+        self, enabled: QCheckBox, editor: CompactDateWidget
+    ) -> None:
+        """Enable an endpoint and copy the exact active playhead value."""
+        enabled.setChecked(True)
+        editor.set_value(self._playhead_time)
+        editor.setProperty("exact_lore_value", self._playhead_time)
+        self._update_temporal_feedback()
+
+    def _temporal_values(self) -> tuple[Optional[float], Optional[float]]:
+        """Return optional bounds exactly as they will be persisted."""
+        if self._node.layer_type not in _TEMPORAL_LAYER_TYPES:
+            return self._node.start_date, self._node.end_date
+        start = self._date_value(self._start) if self._start_enabled.isChecked() else None
+        end = self._date_value(self._end) if self._end_enabled.isChecked() else None
+        return start, end
+
+    @staticmethod
+    def _date_value(editor: CompactDateWidget) -> float:
+        """Preserve an exact loaded/playhead value until the user edits it."""
+        exact = editor.property("exact_lore_value")
+        return float(exact) if exact is not None else editor.get_value()
+
+    def _format_date(self, value: Optional[float]) -> str:
+        if value is None:
+            return "unbounded"
+        if self._calendar_converter is not None:
+            return str(self._calendar_converter.format_date(value))
+        return f"{value:g}"
+
+    def _update_temporal_feedback(self, *_args: object) -> None:
+        """Refresh the half-open summary and strict-range validation."""
+        start, end = self._temporal_values()
+        invalid = start is not None and end is not None and end <= start
+        self._temporal_error.setVisible(invalid)
+        self._temporal_error.setText(
+            "The end date must be later than the start date." if invalid else ""
+        )
+        ok_button = self._buttons.button(QDialogButtonBox.StandardButton.Ok)
+        if ok_button is not None:
+            ok_button.setEnabled(not invalid)
+        subject = "Visible" if self._node.layer_type == MAP_LAYER_TYPE_GROUP else "Exists"
+        if start is None and end is None:
+            summary = f"{subject} at every lore date."
+        elif start is None:
+            summary = f"{subject} until {self._format_date(end)}."
+        elif end is None:
+            summary = f"{subject} from {self._format_date(start)} onward."
+        else:
+            summary = (
+                f"{subject} from {self._format_date(start)} until "
+                f"{self._format_date(end)}. At the end date it is no longer "
+                "part of the map state."
+            )
+        self._temporal_summary.setText(summary)
+
+    def _accept_if_valid(self) -> None:
+        """Accept only when the half-open validity range is non-empty."""
+        start, end = self._temporal_values()
+        if start is not None and end is not None and end <= start:
+            self._update_temporal_feedback()
+            return
+        self.accept()
 
     def properties(self) -> dict[str, Any]:
         """Return validated values for ``UpdateLayerPropertiesCommand``."""
@@ -120,14 +251,8 @@ class LayerPropertiesDialog(QDialog):
             "opacity": self._opacity.value(),
             "notes": self._notes.toPlainText(),
             "mutually_exclusive": self._exclusive.isChecked(),
-            "start_date": (
-                self._start.value()
-                if self._start_enabled.isChecked()
-                else None
-            ),
-            "end_date": (
-                self._end.value() if self._end_enabled.isChecked() else None
-            ),
+            "start_date": self._temporal_values()[0],
+            "end_date": self._temporal_values()[1],
             "min_zoom": self._min_zoom.value(),
             "max_zoom": (
                 self._max_zoom.value()

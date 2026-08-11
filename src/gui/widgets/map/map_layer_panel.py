@@ -9,8 +9,17 @@ and reordering via drag-and-drop.  Integrates with the application's
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
 
-from PySide6.QtCore import QModelIndex, QPoint, QSize, Qt, Signal, Slot
-from PySide6.QtGui import QColor
+from PySide6.QtCore import (
+    QModelIndex,
+    QPersistentModelIndex,
+    QPoint,
+    QSize,
+    QSortFilterProxyModel,
+    Qt,
+    Signal,
+    Slot,
+)
+from PySide6.QtGui import QColor, QPainter
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QCheckBox,
@@ -26,6 +35,8 @@ from PySide6.QtWidgets import (
     QSlider,
     QSpinBox,
     QStackedWidget,
+    QStyledItemDelegate,
+    QStyleOptionViewItem,
     QTreeView,
     QVBoxLayout,
     QWidget,
@@ -33,7 +44,8 @@ from PySide6.QtWidgets import (
 
 from src.app.ui_constants import Spacing
 from src.core.calendar import CalendarConverter
-from src.core.map import MapLayerNode
+from src.core.map import VECTOR_LAYER_TYPES, MapLayerNode
+from src.core.theme_manager import ThemeManager
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.color_pickers import (
@@ -57,6 +69,81 @@ logger = logging.getLogger(__name__)
 
 # Label width used for consistent alignment across raster tool rows.
 _LABEL_WIDTH = 52
+ModelIndex = QModelIndex | QPersistentModelIndex
+
+
+class TemporalLayerFilterProxy(QSortFilterProxyModel):
+    """Optionally retain only vector features outside the current date."""
+
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self._outside_only = False
+        self.setRecursiveFilteringEnabled(True)
+
+    def set_outside_only(self, enabled: bool) -> None:
+        """Toggle the temporal-authoring filter."""
+        self._outside_only = bool(enabled)
+        self.invalidate()
+
+    def filterAcceptsRow(
+        self, source_row: int, source_parent: ModelIndex
+    ) -> bool:
+        if not self._outside_only:
+            return True
+        source = self.sourceModel()
+        if source is None:
+            return False
+        index = source.index(source_row, 0, source_parent)
+        from src.gui.widgets.map.map_layer_model import MapLayerModel
+
+        layer_type = index.data(MapLayerModel.LayerTypeRole)
+        state = index.data(MapLayerModel.TemporalValidityRole)
+        return bool(
+            layer_type in VECTOR_LAYER_TYPES
+            and state is not None
+            and not state.valid
+        )
+
+
+class TemporalLayerDelegate(QStyledItemDelegate):
+    """Paint temporal and manual-hidden badges beside layer names."""
+
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        index: ModelIndex,
+    ) -> None:
+        from src.gui.widgets.map.map_layer_model import MapLayerModel
+
+        state = index.data(MapLayerModel.TemporalValidityRole)
+        manual_hidden = bool(index.data(MapLayerModel.ManualHiddenRole))
+        outside = bool(state is not None and state.applicable and not state.valid)
+        badge_count = int(outside) + int(manual_hidden)
+
+        adjusted = QStyleOptionViewItem(option)
+        adjusted_view = cast(Any, adjusted)
+        option_view = cast(Any, option)
+        if badge_count:
+            adjusted_view.rect.adjust(0, 0, -(badge_count * 18 + 4), 0)
+        if outside:
+            adjusted_view.palette.setColor(
+                adjusted_view.palette.ColorRole.Text,
+                QColor(ThemeManager().get_theme().get("text_dim", "#888888")),
+            )
+        super().paint(painter, adjusted, index)
+
+        x = option_view.rect.right() - badge_count * 18
+        color = ThemeManager().get_theme().get("text_dim", "#888888")
+        for icon_name, show in (
+            ("clock.svg", outside),
+            ("eye-slash.svg", manual_hidden),
+        ):
+            if not show:
+                continue
+            icon = load_icon(f"default_assets/icons/ui_icons/{icon_name}", color)
+            icon.paint(painter, x, option_view.rect.center().y() - 7, 14, 14)
+            x += 18
 
 
 class MapLayerPanel(QWidget):
@@ -93,6 +180,9 @@ class MapLayerPanel(QWidget):
     layer_opacity_changed = Signal(str, float, float)  # id, new, old
     layer_renamed = Signal(str, str)
     layer_properties_changed = Signal(str, dict)
+    temporal_jump_requested = Signal(float)
+    temporal_filter_changed = Signal(bool)
+    temporal_counts_changed = Signal(int, int)
 
     # Raster editing signals
     raster_edit_requested = Signal(str)  # node_id — start editing
@@ -132,6 +222,8 @@ class MapLayerPanel(QWidget):
 
         # ── Internal State ────────────────────────────────────────────
         self._model: Optional["MapLayerModel"] = None
+        self._proxy_model = TemporalLayerFilterProxy(self)
+        self._playhead_time = 0.0
         self._selected_node_id: Optional[str] = None
         self._current_node_id: str = ""
         self._slider_updating = False  # guard against feedback loops
@@ -190,6 +282,16 @@ class MapLayerPanel(QWidget):
 
         self._title_label = QLabel("Layers")
         header_layout.addWidget(self._title_label)
+        self._temporal_count_button = QPushButton("0 in date · 0 outside")
+        self._temporal_count_button.setCheckable(True)
+        self._temporal_count_button.setToolTip(
+            "Show only vector features outside the current playhead date"
+        )
+        self._temporal_count_button.setEnabled(False)
+        self._temporal_count_button.toggled.connect(
+            self.set_temporal_filter_enabled
+        )
+        header_layout.addWidget(self._temporal_count_button)
         header_layout.addStretch()
 
         _dim = self._theme_token("text_dim")
@@ -249,6 +351,7 @@ class MapLayerPanel(QWidget):
         self._tree.setAnimated(True)
         self._tree.setExpandsOnDoubleClick(False)  # double-click = rename
         self._tree.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self._tree.setItemDelegate(TemporalLayerDelegate(self._tree))
         self._tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self._tree.customContextMenuRequested.connect(self._show_context_menu)
         self._tree.clicked.connect(self._on_item_clicked)
@@ -1087,6 +1190,12 @@ class MapLayerPanel(QWidget):
         """Access the underlying QTreeView."""
         return self._tree
 
+    def source_index(self, index: ModelIndex) -> QModelIndex:
+        """Map a tree/proxy index to the canonical layer-model index."""
+        if index.model() is self._model:
+            return cast(QModelIndex, index)
+        return self._proxy_model.mapToSource(index)
+
     def set_model(self, model: "MapLayerModel") -> None:
         """Attach a :class:`MapLayerModel` to the tree view.
 
@@ -1099,13 +1208,24 @@ class MapLayerPanel(QWidget):
                 self._model.layer_tree_changed.disconnect(
                     self._reconcile_selection_with_model
                 )
+                self._model.dataChanged.disconnect(self._on_model_data_changed)
+                self._model.temporal_state_changed.disconnect(
+                    self._on_temporal_state_changed
+                )
             except (RuntimeError, TypeError):
                 pass
         self._model = model
-        self._tree.setModel(model)
+        self._proxy_model.setSourceModel(model)
+        self._tree.setModel(self._proxy_model)
         model.layer_tree_changed.connect(self._reconcile_selection_with_model)
+        model.dataChanged.connect(self._on_model_data_changed)
+        model.temporal_state_changed.connect(self._on_temporal_state_changed)
+        if self._calendar_converter is not None:
+            model.set_date_formatter(self._calendar_converter.format_date)
+        model.set_current_time(self._playhead_time)
         self._tree.expandAll()
         self._reconcile_selection_with_model()
+        self._update_temporal_count()
 
     def _reconcile_selection_with_model(self) -> None:
         """Clear controls that refer to a node removed from the layer model."""
@@ -1120,7 +1240,7 @@ class MapLayerPanel(QWidget):
         if selected is not None:
             index = self._model.index_from_node(selected)
             if index.isValid():
-                self._tree.setCurrentIndex(index)
+                self._tree.setCurrentIndex(self._proxy_model.mapFromSource(index))
             self._update_button_state()
             return
 
@@ -1142,6 +1262,8 @@ class MapLayerPanel(QWidget):
             converter: Object exposing ``format_date(float) -> str``.
         """
         self._calendar_converter = converter
+        if self._model is not None:
+            self._model.set_date_formatter(converter.format_date)
         if self._selected_node_id and self._model is not None:
             node = self._model.find_node_by_id(self._selected_node_id)
             if node is not None:
@@ -1165,11 +1287,60 @@ class MapLayerPanel(QWidget):
             return
         index = self._model.index_from_node(node)
         if index.isValid():
-            self._tree.setCurrentIndex(index)
-            self._tree.scrollTo(index)
+            proxy_index = self._proxy_model.mapFromSource(index)
+            if not proxy_index.isValid() and self._temporal_count_button.isChecked():
+                self.set_temporal_filter_enabled(False)
+                proxy_index = self._proxy_model.mapFromSource(index)
+            self._tree.setCurrentIndex(proxy_index)
+            self._tree.scrollTo(proxy_index)
             self._selected_node_id = node_id
             self._sync_opacity_slider(node)
             self._update_button_state()
+
+    def set_playhead_time(self, time: float) -> None:
+        """Refresh temporal tree awareness for the active playhead."""
+        self._playhead_time = float(time)
+        if self._model is not None:
+            self._model.set_current_time(self._playhead_time)
+        self._proxy_model.invalidate()
+        self._update_temporal_count()
+
+    @Slot(bool)
+    def set_temporal_filter_enabled(self, enabled: bool) -> None:
+        """Show only vector features outside the current date when enabled."""
+        enabled = bool(enabled)
+        self._proxy_model.set_outside_only(enabled)
+        self._temporal_count_button.blockSignals(True)
+        self._temporal_count_button.setChecked(enabled)
+        self._temporal_count_button.blockSignals(False)
+        self._tree.expandAll()
+        self.temporal_filter_changed.emit(enabled)
+
+    @Slot()
+    def _on_model_data_changed(self, *_args: object) -> None:
+        self._proxy_model.invalidate()
+        self._update_temporal_count()
+
+    @Slot()
+    def _on_temporal_state_changed(self) -> None:
+        self._proxy_model.invalidate()
+        self._tree.viewport().update()
+        self._update_temporal_count()
+
+    def _update_temporal_count(self) -> None:
+        """Refresh the vector-feature date summary in the panel header."""
+        if self._model is None:
+            self._temporal_count_button.setText("0 in date · 0 outside")
+            self.temporal_counts_changed.emit(0, 0)
+            return
+        valid, outside = self._model.vector_temporal_counts()
+        self.temporal_counts_changed.emit(valid, outside)
+        self._temporal_count_button.setText(
+            f"{valid} in date · {outside} outside"
+        )
+        self._temporal_count_button.setEnabled(outside > 0)
+        if outside == 0 and self._temporal_count_button.isChecked():
+            self.set_temporal_filter_enabled(False)
 
     def refresh_styles(self) -> None:
         """Re-apply all theme-aware styles (call on theme change)."""
@@ -1298,7 +1469,8 @@ class MapLayerPanel(QWidget):
         """
         if self._model is None or not index.isValid():
             return
-        node = self._model.node_from_index(index)
+        source_index = self.source_index(index)
+        node = self._model.node_from_index(source_index)
 
         from src.app.constants import MAP_LAYER_TYPE_SNAPSHOT
 
@@ -1316,7 +1488,9 @@ class MapLayerPanel(QWidget):
                 if parent_node is not None:
                     parent_idx = self._model.index_from_node(parent_node)
                     if parent_idx.isValid():
-                        self._tree.setCurrentIndex(parent_idx)
+                        self._tree.setCurrentIndex(
+                            self._proxy_model.mapFromSource(parent_idx)
+                        )
             return
 
         # Before switching selection, flush any pending drag commit so
@@ -1338,7 +1512,8 @@ class MapLayerPanel(QWidget):
         """
         if self._model is None or not index.isValid():
             return
-        node = self._model.node_from_index(index)
+        source_index = self.source_index(index)
+        node = self._model.node_from_index(source_index)
         name, ok = QInputDialog.getText(
             self, "Rename Layer", "New name:", text=node.name
         )
@@ -1364,7 +1539,8 @@ class MapLayerPanel(QWidget):
         menu = QMenu(self)
 
         if index.isValid():
-            node = self._model.node_from_index(index)
+            source_index = self.source_index(index)
+            node = self._model.node_from_index(source_index)
 
             from src.app.constants import MAP_LAYER_TYPE_SNAPSHOT
 
@@ -1415,6 +1591,23 @@ class MapLayerPanel(QWidget):
                     lambda: self._edit_properties(node)
                 )
 
+                if node.layer_type in VECTOR_LAYER_TYPES or node.layer_type == "group":
+                    temporal_action = menu.addAction("Temporal Validity…")
+                    temporal_action.triggered.connect(
+                        lambda: self._edit_properties(node, focus_temporal=True)
+                    )
+                    state = self._model.temporal_validity(node)
+                    if not state.valid and state.boundary is not None:
+                        jump_text = (
+                            "Jump to Start"
+                            if state.status.value == "before_start"
+                            else "Jump to Last Valid Day"
+                        )
+                        jump_action = menu.addAction(jump_text)
+                        jump_action.triggered.connect(
+                            lambda: self.jump_to_valid_time(node.id)
+                        )
+
                 menu.addSeparator()
 
                 # Delete
@@ -1429,15 +1622,54 @@ class MapLayerPanel(QWidget):
 
         menu.exec(self._tree.viewport().mapToGlobal(pos))
 
-    def _edit_properties(self, node: "MapLayerNode") -> None:
+    def edit_properties(self, node_id: str, *, focus_temporal: bool = False) -> None:
+        """Open properties for a node by id through the existing command path."""
+        if self._model is None:
+            return
+        node = self._model.find_node_by_id(node_id)
+        if node is not None:
+            self._edit_properties(node, focus_temporal=focus_temporal)
+
+    def _edit_properties(
+        self, node: "MapLayerNode", *, focus_temporal: bool = False
+    ) -> None:
         """Open the contextual inspector and emit a property-edit intent."""
         from src.gui.dialogs.layer_properties_dialog import (
             LayerPropertiesDialog,
         )
 
-        dialog = LayerPropertiesDialog(node, self)
+        dialog = LayerPropertiesDialog(
+            node,
+            self,
+            calendar_converter=self._calendar_converter,
+            playhead_time=self._playhead_time,
+            focus_temporal=focus_temporal,
+        )
         if dialog.exec():
             self.layer_properties_changed.emit(node.id, dialog.properties())
+
+    def jump_to_valid_time(self, node_id: str) -> None:
+        """Jump to a deterministic date inside a feature's valid interval."""
+        if self._model is None:
+            return
+        node = self._model.find_node_by_id(node_id)
+        if node is None:
+            return
+        state = self._model.temporal_validity(node)
+        if state.valid or state.boundary is None:
+            return
+        if state.status.value == "before_start":
+            target = state.boundary
+        else:
+            target = state.boundary - 1.0
+            source = (
+                self._model.find_node_by_id(state.source_node_id)
+                if state.source_node_id
+                else node
+            )
+            if source is not None and source.start_date is not None:
+                target = max(source.start_date, target)
+        self.temporal_jump_requested.emit(float(target))
 
     def _toggle_visibility(self, node: "MapLayerNode") -> None:
         """Toggle a node's visibility via the model.
@@ -2704,7 +2936,9 @@ class MapLayerPanel(QWidget):
         if raster_node is not None:
             raster_index = self._model.index_from_node(raster_node)
             if raster_index.isValid():
-                self._tree.setExpanded(raster_index, True)
+                self._tree.setExpanded(
+                    self._proxy_model.mapFromSource(raster_index), True
+                )
 
     @Slot(str)
     def _on_blend_mode_changed(self, new_mode: str) -> None:

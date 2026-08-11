@@ -12,7 +12,7 @@ Implements a ``QAbstractItemModel`` that manages a tree of
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Sequence, cast
+from typing import Any, Callable, Dict, List, Optional, Sequence, cast
 
 from PySide6.QtCore import (
     QAbstractItemModel,
@@ -36,7 +36,13 @@ from src.app.constants import (
     MAP_LAYER_Z_BASE,
     MAP_LAYER_Z_SPACING,
 )
-from src.core.map import MapLayerNode
+from src.core.map import (
+    VECTOR_LAYER_TYPES,
+    MapLayerNode,
+    ResolvedLayerTemporalValidity,
+    TemporalValidityStatus,
+    resolve_layer_temporal_validity,
+)
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.icon_loader import load_icon
 
@@ -68,6 +74,7 @@ class MapLayerModel(QAbstractItemModel):
     layer_opacity_changed = Signal(str, float)
     layer_order_changed = Signal()
     layer_tree_changed = Signal()
+    temporal_state_changed = Signal()
 
     # Columns
     COL_NAME = 0
@@ -77,6 +84,8 @@ class MapLayerModel(QAbstractItemModel):
     LayerTypeRole = Qt.ItemDataRole.UserRole + 1
     OpacityRole = Qt.ItemDataRole.UserRole + 2
     NodeIdRole = Qt.ItemDataRole.UserRole + 3
+    TemporalValidityRole = Qt.ItemDataRole.UserRole + 4
+    ManualHiddenRole = Qt.ItemDataRole.UserRole + 5
 
     def __init__(
         self,
@@ -99,6 +108,8 @@ class MapLayerModel(QAbstractItemModel):
         self._last_zoom: Optional[float] = None
         self._last_fit_zoom: Optional[float] = None
         self._last_time: Optional[float] = None
+        self._current_time: Optional[float] = None
+        self._date_formatter: Optional[Callable[[float], str]] = None
         self._icon_cache: Dict[str, Any] = {}
         ThemeManager().theme_changed.connect(self._on_theme_changed)
 
@@ -267,6 +278,12 @@ class MapLayerModel(QAbstractItemModel):
             return node.opacity
         if role == self.NodeIdRole:
             return node.id
+        if role == self.TemporalValidityRole:
+            return self.temporal_validity(node)
+        if role == self.ManualHiddenRole:
+            return not self._effective_visible(node)
+        if role == Qt.ItemDataRole.ToolTipRole:
+            return self._temporal_tooltip(node)
         return None
 
     def flags(self, index: ModelIndex) -> Qt.ItemFlag:
@@ -715,14 +732,89 @@ class MapLayerModel(QAbstractItemModel):
             return self.visible_at_zoom(parent, zoom_level, fit_zoom_level)
         return True
 
+    @property
+    def current_time(self) -> Optional[float]:
+        """Current playhead used for temporal authoring state."""
+        return self._current_time
+
+    def set_current_time(self, current_time: Optional[float]) -> None:
+        """Set the playhead and refresh temporal roles and visibility caches."""
+        if current_time == self._current_time:
+            return
+        self._current_time = current_time
+        self.invalidate_cache()
+        self._emit_all_data_changed()
+
+    def set_date_formatter(
+        self, formatter: Optional[Callable[[float], str]]
+    ) -> None:
+        """Set the formatter used by temporal layer tooltips."""
+        self._date_formatter = formatter
+        self._emit_all_data_changed()
+
+    def temporal_validity(
+        self, node: MapLayerNode
+    ) -> ResolvedLayerTemporalValidity:
+        """Return temporal authoring state for a vector feature or group."""
+        if self._current_time is None:
+            return ResolvedLayerTemporalValidity(
+                applicable=node.layer_type in VECTOR_LAYER_TYPES
+                or node.layer_type == MAP_LAYER_TYPE_GROUP,
+                valid=True,
+                status=TemporalValidityStatus.VALID,
+            )
+        if node.layer_type in VECTOR_LAYER_TYPES:
+            return resolve_layer_temporal_validity(
+                self._root, node.id, self._current_time
+            )
+        if node.layer_type != MAP_LAYER_TYPE_GROUP:
+            return ResolvedLayerTemporalValidity(
+                applicable=False,
+                valid=True,
+                status=TemporalValidityStatus.VALID,
+            )
+
+        path: List[MapLayerNode] = []
+        current: Optional[MapLayerNode] = node
+        while current is not None and current is not self._root:
+            path.append(current)
+            current = self._find_parent(current)
+        for candidate in reversed(path):
+            if (
+                candidate.start_date is not None
+                and self._current_time < candidate.start_date
+            ):
+                return ResolvedLayerTemporalValidity(
+                    applicable=True,
+                    valid=False,
+                    status=TemporalValidityStatus.BEFORE_START,
+                    source_node_id=candidate.id,
+                    source_node_name=candidate.name,
+                    boundary=candidate.start_date,
+                )
+            if (
+                candidate.end_date is not None
+                and self._current_time >= candidate.end_date
+            ):
+                return ResolvedLayerTemporalValidity(
+                    applicable=True,
+                    valid=False,
+                    status=TemporalValidityStatus.AT_OR_AFTER_END,
+                    source_node_id=candidate.id,
+                    source_node_name=candidate.name,
+                    boundary=candidate.end_date,
+                )
+        return ResolvedLayerTemporalValidity(
+            applicable=True,
+            valid=True,
+            status=TemporalValidityStatus.VALID,
+        )
+
     def visible_at_time(self, node: MapLayerNode, current_time: float) -> bool:
         """Check whether *node* should be visible at the given lore time.
 
-        A node is time-visible if:
-        - It has no ``start_date`` and no ``end_date`` (always visible), or
-        - ``start_date <= current_time`` and ``current_time <= end_date``.
-
-        Ancestor visibility is also checked.
+        Vector features and groups use half-open validity intervals. Other
+        layer types deliberately ignore these bounds.
 
         Args:
             node: The layer node.
@@ -732,16 +824,12 @@ class MapLayerModel(QAbstractItemModel):
             bool: ``True`` if the node should be rendered at this time.
 
         """
-        if not node.visible:
-            return False
-        if node.start_date is not None and current_time < node.start_date:
-            return False
-        if node.end_date is not None and current_time > node.end_date:
-            return False
-        parent = self._find_parent(node)
-        if parent is not None and parent is not self._root:
-            return self.visible_at_time(parent, current_time)
-        return True
+        previous_time = self._current_time
+        self._current_time = current_time
+        try:
+            return self._effective_visible(node) and self.temporal_validity(node).valid
+        finally:
+            self._current_time = previous_time
 
     def compute_visibility(
         self,
@@ -789,6 +877,61 @@ class MapLayerModel(QAbstractItemModel):
         self._last_zoom = None
         self._last_fit_zoom = None
         self._last_time = None
+
+    def vector_temporal_counts(self) -> tuple[int, int]:
+        """Return ``(valid, outside_time)`` counts for vector leaves."""
+        valid = 0
+        outside = 0
+        for node in self._iter_nodes(self._root):
+            if node.layer_type not in VECTOR_LAYER_TYPES:
+                continue
+            if self.temporal_validity(node).valid:
+                valid += 1
+            else:
+                outside += 1
+        return valid, outside
+
+    def effective_opacity(self, node: MapLayerNode) -> float:
+        """Return local opacity composed with every ancestor opacity."""
+        return self._effective_opacity(node)
+
+    def _temporal_tooltip(self, node: MapLayerNode) -> Optional[str]:
+        """Build an authoring tooltip that distinguishes visibility causes."""
+        lines: List[str] = []
+        state = self.temporal_validity(node)
+        if state.applicable and not state.valid and state.boundary is not None:
+            boundary = self._format_date(state.boundary)
+            source = state.source_node_name or node.name
+            if state.status == TemporalValidityStatus.BEFORE_START:
+                lines.append(f"Not visible at current playhead — {source} starts {boundary}.")
+            else:
+                lines.append(f"Not visible at current playhead — {source} ended {boundary}.")
+        if not self._effective_visible(node):
+            lines.append("Manually hidden by this layer or an ancestor.")
+        if self._current_time is not None and lines:
+            lines.append(f"Current playhead: {self._format_date(self._current_time)}")
+        return "\n".join(lines) if lines else None
+
+    def _format_date(self, value: float) -> str:
+        """Format a lore date for authoring feedback."""
+        if self._date_formatter is not None:
+            try:
+                return self._date_formatter(value)
+            except Exception:
+                logger.debug("Layer date formatter failed", exc_info=True)
+        return f"{value:g}"
+
+    def _emit_all_data_changed(self) -> None:
+        """Refresh display roles for the complete layer tree."""
+        self.temporal_state_changed.emit()
+
+    def _iter_nodes(self, node: MapLayerNode) -> Sequence[MapLayerNode]:
+        """Return a flattened node subtree in display order."""
+        nodes: List[MapLayerNode] = []
+        for child in node.children:
+            nodes.append(child)
+            nodes.extend(self._iter_nodes(child))
+        return nodes
 
     @Slot()
     def _on_theme_changed(self) -> None:
@@ -1050,22 +1193,31 @@ class MapLayerModel(QAbstractItemModel):
         """
         if node is not self._root:
             if not parent_visible:
-                vis = False
+                manual_zoom_visible = False
             else:
                 if fit_zoom_level is None:
                     # Preserve the two-argument compatibility surface for
                     # legacy callers and test instrumentation.
-                    vis = self.visible_at_zoom(node, zoom_level)
+                    manual_zoom_visible = self.visible_at_zoom(node, zoom_level)
                 else:
-                    vis = self.visible_at_zoom(
+                    manual_zoom_visible = self.visible_at_zoom(
                         node,
                         zoom_level,
                         fit_zoom_level,
                     )
-                if vis and current_time is not None:
-                    vis = self.visible_at_time(node, current_time)
+            vis = manual_zoom_visible
+            if (
+                vis
+                and current_time is not None
+                and node.layer_type in VECTOR_LAYER_TYPES
+            ):
+                vis = resolve_layer_temporal_validity(
+                    self._root, node.id, current_time
+                ).valid
             result[node.id] = vis
-            node_vis = vis
+            # Group temporal bounds affect vector descendants through the
+            # resolver above, but never suppress raster/basemap descendants.
+            node_vis = manual_zoom_visible
         else:
             node_vis = True  # root container is always the visible anchor
         for child in node.children:

@@ -357,6 +357,18 @@ class MapWidget(
         self.btn_legend_toggle.toggled.connect(self._on_legend_toggle)
         self.toolbar.addWidget(self.btn_legend_toggle)
 
+        self.btn_temporal_ghosts = QPushButton("Temporal Ghosts")
+        self.btn_temporal_ghosts.setCheckable(True)
+        self.btn_temporal_ghosts.setChecked(False)
+        self.btn_temporal_ghosts.setToolTip(
+            "Show selectable authoring ghosts for vector features outside "
+            "the current playhead date"
+        )
+        self.btn_temporal_ghosts.toggled.connect(
+            self.view.set_temporal_ghosts_visible
+        )
+        self.toolbar.addWidget(self.btn_temporal_ghosts)
+
         self.toolbar.addSeparator()
 
         self.btn_edit_trajectory = QPushButton("Edit Trajectory")
@@ -774,7 +786,21 @@ class MapWidget(
         self.coord_label.setSizePolicy(
             QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed
         )
-        layout.addWidget(self.coord_label)
+        status_row = QWidget(self)
+        status_layout = QHBoxLayout(status_row)
+        status_layout.setContentsMargins(0, 0, 0, 0)
+        status_layout.addWidget(self.coord_label, 1)
+        self.temporal_outside_button = QPushButton("0 features outside this date")
+        self.temporal_outside_button.setCheckable(True)
+        self.temporal_outside_button.setVisible(False)
+        self.temporal_outside_button.setToolTip(
+            "Filter the Layers panel to features outside the current date"
+        )
+        self.temporal_outside_button.toggled.connect(
+            self.layer_panel.set_temporal_filter_enabled
+        )
+        status_layout.addWidget(self.temporal_outside_button)
+        layout.addWidget(status_row)
 
         self._apply_theme_styles()
         ThemeManager().theme_changed.connect(self._on_theme_changed)
@@ -825,6 +851,20 @@ class MapWidget(
         self.view.feature_geometry_cancel_requested.connect(
             self.feature_geometry_cancel_requested.emit
         )
+        self.view.temporal_validity_requested.connect(
+            lambda node_id: self.layer_panel.edit_properties(
+                node_id, focus_temporal=True
+            )
+        )
+        self.view.temporal_jump_requested.connect(
+            self.layer_panel.jump_to_valid_time
+        )
+        self.view.temporal_show_in_layers_requested.connect(
+            self.layer_panel.select_node
+        )
+        self.view.effective_visibility_changed.connect(
+            self._refresh_selected_trajectory_visibility
+        )
         self.view.feature_geometry_changed.connect(self._on_geometry_changed)
         self.view.graphics_scene.selectionChanged.connect(self._on_selection_changed)
         # Bi-directional selection: marker click → highlight in layer panel
@@ -853,6 +893,15 @@ class MapWidget(
         self.layer_panel.raster_layer_selected.connect(self._on_raster_layer_selected)
         self.layer_panel.raster_snapshot_selected.connect(
             self._on_raster_snapshot_selected
+        )
+        self.layer_panel.temporal_jump_requested.connect(
+            self.jump_to_time_requested.emit
+        )
+        self.layer_panel.temporal_counts_changed.connect(
+            self._on_temporal_counts_changed
+        )
+        self.layer_panel.temporal_filter_changed.connect(
+            self._on_temporal_filter_changed
         )
 
         # Forward raster signals from the graphics view
@@ -890,6 +939,24 @@ class MapWidget(
 
         # Update all markers with active trajectories
         self._update_trajectory_positions()
+
+    @Slot(int, int)
+    def _on_temporal_counts_changed(self, _valid: int, outside: int) -> None:
+        """Refresh the compact map-level temporal awareness control."""
+        noun = "feature" if outside == 1 else "features"
+        self.temporal_outside_button.setText(
+            f"{outside} {noun} outside this date"
+        )
+        self.temporal_outside_button.setVisible(outside > 0)
+        if outside == 0 and self.temporal_outside_button.isChecked():
+            self.temporal_outside_button.setChecked(False)
+
+    @Slot(bool)
+    def _on_temporal_filter_changed(self, enabled: bool) -> None:
+        """Keep map-level and layer-panel temporal filters synchronized."""
+        self.temporal_outside_button.blockSignals(True)
+        self.temporal_outside_button.setChecked(enabled)
+        self.temporal_outside_button.blockSignals(False)
 
     def minimumSizeHint(self) -> QSize:
         """Allow the widget to shrink inside its dock.
@@ -1589,8 +1656,15 @@ class MapWidget(
             button.setStyleSheet(drawing_style)
 
         toggle_style = StyleHelper.get_toggle_button_style()
-        for button in (self.btn_snap, self.btn_legend_toggle):
+        for button in (
+            self.btn_snap,
+            self.btn_legend_toggle,
+            self.btn_temporal_ghosts,
+        ):
             button.setStyleSheet(toggle_style)
+        self.temporal_outside_button.setStyleSheet(
+            StyleHelper.get_secondary_button_style()
+        )
 
         self.btn_finish_sketch.setStyleSheet(StyleHelper.get_primary_button_style())
         self.overlay_banner.setStyleSheet(StyleHelper.get_overlay_banner_style())

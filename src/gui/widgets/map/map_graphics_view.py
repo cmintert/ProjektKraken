@@ -229,6 +229,10 @@ class MapGraphicsView(QGraphicsView):
     feature_geometry_edit_requested = Signal(str)
     feature_geometry_manage_requested = Signal(str)
     feature_geometry_cancel_requested = Signal()
+    temporal_validity_requested = Signal(str)
+    temporal_jump_requested = Signal(str)
+    temporal_show_in_layers_requested = Signal(str)
+    effective_visibility_changed = Signal()
 
     # -- Visual styling signal (marker_id, style_overrides_dict) --
     marker_visual_style_changed = Signal(str, dict)
@@ -338,6 +342,9 @@ class MapGraphicsView(QGraphicsView):
 
         # Temporal state
         self._current_time: float = 0.0
+        self._playhead_time: float = 0.0
+        self._show_temporal_ghosts = False
+        self._temporal_authoring_overrides: set[str] = set()
 
         # -- Sub-components --
         self._snapping_manager = SnappingManager(self.graphics_scene)
@@ -918,6 +925,8 @@ class MapGraphicsView(QGraphicsView):
             style,
             visual_attributes,
         )
+        self._apply_effective_layer_opacity()
+        self._apply_effective_layer_visibility()
         self._schedule_label_layout()
 
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
@@ -1497,6 +1506,9 @@ class MapGraphicsView(QGraphicsView):
         model.layer_visibility_changed.connect(self._on_layer_visibility_changed)
         model.layer_opacity_changed.connect(self._on_layer_opacity_changed)
         model.layer_order_changed.connect(self._on_layer_order_changed)
+        model.set_current_time(self._playhead_time)
+        self._apply_effective_layer_opacity()
+        self._apply_effective_layer_visibility()
 
     def _on_layer_visibility_changed(self, node_id: str, visible: bool) -> None:
         """Respond to a layer visibility change.
@@ -1505,23 +1517,8 @@ class MapGraphicsView(QGraphicsView):
             node_id: ID of the layer node.
             visible: Whether the layer should be visible.
         """
-        import shiboken6
-
-        item = self._find_graphics_item(node_id)
-        if item is not None and shiboken6.isValid(item):
-            try:
-                item.setVisible(visible)
-                # If hiding a feature that's currently being edited, finish editing
-                # to remove vertex handles
-                if not visible and hasattr(item, "marker_id"):
-                    if self._vertex_editor.editing_feature_id == item.marker_id:
-                        self._vertex_editor.finish_vertex_editing(
-                            emit_geometry_change=False
-                        )
-            except RuntimeError:
-                logger.debug(
-                    "_on_layer_visibility_changed: item %s already deleted", node_id
-                )
+        del node_id, visible
+        self._apply_effective_layer_visibility()
 
     def _on_layer_opacity_changed(self, node_id: str, opacity: float) -> None:
         """Respond to a layer opacity change.
@@ -1535,7 +1532,11 @@ class MapGraphicsView(QGraphicsView):
         item = self._find_graphics_item(node_id)
         if item is not None and shiboken6.isValid(item):
             try:
-                item.setOpacity(opacity)
+                set_layer_opacity = getattr(item, "set_layer_opacity", None)
+                if callable(set_layer_opacity):
+                    set_layer_opacity(opacity)
+                else:
+                    item.setOpacity(opacity)
             except RuntimeError:
                 logger.debug(
                     "_on_layer_opacity_changed: item %s already deleted", node_id
@@ -1569,29 +1570,107 @@ class MapGraphicsView(QGraphicsView):
 
     def _apply_scale_dependent_visibility(self) -> None:
         """Show/hide items based on zoom and layer model."""
+        self._apply_effective_layer_visibility()
+
+    def set_playhead_time(self, time: float) -> None:
+        """Recompute historical feature visibility for a new playhead."""
+        self._playhead_time = float(time)
+        if self._layer_model is not None:
+            self._layer_model.set_current_time(self._playhead_time)
+        self._apply_effective_layer_visibility()
+
+    def set_temporal_ghosts_visible(self, visible: bool) -> None:
+        """Toggle session-only temporal authoring ghosts."""
+        self._show_temporal_ghosts = bool(visible)
+        self._apply_effective_layer_visibility()
+
+    def set_temporal_authoring_override(
+        self, marker_id: str, enabled: bool
+    ) -> None:
+        """Keep an actively edited feature visible despite temporal validity."""
+        if enabled:
+            self._temporal_authoring_overrides.add(marker_id)
+        else:
+            self._temporal_authoring_overrides.discard(marker_id)
+        self._apply_effective_layer_visibility()
+
+    def is_temporally_valid(self, marker_id: str) -> bool:
+        """Return whether a vector feature exists at the current playhead."""
+        if self._layer_model is None:
+            return True
+        node = self._layer_model.find_node_by_id(marker_id)
+        if node is None:
+            return True
+        return self._layer_model.temporal_validity(node).valid
+
+    def _apply_effective_layer_visibility(self) -> None:
+        """Apply manual, ancestor, zoom, and temporal visibility together."""
         if self._layer_model is None:
             return
         zoom = self._get_current_zoom_level()
-        root = self._layer_model.root
-        self._apply_zoom_recursive(root, zoom)
+        base_visibility = dict(
+            self._layer_model.compute_visibility(
+                zoom,
+                current_time=None,
+                fit_zoom_level=self._fit_zoom_level,
+            )
+        )
+        effective_visibility = self._layer_model.compute_visibility(
+            zoom,
+            current_time=self._playhead_time,
+            fit_zoom_level=self._fit_zoom_level,
+        )
+        for node_id, base_visible in base_visibility.items():
+            item = self._find_graphics_item(node_id)
+            if item is None:
+                continue
+            temporal_invalid = base_visible and not effective_visibility.get(
+                node_id, base_visible
+            )
+            override = (
+                base_visible and node_id in self._temporal_authoring_overrides
+            )
+            ghost = (
+                temporal_invalid
+                and self._show_temporal_ghosts
+                and not override
+            )
+            set_ghost = getattr(item, "set_temporal_ghost", None)
+            if callable(set_ghost):
+                set_ghost(ghost)
+            visible = bool(
+                effective_visibility.get(node_id, base_visible) or ghost or override
+            )
+            item.setVisible(visible)
+            if (
+                not visible
+                and self._vertex_editor.editing_feature_id == node_id
+            ):
+                self._vertex_editor.finish_vertex_editing(
+                    emit_geometry_change=False
+                )
+        self.effective_visibility_changed.emit()
 
-    def _apply_zoom_recursive(self, node: Any, zoom: float) -> None:
-        """Walk the layer tree and toggle visibility per zoom range.
-
-        Args:
-            node: A MapLayerNode.
-            zoom: Current zoom level.
-        """
+    def _apply_effective_layer_opacity(self) -> None:
+        """Apply inherited layer opacity without replacing temporal factors."""
         if self._layer_model is None:
             return
-        vis = self._layer_model.visible_at_zoom(
-            node, zoom, self._fit_zoom_level
+        node_ids = self._layer_model.compute_visibility(
+            self._get_current_zoom_level(),
+            current_time=self._playhead_time,
+            fit_zoom_level=self._fit_zoom_level,
         )
-        item = self._find_graphics_item(node.id)
-        if item is not None:
-            item.setVisible(vis)
-        for child in node.children:
-            self._apply_zoom_recursive(child, zoom)
+        for node_id in node_ids:
+            node = self._layer_model.find_node_by_id(node_id)
+            item = self._find_graphics_item(node_id)
+            if node is None or item is None:
+                continue
+            opacity = self._layer_model.effective_opacity(node)
+            set_layer_opacity = getattr(item, "set_layer_opacity", None)
+            if callable(set_layer_opacity):
+                set_layer_opacity(opacity)
+            else:
+                item.setOpacity(opacity)
 
     # ------------------------------------------------------------------
     # Qt Event Overrides (thin dispatchers)

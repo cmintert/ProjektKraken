@@ -376,7 +376,7 @@ class TestMapLayerPanel:
         panel = MapLayerPanel()
         qtbot.addWidget(panel)
         panel.set_model(simple_model)
-        assert panel.tree_view.model() is simple_model
+        assert panel.tree_view.model().sourceModel() is simple_model
 
     def test_panel_select_node(self, qtbot, simple_model: MapLayerModel) -> None:
         """select_node highlights the correct item."""
@@ -386,7 +386,7 @@ class TestMapLayerPanel:
         panel.select_node("m1")
         current = panel.tree_view.currentIndex()
         assert current.isValid()
-        node = simple_model.node_from_index(current)
+        node = simple_model.node_from_index(panel.source_index(current))
         assert node.id == "m1"
 
     def test_panel_layer_selected_signal(
@@ -574,7 +574,9 @@ class TestBidirectionalSelection:
         current = widget.layer_panel.tree_view.currentIndex()
         if current.isValid():
             model = widget.get_layer_model()
-            node = model.node_from_index(current)
+            node = model.node_from_index(
+                widget.layer_panel.source_index(current)
+            )
             assert node.id == "test-1"
 
     def test_layer_panel_click_selects_marker(self, qtbot) -> None:

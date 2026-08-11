@@ -771,6 +771,19 @@ class UpdateLayerPropertiesCommand(BaseCommand):
 
     @staticmethod
     def _apply(node: MapLayerNode, properties: dict[str, Any]) -> None:
+        start_date = properties.get("start_date")
+        end_date = properties.get("end_date")
+        if (
+            start_date is not None
+            and end_date is not None
+            and float(end_date) <= float(start_date)
+        ):
+            raise ValueError("Layer end date must be after its start date")
+        min_zoom = float(properties.get("min_zoom", node.min_zoom))
+        max_zoom = float(properties.get("max_zoom", node.max_zoom))
+        if min_zoom > max_zoom:
+            raise ValueError("Minimum zoom must not exceed maximum zoom")
+
         node.name = str(properties.get("name", node.name)).strip() or node.name
         node.visible = bool(properties.get("visible", node.visible))
         node.opacity = max(
@@ -779,18 +792,10 @@ class UpdateLayerPropertiesCommand(BaseCommand):
         node.mutually_exclusive = bool(
             properties.get("mutually_exclusive", node.mutually_exclusive)
         )
-        node.start_date = properties.get("start_date")
-        node.end_date = properties.get("end_date")
-        node.min_zoom = float(properties.get("min_zoom", node.min_zoom))
-        node.max_zoom = float(properties.get("max_zoom", node.max_zoom))
-        if (
-            node.start_date is not None
-            and node.end_date is not None
-            and node.start_date > node.end_date
-        ):
-            raise ValueError("Layer start date must not be after its end date")
-        if node.min_zoom > node.max_zoom:
-            raise ValueError("Minimum zoom must not exceed maximum zoom")
+        node.start_date = float(start_date) if start_date is not None else None
+        node.end_date = float(end_date) if end_date is not None else None
+        node.min_zoom = min_zoom
+        node.max_zoom = max_zoom
         attributes = dict(node.attributes)
         attributes["notes"] = str(properties.get("notes", ""))
         zoom_basis = properties.get("zoom_basis")

@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-08-10
-**Commit:** 9e319f79
+**Last Updated:** 2026-08-11
+**Commit:** 2a51a29a
 ---
 
 # Changelog
@@ -12,6 +12,11 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-08-10)* **Map / Temporal Visibility**: Added half-open existence
+  windows for markers and vector geometry, calendar-aware validity editing,
+  layer-tree awareness and filtering, selectable temporal ghosts, and
+  playhead-aware spatial exclusion.
 
 - *(2026-08-10)* **Map / Temporal Geometry**: Added Base plus dated replacement
   geometry for paths and regions, with cached playhead playback,
@@ -27,6 +32,10 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-10)* **Map / Visibility**: Unified manual, inherited, zoom, and
+  temporal visibility, kept selected trajectories aligned with their owners,
+  and composed layer opacity with future and ghost styling.
+
 - *(2026-08-09)* **Editor / Tags**: Restored normalized tags during entity and
   event update undo, and prevented deferred chip-layout callbacks from outliving
   closed editors and dialogs.
@@ -38,6 +47,10 @@ All notable changes to this project will be documented in this file.
   databases from being silently recreated and added explicit recovery warnings.
 
 ### Changed
+
+- *(2026-08-10)* **Documentation / Testing**: Documented vector-feature
+  validity and added resolver, rendering, ghost, filtering, command,
+  trajectory, dialog, and spatial-context regressions.
 
 - *(2026-08-10)* **Documentation / Testing**: Documented temporal path and
   region editing, regenerated schema references, and added domain, repository,

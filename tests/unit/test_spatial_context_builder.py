@@ -142,6 +142,73 @@ def test_returns_none_when_quality_gate_fails() -> None:
     assert builder.build(marker.object_id, marker.object_type, "map-1") is None
 
 
+def test_temporally_invalid_target_returns_no_context() -> None:
+    marker = _make_marker()
+    tree = _layer_tree_with_marker(marker.id, group_notes="Useful context")
+    tree.children[0].children[0].end_date = 50.0
+    map_obj = _make_map(layers=tree)
+    repo = MagicMock()
+    repo.get_marker_by_composite.return_value = marker
+    repo.get_map.return_value = map_obj
+
+    builder = SpatialContextBuilder(repo)
+    assert builder.build(
+        marker.object_id,
+        marker.object_type,
+        "map-1",
+        lore_date=50.0,
+    ) is None
+
+
+def test_temporally_invalid_nearby_marker_is_excluded() -> None:
+    marker = _make_marker(marker_id="target")
+    nearby = _make_marker(
+        marker_id="ended",
+        object_id="entity-2",
+        x=0.51,
+        label="Ended Place",
+    )
+    target_node = MapLayerNode(
+        name="Target",
+        layer_type="marker",
+        id=marker.id,
+        attributes={"notes": "Anchor notes"},
+    )
+    nearby_node = MapLayerNode(
+        name="Ended Place",
+        layer_type="marker",
+        id=nearby.id,
+        end_date=10.0,
+    )
+    group = MapLayerNode(
+        name="Default",
+        layer_type="group",
+        id="group-1",
+        children=[target_node, nearby_node],
+    )
+    root = MapLayerNode(
+        name="Layers",
+        layer_type="group",
+        id="root",
+        children=[group],
+    )
+    map_obj = _make_map(layers=root)
+    repo = MagicMock()
+    repo.get_marker_by_composite.return_value = marker
+    repo.get_map.return_value = map_obj
+    repo.get_markers_by_map.return_value = [marker, nearby]
+
+    builder = SpatialContextBuilder(repo)
+    result = builder.build(
+        marker.object_id,
+        marker.object_type,
+        "map-1",
+        lore_date=10.0,
+    )
+    assert result is not None
+    assert "Ended Place" not in result
+
+
 # ---------------------------------------------------------------------------
 # Signal-by-signal behaviour
 # ---------------------------------------------------------------------------

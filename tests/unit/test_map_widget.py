@@ -473,6 +473,49 @@ def test_trajectory_marker_is_movable_only_before_first_keyframe(map_widget, qtb
     assert map_widget.get_marker_base_position("marker1") == (0.4, 0.6)
 
 
+def test_selected_trajectory_tracks_owner_temporal_validity(map_widget, qtbot):
+    """Normal routes disappear at exclusive end and return when scrubbing back."""
+    marker = _show_map_with_marker(map_widget, qtbot)
+    node = map_widget.get_layer_model().find_node_by_id("marker1")
+    assert node is not None
+    node.end_date = 10.0
+    map_widget.get_layer_model().invalidate_cache()
+    map_widget.set_trajectories(
+        [
+            {
+                "marker_id": "marker1",
+                "trajectory_id": "trajectory-1",
+                "keyframes": [
+                    {"t": 0.0, "x": 0.1, "y": 0.2, "point_kind": "timed"},
+                    {"t": 10.0, "x": 0.9, "y": 0.8, "point_kind": "timed"},
+                ],
+                "row_snapshot": {},
+            }
+        ]
+    )
+    map_widget._on_marker_clicked_internal("marker1", "entity")
+
+    map_widget.on_time_changed(9.0)
+    assert marker.isVisible()
+    assert map_widget.view.trajectory_path_item is not None
+
+    model = map_widget.get_layer_model()
+    node = model.find_node_by_id("marker1")
+    assert node is not None
+    model.set_node_visible(node, False)
+    assert map_widget.view.trajectory_path_item is None
+    model.set_node_visible(node, True)
+    assert map_widget.view.trajectory_path_item is not None
+
+    map_widget.on_time_changed(10.0)
+    assert not marker.isVisible()
+    assert map_widget.view.trajectory_path_item is None
+
+    map_widget.on_time_changed(9.0)
+    assert marker.isVisible()
+    assert map_widget.view.trajectory_path_item is not None
+
+
 def _show_map_with_marker(map_widget, qtbot, object_type="entity"):
     """Show a laid-out map widget containing one clickable marker."""
     map_widget.resize(1200, 700)

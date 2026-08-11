@@ -327,6 +327,9 @@ class FeatureGeometryCoordinator(QObject):
             "target": copy.deepcopy(target),
             "before_states": copy.deepcopy(before_states),
         }
+        self._window.map_widget.view.set_temporal_authoring_override(
+            object_id, True
+        )
         source = self._source_label(target_type, target)
         self._window.map_widget.show_feature_geometry_edit(
             f"Geometry — {marker_snapshot.get('label', 'Feature')}", source
@@ -350,6 +353,11 @@ class FeatureGeometryCoordinator(QObject):
 
     def _finish_edit_session(self, *, restore_playhead: bool = True) -> None:
         map_id = self._session["map_id"] if self._session else None
+        object_id = self._session["object_id"] if self._session else None
+        if object_id:
+            self._window.map_widget.view.set_temporal_authoring_override(
+                object_id, False
+            )
         self._session = None
         self._pending_command_id = None
         self._window.map_widget.hide_feature_geometry_edit()

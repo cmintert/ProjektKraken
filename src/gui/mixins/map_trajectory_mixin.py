@@ -68,6 +68,7 @@ class MapTrajectoryMixin:
         _calendar_converter: Any
         _selected_marker_id: str | None
         map_selector: QComboBox
+        layer_panel: Any
         coord_label: _CoordinateLabel
         trajectory_edit_label: Any
         trajectory_keyframe_label: Any
@@ -206,6 +207,7 @@ class MapTrajectoryMixin:
         self._trajectory_edit_pending = pending
         marker_id = snapshot["marker_id"]
         self._trajectory_edit_marker_id = marker_id
+        self.view.set_temporal_authoring_override(marker_id, True)
         self._trajectory_edit_keyframes = [
             Keyframe(
                 t=float(keyframe["t"]),
@@ -471,6 +473,7 @@ class MapTrajectoryMixin:
         marker_id = self._trajectory_edit_marker_id
         self.view.trajectory_edit_overlay.clear()
         if marker_id is not None:
+            self.view.set_temporal_authoring_override(marker_id, False)
             marker = self.view.markers.get(marker_id)
             if marker is not None:
                 marker.setFlag(
@@ -737,8 +740,13 @@ class MapTrajectoryMixin:
 
         self._update_trajectory_positions()
 
+        self.view.set_playhead_time(self._playhead_time)
+        self.layer_panel.set_playhead_time(self._playhead_time)
+
         # Update marker visuals (dull/vivid) based on new time
         self.view.update_markers_temporal_state(self._playhead_time, self._current_time)
+        if self._selected_marker_id:
+            self._update_trajectory_visualization(self._selected_marker_id)
 
     @Slot(float)
     def on_current_time_changed(self, time: float) -> None:
@@ -779,6 +787,14 @@ class MapTrajectoryMixin:
         """Updates the view to show the trajectory for the given marker."""
         if self._trajectory_edit_marker_id is not None:
             return
+        marker = self.view.find_item_by_id(marker_id)
+        if (
+            marker is None
+            or not marker.isVisible()
+            or not self.view.is_temporally_valid(marker_id)
+        ):
+            self.view.clear_trajectory()
+            return
         keyframes = self._active_trajectories.get(marker_id, [])
         if keyframes:
             self.view.show_trajectory(
@@ -788,3 +804,9 @@ class MapTrajectoryMixin:
             )
         else:
             self.view.clear_trajectory()
+
+    @Slot()
+    def _refresh_selected_trajectory_visibility(self) -> None:
+        """Keep an ordinary selected route aligned with owner visibility."""
+        if self._selected_marker_id is not None:
+            self._update_trajectory_visualization(self._selected_marker_id)

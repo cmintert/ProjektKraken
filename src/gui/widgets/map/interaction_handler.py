@@ -63,6 +63,11 @@ class InteractionHandler:
         """
         menu = QMenu(self._view)
 
+        if item.is_temporal_ghost:
+            self._populate_temporal_ghost_menu(menu, item.marker_id)
+            menu.exec(global_pos)
+            return
+
         if item.object_type != "event":
             has_trajectory = item.marker_id in self._view._trajectory_marker_ids
             edit_trajectory_action = QAction(
@@ -112,6 +117,12 @@ class InteractionHandler:
         style_menu.addAction(no_border_action)
 
         menu.addMenu(style_menu)
+
+        temporal_action = QAction("Temporal Validity...", self._view)
+        temporal_action.triggered.connect(
+            lambda: self._view.temporal_validity_requested.emit(item.marker_id)
+        )
+        menu.addAction(temporal_action)
 
         menu.addSeparator()
 
@@ -179,6 +190,11 @@ class InteractionHandler:
         """
         menu = QMenu(self._view)
 
+        if item.is_temporal_ghost:
+            self._populate_temporal_ghost_menu(menu, item.marker_id)
+            menu.exec(global_pos)
+            return
+
         feature_label = "Path" if isinstance(item, PathItem) else "Region"
 
         edit_style_action = QAction(self._view)
@@ -202,6 +218,12 @@ class InteractionHandler:
         )
         menu.addAction(manage_states_action)
 
+        temporal_action = QAction("Temporal Validity...", self._view)
+        temporal_action.triggered.connect(
+            lambda: self._view.temporal_validity_requested.emit(item.marker_id)
+        )
+        menu.addAction(temporal_action)
+
         menu.addSeparator()
 
         delete_action = QAction(self._view)
@@ -211,6 +233,26 @@ class InteractionHandler:
         )
         menu.addAction(delete_action)
         menu.exec(global_pos)
+
+    def _populate_temporal_ghost_menu(self, menu: QMenu, marker_id: str) -> None:
+        """Add the restricted authoring actions available for a ghost."""
+        jump_action = QAction("Jump to Valid Time", self._view)
+        jump_action.triggered.connect(
+            lambda: self._view.temporal_jump_requested.emit(marker_id)
+        )
+        menu.addAction(jump_action)
+
+        validity_action = QAction("Temporal Validity...", self._view)
+        validity_action.triggered.connect(
+            lambda: self._view.temporal_validity_requested.emit(marker_id)
+        )
+        menu.addAction(validity_action)
+
+        show_action = QAction("Show in Layers", self._view)
+        show_action.triggered.connect(
+            lambda: self._view.temporal_show_in_layers_requested.emit(marker_id)
+        )
+        menu.addAction(show_action)
 
     # ------------------------------------------------------------------
     # Picker Dialogs

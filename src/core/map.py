@@ -7,6 +7,7 @@ layer tree used for organising markers, paths, and regions on the map.
 import time
 import uuid
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from src.core.map_constants import (
@@ -14,7 +15,34 @@ from src.core.map_constants import (
     MAP_LAYER_DEFAULT_MIN_ZOOM,
     MAP_LAYER_DEFAULT_OPACITY,
     MAP_LAYER_TYPE_GROUP,
+    MAP_LAYER_TYPE_MARKER,
+    MAP_LAYER_TYPE_PATH,
+    MAP_LAYER_TYPE_REGION,
 )
+
+VECTOR_LAYER_TYPES = frozenset(
+    {MAP_LAYER_TYPE_MARKER, MAP_LAYER_TYPE_PATH, MAP_LAYER_TYPE_REGION}
+)
+
+
+class TemporalValidityStatus(str, Enum):
+    """Relationship between a vector feature and a lore date."""
+
+    VALID = "valid"
+    BEFORE_START = "before_start"
+    AT_OR_AFTER_END = "at_or_after_end"
+
+
+@dataclass(frozen=True)
+class ResolvedLayerTemporalValidity:
+    """Resolved temporal validity for one vector feature on a map."""
+
+    applicable: bool
+    valid: bool
+    status: TemporalValidityStatus
+    source_node_id: Optional[str] = None
+    source_node_name: Optional[str] = None
+    boundary: Optional[float] = None
 
 
 @dataclass
@@ -37,8 +65,8 @@ class MapLayerNode:
         max_zoom: Maximum zoom level at which this layer is visible.
         mutually_exclusive: If ``True``, only one child of this group
             may be visible at a time (radio-button behaviour).
-        start_date: Optional lore date when this layer becomes visible.
-        end_date: Optional lore date when this layer stops being visible.
+        start_date: Optional inclusive lore date when this layer becomes visible.
+        end_date: Optional exclusive lore date when this layer stops being visible.
         attributes: Flexible key-value store for layer-type-specific metadata
             (e.g. ``blend_mode``, ``notes``, ``raster_snapshots``).
 
@@ -140,6 +168,77 @@ class MapLayerNode:
             end_date=data.get("end_date"),
             attributes=dict(data.get("attributes", {})),
         )
+
+
+def resolve_layer_temporal_validity(
+    root: MapLayerNode,
+    node_id: str,
+    lore_date: float,
+) -> ResolvedLayerTemporalValidity:
+    """Resolve half-open temporal validity for a vector feature.
+
+    Vector features inherit temporal bounds from group ancestors. Raster,
+    basemap, and other non-vector leaves deliberately ignore temporal bounds.
+    Missing nodes are treated as not applicable so older maps retain their
+    historical behaviour.
+
+    Args:
+        root: Root of the map layer tree.
+        node_id: Vector feature node identifier.
+        lore_date: Timeline playhead date.
+
+    Returns:
+        The resolved status and the first node that makes the feature invalid.
+
+    """
+    path = _find_layer_path(root, node_id)
+    if not path or path[-1].layer_type not in VECTOR_LAYER_TYPES:
+        return ResolvedLayerTemporalValidity(
+            applicable=False,
+            valid=True,
+            status=TemporalValidityStatus.VALID,
+        )
+
+    # The root is an invisible container rather than an authored layer.
+    for node in path[1:]:
+        if node.start_date is not None and lore_date < node.start_date:
+            return ResolvedLayerTemporalValidity(
+                applicable=True,
+                valid=False,
+                status=TemporalValidityStatus.BEFORE_START,
+                source_node_id=node.id,
+                source_node_name=node.name,
+                boundary=node.start_date,
+            )
+        if node.end_date is not None and lore_date >= node.end_date:
+            return ResolvedLayerTemporalValidity(
+                applicable=True,
+                valid=False,
+                status=TemporalValidityStatus.AT_OR_AFTER_END,
+                source_node_id=node.id,
+                source_node_name=node.name,
+                boundary=node.end_date,
+            )
+
+    return ResolvedLayerTemporalValidity(
+        applicable=True,
+        valid=True,
+        status=TemporalValidityStatus.VALID,
+    )
+
+
+def _find_layer_path(
+    node: MapLayerNode,
+    node_id: str,
+) -> Optional[List[MapLayerNode]]:
+    """Return the root-to-node path for ``node_id`` when present."""
+    if node.id == node_id:
+        return [node]
+    for child in node.children:
+        child_path = _find_layer_path(child, node_id)
+        if child_path:
+            return [node, *child_path]
+    return None
 
 
 @dataclass

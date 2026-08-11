@@ -47,6 +47,38 @@ Feature style, label, and layer assignment remain global. Event-date
 future/past presentation is separate from geometry-state resolution. Point
 markers continue to use their ordinary positions or trajectories.
 
+## Temporal visibility
+
+Point markers, paths, and regions can exist only during part of the timeline.
+Right-click a feature and choose **Temporal Validity…**, or open its layer
+properties, then set optional **Exists from** and **Exists until** dates. Group
+dates apply to the vector features beneath them.
+
+Validity uses an inclusive start and exclusive end. A feature is present when
+the playhead is on or after **Exists from**, but it is absent on the exact
+**Exists until** date. This lets one feature end exactly when its replacement
+begins without an overlap or gap. **Use Playhead** copies the active lore date
+into either endpoint.
+
+The layer tree keeps absent features available for authoring. A clock badge and
+dimmed name mean the feature is outside the current date; an eye-slash means it
+is manually hidden. The panel and map status show how many vector features are
+outside the date. Select that count to filter the tree, then use **Jump to
+Start** or **Jump to Last Valid Day** to inspect a hidden feature.
+
+**Temporal Ghosts** is an optional, session-only authoring view. It shows
+outside-time features as faint dashed shapes while still respecting manual,
+group, and zoom hiding. Ghosts can be selected, but cannot be dragged or edited
+directly; use their menu to jump to a valid date, change validity, or reveal the
+feature in Layers.
+
+Trajectory dates continue to answer where an entity would be. Temporal
+validity separately decides whether it exists on the map. A normal selected
+route disappears with an invalid owner, while an already-open trajectory or
+geometry editing session remains visible as an authoring aid. Playhead-aware
+spatial generation also excludes features that do not exist at the requested
+date.
+
 ## Create or edit a trajectory
 
 Select an entity marker and choose **Create Trajectory**. ProjektKraken starts

@@ -33,7 +33,7 @@ from pathlib import Path
 from typing import Callable, List, Optional, Tuple
 
 from src.app.constants import MAP_DEFAULT_WIDTH_METERS, MAP_ROLE_MASTER
-from src.core.map import Map, MapLayerNode
+from src.core.map import Map, MapLayerNode, resolve_layer_temporal_validity
 from src.core.marker import Marker
 from src.services.map_nesting_service import MapNestingService
 from src.services.raster_image_analysis import sample_raster_semantic
@@ -132,11 +132,13 @@ class SpatialContextBuilder:
         )
         if marker is None:
             return None
-        marker = self._resolve_marker_geometry(marker, lore_date)
 
         map_obj = self._map_repo.get_map(active_map_id)
         if map_obj is None:
             return None
+        if not self._is_temporally_valid(map_obj, marker, lore_date):
+            return None
+        marker = self._resolve_marker_geometry(marker, lore_date)
 
         width_m = self._extract_width_meters(map_obj)
         suppress_distance = width_m is None
@@ -144,7 +146,7 @@ class SpatialContextBuilder:
         layer_name, layer_notes = self._resolve_layer(map_obj, marker)
         raster_facts = self._resolve_raster_facts(map_obj, marker)
         nearby = self._resolve_nearby(
-            active_map_id, marker, width_m, suppress_distance, lore_date
+            map_obj, marker, width_m, suppress_distance, lore_date
         )
 
         has_notes = bool(layer_notes)
@@ -276,7 +278,7 @@ class SpatialContextBuilder:
 
     def _resolve_nearby(
         self,
-        map_id: str,
+        map_obj: Map,
         marker: Marker,
         width_m: Optional[float],
         suppress_distance: bool,
@@ -290,17 +292,19 @@ class SpatialContextBuilder:
             (e.g. ``"near"``) when the map is uncalibrated or a formatted
             distance with compass direction (e.g. ``"0.8 km NE"``).
         """
-        all_markers = self._map_repo.get_markers_by_map(map_id)
+        all_markers = self._map_repo.get_markers_by_map(map_obj.id)
         if not all_markers:
             return []
 
         candidates: List[Tuple[float, Marker]] = []
         for other in all_markers:
-            other = self._resolve_marker_geometry(other, lore_date)
             if other.id == marker.id:
                 continue
             if other.object_id == marker.object_id and other.object_type == marker.object_type:
                 continue
+            if not self._is_temporally_valid(map_obj, other, lore_date):
+                continue
+            other = self._resolve_marker_geometry(other, lore_date)
             dx = other.x - marker.x
             dy = other.y - marker.y
             dist_norm = math.sqrt(dx * dx + dy * dy)
@@ -324,6 +328,17 @@ class SpatialContextBuilder:
             )
             results.append((name, phrase))
         return results
+
+    @staticmethod
+    def _is_temporally_valid(
+        map_obj: Map, marker: Marker, lore_date: Optional[float]
+    ) -> bool:
+        """Return historical map existence without applying presentation state."""
+        if lore_date is None or map_obj.layers is None:
+            return True
+        return resolve_layer_temporal_validity(
+            map_obj.layers, marker.id, lore_date
+        ).valid
 
     def _resolve_marker_geometry(
         self, marker: Marker, lore_date: Optional[float]

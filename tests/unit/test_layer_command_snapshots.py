@@ -7,6 +7,7 @@ import pytest
 from src.commands.layer_commands import (
     SetLayerOpacityCommand,
     SetLayerVisibilityCommand,
+    UpdateLayerPropertiesCommand,
 )
 from src.core.map import Map, MapLayerNode
 
@@ -112,3 +113,33 @@ def test_visibility_command_succeeds_when_node_exists_in_db():
     assert result.success is True
     saved_map = service.map_repo.insert_map.call_args[0][0]
     assert saved_map.layers.children[0].visible is False
+
+
+def test_temporal_properties_execute_undo_and_redo() -> None:
+    """Half-open validity bounds survive the full command lifecycle."""
+    child = MapLayerNode(
+        name="Ardent",
+        layer_type="marker",
+        id="ardent",
+        start_date=600.0,
+        end_date=700.0,
+    )
+    root = MapLayerNode(name="Root", id="root", children=[child])
+    map_obj = Map(id="map-1", name="Map", image_path="path", layers=root)
+    service = MagicMock()
+    service.map_repo.get_map.return_value = map_obj
+    command = UpdateLayerPropertiesCommand(
+        "map-1",
+        "ardent",
+        {"start_date": 610.0, "end_date": 634.25},
+    )
+
+    assert command.execute(service).success
+    assert child.start_date == 610.0
+    assert child.end_date == 634.25
+    command.undo(service)
+    assert child.start_date == 600.0
+    assert child.end_date == 700.0
+    assert command.execute(service).success
+    assert child.start_date == 610.0
+    assert child.end_date == 634.25

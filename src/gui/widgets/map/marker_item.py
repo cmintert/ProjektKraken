@@ -30,6 +30,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.app.constants import MAP_TEMPORAL_GHOST_OPACITY, TEMPORAL_FUTURE_OPACITY
 from src.core.style_constants import BASE_SIZE
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.svg_utils import apply_svg_inline_styles, svg_file_to_string
@@ -176,6 +177,9 @@ class MarkerItem(QGraphicsObject):
         self.is_future = False
         self.is_past = False
         self.has_keyframes = False
+        self._layer_opacity = 1.0
+        self._temporal_ghost = False
+        self._movable_before_temporal_ghost = True
 
         # Load icon if specified
         self._load_icon(icon)
@@ -349,16 +353,44 @@ class MarkerItem(QGraphicsObject):
         self.is_future = is_future
         self.is_past = is_past
 
-        # Update visual properties based on state
-        if is_future:
-            # Dulling effect: Reduced opacity (1.0 - 0.3 = 0.7)
-            self.setOpacity(0.7)
-            # Saturation change happens in paint() via color processing
-        else:
-            # Normal state: Vivid
-            self.setOpacity(1.0)
+        self._apply_effective_opacity()
 
         self.update()
+
+    def set_layer_opacity(self, opacity: float) -> None:
+        """Set inherited layer opacity without replacing temporal styling."""
+        self._layer_opacity = max(0.0, min(1.0, float(opacity)))
+        self._apply_effective_opacity()
+
+    def set_temporal_ghost(self, enabled: bool) -> None:
+        """Enable the selectable, non-movable authoring ghost treatment."""
+        enabled = bool(enabled)
+        if enabled == self._temporal_ghost:
+            return
+        self._temporal_ghost = enabled
+        if enabled:
+            self._movable_before_temporal_ghost = bool(
+                self.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsMovable
+            )
+            self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
+        else:
+            self.setFlag(
+                QGraphicsItem.GraphicsItemFlag.ItemIsMovable,
+                self._movable_before_temporal_ghost,
+            )
+        self._apply_effective_opacity()
+        self.update()
+
+    @property
+    def is_temporal_ghost(self) -> bool:
+        """Whether this marker is rendered as an authoring ghost."""
+        return self._temporal_ghost
+
+    def _apply_effective_opacity(self) -> None:
+        """Compose layer, future-state, and ghost opacity factors."""
+        future_factor = TEMPORAL_FUTURE_OPACITY if self.is_future else 1.0
+        ghost_factor = MAP_TEMPORAL_GHOST_OPACITY if self._temporal_ghost else 1.0
+        self.setOpacity(self._layer_opacity * future_factor * ghost_factor)
 
     def _get_effective_color(self) -> QColor:
         """Returns the color modified by current state.
@@ -449,6 +481,13 @@ class MarkerItem(QGraphicsObject):
             self._draw_svg_icon(painter, rect)
         else:
             self._draw_fallback_circle(painter, rect)
+
+        if self._temporal_ghost:
+            ghost_pen = QPen(QColor(255, 255, 255), 1.5, Qt.PenStyle.DashLine)
+            ghost_pen.setCosmetic(True)
+            painter.setPen(ghost_pen)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawEllipse(rect.adjusted(1.0, 1.0, -1.0, -1.0))
 
     def _draw_svg_icon(self, painter: QPainter, rect: QRectF) -> None:
         """Draws the SVG icon with inline styles already applied.

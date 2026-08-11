@@ -52,6 +52,7 @@ from src.app.constants import (
     MAP_FEATURE_SELECTION_PEN_COLOR,
     MAP_FEATURE_SELECTION_PEN_WIDTH,
     MAP_FEATURE_Z_VALUE,
+    MAP_TEMPORAL_GHOST_OPACITY,
     TEMPORAL_FUTURE_OPACITY,
 )
 
@@ -129,6 +130,8 @@ class _FeatureItemBase(QGraphicsObject):
         # Temporal state
         self.is_future = False
         self.is_past = False
+        self._layer_opacity = 1.0
+        self._temporal_ghost = False
 
         # Click detection
         self._drag_start_pos: Optional[QPointF] = None
@@ -184,6 +187,8 @@ class _FeatureItemBase(QGraphicsObject):
         dash = self._dash_pattern()
         if dash:
             pen.setDashPattern(dash)
+        if self._temporal_ghost:
+            pen.setStyle(Qt.PenStyle.DashLine)
         return pen
 
     # ------------------------------------------------------------------
@@ -202,8 +207,34 @@ class _FeatureItemBase(QGraphicsObject):
             return
         self.is_future = is_future
         self.is_past = is_past
-        self.setOpacity(TEMPORAL_FUTURE_OPACITY if is_future else 1.0)
+        self._apply_effective_opacity()
         self.update()
+
+    def set_layer_opacity(self, opacity: float) -> None:
+        """Set inherited layer opacity without replacing temporal styling."""
+        self._layer_opacity = max(0.0, min(1.0, float(opacity)))
+        self._apply_effective_opacity()
+
+    def set_temporal_ghost(self, enabled: bool) -> None:
+        """Enable the selectable, non-historical authoring treatment."""
+        enabled = bool(enabled)
+        if enabled == self._temporal_ghost:
+            return
+        self._temporal_ghost = enabled
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
+        self._apply_effective_opacity()
+        self.update()
+
+    @property
+    def is_temporal_ghost(self) -> bool:
+        """Whether this feature is rendered as an authoring ghost."""
+        return self._temporal_ghost
+
+    def _apply_effective_opacity(self) -> None:
+        """Compose layer, future-state, and ghost opacity factors."""
+        future_factor = TEMPORAL_FUTURE_OPACITY if self.is_future else 1.0
+        ghost_factor = MAP_TEMPORAL_GHOST_OPACITY if self._temporal_ghost else 1.0
+        self.setOpacity(self._layer_opacity * future_factor * ghost_factor)
 
     # ------------------------------------------------------------------
     # Mouse interaction (click detection)
@@ -698,7 +729,11 @@ class RegionItem(_FeatureItemBase):
             painter.drawPolygon(self._polygon)
 
         # Fill + stroke
-        painter.setBrush(QBrush(self._fill_color(DEFAULT_REGION_FILL_COLOR)))
+        painter.setBrush(
+            Qt.BrushStyle.NoBrush
+            if self._temporal_ghost
+            else QBrush(self._fill_color(DEFAULT_REGION_FILL_COLOR))
+        )
         painter.setPen(self._make_pen(DEFAULT_REGION_STROKE_COLOR))
         painter.drawPolygon(self._polygon)
 
