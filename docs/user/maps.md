@@ -50,9 +50,10 @@ markers continue to use their ordinary positions or trajectories.
 ## Temporal visibility
 
 Point markers, paths, and regions can exist only during part of the timeline.
-Right-click a feature and choose **Temporal Validity…**, or open its layer
-properties, then set optional **Exists from** and **Exists until** dates. Group
-dates apply to the vector features beneath them.
+Right-click a feature or its layer and choose **Temporal Validity…**, then set
+optional **Exists from** and **Exists until** dates. Temporal validity has its
+own focused editor; ordinary layer properties remain separate. Group dates
+apply to the vector features beneath them.
 
 Validity uses an inclusive start and exclusive end. A feature is present when
 the playhead is on or after **Exists from**, but it is absent on the exact

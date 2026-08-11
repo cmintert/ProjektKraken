@@ -858,9 +858,7 @@ class MapWidget(
             self.feature_geometry_cancel_requested.emit
         )
         self.view.temporal_validity_requested.connect(
-            lambda node_id: self.layer_panel.edit_properties(
-                node_id, focus_temporal=True
-            )
+            self.layer_panel.edit_temporal_validity
         )
         self.view.temporal_jump_requested.connect(
             self.layer_panel.jump_to_valid_time

@@ -771,8 +771,8 @@ class UpdateLayerPropertiesCommand(BaseCommand):
 
     @staticmethod
     def _apply(node: MapLayerNode, properties: dict[str, Any]) -> None:
-        start_date = properties.get("start_date")
-        end_date = properties.get("end_date")
+        start_date = properties.get("start_date", node.start_date)
+        end_date = properties.get("end_date", node.end_date)
         if (
             start_date is not None
             and end_date is not None
@@ -797,12 +797,14 @@ class UpdateLayerPropertiesCommand(BaseCommand):
         node.min_zoom = min_zoom
         node.max_zoom = max_zoom
         attributes = dict(node.attributes)
-        attributes["notes"] = str(properties.get("notes", ""))
-        zoom_basis = properties.get("zoom_basis")
-        if zoom_basis:
-            attributes["zoom_basis"] = str(zoom_basis)
-        else:
-            attributes.pop("zoom_basis", None)
+        if "notes" in properties:
+            attributes["notes"] = str(properties["notes"])
+        if "zoom_basis" in properties:
+            zoom_basis = properties["zoom_basis"]
+            if zoom_basis:
+                attributes["zoom_basis"] = str(zoom_basis)
+            else:
+                attributes.pop("zoom_basis", None)
         node.attributes = attributes
 
     def _persist(

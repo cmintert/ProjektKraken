@@ -64,6 +64,7 @@ from src.gui.widgets.map.raster_layer_item import BLEND_MODE_NAMES
 
 if TYPE_CHECKING:
     from src.gui.dialogs.layer_properties_dialog import LayerPropertiesDialog
+    from src.gui.dialogs.temporal_validity_dialog import TemporalValidityDialog
     from src.gui.widgets.map.map_layer_model import MapLayerModel
 
 logger = logging.getLogger(__name__)
@@ -243,6 +244,8 @@ class MapLayerPanel(QWidget):
         self._calendar_converter: Optional[CalendarConverter] = None
         self._properties_dialog: Optional["LayerPropertiesDialog"] = None
         self._properties_node_id: Optional[str] = None
+        self._temporal_dialog: Optional["TemporalValidityDialog"] = None
+        self._temporal_node_id: Optional[str] = None
         # Internal lookup: node_id → mode string (populated by MapHandler)
         self._raster_mode_by_id: dict[str, str] = {}
         self._raster_edit_target_label_by_id: dict[str, str] = {}
@@ -1278,6 +1281,11 @@ class MapLayerPanel(QWidget):
             and self._model.find_node_by_id(self._properties_node_id) is None
         ):
             self._close_properties_dialog()
+        if (
+            self._temporal_node_id
+            and self._model.find_node_by_id(self._temporal_node_id) is None
+        ):
+            self._close_temporal_dialog()
 
         selected = (
             self._model.find_node_by_id(self._selected_node_id)
@@ -1347,8 +1355,8 @@ class MapLayerPanel(QWidget):
     def set_playhead_time(self, time: float) -> None:
         """Refresh temporal tree awareness for the active playhead."""
         self._playhead_time = float(time)
-        if self._properties_dialog is not None:
-            self._properties_dialog.set_playhead_time(self._playhead_time)
+        if self._temporal_dialog is not None:
+            self._temporal_dialog.set_playhead_time(self._playhead_time)
         if self._model is not None:
             self._model.set_current_time(self._playhead_time)
         self._proxy_model.invalidate()
@@ -1643,7 +1651,7 @@ class MapLayerPanel(QWidget):
                 if node.layer_type in VECTOR_LAYER_TYPES or node.layer_type == "group":
                     temporal_action = menu.addAction("Temporal Validity…")
                     temporal_action.triggered.connect(
-                        lambda: self._edit_properties(node, focus_temporal=True)
+                        lambda: self._edit_temporal_validity(node)
                     )
                     state = self._model.temporal_validity(node)
                     if not state.valid and state.boundary is not None:
@@ -1671,25 +1679,31 @@ class MapLayerPanel(QWidget):
 
         menu.exec(self._tree.viewport().mapToGlobal(pos))
 
-    def edit_properties(self, node_id: str, *, focus_temporal: bool = False) -> None:
+    def edit_properties(self, node_id: str) -> None:
         """Open properties for a node by id through the existing command path."""
         if self._model is None:
             return
         node = self._model.find_node_by_id(node_id)
         if node is not None:
-            self._edit_properties(node, focus_temporal=focus_temporal)
+            self._edit_properties(node)
 
-    def _edit_properties(
-        self, node: "MapLayerNode", *, focus_temporal: bool = False
-    ) -> None:
+    def edit_temporal_validity(self, node_id: str) -> None:
+        """Open the focused temporal-validity editor for a node by id."""
+        if self._model is None:
+            return
+        node = self._model.find_node_by_id(node_id)
+        if node is not None:
+            self._edit_temporal_validity(node)
+
+    def _edit_properties(self, node: "MapLayerNode") -> None:
         """Open the contextual inspector and emit a property-edit intent."""
         from src.gui.dialogs.layer_properties_dialog import (
             LayerPropertiesDialog,
         )
 
+        self._close_temporal_dialog()
         if self._properties_dialog is not None:
             if self._properties_node_id == node.id:
-                self._properties_dialog.set_playhead_time(self._playhead_time)
                 self._properties_dialog.show()
                 self._properties_dialog.raise_()
                 self._properties_dialog.activateWindow()
@@ -1699,9 +1713,6 @@ class MapLayerPanel(QWidget):
         dialog = LayerPropertiesDialog(
             node,
             self,
-            calendar_converter=self._calendar_converter,
-            playhead_time=self._playhead_time,
-            focus_temporal=focus_temporal,
         )
         self._properties_dialog = dialog
         self._properties_node_id = node.id
@@ -1711,6 +1722,41 @@ class MapLayerPanel(QWidget):
             )
         )
         dialog.destroyed.connect(self._on_properties_dialog_destroyed)
+        dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
+        dialog.show()
+        dialog.raise_()
+        dialog.activateWindow()
+
+    def _edit_temporal_validity(self, node: "MapLayerNode") -> None:
+        """Open the temporal editor and emit only validity properties."""
+        from src.gui.dialogs.temporal_validity_dialog import (
+            TemporalValidityDialog,
+        )
+
+        self._close_properties_dialog()
+        if self._temporal_dialog is not None:
+            if self._temporal_node_id == node.id:
+                self._temporal_dialog.set_playhead_time(self._playhead_time)
+                self._temporal_dialog.show()
+                self._temporal_dialog.raise_()
+                self._temporal_dialog.activateWindow()
+                return
+            self._close_temporal_dialog()
+
+        dialog = TemporalValidityDialog(
+            node,
+            self,
+            calendar_converter=self._calendar_converter,
+            playhead_time=self._playhead_time,
+        )
+        self._temporal_dialog = dialog
+        self._temporal_node_id = node.id
+        dialog.accepted.connect(
+            lambda: self.layer_properties_changed.emit(
+                node.id, dialog.properties()
+            )
+        )
+        dialog.destroyed.connect(self._on_temporal_dialog_destroyed)
         dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
         dialog.show()
         dialog.raise_()
@@ -1730,9 +1776,24 @@ class MapLayerPanel(QWidget):
         if dialog is not None:
             dialog.reject()
 
+    @Slot()
+    def _on_temporal_dialog_destroyed(self) -> None:
+        """Forget the temporal editor after either OK or Cancel."""
+        self._temporal_dialog = None
+        self._temporal_node_id = None
+
+    def _close_temporal_dialog(self) -> None:
+        """Close the temporal editor without applying changes."""
+        dialog = self._temporal_dialog
+        self._temporal_dialog = None
+        self._temporal_node_id = None
+        if dialog is not None:
+            dialog.reject()
+
     def close_properties_editor(self) -> None:
-        """Close the modeless properties editor when map context changes."""
+        """Close modeless layer editors when map context changes."""
         self._close_properties_dialog()
+        self._close_temporal_dialog()
 
     def jump_to_valid_time(self, node_id: str) -> None:
         """Jump to a deterministic date inside a feature's valid interval."""

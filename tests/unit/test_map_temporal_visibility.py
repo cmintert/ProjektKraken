@@ -14,6 +14,7 @@ from src.core.map import (
     resolve_layer_temporal_validity,
 )
 from src.gui.dialogs.layer_properties_dialog import LayerPropertiesDialog
+from src.gui.dialogs.temporal_validity_dialog import TemporalValidityDialog
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 from src.gui.widgets.map.map_layer_model import MapLayerModel
 from src.gui.widgets.map.map_layer_panel import MapLayerPanel
@@ -110,6 +111,24 @@ def test_layer_property_command_rejects_empty_interval_before_mutation() -> None
         )
     assert node.start_date == 1.0
     assert node.end_date == 2.0
+
+
+def test_layer_property_command_preserves_omitted_fields() -> None:
+    """Focused editors must not clear properties outside their scope."""
+    node = MapLayerNode(
+        name="Road",
+        layer_type="path",
+        start_date=1.0,
+        end_date=2.0,
+        attributes={"notes": "Old road", "zoom_basis": "fit_ratio"},
+    )
+
+    UpdateLayerPropertiesCommand._apply(node, {"opacity": 0.5})
+
+    assert node.start_date == 1.0
+    assert node.end_date == 2.0
+    assert node.attributes["notes"] == "Old road"
+    assert node.attributes["zoom_basis"] == "fit_ratio"
 
 
 def _view_with_marker(qtbot) -> tuple[MapGraphicsView, MapLayerModel, str]:
@@ -218,11 +237,9 @@ def test_layer_panel_filters_outside_features_and_jumps_inside_range(qtbot) -> N
     assert blocker.args == [19.0]
 
 
-def test_layer_dialog_rejects_equal_bounds_and_preserves_unsupported_values(
-    qtbot,
-) -> None:
+def test_temporal_dialog_rejects_equal_bounds(qtbot) -> None:
     node = MapLayerNode(name="Road", layer_type="path")
-    dialog = LayerPropertiesDialog(node, playhead_time=42.0)
+    dialog = TemporalValidityDialog(node, playhead_time=42.0)
     qtbot.addWidget(dialog)
     dialog._start_enabled.setChecked(True)
     dialog._end_enabled.setChecked(True)
@@ -232,38 +249,49 @@ def test_layer_dialog_rejects_equal_bounds_and_preserves_unsupported_values(
     ok = dialog._buttons.button(QDialogButtonBox.StandardButton.Ok)
     assert ok is not None and not ok.isEnabled()
 
-    raster = MapLayerNode(
-        name="Raster",
-        layer_type="raster",
-        start_date=1.0,
-        end_date=2.0,
-    )
-    raster_dialog = LayerPropertiesDialog(raster)
-    qtbot.addWidget(raster_dialog)
-    properties = raster_dialog.properties()
-    assert properties["start_date"] == 1.0
-    assert properties["end_date"] == 2.0
 
-
-def test_layer_dialog_use_playhead_preserves_exact_lore_float(qtbot) -> None:
+def test_temporal_dialog_use_playhead_preserves_exact_lore_float(qtbot) -> None:
     node = MapLayerNode(name="Site", layer_type="marker")
-    dialog = LayerPropertiesDialog(node, playhead_time=42.1234)
+    dialog = TemporalValidityDialog(node, playhead_time=42.1234)
     qtbot.addWidget(dialog)
     dialog._copy_playhead(dialog._start_enabled, dialog._start)
     assert dialog.properties()["start_date"] == 42.1234
 
 
-def test_layer_panel_modeless_editor_captures_two_playhead_dates(qtbot) -> None:
+def test_properties_and_temporal_dialogs_have_distinct_scope(qtbot) -> None:
+    node = MapLayerNode(
+        name="Site",
+        layer_type="marker",
+        start_date=10.0,
+        end_date=20.0,
+    )
+    properties_dialog = LayerPropertiesDialog(node)
+    temporal_dialog = TemporalValidityDialog(node)
+    qtbot.addWidget(properties_dialog)
+    qtbot.addWidget(temporal_dialog)
+
+    assert properties_dialog.windowTitle() == "Layer Properties"
+    assert "start_date" not in properties_dialog.properties()
+    assert "end_date" not in properties_dialog.properties()
+    assert temporal_dialog.windowTitle() == "Temporal Validity — Site"
+    assert temporal_dialog.properties() == {
+        "start_date": 10.0,
+        "end_date": 20.0,
+    }
+
+
+def test_layer_panel_temporal_editor_captures_two_playhead_dates(qtbot) -> None:
     node = MapLayerNode(name="Site", layer_type="marker", id="site")
     panel = MapLayerPanel()
     qtbot.addWidget(panel)
     panel.set_model(MapLayerModel(_tree(node)))
     panel.set_playhead_time(10.25)
 
-    panel.edit_properties("site")
-    dialog = panel._properties_dialog
+    panel.edit_temporal_validity("site")
+    dialog = panel._temporal_dialog
     assert dialog is not None
     assert not dialog.isModal()
+    assert panel._properties_dialog is None
     dialog._copy_playhead(dialog._start_enabled, dialog._start)
 
     panel.set_playhead_time(20.75)
@@ -276,6 +304,21 @@ def test_layer_panel_modeless_editor_captures_two_playhead_dates(qtbot) -> None:
     assert blocker.args[0] == "site"
     assert blocker.args[1]["start_date"] == 10.25
     assert blocker.args[1]["end_date"] == 20.75
+
+
+def test_layer_panel_switches_between_distinct_editors(qtbot) -> None:
+    node = MapLayerNode(name="Site", layer_type="marker", id="site")
+    panel = MapLayerPanel()
+    qtbot.addWidget(panel)
+    panel.set_model(MapLayerModel(_tree(node)))
+
+    panel.edit_properties("site")
+    assert panel._properties_dialog is not None
+    assert panel._temporal_dialog is None
+
+    panel.edit_temporal_validity("site")
+    assert panel._properties_dialog is None
+    assert panel._temporal_dialog is not None
 
 
 def test_layer_model_refresh_preserves_selection_and_collapsed_groups(qtbot) -> None:

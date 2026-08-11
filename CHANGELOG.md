@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-11
-**Commit:** b8c9fc3f
+**Commit:** 79e16e2c
 ---
 
 # Changelog
@@ -58,6 +58,13 @@ All notable changes to this project will be documented in this file.
   databases from being silently recreated and added explicit recovery warnings.
 
 ### Changed
+
+- *(2026-08-11)* **Map / Temporal Editing**: Separated temporal validity from
+  general layer properties with a focused date-range editor and scope-safe
+  persistence.
+- *(2026-08-11)* **Documentation / Testing**: Documented the separated temporal
+  workflow and added dialog-scope, playhead capture, validation, switching, and
+  partial-update regressions.
 
 - *(2026-08-11)* **Testing / Map**: Added regressions for region fill channels,
   alpha-preserving style edits, and independent label opacity.
