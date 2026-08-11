@@ -140,6 +140,13 @@ def test_safe_color_css_returns_valid_color_unchanged():
     assert _safe_color_css("#ff0000") == "#ff0000"
 
 
+def test_safe_color_css_preserves_alpha_when_requested():
+    """Region style editing must not turn a translucent fill opaque."""
+    assert (
+        _safe_color_css("#403498db", preserve_alpha=True) == "#403498db"
+    )
+
+
 def test_safe_color_css_invalid_uses_theme_text_dim():
     """An invalid color string must return theme["text_dim"], not hardcoded grey."""
     theme = ThemeManager().get_theme()

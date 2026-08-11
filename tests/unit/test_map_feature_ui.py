@@ -26,7 +26,11 @@ from src.core.marker import (  # noqa: E402
     FEATURE_TYPE_PATH,
     MapFeature,
 )
-from src.gui.widgets.map.feature_items import PathItem, RegionItem  # noqa: E402
+from src.gui.widgets.map.feature_items import (  # noqa: E402
+    DEFAULT_REGION_FILL_COLOR,
+    PathItem,
+    RegionItem,
+)
 
 # --------------------------------------------------------------------------
 # Fixtures
@@ -212,6 +216,29 @@ class TestRegionItem:
         )
         assert item.marker_id == "region-1"
         assert item.label == "Kingdom of Gondor"
+
+    def test_region_default_fill_uses_translucent_blue(
+        self, pixmap_item, sample_region_geometry
+    ) -> None:
+        """The Qt ARGB default keeps the intended blue and alpha channels."""
+        item = RegionItem(
+            marker_id="region-1",
+            object_type="entity",
+            label="Kingdom of Gondor",
+            pixmap_item=pixmap_item,
+            geometry=sample_region_geometry,
+            anchor_x=0.5,
+            anchor_y=0.5,
+        )
+
+        fill = item._fill_color(DEFAULT_REGION_FILL_COLOR)
+
+        assert (fill.red(), fill.green(), fill.blue(), fill.alpha()) == (
+            0x34,
+            0x98,
+            0xDB,
+            0x30,
+        )
 
     def test_region_item_bounding_rect(
         self, pixmap_item, sample_region_geometry

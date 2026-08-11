@@ -26,6 +26,7 @@ class MapLabelItem(QGraphicsObject):
         self._padding_y = 2
         self._rect = QRectF()
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations)
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIgnoresParentOpacity)
         self._update_rect()
 
     def _update_rect(self) -> None:

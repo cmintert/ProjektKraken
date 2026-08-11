@@ -467,7 +467,8 @@ class InteractionHandler:
         _fill_color: list = [None]
         if isinstance(item, RegionItem):
             fill_init = _safe_color_css(
-                item._style.get("fill_color", DEFAULT_REGION_FILL_COLOR)
+                item._style.get("fill_color", DEFAULT_REGION_FILL_COLOR),
+                preserve_alpha=True,
             )
             fill_btn = QPushButton(fill_init)
             fill_btn.setStyleSheet(
@@ -667,16 +668,23 @@ class InteractionHandler:
         return False
 
 
-def _safe_color_css(color_str: str) -> str:
+def _safe_color_css(color_str: str, *, preserve_alpha: bool = False) -> str:
     """Validates a color string for safe use in QSS stylesheets.
 
     Args:
         color_str: A candidate color string.
+        preserve_alpha: Return Qt's ``#AARRGGBB`` form instead of dropping
+            the alpha channel.
 
     Returns:
         A validated hex color safe for use in CSS.
     """
     c = QColor(color_str)
     if c.isValid():
-        return c.name()
+        name_format = (
+            QColor.NameFormat.HexArgb
+            if preserve_alpha
+            else QColor.NameFormat.HexRgb
+        )
+        return c.name(name_format)
     return ThemeManager().get_theme().get("text_dim", "#808080").lower()

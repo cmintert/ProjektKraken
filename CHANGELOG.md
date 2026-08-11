@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-11
-**Commit:** d0b356ff
+**Commit:** b8c9fc3f
 ---
 
 # Changelog
@@ -32,6 +32,10 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-11)* **Map / Styling**: Preserved translucent region fills during
+  style edits and kept map-label opacity independent from marker and geometry
+  opacity.
+
 - *(2026-08-11)* **Map / Temporal Editing**: Kept layer validity editing open
   while the playhead moves, refreshed property-only layer changes immediately,
   and preserved layer selection and expansion state.
@@ -54,6 +58,9 @@ All notable changes to this project will be documented in this file.
   databases from being silently recreated and added explicit recovery warnings.
 
 ### Changed
+
+- *(2026-08-11)* **Testing / Map**: Added regressions for region fill channels,
+  alpha-preserving style edits, and independent label opacity.
 
 - *(2026-08-11)* **Map / Labels**: Unified point, path, and region labels with
   theme-aware collision placement and emphasized geometry Apply as the primary

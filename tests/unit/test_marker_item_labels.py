@@ -44,6 +44,20 @@ def test_marker_item_label_hidden_by_default(mock_pixmap_item):
     assert marker._label_item.isVisible() is False
 
 
+def test_marker_label_opacity_is_independent_from_marker(mock_pixmap_item):
+    """Layer and marker opacity must not fade the independently styled label."""
+    marker = MarkerItem(
+        marker_id="m1",
+        object_type="entity",
+        label="Test Entity",
+        pixmap_item=mock_pixmap_item,
+    )
+
+    marker.setOpacity(0.25)
+
+    assert marker._label_item.effectiveOpacity() == pytest.approx(1.0)
+
+
 def test_marker_item_apply_label_position(mock_pixmap_item):
     """Test that apply_label_position sets position and visibility."""
     marker = MarkerItem(
