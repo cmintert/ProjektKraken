@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -54,6 +55,8 @@ class LayerPropertiesDialog(QDialog):
         self._node = node
         self._calendar_converter = calendar_converter
         self._playhead_time = float(playhead_time)
+        self.setModal(False)
+        self.setWindowModality(Qt.WindowModality.NonModal)
         self.setWindowTitle("Layer Properties")
         self.setMinimumWidth(420)
         self.setStyleSheet(StyleHelper.get_dialog_base_style())
@@ -187,6 +190,10 @@ class LayerPropertiesDialog(QDialog):
         editor.set_value(self._playhead_time)
         editor.setProperty("exact_lore_value", self._playhead_time)
         self._update_temporal_feedback()
+
+    def set_playhead_time(self, playhead_time: float) -> None:
+        """Update the date copied by subsequent ``Use Playhead`` actions."""
+        self._playhead_time = float(playhead_time)
 
     def _temporal_values(self) -> tuple[Optional[float], Optional[float]]:
         """Return optional bounds exactly as they will be persisted."""

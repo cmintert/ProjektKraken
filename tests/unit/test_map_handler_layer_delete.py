@@ -167,6 +167,27 @@ class TestPendingLayerNodeSyncFlag:
 
         mock_widget.rebuild_layer_model.assert_called_once_with(db_root)
 
+    def test_guard_rebuilds_when_only_layer_properties_changed(self, qapp) -> None:
+        """Fresh validity metadata must replace same-ID live nodes."""
+        handler, mock_widget = _make_handler()
+        db_root = _make_node("root")
+        db_node = _make_node("road", "path")
+        db_node.start_date = 10.0
+        db_node.end_date = 20.0
+        db_root.children.append(db_node)
+
+        live_root = _make_node("root")
+        live_root.children.append(_make_node("road", "path"))
+        mock_map = MagicMock(id="map-1", layers=db_root)
+        mock_widget.maps_data = [mock_map]
+        mock_widget.get_layer_model.return_value.root = live_root
+        handler._loaded_markers_map_id = "map-1"
+        handler._pending_layer_node_sync = True
+
+        handler.on_markers_ready("map-1", [])
+
+        mock_widget.rebuild_layer_model.assert_called_once_with(db_root)
+
     def test_pending_flag_consumed_after_first_on_markers_ready(self, qapp) -> None:
         """The flag is reset to False after the first incremental ``on_markers_ready``.
 

@@ -18,7 +18,6 @@ from PySide6.QtGui import (
     QBrush,
     QColor,
     QCursor,
-    QFont,
     QPainter,
     QPainterPath,
     QPen,
@@ -30,7 +29,6 @@ from PySide6.QtWidgets import (
     QGraphicsPixmapItem,
     QGraphicsSceneHoverEvent,
     QGraphicsSceneMouseEvent,
-    QGraphicsSimpleTextItem,
     QStyleOptionGraphicsItem,
     QWidget,
 )
@@ -55,6 +53,7 @@ from src.app.constants import (
     MAP_TEMPORAL_GHOST_OPACITY,
     TEMPORAL_FUTURE_OPACITY,
 )
+from src.gui.widgets.map.map_label_item import MapLabelItem
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +74,6 @@ MIN_HIT_AREA_WIDTH = MAP_FEATURE_MIN_HIT_AREA_WIDTH
 LABEL_FONT_FAMILY = MAP_FEATURE_LABEL_FONT_FAMILY
 LABEL_FONT_SIZE = MAP_FEATURE_LABEL_FONT_SIZE
 LABEL_COLOR = MAP_FEATURE_LABEL_COLOR
-
 
 class _FeatureItemBase(QGraphicsObject):
     """Abstract base for vector map features (paths, regions).
@@ -126,6 +124,8 @@ class _FeatureItemBase(QGraphicsObject):
         self.lore_date = lore_date
         self._description = description or ""
         self._map_width_meters = map_width_meters
+        self._anchor_x = 0.0
+        self._anchor_y = 0.0
 
         # Temporal state
         self.is_future = False
@@ -148,6 +148,49 @@ class _FeatureItemBase(QGraphicsObject):
         self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.setZValue(MAP_FEATURE_Z_VALUE)
         self.setToolTip(description or label)
+        self.connection_count = 0
+        self._label_item = MapLabelItem(label, self)
+        self._label_item.setVisible(False)
+
+    def label_anchor_scene_pos(self) -> QPointF:
+        """Return the normalized feature anchor in scene coordinates."""
+        rect = self.pixmap_item.sceneBoundingRect()
+        return QPointF(
+            rect.left() + self._anchor_x * rect.width(),
+            rect.top() + self._anchor_y * rect.height(),
+        )
+
+    @staticmethod
+    def label_clearance_px() -> float:
+        """Keep a small gap between geometry anchors and their labels."""
+        return 4.0
+
+    def apply_label_scene_position(
+        self, scene_x: float, scene_y: float, _inv_scale: float
+    ) -> None:
+        """Place the label at a scene-space layout candidate."""
+        self._label_item.setPos(scene_x, scene_y)
+        self._label_item.setVisible(True)
+
+    def hide_layout_label(self) -> None:
+        """Hide the label when no collision-free candidate exists."""
+        self._label_item.setVisible(False)
+
+    def _position_label(self) -> None:
+        """Refresh the anchor and request collision-aware relayout."""
+        anchor = self.label_anchor_scene_pos()
+        label_rect = self._label_item.boundingRect()
+        self._label_item.setPos(
+            anchor.x() - label_rect.width() / 2.0,
+            anchor.y() + self.label_clearance_px(),
+        )
+        scene = self.scene()
+        if scene is None:
+            return
+        for view in scene.views():
+            schedule = getattr(view, "_schedule_label_layout", None)
+            if callable(schedule):
+                schedule()
 
     # ------------------------------------------------------------------
     # Style helpers
@@ -436,17 +479,6 @@ class PathItem(_FeatureItemBase):
         self._path = QPainterPath()
         self._build_path()
 
-        # Label (child item — auto-managed)
-        self._label_item = QGraphicsSimpleTextItem(label, self)
-        self._label_item.setBrush(QBrush(QColor(LABEL_COLOR)))
-        font = QFont(LABEL_FONT_FAMILY, LABEL_FONT_SIZE)
-        font.setBold(True)
-        self._label_item.setFont(font)
-        self._label_item.setFlag(
-            QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True
-        )
-        self._position_label()
-
     def _build_path(self) -> None:
         """Converts normalized geometry → scene-coordinates QPainterPath."""
         if not self.pixmap_item or not self._geometry:
@@ -464,16 +496,6 @@ class PathItem(_FeatureItemBase):
             else:
                 self._path.lineTo(sp)
 
-    def _position_label(self) -> None:
-        """Places the label at the anchor position."""
-        if not self.pixmap_item:
-            return
-        rect = self.pixmap_item.sceneBoundingRect()
-        ax = rect.left() + self._anchor_x * rect.width()
-        ay = rect.top() + self._anchor_y * rect.height()
-        label_rect = self._label_item.boundingRect()
-        self._label_item.setPos(ax - label_rect.width() / 2, ay + 4)
-
     def set_geometry(
         self, geometry: List[Dict[str, float]], anchor_x: float, anchor_y: float
     ) -> None:
@@ -483,7 +505,6 @@ class PathItem(_FeatureItemBase):
         self._anchor_x = anchor_x
         self._anchor_y = anchor_y
         self._build_path()
-        self._position_label()
         self.update()
 
     # ------------------------------------------------------------------
@@ -626,17 +647,6 @@ class RegionItem(_FeatureItemBase):
         self._polygon = QPolygonF()
         self._build_polygon()
 
-        # Label (child item)
-        self._label_item = QGraphicsSimpleTextItem(label, self)
-        self._label_item.setBrush(QBrush(QColor(LABEL_COLOR)))
-        font = QFont(LABEL_FONT_FAMILY, LABEL_FONT_SIZE)
-        font.setBold(True)
-        self._label_item.setFont(font)
-        self._label_item.setFlag(
-            QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True
-        )
-        self._position_label()
-
     def _build_polygon(self) -> None:
         """Converts normalized geometry → scene-coordinates QPolygonF."""
         if not self.pixmap_item or not self._geometry:
@@ -649,18 +659,6 @@ class RegionItem(_FeatureItemBase):
             points.append(QPointF(sx, sy))
         self._polygon = QPolygonF(points)
 
-    def _position_label(self) -> None:
-        """Places the label at the anchor (centroid)."""
-        if not self.pixmap_item:
-            return
-        rect = self.pixmap_item.sceneBoundingRect()
-        ax = rect.left() + self._anchor_x * rect.width()
-        ay = rect.top() + self._anchor_y * rect.height()
-        label_rect = self._label_item.boundingRect()
-        self._label_item.setPos(
-            ax - label_rect.width() / 2, ay - label_rect.height() / 2
-        )
-
     def set_geometry(
         self, geometry: List[Dict[str, float]], anchor_x: float, anchor_y: float
     ) -> None:
@@ -670,7 +668,6 @@ class RegionItem(_FeatureItemBase):
         self._anchor_x = anchor_x
         self._anchor_y = anchor_y
         self._build_polygon()
-        self._position_label()
         self.update()
 
     # ------------------------------------------------------------------

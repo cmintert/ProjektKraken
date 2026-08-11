@@ -37,6 +37,33 @@ def setup_map_with_pixmap(map_view, width=100, height=100):
     return map_view
 
 
+def test_temporal_status_visibility_does_not_resize_viewport(
+    map_widget, qtbot
+) -> None:
+    """Showing the outside-date control must not shift map content."""
+    map_widget.resize(1000, 700)
+    map_widget.show()
+    qtbot.waitExposed(map_widget)
+    before_height = map_widget.view.viewport().height()
+
+    map_widget._on_temporal_counts_changed(0, 1)
+    qtbot.wait(0)
+    shown_height = map_widget.view.viewport().height()
+    map_widget._on_temporal_counts_changed(1, 0)
+    qtbot.wait(0)
+
+    assert shown_height == before_height
+    assert map_widget.view.viewport().height() == before_height
+
+
+def test_geometry_apply_uses_primary_action_style(map_widget) -> None:
+    """Geometry Apply matches the established positive action treatment."""
+    assert (
+        map_widget.btn_apply_feature_geometry.styleSheet()
+        == StyleHelper.get_primary_button_style()
+    )
+
+
 @pytest.fixture
 def map_widget(qtbot):
     """Provides a MapWidget instance."""

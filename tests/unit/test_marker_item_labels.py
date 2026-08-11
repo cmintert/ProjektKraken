@@ -1,6 +1,11 @@
 import pytest
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import QGraphicsPixmapItem
 
+from src.gui.widgets.map.feature_items import PathItem
+from src.gui.widgets.map.label_manager import LabelManager
+from src.gui.widgets.map.map_label_item import MapLabelItem
 from src.gui.widgets.map.marker_item import MarkerItem, MarkerLabelItem
 
 
@@ -67,3 +72,23 @@ def test_marker_item_connection_count_default(mock_pixmap_item):
     )
 
     assert marker.connection_count == 0
+
+
+def test_geometry_labels_share_themed_pill_and_avoid_each_other(qapp):
+    """Path labels use the shared pill and deterministic collision layout."""
+    image = QImage(100, 100, QImage.Format.Format_RGB32)
+    image.fill(Qt.GlobalColor.white)
+    pixmap_item = QGraphicsPixmapItem(QPixmap.fromImage(image))
+    geometry = [{"x": 0.4, "y": 0.5}, {"x": 0.6, "y": 0.5}]
+    first = PathItem("p1", "entity", "First", pixmap_item, geometry, 0.5, 0.5)
+    second = PathItem("p2", "entity", "Second", pixmap_item, geometry, 0.5, 0.5)
+
+    manager = LabelManager()
+    manager.run_layout_pass([first, second], 1.0)
+
+    assert isinstance(first._label_item, MapLabelItem)
+    assert isinstance(second._label_item, MapLabelItem)
+    assert first._label_item.isVisible()
+    assert second._label_item.isVisible()
+    first_label, second_label = manager._occupied_rects[-2:]
+    assert not first_label.intersects(second_label)

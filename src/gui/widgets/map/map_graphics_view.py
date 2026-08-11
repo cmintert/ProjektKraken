@@ -75,7 +75,7 @@ from src.gui.widgets.map.detail_map_footprint_item import DetailMapFootprintItem
 from src.gui.widgets.map.drawing_tool import DrawingTool
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.interaction_handler import InteractionHandler
-from src.gui.widgets.map.label_manager import LabelManager
+from src.gui.widgets.map.label_manager import LabelLayoutItem, LabelManager
 from src.gui.widgets.map.marker_item import MarkerItem
 from src.gui.widgets.map.marker_manager import MarkerManager
 from src.gui.widgets.map.raster_edit_tool import RasterEditMode
@@ -660,6 +660,14 @@ class MapGraphicsView(QGraphicsView):
     def _update_theme(self, theme: dict) -> None:
         """Updates the scene background."""
         self.graphics_scene.setBackgroundBrush(QBrush(QColor(theme["app_bg"])))
+        if hasattr(self, "_marker_manager"):
+            label_items = [
+                *self._marker_manager.markers.values(),
+                *self._marker_manager.feature_items.values(),
+            ]
+            for item in label_items:
+                item._label_item.refresh_theme()
+            self._schedule_label_layout()
 
         # Scale Bar
         self.scale_bar_painter = ScaleBarPainter()
@@ -830,7 +838,12 @@ class MapGraphicsView(QGraphicsView):
         Keyframe dots and labels from the active trajectory are
         registered as extra obstacles so marker labels avoid them.
         """
-        marker_list = list(self.markers.values())
+        marker_list = [
+            cast(LabelLayoutItem, item) for item in self.markers.values()
+        ]
+        marker_list.extend(
+            cast(LabelLayoutItem, item) for item in self.feature_items.values()
+        )
         view_scale = self.transform().m11()
         extra = self._collect_keyframe_obstacles(view_scale)
         self.label_manager.run_layout_pass(
@@ -1650,6 +1663,7 @@ class MapGraphicsView(QGraphicsView):
                     emit_geometry_change=False
                 )
         self.effective_visibility_changed.emit()
+        self._schedule_label_layout()
 
     def _apply_effective_layer_opacity(self) -> None:
         """Apply inherited layer opacity without replacing temporal factors."""

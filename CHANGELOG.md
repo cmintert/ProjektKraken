@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-11
-**Commit:** 2a51a29a
+**Commit:** d0b356ff
 ---
 
 # Changelog
@@ -32,6 +32,13 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-11)* **Map / Temporal Editing**: Kept layer validity editing open
+  while the playhead moves, refreshed property-only layer changes immediately,
+  and preserved layer selection and expansion state.
+- *(2026-08-11)* **Map / Geometry**: Kept applied base geometry authoritative
+  without restart, recovered failed geometry saves, and prevented temporal
+  status changes from shifting the map viewport.
+
 - *(2026-08-10)* **Map / Visibility**: Unified manual, inherited, zoom, and
   temporal visibility, kept selected trajectories aligned with their owners,
   and composed layer opacity with future and ghost styling.
@@ -47,6 +54,13 @@ All notable changes to this project will be documented in this file.
   databases from being silently recreated and added explicit recovery warnings.
 
 ### Changed
+
+- *(2026-08-11)* **Map / Labels**: Unified point, path, and region labels with
+  theme-aware collision placement and emphasized geometry Apply as the primary
+  action.
+- *(2026-08-11)* **Testing / Map**: Added temporal capture, layer
+  reconciliation, geometry cache recovery, viewport stability, and shared-label
+  regressions.
 
 - *(2026-08-10)* **Documentation / Testing**: Documented vector-feature
   validity and added resolver, rendering, ghost, filtering, command,

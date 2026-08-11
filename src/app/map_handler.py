@@ -623,13 +623,15 @@ class MapHandler(QObject):
                     None,
                 )
                 if selected_map and selected_map.layers and model:
-                    db_ids = self._collect_node_ids(selected_map.layers)
-                    mem_ids = self._collect_node_ids(model.root)
-                    missing_in_model = db_ids - mem_ids
-                    stale_in_model = mem_ids - db_ids
-                    if missing_in_model or stale_in_model:
+                    db_tree = selected_map.layers.to_dict()
+                    live_tree = model.root.to_dict()
+                    if db_tree != live_tree:
+                        db_ids = self._collect_node_ids(selected_map.layers)
+                        mem_ids = self._collect_node_ids(model.root)
+                        missing_in_model = db_ids - mem_ids
+                        stale_in_model = mem_ids - db_ids
                         logger.debug(
-                            "on_markers_ready: layer model differs from fresh "
+                            "on_markers_ready: layer tree differs from fresh "
                             "maps_data (missing=%d, stale=%d, db=%d, mem=%d) — "
                             "rebuilding layer model",
                             len(missing_in_model),
@@ -672,6 +674,7 @@ class MapHandler(QObject):
             "color": marker_data["color"],
             "summary": marker_data.get("summary", ""),
             "feature_type": marker_data.get("feature_type", "point"),
+            "geometry": marker_data.get("geometry"),
             "connection_count": marker_data.get("connection_count", 0),
         }
 
@@ -783,6 +786,10 @@ class MapHandler(QObject):
         obj_id = marker_data["object_id"]
         if obj_id in view.markers:
             view.markers[obj_id].connection_count = marker_data.get(
+                "connection_count", 0
+            )
+        elif obj_id in view.feature_items:
+            view.feature_items[obj_id].connection_count = marker_data.get(
                 "connection_count", 0
             )
         self._marker_object_to_id[marker_data["object_id"]] = marker_data["id"]

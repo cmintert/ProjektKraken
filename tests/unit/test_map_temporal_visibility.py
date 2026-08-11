@@ -251,3 +251,60 @@ def test_layer_dialog_use_playhead_preserves_exact_lore_float(qtbot) -> None:
     qtbot.addWidget(dialog)
     dialog._copy_playhead(dialog._start_enabled, dialog._start)
     assert dialog.properties()["start_date"] == 42.1234
+
+
+def test_layer_panel_modeless_editor_captures_two_playhead_dates(qtbot) -> None:
+    node = MapLayerNode(name="Site", layer_type="marker", id="site")
+    panel = MapLayerPanel()
+    qtbot.addWidget(panel)
+    panel.set_model(MapLayerModel(_tree(node)))
+    panel.set_playhead_time(10.25)
+
+    panel.edit_properties("site")
+    dialog = panel._properties_dialog
+    assert dialog is not None
+    assert not dialog.isModal()
+    dialog._copy_playhead(dialog._start_enabled, dialog._start)
+
+    panel.set_playhead_time(20.75)
+    dialog._copy_playhead(dialog._end_enabled, dialog._end)
+
+    assert dialog.properties()["start_date"] == 10.25
+    assert dialog.properties()["end_date"] == 20.75
+    with qtbot.waitSignal(panel.layer_properties_changed) as blocker:
+        dialog._accept_if_valid()
+    assert blocker.args[0] == "site"
+    assert blocker.args[1]["start_date"] == 10.25
+    assert blocker.args[1]["end_date"] == 20.75
+
+
+def test_layer_model_refresh_preserves_selection_and_collapsed_groups(qtbot) -> None:
+    first = MapLayerNode(name="Site", layer_type="marker", id="site")
+    panel = MapLayerPanel()
+    qtbot.addWidget(panel)
+    first_model = MapLayerModel(_tree(first))
+    panel.set_model(first_model)
+    panel.select_node("site")
+    first_group = first_model.find_node_by_id("group")
+    assert first_group is not None
+    first_group_index = panel._proxy_model.mapFromSource(
+        first_model.index_from_node(first_group)
+    )
+    panel.tree_view.setExpanded(first_group_index, False)
+
+    refreshed = MapLayerNode(
+        name="Site",
+        layer_type="marker",
+        id="site",
+        start_date=10.0,
+    )
+    refreshed_model = MapLayerModel(_tree(refreshed))
+    panel.set_model(refreshed_model)
+    refreshed_group = refreshed_model.find_node_by_id("group")
+    assert refreshed_group is not None
+    refreshed_group_index = panel._proxy_model.mapFromSource(
+        refreshed_model.index_from_node(refreshed_group)
+    )
+
+    assert panel.selected_node_id == "site"
+    assert not panel.tree_view.isExpanded(refreshed_group_index)

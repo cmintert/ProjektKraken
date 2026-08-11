@@ -97,7 +97,14 @@ class FeatureGeometryCoordinator(QObject):
     @Slot(CommandResult)
     def on_command_finished(self, result: CommandResult) -> None:
         """Reload the affected map after a geometry-state command or undo."""
+        command_id = str(result.data.get("command_id", ""))
+        pending_matches = self._pending_command_id is not None and (
+            not command_id or command_id == self._pending_command_id
+        )
         if not result.success:
+            if pending_matches:
+                self._pending_command_id = None
+                self._window.map_widget.set_feature_geometry_edit_pending(False)
             return
         effects = result.data.get("effects", [])
         for effect in effects if isinstance(effects, list) else []:
@@ -114,14 +121,18 @@ class FeatureGeometryCoordinator(QObject):
                 )
         if self._pending_command_id is None:
             return
-        command_id = str(result.data.get("command_id", ""))
         if command_id and command_id != self._pending_command_id:
             return
-        if result.success:
-            self._finish_edit_session(restore_playhead=False)
-        else:
-            self._pending_command_id = None
-            self._window.map_widget.set_feature_geometry_edit_pending(False)
+        if self._session is not None and self._session["target_type"] == "base":
+            snapshot = self._markers_by_map.get(
+                self._session["map_id"], {}
+            ).get(self._session["marker_id"])
+            pending_base = self._session.get("pending_base")
+            if snapshot is not None and isinstance(pending_base, dict):
+                snapshot["geometry"] = copy.deepcopy(pending_base["geometry"])
+                snapshot["x"] = float(pending_base["x"])
+                snapshot["y"] = float(pending_base["y"])
+        self._finish_edit_session(restore_playhead=False)
 
     @Slot(str)
     def start_edit_at_playhead(self, object_id: str) -> None:
@@ -256,6 +267,11 @@ class FeatureGeometryCoordinator(QObject):
             emit_geometry_change=False
         )
         if session["target_type"] == "base":
+            session["pending_base"] = {
+                "geometry": copy.deepcopy(geometry),
+                "x": anchor_x,
+                "y": anchor_y,
+            }
             command: BaseCommand = UpdateMarkerCommand(
                 session["marker_id"],
                 {"geometry": geometry, "x": anchor_x, "y": anchor_y},

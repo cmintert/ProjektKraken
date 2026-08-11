@@ -7,12 +7,29 @@ and lower-priority labels gracefully hide when no free space exists.
 """
 
 import logging
-from typing import TYPE_CHECKING, List, Optional
+from typing import List, Optional, Protocol
 
-from PySide6.QtCore import QRectF
+from PySide6.QtCore import QPointF, QRectF
+from PySide6.QtWidgets import QGraphicsItem
 
-if TYPE_CHECKING:
-    from src.gui.widgets.map.marker_item import MarkerItem
+
+class LabelLayoutItem(Protocol):
+    """Device-independent contract consumed by the shared label layout."""
+
+    connection_count: int
+    _label_item: QGraphicsItem
+
+    def isVisible(self) -> bool: ...
+
+    def label_anchor_scene_pos(self) -> QPointF: ...
+
+    def label_clearance_px(self) -> float: ...
+
+    def apply_label_scene_position(
+        self, scene_x: float, scene_y: float, inv_scale: float
+    ) -> None: ...
+
+    def hide_layout_label(self) -> None: ...
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +70,7 @@ class LabelManager:
 
     def run_layout_pass(
         self,
-        markers: List["MarkerItem"],
+        markers: List[LabelLayoutItem],
         view_scale: float,
         extra_obstacles: Optional[List[QRectF]] = None,
     ) -> None:
@@ -80,29 +97,31 @@ class LabelManager:
         if extra_obstacles:
             self._occupied_rects.extend(extra_obstacles)
 
-        if not markers:
+        visible_items = [item for item in markers if item.isVisible()]
+        for item in markers:
+            if not item.isVisible():
+                item.hide_layout_label()
+
+        if not visible_items:
             return
 
         inv_scale = 1.0 / view_scale if view_scale > 0 else 1.0
 
         # Step 1 – register marker icons as obstacles.
-        for marker in markers:
-            icon_rect = marker.boundingRect()
-            scene_pos = marker.scenePos()
-            # Icon rect is in local coords centered on (0,0).
-            # Map to scene by shifting by the marker's scene position,
-            # then scaling by inv_scale (since ItemIgnoresTransformations).
+        for marker in visible_items:
+            scene_pos = marker.label_anchor_scene_pos()
+            clearance = marker.label_clearance_px() * inv_scale
             obstacle = QRectF(
-                scene_pos.x() + icon_rect.x() * inv_scale,
-                scene_pos.y() + icon_rect.y() * inv_scale,
-                icon_rect.width() * inv_scale,
-                icon_rect.height() * inv_scale,
+                scene_pos.x() - clearance,
+                scene_pos.y() - clearance,
+                clearance * 2.0,
+                clearance * 2.0,
             )
             self._occupied_rects.append(obstacle)
 
         # Step 2 – sort markers by priority and place their labels.
         sorted_markers = sorted(
-            markers,
+            visible_items,
             key=lambda m: getattr(m, "connection_count", 0),
             reverse=True,
         )
@@ -113,7 +132,7 @@ class LabelManager:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _place_label(self, marker: "MarkerItem", inv_scale: float) -> None:
+    def _place_label(self, marker: LabelLayoutItem, inv_scale: float) -> None:
         """Tries to place a single marker's label at the best candidate.
 
         Args:
@@ -125,9 +144,8 @@ class LabelManager:
         label_w = label_rect.width() * inv_scale
         label_h = label_rect.height() * inv_scale
 
-        scene_pos = marker.scenePos()
-        size = marker.resolved_size * inv_scale
-        half_size = size / 2.0
+        scene_pos = marker.label_anchor_scene_pos()
+        half_size = marker.label_clearance_px() * inv_scale
         padding = self._PADDING * inv_scale
 
         for dx_factor, dy_factor in self._CANDIDATE_OFFSETS:
@@ -149,15 +167,12 @@ class LabelManager:
             candidate = QRectF(cx, cy, label_w, label_h)
 
             if self._is_space_free(candidate):
-                # Convert scene position back to local coords.
-                local_x = (cx - scene_pos.x()) / inv_scale
-                local_y = (cy - scene_pos.y()) / inv_scale
-                marker.apply_label_position(local_x, local_y, True)
+                marker.apply_label_scene_position(cx, cy, inv_scale)
                 self._occupied_rects.append(candidate)
                 return
 
         # All 8 candidates collided – hide the label.
-        marker.apply_label_position(0.0, 0.0, False)
+        marker.hide_layout_label()
 
     def _is_space_free(self, candidate: QRectF) -> bool:
         """Checks whether *candidate* overlaps any occupied rectangle.

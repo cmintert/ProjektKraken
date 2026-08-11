@@ -15,8 +15,6 @@ from PySide6.QtGui import (
     QBrush,
     QColor,
     QCursor,
-    QFont,
-    QFontMetrics,
     QPainter,
     QPen,
 )
@@ -32,8 +30,8 @@ from PySide6.QtWidgets import (
 
 from src.app.constants import MAP_TEMPORAL_GHOST_OPACITY, TEMPORAL_FUTURE_OPACITY
 from src.core.style_constants import BASE_SIZE
-from src.core.theme_manager import ThemeManager
 from src.gui.utils.svg_utils import apply_svg_inline_styles, svg_file_to_string
+from src.gui.widgets.map.map_label_item import MapLabelItem
 from src.services.visual_resolver import VisualResolver
 
 if TYPE_CHECKING:
@@ -53,63 +51,8 @@ MARKER_ICONS_PATH = os.path.join(
 
 logger = logging.getLogger(__name__)
 
-
-class MarkerLabelItem(QGraphicsObject):
-    """Custom graphics item for marker labels that displays a themed background pill."""
-
-    def __init__(self, text: str, parent: Optional[QGraphicsItem] = None) -> None:
-        super().__init__(parent)
-        self._text = text
-        self._font = QFont("Segoe UI", 8)
-        self._font.setBold(True)
-        self.setFlag(QGraphicsObject.GraphicsItemFlag.ItemIgnoresTransformations)
-
-        self._padding_x = 6
-        self._padding_y = 2
-        self._rect = QRectF()
-        self._update_rect()
-
-    def _update_rect(self) -> None:
-        fm = QFontMetrics(self._font)
-        text_rect = fm.boundingRect(self._text)
-        width = text_rect.width() + self._padding_x * 2
-        height = text_rect.height() + self._padding_y * 2
-        self._rect = QRectF(0, 0, float(width), float(height))
-        self.prepareGeometryChange()
-
-    def boundingRect(self) -> QRectF:
-        return self._rect
-
-    def setText(self, text: str) -> None:
-        if self._text != text:
-            self._text = text
-            self._update_rect()
-            self.update()
-
-    def paint(
-        self,
-        painter: QPainter,
-        option: QStyleOptionGraphicsItem,
-        widget: Optional[QWidget] = None,
-    ) -> None:
-        theme = ThemeManager().get_theme()
-        bg_color = QColor(theme.get("surface", "#1A1A1A"))
-        text_color = QColor(theme.get("text_main", "#FFFFFF"))
-        border_color = QColor(theme.get("border", "#333333"))
-
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-
-        # Draw the pill background
-        painter.setBrush(QBrush(bg_color))
-        painter.setPen(QPen(border_color, 1))
-
-        radius = self._rect.height() / 2.0
-        painter.drawRoundedRect(self._rect, radius, radius)
-
-        # Draw the text
-        painter.setFont(self._font)
-        painter.setPen(QPen(text_color))
-        painter.drawText(self._rect, Qt.AlignmentFlag.AlignCenter, self._text)
+# Compatibility alias for callers that imported the former local class.
+MarkerLabelItem = MapLabelItem
 
 
 class MarkerItem(QGraphicsObject):
@@ -209,7 +152,7 @@ class MarkerItem(QGraphicsObject):
         self.connection_count: int = 0
 
         # Text Label - pill background (hidden until first layout pass)
-        self._label_item = MarkerLabelItem(label, self)
+        self._label_item = MapLabelItem(label, self)
         self._label_item.setVisible(False)
 
     def apply_label_position(
@@ -226,6 +169,29 @@ class MarkerItem(QGraphicsObject):
         """
         self._label_item.setPos(local_x, local_y)
         self._label_item.setVisible(is_visible)
+
+    def label_anchor_scene_pos(self) -> QPointF:
+        """Return the scene anchor used by the shared label layout."""
+        return self.scenePos()
+
+    def label_clearance_px(self) -> float:
+        """Return icon clearance around the label anchor in device pixels."""
+        return self.resolved_size / 2.0
+
+    def apply_label_scene_position(
+        self, scene_x: float, scene_y: float, inv_scale: float
+    ) -> None:
+        """Place the device-space child label at a scene-space candidate."""
+        anchor = self.scenePos()
+        self.apply_label_position(
+            (scene_x - anchor.x()) / inv_scale,
+            (scene_y - anchor.y()) / inv_scale,
+            True,
+        )
+
+    def hide_layout_label(self) -> None:
+        """Hide the label when no collision-free candidate exists."""
+        self.apply_label_position(0.0, 0.0, False)
 
     def _load_icon(self, icon_name: Optional[str]) -> None:
         """Loads an SVG icon for the marker.

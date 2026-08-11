@@ -63,6 +63,7 @@ from src.gui.widgets.map.map_data_buffer import (
 from src.gui.widgets.map.raster_layer_item import BLEND_MODE_NAMES
 
 if TYPE_CHECKING:
+    from src.gui.dialogs.layer_properties_dialog import LayerPropertiesDialog
     from src.gui.widgets.map.map_layer_model import MapLayerModel
 
 logger = logging.getLogger(__name__)
@@ -240,6 +241,8 @@ class MapLayerPanel(QWidget):
         # Full raster layer metadata keyed by node_id (set by MapHandler)
         self._raster_meta_by_id: Dict[str, Dict[str, Any]] = {}
         self._calendar_converter: Optional[CalendarConverter] = None
+        self._properties_dialog: Optional["LayerPropertiesDialog"] = None
+        self._properties_node_id: Optional[str] = None
         # Internal lookup: node_id → mode string (populated by MapHandler)
         self._raster_mode_by_id: dict[str, str] = {}
         self._raster_edit_target_label_by_id: dict[str, str] = {}
@@ -1203,6 +1206,8 @@ class MapLayerPanel(QWidget):
             model: The layer model to display.
 
         """
+        had_model = self._model is not None
+        expanded_node_ids = self._expanded_node_ids()
         if self._model is not None:
             try:
                 self._model.layer_tree_changed.disconnect(
@@ -1223,14 +1228,56 @@ class MapLayerPanel(QWidget):
         if self._calendar_converter is not None:
             model.set_date_formatter(self._calendar_converter.format_date)
         model.set_current_time(self._playhead_time)
-        self._tree.expandAll()
+        if had_model:
+            self._restore_expanded_nodes(expanded_node_ids)
+        else:
+            self._tree.expandAll()
         self._reconcile_selection_with_model()
         self._update_temporal_count()
+
+    def _expanded_node_ids(self) -> set[str]:
+        """Return expanded group IDs before replacing the source model."""
+        model = self._model
+        if model is None:
+            return set()
+        expanded: set[str] = set()
+
+        def visit(node: MapLayerNode) -> None:
+            index = model.index_from_node(node)
+            if index.isValid():
+                proxy_index = self._proxy_model.mapFromSource(index)
+                if proxy_index.isValid() and self._tree.isExpanded(proxy_index):
+                    expanded.add(node.id)
+            for child in node.children:
+                visit(child)
+
+        visit(model.root)
+        return expanded
+
+    def _restore_expanded_nodes(self, node_ids: set[str]) -> None:
+        """Restore expansion state after installing a fresh layer model."""
+        if self._model is None:
+            return
+        for node_id in node_ids:
+            node = self._model.find_node_by_id(node_id)
+            if node is None:
+                continue
+            index = self._proxy_model.mapFromSource(
+                self._model.index_from_node(node)
+            )
+            if index.isValid():
+                self._tree.setExpanded(index, True)
 
     def _reconcile_selection_with_model(self) -> None:
         """Clear controls that refer to a node removed from the layer model."""
         if self._model is None:
             return
+
+        if (
+            self._properties_node_id
+            and self._model.find_node_by_id(self._properties_node_id) is None
+        ):
+            self._close_properties_dialog()
 
         selected = (
             self._model.find_node_by_id(self._selected_node_id)
@@ -1300,6 +1347,8 @@ class MapLayerPanel(QWidget):
     def set_playhead_time(self, time: float) -> None:
         """Refresh temporal tree awareness for the active playhead."""
         self._playhead_time = float(time)
+        if self._properties_dialog is not None:
+            self._properties_dialog.set_playhead_time(self._playhead_time)
         if self._model is not None:
             self._model.set_current_time(self._playhead_time)
         self._proxy_model.invalidate()
@@ -1638,6 +1687,15 @@ class MapLayerPanel(QWidget):
             LayerPropertiesDialog,
         )
 
+        if self._properties_dialog is not None:
+            if self._properties_node_id == node.id:
+                self._properties_dialog.set_playhead_time(self._playhead_time)
+                self._properties_dialog.show()
+                self._properties_dialog.raise_()
+                self._properties_dialog.activateWindow()
+                return
+            self._close_properties_dialog()
+
         dialog = LayerPropertiesDialog(
             node,
             self,
@@ -1645,8 +1703,36 @@ class MapLayerPanel(QWidget):
             playhead_time=self._playhead_time,
             focus_temporal=focus_temporal,
         )
-        if dialog.exec():
-            self.layer_properties_changed.emit(node.id, dialog.properties())
+        self._properties_dialog = dialog
+        self._properties_node_id = node.id
+        dialog.accepted.connect(
+            lambda: self.layer_properties_changed.emit(
+                node.id, dialog.properties()
+            )
+        )
+        dialog.destroyed.connect(self._on_properties_dialog_destroyed)
+        dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
+        dialog.show()
+        dialog.raise_()
+        dialog.activateWindow()
+
+    @Slot()
+    def _on_properties_dialog_destroyed(self) -> None:
+        """Forget the modeless editor after either OK or Cancel."""
+        self._properties_dialog = None
+        self._properties_node_id = None
+
+    def _close_properties_dialog(self) -> None:
+        """Close the current properties editor without applying changes."""
+        dialog = self._properties_dialog
+        self._properties_dialog = None
+        self._properties_node_id = None
+        if dialog is not None:
+            dialog.reject()
+
+    def close_properties_editor(self) -> None:
+        """Close the modeless properties editor when map context changes."""
+        self._close_properties_dialog()
 
     def jump_to_valid_time(self, node_id: str) -> None:
         """Jump to a deterministic date inside a feature's valid interval."""

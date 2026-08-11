@@ -786,8 +786,8 @@ class MapWidget(
         self.coord_label.setSizePolicy(
             QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed
         )
-        status_row = QWidget(self)
-        status_layout = QHBoxLayout(status_row)
+        self.map_status_row = QWidget(self)
+        status_layout = QHBoxLayout(self.map_status_row)
         status_layout.setContentsMargins(0, 0, 0, 0)
         status_layout.addWidget(self.coord_label, 1)
         self.temporal_outside_button = QPushButton("0 features outside this date")
@@ -800,7 +800,13 @@ class MapWidget(
             self.layer_panel.set_temporal_filter_enabled
         )
         status_layout.addWidget(self.temporal_outside_button)
-        layout.addWidget(status_row)
+        self.map_status_row.setFixedHeight(
+            max(
+                self.coord_label.sizeHint().height(),
+                self.temporal_outside_button.sizeHint().height(),
+            )
+        )
+        layout.addWidget(self.map_status_row)
 
         self._apply_theme_styles()
         ThemeManager().theme_changed.connect(self._on_theme_changed)
@@ -1368,7 +1374,8 @@ class MapWidget(
         Automatically exits any active drawing or vertex editing mode
         when the user switches to a different map layer.
         """
-        # Exit active editing modes before switching maps
+        # Exit active editors before switching maps.
+        self.layer_panel.close_properties_editor()
         if self.view.is_drawing:
             self.view.cancel_drawing()
         if self.view.is_editing_vertices:
@@ -1667,6 +1674,12 @@ class MapWidget(
         )
 
         self.btn_finish_sketch.setStyleSheet(StyleHelper.get_primary_button_style())
+        self.btn_apply_feature_geometry.setStyleSheet(
+            StyleHelper.get_primary_button_style()
+        )
+        self.btn_cancel_feature_geometry.setStyleSheet(
+            StyleHelper.get_secondary_button_style()
+        )
         self.overlay_banner.setStyleSheet(StyleHelper.get_overlay_banner_style())
         self.legend_overlay.setStyleSheet(StyleHelper.get_legend_overlay_style())
         self._apply_mode_indicator_style(self._mode_indicator_mode)

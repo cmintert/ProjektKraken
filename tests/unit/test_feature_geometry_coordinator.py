@@ -9,6 +9,7 @@ from src.commands.base_command import CommandResult
 from src.commands.feature_geometry_commands import (
     ReplaceFeatureGeometryStatesCommand,
 )
+from src.commands.marker_commands import UpdateMarkerCommand
 
 
 class _Item:
@@ -35,6 +36,11 @@ class _View:
         self.feature_items = {"object": _Item()}
         self._vertex_editor = _VertexEditor()
 
+    def set_temporal_authoring_override(
+        self, _object_id: str, _enabled: bool
+    ) -> None:
+        """Mirror the production view contract for coordinator tests."""
+
 
 class _Timeline(QObject):
     playhead_time_changed = Signal(float)
@@ -60,6 +66,7 @@ class _Widget(QObject):
         self.updates: list[tuple] = []
         self.view = _View()
         self.edit_visible = False
+        self.edit_pending = False
 
     def get_selected_map_id(self) -> str:
         return self.map_id
@@ -70,8 +77,8 @@ class _Widget(QObject):
     def show_feature_geometry_edit(self, _label: str, _source: str) -> None:
         self.edit_visible = True
 
-    def set_feature_geometry_edit_pending(self, _pending: bool) -> None:
-        pass
+    def set_feature_geometry_edit_pending(self, pending: bool) -> None:
+        self.edit_pending = pending
 
     def hide_feature_geometry_edit(self) -> None:
         self.edit_visible = False
@@ -184,3 +191,69 @@ def test_cancel_discards_preview_and_restores_playhead_geometry() -> None:
 
     assert not window.map_widget.edit_visible
     assert window.map_widget.updates[-1][1][0]["x"] == 0.1
+
+
+def test_base_apply_updates_cache_before_future_playhead_changes() -> None:
+    window = _Window()
+    coordinator = FeatureGeometryCoordinator(window)
+    coordinator.bind_ui()
+    snapshot = _marker_snapshot()
+    coordinator.on_markers_ready("map", [snapshot])
+    commands = []
+    window.command_requested.connect(commands.append)
+    coordinator._start_session(
+        "map",
+        "marker",
+        snapshot,
+        "base",
+        {
+            "geometry": snapshot["geometry"],
+            "anchor_x": snapshot["x"],
+            "anchor_y": snapshot["y"],
+        },
+        [],
+    )
+    window.map_widget.view.feature_items["object"]._geometry = [
+        {"x": 0.4, "y": 0.4},
+        {"x": 0.8, "y": 0.8},
+    ]
+
+    coordinator.apply_edit()
+    assert isinstance(commands[0], UpdateMarkerCommand)
+    window.worker.command_finished.emit(
+        CommandResult(
+            True,
+            "saved",
+            data={"command_id": commands[0].command_id},
+            command_name="UpdateMarkerCommand",
+        )
+    )
+    window.timeline.playhead_time_changed.emit(50.0)
+
+    assert window.map_widget.updates[-1][1][0]["x"] == 0.4
+    assert not window.map_widget.edit_visible
+
+
+def test_failed_geometry_apply_keeps_session_editable() -> None:
+    window = _Window()
+    coordinator = FeatureGeometryCoordinator(window)
+    coordinator.bind_ui()
+    coordinator.on_markers_ready("map", [_marker_snapshot()])
+    commands = []
+    window.command_requested.connect(commands.append)
+    coordinator.start_edit_at_playhead("object")
+    coordinator.apply_edit()
+    assert window.map_widget.edit_pending
+
+    window.worker.command_finished.emit(
+        CommandResult(
+            False,
+            "save failed",
+            data={"command_id": commands[0].command_id},
+            command_name=commands[0].__class__.__name__,
+        )
+    )
+
+    assert window.map_widget.edit_visible
+    assert not window.map_widget.edit_pending
+    assert coordinator._session is not None
