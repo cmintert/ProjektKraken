@@ -226,3 +226,38 @@ class TestDisplayReport:
         assert isinstance(widget, QTextEdit)
         assert "Test suggestion" in widget.toPlainText()
         panel.close()
+
+    def test_issue_row_can_open_affected_object(self, qapp, qtbot):
+        from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
+
+        panel = AnalysisPanel()
+        panel.display_report(
+            _make_report(
+                issues=[
+                    _make_issue(
+                        SeverityLevel.WARNING,
+                        IssueType.ORPHANED_ENTITY,
+                    )
+                ]
+            )
+        )
+        panel.issues_table.selectRow(0)
+
+        assert panel.open_source_btn.isEnabled()
+        with qtbot.waitSignal(panel.open_source_requested) as blocker:
+            panel.open_source_btn.click()
+        assert blocker.args == ["id-1"]
+        panel.close()
+
+    def test_completeness_row_can_open_object(self, qapp, qtbot):
+        from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
+
+        panel = AnalysisPanel()
+        panel.display_report(_make_report(scores=[_make_score("Entity")]))
+        panel.completeness_table.selectRow(0)
+
+        assert panel.open_source_btn.isEnabled()
+        with qtbot.waitSignal(panel.open_source_requested) as blocker:
+            panel.open_source_btn.click()
+        assert blocker.args == ["id-1"]
+        panel.close()

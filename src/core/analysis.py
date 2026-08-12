@@ -5,9 +5,180 @@ suite results. These are pure data containers — no database or service
 dependencies.
 """
 
+import uuid
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
+
+
+class AnalysisScopeKind(Enum):
+    """Supported boundaries for an AI analysis run."""
+
+    WHOLE_WORLD = "whole_world"
+    CURRENT_ITEM = "current_item"
+    SELECTION = "selection"
+    TAGS = "tags"
+    DATE_RANGE = "date_range"
+
+
+class AnalysisPreset(Enum):
+    """Request budgets available to users."""
+
+    QUICK = "quick"
+    BALANCED = "balanced"
+    THOROUGH = "thorough"
+
+    @property
+    def limits(self) -> dict[str, int]:
+        """Return plot-hole, relation, and lore candidate limits."""
+        return {
+            AnalysisPreset.QUICK: {"plot_holes": 3, "relations": 5, "lore": 2},
+            AnalysisPreset.BALANCED: {
+                "plot_holes": 6,
+                "relations": 10,
+                "lore": 3,
+            },
+            AnalysisPreset.THOROUGH: {
+                "plot_holes": 10,
+                "relations": 20,
+                "lore": 5,
+            },
+        }[self]
+
+
+class AnalysisSectionStatus(Enum):
+    """Lifecycle state for one analysis section."""
+
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETE = "complete"
+    PARTIAL = "partial"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+    SKIPPED = "skipped"
+
+
+class EvidenceStrength(Enum):
+    """Deterministic strength of evidence supplied to an AI finding."""
+
+    STRONG = "strong"
+    MODERATE = "moderate"
+    WEAK = "weak"
+
+
+@dataclass
+class AnalysisScope:
+    """Serializable boundary for an AI analysis run."""
+
+    kind: AnalysisScopeKind = AnalysisScopeKind.WHOLE_WORLD
+    item_ids: list[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
+    start_date: float | None = None
+    end_date: float | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return a JSON-safe scope payload."""
+        return {
+            "kind": self.kind.value,
+            "item_ids": list(self.item_ids),
+            "tags": list(self.tags),
+            "start_date": self.start_date,
+            "end_date": self.end_date,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any] | None) -> "AnalysisScope":
+        """Build a scope from a serialized payload."""
+        if not data:
+            return cls()
+        try:
+            kind = AnalysisScopeKind(str(data.get("kind", "whole_world")))
+        except ValueError:
+            kind = AnalysisScopeKind.WHOLE_WORLD
+        return cls(
+            kind=kind,
+            item_ids=[str(value) for value in data.get("item_ids", [])],
+            tags=[str(value) for value in data.get("tags", [])],
+            start_date=data.get("start_date"),
+            end_date=data.get("end_date"),
+        )
+
+
+@dataclass
+class AnalysisCoverage:
+    """Coverage and request counts for one analysis section."""
+
+    eligible: int = 0
+    attempted: int = 0
+    succeeded: int = 0
+    failed: int = 0
+    requests: int = 0
+    errors: list[str] = field(default_factory=list)
+
+    @property
+    def status(self) -> AnalysisSectionStatus:
+        """Derive an honest terminal status from coverage counts."""
+        if self.eligible == 0:
+            return AnalysisSectionStatus.SKIPPED
+        if self.succeeded == 0 and self.failed > 0:
+            return AnalysisSectionStatus.FAILED
+        if self.failed > 0:
+            return AnalysisSectionStatus.PARTIAL
+        return AnalysisSectionStatus.COMPLETE
+
+
+@dataclass
+class EvidenceReference:
+    """Stable reference to world data supporting a finding."""
+
+    evidence_id: str
+    object_type: str
+    object_id: str
+    object_name: str
+    field: str = ""
+    excerpt: str = ""
+    lore_date: float | None = None
+    relation_id: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return a JSON-safe evidence payload."""
+        return {
+            "evidence_id": self.evidence_id,
+            "object_type": self.object_type,
+            "object_id": self.object_id,
+            "object_name": self.object_name,
+            "field": self.field,
+            "excerpt": self.excerpt,
+            "lore_date": self.lore_date,
+            "relation_id": self.relation_id,
+        }
+
+
+@dataclass
+class CompletenessComponent:
+    """One transparent component of a documentation score."""
+
+    name: str
+    earned: float
+    maximum: float
+    explanation: str
+
+
+@dataclass
+class CompletenessBreakdown:
+    """Transparent component breakdown for one object."""
+
+    components: list[CompletenessComponent] = field(default_factory=list)
+
+    @property
+    def earned(self) -> float:
+        """Return total earned points."""
+        return sum(component.earned for component in self.components)
+
+    @property
+    def maximum(self) -> float:
+        """Return total available points."""
+        return sum(component.maximum for component in self.components)
 
 
 class SeverityLevel(Enum):
@@ -44,6 +215,15 @@ class IssueType(Enum):
     ORPHANED_RELATION = "orphaned_relation"
     TAG_UNUSED = "tag_unused"
     MISSING_RELATION = "missing_relation"
+    BROKEN_WIKILINK = "broken_wikilink"
+    AMBIGUOUS_WIKILINK = "ambiguous_wikilink"
+    DUPLICATE_RELATION = "duplicate_relation"
+    MISSING_ASSET = "missing_asset"
+    UNSAFE_ASSET_PATH = "unsafe_asset_path"
+    ORPHANED_ATTACHMENT = "orphaned_attachment"
+    INVALID_DATE = "invalid_date"
+    INVALID_DURATION = "invalid_duration"
+    INVALID_TEMPORAL_WINDOW = "invalid_temporal_window"
 
 
 # ---------------------------------------------------------------------------
@@ -74,6 +254,8 @@ class ValidationIssue:
     message: str
     suggestion: str | None = None
     related_ids: list[str] | None = None
+    evidence: list[EvidenceReference] = field(default_factory=list)
+    fingerprint: str = ""
 
     def __post_init__(self) -> None:
         """Normalize related_ids to an empty list when not provided."""
@@ -85,10 +267,9 @@ class ValidationIssue:
 class CompletenessScore:
     """Per-object completeness metrics.
 
-    Score components: description (40%), tags (20%), relations (20%),
-    image (10%). Maximum score is 90 (the "type" component is not yet
-    automated). Call ``calculate_score()`` to compute the current value;
-    ``completeness_score`` is a placeholder for an externally cached result.
+    Uses a transparent 100-point documentation profile tailored to entities
+    and events. Call :meth:`calculate_score` to populate :attr:`breakdown`
+    and return the current value.
 
     Attributes:
         object_id: ID of the entity or event.
@@ -114,36 +295,92 @@ class CompletenessScore:
     tag_count: int
     relation_count: int
     completeness_score: float
+    has_name: bool = False
+    has_type: bool = False
+    has_valid_date: bool = False
+    breakdown: CompletenessBreakdown = field(default_factory=CompletenessBreakdown)
 
     def calculate_score(self) -> float:
-        """Compute and return a 0–100 completeness score from current fields.
+        """Compute and return the object's 0–100 documentation score."""
+        is_event = self.object_type == "event"
+        weights = (
+            {
+                "name": 10.0,
+                "type": 10.0,
+                "date": 20.0,
+                "description": 40.0,
+                "tags": 5.0,
+                "relations": 10.0,
+                "attachment": 5.0,
+            }
+            if is_event
+            else {
+                "name": 10.0,
+                "type": 15.0,
+                "description": 45.0,
+                "tags": 10.0,
+                "relations": 15.0,
+                "attachment": 5.0,
+            }
+        )
 
-        Score components:
-            - Description length > 50 chars: 40 pts; > 0 chars: 20 pts.
-            - Tags: 5 pts each, capped at 20.
-            - Relations: 5 pts each, capped at 20.
-            - Image: 10 pts.
-
-        Returns:
-            float: Score from 0.0 to 100.0.
-        """
-        score = 0.0
-
-        if self.description_length > 50:
-            score += 40
+        description_weight = weights["description"]
+        description_earned = 0.0
+        if self.description_length >= 50:
+            description_earned = description_weight
         elif self.description_length > 0:
-            score += 20
+            description_earned = description_weight / 2.0
 
-        if self.has_tags:
-            score += min(20.0, self.tag_count * 5.0)
-
-        if self.relation_count > 0:
-            score += min(20.0, self.relation_count * 5.0)
-
-        if self.has_image:
-            score += 10
-
-        return min(100.0, score)
+        values: list[tuple[str, float, bool, str]] = [
+            ("Name", weights["name"], self.has_name, "A non-empty name."),
+            ("Type", weights["type"], self.has_type, "A non-empty object type."),
+        ]
+        if is_event:
+            values.append(
+                (
+                    "Lore date",
+                    weights["date"],
+                    self.has_valid_date,
+                    "A finite lore date.",
+                )
+            )
+        values.extend(
+            [
+                (
+                    "Tags",
+                    weights["tags"],
+                    self.has_tags,
+                    "At least one organizational tag.",
+                ),
+                (
+                    "Relations",
+                    weights["relations"],
+                    self.relation_count > 0,
+                    "At least one connected relation.",
+                ),
+                (
+                    "Attachment",
+                    weights["attachment"],
+                    self.has_image,
+                    "At least one image attachment.",
+                ),
+            ]
+        )
+        components = [
+            CompletenessComponent(name, maximum if present else 0.0, maximum, text)
+            for name, maximum, present, text in values
+        ]
+        components.insert(
+            2,
+            CompletenessComponent(
+                "Description",
+                description_earned,
+                description_weight,
+                "Half credit below 50 trimmed characters; full credit at 50 or more.",
+            ),
+        )
+        self.breakdown = CompletenessBreakdown(components)
+        return min(100.0, self.breakdown.earned)
 
 
 @dataclass
@@ -179,6 +416,11 @@ class WorldValidationReport:
     orphaned_entities_count: int
     broken_references_count: int
     unused_tags_count: int
+    report_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    world_id: str = ""
+    snapshot_timestamp: float | None = None
+    scope: AnalysisScope = field(default_factory=AnalysisScope)
+    section_status: AnalysisSectionStatus = AnalysisSectionStatus.COMPLETE
 
     def get_issues_by_severity(self, severity: SeverityLevel) -> list[ValidationIssue]:
         """Return all issues matching the given severity.
@@ -225,6 +467,7 @@ class TimelineGap:
     gap_duration: float
     message: str = ""
     affected_entity_ids: list[str] = field(default_factory=list)
+    evidence: list[EvidenceReference] = field(default_factory=list)
 
 
 @dataclass
@@ -249,6 +492,10 @@ class TemporalConflict:
     message: str
     suggestion: str | None = None
     severity: SeverityLevel = SeverityLevel.WARNING
+    object_type: str = "relation"
+    related_ids: list[str] = field(default_factory=list)
+    evidence: list[EvidenceReference] = field(default_factory=list)
+    fingerprint: str = ""
 
 
 @dataclass
@@ -310,6 +557,11 @@ class TemporalAnalysisReport:
     latest_event_date: float | None
     calendar_name: str
     calendar_config: Any | None = None
+    report_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    world_id: str = ""
+    snapshot_timestamp: float | None = None
+    scope: AnalysisScope = field(default_factory=AnalysisScope)
+    section_status: AnalysisSectionStatus = AnalysisSectionStatus.COMPLETE
 
 
 # ---------------------------------------------------------------------------
@@ -338,6 +590,10 @@ class PlotHole:
     severity: SeverityLevel
     suggested_resolution: str | None = None
     confidence: float = 0.8
+    issue_kind: str = "logical_conflict"
+    evidence_strength: EvidenceStrength = EvidenceStrength.WEAK
+    evidence: list[EvidenceReference] = field(default_factory=list)
+    fingerprint: str = ""
 
 
 @dataclass
@@ -361,6 +617,9 @@ class RelationProposal:
     suggested_relation_type: str
     reasoning: str
     confidence: float = 0.7
+    evidence_strength: EvidenceStrength = EvidenceStrength.WEAK
+    evidence: list[EvidenceReference] = field(default_factory=list)
+    fingerprint: str = ""
 
 
 @dataclass
@@ -395,6 +654,9 @@ class LoreGapFiller:
     end_date: float
     suggestions: list[ParsedLoreSuggestion]
     selected_suggestion: int | None = None
+    evidence_strength: EvidenceStrength = EvidenceStrength.MODERATE
+    evidence: list[EvidenceReference] = field(default_factory=list)
+    fingerprint: str = ""
 
 
 @dataclass
@@ -420,3 +682,11 @@ class IntelligenceReport:
     audit_log: list[dict[str, Any]]
     calendar_config: Any | None = None
     snapshot_timestamp: float | None = None
+    report_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    world_id: str = ""
+    scope: AnalysisScope = field(default_factory=AnalysisScope)
+    preset: AnalysisPreset = AnalysisPreset.BALANCED
+    section_statuses: dict[str, AnalysisSectionStatus] = field(default_factory=dict)
+    coverage: dict[str, AnalysisCoverage] = field(default_factory=dict)
+    provider_metadata: dict[str, Any] = field(default_factory=dict)
+    token_usage: dict[str, int] = field(default_factory=dict)

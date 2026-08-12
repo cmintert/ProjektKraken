@@ -13,8 +13,10 @@ from __future__ import annotations
 
 import logging
 
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QLabel,
+    QPushButton,
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
@@ -56,6 +58,8 @@ class TemporalPanel(QWidget):
     Call :meth:`display_report` to populate or refresh the panel.
     """
 
+    open_source_requested = Signal(str)
+
     def __init__(self, parent: QWidget | None = None) -> None:
         """Initialise the panel and build the UI layout.
 
@@ -85,6 +89,16 @@ class TemporalPanel(QWidget):
         self.conflicts_table = make_analysis_table(_CONFLICT_HEADERS)
         configure_stretch_columns(self.conflicts_table, 3, 4)  # Message, Suggestion
         layout.addWidget(self.conflicts_table)
+        self.open_conflict_source_btn = QPushButton("Open Source")
+        self.open_conflict_source_btn.setEnabled(False)
+        layout.addWidget(self.open_conflict_source_btn)
+        self.conflicts_table.itemSelectionChanged.connect(
+            self._update_conflict_navigation
+        )
+        self.conflicts_table.itemDoubleClicked.connect(
+            lambda _item: self._open_conflict_source()
+        )
+        self.open_conflict_source_btn.clicked.connect(self._open_conflict_source)
 
         self._lifespans_label = QLabel("Character Lifespans")
         layout.addWidget(self._lifespans_label)
@@ -199,9 +213,15 @@ class TemporalPanel(QWidget):
         """
         self.conflicts_table.setRowCount(len(report.conflicts))
         for row, conflict in enumerate(report.conflicts):
-            self.conflicts_table.setItem(
-                row, 0, QTableWidgetItem(conflict.conflict_type)
+            type_item = QTableWidgetItem(conflict.conflict_type)
+            type_item.setData(Qt.ItemDataRole.UserRole, conflict.entity_id)
+            evidence_text = "\n".join(
+                f"{item.object_name}: {item.excerpt or item.field}"
+                for item in conflict.evidence
             )
+            if evidence_text:
+                type_item.setToolTip(evidence_text)
+            self.conflicts_table.setItem(row, 0, type_item)
             self.conflicts_table.setItem(
                 row, 1, QTableWidgetItem(conflict.entity_name)
             )
@@ -213,6 +233,21 @@ class TemporalPanel(QWidget):
                 row, 4, make_text_cell(conflict.suggestion or "")
             )
         self.conflicts_table.resizeRowsToContents()
+
+    def _selected_conflict_source(self) -> str:
+        rows = self.conflicts_table.selectionModel().selectedRows()
+        if not rows:
+            return ""
+        item = self.conflicts_table.item(rows[0].row(), 0)
+        return str(item.data(Qt.ItemDataRole.UserRole) or "") if item else ""
+
+    def _update_conflict_navigation(self) -> None:
+        self.open_conflict_source_btn.setEnabled(bool(self._selected_conflict_source()))
+
+    def _open_conflict_source(self) -> None:
+        source_id = self._selected_conflict_source()
+        if source_id:
+            self.open_source_requested.emit(source_id)
 
     def _populate_lifespans_table(
         self, report: TemporalAnalysisReport, converter: CalendarConverter | None

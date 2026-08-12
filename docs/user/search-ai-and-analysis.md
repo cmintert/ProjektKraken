@@ -66,5 +66,43 @@ Open **Analysis Suite** from **View**. Its tabs can:
 - inspect temporal relationships and character lifespans;
 - identify intelligence or lore gaps for further review.
 
-Analysis results are advisory. Review the underlying events and relations
-before changing established lore.
+World validation always checks objective integrity: broken relation endpoints,
+attachments and asset paths, duplicate directed relations, wiki links, dates,
+temporal windows, and character lifespans. **Editorial checks** is off by
+default; enable it when you also want documentation completeness, minimal
+description, isolation, and low-use-tag advice. Documentation completeness is
+a transparent 100-point profile. Hover a score to see the earned and available
+points for every component.
+
+Choose **Run AI Analysis** to select an explicit scope: the whole world, the
+current item, a multi-selection, any of several tags, or an inclusive lore-date
+range. Current-item and selection scopes include one-hop context. Date scopes
+include events in range and their directly connected objects. Then select Plot
+Holes, Relation Gaps, Lore Suggestions, and a Quick, Balanced, or Thorough
+request budget. A malformed model response may receive one repair request.
+
+Each AI finding lists deterministic **Strong**, **Moderate**, or **Weak**
+evidence strength. Select a row to read its full text and evidence, select the
+specific source you want, and choose **Open Source**. Double-clicking opens the
+primary source. Lore suggestions are explicitly creative; they cite the two
+events bounding the gap.
+
+Section states distinguish complete, partial, failed, skipped, and cancelled
+runs. A section reports “no findings” only if at least one candidate completed;
+provider failures remain visible with request counts and summaries.
+
+Reports, comparisons, dismissals, and optional dismissal notes live only in the
+current application session. Successful edits, imports, restores, calendar or
+attachment changes, and external reloads mark reports **stale**. Switching
+worlds clears them. Comparisons use stable source fingerprints rather than
+generated prose. Reports can be exported as Markdown or JSON.
+
+Analysis is advisory and navigation-only. It never changes world data or opens
+a prefilled edit operation.
+
+### Instant temporal relations
+
+**Only valid at Event** is an instant, not an invalid zero-length interval. It
+matches the current source-event date to within `0.000000001` lore days and
+continues to follow that event when it moves. Manually entered equal start and
+end bounds remain invalid; omitted interval ends remain open.

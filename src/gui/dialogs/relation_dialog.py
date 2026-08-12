@@ -229,7 +229,9 @@ class RelationEditDialog(QDialog):
             # Initial State
             is_start_event = self.attributes.get("valid_from_event", False)
             is_end_event = self.attributes.get("valid_to_event", False)
-            is_at_event = is_start_event and is_end_event
+            is_at_event = self.attributes.get("valid_at_event", False) or (
+                is_start_event and is_end_event
+            )
 
             if is_at_event:
                 self.rb_at_event.setChecked(True)
@@ -475,6 +477,7 @@ class RelationEditDialog(QDialog):
         if self.source_event_date is not None and hasattr(self, "rb_at_event"):
             if self.rb_at_event.isChecked():
                 # Only valid at Event - both start and end
+                attrs["valid_at_event"] = True
                 attrs["valid_from_event"] = True
                 attrs["valid_to_event"] = True
                 attrs["valid_from"] = self.source_event_date

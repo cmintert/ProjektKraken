@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-08-11
-**Commit:** 79e16e2c
+**Last Updated:** 2026-08-12
+**Commit:** 4a134ff6
 ---
 
 # Changelog
@@ -12,6 +12,16 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+
+- *(2026-08-12)* **Analysis / Trust and Actionability**: Added explicit AI
+  scopes and request presets, strict repaired JSON contracts, stable evidence
+  references and strength, honest coverage states, source navigation,
+  session-only comparison and dismissal, stale-report tracking, and Markdown
+  and JSON export.
+- *(2026-08-12)* **Analysis / Integrity**: Added duplicate relation, wiki-link,
+  attachment and map path, finite date and duration, shared temporal-window,
+  malformed lifespan, and related out-of-lifespan checks, with optional
+  remembered editorial checks.
 
 - *(2026-08-10)* **Map / Temporal Visibility**: Added half-open existence
   windows for markers and vector geometry, calendar-aware validity editing,
@@ -58,6 +68,15 @@ All notable changes to this project will be documented in this file.
   databases from being silently recreated and added explicit recovery warnings.
 
 ### Changed
+
+- *(2026-08-12)* **Documentation / Testing**: Documented scoped advisory
+  analysis, evidence, partial failures, stale reports, and instant relations;
+  added focused contract, GUI, worker, and integration regressions.
+- *(2026-08-12)* **Analysis / Completeness**: Replaced the opaque world-health
+  score with transparent 100-point entity and event documentation profiles.
+- *(2026-08-12)* **Relations / Temporal Semantics**: Made event-only relations
+  explicit instants that follow their source event while preserving invalid
+  manual equal-bound intervals.
 
 - *(2026-08-11)* **Map / Temporal Editing**: Separated temporal validity from
   general layer properties with a focused date-range editor and scope-safe

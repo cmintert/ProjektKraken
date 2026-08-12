@@ -698,6 +698,10 @@ class UnifiedListWidget(QWidget):
 
         self._update_delete_button_state()
 
+    def get_checked_item_ids(self) -> list[str]:
+        """Return IDs explicitly checked for multi-item actions."""
+        return [item_id for _item_type, item_id in self._model.get_checked_items()]
+
     def _update_delete_button_state(self) -> None:
         """Update enable state of delete button based on selection or checks."""
         selection_model = self.list_widget.selectionModel()

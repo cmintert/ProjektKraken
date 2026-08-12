@@ -54,6 +54,11 @@ class ValidateWorldCommand(ReadOnlyAnalysisCommand):
     in ``result.data["report"]`` on success.
     """
 
+    def __init__(self, editorial_checks: bool = True) -> None:
+        """Initialize validation with optional editorial guidance."""
+        super().__init__()
+        self.editorial_checks = editorial_checks
+
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Run world validation and return a report.
 
@@ -67,7 +72,10 @@ class ValidateWorldCommand(ReadOnlyAnalysisCommand):
             ``success=False`` with an error message on failure.
         """
         try:
-            validator = WorldValidator(db_service)
+            validator = WorldValidator(
+                db_service,
+                editorial_checks=self.editorial_checks,
+            )
             report = validator.validate()
             return CommandResult(
                 success=True,
@@ -85,7 +93,10 @@ class ValidateWorldCommand(ReadOnlyAnalysisCommand):
         Returns:
             dict: Contains ``command_type`` key only (no mutable state).
         """
-        return {"command_type": "ValidateWorldCommand"}
+        return {
+            "command_type": "ValidateWorldCommand",
+            "editorial_checks": self.editorial_checks,
+        }
 
     @classmethod
     def from_dict(cls, data: dict) -> ValidateWorldCommand:
@@ -97,7 +108,7 @@ class ValidateWorldCommand(ReadOnlyAnalysisCommand):
         Returns:
             ValidateWorldCommand: A fresh instance.
         """
-        return cls()
+        return cls(editorial_checks=bool(data.get("editorial_checks", True)))
 
 
 class AnalyzeTemporalCommand(ReadOnlyAnalysisCommand):

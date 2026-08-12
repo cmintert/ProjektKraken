@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class IntelligenceAnalysisManager(QObject):
     """Coordinate snapshot capture and dedicated-thread AI analysis."""
 
-    snapshot_requested = Signal(str, str, str)
+    snapshot_requested = Signal(str, str, str, dict)
     analysis_requested = Signal(str, dict)
 
     started = Signal()
@@ -73,7 +73,11 @@ class IntelligenceAnalysisManager(QObject):
         """Return whether an intelligence analysis job is active."""
         return self._active_job_id is not None
 
-    def start(self, analysis_type: str = "all") -> bool:
+    def start(
+        self,
+        analysis_type: str = "all",
+        options: dict[str, Any] | None = None,
+    ) -> bool:
         """Request a click-time snapshot and start one analysis job.
 
         Args:
@@ -94,7 +98,7 @@ class IntelligenceAnalysisManager(QObject):
         self._job_dispatched = False
         self._cancellation_event.clear()
         self.started.emit()
-        self.snapshot_requested.emit(job_id, world_id, analysis_type)
+        self.snapshot_requested.emit(job_id, world_id, analysis_type, options or {})
         logger.info("AI analysis job %s requested for world %s", job_id, world_id)
         return True
 

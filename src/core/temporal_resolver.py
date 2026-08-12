@@ -8,6 +8,7 @@ import logging
 from typing import Any, Dict, List, Tuple
 
 from src.core.entities import Entity
+from src.core.temporal_window import resolve_temporal_window
 
 logger = logging.getLogger(__name__)
 
@@ -44,27 +45,9 @@ class TemporalResolver:
         for rel in relations:
             attrs = rel.get("attributes", {})
             source_event_date = rel.get("source_event_date")
-
-            # Dynamic Timing Logic
-            if attrs.get("valid_from_event") is True and source_event_date is not None:
-                valid_from = float(source_event_date)
-            else:
-                valid_from = attrs.get("valid_from")
-
-            if attrs.get("valid_to_event") is True and source_event_date is not None:
-                valid_to = float(source_event_date)
-            else:
-                valid_to = attrs.get("valid_to")
-
-            # Skip if no temporal data
-            if valid_from is None:
-                continue
-
-            # Check time bounds
-            # active if valid_from <= time AND (valid_to is None OR valid_to > time)
-            if valid_from <= time:
-                if valid_to is None or valid_to > time:
-                    applicable_relations.append(rel)
+            window = resolve_temporal_window(attrs, source_event_date)
+            if window.is_active(time):
+                applicable_relations.append(rel)
 
         # 3. Sort relations to determine application order
         # Sort keys:
@@ -97,10 +80,8 @@ class TemporalResolver:
 
         # 1. Time
         source_event_date = relation.get("source_event_date")
-        if attrs.get("valid_from_event") is True and source_event_date is not None:
-            valid_from = float(source_event_date)
-        else:
-            valid_from = attrs.get("valid_from", float("-inf"))
+        window = resolve_temporal_window(attrs, source_event_date)
+        valid_from = window.start if window.start is not None else float("-inf")
 
         # 2. Priority
         # event = 1, manual = 2 (Manual wins ties at same time)

@@ -273,7 +273,7 @@ class TestMainAnalysisPanelStreaming:
         report = _make_intelligence_report()
         panel.on_intelligence_complete(report)
         assert "test-model" in panel.intelligence_panel.header_label.text()
-        assert panel.status_label.text() == "AI analysis complete."
+        assert panel.status_label.text() == "AI analysis finished."
 
     def test_ai_job_disables_only_ai_trigger_and_enables_cancel(self, qapp):
         from src.gui.widgets.analysis.main_analysis_panel import MainAnalysisPanel

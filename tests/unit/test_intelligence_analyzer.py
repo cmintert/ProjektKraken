@@ -9,6 +9,8 @@ All tests inject a _FakeProvider so no real LLM is called.  Tests cover:
 
 from __future__ import annotations
 
+import json
+import re
 import uuid
 from typing import Any
 
@@ -56,8 +58,28 @@ class _FakeProvider:
         self.prompts.append(prompt)
         if self._raise:
             raise RuntimeError("LLM unavailable")
+        response = self._response
+        if response == _LORE_RESPONSE:
+            evidence_ids = re.findall(r'"evidence_id": "([^"]+)"', prompt)[-2:]
+            response = json.dumps(
+                {
+                    "suggestions": [
+                        {
+                            "name": "The Long Silence",
+                            "date": "150",
+                            "description": "A period of unknown political upheaval.",
+                        },
+                        {
+                            "name": "Rise of the Eastern Clans",
+                            "date": "180",
+                            "description": "Tribal factions consolidated power.",
+                        },
+                    ],
+                    "evidence_ids": evidence_ids,
+                }
+            )
         return {
-            "text": self._response,
+            "text": response,
             "model": self._model_name,
             "usage": {"prompt_tokens": 10, "completion_tokens": 5},
             "finish_reason": "stop",
@@ -96,42 +118,55 @@ def _make_event(eid: str, name: str, lore_date: float) -> Event:
     return Event(id=eid, name=name, lore_date=lore_date, description="A test event.")
 
 
-_PLOT_HOLE_RESPONSE = """\
-PLOT HOLE: Alice disappears for 200 years with no explanation.
-SEVERITY: high
-RESOLUTION: Add an event covering her whereabouts.
-CONFIDENCE: 0.91
-"""
+_PLOT_HOLE_RESPONSE = json.dumps(
+    {
+        "has_issue": True,
+        "issue_kind": "missing_context",
+        "description": "Alice disappears for 200 years with no explanation.",
+        "severity": "high",
+        "suggested_resolution": "Add an event covering her whereabouts.",
+        "confidence": 0.91,
+        "evidence_ids": [],
+    }
+)
 
-_RELATION_YES_RESPONSE = """\
-SHOULD_RELATE: yes
-RELATION_TYPE: ally
-CONFIDENCE: 0.85
-REASONING: Both characters share the warrior tag and fought in the same battle.
-"""
+_RELATION_YES_RESPONSE = json.dumps(
+    {
+        "should_relate": True,
+        "source_id": "e1",
+        "target_id": "e2",
+        "relation_type": "ally",
+        "confidence": 0.85,
+        "reasoning": "Both characters share the warrior tag.",
+        "evidence_ids": [],
+    }
+)
 
-_RELATION_YES_WITH_DIRECTION_RESPONSE = """\
-SHOULD_RELATE: yes
-SOURCE: Bob
-TARGET: Alice
-RELATION_TYPE: employs
-CONFIDENCE: 0.90
-REASONING: Bob runs the guild and Alice works for him.
-"""
+_RELATION_YES_WITH_DIRECTION_RESPONSE = json.dumps(
+    {
+        "should_relate": True,
+        "source_id": "e2",
+        "target_id": "e1",
+        "relation_type": "employs",
+        "confidence": 0.9,
+        "reasoning": "Bob runs the guild and Alice works for him.",
+        "evidence_ids": [],
+    }
+)
 
-_RELATION_NO_RESPONSE = """\
-SHOULD_RELATE: no
-"""
+_RELATION_NO_RESPONSE = json.dumps(
+    {
+        "should_relate": False,
+        "source_id": "e1",
+        "target_id": "e2",
+        "relation_type": "related",
+        "confidence": 0.0,
+        "reasoning": "No supported relation.",
+        "evidence_ids": [],
+    }
+)
 
-_LORE_RESPONSE = """\
-EVENT: The Long Silence
-DATE: 150
-DESCRIPTION: A period of unknown political upheaval during which no records survive.
-
-EVENT: Rise of the Eastern Clans
-DATE: 180
-DESCRIPTION: Tribal factions consolidated power in the eastern territories.
-"""
+_LORE_RESPONSE = "__DYNAMIC_LORE_JSON__"
 
 
 # ---------------------------------------------------------------------------
@@ -235,7 +270,10 @@ class TestDetectPlotHoles:
 
     def test_plot_hole_severity_low_maps_to_info(self, db_service):
         db_service.insert_entity(_make_entity("e1", "Bob"))
-        response = "PLOT HOLE: Bob appears twice in one scene.\nSEVERITY: low\n"
+        payload = json.loads(_PLOT_HOLE_RESPONSE)
+        payload["severity"] = "low"
+        payload["description"] = "Bob appears twice in one scene."
+        response = json.dumps(payload)
         provider = _FakeProvider(response=response)
         analyzer = IntelligenceAnalyzer(db_service, provider=provider)
         report = analyzer.analyze(analysis_type="plot_holes")
@@ -243,7 +281,10 @@ class TestDetectPlotHoles:
 
     def test_plot_hole_severity_medium_maps_to_warning(self, db_service):
         db_service.insert_entity(_make_entity("e1", "Carol"))
-        response = "PLOT HOLE: Carol changes allegiance unexpectedly.\nSEVERITY: medium\n"
+        payload = json.loads(_PLOT_HOLE_RESPONSE)
+        payload["severity"] = "medium"
+        payload["description"] = "Carol changes allegiance unexpectedly."
+        response = json.dumps(payload)
         provider = _FakeProvider(response=response)
         analyzer = IntelligenceAnalyzer(db_service, provider=provider)
         report = analyzer.analyze(analysis_type="plot_holes")
@@ -264,17 +305,16 @@ class TestDetectPlotHoles:
         report = analyzer.analyze(analysis_type="plot_holes")
         assert abs(report.plot_holes[0].confidence - 0.91) < 0.001
 
-    def test_plot_hole_confidence_defaults_when_missing(self, db_service):
+    def test_plot_hole_missing_confidence_fails_strict_contract(self, db_service):
         db_service.insert_entity(_make_entity("e1", "Alice"))
-        response = (
-            "PLOT HOLE: Alice disappears for 200 years with no explanation.\n"
-            "SEVERITY: high\n"
-            "RESOLUTION: Add an event covering her whereabouts.\n"
-        )
-        provider = _FakeProvider(response=response)
+        payload = json.loads(_PLOT_HOLE_RESPONSE)
+        del payload["confidence"]
+        provider = _FakeProvider(response=json.dumps(payload))
         analyzer = IntelligenceAnalyzer(db_service, provider=provider)
         report = analyzer.analyze(analysis_type="plot_holes")
-        assert abs(report.plot_holes[0].confidence - 0.75) < 0.001
+        assert report.plot_holes == []
+        assert report.coverage["plot_holes"].failed == 1
+        assert provider.call_count == 2
 
     def test_provider_error_logged_in_audit(self, db_service):
         db_service.insert_entity(_make_entity("e1", "Alice"))
@@ -526,7 +566,11 @@ class TestRelationProposalDirectionSwap:
     def test_no_source_target_fields_uses_param_order(self) -> None:
         src = _make_entity("e1", "Alice")
         tgt = _make_entity("e2", "Bob")
-        result = self._parse(_RELATION_YES_RESPONSE, src, tgt)
+        result = self._parse(
+            "SHOULD_RELATE: yes\nRELATION_TYPE: ally\nREASONING: shared tag\n",
+            src,
+            tgt,
+        )
         assert result is not None
         assert result.source_id == "e1"
         assert result.target_id == "e2"
@@ -546,7 +590,11 @@ class TestRelationProposalDirectionSwap:
         """LLM picks Bob as source and Alice as target → swap the pair."""
         src = _make_entity("e1", "Alice")
         tgt = _make_entity("e2", "Bob")
-        result = self._parse(_RELATION_YES_WITH_DIRECTION_RESPONSE, src, tgt)
+        response = (
+            "SHOULD_RELATE: yes\nSOURCE: Bob\nTARGET: Alice\n"
+            "RELATION_TYPE: employs\nREASONING: x\n"
+        )
+        result = self._parse(response, src, tgt)
         assert result is not None
         assert result.source_id == "e2"
         assert result.source_name == "Bob"

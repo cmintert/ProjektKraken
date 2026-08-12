@@ -306,6 +306,9 @@ class TestAnalyzeCharacterLifespans:
         )
         ev = make_event("ev1", "Ghost Sighting", 300.0)
         db_service.insert_event(ev)
+        db_service.insert_relation(
+            test_id("ev1"), test_id("e1"), "features", {}
+        )
         report = analyzer.analyze()
         lifespan = next(
             (
@@ -318,7 +321,7 @@ class TestAnalyzeCharacterLifespans:
         assert lifespan is not None
         assert test_id("ev1") in lifespan.violating_events
 
-    def test_event_before_birth_is_violating(self, db_service, analyzer):
+    def test_unrelated_event_before_birth_is_not_violating(self, db_service, analyzer):
         db_service.insert_entity(make_entity("e1", "Alice"))
         db_service.insert_entity(make_entity("e2", "Source"))
         db_service.insert_relation(
@@ -336,7 +339,7 @@ class TestAnalyzeCharacterLifespans:
             None,
         )
         assert lifespan is not None
-        assert test_id("ev1") in lifespan.violating_events
+        assert test_id("ev1") not in lifespan.violating_events
 
     def test_event_within_lifespan_not_violating(self, db_service, analyzer):
         db_service.insert_entity(make_entity("e1", "Alice"))

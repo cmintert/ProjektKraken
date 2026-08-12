@@ -370,10 +370,10 @@ class TestValidateReport:
 
 @pytest.mark.unit
 class TestOrphanEdgeCases:
-    def test_entity_excluded_from_orphan_if_mentioned_in_attributes(
+    def test_incidental_attribute_id_does_not_prevent_isolation(
         self, db_service, validator
     ):
-        """Entity is not orphaned if its ID appears in another entity's attributes."""
+        """Serialized attribute substrings are not treated as resolved links."""
         e1 = Entity(id="e1", name="Referenced", type="character", description="")
         e2 = Entity(
             id="e2",
@@ -388,7 +388,7 @@ class TestOrphanEdgeCases:
         report = validator.validate()
 
         orphaned_ids = [i.object_id for i in report.get_issues_by_type(IssueType.ORPHANED_ENTITY)]
-        assert "e1" not in orphaned_ids
+        assert "e1" in orphaned_ids
 
     def test_entity_with_image_not_flagged_as_orphan(self, db_service, validator):
         """Entity with an image attachment is excluded from orphan detection."""

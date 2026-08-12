@@ -10,7 +10,7 @@ import subprocess
 import sys
 import traceback
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Set, Tuple, Union
 
 from PySide6.QtCore import QObject, Signal, SignalInstance, Slot
 
@@ -106,8 +106,9 @@ class DatabaseWorker(QObject):
     index_rebuild_finished = Signal(int, int, int)  # (indexed, unchanged, failed)
 
     # Analysis signals
-    validation_complete = Signal(object)  # Emits WorldValidationReport
-    temporal_analysis_complete = Signal(object)  # Emits TemporalAnalysisReport
+    validation_complete = Signal(str, str, object)  # job_id, world_id, report
+    temporal_analysis_complete = Signal(str, str, object)  # job_id, world_id, report
+    analysis_failed = Signal(str, str, str, str)  # job_id, world_id, kind, message
     intelligence_snapshot_ready = Signal(str, dict)  # job_id, serialized snapshot
     intelligence_snapshot_failed = Signal(str, str)  # job_id, message
 
@@ -1557,7 +1558,7 @@ class DatabaseWorker(QObject):
         }
         self.obsidian_export_prepared.emit(snapshot)
 
-    @Slot(str, str, str)
+    @Slot(str, str, str, dict)
     def run_single_obsidian_export(
         self,
         item_type: str,
@@ -1658,9 +1659,7 @@ class DatabaseWorker(QObject):
         self,
         cmd: "BaseCommand",
         result_signal: SignalInstance,
-        start_msg: str,
-        done_msg: str,
-        error_prefix: str,
+        *args: str,
     ) -> None:
         """Execute an analysis command and emit results on the worker thread.
 
@@ -1679,29 +1678,48 @@ class DatabaseWorker(QObject):
             error_prefix: Short label used in error messages, e.g.
                 ``"Validation"``.
         """
+        if len(args) == 3:
+            job_id = world_id = analysis_kind = ""
+            start_msg, done_msg, error_prefix = args
+        elif len(args) == 6:
+            job_id, world_id, analysis_kind, start_msg, done_msg, error_prefix = args
+        else:
+            raise TypeError("analysis helper expects 3 legacy or 6 job-aware arguments")
         self.operation_started.emit(start_msg)
         try:
             db_service = self.db_service
             if db_service is None:
                 logger.error("Database not ready for %s", error_prefix.lower())
-                self.error_occurred.emit(
-                    f"Database not ready for {error_prefix.lower()}."
-                )
+                message = f"Database not ready for {error_prefix.lower()}."
+                self.error_occurred.emit(message)
+                self.analysis_failed.emit(job_id, world_id, analysis_kind, message)
                 return
 
             result = cmd.execute(db_service)
             if result.success:
-                result_signal.emit(result.data["report"])
+                report: Any = result.data["report"]
+                report.world_id = world_id
+                report.snapshot_timestamp = report.timestamp
+                result_signal.emit(job_id, world_id, report)
             else:
-                self.error_occurred.emit(f"{error_prefix} failed: {result.errors}")
+                message = f"{error_prefix} failed: {result.errors}"
+                self.error_occurred.emit(message)
+                self.analysis_failed.emit(job_id, world_id, analysis_kind, message)
         except Exception as exc:
             logger.error("%s error: %s\n%s", error_prefix, exc, traceback.format_exc())
-            self.error_occurred.emit(f"{error_prefix} error: {exc!s}")
+            message = f"{error_prefix} error: {exc!s}"
+            self.error_occurred.emit(message)
+            self.analysis_failed.emit(job_id, world_id, analysis_kind, message)
         finally:
             self.operation_finished.emit(done_msg)
 
-    @Slot()
-    def validate_world(self) -> None:
+    @Slot(str, str, bool)
+    def validate_world(
+        self,
+        job_id: str = "",
+        world_id: str = "",
+        editorial_checks: bool = False,
+    ) -> None:
         """Run world validation in the worker thread and emit the report.
 
         On success emits :attr:`validation_complete` with the
@@ -1711,15 +1729,18 @@ class DatabaseWorker(QObject):
         from src.commands.analysis_commands import ValidateWorldCommand
 
         self._run_analysis_command(
-            ValidateWorldCommand(),
+            ValidateWorldCommand(editorial_checks=editorial_checks),
             self.validation_complete,
+            job_id,
+            world_id,
+            "validation",
             "Validating world…",
-            "Validation complete.",
+            "Validation finished.",
             "Validation",
         )
 
-    @Slot()
-    def analyze_temporal(self) -> None:
+    @Slot(str, str)
+    def analyze_temporal(self, job_id: str = "", world_id: str = "") -> None:
         """Run temporal analysis in the worker thread and emit the report.
 
         On success emits :attr:`temporal_analysis_complete` with the
@@ -1731,17 +1752,21 @@ class DatabaseWorker(QObject):
         self._run_analysis_command(
             AnalyzeTemporalCommand(),
             self.temporal_analysis_complete,
+            job_id,
+            world_id,
+            "temporal",
             "Analyzing timeline…",
-            "Temporal analysis complete.",
+            "Temporal analysis finished.",
             "Temporal analysis",
         )
 
-    @Slot(str, str, str)
+    @Slot(str, str, str, dict)
     def prepare_intelligence_analysis(
         self,
         job_id: str,
         world_id: str,
         analysis_type: str = "all",
+        options: dict[str, Any] | None = None,
     ) -> None:
         """Capture a serialized click-time snapshot for the AI worker.
 
@@ -1770,6 +1795,7 @@ class DatabaseWorker(QObject):
                 self.db_service,
                 world_id=world_id,
                 analysis_type=analysis_type,
+                options=options,
             )
             self.intelligence_snapshot_ready.emit(job_id, snapshot)
         except Exception as exc:

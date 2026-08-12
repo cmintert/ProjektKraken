@@ -37,6 +37,27 @@ Pass serializable snapshots such as dictionaries across thread boundaries. Do
 not pass live commands, database connections, widgets, or other thread-owned
 objects.
 
+### Analysis Suite
+
+Deterministic validation and temporal analysis execute on the database worker.
+Each request carries job and world IDs; consumers reject superseded output. A
+typed failure signal restores controls on every terminal path.
+
+AI analysis first captures a deep, serializable snapshot on the database
+worker, including the world ID, timestamp, explicit scope, preset, and selected
+categories. A dedicated AI `QThread` reconstructs core objects and makes model
+calls without database or widget access. Cancellation uses a thread-safe token.
+Late results are accepted only while both job and world IDs remain current.
+
+Structured responses use `json.loads`, schema and enum checks, candidate-ID
+validation, and supplied-evidence-ID validation. One malformed response can
+receive one repair request. Reports and dismissals remain in the GUI session;
+they never enter world storage or `QSettings`.
+
+Relation visibility is centralized in `src/core/temporal_window.py`. The
+relation dialog, resolver, analyzer, and validator use that evaluator so
+instant, dynamic, open, and invalid interval semantics cannot drift.
+
 ## Coordinators
 
 - `AppCoordinator` coordinates cross-feature work.
@@ -54,4 +75,3 @@ objects.
 - Declare Qt signals with `Signal`.
 - Use fully qualified Qt enum names.
 - Guard delayed widget access during teardown with `shiboken6.isValid`.
-

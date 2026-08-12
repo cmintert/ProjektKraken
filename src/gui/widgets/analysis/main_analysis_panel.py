@@ -15,8 +15,9 @@ import datetime
 import logging
 from typing import Any
 
-from PySide6.QtCore import Slot
+from PySide6.QtCore import QSettings, Slot
 from PySide6.QtWidgets import (
+    QCheckBox,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -25,11 +26,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.core.analysis import (
-    IntelligenceReport,
-    TemporalAnalysisReport,
-    WorldValidationReport,
-)
+from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+from src.core.analysis import IntelligenceReport
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
 from src.gui.widgets.analysis.intelligence_panel import IntelligencePanel
@@ -74,6 +72,7 @@ class MainAnalysisPanel(QWidget):
         self._standard_analysis_running = False
         self._intelligence_running = False
         self._intelligence_cancelling = False
+        self._active_standard_jobs: dict[str, str] = {}
         self._init_ui()
 
     def _init_ui(self) -> None:
@@ -87,6 +86,18 @@ class MainAnalysisPanel(QWidget):
         self.intelligence_btn = QPushButton("Run AI Analysis")
         self.cancel_intelligence_btn = QPushButton("Cancel AI Analysis")
         self.cancel_intelligence_btn.setEnabled(False)
+        self.editorial_checks = QCheckBox("Editorial checks")
+        self.editorial_checks.setToolTip(
+            "Include completeness, sparse-description, isolation, and tag-use advice."
+        )
+        settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
+        editorial_enabled = bool(
+            settings.value("analysis/editorial_checks", False, type=bool)
+        )
+        self.editorial_checks.setChecked(editorial_enabled)
+        self.editorial_checks.toggled.connect(
+            lambda checked: settings.setValue("analysis/editorial_checks", checked)
+        )
         self.status_label = QLabel("")
         self.status_label.setStyleSheet(StyleHelper.get_preview_label_style())
         for btn in (
@@ -96,6 +107,7 @@ class MainAnalysisPanel(QWidget):
             self.cancel_intelligence_btn,
         ):
             btn_layout.addWidget(btn)
+        btn_layout.addWidget(self.editorial_checks)
         btn_layout.addWidget(self.status_label, stretch=1)
         layout.addLayout(btn_layout)
 
@@ -132,7 +144,12 @@ class MainAnalysisPanel(QWidget):
         self.tab_widget.setCurrentIndex(self._TAB_INTELLIGENCE)
         self.intelligence_panel.start_streaming()
 
-    def on_analysis_started(self, message: str) -> None:
+    def on_analysis_started(
+        self,
+        message: str,
+        analysis_kind: str = "",
+        job_id: str = "",
+    ) -> None:
         """Disable buttons and update the status label when analysis begins.
 
         This method is called by the :class:`~src.app.connection_manager.\
@@ -144,6 +161,8 @@ ConnectionManager` button lambdas before invoking the coordinator, so the
                 running (e.g. ``"Validating world…"``).
         """
         self._standard_analysis_running = True
+        if analysis_kind and job_id:
+            self._active_standard_jobs[analysis_kind] = job_id
         self._set_standard_buttons_enabled(False)
         if self._intelligence_running:
             self.status_label.setText(f"{message} AI analysis continues in background.")
@@ -178,7 +197,8 @@ ConnectionManager` button lambdas before invoking the coordinator, so the
     # ------------------------------------------------------------------
 
     @Slot(object)
-    def on_validation_complete(self, report: WorldValidationReport) -> None:
+    @Slot(str, str, object)
+    def on_validation_complete(self, *args: Any) -> None:
         """Display a validation report and switch to the Validation tab.
 
         Re-enables the trigger buttons after the report is displayed.
@@ -186,6 +206,10 @@ ConnectionManager` button lambdas before invoking the coordinator, so the
         Args:
             report: The :class:`~src.core.analysis.WorldValidationReport` to display.
         """
+        job_id, report = self._unpack_report_args(args)
+        if job_id and self._active_standard_jobs.get("validation") != job_id:
+            return
+        self._active_standard_jobs.pop("validation", None)
         self.validation_panel.display_report(report)
         self.tab_widget.setCurrentIndex(self._TAB_VALIDATION)
         self._standard_analysis_running = False
@@ -193,11 +217,12 @@ ConnectionManager` button lambdas before invoking the coordinator, so the
         if self._intelligence_running:
             self._show_intelligence_status()
         else:
-            self.status_label.setText("Validation complete.")
+            self.status_label.setText("Validation finished.")
         logger.debug("MainAnalysisPanel: validation report received")
 
     @Slot(object)
-    def on_temporal_complete(self, report: TemporalAnalysisReport) -> None:
+    @Slot(str, str, object)
+    def on_temporal_complete(self, *args: Any) -> None:
         """Display a temporal report and switch to the Timeline tab.
 
         Re-enables the trigger buttons after the report is displayed.
@@ -205,6 +230,10 @@ ConnectionManager` button lambdas before invoking the coordinator, so the
         Args:
             report: The :class:`~src.core.analysis.TemporalAnalysisReport` to display.
         """
+        job_id, report = self._unpack_report_args(args)
+        if job_id and self._active_standard_jobs.get("temporal") != job_id:
+            return
+        self._active_standard_jobs.pop("temporal", None)
         self.temporal_panel.display_report(report)
         self.tab_widget.setCurrentIndex(self._TAB_TIMELINE)
         self._standard_analysis_running = False
@@ -212,7 +241,7 @@ ConnectionManager` button lambdas before invoking the coordinator, so the
         if self._intelligence_running:
             self._show_intelligence_status()
         else:
-            self.status_label.setText("Timeline analysis complete.")
+            self.status_label.setText("Timeline analysis finished.")
         logger.debug("MainAnalysisPanel: temporal report received")
 
     @Slot(str, object)
@@ -242,12 +271,12 @@ ConnectionManager` button lambdas before invoking the coordinator, so the
         self.tab_widget.setCurrentIndex(self._TAB_INTELLIGENCE)
         captured_at = report.snapshot_timestamp
         if captured_at is None:
-            status = "AI analysis complete."
+            status = "AI analysis finished."
         else:
             captured = datetime.datetime.fromtimestamp(captured_at).strftime(
                 "%Y-%m-%d %H:%M:%S"
             )
-            status = f"AI analysis complete — snapshot captured {captured}."
+            status = f"AI analysis finished — snapshot captured {captured}."
         self.status_label.setText(status)
         self._finish_intelligence()
         logger.debug("MainAnalysisPanel: intelligence report received")
@@ -272,3 +301,45 @@ ConnectionManager` button lambdas before invoking the coordinator, so the
         self.intelligence_panel.show_terminal_message("AI Analysis — Failed")
         self.status_label.setText(message)
         self._finish_intelligence()
+
+    @Slot(str, str, str, str)
+    def on_standard_analysis_failed(
+        self,
+        job_id: str,
+        _world_id: str,
+        analysis_kind: str,
+        message: str,
+    ) -> None:
+        """Restore deterministic-analysis controls after a matching failure."""
+        if self._active_standard_jobs.get(analysis_kind) != job_id:
+            return
+        self._active_standard_jobs.pop(analysis_kind, None)
+        self._standard_analysis_running = False
+        self._set_standard_buttons_enabled(True)
+        if analysis_kind == "validation":
+            self.validation_panel.header_label.setText(message)
+            self.tab_widget.setCurrentIndex(self._TAB_VALIDATION)
+        elif analysis_kind == "temporal":
+            self.temporal_panel.header_label.setText(message)
+            self.tab_widget.setCurrentIndex(self._TAB_TIMELINE)
+        if self._intelligence_running:
+            self._show_intelligence_status()
+        else:
+            self.status_label.setText(message)
+
+    @Slot(bool)
+    def on_world_initialized(self, _success: bool) -> None:
+        """Reject prior jobs and clear all session-only reports on world change."""
+        self._active_standard_jobs.clear()
+        self._standard_analysis_running = False
+        self._set_standard_buttons_enabled(True)
+        self.intelligence_panel.clear_session()
+
+    @staticmethod
+    def _unpack_report_args(args: tuple[Any, ...]) -> tuple[str, Any]:
+        """Accept legacy one-argument and job-aware report deliveries."""
+        if len(args) == 1:
+            return "", args[0]
+        if len(args) == 3:
+            return str(args[0]), args[2]
+        raise TypeError("Unexpected analysis report arguments")

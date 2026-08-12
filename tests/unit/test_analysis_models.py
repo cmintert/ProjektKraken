@@ -92,35 +92,36 @@ class TestCompletenessScore:
 
     def test_short_description_gives_partial_description_points(self):
         score = self._make_score(has_description=True, description_length=10)
-        assert score.calculate_score() == 20.0
+        assert score.calculate_score() == 22.5
 
     def test_long_description_gives_full_description_points(self):
         score = self._make_score(has_description=True, description_length=51)
-        assert score.calculate_score() == 40.0
+        assert score.calculate_score() == 45.0
 
     def test_tags_add_points(self):
         score = self._make_score(has_tags=True, tag_count=2)
         assert score.calculate_score() == 10.0
 
-    def test_tags_capped_at_20(self):
+    def test_tags_are_binary(self):
         score = self._make_score(has_tags=True, tag_count=100)
-        assert score.calculate_score() == 20.0
+        assert score.calculate_score() == 10.0
 
     def test_relations_add_points(self):
         score = self._make_score(relation_count=1)
+        assert score.calculate_score() == 15.0
+
+    def test_relations_are_binary(self):
+        score = self._make_score(relation_count=100)
+        assert score.calculate_score() == 15.0
+
+    def test_attachment_adds_five_points(self):
+        score = self._make_score(has_image=True)
         assert score.calculate_score() == 5.0
 
-    def test_relations_capped_at_20(self):
-        score = self._make_score(relation_count=100)
-        assert score.calculate_score() == 20.0
-
-    def test_image_adds_10_points(self):
-        score = self._make_score(has_image=True)
-        assert score.calculate_score() == 10.0
-
-    def test_fully_saturated_entity_scores_90(self):
-        # Design doc formula: desc(40) + tags(20) + relations(20) + image(10) = 90 max
+    def test_fully_documented_entity_scores_100(self):
         score = self._make_score(
+            has_name=True,
+            has_type=True,
             has_description=True,
             description_length=100,
             has_image=True,
@@ -128,7 +129,7 @@ class TestCompletenessScore:
             tag_count=4,
             relation_count=4,
         )
-        assert score.calculate_score() == 90.0
+        assert score.calculate_score() == 100.0
 
     def test_score_capped_at_100_when_overflow(self):
         # Even with enormous values, score never exceeds 100

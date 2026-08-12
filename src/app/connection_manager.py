@@ -941,6 +941,13 @@ class ConnectionManager:
                     "AnalysisPanel",
                     Qt.ConnectionType.QueuedConnection,
                 ),
+                (
+                    worker,
+                    "analysis_failed",
+                    panel.on_standard_analysis_failed,
+                    "AnalysisPanel",
+                    Qt.ConnectionType.QueuedConnection,
+                ),
                 # Dedicated AI manager → panel.
                 (
                     intelligence_manager,
@@ -978,23 +985,83 @@ class ConnectionManager:
                     panel.on_intelligence_cancelled,
                     "AnalysisPanel",
                 ),
+                (
+                    panel.intelligence_panel,
+                    "open_source_requested",
+                    self.window.navigation_coordinator.navigate_to_entity,
+                    "AnalysisPanel",
+                ),
+                (
+                    panel.validation_panel,
+                    "open_source_requested",
+                    self.window.navigation_coordinator.navigate_to_entity,
+                    "AnalysisPanel",
+                ),
+                (
+                    panel.temporal_panel,
+                    "open_source_requested",
+                    self.window.navigation_coordinator.navigate_to_entity,
+                    "AnalysisPanel",
+                ),
+                (
+                    getattr(self.window, "command_coordinator", panel),
+                    "history_changed",
+                    lambda _undo, _redo: panel.intelligence_panel.mark_stale(),
+                    "AnalysisPanel",
+                ),
+                (
+                    worker,
+                    "initialized",
+                    panel.on_world_initialized,
+                    "AnalysisPanel",
+                ),
+                (
+                    worker,
+                    "import_finished",
+                    lambda result: (
+                        panel.intelligence_panel.mark_stale()
+                        if getattr(result, "success", False)
+                        else None
+                    ),
+                    "AnalysisPanel",
+                ),
+                (
+                    worker,
+                    "events_loaded",
+                    lambda _events: panel.intelligence_panel.mark_stale(),
+                    "AnalysisPanel",
+                ),
+                (
+                    worker,
+                    "entities_loaded",
+                    lambda _entities: panel.intelligence_panel.mark_stale(),
+                    "AnalysisPanel",
+                ),
+                (
+                    worker,
+                    "calendar_config_loaded",
+                    lambda _config: panel.intelligence_panel.mark_stale(),
+                    "AnalysisPanel",
+                ),
                 # Buttons → coordinator (main thread).
                 # Each lambda fires on_analysis_started first so the panel
                 # immediately shows a busy state before the async worker call.
                 (
                     panel.validate_btn,
                     "clicked",
-                    lambda _checked: (
-                        panel.on_analysis_started("Validating world\u2026"),
-                        coord.validate_world(),
+                    lambda _checked: panel.on_analysis_started(
+                        "Validating world\u2026",
+                        "validation",
+                        coord.validate_world(panel.editorial_checks.isChecked()),
                     ),
                     "AnalysisPanel",
                 ),
                 (
                     panel.temporal_btn,
                     "clicked",
-                    lambda _checked: (
-                        panel.on_analysis_started("Analyzing timeline\u2026"),
+                    lambda _checked: panel.on_analysis_started(
+                        "Analyzing timeline\u2026",
+                        "temporal",
                         coord.analyze_temporal(),
                     ),
                     "AnalysisPanel",
@@ -1002,7 +1069,7 @@ class ConnectionManager:
                 (
                     panel.intelligence_btn,
                     "clicked",
-                    lambda _checked: coord.run_intelligence_analysis(),
+                    self._show_analysis_run_dialog,
                     "AnalysisPanel",
                 ),
                 (
@@ -1013,4 +1080,24 @@ class ConnectionManager:
                 ),
             ],
             "AnalysisPanel",
+        )
+
+    def _show_analysis_run_dialog(self, _checked: bool = False) -> None:
+        """Collect an explicit AI scope before dispatching the snapshot job."""
+        from PySide6.QtWidgets import QDialog
+
+        from src.gui.dialogs.analysis_run_dialog import AnalysisRunDialog
+
+        navigation = self.window.navigation_coordinator
+        current_item_id = getattr(navigation, "selected_id", None)
+        selection_ids = self.window.unified_list.get_checked_item_ids()
+        dialog = AnalysisRunDialog(
+            current_item_id=current_item_id,
+            selection_ids=selection_ids,
+            parent=self.window.analysis_panel,
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        self.window.app_coordinator.run_intelligence_analysis(
+            "all", dialog.run_options()
         )

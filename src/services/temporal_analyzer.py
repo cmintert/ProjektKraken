@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any
 
 from src.core.analysis import (
     CharacterLifespan,
+    EvidenceReference,
     SeverityLevel,
     TemporalAnalysisReport,
     TemporalConflict,
@@ -21,6 +22,8 @@ from src.core.analysis import (
 )
 from src.core.entities import Entity
 from src.core.events import Event
+from src.core.temporal_window import resolve_temporal_window
+from src.services.text_parser import WikiLinkParser
 
 if TYPE_CHECKING:
     from src.core.date_parser import DateParser
@@ -120,14 +123,20 @@ class TemporalAnalyzer:
         self.gap_threshold = self._year_length * 100.0  # flag gaps > 100 lore-years
 
         gaps, dated = self._detect_timeline_gaps(events)
-        conflicts = self._detect_temporal_conflicts(relations)
+        conflicts = self._detect_temporal_conflicts(relations, events)
 
         # Pre-build event date map once; reused by lifespan check to avoid
         # calling _coerce_date O(entities × events) times.
         event_dates: dict[str, float | None] = {
             e.id: self._coerce_date(e.lore_date) for e in events
         }
-        lifespans = self._analyze_character_lifespans(entities, events, relations, event_dates)
+        lifespans, lifespan_conflicts = self._analyze_character_lifespans(
+            entities,
+            events,
+            relations,
+            event_dates,
+        )
+        conflicts.extend(lifespan_conflicts)
 
         # dated is already sorted; extract min/max without a second coercion pass.
         earliest = dated[0][0] if dated else None
@@ -200,7 +209,9 @@ class TemporalAnalyzer:
         return gaps, dated
 
     def _detect_temporal_conflicts(
-        self, relations: list[dict[str, Any]]
+        self,
+        relations: list[dict[str, Any]],
+        events: list[Event] | None = None,
     ) -> list[TemporalConflict]:
         """Flag relations whose ``valid_from``/``valid_to`` window is invalid.
 
@@ -215,32 +226,43 @@ class TemporalAnalyzer:
         """
         conflicts: list[TemporalConflict] = []
 
+        event_map = {event.id: event for event in events or []}
         for rel in relations:
             attrs = rel.get("attributes", {})
-            valid_from = attrs.get("valid_from")
-            valid_to = attrs.get("valid_to")
-
-            if valid_from is None or valid_to is None:
+            if not any(
+                key in attrs
+                for key in (
+                    "valid_from",
+                    "valid_to",
+                    "valid_from_event",
+                    "valid_to_event",
+                    "valid_at_event",
+                )
+            ):
                 continue
-
-            from_float = self._coerce_date(valid_from)
-            to_float = self._coerce_date(valid_to)
-            if from_float is None or to_float is None:
-                continue
-
-            if from_float >= to_float:
-                rel_id = rel.get("id", "")
+            source_event = event_map.get(str(rel.get("source_id", "")))
+            source_date = (
+                self._coerce_date(source_event.lore_date)
+                if source_event is not None
+                else None
+            )
+            window = resolve_temporal_window(attrs, source_date)
+            if not window.is_valid:
+                rel_id = str(rel.get("id", ""))
                 conflicts.append(
                     TemporalConflict(
                         conflict_type="invalid_relation_window",
                         entity_id=rel_id,
                         entity_name=f"Relation {rel_id}",
-                        problem_date=from_float,
-                        message=(
-                            f"valid_from ({valid_from}) >= valid_to ({valid_to})"
-                        ),
+                        problem_date=window.start,
+                        message=window.error or "Invalid temporal relation window.",
                         suggestion="Fix the date range for this relation.",
                         severity=SeverityLevel.WARNING,
+                        related_ids=[
+                            str(rel.get("source_id", "")),
+                            str(rel.get("target_id", "")),
+                        ],
+                        fingerprint=f"invalid-window:{rel_id}",
                     )
                 )
 
@@ -252,7 +274,7 @@ class TemporalAnalyzer:
         events: list[Event],
         relations: list[dict[str, Any]],
         event_dates: dict[str, float | None] | None = None,
-    ) -> list[CharacterLifespan]:
+    ) -> tuple[list[CharacterLifespan], list[TemporalConflict]]:
         """Compute birth/death and lifespan violation data for every entity.
 
         Birth and death dates are resolved from relations whose ``rel_type``
@@ -275,20 +297,87 @@ class TemporalAnalyzer:
                 itself.
 
         Returns:
-            list[CharacterLifespan]: One entry per entity that has at least
-            one birth or death relation.
+            tuple: Lifespans and any malformed or out-of-lifespan conflicts.
         """
         event_map: dict[str, Event] = {e.id: e for e in events}
+        entity_map: dict[str, Entity] = {entity.id: entity for entity in entities}
 
         if event_dates is None:
             event_dates = {e.id: self._coerce_date(e.lore_date) for e in events}
 
-        # Pre-bucket relations by target_id: O(R) instead of O(E*R).
-        relations_by_target: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        lifespan_relations: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        related_event_ids: dict[str, set[str]] = defaultdict(set)
+        conflicts: list[TemporalConflict] = []
         for rel in relations:
-            target = rel.get("target_id")
-            if target:
-                relations_by_target[target].append(rel)
+            source_id = str(rel.get("source_id", ""))
+            target_id = str(rel.get("target_id", ""))
+            endpoints = (source_id, target_id)
+            for entity_id in endpoints:
+                other_id = target_id if entity_id == source_id else source_id
+                if entity_id in entity_map and other_id in event_map:
+                    related_event_ids[entity_id].add(other_id)
+
+            rel_type = str(rel.get("rel_type", "")).casefold()
+            if "birth" not in rel_type and "death" not in rel_type:
+                continue
+            characters = [
+                entity_map[endpoint]
+                for endpoint in endpoints
+                if endpoint in entity_map
+                and entity_map[endpoint].type.casefold() == "character"
+            ]
+            rel_id = str(rel.get("id", ""))
+            if not characters:
+                conflicts.append(
+                    TemporalConflict(
+                        conflict_type="malformed_lifespan_relation",
+                        entity_id=rel_id,
+                        entity_name=f"Relation {rel_id}",
+                        problem_date=None,
+                        message=(
+                            "Birth/death relation must have exactly one character "
+                            "endpoint."
+                        ),
+                        suggestion="Connect the relation to one character.",
+                        related_ids=list(endpoints),
+                        fingerprint=f"malformed-lifespan:{rel_id}",
+                    )
+                )
+                continue
+            character = characters[0]
+            if len(characters) > 1:
+                target_entity = entity_map.get(target_id)
+                if (
+                    target_entity is not None
+                    and target_entity.type.casefold() == "character"
+                ):
+                    character = target_entity
+                conflicts.append(
+                    TemporalConflict(
+                        conflict_type="ambiguous_lifespan_relation",
+                        entity_id=rel_id,
+                        entity_name=f"Relation {rel_id}",
+                        problem_date=None,
+                        message=(
+                            "Birth/death relation has two character endpoints; "
+                            "the target is treated as the subject for compatibility."
+                        ),
+                        suggestion="Connect the relation to an event or add a date.",
+                        related_ids=list(endpoints),
+                        fingerprint=f"ambiguous-lifespan:{rel_id}",
+                    )
+                )
+            lifespan_relations[character.id].append(rel)
+
+        for event in events:
+            texts = [event.description or ""]
+            summary = event.attributes.get("_summary_data")
+            if isinstance(summary, dict) and summary.get("text"):
+                texts.append(str(summary["text"]))
+            for text in texts:
+                for link in WikiLinkParser.extract_links(text):
+                    if link.is_id_based and link.target_id in entity_map:
+                        related_event_ids[str(link.target_id)].add(event.id)
 
         lifespans: list[CharacterLifespan] = []
 
@@ -297,25 +386,91 @@ class TemporalAnalyzer:
             death_date: float | None = None
             has_lifespan_relation = False
 
-            for rel in relations_by_target[entity.id]:
+            if entity.type.casefold() != "character":
+                continue
+            for rel in lifespan_relations[entity.id]:
                 rel_type = rel.get("rel_type", "").lower()
                 attrs = rel.get("attributes", {})
-                date = self._resolve_date(attrs, event_map)
+                source_id = str(rel.get("source_id", ""))
+                target_id = str(rel.get("target_id", ""))
+                event_endpoint = next(
+                    (
+                        endpoint
+                        for endpoint in (source_id, target_id)
+                        if endpoint in event_map
+                    ),
+                    None,
+                )
+                date = self._resolve_date(attrs, event_map, event_endpoint)
+                if date is None:
+                    rel_id = str(rel.get("id", ""))
+                    conflicts.append(
+                        TemporalConflict(
+                            conflict_type="malformed_lifespan_relation",
+                            entity_id=rel_id,
+                            entity_name=f"Relation {rel_id}",
+                            problem_date=None,
+                            message=(
+                                "Birth/death relation has no resolvable explicit "
+                                "or event date."
+                            ),
+                            suggestion="Add a relation date or connect an event.",
+                            related_ids=[source_id, target_id],
+                            fingerprint=f"malformed-lifespan-date:{rel_id}",
+                        )
+                    )
 
                 if "birth" in rel_type:
                     has_lifespan_relation = True
                     if date is not None and birth_date is None:
                         birth_date = date
+                    elif (
+                        date is not None
+                        and birth_date is not None
+                        and date != birth_date
+                    ):
+                        rel_id = str(rel.get("id", ""))
+                        conflicts.append(
+                            TemporalConflict(
+                                conflict_type="ambiguous_lifespan_relation",
+                                entity_id=rel_id,
+                                entity_name=entity.name,
+                                problem_date=date,
+                                message="Character has conflicting birth dates.",
+                                suggestion="Keep one authoritative birth relation.",
+                                related_ids=[entity.id],
+                                fingerprint=f"ambiguous-birth:{entity.id}:{rel_id}",
+                            )
+                        )
                 if "death" in rel_type:
                     has_lifespan_relation = True
                     if date is not None and death_date is None:
                         death_date = date
+                    elif (
+                        date is not None
+                        and death_date is not None
+                        and date != death_date
+                    ):
+                        rel_id = str(rel.get("id", ""))
+                        conflicts.append(
+                            TemporalConflict(
+                                conflict_type="ambiguous_lifespan_relation",
+                                entity_id=rel_id,
+                                entity_name=entity.name,
+                                problem_date=date,
+                                message="Character has conflicting death dates.",
+                                suggestion="Keep one authoritative death relation.",
+                                related_ids=[entity.id],
+                                fingerprint=f"ambiguous-death:{entity.id}:{rel_id}",
+                            )
+                        )
 
             if not has_lifespan_relation:
                 continue
 
             violating: list[str] = []
-            for event in events:
+            for event_id in sorted(related_event_ids[entity.id]):
+                event = event_map[event_id]
                 event_date = event_dates.get(event.id)
                 if event_date is None:
                     continue
@@ -323,6 +478,36 @@ class TemporalAnalyzer:
                     violating.append(event.id)
                 elif death_date is not None and event_date > death_date:
                     violating.append(event.id)
+
+                if event.id in violating:
+                    conflicts.append(
+                        TemporalConflict(
+                            conflict_type="lifespan_violation",
+                            entity_id=event.id,
+                            entity_name=event.name,
+                            problem_date=event_date,
+                            message=(
+                                f"'{event.name}' falls outside {entity.name}'s "
+                                "recorded lifespan."
+                            ),
+                            suggestion="Review the event date or lifespan relation.",
+                            object_type="event",
+                            related_ids=[entity.id, event.id],
+                            evidence=[
+                                EvidenceReference(
+                                    evidence_id=f"event:{event.id}",
+                                    object_type="event",
+                                    object_id=event.id,
+                                    object_name=event.name,
+                                    field="lore_date",
+                                    lore_date=event_date,
+                                )
+                            ],
+                            fingerprint=(
+                                f"lifespan:{entity.id}:{event.id}"
+                            ),
+                        )
+                    )
 
             life_span_years: float | None = None
             if birth_date is not None and death_date is not None:
@@ -339,7 +524,7 @@ class TemporalAnalyzer:
                 )
             )
 
-        return lifespans
+        return lifespans, conflicts
 
     # ------------------------------------------------------------------
     # Private helpers
@@ -373,7 +558,10 @@ class TemporalAnalyzer:
         return None
 
     def _resolve_date(
-        self, attrs: dict[str, Any], event_map: dict[str, Event]
+        self,
+        attrs: dict[str, Any],
+        event_map: dict[str, Event],
+        event_endpoint: str | None = None,
     ) -> float | None:
         """Resolve a lore date from relation attributes.
 
@@ -390,6 +578,9 @@ class TemporalAnalyzer:
         """
         if "date" in attrs and attrs["date"] is not None:
             return self._coerce_date(attrs["date"])
+
+        if event_endpoint is not None and event_endpoint in event_map:
+            return self._coerce_date(event_map[event_endpoint].lore_date)
 
         event_id = attrs.get("event_id")
         if event_id and event_id in event_map:

@@ -13,15 +13,18 @@ from __future__ import annotations
 
 import logging
 
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
     QLabel,
+    QPushButton,
+    QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
-from src.core.analysis import WorldValidationReport
+from src.core.analysis import ValidationIssue, WorldValidationReport
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.analysis._analysis_utils import (
@@ -54,6 +57,8 @@ class AnalysisPanel(QWidget):
     Call :meth:`display_report` to populate or refresh the panel.
     """
 
+    open_source_requested = Signal(str)
+
     def __init__(self, parent: QWidget | None = None) -> None:
         """Initialise the panel and build the UI layout.
 
@@ -79,10 +84,24 @@ class AnalysisPanel(QWidget):
         configure_stretch_columns(self.issues_table, 3, 4)  # Message, Suggestion
         layout.addWidget(self.issues_table)
 
-        self._completeness_label = QLabel("Completeness Scores")
+        self._completeness_label = QLabel("Documentation Completeness")
         layout.addWidget(self._completeness_label)
         self.completeness_table = make_analysis_table(_COMPLETENESS_HEADERS)
         layout.addWidget(self.completeness_table)
+
+        self.open_source_btn = QPushButton("Open Source")
+        self.open_source_btn.setEnabled(False)
+        layout.addWidget(self.open_source_btn)
+
+        for table in (self.issues_table, self.completeness_table):
+            table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+            table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+            table.setSortingEnabled(True)
+            table.itemSelectionChanged.connect(
+                lambda selected_table=table: self._on_table_selection(selected_table)
+            )
+            table.itemDoubleClicked.connect(lambda _item: self._open_source())
+        self.open_source_btn.clicked.connect(self._open_source)
 
     def _apply_styles(self) -> None:
         """Apply theme-aware styles to all child widgets."""
@@ -113,7 +132,7 @@ class AnalysisPanel(QWidget):
             report: The report to summarise.
         """
         self.header_label.setText(
-            f"World Health: {report.average_completeness:.0f}% Complete | "
+            f"Documentation completeness: {report.average_completeness:.0f}% | "
             f"{len(report.issues)} Issues | "
             f"Entities: {report.total_entities}, Events: {report.total_events}"
         )
@@ -129,8 +148,13 @@ class AnalysisPanel(QWidget):
             report: The report whose issues are displayed.
         """
         self.issues_table.setRowCount(len(report.issues))
+        self.issues_table.setSortingEnabled(False)
         for row, issue in enumerate(report.issues):
             sev_item = QTableWidgetItem(issue.severity.value)
+            sev_item.setData(
+                Qt.ItemDataRole.UserRole,
+                self._issue_source_id(issue),
+            )
             color = SEVERITY_COLORS.get(issue.severity)
             if color:
                 sev_item.setForeground(QBrush(QColor(color)))
@@ -141,6 +165,7 @@ class AnalysisPanel(QWidget):
             self.issues_table.setCellWidget(
                 row, 4, make_text_cell(issue.suggestion or "")
             )
+        self.issues_table.setSortingEnabled(True)
         self.issues_table.resizeRowsToContents()
 
     def _populate_completeness_table(self, report: WorldValidationReport) -> None:
@@ -153,14 +178,72 @@ class AnalysisPanel(QWidget):
             report.completeness_scores, key=lambda s: s.completeness_score
         )
         self.completeness_table.setRowCount(len(sorted_scores))
+        self.completeness_table.setSortingEnabled(False)
         for row, score in enumerate(sorted_scores):
-            self.completeness_table.setItem(row, 0, QTableWidgetItem(score.name))
+            name_item = QTableWidgetItem(score.name)
+            name_item.setData(Qt.ItemDataRole.UserRole, score.object_id)
+            self.completeness_table.setItem(row, 0, name_item)
             self.completeness_table.setItem(
                 row, 1, QTableWidgetItem(score.object_type)
             )
             self.completeness_table.setItem(
                 row, 2, QTableWidgetItem(f"{score.completeness_score:.0f}%")
             )
+            breakdown = "\n".join(
+                f"{component.name}: {component.earned:g}/{component.maximum:g} — "
+                f"{component.explanation}"
+                for component in score.breakdown.components
+            )
+            for column in range(3):
+                item = self.completeness_table.item(row, column)
+                if item is not None:
+                    item.setToolTip(breakdown)
             self.completeness_table.setItem(
                 row, 3, QTableWidgetItem(str(score.tag_count))
             )
+        self.completeness_table.setSortingEnabled(True)
+
+    @staticmethod
+    def _issue_source_id(issue: ValidationIssue) -> str:
+        """Return the best navigable world object behind a validation issue."""
+        object_type = issue.object_type
+        object_id = issue.object_id
+        if object_type in {"entity", "event"}:
+            return object_id
+        evidence = issue.evidence
+        if evidence:
+            return str(evidence[0].object_id)
+        related_ids = issue.related_ids or []
+        return str(related_ids[0]) if related_ids else ""
+
+    def _selected_source_id(self) -> str:
+        """Return the source ID stored on the selected issue or score row."""
+        for table in (self.issues_table, self.completeness_table):
+            rows = table.selectionModel().selectedRows()
+            if not rows:
+                continue
+            item = table.item(rows[0].row(), 0)
+            if item is not None:
+                return str(item.data(Qt.ItemDataRole.UserRole) or "")
+        return ""
+
+    def _update_source_action(self) -> None:
+        """Enable source navigation only for rows backed by a world object."""
+        self.open_source_btn.setEnabled(bool(self._selected_source_id()))
+
+    def _on_table_selection(self, selected_table: QTableWidget) -> None:
+        """Keep one active row across both validation result tables."""
+        if selected_table.selectionModel().hasSelection():
+            for table in (self.issues_table, self.completeness_table):
+                if table is selected_table:
+                    continue
+                table.blockSignals(True)
+                table.clearSelection()
+                table.blockSignals(False)
+        self._update_source_action()
+
+    def _open_source(self) -> None:
+        """Request navigation without mutating or opening an edit operation."""
+        source_id = self._selected_source_id()
+        if source_id:
+            self.open_source_requested.emit(source_id)

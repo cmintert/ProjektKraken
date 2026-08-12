@@ -129,6 +129,7 @@ class MainWindowProtocol(Protocol):
     analysis_panel: Any
     app_coordinator: Any
     backup_coordinator: Any
+    command_coordinator: Any
     coordinator: Any
     data_coordinator: Any
     data_handler: Any

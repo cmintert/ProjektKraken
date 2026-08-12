@@ -53,7 +53,11 @@ class IntelligenceAnalysisWorker(QObject):
                 if not self._cancellation_event.is_set():
                     self.partial_result.emit(job_id, result_type, data)
 
-            report = IntelligenceAnalyzer(snapshot).analyze(
+            analyzer = IntelligenceAnalyzer(snapshot)
+            estimate_coverage = getattr(analyzer, "estimate_coverage", None)
+            if callable(estimate_coverage):
+                self.partial_result.emit(job_id, "estimate", estimate_coverage())
+            report = analyzer.analyze(
                 on_partial=_on_partial,
                 is_cancelled=self._cancellation_event.is_set,
             )

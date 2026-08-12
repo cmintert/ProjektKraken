@@ -6,9 +6,10 @@ and accesses individual coordinators through it.
 """
 
 import logging
-from typing import TYPE_CHECKING
+import uuid
+from typing import TYPE_CHECKING, Any
 
-from PySide6.QtCore import QObject
+from PySide6.QtCore import Q_ARG, QObject
 
 from src.app.qt_invocation import invoke_queued
 
@@ -78,7 +79,7 @@ class AppCoordinator(QObject):
         self.main_window = main_window
         logger.debug("AppCoordinator initialized with 10 coordinators")
 
-    def validate_world(self) -> None:
+    def validate_world(self, editorial_checks: bool = False) -> str:
         """Request world validation on the DatabaseWorker thread.
 
         The result is delivered asynchronously via the worker's
@@ -86,12 +87,19 @@ class AppCoordinator(QObject):
         calling this method to receive the
         :class:`~src.core.analysis.WorldValidationReport`.
         """
+        job_id = str(uuid.uuid4())
+        world = getattr(self.main_window, "current_world", None)
+        world_id = str(getattr(world, "id", "") or "")
         invoke_queued(
             self.main_window.worker,
             "validate_world",
+            Q_ARG(str, job_id),
+            Q_ARG(str, world_id),
+            Q_ARG(bool, editorial_checks),
         )
+        return job_id
 
-    def analyze_temporal(self) -> None:
+    def analyze_temporal(self) -> str:
         """Request temporal analysis on the DatabaseWorker thread.
 
         The result is delivered asynchronously via the worker's
@@ -99,12 +107,22 @@ class AppCoordinator(QObject):
         calling this method to receive the
         :class:`~src.core.analysis.TemporalAnalysisReport`.
         """
+        job_id = str(uuid.uuid4())
+        world = getattr(self.main_window, "current_world", None)
+        world_id = str(getattr(world, "id", "") or "")
         invoke_queued(
             self.main_window.worker,
             "analyze_temporal",
+            Q_ARG(str, job_id),
+            Q_ARG(str, world_id),
         )
+        return job_id
 
-    def run_intelligence_analysis(self, analysis_type: str = "all") -> None:
+    def run_intelligence_analysis(
+        self,
+        analysis_type: str = "all",
+        options: dict[str, Any] | None = None,
+    ) -> None:
         """Request non-blocking intelligence analysis from a world snapshot.
 
         The result is delivered asynchronously via the
@@ -116,7 +134,7 @@ class AppCoordinator(QObject):
             analysis_type: Scope of analysis — ``"all"``, ``"plot_holes"``,
                 ``"relations"``, or ``"lore"``.  Defaults to ``"all"``.
         """
-        self.main_window.intelligence_analysis_manager.start(analysis_type)
+        self.main_window.intelligence_analysis_manager.start(analysis_type, options)
 
     def cancel_intelligence_analysis(self) -> None:
         """Request cooperative cancellation of the active AI analysis."""
