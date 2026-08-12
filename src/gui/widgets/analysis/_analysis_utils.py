@@ -22,6 +22,7 @@ import logging
 from typing import Any
 
 from PySide6.QtCore import QSize, Qt, QTimer
+from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QFrame,
@@ -32,11 +33,13 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.analysis import ParsedLoreSuggestion, SeverityLevel
+from src.core.theme_manager import ThemeManager
 from src.gui.constants import (
     ANALYSIS_SEVERITY_CRITICAL_COLOR,
     ANALYSIS_SEVERITY_INFO_COLOR,
     ANALYSIS_SEVERITY_WARNING_COLOR,
 )
+from src.gui.utils.style_helper import StyleHelper
 
 logger = logging.getLogger(__name__)
 
@@ -124,11 +127,11 @@ class AutoHeightTextEdit(QTextEdit):
         self.setFrameShape(QFrame.Shape.NoFrame)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         self.document().setDocumentMargin(4)
-        # Blend with table row background (including alternating colours).
-        self.setStyleSheet(
-            "QTextEdit { background-color: transparent; border: none; }"
-        )
+        self._selected = False
+        self._apply_selection_style()
         self.viewport().setAutoFillBackground(False)
 
         # Use a member timer so it is destroyed with this widget, preventing
@@ -157,7 +160,7 @@ class AutoHeightTextEdit(QTextEdit):
             QSize: Width from the base hint; height from document layout.
         """
         doc_h = int(self.document().size().height())
-        return QSize(super().sizeHint().width(), max(doc_h + 8, 24))
+        return QSize(super().sizeHint().width(), max(doc_h + 12, 32))
 
     def minimumSizeHint(self) -> QSize:
         """Mirror :meth:`sizeHint` so the table never clips the row.
@@ -179,7 +182,18 @@ class AutoHeightTextEdit(QTextEdit):
         """
         super().resizeEvent(event)
         if event.oldSize().width() != event.size().width():
+            self.document().setTextWidth(max(1.0, float(self.viewport().width())))
             self._schedule_row_resize()
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        """Select the owning row before allowing text selection in the cell."""
+        table = self._find_parent_table()
+        if table is not None:
+            position = self.mapTo(table.viewport(), event.position().toPoint())
+            index = table.indexAt(position)
+            if index.isValid():
+                table.selectRow(index.row())
+        super().mousePressEvent(event)
 
     def _schedule_row_resize(self, _new_size: object = None) -> None:
         """Start (or restart) the deferred resize timer.
@@ -222,6 +236,35 @@ class AutoHeightTextEdit(QTextEdit):
             if isinstance(table, QTableWidget):
                 return table
         return None
+
+    def set_row_selected(self, selected: bool) -> None:
+        """Apply the owning table row's current selection state.
+
+        Args:
+            selected: Whether the row containing this cell is selected.
+        """
+        if self._selected == selected:
+            return
+        self._selected = selected
+        self._apply_selection_style()
+
+    def _apply_selection_style(self) -> None:
+        """Keep embedded text visually continuous with its table row."""
+        theme = ThemeManager().get_theme()
+        if self._selected:
+            background = theme["primary"]
+            text = StyleHelper.get_contrasting_text_color(background)
+        else:
+            background = "transparent"
+            text = theme["text_main"]
+        self.setStyleSheet(
+            "QTextEdit {"
+            f"background-color: {background};"
+            f"color: {text};"
+            "border: none;"
+            "padding: 0;"
+            "}"
+        )
 
 
 def make_text_cell(text: str) -> AutoHeightTextEdit:
@@ -289,12 +332,30 @@ def format_lore_suggestions_html(suggestions: list[ParsedLoreSuggestion]) -> str
     return "".join(html_parts)
 
 
-# Appended to the base table stylesheet to suppress hover and selection
-# highlights in all analysis panels.
-ANALYSIS_TABLE_NO_HIGHLIGHT: str = (
-    "QTableWidget::item:hover { background-color: transparent; }"
-    "QTableWidget::item:selected { background-color: transparent; color: inherit; }"
-)
+def get_analysis_table_style() -> str:
+    """Return table styling with Project Explorer-like row selection."""
+    theme = ThemeManager().get_theme()
+    background = theme["primary"]
+    text = StyleHelper.get_contrasting_text_color(background)
+    return (
+        StyleHelper.get_table_widget_style()
+        + "QTableWidget::item:selected {"
+        + f"background-color: {background}; color: {text};"
+        + "}"
+    )
+
+
+def sync_analysis_cell_styles(table: QTableWidget) -> None:
+    """Propagate selected-row theme colours to embedded cell widgets."""
+    selected_rows = {
+        index.row() for index in table.selectionModel().selectedRows()
+    }
+    for row in range(table.rowCount()):
+        selected = row in selected_rows
+        for column in range(table.columnCount()):
+            widget = table.cellWidget(row, column)
+            if isinstance(widget, AutoHeightTextEdit):
+                widget.set_row_selected(selected)
 
 
 def configure_stretch_columns(table: QTableWidget, *col_indices: int) -> None:
@@ -315,11 +376,11 @@ def configure_stretch_columns(table: QTableWidget, *col_indices: int) -> None:
 
 
 def make_analysis_table(headers: list[str]) -> QTableWidget:
-    """Create a standard read-only, non-interactive table with given column headers.
+    """Create a standard read-only, row-selectable analysis table.
 
     Columns are sized to content except the last, which stretches to fill the
-    available width.  Selection and focus are disabled so no row or cell
-    highlighting appears on click or hover.
+    available width. Selection follows the Project Explorer's full-row primary
+    highlight, including text widgets embedded in message columns.
 
     Args:
         headers: Column header labels.
@@ -330,13 +391,19 @@ def make_analysis_table(headers: list[str]) -> QTableWidget:
     table = QTableWidget(0, len(headers))
     table.setHorizontalHeaderLabels(headers)
     table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-    table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
-    table.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+    table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+    table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+    table.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+    table.setWordWrap(True)
+    table.itemSelectionChanged.connect(
+        lambda selected_table=table: sync_analysis_cell_styles(selected_table)
+    )
 
     header = table.horizontalHeader()
     header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
     header.setStretchLastSection(True)
     table.verticalHeader().setVisible(False)
+    table.verticalHeader().setMinimumSectionSize(32)
 
     table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
     return table

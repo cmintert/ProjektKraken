@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QPushButton,
+    QTableWidget,
     QTableWidgetItem,
     QTextBrowser,
     QVBoxLayout,
@@ -47,14 +48,13 @@ from src.core.analysis import (
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.analysis._analysis_utils import (
-    ANALYSIS_TABLE_NO_HIGHLIGHT,
     SEVERITY_COLORS,
     configure_stretch_columns,
     fmt_lore_date,
-    format_lore_suggestions_html,
+    get_analysis_table_style,
     make_analysis_table,
-    make_html_cell,
     make_text_cell,
+    sync_analysis_cell_styles,
 )
 
 logger = logging.getLogger(__name__)
@@ -82,7 +82,7 @@ class IntelligencePanel(QWidget):
       source, target, type, confidence, and reasoning.  The reasoning cell
       is a selectable QLabel widget.
     - A lore-suggestions table listing every gap filler with start date, end
-      date, and suggestions rendered as HTML mini-cards in a QTextBrowser.
+      date, and a compact title preview. Full text appears in the details pane.
 
     Call :meth:`display_report` to populate or refresh the panel.
     """
@@ -165,11 +165,16 @@ class IntelligencePanel(QWidget):
         self._lore_label = QLabel("Lore Gap Suggestions")
         layout.addWidget(self._lore_label)
         self.lore_table = make_analysis_table(_LORE_HEADERS)
+        self.lore_table.setWordWrap(False)
         layout.addWidget(self.lore_table)
 
+        self._details_label = QLabel("Finding Details")
+        layout.addWidget(self._details_label)
         self.details = QTextBrowser()
         self.details.setPlaceholderText("Select a finding to see its complete details.")
         layout.addWidget(self.details)
+        self._sources_label = QLabel("Sources")
+        layout.addWidget(self._sources_label)
         self.evidence_list = QListWidget()
         self.evidence_list.setMaximumHeight(130)
         layout.addWidget(self.evidence_list)
@@ -182,7 +187,9 @@ class IntelligencePanel(QWidget):
             table.setSelectionBehavior(table.SelectionBehavior.SelectRows)
             table.setSelectionMode(table.SelectionMode.SingleSelection)
             table.setSortingEnabled(True)
-            table.itemSelectionChanged.connect(self._on_row_selected)
+            table.itemSelectionChanged.connect(
+                lambda selected_table=table: self._on_row_selected(selected_table)
+            )
             table.itemDoubleClicked.connect(lambda _item: self._open_source())
         self.category_filter.currentIndexChanged.connect(self._apply_filters)
         self.severity_filter.currentIndexChanged.connect(self._apply_filters)
@@ -202,10 +209,16 @@ class IntelligencePanel(QWidget):
         self._holes_label.setStyleSheet(section_style)
         self._proposals_label.setStyleSheet(section_style)
         self._lore_label.setStyleSheet(section_style)
-        table_style = StyleHelper.get_table_widget_style() + ANALYSIS_TABLE_NO_HIGHLIGHT
-        self.plot_holes_table.setStyleSheet(table_style)
-        self.proposals_table.setStyleSheet(table_style)
-        self.lore_table.setStyleSheet(table_style)
+        self._details_label.setStyleSheet(section_style)
+        self._sources_label.setStyleSheet(section_style)
+        table_style = get_analysis_table_style()
+        for table in (
+            self.plot_holes_table,
+            self.proposals_table,
+            self.lore_table,
+        ):
+            table.setStyleSheet(table_style)
+            sync_analysis_cell_styles(table)
 
     # ------------------------------------------------------------------
     # One-shot render (non-streaming callers)
@@ -472,9 +485,8 @@ class IntelligencePanel(QWidget):
     def _populate_lore_from_list(self, suggestions: list[LoreGapFiller]) -> None:
         """Fill the lore-suggestions table from a list of :class:`~src.core.analysis.LoreGapFiller`.
 
-        Suggestions for a single gap are rendered as structured HTML mini-cards
-        in a QTextBrowser cell, with event names, dates, and descriptions
-        (wrapped at 75 chars) separated by dividers.
+        Each row stays compact and shows only the number and titles of generated
+        suggestions. Selecting the row reveals full text in the details pane.
 
         Args:
             suggestions: Lore gap fillers to display.
@@ -492,11 +504,14 @@ class IntelligencePanel(QWidget):
                 1,
                 QTableWidgetItem(fmt_lore_date(filler.end_date, self._converter)),
             )
-            self.lore_table.setCellWidget(
-                row, 2, make_html_cell(format_lore_suggestions_html(filler.suggestions))
-            )
+            count = len(filler.suggestions)
+            noun = "suggestion" if count == 1 else "suggestions"
+            titles = "; ".join(item.name for item in filler.suggestions)
+            preview = QTableWidgetItem(f"{count} {noun} — {titles}")
+            preview.setToolTip("\n".join(item.name for item in filler.suggestions))
+            self.lore_table.setItem(row, 2, preview)
+            self.lore_table.setRowHeight(row, 32)
         self.lore_table.setSortingEnabled(True)
-        self.lore_table.resizeRowsToContents()
 
     # ------------------------------------------------------------------
     # Session interaction
@@ -569,6 +584,7 @@ class IntelligencePanel(QWidget):
         self._stale = False
         self._selected_finding = None
         self._selected_evidence_id = None
+        self._details_label.setText("Finding Details")
         self.details.clear()
         self.evidence_list.clear()
         for table in (
@@ -593,12 +609,31 @@ class IntelligencePanel(QWidget):
                 return item.data(Qt.ItemDataRole.UserRole)
         return None
 
-    def _on_row_selected(self) -> None:
+    def _on_row_selected(self, selected_table: QTableWidget | None = None) -> None:
+        """Update details and keep one active selection across result tables."""
+        if (
+            selected_table is not None
+            and selected_table.selectionModel().hasSelection()
+        ):
+            for table in (
+                self.plot_holes_table,
+                self.proposals_table,
+                self.lore_table,
+            ):
+                if table is selected_table:
+                    continue
+                table.blockSignals(True)
+                table.clearSelection()
+                sync_analysis_cell_styles(table)
+                table.blockSignals(False)
         finding = self._selected_table_finding()
         if finding is None:
             return
         self._selected_finding = finding
         self._selected_evidence_id = None
+        self._details_label.setText(
+            "Suggestion Details" if isinstance(finding, LoreGapFiller) else "Finding Details"
+        )
         self.evidence_list.clear()
         evidence = list(getattr(finding, "evidence", []))
         for reference in evidence:

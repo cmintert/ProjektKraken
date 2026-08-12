@@ -28,11 +28,12 @@ from src.core.analysis import ValidationIssue, WorldValidationReport
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.analysis._analysis_utils import (
-    ANALYSIS_TABLE_NO_HIGHLIGHT,
     SEVERITY_COLORS,
     configure_stretch_columns,
+    get_analysis_table_style,
     make_analysis_table,
     make_text_cell,
+    sync_analysis_cell_styles,
 )
 
 logger = logging.getLogger(__name__)
@@ -108,9 +109,10 @@ class AnalysisPanel(QWidget):
         self.header_label.setStyleSheet(StyleHelper.get_preview_label_style())
         self._issues_label.setStyleSheet(StyleHelper.get_section_header_style())
         self._completeness_label.setStyleSheet(StyleHelper.get_section_header_style())
-        table_style = StyleHelper.get_table_widget_style() + ANALYSIS_TABLE_NO_HIGHLIGHT
-        self.issues_table.setStyleSheet(table_style)
-        self.completeness_table.setStyleSheet(table_style)
+        table_style = get_analysis_table_style()
+        for table in (self.issues_table, self.completeness_table):
+            table.setStyleSheet(table_style)
+            sync_analysis_cell_styles(table)
 
     def display_report(self, report: WorldValidationReport) -> None:
         """Populate the panel with data from a validation report.
@@ -239,6 +241,7 @@ class AnalysisPanel(QWidget):
                     continue
                 table.blockSignals(True)
                 table.clearSelection()
+                sync_analysis_cell_styles(table)
                 table.blockSignals(False)
         self._update_source_action()
 

@@ -331,18 +331,39 @@ class TestIntelligencePanelDisplayReport:
         # 800 days ÷ 365 ≈ Year 3.
         assert "Year 3" in panel.lore_table.item(0, 1).text()
 
-    def test_lore_suggestions_cell_is_text_browser(self, qapp):
-        from PySide6.QtWidgets import QTextEdit
+    def test_lore_table_uses_compact_title_preview(self, qapp):
+        from src.gui.widgets.analysis.intelligence_panel import IntelligencePanel
+
+        panel = IntelligencePanel()
+        panel.display_report(_make_report(lore=[_make_lore()]))
+        preview = panel.lore_table.item(0, 2)
+
+        assert panel.lore_table.cellWidget(0, 2) is None
+        assert preview.text().startswith("2 suggestions —")
+        assert "The Long Silence" in preview.text()
+        assert "Rise of the Eastern Clans" in preview.text()
+        assert "A period of isolation" not in preview.text()
+        assert panel.lore_table.rowHeight(0) == 32
+
+    def test_lore_selection_shows_scrollable_details_and_sources(self, qapp):
+        from PySide6.QtCore import Qt
 
         from src.gui.widgets.analysis.intelligence_panel import IntelligencePanel
 
         panel = IntelligencePanel()
         panel.display_report(_make_report(lore=[_make_lore()]))
-        browser = panel.lore_table.cellWidget(0, 2)
-        assert isinstance(browser, QTextEdit)
-        content = browser.toHtml()
-        assert "Long Silence" in content
-        assert "Eastern Clans" in content
+        panel.lore_table.selectRow(0)
+        qapp.processEvents()
+
+        details = panel.details.toPlainText()
+        assert panel._details_label.text() == "Suggestion Details"
+        assert panel._sources_label.text() == "Sources"
+        assert "A period of isolation and mystery." in details
+        assert "Powerful clans emerge in the east." in details
+        assert (
+            panel.details.verticalScrollBarPolicy()
+            == Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
 
     def test_display_report_called_twice_replaces_data(self, qapp):
         from src.gui.widgets.analysis.intelligence_panel import IntelligencePanel

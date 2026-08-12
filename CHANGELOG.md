@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-12
-**Commit:** c6c6a525
+**Commit:** d2eba9b0
 ---
 
 # Changelog
@@ -42,6 +42,11 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-12)* **Analysis / UI**: Matched result-row selection to the Project
+  Explorer, preserved readable themed contrast, and expanded wrapped result text
+  without clipping.
+- *(2026-08-12)* **Analysis / AI**: Made lore-suggestion string contracts
+  explicit and safely normalized numeric dates returned by providers.
 - *(2026-08-12)* **Architecture / Stability**: Restored worker-owned database
   access, atomic command and tag persistence, asynchronous semantic search,
   deterministic resource cleanup, and one-way source dependencies.
@@ -75,6 +80,10 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-12)* **Analysis / Usability**: Replaced duplicated full lore text in
+  result rows with compact previews and labeled, scrollable details and sources.
+- *(2026-08-12)* **Documentation / Testing**: Documented the lore master-detail
+  workflow and added selection, wrapping, schema, and panel regressions.
 - *(2026-08-12)* **Refactor / Maintainability**: Centralized version and shared
   configuration contracts, decomposed oversized UI constructors, and added
   enforceable complexity, public-docstring, magic-value, and dependency gates.

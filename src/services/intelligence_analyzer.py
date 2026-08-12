@@ -984,6 +984,17 @@ class IntelligenceAnalyzer:
         after_year = _lore_date_to_year(after_event.lore_date, converter)
         before_evidence = self._event_evidence(before_event)
         after_evidence = self._event_evidence(after_event)
+        evidence_ids = [before_evidence.evidence_id, after_evidence.evidence_id]
+        response_example = {
+            "suggestions": [
+                {
+                    "name": "Bridging event title",
+                    "date": f"Year {before_year + 1}",
+                    "description": "Brief account of the bridging event.",
+                }
+            ],
+            "evidence_ids": evidence_ids,
+        }
         return (
             f"There is a {gap_years}-year gap in the timeline.\n\n"
             f"Last event: Year {before_year} — {before_event.name}\n"
@@ -991,9 +1002,11 @@ class IntelligenceAnalyzer:
             f"Next event: Year {after_year} — {after_event.name}\n"
             f"Description: {after_event.description or 'None'}\n\n"
             "This is a creative suggestion, not a factual finding. Generate 2-3 "
-            "plausible bridging events. Return exactly one JSON object with keys "
-            '"suggestions" (an array of objects with name, date, and description) '
-            'and "evidence_ids" (an array containing both boundary evidence IDs). '
+            "plausible bridging events. Return exactly one JSON object. "
+            '"suggestions" must be an array of objects whose "name", "date", '
+            'and "description" values are JSON strings, including dates. '
+            '"evidence_ids" must be an array containing both boundary evidence IDs. '
+            f"Required shape: {json.dumps(response_example, ensure_ascii=False)}. "
             f"Boundary evidence: {json.dumps([before_evidence.to_dict(), after_evidence.to_dict()], ensure_ascii=False)}. "
             "Do not use markdown."
         )
@@ -1517,15 +1530,16 @@ class IntelligenceAnalyzer:
             if not isinstance(raw, dict):
                 raise ValueError("each suggestion must be an object")
             self._require_fields(raw, {"name", "date", "description"})
-            if not all(isinstance(raw[key], str) for key in ("name", "date", "description")):
-                raise ValueError("suggestion fields must be strings")
-            if not raw["name"].strip() or not raw["description"].strip():
+            name = self._lore_string_field(raw["name"], "name")
+            date = self._lore_string_field(raw["date"], "date")
+            description = self._lore_string_field(raw["description"], "description")
+            if not name or not description:
                 raise ValueError("suggestions require a name and description")
             suggestions.append(
                 ParsedLoreSuggestion(
-                    name=raw["name"].strip(),
-                    date_str=raw["date"].strip(),
-                    description=raw["description"].strip(),
+                    name=name,
+                    date_str=date,
+                    description=description,
                 )
             )
         if not suggestions:
@@ -1540,6 +1554,33 @@ class IntelligenceAnalyzer:
             evidence=selected,
             fingerprint=fingerprint,
         )
+
+    @staticmethod
+    def _lore_string_field(value: Any, field_name: str) -> str:
+        """Return a normalized lore field while preserving strict structure.
+
+        Models commonly encode an otherwise valid date as a JSON number. That
+        scalar representation is losslessly converted to text. Objects, arrays,
+        booleans, and null remain invalid so the structured-response repair path
+        can correct genuinely malformed output.
+
+        Args:
+            value: Raw JSON field value.
+            field_name: Field name used in validation errors.
+
+        Returns:
+            The normalized string value.
+
+        Raises:
+            ValueError: If the value cannot be safely represented as text.
+        """
+        if isinstance(value, str):
+            return value.strip()
+        if field_name == "date" and not isinstance(value, bool) and isinstance(
+            value, (int, float)
+        ):
+            return str(value)
+        raise ValueError(f"suggestion {field_name} must be a string")
 
     @staticmethod
     def _event_evidence(event: Any) -> EvidenceReference:

@@ -90,6 +90,18 @@ class StyleHelper:
     """
 
     @staticmethod
+    def get_contrasting_text_color(background: str) -> str:
+        """Return the active theme text token with best background contrast.
+
+        Args:
+            background: CSS-compatible background colour.
+
+        Returns:
+            A theme-owned text colour suitable for the background.
+        """
+        return _contrasting_theme_text(background, ThemeManager().get_theme())
+
+    @staticmethod
     def get_empty_state_style() -> str:
         """Returns QSS for empty state labels.
 

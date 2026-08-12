@@ -27,11 +27,12 @@ from src.core.calendar import CalendarConverter
 from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.analysis._analysis_utils import (
-    ANALYSIS_TABLE_NO_HIGHLIGHT,
     configure_stretch_columns,
     fmt_lore_date,
+    get_analysis_table_style,
     make_analysis_table,
     make_text_cell,
+    sync_analysis_cell_styles,
 )
 
 logger = logging.getLogger(__name__)
@@ -120,10 +121,10 @@ class TemporalPanel(QWidget):
         self._conflicts_label.setStyleSheet(section_style)
         self._lifespans_label.setStyleSheet(section_style)
         self._lifespans_hint.setStyleSheet(StyleHelper.get_preview_label_style())
-        table_style = StyleHelper.get_table_widget_style() + ANALYSIS_TABLE_NO_HIGHLIGHT
-        self.gaps_table.setStyleSheet(table_style)
-        self.conflicts_table.setStyleSheet(table_style)
-        self.lifespans_table.setStyleSheet(table_style)
+        table_style = get_analysis_table_style()
+        for table in (self.gaps_table, self.conflicts_table, self.lifespans_table):
+            table.setStyleSheet(table_style)
+            sync_analysis_cell_styles(table)
 
     def _connect_theme_changes(self) -> None:
         """Subscribe to theme-change notifications for live style updates."""

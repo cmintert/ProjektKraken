@@ -84,8 +84,9 @@ request budget. A malformed model response may receive one repair request.
 Each AI finding lists deterministic **Strong**, **Moderate**, or **Weak**
 evidence strength. Select a row to read its full text and evidence, select the
 specific source you want, and choose **Open Source**. Double-clicking opens the
-primary source. Lore suggestions are explicitly creative; they cite the two
-events bounding the gap.
+primary source. Lore rows show a compact title preview; select one to read its
+complete suggestions in the scrollable **Suggestion Details** pane. Lore
+suggestions are explicitly creative; they cite the two events bounding the gap.
 
 Section states distinguish complete, partial, failed, skipped, and cancelled
 runs. A section reports “no findings” only if at least one candidate completed;

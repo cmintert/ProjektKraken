@@ -22,6 +22,7 @@ from src.core.analysis import (
     PlotHole,
     RelationProposal,
     SeverityLevel,
+    TimelineGap,
 )
 from src.core.entities import Entity
 from src.core.events import Event
@@ -471,6 +472,68 @@ class TestGenerateLore:
         filler = report.lore_suggestions[0]
         assert filler.start_date == 0.0
         assert filler.end_date == 40000.0
+
+    def test_lore_prompt_requires_string_suggestion_fields(self) -> None:
+        """The generated contract removes ambiguity around numeric dates."""
+        analyzer = IntelligenceAnalyzer(None, provider=None)
+        before = _make_event("ev1", "Start", 0.0)
+        after = _make_event("ev2", "End", 40000.0)
+        gap = TimelineGap(0.0, 40000.0, 40000.0)
+
+        prompt = analyzer._build_lore_generation_prompt(gap, before, after)
+
+        assert '"name", "date", and "description" values are JSON strings' in prompt
+        assert '"date": "Year 2"' in prompt
+
+    def test_numeric_lore_date_is_normalized_to_string(self) -> None:
+        """A harmless model choice must not fail an otherwise valid result."""
+        analyzer = IntelligenceAnalyzer(None, provider=None)
+        before = _make_event("ev1", "Start", 0.0)
+        after = _make_event("ev2", "End", 40000.0)
+        gap = TimelineGap(0.0, 40000.0, 40000.0)
+        evidence = [
+            analyzer._event_evidence(before),
+            analyzer._event_evidence(after),
+        ]
+        payload = {
+            "suggestions": [
+                {
+                    "name": "The Interregnum",
+                    "date": 125,
+                    "description": "A council governed between both eras.",
+                }
+            ],
+            "evidence_ids": [item.evidence_id for item in evidence],
+        }
+
+        filler = analyzer._parse_lore_json(payload, gap, evidence)
+
+        assert filler is not None
+        assert filler.suggestions[0].date_str == "125"
+
+    def test_structured_lore_field_still_uses_repair_path(self) -> None:
+        """Nested field values remain invalid rather than leaking into the UI."""
+        analyzer = IntelligenceAnalyzer(None, provider=None)
+        before = _make_event("ev1", "Start", 0.0)
+        after = _make_event("ev2", "End", 40000.0)
+        gap = TimelineGap(0.0, 40000.0, 40000.0)
+        evidence = [
+            analyzer._event_evidence(before),
+            analyzer._event_evidence(after),
+        ]
+        payload = {
+            "suggestions": [
+                {
+                    "name": "The Interregnum",
+                    "date": {"year": 125},
+                    "description": "A council governed between both eras.",
+                }
+            ],
+            "evidence_ids": [item.evidence_id for item in evidence],
+        }
+
+        with pytest.raises(ValueError, match="suggestion date must be a string"):
+            analyzer._parse_lore_json(payload, gap, evidence)
 
     def test_no_lore_without_surrounding_events(self, db_service):
         """Gap at the edge with no events on one side → skipped."""
