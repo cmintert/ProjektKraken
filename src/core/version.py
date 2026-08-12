@@ -1,3 +1,3 @@
 """Authoritative runtime version for ProjektKraken."""
 
-VERSION = "0.18.8"
+VERSION = "0.19.0"

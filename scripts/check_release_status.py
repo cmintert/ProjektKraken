@@ -1,3 +1,5 @@
+"""Report whether ProjektKraken's metadata is ready for a release."""
+
 import re
 import subprocess
 import sys
@@ -8,7 +10,7 @@ from typing import Any
 # Constants
 ROOT_DIR = Path(__file__).resolve().parent.parent
 PYPROJECT_PATH = ROOT_DIR / "pyproject.toml"
-CONSTANTS_PATH = ROOT_DIR / "src" / "app" / "constants.py"
+VERSION_PATH = ROOT_DIR / "src" / "core" / "version.py"
 CHANGELOG_PATH = ROOT_DIR / "CHANGELOG.md"
 
 RED = "\033[91m"
@@ -19,6 +21,7 @@ BOLD = "\033[1m"
 
 
 def print_result(label: str, value: Any, status: str = "info") -> None:
+    """Print one color-coded release-status result."""
     color = RESET
     if status == "success":
         color = GREEN
@@ -31,6 +34,7 @@ def print_result(label: str, value: Any, status: str = "info") -> None:
 
 
 def get_pyproject_version() -> str:
+    """Return the project version declared in pyproject.toml."""
     try:
         with open(PYPROJECT_PATH, "rb") as f:
             data = tomllib.load(f)
@@ -39,19 +43,20 @@ def get_pyproject_version() -> str:
         return f"Error reading pyproject.toml: {e}"
 
 
-def get_constant_version() -> str:
+def get_runtime_version() -> str:
+    """Return the authoritative application runtime version."""
     try:
-        content = CONSTANTS_PATH.read_text(encoding="utf-8")
-        # Look for VERSION = "0.10.1"
+        content = VERSION_PATH.read_text(encoding="utf-8")
         match = re.search(r'VERSION\s*=\s*"(\d+\.\d+\.\d+)"', content)
         if match:
             return match.group(1)
-        return "Version not found in constants.py"
+        return "Version not found in version.py"
     except Exception as e:
-        return f"Error reading constants.py: {e}"
+        return f"Error reading version.py: {e}"
 
 
 def check_changelog(current_version: str) -> dict[str, Any]:
+    """Check whether required changelog sections exist."""
     try:
         content = CHANGELOG_PATH.read_text(encoding="utf-8")
         has_unreleased = "## [Unreleased]" in content
@@ -69,6 +74,7 @@ def check_changelog(current_version: str) -> dict[str, Any]:
 
 
 def check_git_status() -> dict[str, Any]:
+    """Return working-tree cleanliness and the exact current tag."""
     try:
         # Check for uncommitted changes
         result = subprocess.run(
@@ -90,20 +96,27 @@ def check_git_status() -> dict[str, Any]:
 
 
 def main() -> None:
+    """Print the complete release-readiness report and exit appropriately."""
     print(f"{BOLD}=== Project Kraken Release Status Checker ==={RESET}\n")
 
     errors = []
 
     # 1. Version Check
     v_toml = get_pyproject_version()
-    v_const = get_constant_version()
+    v_runtime = get_runtime_version()
 
-    match = v_toml == v_const
+    match = v_toml == v_runtime
     print_result("Version (pyproject.toml):", v_toml)
-    print_result("Version (constants.py):", v_const, "success" if match else "error")
+    print_result(
+        "Version (core/version.py):",
+        v_runtime,
+        "success" if match else "error",
+    )
 
     if not match:
-        errors.append("Version Mismatch: pyproject.toml and constants.py do not match.")
+        errors.append(
+            "Version Mismatch: pyproject.toml and core/version.py do not match."
+        )
 
     current_version = v_toml
 

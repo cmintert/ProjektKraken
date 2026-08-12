@@ -27,8 +27,8 @@ tagging as one ordered workflow.
 Update the current authoritative files:
 
 - pyproject.toml: set the project version.
-- src/app/constants.py: set VERSION; leave the derived WINDOW_TITLE expression
-  intact.
+- src/core/version.py: set VERSION; leave the derived WINDOW_TITLE expression
+  in src/app/constants.py intact.
 - README.md: update both bold vX.Y.Z Beta labels.
 - CHANGELOG.md: roll the current unreleased changes into the new release.
 
