@@ -42,10 +42,15 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.ui_constants import Spacing
 from src.core.calendar import CalendarConverter
 from src.core.map import VECTOR_LAYER_TYPES, MapLayerNode
 from src.core.theme_manager import ThemeManager
+from src.gui.constants import (
+    MAP_LAYER_BASEMAP_NODE_ID,
+    MAP_LAYER_TYPE_RASTER,
+    MAP_LAYER_TYPE_SNAPSHOT,
+)
+from src.gui.ui_constants import Spacing
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.color_pickers import (
@@ -69,6 +74,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_MAXIMUM_SWATCH_HOTKEY_INDEX = 9
+_CONTINUOUS_DEFAULT_VISIBILITY_THRESHOLD = 256
+
 # Label width used for consistent alignment across raster tool rows.
 _LABEL_WIDTH = 52
 ModelIndex = QModelIndex | QPersistentModelIndex
@@ -78,6 +86,7 @@ class TemporalLayerFilterProxy(QSortFilterProxyModel):
     """Optionally retain only vector features outside the current date."""
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
+        """Initialize the optional temporal layer filter."""
         super().__init__(parent)
         self._outside_only = False
         self.setRecursiveFilteringEnabled(True)
@@ -90,6 +99,7 @@ class TemporalLayerFilterProxy(QSortFilterProxyModel):
     def filterAcceptsRow(
         self, source_row: int, source_parent: ModelIndex
     ) -> bool:
+        """Return whether a layer satisfies the optional temporal filter."""
         if not self._outside_only:
             return True
         source = self.sourceModel()
@@ -116,6 +126,7 @@ class TemporalLayerDelegate(QStyledItemDelegate):
         option: QStyleOptionViewItem,
         index: ModelIndex,
     ) -> None:
+        """Paint the layer row with temporal and visibility badges."""
         from src.gui.widgets.map.map_layer_model import MapLayerModel
 
         state = index.data(MapLayerModel.TemporalValidityRole)
@@ -685,8 +696,9 @@ class MapLayerPanel(QWidget):
         scrub_row.addWidget(self._paint_value_spin)
 
         self._paint_value_display_label = QLabel("")
+        dim_color = ThemeManager().get_theme().get("text_dim", "#888888")
         self._paint_value_display_label.setStyleSheet(
-            "color: rgba(255,255,255,0.55); font-style: italic;"
+            f"color: {dim_color}; font-style: italic;"
         )
         scrub_row.addWidget(self._paint_value_display_label, 1)
         rt.addWidget(self._raw_value_row)
@@ -1322,7 +1334,7 @@ class MapLayerPanel(QWidget):
         if self._selected_node_id and self._model is not None:
             node = self._model.find_node_by_id(self._selected_node_id)
             if node is not None:
-                from src.app.constants import MAP_LAYER_TYPE_RASTER
+                from src.gui.constants import MAP_LAYER_TYPE_RASTER
 
                 if node.layer_type == MAP_LAYER_TYPE_RASTER:
                     layer_meta = self._raster_meta_by_id.get(self._selected_node_id)
@@ -1529,8 +1541,6 @@ class MapLayerPanel(QWidget):
         source_index = self.source_index(index)
         node = self._model.node_from_index(source_index)
 
-        from src.app.constants import MAP_LAYER_TYPE_SNAPSHOT
-
         if node.layer_type == MAP_LAYER_TYPE_SNAPSHOT:
             # Remember the dated state so its edit action remains visible after
             # the tree selection returns to the parent raster.
@@ -1599,7 +1609,7 @@ class MapLayerPanel(QWidget):
             source_index = self.source_index(index)
             node = self._model.node_from_index(source_index)
 
-            from src.app.constants import MAP_LAYER_TYPE_SNAPSHOT
+            from src.gui.constants import MAP_LAYER_TYPE_SNAPSHOT
 
             if node.layer_type == MAP_LAYER_TYPE_SNAPSHOT:
                 lore_date = float(node.attributes.get("lore_date", 0.0))
@@ -1628,7 +1638,7 @@ class MapLayerPanel(QWidget):
             self._sync_opacity_slider(node)
             self._update_button_state()
 
-            from src.app.constants import MAP_LAYER_BASEMAP_NODE_ID
+            from src.gui.constants import MAP_LAYER_BASEMAP_NODE_ID
 
             is_basemap = node.id == MAP_LAYER_BASEMAP_NODE_ID
 
@@ -1952,8 +1962,6 @@ class MapLayerPanel(QWidget):
         The pinned basemap node is never deletable, so the button stays
         disabled while it is selected.
         """
-        from src.app.constants import MAP_LAYER_BASEMAP_NODE_ID
-
         has_selection = self._selected_node_id is not None
         is_basemap = self._selected_node_id == MAP_LAYER_BASEMAP_NODE_ID
         self.btn_delete.setEnabled(has_selection and not is_basemap)
@@ -1970,8 +1978,6 @@ class MapLayerPanel(QWidget):
         Args:
             node: The newly selected layer node.
         """
-        from src.app.constants import MAP_LAYER_TYPE_RASTER, MAP_LAYER_TYPE_SNAPSHOT
-
         # Snapshot virtual rows: toolbar is already shown for the raster parent.
         if node.layer_type == MAP_LAYER_TYPE_SNAPSHOT:
             return
@@ -2251,7 +2257,7 @@ class MapLayerPanel(QWidget):
                     continue
                 allowed_values.add(val)
                 lbl = label_by_value.get(val, str(val))
-                hotkey = idx + 1 if idx < 9 else None
+                hotkey = idx + 1 if idx < _MAXIMUM_SWATCH_HOTKEY_INDEX else None
                 swatches.append(Swatch(value=val, color=entry.color, label=lbl, hotkey=hotkey))
         if self._current_node_id:
             self._discrete_paint_values_by_id[self._current_node_id] = allowed_values
@@ -2641,7 +2647,7 @@ class MapLayerPanel(QWidget):
         if self._selected_node_id and self._model is not None:
             node = self._model.find_node_by_id(self._selected_node_id)
             if node is not None:
-                from src.app.constants import MAP_LAYER_TYPE_RASTER
+                from src.gui.constants import MAP_LAYER_TYPE_RASTER
 
                 if node.layer_type == MAP_LAYER_TYPE_RASTER:
                     mode = self._raster_mode_by_id.get(
@@ -2677,7 +2683,7 @@ class MapLayerPanel(QWidget):
         if self._selected_node_id and self._model is not None:
             node = self._model.find_node_by_id(self._selected_node_id)
             if node is not None:
-                from src.app.constants import MAP_LAYER_TYPE_RASTER
+                from src.gui.constants import MAP_LAYER_TYPE_RASTER
 
                 if node.layer_type == MAP_LAYER_TYPE_RASTER:
                     mode = self._raster_mode_by_id.get(
@@ -2733,7 +2739,11 @@ class MapLayerPanel(QWidget):
         # painting is visible by default. This avoids the common confusion
         # where continuous ramps painted with value=1 are visually null.
         try:
-            if mode == "continuous" and self._paint_value_spin.value() < 256:
+            if (
+                mode == "continuous"
+                and self._paint_value_spin.value()
+                < _CONTINUOUS_DEFAULT_VISIBILITY_THRESHOLD
+            ):
                 self._set_paint_value(32768)
         except Exception:
             # In some test contexts _paint_value_spin may not yet exist; ignore
@@ -2954,6 +2964,7 @@ class MapLayerPanel(QWidget):
     def raster_gradient_from(
         self,
     ) -> int | tuple[int, int, int, int]:
+        """Return the active gradient's starting value or colour."""
         mode = self._raster_mode_by_id.get(self._current_node_id, "discrete")
         if mode == "color":
             return self._qcolor_rgba(self._rgba_gradient_from)
@@ -2963,6 +2974,7 @@ class MapLayerPanel(QWidget):
     def raster_gradient_to(
         self,
     ) -> int | tuple[int, int, int, int]:
+        """Return the active gradient's ending value or colour."""
         mode = self._raster_mode_by_id.get(self._current_node_id, "discrete")
         if mode == "color":
             return self._qcolor_rgba(self._rgba_gradient_to)
@@ -3038,8 +3050,6 @@ class MapLayerPanel(QWidget):
         """Inject virtual snapshot nodes as direct children of the raster node."""
         if self._model is None:
             return
-
-        from src.app.constants import MAP_LAYER_TYPE_SNAPSHOT
 
         snapshots = (layer_meta or {}).get("snapshots", {})
         if not snapshots:

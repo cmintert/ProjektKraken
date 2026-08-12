@@ -9,6 +9,10 @@ from pytestqt.qtbot import QtBot
 from src.gui.mixins.layout_guard import LayoutGuardMixin
 from src.gui.utils.geometry_utils import GeometryUtils
 
+_EXPECTED_TARGET_WIDTH = 400
+_COLLAPSED_DOCK_THRESHOLD_PX = 50
+_RESTORED_DOCK_MINIMUM_WIDTH_PX = 200
+
 
 # --- Mocking QScreen ---
 class MockScreen:
@@ -56,7 +60,7 @@ def test_geometry_utils_clamp_off_screen(monkeypatch: pytest.MonkeyPatch) -> Non
     # So for width 1920, right is 1919.
     expected_right = 1919
     assert result.right() == expected_right
-    assert result.width() == 400
+    assert result.width() == _EXPECTED_TARGET_WIDTH
 
 
 def test_geometry_utils_multi_monitor_ghost(
@@ -136,7 +140,7 @@ def test_guard_validate_dock_sizes(qtbot: QtBot) -> None:
     qtbot.waitExposed(dock)
 
     # Check if squashed
-    if dock.width() > 50:
+    if dock.width() > _COLLAPSED_DOCK_THRESHOLD_PX:
         pytest.skip("Could not squash dock to verify expansion logic")
 
     # Trigger Guard
@@ -145,4 +149,7 @@ def test_guard_validate_dock_sizes(qtbot: QtBot) -> None:
 
     # Should have been forced to expand
     # Guard logic sets temporary min to 200
-    assert dock.width() >= 200 or dock.minimumWidth() >= 200
+    assert (
+        dock.width() >= _RESTORED_DOCK_MINIMUM_WIDTH_PX
+        or dock.minimumWidth() >= _RESTORED_DOCK_MINIMUM_WIDTH_PX
+    )

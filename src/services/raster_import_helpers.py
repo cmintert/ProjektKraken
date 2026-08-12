@@ -7,6 +7,8 @@ side effects — fully unit-testable without a running application.
 import numpy as np
 from PIL import Image as PilImage
 
+_MAX_DISCRETE_PALETTE_COLOURS = 256
+
 __all__ = [
     "detect_greyscale",
     "normalize_to_uint16",
@@ -98,7 +100,7 @@ def quantize_discrete_rgb(
     palette_entries: list[dict] = []
     arr16: np.ndarray
 
-    if len(unique_colours) <= 256:
+    if len(unique_colours) <= _MAX_DISCRETE_PALETTE_COLOURS:
         colour_to_val = {tuple(c): i + 1 for i, c in enumerate(unique_colours)}
         arr16 = np.array(
             [colour_to_val[tuple(p)] for p in pixels], dtype=np.uint16

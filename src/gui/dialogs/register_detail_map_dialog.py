@@ -23,8 +23,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.constants import MAP_ROLE_DETAIL, MAP_ROLE_MASTER
 from src.core.map import Map
+from src.gui.constants import MAP_ROLE_DETAIL, MAP_ROLE_MASTER
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +60,7 @@ class RegisterDetailMapDialog(QDialog):
         resolve_image_path: Optional[Callable[[str], str]] = None,
         parent: Optional[QWidget] = None,
     ) -> None:
+        """Initialize detail-map registration controls."""
         super().__init__(parent)
         self._detail_map = detail_map
         self._candidates = candidate_parents

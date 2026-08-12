@@ -65,7 +65,25 @@ target-version = "py313"
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
 # Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
 # McCabe complexity (`C901`) by default.
-select = ["E4", "E7", "E9", "F", "I", "ANN", "C901"]
+select = [
+    "E4",
+    "E7",
+    "E9",
+    "F",
+    "I",
+    "ANN",
+    "C901",
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D106",
+    "D107",
+    "PLR0915",
+    "PLR2004",
+]
 ignore = [
     "ANN401", # Dynamically typed expressions (Any) are allowed
 ]
@@ -81,8 +99,14 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 # Flag functions with cyclomatic complexity > 15 (default 10 is too strict for existing code)
 max-complexity = 15
 
+[tool.ruff.lint.pylint]
+# Beta ratchet: prevent monolithic functions from returning while legacy
+# complexity is reduced incrementally below Ruff's stricter default of 50.
+max-statements = 150
+
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["ANN"]
+"tests/**/*.py" = ["ANN", "D", "PLR2004"]
+"src/tests/**/*.py" = ["D", "PLR2004"]
 
 [tool.ruff.format]
 # Like Black, use double quotes for strings.

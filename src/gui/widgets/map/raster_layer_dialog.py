@@ -28,10 +28,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 from src.services.raster_image_analysis import ImageAnalysisResult, analyse_image
 
 logger = logging.getLogger(__name__)
+
+_ASPECT_RATIO_WARNING_THRESHOLD = 0.05
+
 
 def _parse_float_or_none(text: str) -> Optional[float]:
     """Return a float parsed from *text*, or ``None`` for blank / invalid."""
@@ -73,6 +77,7 @@ class RasterLayerDialog(QDialog):
         parent: Optional[QWidget] = None,
         map_aspect: float = 1.0,
     ) -> None:
+        """Initialize the raster-layer creation dialog."""
         super().__init__(parent)
         self.setWindowTitle("New Raster Layer")
         self.setMinimumWidth(380)
@@ -195,8 +200,10 @@ class RasterLayerDialog(QDialog):
         self._preview_label = QLabel()
         self._preview_label.setFixedSize(128, 128)
         self._preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        theme = ThemeManager().get_theme()
         self._preview_label.setStyleSheet(
-            "border: 1px solid gray; background-color: #222222;"
+            f"border: 1px solid {theme.get('border', '#454545')}; "
+            f"background-color: {theme.get('surface_alt', '#222222')};"
         )
         self._preview_label.setVisible(False)
         import_form.addRow("Preview:", self._preview_label)
@@ -286,7 +293,10 @@ class RasterLayerDialog(QDialog):
         self._import_dims_label.setVisible(True)
         self._clear_btn.setVisible(True)
         if h > 0 and self._map_aspect > 0:
-            mismatch = abs(w / h - self._map_aspect) / self._map_aspect > 0.05
+            mismatch = (
+                abs(w / h - self._map_aspect) / self._map_aspect
+                > _ASPECT_RATIO_WARNING_THRESHOLD
+            )
             self._aspect_warn_label.setVisible(mismatch)
         self._res_combo.setEnabled(False)
         self._default_spin.setEnabled(False)

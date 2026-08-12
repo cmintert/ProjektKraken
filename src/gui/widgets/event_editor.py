@@ -16,6 +16,7 @@ from PySide6.QtGui import QDropEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -23,11 +24,22 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QMenu,
     QMessageBox,
+    QScrollArea,
+    QSizePolicy,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
 
-from src.app.constants import (
+from src.core.ai_generation import GenerationReviewResult, apply_reviewed_generation
+from src.core.events import Event
+from src.core.summary_data import (
+    SummaryData,
+    calculate_summary_source_hash,
+    is_summary_stale,
+)
+from src.core.theme_manager import ThemeManager
+from src.gui.constants import (
     EDITOR_DETAILS_MIN_HEIGHT,
     EDITOR_FORM_VERTICAL_SPACING,
     EDITOR_ICON_BUTTON_SIZE,
@@ -35,13 +47,14 @@ from src.app.constants import (
     EDITOR_RELATION_LIST_MIN_HEIGHT,
     EDITOR_SECTION_SPACING,
 )
-from src.core.ai_generation import GenerationReviewResult, apply_reviewed_generation
-from src.core.events import Event
-from src.core.summary_data import SummaryData, calculate_summary_source_hash
 from src.gui.mixins.autosave_mixin import AutoSaveManager
 from src.gui.mixins.editor_mixin import BaseEditorMixin
 from src.gui.utils.icon_loader import load_icon
+from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
+from src.gui.widgets.empty_state_widget import EmptyStateWidget
+from src.gui.widgets.gallery_widget import GalleryWidget
+from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
 from src.gui.widgets.relation_item_widget import RelationItemWidget
 from src.gui.widgets.sheet_builder import SheetBuilderWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
@@ -109,21 +122,35 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
         """
         QWidget.__init__(self, parent)
+        self._current_event_id: str | None = None
         self.autosave_manager = AutoSaveManager(self)
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
-        # Set size policy to prevent dock collapse
-        from PySide6.QtWidgets import QSizePolicy
+        main_layout = self._build_editor_shell()
 
+        self._is_loading = False
+        self._is_dirty = False
+        self._calendar_converter = None
+
+        self._build_header(main_layout)
+
+        # Splitter-based tab inspector for vertical stacking
+        self.inspector = SplitterTabInspector()
+        main_layout.addWidget(self.inspector)
+
+        self._build_details_tab()
+        self._connect_field_signals()
+
+        self._build_secondary_tabs(parent)
+        self._build_action_buttons(main_layout)
+        self._initialize_editor_state()
+
+    def _build_editor_shell(self) -> QVBoxLayout:
+        """Build empty/content containers and return the content layout."""
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-
-        from src.gui.utils.style_helper import StyleHelper
-        from src.gui.widgets.empty_state_widget import EmptyStateWidget
-
-        main_layout = QVBoxLayout(self)
-        StyleHelper.apply_no_margins(main_layout)
-
+        outer_layout = QVBoxLayout(self)
+        StyleHelper.apply_no_margins(outer_layout)
         self._empty_state = EmptyStateWidget(
             "No Event Selected",
             "Select an event from the list to view and edit its details.",
@@ -131,45 +158,140 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self._empty_state.add_action(
             "New Event", self.create_new_requested.emit, primary=True
         )
-        main_layout.addWidget(self._empty_state)
+        outer_layout.addWidget(self._empty_state)
         self._empty_state.show()
-
         self._content_widget = QWidget()
-        _content_layout = QVBoxLayout(self._content_widget)
-        StyleHelper.apply_form_spacing(_content_layout)
-        main_layout.addWidget(self._content_widget)
+        content_layout = QVBoxLayout(self._content_widget)
+        StyleHelper.apply_form_spacing(content_layout)
+        outer_layout.addWidget(self._content_widget)
         self._content_widget.hide()
+        return content_layout
 
-        # Alias so the rest of __init__ can keep using main_layout idiom
-        main_layout = _content_layout
+    def _build_details_tab(self) -> None:
+        """Build event timing, description, and collapsible detail sections."""
+        self.tab_details = QWidget()
+        tab_layout = QVBoxLayout(self.tab_details)
+        tab_layout.setContentsMargins(0, 0, 0, 0)
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        self.scroll_area.setStyleSheet(StyleHelper.get_scroll_area_style())
+        self.details_container = QWidget()
+        details_layout = QVBoxLayout(self.details_container)
+        StyleHelper.apply_compact_spacing(details_layout)
+        self.scroll_area.setWidget(self.details_container)
+        tab_layout.addWidget(self.scroll_area)
+        self.form_layout = QFormLayout()
+        self.form_layout.setVerticalSpacing(EDITOR_FORM_VERTICAL_SPACING)
+        self.form_layout.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
+        )
+        self.form_layout.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
+        self.form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+        self._build_temporal_description_fields()
+        self._build_summary_section()
+        self._build_llm_section()
+        self._build_raster_appearances_section()
+        details_layout.addLayout(self.form_layout)
+        self.tab_details.setMinimumHeight(EDITOR_DETAILS_MIN_HEIGHT)
+        self.inspector.add_tab(
+            self.tab_details, "Details", "Event timing, description, and AI summary"
+        )
 
-        self._is_loading = False
-        self._is_dirty = False
-        self._calendar_converter = None
+    def _build_temporal_description_fields(self) -> None:
+        """Build the temporal range and event description fields."""
+        self.desc_edit = WikiTextEdit()
+        self.desc_edit.link_clicked.connect(self.link_clicked.emit)
+        self.desc_edit.completion_prefix_changed.connect(
+            self.completion_prefix_changed.emit
+        )
+        self.temporal_widget = TemporalRangeWidget()
+        if self._calendar_converter:
+            self.temporal_widget.set_calendar_converter(self._calendar_converter)
+        self.form_layout.addRow(self.temporal_widget)
+        self.date_edit = self.temporal_widget.date_start
+        self.end_date_edit = self.temporal_widget.date_end
+        self.duration_widget = self.temporal_widget.duration_widget
+        self.form_layout.addRow("Description:", self.desc_edit)
 
-        # --- Persistent Header ---
+    def _build_summary_section(self) -> None:
+        """Build the collapsible event summary section."""
+        self.summary_container = QWidget()
+        section_layout = QVBoxLayout(self.summary_container)
+        section_layout.setContentsMargins(0, 0, 0, 0)
+        section_layout.setSpacing(EDITOR_SECTION_SPACING)
+        self.summary_checkbox = StandardCheckbox("")
+        section_layout.addWidget(self.summary_checkbox)
+        self.summary_widget = SummaryWidget()
+        self.summary_widget.setVisible(False)
+        self.summary_widget.generate_requested.connect(
+            self._on_summary_generate_requested
+        )
+        self.summary_widget.edit_committed.connect(self._on_summary_edit_committed)
+        self.summary_widget.delete_requested.connect(
+            self._on_summary_delete_requested
+        )
+        section_layout.addWidget(self.summary_widget)
+        self.summary_checkbox.toggled.connect(self.summary_widget.setVisible)
+        self.form_layout.addRow("Summary:", self.summary_container)
+
+    def _build_llm_section(self) -> None:
+        """Build the collapsible event description-generation section."""
+        self.llm_container = QWidget()
+        section_layout = QVBoxLayout(self.llm_container)
+        section_layout.setContentsMargins(0, 0, 0, 0)
+        section_layout.setSpacing(EDITOR_SECTION_SPACING)
+        self.llm_checkbox = StandardCheckbox("")
+        section_layout.addWidget(self.llm_checkbox)
+        self.llm_generator = LLMGenerationWidget(self, context_provider=self)
+        self.llm_generator.setVisible(False)
+        self.llm_generator.text_generated.connect(self._on_text_generated)
+        section_layout.addWidget(self.llm_generator)
+        self.llm_checkbox.toggled.connect(self.llm_generator.setVisible)
+        self.form_layout.addRow("LLM Generation:", self.llm_container)
+
+    def _build_raster_appearances_section(self) -> None:
+        """Build the read-only collapsible raster-appearance section."""
+        self.raster_appearances_container = QWidget()
+        section_layout = QVBoxLayout(self.raster_appearances_container)
+        section_layout.setContentsMargins(0, 0, 0, 0)
+        section_layout.setSpacing(EDITOR_SECTION_SPACING)
+        self.raster_appearances_checkbox = StandardCheckbox("")
+        section_layout.addWidget(self.raster_appearances_checkbox)
+        self.raster_appearances_label = QLabel("Not linked to any raster map.")
+        self.raster_appearances_label.setWordWrap(True)
+        self.raster_appearances_label.setVisible(False)
+        section_layout.addWidget(self.raster_appearances_label)
+        self.raster_appearances_checkbox.toggled.connect(
+            self.raster_appearances_label.setVisible
+        )
+        self.form_layout.addRow("Raster Maps:", self.raster_appearances_container)
+
+    def _connect_field_signals(self) -> None:
+        """Connect editor fields to dirty tracking and live preview."""
+        self.name_edit.textChanged.connect(self._on_field_changed)
+        self.temporal_widget.start_changed.connect(lambda _value: self._on_field_changed())
+        self.temporal_widget.duration_changed.connect(
+            lambda _value: self._on_field_changed()
+        )
+        self.type_edit.editTextChanged.connect(self._on_field_changed)
+        self.type_edit.currentIndexChanged.connect(self._on_field_changed)
+        self.desc_edit.textChanged.connect(self._on_field_changed)
+
+    def _build_header(self, main_layout: QVBoxLayout) -> None:
+        """Build the persistent event name, type, and inject header."""
         self.header_widget = QWidget()
         header_layout = QVBoxLayout(self.header_widget)
         header_layout.setContentsMargins(0, 0, 0, 0)
-
-        # Header Form Layout
         self.header_form = QFormLayout()
-
         self.header_form.setVerticalSpacing(EDITOR_FORM_VERTICAL_SPACING)
         self.header_form.setFieldGrowthPolicy(
             QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
         )
-        self.header_form.setRowWrapPolicy(
-            QFormLayout.RowWrapPolicy.DontWrapRows
-        )
+        self.header_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         self.header_form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-
-        # Inject Button Header
-        # Inject Button (QToolButton with Menu)
-        from PySide6.QtWidgets import QToolButton
-
         self.btn_inject = QToolButton()
-        self.btn_inject.setText("Fast Inject")  # Down arrow
+        self.btn_inject.setText("Fast Inject")
         self.btn_inject.setToolTip("Quickly apply templates or snippets to this event")
         self.btn_inject.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.btn_inject.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
@@ -177,183 +299,43 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             StyleHelper.get_tool_button_style()
             + " QToolButton::menu-indicator { image: none; }"
         )
-
-        # Connect to theme changes
-        from src.core.theme_manager import ThemeManager
-
         ThemeManager().theme_changed.connect(self._on_theme_changed)
-
         self.inject_menu = QMenu(self.btn_inject)
         self.btn_inject.setMenu(self.inject_menu)
         self.inject_menu.aboutToShow.connect(self._populate_inject_menu)
-
         self.name_edit = QLineEdit()
-
-        # Name row with Inject button
         name_layout = QHBoxLayout()
         name_layout.addWidget(self.name_edit)
         name_layout.addWidget(self.btn_inject)
-
         self.type_edit = QComboBox()
         self.type_edit.addItems(
             ["generic", "cosmic", "historical", "personal", "session", "combat"]
         )
         self.type_edit.setEditable(True)
-        from PySide6.QtWidgets import QSizePolicy
-
         self.type_edit.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
-
         self.header_form.addRow("Name:", name_layout)
         self.header_form.addRow("Type:", self.type_edit)
-
         header_layout.addLayout(self.header_form)
         main_layout.addWidget(self.header_widget)
 
-        # Splitter-based tab inspector for vertical stacking
-        self.inspector = SplitterTabInspector()
-        main_layout.addWidget(self.inspector)
-
-        # --- Tab 1: Details ---
-        self.tab_details = QWidget()
-
-        # Scroll Area Wrapper
-        from PySide6.QtWidgets import QFrame, QScrollArea
-
-        tab_layout = QVBoxLayout(self.tab_details)
-        tab_layout.setContentsMargins(0, 0, 0, 0)
-
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
-        self.scroll_area.setStyleSheet(StyleHelper.get_scroll_area_style())
-
-        self.details_container = QWidget()
-        details_layout = QVBoxLayout(self.details_container)
-        StyleHelper.apply_compact_spacing(details_layout)
-
-        self.scroll_area.setWidget(self.details_container)
-        tab_layout.addWidget(self.scroll_area)
-
-        self.form_layout = QFormLayout()
-        self.form_layout.setVerticalSpacing(EDITOR_FORM_VERTICAL_SPACING)
-        self.form_layout.setFieldGrowthPolicy(
-            QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
-        )
-        self.form_layout.setRowWrapPolicy(
-            QFormLayout.RowWrapPolicy.DontWrapRows
-        )
-        self.form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-
-        self.desc_edit = WikiTextEdit()
-        self.desc_edit.link_clicked.connect(self.link_clicked.emit)
-        self.desc_edit.completion_prefix_changed.connect(
-            self.completion_prefix_changed.emit
-        )
-
-        # Unified temporal range card (start / span / end with anchor lock)
-        self.temporal_widget = TemporalRangeWidget()
-        if self._calendar_converter:
-            self.temporal_widget.set_calendar_converter(self._calendar_converter)
-        self.form_layout.addRow(self.temporal_widget)
-
-        # Convenience aliases so tests and external code can reference the
-        # date / duration sub-widgets without going through temporal_widget.
-        self.date_edit = self.temporal_widget.date_start
-        self.end_date_edit = self.temporal_widget.date_end
-        self.duration_widget = self.temporal_widget.duration_widget
-
-        self.form_layout.addRow("Description:", self.desc_edit)
-
-        # Add Summary Widget (Collapsible)
-        # Add Summary Widget (Collapsible)
-        self.summary_container = QWidget()
-        summary_outer_layout = QVBoxLayout(self.summary_container)
-        summary_outer_layout.setContentsMargins(0, 0, 0, 0)
-        summary_outer_layout.setSpacing(EDITOR_SECTION_SPACING)
-
-        self.summary_checkbox = StandardCheckbox("")
-
-        summary_outer_layout.addWidget(self.summary_checkbox)
-
-        self.summary_widget = SummaryWidget()
-        self.summary_widget.setVisible(False)
-        self.summary_widget.generate_requested.connect(
-            self._on_summary_generate_requested
-        )
-        self.summary_widget.edit_committed.connect(
-            self._on_summary_edit_committed
-        )
-        self.summary_widget.delete_requested.connect(
-            self._on_summary_delete_requested
-        )
-        summary_outer_layout.addWidget(self.summary_widget)
-
-        self.summary_checkbox.toggled.connect(self.summary_widget.setVisible)
-
-        self.form_layout.addRow("Summary:", self.summary_container)
-
-        # Add LLM Generation Widget below description in a collapsible group
-        from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
-
-        self.llm_container = QWidget()
-        llm_outer_layout = QVBoxLayout(self.llm_container)
-        llm_outer_layout.setContentsMargins(0, 0, 0, 0)
-        llm_outer_layout.setSpacing(EDITOR_SECTION_SPACING)
-
-        self.llm_checkbox = StandardCheckbox("")
-
-        llm_outer_layout.addWidget(self.llm_checkbox)
-
-        self.llm_generator = LLMGenerationWidget(self, context_provider=self)
-        self.llm_generator.setVisible(False)
-        self.llm_generator.text_generated.connect(self._on_text_generated)
-        llm_outer_layout.addWidget(self.llm_generator)
-
-        self.llm_checkbox.toggled.connect(self.llm_generator.setVisible)
-
-        self.form_layout.addRow("LLM Generation:", self.llm_container)
-
-        # Raster Appearances — read-only collapsible section
-        self.raster_appearances_container = QWidget()
-        raster_outer_layout = QVBoxLayout(self.raster_appearances_container)
-        raster_outer_layout.setContentsMargins(0, 0, 0, 0)
-        raster_outer_layout.setSpacing(EDITOR_SECTION_SPACING)
-
-        self.raster_appearances_checkbox = StandardCheckbox("")
-        raster_outer_layout.addWidget(self.raster_appearances_checkbox)
-
-        self.raster_appearances_label = QLabel("Not linked to any raster map.")
-        self.raster_appearances_label.setWordWrap(True)
-        self.raster_appearances_label.setVisible(False)
-        raster_outer_layout.addWidget(self.raster_appearances_label)
-
-        self.raster_appearances_checkbox.toggled.connect(
-            self.raster_appearances_label.setVisible
-        )
-
-        self.form_layout.addRow("Raster Maps:", self.raster_appearances_container)
-
-        details_layout.addLayout(self.form_layout)
-
-        # Set minimum height on details tab to ensure it doesn't collapse
-        self.tab_details.setMinimumHeight(EDITOR_DETAILS_MIN_HEIGHT)
+    def _build_secondary_tabs(self, parent: QWidget | None) -> None:
+        """Build tags, relations, gallery, attributes, and sheet tabs."""
+        self._build_tags_tab()
+        self.tab_relations = QWidget()
+        self._setup_relations_tab()
         self.inspector.add_tab(
-            self.tab_details, "Details", "Event timing, description, and AI summary"
+            self.tab_relations,
+            "Relations",
+            "View and edit connections to participants and locations",
         )
+        self._build_gallery_tab(parent)
+        self._build_attributes_tab()
+        self._build_sheet_tab()
 
-        # Connect modifications to dirty check and live preview
-        self.name_edit.textChanged.connect(self._on_field_changed)
-        self.temporal_widget.start_changed.connect(lambda val: self._on_field_changed())
-        self.temporal_widget.duration_changed.connect(
-            lambda val: self._on_field_changed()
-        )
-        self.type_edit.editTextChanged.connect(self._on_field_changed)
-        self.type_edit.currentIndexChanged.connect(self._on_field_changed)
-        self.desc_edit.textChanged.connect(self._on_field_changed)
-
-        # --- Tab 2: Tags ---
+    def _build_tags_tab(self) -> None:
+        """Build the event tags tab."""
         self.tab_tags = QWidget()
         tags_layout = QVBoxLayout(self.tab_tags)
         StyleHelper.apply_no_margins(tags_layout)
@@ -363,28 +345,19 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             self.tab_tags, "Tags", "Manage organizational tags and metadata"
         )
 
-        # --- Tab 3: Relations ---
-        self.tab_relations = QWidget()
-        self._setup_relations_tab()
-        self.inspector.add_tab(
-            self.tab_relations,
-            "Relations",
-            "View and edit connections to participants and locations",
-        )
-
-        # --- Tab 4: Gallery ---
+    def _build_gallery_tab(self, parent: QWidget | None) -> None:
+        """Build the event image gallery tab."""
         self.tab_gallery = QWidget()
         gallery_layout = QVBoxLayout(self.tab_gallery)
         gallery_layout.setContentsMargins(0, 0, 0, 0)
-        from src.gui.widgets.gallery_widget import GalleryWidget
-
-        self.gallery = GalleryWidget(parent)  # parent should be main_window
+        self.gallery = GalleryWidget(parent)
         gallery_layout.addWidget(self.gallery)
         self.inspector.add_tab(
             self.tab_gallery, "Gallery", "Manage images and media attachments"
         )
 
-        # --- Tab 5: Attributes ---
+    def _build_attributes_tab(self) -> None:
+        """Build the structured event attributes tab."""
         self.tab_attributes = QWidget()
         attr_layout = QVBoxLayout(self.tab_attributes)
         StyleHelper.apply_no_margins(attr_layout)
@@ -394,54 +367,44 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             self.tab_attributes, "Attributes", "Edit custom structured data fields"
         )
 
-        # --- Tab 6: Sheet ---
+    def _build_sheet_tab(self) -> None:
+        """Build the configurable event-sheet tab."""
         self.tab_sheet = QWidget()
-        sheet_tab_layout = QVBoxLayout(self.tab_sheet)
-        StyleHelper.apply_no_margins(sheet_tab_layout)
+        sheet_layout = QVBoxLayout(self.tab_sheet)
+        StyleHelper.apply_no_margins(sheet_layout)
         self.sheet_builder = SheetBuilderWidget()
-        sheet_tab_layout.addWidget(self.sheet_builder)
+        sheet_layout.addWidget(self.sheet_builder)
         self.inspector.add_tab(
             self.tab_sheet, "Sheet", "Configure the visual layout for the event sheet"
         )
 
-        # Buttons
-        btn_layout = QHBoxLayout()
+    def _build_action_buttons(self, main_layout: QVBoxLayout) -> None:
+        """Build persistent discard and save controls."""
+        buttons = QHBoxLayout()
         self.btn_save = PrimaryButton("Save Changes")
         self.btn_save.setEnabled(False)
         self.btn_save.clicked.connect(self._on_save)
-
         self.btn_discard = StandardButton("Discard")
         self.btn_discard.setEnabled(False)
         self.btn_discard.clicked.connect(self._on_discard)
+        buttons.addStretch()
+        buttons.addWidget(self.btn_discard)
+        buttons.addWidget(self.btn_save)
+        main_layout.addLayout(buttons)
 
-        btn_layout.addStretch()
-        btn_layout.addWidget(self.btn_discard)
-        btn_layout.addWidget(self.btn_save)
-
-        main_layout.addLayout(btn_layout)
-
-        # Internal State
-        self._current_event_id: str | None = None
+    def _initialize_editor_state(self) -> None:
+        """Initialize mutable state and dirty tracking for an empty editor."""
         self._current_created_at = 0.0
         self._is_dirty = False
         self._pending_summary_changed = False
         self._pending_summary_data: dict | None = None
-
-        # Connect signals for dirty tracking
         self._connect_dirty_signals()
-
         self.summary_service = None
-
-        # Enable drag-and-drop for relation creation
         self.setAcceptDrops(True)
-
-        # Create drop hint label (Sprint 1 - visual feedback)
         self._drop_hint_label: QLabel | None = None
         self._is_drag_over = False
-
-        # Type picker for relation type selection (activated by Shift key)
         self._type_picker: Any = None
-        self._selected_relation_type = "related"  # Default type
+        self._selected_relation_type = "related"
 
     def _get_current_item_id(self) -> str | None:
         """Returns the current event ID or None."""
@@ -458,22 +421,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             rel_type: Relation type to display in hint.
         """
         if self._drop_hint_label is None:
-            from PySide6.QtWidgets import QLabel
-
             self._drop_hint_label = QLabel(self)
-            self._drop_hint_label.setStyleSheet(
-                """
-                QLabel {
-                    background-color: rgba(51, 153, 255, 0.15);
-                    border: 2px dashed #3399FF;
-                    border-radius: 6px;
-                    color: #3399FF;
-                    font-size: 12px;
-                    font-weight: bold;
-                    padding: 8px;
-                }
-                """
-            )
+            self._drop_hint_label.setStyleSheet(StyleHelper.get_drag_overlay_style())
             self._drop_hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self._drop_hint_label.setText(f"→ {rel_type}")
@@ -1126,9 +1075,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
                 data = SummaryData.from_dict(summary_data)
                 self.summary_widget.set_summary(data)
 
-            if self.summary_service:
-                is_stale = self.summary_service.is_stale(event)
-                self.summary_widget.set_stale(is_stale)
+            self.summary_widget.set_stale(is_summary_stale(event))
 
         self.tag_editor.load_tags(event.tags)
         self.gallery.set_owner("event", event.id)

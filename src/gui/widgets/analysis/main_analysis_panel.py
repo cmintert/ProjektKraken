@@ -26,14 +26,17 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 from src.core.analysis import IntelligenceReport
+from src.gui.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.analysis.analysis_panel import AnalysisPanel
 from src.gui.widgets.analysis.intelligence_panel import IntelligencePanel
 from src.gui.widgets.analysis.temporal_panel import TemporalPanel
 
 logger = logging.getLogger(__name__)
+
+_LEGACY_REPORT_ARGUMENT_COUNT = 1
+_SCOPED_REPORT_ARGUMENT_COUNT = 3
 
 
 class MainAnalysisPanel(QWidget):
@@ -338,8 +341,8 @@ ConnectionManager` button lambdas before invoking the coordinator, so the
     @staticmethod
     def _unpack_report_args(args: tuple[Any, ...]) -> tuple[str, Any]:
         """Accept legacy one-argument and job-aware report deliveries."""
-        if len(args) == 1:
+        if len(args) == _LEGACY_REPORT_ARGUMENT_COUNT:
             return "", args[0]
-        if len(args) == 3:
+        if len(args) == _SCOPED_REPORT_ARGUMENT_COUNT:
             return str(args[0]), args[2]
         raise TypeError("Unexpected analysis report arguments")

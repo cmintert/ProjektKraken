@@ -13,6 +13,7 @@ class MapAggregateService:
     """Load map state required for safe destructive commands."""
 
     def __init__(self, db_service: DatabaseService) -> None:
+        """Initialize aggregate reads over a database service."""
         self.db_service = db_service
 
     def snapshot(self, map_id: str) -> MapAggregateSnapshot:

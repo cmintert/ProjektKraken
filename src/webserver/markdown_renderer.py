@@ -48,6 +48,7 @@ _ALLOWED_TAGS = frozenset(
 _ALLOWED_PROTOCOLS = frozenset({"http", "https", "mailto"})
 _CODE_CLASS_PATTERN = re.compile(r"^language-[A-Za-z0-9_+-]{1,50}$")
 _WIKILINK_PATTERN = r"\[\[([^]|]+?)(?:\|([^]]+?))?\]\]"
+_ASCII_CONTROL_CHARACTER_LIMIT = 0x20
 
 
 class _TrackedFencedBlockPreprocessor(FencedBlockPreprocessor):
@@ -160,7 +161,11 @@ def _is_safe_url(value: str) -> bool:
     decoded = _decode_url_for_validation(value)
     if not decoded or "\\" in decoded:
         return False
-    if any(character.isspace() or ord(character) < 0x20 for character in decoded):
+    if any(
+        character.isspace()
+        or ord(character) < _ASCII_CONTROL_CHARACTER_LIMIT
+        for character in decoded
+    ):
         return False
     if decoded.startswith("#"):
         return len(decoded) > 1

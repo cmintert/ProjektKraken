@@ -1,3 +1,5 @@
+"""Parsed date values and precision levels used by date input workflows."""
+
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Optional

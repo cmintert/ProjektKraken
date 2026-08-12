@@ -47,20 +47,28 @@ class RasterBufferProtocol(Protocol):
     """Minimal legacy paint-buffer interface, without a GUI dependency."""
 
     @property
-    def width(self) -> int: ...
+    def width(self) -> int:
+        """Return the raster width in pixels."""
+        ...
 
     @property
-    def height(self) -> int: ...
+    def height(self) -> int:
+        """Return the raster height in pixels."""
+        ...
 
     def _norm_to_pixel(self, x_norm: float, y_norm: float) -> tuple[int, int]: ...
 
     def get_region(
         self, min_col: int, min_row: int, max_col: int, max_row: int
-    ) -> np.ndarray: ...
+    ) -> np.ndarray:
+        """Return a rectangular pixel region."""
+        ...
 
     def set_region(
         self, min_col: int, min_row: int, region_data: np.ndarray
-    ) -> None: ...
+    ) -> None:
+        """Replace a rectangular pixel region."""
+        ...
 
     def paint_brush(
         self,
@@ -69,7 +77,9 @@ class RasterBufferProtocol(Protocol):
         radius_px: int,
         value: int,
         falloff: float,
-    ) -> None: ...
+    ) -> None:
+        """Apply one legacy brush dab to the buffer."""
+        ...
 
 
 def _sanitize_filename(name: str, fallback: str) -> str:
@@ -197,6 +207,7 @@ class CreateRasterLayerCommand(BaseCommand):
         format_str: str = "",
         scale: str = "",
     ) -> None:
+        """Initialize creation of a raster layer and backing asset."""
         super().__init__()
         self.map_id = map_id
         self.name = name
@@ -672,6 +683,7 @@ class DeleteRasterLayerCommand(BaseCommand):
         node_id: str,
         world_root: str = "",
     ) -> None:
+        """Initialize deletion of one raster layer."""
         super().__init__()
         self.map_id = map_id
         self.node_id = node_id
@@ -771,6 +783,7 @@ class PaintRasterCommand(BaseCommand):
         value: int,
         falloff: float = 0.0,
     ) -> None:
+        """Initialize a legacy raster paint operation."""
         super().__init__()
         self.map_id = map_id
         self.node_id = node_id
@@ -909,6 +922,7 @@ class StrokeRasterCommand(BaseCommand):
         patches: Optional[List[RasterPatch]] = None,
         pixel_format: str = "value16",
     ) -> None:
+        """Initialize an atomic raster stroke from tile patches."""
         super().__init__()
         self.map_id = map_id
         self.node_id = node_id
@@ -1137,6 +1151,7 @@ class SetRasterMappingCommand(BaseCommand):
         new_color_map: Optional[Dict[str, Any]] = None,
         old_color_map: Optional[Dict[str, Any]] = None,
     ) -> None:
+        """Initialize a raster value-mapping update."""
         super().__init__()
         self.map_id = map_id
         self.node_id = node_id
@@ -1285,6 +1300,7 @@ class SetRasterBlendModeCommand(BaseCommand):
         new_mode: str,
         old_mode: str,
     ) -> None:
+        """Initialize a raster blend-mode update."""
         super().__init__()
         self.map_id = map_id
         self.node_id = node_id
@@ -1421,6 +1437,7 @@ class SetRasterSnapshotCommand(BaseCommand):
         old_snapshots: Dict[str, str],
         image_bytes: bytes = b"",
     ) -> None:
+        """Initialize creation or replacement of a raster snapshot."""
         super().__init__()
         self.map_id = map_id
         self.node_id = node_id
@@ -1623,6 +1640,7 @@ class RemoveRasterSnapshotCommand(BaseCommand):
         old_snapshots: Dict[str, str],
         rel_file_path: str = "",
     ) -> None:
+        """Initialize removal of a raster snapshot."""
         super().__init__()
         self.map_id = map_id
         self.node_id = node_id
@@ -1823,6 +1841,7 @@ class SetRasterNotesCommand(BaseCommand):
         notes: str,
         old_notes: str = "",
     ) -> None:
+        """Initialize a raster-layer notes update."""
         super().__init__()
         self.map_id = map_id
         self.node_id = node_id

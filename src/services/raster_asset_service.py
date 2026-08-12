@@ -14,6 +14,7 @@ class RasterAssetService:
     """Own raster paths and atomic file replacement within one world."""
 
     def __init__(self, world_root: Path) -> None:
+        """Initialize safe raster-asset paths beneath a world root."""
         self.world_root = world_root.resolve()
         self.raster_root = (self.world_root / "rasters").resolve()
 
@@ -63,4 +64,3 @@ class RasterAssetService:
             layer = RasterLayerState.from_dict(dict(metadata))
             files.extend(RasterAssetService.owned_files(layer))
         return list(dict.fromkeys(path for path in files if path))
-

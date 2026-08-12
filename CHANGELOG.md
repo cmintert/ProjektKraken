@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-12
-**Commit:** 4a134ff6
+**Commit:** c6c6a525
 ---
 
 # Changelog
@@ -42,6 +42,12 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-12)* **Architecture / Stability**: Restored worker-owned database
+  access, atomic command and tag persistence, asynchronous semantic search,
+  deterministic resource cleanup, and one-way source dependencies.
+- *(2026-08-12)* **UI / Maintainability**: Replaced unexplained thresholds and
+  hard-coded interface colors with named constants and theme-aware styling.
+
 - *(2026-08-11)* **Map / Styling**: Preserved translucent region fills during
   style edits and kept map-label opacity independent from marker and geometry
   opacity.
@@ -68,6 +74,13 @@ All notable changes to this project will be documented in this file.
   databases from being silently recreated and added explicit recovery warnings.
 
 ### Changed
+
+- *(2026-08-12)* **Refactor / Maintainability**: Centralized version and shared
+  configuration contracts, decomposed oversized UI constructors, and added
+  enforceable complexity, public-docstring, magic-value, and dependency gates.
+- *(2026-08-12)* **Testing / Quality**: Added transactional command, worker
+  boundary, timeline-cache, and architectural regression coverage; verified
+  the complete unit, integration, GUI, CLI, security, and reproduction suites.
 
 - *(2026-08-12)* **Documentation / Testing**: Documented scoped advisory
   analysis, evidence, partial failures, stale reports, and instant relations;

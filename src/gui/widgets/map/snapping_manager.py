@@ -30,9 +30,12 @@ from PySide6.QtCore import QPointF, QRectF
 from PySide6.QtGui import QTransform
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsScene
 
-from src.app.constants import MAP_SNAP_RADIUS_PX
+from src.gui.constants import MAP_SNAP_RADIUS_PX
 
 logger = logging.getLogger(__name__)
+
+_DEGENERATE_SEGMENT_EPSILON = 1e-12
+_MINIMUM_SEGMENT_POINT_COUNT = 2
 
 
 class SnapType(Enum):
@@ -87,7 +90,7 @@ def point_to_segment_distance(
     ab_y = b.y() - a.y()
     len_sq = ab_x * ab_x + ab_y * ab_y
 
-    if len_sq < 1e-12:
+    if len_sq < _DEGENERATE_SEGMENT_EPSILON:
         # Degenerate segment (A == B)
         dx = p.x() - a.x()
         dy = p.y() - a.y()
@@ -125,6 +128,7 @@ class SnappingManager:
         scene: QGraphicsScene,
         snap_radius_px: float = MAP_SNAP_RADIUS_PX,
     ) -> None:
+        """Initialize vertex and edge snapping for a graphics scene."""
         self._scene = scene
         self._snap_radius_px = snap_radius_px
         self._enabled = True
@@ -311,7 +315,7 @@ class SnappingManager:
         """
         best = SnapResult(pos=QPointF(query))
         n = len(scene_points)
-        if n < 2:
+        if n < _MINIMUM_SEGMENT_POINT_COUNT:
             return best
 
         # Check all segments. For closed polygons (RegionItem),

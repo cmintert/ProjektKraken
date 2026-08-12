@@ -43,6 +43,7 @@ class GradientScrubberWidget(QWidget):
     value_committed = Signal(int)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
+        """Initialize a theme-aware gradient value scrubber."""
         super().__init__(parent)
         self._color_map: Optional[ColorMap] = None
         self._value_min: int = 0
@@ -91,6 +92,7 @@ class GradientScrubberWidget(QWidget):
     # ------------------------------------------------------------------
 
     def paintEvent(self, event: QPaintEvent) -> None:  # type: ignore[override]
+        """Paint the active gradient, border, and value handle."""
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         theme = ThemeManager().get_theme()
@@ -155,6 +157,7 @@ class GradientScrubberWidget(QWidget):
     # ------------------------------------------------------------------
 
     def mousePressEvent(self, event: QMouseEvent) -> None:  # type: ignore[override]
+        """Begin a left-button value scrub."""
         if event.button() != Qt.MouseButton.LeftButton:
             super().mousePressEvent(event)
             return
@@ -163,12 +166,14 @@ class GradientScrubberWidget(QWidget):
         event.accept()
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:  # type: ignore[override]
+        """Update the value and tooltip while the pointer moves."""
         if self._dragging:
             self._set_from_pos(event.position().x())
         self._maybe_show_tooltip(event.position().toPoint())
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:  # type: ignore[override]
+        """Finish a scrub and emit the committed value."""
         if event.button() == Qt.MouseButton.LeftButton and self._dragging:
             self._dragging = False
             self.value_committed.emit(self._value)

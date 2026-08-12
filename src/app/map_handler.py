@@ -59,6 +59,9 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
+_REGION_COMPONENT_COUNT = 4
+_RGBA_COMPONENT_COUNT = 4
+
 
 def _safe_float(value: Any) -> Optional[float]:
     """Safely convert a value to float, returning None on error.
@@ -1414,7 +1417,7 @@ class MapHandler(QObject):
             if not isinstance(payload, dict):
                 continue
             region_values = tuple(int(value) for value in payload["region"])
-            if len(region_values) != 4:
+            if len(region_values) != _REGION_COMPONENT_COUNT:
                 continue
             region = (
                 region_values[0],
@@ -2019,8 +2022,9 @@ class MapHandler(QObject):
         if rgba_value is None and not isinstance(value, int):
             return
         raw_value = 0 if rgba_value is not None else int(cast(int, value))
-        if rgba_value is not None and len(rgba_value) == 4:
-            self._map_widget.layer_panel.set_raster_paint_color(rgba_value)
+        if rgba_value is not None and len(rgba_value) == _RGBA_COMPONENT_COUNT:
+            rgba_color = cast(tuple[int, int, int, int], rgba_value)
+            self._map_widget.layer_panel.set_raster_paint_color(rgba_color)
 
         from src.gui.widgets.map.raster_mapping import probe_all_layers
 

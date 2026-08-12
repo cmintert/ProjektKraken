@@ -16,8 +16,8 @@ from PySide6.QtWidgets import (
     QGraphicsView,
 )
 
-from src.app.constants import MAP_LAYER_Z_UI_OVERLAY
 from src.core.theme_manager import ThemeManager
+from src.gui.constants import MAP_LAYER_Z_UI_OVERLAY
 from src.gui.widgets.map.snapping_manager import SnappingManager
 
 if TYPE_CHECKING:
@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 # Drawing mode constants
 NORMALIZED_COORD_PRECISION = 6  # decimal places for normalized coordinates
+MINIMUM_REGION_PREVIEW_VERTICES = 2
 
 
 class DrawingTool:
@@ -45,6 +46,7 @@ class DrawingTool:
         view: "MapGraphicsView",
         snapping_manager: SnappingManager,
     ) -> None:
+        """Initialize drawing state for a map graphics view."""
         self._view = view
         self._snapping_manager = snapping_manager
 
@@ -265,7 +267,10 @@ class DrawingTool:
         # Rubber band to mouse
         path.lineTo(mouse_pos)
         # Close for region preview
-        if self._drawing_mode == "region" and len(self._drawing_vertices) >= 2:
+        if (
+            self._drawing_mode == "region"
+            and len(self._drawing_vertices) >= MINIMUM_REGION_PREVIEW_VERTICES
+        ):
             path.lineTo(self._drawing_vertices[0])
 
         self._drawing_preview_item = QGraphicsPathItem(path)

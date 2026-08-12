@@ -22,6 +22,8 @@ from src.gui.utils.color_utils import get_hashed_color
 
 logger = logging.getLogger(__name__)
 
+_CHECKED_STATE_VALUE = Qt.CheckState.Checked.value
+
 ExplorerItem: TypeAlias = (
     tuple[Literal["event"], Event] | tuple[Literal["entity"], Entity]
 )
@@ -234,7 +236,9 @@ class ExplorerModel(QAbstractListModel):
 
             # Robust value handling (enum or int)
             is_checked = (
-                value == Qt.CheckState.Checked or value == 2 or str(value) == "2"
+                value == Qt.CheckState.Checked
+                or value == _CHECKED_STATE_VALUE
+                or str(value) == str(_CHECKED_STATE_VALUE)
             )
 
             if is_checked:

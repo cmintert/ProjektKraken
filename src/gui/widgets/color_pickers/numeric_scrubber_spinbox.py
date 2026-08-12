@@ -35,6 +35,7 @@ class NumericScrubberSpinBox(QSpinBox):
         parent: Optional[QWidget] = None,
         sensitivity: float = _DEFAULT_SENSITIVITY,
     ) -> None:
+        """Initialize a spin box with horizontal drag scrubbing."""
         super().__init__(parent)
         self._sensitivity = sensitivity
         self._drag_origin: Optional[QPoint] = None
@@ -44,6 +45,7 @@ class NumericScrubberSpinBox(QSpinBox):
         self.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:  # type: ignore[override]
+        """Record the origin of a possible horizontal scrub."""
         if event.button() == Qt.MouseButton.LeftButton:
             self._drag_origin = event.pos()
             self._drag_start_value = self.value()
@@ -53,6 +55,7 @@ class NumericScrubberSpinBox(QSpinBox):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:  # type: ignore[override]
+        """Adjust the value when pointer movement exceeds the threshold."""
         if self._drag_origin is None:
             super().mouseMoveEvent(event)
             return
@@ -67,6 +70,7 @@ class NumericScrubberSpinBox(QSpinBox):
         event.accept()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:  # type: ignore[override]
+        """Finish scrubbing or focus the editor for a simple click."""
         if self._drag_origin is not None and not self._scrubbing:
             # Treat as a click → give the line edit focus for typing.
             self.selectAll()
@@ -82,6 +86,7 @@ class NumericScrubberSpinBox(QSpinBox):
         super().mouseReleaseEvent(event)
 
     def enterEvent(self, event: QEnterEvent) -> None:
+        """Preserve the horizontal resize cursor on pointer entry."""
         QCursor.setPos(QCursor.pos())  # no-op; keeps API symmetric
         super().enterEvent(event)
 

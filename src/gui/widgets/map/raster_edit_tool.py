@@ -20,16 +20,18 @@ from PySide6.QtWidgets import (
     QGraphicsView,
 )
 
-from src.app.constants import MAP_LAYER_Z_UI_OVERLAY
-from src.app.ui_constants import RASTER_DAB_SPACING_FACTOR
 from src.core.raster_paint import RasterPaintMode, brush_bounds
 from src.core.theme_manager import ThemeManager
+from src.gui.constants import MAP_LAYER_Z_UI_OVERLAY
+from src.gui.ui_constants import RASTER_DAB_SPACING_FACTOR
 from src.gui.widgets.map.raster_layer_item import RasterLayerItem
 
 if TYPE_CHECKING:
     from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 
 logger = logging.getLogger(__name__)
+
+_RGBA_CHANNEL_COUNT = 4
 
 
 class RasterEditMode(Enum):
@@ -202,6 +204,7 @@ class RasterEditTool:
     """
 
     def __init__(self, view: "MapGraphicsView") -> None:
+        """Initialize raster editing for one map graphics view."""
         self._view = view
 
         # State
@@ -956,7 +959,7 @@ class RasterEditTool:
     ) -> None:
         """Read the value at the given position and emit a probe signal."""
         value = item.buffer.sample_at(x_norm, y_norm)
-        if isinstance(value, tuple) and len(value) == 4:
+        if isinstance(value, tuple) and len(value) == _RGBA_CHANNEL_COUNT:
             self._paint_color = (
                 value[0],
                 value[1],

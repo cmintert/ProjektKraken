@@ -22,6 +22,7 @@ class ReplaceFeatureGeometryStatesCommand(BaseCommand):
         after_states: Sequence[FeatureGeometryState | dict[str, Any]],
         description: str = "Update Dated Geometry",
     ) -> None:
+        """Initialize a complete feature-geometry state replacement."""
         super().__init__()
         self.map_id = map_id
         self.marker_id = marker_id

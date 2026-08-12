@@ -56,6 +56,9 @@ from src.gui.widgets.map.raster_mapping import (
 
 logger = logging.getLogger(__name__)
 
+_MINIMUM_GRADIENT_STOP_COUNT = 2
+_UUID_TEXT_LENGTH = 36
+
 _ITEM_TYPES = ["None", "Entity", "Event"]
 
 _COL_VALUE = 0
@@ -237,6 +240,7 @@ class RasterPaletteEditor(QDialog):
         events: Optional[List[Any]] = None,
         parent: Optional[QWidget] = None,
     ) -> None:
+        """Initialize the raster palette and gradient editor."""
         super().__init__(parent)
         if mode == "discrete":
             mode_label = "Discrete"
@@ -527,7 +531,7 @@ class RasterPaletteEditor(QDialog):
         # --- Value Range Mapping (optional) -----------------------------------
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.HLine)
-        sep.setStyleSheet("color: rgba(255,255,255,30);")
+        sep.setStyleSheet(StyleHelper.get_temporal_separator_style())
         layout.addWidget(sep)
 
         mapping_hdr = QHBoxLayout()
@@ -615,16 +619,17 @@ class RasterPaletteEditor(QDialog):
         self._on_display_mapping_toggled(has_mapping)
         self._update_display_preview()
 
-        # --- Linked Entity / Event -------------------------------------------
-        sep2 = QFrame()
-        sep2.setFrameShape(QFrame.Shape.HLine)
-        sep2.setStyleSheet("color: rgba(255,255,255,30);")
-        layout.addWidget(sep2)
+        self._build_linked_item_controls(layout)
 
-        link_lbl = QLabel("Linked Entity / Event (optional):")
-        link_lbl.setStyleSheet(StyleHelper.get_preview_label_style())
-        layout.addWidget(link_lbl)
-
+    def _build_linked_item_controls(self, layout: QVBoxLayout) -> None:
+        """Build optional entity/event linking controls for a gradient."""
+        separator = QFrame()
+        separator.setFrameShape(QFrame.Shape.HLine)
+        separator.setStyleSheet(StyleHelper.get_temporal_separator_style())
+        layout.addWidget(separator)
+        link_label = QLabel("Linked Entity / Event (optional):")
+        link_label.setStyleSheet(StyleHelper.get_preview_label_style())
+        layout.addWidget(link_label)
         link_row = QHBoxLayout()
         link_row.setSpacing(6)
         self._linked_type_combo = QComboBox()
@@ -638,28 +643,26 @@ class RasterPaletteEditor(QDialog):
         )
         link_row.addWidget(self._linked_name_edit, 1)
         layout.addLayout(link_row)
-
-        # Completer for the name field
-        comp = QCompleter(self._all_item_names, self._linked_name_edit)
-        comp.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-        comp.setFilterMode(Qt.MatchFlag.MatchContains)
-        self._linked_name_edit.setCompleter(comp)
-        comp.activated.connect(self._on_linked_entity_activated)
+        completer = QCompleter(self._all_item_names, self._linked_name_edit)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        completer.setFilterMode(Qt.MatchFlag.MatchContains)
+        self._linked_name_edit.setCompleter(completer)
+        completer.activated.connect(self._on_linked_entity_activated)
         self._linked_name_edit.editingFinished.connect(
             self._on_linked_entity_editing_finished
         )
-
-        # Pre-populate from existing color_map
         if self._color_map.linked_entity_id:
-            lid = self._color_map.linked_entity_id
-            name = self._id_to_choice.get(lid, self._id_to_name.get(lid, ""))
+            linked_id = self._color_map.linked_entity_id
+            name = self._id_to_choice.get(
+                linked_id, self._id_to_name.get(linked_id, "")
+            )
             if name:
                 self._linked_name_edit.setText(name)
-            self._linked_name_edit.setProperty("linked_id", lid)
-            ltype = self._color_map.linked_entity_type or ""
-            if ltype == "entity":
+            self._linked_name_edit.setProperty("linked_id", linked_id)
+            linked_type = self._color_map.linked_entity_type or ""
+            if linked_type == "entity":
                 self._linked_type_combo.setCurrentText("Entity")
-            elif ltype == "event":
+            elif linked_type == "event":
                 self._linked_type_combo.setCurrentText("Event")
 
     def _refresh_gradient_preview(self, *_args: object) -> None:
@@ -724,7 +727,7 @@ class RasterPaletteEditor(QDialog):
             if row is not None:
                 del_btn = row.findChild(QPushButton, "del_btn")
                 if del_btn:
-                    del_btn.setEnabled(count > 2)
+                    del_btn.setEnabled(count > _MINIMUM_GRADIENT_STOP_COUNT)
 
     def _collect_gradient_stops(self) -> List[GradientStop]:
         """Read all stop rows and return a sorted list of GradientStop objects."""
@@ -1075,7 +1078,7 @@ class RasterPaletteEditor(QDialog):
                 eid = (entity_edit.property("linked_id") or "").strip()
                 if not eid:
                     raw = entity_edit.text().strip()
-                    if raw and " " not in raw and len(raw) == 36:
+                    if raw and " " not in raw and len(raw) == _UUID_TEXT_LENGTH:
                         eid = raw
             if eid:
                 entry["entity_id"] = eid
@@ -1277,7 +1280,7 @@ class RasterPaletteEditor(QDialog):
                     # Fallback: if no linked_id stored but text looks like a UUID
                     # (backward-compat for rows added without a completer available)
                     raw = entity_edit.text().strip()
-                    if raw and " " not in raw and len(raw) == 36:
+                    if raw and " " not in raw and len(raw) == _UUID_TEXT_LENGTH:
                         eid = raw
             itype_str = (
                 type_combo.currentText()

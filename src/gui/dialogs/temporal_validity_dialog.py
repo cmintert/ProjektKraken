@@ -35,6 +35,7 @@ class TemporalValidityDialog(QDialog):
         calendar_converter: Optional[CalendarConverter] = None,
         playhead_time: float = 0.0,
     ) -> None:
+        """Initialize temporal-validity controls for a layer."""
         super().__init__(parent)
         self._node = node
         self._calendar_converter = calendar_converter

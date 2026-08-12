@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.constants import IMAGE_FILE_FILTER
+from src.gui.constants import IMAGE_FILE_FILTER
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,9 @@ class MapDialogMixin:
         _cached_entities: list[Any]
         _cached_events: list[Any]
 
-        def get_selected_map_id(self) -> str | None: ...
+        def get_selected_map_id(self) -> str | None:
+            """Return the active map identifier."""
+            ...
 
     def set_cached_items(self, entities: list, events: list) -> None:
         """Stores the entity/event caches for the object-selection dialog.

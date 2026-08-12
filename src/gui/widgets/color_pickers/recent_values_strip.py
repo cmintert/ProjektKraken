@@ -21,6 +21,8 @@ from src.gui.widgets.color_pickers.color_history_service import ColorHistoryServ
 
 logger = logging.getLogger(__name__)
 
+_THOUSANDS_ABBREVIATION_THRESHOLD = 1000
+
 _TILE_PX = 22
 _MAX_TILES = 12
 
@@ -75,8 +77,8 @@ class _ValueTile(QPushButton):
             v = int(value)
         except (TypeError, ValueError):
             return str(value)[:4]
-        if v >= 1000:
-            return f"{v // 1000}k"
+        if v >= _THOUSANDS_ABBREVIATION_THRESHOLD:
+            return f"{v // _THOUSANDS_ABBREVIATION_THRESHOLD}k"
         return str(v)
 
 
@@ -103,6 +105,7 @@ class RecentValuesStrip(QWidget):
         is_color: bool = False,
         parent: Optional[QWidget] = None,
     ) -> None:
+        """Initialize a recent-values strip for one settings context."""
         super().__init__(parent)
         self._context = context
         self._is_color = is_color
@@ -112,7 +115,9 @@ class RecentValuesStrip(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(2)
         self._label = QLabel("Recent:")
-        self._label.setStyleSheet("color: rgba(255,255,255,0.55); font-size: 10px;")
+        self._label.setStyleSheet(
+            f"color: {ThemeManager().get_theme()['text_dim']}; font-size: 10px;"
+        )
         layout.addWidget(self._label)
         self._tiles_container = QWidget()
         self._tiles_layout = QHBoxLayout(self._tiles_container)

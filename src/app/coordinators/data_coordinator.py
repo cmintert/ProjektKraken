@@ -53,6 +53,8 @@ class DataCoordinator(BaseCoordinator):
         self._cached_events: list = []
         self._cached_entities: list = []
         self._cached_longform_sequence: list = []
+        self._cached_tags: list[str] = []
+        self._cached_entity_types: list[str] = []
         self._graph_reload_timer: Optional[QTimer] = None
 
         # Semantic completion debounce
@@ -75,6 +77,16 @@ class DataCoordinator(BaseCoordinator):
     def cached_entities(self) -> list:
         """Returns the cached list of entities."""
         return self._cached_entities
+
+    @property
+    def cached_tags(self) -> list[str]:
+        """Return worker-loaded tag names for synchronous UI dialogs."""
+        return list(self._cached_tags)
+
+    @property
+    def cached_entity_types(self) -> list[str]:
+        """Return worker-loaded entity types for graph configuration UI."""
+        return list(self._cached_entity_types)
 
     @property
     def cached_longform_sequence(self) -> list:
@@ -309,33 +321,17 @@ class DataCoordinator(BaseCoordinator):
             self.main_window.graph_widget.set_lexicon_config(
                 raw_lexicon, resolved_lexicon
             )
-            # Set entity types from the raw lexicon's node keys + any from
-            # completer data (entity_types come from graph_metadata_loaded)
-            from src.services.graph_data_service import GraphDataService
-
-            try:
-                # Use gui_db_service which is initialized on MainWindow
-                db = self.main_window.gui_db_service
-                if db:
-                    service = GraphDataService()
-                    entity_types = service.get_all_entity_types(db)
-                    self.main_window.graph_widget.set_available_entity_types(
-                        entity_types
-                    )
-            except Exception:
-                logger.debug(
-                    "Could not load entity types for lexicon editor",
-                    exc_info=True,
-                )
+            self.main_window.graph_widget.set_available_entity_types(
+                self._cached_entity_types
+            )
 
             # Set world assets dir from DB path
             try:
                 from pathlib import Path
 
-                # Use gui_db_service
-                db = self.main_window.gui_db_service
-                if db and db.db_path != ":memory:":
-                    assets_dir = str(Path(db.db_path).parent / "assets")
+                db_path = self.main_window.db_path
+                if db_path != ":memory:":
+                    assets_dir = str(Path(db_path).parent / "assets")
                     self.main_window.graph_widget.set_world_assets_dir(assets_dir)
             except Exception:
                 logger.debug(
@@ -437,6 +433,8 @@ class DataCoordinator(BaseCoordinator):
             entity_types: List of available entity types.
 
         """
+        self._cached_tags = list(tags)
+        self._cached_entity_types = list(entity_types)
         self.main_window.entity_editor.update_tag_suggestions(tags)
         self.main_window.entity_editor.update_attribute_suggestions(attr_keys)
         self.main_window.entity_editor.update_relation_type_suggestions(rel_types)
@@ -449,6 +447,8 @@ class DataCoordinator(BaseCoordinator):
         context_tags = getattr(app_coordinator, "context_tags", None)
         if context_tags is not None:
             context_tags.set_available_tags(tags)
+        if self.main_window.graph_widget:
+            self.main_window.graph_widget.set_available_entity_types(entity_types)
 
     def _reconcile_context_tags(self) -> None:
         """Update context recovery when the host exposes that coordinator."""

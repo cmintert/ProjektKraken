@@ -53,6 +53,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_STRONG_EVIDENCE_MIN_ITEMS = 3
+_MODERATE_EVIDENCE_MIN_ITEMS = 2
+
 CancellationCheck = Callable[[], bool]
 
 
@@ -64,6 +67,7 @@ class InvalidStructuredResponse(ValueError):
     """Raised after both the initial and repair JSON responses are invalid."""
 
     def __init__(self, message: str, requests: int = 2) -> None:
+        """Initialize a structured-response error with retry requests."""
         super().__init__(message)
         self.requests = requests
 
@@ -1341,9 +1345,16 @@ class IntelligenceAnalyzer:
     @staticmethod
     def _evidence_strength(evidence: list[EvidenceReference]) -> EvidenceStrength:
         kinds = {item.object_type for item in evidence}
-        if len(evidence) >= 3 or ({"event", "relation"} <= kinds):
+        if (
+            len(evidence) >= _STRONG_EVIDENCE_MIN_ITEMS
+            or {"event", "relation"} <= kinds
+        ):
             return EvidenceStrength.STRONG
-        if len(evidence) >= 2 or "event" in kinds or "relation" in kinds:
+        if (
+            len(evidence) >= _MODERATE_EVIDENCE_MIN_ITEMS
+            or "event" in kinds
+            or "relation" in kinds
+        ):
             return EvidenceStrength.MODERATE
         return EvidenceStrength.WEAK
 
@@ -1807,7 +1818,7 @@ class IntelligenceAnalyzer:
 
         from PySide6.QtCore import QSettings
 
-        from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+        from src.core.settings import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
         from src.services.llm_provider import create_provider
 
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)

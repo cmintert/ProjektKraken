@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.constants import VERSION
+from src.gui.constants import VERSION
 from src.gui.utils.style_helper import StyleHelper
 
 

@@ -33,7 +33,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.constants import (
+from src.gui.constants import (
     MAP_FEATURE_CLICK_THRESHOLD_PX,
     MAP_FEATURE_DEFAULT_DASH_PATTERN,
     MAP_FEATURE_DEFAULT_FILL_COLOR,
@@ -70,6 +70,8 @@ SELECTION_PEN_WIDTH = MAP_FEATURE_SELECTION_PEN_WIDTH
 
 HIT_AREA_MARGIN = MAP_FEATURE_HIT_AREA_MARGIN
 MIN_HIT_AREA_WIDTH = MAP_FEATURE_MIN_HIT_AREA_WIDTH
+METERS_PER_KILOMETER = 1000.0
+SQUARE_METERS_PER_SQUARE_KILOMETER = 1_000_000.0
 
 LABEL_FONT_FAMILY = MAP_FEATURE_LABEL_FONT_FAMILY
 LABEL_FONT_SIZE = MAP_FEATURE_LABEL_FONT_SIZE
@@ -359,8 +361,8 @@ class _FeatureItemBase(QGraphicsObject):
             Human-readable string with unit (m or km).
 
         """
-        if meters >= 1000.0:
-            return f"{meters / 1000.0:.2f} km"
+        if meters >= METERS_PER_KILOMETER:
+            return f"{meters / METERS_PER_KILOMETER:.2f} km"
         return f"{meters:.1f} m"
 
     @staticmethod
@@ -374,8 +376,8 @@ class _FeatureItemBase(QGraphicsObject):
             Human-readable string with unit (m² or km²).
 
         """
-        if sq_meters >= 1_000_000.0:
-            return f"{sq_meters / 1_000_000.0:.2f} km²"
+        if sq_meters >= SQUARE_METERS_PER_SQUARE_KILOMETER:
+            return f"{sq_meters / SQUARE_METERS_PER_SQUARE_KILOMETER:.2f} km²"
         return f"{sq_meters:.1f} m²"
 
     def _apply_hover_tooltip(self) -> None:

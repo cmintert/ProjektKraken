@@ -445,7 +445,10 @@ class FastInjectDialog(QDialog):
                 row += 1
 
                 sub_lbl = QLabel(f"  ↳ {v_name}:")
-                sub_lbl.setStyleSheet("color: #888888; font-style: italic;")
+                sub_lbl.setStyleSheet(
+                    f"color: {StyleHelper.get_dim_text_color()}; "
+                    "font-style: italic;"
+                )
 
                 sub_inp: QComboBox | QLineEdit
                 if option_text:

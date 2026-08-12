@@ -13,36 +13,22 @@ import time
 import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from functools import wraps
 from typing import Any, Literal
 
+from src.core.command import CommandResult
 from src.services.db_service import DatabaseService
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class CommandResult:
-    """Standardized result object for command execution.
+class _RollbackCommandResult(Exception):
+    """Internal control flow used to roll back a failed command result."""
 
-    Attributes:
-        success (bool): True if the command executed successfully,
-                        False otherwise.
-        message (str): A human-readable message describing the result.
-        errors (dict[str, str]): A dictionary of validation errors
-                                 (field -> error content).
-        data (dict[str, object]): Arbitrary payload returned by the command
-                                   (e.g. newly created IDs, updated records).
-        command_name (str): The name of the command that generated
-                            this result.
-
-    """
-
-    success: bool
-    message: str = ""
-    errors: dict[str, str] = field(default_factory=dict)
-    data: dict[str, object] = field(default_factory=dict)
-    command_name: str = ""
+    def __init__(self, result: CommandResult) -> None:
+        super().__init__(result.message)
+        self.result = result
+        self.silent_transaction_rollback = True
 
 
 class BaseCommand(ABC):
@@ -60,6 +46,45 @@ class BaseCommand(ABC):
                              :attr:`is_executed` property.
 
     """
+
+    def __init_subclass__(cls, **kwargs: object) -> None:
+        """Wrap concrete execute/undo methods in a database transaction.
+
+        Commands historically caught exceptions and returned a failed
+        :class:`CommandResult`, which allowed repository-level transactions to
+        commit earlier writes. Wrapping every concrete command at class creation
+        keeps the public API unchanged while guaranteeing one transaction for
+        direct GUI, CLI, composite, and test execution paths.
+        """
+        super().__init_subclass__()
+        cls._wrap_transactional_method("execute")
+        cls._wrap_transactional_method("undo")
+
+    @classmethod
+    def _wrap_transactional_method(cls, method_name: str) -> None:
+        """Install an atomic wrapper around a concrete command method."""
+        method = cls.__dict__.get(method_name)
+        if method is None or getattr(method, "_kraken_atomic", False):
+            return
+
+        @wraps(method)
+        def atomic_method(
+            self: "BaseCommand", db_service: DatabaseService
+        ) -> CommandResult | None:
+            transaction_factory = getattr(db_service, "transaction", None)
+            if transaction_factory is None:
+                return method(self, db_service)
+            try:
+                with transaction_factory():
+                    result = method(self, db_service)
+                    if isinstance(result, CommandResult) and not result.success:
+                        raise _RollbackCommandResult(result)
+                    return result
+            except _RollbackCommandResult as rollback:
+                return rollback.result
+
+        atomic_method._kraken_atomic = True  # type: ignore[attr-defined]
+        setattr(cls, method_name, atomic_method)
 
     def __init__(self) -> None:
         """Initializes the command."""
@@ -196,11 +221,15 @@ class BaseCommand(ABC):
             if object_type == "entity"
             else db_service.assign_tag_to_event
         )
+        errors: list[str] = []
         for tag_name in tags:
             try:
                 assign_fn(object_id, tag_name)
             except Exception as e:
                 logger.warning("Failed to assign tag '%s': %s", tag_name, e)
+                errors.append(f"{tag_name}: {e}")
+        if errors:
+            raise RuntimeError("Failed to assign tags: " + "; ".join(errors))
 
     @staticmethod
     def _sync_tags(
@@ -235,14 +264,19 @@ class BaseCommand(ABC):
 
         current_tags: set[str] = {t["name"] for t in get_fn(object_id)}
 
+        errors: list[str] = []
         for tag_name in current_tags - new_tags:
             try:
                 remove_fn(object_id, tag_name)
             except Exception as e:
                 logger.warning("Failed to remove tag '%s': %s", tag_name, e)
+                errors.append(f"remove {tag_name}: {e}")
 
         for tag_name in new_tags - current_tags:
             try:
                 assign_fn(object_id, tag_name)
             except Exception as e:
                 logger.warning("Failed to assign tag '%s': %s", tag_name, e)
+                errors.append(f"assign {tag_name}: {e}")
+        if errors:
+            raise RuntimeError("Failed to synchronize tags: " + "; ".join(errors))

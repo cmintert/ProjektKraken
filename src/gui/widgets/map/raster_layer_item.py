@@ -12,7 +12,7 @@ from PySide6.QtCore import QRectF
 from PySide6.QtGui import QPainter, QPixmap
 from PySide6.QtWidgets import QGraphicsPixmapItem
 
-from src.app.constants import MAP_LAYER_Z_RASTER
+from src.gui.constants import MAP_LAYER_Z_RASTER
 from src.gui.widgets.map.map_data_buffer import ColorMap, MapDataBuffer
 
 logger = logging.getLogger(__name__)
@@ -52,6 +52,7 @@ class RasterLayerItem(QGraphicsPixmapItem):
         node_id: str = "",
         mode: str = "continuous",
     ) -> None:
+        """Initialize a raster layer scene item."""
         super().__init__()
         self._buffer = buffer
         self._color_map = color_map

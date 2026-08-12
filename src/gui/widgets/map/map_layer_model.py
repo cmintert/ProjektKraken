@@ -24,7 +24,15 @@ from PySide6.QtCore import (
     Slot,
 )
 
-from src.app.constants import (
+from src.core.map import (
+    VECTOR_LAYER_TYPES,
+    MapLayerNode,
+    ResolvedLayerTemporalValidity,
+    TemporalValidityStatus,
+    resolve_layer_temporal_validity,
+)
+from src.core.theme_manager import ThemeManager
+from src.gui.constants import (
     MAP_LAYER_DEFAULT_OPACITY,
     MAP_LAYER_TYPE_BASEMAP,
     MAP_LAYER_TYPE_GROUP,
@@ -36,14 +44,6 @@ from src.app.constants import (
     MAP_LAYER_Z_BASE,
     MAP_LAYER_Z_SPACING,
 )
-from src.core.map import (
-    VECTOR_LAYER_TYPES,
-    MapLayerNode,
-    ResolvedLayerTemporalValidity,
-    TemporalValidityStatus,
-    resolve_layer_temporal_validity,
-)
-from src.core.theme_manager import ThemeManager
 from src.gui.utils.icon_loader import load_icon
 
 logger = logging.getLogger(__name__)

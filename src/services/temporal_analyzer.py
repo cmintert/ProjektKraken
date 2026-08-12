@@ -32,6 +32,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 _GAP_THRESHOLD: float = 365.0 * 100.0  # 100 Gregorian years in days
+_MIN_GAP_EVENT_COUNT = 2
 
 
 class TemporalAnalyzer:
@@ -184,7 +185,7 @@ class TemporalAnalyzer:
             if date is not None:
                 dated.append((date, event))
 
-        if len(dated) < 2:
+        if len(dated) < _MIN_GAP_EVENT_COUNT:
             return [], dated
 
         dated.sort(key=lambda x: x[0])

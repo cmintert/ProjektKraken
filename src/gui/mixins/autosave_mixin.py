@@ -8,7 +8,7 @@ from typing import Protocol, runtime_checkable
 
 from PySide6.QtCore import QObject, QTimer
 
-from src.app.constants import AUTOSAVE_DELAY_MS
+from src.gui.constants import AUTOSAVE_DELAY_MS
 
 logger = logging.getLogger(__name__)
 

@@ -19,6 +19,8 @@ from src.services.repositories.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
 
+_SHORT_HEX_COLOR_LENGTH = 4
+
 
 class TagRepository(BaseRepository):
     """Repository for Tag entities.
@@ -754,7 +756,7 @@ class TagRepository(BaseRepository):
             raise ValueError(f"Invalid hex color format: {color}")
 
         # Normalize short form to long form
-        if len(color) == 4:
+        if len(color) == _SHORT_HEX_COLOR_LENGTH:
             color = f"#{color[1]}{color[1]}{color[2]}{color[2]}{color[3]}{color[3]}"
 
         # Update color

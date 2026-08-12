@@ -31,6 +31,7 @@ class RasterNotesDialog(QDialog):
         current_notes: str = "",
         parent: Optional[object] = None,
     ) -> None:
+        """Initialize the raster notes editor."""
         super().__init__(parent)  # type: ignore[arg-type]
         self.setWindowTitle(f"Notes — {layer_name}")
         self.setMinimumSize(400, 300)

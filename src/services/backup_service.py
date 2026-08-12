@@ -210,6 +210,7 @@ else:
         """Unavailable worker placeholder for installations without Qt."""
 
         def __init__(self, *args: object, **kwargs: object) -> None:
+            """Reject worker construction when Qt is unavailable."""
             raise RuntimeError("Qt is required to create a BackupWorker")
 
     BackupWorker = UnavailableBackupWorker

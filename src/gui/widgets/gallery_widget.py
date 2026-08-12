@@ -33,8 +33,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.constants import IMAGE_FILE_FILTER
-from src.app.qt_invocation import invoke_queued
 from src.commands.base_command import CommandResult
 from src.commands.image_commands import (
     AddImagesCommand,
@@ -43,7 +41,9 @@ from src.commands.image_commands import (
 )
 from src.core.image_attachment import ImageAttachment
 from src.core.paths import get_user_data_path
+from src.gui.constants import IMAGE_FILE_FILTER
 from src.gui.dialogs.image_viewer_dialog import ImageViewerDialog
+from src.gui.utils.qt_invocation import invoke_queued
 from src.gui.widgets.standard_buttons import DestructiveButton, StandardButton
 from src.gui.workers.thumbnail_loader import ThumbnailLoader
 

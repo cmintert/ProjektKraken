@@ -32,6 +32,8 @@ from src.services.db_service import DatabaseService
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
+_DESCRIPTION_PREVIEW_LENGTH = 50
+
 
 def create_event(args: argparse.Namespace) -> int:
     """Create a new event."""
@@ -126,8 +128,8 @@ def list_events(args: argparse.Namespace) -> int:
                 print(f"  Type: {event.type}")
                 if event.description:
                     desc_preview = (
-                        event.description[:50] + "..."
-                        if len(event.description) > 50
+                        event.description[:_DESCRIPTION_PREVIEW_LENGTH] + "..."
+                        if len(event.description) > _DESCRIPTION_PREVIEW_LENGTH
                         else event.description
                     )
                     print(f"  Description: {desc_preview}")

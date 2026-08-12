@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional
 from PySide6.QtCore import QSize, Signal, Slot
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QWidget
 
+from src.core.theme_manager import ThemeManager
 from src.gui.widgets.standard_buttons import StandardButton
 
 
@@ -67,7 +68,10 @@ class RelationItemWidget(QWidget):
         if self.attributes:
             attr_text = self._format_attributes()
             self.attr_label = QLabel(attr_text)
-            self.attr_label.setStyleSheet("color: #888; font-size: 11px;")
+            self.attr_label.setStyleSheet(
+                f"color: {ThemeManager().get_theme()['text_dim']}; "
+                "font-size: 11px;"
+            )
             layout.addWidget(self.attr_label)
 
         # Go to button (compact, icon-style)
@@ -77,25 +81,25 @@ class RelationItemWidget(QWidget):
         self.btn_go_to.clicked.connect(self._on_go_to_clicked)
 
         # Apply compact styling
+        theme = ThemeManager().get_theme()
         self.btn_go_to.setStyleSheet(
-            """
-            QPushButton {
+            f"""
+            QPushButton {{
                 font-size: 12px;
                 font-weight: bold;
                 padding: 0px;
-                border: 1px solid #555;
+                border: 1px solid {theme['border']};
                 border-radius: 3px;
-                background-color: #3a3a3a;
-                color: #aaa;
-            }
-            QPushButton:hover {
-                background-color: #4a4a4a;
-                color: #fff;
-                border-color: #777;
-            }
-            QPushButton:pressed {
-                background-color: #2a2a2a;
-            }
+                background-color: {theme['surface']};
+                color: {theme['text_dim']};
+            }}
+            QPushButton:hover {{
+                background-color: {theme['primary']};
+                color: {theme['app_bg']};
+            }}
+            QPushButton:pressed {{
+                background-color: {theme['app_bg']};
+            }}
         """
         )
 

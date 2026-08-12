@@ -11,6 +11,8 @@ from PySide6.QtGui import QIcon, QPixmap, QPixmapCache
 
 logger = logging.getLogger(__name__)
 
+_THUMBNAIL_MAX_DIMENSION_PX = 128
+
 
 class ThumbnailLoaderSignals(QObject):
     """Signals for the ThumbnailLoader.
@@ -75,10 +77,13 @@ class ThumbnailLoader(QRunnable):
                 return
 
             # Scale to thumbnail size if needed (max 128x128)
-            if pixmap.width() > 128 or pixmap.height() > 128:
+            if (
+                pixmap.width() > _THUMBNAIL_MAX_DIMENSION_PX
+                or pixmap.height() > _THUMBNAIL_MAX_DIMENSION_PX
+            ):
                 pixmap = pixmap.scaled(
-                    128,
-                    128,
+                    _THUMBNAIL_MAX_DIMENSION_PX,
+                    _THUMBNAIL_MAX_DIMENSION_PX,
                     Qt.AspectRatioMode.KeepAspectRatio,
                     Qt.TransformationMode.SmoothTransformation,
                 )

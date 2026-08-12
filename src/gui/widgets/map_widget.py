@@ -59,6 +59,8 @@ from src.gui.widgets.map.raster_legend_widget import RasterLegendWidget
 
 logger = logging.getLogger(__name__)
 
+_MINIMUM_BREADCRUMB_CHAIN_LENGTH = 2
+
 # Path to marker icons
 MARKER_ICONS_PATH = get_resource_path(
     os.path.join("default_assets", "icons", "markers")
@@ -274,140 +276,140 @@ class MapWidget(
         # Layout
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        # Toolbar
+        self._build_toolbar(layout)
+
+        self._build_breadcrumb(layout)
+        self._build_trajectory_edit_strip(layout)
+        self._build_feature_geometry_edit_strip(layout)
+
+        self._build_trajectory_date_panel(layout)
+
+        self._build_trajectory_segment_panel(layout)
+
+        self._build_trajectory_speed_panel(layout)
+
+        self._build_map_content(layout)
+
+        self._apply_theme_styles()
+        ThemeManager().theme_changed.connect(self._on_theme_changed)
+        self._connect_view_signals()
+        self._connect_layer_panel_signals()
+        self._connect_raster_signals()
+
+        self._maps_data: list[Map] = []  # List of maps for selector
+        self._playhead_time: float = 0.0  # Current playhead time from Timeline
+        self._current_time: float = 0.0  # Story's "Now" time from Timeline
+        self._calendar_converter: CalendarConverter | None = None
+
+        self._active_trajectories: dict[str, list] = {}  # marker_id -> list[Keyframe]
+        self._active_trajectory_segment_modes: dict[str, dict] = {}
+        self._base_marker_positions: dict[str, tuple[float, float]] = {}
+        self._trajectory_edit_marker_id: str | None = None
+        self._trajectory_edit_keyframes: list = []
+        self._trajectory_edit_segment_modes: dict = {}
+        self._trajectory_edit_snapshot: TrajectoryEditSnapshot | None = None
+        self._trajectory_edit_pending = False
+        self._selected_marker_id: Optional[str] = None
+
+        # Entity/event caches for the object-selection dialog
+        self._cached_entities: list = []
+        self._cached_events: list = []
+
+        # Update all markers with active trajectories
+        self._update_trajectory_positions()
+
+    def _build_map_content(self, layout: QVBoxLayout) -> None:
+        """Build the map/layer splitter, overlays, and compact status row."""
+        self._splitter = QSplitter(Qt.Orientation.Horizontal, self)
+        self._splitter.addWidget(self.view)
+        self.layer_panel = MapLayerPanel(self)
+        self._splitter.addWidget(self.layer_panel)
+        self._splitter.setStretchFactor(0, 4)
+        self._splitter.setStretchFactor(1, 1)
+        layout.addWidget(self._splitter, 1)
+        self.empty_state = EmptyStateWidget(
+            title="No Map Available",
+            description="Create or select a map to start exploring.",
+            parent=self,
+        )
+        self.empty_state.add_action(
+            "Create Map", self._on_create_map_clicked, primary=True
+        )
+        layout.addWidget(self.empty_state)
+        self._layer_model: Optional[MapLayerModel] = None
+        self.overlay_banner = QLabel(self.view)
+        self.overlay_banner.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.overlay_banner.setStyleSheet(StyleHelper.get_overlay_banner_style())
+        self.overlay_banner.hide()
+        self.legend_overlay = RasterLegendWidget(self.view)
+        self.legend_overlay.setMaximumWidth(360)
+        self.legend_overlay.setStyleSheet(StyleHelper.get_legend_overlay_style())
+        self.legend_overlay.hide()
+        self.btn_finish_sketch = QPushButton("✔ Finish Sketch", self.view)
+        self.btn_finish_sketch.setStyleSheet(StyleHelper.get_primary_button_style())
+        self.btn_finish_sketch.clicked.connect(self._on_finish_sketch)
+        self.btn_finish_sketch.hide()
+        coord_label = NoLayoutLabel("Ready")
+        self.coord_label = coord_label
+        coord_label.setSizePolicy(
+            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed
+        )
+        self._build_map_status_row(layout, coord_label)
+
+    def _build_map_status_row(
+        self, layout: QVBoxLayout, coord_label: NoLayoutLabel
+    ) -> None:
+        """Build coordinate and temporal-status controls below the map."""
+        self.map_status_row = QWidget(self)
+        status_layout = QHBoxLayout(self.map_status_row)
+        status_layout.setContentsMargins(0, 0, 0, 0)
+        status_layout.addWidget(coord_label, 1)
+        self.temporal_outside_button = QPushButton("0 features outside this date")
+        self.temporal_outside_button.setCheckable(True)
+        self.temporal_outside_button.setVisible(False)
+        self.temporal_outside_button.setToolTip(
+            "Filter the Layers panel to features outside the current date"
+        )
+        self.temporal_outside_button.toggled.connect(
+            self.layer_panel.set_temporal_filter_enabled
+        )
+        status_layout.addWidget(self.temporal_outside_button)
+        self.map_status_row.setFixedHeight(
+            max(
+                coord_label.sizeHint().height(),
+                self.temporal_outside_button.sizeHint().height(),
+            )
+        )
+        layout.addWidget(self.map_status_row)
+
+    def _build_toolbar(self, layout: QVBoxLayout) -> None:
+        """Build the map toolbar from focused control groups."""
         self.toolbar = QToolBar(self)
         self.toolbar.setStyleSheet(StyleHelper.get_toolbar_spacing_style())
         layout.addWidget(self.toolbar)
-
         self._breadcrumb_parent_id: Optional[str] = None
-
-        # Map Selector
-        self.map_selector = QComboBox()
-        self.map_selector.setMinimumWidth(200)
-        self.map_selector.setToolTip("Switch between maps in this world")
-        self.map_selector.currentIndexChanged.connect(self._on_map_selected)
-        self.toolbar.addWidget(self.map_selector)
-
-        # Group 1: Map management
-        self.btn_new_map = QPushButton("New Map")
-        self.btn_new_map.setToolTip("Create a new map in this world")
-        self.btn_new_map.clicked.connect(self._on_create_map_clicked)
-        self.toolbar.addWidget(self.btn_new_map)
-
-        self.btn_map_overflow = QPushButton("⋯")
-        self.btn_map_overflow.setFixedWidth(28)
-        self.btn_map_overflow.setToolTip("Map options (delete, etc.)")
-        self.btn_map_overflow.clicked.connect(self._show_map_overflow_menu)
-        self.toolbar.addWidget(self.btn_map_overflow)
-
+        self._build_map_management_controls()
         self.toolbar.addSeparator()
-
-        # Group 2: Viewport
-        self.btn_fit_view = QPushButton("Fit to View")
-        self.btn_fit_view.setToolTip("Zoom and pan to fit all content in view")
-        self.btn_fit_view.clicked.connect(self.view.fit_to_view)
-        self.toolbar.addWidget(self.btn_fit_view)
-
-        self.btn_settings = QPushButton("Settings")
-        self.btn_settings.setToolTip("Configure Map Properties (Scale)")
-        self.btn_settings.clicked.connect(self._configure_map_width)
-        self.toolbar.addWidget(self.btn_settings)
-
+        self._build_viewport_controls()
         self.toolbar.addSeparator()
-
-        # Group 3: Drawing tools (mutually exclusive, fill when active)
-        self.btn_add_marker = QPushButton("Add Marker")
-        self.btn_add_marker.setToolTip(
-            "Add a marker to the map (click the map to choose its position)"
-        )
-        self.btn_add_marker.setCheckable(True)
-        self.btn_add_marker.clicked.connect(self._on_add_marker_clicked)
-        self.toolbar.addWidget(self.btn_add_marker)
-
-        self.btn_draw_path = QPushButton("Draw Path")
-        self.btn_draw_path.setToolTip(
-            "Draw a polyline path on the map (click vertices, double-click to finish)"
-        )
-        self.btn_draw_path.setCheckable(True)
-        self.btn_draw_path.clicked.connect(self._on_draw_path_clicked)
-        self.toolbar.addWidget(self.btn_draw_path)
-
-        self.btn_draw_region = QPushButton("Draw Region")
-        self.btn_draw_region.setToolTip(
-            "Draw a polygon region on the map (click vertices, double-click to finish)"
-        )
-        self.btn_draw_region.setCheckable(True)
-        self.btn_draw_region.clicked.connect(self._on_draw_region_clicked)
-        self.toolbar.addWidget(self.btn_draw_region)
-
+        self._build_drawing_controls()
         self.toolbar.addSeparator()
-
-        # Group 4: Persistent view toggles (border highlight when on)
-        self.btn_snap = QPushButton("Snap")
-        self.btn_snap.setToolTip("Toggle snapping to nearby feature vertices and edges")
-        self.btn_snap.setCheckable(True)
-        self.btn_snap.setChecked(True)  # enabled by default
-        self.btn_snap.clicked.connect(self._on_snap_toggled)
-        self.toolbar.addWidget(self.btn_snap)
-
-        self.btn_legend_toggle = QPushButton("Legend")
-        self.btn_legend_toggle.setToolTip("Show / hide the raster layer legend overlay")
-        self.btn_legend_toggle.setCheckable(True)
-        self.btn_legend_toggle.setChecked(False)
-        self.btn_legend_toggle.toggled.connect(self._on_legend_toggle)
-        self.toolbar.addWidget(self.btn_legend_toggle)
-
-        self.btn_temporal_ghosts = QPushButton("Temporal Ghosts")
-        self.btn_temporal_ghosts.setCheckable(True)
-        self.btn_temporal_ghosts.setChecked(False)
-        self.btn_temporal_ghosts.setToolTip(
-            "Show selectable authoring ghosts for vector features outside "
-            "the current playhead date"
-        )
-        self.btn_temporal_ghosts.toggled.connect(
-            self.view.set_temporal_ghosts_visible
-        )
-        self.toolbar.addWidget(self.btn_temporal_ghosts)
-
+        self._build_view_toggle_controls()
         self.toolbar.addSeparator()
+        self._build_mode_controls()
 
-        self.btn_edit_trajectory = QPushButton("Edit Trajectory")
-        self.btn_edit_trajectory.setToolTip(
-            "Edit this entity's trajectory directly on the map"
-        )
-        self.btn_edit_trajectory.clicked.connect(self._request_selected_trajectory_edit)
-        self._edit_trajectory_action = self.toolbar.addWidget(self.btn_edit_trajectory)
-        self._edit_trajectory_action.setEnabled(False)
-        self._edit_trajectory_action.setVisible(False)
-
-        # Mode Pill (right side) — clickable to exit the current mode
-        spacer = QWidget()
-        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        self.toolbar.addWidget(spacer)
-
-        self.mode_indicator = QPushButton("● Normal")
-        self.mode_indicator.setToolTip("Current editing mode — click to exit")
-        self.mode_indicator.clicked.connect(self._on_mode_indicator_clicked)
-        self._mode_indicator_mode = "normal"
-        self._apply_mode_indicator_style("normal")
-        self.toolbar.addWidget(self.mode_indicator)
-
-        # Add View (after toolbar) — wrapped in a splitter with the layer panel
-        # Breadcrumb row — shows the ancestor chain for master/detail maps.
-        # Hidden for plain maps.  Lives on its own row to avoid being
-        # clipped by the crowded toolbar above.
+    def _build_breadcrumb(self, layout: QVBoxLayout) -> None:
+        """Build the optional master/detail navigation breadcrumb."""
         breadcrumb_row = QWidget(self)
         breadcrumb_layout = QHBoxLayout(breadcrumb_row)
         breadcrumb_layout.setContentsMargins(8, 2, 8, 2)
         breadcrumb_layout.setSpacing(6)
-
         self.btn_parent = QPushButton("↑")
         self.btn_parent.setFixedWidth(24)
         self.btn_parent.setToolTip("Navigate to parent map")
         self.btn_parent.clicked.connect(self._on_navigate_to_parent)
         self.btn_parent.hide()
         breadcrumb_layout.addWidget(self.btn_parent)
-
         self.breadcrumb_label = QLabel()
         self.breadcrumb_label.setTextFormat(Qt.TextFormat.RichText)
         self.breadcrumb_label.setOpenExternalLinks(False)
@@ -416,7 +418,6 @@ class MapWidget(
         self.breadcrumb_label.hide()
         breadcrumb_layout.addWidget(self.breadcrumb_label)
         breadcrumb_layout.addStretch(1)
-
         breadcrumb_row.setSizePolicy(
             QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
         )
@@ -424,21 +425,23 @@ class MapWidget(
         self._breadcrumb_row.hide()
         layout.addWidget(self._breadcrumb_row)
 
+    def _build_trajectory_edit_strip(self, layout: QVBoxLayout) -> None:
+        """Build controls for applying or discarding trajectory edits."""
         self.trajectory_edit_strip = QFrame(self)
         self.trajectory_edit_strip.setSizePolicy(
             QSizePolicy.Policy.Expanding,
             QSizePolicy.Policy.Fixed,
         )
         self.trajectory_edit_strip.setStyleSheet(StyleHelper.get_frame_style())
-        edit_strip_layout = QHBoxLayout(self.trajectory_edit_strip)
-        edit_strip_layout.setContentsMargins(8, 4, 8, 4)
-        edit_strip_layout.setSpacing(8)
+        edit_layout = QHBoxLayout(self.trajectory_edit_strip)
+        edit_layout.setContentsMargins(8, 4, 8, 4)
+        edit_layout.setSpacing(8)
         self.trajectory_edit_label = QLabel("Edit Trajectory")
         self.trajectory_keyframe_label = QLabel()
         self.trajectory_validation_label = QLabel()
-        edit_strip_layout.addWidget(self.trajectory_edit_label)
-        edit_strip_layout.addWidget(self.trajectory_keyframe_label)
-        edit_strip_layout.addWidget(self.trajectory_validation_label, 1)
+        edit_layout.addWidget(self.trajectory_edit_label)
+        edit_layout.addWidget(self.trajectory_keyframe_label)
+        edit_layout.addWidget(self.trajectory_validation_label, 1)
         self.btn_delete_trajectory_keyframe = QPushButton("Delete")
         self.btn_delete_trajectory_keyframe.setStyleSheet(
             StyleHelper.get_ghost_destructive_button_style()
@@ -446,7 +449,7 @@ class MapWidget(
         self.btn_delete_trajectory_keyframe.clicked.connect(
             self.trajectory_delete_selected_requested.emit
         )
-        edit_strip_layout.addWidget(self.btn_delete_trajectory_keyframe)
+        edit_layout.addWidget(self.btn_delete_trajectory_keyframe)
         self.btn_add_trajectory_location = QPushButton("Add Location")
         self.btn_add_trajectory_location.setToolTip(
             "Add a dated location at the current playhead."
@@ -454,7 +457,13 @@ class MapWidget(
         self.btn_add_trajectory_location.clicked.connect(
             self.trajectory_add_location_requested.emit
         )
-        edit_strip_layout.addWidget(self.btn_add_trajectory_location)
+        edit_layout.addWidget(self.btn_add_trajectory_location)
+        self._build_trajectory_commit_buttons(edit_layout)
+        self.trajectory_edit_strip.hide()
+        layout.addWidget(self.trajectory_edit_strip)
+
+    def _build_trajectory_commit_buttons(self, edit_layout: QHBoxLayout) -> None:
+        """Build reload, apply, and cancel buttons for trajectory edits."""
         self.btn_reload_trajectory = QPushButton("Discard & Reload")
         self.btn_reload_trajectory.setStyleSheet(
             StyleHelper.get_secondary_button_style()
@@ -463,11 +472,11 @@ class MapWidget(
             self.trajectory_discard_reload_requested.emit
         )
         self.btn_reload_trajectory.hide()
-        edit_strip_layout.addWidget(self.btn_reload_trajectory)
+        edit_layout.addWidget(self.btn_reload_trajectory)
         self.btn_apply_trajectory = QPushButton("Apply")
         self.btn_apply_trajectory.setStyleSheet(StyleHelper.get_primary_button_style())
         self.btn_apply_trajectory.clicked.connect(self.trajectory_apply_requested.emit)
-        edit_strip_layout.addWidget(self.btn_apply_trajectory)
+        edit_layout.addWidget(self.btn_apply_trajectory)
         self.btn_cancel_trajectory = QPushButton("Cancel")
         self.btn_cancel_trajectory.setStyleSheet(
             StyleHelper.get_secondary_button_style()
@@ -475,18 +484,18 @@ class MapWidget(
         self.btn_cancel_trajectory.clicked.connect(
             self.trajectory_cancel_requested.emit
         )
-        edit_strip_layout.addWidget(self.btn_cancel_trajectory)
-        self.trajectory_edit_strip.hide()
-        layout.addWidget(self.trajectory_edit_strip)
+        edit_layout.addWidget(self.btn_cancel_trajectory)
 
+    def _build_feature_geometry_edit_strip(self, layout: QVBoxLayout) -> None:
+        """Build controls for applying or cancelling geometry edits."""
         self.feature_geometry_edit_strip = QFrame(self)
         self.feature_geometry_edit_strip.setStyleSheet(StyleHelper.get_frame_style())
-        geometry_strip_layout = QHBoxLayout(self.feature_geometry_edit_strip)
-        geometry_strip_layout.setContentsMargins(8, 4, 8, 4)
+        geometry_layout = QHBoxLayout(self.feature_geometry_edit_strip)
+        geometry_layout.setContentsMargins(8, 4, 8, 4)
         self.feature_geometry_edit_label = QLabel("Edit Geometry")
         self.feature_geometry_edit_source = QLabel("")
-        geometry_strip_layout.addWidget(self.feature_geometry_edit_label)
-        geometry_strip_layout.addWidget(self.feature_geometry_edit_source, 1)
+        geometry_layout.addWidget(self.feature_geometry_edit_label)
+        geometry_layout.addWidget(self.feature_geometry_edit_source, 1)
         self.btn_apply_feature_geometry = QPushButton("Apply")
         self.btn_cancel_feature_geometry = QPushButton("Cancel")
         self.btn_apply_feature_geometry.clicked.connect(
@@ -495,121 +504,13 @@ class MapWidget(
         self.btn_cancel_feature_geometry.clicked.connect(
             self.feature_geometry_cancel_requested.emit
         )
-        geometry_strip_layout.addWidget(self.btn_apply_feature_geometry)
-        geometry_strip_layout.addWidget(self.btn_cancel_feature_geometry)
+        geometry_layout.addWidget(self.btn_apply_feature_geometry)
+        geometry_layout.addWidget(self.btn_cancel_feature_geometry)
         self.feature_geometry_edit_strip.hide()
         layout.addWidget(self.feature_geometry_edit_strip)
 
-        self.trajectory_date_panel = QFrame(self)
-        self.trajectory_date_panel.setSizePolicy(
-            QSizePolicy.Policy.Expanding,
-            QSizePolicy.Policy.Fixed,
-        )
-        self.trajectory_date_panel.setStyleSheet(StyleHelper.get_frame_style())
-        date_panel_layout = QVBoxLayout(self.trajectory_date_panel)
-        date_panel_layout.setContentsMargins(8, 6, 8, 6)
-        date_panel_layout.setSpacing(4)
-        self.trajectory_date_feedback = QLabel()
-        self.trajectory_date_feedback.setWordWrap(True)
-        date_panel_layout.addWidget(self.trajectory_date_feedback)
-        self.trajectory_date_constraints = QLabel()
-        self.trajectory_date_constraints.setWordWrap(True)
-        date_panel_layout.addWidget(self.trajectory_date_constraints)
-
-        date_controls_layout = QHBoxLayout()
-        date_controls_layout.setContentsMargins(0, 0, 0, 0)
-        date_controls_layout.setSpacing(8)
-        self.trajectory_date_input = CompactDateWidget(self.trajectory_date_panel)
-        self.trajectory_date_input.setMinimumWidth(460)
-        self.trajectory_date_input.setSizePolicy(
-            QSizePolicy.Policy.Expanding,
-            QSizePolicy.Policy.Fixed,
-        )
-        self.trajectory_date_input.value_changed.connect(
-            self.trajectory_date_value_changed.emit
-        )
-        date_controls_layout.addWidget(self.trajectory_date_input, 1)
-        self.btn_trajectory_date_previous = QPushButton("−1 day")
-        self.btn_trajectory_date_previous.clicked.connect(
-            lambda: self.trajectory_date_step_requested.emit(-1.0)
-        )
-        date_controls_layout.addWidget(self.btn_trajectory_date_previous)
-        self.btn_trajectory_date_next = QPushButton("+1 day")
-        self.btn_trajectory_date_next.clicked.connect(
-            lambda: self.trajectory_date_step_requested.emit(1.0)
-        )
-        date_controls_layout.addWidget(self.btn_trajectory_date_next)
-        self.btn_shift_trajectory_later = QPushButton("Shift Later")
-        self.btn_shift_trajectory_later.setToolTip(
-            "Apply this date change to all later locations."
-        )
-        self.btn_shift_trajectory_later.clicked.connect(
-            self.trajectory_shift_later_requested.emit
-        )
-        date_controls_layout.addWidget(self.btn_shift_trajectory_later)
-        self.btn_edit_trajectory_date = QPushButton("Edit Date")
-        self.btn_edit_trajectory_date.setStyleSheet(
-            StyleHelper.get_primary_button_style()
-        )
-        self.btn_edit_trajectory_date.clicked.connect(
-            self._request_selected_trajectory_date_edit
-        )
-        date_controls_layout.addWidget(self.btn_edit_trajectory_date)
-        self.trajectory_playhead_value = QLabel()
-        self.trajectory_playhead_value.setToolTip(
-            "The current date represented by the timeline playhead."
-        )
-        date_controls_layout.addWidget(self.trajectory_playhead_value)
-        self.btn_trajectory_date_use_playhead = QPushButton("Use Playhead")
-        self.btn_trajectory_date_use_playhead.setToolTip(
-            "Set this keyframe's date to the current timeline playhead"
-        )
-        self.btn_trajectory_date_use_playhead.setStyleSheet(
-            StyleHelper.get_secondary_button_style()
-        )
-        self.btn_trajectory_date_use_playhead.clicked.connect(
-            self.trajectory_date_use_playhead_requested.emit
-        )
-        date_controls_layout.addWidget(self.btn_trajectory_date_use_playhead)
-        self.btn_finish_trajectory_date = QPushButton("Done")
-        self.btn_finish_trajectory_date.setStyleSheet(
-            StyleHelper.get_primary_button_style()
-        )
-        self.btn_finish_trajectory_date.clicked.connect(
-            self.trajectory_date_edit_done_requested.emit
-        )
-        date_controls_layout.addWidget(self.btn_finish_trajectory_date)
-        self.btn_cancel_trajectory_date = QPushButton("Cancel Date")
-        self.btn_cancel_trajectory_date.setStyleSheet(
-            StyleHelper.get_secondary_button_style()
-        )
-        self.btn_cancel_trajectory_date.clicked.connect(
-            self.trajectory_date_edit_cancel_requested.emit
-        )
-        date_controls_layout.addWidget(self.btn_cancel_trajectory_date)
-        self.btn_make_trajectory_route_point = QPushButton("Make Route Point")
-        self.btn_make_trajectory_route_point.setToolTip(
-            "Calculate this point's date automatically from its travel leg."
-        )
-        self.btn_make_trajectory_route_point.clicked.connect(
-            self.trajectory_make_route_point_requested.emit
-        )
-        date_controls_layout.addWidget(self.btn_make_trajectory_route_point)
-        self.btn_make_trajectory_timed_location = QPushButton("Make Timed Location")
-        self.btn_make_trajectory_timed_location.setToolTip(
-            "Keep this point's calculated date as an independently editable date."
-        )
-        self.btn_make_trajectory_timed_location.clicked.connect(
-            self.trajectory_make_timed_location_requested.emit
-        )
-        date_controls_layout.addWidget(self.btn_make_trajectory_timed_location)
-        date_panel_layout.addLayout(date_controls_layout)
-        self.trajectory_date_panel.setMinimumHeight(
-            self.trajectory_date_panel.sizeHint().height()
-        )
-        self.trajectory_date_panel.hide()
-        layout.addWidget(self.trajectory_date_panel)
-
+    def _build_trajectory_segment_panel(self, layout: QVBoxLayout) -> None:
+        """Build the incoming trajectory-segment mode controls."""
         self.trajectory_segment_panel = QFrame(self)
         self.trajectory_segment_panel.setSizePolicy(
             QSizePolicy.Policy.Expanding,
@@ -632,19 +533,151 @@ class MapWidget(
         self.trajectory_segment_panel.hide()
         layout.addWidget(self.trajectory_segment_panel)
 
+    def _build_trajectory_date_panel(self, layout: QVBoxLayout) -> None:
+        """Build trajectory-date feedback and editing controls."""
+        self.trajectory_date_panel = QFrame(self)
+        self.trajectory_date_panel.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
+        self.trajectory_date_panel.setStyleSheet(StyleHelper.get_frame_style())
+        date_layout = QVBoxLayout(self.trajectory_date_panel)
+        date_layout.setContentsMargins(8, 6, 8, 6)
+        date_layout.setSpacing(4)
+        self.trajectory_date_feedback = QLabel()
+        self.trajectory_date_feedback.setWordWrap(True)
+        date_layout.addWidget(self.trajectory_date_feedback)
+        self.trajectory_date_constraints = QLabel()
+        self.trajectory_date_constraints.setWordWrap(True)
+        date_layout.addWidget(self.trajectory_date_constraints)
+        self._build_trajectory_date_controls(date_layout)
+        self.trajectory_date_panel.setMinimumHeight(
+            self.trajectory_date_panel.sizeHint().height()
+        )
+        self.trajectory_date_panel.hide()
+        layout.addWidget(self.trajectory_date_panel)
+
+    def _build_trajectory_date_controls(self, date_layout: QVBoxLayout) -> None:
+        """Build controls that mutate the selected trajectory date."""
+        controls = QHBoxLayout()
+        controls.setContentsMargins(0, 0, 0, 0)
+        controls.setSpacing(8)
+        self.trajectory_date_input = CompactDateWidget(self.trajectory_date_panel)
+        self.trajectory_date_input.setMinimumWidth(460)
+        self.trajectory_date_input.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
+        self.trajectory_date_input.value_changed.connect(
+            self.trajectory_date_value_changed.emit
+        )
+        controls.addWidget(self.trajectory_date_input, 1)
+        self.btn_trajectory_date_previous = QPushButton("−1 day")
+        self.btn_trajectory_date_previous.clicked.connect(
+            lambda: self.trajectory_date_step_requested.emit(-1.0)
+        )
+        controls.addWidget(self.btn_trajectory_date_previous)
+        self.btn_trajectory_date_next = QPushButton("+1 day")
+        self.btn_trajectory_date_next.clicked.connect(
+            lambda: self.trajectory_date_step_requested.emit(1.0)
+        )
+        controls.addWidget(self.btn_trajectory_date_next)
+        self.btn_shift_trajectory_later = QPushButton("Shift Later")
+        self.btn_shift_trajectory_later.setToolTip(
+            "Apply this date change to all later locations."
+        )
+        self.btn_shift_trajectory_later.clicked.connect(
+            self.trajectory_shift_later_requested.emit
+        )
+        controls.addWidget(self.btn_shift_trajectory_later)
+        self.btn_edit_trajectory_date = QPushButton("Edit Date")
+        self.btn_edit_trajectory_date.setStyleSheet(
+            StyleHelper.get_primary_button_style()
+        )
+        self.btn_edit_trajectory_date.clicked.connect(
+            self._request_selected_trajectory_date_edit
+        )
+        controls.addWidget(self.btn_edit_trajectory_date)
+        self._build_trajectory_date_mode_controls(controls)
+        date_layout.addLayout(controls)
+
+    def _build_trajectory_date_mode_controls(self, controls: QHBoxLayout) -> None:
+        """Build playhead, completion, and keyframe-mode date controls."""
+        self.trajectory_playhead_value = QLabel()
+        self.trajectory_playhead_value.setToolTip(
+            "The current date represented by the timeline playhead."
+        )
+        controls.addWidget(self.trajectory_playhead_value)
+        self.btn_trajectory_date_use_playhead = QPushButton("Use Playhead")
+        self.btn_trajectory_date_use_playhead.setToolTip(
+            "Set this keyframe's date to the current timeline playhead"
+        )
+        self.btn_trajectory_date_use_playhead.setStyleSheet(
+            StyleHelper.get_secondary_button_style()
+        )
+        self.btn_trajectory_date_use_playhead.clicked.connect(
+            self.trajectory_date_use_playhead_requested.emit
+        )
+        controls.addWidget(self.btn_trajectory_date_use_playhead)
+        self.btn_finish_trajectory_date = QPushButton("Done")
+        self.btn_finish_trajectory_date.setStyleSheet(
+            StyleHelper.get_primary_button_style()
+        )
+        self.btn_finish_trajectory_date.clicked.connect(
+            self.trajectory_date_edit_done_requested.emit
+        )
+        controls.addWidget(self.btn_finish_trajectory_date)
+        self.btn_cancel_trajectory_date = QPushButton("Cancel Date")
+        self.btn_cancel_trajectory_date.setStyleSheet(
+            StyleHelper.get_secondary_button_style()
+        )
+        self.btn_cancel_trajectory_date.clicked.connect(
+            self.trajectory_date_edit_cancel_requested.emit
+        )
+        controls.addWidget(self.btn_cancel_trajectory_date)
+        self.btn_make_trajectory_route_point = QPushButton("Make Route Point")
+        self.btn_make_trajectory_route_point.setToolTip(
+            "Calculate this point's date automatically from its travel leg."
+        )
+        self.btn_make_trajectory_route_point.clicked.connect(
+            self.trajectory_make_route_point_requested.emit
+        )
+        controls.addWidget(self.btn_make_trajectory_route_point)
+        self.btn_make_trajectory_timed_location = QPushButton("Make Timed Location")
+        self.btn_make_trajectory_timed_location.setToolTip(
+            "Keep this point's calculated date as an independently editable date."
+        )
+        self.btn_make_trajectory_timed_location.clicked.connect(
+            self.trajectory_make_timed_location_requested.emit
+        )
+        controls.addWidget(self.btn_make_trajectory_timed_location)
+
+    def _build_trajectory_speed_panel(self, layout: QVBoxLayout) -> None:
+        """Build trajectory speed equalization controls and preview text."""
         self.trajectory_speed_panel = QFrame(self)
         self.trajectory_speed_panel.setSizePolicy(
             QSizePolicy.Policy.Expanding,
             QSizePolicy.Policy.Fixed,
         )
         self.trajectory_speed_panel.setStyleSheet(StyleHelper.get_frame_style())
-        speed_panel_layout = QVBoxLayout(self.trajectory_speed_panel)
-        speed_panel_layout.setContentsMargins(8, 4, 8, 4)
-        speed_panel_layout.setSpacing(4)
-        speed_controls_layout = QHBoxLayout()
-        speed_controls_layout.setSpacing(8)
+        speed_layout = QVBoxLayout(self.trajectory_speed_panel)
+        speed_layout.setContentsMargins(8, 4, 8, 4)
+        speed_layout.setSpacing(4)
+        controls = QHBoxLayout()
+        controls.setSpacing(8)
         self.trajectory_speed_feedback = QLabel()
-        speed_controls_layout.addWidget(self.trajectory_speed_feedback, 1)
+        controls.addWidget(self.trajectory_speed_feedback, 1)
+        self._build_speed_anchor_controls(controls)
+        self._build_speed_preview_controls(controls)
+        speed_layout.addLayout(controls)
+        self.trajectory_speed_changes = QLabel()
+        self.trajectory_speed_changes.setWordWrap(True)
+        speed_layout.addWidget(self.trajectory_speed_changes)
+        self.trajectory_speed_panel.hide()
+        layout.addWidget(self.trajectory_speed_panel)
+
+    def _build_speed_anchor_controls(self, controls: QHBoxLayout) -> None:
+        """Build anchor and equalization-range controls."""
         self.btn_set_trajectory_speed_anchor = QPushButton("Set Start Anchor")
         self.btn_set_trajectory_speed_anchor.setToolTip(
             "Keep this keyframe fixed as the start of a speed-equalization range."
@@ -655,7 +688,7 @@ class MapWidget(
         self.btn_set_trajectory_speed_anchor.clicked.connect(
             self._request_selected_trajectory_speed_anchor
         )
-        speed_controls_layout.addWidget(self.btn_set_trajectory_speed_anchor)
+        controls.addWidget(self.btn_set_trajectory_speed_anchor)
         self.btn_equalize_trajectory_speed = QPushButton("Equalize Speed to Here")
         self.btn_equalize_trajectory_speed.setToolTip(
             "Preview constant speed between the fixed start and this keyframe."
@@ -666,7 +699,7 @@ class MapWidget(
         self.btn_equalize_trajectory_speed.clicked.connect(
             self._request_equalize_trajectory_speed_to_selected
         )
-        speed_controls_layout.addWidget(self.btn_equalize_trajectory_speed)
+        controls.addWidget(self.btn_equalize_trajectory_speed)
         self.btn_make_intermediate_automatic = QPushButton(
             "Make Intermediate Automatic"
         )
@@ -676,7 +709,7 @@ class MapWidget(
         self.btn_make_intermediate_automatic.clicked.connect(
             self._request_make_intermediate_automatic
         )
-        speed_controls_layout.addWidget(self.btn_make_intermediate_automatic)
+        controls.addWidget(self.btn_make_intermediate_automatic)
         self.btn_equalize_whole_trajectory = QPushButton("Equalize Whole")
         self.btn_equalize_whole_trajectory.setToolTip(
             "Preview constant speed between the trajectory endpoints."
@@ -687,7 +720,10 @@ class MapWidget(
         self.btn_equalize_whole_trajectory.clicked.connect(
             self.trajectory_speed_equalize_whole_requested.emit
         )
-        speed_controls_layout.addWidget(self.btn_equalize_whole_trajectory)
+        controls.addWidget(self.btn_equalize_whole_trajectory)
+
+    def _build_speed_preview_controls(self, controls: QHBoxLayout) -> None:
+        """Build controls for clearing, applying, or cancelling speed previews."""
         self.btn_clear_trajectory_speed_anchor = QPushButton("Clear Anchor")
         self.btn_clear_trajectory_speed_anchor.setToolTip(
             "Remove the selected speed start anchor without changing dates."
@@ -698,7 +734,7 @@ class MapWidget(
         self.btn_clear_trajectory_speed_anchor.clicked.connect(
             self.trajectory_speed_anchor_clear_requested.emit
         )
-        speed_controls_layout.addWidget(self.btn_clear_trajectory_speed_anchor)
+        controls.addWidget(self.btn_clear_trajectory_speed_anchor)
         self.btn_apply_speed_equalization = QPushButton("Apply Equalization")
         self.btn_apply_speed_equalization.setToolTip(
             "Keep these previewed dates in the working trajectory. "
@@ -710,7 +746,7 @@ class MapWidget(
         self.btn_apply_speed_equalization.clicked.connect(
             self.trajectory_speed_equalization_apply_requested.emit
         )
-        speed_controls_layout.addWidget(self.btn_apply_speed_equalization)
+        controls.addWidget(self.btn_apply_speed_equalization)
         self.btn_cancel_speed_equalization = QPushButton("Cancel Equalization")
         self.btn_cancel_speed_equalization.setToolTip(
             "Restore the working dates from before this preview."
@@ -721,97 +757,108 @@ class MapWidget(
         self.btn_cancel_speed_equalization.clicked.connect(
             self.trajectory_speed_equalization_cancel_requested.emit
         )
-        speed_controls_layout.addWidget(self.btn_cancel_speed_equalization)
-        speed_panel_layout.addLayout(speed_controls_layout)
-        self.trajectory_speed_changes = QLabel()
-        self.trajectory_speed_changes.setWordWrap(True)
-        speed_panel_layout.addWidget(self.trajectory_speed_changes)
-        self.trajectory_speed_panel.hide()
-        layout.addWidget(self.trajectory_speed_panel)
+        controls.addWidget(self.btn_cancel_speed_equalization)
 
-        self._splitter = QSplitter(Qt.Orientation.Horizontal, self)
+    def _build_map_management_controls(self) -> None:
+        """Build map selection and lifecycle controls."""
+        self.map_selector = QComboBox()
+        self.map_selector.setMinimumWidth(200)
+        self.map_selector.setToolTip("Switch between maps in this world")
+        self.map_selector.currentIndexChanged.connect(self._on_map_selected)
+        self.toolbar.addWidget(self.map_selector)
+        self.btn_new_map = QPushButton("New Map")
+        self.btn_new_map.setToolTip("Create a new map in this world")
+        self.btn_new_map.clicked.connect(self._on_create_map_clicked)
+        self.toolbar.addWidget(self.btn_new_map)
+        self.btn_map_overflow = QPushButton("⋯")
+        self.btn_map_overflow.setFixedWidth(28)
+        self.btn_map_overflow.setToolTip("Map options (delete, etc.)")
+        self.btn_map_overflow.clicked.connect(self._show_map_overflow_menu)
+        self.toolbar.addWidget(self.btn_map_overflow)
 
-        self._splitter.addWidget(self.view)
+    def _build_viewport_controls(self) -> None:
+        """Build viewport fitting and settings controls."""
+        self.btn_fit_view = QPushButton("Fit to View")
+        self.btn_fit_view.setToolTip("Zoom and pan to fit all content in view")
+        self.btn_fit_view.clicked.connect(self.view.fit_to_view)
+        self.toolbar.addWidget(self.btn_fit_view)
+        self.btn_settings = QPushButton("Settings")
+        self.btn_settings.setToolTip("Configure Map Properties (Scale)")
+        self.btn_settings.clicked.connect(self._configure_map_width)
+        self.toolbar.addWidget(self.btn_settings)
 
-        # Layer Panel (right side)
-        self.layer_panel = MapLayerPanel(self)
-        self._splitter.addWidget(self.layer_panel)
-
-        # Default proportions: 80% map, 20% layer panel
-        self._splitter.setStretchFactor(0, 4)
-        self._splitter.setStretchFactor(1, 1)
-
-        layout.addWidget(self._splitter, 1)
-
-        # Empty State
-        self.empty_state = EmptyStateWidget(
-            title="No Map Available",
-            description="Create or select a map to start exploring.",
-            parent=self,
+    def _build_drawing_controls(self) -> None:
+        """Build mutually exclusive marker and geometry drawing controls."""
+        self.btn_add_marker = QPushButton("Add Marker")
+        self.btn_add_marker.setToolTip(
+            "Add a marker to the map (click the map to choose its position)"
         )
-        self.empty_state.add_action(
-            "Create Map", self._on_create_map_clicked, primary=True
+        self.btn_add_marker.setCheckable(True)
+        self.btn_add_marker.clicked.connect(self._on_add_marker_clicked)
+        self.toolbar.addWidget(self.btn_add_marker)
+        self.btn_draw_path = QPushButton("Draw Path")
+        self.btn_draw_path.setToolTip(
+            "Draw a polyline path on the map (click vertices, double-click to finish)"
         )
-        layout.addWidget(self.empty_state)
-        # Hidden by default
-
-        # Layer model (created per-map; None until markers load)
-        self._layer_model: Optional[MapLayerModel] = None
-
-        # Overlay Banner (Child of view, positioned at top)
-        self.overlay_banner = QLabel(self.view)
-        self.overlay_banner.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.overlay_banner.setStyleSheet(StyleHelper.get_overlay_banner_style())
-        self.overlay_banner.hide()
-
-        # ── Raster Legend Overlay (bottom-left, floating over the map) ──
-        # Parented to the view (not viewport) so it survives OpenGL viewport
-        # recreation during map switches (`setViewport()`), but positioned
-        # mathematically relative to the viewport's geometry to avoid scrollbars.
-        self.legend_overlay = RasterLegendWidget(self.view)
-        self.legend_overlay.setMaximumWidth(360)  # wide enough for class labels
-        self.legend_overlay.setStyleSheet(StyleHelper.get_legend_overlay_style())
-        self.legend_overlay.hide()
-
-        # Finish Sketch button (shown during drawing/vertex editing)
-        self.btn_finish_sketch = QPushButton("✔ Finish Sketch", self.view)
-        self.btn_finish_sketch.setStyleSheet(StyleHelper.get_primary_button_style())
-        self.btn_finish_sketch.clicked.connect(self._on_finish_sketch)
-        self.btn_finish_sketch.hide()
-
-        # Coordinate Label
-        self.coord_label = NoLayoutLabel("Ready")
-
-        # Prevent label from pushing layout width when text changes
-        self.coord_label.setSizePolicy(
-            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed
+        self.btn_draw_path.setCheckable(True)
+        self.btn_draw_path.clicked.connect(self._on_draw_path_clicked)
+        self.toolbar.addWidget(self.btn_draw_path)
+        self.btn_draw_region = QPushButton("Draw Region")
+        self.btn_draw_region.setToolTip(
+            "Draw a polygon region on the map (click vertices, double-click to finish)"
         )
-        self.map_status_row = QWidget(self)
-        status_layout = QHBoxLayout(self.map_status_row)
-        status_layout.setContentsMargins(0, 0, 0, 0)
-        status_layout.addWidget(self.coord_label, 1)
-        self.temporal_outside_button = QPushButton("0 features outside this date")
-        self.temporal_outside_button.setCheckable(True)
-        self.temporal_outside_button.setVisible(False)
-        self.temporal_outside_button.setToolTip(
-            "Filter the Layers panel to features outside the current date"
-        )
-        self.temporal_outside_button.toggled.connect(
-            self.layer_panel.set_temporal_filter_enabled
-        )
-        status_layout.addWidget(self.temporal_outside_button)
-        self.map_status_row.setFixedHeight(
-            max(
-                self.coord_label.sizeHint().height(),
-                self.temporal_outside_button.sizeHint().height(),
-            )
-        )
-        layout.addWidget(self.map_status_row)
+        self.btn_draw_region.setCheckable(True)
+        self.btn_draw_region.clicked.connect(self._on_draw_region_clicked)
+        self.toolbar.addWidget(self.btn_draw_region)
 
-        self._apply_theme_styles()
-        ThemeManager().theme_changed.connect(self._on_theme_changed)
+    def _build_view_toggle_controls(self) -> None:
+        """Build persistent map-view toggle controls."""
+        self.btn_snap = QPushButton("Snap")
+        self.btn_snap.setToolTip("Toggle snapping to nearby feature vertices and edges")
+        self.btn_snap.setCheckable(True)
+        self.btn_snap.setChecked(True)
+        self.btn_snap.clicked.connect(self._on_snap_toggled)
+        self.toolbar.addWidget(self.btn_snap)
+        self.btn_legend_toggle = QPushButton("Legend")
+        self.btn_legend_toggle.setToolTip("Show / hide the raster layer legend overlay")
+        self.btn_legend_toggle.setCheckable(True)
+        self.btn_legend_toggle.setChecked(False)
+        self.btn_legend_toggle.toggled.connect(self._on_legend_toggle)
+        self.toolbar.addWidget(self.btn_legend_toggle)
+        self.btn_temporal_ghosts = QPushButton("Temporal Ghosts")
+        self.btn_temporal_ghosts.setCheckable(True)
+        self.btn_temporal_ghosts.setChecked(False)
+        self.btn_temporal_ghosts.setToolTip(
+            "Show selectable authoring ghosts for vector features outside "
+            "the current playhead date"
+        )
+        self.btn_temporal_ghosts.toggled.connect(
+            self.view.set_temporal_ghosts_visible
+        )
+        self.toolbar.addWidget(self.btn_temporal_ghosts)
 
-        # Connect signals
+    def _build_mode_controls(self) -> None:
+        """Build trajectory-edit access and the active-mode indicator."""
+        self.btn_edit_trajectory = QPushButton("Edit Trajectory")
+        self.btn_edit_trajectory.setToolTip(
+            "Edit this entity's trajectory directly on the map"
+        )
+        self.btn_edit_trajectory.clicked.connect(self._request_selected_trajectory_edit)
+        self._edit_trajectory_action = self.toolbar.addWidget(self.btn_edit_trajectory)
+        self._edit_trajectory_action.setEnabled(False)
+        self._edit_trajectory_action.setVisible(False)
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        self.toolbar.addWidget(spacer)
+        self.mode_indicator = QPushButton("● Normal")
+        self.mode_indicator.setToolTip("Current editing mode — click to exit")
+        self.mode_indicator.clicked.connect(self._on_mode_indicator_clicked)
+        self._mode_indicator_mode = "normal"
+        self._apply_mode_indicator_style("normal")
+        self.toolbar.addWidget(self.mode_indicator)
+
+    def _connect_view_signals(self) -> None:
+        """Wire map-view interactions to widget handlers and public signals."""
         self.view.marker_moved.connect(self._on_marker_moved)
         self.view.marker_clicked.connect(self.marker_clicked.emit)
         self.view.marker_clicked.connect(self._on_marker_clicked_internal)
@@ -841,8 +888,6 @@ class MapWidget(
         self.view.marker_drop_requested.connect(self.marker_drop_requested.emit)
         self.view.mouse_coordinates_changed.connect(self._on_mouse_coordinates_changed)
         self.view.viewport_resized.connect(lambda _: self._position_legend_overlay())
-
-        # Focus proxy to ensure view gets keyboard events when widget is clicked
         self.setFocusProxy(self.view)
         self.view.drawing_finished.connect(self._on_drawing_finished)
         self.view.drawing_cancelled.connect(self._on_drawing_cancelled)
@@ -871,10 +916,11 @@ class MapWidget(
         )
         self.view.feature_geometry_changed.connect(self._on_geometry_changed)
         self.view.graphics_scene.selectionChanged.connect(self._on_selection_changed)
-        # Bi-directional selection: marker click → highlight in layer panel
         self.view.marker_clicked.connect(self._on_marker_clicked_select_layer)
+
+    def _connect_layer_panel_signals(self) -> None:
+        """Wire layer-panel actions to map operations and public signals."""
         self.layer_panel.layer_selected.connect(self._on_layer_panel_selected)
-        # Layer panel actions
         self.layer_panel.create_group_requested.connect(self._on_create_group)
         self.layer_panel.create_layer_requested.connect(self._on_create_layer)
         self.layer_panel.delete_layer_requested.connect(self._on_delete_layer)
@@ -908,7 +954,8 @@ class MapWidget(
             self._on_temporal_filter_changed
         )
 
-        # Forward raster signals from the graphics view
+    def _connect_raster_signals(self) -> None:
+        """Forward raster-edit signals between the view and layer panel."""
         self.view.raster_stroke_completed.connect(self.raster_stroke_completed.emit)
         self.view.raster_value_probed.connect(self.raster_value_probed.emit)
         self.view.raster_edit_externally_stopped.connect(
@@ -921,28 +968,6 @@ class MapWidget(
         self.view.raster_tool_shortcut_requested.connect(
             self.layer_panel.set_raster_tool_mode
         )
-
-        self._maps_data: list[Map] = []  # List of maps for selector
-        self._playhead_time: float = 0.0  # Current playhead time from Timeline
-        self._current_time: float = 0.0  # Story's "Now" time from Timeline
-        self._calendar_converter: CalendarConverter | None = None
-
-        self._active_trajectories: dict[str, list] = {}  # marker_id -> list[Keyframe]
-        self._active_trajectory_segment_modes: dict[str, dict] = {}
-        self._base_marker_positions: dict[str, tuple[float, float]] = {}
-        self._trajectory_edit_marker_id: str | None = None
-        self._trajectory_edit_keyframes: list = []
-        self._trajectory_edit_segment_modes: dict = {}
-        self._trajectory_edit_snapshot: TrajectoryEditSnapshot | None = None
-        self._trajectory_edit_pending = False
-        self._selected_marker_id: Optional[str] = None
-
-        # Entity/event caches for the object-selection dialog
-        self._cached_entities: list = []
-        self._cached_events: list = []
-
-        # Update all markers with active trajectories
-        self._update_trajectory_positions()
 
     @Slot(int, int)
     def _on_temporal_counts_changed(self, _valid: int, outside: int) -> None:
@@ -1354,7 +1379,11 @@ class MapWidget(
         self.breadcrumb_label.show()
 
         # Back-to-parent: parent is the second-to-last in the chain.
-        parent_id = chain[-2][0] if len(chain) >= 2 else None
+        parent_id = (
+            chain[-2][0]
+            if len(chain) >= _MINIMUM_BREADCRUMB_CHAIN_LENGTH
+            else None
+        )
         self._breadcrumb_parent_id = parent_id
         self.btn_parent.setVisible(parent_id is not None)
         self._breadcrumb_row.show()

@@ -13,6 +13,8 @@ from PySide6.QtGui import (
     QTextDocument,
 )
 
+from src.core.theme_manager import ThemeManager
+
 
 class PromptSyntaxHighlighter(QSyntaxHighlighter):
     """Syntax highlighter for prompt variables in braces {variable}."""
@@ -28,7 +30,9 @@ class PromptSyntaxHighlighter(QSyntaxHighlighter):
 
         # Define the format for variables
         variable_format = QTextCharFormat()
-        variable_format.setForeground(QColor("#FF8C00"))  # Dark Orange for standout
+        variable_format.setForeground(
+            QColor(ThemeManager().get_theme()["primary"])
+        )
         variable_format.setFontWeight(QFont.Weight.Bold)
 
         # Simple rule: anything inside { }

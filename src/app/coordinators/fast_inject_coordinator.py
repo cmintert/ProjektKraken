@@ -1,3 +1,5 @@
+"""Coordinate fast-inject templates and command dispatch."""
+
 import logging
 from typing import Any
 
@@ -9,6 +11,8 @@ from src.core.fast_inject import FastInjectTemplate
 from src.gui.dialogs.fast_inject_dialog import FastInjectDialog
 
 logger = logging.getLogger(__name__)
+
+_IMPORT_DIALOG_RESULT = 2
 
 
 class FastInjectCoordinator(BaseCoordinator):
@@ -26,6 +30,7 @@ class FastInjectCoordinator(BaseCoordinator):
     status_message_requested = Signal(str, int)
 
     def __init__(self, main_window: Any) -> None:
+        """Initialize fast-inject command coordination."""
         super().__init__(main_window)
         self._fast_inject_manager: Any = None
 
@@ -106,7 +111,7 @@ class FastInjectCoordinator(BaseCoordinator):
         result = dlg.exec()
 
         # Handle Import
-        if result == 2:
+        if result == _IMPORT_DIALOG_RESULT:
             self._handle_import_result(dlg, target)
             return
 

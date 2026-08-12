@@ -45,6 +45,7 @@ class RasterLegendWidget(QWidget):
     """
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
+        """Initialize a draggable raster legend overlay."""
         super().__init__(parent)
         self._drag_last_global: Optional[QPoint] = None
         self._layer_meta: Optional[Dict[str, Any]] = None
@@ -332,11 +333,13 @@ class RasterLegendWidget(QWidget):
     # ------------------------------------------------------------------
 
     def mousePressEvent(self, event: QMouseEvent) -> None:  # type: ignore[override]
+        """Begin dragging the floating legend with the left button."""
         if event.button() == Qt.MouseButton.LeftButton:
             self._drag_last_global = event.globalPosition().toPoint()
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:  # type: ignore[override]
+        """Move the floating legend during an active drag."""
         if (
             event.buttons() & Qt.MouseButton.LeftButton
             and self._drag_last_global is not None
@@ -355,6 +358,7 @@ class RasterLegendWidget(QWidget):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:  # type: ignore[override]
+        """Finish an active floating-legend drag."""
         self._drag_last_global = None
         super().mouseReleaseEvent(event)
 

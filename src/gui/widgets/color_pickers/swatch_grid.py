@@ -63,6 +63,7 @@ class SwatchGridWidget(QWidget):
     swatch_right_clicked = Signal(object)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
+        """Initialize the keyboard-accessible swatch grid."""
         super().__init__(parent)
         self._swatches: List[Swatch] = []
         self._active_value: object = None
@@ -93,6 +94,7 @@ class SwatchGridWidget(QWidget):
         self.update()
 
     def sizeHint(self) -> QSize:  # type: ignore[override]
+        """Return a compact size suitable for the current swatch layout."""
         if not self._swatches:
             return QSize(100, _TILE_SIZE + _LABEL_HEIGHT + _TILE_GAP)
         columns = max(1, self.width() // (_TILE_SIZE + _TILE_GAP))
@@ -101,9 +103,11 @@ class SwatchGridWidget(QWidget):
         return QSize(_TILE_SIZE + _TILE_GAP, h)
 
     def hasHeightForWidth(self) -> bool:  # type: ignore[override]
+        """Report that grid height depends on available width."""
         return True
 
     def heightForWidth(self, width: int) -> int:  # type: ignore[override]
+        """Calculate the wrapped grid height for a supplied width."""
         if not self._swatches:
             return _TILE_SIZE + _LABEL_HEIGHT + _TILE_GAP
         columns = max(1, width // (_TILE_SIZE + _TILE_GAP))
@@ -115,6 +119,7 @@ class SwatchGridWidget(QWidget):
     # ------------------------------------------------------------------
 
     def paintEvent(self, event: QPaintEvent) -> None:  # type: ignore[override]
+        """Paint swatches, selection borders, hotkeys, and labels."""
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         theme = ThemeManager().get_theme()
@@ -203,6 +208,7 @@ class SwatchGridWidget(QWidget):
     # ------------------------------------------------------------------
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:  # type: ignore[override]
+        """Track the hovered swatch and update its tooltip."""
         pos = event.position().toPoint()
         new_hover = -1
         for i, rect in enumerate(self._tile_rects):
@@ -224,6 +230,7 @@ class SwatchGridWidget(QWidget):
         super().mouseMoveEvent(event)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:  # type: ignore[override]
+        """Emit left- or right-click selection for the hit swatch."""
         pos = event.position().toPoint()
         for i, rect in enumerate(self._tile_rects):
             tile_rect = QRect(rect.x(), rect.y(), _TILE_SIZE, _TILE_SIZE)
@@ -240,12 +247,14 @@ class SwatchGridWidget(QWidget):
         super().mousePressEvent(event)
 
     def leaveEvent(self, event: QEvent) -> None:
+        """Clear hover state when the pointer leaves the grid."""
         if self._hover_index != -1:
             self._hover_index = -1
             self.update()
         super().leaveEvent(event)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:  # type: ignore[override]
+        """Activate numbered swatches with keys one through nine."""
         key = event.key()
         if Qt.Key.Key_1 <= key <= Qt.Key.Key_9:
             idx = key - Qt.Key.Key_1
@@ -256,5 +265,6 @@ class SwatchGridWidget(QWidget):
         super().keyPressEvent(event)
 
     def resizeEvent(self, event: QResizeEvent) -> None:
+        """Recalculate preferred geometry after a resize."""
         self.updateGeometry()
         super().resizeEvent(event)

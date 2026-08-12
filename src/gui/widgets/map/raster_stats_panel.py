@@ -47,9 +47,9 @@ class _HistogramWidget(QWidget):
         self.setMinimumWidth(300)
 
         # Cache theme colors at construction; refresh on theme change.
-        self._bar_color: QColor = QColor("#5C82FF")
-        self._border_color: QColor = QColor("#3A5ACC")
-        self._bg_color: QColor = QColor("#1E1E2E")
+        self._bar_color = QColor()
+        self._border_color = QColor()
+        self._bg_color = QColor()
         self._refresh_theme_colors()
         ThemeManager().theme_changed.connect(self._on_theme_changed)
 
@@ -119,6 +119,7 @@ class RasterStatsPanel(QDialog):
         layer_name: str = "",
         parent: Optional[QWidget] = None,
     ) -> None:
+        """Initialize a raster statistics panel for one layer."""
         super().__init__(parent)
         title = f"Layer Stats — {layer_name}" if layer_name else "Layer Stats"
         self.setWindowTitle(title)

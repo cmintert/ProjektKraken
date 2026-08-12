@@ -40,14 +40,17 @@ class MapDrawingMixin:
         feature_created: SignalProtocol
 
         def _update_mode_indicator(self) -> None:
+            """Refresh the host widget's mode indicator."""
             ...
 
         def get_selected_map_id(self) -> str | None:
+            """Return the active map identifier."""
             ...
 
         def _select_or_create_object(
             self, title: str, prompt: str
         ) -> tuple[str, str, str] | None:
+            """Prompt for an existing or newly created linked object."""
             ...
 
     @Slot()

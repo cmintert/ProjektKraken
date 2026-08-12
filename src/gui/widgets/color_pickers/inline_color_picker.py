@@ -192,6 +192,7 @@ class InlineColorPickerPopover(QFrame):
         initial_color: str = "#808080",
         history_context: str = "palette.color",
     ) -> None:
+        """Initialize the inline colour-picker popover."""
         super().__init__(parent, Qt.WindowType.Popup)
         self._history_context = history_context
         self._color = QColor(initial_color)
@@ -362,6 +363,7 @@ class InlineColorPickerPopover(QFrame):
         self.close()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
+        """Commit or cancel the popover for keyboard shortcuts."""
         key = event.key()
         if key == Qt.Key.Key_Escape:
             self.close()

@@ -35,9 +35,12 @@ from src.core.calendar import (
     MonthDefinition,
     WeekDefinition,
 )
+from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 
 logger = logging.getLogger(__name__)
+
+_MONTH_DAYS_COLUMN = 2
 
 
 class CalendarConfigDialog(QDialog):
@@ -311,14 +314,14 @@ class CalendarConfigDialog(QDialog):
     def _on_month_changed(self, item: QTableWidgetItem) -> None:
         """Handles changes to month table cells."""
         # If days column, validate it's a positive integer
-        if item.column() == 2:
+        if item.column() == _MONTH_DAYS_COLUMN:
             try:
                 days = int(item.text())
                 if days <= 0:
                     raise ValueError("Days must be positive")
                 item.setData(Qt.ItemDataRole.UserRole, days)
             except ValueError:
-                item.setBackground(QColor("#ff6b6b"))
+                item.setBackground(QColor(ThemeManager().get_theme()["error"]))
                 return
             item.setBackground(QColor("transparent"))
 

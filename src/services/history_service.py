@@ -9,12 +9,13 @@ import logging
 import time
 import uuid
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from src.core.command import CommandProtocol
+from src.core.version import VERSION
 from src.services.command_artifact_store import CommandArtifactStore
 
 if TYPE_CHECKING:
-    from src.commands.base_command import BaseCommand
     from src.services.db_service import DatabaseService
 
 logger = logging.getLogger(__name__)
@@ -40,7 +41,7 @@ class HistoryService:
         self.db_service = db_service
         self.world_id = world_id
         self.session_id = self._generate_session_id()
-        self._command_registry: Dict[str, type["BaseCommand"]] = {}
+        self._command_registry: Dict[str, type[Any]] = {}
 
         # Start a new session
         self._start_session()
@@ -59,16 +60,13 @@ class HistoryService:
     def _start_session(self) -> None:
         """Record session start in database."""
         try:
-            # Get app version
-            app_version = "0.10.3"  # TODO: Get from config/package
-
             with self.db_service.transaction() as conn:
                 conn.execute(
                     """
                     INSERT INTO edit_sessions (session_id, world_id, started_at, app_version)
                     VALUES (?, ?, ?, ?)
                     """,
-                    (self.session_id, self.world_id, time.time(), app_version),
+                    (self.session_id, self.world_id, time.time(), VERSION),
                 )
             logger.debug(f"Session {self.session_id} started")
         except Exception as e:
@@ -91,7 +89,7 @@ class HistoryService:
             logger.error(f"Failed to end session: {e}")
 
     def register_command_type(
-        self, command_type: str, command_class: type["BaseCommand"]
+        self, command_type: str, command_class: type[Any]
     ) -> None:
         """Register a command class for deserialization.
 
@@ -102,17 +100,9 @@ class HistoryService:
         self._command_registry[command_type] = command_class
         logger.debug(f"Registered command type: {command_type}")
 
-    def _register_default_commands(self) -> None:
-        """Register core commands."""
-        # This could be called in __init__, or we let the coordinator handle registration.
-        # But for reliability, having them known is good.
-        from src.commands.composite_command import CompositeCommand
-
-        self.register_command_type("CompositeCommand", CompositeCommand)
-
     def save_command(
         self,
-        command: "BaseCommand",
+        command: CommandProtocol,
         description: Optional[str] = None,
         aggregate_id: Optional[str] = None,
         aggregate_type: Optional[str] = None,
@@ -164,7 +154,7 @@ class HistoryService:
             logger.error(f"Failed to save command {command.__class__.__name__}: {e}")
             # Don't raise - history save failures shouldn't block user actions
 
-    def load_recent_history(self, limit: int = 100) -> List["BaseCommand"]:
+    def load_recent_history(self, limit: int = 100) -> List[CommandProtocol]:
         """Load recent commands from history.
 
         Args:
@@ -246,7 +236,7 @@ class HistoryService:
 
     def _deserialize_command(
         self, command_type: str, command_data_json: str, timestamp: float = 0.0
-    ) -> Optional["BaseCommand"]:
+    ) -> Optional[CommandProtocol]:
         """Reconstruct a command from stored data.
 
         Args:

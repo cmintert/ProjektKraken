@@ -9,11 +9,17 @@ Handles retrieval augmented generation logic, including:
 import logging
 import re
 import sqlite3
+from contextlib import closing
 from typing import Any, Dict, List, Optional
 
 from src.services.search_service import create_search_service
 
 logger = logging.getLogger(__name__)
+
+_MAX_CLEAN_QUERY_CHARS = 300
+_MAX_ATTRIBUTE_LINE_CHARS = 100
+_MAX_DESCRIPTION_CHARS = 300
+_ELLIPSIS_CHARS = 3
 
 
 class RAGService:
@@ -56,40 +62,32 @@ class RAGService:
 
         try:
             # Connect strictly for reading
-            conn = sqlite3.connect(self.db_path, check_same_thread=False)
-            conn.row_factory = sqlite3.Row
-
-            search_service = create_search_service(conn)
-
-            # 1. Clean Query
-            cleaned_query = self._clean_query(query)
-            logger.debug(
-                f"Original Prompt: {query[:50]}... -> Cleaned: {cleaned_query}"
-            )
-
-            # 2. Hybrid Search
-            # A. Semantic Search
-            # We use the cleaned query for better semantic/topical matching
-            semantic_results = search_service.query(
-                cleaned_query, top_k=top_k, object_type=object_type
-            )
-
-            # B. Lexical Search (Name Matching)
-            # Only perform if looking for Entities or All (Events usually less name-centric but possible)
-            lexical_results = []
-            if hasattr(search_service, "search_by_name"):
-                # Use raw prompt/query to find names mentioned
-                lexical_results = search_service.search_by_name(
-                    query, object_type=object_type
+            with closing(
+                sqlite3.connect(self.db_path, check_same_thread=False)
+            ) as conn:
+                conn.row_factory = sqlite3.Row
+                search_service = create_search_service(conn)
+                cleaned_query = self._clean_query(query)
+                logger.debug(
+                    "Original Prompt: %s... -> Cleaned: %s",
+                    query[:50],
+                    cleaned_query,
                 )
-
-            # 3. Merge Results
-            final_results = self._merge_results(
-                lexical_results, semantic_results, top_k
-            )
-
-            conn.close()
-            return final_results
+                semantic_results = search_service.query(
+                    cleaned_query,
+                    top_k=top_k,
+                    object_type=object_type,
+                )
+                lexical_results = (
+                    search_service.search_by_name(query, object_type=object_type)
+                    if hasattr(search_service, "search_by_name")
+                    else []
+                )
+                return self._merge_results(
+                    lexical_results,
+                    semantic_results,
+                    top_k,
+                )
 
         except Exception as e:
             logger.error(f"RAG search failed: {e}", exc_info=True)
@@ -159,9 +157,10 @@ class RAGService:
 
         relation_map: Dict[str, List[str]] = {}
         try:
-            conn = sqlite3.connect(self.db_path, check_same_thread=False)
-            conn.row_factory = sqlite3.Row
-            try:
+            with closing(
+                sqlite3.connect(self.db_path, check_same_thread=False)
+            ) as conn:
+                conn.row_factory = sqlite3.Row
                 for r in results:
                     entity_id = r.get("object_id") or r.get("id", "")
                     entity_name = r.get("name", entity_id)
@@ -170,8 +169,6 @@ class RAGService:
                     relation_map[entity_id] = self._spo_lines_for_entity(
                         conn, entity_id, entity_name
                     )
-            finally:
-                conn.close()
         except Exception as e:
             logger.warning(f"RAG: failed to fetch entity relations: {e}")
         return relation_map
@@ -243,7 +240,7 @@ class RAGService:
             return prompt
 
         # Truncate to reasonable length for embedding (focus on subject)
-        return cleaned[:300]
+        return cleaned[:_MAX_CLEAN_QUERY_CHARS]
 
     def _merge_results(
         self,
@@ -328,7 +325,7 @@ class RAGService:
                         tags_line = line[len("Tags: ") :].strip()
                     elif line.startswith(("Name:", "Type:", "Date:", "Duration:")):
                         continue
-                    elif len(line) < 100:
+                    elif len(line) < _MAX_ATTRIBUTE_LINE_CHARS:
                         attributes_parts.append(line)
 
             # Compact single-line header
@@ -341,8 +338,11 @@ class RAGService:
 
             entry_lines: List[str] = [header]
             if description:
-                if len(description) > 300:
-                    description = description[:297] + "..."
+                if len(description) > _MAX_DESCRIPTION_CHARS:
+                    description = (
+                        description[: _MAX_DESCRIPTION_CHARS - _ELLIPSIS_CHARS]
+                        + "..."
+                    )
                 entry_lines.append(description)
 
             # Append SPO relation lines if available for this entity.

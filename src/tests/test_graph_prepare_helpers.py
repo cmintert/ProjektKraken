@@ -6,6 +6,8 @@ regardless of which render path uses them (full or incremental).
 
 from src.gui.widgets.graph_view.graph_builder import GraphBuilder
 
+_DEFAULT_GRAPH_NODE_SIZE = 24
+
 
 class TestPrepareNode:
     """Tests for GraphBuilder.prepare_node static method."""
@@ -57,7 +59,7 @@ class TestPrepareNode:
         node = {"id": "n1", "name": "X", "object_type": "entity"}
         result = GraphBuilder.prepare_node(node, "#AAA", "#BBB")
 
-        assert result["size"] == 24
+        assert result["size"] == _DEFAULT_GRAPH_NODE_SIZE
 
 
 class TestPrepareEdge:

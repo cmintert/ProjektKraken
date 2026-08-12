@@ -10,7 +10,8 @@ from typing import TYPE_CHECKING, List, Optional, Tuple, cast
 from PySide6.QtCore import Qt, SignalInstance, Slot
 from PySide6.QtWidgets import QMessageBox, QWidget
 
-from src.app.constants import (
+from src.core.map import MapLayerNode
+from src.gui.constants import (
     MAP_LAYER_BASEMAP_NODE_ID,
     MAP_LAYER_DEFAULT_GROUP_NAME,
     MAP_LAYER_TYPE_BASEMAP,
@@ -19,7 +20,6 @@ from src.app.constants import (
     MAP_LAYER_TYPE_PATH,
     MAP_LAYER_TYPE_REGION,
 )
-from src.core.map import MapLayerNode
 from src.gui.widgets.map.map_layer_model import MapLayerModel
 
 if TYPE_CHECKING:

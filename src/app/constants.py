@@ -3,9 +3,8 @@
 Stores default values for UI configuration and magic numbers.
 """
 
-import os
-
-from src.core.map_constants import (  # noqa: F401
+from src.core.map_constants import (
+    DEFAULT_MARKER_ICONS_PATH,
     MAP_DEFAULT_WIDTH_METERS,
     MAP_LAYER_BASEMAP_NODE_ID,
     MAP_LAYER_DEFAULT_GROUP_NAME,
@@ -28,40 +27,187 @@ from src.core.map_constants import (  # noqa: F401
     MAP_LAYER_Z_SPACING,
     MAP_LAYER_Z_TRAJECTORIES,
     MAP_LAYER_Z_UI_OVERLAY,
+    MAP_NESTING_DEPTH_CAP,
     MAP_ROLE_DETAIL,
     MAP_ROLE_MASTER,
     TEMPORAL_SNAPSHOT_CACHE_MAX,
 )
+from src.core.semantic_config import (
+    SEMANTIC_COMPLETION_ENABLE_EMBEDDING,
+    SEMANTIC_COMPLETION_PROBE_ON_WINDOWS,
+    SEMANTIC_COMPLETION_PROBE_TIMEOUT_S,
+)
+from src.core.settings import (
+    WINDOW_SETTINGS_APP,
+    WINDOW_SETTINGS_KEY,
+)
+from src.core.version import VERSION
+from src.gui.constants import (
+    ANALYSIS_SEVERITY_CRITICAL_COLOR,
+    ANALYSIS_SEVERITY_INFO_COLOR,
+    ANALYSIS_SEVERITY_WARNING_COLOR,
+    AUTOSAVE_DELAY_MS,
+    EDITOR_DETAILS_MIN_HEIGHT,
+    EDITOR_FORM_VERTICAL_SPACING,
+    EDITOR_ICON_BUTTON_SIZE,
+    EDITOR_LIST_SPACING,
+    EDITOR_RELATION_LIST_MIN_HEIGHT,
+    EDITOR_SECTION_SPACING,
+    IMAGE_FILE_FILTER,
+    MAP_EDIT_DASH_PATTERN,
+    MAP_EDIT_STROKE_COLOR,
+    MAP_EDIT_STROKE_WIDTH,
+    MAP_FEATURE_CLICK_THRESHOLD_PX,
+    MAP_FEATURE_DEFAULT_DASH_PATTERN,
+    MAP_FEATURE_DEFAULT_FILL_COLOR,
+    MAP_FEATURE_DEFAULT_STROKE_COLOR,
+    MAP_FEATURE_DEFAULT_STROKE_WIDTH,
+    MAP_FEATURE_HIT_AREA_MARGIN,
+    MAP_FEATURE_HOVER_DEBOUNCE_MS,
+    MAP_FEATURE_LABEL_COLOR,
+    MAP_FEATURE_LABEL_FONT_FAMILY,
+    MAP_FEATURE_LABEL_FONT_SIZE,
+    MAP_FEATURE_MIN_HIT_AREA_WIDTH,
+    MAP_FEATURE_REGION_FILL_COLOR,
+    MAP_FEATURE_REGION_STROKE_COLOR,
+    MAP_FEATURE_SELECTION_PEN_COLOR,
+    MAP_FEATURE_SELECTION_PEN_WIDTH,
+    MAP_FEATURE_Z_VALUE,
+    MAP_MIDPOINT_GHOST_OPACITY,
+    MAP_MIDPOINT_HANDLE_BORDER_COLOR,
+    MAP_MIDPOINT_HANDLE_COLOR,
+    MAP_MIDPOINT_HANDLE_RADIUS,
+    MAP_MIDPOINT_HOVER_OPACITY,
+    MAP_SNAP_INDICATOR_BORDER_COLOR,
+    MAP_SNAP_INDICATOR_BORDER_WIDTH,
+    MAP_SNAP_INDICATOR_EDGE_COLOR,
+    MAP_SNAP_INDICATOR_RADIUS,
+    MAP_SNAP_INDICATOR_VERTEX_COLOR,
+    MAP_SNAP_RADIUS_PX,
+    MAP_TEMPORAL_GHOST_OPACITY,
+    MAP_VERTEX_HANDLE_BORDER_COLOR,
+    MAP_VERTEX_HANDLE_COLOR,
+    MAP_VERTEX_HANDLE_RADIUS,
+    MAP_ZOOM_IN_FACTOR,
+    RELATION_PICKER_MAX_HEIGHT,
+    RELATION_PICKER_MAX_WIDTH,
+    RELATION_PICKER_MIN_HEIGHT,
+    RELATION_PICKER_MIN_WIDTH,
+    SEMANTIC_COMPLETION_MIN_PREFIX_LEN,
+    SETTINGS_ACTIVE_DB_KEY,
+    SHEET_VALUE_MAX_LINES,
+    SUPPORTED_IMAGE_FORMATS,
+    TEMPORAL_FUTURE_LIGHTNESS_BOOST,
+    TEMPORAL_FUTURE_OPACITY,
+    TEMPORAL_FUTURE_SATURATION_FACTOR,
+    TOOLTIP_DELAY_MS,
+    TOOLTIP_DURATION_MS,
+    WIKI_EDITOR_MAX_LINE_LENGTH,
+)
+
+__all__ = [
+    "ANALYSIS_SEVERITY_CRITICAL_COLOR",
+    "ANALYSIS_SEVERITY_INFO_COLOR",
+    "ANALYSIS_SEVERITY_WARNING_COLOR",
+    "AUTOSAVE_DELAY_MS",
+    "DEFAULT_MARKER_ICONS_PATH",
+    "EDITOR_DETAILS_MIN_HEIGHT",
+    "EDITOR_FORM_VERTICAL_SPACING",
+    "EDITOR_ICON_BUTTON_SIZE",
+    "EDITOR_LIST_SPACING",
+    "EDITOR_RELATION_LIST_MIN_HEIGHT",
+    "EDITOR_SECTION_SPACING",
+    "IMAGE_FILE_FILTER",
+    "MAP_EDIT_DASH_PATTERN",
+    "MAP_EDIT_STROKE_COLOR",
+    "MAP_EDIT_STROKE_WIDTH",
+    "MAP_DEFAULT_WIDTH_METERS",
+    "MAP_FEATURE_CLICK_THRESHOLD_PX",
+    "MAP_FEATURE_DEFAULT_DASH_PATTERN",
+    "MAP_FEATURE_DEFAULT_FILL_COLOR",
+    "MAP_FEATURE_DEFAULT_STROKE_COLOR",
+    "MAP_FEATURE_DEFAULT_STROKE_WIDTH",
+    "MAP_FEATURE_HIT_AREA_MARGIN",
+    "MAP_FEATURE_HOVER_DEBOUNCE_MS",
+    "MAP_FEATURE_LABEL_COLOR",
+    "MAP_FEATURE_LABEL_FONT_FAMILY",
+    "MAP_FEATURE_LABEL_FONT_SIZE",
+    "MAP_FEATURE_MIN_HIT_AREA_WIDTH",
+    "MAP_FEATURE_REGION_FILL_COLOR",
+    "MAP_FEATURE_REGION_STROKE_COLOR",
+    "MAP_FEATURE_SELECTION_PEN_COLOR",
+    "MAP_FEATURE_SELECTION_PEN_WIDTH",
+    "MAP_FEATURE_Z_VALUE",
+    "MAP_LAYER_BASEMAP_NODE_ID",
+    "MAP_LAYER_DEFAULT_GROUP_NAME",
+    "MAP_LAYER_DEFAULT_MAX_ZOOM",
+    "MAP_LAYER_DEFAULT_MIN_ZOOM",
+    "MAP_LAYER_DEFAULT_OPACITY",
+    "MAP_LAYER_TYPE_BASEMAP",
+    "MAP_LAYER_TYPE_GROUP",
+    "MAP_LAYER_TYPE_MARKER",
+    "MAP_LAYER_TYPE_PATH",
+    "MAP_LAYER_TYPE_RASTER",
+    "MAP_LAYER_TYPE_REGION",
+    "MAP_LAYER_TYPE_SNAPSHOT",
+    "MAP_LAYER_Z_BASE",
+    "MAP_LAYER_Z_FEATURES",
+    "MAP_LAYER_Z_FOOTPRINTS",
+    "MAP_LAYER_Z_MAP_BG",
+    "MAP_LAYER_Z_MARKERS",
+    "MAP_LAYER_Z_RASTER",
+    "MAP_LAYER_Z_SPACING",
+    "MAP_LAYER_Z_TRAJECTORIES",
+    "MAP_LAYER_Z_UI_OVERLAY",
+    "MAP_NESTING_DEPTH_CAP",
+    "MAP_MIDPOINT_GHOST_OPACITY",
+    "MAP_MIDPOINT_HANDLE_BORDER_COLOR",
+    "MAP_MIDPOINT_HANDLE_COLOR",
+    "MAP_MIDPOINT_HANDLE_RADIUS",
+    "MAP_MIDPOINT_HOVER_OPACITY",
+    "MAP_ROLE_DETAIL",
+    "MAP_ROLE_MASTER",
+    "MAP_SNAP_INDICATOR_BORDER_COLOR",
+    "MAP_SNAP_INDICATOR_BORDER_WIDTH",
+    "MAP_SNAP_INDICATOR_EDGE_COLOR",
+    "MAP_SNAP_INDICATOR_RADIUS",
+    "MAP_SNAP_INDICATOR_VERTEX_COLOR",
+    "MAP_SNAP_RADIUS_PX",
+    "MAP_TEMPORAL_GHOST_OPACITY",
+    "MAP_VERTEX_HANDLE_BORDER_COLOR",
+    "MAP_VERTEX_HANDLE_COLOR",
+    "MAP_VERTEX_HANDLE_RADIUS",
+    "MAP_ZOOM_IN_FACTOR",
+    "RELATION_PICKER_MAX_HEIGHT",
+    "RELATION_PICKER_MAX_WIDTH",
+    "RELATION_PICKER_MIN_HEIGHT",
+    "RELATION_PICKER_MIN_WIDTH",
+    "SEMANTIC_COMPLETION_ENABLE_EMBEDDING",
+    "SEMANTIC_COMPLETION_MIN_PREFIX_LEN",
+    "SEMANTIC_COMPLETION_PROBE_ON_WINDOWS",
+    "SEMANTIC_COMPLETION_PROBE_TIMEOUT_S",
+    "SETTINGS_ACTIVE_DB_KEY",
+    "SHEET_VALUE_MAX_LINES",
+    "SUPPORTED_IMAGE_FORMATS",
+    "TEMPORAL_SNAPSHOT_CACHE_MAX",
+    "TEMPORAL_FUTURE_LIGHTNESS_BOOST",
+    "TEMPORAL_FUTURE_OPACITY",
+    "TEMPORAL_FUTURE_SATURATION_FACTOR",
+    "TOOLTIP_DELAY_MS",
+    "TOOLTIP_DURATION_MS",
+    "VERSION",
+    "WIKI_EDITOR_MAX_LINE_LENGTH",
+    "WINDOW_SETTINGS_APP",
+    "WINDOW_SETTINGS_KEY",
+]
 
 
-def _env_bool(name: str, default: bool) -> bool:
-    """Parse a boolean environment variable with a fallback default."""
-    value = os.getenv(name)
-    if value is None:
-        return default
-    return value.strip().lower() in {"1", "true", "yes", "on"}
-
-
-def _env_float(name: str, default: float) -> float:
-    """Parse a float environment variable with a fallback default."""
-    value = os.getenv(name)
-    if value is None:
-        return default
-    try:
-        return float(value)
-    except ValueError:
-        return default
-
-
-# Window Configuration
-VERSION = "0.18.8"
+# Background semantic-search thread shutdown grace period.
+AI_SEARCH_THREAD_SHUTDOWN_MS = 10_000
 WINDOW_TITLE = f"Project Kraken - v{VERSION} (Beta)"
 DEFAULT_WINDOW_WIDTH = 1280
 DEFAULT_WINDOW_HEIGHT = 720
-WINDOW_SETTINGS_KEY = "ChristianMintert"
-WINDOW_SETTINGS_APP = "ProjektKraken"
 DEFAULT_WORLD_NAME = "Default World"
-SETTINGS_ACTIVE_DB_KEY = "active_world"  # Now stores world name, not filename
 SETTINGS_LAYOUTS_KEY = "saved_layouts"
 SETTINGS_LAST_ITEM_ID_KEY = "last_selected_item_id"
 SETTINGS_LAST_ITEM_TYPE_KEY = "last_selected_item_type"
@@ -106,37 +252,12 @@ STATUS_ERROR_PREFIX = "Error: "
 
 
 # Default marker icons bundled with the application
-DEFAULT_MARKER_ICONS_PATH = "default_assets/icons/markers"
 
 # File Dialog Filters
-SUPPORTED_IMAGE_FORMATS = ["png", "jpg", "jpeg", "bmp", "webp"]
-IMAGE_FILE_FILTER = (
-    f"Images ({' '.join([f'*.{ext}' for ext in SUPPORTED_IMAGE_FORMATS])})"
-)
-
-# Autosave Configuration
-AUTOSAVE_DELAY_MS = 2000  # 2 seconds
-
-# Editor Configuration
-WIKI_EDITOR_MAX_LINE_LENGTH = 90
-
 # Semantic Completion Constants
 SEMANTIC_COMPLETION_MIN_SCORE = 0.85  # Minimum cosine similarity to surface a suggestion
 SEMANTIC_COMPLETION_TOP_K = 5  # Max candidates fetched from the semantic index
 SEMANTIC_COMPLETION_DEBOUNCE_MS = 350  # Keystroke debounce before querying the worker
-SEMANTIC_COMPLETION_MIN_PREFIX_LEN = 3  # Minimum [[prefix length before triggering query
-SEMANTIC_COMPLETION_ENABLE_EMBEDDING = _env_bool(
-    "PK_SEMANTIC_COMPLETION_ENABLE_EMBEDDING",
-    default=True,
-)
-SEMANTIC_COMPLETION_PROBE_ON_WINDOWS = _env_bool(
-    "PK_SEMANTIC_COMPLETION_PROBE_ON_WINDOWS",
-    default=True,
-)
-SEMANTIC_COMPLETION_PROBE_TIMEOUT_S = _env_float(
-    "PK_SEMANTIC_COMPLETION_PROBE_TIMEOUT_S",
-    default=15.0,
-)
 
 # UI Timing Constants
 # Delays for deferred initialization and UI updates
@@ -148,35 +269,8 @@ UI_DOCK_VALIDATE_DELAY_MS = 200  # Delay for dock size validation after restoreS
 UI_SEARCH_INDEX_REFRESH_DELAY_MS = 100  # Delay for search index status refresh
 UI_CLEANUP_DELAY_MS = 200  # Delay for cleanup operations
 
-# Tooltip Configuration
-TOOLTIP_DELAY_MS = 1500  # Time to hover before showing
-TOOLTIP_DURATION_MS = 5000  # Time to show before hiding
-
 # Provider Retry Configuration
 PROVIDER_RETRY_WAIT_TIME_S = 1.0  # Wait time between provider retries
-
-# Temporal Visualization Constants
-# Used for dulling/desaturating future events and markers
-TEMPORAL_FUTURE_OPACITY = 0.7  # Opacity for future events (0.0-1.0)
-MAP_TEMPORAL_GHOST_OPACITY = 0.2
-TEMPORAL_FUTURE_SATURATION_FACTOR = 0.8  # Saturation multiplier for future events
-TEMPORAL_FUTURE_LIGHTNESS_BOOST = 0.1  # Lightness increase for future events
-# Sheet Builder Constants
-SHEET_VALUE_MAX_LINES = 4  # Max visible lines for multiline attribute values
-
-# Editor Layout Constants
-EDITOR_FORM_VERTICAL_SPACING = 12
-EDITOR_SECTION_SPACING = 4
-EDITOR_LIST_SPACING = 2
-EDITOR_DETAILS_MIN_HEIGHT = 400
-EDITOR_RELATION_LIST_MIN_HEIGHT = 80
-EDITOR_ICON_BUTTON_SIZE = 32
-
-# Relation Type Picker Constants
-RELATION_PICKER_MIN_WIDTH = 250
-RELATION_PICKER_MAX_WIDTH = 400
-RELATION_PICKER_MIN_HEIGHT = 80
-RELATION_PICKER_MAX_HEIGHT = 120
 
 # Unified List Constants
 UNIFIED_LIST_MIN_WIDTH = 250
@@ -190,86 +284,3 @@ UNIFIED_LIST_DELETE_CONFIRM_TIMEOUT_MS = 1000
 NAVIGATION_SELECTION_DELAY_MS = (
     250  # Delay to allow drag operations to cancel selection
 )
-
-# ---------------------------------------------------------------------------
-# Map Feature Constants
-# ---------------------------------------------------------------------------
-
-# Default visual style for map features (paths / regions)
-MAP_FEATURE_DEFAULT_STROKE_COLOR = "#3498DB"
-MAP_FEATURE_DEFAULT_STROKE_WIDTH = 2.0
-MAP_FEATURE_DEFAULT_FILL_COLOR = "#403498DB"  # 25% alpha (Qt #AARRGGBB)
-MAP_FEATURE_DEFAULT_DASH_PATTERN: list[float] = []  # solid line
-MAP_FEATURE_REGION_STROKE_COLOR = "#2C3E50"
-MAP_FEATURE_REGION_FILL_COLOR = "#303498DB"  # Qt #AARRGGBB
-
-# Selection highlight
-MAP_FEATURE_SELECTION_PEN_COLOR = "#FFFFFF"
-MAP_FEATURE_SELECTION_PEN_WIDTH = 2.0
-
-# Hit testing (click / hover detection margins)
-MAP_FEATURE_HIT_AREA_MARGIN = 6  # extra pixels around stroke
-MAP_FEATURE_MIN_HIT_AREA_WIDTH = 10  # minimum clickable pixel width
-
-# Label styling
-MAP_FEATURE_LABEL_FONT_FAMILY = "Segoe UI"
-MAP_FEATURE_LABEL_FONT_SIZE = 9
-MAP_FEATURE_LABEL_COLOR = "#333333"
-
-# Feature item z-layer (between map background and point markers)
-MAP_FEATURE_Z_VALUE = 8
-
-# Hover tooltip debounce delay
-MAP_FEATURE_HOVER_DEBOUNCE_MS = 100
-
-# Click-vs-drag threshold (manhattan length in pixels)
-MAP_FEATURE_CLICK_THRESHOLD_PX = 5
-
-# Vertex editing handles
-MAP_VERTEX_HANDLE_RADIUS = 5  # screen pixels (cosmetic)
-MAP_VERTEX_HANDLE_COLOR = "#e74c3c"  # red
-MAP_VERTEX_HANDLE_BORDER_COLOR = "#FFFFFF"
-MAP_MIDPOINT_HANDLE_RADIUS = 4  # slightly smaller
-MAP_MIDPOINT_HANDLE_COLOR = "#2ecc71"  # green
-MAP_MIDPOINT_HANDLE_BORDER_COLOR = "#FFFFFF"
-MAP_MIDPOINT_GHOST_OPACITY = 0.4
-MAP_MIDPOINT_HOVER_OPACITY = 0.9
-
-# Vertex editing style applied to the feature being edited
-MAP_EDIT_DASH_PATTERN = [6, 3]  # dashed line during editing
-MAP_EDIT_STROKE_COLOR = "#e67e22"  # orange highlight
-MAP_EDIT_STROKE_WIDTH = 5.0  # thicker line during vertex editing
-
-# Snap radius for vertex snapping during editing (screen pixels)
-MAP_SNAP_RADIUS_PX = 10.0
-
-# ---------------------------------------------------------------------------
-# Snapping Manager Constants
-# ---------------------------------------------------------------------------
-
-# Snap indicator visual feedback
-MAP_SNAP_INDICATOR_VERTEX_COLOR = "#f1c40f"  # yellow for vertex snap
-MAP_SNAP_INDICATOR_EDGE_COLOR = "#3498db"  # blue for edge snap
-MAP_SNAP_INDICATOR_RADIUS = 6  # screen pixels (cosmetic)
-MAP_SNAP_INDICATOR_BORDER_COLOR = "#FFFFFF"
-MAP_SNAP_INDICATOR_BORDER_WIDTH = 1.5
-
-# Zoom factor for mouse wheel
-MAP_ZOOM_IN_FACTOR = 1.25
-
-# ---------------------------------------------------------------------------
-# Map Nesting Constants
-# ---------------------------------------------------------------------------
-
-# Maximum depth of the master -> detail -> ... chain.  Prevents runaway
-# nesting and keeps transform composition bounded.
-MAP_NESTING_DEPTH_CAP = 5
-
-# ---------------------------------------------------------------------------
-# Analysis Suite Constants
-# ---------------------------------------------------------------------------
-
-# Row foreground colors for severity-coded issues in analysis tables
-ANALYSIS_SEVERITY_CRITICAL_COLOR = "#e74c3c"  # red
-ANALYSIS_SEVERITY_WARNING_COLOR = "#e67e22"   # orange
-ANALYSIS_SEVERITY_INFO_COLOR = "#3498db"      # blue

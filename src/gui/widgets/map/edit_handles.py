@@ -7,7 +7,7 @@ from PySide6.QtCore import QPointF, Qt
 from PySide6.QtGui import QBrush, QColor, QPen
 from PySide6.QtWidgets import QGraphicsEllipseItem, QGraphicsItem
 
-from src.app.constants import (
+from src.gui.constants import (
     MAP_LAYER_Z_UI_OVERLAY,
     MAP_MIDPOINT_GHOST_OPACITY,
     MAP_MIDPOINT_HANDLE_BORDER_COLOR,

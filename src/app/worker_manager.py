@@ -29,7 +29,6 @@ from src.core.logging_config import get_logger
 from src.core.paths import ensure_worlds_directory
 from src.core.world import World, WorldManager
 from src.gui.dialogs.external_database_warning import external_database_warning
-from src.services.db_service import DatabaseService
 from src.services.worker import DatabaseWorker
 from src.services.world_storage_settings import WorldStorageSettings
 
@@ -55,6 +54,9 @@ class WorkerManager(QObject):
     load_ai_preferences_requested = Signal()
     save_ai_preferences_requested = Signal(dict)
     initialize_history_requested = Signal(str)
+    load_timeline_grouping_requested = Signal()
+    save_world_theme_requested = Signal(str)
+    load_embedding_stats_requested = Signal()
 
     # Delay (ms) after the last save before firing the re-embed request.
     # Prevents running ONNX/numpy-heavy embedding code on every keystroke-
@@ -204,7 +206,9 @@ class WorkerManager(QObject):
         self.window.db_path = db_path
         self.window.current_world = world
 
-        self.window.worker = DatabaseWorker(db_path)
+        from src.commands.registry import get_command_types
+
+        self.window.worker = DatabaseWorker(db_path, get_command_types())
         self.window.worker.moveToThread(self.window.worker_thread)
 
         # Connect Worker Signals (explicit QueuedConnection for cross-thread safety)
@@ -276,6 +280,14 @@ class WorkerManager(QObject):
         self.window.worker.graph_lexicon_loaded.connect(
             self.window.data_handler.on_graph_lexicon_loaded, connection_type
         )
+        self.window.worker.timeline_grouping_loaded.connect(
+            self.on_timeline_grouping_loaded,
+            connection_type,
+        )
+        self.window.worker.world_theme_loaded.connect(
+            self.on_world_theme_loaded,
+            connection_type,
+        )
         self.window.worker.completer_data_loaded.connect(
             self.window.data_coordinator.on_completer_data_loaded, connection_type
         )
@@ -315,6 +327,18 @@ class WorkerManager(QObject):
         )
         self.initialize_history_requested.connect(
             self.window.worker.initialize_history,
+            connection_type,
+        )
+        self.load_timeline_grouping_requested.connect(
+            self.window.worker.load_timeline_grouping_config,
+            connection_type,
+        )
+        self.save_world_theme_requested.connect(
+            self.window.worker.save_world_theme,
+            connection_type,
+        )
+        self.load_embedding_stats_requested.connect(
+            self.window.worker.load_embedding_stats,
             connection_type,
         )
         self.window.import_coordinator.run_import_requested.connect(
@@ -459,36 +483,8 @@ class WorkerManager(QObject):
 
         """
         if success:
-            # Initialize GUI database connection for timeline data provider
-            try:
-                # Use the same db_path as the worker
-                self.window.gui_db_service = DatabaseService(self.window.db_path)
-                self.window.gui_db_service.connect()
-                # Set MainWindow as data provider (implements the interface)
-                self.window.timeline.set_data_provider(self.window)
-            except Exception as e:
-                logger.error(f"Failed to initialize GUI database service: {e}")
-
-            # Restore per-world theme preference
-            try:
-                from src.core.theme_manager import ThemeManager
-
-                world_theme = self.window.gui_db_service.get_world_theme()
-                if world_theme:
-                    ThemeManager().set_theme(world_theme)
-                    logger.info(f"Restored world theme: {world_theme}")
-            except Exception as e:
-                logger.warning(f"Failed to restore world theme: {e}")
-
-            # Inject SummaryService into editors for staleness checks
-            try:
-                from src.services.summary_service import SummaryService
-
-                gui_summary_service = SummaryService(self.window.gui_db_service)
-                self.window.entity_editor.set_summary_service(gui_summary_service)
-                self.window.event_editor.set_summary_service(gui_summary_service)
-            except Exception as e:
-                logger.error(f"Failed to inject SummaryService into editors: {e}")
+            # Timeline callbacks read immutable snapshots cached on the GUI thread.
+            self.window.timeline.set_data_provider(self.window)
 
             # Initialize backup service
             try:
@@ -501,12 +497,6 @@ class WorkerManager(QObject):
                 # Initialize backup service
                 self.window.backup_service = BackupService(backup_config)
                 self.window.backup_service.set_database_path(self.window.db_path)
-
-                # Register with database service for integration
-                if hasattr(self.window, "gui_db_service"):
-                    self.window.gui_db_service.register_backup_service(
-                        self.window.backup_service
-                    )
 
                 logger.info("Backup service initialized successfully")
 
@@ -533,7 +523,7 @@ class WorkerManager(QObject):
             self.window.data_coordinator.load_data()
             self.window.time_coordinator.request_calendar_config()
             self.window.time_coordinator.request_current_time()
-            self.window._request_grouping_config()
+            self.load_timeline_grouping_requested.emit()
             self.window.load_maps()
             self.load_ai_preferences_requested.emit()
 
@@ -563,6 +553,24 @@ class WorkerManager(QObject):
             )
         else:
             self.window.status_bar.showMessage(STATUS_DB_INIT_FAIL)
+
+    @Slot(object)
+    def on_timeline_grouping_loaded(self, payload: object) -> None:
+        """Forward worker-loaded grouping state to the grouping manager."""
+        self.window.grouping_manager.on_grouping_snapshot_loaded(payload)
+
+    @Slot(str)
+    def on_world_theme_loaded(self, theme_name: str) -> None:
+        """Apply the worker-loaded world theme on the GUI thread."""
+        if not theme_name:
+            return
+        try:
+            from src.core.theme_manager import ThemeManager
+
+            ThemeManager().set_theme(theme_name)
+            logger.info("Restored world theme: %s", theme_name)
+        except Exception:
+            logger.warning("Failed to restore world theme", exc_info=True)
 
     @Slot(object)
     def generate_summary(self, item: object) -> None:

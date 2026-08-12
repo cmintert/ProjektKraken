@@ -1,3 +1,5 @@
+"""Coordinate calendar configuration and current lore time."""
+
 import logging
 from typing import TYPE_CHECKING, Optional
 
@@ -24,11 +26,13 @@ class TimeCoordinator(BaseCoordinator):
     """
 
     def __init__(self, main_window: "MainWindow") -> None:
+        """Initialize lore-time and playhead coordination."""
         super().__init__(main_window)
         self._current_playhead_time: Optional[float] = None
 
     @property
     def current_playhead_time(self) -> Optional[float]:
+        """Return the latest timeline playhead value, when available."""
         return self._current_playhead_time
 
     @Slot(float)

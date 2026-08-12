@@ -11,6 +11,8 @@ from src.services.repositories.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
 
+_RESOLUTION_COMPONENT_COUNT = 2
+
 
 class AttachmentRepository(BaseRepository):
     """Repository for managing ImageAttachment persistence in SQLite."""
@@ -121,7 +123,7 @@ class AttachmentRepository(BaseRepository):
         if row["resolution"]:
             try:
                 parts = row["resolution"].split("x")
-                if len(parts) == 2:
+                if len(parts) == _RESOLUTION_COMPONENT_COUNT:
                     resolution = (int(parts[0]), int(parts[1]))
             except ValueError:
                 pass

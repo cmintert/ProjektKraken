@@ -14,6 +14,7 @@ MAP_LAYER_TYPE_BASEMAP = "basemap"
 
 MAP_ROLE_MASTER = "master"
 MAP_ROLE_DETAIL = "detail"
+MAP_NESTING_DEPTH_CAP = 5
 
 MAP_LAYER_BASEMAP_NODE_ID = "__basemap__"
 MAP_LAYER_DEFAULT_GROUP_NAME = "Default"
@@ -32,3 +33,4 @@ TEMPORAL_SNAPSHOT_CACHE_MAX = 20
 
 # Compatibility only. Zero means the map has no physical calibration.
 MAP_DEFAULT_WIDTH_METERS = 0.0
+DEFAULT_MARKER_ICONS_PATH = "default_assets/icons/markers"

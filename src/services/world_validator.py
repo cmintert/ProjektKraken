@@ -27,6 +27,8 @@ from src.services.text_parser import WikiLinkParser
 
 logger = logging.getLogger(__name__)
 
+_DUPLICATE_RELATION_MIN_COUNT = 2
+
 _MIN_DESCRIPTION_LENGTH: int = 20
 _MIN_TAG_USAGE_COUNT: int = 2
 
@@ -289,7 +291,7 @@ class WorldValidator:
             )
             grouped.setdefault(key, []).append(str(relation.get("id", "")))
         for (source_id, target_id, rel_type), relation_ids in grouped.items():
-            if len(relation_ids) < 2:
+            if len(relation_ids) < _DUPLICATE_RELATION_MIN_COUNT:
                 continue
             for relation_id in relation_ids[1:]:
                 self.issues.append(

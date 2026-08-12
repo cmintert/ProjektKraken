@@ -26,13 +26,21 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_TRAJECTORY_CHANGE_PREVIEW_LIMIT = 4
+_MINIMUM_SPEED_PANEL_KEYFRAMES = 3
+_METERS_PER_KILOMETER = 1000.0
+
 
 class _CoordinateLabel(Protocol):
     """Text API required from the map widget's lightweight status label."""
 
-    def text(self) -> str: ...
+    def text(self) -> str:
+        """Return the current label text."""
+        ...
 
-    def setText(self, text: str) -> None: ...
+    def setText(self, text: str) -> None:
+        """Replace the current label text."""
+        ...
 
 
 class MapTrajectoryMixin:
@@ -107,11 +115,17 @@ class MapTrajectoryMixin:
         btn_apply_speed_equalization: Any
         btn_cancel_speed_equalization: Any
 
-        def _update_mode_indicator(self) -> None: ...
+        def _update_mode_indicator(self) -> None:
+            """Refresh the host widget's mode indicator."""
+            ...
 
-        def get_selected_map_id(self) -> str | None: ...
+        def get_selected_map_id(self) -> str | None:
+            """Return the active map identifier."""
+            ...
 
-        def _update_trajectory_edit_action(self) -> None: ...
+        def _update_trajectory_edit_action(self) -> None:
+            """Refresh availability of the trajectory-edit action."""
+            ...
 
     def set_trajectories(self, trajectories: list) -> None:
         """Sets the active trajectories for the current map.
@@ -604,9 +618,12 @@ class MapTrajectoryMixin:
                 f"{self._format_trajectory_date(change['proposed_t'])}"
                 for change in snapshot["equalization_changes"]
             )
-            visible_changes = " | ".join(all_changes.split(" | ")[:4])
-            if changed_count > 4:
-                visible_changes += f" | … {changed_count - 4} more"
+            visible_changes = " | ".join(
+                all_changes.split(" | ")[:_TRAJECTORY_CHANGE_PREVIEW_LIMIT]
+            )
+            if changed_count > _TRAJECTORY_CHANGE_PREVIEW_LIMIT:
+                remaining = changed_count - _TRAJECTORY_CHANGE_PREVIEW_LIMIT
+                visible_changes += f" | … {remaining} more"
             self.trajectory_speed_changes.setText(visible_changes)
             self.trajectory_speed_changes.setToolTip(all_changes)
             self.trajectory_speed_changes.show()
@@ -625,7 +642,7 @@ class MapTrajectoryMixin:
             self.trajectory_speed_changes.hide()
 
         self.trajectory_speed_panel.setVisible(
-            snapshot["keyframe_count"] >= 3 or previewing
+            snapshot["keyframe_count"] >= _MINIMUM_SPEED_PANEL_KEYFRAMES or previewing
         )
 
     @staticmethod
@@ -633,7 +650,11 @@ class MapTrajectoryMixin:
         if value is None:
             return "—"
         if unit == "m":
-            return f"{value / 1000.0:.2f} km" if value >= 1000.0 else f"{value:.1f} m"
+            return (
+                f"{value / _METERS_PER_KILOMETER:.2f} km"
+                if value >= _METERS_PER_KILOMETER
+                else f"{value:.1f} m"
+            )
         return f"{value:.3g} relative units"
 
     @staticmethod
@@ -642,8 +663,8 @@ class MapTrajectoryMixin:
             return "—"
         if unit == "m":
             return (
-                f"{value / 1000.0:.2f} km/day"
-                if value >= 1000.0
+                f"{value / _METERS_PER_KILOMETER:.2f} km/day"
+                if value >= _METERS_PER_KILOMETER
                 else f"{value:.1f} m/day"
             )
         return f"{value:.3g} relative units/day"

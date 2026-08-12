@@ -65,6 +65,7 @@ from src.app.worker_manager import WorkerManager
 from src.core.fast_inject import FastInjectManager
 from src.core.logging_config import get_logger
 from src.core.paths import get_worlds_dir
+from src.core.timeline_grouping import build_group_metadata, events_for_group
 from src.gui.dialogs.filter_dialog import FilterDialog
 from src.gui.mixins.layout_guard import LayoutGuardMixin
 from src.gui.widgets.ai_search_panel import AISearchPanelWidget
@@ -79,8 +80,10 @@ from src.gui.widgets.unified_list import UnifiedListWidget
 if TYPE_CHECKING:
     from PySide6.QtCore import QThread
 
-    from src.services.db_service import DatabaseService
     from src.services.worker import DatabaseWorker
+
+_COLOR_LIGHTNESS_MIDPOINT = 128
+_CONTEXT_TAG_SUMMARY_LIMIT = 2
 
 logger = get_logger(__name__)
 
@@ -285,7 +288,6 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     worker: DatabaseWorker
     worker_thread: QThread
     db_path: str
-    gui_db_service: DatabaseService
     filter_config: dict[str, Any]
     command_coordinator: CommandCoordinator
     coordinator: CommandCoordinator
@@ -412,7 +414,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
 
             # Determine if dark mode: dark backgrounds have lightness < 128.
             bg_color = QColor(app_bg)
-            is_dark = bg_color.lightness() < 128
+            is_dark = bg_color.lightness() < _COLOR_LIGHTNESS_MIDPOINT
 
             apply_windows_title_bar_style(
                 self,
@@ -442,6 +444,31 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         return lbl
 
     @Slot(dict)
+    def _apply_status_label_theme(self, theme: dict) -> None:
+        """Refresh semantic time-label colours after a theme change."""
+        self.lbl_world_time.setStyleSheet(
+            f"color: {theme['entity_main']}; font-weight: bold;"
+        )
+        self.lbl_playhead_time.setStyleSheet(
+            f"color: {theme['event_main']}; font-weight: bold;"
+        )
+
+    @Slot(dict)
+    def _on_context_tag_theme_changed(self, _theme: dict) -> None:
+        """Refresh context-tag status styling after a theme change."""
+        self._update_context_tag_status(
+            self.app_coordinator.context_tags.snapshot()
+        )
+
+    @Slot(dict)
+    def _refresh_map_layer_styles(self, _theme: dict) -> None:
+        """Refresh map-layer styles when the application theme changes."""
+        try:
+            self.map_widget.layer_panel.refresh_styles()
+        except RuntimeError:
+            logger.debug("Skipped layer style refresh during window teardown")
+
+    @Slot(dict)
     def _update_context_tag_status(self, state: dict[str, object]) -> None:
         """Render the persistent status reminder for active context tags."""
         active = bool(state.get("active", False))
@@ -452,9 +479,9 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         tags = [str(tag) for tag in raw_tags] if isinstance(raw_tags, list) else []
         raw_count = state.get("affected_count", 0)
         affected = raw_count if isinstance(raw_count, int) else 0
-        summary = ", ".join(tags[:2])
-        if len(tags) > 2:
-            summary += f" +{len(tags) - 2}"
+        summary = ", ".join(tags[:_CONTEXT_TAG_SUMMARY_LIMIT])
+        if len(tags) > _CONTEXT_TAG_SUMMARY_LIMIT:
+            summary += f" +{len(tags) - _CONTEXT_TAG_SUMMARY_LIMIT}"
         self.btn_context_tags_status.setText(
             f"Context: {summary} · {affected} item{'s' if affected != 1 else ''}"
         )
@@ -484,21 +511,11 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.entity_editor = EntityEditorWidget(self)
         self.timeline = TimelineWidget()
         self.map_widget = MapWidget()
-        # Propagate theme changes to the layer panel
+        # Propagate theme changes to the layer panel.
         try:
             from src.core.theme_manager import ThemeManager
 
-            def _refresh_layer_styles(_theme_data: dict) -> None:
-                """Refresh map layer panel styles on theme change."""
-                try:
-                    import shiboken6
-
-                    if shiboken6.isValid(self) and shiboken6.isValid(self.map_widget):
-                        self.map_widget.layer_panel.refresh_styles()
-                except (RuntimeError, ImportError):
-                    pass
-
-            ThemeManager().theme_changed.connect(_refresh_layer_styles)
+            ThemeManager().theme_changed.connect(self._refresh_map_layer_styles)
         except Exception as e:
             logger.warning(f"Failed to connect theme->layer panel: {e}")
 
@@ -585,8 +602,15 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         self.centralWidget().hide()
 
         # Status Bar Time Labels
-        self.lbl_world_time = self._create_status_label("World: --", "#3498db")
-        self.lbl_playhead_time = self._create_status_label("Playhead: --", "#e74c3c")
+        from src.core.theme_manager import ThemeManager
+
+        theme = ThemeManager().get_theme()
+        self.lbl_world_time = self._create_status_label(
+            "World: --", theme["entity_main"]
+        )
+        self.lbl_playhead_time = self._create_status_label(
+            "Playhead: --", theme["event_main"]
+        )
         self.btn_context_tags_status = QToolButton()
         self.btn_context_tags_status.setAccessibleName("Active context tags")
         self.btn_context_tags_status.setToolTip("Edit active context tags")
@@ -595,13 +619,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         )
         self.btn_context_tags_status.hide()
         self.status_bar.addPermanentWidget(self.btn_context_tags_status)
-        from src.core.theme_manager import ThemeManager
-
-        ThemeManager().theme_changed.connect(
-            lambda _theme: self._update_context_tag_status(
-                self.app_coordinator.context_tags.snapshot()
-            )
-        )
+        ThemeManager().theme_changed.connect(self._on_context_tag_theme_changed)
+        ThemeManager().theme_changed.connect(self._apply_status_label_theme)
 
         # Create Menus
         self.ui_manager.create_file_menu(self.menuBar())
@@ -1146,15 +1165,11 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             _theme_dict: The new theme dictionary from ThemeManager (unused).
 
         """
-        try:
-            if not hasattr(self, "gui_db_service") or self.gui_db_service is None:
-                return
-            from src.core.theme_manager import ThemeManager
+        from src.core.theme_manager import ThemeManager
 
-            theme_name = ThemeManager().current_theme_name
-            self.gui_db_service.set_world_theme(theme_name)
-        except Exception as e:
-            logger.warning(f"Failed to save world theme: {e}")
+        self.worker_manager.save_world_theme_requested.emit(
+            ThemeManager().current_theme_name
+        )
 
     def _on_theme_changed_for_titlebar(self, theme_dict: dict) -> None:
         """Update Windows title bar style when theme changes.
@@ -1223,6 +1238,7 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
         if self.backup_service is not None:
             self.backup_service.stop_auto_backup()
 
+        self.ai_search_manager.shutdown()
         self.intelligence_analysis_manager.shutdown()
 
         # Cleanup Worker
@@ -1256,11 +1272,12 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             List of dicts containing tag metadata.
 
         """
-        if hasattr(self, "gui_db_service"):
-            return self.gui_db_service.get_group_metadata(
-                tag_order=tag_order, date_range=date_range
-            )
-        return []
+        return build_group_metadata(
+            self.data_coordinator.cached_events,
+            tag_order,
+            self.grouping_manager.tag_colors,
+            date_range,
+        )
 
     def get_events_for_group(
         self, tag_name: str, date_range: tuple[float, float] | None = None
@@ -1277,11 +1294,11 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
             List of Event objects with the specified tag.
 
         """
-        if hasattr(self, "gui_db_service"):
-            return self.gui_db_service.get_events_for_group(
-                tag_name=tag_name, date_range=date_range
-            )
-        return []
+        return events_for_group(
+            self.data_coordinator.cached_events,
+            tag_name,
+            date_range,
+        )
 
     # DataHandler signal handlers (loose coupling via signals)
 
@@ -1330,17 +1347,9 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     @Slot()
     def show_filter_dialog(self) -> None:
         """Shows the advanced filter dialog."""
-        # Get all tags from DB (Synchronous read from GUI DB Service is fine
-        # for metadata)
-        tags = []
-        if hasattr(self, "gui_db_service"):
-            # db_service.get_active_tags returns list of dicts: need to extract names
-            tag_dicts = self.gui_db_service.get_active_tags()
-            tags = [t["name"] for t in tag_dicts]
-
         dialog = FilterDialog(
             self,
-            available_tags=tags,
+            available_tags=self.data_coordinator.cached_tags,
             current_config=self.unified_list.get_advanced_filter_config(),
         )
         if dialog.exec() == QDialog.DialogCode.Accepted:

@@ -100,6 +100,27 @@ def calculate_summary_source_hash(item: Any) -> str:
     return hashlib.sha256(content.encode("utf-8")).hexdigest()
 
 
+def is_summary_stale(item: Any) -> bool:
+    """Return whether an item's cached summary is absent or out of date.
+
+    This check depends only on the serialized item snapshot, so GUI code can
+    evaluate it without holding a database-backed ``SummaryService``.
+
+    Args:
+        item: Entity or event snapshot containing an ``attributes`` mapping.
+
+    Returns:
+        ``True`` when no summary exists, its metadata is malformed, or its
+        stored source hash does not match the current item content.
+
+    """
+    summary_data = item.attributes.get("_summary_data")
+    if not isinstance(summary_data, dict):
+        return True
+    stored_hash = summary_data.get("hash")
+    return stored_hash != calculate_summary_source_hash(item)
+
+
 @dataclass
 class SummaryData:
     """Data structure for storing item summaries and metadata."""

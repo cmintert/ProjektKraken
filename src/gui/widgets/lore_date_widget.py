@@ -23,6 +23,8 @@ from src.gui.utils.style_helper import StyleHelper
 
 logger = logging.getLogger(__name__)
 
+_MINUTE_OPTIONS_PER_HOUR = 12
+
 
 class LoreDateWidget(QWidget):
     """A composite widget for entering lore dates with structured fields.
@@ -405,8 +407,8 @@ class LoreDateWidget(QWidget):
             minute = int((total_hours - hour) * 60)
             # Round minute to nearest 5-minute interval
             minute_index = round(minute / 5)
-            if minute_index >= 12:
-                minute_index = 11
+            if minute_index >= _MINUTE_OPTIONS_PER_HOUR:
+                minute_index = _MINUTE_OPTIONS_PER_HOUR - 1
             self._hour_combo.setCurrentIndex(min(hour, 23))
             self._minute_combo.setCurrentIndex(minute_index)
 

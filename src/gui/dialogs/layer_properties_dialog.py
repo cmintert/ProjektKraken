@@ -31,6 +31,7 @@ class LayerPropertiesDialog(QDialog):
         node: MapLayerNode,
         parent: Optional[QWidget] = None,
     ) -> None:
+        """Initialize the layer-properties editor."""
         super().__init__(parent)
         self._node = node
         self.setModal(False)

@@ -17,6 +17,8 @@ from src.webserver.server import create_app
 
 logger = logging.getLogger(__name__)
 
+_ADDRESS_IN_USE_ERRNOS = {98, 10048}
+
 
 class WebServerThread(QThread):
     """Background thread to run the Uvicorn server."""
@@ -62,7 +64,7 @@ class WebServerThread(QThread):
             logger.info("Web Server Thread stopped.")
 
         except OSError as e:
-            if e.errno == 98 or e.errno == 10048:  # Address in use
+            if e.errno in _ADDRESS_IN_USE_ERRNOS:
                 self.error_occurred.emit(f"Port {self.config.port} is already in use.")
             else:
                 self.error_occurred.emit(str(e))

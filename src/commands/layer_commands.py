@@ -526,6 +526,7 @@ class DeleteLayerSubtreeCommand(BaseCommand):
         node_id: str,
         world_root: str = "",
     ) -> None:
+        """Initialize deletion of a layer subtree and its artifacts."""
         super().__init__()
         self.map_id = map_id
         self.node_id = node_id
@@ -748,6 +749,7 @@ class UpdateLayerPropertiesCommand(BaseCommand):
     def __init__(
         self, map_id: str, node_id: str, properties: dict[str, Any]
     ) -> None:
+        """Initialize a layer-properties update."""
         super().__init__()
         self.map_id = map_id
         self.node_id = node_id

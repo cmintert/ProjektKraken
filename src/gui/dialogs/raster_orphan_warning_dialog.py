@@ -42,6 +42,7 @@ class RasterOrphanWarningDialog(QDialog):
         map_names: Dict[str, str],
         parent: Optional[QWidget] = None,
     ) -> None:
+        """Initialize the orphaned-raster recovery dialog."""
         super().__init__(parent)
         self.setWindowTitle("Entity Has Raster References")
         self.setModal(True)

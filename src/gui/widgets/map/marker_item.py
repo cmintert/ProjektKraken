@@ -28,8 +28,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.constants import MAP_TEMPORAL_GHOST_OPACITY, TEMPORAL_FUTURE_OPACITY
 from src.core.style_constants import BASE_SIZE
+from src.gui.constants import MAP_TEMPORAL_GHOST_OPACITY, TEMPORAL_FUTURE_OPACITY
 from src.gui.utils.svg_utils import apply_svg_inline_styles, svg_file_to_string
 from src.gui.widgets.map.map_label_item import MapLabelItem
 from src.services.visual_resolver import VisualResolver
@@ -50,6 +50,8 @@ MARKER_ICONS_PATH = os.path.join(
 )
 
 logger = logging.getLogger(__name__)
+
+_CLICK_DISTANCE_THRESHOLD_PX = 3
 
 # Compatibility alias for callers that imported the former local class.
 MarkerLabelItem = MapLabelItem
@@ -566,7 +568,7 @@ class MarkerItem(QGraphicsObject):
         # Check for click vs drag
         if self._drag_start_pos is not None:
             dist = (self.pos() - self._drag_start_pos).manhattanLength()
-            if dist < 3:
+            if dist < _CLICK_DISTANCE_THRESHOLD_PX:
                 # It's a click!
                 self.clicked.emit(self.marker_id, self.object_type)
                 logger.debug(f"Marker {self.marker_id} clicked.")

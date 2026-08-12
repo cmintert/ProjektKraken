@@ -24,6 +24,9 @@ from src.core.raster_mapping import lookup_label_for_value
 
 logger = logging.getLogger(__name__)
 
+_FLOAT_TAG_BYTE_COUNT = 4
+_GREYSCALE_CHANNEL_TOLERANCE = 2
+
 # Maximum thumbnail dimension (pixels)
 _THUMB_MAX = 128
 
@@ -107,7 +110,10 @@ def _read_sample_value_tag(
             return float(tag_data[0])
         except (TypeError, ValueError):
             return None
-    if isinstance(tag_data, (bytes, bytearray)) and len(tag_data) >= 4:
+    if (
+        isinstance(tag_data, (bytes, bytearray))
+        and len(tag_data) >= _FLOAT_TAG_BYTE_COUNT
+    ):
         try:
             return struct.unpack("<f", bytes(tag_data[:4]))[0]
         except struct.error:
@@ -379,7 +385,10 @@ def analyse_image(path: str) -> ImageAnalysisResult:
                     )
                 )
             )
-            _is_content_grey = _drg <= 2 and _drb <= 2
+            _is_content_grey = (
+                _drg <= _GREYSCALE_CHANNEL_TOLERANCE
+                and _drb <= _GREYSCALE_CHANNEL_TOLERANCE
+            )
 
         # ------------------------------------------------------------------ #
         # Mode suggestion and hint text

@@ -31,6 +31,10 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_AMBIGUOUS_ITEM_PREVIEW_LIMIT = 3
+_WARNING_PREVIEW_LIMIT = 5
+_ERROR_PREVIEW_LIMIT = 10
+
 
 class ImportCoordinator(BaseCoordinator):
     """Coordinates import operations and database management.
@@ -241,23 +245,28 @@ class ImportCoordinator(BaseCoordinator):
                         f"\n  \u2022 {item['type'].title()} '{item['name']}': "
                         f"{len(item['candidates'])} matches"
                     )
-                if len(result.ambiguous_items) > 3:
-                    msg += f"\n  ...and {len(result.ambiguous_items) - 3} more."
+                if len(result.ambiguous_items) > _AMBIGUOUS_ITEM_PREVIEW_LIMIT:
+                    remaining = len(result.ambiguous_items) - _AMBIGUOUS_ITEM_PREVIEW_LIMIT
+                    msg += f"\n  ...and {remaining} more."
             if result.unparsed_date_count > 0:
                 msg += (
                     f"\n\nEvents with unparsed dates (defaulted to 0.0): "
                     f"{result.unparsed_date_count}"
                 )
             if result.warnings:
-                msg += "\n\nWarnings:\n" + "\n".join(result.warnings[:5])
-                if len(result.warnings) > 5:
-                    msg += f"\n...and {len(result.warnings) - 5} more."
+                msg += "\n\nWarnings:\n" + "\n".join(
+                    result.warnings[:_WARNING_PREVIEW_LIMIT]
+                )
+                if len(result.warnings) > _WARNING_PREVIEW_LIMIT:
+                    remaining = len(result.warnings) - _WARNING_PREVIEW_LIMIT
+                    msg += f"\n...and {remaining} more."
 
             QMessageBox.information(self.main_window, "Import Complete", msg)
         else:
-            err_msg = "\n".join(result.errors[:10])
-            if len(result.errors) > 10:
-                err_msg += f"\n...and {len(result.errors) - 10} more errors."
+            err_msg = "\n".join(result.errors[:_ERROR_PREVIEW_LIMIT])
+            if len(result.errors) > _ERROR_PREVIEW_LIMIT:
+                remaining = len(result.errors) - _ERROR_PREVIEW_LIMIT
+                err_msg += f"\n...and {remaining} more errors."
 
             QMessageBox.critical(
                 self.main_window,

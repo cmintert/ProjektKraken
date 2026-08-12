@@ -177,7 +177,7 @@ def get_provider_settings_from_qsettings(
     try:
         from PySide6.QtCore import QSettings
 
-        from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+        from src.core.settings import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 

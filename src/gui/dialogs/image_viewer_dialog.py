@@ -22,8 +22,11 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.image_attachment import ImageAttachment
+from src.core.theme_manager import ThemeManager
 
 logger = logging.getLogger(__name__)
+
+IMAGE_VIEWER_MAX_DIMENSION_PX = 1024
 
 
 class ImageViewerDialog(QDialog):
@@ -55,11 +58,12 @@ class ImageViewerDialog(QDialog):
         self._base_pixmap: QPixmap | None = None
 
         self.init_ui()
+        ThemeManager().theme_changed.connect(self._apply_theme)
         self.load_current_image()
 
     def init_ui(self) -> None:
         """Initialize the user interface components."""
-        self.setStyleSheet("background-color: #2b2b2b; color: #e0e0e0;")
+        self._apply_theme(ThemeManager().get_theme())
         # Main layout with zero margins to let image touch edges if desired
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -77,8 +81,7 @@ class ImageViewerDialog(QDialog):
         )
         self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
 
-        # Style the scroll area background to match
-        self.scroll_area.setStyleSheet("background-color: #2b2b2b;")
+        # The scroll area inherits the dialog's theme-aware background.
 
         self.image_label = QLabel()
         self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -119,6 +122,13 @@ class ImageViewerDialog(QDialog):
 
         layout.addWidget(controls_widget)
 
+    @Slot(dict)
+    def _apply_theme(self, theme: dict) -> None:
+        """Apply dialog colours from the active theme."""
+        self.setStyleSheet(
+            f"background-color: {theme['app_bg']}; color: {theme['text_main']};"
+        )
+
     def load_current_image(self) -> None:
         """Load and display the current image from the attachments list."""
         if not self.attachments:
@@ -141,21 +151,21 @@ class ImageViewerDialog(QDialog):
         if full_path.exists():
             original = QPixmap(str(full_path))
             if not original.isNull():
-                # 1. Scale down largest dimension to 1024 if needed
-                if original.width() > 1024 or original.height() > 1024:
+                # Scale oversized images while preserving their aspect ratio.
+                if (
+                    original.width() > IMAGE_VIEWER_MAX_DIMENSION_PX
+                    or original.height() > IMAGE_VIEWER_MAX_DIMENSION_PX
+                ):
                     self._base_pixmap = original.scaled(
-                        1024,
-                        1024,
+                        IMAGE_VIEWER_MAX_DIMENSION_PX,
+                        IMAGE_VIEWER_MAX_DIMENSION_PX,
                         Qt.AspectRatioMode.KeepAspectRatio,
                         Qt.TransformationMode.SmoothTransformation,
                     )
                 else:
                     self._base_pixmap = original
 
-                # 2. Update Label
-                self.image_label.setPixmap(self._base_pixmap)
-
-                # 2. Update Label
+                # Update the display from the cached, possibly scaled pixmap.
                 self.image_label.setPixmap(self._base_pixmap)
 
                 # 3. Request Resize

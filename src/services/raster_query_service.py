@@ -7,6 +7,8 @@ from typing import Any
 import numpy as np
 from PIL import Image as PilImage
 
+_VALUE_RASTER_DIMENSIONS = 2
+
 
 def _resample(
     array: np.ndarray, target_shape: tuple[int, int], mode: str
@@ -39,7 +41,7 @@ def compute_resampled_query(
     """Evaluate conditions after resampling layers to the largest grid."""
     if not arrays or len(arrays) != len(modes):
         raise ValueError("Query requires matching raster arrays and modes")
-    if any(array.ndim != 2 for array in arrays):
+    if any(array.ndim != _VALUE_RASTER_DIMENSIONS for array in arrays):
         raise ValueError("Only value rasters can be queried")
 
     target_shape = (
@@ -75,4 +77,3 @@ def compute_resampled_query(
             raise ValueError(f"Unknown raster query operator: {operator}")
         mask &= comparisons[operator]
     return mask
-

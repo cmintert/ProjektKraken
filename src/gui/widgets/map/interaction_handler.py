@@ -48,6 +48,7 @@ class InteractionHandler:
     """
 
     def __init__(self, view: "MapGraphicsView") -> None:
+        """Initialize map pointer and keyboard interaction handling."""
         self._view = view
 
     # ------------------------------------------------------------------

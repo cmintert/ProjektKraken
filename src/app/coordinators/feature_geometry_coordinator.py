@@ -31,6 +31,7 @@ class FeatureGeometryCoordinator(QObject):
     """Own map-scoped geometry caches and resolve them at the playhead."""
 
     def __init__(self, main_window: "MainWindow") -> None:
+        """Initialize feature-geometry edit coordination."""
         super().__init__(main_window)
         self._window = main_window
         self._markers_by_map: dict[str, dict[str, dict[str, Any]]] = {}

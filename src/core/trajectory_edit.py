@@ -27,6 +27,9 @@ from src.core.trajectory import (
     validate_keyframes,
 )
 
+_MIN_EQUALIZATION_KEYFRAMES = 3
+_MIN_INDEX_SPAN_WITH_INTERMEDIATE = 2
+
 
 class EditableKeyframeSnapshot(TypedDict):
     """Serializable editable-keyframe state for GUI rendering."""
@@ -597,7 +600,7 @@ class TrajectoryEditSession:
             raise ValueError("Set a timed start location first.")
         start_index = self._index_of(self.speed_anchor_id)
         end_index = self._index_of(end_id)
-        if end_index - start_index < 2:
+        if end_index - start_index < _MIN_INDEX_SPAN_WITH_INTERMEDIATE:
             raise ValueError("The selected range has no intermediate points.")
         if (
             self.working_keyframes[start_index].point_kind != POINT_KIND_TIMED
@@ -656,7 +659,7 @@ class TrajectoryEditSession:
         self, context: TrajectoryDistanceContext
     ) -> None:
         """Preview constant speed across the complete working trajectory."""
-        if len(self.working_keyframes) < 3:
+        if len(self.working_keyframes) < _MIN_EQUALIZATION_KEYFRAMES:
             raise ValueError(
                 "Whole-trajectory equalization needs an intermediate keyframe."
             )
@@ -747,7 +750,8 @@ class TrajectoryEditSession:
             and self.active_date_edit_id is None
             and speed_anchor_index is not None
             and selected_index is not None
-            and selected_index - speed_anchor_index >= 2
+            and selected_index - speed_anchor_index
+            >= _MIN_INDEX_SPAN_WITH_INTERMEDIATE
             and self.working_keyframes[speed_anchor_index].point_kind
             == POINT_KIND_TIMED
             and self.working_keyframes[selected_index].point_kind == POINT_KIND_TIMED
@@ -829,7 +833,7 @@ class TrajectoryEditSession:
             "can_equalize_whole": (
                 self.equalization_before is None
                 and self.active_date_edit_id is None
-                and len(self.working_keyframes) >= 3
+                and len(self.working_keyframes) >= _MIN_EQUALIZATION_KEYFRAMES
             ),
             "keyframe_count": len(self.working_keyframes),
             "is_dirty": self.is_dirty,
@@ -857,7 +861,7 @@ class TrajectoryEditSession:
             raise ValueError("Finish editing the keyframe date first.")
         start_index = self._index_of(start_id)
         end_index = self._index_of(end_id)
-        if end_index - start_index < 2:
+        if end_index - start_index < _MIN_INDEX_SPAN_WITH_INTERMEDIATE:
             raise ValueError("Equalize Speed needs at least one intermediate keyframe.")
         for start, end in zip(
             self.working_keyframes[start_index:end_index],

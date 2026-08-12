@@ -1,3 +1,5 @@
+"""Coordinate scheduled and user-triggered world backups."""
+
 import logging
 import os
 import subprocess
@@ -34,6 +36,7 @@ class BackupCoordinator(BaseCoordinator):
     """
 
     def __init__(self, main_window: "MainWindow") -> None:
+        """Initialize backup orchestration for the main window."""
         super().__init__(main_window)
 
     @property

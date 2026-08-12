@@ -26,6 +26,7 @@ class RasterQueryTask(QRunnable):
         modes: list[str],
         conditions: list[dict[str, Any]],
     ) -> None:
+        """Initialize one immutable background raster query."""
         super().__init__()
         self.arrays = [array.copy() for array in arrays]
         self.modes = list(modes)

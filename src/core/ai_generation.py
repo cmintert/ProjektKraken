@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+AI_GENERATION_PREFERENCES_VERSION = 2
+
 
 class TaskIntent(str, Enum):
     """Authoring purpose of a task template."""
@@ -177,7 +179,7 @@ class GenerationReviewResult:
 class AIGenerationPreferences:
     """Portable, versioned creative preferences stored inside a world."""
 
-    version: int = 2
+    version: int = AI_GENERATION_PREFERENCES_VERSION
     persona: str = ""
     max_tokens: int = 512
     temperature_percent: int = 70

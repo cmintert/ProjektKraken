@@ -6,6 +6,10 @@ Handles the calculation and rendering of a GIS-style scale bar.
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QBrush, QColor, QFont, QFontMetrics, QPainter, QPen
 
+_NICE_SCALE_HIGH_RESIDUAL = 5
+_NICE_SCALE_MID_RESIDUAL = 2
+_METERS_PER_KILOMETER = 1000
+
 
 class ScaleBarPainter:
     """Helper class to render a map scale bar."""
@@ -116,9 +120,9 @@ class ScaleBarPainter:
         magnitude = 10 ** math.floor(math.log10(num))
         residual = num / magnitude
 
-        if residual > 5:
+        if residual > _NICE_SCALE_HIGH_RESIDUAL:
             return 10 * magnitude
-        elif residual > 2:
+        elif residual > _NICE_SCALE_MID_RESIDUAL:
             return 5 * magnitude
         elif residual > 1:
             return 2 * magnitude
@@ -127,4 +131,8 @@ class ScaleBarPainter:
 
     def _format_distance(self, meters: float) -> str:
         """Formats meters into m or km string."""
-        return f"{meters / 1000:.0f} km" if meters >= 1000 else f"{meters:.0f} m"
+        return (
+            f"{meters / _METERS_PER_KILOMETER:.0f} km"
+            if meters >= _METERS_PER_KILOMETER
+            else f"{meters:.0f} m"
+        )

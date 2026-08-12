@@ -139,6 +139,7 @@ class RasterQueryDialog(QDialog):
         layers: List[Dict[str, Any]],
         parent: Optional[QWidget] = None,
     ) -> None:
+        """Initialize the raster query builder dialog."""
         super().__init__(parent)
         self.setWindowTitle("Cross-Layer Spatial Query")
         self.setMinimumWidth(520)

@@ -29,6 +29,7 @@ class ScaleBarOverlay(QWidget):
     """
 
     def __init__(self, parent: QWidget) -> None:
+        """Initialize the map scale-bar overlay."""
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)

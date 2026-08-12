@@ -1,3 +1,5 @@
+"""Qt WebEngine view and bridge used by the relationship graph."""
+
 import json
 import logging
 from typing import Any, Optional
@@ -8,6 +10,7 @@ from PySide6.QtWebChannel import QWebChannel
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
+from src.core.theme_manager import ThemeManager
 from src.gui.widgets.graph_view.graph_builder import GraphBuilder
 
 logger = logging.getLogger(__name__)
@@ -72,16 +75,20 @@ class GraphWebView(QWidget):
         self._channel.registerObject("bridge", self._bridge)
         self._web_view.page().setWebChannel(self._channel)
 
-        # Set a dark background before content loads (widget background)
-        self._web_view.setStyleSheet("background-color: #1e1e1e;")
-
-        # Set the page's default background color (fills empty space)
-        self._web_view.page().setBackgroundColor(QColor("#1e1e1e"))
+        self._apply_theme(ThemeManager().get_theme())
+        ThemeManager().theme_changed.connect(self._apply_theme)
 
         # Disable default context menu
         self._web_view.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
 
         layout.addWidget(self._web_view)
+
+    @Slot(dict)
+    def _apply_theme(self, theme: dict) -> None:
+        """Apply the active surface colour before graph content loads."""
+        surface = theme["surface"]
+        self._web_view.setStyleSheet(f"background-color: {surface};")
+        self._web_view.page().setBackgroundColor(QColor(surface))
 
     def load_html(self, html: str) -> None:
         """Loads HTML content into the web view.

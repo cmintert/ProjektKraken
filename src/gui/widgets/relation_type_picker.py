@@ -151,7 +151,7 @@ class RelationTypePicker(QWidget):
         self.cancel_button.clicked.connect(self.hide)
 
         # Set size constraints from constants
-        from src.app.constants import (
+        from src.gui.constants import (
             RELATION_PICKER_MAX_HEIGHT,
             RELATION_PICKER_MAX_WIDTH,
             RELATION_PICKER_MIN_HEIGHT,

@@ -24,8 +24,12 @@ from __future__ import annotations
 import math
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 
-from src.app.constants import MAP_NESTING_DEPTH_CAP, MAP_ROLE_DETAIL, MAP_ROLE_MASTER
 from src.core.map import Map
+from src.core.map_constants import (
+    MAP_NESTING_DEPTH_CAP,
+    MAP_ROLE_DETAIL,
+    MAP_ROLE_MASTER,
+)
 
 
 class NestingValidationError(ValueError):

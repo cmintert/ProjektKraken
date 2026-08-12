@@ -85,6 +85,7 @@ class ContextTagCoordinator(BaseCoordinator):
         main_window: MainWindow,
         settings: QSettings | None = None,
     ) -> None:
+        """Initialize context-tag state and settings integration."""
         super().__init__(main_window)
         self._settings = settings or QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         world = getattr(main_window, "current_world", None)

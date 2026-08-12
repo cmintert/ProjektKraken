@@ -10,6 +10,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+_FULL_DESCRIPTION_CREDIT_CHARS = 50
+
 
 class AnalysisScopeKind(Enum):
     """Supported boundaries for an AI analysis run."""
@@ -326,7 +328,7 @@ class CompletenessScore:
 
         description_weight = weights["description"]
         description_earned = 0.0
-        if self.description_length >= 50:
+        if self.description_length >= _FULL_DESCRIPTION_CREDIT_CHARS:
             description_earned = description_weight
         elif self.description_length > 0:
             description_earned = description_weight / 2.0

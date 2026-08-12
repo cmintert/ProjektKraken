@@ -7,6 +7,10 @@ import zlib
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
+_RASTER_SCHEMA_VERSION = 2
+_RASTER_REGION_COMPONENT_COUNT = 4
+_SUPPORTED_RASTER_SHAPE_DIMENSIONS = (2, 3)
+
 
 @dataclass(frozen=True)
 class RasterSnapshotRef:
@@ -39,7 +43,7 @@ class RasterLayerState:
     snapshots: list[RasterSnapshotRef] = field(default_factory=list)
     color_map: dict[str, Any] = field(default_factory=dict)
     value_entity_map: dict[str, Any] = field(default_factory=dict)
-    schema_version: int = 2
+    schema_version: int = _RASTER_SCHEMA_VERSION
     extra: dict[str, Any] = field(default_factory=dict)
     _legacy_raw: Optional[dict[str, Any]] = field(
         default=None, repr=False, compare=False
@@ -47,7 +51,7 @@ class RasterLayerState:
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize using the existing map-attribute storage shape."""
-        if self.schema_version < 2 and self._legacy_raw is not None:
+        if self.schema_version < _RASTER_SCHEMA_VERSION and self._legacy_raw is not None:
             return dict(self._legacy_raw)
         data = dict(self.extra)
         data.update(
@@ -103,7 +107,9 @@ class RasterLayerState:
             value_entity_map=dict(data.get("value_entity_map", {})),
             schema_version=schema_version,
             extra={key: value for key, value in data.items() if key not in known},
-            _legacy_raw=dict(data) if schema_version < 2 else None,
+            _legacy_raw=(
+                dict(data) if schema_version < _RASTER_SCHEMA_VERSION else None
+            ),
         )
 
     def resolve_file(self, lore_date: float) -> str:
@@ -155,7 +161,10 @@ class RasterPatch:
         """Deserialize a patch."""
         region_values = [int(v) for v in data["region"]]
         shape_values = [int(v) for v in data["shape"]]
-        if len(region_values) != 4 or len(shape_values) not in (2, 3):
+        if (
+            len(region_values) != _RASTER_REGION_COMPONENT_COUNT
+            or len(shape_values) not in _SUPPORTED_RASTER_SHAPE_DIMENSIONS
+        ):
             raise ValueError("Invalid raster patch dimensions")
         return cls(
             map_id=str(data["map_id"]),
@@ -181,6 +190,7 @@ class MapCalibration:
     width_meters: Optional[float] = None
 
     def __post_init__(self) -> None:
+        """Validate that a configured physical width is positive."""
         if self.width_meters is not None and self.width_meters <= 0:
             raise ValueError("width_meters must be positive or None")
 

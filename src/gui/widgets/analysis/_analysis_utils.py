@@ -31,12 +31,12 @@ from PySide6.QtWidgets import (
     QTextEdit,
 )
 
-from src.app.constants import (
+from src.core.analysis import ParsedLoreSuggestion, SeverityLevel
+from src.gui.constants import (
     ANALYSIS_SEVERITY_CRITICAL_COLOR,
     ANALYSIS_SEVERITY_INFO_COLOR,
     ANALYSIS_SEVERITY_WARNING_COLOR,
 )
-from src.core.analysis import ParsedLoreSuggestion, SeverityLevel
 
 logger = logging.getLogger(__name__)
 

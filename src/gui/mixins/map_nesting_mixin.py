@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, cast
 from PySide6.QtCore import SignalInstance, Slot
 from PySide6.QtWidgets import QComboBox, QDialog, QInputDialog, QMessageBox, QWidget
 
-from src.app.constants import MAP_ROLE_DETAIL, MAP_ROLE_MASTER
+from src.gui.constants import MAP_ROLE_DETAIL, MAP_ROLE_MASTER
 from src.gui.dialogs.register_detail_map_dialog import RegisterDetailMapDialog
 
 if TYPE_CHECKING:
@@ -39,15 +39,21 @@ class MapNestingMixin:
     if TYPE_CHECKING:
         map_selector: QComboBox
         @property
-        def maps_data(self) -> list[Map]: ...
+        def maps_data(self) -> list[Map]:
+            """Return the maps cached by the host widget."""
+            ...
         set_master_map_requested: SignalInstance
         register_detail_map_requested: SignalInstance
         edit_footprint_requested: SignalInstance
         _pending_footprint_edit_id: str | None
 
-        def get_selected_map_id(self) -> str | None: ...
+        def get_selected_map_id(self) -> str | None:
+            """Return the active map identifier."""
+            ...
 
-        def _update_mode_indicator(self) -> None: ...
+        def _update_mode_indicator(self) -> None:
+            """Refresh the host widget's mode indicator."""
+            ...
 
     @Slot()
     def _on_set_master_map_clicked(self) -> None:

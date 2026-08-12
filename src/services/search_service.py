@@ -37,9 +37,13 @@ if TYPE_CHECKING:
     from src.core.entities import Entity
     from src.core.events import Event
 
-from src.app.constants import _env_bool
+from src.core.environment import env_bool
 
 logger = logging.getLogger(__name__)
+
+_EMBEDDING_MATRIX_DIMENSIONS = 2
+
+_VECTOR_NORM_EPSILON = 1e-12
 
 REBUILD_BATCH_SIZE = 32
 
@@ -231,7 +235,7 @@ def normalize_vector(v: np.ndarray) -> np.ndarray:
     """
     v = v.astype(np.float32)
     norm = np.linalg.norm(v)
-    if norm < 1e-12:
+    if norm < _VECTOR_NORM_EPSILON:
         return v  # avoid division by zero; treat as near-zero vector
     return v / norm
 
@@ -637,7 +641,7 @@ class SubprocessSentenceTransformersProvider(EmbeddingProvider):
             raise RuntimeError("Subprocess embedding returned invalid payload")
 
         embeddings = np.array(parsed["embeddings"], dtype=np.float32)
-        if embeddings.ndim != 2:
+        if embeddings.ndim != _EMBEDDING_MATRIX_DIMENSIONS:
             raise RuntimeError("Subprocess embedding payload had unexpected shape")
         return embeddings
 
@@ -1273,6 +1277,7 @@ class SearchService:
     def search_by_name(
         self, text: str, object_type: Optional[str] = None
     ) -> List[Dict[str, Any]]:
+        """Return entities or events whose complete names occur in text."""
         # We need to find names.
         # Strategy: Fetch all names and check if they exist in text?
         # Or checking if text contains known names.
@@ -1404,7 +1409,7 @@ def get_llm_settings_from_qsettings() -> Dict[str, Any]:
     try:
         from PySide6.QtCore import QSettings
 
-        from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+        from src.core.settings import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
         from src.services.secret_store import get_api_key
 
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
@@ -1490,7 +1495,7 @@ def create_provider(
         )
     elif provider_name == "sentence-transformers":
         st_model = model or qsettings["st_model"] or None
-        use_subprocess_provider = _env_bool(
+        use_subprocess_provider = env_bool(
             "PK_ST_EMBED_SUBPROCESS",
             default=sys.platform == "win32",
         )

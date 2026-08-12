@@ -6,6 +6,7 @@ import numpy as np
 from PIL import Image
 
 from src.commands.raster_commands import StrokeRasterCommand
+from src.commands.registry import get_command_types
 from src.core.map_state import MapCalibration, RasterLayerState
 from src.services.command_artifact_store import CommandArtifactStore
 from src.services.raster_image_analysis import gradient_from_rgb_image
@@ -109,7 +110,8 @@ def test_stroke_intent_crosses_worker_boundary_without_live_buffer() -> None:
         "base": command.base_state_dict(),
     }
 
-    restored = DatabaseWorker._command_from_request(payload)
+    worker = DatabaseWorker(":memory:", get_command_types())
+    restored = worker._command_from_request(payload)
 
     assert isinstance(restored, StrokeRasterCommand)
     assert restored is not command

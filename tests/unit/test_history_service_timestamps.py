@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from src.commands.base_command import BaseCommand, CommandResult
+from src.core.version import VERSION
 from src.services.db_service import DatabaseService
 from src.services.history_service import HistoryService
 
@@ -81,3 +82,12 @@ def test_save_command_timestamps(mock_db_service):
     loaded_cmd = loaded_commands[0]
     assert isinstance(loaded_cmd, MockCommand)
     assert loaded_cmd.timestamp == test_time
+
+
+def test_session_records_current_application_version(mock_db_service):
+    """New history sessions store the authoritative application version."""
+    HistoryService(mock_db_service, "test_world")
+
+    execute_call = mock_db_service.transaction.return_value.__enter__.return_value.execute
+    parameters = execute_call.call_args.args[1]
+    assert parameters[-1] == VERSION

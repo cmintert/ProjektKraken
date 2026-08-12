@@ -32,8 +32,8 @@ import sqlite3
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple
 
-from src.app.constants import MAP_DEFAULT_WIDTH_METERS, MAP_ROLE_MASTER
 from src.core.map import Map, MapLayerNode, resolve_layer_temporal_validity
+from src.core.map_constants import MAP_DEFAULT_WIDTH_METERS, MAP_ROLE_MASTER
 from src.core.marker import Marker
 from src.services.map_nesting_service import MapNestingService
 from src.services.raster_image_analysis import sample_raster_semantic
@@ -43,6 +43,9 @@ from src.services.repositories.feature_geometry_repository import (
 from src.services.repositories.map_repository import MapRepository
 
 logger = logging.getLogger(__name__)
+
+_MIN_LAYER_PATH_LENGTH = 2
+_METRES_PER_KILOMETRE = 1000.0
 
 _MAX_NEARBY = 5
 
@@ -214,7 +217,7 @@ class SpatialContextBuilder:
             return None, None
 
         leaf = path[-1]
-        parent = path[-2] if len(path) >= 2 else None
+        parent = path[-2] if len(path) >= _MIN_LAYER_PATH_LENGTH else None
         layer_name = parent.name if parent is not None else leaf.name
 
         notes_parts: List[str] = []
@@ -537,8 +540,8 @@ def _proximity_band(dist_norm: float) -> str:
 
 def _format_distance(metres: float) -> str:
     """Format a distance in metres to a short, human-readable string."""
-    if metres >= 1000.0:
-        return f"{metres / 1000.0:.1f} km"
+    if metres >= _METRES_PER_KILOMETRE:
+        return f"{metres / _METRES_PER_KILOMETRE:.1f} km"
     return f"{int(round(metres))} m"
 
 

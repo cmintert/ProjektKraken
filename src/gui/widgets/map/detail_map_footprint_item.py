@@ -42,8 +42,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.constants import MAP_LAYER_Z_FOOTPRINTS
 from src.core.theme_manager import ThemeManager
+from src.gui.constants import MAP_LAYER_Z_FOOTPRINTS
 from src.services.map_nesting_service import MapNestingService
 
 # Handle geometry
@@ -61,6 +61,9 @@ _ZONE_CORNER_TR = 3
 _ZONE_CORNER_BR = 4
 _ZONE_CORNER_BL = 5
 _ZONE_ROTATE = 6
+
+
+_MINIMUM_SCALE_FACTOR = 1e-6
 
 
 class DetailMapFootprintItem(QGraphicsObject):
@@ -97,6 +100,7 @@ class DetailMapFootprintItem(QGraphicsObject):
         image_path: str = "",
         parent: Optional[QGraphicsObject] = None,
     ) -> None:
+        """Initialize an interactive detail-map footprint item."""
         super().__init__(parent)
         self._detail_map_id = detail_map_id
         self._name = name
@@ -489,9 +493,9 @@ class DetailMapFootprintItem(QGraphicsObject):
                 self._drag_start_scene.y() - cy_px,
             )
             curr_dist = math.hypot(pos.x() - cx_px, pos.y() - cy_px)
-            if start_dist > 1e-6:
+            if start_dist > _MINIMUM_SCALE_FACTOR:
                 new_scale = reg["scale_norm"] * (curr_dist / start_dist)
-                reg["scale_norm"] = max(1e-6, new_scale)
+                reg["scale_norm"] = max(_MINIMUM_SCALE_FACTOR, new_scale)
 
         elif self._drag_zone == _ZONE_ROTATE:
             cx_px = reg["master_center_norm"]["x"] * self._iw

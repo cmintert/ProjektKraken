@@ -8,6 +8,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from src.core.ai_generation import (
+    AI_GENERATION_PREFERENCES_VERSION,
     AIGenerationPreferences,
     TaskIntent,
     TaskTemplate,
@@ -41,6 +42,7 @@ class TaskTemplateCatalog:
         built_in_dir: Path | None = None,
         legacy_dir: Path | None = None,
     ) -> None:
+        """Initialize built-in and optional world task-template sources."""
         package_root = Path(__file__).parent.parent.parent
         self.built_in_dir = built_in_dir or (
             package_root / "default_assets" / "templates" / "task_prompts"
@@ -137,7 +139,7 @@ class TaskTemplateCatalog:
         self, preferences: AIGenerationPreferences
     ) -> AIGenerationPreferences:
         """Upgrade v1 preferences and import non-bundled legacy templates once."""
-        if preferences.version >= 2:
+        if preferences.version >= AI_GENERATION_PREFERENCES_VERSION:
             return preferences
 
         imported = list(preferences.custom_task_templates)
@@ -166,7 +168,7 @@ class TaskTemplateCatalog:
 
         return replace(
             preferences,
-            version=2,
+            version=AI_GENERATION_PREFERENCES_VERSION,
             custom_task_templates=tuple(imported),
         )
 

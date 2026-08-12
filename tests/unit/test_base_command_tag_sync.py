@@ -70,7 +70,8 @@ class TestAssignTags:
         """A failing tag does not prevent subsequent tags from being assigned."""
         mock_db.assign_tag_to_entity.side_effect = [Exception("fail"), None]
 
-        BaseCommand._assign_tags(mock_db, "e1", ["bad", "good"], "entity")
+        with pytest.raises(RuntimeError, match="bad: fail"):
+            BaseCommand._assign_tags(mock_db, "e1", ["bad", "good"], "entity")
 
         assert mock_db.assign_tag_to_entity.call_count == 2
 
@@ -127,6 +128,7 @@ class TestSyncTags:
         ]
         mock_db.remove_tag_from_entity.side_effect = [Exception("fail"), None]
 
-        BaseCommand._sync_tags(mock_db, "e1", set(), "entity")
+        with pytest.raises(RuntimeError, match="Failed to synchronize tags"):
+            BaseCommand._sync_tags(mock_db, "e1", set(), "entity")
 
         assert mock_db.remove_tag_from_entity.call_count == 2

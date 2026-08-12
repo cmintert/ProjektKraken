@@ -10,18 +10,18 @@ import subprocess
 import sys
 import traceback
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, List, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Set, Tuple, Union, cast
 
 from PySide6.QtCore import QObject, Signal, SignalInstance, Slot
 
-from src.app.constants import (
+from src.core.command import CommandProtocol, CommandResult
+from src.core.entities import Entity
+from src.core.events import Event
+from src.core.semantic_config import (
     SEMANTIC_COMPLETION_ENABLE_EMBEDDING,
     SEMANTIC_COMPLETION_PROBE_ON_WINDOWS,
     SEMANTIC_COMPLETION_PROBE_TIMEOUT_S,
 )
-from src.commands.base_command import BaseCommand, CommandResult
-from src.core.entities import Entity
-from src.core.events import Event
 from src.core.summary_data import SummaryData
 from src.services import longform_builder
 from src.services.asset_store import AssetStore
@@ -41,6 +41,9 @@ if TYPE_CHECKING:
     from src.services.search_service import SearchService
 
 logger = logging.getLogger(__name__)
+
+_LEGACY_ANALYSIS_ARG_COUNT = 3
+_SCOPED_ANALYSIS_ARG_COUNT = 6
 
 
 class DatabaseWorker(QObject):
@@ -69,6 +72,9 @@ class DatabaseWorker(QObject):
     graph_data_loaded = Signal(list, list)  # nodes, edges
     graph_metadata_loaded = Signal(list, list)  # tags, rel_types
     graph_lexicon_loaded = Signal(dict, dict)  # raw_lexicon, resolved_lexicon
+    timeline_grouping_loaded = Signal(object)
+    world_theme_loaded = Signal(str)
+    embedding_stats_loaded = Signal(dict)
     completer_data_loaded = Signal(
         list, list, list, list
     )  # tags, rel_types, attr_keys, entity_types
@@ -95,6 +101,7 @@ class DatabaseWorker(QObject):
     import_finished = Signal(ImportResult)
     obsidian_export_prepared = Signal(dict)
     obsidian_export_finished = Signal(dict)
+    obsidian_vault_export_finished = Signal(dict)
     summary_generated = Signal(str, SummaryData)
     summary_generation_failed = Signal(str)  # item_id
 
@@ -112,15 +119,22 @@ class DatabaseWorker(QObject):
     intelligence_snapshot_ready = Signal(str, dict)  # job_id, serialized snapshot
     intelligence_snapshot_failed = Signal(str, str)  # job_id, message
 
-    def __init__(self, db_path: str) -> None:
+    def __init__(
+        self,
+        db_path: str,
+        command_types: dict[str, type[Any]] | None = None,
+    ) -> None:
         """Initializes the worker.
 
         Args:
             db_path: Path to the database file.
+            command_types: Command classes supplied by the application layer for
+                deserializing worker requests without reversing layer dependencies.
 
         """
         super().__init__()
         self.db_path = db_path
+        self._command_types = dict(command_types or {})
         self.db_service: Optional[DatabaseService] = None
         self.asset_store: Optional[AssetStore] = None
         self.attachment_service: Optional[AttachmentService] = None
@@ -222,6 +236,8 @@ class DatabaseWorker(QObject):
 
             self.temporal_manager = TemporalManager(self.db_service)
 
+            self.world_theme_loaded.emit(self.db_service.get_world_theme() or "")
+
             logger.info("DatabaseWorker initialized successfully.")
             self.initialized.emit(True)
             self.operation_finished.emit("Database Connected.")
@@ -268,11 +284,10 @@ class DatabaseWorker(QObject):
             self.error_occurred.emit("Database not ready for command history.")
             return
         try:
-            from src.commands.registry import get_command_types
             from src.services.history_service import HistoryService
 
             self.history_service = HistoryService(self.db_service, world_id)
-            for name, command_type in get_command_types().items():
+            for name, command_type in self._command_types.items():
                 self.history_service.register_command_type(name, command_type)
             commands = self.history_service.load_recent_history(limit=100)
             payloads = [
@@ -295,6 +310,50 @@ class DatabaseWorker(QObject):
             self.history_cleared.emit(0)
             return
         self.history_cleared.emit(self.history_service.clear_all_history())
+
+    @Slot()
+    def load_timeline_grouping_config(self) -> None:
+        """Load timeline grouping configuration and tag colors."""
+        if self.db_service is None:
+            self.timeline_grouping_loaded.emit(None)
+            return
+        try:
+            config = self.db_service.get_timeline_grouping_config()
+            tag_order = config.get("tag_order", []) if config else []
+            colors = {
+                tag_name: self.db_service.get_tag_color(tag_name)
+                for tag_name in tag_order
+            }
+            self.timeline_grouping_loaded.emit(
+                {"config": config, "colors": colors}
+            )
+        except Exception:
+            logger.exception("Failed to load timeline grouping configuration")
+            self.timeline_grouping_loaded.emit(None)
+
+    @Slot(str)
+    def save_world_theme(self, theme_name: str) -> None:
+        """Persist the active theme using the worker-owned database service."""
+        if self.db_service is None:
+            return
+        try:
+            self.db_service.set_world_theme(theme_name)
+        except Exception:
+            logger.exception("Failed to save world theme")
+            self.error_occurred.emit("Failed to save world theme.")
+
+    @Slot()
+    def load_embedding_stats(self) -> None:
+        """Emit aggregate semantic-index statistics."""
+        if self.db_service is None:
+            self.embedding_stats_loaded.emit({"count": 0, "last_updated": None})
+            return
+        try:
+            self.embedding_stats_loaded.emit(self.db_service.get_embedding_stats())
+        except Exception:
+            logger.exception("Failed to load semantic-index statistics")
+            self.embedding_stats_loaded.emit({"count": 0, "last_updated": None})
+            self.error_occurred.emit("Failed to load semantic-index statistics.")
 
     @Slot()
     def load_events(self) -> None:
@@ -536,17 +595,23 @@ class DatabaseWorker(QObject):
             logger.error(f"Failed to load calendar config: {e}")
             self.calendar_config_loaded.emit(None)
 
-    @staticmethod
-    def _command_from_request(request: object) -> BaseCommand:
+    def _command_from_request(self, request: object) -> CommandProtocol:
         """Reconstruct a command from a serializable main-thread intent."""
-        if isinstance(request, BaseCommand):
-            return request
         if not isinstance(request, dict):
+            required_methods = (
+                "execute",
+                "undo",
+                "to_dict",
+                "base_state_dict",
+                "restore_base_state",
+                "get_description",
+            )
+            if all(callable(getattr(request, name, None)) for name in required_methods):
+                return cast(CommandProtocol, request)
             raise TypeError("Command request must be a serializable dictionary")
-        from src.commands.registry import get_command_types
 
         command_type = str(request.get("type", ""))
-        command_class = get_command_types().get(command_type)
+        command_class = self._command_types.get(command_type)
         if command_class is None:
             raise ValueError(f"Unknown command type: {command_type}")
         data = request.get("data", {})
@@ -555,10 +620,17 @@ class DatabaseWorker(QObject):
             raise TypeError(f"Invalid command request: {command_type}")
         command = command_class.from_dict(data)
         command.restore_base_state(base)
-        return command
+        return cast(CommandProtocol, command)
+
+    def _new_command(self, command_type: str, **kwargs: object) -> CommandProtocol:
+        """Construct a registered command without importing the command layer."""
+        command_class = self._command_types.get(command_type)
+        if command_class is None:
+            raise RuntimeError(f"Command type is not registered: {command_type}")
+        return cast(CommandProtocol, command_class(**kwargs))
 
     @staticmethod
-    def _command_state(command: BaseCommand) -> dict[str, object]:
+    def _command_state(command: CommandProtocol) -> dict[str, object]:
         """Create the canonical serializable state returned to the UI."""
         return {
             "type": command.__class__.__name__,
@@ -1196,8 +1268,8 @@ class DatabaseWorker(QObject):
         try:
             from pathlib import Path
 
-            from src.gui.widgets.graph_view.graph_builder import GraphBuilder
             from src.services.graph_data_service import GraphDataService
+            from src.services.graph_lexicon_resolver import resolve_lexicon_images
 
             self.operation_started.emit("Loading Graph Data...")
             graph_service = GraphDataService()
@@ -1218,7 +1290,7 @@ class DatabaseWorker(QObject):
                 "edges": {},
             }
             project_root = Path(self.db_service.db_path).parent
-            resolved = GraphBuilder.resolve_lexicon_images(raw_lexicon, project_root)
+            resolved = resolve_lexicon_images(raw_lexicon, project_root)
             self.graph_lexicon_loaded.emit(raw_lexicon, resolved)
 
             self.operation_finished.emit(
@@ -1610,6 +1682,47 @@ class DatabaseWorker(QObject):
         }
         self.obsidian_export_finished.emit(snapshot)
 
+    @Slot(str)
+    def run_obsidian_vault_export(self, output_dir: str) -> None:
+        """Export the complete world to an Obsidian-compatible folder.
+
+        Args:
+            output_dir: User-selected destination directory.
+
+        """
+        db_service = self.db_service
+        if db_service is None:
+            self.obsidian_vault_export_finished.emit(
+                {
+                    "success": False,
+                    "files_created": 0,
+                    "output_dir": output_dir,
+                    "errors": ["No database connection"],
+                }
+            )
+            return
+
+        try:
+            result = ObsidianExporter(db_service).export_to_folder(
+                output_dir=Path(output_dir),
+                include_relations=True,
+            )
+            snapshot = {
+                "success": result.success,
+                "files_created": result.files_created,
+                "output_dir": str(result.output_dir),
+                "errors": list(result.errors),
+            }
+        except Exception as exc:
+            logger.exception("Obsidian vault export failed")
+            snapshot = {
+                "success": False,
+                "files_created": 0,
+                "output_dir": output_dir,
+                "errors": [str(exc)],
+            }
+        self.obsidian_vault_export_finished.emit(snapshot)
+
     @Slot(object)  # Union[Entity, Event] - use object for union types
     def generate_summary(self, item: Union[Entity, Event]) -> None:
         """Generates a summary for the given item using LLM.
@@ -1657,7 +1770,7 @@ class DatabaseWorker(QObject):
 
     def _run_analysis_command(
         self,
-        cmd: "BaseCommand",
+        cmd: CommandProtocol,
         result_signal: SignalInstance,
         *args: str,
     ) -> None:
@@ -1669,8 +1782,8 @@ class DatabaseWorker(QObject):
         :attr:`error_occurred`.
 
         Args:
-            cmd: A :class:`~src.commands.base_command.BaseCommand` whose
-                ``execute()`` returns a :class:`CommandResult` with
+            cmd: A command whose ``execute()`` returns a
+                :class:`~src.core.command.CommandResult` with
                 ``data["report"]`` on success.
             result_signal: The signal to emit with the report on success.
             start_msg: Status string passed to :attr:`operation_started`.
@@ -1678,10 +1791,10 @@ class DatabaseWorker(QObject):
             error_prefix: Short label used in error messages, e.g.
                 ``"Validation"``.
         """
-        if len(args) == 3:
+        if len(args) == _LEGACY_ANALYSIS_ARG_COUNT:
             job_id = world_id = analysis_kind = ""
             start_msg, done_msg, error_prefix = args
-        elif len(args) == 6:
+        elif len(args) == _SCOPED_ANALYSIS_ARG_COUNT:
             job_id, world_id, analysis_kind, start_msg, done_msg, error_prefix = args
         else:
             raise TypeError("analysis helper expects 3 legacy or 6 job-aware arguments")
@@ -1726,10 +1839,10 @@ class DatabaseWorker(QObject):
         :class:`~src.core.analysis.WorldValidationReport`.
         On failure emits :attr:`error_occurred` with an error string.
         """
-        from src.commands.analysis_commands import ValidateWorldCommand
-
         self._run_analysis_command(
-            ValidateWorldCommand(editorial_checks=editorial_checks),
+            self._new_command(
+                "ValidateWorldCommand", editorial_checks=editorial_checks
+            ),
             self.validation_complete,
             job_id,
             world_id,
@@ -1747,10 +1860,8 @@ class DatabaseWorker(QObject):
         :class:`~src.core.analysis.TemporalAnalysisReport`.
         On failure emits :attr:`error_occurred` with an error string.
         """
-        from src.commands.analysis_commands import AnalyzeTemporalCommand
-
         self._run_analysis_command(
-            AnalyzeTemporalCommand(),
+            self._new_command("AnalyzeTemporalCommand"),
             self.temporal_analysis_complete,
             job_id,
             world_id,

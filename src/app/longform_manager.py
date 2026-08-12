@@ -7,7 +7,7 @@ MainWindow to reduce its size and improve maintainability.
 import json
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Q_ARG, QObject, Slot
+from PySide6.QtCore import Q_ARG, QObject, Signal, Slot
 from PySide6.QtWidgets import QDialog, QFileDialog
 
 from src.app.qt_invocation import invoke_queued
@@ -36,6 +36,8 @@ class LongformManager(QObject):
     - Promoting/demoting/moving entries
     - Exporting longform documents to Markdown
     """
+
+    export_vault_requested = Signal(str)
 
     def __init__(self, main_window: "MainWindow") -> None:
         """Initialize the LongformManager.
@@ -77,14 +79,9 @@ class LongformManager(QObject):
         """Shows filter dialog for the Longform editor (independent state)."""
         from src.gui.dialogs.filter_dialog import FilterDialog
 
-        tags = []
-        if self.window.gui_db_service:
-            tag_dicts = self.window.gui_db_service.get_active_tags()
-            tags = [t["name"] for t in tag_dicts]
-
         dialog = FilterDialog(
             self.window,
-            available_tags=tags,
+            available_tags=self.window.data_coordinator.cached_tags,
             current_config=self.window.longform_filter_config,
         )
         if dialog.exec() == QDialog.DialogCode.Accepted:
@@ -354,10 +351,6 @@ class LongformManager(QObject):
         Opens a folder dialog for the user to choose export location. Each entity/event
         becomes a separate file with YAML frontmatter.
         """
-        from pathlib import Path
-
-        from src.services.obsidian_exporter import ObsidianExporter
-
         # Get output directory from user
         output_dir = QFileDialog.getExistingDirectory(
             self.window,
@@ -369,29 +362,38 @@ class LongformManager(QObject):
         if not output_dir:
             return
 
-        if not self.window.gui_db_service:
-            self.window.status_bar.showMessage("No database connection", 3000)
-            return
+        self.window.status_bar.showMessage("Exporting vault...")
+        self.export_vault_requested.emit(output_dir)
 
-        try:
-            exporter = ObsidianExporter(self.window.gui_db_service)
-            result = exporter.export_to_folder(
-                output_dir=Path(output_dir),
-                include_relations=True,
+    @Slot(dict)
+    def on_vault_export_finished(self, result: dict[str, object]) -> None:
+        """Present the result of a worker-thread vault export.
+
+        Args:
+            result: Serializable export-result snapshot from ``DatabaseWorker``.
+
+        """
+        files_created_value = result.get("files_created", 0)
+        files_created = (
+            int(files_created_value)
+            if isinstance(files_created_value, (int, float, str))
+            else 0
+        )
+        output_dir = str(result.get("output_dir", ""))
+        errors_value = result.get("errors", [])
+        errors = (
+            [str(error) for error in errors_value]
+            if isinstance(errors_value, list)
+            else []
+        )
+        if bool(result.get("success", False)):
+            self.window.status_bar.showMessage(
+                f"Exported {files_created} files to {output_dir}", 5000
             )
-
-            if result.success:
-                self.window.status_bar.showMessage(
-                    f"Exported {result.files_created} files to {output_dir}", 5000
-                )
-                logger.info(f"Vault export complete: {result.files_created} files")
-            else:
-                error_summary = "; ".join(result.errors[:3])
-                self.window.status_bar.showMessage(
-                    f"Export completed with errors: {error_summary}", 5000
-                )
-                logger.warning(f"Vault export errors: {result.errors}")
-
-        except Exception as e:
-            logger.error(f"Failed to export vault: {e}")
-            self.window.status_bar.showMessage(f"Export failed: {e}", 5000)
+            logger.info("Vault export complete: %d files", files_created)
+            return
+        error_summary = "; ".join(errors[:3]) or "Unknown export error"
+        self.window.status_bar.showMessage(
+            f"Export completed with errors: {error_summary}", 5000
+        )
+        logger.warning("Vault export errors: %s", errors)

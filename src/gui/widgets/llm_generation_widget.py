@@ -31,7 +31,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 from src.core.ai_generation import (
     GenerationApplyMode,
     GenerationRequest,
@@ -41,6 +40,7 @@ from src.core.ai_generation import (
 )
 from src.core.logging_config import get_world_audit_log_path
 from src.core.theme_manager import ThemeManager
+from src.gui.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 from src.gui.utils.settings_reader import (
     read_bool_setting,
     read_int_setting,
@@ -1683,37 +1683,14 @@ class LLMGenerationWidget(QWidget):
         # Determine DB path for RAG if enabled
         db_path = None
         if self.rag_cb.isChecked():
-            # Robust lookup: Traverse up to find db_path or gui_db_service
+            # Traverse parents to find the active world's immutable path.
             curr: QObject | None = self
             while curr:
-                # Direct db_path attribute
                 if hasattr(curr, "db_path") and curr.db_path:
                     db_path = curr.db_path
                     break
-                # Via gui_db_service (MainWindow usually has this)
-                if hasattr(curr, "gui_db_service") and hasattr(
-                    curr.gui_db_service, "db_path"
-                ):
-                    db_path = curr.gui_db_service.db_path
-                    break
-
-                # If we hit a window that is not the main one (e.g. floating dock), keep going?
-                # QWidget.parent() returns None for top-level windows unless set.
-                # However, self.window() returns the window.
-                # If we are at top level and haven't found it,
-                # we might check self.window() explicitly
-                # if the loop didn't cover it (parent() from child hits window? Yes).
-
-                # Special jump for QDockWidget if floating?
-                # If floating, parent() might be None, but it is effectively parented to main in logic?
-                # No, floating dock matches window().
-
                 parent = curr.parent()
                 if not parent:
-                    # If we reached top and didn't find it, consider checking QApplication.topLevelWidgets
-                    # as last resort? Or just rely on what we found.
-                    # Try accessing .window() just in case we started mid-hierarchy
-                    # and parent() traversal failure
                     if isinstance(curr, QWidget):
                         window = curr.window()
                         if window != curr:

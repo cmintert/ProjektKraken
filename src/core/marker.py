@@ -16,6 +16,9 @@ from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
+_POLYGON_MIN_POINTS = 3
+_LINE_MIN_POINTS = 2
+
 # Valid feature_type discriminator values
 FEATURE_TYPE_POINT = "point"
 FEATURE_TYPE_PATH = "path"
@@ -187,7 +190,7 @@ class MapFeature:
         if self.feature_type != FEATURE_TYPE_REGION:
             return 0.0
         pts = self.points
-        if len(pts) < 3:
+        if len(pts) < _POLYGON_MIN_POINTS:
             return 0.0
         # Close the polygon by appending the first point
         closed = list(pts) + [pts[0]]
@@ -210,7 +213,7 @@ class MapFeature:
         if self.feature_type != FEATURE_TYPE_REGION:
             return 0.0
         pts = self.points
-        if len(pts) < 3:
+        if len(pts) < _POLYGON_MIN_POINTS:
             return 0.0
         # Shoelace formula
         n = len(pts)
@@ -231,7 +234,7 @@ class MapFeature:
 
         """
         pts = self.points
-        if len(pts) < 2:
+        if len(pts) < _LINE_MIN_POINTS:
             return 0
         if self.feature_type == FEATURE_TYPE_REGION:
             return len(pts)  # closed polygon

@@ -36,7 +36,9 @@ class MapCalibrationMixin:
         overlay_banner: QLabel
         map_scale_changed: SignalInstance
 
-        def get_selected_map_id(self) -> str | None: ...
+        def get_selected_map_id(self) -> str | None:
+            """Return the active map identifier."""
+            ...
 
     @Slot()
     def _configure_map_width(self) -> None:

@@ -40,11 +40,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.constants import SHEET_VALUE_MAX_LINES
 from src.core.theme_manager import ThemeManager
+from src.gui.constants import SHEET_VALUE_MAX_LINES
 from src.gui.utils.style_helper import StyleHelper
 
 logger = logging.getLogger(__name__)
+
+_DRAG_START_DISTANCE_PX = 10
+_MINIMUM_RESIZABLE_ROW_ITEMS = 2
 
 # Internal MIME type for drag-and-drop within the sheet builder
 _SHEET_DRAG_MIME = "application/x-kraken-sheet-key"
@@ -245,7 +248,10 @@ class AttributePairWidget(QFrame):
         """Initiate a drag if the mouse moves far enough from the press point."""
         if (
             self._drag_start_pos is not None
-            and (event.pos() - self._drag_start_pos).manhattanLength() > 10
+            and (
+                event.pos() - self._drag_start_pos
+            ).manhattanLength()
+            > _DRAG_START_DISTANCE_PX
         ):
             drag = QDrag(self)
             mime = QMimeData()
@@ -534,7 +540,10 @@ class SpacerWidget(QFrame):
         """Initiate a drag once the mouse has moved far enough."""
         if (
             self._drag_start_pos is not None
-            and (event.pos() - self._drag_start_pos).manhattanLength() > 10
+            and (
+                event.pos() - self._drag_start_pos
+            ).manhattanLength()
+            > _DRAG_START_DISTANCE_PX
         ):
             drag = QDrag(self)
             mime = QMimeData()
@@ -1545,7 +1554,7 @@ class SheetBuilderWidget(QWidget):
             widget_indices.append(idx)
 
         # Insert resize handles between adjacent real items
-        if len(widget_indices) >= 2:
+        if len(widget_indices) >= _MINIMUM_RESIZABLE_ROW_ITEMS:
             self._insert_resize_handles(hlayout, widget_indices)
 
         self._grid_layout.addLayout(hlayout)
@@ -1562,7 +1571,7 @@ class SheetBuilderWidget(QWidget):
             hlayout: The horizontal layout to add handles to.
             widget_indices: Original indices of real items (before handles inserted).
         """
-        if len(widget_indices) < 2:
+        if len(widget_indices) < _MINIMUM_RESIZABLE_ROW_ITEMS:
             return
 
         pairs_for_handles = [
@@ -1997,7 +2006,7 @@ class SheetBuilderWidget(QWidget):
             hlayout.addWidget(w, stretch=stretch)
             new_indices.append(idx)
 
-        if len(new_indices) >= 2:
+        if len(new_indices) >= _MINIMUM_RESIZABLE_ROW_ITEMS:
             self._insert_resize_handles(hlayout, new_indices)
 
         if self._block_depth == 0:

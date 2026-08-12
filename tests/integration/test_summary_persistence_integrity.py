@@ -417,8 +417,10 @@ class TestSummaryLoadedOnEditorOpen:
         displayed = editor.summary_widget.text_display.toPlainText()
         assert "A decisive battle." in displayed
 
-    def test_entity_editor_shows_staleness_with_summary_service(self, qapp, db_service):
-        """When summary_service is injected, staleness should be checked."""
+    def test_entity_editor_shows_staleness_from_summary_snapshot(
+        self, qapp, db_service
+    ):
+        """The editor should derive stale state without database access."""
         from src.gui.widgets.entity_editor import EntityEditorWidget
 
         summary_dict = {
@@ -443,18 +445,13 @@ class TestSummaryLoadedOnEditorOpen:
         # Mock gallery to avoid main_window dependency
         editor.gallery = MagicMock()
 
-        mock_service = MagicMock()
-        mock_service.is_stale.return_value = True
-        editor.set_summary_service(mock_service)
-
         editor.load_entity(reloaded)
 
         # Summary should still be displayed
         displayed = editor.summary_widget.text_display.toPlainText()
         assert "Old summary." in displayed
 
-        # Staleness check should have been called
-        mock_service.is_stale.assert_called_once()
+        assert not editor.summary_widget.stale_banner.isHidden()
 
 
 class TestSummaryEditorMutations:

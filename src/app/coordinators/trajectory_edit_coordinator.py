@@ -33,6 +33,7 @@ class TrajectoryEditCoordinator(QObject):
     command_requested = Signal(object)
 
     def __init__(self, main_window: "MainWindow") -> None:
+        """Initialize direct trajectory-edit coordination."""
         super().__init__(main_window)
         self._window = main_window
         self._session: TrajectoryEditSession | None = None

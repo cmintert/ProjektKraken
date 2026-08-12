@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING, Dict, Optional
 import shiboken6
 from PySide6.QtWidgets import QGraphicsItem
 
-from src.app.constants import MAP_LAYER_Z_MARKERS
 from src.core.marker import FEATURE_TYPE_PATH, FEATURE_TYPE_REGION
+from src.gui.constants import MAP_LAYER_Z_MARKERS
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.marker_item import MarkerItem
 
@@ -32,6 +32,7 @@ class MarkerManager:
     """
 
     def __init__(self, view: "MapGraphicsView") -> None:
+        """Initialize marker ownership for one map graphics view."""
         self._view = view
         self.markers: Dict[str, MarkerItem] = {}
         self.feature_items: Dict[str, PathItem | RegionItem] = {}

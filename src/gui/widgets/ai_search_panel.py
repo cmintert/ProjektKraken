@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.theme_manager import ThemeManager
 from src.gui.utils.style_helper import StyleHelper
 
 
@@ -64,29 +65,41 @@ class SearchResultItem(QWidget):
 
         # Type badge
         type_text = obj_subtype if obj_subtype else object_type
-        type_label = QLabel(f"[{type_text}]")
-        type_label.setStyleSheet(
-            f"color: {'#3498db' if object_type == 'event' else '#2ecc71'};"
-            "font-size: 10px;"
-        )
-        layout.addWidget(type_label, stretch=1)
+        self.type_label = QLabel(f"[{type_text}]")
+        layout.addWidget(self.type_label, stretch=1)
 
         # Score label
-        score_label = QLabel(f"{score:.3f}")
-        score_label.setStyleSheet("color: #95a5a6; font-size: 10px;")
-        score_label.setAlignment(
+        self.score_label = QLabel(f"{score:.3f}")
+        self.score_label.setAlignment(
             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
         )
-        layout.addWidget(score_label, stretch=1)
+        layout.addWidget(self.score_label, stretch=1)
 
         # Make clickable
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setObjectName("searchResultItem")
-        self.setStyleSheet(
-            "#searchResultItem:hover { background-color: rgba(255, 255, 255, 0.1); }"
-        )
+        self._apply_theme(ThemeManager().get_theme())
+        ThemeManager().theme_changed.connect(self._apply_theme)
         self.setMinimumHeight(40)
+
+    @Slot(dict)
+    def _apply_theme(self, theme: dict) -> None:
+        """Apply current theme tokens to result metadata and hover state."""
+        type_color = (
+            theme["event_main"]
+            if self.object_type == "event"
+            else theme["entity_main"]
+        )
+        self.type_label.setStyleSheet(f"color: {type_color}; font-size: 10px;")
+        self.score_label.setStyleSheet(
+            f"color: {theme['text_dim']}; font-size: 10px;"
+        )
+        self.setStyleSheet(
+            "#searchResultItem:hover {"
+            f"background-color: {theme.get('surface_alt', theme['surface'])};"
+            "}"
+        )
 
     def sizeHint(self) -> QSize:
         """Ensure item has sufficient height."""
@@ -179,7 +192,9 @@ class AISearchPanelWidget(QWidget):
 
         # Status label
         self.status_label = QLabel("")
-        self.status_label.setStyleSheet("color: #95a5a6; font-size: 10px;")
+        self.status_label.setStyleSheet(
+            f"color: {ThemeManager().get_theme()['text_dim']}; font-size: 10px;"
+        )
         self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         results_layout.addWidget(self.status_label)
 

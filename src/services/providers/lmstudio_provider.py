@@ -8,6 +8,7 @@ import asyncio
 import json
 import logging
 import time
+from http import HTTPStatus
 from typing import Any, AsyncIterator, Dict, List, Optional
 
 import numpy as np
@@ -562,7 +563,7 @@ class LMStudioProvider(Provider):
 
             latency_ms = (time.time() - start_time) * 1000
 
-            if response.status_code == 200:
+            if response.status_code == HTTPStatus.OK:
                 return {
                     "status": "healthy",
                     "latency_ms": latency_ms,
@@ -618,7 +619,7 @@ class LMStudioProvider(Provider):
 
                 latency_ms = (time.time() - start_time) * 1000
 
-                if response.status_code == 200:
+                if response.status_code == HTTPStatus.OK:
                     return {
                         "status": "healthy",
                         "latency_ms": latency_ms,

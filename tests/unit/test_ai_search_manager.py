@@ -15,11 +15,15 @@ def mock_window():
 
 @pytest.fixture
 def manager(mock_window):
-    return AISearchManager(mock_window)
+    search_manager = AISearchManager(mock_window)
+    yield search_manager
+    search_manager.shutdown()
 
 
-@patch("src.services.rag_service.RAGService")
-def test_perform_semantic_search_uses_rag(mock_rag_cls, manager, mock_window):
+@patch("src.services.semantic_search_worker.RAGService")
+def test_perform_semantic_search_uses_rag(
+    mock_rag_cls, manager, mock_window, qtbot
+):
     """Test that perform_semantic_search uses RAGService when db_path is available."""
     # Setup
     mock_service = MagicMock()
@@ -32,6 +36,11 @@ def test_perform_semantic_search_uses_rag(mock_rag_cls, manager, mock_window):
     # Execute
     query = "Find test"
     manager.perform_semantic_search(query, "entity", 5)
+
+    qtbot.waitUntil(
+        lambda: mock_window.ai_search_panel.set_results.called,
+        timeout=2000,
+    )
 
     # Verify RAGService creation
     # Since we import RAGService inside the method, patching src.app.ai_search_manager.RAGService
@@ -48,30 +57,18 @@ def test_perform_semantic_search_uses_rag(mock_rag_cls, manager, mock_window):
     mock_window.ai_search_panel.set_searching.assert_any_call(False)
 
 
-@patch("src.services.search_service.create_search_service")
-def test_fallback_when_no_db_path(mock_create_service, manager, mock_window):
-    """Test fallback to raw SearchService when db_path is missing."""
+def test_missing_db_path_reports_unavailable_world(manager, mock_window):
+    """A search without an active world fails without touching a database."""
     # Simulate missing db_path on window
     if hasattr(mock_window, "db_path"):
         del mock_window.db_path
 
-    # Setup mock fallback service
-    mock_search_service = MagicMock()
-    mock_create_service.return_value = mock_search_service
-    expected_results = [{"id": 2, "name": "Fallback", "score": 0.5}]
-    mock_search_service.query.return_value = expected_results
-
-    # Execute
     manager.perform_semantic_search("Query", "event", 3)
 
-    # Verify fallback usage
-    mock_create_service.assert_called()
-    mock_search_service.query.assert_called_with(
-        text="Query", object_type="event", top_k=3
+    mock_window.ai_search_panel.set_status.assert_called_once_with(
+        "Search failed: no active world database is available"
     )
-
-    # Verify results passed to panel
-    mock_window.ai_search_panel.set_results.assert_called_with(expected_results)
+    mock_window.ai_search_panel.set_searching.assert_not_called()
 
 
 def test_rebuild_search_index_dispatches_to_worker(manager, mock_window):

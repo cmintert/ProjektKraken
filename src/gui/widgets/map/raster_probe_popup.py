@@ -31,6 +31,7 @@ class RasterProbePopup(QLabel):
     """
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
+        """Initialize the raster-value probe popup."""
         super().__init__(parent)
         self.setObjectName("RasterProbePopup")
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)

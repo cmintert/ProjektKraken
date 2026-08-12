@@ -7,13 +7,18 @@ from MainWindow to reduce its size and improve maintainability.
 import datetime
 from typing import TYPE_CHECKING, cast
 
-from PySide6.QtCore import QObject, QSettings, Qt, QTimer, Slot
+from PySide6.QtCore import QObject, QSettings, Qt, QThread, QTimer, Slot
 
-from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+from src.app.constants import (
+    AI_SEARCH_THREAD_SHUTDOWN_MS,
+    WINDOW_SETTINGS_APP,
+    WINDOW_SETTINGS_KEY,
+)
 from src.app.qt_invocation import invoke_queued
 from src.core.ai_generation import AIGenerationPreferences, TaskTemplate
 from src.core.logging_config import get_logger
 from src.services.prompt_builder import DEFAULT_SYSTEM_PROMPT
+from src.services.semantic_search_worker import SemanticSearchWorker
 from src.services.task_template_catalog import TaskTemplateCatalog
 
 if TYPE_CHECKING:
@@ -45,6 +50,8 @@ class AISearchManager(QObject):
         self._task_template_catalog = TaskTemplateCatalog()
         self._custom_task_templates: tuple[TaskTemplate, ...] = ()
         self._task_templates = self._task_template_catalog.built_in_templates()
+        self._search_thread: QThread | None = None
+        self._search_worker: SemanticSearchWorker | None = None
         worker = getattr(self.window, "worker", None)
         if worker is not None:
             worker.ai_generation_preferences_loaded.connect(
@@ -285,72 +292,67 @@ class AISearchManager(QObject):
             top_k: Number of results to return.
 
         """
-        try:
-            if not hasattr(self.window, "gui_db_service"):
-                logger.warning("GUI DB Service not ready for search.")
-                return
+        if self._search_thread is not None and self._search_thread.isRunning():
+            self.window.ai_search_panel.set_status("A search is already running.")
+            return
+        db_path = getattr(self.window, "db_path", "")
+        if not db_path:
+            self.window.ai_search_panel.set_status(
+                "Search failed: no active world database is available"
+            )
+            return
 
-            self.window.ai_search_panel.set_searching(True)
+        self.window.ai_search_panel.set_searching(True)
+        thread = QThread(self)
+        worker = SemanticSearchWorker(
+            db_path,
+            query,
+            object_type_filter or None,
+            top_k,
+        )
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.completed.connect(self._on_search_completed)
+        worker.failed.connect(self._on_search_failed)
+        worker.completed.connect(thread.quit)
+        worker.failed.connect(thread.quit)
+        worker.completed.connect(worker.deleteLater)
+        worker.failed.connect(worker.deleteLater)
+        thread.finished.connect(self._on_search_thread_finished)
+        thread.finished.connect(thread.deleteLater)
+        self._search_thread = thread
+        self._search_worker = worker
+        thread.start()
 
-            # Use RAGService for hybrid search (Name + Semantic)
-            from src.services.rag_service import RAGService
+    @Slot(list)
+    def _on_search_completed(self, results: list[dict[str, object]]) -> None:
+        """Display results returned by the background semantic worker."""
+        self.window.ai_search_panel.set_results(results)
+        self.window.ai_search_panel.set_searching(False)
 
-            # We need the db_path from somewhere.
-            # gui_db_service has a path attribute? Or we use connection?
-            # RAGService takes db_path string currently.
-            # The gui_db_service abstracts the connection.
-            # Let's see if we can get the path.
-            # Standard pattern: self.window.db_path usually exists or we get it
-            # from UIManager?
-            # MainWindow has self.db_path (passed to LongformEditorWidget in
-            # main_window.py).
-            # Let's assume self.window.db_path exists.
+    @Slot(str)
+    def _on_search_failed(self, message: str) -> None:
+        """Restore search controls and display a background-worker error."""
+        self.window.ai_search_panel.set_status(f"Search failed: {message}")
+        self.window.ai_search_panel.set_searching(False)
 
-            if not (db_path := getattr(self.window, "db_path", None)):
-                # Fallback to direct service creation if no path (but RAGService
-                # needs path for isolation)
-                # Actually, RAGService creates its own connection for thread safety.
-                # If we can't get path, we can't use RAGService easily without refactor.
-                # Let's check MainWindow init... yes it has db_path logic usually
-                # (or active_world).
-                # Wait, MainWindow.__init__ doesn't show self.db_path assignment
-                # explicitly in the snippet I saw earlier (lines 100-300).
-                # But LongformEditorWidget received self.db_path (line 215).
-                # So it must exist.
-                pass
+    @Slot()
+    def _on_search_thread_finished(self) -> None:
+        """Release references after a semantic-search thread exits."""
+        self._search_worker = None
+        self._search_thread = None
 
-            if db_path:
-                rag_service = RAGService(db_path)
-                results = rag_service.search(
-                    query=query,
-                    top_k=top_k,
-                    object_type=object_type_filter or None,
-                )
-            else:
-                # Fallback to old method if no db_path (unlikely)
-                logger.warning(
-                    "No db_path found for RAGService, falling back to direct connection"
-                )
-                from src.services.search_service import create_search_service
-
-                assert self.window.gui_db_service._connection is not None
-                search_service = create_search_service(
-                    self.window.gui_db_service._connection
-                )
-                results = search_service.query(
-                    text=query,
-                    object_type=object_type_filter or None,
-                    top_k=top_k,
-                )
-
-            # Display results
-            self.window.ai_search_panel.set_results(results)
-            self.window.ai_search_panel.set_searching(False)
-
-        except Exception as e:
-            logger.error(f"Semantic search failed: {e}")
-            self.window.ai_search_panel.set_status(f"Search failed: {e}")
-            self.window.ai_search_panel.set_searching(False)
+    def shutdown(self) -> None:
+        """Stop an active semantic-search thread during application shutdown."""
+        thread = self._search_thread
+        if thread is None or not thread.isRunning():
+            return
+        thread.requestInterruption()
+        thread.quit()
+        if not thread.wait(AI_SEARCH_THREAD_SHUTDOWN_MS):
+            logger.warning("Semantic search did not stop in time; terminating thread")
+            thread.terminate()
+            thread.wait()
 
     @Slot(str)
     def rebuild_search_index(self, object_type: str) -> None:
@@ -464,38 +466,40 @@ class AISearchManager(QObject):
     @Slot()
     def refresh_search_index_status(self) -> None:
         """Refresh the search index status display."""
-        try:
-            if not hasattr(self.window, "gui_db_service"):
-                return
+        self.window.worker_manager.load_embedding_stats_requested.emit()
 
+    @Slot(dict)
+    def on_embedding_stats_loaded(self, stats: dict[str, object]) -> None:
+        """Update the settings dialog with worker-loaded index statistics."""
+        try:
             from src.services.search_service import get_llm_settings_from_qsettings
 
             qsettings = get_llm_settings_from_qsettings()
             provider = qsettings["provider"]
             model = qsettings.get("st_model") or qsettings.get("lm_model") or "default"
-
-            stats = self.window.gui_db_service.get_embedding_stats()
-            count = stats["count"]
-
-            if last_time := stats["last_updated"]:
-                dt = datetime.datetime.fromtimestamp(last_time)
-                last_indexed = dt.strftime("%Y-%m-%d %H:%M:%S")
-            else:
-                last_indexed = "Never"
-
-            if (
-                hasattr(self.window, "ai_settings_dialog")
-                and self.window.ai_settings_dialog
-                and self.window.ai_settings_dialog.isVisible()
-            ):
-                self.window.ai_settings_dialog.update_status(
+            count_value = stats.get("count", 0)
+            count = (
+                int(count_value)
+                if isinstance(count_value, (int, float, str))
+                else 0
+            )
+            last_time = stats.get("last_updated")
+            last_indexed = (
+                datetime.datetime.fromtimestamp(float(last_time)).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+                if isinstance(last_time, (int, float))
+                else "Never"
+            )
+            dialog = getattr(self.window, "ai_settings_dialog", None)
+            if dialog is not None and dialog.isVisible():
+                dialog.update_status(
                     model=f"{provider}:{model}",
                     counts=str(count),
                     last_updated=last_indexed,
                 )
-
-        except Exception as e:
-            logger.error(f"Failed to refresh index status: {e}")
+        except Exception:
+            logger.exception("Failed to refresh index status")
 
     def _set_status(self, msg: str, duration: int = 5000) -> None:
         """Update the status bar and AI search panel with the same message."""

@@ -14,6 +14,8 @@ from src.gui.widgets.timeline_lane_packer import TimelineLanePacker
 
 logger = logging.getLogger(__name__)
 
+_SLOW_LAYOUT_THRESHOLD_SECONDS = 0.1
+
 
 class LayoutWorkerSignals(QObject):
     """Signals for the LayoutWorker.
@@ -73,7 +75,7 @@ class LayoutWorker(QRunnable):
             # Emit results back to main thread
             self.signals.finished.emit(lane_assignments, lane_heights, elapsed)
 
-            if elapsed > 0.1:  # Log slow operations
+            if elapsed > _SLOW_LAYOUT_THRESHOLD_SECONDS:
                 logger.warning(
                     f"Lane packing took {elapsed:.3f}s for {len(self.events)} events"
                 )

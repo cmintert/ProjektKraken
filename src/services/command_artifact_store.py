@@ -14,6 +14,7 @@ class CommandArtifactStore:
     """Move world files into command-scoped history storage and restore them."""
 
     def __init__(self, world_root: Path) -> None:
+        """Initialize artifact storage beneath a world root."""
         self.world_root = world_root.resolve()
         self.history_root = self.world_root / "assets" / ".history"
 

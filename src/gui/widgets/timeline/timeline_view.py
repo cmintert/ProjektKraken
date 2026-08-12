@@ -52,6 +52,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_TICK_VISIBILITY_BUFFER_PX = 50
+
 
 class TimelineView(QGraphicsView):
     """Custom Graphics View for displaying the TimelineScene.
@@ -364,10 +366,10 @@ class TimelineView(QGraphicsView):
             theme = ThemeManager().get_theme()
         except (KeyError, AttributeError) as e:
             logger.warning(f"Theme not available, using defaults: {e}")
-            # Fallback theme for when ThemeManager isn't initialized
+            palette = self.palette()
             theme = {
-                "surface": "#2B2B2B",
-                "border": "#555555",
+                "surface": palette.window().color().name(),
+                "border": palette.mid().color().name(),
             }
 
         # 2. Draw context tier background (top band)
@@ -417,7 +419,10 @@ class TimelineView(QGraphicsView):
             screen_x = screen_pos.x()
 
             # Skip if outside viewport (with buffer)
-            if screen_x < -50 or screen_x > w + 50:
+            if (
+                screen_x < -_TICK_VISIBILITY_BUFFER_PX
+                or screen_x > w + _TICK_VISIBILITY_BUFFER_PX
+            ):
                 continue
 
             # Determine tick styling

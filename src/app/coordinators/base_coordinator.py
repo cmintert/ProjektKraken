@@ -1,3 +1,5 @@
+"""Shared base class for application coordinators."""
+
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QObject

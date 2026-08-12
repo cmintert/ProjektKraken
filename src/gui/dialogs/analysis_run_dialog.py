@@ -21,6 +21,8 @@ from PySide6.QtWidgets import (
 
 from src.core.analysis import AnalysisPreset, AnalysisScope, AnalysisScopeKind
 
+_MINIMUM_MULTI_SELECTION_ITEMS = 2
+
 
 class AnalysisRunDialog(QDialog):
     """Collect a valid explicit scope, categories, and request preset."""
@@ -31,6 +33,7 @@ class AnalysisRunDialog(QDialog):
         selection_ids: list[str] | None = None,
         parent: QWidget | None = None,
     ) -> None:
+        """Initialize the analysis configuration dialog."""
         super().__init__(parent)
         self.setWindowTitle("Run AI Analysis")
         self.setMinimumWidth(520)
@@ -157,7 +160,10 @@ class AnalysisRunDialog(QDialog):
             reason = "Select a scope before starting."
         elif scope.kind == AnalysisScopeKind.CURRENT_ITEM and not scope.item_ids:
             reason = "No current entity or event is selected."
-        elif scope.kind == AnalysisScopeKind.SELECTION and len(scope.item_ids) < 2:
+        elif (
+            scope.kind == AnalysisScopeKind.SELECTION
+            and len(scope.item_ids) < _MINIMUM_MULTI_SELECTION_ITEMS
+        ):
             reason = "Multi-selection requires at least two object IDs."
         elif scope.kind == AnalysisScopeKind.TAGS and not scope.tags:
             reason = "Select at least one tag."

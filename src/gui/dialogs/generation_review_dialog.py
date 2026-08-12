@@ -93,7 +93,9 @@ class GenerationReviewDialog(QDialog):
                 details.append(f"finish: {self.reply.finish_reason}")
             if details:
                 reply_details = QLabel(" · ".join(details))
-                reply_details.setStyleSheet("color: #888888;")
+                reply_details.setStyleSheet(
+                    f"color: {StyleHelper.get_dim_text_color()};"
+                )
                 main_layout.addWidget(reply_details)
             if self.reply.finish_reason == "length":
                 truncation_warning = QLabel(
@@ -114,7 +116,9 @@ class GenerationReviewDialog(QDialog):
         # Rating section
         rating_layout = QHBoxLayout()
         rating_label = QLabel("Rate this result:")
-        rating_label.setStyleSheet("color: #888888;")
+        rating_label.setStyleSheet(
+            f"color: {StyleHelper.get_dim_text_color()};"
+        )
         rating_layout.addWidget(rating_label)
 
         self.thumbs_up_btn = QPushButton("👍")
@@ -149,7 +153,9 @@ class GenerationReviewDialog(QDialog):
         # Discard button (left)
         self.discard_btn = QPushButton("Discard")
         self.discard_btn.setToolTip("Discard generated content")
-        self.discard_btn.setStyleSheet("color: #e74c3c;")
+        self.discard_btn.setStyleSheet(
+            StyleHelper.get_ghost_destructive_button_style()
+        )
         self.discard_btn.clicked.connect(self._on_discard_clicked)
         buttons_layout.addWidget(self.discard_btn)
 

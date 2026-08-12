@@ -36,6 +36,14 @@ from src.gui.widgets.map.raster_mapping import normalize_value_entity_map
 
 logger = logging.getLogger(__name__)
 
+_MINIMUM_GRADIENT_STOP_COUNT = 2
+_IMAGE_ARRAY_DIMENSIONS = 2
+_RGB_CHANNEL_COUNT = 3
+_RGBA_CHANNEL_COUNT = 4
+_RGBA_HEX_LENGTH = 8
+_RGB_HEX_LENGTH = 6
+_UINT16_MAX = 0xFFFF
+
 
 @lru_cache(maxsize=32)
 def _compute_brush_kernel(r: int, falloff: float, falloff_curve: str) -> np.ndarray:
@@ -291,7 +299,7 @@ class ColorMap:
         """
         from PIL import Image as _PILImage
 
-        if n_stops < 2:
+        if n_stops < _MINIMUM_GRADIENT_STOP_COUNT:
             raise ValueError("n_stops must be >= 2")
 
         # --- Normalise input to (H, W, 3) uint8 array -------------------
@@ -299,10 +307,10 @@ class ColorMap:
             rgb_arr = np.array(img.convert("RGB"), dtype=np.uint8)
         else:
             rgb_arr = np.asarray(img, dtype=np.uint8)
-            if rgb_arr.ndim == 2:
-                rgb_arr = np.stack([rgb_arr] * 3, axis=-1)
-            elif rgb_arr.shape[2] == 4:
-                rgb_arr = rgb_arr[:, :, :3]
+            if rgb_arr.ndim == _IMAGE_ARRAY_DIMENSIONS:
+                rgb_arr = np.stack([rgb_arr] * _RGB_CHANNEL_COUNT, axis=-1)
+            elif rgb_arr.shape[2] == _RGBA_CHANNEL_COUNT:
+                rgb_arr = rgb_arr[:, :, :_RGB_CHANNEL_COUNT]
 
         flat = rgb_arr.reshape(-1, 3).astype(np.float32)  # (N, 3)
 
@@ -500,9 +508,9 @@ def _hex_to_rgba(hex_color: str, alpha: int = 255) -> Tuple[int, int, int, int]:
 
     """
     h = hex_color.lstrip("#")
-    if len(h) == 8:
+    if len(h) == _RGBA_HEX_LENGTH:
         return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16), int(h[6:8], 16))
-    if len(h) == 6:
+    if len(h) == _RGB_HEX_LENGTH:
         return (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16), alpha)
     return (128, 128, 128, alpha)
 
@@ -534,9 +542,12 @@ class MapDataBuffer:
         default_value: int = 0,
         mode: str = RasterPaintMode.CONTINUOUS.value,
     ) -> None:
+        """Initialize a validated tiled raster data buffer."""
         if width <= 0 or height <= 0:
             raise ValueError(f"Invalid buffer dimensions: {width}×{height}")
-        if not isinstance(default_value, int) or not (0 <= default_value <= 0xFFFF):
+        if not isinstance(default_value, int) or not (
+            0 <= default_value <= _UINT16_MAX
+        ):
             raise ValueError(
                 f"default_value must be an int in 0–65535, got {default_value!r}"
             )
@@ -1001,7 +1012,7 @@ class MapDataBuffer:
             rgba = np.zeros((self._height, self._width, 4), dtype=np.uint8)
             # Gradient mode: multi-stop interpolation with optional stretch range
             stops = sorted(color_map.gradient_stops, key=lambda s: s.position)
-            if len(stops) < 2:
+            if len(stops) < _MINIMUM_GRADIENT_STOP_COUNT:
                 # Degenerate gradient — return transparent image rather than crashing
                 return QImage(
                     self._width, self._height, QImage.Format.Format_RGBA8888
@@ -1113,7 +1124,7 @@ class MapDataBuffer:
                 f"dtype={arr.dtype}"
             )
         arr = arr.astype(np.uint16)
-        if arr.ndim != 2:
+        if arr.ndim != _IMAGE_ARRAY_DIMENSIONS:
             raise ValueError(f"Expected 2-D grayscale image, got shape {arr.shape}")
 
         buf = cls(
@@ -1686,7 +1697,7 @@ def compute_spatial_query(
 
     ref_shape = arrays[0].shape
     for i, arr in enumerate(arrays):
-        if arr.ndim != 2:
+        if arr.ndim != _IMAGE_ARRAY_DIMENSIONS:
             raise ValueError(f"arrays[{i}] is not 2-D (shape={arr.shape})")
         if arr.shape != ref_shape:
             raise ValueError(

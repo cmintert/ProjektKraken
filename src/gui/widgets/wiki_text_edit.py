@@ -45,14 +45,21 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.constants import (
+from src.core.theme_manager import ThemeManager
+from src.core.wiki_ast import CursorMapper, WikiASTParser, WikiASTSerializer
+from src.gui.constants import (
     SEMANTIC_COMPLETION_MIN_PREFIX_LEN,
     WIKI_EDITOR_MAX_LINE_LENGTH,
 )
-from src.core.theme_manager import ThemeManager
-from src.core.wiki_ast import CursorMapper, WikiASTParser, WikiASTSerializer
 
 logger = logging.getLogger(__name__)
+
+_MAXIMUM_OUTLINE_HEADING_LEVEL = 3
+_BOLD_WEIGHT_THRESHOLD = 600
+_HEADING_LEVEL_TWO = 2
+_HEADING_LEVEL_THREE = 3
+_WIKI_LINK_CLOSING_TOKEN_LENGTH = 2
+_MINIMUM_SPELLCHECK_TEXT_LENGTH = 15
 
 
 class SectionData(QTextBlockUserData):
@@ -761,7 +768,10 @@ class WikiTextEditView(QTextEdit):
                 if line.startswith("#"):
                     stripped = line.lstrip("#")
                     level = len(line) - len(stripped)
-                    if 1 <= level <= 3 and stripped.startswith(" "):
+                    if (
+                        1 <= level <= _MAXIMUM_OUTLINE_HEADING_LEVEL
+                        and stripped.startswith(" ")
+                    ):
                         headings.append((level, stripped.strip(), pos))
                 pos += len(line) + 1  # +1 for newline character
             return headings
@@ -908,7 +918,7 @@ class WikiTextEditView(QTextEdit):
         # Qt 6: QFont.Weight.Bold = 700, Normal = 400.
         # But internal integer values might differ.
         # If it's a heading, explicit bold wrapping is redundant/visual only.
-        if not is_heading and fmt.fontWeight() > 600:  # Safe threshold for Bold (700)
+        if not is_heading and fmt.fontWeight() > _BOLD_WEIGHT_THRESHOLD:
             text = f"**{text}**"
 
         # 3. Italic
@@ -1210,10 +1220,10 @@ class WikiTextEditView(QTextEdit):
         if level == 1:
             block_fmt.setTopMargin(10)
             block_fmt.setBottomMargin(5)
-        elif level == 2:
+        elif level == _HEADING_LEVEL_TWO:
             block_fmt.setTopMargin(8)
             block_fmt.setBottomMargin(4)
-        elif level == 3:
+        elif level == _HEADING_LEVEL_THREE:
             block_fmt.setTopMargin(6)
             block_fmt.setBottomMargin(3)
         else:
@@ -1327,7 +1337,7 @@ class WikiTextEditView(QTextEdit):
         pos_in_block = cursor.positionInBlock()
 
         # Check if previous char was also ]
-        if pos_in_block < 2:
+        if pos_in_block < _WIKI_LINK_CLOSING_TOKEN_LENGTH:
             return
 
         text_before = block_text[:pos_in_block]
@@ -1639,7 +1649,7 @@ class WikiTextEditView(QTextEdit):
         # rendered text, not the raw markdown, so offsets computed from the raw
         # source would be misaligned and underlines would land on the wrong span.
         text = self.toPlainText()
-        if len(text.strip()) < 15:
+        if len(text.strip()) < _MINIMUM_SPELLCHECK_TEXT_LENGTH:
             self._lt_matches = []
             self.setExtraSelections([])
             return
@@ -1971,8 +1981,10 @@ class WikiTextEdit(QFrame):
 
         # Subtle right border for TOC since it's on the left
         style = self.toc_widget.styleSheet()
+        border_color = ThemeManager().get_theme().get("border", "#454545")
         self.toc_widget.setStyleSheet(
-            style + "\nTOCWidget { border-right: 1px solid #454545; }"
+            style
+            + f"\nTOCWidget {{ border-right: 1px solid {border_color}; }}"
         )
         content_layout.addWidget(self.toc_widget)
         content_layout.addWidget(self.editor, stretch=1)
@@ -1996,8 +2008,6 @@ class WikiTextEdit(QFrame):
         self._apply_style()
 
         # Connect to theme changes
-        from src.core.theme_manager import ThemeManager
-
         ThemeManager().theme_changed.connect(self._on_theme_changed)
         self._apply_editor_width_limit()
 

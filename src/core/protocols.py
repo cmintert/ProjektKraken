@@ -41,6 +41,10 @@ class DatabaseWorkerProtocol(Protocol):
         """Persist the graph lexicon configuration."""
         ...
 
+    def run_obsidian_vault_export(self, output_dir: str) -> None:
+        """Export the active world as an Obsidian vault."""
+        ...
+
 
 @runtime_checkable
 class MainWindowProtocol(Protocol):

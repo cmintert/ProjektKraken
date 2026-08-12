@@ -9,7 +9,7 @@ import logging
 from typing import Any, Optional, Tuple
 
 from PySide6.QtCore import QEvent, QObject, QRect
-from PySide6.QtGui import QCursor
+from PySide6.QtGui import QColor, QCursor
 from PySide6.QtWidgets import (
     QLayout,
     QProxyStyle,
@@ -18,13 +18,36 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.constants import (
+from src.core.theme_manager import ThemeManager
+from src.gui.constants import (
     TOOLTIP_DELAY_MS,
     TOOLTIP_DURATION_MS,
 )
-from src.core.theme_manager import ThemeManager
 
 logger = logging.getLogger(__name__)
+
+_FULL_HEX_COLOR_LENGTH = 7
+
+
+def _relative_luminance(color: QColor) -> float:
+    """Return a lightweight luminance estimate for contrast selection."""
+    return (
+        0.2126 * color.redF()
+        + 0.7152 * color.greenF()
+        + 0.0722 * color.blueF()
+    )
+
+
+def _contrasting_theme_text(background: str, theme: dict[str, Any]) -> str:
+    """Choose the theme text token with greatest contrast to a background."""
+    background_luminance = _relative_luminance(QColor(background))
+    candidates = (theme["text_main"], theme["app_bg"])
+    return max(
+        candidates,
+        key=lambda candidate: abs(
+            _relative_luminance(QColor(str(candidate))) - background_luminance
+        ),
+    )
 
 
 class TooltipProxyStyle(QProxyStyle):
@@ -37,6 +60,7 @@ class TooltipProxyStyle(QProxyStyle):
         widget: Optional[QWidget] = None,
         returnData: Optional[Any] = None,
     ) -> int:
+        """Override the tooltip wake-up delay and delegate other hints."""
         if hint == QStyle.StyleHint.SH_ToolTip_WakeUpDelay:
             return TOOLTIP_DELAY_MS
         return super().styleHint(hint, option, widget, returnData)
@@ -46,6 +70,7 @@ class TooltipEventFilter(QObject):
     """Event filter to override tooltip duration globally."""
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        """Display widget tooltips for the configured global duration."""
         if event.type() == QEvent.Type.ToolTip:
             if isinstance(obj, QWidget):
                 tooltip = obj.toolTip()
@@ -386,7 +411,7 @@ class StyleHelper:
         theme = ThemeManager().get_theme()
         return (
             f"QFrame#MapViewport {{ border: 2px solid {theme['primary']}; "
-            f"background-color: #000000; }}"
+            f"background-color: {theme['app_bg']}; }}"
         )
 
     @staticmethod
@@ -401,9 +426,10 @@ class StyleHelper:
         """
 
         theme = ThemeManager().get_theme()
+        text_color = _contrasting_theme_text(theme["primary"], theme)
         return (
             f"QPushButton {{ background-color: {theme['primary']}; "
-            f"color: #121212; border: 1px solid {theme['primary']}; "
+            f"color: {text_color}; border: 1px solid {theme['primary']}; "
             f"border-radius: 4px; padding: 6px 16px; font-weight: bold; }}"
             f"QPushButton:hover {{ background-color: {theme['border']}; "
             f"color: {theme['text_main']}; }}"
@@ -472,6 +498,7 @@ class StyleHelper:
         text_main = theme.get("text_main", "#E0E0E0")
         border = theme.get("border", "#333333")
         app_bg = theme.get("app_bg", "#121212")
+        checked_text = _contrasting_theme_text(primary, theme)
 
         return (
             f"QPushButton {{ background-color: {surface}; "
@@ -480,7 +507,7 @@ class StyleHelper:
             f"QPushButton:hover {{ background-color: {border}; }}"
             f"QPushButton:pressed {{ background-color: {app_bg}; }}"
             f"QPushButton:checked {{ "
-            f"background-color: {primary}; color: {theme.get('text_on_primary', '#FFFFFF')}; "
+            f"background-color: {primary}; color: {checked_text}; "
             f"border: 2px solid {primary}; font-weight: bold; }}"
         )
 
@@ -500,6 +527,7 @@ class StyleHelper:
         text_main = theme.get("text_main", "#E0E0E0")
         border = theme.get("border", "#333333")
         app_bg = theme.get("app_bg", "#121212")
+        checked_text = _contrasting_theme_text(primary, theme)
 
         return (
             f"QPushButton {{ background-color: {surface}; "
@@ -508,7 +536,7 @@ class StyleHelper:
             f"QPushButton:hover {{ background-color: {border}; }}"
             f"QPushButton:pressed {{ background-color: {app_bg}; }}"
             f"QPushButton:checked {{ "
-            f"background-color: {primary}; color: {theme.get('text_on_primary', '#FFFFFF')}; "
+            f"background-color: {primary}; color: {checked_text}; "
             f"border: 2px solid {primary}; }}"
         )
 
@@ -621,7 +649,7 @@ class StyleHelper:
 
         # Convert hex to rgba
         r, g, b = 74, 144, 217
-        if hex_color.startswith("#") and len(hex_color) == 7:
+        if hex_color.startswith("#") and len(hex_color) == _FULL_HEX_COLOR_LENGTH:
             r = int(hex_color[1:3], 16)
             g = int(hex_color[3:5], 16)
             b = int(hex_color[5:7], 16)
@@ -882,7 +910,7 @@ class StyleHelper:
         theme = ThemeManager().get_theme()
         if active:
             bg = theme.get("primary", "#4A90D9")
-            text = "#ffffff"
+            text = _contrasting_theme_text(bg, theme)
             border = bg
             hover_bg = theme.get("accent_secondary", bg)
         else:
@@ -1133,7 +1161,7 @@ class StyleHelper:
         primary = theme.get("primary", "#4A9EFF")
 
         # Create a semi-transparent version of the primary color for hover
-        if len(primary) == 7 and primary.startswith("#"):
+        if len(primary) == _FULL_HEX_COLOR_LENGTH and primary.startswith("#"):
             r = int(primary[1:3], 16)
             g = int(primary[3:5], 16)
             b = int(primary[5:7], 16)
@@ -1171,7 +1199,7 @@ class StyleHelper:
         theme = ThemeManager().get_theme()
         primary = theme.get("primary", "#4A9EFF")
 
-        if len(primary) == 7 and primary.startswith("#"):
+        if len(primary) == _FULL_HEX_COLOR_LENGTH and primary.startswith("#"):
             r = int(primary[1:3], 16)
             g = int(primary[3:5], 16)
             b = int(primary[5:7], 16)
@@ -1483,16 +1511,19 @@ class StyleHelper:
         Returns:
             str: QSS stylesheet string for drag overlays.
         """
-        return """
-            QLabel {
-                background-color: rgba(51, 153, 255, 0.15);
-                border: 2px dashed #3399FF;
+        theme = ThemeManager().get_theme()
+        accent = QColor(theme["accent_secondary"])
+        overlay = f"rgba({accent.red()}, {accent.green()}, {accent.blue()}, 0.15)"
+        return f"""
+            QLabel {{
+                background-color: {overlay};
+                border: 2px dashed {theme["accent_secondary"]};
                 border-radius: 6px;
-                color: #3399FF;
+                color: {theme["accent_secondary"]};
                 font-size: 14px;
                 font-weight: bold;
                 padding: 12px;
-            }
+            }}
         """
 
     @staticmethod
@@ -1624,10 +1655,13 @@ class StyleHelper:
         Returns:
             str: QSS stylesheet string for raster mode badges.
         """
+        text_color = _contrasting_theme_text(
+            bg_color, ThemeManager().get_theme()
+        )
         return (
             "QLabel#RasterModeBadge {"
             f"  background-color: {bg_color};"
-            "  color: #FFFFFF;"
+            f"  color: {text_color};"
             "  border-radius: 4px;"
             "  padding: 2px 8px;"
             "  font-size: 8pt;"
@@ -1679,7 +1713,7 @@ class StyleHelper:
         theme = ThemeManager().get_theme()
         primary = theme.get("primary", "#4A9EFF")
 
-        if len(primary) == 7 and primary.startswith("#"):
+        if len(primary) == _FULL_HEX_COLOR_LENGTH and primary.startswith("#"):
             r = int(primary[1:3], 16)
             g = int(primary[3:5], 16)
             b = int(primary[5:7], 16)

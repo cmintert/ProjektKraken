@@ -17,6 +17,11 @@ RasterTarget: TypeAlias = int | tuple[int, int, int, int]
 GradientKind: TypeAlias = Literal["linear", "radial", "reflected"]
 FalloffCurve: TypeAlias = Literal["linear", "cosine", "gaussian"]
 
+_VALUE_GRID_DIMENSIONS = 2
+_RGBA_GRID_DIMENSIONS = 3
+_RGBA_CHANNEL_COUNT = 4
+_ALPHA_EPSILON = 1e-8
+
 
 class RasterPixelFormat(str, Enum):
     """Storage format for editable raster pixels."""
@@ -47,6 +52,7 @@ class BrushSpec:
     curve: FalloffCurve = "cosine"
 
     def __post_init__(self) -> None:
+        """Validate brush radius and normalized control values."""
         if self.radius_px < 1:
             raise ValueError("Brush radius must be positive")
         if not 0.0 <= self.hardness <= 1.0:
@@ -62,6 +68,7 @@ class FillSpec:
     tolerance: int = 0
 
     def __post_init__(self) -> None:
+        """Validate that fill tolerance is non-negative."""
         if self.tolerance < 0:
             raise ValueError("Fill tolerance cannot be negative")
 
@@ -76,18 +83,19 @@ class GradientSpec:
     width_px: int = 0
 
     def __post_init__(self) -> None:
+        """Validate that gradient width is non-negative."""
         if self.width_px < 0:
             raise ValueError("Gradient width cannot be negative")
 
 
 def pixel_format_for_array(array: np.ndarray) -> RasterPixelFormat:
     """Return the supported pixel format for *array*."""
-    if array.dtype == np.uint16 and array.ndim == 2:
+    if array.dtype == np.uint16 and array.ndim == _VALUE_GRID_DIMENSIONS:
         return RasterPixelFormat.VALUE16
     if (
         array.dtype == np.uint8
-        and array.ndim == 3
-        and array.shape[2] == 4
+        and array.ndim == _RGBA_GRID_DIMENSIONS
+        and array.shape[2] == _RGBA_CHANNEL_COUNT
     ):
         return RasterPixelFormat.RGBA8
     raise ValueError(
@@ -234,7 +242,7 @@ def _source_over_rgba(
         out_premul,
         out_alpha,
         out=np.zeros_like(out_premul),
-        where=out_alpha > 1e-8,
+        where=out_alpha > _ALPHA_EPSILON,
     )
     return np.concatenate((out_rgb, out_alpha), axis=2)
 
@@ -480,7 +488,7 @@ def paint_gradient(
         premul[..., :3],
         alpha,
         out=np.zeros_like(premul[..., :3]),
-        where=alpha > 1e-8,
+        where=alpha > _ALPHA_EPSILON,
     )
     rgba = np.concatenate((rgb, alpha), axis=2)
     encoded = np.rint(rgba * 255.0).clip(0, 255).astype(np.uint8)

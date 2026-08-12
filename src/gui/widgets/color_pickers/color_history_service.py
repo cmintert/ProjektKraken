@@ -41,6 +41,7 @@ class ColorHistoryService(QObject):
         return cls._instance
 
     def __init__(self) -> None:
+        """Initialize persistent recent-colour history."""
         super().__init__()
         self._settings = QSettings(_ORG, _APP)
         self._cache: dict[str, List[Any]] = {}

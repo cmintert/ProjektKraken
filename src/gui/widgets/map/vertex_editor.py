@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional
 from PySide6.QtCore import QPointF, Qt
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsView
 
-from src.app.constants import (
+from src.gui.constants import (
     MAP_EDIT_DASH_PATTERN,
     MAP_EDIT_STROKE_COLOR,
     MAP_EDIT_STROKE_WIDTH,
@@ -55,6 +55,7 @@ class VertexEditor:
         view: "MapGraphicsView",
         snapping_manager: SnappingManager,
     ) -> None:
+        """Initialize vector-feature vertex editing."""
         self._view = view
         self._snapping_manager = snapping_manager
 

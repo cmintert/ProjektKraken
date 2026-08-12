@@ -24,13 +24,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.constants import (
+from src.core.calendar import CalendarConverter
+from src.core.events import Event
+from src.gui.constants import (
     TEMPORAL_FUTURE_LIGHTNESS_BOOST,
     TEMPORAL_FUTURE_OPACITY,
     TEMPORAL_FUTURE_SATURATION_FACTOR,
 )
-from src.core.calendar import CalendarConverter
-from src.core.events import Event
 from src.gui.utils.style_helper import StyleHelper
 
 logger = logging.getLogger(__name__)

@@ -25,9 +25,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.constants import SETTINGS_ACTIVE_DB_KEY
 from src.core.paths import ensure_worlds_directory
 from src.core.world import EXTERNAL_DATABASE_STORAGE, World, WorldManager
+from src.gui.constants import SETTINGS_ACTIVE_DB_KEY
 from src.gui.dialogs.external_database_warning import external_database_warning
 from src.services.world_storage_settings import WorldStorageSettings
 

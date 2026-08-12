@@ -42,6 +42,7 @@ from src.core.summary_data import (
     DEFAULT_SUMMARY_PROMPT,
     normalize_summary_prompt_template,
 )
+from src.core.theme_manager import ThemeManager
 from src.gui.utils.settings_reader import (
     read_bool_setting,
     read_int_setting,
@@ -75,6 +76,7 @@ class LMStudioDiscoveryWorker(QThread):
         timeout: float,
         parent: Optional[QWidget] = None,
     ) -> None:
+        """Initialize LM Studio discovery for a configured endpoint."""
         super().__init__(parent)
         self.base_url = base_url
         self.api_key = api_key
@@ -136,6 +138,7 @@ class AISettingsDialog(QDialog):
         main_layout.addLayout(content_layout)
 
         # Sidebar (Left)
+        theme = ThemeManager().get_theme()
         self.sidebar_list = QListWidget()
         self.sidebar_list.setFixedWidth(200)
         self.sidebar_list.setSpacing(4)
@@ -143,29 +146,29 @@ class AISettingsDialog(QDialog):
             QAbstractItemView.SelectionMode.SingleSelection
         )
         self.sidebar_list.setStyleSheet(
-            """
-            QListWidget {
-                background-color: #2b2b2b;
-                border: 1px solid #3d3d3d;
+            f"""
+            QListWidget {{
+                background-color: {theme['app_bg']};
+                border: 1px solid {theme['border']};
                 border-radius: 4px;
                 padding: 4px;
                 outline: none;
-            }
-            QListWidget::item {
+            }}
+            QListWidget::item {{
                 padding: 12px;
                 border-radius: 4px;
-                color: #b0b0b0;
+                color: {theme['text_dim']};
                 font-size: 13px;
-            }
-            QListWidget::item:selected {
-                background-color: #3d3d3d;
-                color: #ffffff;
+            }}
+            QListWidget::item:selected {{
+                background-color: {theme['surface']};
+                color: {theme['text_main']};
                 font-weight: bold;
-                border-left: 3px solid #3498db;
-            }
-            QListWidget::item:hover {
-                background-color: #323232;
-            }
+                border-left: 3px solid {theme['primary']};
+            }}
+            QListWidget::item:hover {{
+                background-color: {theme['surface']};
+            }}
         """
         )
 
@@ -212,7 +215,7 @@ class AISettingsDialog(QDialog):
         # Save status label (autosave feedback)
         self.save_status_label = QLabel("")
         self.save_status_label.setStyleSheet(
-            "color: #27ae60; font-size: 11px; font-style: italic;"
+            f"color: {theme['entity_main']}; font-size: 11px; font-style: italic;"
         )
         self.save_status_label.setAlignment(Qt.AlignmentFlag.AlignRight)
         main_layout.addWidget(self.save_status_label)
@@ -429,7 +432,7 @@ class AISettingsDialog(QDialog):
         # Clear settings button (Local to Generative AI?)
         # Let's keep it global-ish but on the relevant pages or just here
         clear_btn = QPushButton("Clear All AI Settings")
-        clear_btn.setStyleSheet("QPushButton { color: #e74c3c; }")
+        clear_btn.setStyleSheet(StyleHelper.get_ghost_destructive_button_style())
         clear_btn.clicked.connect(self._on_clear_generation_settings)
         clear_btn.setToolTip("Clear all stored API keys and settings")
         main_layout.addWidget(clear_btn)
@@ -473,7 +476,9 @@ class AISettingsDialog(QDialog):
             "The model is downloaded automatically on first use (~90 MB)."
         )
         st_info_label.setWordWrap(True)
-        st_info_label.setStyleSheet("color: #27ae60; font-size: 11px;")
+        st_info_label.setStyleSheet(
+            f"color: {ThemeManager().get_theme()['entity_main']}; font-size: 11px;"
+        )
         st_form.addRow(st_info_label)
         self.st_model_input = QLineEdit()
         self.st_model_input.setPlaceholderText("all-MiniLM-L6-v2")
@@ -725,7 +730,10 @@ class AISettingsDialog(QDialog):
         # Splitter for Master-Detail view
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.setHandleWidth(1)
-        splitter.setStyleSheet("QSplitter::handle { background-color: #3d3d3d; }")
+        theme = ThemeManager().get_theme()
+        splitter.setStyleSheet(
+            f"QSplitter::handle {{ background-color: {theme['border']}; }}"
+        )
 
         # === Left: Template List ===
         left_widget = QWidget()
@@ -733,25 +741,27 @@ class AISettingsDialog(QDialog):
         left_layout.setContentsMargins(0, 0, 8, 0)
 
         lbl_list = QLabel("Task Templates")
-        lbl_list.setStyleSheet("font-weight: bold; color: #b0b0b0;")
+        lbl_list.setStyleSheet(
+            f"font-weight: bold; color: {theme['text_dim']};"
+        )
         left_layout.addWidget(lbl_list)
 
         self.template_list = QListWidget()
         self.template_list.setStyleSheet(
-            """
-            QListWidget {
-                background-color: #1e1e1e;
-                border: 1px solid #3d3d3d;
+            f"""
+            QListWidget {{
+                background-color: {theme['app_bg']};
+                border: 1px solid {theme['border']};
                 border-radius: 4px;
-            }
-            QListWidget::item {
+            }}
+            QListWidget::item {{
                 padding: 8px;
-                color: #cccccc;
-            }
-            QListWidget::item:selected {
-                background-color: #3498db;
-                color: #ffffff;
-            }
+                color: {theme['text_main']};
+            }}
+            QListWidget::item:selected {{
+                background-color: {theme['primary']};
+                color: {theme['app_bg']};
+            }}
         """
         )
         self.template_list.currentItemChanged.connect(self._on_template_selected)
@@ -828,7 +838,7 @@ class AISettingsDialog(QDialog):
 
         self.btn_save_template = QPushButton("Save Template")
         self.btn_save_template.setStyleSheet(
-            "background-color: #3498db; color: white; font-weight: bold;"
+            StyleHelper.get_primary_button_style()
         )
         self.btn_save_template.clicked.connect(self._on_save_template)
         editor_actions.addWidget(self.btn_save_template)
@@ -1177,7 +1187,7 @@ class AISettingsDialog(QDialog):
         """Clear all generation provider settings."""
         from PySide6.QtCore import QSettings
 
-        from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+        from src.gui.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 
         reply = QMessageBox.question(
             self,
@@ -1332,7 +1342,7 @@ class AISettingsDialog(QDialog):
 
         from PySide6.QtCore import QSettings
 
-        from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+        from src.gui.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
@@ -1462,7 +1472,7 @@ class AISettingsDialog(QDialog):
         """Load settings from QSettings."""
         from PySide6.QtCore import QSettings
 
-        from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+        from src.gui.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
@@ -1633,7 +1643,7 @@ class AISettingsDialog(QDialog):
         """Build the portable creative settings for the current world."""
         from PySide6.QtCore import QSettings
 
-        from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+        from src.gui.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
         return AIGenerationPreferences(
@@ -1666,7 +1676,7 @@ class AISettingsDialog(QDialog):
         """Apply portable world settings to the dialog and compatibility cache."""
         from PySide6.QtCore import QSettings
 
-        from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+        from src.gui.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 
         self._initializing = True
         try:

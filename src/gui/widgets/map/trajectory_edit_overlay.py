@@ -6,10 +6,10 @@ from PySide6.QtCore import QPointF, Qt
 from PySide6.QtGui import QBrush, QColor, QPainterPath, QPen
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsPathItem
 
-from src.app.constants import MAP_LAYER_Z_UI_OVERLAY
 from src.core.theme_manager import ThemeManager
 from src.core.trajectory import SEGMENT_MODE_STEP, SegmentKey, SegmentMode
 from src.core.trajectory_edit import TrajectoryEditSession, TrajectoryEditSnapshot
+from src.gui.constants import MAP_LAYER_Z_UI_OVERLAY
 from src.gui.widgets.map.edit_handles import (
     DraggableEditHandle,
     MidpointEditHandle,
@@ -20,10 +20,14 @@ if TYPE_CHECKING:
     from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 
 
+_MINIMUM_PATH_KEYFRAMES = 2
+
+
 class TrajectoryEditOverlay:
     """Render and update only the active trajectory's editable geometry."""
 
     def __init__(self, view: "MapGraphicsView") -> None:
+        """Initialize direct trajectory-edit scene overlays."""
         self._view = view
         self._marker_id: str | None = None
         self._selected_keyframe_id: str | None = None
@@ -294,7 +298,7 @@ class TrajectoryEditOverlay:
         for item in self._relocation_path_items:
             self._view.graphics_scene.removeItem(item)
         self._relocation_path_items.clear()
-        if len(self._keyframe_handles) < 2:
+        if len(self._keyframe_handles) < _MINIMUM_PATH_KEYFRAMES:
             if self._path_item is not None:
                 self._view.graphics_scene.removeItem(self._path_item)
                 self._path_item = None

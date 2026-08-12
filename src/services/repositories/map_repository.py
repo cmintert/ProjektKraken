@@ -7,8 +7,8 @@ import json
 import logging
 from typing import Iterator, List, Optional
 
-from src.app.constants import MAP_ROLE_DETAIL, MAP_ROLE_MASTER
 from src.core.map import Map
+from src.core.map_constants import MAP_ROLE_DETAIL, MAP_ROLE_MASTER
 from src.core.marker import Marker
 from src.services.repositories.base_repository import BaseRepository
 

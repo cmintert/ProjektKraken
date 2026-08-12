@@ -32,6 +32,8 @@ from src.services.db_service import DatabaseService
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
+_DESCRIPTION_PREVIEW_LENGTH = 50
+
 
 def create_entity(args: argparse.Namespace) -> int:
     """Create a new entity."""
@@ -122,8 +124,8 @@ def list_entities(args: argparse.Namespace) -> int:
                 print(f"  Type: {entity.type}")
                 if entity.description:
                     desc_preview = (
-                        entity.description[:50] + "..."
-                        if len(entity.description) > 50
+                        entity.description[:_DESCRIPTION_PREVIEW_LENGTH] + "..."
+                        if len(entity.description) > _DESCRIPTION_PREVIEW_LENGTH
                         else entity.description
                     )
                     print(f"  Description: {desc_preview}")

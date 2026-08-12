@@ -13,6 +13,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
+_TEMPLATE_SECTION_COUNT = 3
+
 
 @dataclass
 class PromptTemplate:
@@ -281,7 +283,7 @@ class PromptLoader:
 
             # Split metadata and content
             parts = content.split("---", 2)
-            if len(parts) < 3:
+            if len(parts) < _TEMPLATE_SECTION_COUNT:
                 return False, "Invalid metadata format (missing closing '---')"
 
             metadata_text = parts[1].strip()
@@ -325,7 +327,7 @@ class PromptLoader:
             raise ValueError("Template must start with '---' metadata delimiter")
 
         parts = content.split("---", 2)
-        if len(parts) < 3:
+        if len(parts) < _TEMPLATE_SECTION_COUNT:
             raise ValueError("Invalid template format: missing closing '---'")
 
         metadata_text = parts[1].strip()

@@ -7,11 +7,15 @@ from io import BytesIO
 import numpy as np
 from PIL import Image as PilImage
 
+_VALUE_GRID_DIMENSIONS = 2
+_RGBA_GRID_DIMENSIONS = 3
+_RGBA_CHANNEL_COUNT = 4
+
 
 def encode_value_png(array: np.ndarray) -> bytes:
     """Encode a two-dimensional uint16 value grid as PNG."""
     values = np.asarray(array, dtype=np.uint16)
-    if values.ndim != 2:
+    if values.ndim != _VALUE_GRID_DIMENSIONS:
         raise ValueError("Value raster must be a two-dimensional grid")
     output = BytesIO()
     PilImage.fromarray(values, mode="I;16").save(output, format="PNG")
@@ -21,7 +25,10 @@ def encode_value_png(array: np.ndarray) -> bytes:
 def encode_rgba_png(array: np.ndarray) -> bytes:
     """Encode an RGBA visual grid as PNG."""
     rgba = np.asarray(array, dtype=np.uint8)
-    if rgba.ndim != 3 or rgba.shape[2] != 4:
+    if (
+        rgba.ndim != _RGBA_GRID_DIMENSIONS
+        or rgba.shape[2] != _RGBA_CHANNEL_COUNT
+    ):
         raise ValueError("Visual raster must be an RGBA grid")
     output = BytesIO()
     PilImage.fromarray(rgba, mode="RGBA").save(output, format="PNG")
@@ -32,7 +39,7 @@ def load_value_grid(path: str) -> np.ndarray:
     """Load a value raster into an independent uint16 array."""
     with PilImage.open(path) as image:
         values = np.array(image, dtype=np.uint16)
-    if values.ndim != 2:
+    if values.ndim != _VALUE_GRID_DIMENSIONS:
         raise ValueError("Value raster must be a two-dimensional grid")
     return values
 

@@ -445,11 +445,12 @@ class UnifiedListWidget(QWidget):
 
         """
         if active:
-            # Use theme-aware styling or a distinct color
-            # For now, a simple border/background tint
+            from src.core.theme_manager import ThemeManager
+
+            theme = ThemeManager().get_theme()
             self.btn_filter.setStyleSheet(
-                "background-color: #2c3e50; border: 2px solid #3498db; "
-                "font-weight: bold;"
+                f"background-color: {theme['surface']}; "
+                f"border: 2px solid {theme['primary']}; font-weight: bold;"
             )
             self.btn_filter.setText("Filter (Active)")
         else:

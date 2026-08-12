@@ -34,6 +34,7 @@ from PySide6.QtWidgets import (
 from src.core.theme_manager import ThemeManager
 
 ModelIndex = QModelIndex | QPersistentModelIndex
+_COLOR_LIGHTNESS_MIDPOINT = 128
 
 
 def tag_color_for_theme(tag: str, theme: dict[str, Any]) -> QColor:
@@ -41,7 +42,9 @@ def tag_color_for_theme(tag: str, theme: dict[str, Any]) -> QColor:
     digest = hashlib.sha256(tag.encode("utf-8")).digest()
     hue = int.from_bytes(digest[:2], byteorder="big") % 360
     surface = QColor(theme.get("surface", "#FFFFFF"))
-    lightness = 160 if surface.lightness() < 128 else 100
+    lightness = (
+        160 if surface.lightness() < _COLOR_LIGHTNESS_MIDPOINT else 100
+    )
     return QColor.fromHsl(hue, 185, lightness)
 
 
@@ -49,6 +52,7 @@ class TagListModel(QAbstractListModel):
     """Ordered, mutable tag list used by :class:`TagChipView`."""
 
     def __init__(self, parent: QObject | None = None) -> None:
+        """Initialize the normalized tag-list model."""
         super().__init__(parent)
         self._tags: list[str] = []
 
@@ -114,6 +118,7 @@ class TagChipDelegate(QStyledItemDelegate):
     CLOSE_WIDTH = 24
 
     def __init__(self, parent: QWidget | None = None) -> None:
+        """Initialize theme-aware tag-chip painting."""
         super().__init__(parent)
         self._base_color: str | None = None
         self._theme = ThemeManager().get_theme()
@@ -290,6 +295,7 @@ class TagChipView(QListView):
     SPACING = 4
 
     def __init__(self, parent: QWidget | None = None) -> None:
+        """Initialize the interactive tag-chip list view."""
         super().__init__(parent)
         self._height_refresh_pending = False
         self._hovered_close_row: int | None = None

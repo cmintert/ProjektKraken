@@ -4,6 +4,7 @@ import pytest
 from PySide6.QtWidgets import QApplication
 
 from src.app.main import MainWindow
+from src.core.theme_manager import ThemeManager
 
 
 @pytest.fixture
@@ -32,11 +33,9 @@ def test_status_bar_initialization(main_window):
     assert hasattr(main_window, "lbl_world_time")
     assert hasattr(main_window, "lbl_playhead_time")
 
-    # Check Blue for World Time
-    assert "#3498db" in main_window.lbl_world_time.styleSheet()
-
-    # Check Red for Playhead Time
-    assert "#e74c3c" in main_window.lbl_playhead_time.styleSheet()
+    theme = ThemeManager().get_theme()
+    assert theme["entity_main"] in main_window.lbl_world_time.styleSheet()
+    assert theme["event_main"] in main_window.lbl_playhead_time.styleSheet()
 
 
 def test_status_bar_updates(main_window):

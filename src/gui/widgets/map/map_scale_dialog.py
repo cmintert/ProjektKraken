@@ -14,6 +14,8 @@ from PySide6.QtWidgets import (
 
 from src.gui.utils.style_helper import StyleHelper
 
+_METERS_PER_KILOMETER = 1000.0
+
 
 class MapScaleDialog(QDialog):
     """Dialog to set the map's real-world width, with a calibration option."""
@@ -61,8 +63,8 @@ class MapScaleDialog(QDialog):
         self.unit_selector.setStyleSheet(StyleHelper.get_input_field_style())
 
         # Set initial value and unit
-        if current_width >= 1000.0:
-            self.width_input.setValue(current_width / 1000.0)
+        if current_width >= _METERS_PER_KILOMETER:
+            self.width_input.setValue(current_width / _METERS_PER_KILOMETER)
             self.unit_selector.setCurrentText("km")
         else:
             self.width_input.setValue(current_width)

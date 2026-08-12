@@ -15,6 +15,8 @@ from src.core.theme_manager import ThemeManager
 
 logger = logging.getLogger(__name__)
 
+_LABEL_VISIBILITY_TOP_BUFFER_PX = 30
+
 
 class GroupLabelOverlay(QWidget):
     """An overlay widget that displays fixed tag lane labels.
@@ -90,7 +92,7 @@ class GroupLabelOverlay(QWidget):
             is_collapsed = label_data.get("is_collapsed", False)
 
             # Skip if label is outside visible area
-            if y_pos < -30 or y_pos > self.height():
+            if y_pos < -_LABEL_VISIBILITY_TOP_BUFFER_PX or y_pos > self.height():
                 continue
 
             # Constant height regardless of collapse state

@@ -4,6 +4,7 @@ import pytest
 
 from src.commands.base_command import CommandResult
 from src.commands.entity_commands import CreateEntityCommand
+from src.commands.registry import get_command_types
 from src.services.worker import DatabaseWorker
 
 
@@ -39,7 +40,7 @@ def mock_attachment_service():
 def worker(mock_db_service, mock_asset_store, mock_attachment_service):
     # Initialize worker without calling initialize_db automatically in fixture
     # unless we want to test loaded state.
-    worker = DatabaseWorker("test.db")
+    worker = DatabaseWorker("test.db", get_command_types())
     return worker
 
 

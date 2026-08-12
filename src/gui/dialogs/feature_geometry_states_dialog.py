@@ -30,6 +30,7 @@ class FeatureGeometryStatesDialog(QDialog):
         calendar_converter: Any = None,
         parent: Any = None,
     ) -> None:
+        """Initialize the feature-geometry states dialog."""
         super().__init__(parent)
         self.setWindowTitle("Manage Geometry States")
         self.setMinimumWidth(420)

@@ -19,6 +19,9 @@ from src.core.calendar import CalendarConverter, CalendarDate
 
 logger = logging.getLogger(__name__)
 
+_START_DATE_CHANGE_EPSILON = 0.0001
+_DURATION_SYNC_EPSILON_DAYS = 0.001
+
 
 class LoreDurationWidget(QWidget):
     """Widget for inputting duration in semantic units.
@@ -111,7 +114,10 @@ class LoreDurationWidget(QWidget):
     def set_start_date(self, start_date_float: float) -> None:
         """Sets the context date for duration calculation."""
         # Only update if changed meaningfully to avoid feedback loops if any
-        if abs(self._start_date_float - start_date_float) > 0.0001:
+        if (
+            abs(self._start_date_float - start_date_float)
+            > _START_DATE_CHANGE_EPSILON
+        ):
             self._start_date_float = start_date_float
             # Recalculate duration float based on new start date + preserved inputs
             self._on_input_changed()
@@ -265,7 +271,7 @@ class LoreDurationWidget(QWidget):
 
         # Check if current inputs already result in roughly this float
         current_calc = self.get_value()
-        if abs(current_calc - days_float) < 0.001:
+        if abs(current_calc - days_float) < _DURATION_SYNC_EPSILON_DAYS:
             return
 
         self._updating = True

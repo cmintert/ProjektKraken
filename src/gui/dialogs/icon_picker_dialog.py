@@ -31,8 +31,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.constants import DEFAULT_MARKER_ICONS_PATH
 from src.core.paths import get_resource_path
+from src.gui.constants import DEFAULT_MARKER_ICONS_PATH
 from src.gui.utils.style_helper import StyleHelper
 
 logger = logging.getLogger(__name__)

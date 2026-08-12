@@ -17,6 +17,7 @@ class TagEditorWidget(QWidget):
     tags_changed = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
+        """Initialize editable normalized tag controls."""
         super().__init__(parent)
         self._base_color: Optional[str] = None
         self._suggestions: list[str] = []

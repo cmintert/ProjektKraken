@@ -43,16 +43,44 @@ class TimelineGroupingManager(QObject):
         """
         super().__init__()
         self.window = main_window
+        self._current_config: dict[str, Any] | None = None
+        self._tag_colors: dict[str, str] = {}
+
+    @property
+    def current_config(self) -> dict[str, Any] | None:
+        """Return a defensive copy of the cached grouping configuration."""
+        return dict(self._current_config) if self._current_config else None
+
+    @property
+    def tag_colors(self) -> dict[str, str]:
+        """Return a defensive copy of worker-loaded tag colors."""
+        return dict(self._tag_colors)
+
+    def color_for_tag(self, tag_name: str) -> str | None:
+        """Return the cached display color for a grouping tag."""
+        return self._tag_colors.get(tag_name)
 
     def request_grouping_config(self) -> None:
         """Requests loading of the timeline grouping configuration."""
-        try:
-            # Load from GUI db_service (thread-safe main thread usage)
-            if hasattr(self.window, "gui_db_service"):
-                config = self.window.gui_db_service.get_timeline_grouping_config()
-                self.on_grouping_config_loaded(config)
-        except Exception as e:
-            logger.warning(f"Failed to load grouping config: {e}")
+        self.window.worker_manager.load_timeline_grouping_requested.emit()
+
+    @Slot(object)
+    def on_grouping_snapshot_loaded(self, payload: object) -> None:
+        """Cache and apply grouping configuration loaded by the DB worker."""
+        if not isinstance(payload, dict):
+            self._current_config = None
+            self._tag_colors = {}
+            self.on_grouping_config_loaded(None)
+            return
+        config = payload.get("config")
+        colors = payload.get("colors", {})
+        self._tag_colors = (
+            {str(key): str(value) for key, value in colors.items()}
+            if isinstance(colors, dict)
+            else {}
+        )
+        typed_config = config if isinstance(config, dict) else None
+        self.on_grouping_config_loaded(typed_config)
 
     def on_grouping_config_loaded(self, config: dict[str, Any] | None) -> None:
         """Handler for grouping config loaded.
@@ -61,6 +89,7 @@ class TimelineGroupingManager(QObject):
             config: Dictionary with 'tag_order' and 'mode', or None.
 
         """
+        self._current_config = dict(config) if config else None
         if config:
             tag_order = config.get("tag_order", [])
             mode = config.get("mode", "DUPLICATE")
@@ -95,6 +124,13 @@ class TimelineGroupingManager(QObject):
         from src.gui.dialogs.grouping_config_dialog import GroupingConfigDialog
 
         try:
+            self._tag_colors.update(
+                {
+                    str(tag["name"]): str(tag["color"])
+                    for tag in tags_data
+                    if isinstance(tag, dict) and tag.get("name") and tag.get("color")
+                }
+            )
             # Create dialog with pre-loaded data
             command_coordinator = getattr(self.window, "command_coordinator")
             dialog = GroupingConfigDialog(
@@ -119,7 +155,7 @@ class TimelineGroupingManager(QObject):
             mode: Grouping mode (DUPLICATE or FIRST_MATCH).
 
         """
-        # Update timeline view
+        self._current_config = {"tag_order": list(tag_order), "mode": mode}
         self.window.timeline.set_grouping_config(tag_order, mode)
         logger.info(f"Grouping applied: {len(tag_order)} tags in {mode} mode")
 
@@ -127,6 +163,8 @@ class TimelineGroupingManager(QObject):
         """Clears timeline grouping."""
         cmd = ClearTimelineGroupingCommand()
         self.window.command_requested.emit(cmd)
+        self._current_config = None
+        self._tag_colors = {}
         # Also clear UI
         self.window.timeline.clear_grouping()
         logger.info("Timeline grouping cleared")
@@ -141,9 +179,11 @@ class TimelineGroupingManager(QObject):
         """
         color = QColorDialog.getColor()
         if color.isValid():
-            cmd = UpdateTagColorCommand(tag_name, color.name())
+            color_name = color.name()
+            cmd = UpdateTagColorCommand(tag_name, color_name)
             self.window.command_requested.emit(cmd)
-            logger.debug(f"Tag color changed: {tag_name} -> {color.name()}")
+            self._tag_colors[tag_name] = color_name
+            logger.debug(f"Tag color changed: {tag_name} -> {color_name}")
 
     @Slot(str)
     def on_remove_from_grouping_requested(self, tag_name: str) -> None:
@@ -153,14 +193,17 @@ class TimelineGroupingManager(QObject):
             tag_name: The name of the tag to remove.
 
         """
-        # Get current config from GUI thread's db_service (thread-safe)
-        current_config = self.window.gui_db_service.get_timeline_grouping_config()
+        current_config = self.current_config
         if current_config:
-            tag_order = current_config["tag_order"]
+            tag_order = list(current_config["tag_order"])
             if tag_name in tag_order:
                 tag_order.remove(tag_name)
                 cmd = SetTimelineGroupingCommand(tag_order, current_config["mode"])
                 self.window.command_requested.emit(cmd)
+                self._current_config = {
+                    "tag_order": tag_order,
+                    "mode": current_config["mode"],
+                }
                 self.window.timeline.set_grouping_config(
                     tag_order, current_config["mode"]
                 )

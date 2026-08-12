@@ -8,7 +8,7 @@ boilerplate and making it easier to add or remove signal wiring.
 """
 
 import logging
-from typing import TYPE_CHECKING, Callable, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Callable, Sequence, Tuple, Union, cast
 
 from PySide6.QtCore import Qt
 
@@ -22,6 +22,8 @@ ConnectionSpec = Union[
 ]
 
 logger = logging.getLogger(__name__)
+
+_CONNECTION_SPEC_BASE_FIELD_COUNT = 4
 
 
 class ConnectionManager:
@@ -129,8 +131,15 @@ class ConnectionManager:
         """
         failed = 0
         for spec in specs:
-            obj, signal_name, slot, desc = spec[:4]
-            conn_type = spec[4] if len(spec) > 4 else Qt.ConnectionType.AutoConnection
+            if len(spec) == _CONNECTION_SPEC_BASE_FIELD_COUNT:
+                short_spec = cast(Tuple[object, str, Callable, str], spec)
+                obj, signal_name, slot, desc = short_spec
+                conn_type = Qt.ConnectionType.AutoConnection
+            else:
+                long_spec = cast(
+                    Tuple[object, str, Callable, str, Qt.ConnectionType], spec
+                )
+                obj, signal_name, slot, desc, conn_type = long_spec
             if not self._connect_signal_safe(obj, signal_name, slot, desc, conn_type):
                 failed += 1
 
@@ -592,6 +601,20 @@ class ConnectionManager:
                     lm.clear_longform_filter,
                     "LongformEditor",
                 ),
+                (
+                    lm,
+                    "export_vault_requested",
+                    self.window.worker.run_obsidian_vault_export,
+                    "LongformManager",
+                    Qt.ConnectionType.QueuedConnection,
+                ),
+                (
+                    self.window.worker,
+                    "obsidian_vault_export_finished",
+                    lm.on_vault_export_finished,
+                    "DatabaseWorker",
+                    Qt.ConnectionType.QueuedConnection,
+                ),
             ],
             "LongformEditor",
         )
@@ -864,6 +887,13 @@ class ConnectionManager:
                     worker,
                     "index_rebuild_finished",
                     ai.on_index_rebuild_finished,
+                    "Worker→AISearchManager",
+                    queued,
+                ),
+                (
+                    worker,
+                    "embedding_stats_loaded",
+                    ai.on_embedding_stats_loaded,
                     "Worker→AISearchManager",
                     queued,
                 ),

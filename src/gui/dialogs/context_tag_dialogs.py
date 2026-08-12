@@ -28,6 +28,12 @@ from src.gui.widgets.tag_editor import TagEditorWidget
 ModelIndex = QModelIndex | QPersistentModelIndex
 
 
+_ITEM_TYPE_COLUMN = 1
+_ITEM_NAME_COLUMN = 2
+_ITEM_TAGS_COLUMN = 3
+_ITEM_CREATED_AT_COLUMN = 4
+
+
 class ContextTagEditorDialog(QDialog):
     """Edit the remembered tag set with existing tag autocomplete."""
 
@@ -39,6 +45,7 @@ class ContextTagEditorDialog(QDialog):
         active: bool,
         parent: QWidget | None = None,
     ) -> None:
+        """Initialize the context-tag editor dialog."""
         super().__init__(parent)
         self.setWindowTitle("Context Tags")
         self.resize(560, 260)
@@ -92,17 +99,21 @@ class ContextReviewModel(QAbstractTableModel):
     HEADERS = ("", "Type", "Name", "Context tags", "Created")
 
     def __init__(self, records: list[dict[str, object]]) -> None:
+        """Initialize the checkable context-review table model."""
         super().__init__()
         self.records = records
         self._checked = {row for row in range(len(records))}
 
     def rowCount(self, parent: ModelIndex = QModelIndex()) -> int:
+        """Return the number of top-level review records."""
         return 0 if parent.isValid() else len(self.records)
 
     def columnCount(self, parent: ModelIndex = QModelIndex()) -> int:
+        """Return the number of columns in the review table."""
         return 0 if parent.isValid() else len(self.HEADERS)
 
     def data(self, index: ModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
+        """Return display or check-state data for one review cell."""
         if not index.isValid() or not 0 <= index.row() < len(self.records):
             return None
         record = self.records[index.row()]
@@ -114,14 +125,14 @@ class ContextReviewModel(QAbstractTableModel):
             )
         if role != Qt.ItemDataRole.DisplayRole:
             return None
-        if index.column() == 1:
+        if index.column() == _ITEM_TYPE_COLUMN:
             return str(record["item_type"]).title()
-        if index.column() == 2:
+        if index.column() == _ITEM_NAME_COLUMN:
             return str(record["name"])
-        if index.column() == 3:
+        if index.column() == _ITEM_TAGS_COLUMN:
             tags = record["tags"]
             return ", ".join(str(tag) for tag in tags) if isinstance(tags, list) else ""
-        if index.column() == 4:
+        if index.column() == _ITEM_CREATED_AT_COLUMN:
             created_at = record["created_at"]
             timestamp = (
                 float(created_at) if isinstance(created_at, (int, float, str)) else 0.0
@@ -137,11 +148,13 @@ class ContextReviewModel(QAbstractTableModel):
         orientation: Qt.Orientation,
         role: int = Qt.ItemDataRole.DisplayRole,
     ) -> Any:
+        """Return horizontal header text for display roles."""
         if role == Qt.ItemDataRole.DisplayRole and orientation == Qt.Orientation.Horizontal:
             return self.HEADERS[section]
         return None
 
     def flags(self, index: ModelIndex) -> Qt.ItemFlag:
+        """Return item flags, making the selection column checkable."""
         flags = super().flags(index)
         if index.column() == 0:
             flags |= Qt.ItemFlag.ItemIsUserCheckable
@@ -153,6 +166,7 @@ class ContextReviewModel(QAbstractTableModel):
         value: Any,
         role: int = Qt.ItemDataRole.EditRole,
     ) -> bool:
+        """Update a record's checked state."""
         if index.column() != 0 or role != Qt.ItemDataRole.CheckStateRole:
             return False
         if value == Qt.CheckState.Checked.value:
@@ -188,6 +202,7 @@ class ContextTagReviewDialog(QDialog):
         records: list[dict[str, object]],
         parent: QWidget | None = None,
     ) -> None:
+        """Initialize the context-tag review and cleanup dialog."""
         super().__init__(parent)
         self.setWindowTitle("Review Context Tags")
         self.resize(760, 440)
@@ -237,6 +252,7 @@ class ContextTagReviewDialog(QDialog):
         layout.addLayout(buttons)
 
     def selected_keys(self) -> list[tuple[str, str]]:
+        """Return the selected item type and identifier pairs."""
         return self.model.selected_keys()
 
     def _cleanup(self) -> None:

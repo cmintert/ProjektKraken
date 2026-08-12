@@ -21,6 +21,7 @@ from src.core.logging_config import get_logger
 logger = get_logger(__name__)
 
 INSPECTOR_TAB_MIME_TYPE = "application/x-inspector-tab"
+_DRAG_START_DISTANCE_PX = 20
 
 
 def _decode_source_index(mime_data: QMimeData) -> int | None:
@@ -110,7 +111,10 @@ class DraggableTabBar(QTabBar):
         if not (event.buttons() & Qt.MouseButton.LeftButton):
             return super().mouseMoveEvent(event)
 
-        if (event.position().toPoint() - self._drag_start_pos).manhattanLength() < 20:
+        drag_distance = (
+            event.position().toPoint() - self._drag_start_pos
+        ).manhattanLength()
+        if drag_distance < _DRAG_START_DISTANCE_PX:
             return super().mouseMoveEvent(event)
 
         idx = self.tabAt(self._drag_start_pos)

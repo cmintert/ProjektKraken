@@ -78,7 +78,8 @@ class BaseRepository:
         except Exception as e:
             if owns_transaction:
                 connection.rollback()
-            logger.error(f"Transaction rolled back due to error: {e}")
+            if not getattr(e, "silent_transaction_rollback", False):
+                logger.error(f"Transaction rolled back due to error: {e}")
             raise
 
     @staticmethod

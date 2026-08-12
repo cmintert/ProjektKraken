@@ -25,10 +25,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.constants import MAP_LAYER_Z_TRAJECTORIES
 from src.core.calendar import CalendarConverter
 from src.core.theme_manager import ThemeManager
 from src.core.trajectory import SEGMENT_MODE_STEP, SegmentKey, SegmentMode
+from src.gui.constants import MAP_LAYER_Z_TRAJECTORIES
 
 if TYPE_CHECKING:
     from src.gui.widgets.map.map_graphics_view import KeyframeItem, MapGraphicsView
@@ -46,12 +46,14 @@ KEYFRAME_LABEL_OFFSET_X = -10
 KEYFRAME_LABEL_OFFSET_Y = 10
 KEYFRAME_LABEL_MIN_SIZE_PT = 8
 KEYFRAME_LABEL_MAX_SIZE_PT = 10
+MINIMUM_TRAJECTORY_KEYFRAMES = 2
 
 
 class KeyframeLabelItem(QGraphicsObject):
     """Custom graphics item for keyframe labels with a themed background pill."""
 
     def __init__(self, text: str, parent: Optional[QGraphicsObject] = None) -> None:
+        """Initialize a scale-independent trajectory keyframe label."""
         super().__init__(parent)
         self._text = text
         self._font = QFont(KEYFRAME_LABEL_FONT_FAMILY, KEYFRAME_LABEL_FONT_SIZE)
@@ -71,9 +73,11 @@ class KeyframeLabelItem(QGraphicsObject):
         self._rect = QRectF(0, 0, float(width), float(height))
 
     def boundingRect(self) -> QRectF:
+        """Return the scene bounds of the trajectory label pill."""
         return self._rect
 
     def setText(self, text: str) -> None:
+        """Replace the label text and recalculate its bounds."""
         if self._text != text:
             self._text = text
             self._update_rect()
@@ -85,6 +89,7 @@ class KeyframeLabelItem(QGraphicsObject):
         option: QStyleOptionGraphicsItem,
         widget: Optional[QWidget] = None,
     ) -> None:
+        """Paint the trajectory label using current theme tokens."""
         theme = ThemeManager().get_theme()
         bg_color = QColor(theme.get("surface", "#1A1A1A"))
         text_color = QColor(theme.get("text_main", "#FFFFFF"))
@@ -109,6 +114,7 @@ class TrajectoryPathItem(QGraphicsPathItem):
     """Passive playback path carrying its owning marker identity."""
 
     def __init__(self, marker_id: str, path: QPainterPath) -> None:
+        """Initialize a trajectory path carrying its marker identifier."""
         super().__init__(path)
         self.marker_id = marker_id
 
@@ -121,6 +127,7 @@ class TrajectoryRenderer:
     """
 
     def __init__(self, view: "MapGraphicsView") -> None:
+        """Initialize trajectory rendering for one map graphics view."""
         self._view = view
 
         self.trajectory_path_item: Optional[QGraphicsPathItem] = None
@@ -144,6 +151,7 @@ class TrajectoryRenderer:
         keyframes: list,
         segment_modes: dict[SegmentKey, SegmentMode] | None = None,
     ) -> None:
+        """Paint the trajectory label using current theme tokens."""
         """Visualizes the trajectory path and keyframes.
 
         Args:
@@ -156,7 +164,7 @@ class TrajectoryRenderer:
         self._marker_id = marker_id
         self._keyframes = list(keyframes)
         self._segment_modes = dict(segment_modes or {})
-        if not keyframes or len(keyframes) < 2:
+        if not keyframes or len(keyframes) < MINIMUM_TRAJECTORY_KEYFRAMES:
             return
 
         view_scale = (
@@ -325,7 +333,10 @@ class TrajectoryRenderer:
 
     def _update_trajectory_path(self, base_z: float = MAP_LAYER_Z_TRAJECTORIES) -> None:
         """Re-draws the trajectory path based on current keyframe positions."""
-        if not self.keyframe_items or len(self.keyframe_items) < 2:
+        if (
+            not self.keyframe_items
+            or len(self.keyframe_items) < MINIMUM_TRAJECTORY_KEYFRAMES
+        ):
             if self.trajectory_path_item:
                 self._view.graphics_scene.removeItem(self.trajectory_path_item)
                 self.trajectory_path_item = None

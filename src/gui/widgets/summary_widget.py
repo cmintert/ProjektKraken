@@ -5,7 +5,7 @@ Provides a widget for displaying and managing AI-generated item summaries.
 
 from datetime import datetime
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import (
     QApplication,
     QFrame,
@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.summary_data import SummaryData
+from src.core.theme_manager import ThemeManager
 from src.gui.widgets.standard_buttons import (
     DestructiveButton,
     PrimaryButton,
@@ -51,6 +52,7 @@ class SummaryWidget(QWidget):
         self._controls_enabled = True
         self._setup_ui()
         self._apply_styles()
+        ThemeManager().theme_changed.connect(self._apply_styles)
 
     def _setup_ui(self) -> None:
         """Set up the user interface components."""
@@ -65,9 +67,10 @@ class SummaryWidget(QWidget):
         stale_layout.setContentsMargins(8, 4, 8, 4)
 
         # Use a warning icon/color if possible, for now just text
-        stale_label = QLabel("⚠️ Content has changed since this summary was generated.")
-        stale_label.setStyleSheet("color: #FF6B6B; font-weight: bold;")
-        stale_layout.addWidget(stale_label)
+        self.stale_label = QLabel(
+            "⚠️ Content has changed since this summary was generated."
+        )
+        stale_layout.addWidget(self.stale_label)
 
         self.stale_banner.hide()
         layout.addWidget(self.stale_banner)
@@ -83,7 +86,6 @@ class SummaryWidget(QWidget):
 
         self.metadata_label = QLabel()
         self.metadata_label.setObjectName("metadata")
-        self.metadata_label.setStyleSheet("color: #888888; font-size: 10px;")
         footer_layout.addWidget(self.metadata_label)
 
         footer_layout.addStretch()
@@ -235,15 +237,22 @@ class SummaryWidget(QWidget):
         """Copies summary text to clipboard."""
         QApplication.clipboard().setText(self.text_display.toPlainText())
 
-    def _apply_styles(self) -> None:
-        """Apply custom styling."""
-        # Banner style
+    @Slot(dict)
+    def _apply_styles(self, _theme: dict | None = None) -> None:
+        """Apply stale-state and metadata colours from the active theme."""
+        theme = ThemeManager().get_theme()
+        self.stale_label.setStyleSheet(
+            f"color: {theme['error']}; font-weight: bold;"
+        )
+        self.metadata_label.setStyleSheet(
+            f"color: {theme['text_dim']}; font-size: 10px;"
+        )
         self.stale_banner.setStyleSheet(
-            """
-            QFrame#stale_banner {
-                background-color: rgba(255, 107, 107, 0.1);
-                border: 1px solid rgba(255, 107, 107, 0.3);
+            f"""
+            QFrame#stale_banner {{
+                background-color: {theme['surface']};
+                border: 1px solid {theme['error']};
                 border-radius: 4px;
-            }
+            }}
         """
         )

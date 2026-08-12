@@ -19,6 +19,7 @@ from src.core.summary_data import (
     calculate_summary_target_words,
     calculate_summary_word_limit,
     count_summary_words,
+    is_summary_stale,
     normalize_summary_prompt_template,
 )
 from src.services.ai_audit_service import (
@@ -32,6 +33,8 @@ if TYPE_CHECKING:
     from src.services.db_service import DatabaseService
 
 logger = logging.getLogger(__name__)
+
+_MIN_SENTENCE_COUNT = 2
 
 
 class SummaryService:
@@ -66,7 +69,7 @@ class SummaryService:
         if not self._llm_provider:
             from PySide6.QtCore import QSettings
 
-            from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+            from src.core.settings import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
@@ -125,16 +128,7 @@ class SummaryService:
             bool: True if summary is missing or content has changed.
 
         """
-        summary_data = item.attributes.get("_summary_data")
-        if not summary_data:
-            return True
-
-        try:
-            stored_hash = summary_data.get("hash")
-            current_hash = self._calculate_hash(item)
-            return stored_hash != current_hash
-        except Exception:
-            return True
+        return is_summary_stale(item)
 
     def get_summary(self, item: Union[Entity, Event]) -> Optional[SummaryData]:
         """Get the cached summary if valid, otherwise None.
@@ -181,7 +175,7 @@ class SummaryService:
             # Read configured summary max tokens from settings
             from PySide6.QtCore import QSettings
 
-            from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+            from src.core.settings import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 
             settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
             summary_max_tokens = cast(
@@ -349,7 +343,7 @@ class SummaryService:
         """
         from PySide6.QtCore import QSettings
 
-        from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
+        from src.core.settings import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 
         settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
 
@@ -414,7 +408,7 @@ class SummaryService:
             for sentence in re.split(r"(?<=[.!?])\s+", text.strip())
             if sentence.strip()
         ]
-        if len(sentences) < 2:
+        if len(sentences) < _MIN_SENTENCE_COUNT:
             return None
 
         while len(sentences) > 1:

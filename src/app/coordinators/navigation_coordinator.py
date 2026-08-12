@@ -1,3 +1,5 @@
+"""Coordinate selection and navigation between world objects."""
+
 import logging
 from typing import TYPE_CHECKING, Any, Optional
 
@@ -32,6 +34,7 @@ class NavigationCoordinator(BaseCoordinator):
     """
 
     def __init__(self, main_window: "MainWindow") -> None:
+        """Initialize navigation state for the main window."""
         super().__init__(main_window)
 
         # State

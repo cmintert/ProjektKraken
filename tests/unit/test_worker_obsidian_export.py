@@ -71,3 +71,20 @@ def test_run_single_obsidian_export_writes_user_selected_path(
             "error": "",
         }
     ]
+
+
+def test_embedding_stats_failure_emits_safe_snapshot_and_error() -> None:
+    """A statistics read failure must not escape the worker slot."""
+    worker = DatabaseWorker(":memory:")
+    db_service = MagicMock()
+    db_service.get_embedding_stats.side_effect = RuntimeError("broken")
+    worker.db_service = db_service
+    snapshots: list[dict[str, object]] = []
+    errors: list[str] = []
+    worker.embedding_stats_loaded.connect(snapshots.append)
+    worker.error_occurred.connect(errors.append)
+
+    worker.load_embedding_stats()
+
+    assert snapshots == [{"count": 0, "last_updated": None}]
+    assert errors == ["Failed to load semantic-index statistics."]

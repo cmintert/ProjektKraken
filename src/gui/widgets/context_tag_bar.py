@@ -22,6 +22,7 @@ class ContextTagBar(QFrame):
     MAX_VISIBLE_CHIPS = 3
 
     def __init__(self, parent: QWidget | None = None) -> None:
+        """Initialize the active context-tag bar."""
         super().__init__(parent)
         self.setObjectName("contextTagBar")
         self.setAccessibleName("Context tags")

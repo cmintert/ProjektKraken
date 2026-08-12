@@ -16,6 +16,12 @@ from typing import TYPE_CHECKING, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
+_BILLION = 1e9
+_MILLION = 1e6
+_TEN_THOUSAND = 1e4
+_THOUSAND = 1e3
+_HUNDREDTH = 0.01
+
 if TYPE_CHECKING:
     from src.core.calendar import CalendarConverter
 
@@ -430,15 +436,15 @@ class TimelineRuler:
 
         # Handle standard numeric formatting for decade+ levels
         abs_pos = abs(position)
-        if abs_pos >= 1e9:
-            return f"{position / 1e9:.1f}B"
-        elif abs_pos >= 1e6:
-            return f"{position / 1e6:.1f}M"
-        elif abs_pos >= 1e4:
-            return f"{position / 1e3:.0f}k"
+        if abs_pos >= _BILLION:
+            return f"{position / _BILLION:.1f}B"
+        elif abs_pos >= _MILLION:
+            return f"{position / _MILLION:.1f}M"
+        elif abs_pos >= _TEN_THOUSAND:
+            return f"{position / _THOUSAND:.0f}k"
         elif abs_pos >= 1:
             return f"{position:.0f}"
-        elif abs_pos >= 0.01:
+        elif abs_pos >= _HUNDREDTH:
             return f"{position:.2f}"
         else:
             return f"{position:.4f}"
@@ -518,9 +524,9 @@ class TimelineRuler:
                 # Calendar conversion may fail for extreme dates
                 pass
         # Numeric fallback
-        if abs(start_date) >= 1e6:
-            return f"~{start_date / 1e6:.0f}M"
-        elif abs(start_date) >= 1e3:
-            return f"~{start_date / 1e3:.0f}k"
+        if abs(start_date) >= _MILLION:
+            return f"~{start_date / _MILLION:.0f}M"
+        elif abs(start_date) >= _THOUSAND:
+            return f"~{start_date / _THOUSAND:.0f}k"
         else:
             return f"~{start_date:.0f}"

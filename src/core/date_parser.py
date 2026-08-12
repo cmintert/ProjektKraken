@@ -10,6 +10,12 @@ from typing import Any, Dict, List, Optional
 from src.core.calendar import CalendarConfig, CalendarConverter, CalendarDate
 from src.core.parsed_date import DatePrecision, ParsedDate
 
+_MIN_ABBREVIATION_CONSONANTS = 2
+_CONSONANT_ABBREVIATION_ATTEMPT = 2
+_HOURS_PER_HALF_DAY = 12
+_DURATION_WITH_DAY_GROUP_COUNT = 3
+_RANGE_ENDPOINT_COUNT = 2
+
 
 class DateParser:
     """A unified parser for custom calendar dates using CalendarConfig.
@@ -75,9 +81,9 @@ class DateParser:
                 while abbrev.lower() in used_abbrevs:
                     if counter == 1:
                         abbrev = f"{name[:2]}{name[-1]}"
-                    elif counter == 2:
+                    elif counter == _CONSONANT_ABBREVIATION_ATTEMPT:
                         consonants = [c for c in name[1:] if c.lower() not in "aeiou"]
-                        if len(consonants) >= 2:
+                        if len(consonants) >= _MIN_ABBREVIATION_CONSONANTS:
                             abbrev = f"{name[0]}{consonants[0]}{consonants[1]}"
                         else:
                             abbrev = f"{base_abbrev}{counter}"
@@ -471,9 +477,9 @@ class DateParser:
         meridiem = groupdict.get("meridiem")
         if hour is not None and meridiem:
             m = meridiem.strip().upper()
-            if m == "PM" and hour < 12:
-                hour += 12
-            elif m == "AM" and hour == 12:
+            if m == "PM" and hour < _HOURS_PER_HALF_DAY:
+                hour += _HOURS_PER_HALF_DAY
+            elif m == "AM" and hour == _HOURS_PER_HALF_DAY:
                 hour = 0
 
         return ParsedDate(year=year, month=month, day=day, hour=hour, minute=minute, second=second)
@@ -488,9 +494,9 @@ class DateParser:
         meridiem = groupdict.get("meridiem")
         if meridiem:
             m = meridiem.strip().upper()
-            if m == "PM" and hour < 12:
-                hour += 12
-            elif m == "AM" and hour == 12:
+            if m == "PM" and hour < _HOURS_PER_HALF_DAY:
+                hour += _HOURS_PER_HALF_DAY
+            elif m == "AM" and hour == _HOURS_PER_HALF_DAY:
                 hour = 0
 
         # CalendarConfig has no current_year; default to epoch year 1
@@ -533,7 +539,7 @@ class DateParser:
     def _parse_relative_date(self, match: re.Match) -> ParsedDate:
         """Parse a relative date (RELATIVE precision)."""
         groups = match.groups()
-        if len(groups) == 3:
+        if len(groups) == _DURATION_WITH_DAY_GROUP_COUNT:
             days = int(groups[0])
             direction = groups[1]
             event = groups[2]
@@ -599,11 +605,14 @@ class DateParser:
                 raise ValueError(f"Invalid day: {group}")
             days.append(int(day_match.group()))
 
-        if len(days) == 2 and len(months) >= 2:
+        if (
+            len(days) == _RANGE_ENDPOINT_COUNT
+            and len(months) >= _RANGE_ENDPOINT_COUNT
+        ):
             # Cross-month: "23 AUG–6 SEP 1895"
             start_date = ParsedDate(year=year, month=months[0], day=days[0])
             end_date = ParsedDate(year=year, month=months[1], day=days[1])
-        elif len(days) == 2:
+        elif len(days) == _RANGE_ENDPOINT_COUNT:
             # Same-month: "23–30 AUG 1895"
             start_date = ParsedDate(year=year, month=months[0], day=days[0])
             end_date = ParsedDate(year=year, month=months[0], day=days[1])

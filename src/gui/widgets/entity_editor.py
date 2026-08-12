@@ -15,6 +15,7 @@ from PySide6.QtGui import QDropEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -22,16 +23,33 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QMenu,
     QMessageBox,
+    QScrollArea,
+    QSizePolicy,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
 
 from src.core.ai_generation import GenerationReviewResult, apply_reviewed_generation
 from src.core.entities import Entity
-from src.core.summary_data import SummaryData, calculate_summary_source_hash
+from src.core.summary_data import (
+    SummaryData,
+    calculate_summary_source_hash,
+    is_summary_stale,
+)
+from src.core.theme_manager import ThemeManager
+from src.gui.constants import (
+    EDITOR_FORM_VERTICAL_SPACING,
+    EDITOR_LIST_SPACING,
+    EDITOR_SECTION_SPACING,
+)
 from src.gui.mixins.autosave_mixin import AutoSaveManager
 from src.gui.mixins.editor_mixin import BaseEditorMixin
+from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
+from src.gui.widgets.empty_state_widget import EmptyStateWidget
+from src.gui.widgets.gallery_widget import GalleryWidget
+from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
 from src.gui.widgets.relation_item_widget import RelationItemWidget
 from src.gui.widgets.sheet_builder import SheetBuilderWidget
 from src.gui.widgets.splitter_tab_inspector import SplitterTabInspector
@@ -43,6 +61,7 @@ from src.gui.widgets.standard_buttons import (
 )
 from src.gui.widgets.summary_widget import SummaryWidget
 from src.gui.widgets.tag_editor import TagEditorWidget
+from src.gui.widgets.timeline_display_widget import TimelineDisplayWidget
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
 logger = logging.getLogger(__name__)
@@ -93,20 +112,28 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
         """
         super().__init__(parent)
+        self._current_entity_id: str | None = None
         self.autosave_manager = AutoSaveManager(self)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
-        # Set size policy to prevent dock collapse
-        from PySide6.QtWidgets import QSizePolicy
+        main_layout = self._build_editor_shell()
+        self._build_header(main_layout)
 
+        # Splitter-based tab inspector for vertical stacking
+        self.inspector = SplitterTabInspector()
+        main_layout.addWidget(self.inspector)
+
+        self._build_details_tab()
+
+        self._build_secondary_tabs(parent)
+        self._build_action_buttons(main_layout)
+        self._initialize_editor_state()
+
+    def _build_editor_shell(self) -> QVBoxLayout:
+        """Build empty/content containers and return the content layout."""
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-
-        from src.gui.utils.style_helper import StyleHelper
-        from src.gui.widgets.empty_state_widget import EmptyStateWidget
-
-        main_layout = QVBoxLayout(self)
-        StyleHelper.apply_no_margins(main_layout)
-
+        outer_layout = QVBoxLayout(self)
+        StyleHelper.apply_no_margins(outer_layout)
         self._empty_state = EmptyStateWidget(
             "No Entity Selected",
             "Select an entity from the list to view and edit its details.",
@@ -114,30 +141,132 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self._empty_state.add_action(
             "New Entity", self.create_new_requested.emit, primary=True
         )
-        main_layout.addWidget(self._empty_state)
+        outer_layout.addWidget(self._empty_state)
         self._empty_state.show()
-
         self._content_widget = QWidget()
-        _content_layout = QVBoxLayout(self._content_widget)
-        StyleHelper.apply_form_spacing(_content_layout)
-        main_layout.addWidget(self._content_widget)
+        content_layout = QVBoxLayout(self._content_widget)
+        StyleHelper.apply_form_spacing(content_layout)
+        outer_layout.addWidget(self._content_widget)
         self._content_widget.hide()
+        return content_layout
 
-        # Alias so the rest of __init__ can keep using main_layout idiom
-        main_layout = _content_layout
+    def _build_details_tab(self) -> None:
+        """Build the scrollable details tab and its collapsible sections."""
+        self.tab_details = QWidget()
+        tab_layout = QVBoxLayout(self.tab_details)
+        tab_layout.setContentsMargins(0, 0, 0, 0)
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        self.scroll_area.setStyleSheet(StyleHelper.get_scroll_area_style())
+        self.details_container = QWidget()
+        details_layout = QVBoxLayout(self.details_container)
+        StyleHelper.apply_compact_spacing(details_layout)
+        self.scroll_area.setWidget(self.details_container)
+        tab_layout.addWidget(self.scroll_area)
+        self.form_layout = QFormLayout()
+        self.form_layout.setVerticalSpacing(EDITOR_FORM_VERTICAL_SPACING)
+        self.form_layout.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
+        )
+        self.form_layout.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
+        self.form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+        self.desc_edit = WikiTextEdit()
+        self.desc_edit.link_clicked.connect(self.link_clicked.emit)
+        self.desc_edit.completion_prefix_changed.connect(
+            self.completion_prefix_changed.emit
+        )
+        self.form_layout.addRow("Description:", self.desc_edit)
+        self._build_timeline_section()
+        self._build_summary_section()
+        self._build_llm_section()
+        self._build_raster_appearances_section()
+        details_layout.addLayout(self.form_layout)
+        self.inspector.add_tab(
+            self.tab_details,
+            "Details",
+            "Core entity details, description, and AI summary",
+        )
 
-        # --- Persistent Header ---
+    def _build_timeline_section(self) -> None:
+        """Build the collapsible entity timeline section."""
+        self.timeline_container = QWidget()
+        section_layout = QVBoxLayout(self.timeline_container)
+        section_layout.setContentsMargins(0, 0, 0, 0)
+        section_layout.setSpacing(EDITOR_SECTION_SPACING)
+        self.timeline_checkbox = StandardCheckbox("")
+        section_layout.addWidget(self.timeline_checkbox)
+        self.timeline_display = TimelineDisplayWidget()
+        self.timeline_display.setMaximumWidth(self.desc_edit.maximumWidth())
+        self.desc_edit.maximum_width_changed.connect(
+            self.timeline_display.setMaximumWidth
+        )
+        self.timeline_display.event_clicked.connect(self.navigate_to_relation.emit)
+        self.timeline_display.setVisible(False)
+        section_layout.addWidget(self.timeline_display)
+        self.timeline_checkbox.toggled.connect(self.timeline_display.setVisible)
+        self.form_layout.addRow("Timeline:", self.timeline_container)
+
+    def _build_summary_section(self) -> None:
+        """Build the collapsible entity summary section."""
+        self.summary_container = QWidget()
+        section_layout = QVBoxLayout(self.summary_container)
+        section_layout.setContentsMargins(0, 0, 0, 0)
+        section_layout.setSpacing(EDITOR_SECTION_SPACING)
+        self.summary_checkbox = StandardCheckbox("")
+        section_layout.addWidget(self.summary_checkbox)
+        self.summary_widget = SummaryWidget()
+        self.summary_widget.setVisible(False)
+        self.summary_widget.generate_requested.connect(
+            self._on_summary_generate_requested
+        )
+        self.summary_widget.edit_committed.connect(self._on_summary_edit_committed)
+        self.summary_widget.delete_requested.connect(
+            self._on_summary_delete_requested
+        )
+        section_layout.addWidget(self.summary_widget)
+        self.summary_checkbox.toggled.connect(self.summary_widget.setVisible)
+        self.form_layout.addRow("Summary:", self.summary_container)
+
+    def _build_llm_section(self) -> None:
+        """Build the collapsible description-generation section."""
+        self.llm_container = QWidget()
+        section_layout = QVBoxLayout(self.llm_container)
+        section_layout.setContentsMargins(0, 0, 0, 0)
+        section_layout.setSpacing(EDITOR_SECTION_SPACING)
+        self.llm_checkbox = StandardCheckbox("")
+        section_layout.addWidget(self.llm_checkbox)
+        self.llm_generator = LLMGenerationWidget(self, context_provider=self)
+        self.llm_generator.setVisible(False)
+        self.llm_generator.text_generated.connect(self._on_text_generated)
+        section_layout.addWidget(self.llm_generator)
+        self.llm_checkbox.toggled.connect(self.llm_generator.setVisible)
+        self.form_layout.addRow("LLM Generation:", self.llm_container)
+
+    def _build_raster_appearances_section(self) -> None:
+        """Build the read-only collapsible raster-appearance section."""
+        self.raster_appearances_container = QWidget()
+        section_layout = QVBoxLayout(self.raster_appearances_container)
+        section_layout.setContentsMargins(0, 0, 0, 0)
+        section_layout.setSpacing(EDITOR_SECTION_SPACING)
+        self.raster_appearances_checkbox = StandardCheckbox("")
+        section_layout.addWidget(self.raster_appearances_checkbox)
+        self.raster_appearances_label = QLabel("Not linked to any raster map.")
+        self.raster_appearances_label.setWordWrap(True)
+        self.raster_appearances_label.setVisible(False)
+        section_layout.addWidget(self.raster_appearances_label)
+        self.raster_appearances_checkbox.toggled.connect(
+            self.raster_appearances_label.setVisible
+        )
+        self.form_layout.addRow("Raster Maps:", self.raster_appearances_container)
+
+    def _build_header(self, main_layout: QVBoxLayout) -> None:
+        """Build the persistent entity name, type, and inject header."""
         self.header_widget = QWidget()
         header_layout = QVBoxLayout(self.header_widget)
         header_layout.setContentsMargins(0, 0, 0, 0)
-        # It seems StyleHelper is imported inside __init__ in original code at line 84
-        # Inject Button (QToolButton with Menu)
-        from PySide6.QtWidgets import QToolButton
-
-        from src.gui.utils.style_helper import StyleHelper
-
         self.btn_inject = QToolButton()
-        self.btn_inject.setText("Fast Inject")  # Down arrow
+        self.btn_inject.setText("Fast Inject")
         self.btn_inject.setToolTip("Quickly apply templates or snippets to this entity")
         self.btn_inject.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.btn_inject.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
@@ -145,203 +274,42 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             StyleHelper.get_tool_button_style()
             + " QToolButton::menu-indicator { image: none; }"
         )
-
         self.inject_menu = QMenu(self.btn_inject)
         self.btn_inject.setMenu(self.inject_menu)
         self.inject_menu.aboutToShow.connect(self._populate_inject_menu)
-
-        # Connect to theme changes
-        from src.core.theme_manager import ThemeManager
-
         ThemeManager().theme_changed.connect(self._on_theme_changed)
-
-        from src.app.constants import (
-            EDITOR_FORM_VERTICAL_SPACING,
-            EDITOR_LIST_SPACING,
-            EDITOR_SECTION_SPACING,
-        )
-
-        # Header Form Layout
         self.header_form = QFormLayout()
         self.header_form.setVerticalSpacing(EDITOR_FORM_VERTICAL_SPACING)
         self.header_form.setFieldGrowthPolicy(
             QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
         )
-        self.header_form.setRowWrapPolicy(
-            QFormLayout.RowWrapPolicy.DontWrapRows
-        )
+        self.header_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.DontWrapRows)
         self.header_form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-
         self.name_edit = QLineEdit()
         self.type_edit = QComboBox()
-        from PySide6.QtWidgets import QSizePolicy
-
         self.type_edit.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
         self.type_edit.addItems(["Character", "Location", "Faction", "Item", "Concept"])
         self.type_edit.setEditable(True)
-
-        # Name row with Inject button
         name_layout = QHBoxLayout()
         name_layout.addWidget(self.name_edit)
         name_layout.addWidget(self.btn_inject)
-
         self.header_form.addRow("Name:", name_layout)
         self.header_form.addRow("Type:", self.type_edit)
-
         header_layout.addLayout(self.header_form)
-
         main_layout.addWidget(self.header_widget)
 
-        # Splitter-based tab inspector for vertical stacking
-        self.inspector = SplitterTabInspector()
-        main_layout.addWidget(self.inspector)
+    def _build_secondary_tabs(self, parent: Optional[QWidget]) -> None:
+        """Build tags, relations, gallery, attributes, and sheet tabs."""
+        self._build_tags_tab()
+        self._build_relations_tab()
+        self._build_gallery_tab(parent)
+        self._build_attributes_tab()
+        self._build_sheet_tab()
 
-        # --- Tab 1: Details ---
-        self.tab_details = QWidget()
-
-        # Scroll Area Wrapper
-        from PySide6.QtWidgets import QFrame, QScrollArea
-
-        tab_layout = QVBoxLayout(self.tab_details)
-        tab_layout.setContentsMargins(0, 0, 0, 0)
-
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
-        self.scroll_area.setStyleSheet(StyleHelper.get_scroll_area_style())
-
-        self.details_container = QWidget()
-        details_layout = QVBoxLayout(self.details_container)
-        StyleHelper.apply_compact_spacing(details_layout)
-
-        self.scroll_area.setWidget(self.details_container)
-        tab_layout.addWidget(self.scroll_area)
-
-        self.form_layout = QFormLayout()
-        self.form_layout.setVerticalSpacing(EDITOR_FORM_VERTICAL_SPACING)
-        self.form_layout.setFieldGrowthPolicy(
-            QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
-        )
-        self.form_layout.setRowWrapPolicy(
-            QFormLayout.RowWrapPolicy.DontWrapRows
-        )
-        self.form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-
-        self.desc_edit = WikiTextEdit()
-        self.desc_edit.link_clicked.connect(self.link_clicked.emit)
-        self.desc_edit.completion_prefix_changed.connect(
-            self.completion_prefix_changed.emit
-        )
-
-        self.form_layout.addRow("Description:", self.desc_edit)
-
-        # Add Timeline Display Widget (above LLM section)
-        from src.gui.widgets.timeline_display_widget import TimelineDisplayWidget
-
-        self.timeline_container = QWidget()
-        timeline_outer_layout = QVBoxLayout(self.timeline_container)
-        timeline_outer_layout.setContentsMargins(0, 0, 0, 0)
-        timeline_outer_layout.setSpacing(EDITOR_SECTION_SPACING)
-
-        self.timeline_checkbox = StandardCheckbox("")  # Text in form label
-
-        timeline_outer_layout.addWidget(self.timeline_checkbox)
-
-        self.timeline_display = TimelineDisplayWidget()
-        self.timeline_display.setMaximumWidth(self.desc_edit.maximumWidth())
-        self.desc_edit.maximum_width_changed.connect(
-            self.timeline_display.setMaximumWidth
-        )
-        self.timeline_display.event_clicked.connect(
-            self.navigate_to_relation.emit
-        )
-        self.timeline_display.setVisible(False)
-        timeline_outer_layout.addWidget(self.timeline_display)
-
-        self.timeline_checkbox.toggled.connect(self.timeline_display.setVisible)
-
-        self.form_layout.addRow("Timeline:", self.timeline_container)
-
-        # Add Summary Widget (Collapsible)
-        # Add Summary Widget (Collapsible)
-        self.summary_container = QWidget()
-        summary_outer_layout = QVBoxLayout(self.summary_container)
-        summary_outer_layout.setContentsMargins(0, 0, 0, 0)
-        summary_outer_layout.setSpacing(EDITOR_SECTION_SPACING)
-
-        self.summary_checkbox = StandardCheckbox("")
-
-        summary_outer_layout.addWidget(self.summary_checkbox)
-
-        self.summary_widget = SummaryWidget()
-        self.summary_widget.setVisible(False)
-        self.summary_widget.generate_requested.connect(
-            self._on_summary_generate_requested
-        )
-        self.summary_widget.edit_committed.connect(
-            self._on_summary_edit_committed
-        )
-        self.summary_widget.delete_requested.connect(
-            self._on_summary_delete_requested
-        )
-        summary_outer_layout.addWidget(self.summary_widget)
-
-        self.summary_checkbox.toggled.connect(self.summary_widget.setVisible)
-
-        self.form_layout.addRow("Summary:", self.summary_container)
-
-        # Add LLM Generation Widget below description in a collapsible group
-        from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
-
-        self.llm_container = QWidget()
-        llm_outer_layout = QVBoxLayout(self.llm_container)
-        llm_outer_layout.setContentsMargins(0, 0, 0, 0)
-        llm_outer_layout.setSpacing(EDITOR_SECTION_SPACING)
-
-        self.llm_checkbox = StandardCheckbox("")
-
-        llm_outer_layout.addWidget(self.llm_checkbox)
-
-        self.llm_generator = LLMGenerationWidget(self, context_provider=self)
-        self.llm_generator.setVisible(False)
-        self.llm_generator.text_generated.connect(self._on_text_generated)
-        llm_outer_layout.addWidget(self.llm_generator)
-
-        self.llm_checkbox.toggled.connect(self.llm_generator.setVisible)
-
-        self.form_layout.addRow("LLM Generation:", self.llm_container)
-
-        # Raster Appearances — read-only collapsible section
-        self.raster_appearances_container = QWidget()
-        raster_outer_layout = QVBoxLayout(self.raster_appearances_container)
-        raster_outer_layout.setContentsMargins(0, 0, 0, 0)
-        raster_outer_layout.setSpacing(EDITOR_SECTION_SPACING)
-
-        self.raster_appearances_checkbox = StandardCheckbox("")
-        raster_outer_layout.addWidget(self.raster_appearances_checkbox)
-
-        self.raster_appearances_label = QLabel("Not linked to any raster map.")
-        self.raster_appearances_label.setWordWrap(True)
-        self.raster_appearances_label.setVisible(False)
-        raster_outer_layout.addWidget(self.raster_appearances_label)
-
-        self.raster_appearances_checkbox.toggled.connect(
-            self.raster_appearances_label.setVisible
-        )
-
-        self.form_layout.addRow("Raster Maps:", self.raster_appearances_container)
-
-        details_layout.addLayout(self.form_layout)
-
-        self.inspector.add_tab(
-            self.tab_details,
-            "Details",
-            "Core entity details, description, and AI summary",
-        )
-
-        # --- Tab 2: Tags ---
+    def _build_tags_tab(self) -> None:
+        """Build the entity tags tab."""
         self.tab_tags = QWidget()
         tags_layout = QVBoxLayout(self.tab_tags)
         StyleHelper.apply_no_margins(tags_layout)
@@ -351,63 +319,53 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self.tab_tags, "Tags", "Manage organizational tags and metadata"
         )
 
-        # --- Tab 3: Relations ---
+    def _build_relations_tab(self) -> None:
+        """Build relation actions and the relation list."""
         self.tab_relations = QWidget()
-        rel_tab_layout = QVBoxLayout(self.tab_relations)
-        StyleHelper.apply_compact_spacing(rel_tab_layout)
-
-        # Buttons first
-        rel_btn_layout = QHBoxLayout()
+        rel_layout = QVBoxLayout(self.tab_relations)
+        StyleHelper.apply_compact_spacing(rel_layout)
+        buttons = QHBoxLayout()
         self.btn_add_rel = StandardButton("Add Relation")
         self.btn_add_rel.clicked.connect(self._on_add_relation)
-        rel_btn_layout.addWidget(self.btn_add_rel)
-
+        buttons.addWidget(self.btn_add_rel)
         self.btn_edit_rel = StandardButton("Edit")
         self.btn_edit_rel.clicked.connect(self._on_edit_selected_relation)
         self.btn_edit_rel.setEnabled(False)
-        rel_btn_layout.addWidget(self.btn_edit_rel)
-
+        buttons.addWidget(self.btn_edit_rel)
         self.btn_remove_rel = DestructiveButton("Remove")
         self.btn_remove_rel.clicked.connect(self._on_remove_selected_relation)
         self.btn_remove_rel.setEnabled(False)
-        rel_btn_layout.addWidget(self.btn_remove_rel)
-
-        rel_btn_layout.addStretch()
-        rel_tab_layout.addLayout(rel_btn_layout)
-
-        # List second
+        buttons.addWidget(self.btn_remove_rel)
+        buttons.addStretch()
+        rel_layout.addLayout(buttons)
         self.rel_list = QListWidget()
-        self.rel_list.setSpacing(EDITOR_LIST_SPACING)  # Add spacing between items
+        self.rel_list.setSpacing(EDITOR_LIST_SPACING)
         self.rel_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.rel_list.customContextMenuRequested.connect(self._show_rel_menu)
         self.rel_list.itemDoubleClicked.connect(self._on_edit_relation)
         self.rel_list.itemSelectionChanged.connect(self._update_relation_button_states)
-
-        # Allow deselection by clicking on empty space or selected item
         self.rel_list.viewport().installEventFilter(self)
         self.rel_list.setProperty("_relation_list_widget", True)
-
-        rel_tab_layout.addWidget(self.rel_list)
-
+        rel_layout.addWidget(self.rel_list)
         self.inspector.add_tab(
             self.tab_relations,
             "Relations",
             "View and edit connections to other entities and events",
         )
 
-        # --- Tab 4: Gallery ---
+    def _build_gallery_tab(self, parent: Optional[QWidget]) -> None:
+        """Build the image gallery tab."""
         self.tab_gallery = QWidget()
         gallery_layout = QVBoxLayout(self.tab_gallery)
         gallery_layout.setContentsMargins(0, 0, 0, 0)
-        from src.gui.widgets.gallery_widget import GalleryWidget
-
         self.gallery = GalleryWidget(parent)
         gallery_layout.addWidget(self.gallery)
         self.inspector.add_tab(
             self.tab_gallery, "Gallery", "Manage images and media attachments"
         )
 
-        # --- Tab 5: Attributes ---
+    def _build_attributes_tab(self) -> None:
+        """Build the structured attributes tab."""
         self.tab_attributes = QWidget()
         attr_layout = QVBoxLayout(self.tab_attributes)
         StyleHelper.apply_no_margins(attr_layout)
@@ -417,56 +375,46 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self.tab_attributes, "Attributes", "Edit custom structured data fields"
         )
 
-        # --- Tab 6: Sheet ---
+    def _build_sheet_tab(self) -> None:
+        """Build the configurable character-sheet tab."""
         self.tab_sheet = QWidget()
-        sheet_tab_layout = QVBoxLayout(self.tab_sheet)
-        StyleHelper.apply_no_margins(sheet_tab_layout)
+        sheet_layout = QVBoxLayout(self.tab_sheet)
+        StyleHelper.apply_no_margins(sheet_layout)
         self.sheet_builder = SheetBuilderWidget()
-        sheet_tab_layout.addWidget(self.sheet_builder)
+        sheet_layout.addWidget(self.sheet_builder)
         self.inspector.add_tab(
             self.tab_sheet,
             "Sheet",
             "Configure the visual layout for the character sheet",
         )
 
-        # Buttons
-        btn_layout = QHBoxLayout()
+    def _build_action_buttons(self, main_layout: QVBoxLayout) -> None:
+        """Build persistent discard and save controls."""
+        buttons = QHBoxLayout()
         self.btn_save = PrimaryButton("Save Changes")
         self.btn_save.clicked.connect(self._on_save)
-
         self.btn_discard = StandardButton("Discard")
         self.btn_discard.setEnabled(False)
         self.btn_discard.clicked.connect(self._on_discard)
+        buttons.addStretch()
+        buttons.addWidget(self.btn_discard)
+        buttons.addWidget(self.btn_save)
+        main_layout.addLayout(buttons)
 
-        btn_layout.addStretch()
-        btn_layout.addWidget(self.btn_discard)
-        btn_layout.addWidget(self.btn_save)
-
-        main_layout.addLayout(btn_layout)
-
-        # Internal State
-        self._current_entity_id: str | None = None
+    def _initialize_editor_state(self) -> None:
+        """Initialize mutable state and dirty tracking for an empty editor."""
         self._current_created_at = 0.0
         self._is_dirty = False
-        self._is_loading = False  # Guard against dirty during load
+        self._is_loading = False
         self._pending_summary_changed = False
         self._pending_summary_data: dict | None = None
-
         self._connect_dirty_signals()
-
-        # Start hidden until an entity is loaded (empty state is shown instead)
         self.summary_service = None
-
-        # Enable drag-and-drop for relation creation
         self.setAcceptDrops(True)
-
-        # Create drop hint label (Sprint 1 - visual feedback)
         self._drop_hint_label: QLabel | None = None
         self._is_drag_over = False
-
-        # Type picker for relation type selection (activated by Shift key)
         self._type_picker: Any = None
-        self._selected_relation_type = "related"  # Default type
+        self._selected_relation_type = "related"
 
     def _get_current_item_id(self) -> str | None:
         """Return the UUID of the entity currently loaded in the editor.
@@ -989,9 +937,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
                 data = SummaryData.from_dict(summary_data)
                 self.summary_widget.set_summary(data)
 
-            if self.summary_service:
-                is_stale = self.summary_service.is_stale(entity)
-                self.summary_widget.set_stale(is_stale)
+            self.summary_widget.set_stale(is_summary_stale(entity))
 
     def _load_entity_relations(
         self, relations: list | None, incoming_relations: list | None

@@ -128,6 +128,7 @@ class CompositeCommand(BaseCommand):
         self._is_executed = False
 
     def get_description(self) -> str:
+        """Return the user-facing description for the command group."""
         return self._custom_description
 
     def to_dict(self) -> Dict:

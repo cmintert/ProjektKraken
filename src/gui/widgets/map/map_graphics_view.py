@@ -55,7 +55,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.app.constants import (
+from src.core.calendar import CalendarConverter
+from src.core.theme_manager import ThemeManager
+from src.gui.constants import (
     MAP_LAYER_BASEMAP_NODE_ID,
     MAP_LAYER_Z_MAP_BG,
     MAP_LAYER_Z_MARKERS,
@@ -68,8 +70,6 @@ from src.app.constants import (
     MAP_SNAP_INDICATOR_VERTEX_COLOR,
     MAP_ZOOM_IN_FACTOR,
 )
-from src.core.calendar import CalendarConverter
-from src.core.theme_manager import ThemeManager
 from src.gui.widgets.map.coordinate_system import MapCoordinateSystem
 from src.gui.widgets.map.detail_map_footprint_item import DetailMapFootprintItem
 from src.gui.widgets.map.drawing_tool import DrawingTool
@@ -100,6 +100,7 @@ LAYER_UI_OVERLAY = MAP_LAYER_Z_UI_OVERLAY
 
 # Colors — resolved from ThemeManager at runtime; these are fallback defaults only
 KEYFRAME_COLOR_DEFAULT = "#f1c40f"  # Yellow (fallback)
+CALIBRATION_POINT_COUNT = 2
 
 
 class KeyframeItem(QGraphicsObject):
@@ -113,6 +114,7 @@ class KeyframeItem(QGraphicsObject):
         y: float,
         rect: QRectF,
     ) -> None:
+        """Initialize an interactive trajectory keyframe item."""
         super().__init__()
         self._rect = rect
         self.marker_id = marker_id
@@ -632,7 +634,7 @@ class MapGraphicsView(QGraphicsView):
                 int(scene_rect.height()),
             )
 
-        from src.app.constants import MAP_LAYER_Z_RASTER
+        from src.gui.constants import MAP_LAYER_Z_RASTER
 
         self._query_overlay_item = QGraphicsPixmapItem(pm)
         self._query_overlay_item.setPos(scene_rect.topLeft())
@@ -1530,7 +1532,11 @@ class MapGraphicsView(QGraphicsView):
             node_id: ID of the layer node.
             visible: Whether the layer should be visible.
         """
-        del node_id, visible
+        if self._layer_model is None:
+            item = self._find_graphics_item(node_id)
+            if item is not None:
+                item.setVisible(visible)
+            return
         self._apply_effective_layer_visibility()
 
     def _on_layer_opacity_changed(self, node_id: str, opacity: float) -> None:
@@ -1738,7 +1744,7 @@ class MapGraphicsView(QGraphicsView):
                 self.calibration_points.append(scene_pos)
                 self.viewport().update()
 
-                if len(self.calibration_points) >= 2:
+                if len(self.calibration_points) >= CALIBRATION_POINT_COUNT:
                     p1 = self.calibration_points[0]
                     p2 = self.calibration_points[1]
 

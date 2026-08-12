@@ -22,6 +22,8 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
+_NOON_DAY_FRACTION = 0.5
+
 
 @dataclass
 class LeapYearRule:
@@ -795,9 +797,9 @@ class CalendarConverter:
         # Time of day
         time_str = ""
         if date.time_fraction > 0:
-            if date.time_fraction == 0.5:
+            if date.time_fraction == _NOON_DAY_FRACTION:
                 time_str = ", Noon"
-            elif date.time_fraction < 0.5:
+            elif date.time_fraction < _NOON_DAY_FRACTION:
                 time_str = ", Morning"
             else:
                 time_str = ", Evening"

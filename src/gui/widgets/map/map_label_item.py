@@ -18,6 +18,7 @@ class MapLabelItem(QGraphicsObject):
     """Render a compact map label with a theme-aware pill background."""
 
     def __init__(self, text: str, parent: Optional[QGraphicsItem] = None) -> None:
+        """Initialize a scale-independent map label."""
         super().__init__(parent)
         self._text = text
         self._font = QFont("Segoe UI", 8)

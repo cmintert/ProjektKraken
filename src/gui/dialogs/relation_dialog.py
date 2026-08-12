@@ -84,42 +84,7 @@ class RelationEditDialog(QDialog):
         # Form
         self.form_layout = QFormLayout()
 
-        # 1. Target Input with Autocomplete
-        self.target_edit = QLineEdit()
-        self.target_edit.setPlaceholderText("Search for entity or event...")
-
-        # Setup Completer
-        self._display_to_id: dict[str, str] = {}
-        self._id_to_display: dict[str, str] = {}
-        self._name_to_ids: dict[str, list[str]] = {}
-
-        display_names: list[str] = []
-        if suggestion_items:
-            name_counts = Counter(name.casefold() for _, name, _ in suggestion_items)
-            for item_id, name, item_type in suggestion_items:
-                display = name
-                if name_counts[name.casefold()] > 1:
-                    display = f"{name} ({item_type}, {item_id[:8]})"
-                self._display_to_id[display] = item_id
-                self._id_to_display[item_id] = display
-                self._name_to_ids.setdefault(name.casefold(), []).append(item_id)
-                display_names.append(display)
-
-            # Sort names for better UX
-            display_names.sort(key=str.lower)
-
-        completer = QCompleter(display_names, self)
-        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-        completer.setFilterMode(Qt.MatchFlag.MatchContains)
-        self.target_edit.setCompleter(completer)
-
-        # Pre-fill if editing
-        if target_id:
-            # Try to resolve ID to name for display, otherwise fallback to ID
-            initial_text = self._id_to_display.get(target_id, target_id)
-            self.target_edit.setText(initial_text)
-
-        self.form_layout.addRow("Target:", self.target_edit)
+        self._setup_target_field(target_id, suggestion_items)
 
         # 2. Relation Type
         self.type_edit = QComboBox()
@@ -354,6 +319,37 @@ class RelationEditDialog(QDialog):
 
         # Initial focus
         self.target_edit.setFocus()
+
+    def _setup_target_field(
+        self,
+        target_id: str,
+        suggestion_items: Optional[list[tuple[str, str, str]]],
+    ) -> None:
+        """Build the target field and its disambiguating completer."""
+        self.target_edit = QLineEdit()
+        self.target_edit.setPlaceholderText("Search for entity or event...")
+        self._display_to_id: dict[str, str] = {}
+        self._id_to_display: dict[str, str] = {}
+        self._name_to_ids: dict[str, list[str]] = {}
+        display_names: list[str] = []
+        if suggestion_items:
+            name_counts = Counter(name.casefold() for _, name, _ in suggestion_items)
+            for item_id, name, item_type in suggestion_items:
+                display = name
+                if name_counts[name.casefold()] > 1:
+                    display = f"{name} ({item_type}, {item_id[:8]})"
+                self._display_to_id[display] = item_id
+                self._id_to_display[item_id] = display
+                self._name_to_ids.setdefault(name.casefold(), []).append(item_id)
+                display_names.append(display)
+            display_names.sort(key=str.lower)
+        completer = QCompleter(display_names, self)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        completer.setFilterMode(Qt.MatchFlag.MatchContains)
+        self.target_edit.setCompleter(completer)
+        if target_id:
+            self.target_edit.setText(self._id_to_display.get(target_id, target_id))
+        self.form_layout.addRow("Target:", self.target_edit)
 
     def _update_preview(self) -> None:
         """Refresh the live direction preview label."""

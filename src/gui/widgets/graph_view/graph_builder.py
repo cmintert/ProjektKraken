@@ -4,10 +4,9 @@ Business logic layer for building PyVis networks from graph data. Stateless util
 class that transforms node/edge data into HTML output.
 """
 
-import base64
+import html as html_module
 import json
 import logging
-import mimetypes
 import os
 import re
 import tempfile
@@ -213,21 +212,9 @@ class GraphBuilder:
             Base64 data URI string, or empty string if file not found.
 
         """
-        if not file_path.exists():
-            logger.warning(f"Image file not found for Base64 encoding: {file_path}")
-            return ""
+        from src.services.graph_lexicon_resolver import image_to_base64
 
-        mime_type, _ = mimetypes.guess_type(str(file_path))
-        if not mime_type:
-            mime_type = "application/octet-stream"
-
-        try:
-            with open(file_path, "rb") as f:
-                encoded = base64.b64encode(f.read()).decode("utf-8")
-            return f"data:{mime_type};base64,{encoded}"
-        except OSError as e:
-            logger.error(f"Failed to read image for Base64 encoding: {e}")
-            return ""
+        return image_to_base64(file_path)
 
     @staticmethod
     def apply_svg_styling(
@@ -284,39 +271,13 @@ class GraphBuilder:
             New lexicon dict with icon paths replaced by Base64 data URIs.
 
         """
-        resolved: dict[str, Any] = {}
+        from src.services.graph_lexicon_resolver import resolve_lexicon_images
 
-        # Resolve node icons
-        nodes = lexicon.get("nodes", {})
-        resolved_nodes: dict[str, Any] = {}
-        for type_name, style in nodes.items():
-            resolved_style = dict(style)
-            icon_path = style.get("icon", "")
-            if icon_path:
-                # 1. Try project root (Project Icons/Imports)
-                full_path = project_root / icon_path
-
-                # 2. If not found, try default assets (Default Icons)
-                if not full_path.exists():
-                    try:
-                        from src.app.constants import DEFAULT_MARKER_ICONS_PATH
-
-                        default_dir = Path(get_resource_path(DEFAULT_MARKER_ICONS_PATH))
-                        full_path = default_dir / icon_path
-                    except ImportError:
-                        # Fallback for tests or environments where constants is missing
-                        pass
-
-                data_uri = GraphBuilder.image_to_base64(full_path)
-                if data_uri:
-                    resolved_style["image"] = data_uri
-            resolved_nodes[type_name] = resolved_style
-        resolved["nodes"] = resolved_nodes
-
-        # Pass edges through unchanged
-        resolved["edges"] = lexicon.get("edges", {})
-
-        return resolved
+        return resolve_lexicon_images(
+            lexicon,
+            project_root,
+            image_encoder=GraphBuilder.image_to_base64,
+        )
 
     @classmethod
     def _load_local_vis_assets(cls) -> tuple[str, str, str]:
@@ -411,9 +372,11 @@ class GraphBuilder:
         except Exception as e:
             logger.error(f"Failed to build graph: {type(e).__name__}: {e}")
             # Return error HTML so user can see the problem
-            error_msg = str(e).replace('"', "&quot;")
+            error_msg = html_module.escape(str(e))
+            background = theme.get("background_color", "#1e1e1e")
+            text_color = theme.get("text_color", "#ffffff")
             return f"""
-            <html><body style="background:#1e1e1e;color:#fff;padding:20px;">
+            <html><body style="background:{background};color:{text_color};padding:20px;">
             <h2>Graph Error</h2>
             <p>Failed to build graph: {type(e).__name__}: {error_msg}</p>
             </body></html>
