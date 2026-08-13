@@ -45,12 +45,28 @@ jobs:
         run: |
           python -m unittest discover -s tests/packaging -p "test_*.py" -v
 
+      - name: Resolve beta label
+        shell: pwsh
+        run: |
+          $betaLabel = "beta1"
+          $version = python -c "from src.core.version import VERSION; print(VERSION)"
+          if ($env:GITHUB_REF_TYPE -eq "tag") {
+            if ($env:GITHUB_REF_NAME -notmatch '^([0-9]+\.[0-9]+\.[0-9]+)-(beta[1-9][0-9]*)$') {
+              throw "Unsupported beta tag: $env:GITHUB_REF_NAME"
+            }
+            if ($Matches[1] -ne $version) {
+              throw "Tag version $($Matches[1]) does not match runtime $version."
+            }
+            $betaLabel = $Matches[2]
+          }
+          "PK_BETA_LABEL=$betaLabel" >> $env:GITHUB_ENV
+
       - name: Build, audit, smoke, and archive package
         shell: pwsh
         run: |
           ./scripts/build_windows_package.ps1 `
             -PythonExe (Get-Command python).Source `
-            -BetaLabel beta1
+            -BetaLabel $env:PK_BETA_LABEL
 
       - name: Verify tracked checkout stayed clean
         shell: pwsh
@@ -65,7 +81,7 @@ jobs:
         shell: pwsh
         run: |
           $version = python -c "from src.core.version import VERSION; print(VERSION)"
-          "package_name=ProjektKraken-$version-beta1-windows-x64" >> $env:GITHUB_OUTPUT
+          "package_name=ProjektKraken-$version-$env:PK_BETA_LABEL-windows-x64" >> $env:GITHUB_OUTPUT
 
       - name: Upload candidate package
         uses: actions/upload-artifact@v4
@@ -91,9 +107,11 @@ jobs:
       - name: Validate beta tag
         shell: bash
         run: |
-          expected="0.19.0-beta1"
-          if [[ "${GITHUB_REF_NAME}" != "${expected}" ]]; then
-            echo "Expected ${expected}, got ${GITHUB_REF_NAME}" >&2
+          if [[ "${GITHUB_REF_NAME}" =~ ^([0-9]+\.[0-9]+\.[0-9]+)-beta([1-9][0-9]*)$ ]]; then
+            echo "RELEASE_VERSION=${BASH_REMATCH[1]}" >> "${GITHUB_ENV}"
+            echo "BETA_NUMBER=${BASH_REMATCH[2]}" >> "${GITHUB_ENV}"
+          else
+            echo "Unsupported beta tag: ${GITHUB_REF_NAME}" >&2
             exit 1
           fi
 
@@ -109,7 +127,7 @@ jobs:
         shell: bash
         run: |
           tag="${GITHUB_REF_NAME}"
-          title="ProjektKraken 0.19.0 beta 1"
+          title="ProjektKraken ${RELEASE_VERSION} beta ${BETA_NUMBER}"
           notes="Unsigned Windows x64 beta package. Verify the supplied SHA-256 before extraction. Clean-VM validation is required before approving this protected environment."
           if gh release view "${tag}" >/dev/null 2>&1; then
             gh release edit "${tag}" --prerelease --title "${title}" --notes "${notes}"

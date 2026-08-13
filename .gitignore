@@ -12,7 +12,14 @@ artifacts/
 downloads/
 eggs/
 .eggs/
-lib/
+lib/*
+!lib/bindings/
+lib/bindings/*
+!lib/bindings/utils.js
+!lib/vis-9.1.2/
+lib/vis-9.1.2/*
+!lib/vis-9.1.2/vis-network.css
+!lib/vis-9.1.2/vis-network.min.js
 lib64/
 parts/
 sdist/

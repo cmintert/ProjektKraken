@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-13
-**Commit:** 30627115
+**Commit:** 14dc35e5
 ---
 
 # Changelog
@@ -10,6 +10,13 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Changed
+
+- *(2026-08-13)* **Release**: Bumped project and application metadata to
+  version 0.19.1.
+
+## [0.19.1]
 
 ### Added
 
@@ -19,6 +26,10 @@ All notable changes to this project will be documented in this file.
   gate.
 
 ### Fixed
+
+- *(2026-08-13)* **Packaging / Clean Checkout**: Tracked the offline PyVis graph
+  runtime assets required by clean Windows CI builds and classified PyInstaller
+  warnings for unused optional SQL drivers.
 
 - *(2026-08-12)* **Packaging / Resources**: Bundled the default layout and
   Longform web assets, excluded development tooling, and added Windows icon,

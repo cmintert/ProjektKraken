@@ -45,12 +45,16 @@ class WindowsPackageContractTests(unittest.TestCase):
         self.assertNotIn("# WARNING:", lock)
 
     def test_workflow_keeps_publication_approval_gated(self) -> None:
-        """Require the protected environment and exact beta tag gate."""
+        """Require the protected environment and validated beta tag gate."""
         workflow = (ROOT / ".github/workflows/windows-package.yml").read_text(
             encoding="utf-8"
         )
         self.assertIn("environment: windows-beta", workflow)
-        self.assertIn('expected="0.19.0-beta1"', workflow)
+        self.assertIn("PK_BETA_LABEL", workflow)
+        self.assertIn(
+            "^([0-9]+\\.[0-9]+\\.[0-9]+)-beta([1-9][0-9]*)$",
+            workflow,
+        )
 
     def test_build_info_records_x64_architecture(self) -> None:
         """Require explicit architecture provenance in build metadata."""

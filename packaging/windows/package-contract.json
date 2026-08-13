@@ -1,5 +1,8 @@
 {
   "allowed_missing_hidden_imports": [
+    "MySQLdb",
+    "psycopg2",
+    "pysqlite2",
     "scipy.special._cdflib",
     "tzdata"
   ],
