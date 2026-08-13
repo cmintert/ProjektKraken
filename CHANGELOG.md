@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-13
-**Commit:** a41c4d25
+**Commit:** c98113f0
 ---
 
 # Changelog
@@ -10,6 +10,19 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [0.19.4]
+
+### Changed
+
+- *(2026-08-13)* **Release**: Bumped project and application metadata to
+  version 0.19.4.
+
+### Fixed
+
+- *(2026-08-13)* **CI / Packaged Smoke**: Increased the bounded executable
+  cold-start allowance for hosted Windows runners and retained application and
+  PyInstaller diagnostics when the package gate fails.
 
 ## [0.19.3]
 

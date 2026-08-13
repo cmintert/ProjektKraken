@@ -83,6 +83,19 @@ jobs:
             -PythonExe (Get-Command python).Source `
             -BetaLabel $env:PK_BETA_LABEL
 
+      - name: Upload package failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-package-failure-diagnostics
+          path: |
+            artifacts/windows/staging/ProjektKraken/logs/*.log
+            artifacts/windows/reports/*.json
+            build/windows-package/pyinstaller.log
+            build/windows-package/work/ProjektKraken/warn-ProjektKraken.txt
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Verify tracked checkout stayed clean
         shell: pwsh
         run: |

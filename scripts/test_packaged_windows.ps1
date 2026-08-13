@@ -4,7 +4,7 @@ param(
     [string]$PackageRoot,
     [Parameter(Mandatory = $true)]
     [string]$OutputDirectory,
-    [int]$TimeoutSeconds = 120
+    [int]$TimeoutSeconds = 300
 )
 
 $ErrorActionPreference = "Stop"
@@ -61,6 +61,11 @@ function Invoke-PackagedSmoke {
     }
     if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
         Stop-Process -Id $process.Id -Force
+        $logPath = Join-Path $packagePath "logs\kraken.log"
+        if (Test-Path -LiteralPath $logPath -PathType Leaf) {
+            Write-Host "Packaged $Phase smoke log tail:"
+            Get-Content -LiteralPath $logPath -Tail 100 | Write-Host
+        }
         throw "Packaged $Phase smoke timed out after $TimeoutSeconds seconds."
     }
     if ($process.ExitCode -ne 0) {
