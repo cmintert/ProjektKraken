@@ -2,6 +2,11 @@ name: Windows Beta Package
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Existing beta tag to rebuild and publish after approval"
+        required: false
+        type: string
   push:
     tags:
       - "[0-9]+.[0-9]+.[0-9]+-beta[0-9]+"
@@ -16,9 +21,12 @@ jobs:
     timeout-minutes: 75
     outputs:
       package_name: ${{ steps.metadata.outputs.package_name }}
+      release_tag: ${{ steps.metadata.outputs.release_tag }}
     steps:
       - name: Checkout exact source
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag || github.ref }}
 
       - name: Set up Python 3.13 x64
         uses: actions/setup-python@v5
@@ -47,12 +55,18 @@ jobs:
 
       - name: Resolve beta label
         shell: pwsh
+        env:
+          PK_REQUESTED_RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           $betaLabel = "beta1"
           $version = python -c "from src.core.version import VERSION; print(VERSION)"
-          if ($env:GITHUB_REF_TYPE -eq "tag") {
-            if ($env:GITHUB_REF_NAME -notmatch '^([0-9]+\.[0-9]+\.[0-9]+)-(beta[1-9][0-9]*)$') {
-              throw "Unsupported beta tag: $env:GITHUB_REF_NAME"
+          $releaseTag = $env:PK_REQUESTED_RELEASE_TAG
+          if (-not $releaseTag -and $env:GITHUB_REF_TYPE -eq "tag") {
+            $releaseTag = $env:GITHUB_REF_NAME
+          }
+          if ($releaseTag) {
+            if ($releaseTag -notmatch '^([0-9]+\.[0-9]+\.[0-9]+)-(beta[1-9][0-9]*)$') {
+              throw "Unsupported beta tag: $releaseTag"
             }
             if ($Matches[1] -ne $version) {
               throw "Tag version $($Matches[1]) does not match runtime $version."
@@ -60,6 +74,7 @@ jobs:
             $betaLabel = $Matches[2]
           }
           "PK_BETA_LABEL=$betaLabel" >> $env:GITHUB_ENV
+          "PK_RELEASE_TAG=$releaseTag" >> $env:GITHUB_ENV
 
       - name: Build, audit, smoke, and archive package
         shell: pwsh
@@ -82,6 +97,7 @@ jobs:
         run: |
           $version = python -c "from src.core.version import VERSION; print(VERSION)"
           "package_name=ProjektKraken-$version-$env:PK_BETA_LABEL-windows-x64" >> $env:GITHUB_OUTPUT
+          "release_tag=$env:PK_RELEASE_TAG" >> $env:GITHUB_OUTPUT
 
       - name: Upload candidate package
         uses: actions/upload-artifact@v4
@@ -96,7 +112,7 @@ jobs:
 
   publish-prerelease:
     name: Publish approved GitHub prerelease
-    if: startsWith(github.ref, 'refs/tags/')
+    if: needs.build-and-smoke.outputs.release_tag != ''
     needs: build-and-smoke
     runs-on: ubuntu-latest
     environment: windows-beta
@@ -106,8 +122,10 @@ jobs:
     steps:
       - name: Validate beta tag
         shell: bash
+        env:
+          PK_RELEASE_TAG: ${{ needs.build-and-smoke.outputs.release_tag }}
         run: |
-          if [[ "${GITHUB_REF_NAME}" =~ ^([0-9]+\.[0-9]+\.[0-9]+)-beta([1-9][0-9]*)$ ]]; then
+          if [[ "${PK_RELEASE_TAG}" =~ ^([0-9]+\.[0-9]+\.[0-9]+)-beta([1-9][0-9]*)$ ]]; then
             echo "RELEASE_VERSION=${BASH_REMATCH[1]}" >> "${GITHUB_ENV}"
             echo "BETA_NUMBER=${BASH_REMATCH[2]}" >> "${GITHUB_ENV}"
           else
@@ -124,9 +142,11 @@ jobs:
       - name: Create or update prerelease idempotently
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PK_RELEASE_TAG: ${{ needs.build-and-smoke.outputs.release_tag }}
         shell: bash
         run: |
-          tag="${GITHUB_REF_NAME}"
+          tag="${PK_RELEASE_TAG}"
           title="ProjektKraken ${RELEASE_VERSION} beta ${BETA_NUMBER}"
           notes="Unsigned Windows x64 beta package. Verify the supplied SHA-256 before extraction. Clean-VM validation is required before approving this protected environment."
           if gh release view "${tag}" >/dev/null 2>&1; then

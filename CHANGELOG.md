@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-13
-**Commit:** 803fb89d
+**Commit:** 9ec6c5c7
 ---
 
 # Changelog
@@ -10,6 +10,11 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Fixed
+
+- *(2026-08-13)* **CI / Prerelease**: Added an exact-tag manual recovery path
+  and explicit GitHub repository context for protected beta publication.
 
 ## [0.19.2]
 

@@ -51,6 +51,8 @@ class WindowsPackageContractTests(unittest.TestCase):
         )
         self.assertIn("environment: windows-beta", workflow)
         self.assertIn("PK_BETA_LABEL", workflow)
+        self.assertIn("inputs.release_tag || github.ref", workflow)
+        self.assertIn("GH_REPO: ${{ github.repository }}", workflow)
         self.assertIn(
             "^([0-9]+\\.[0-9]+\\.[0-9]+)-beta([1-9][0-9]*)$",
             workflow,
