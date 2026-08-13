@@ -70,7 +70,10 @@ try {
         throw "OutputDirectory must remain inside the repository."
     }
     $stagingRoot = Join-Path $artifactRoot "staging"
-    $packageRoot = Join-Path $stagingRoot $packageName
+    # Keep the archive filename descriptive, but keep its extracted root short.
+    # A versioned root pushes deeply nested runtime metadata over Windows
+    # Explorer's legacy MAX_PATH limit under otherwise normal user folders.
+    $packageRoot = Join-Path $stagingRoot "ProjektKraken"
     $reportsRoot = Join-Path $artifactRoot "reports"
     $zipPath = Join-Path $artifactRoot "$packageName.zip"
     $checksumPath = "$zipPath.sha256"
@@ -244,6 +247,16 @@ VSVersionInfo(
         if (Test-Path -LiteralPath $runtimePath) {
             Remove-SafeDirectory $runtimePath
         }
+    }
+
+    $maximumArchiveEntryLength = [int]$contract.maximum_archive_entry_length
+    $overlongArchiveEntries = @(Get-ChildItem -LiteralPath $packageRoot `
+        -Recurse -Force | ForEach-Object {
+            [System.IO.Path]::GetRelativePath($stagingRoot, $_.FullName).Replace('\', '/')
+        } | Where-Object { $_.Length -gt $maximumArchiveEntryLength })
+    if ($overlongArchiveEntries) {
+        $examples = $overlongArchiveEntries | Select-Object -First 10
+        throw "Archive entries exceed the $maximumArchiveEntryLength-character limit:`n$($examples -join "`n")"
     }
 
     if (Test-Path -LiteralPath $zipPath) {

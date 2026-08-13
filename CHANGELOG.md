@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-13
-**Commit:** 9ec6c5c7
+**Commit:** a41c4d25
 ---
 
 # Changelog
@@ -11,8 +11,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.19.3]
+
+### Changed
+
+- *(2026-08-13)* **Release**: Bumped project and application metadata to
+  version 0.19.3.
+
 ### Fixed
 
+- *(2026-08-13)* **Packaging / Windows Extraction**: Shortened the ZIP's root
+  directory and added an archive-entry length gate so normal user extraction
+  paths remain below Windows' legacy path limit; generalized the clean-VM
+  validation record for exact future beta candidates.
 - *(2026-08-13)* **CI / Prerelease**: Added an exact-tag manual recovery path
   and explicit GitHub repository context for protected beta publication.
 

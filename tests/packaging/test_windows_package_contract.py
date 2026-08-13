@@ -65,6 +65,22 @@ class WindowsPackageContractTests(unittest.TestCase):
         )
         self.assertIn('architecture = "x64"', script)
 
+    def test_archive_paths_are_bounded_for_windows_extraction(self) -> None:
+        """Keep the extracted root short and reserve room for user folders."""
+        script = (ROOT / "scripts/build_windows_package.ps1").read_text(
+            encoding="utf-8"
+        )
+        contract = json.loads(
+            (ROOT / "packaging/windows/package-contract.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertIn(
+            '$packageRoot = Join-Path $stagingRoot "ProjektKraken"', script
+        )
+        self.assertLessEqual(contract["maximum_archive_entry_length"], 200)
+        self.assertIn("maximum_archive_entry_length", script)
+
     def test_known_optional_hidden_imports_are_explicit(self) -> None:
         """Keep clean-runner PyInstaller warning exceptions reviewable."""
         contract = json.loads(

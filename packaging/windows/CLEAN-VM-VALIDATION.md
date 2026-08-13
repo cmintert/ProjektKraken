@@ -4,17 +4,18 @@ Complete this checklist against the exact CI candidate before approving the
 protected `windows-beta` GitHub Environment. Onboarding remains frozen until this
 record and the automated packaged smoke are both green.
 
-- Candidate: `ProjektKraken-0.19.0-beta1-windows-x64.zip`
-- Source tag: `0.19.0-beta1`
+- Candidate: `ProjektKraken-<version>-beta<number>-windows-x64.zip`
+- Source tag: `<version>-beta<number>`
 - Windows version/build:
 - Standard user account:
 - Python absent (`python` and `py` are not found):
 - Recorded ZIP SHA-256:
 - Supplied SHA-256 matches:
 - SmartScreen result or prompt:
-- ZIP extracted completely before launch:
+- ZIP extracted completely into an ordinary user folder without path errors:
+- Extracted archive has one `ProjektKraken` root folder:
 - `ProjektKraken.exe` opened by double-click:
-- About dialog reports `0.19.0`:
+- About dialog reports `<version>`:
 - Named world created through World Manager:
 - World ID/path recorded:
 - Application closed cleanly:

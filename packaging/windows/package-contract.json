@@ -19,6 +19,7 @@
   "strip_and_forbid_recursive_directories": [
     "tests"
   ],
+  "maximum_archive_entry_length": 200,
   "required_package_paths": [
     "ProjektKraken.exe",
     "_internal/package-contract.json",
