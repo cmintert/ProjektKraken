@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-13
-**Commit:** 14dc35e5
+**Commit:** 803fb89d
 ---
 
 # Changelog
@@ -11,10 +11,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.19.2]
+
 ### Changed
 
 - *(2026-08-13)* **Release**: Bumped project and application metadata to
-  version 0.19.1.
+  version 0.19.2.
+
+### Fixed
+
+- *(2026-08-13)* **Packaging / Clean Runner**: Classified the optional SciPy
+  compatibility import warning emitted by the hash-pinned PyInstaller hooks.
 
 ## [0.19.1]
 
@@ -37,6 +44,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-13)* **Release**: Bumped project and application metadata to
+  version 0.19.1.
 - *(2026-08-12)* **Release / Status**: Recognized plain and beta-package Git
   tags without moving the existing `0.19.0` release tag.
 

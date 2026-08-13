@@ -63,6 +63,18 @@ class WindowsPackageContractTests(unittest.TestCase):
         )
         self.assertIn('architecture = "x64"', script)
 
+    def test_known_optional_hidden_imports_are_explicit(self) -> None:
+        """Keep clean-runner PyInstaller warning exceptions reviewable."""
+        contract = json.loads(
+            (ROOT / "packaging/windows/package-contract.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertIn(
+            "scipy._lib.array_api_compat.numpy.fft",
+            contract["allowed_missing_hidden_imports"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

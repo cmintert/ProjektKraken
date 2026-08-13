@@ -3,6 +3,7 @@
     "MySQLdb",
     "psycopg2",
     "pysqlite2",
+    "scipy._lib.array_api_compat.numpy.fft",
     "scipy.special._cdflib",
     "tzdata"
   ],
