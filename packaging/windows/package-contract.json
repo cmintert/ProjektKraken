@@ -1,0 +1,48 @@
+{
+  "allowed_missing_hidden_imports": [
+    "scipy.special._cdflib",
+    "tzdata"
+  ],
+  "forbidden_internal_directories": [
+    "_pytest",
+    "docutils",
+    "mypy",
+    "pytest",
+    "ruff",
+    "sphinx",
+    "tests"
+  ],
+  "strip_and_forbid_recursive_directories": [
+    "tests"
+  ],
+  "required_package_paths": [
+    "ProjektKraken.exe",
+    "_internal/package-contract.json",
+    "_internal/themes.json",
+    "_internal/default_assets/icons/app_icons/Projekt_Kraken_Icon_32x32.png",
+    "_internal/default_assets/icons/markers/map-pin.svg",
+    "_internal/default_assets/templates/system_prompts/description_default_v1.0.txt",
+    "_internal/src/assets/default_layout.json",
+    "_internal/src/resources/main.qss",
+    "_internal/lib/bindings/utils.js",
+    "_internal/lib/vis-9.1.2/vis-network.min.js",
+    "_internal/src/webserver/static/app.js",
+    "_internal/src/webserver/templates/index.html"
+  ],
+  "smoke_resources": [
+    "themes.json",
+    "default_assets/icons/app_icons/Projekt_Kraken_Icon_32x32.png",
+    "default_assets/icons/markers/map-pin.svg",
+    "default_assets/icons/ui_icons/check.svg",
+    "default_assets/templates/system_prompts/description_default_v1.0.txt",
+    "default_assets/templates/task_prompts/create_complete_description_v1.0.txt",
+    "src/assets/default_layout.json",
+    "src/resources/main.qss",
+    "lib/bindings/utils.js",
+    "lib/vis-9.1.2/vis-network.css",
+    "lib/vis-9.1.2/vis-network.min.js",
+    "src/webserver/static/app.js",
+    "src/webserver/static/styles.css",
+    "src/webserver/templates/index.html"
+  ]
+}

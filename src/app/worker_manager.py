@@ -4,6 +4,7 @@ This module contains all worker thread initialization and status management
 functionality extracted from MainWindow to reduce its size and improve maintainability.
 """
 
+from collections.abc import Callable
 from typing import TYPE_CHECKING, cast
 
 from PySide6.QtCore import (
@@ -73,6 +74,8 @@ class WorkerManager(QObject):
         """
         super().__init__()
         self.window = main_window
+        self.database_initialized: bool | None = None
+        self.package_smoke_callback: Callable[[bool], None] | None = None
 
         self._pending_indices: set[tuple[str, str]] = set()
         self._index_timer = QTimer(self)
@@ -482,6 +485,7 @@ class WorkerManager(QObject):
             success: True if connection succeeded, False otherwise.
 
         """
+        self.database_initialized = success
         if success:
             # Timeline callbacks read immutable snapshots cached on the GUI thread.
             self.window.timeline.set_data_provider(self.window)
@@ -553,6 +557,8 @@ class WorkerManager(QObject):
             )
         else:
             self.window.status_bar.showMessage(STATUS_DB_INIT_FAIL)
+        if self.package_smoke_callback is not None:
+            self.package_smoke_callback(success)
 
     @Slot(object)
     def on_timeline_grouping_loaded(self, payload: object) -> None:

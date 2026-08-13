@@ -1,0 +1,119 @@
+name: Windows Beta Package
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+-beta[0-9]+"
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-smoke:
+    name: Build and smoke Windows x64 package
+    runs-on: windows-latest
+    timeout-minutes: 75
+    outputs:
+      package_name: ${{ steps.metadata.outputs.package_name }}
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13 x64
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          architecture: "x64"
+          cache: pip
+          cache-dependency-path: packaging/windows/requirements.lock
+
+      - name: Install hash-pinned packaging environment
+        shell: pwsh
+        run: python -m pip install --require-hashes -r packaging/windows/requirements.lock
+
+      - name: Verify isolated environment
+        shell: pwsh
+        run: |
+          $forbidden = @("pytest", "ruff", "mypy", "sphinx")
+          foreach ($module in $forbidden) {
+            python -c "import importlib.util, sys; sys.exit(1 if importlib.util.find_spec('$module') else 0)"
+          }
+
+      - name: Run packaging contract tests
+        shell: pwsh
+        run: |
+          python -m unittest discover -s tests/packaging -p "test_*.py" -v
+
+      - name: Build, audit, smoke, and archive package
+        shell: pwsh
+        run: |
+          ./scripts/build_windows_package.ps1 `
+            -PythonExe (Get-Command python).Source `
+            -BetaLabel beta1
+
+      - name: Verify tracked checkout stayed clean
+        shell: pwsh
+        run: |
+          if (git status --porcelain --untracked-files=no) {
+            git status --short
+            throw "Packaging modified tracked files."
+          }
+
+      - name: Export artifact metadata
+        id: metadata
+        shell: pwsh
+        run: |
+          $version = python -c "from src.core.version import VERSION; print(VERSION)"
+          "package_name=ProjektKraken-$version-beta1-windows-x64" >> $env:GITHUB_OUTPUT
+
+      - name: Upload candidate package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.metadata.outputs.package_name }}
+          path: |
+            artifacts/windows/${{ steps.metadata.outputs.package_name }}.zip
+            artifacts/windows/${{ steps.metadata.outputs.package_name }}.zip.sha256
+            artifacts/windows/reports/*.json
+          if-no-files-found: error
+          retention-days: 30
+
+  publish-prerelease:
+    name: Publish approved GitHub prerelease
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build-and-smoke
+    runs-on: ubuntu-latest
+    environment: windows-beta
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Validate beta tag
+        shell: bash
+        run: |
+          expected="0.19.0-beta1"
+          if [[ "${GITHUB_REF_NAME}" != "${expected}" ]]; then
+            echo "Expected ${expected}, got ${GITHUB_REF_NAME}" >&2
+            exit 1
+          fi
+
+      - name: Download verified candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build-and-smoke.outputs.package_name }}
+          path: release-assets
+
+      - name: Create or update prerelease idempotently
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          title="ProjektKraken 0.19.0 beta 1"
+          notes="Unsigned Windows x64 beta package. Verify the supplied SHA-256 before extraction. Clean-VM validation is required before approving this protected environment."
+          if gh release view "${tag}" >/dev/null 2>&1; then
+            gh release edit "${tag}" --prerelease --title "${title}" --notes "${notes}"
+          else
+            gh release create "${tag}" --prerelease --title "${title}" --notes "${notes}"
+          fi
+          gh release upload "${tag}" release-assets/* --clobber

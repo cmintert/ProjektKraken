@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-08-12
-**Commit:** 574a3bed
+**Last Updated:** 2026-08-13
+**Commit:** 30627115
 ---
 
 # Changelog
@@ -11,7 +11,23 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- *(2026-08-12)* **Packaging / Windows**: Added a hash-pinned Windows x64
+  PyInstaller package pipeline, audited runtime manifest, two-launch packaged
+  smoke test, ZIP checksum, protected prerelease workflow, and clean-VM release
+  gate.
+
+### Fixed
+
+- *(2026-08-12)* **Packaging / Resources**: Bundled the default layout and
+  Longform web assets, excluded development tooling, and added Windows icon,
+  version, architecture, and package-content validation.
+
 ### Changed
+
+- *(2026-08-12)* **Release / Status**: Recognized plain and beta-package Git
+  tags without moving the existing `0.19.0` release tag.
 
 - *(2026-08-12)* **Release**: Bumped project and application metadata to
   version 0.19.0.

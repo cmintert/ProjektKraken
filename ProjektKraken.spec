@@ -1,61 +1,81 @@
 # -*- mode: python ; coding: utf-8 -*-
+"""Audited one-directory Windows build for ProjektKraken."""
 
-block_cipher = None
-
-# Find PyVis templates directory
-import pyvis
 import os
-pyvis_templates = os.path.join(os.path.dirname(pyvis.__file__), 'templates')
+from pathlib import Path
 
-added_files = [
-    ('default_assets', 'default_assets'),
-    ('themes.json', '.'),
-    ('src/resources', 'src/resources'),
-    ('lib', 'lib'),  # vis-network for offline graph rendering
-    (pyvis_templates, 'pyvis/templates'),  # PyVis Jinja2 templates
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules, copy_metadata
+
+ROOT = Path(SPECPATH)
+
+datas = [
+    (str(ROOT / "default_assets"), "default_assets"),
+    (str(ROOT / "themes.json"), "."),
+    (str(ROOT / "src" / "resources"), "src/resources"),
+    (str(ROOT / "src" / "assets"), "src/assets"),
+    (str(ROOT / "src" / "webserver" / "static"), "src/webserver/static"),
+    (str(ROOT / "src" / "webserver" / "templates"), "src/webserver/templates"),
+    (str(ROOT / "lib"), "lib"),
+    (str(ROOT / "packaging" / "windows" / "package-contract.json"), "."),
+]
+datas += collect_data_files("pyvis", includes=["templates/**"])
+datas += copy_metadata("keyring")
+
+hiddenimports = [
+    "PySide6.QtSvg",
+    "src.services.providers.anthropic_provider",
+    "src.services.providers.google_provider",
+    "src.services.providers.lmstudio_provider",
+    "src.services.providers.openai_provider",
+]
+hiddenimports += collect_submodules("keyring.backends")
+
+excluded_modules = [
+    "_pytest",
+    "docutils",
+    "mypy",
+    "pytest",
+    "ruff",
+    "sphinx",
 ]
 
+icon_path = os.environ.get("PK_WINDOWS_ICON")
+version_file = os.environ.get("PK_WINDOWS_VERSION_FILE")
+
 a = Analysis(
-    ['launcher.py'],
-    pathex=[],
+    [str(ROOT / "launcher.py")],
+    pathex=[str(ROOT)],
     binaries=[],
-    datas=added_files,
-    hiddenimports=['PySide6.QtSvg'],
+    datas=datas,
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
-    cipher=block_cipher,
+    excludes=excluded_modules,
     noarchive=False,
 )
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+pyz = PYZ(a.pure)
 
 exe = EXE(
     pyz,
     a.scripts,
     [],
     exclude_binaries=True,
-    name='ProjektKraken',
+    name="ProjektKraken",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,
     console=False,
     disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
+    icon=icon_path,
+    version=version_file,
 )
 coll = COLLECT(
     exe,
     a.binaries,
-    a.zipfiles,
     a.datas,
     strip=False,
-    upx=True,
-    upx_exclude=[],
-    name='ProjektKraken',
+    upx=False,
+    name="ProjektKraken",
 )

@@ -53,6 +53,12 @@ def main() -> None:
 
     # Defer MainWindow import to ensure AA_ShareOpenGLContexts is already set
     from src.app.main_window import MainWindow
+    from src.app.package_smoke import (
+        PackageSmokeController,
+        parse_package_smoke_options,
+    )
+
+    package_smoke_options = parse_package_smoke_options(sys.argv)
 
     setup_logging(debug_mode=True)
     from datetime import datetime
@@ -80,7 +86,10 @@ def main() -> None:
             Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
         )
 
-        app = QApplication(sys.argv)
+        qt_argv = [sys.argv[0]] if package_smoke_options is not None else sys.argv
+        app = QApplication(qt_argv)
+        if package_smoke_options is not None:
+            app.setQuitOnLastWindowClosed(False)
         app.setOrganizationName(WINDOW_SETTINGS_KEY)
         app.setApplicationName(WINDOW_SETTINGS_APP)
 
@@ -131,6 +140,15 @@ def main() -> None:
 
         window = MainWindow(capture_layout_on_exit=capture_layout)
         window.show()
+
+        if package_smoke_options is not None:
+            package_smoke_controller = PackageSmokeController(
+                window,
+                package_smoke_options,
+            )
+            # Keep the smoke controller alive for the QApplication lifetime.
+            setattr(app, "_package_smoke_controller", package_smoke_controller)
+            package_smoke_controller.start()
 
         logger.info("Entering Event Loop...")
         exit_code = app.exec()

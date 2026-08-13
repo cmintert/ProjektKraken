@@ -172,11 +172,20 @@ def main() -> None:
             "You have uncommitted changes. \n-> Commit them or stash them before "
             "releasing."
         )
-    elif git_status.get("tag") == f"v{current_version}":
+    elif git_status.get("tag") in {current_version, f"v{current_version}"}:
         print(f"{GREEN}✅ Released{RESET}")
         print(
-            f"Current commit is tagged as v{current_version}. You are sitting on a "
+            f"Current commit is tagged as {git_status.get('tag')}. You are sitting on a "
             "release."
+        )
+    elif re.fullmatch(
+        rf"v?{re.escape(current_version)}-beta[1-9]\d*",
+        str(git_status.get("tag") or ""),
+    ):
+        print(f"{GREEN}✅ Beta Package Release{RESET}")
+        print(
+            f"Current commit is tagged as {git_status.get('tag')}. "
+            "You are sitting on a beta package release."
         )
     elif cl_status.get("has_unreleased"):
         print(f"{GREEN}🛠️  Development Mode{RESET}")
