@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-13
-**Commit:** c98113f0
+**Commit:** f8a6a1ea
 ---
 
 # Changelog
@@ -10,6 +10,12 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Fixed
+
+- *(2026-08-13)* **CI / Prerelease Assets**: Restricted GitHub release uploads
+  to the public ZIP and checksum so packaged-smoke report directories cannot
+  interrupt publication.
 
 ## [0.19.4]
 

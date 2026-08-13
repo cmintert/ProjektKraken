@@ -100,6 +100,16 @@ class WindowsPackageContractTests(unittest.TestCase):
         self.assertIn("if: failure()", workflow)
         self.assertIn("windows-package-failure-diagnostics", workflow)
 
+    def test_release_upload_excludes_report_directory(self) -> None:
+        """Upload only the public ZIP and checksum release assets."""
+        workflow = (ROOT / ".github/workflows/windows-package.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("PK_PACKAGE_NAME", workflow)
+        self.assertIn('"release-assets/${PK_PACKAGE_NAME}.zip"', workflow)
+        self.assertIn('"release-assets/${PK_PACKAGE_NAME}.zip.sha256"', workflow)
+        self.assertNotIn("release-assets/* --clobber", workflow)
+
     def test_known_optional_hidden_imports_are_explicit(self) -> None:
         """Keep clean-runner PyInstaller warning exceptions reviewable."""
         contract = json.loads(

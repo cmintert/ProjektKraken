@@ -156,6 +156,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          PK_PACKAGE_NAME: ${{ needs.build-and-smoke.outputs.package_name }}
           PK_RELEASE_TAG: ${{ needs.build-and-smoke.outputs.release_tag }}
         shell: bash
         run: |
@@ -167,4 +168,7 @@ jobs:
           else
             gh release create "${tag}" --prerelease --title "${title}" --notes "${notes}"
           fi
-          gh release upload "${tag}" release-assets/* --clobber
+          gh release upload "${tag}" \
+            "release-assets/${PK_PACKAGE_NAME}.zip" \
+            "release-assets/${PK_PACKAGE_NAME}.zip.sha256" \
+            --clobber
