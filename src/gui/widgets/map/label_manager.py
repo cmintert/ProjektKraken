@@ -27,7 +27,7 @@ class LabelLayoutItem(Protocol):
         """Return the label anchor in scene coordinates."""
         ...
 
-    def label_clearance_px(self) -> float:
+    def label_clearance_px(self, view_scale: float = 1.0) -> float:
         """Return required clearance around the label in pixels."""
         ...
 
@@ -120,7 +120,7 @@ class LabelManager:
         # Step 1 – register marker icons as obstacles.
         for marker in visible_items:
             scene_pos = marker.label_anchor_scene_pos()
-            clearance = marker.label_clearance_px() * inv_scale
+            clearance = marker.label_clearance_px(view_scale) * inv_scale
             obstacle = QRectF(
                 scene_pos.x() - clearance,
                 scene_pos.y() - clearance,
@@ -136,13 +136,15 @@ class LabelManager:
             reverse=True,
         )
         for marker in sorted_markers:
-            self._place_label(marker, inv_scale)
+            self._place_label(marker, inv_scale, view_scale)
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _place_label(self, marker: LabelLayoutItem, inv_scale: float) -> None:
+    def _place_label(
+        self, marker: LabelLayoutItem, inv_scale: float, view_scale: float
+    ) -> None:
         """Tries to place a single marker's label at the best candidate.
 
         Args:
@@ -155,7 +157,7 @@ class LabelManager:
         label_h = label_rect.height() * inv_scale
 
         scene_pos = marker.label_anchor_scene_pos()
-        half_size = marker.label_clearance_px() * inv_scale
+        half_size = marker.label_clearance_px(view_scale) * inv_scale
         padding = self._PADDING * inv_scale
 
         for dx_factor, dy_factor in self._CANDIDATE_OFFSETS:

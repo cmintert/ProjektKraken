@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-15
-**Commit:** 5a0c10d0
+**Commit:** 5a40e5d0
 ---
 
 # Changelog
@@ -26,6 +26,15 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-15)* **Maps / Marker Sizing**: Point-marker icons now scale with
+  their map by default, with per-marker percentage or calibrated metric sizing,
+  an optional fixed-screen mode, readable labels, and reliable small-token
+  pointer targets.
+- *(2026-08-15)* **Maps / Status Bar**: Replaced redundant float timeline
+  values with the current fit-relative map zoom factor.
+- *(2026-08-15)* **Documentation / Testing**: Updated the map guide and added
+  regression coverage for marker sizing, label placement, pointer targets, and
+  zoom status.
 - *(2026-08-13)* **Documentation / Windows Onboarding**: Replaced source
   launcher instructions for testers with the verified download, checksum,
   extraction, and double-click workflow; kept source launch details in the

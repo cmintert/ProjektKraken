@@ -5,8 +5,8 @@ Unit tests for map widget functionality.
 from unittest.mock import MagicMock
 
 import pytest
-from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QImage, QKeyEvent, QPixmap
+from PySide6.QtCore import QPoint, QPointF, QRectF, Qt
+from PySide6.QtGui import QImage, QKeyEvent, QPixmap, QWheelEvent
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsPixmapItem, QSizePolicy
 
 from src.core.theme_manager import ThemeManager
@@ -879,12 +879,13 @@ def test_mouse_coordinates_display(map_widget):
     assert "N: (0.5000, 0.5000)" in text
     assert "RW: 0.50 km, 0.50 km" in text
 
-    # 2. Test Out-of-Bounds - now includes time suffix
+    # 2. Test Out-of-Bounds
     map_widget._on_mouse_coordinates_changed(0.0, 0.0, False)
     args, _ = map_widget.coord_label.setText.call_args
     out_of_bounds_text = args[0]
-    assert "Ready" in out_of_bounds_text
-    assert "T:" in out_of_bounds_text  # Time is always shown
+    assert out_of_bounds_text == "Ready"
+    assert "T:" not in out_of_bounds_text
+    assert "Now:" not in out_of_bounds_text
 
     # 3. Test Zero Height (Division by Zero protection)
     map_widget.view.pixmap_item.boundingRect.return_value = QRectF(0, 0, 100, 0)
@@ -893,6 +894,43 @@ def test_mouse_coordinates_display(map_widget):
     # y=0.5 * 1000 = 500
     args, _ = map_widget.coord_label.setText.call_args
     assert "RW: 0.50 km, 0.50 km" in args[0]
+
+
+def test_map_status_displays_zoom_factor_without_float_time(map_widget):
+    """The map status row shows zoom while the main bar owns time display."""
+    map_widget.view.zoom_factor_changed.emit(1.25)
+
+    assert map_widget.zoom_label.text() == "Zoom: 1.25×"
+    assert "T:" not in map_widget.coord_label.text()
+    assert "Now:" not in map_widget.coord_label.text()
+
+
+def test_map_status_zoom_tracks_wheel_and_fit(map_widget):
+    """Wheel zoom updates the factor and Fit to View resets it to 1.00×."""
+    setup_map_with_pixmap(map_widget.view)
+    map_widget.view._fit_zoom_level = map_widget.view.transform().m11()
+    event = QWheelEvent(
+        QPointF(10, 10),
+        QPointF(10, 10),
+        QPoint(0, 0),
+        QPoint(0, 120),
+        Qt.MouseButton.NoButton,
+        Qt.KeyboardModifier.NoModifier,
+        Qt.ScrollPhase.NoScrollPhase,
+        False,
+    )
+
+    map_widget.view.wheelEvent(event)
+
+    assert map_widget.view.zoom_factor > 1.0
+    assert map_widget.zoom_label.text() == (
+        f"Zoom: {map_widget.view.zoom_factor:.2f}×"
+    )
+
+    map_widget.view.fit_to_view()
+
+    assert map_widget.view.zoom_factor == pytest.approx(1.0)
+    assert map_widget.zoom_label.text() == "Zoom: 1.00×"
 
 
 def test_esc_in_view_clears_selection(map_widget, qtbot):
@@ -915,8 +953,8 @@ def test_esc_in_view_clears_selection(map_widget, qtbot):
     assert len(map_widget.view.graphics_scene.selectedItems()) == 0
 
 
-def test_configure_map_width_emits_signal(map_widget, monkeypatch):
-    """Test that configuring map width emits the signal via MapScaleDialog."""
+def test_configure_map_settings_emits_attribute_updates(map_widget, monkeypatch):
+    """Applying map settings emits one attribute-update mapping."""
     from PySide6.QtWidgets import QDialog
 
     # Mock MapScaleDialog
@@ -932,11 +970,8 @@ def test_configure_map_width_emits_signal(map_widget, monkeypatch):
         src.gui.mixins.map_calibration_mixin, "MapScaleDialog", mock_class
     )
 
-    # Spy on the new signal
     signal_spy = []
-
-    # This will raise AttributeError if signal doesn't exist
-    map_widget.map_scale_changed.connect(lambda w: signal_spy.append(w))
+    map_widget.map_settings_changed.connect(lambda updates: signal_spy.append(updates))
 
     # Set up preconditions
     setup_map_with_pixmap(map_widget.view)
@@ -950,9 +985,7 @@ def test_configure_map_width_emits_signal(map_widget, monkeypatch):
     # Call the method
     map_widget._configure_map_width()
 
-    # Verify signal emitted
-    assert len(signal_spy) == 1
-    assert signal_spy[0] == 5000.0
+    assert signal_spy == [{"width_meters": 5000.0}]
 
     # Verify view updated
     assert map_widget.view.map_width_meters == 5000.0

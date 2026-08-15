@@ -136,6 +136,7 @@ class MarkerManager:
             lore_date,
             visual_attributes=visual_attributes,
             world_root=self._view._world_root,
+            map_width_meters=self._view.map_width_meters,
         )
 
         scene_pos = self._view.coord_system.to_scene(x, y)

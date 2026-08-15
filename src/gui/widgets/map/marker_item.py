@@ -29,6 +29,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.map_constants import DEFAULT_MARKER_ICONS_PATH
+from src.core.marker_sizing import MarkerSizingMode, MarkerSizingSettings
 from src.core.paths import get_resource_path
 from src.core.style_constants import BASE_SIZE
 from src.gui.constants import MAP_TEMPORAL_GHOST_OPACITY, TEMPORAL_FUTURE_OPACITY
@@ -42,6 +43,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 _CLICK_DISTANCE_THRESHOLD_PX = 3
+_KEYFRAME_INDICATOR_SIZE_PX = 8.0
+_MAX_LABEL_CLEARANCE_PX = 48.0
 _PROJECT_ICON_PARTS = ("assets", "images")
 _RASTER_ICON_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 
@@ -78,6 +81,8 @@ class MarkerItem(QGraphicsObject):
         lore_date: Optional[float] = None,
         visual_attributes: Optional[Dict[str, Any]] = None,
         world_root: Optional[str] = None,
+        marker_sizing: MarkerSizingSettings | None = None,
+        map_width_meters: float = 0.0,
     ) -> None:
         """Initializes a MarkerItem.
 
@@ -92,6 +97,8 @@ class MarkerItem(QGraphicsObject):
             lore_date: Optional lore timestamp for temporal filtering.
             visual_attributes: Optional dict with ``_v_*`` visual override keys.
             world_root: Active portable world root for project icon resolution.
+            marker_sizing: Optional per-marker sizing override.
+            map_width_meters: Calibrated total map width, or zero.
         """
         super().__init__()
 
@@ -107,6 +114,10 @@ class MarkerItem(QGraphicsObject):
         self._world_root = Path(world_root) if world_root is not None else None
         self._custom_color = color
         self._visual_attributes: Dict[str, Any] = visual_attributes or {}
+        self._marker_sizing = marker_sizing or MarkerSizingSettings.from_attributes(
+            self._visual_attributes
+        )
+        self._map_width_meters = max(0.0, float(map_width_meters))
 
         # Resolve fill color via VisualResolver (user override → theme → fallback)
         if color:
@@ -136,7 +147,7 @@ class MarkerItem(QGraphicsObject):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemUsesExtendedStyleOption, True)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True)
+        self._apply_sizing_mode_flag()
 
         # Cursor hint
         self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
@@ -174,9 +185,13 @@ class MarkerItem(QGraphicsObject):
         """Return the scene anchor used by the shared label layout."""
         return self.scenePos()
 
-    def label_clearance_px(self) -> float:
+    def label_clearance_px(self, view_scale: float = 1.0) -> float:
         """Return icon clearance around the label anchor in device pixels."""
-        return self.resolved_size / 2.0
+        if self._marker_sizing.mode is MarkerSizingMode.MAP_RELATIVE:
+            radius = self.resolved_size * max(0.0, float(view_scale)) / 2.0
+        else:
+            radius = self.resolved_size / 2.0
+        return min(radius, _MAX_LABEL_CLEARANCE_PX)
 
     def apply_label_scene_position(
         self, scene_x: float, scene_y: float, inv_scale: float
@@ -274,26 +289,22 @@ class MarkerItem(QGraphicsObject):
         if not hasattr(self, "_raw_svg") or not self._raw_svg:
             return
 
-        from src.core.style_constants import V_BORDER, V_BORDER_WIDTH, V_SIZE_SCALE
+        from src.core.style_constants import V_BORDER, V_BORDER_WIDTH
 
         fill = self._custom_color  # May be a hex string or "none"
         stroke = self._visual_attributes.get(V_BORDER)
         stroke_width = self._visual_attributes.get(V_BORDER_WIDTH)
-        scale = self._visual_attributes.get(V_SIZE_SCALE)
 
         # Convert "none" border to explicit stroke:none in SVG
         stroke_val = stroke if stroke else None
         stroke_width_val = (
             int(stroke_width) if stroke_width is not None and stroke != "none" else None
         )
-        scale_val = float(scale) if scale is not None else None
-
         styled = apply_svg_inline_styles(
             self._raw_svg,
             fill_color=fill,
             stroke_color=stroke_val,
             stroke_width=stroke_width_val,
-            scale=scale_val,
         )
 
         renderer = QSvgRenderer(QByteArray(styled.encode("utf-8")))
@@ -435,13 +446,43 @@ class MarkerItem(QGraphicsObject):
         return color
 
     @property
-    def resolved_size(self) -> int:
-        """Returns the computed marker size (BASE_SIZE * scale).
+    def resolved_size(self) -> float:
+        """Return the marker diameter in its active coordinate space.
 
         Returns:
-            int: Pixel size of this marker.
+            Diameter in scene units for map-relative markers, or device pixels
+            for screen-fixed markers.
         """
-        return VisualResolver.resolve_size(self._visual_attributes)
+        marker_scale = VisualResolver.resolve_scale(self._visual_attributes)
+        if self._marker_sizing.mode is MarkerSizingMode.SCREEN_FIXED:
+            return self._marker_sizing.screen_px * marker_scale
+        image_width = self.pixmap_item.boundingRect().width()
+        base_size = self._marker_sizing.map_diameter_scene_units(
+            image_width,
+            self._map_width_meters,
+        )
+        return max(0.1, base_size * marker_scale)
+
+    def set_map_width_meters(self, map_width_meters: float) -> None:
+        """Refresh this marker after its map calibration changes."""
+        self.prepareGeometryChange()
+        self._map_width_meters = max(0.0, float(map_width_meters))
+        self._apply_sizing_mode_flag()
+        self.update()
+
+    def _apply_sizing_mode_flag(self) -> None:
+        """Toggle view-transform participation for the configured mode."""
+        self.setFlag(
+            QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations,
+            self._marker_sizing.mode is MarkerSizingMode.SCREEN_FIXED,
+        )
+
+    def _current_view_scale(self) -> float:
+        """Return the active view scale for cosmetic adornments."""
+        scene = self.scene()
+        if scene is None or not scene.views():
+            return 1.0
+        return max(1e-9, float(scene.views()[0].transform().m11()))
 
     def set_visual_attributes(self, attrs: Dict[str, Any]) -> None:
         """Replaces the visual attributes and refreshes the marker.
@@ -451,7 +492,10 @@ class MarkerItem(QGraphicsObject):
         """
         from src.core.style_constants import V_FILL
 
+        self.prepareGeometryChange()
         self._visual_attributes = attrs
+        self._marker_sizing = MarkerSizingSettings.from_attributes(attrs)
+        self._apply_sizing_mode_flag()
         # Re-resolve color unless a custom color is explicitly set.
         # "none" is a valid explicit value (transparent fill).
         fill_override = attrs.get(V_FILL)
@@ -467,7 +511,6 @@ class MarkerItem(QGraphicsObject):
             self._color = QColor(resolved)
         # Re-style SVG with updated visual attributes
         self._apply_and_load_svg()
-        self.prepareGeometryChange()
         self.update()
 
     def boundingRect(self) -> QRectF:
@@ -503,6 +546,13 @@ class MarkerItem(QGraphicsObject):
         else:
             self._draw_fallback_circle(painter, rect)
 
+        if self.isSelected():
+            selection_pen = QPen(QColor(255, 255, 255), 2)
+            selection_pen.setCosmetic(True)
+            painter.setPen(selection_pen)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRect(rect)
+
         if self._temporal_ghost:
             ghost_pen = QPen(QColor(255, 255, 255), 1.5, Qt.PenStyle.DashLine)
             ghost_pen.setCosmetic(True)
@@ -523,12 +573,6 @@ class MarkerItem(QGraphicsObject):
 
         if self.has_keyframes:
             self._draw_keyframe_indicator(painter)
-
-        # Draw selection highlight
-        if self.isSelected():
-            painter.setPen(QPen(QColor(255, 255, 255), 2))
-            painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.drawRect(rect)
 
     def _draw_raster_icon(self, painter: QPainter, rect: QRectF) -> None:
         """Draw a raster icon centred in the marker bounds without distortion."""
@@ -558,11 +602,6 @@ class MarkerItem(QGraphicsObject):
 
         if self.has_keyframes:
             self._draw_keyframe_indicator(painter)
-
-        if self.isSelected():
-            painter.setPen(QPen(QColor(255, 255, 255), 2))
-            painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.drawRect(rect)
 
     def _draw_fallback_circle(self, painter: QPainter, rect: QRectF) -> None:
         """Draws a fallback colored circle.
@@ -614,8 +653,14 @@ class MarkerItem(QGraphicsObject):
 
         size = self.resolved_size
         # Position: Centered horizontally, slightly above the icon
-        indicator_size = 8.0
-        y_pos = -(size / 2) - 4 - (indicator_size / 2)
+        adornment_scale = (
+            1.0 / self._current_view_scale()
+            if self._marker_sizing.mode is MarkerSizingMode.MAP_RELATIVE
+            else 1.0
+        )
+        indicator_size = _KEYFRAME_INDICATOR_SIZE_PX * adornment_scale
+        gap = 4.0 * adornment_scale
+        y_pos = -(size / 2) - gap - (indicator_size / 2)
 
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QBrush(primary_color))

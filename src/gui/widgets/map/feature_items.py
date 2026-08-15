@@ -163,7 +163,7 @@ class _FeatureItemBase(QGraphicsObject):
         )
 
     @staticmethod
-    def label_clearance_px() -> float:
+    def label_clearance_px(_view_scale: float = 1.0) -> float:
         """Keep a small gap between geometry anchors and their labels."""
         return 4.0
 

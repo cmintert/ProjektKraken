@@ -812,19 +812,21 @@ class MapHandler(QObject):
 
     @Slot(float)
     def on_map_scale_changed(self, width_meters: float) -> None:
-        """Handle map scale change from MapWidget.
+        """Compatibility wrapper for callers that update only map width.
 
         Args:
             width_meters: The new width of the map in meters.
 
         """
+        self.on_map_settings_changed({"width_meters": width_meters})
+
+    @Slot(dict)
+    def on_map_settings_changed(self, updates: dict) -> None:
+        """Persist map attribute updates as one undoable command."""
         current_map_id = self._map_widget.map_selector.currentData()
         if not current_map_id:
             return
-
-        cmd = UpdateMapCommand(
-            current_map_id, {"attributes": {"width_meters": width_meters}}
-        )
+        cmd = UpdateMapCommand(current_map_id, {"attributes": dict(updates)})
         self.command_requested.emit(cmd)
 
     # ------------------------------------------------------------------

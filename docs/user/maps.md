@@ -28,6 +28,18 @@ folder. SVG markers support fill and border styling. Raster icons retain their
 original colours and transparency; their vector-only styling actions are
 disabled, but marker scale remains available.
 
+Point-marker icons scale with the map by default. This gives character tokens
+and location symbols a stable footprint: zooming in makes both the map and its
+icons larger. Right-click a marker and choose **Visual Styling > Size &
+Zoom…** to set that marker's behavior and base diameter. Uncalibrated maps use
+a percentage of total map width; calibrated maps also offer metres and
+kilometres. The scale multiplier is useful for creature size or emphasis.
+
+Choose **Fixed on screen** for an individual overview symbol that should remain
+readable at every zoom level. Different markers on the same map may use
+different modes and sizes. Labels stay screen-sized and collision-managed, but
+remain visually attached to their marker instead of drifting away from it.
+
 Snapping helps align new or edited vertices with existing geometry. Paths need
 at least two vertices; regions need at least three.
 

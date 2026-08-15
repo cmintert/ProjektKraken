@@ -26,7 +26,7 @@ class MapCalibrationMixin:
         - self.view: MapGraphicsView
         - self.map_selector: QComboBox
         - self.overlay_banner: QLabel
-        - self.map_scale_changed: Signal(float)
+        - self.map_settings_changed: Signal(dict)
         - self.get_selected_map_id(): method
     """
 
@@ -34,7 +34,7 @@ class MapCalibrationMixin:
         view: MapGraphicsView
         map_selector: QComboBox
         overlay_banner: QLabel
-        map_scale_changed: SignalInstance
+        map_settings_changed: SignalInstance
 
         def get_selected_map_id(self) -> str | None:
             """Return the active map identifier."""
@@ -51,17 +51,27 @@ class MapCalibrationMixin:
         map_name = self.map_selector.currentText()
         current_width = self.view.map_width_meters
 
-        dialog = MapScaleDialog(current_width, cast(QWidget, self), map_name)
+        dialog = MapScaleDialog(
+            current_width,
+            cast(QWidget, self),
+            map_name,
+        )
 
         # Determine behavior on result
         dialog.calibrate_requested.connect(self._handle_calibration_request)
 
         if dialog.exec() == QDialog.DialogCode.Accepted:
             new_width = dialog.get_width()
+            updates: dict[str, object] = {}
             if new_width != current_width:
-                self.view.set_map_width_meters(new_width)
-                self.map_scale_changed.emit(new_width)
+                if new_width > 0:
+                    self.view.set_map_width_meters(new_width)
+                else:
+                    self.view.clear_map_scale()
+                updates["width_meters"] = new_width
                 logger.info(f"Updated map width to {new_width:.2f} m")
+            if updates:
+                self.map_settings_changed.emit(updates)
 
     @Slot()
     def _handle_calibration_request(self) -> None:
@@ -117,7 +127,7 @@ class MapCalibrationMixin:
             new_total_width = (image_width_px * segment_meters) / px_distance
 
             self.view.set_map_width_meters(new_total_width)
-            self.map_scale_changed.emit(new_total_width)
+            self.map_settings_changed.emit({"width_meters": new_total_width})
 
             # Show confirmation details
             from PySide6.QtWidgets import QMessageBox

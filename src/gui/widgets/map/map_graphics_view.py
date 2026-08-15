@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, cast
 
 from PySide6.QtCore import (
     Property,
+    QPoint,
     QPointF,
     QRect,
     QRectF,
@@ -101,6 +102,8 @@ LAYER_UI_OVERLAY = MAP_LAYER_Z_UI_OVERLAY
 # Colors — resolved from ThemeManager at runtime; these are fallback defaults only
 KEYFRAME_COLOR_DEFAULT = "#f1c40f"  # Yellow (fallback)
 CALIBRATION_POINT_COUNT = 2
+MINIMUM_MARKER_POINTER_DIAMETER_PX = 20.0
+MARKER_CLICK_DISTANCE_THRESHOLD_PX = 3.0
 
 
 class KeyframeItem(QGraphicsObject):
@@ -202,6 +205,7 @@ class MapGraphicsView(QGraphicsView):
 
     # -- Coordinate signal --
     mouse_coordinates_changed = Signal(float, float, bool)
+    zoom_factor_changed = Signal(float)
 
     # -- Direct trajectory editing signals --
     trajectory_edit_requested = Signal(str)
@@ -403,6 +407,10 @@ class MapGraphicsView(QGraphicsView):
 
         # One-shot marker placement mode, activated by the map toolbar.
         self._is_placing_marker: bool = False
+        self._proxy_drag_marker: MarkerItem | None = None
+        self._proxy_drag_scene_start = QPointF()
+        self._proxy_drag_marker_start = QPointF()
+        self._proxy_drag_view_start = QPointF()
 
     # ------------------------------------------------------------------
     # Backward-compatible property aliases for sub-component state
@@ -720,6 +728,7 @@ class MapGraphicsView(QGraphicsView):
 
             self.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
             self._fit_zoom_level = max(self.transform().m11(), 1e-9)
+            self.zoom_factor_changed.emit(self.zoom_factor)
             self.graphics_scene.setSceneRect(self.pixmap_item.boundingRect())
 
             self.current_image_path = image_path
@@ -766,6 +775,7 @@ class MapGraphicsView(QGraphicsView):
         if self.pixmap_item:
             self.fitInView(self.pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
             self._fit_zoom_level = max(self.transform().m11(), 1e-9)
+            self.zoom_factor_changed.emit(self.zoom_factor)
             self._layout_footprint_labels()
 
     def ensure_software_rendering(self) -> None:
@@ -1224,13 +1234,25 @@ class MapGraphicsView(QGraphicsView):
             return
 
         self.map_width_meters = width_meters
+        self._refresh_marker_calibration()
         self._update_scale_bar_overlay()
 
     def clear_map_scale(self) -> None:
         """Mark the map as uncalibrated and hide metric scale output."""
         self.map_width_meters = 0.0
+        self._refresh_marker_calibration()
         if hasattr(self, "_scale_bar_overlay"):
             self._scale_bar_overlay.update_scale(0.0)
+
+    def _refresh_marker_calibration(self) -> None:
+        """Refresh metric-sized markers after map calibration changes."""
+        marker_manager = getattr(self, "_marker_manager", None)
+        if marker_manager is None:
+            return
+        for marker in marker_manager.markers.values():
+            marker.set_map_width_meters(self.map_width_meters)
+        self._schedule_label_layout()
+        self.viewport().update()
 
     def _update_scale_bar_overlay(self) -> None:
         """Recompute and push the current resolution to the scale bar overlay."""
@@ -1587,6 +1609,12 @@ class MapGraphicsView(QGraphicsView):
         """
         return self.transform().m11()
 
+    @property
+    def zoom_factor(self) -> float:
+        """Return current zoom relative to the most recent fit-to-view scale."""
+        fit_zoom = max(self._fit_zoom_level, 1e-9)
+        return max(self.transform().m11(), 1e-9) / fit_zoom
+
     def _apply_scale_dependent_visibility(self) -> None:
         """Show/hide items based on zoom and layer model."""
         self._apply_effective_layer_visibility()
@@ -1696,6 +1724,44 @@ class MapGraphicsView(QGraphicsView):
     # Qt Event Overrides (thin dispatchers)
     # ------------------------------------------------------------------
 
+    def _marker_near_view_pos(self, pos: QPoint) -> MarkerItem | None:
+        """Return the nearest visible marker within the minimum pointer target."""
+        radius = MINIMUM_MARKER_POINTER_DIAMETER_PX / 2.0
+        best: tuple[float, MarkerItem] | None = None
+        for marker in self.markers.values():
+            if not marker.isVisible():
+                continue
+            marker_pos = self.mapFromScene(marker.scenePos())
+            distance = math.hypot(marker_pos.x() - pos.x(), marker_pos.y() - pos.y())
+            visual_radius = marker.label_clearance_px(self.transform().m11())
+            if distance > max(radius, visual_radius):
+                continue
+            if best is None or distance < best[0]:
+                best = (distance, marker)
+        return best[1] if best is not None else None
+
+    def _handle_normal_marker_press(self, event: QMouseEvent) -> bool:
+        """Start direct or proxy marker interaction for a normal map press."""
+        pos = event.position().toPoint()
+        item = self.itemAt(pos)
+        marker = item if isinstance(item, MarkerItem) else self._marker_near_view_pos(pos)
+        if marker is None:
+            self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+            return False
+
+        self.setDragMode(QGraphicsView.DragMode.NoDrag)
+        if isinstance(item, MarkerItem) or event.button() != Qt.MouseButton.LeftButton:
+            return False
+        if not event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            self.graphics_scene.clearSelection()
+        marker.setSelected(True)
+        self._proxy_drag_marker = marker
+        self._proxy_drag_scene_start = self.mapToScene(pos)
+        self._proxy_drag_marker_start = marker.pos()
+        self._proxy_drag_view_start = event.position()
+        event.accept()
+        return True
+
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Handle mouse press: raster edit, drawing, calibration, or normal."""
         # Space held-to-pan takes absolute priority over every sub-system.
@@ -1763,13 +1829,8 @@ class MapGraphicsView(QGraphicsView):
             return
 
         # Normal handling
-        pos = event.position().toPoint()
-        item = self.itemAt(pos)
-
-        if isinstance(item, MarkerItem):
-            self.setDragMode(QGraphicsView.DragMode.NoDrag)
-        else:
-            self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+        if self._handle_normal_marker_press(event):
+            return
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
@@ -1791,6 +1852,18 @@ class MapGraphicsView(QGraphicsView):
                 if self._raster_edit_tool.handle_mouse_release(scene_pos):
                     return
 
+        if self._proxy_drag_marker is not None and event.button() == Qt.MouseButton.LeftButton:
+            marker = self._proxy_drag_marker
+            moved_px = (event.position() - self._proxy_drag_view_start).manhattanLength()
+            if moved_px < MARKER_CLICK_DISTANCE_THRESHOLD_PX:
+                marker.clicked.emit(marker.marker_id, marker.object_type)
+            else:
+                marker._handle_drag_end()
+            self._proxy_drag_marker = None
+            event.accept()
+            self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+            return
+
         super().mouseReleaseEvent(event)
         if not self.calibration_mode and not self._raster_edit_tool.is_active:
             self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
@@ -1799,6 +1872,13 @@ class MapGraphicsView(QGraphicsView):
         """Handle mouse move: raster edit, drawing preview, vertex editing, coordinates."""
         scene_pos = self.mapToScene(event.position().toPoint())
 
+        proxy_marker = self._proxy_drag_marker
+        proxy_dragging = proxy_marker is not None
+        if proxy_marker is not None:
+            delta = scene_pos - self._proxy_drag_scene_start
+            proxy_marker.setPos(self._proxy_drag_marker_start + delta)
+            self._schedule_label_layout()
+
         # Raster editing (before super to avoid ScrollHandDrag panning).
         # When Space is held, yield to super() so Qt's pan gesture gets the move.
         if self._raster_edit_tool.is_active:
@@ -1806,7 +1886,7 @@ class MapGraphicsView(QGraphicsView):
                 super().mouseMoveEvent(event)
             else:
                 self._raster_edit_tool.handle_mouse_move(scene_pos)
-        else:
+        elif not proxy_dragging:
             super().mouseMoveEvent(event)
 
         # Drawing mode
@@ -2046,6 +2126,7 @@ class MapGraphicsView(QGraphicsView):
         factor = MAP_ZOOM_IN_FACTOR if event.angleDelta().y() > 0 else zoom_out_factor
 
         self.scale(factor, factor)
+        self.zoom_factor_changed.emit(self.zoom_factor)
         self._trajectory.update_label_scales()
         self._apply_scale_dependent_visibility()
         self._schedule_label_layout()
@@ -2071,12 +2152,22 @@ class MapGraphicsView(QGraphicsView):
         item = self.itemAt(pos)
         from src.gui.widgets.map.trajectory_renderer import TrajectoryPathItem
 
+        near_marker = (
+            self._marker_near_view_pos(pos)
+            if not isinstance(
+                item, (KeyframeItem, MarkerItem, TrajectoryPathItem, PathItem, RegionItem)
+            )
+            else None
+        )
+
         if isinstance(item, KeyframeItem):
             self._interaction.show_trajectory_context_menu(
                 item.marker_id, event.globalPos()
             )
         elif isinstance(item, MarkerItem):
             self._interaction.show_marker_context_menu(item, event.globalPos())
+        elif near_marker is not None:
+            self._interaction.show_marker_context_menu(near_marker, event.globalPos())
         elif isinstance(item, TrajectoryPathItem):
             self._interaction.show_trajectory_context_menu(
                 item.marker_id, event.globalPos()

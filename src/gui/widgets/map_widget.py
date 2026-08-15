@@ -228,7 +228,7 @@ class MapWidget(
     trajectory_make_timed_location_requested = Signal()
     trajectory_make_intermediate_automatic_requested = Signal(str)
     jump_to_time_requested = Signal(float)  # target_time
-    map_scale_changed = Signal(float)  # For persisting map scale
+    map_settings_changed = Signal(dict)  # Map attribute updates for persistence
     # Map nesting (master / detail) signals
     set_master_map_requested = Signal(str)  # map_id
     register_detail_map_requested = Signal(
@@ -359,11 +359,14 @@ class MapWidget(
     def _build_map_status_row(
         self, layout: QVBoxLayout, coord_label: NoLayoutLabel
     ) -> None:
-        """Build coordinate and temporal-status controls below the map."""
+        """Build coordinate, zoom, and temporal-status controls below the map."""
         self.map_status_row = QWidget(self)
         status_layout = QHBoxLayout(self.map_status_row)
         status_layout.setContentsMargins(0, 0, 0, 0)
         status_layout.addWidget(coord_label, 1)
+        self.zoom_label = QLabel("Zoom: 1.00×")
+        self.zoom_label.setToolTip("Zoom relative to Fit to View")
+        status_layout.addWidget(self.zoom_label)
         self.temporal_outside_button = QPushButton("0 features outside this date")
         self.temporal_outside_button.setCheckable(True)
         self.temporal_outside_button.setVisible(False)
@@ -377,6 +380,7 @@ class MapWidget(
         self.map_status_row.setFixedHeight(
             max(
                 coord_label.sizeHint().height(),
+                self.zoom_label.sizeHint().height(),
                 self.temporal_outside_button.sizeHint().height(),
             )
         )
@@ -783,7 +787,7 @@ class MapWidget(
         self.btn_fit_view.clicked.connect(self.view.fit_to_view)
         self.toolbar.addWidget(self.btn_fit_view)
         self.btn_settings = QPushButton("Settings")
-        self.btn_settings.setToolTip("Configure Map Properties (Scale)")
+        self.btn_settings.setToolTip("Configure map scale and distance calibration")
         self.btn_settings.clicked.connect(self._configure_map_width)
         self.toolbar.addWidget(self.btn_settings)
 
@@ -887,6 +891,7 @@ class MapWidget(
         )
         self.view.marker_drop_requested.connect(self.marker_drop_requested.emit)
         self.view.mouse_coordinates_changed.connect(self._on_mouse_coordinates_changed)
+        self.view.zoom_factor_changed.connect(self._on_zoom_factor_changed)
         self.view.viewport_resized.connect(lambda _: self._position_legend_overlay())
         self.setFocusProxy(self.view)
         self.view.drawing_finished.connect(self._on_drawing_finished)
@@ -1474,11 +1479,8 @@ class MapWidget(
             in_bounds: True if cursor is over the map image.
 
         """
-        # Time suffix (always shown)
-        time_str = f"T: {self._playhead_time:.1f} | Now: {self._current_time:.1f}"
-
         if not in_bounds:
-            self.coord_label.setText(f"Ready | {time_str}")
+            self.coord_label.setText("Ready")
             return
 
         # 1. Format Normalized
@@ -1512,12 +1514,17 @@ class MapWidget(
 
         km_str = f"RW: {km_x:.2f} km, {km_y:.2f} km"
 
-        new_text = f"{norm_str} | {km_str} | {time_str}"
+        new_text = f"{norm_str} | {km_str}"
 
         # Only update if text changed
         if self.coord_label.text() != new_text:
             self.coord_label.setText(new_text)
             # logger.debug(f"Coords updated: {new_text} | Label Width Hint: {self.coord_label.sizeHint().width()}")
+
+    @Slot(float)
+    def _on_zoom_factor_changed(self, factor: float) -> None:
+        """Update the map status row with zoom relative to Fit to View."""
+        self.zoom_label.setText(f"Zoom: {factor:.2f}×")
 
     def load_map(self, image_path: str) -> bool:
         """Loads a map image.

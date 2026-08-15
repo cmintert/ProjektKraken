@@ -17,11 +17,10 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 
+from src.core.marker_sizing import MARKER_SIZING_ATTRIBUTE, MarkerSizingSettings
 from src.core.style_constants import (
     MAX_BORDER_WIDTH,
-    MAX_SCALE,
     MIN_BORDER_WIDTH,
-    MIN_SCALE,
     V_BORDER,
     V_BORDER_WIDTH,
     V_FILL,
@@ -89,7 +88,7 @@ class InteractionHandler:
         # --- Visual Styling sub-menu ---
         style_menu = QMenu("Visual Styling", self._view)
 
-        scale_action = QAction("Set Scale...", self._view)
+        scale_action = QAction("Size & Zoom...", self._view)
         scale_action.triggered.connect(lambda: self.show_scale_dialog(item))
         style_menu.addAction(scale_action)
 
@@ -301,42 +300,34 @@ class InteractionHandler:
     # ------------------------------------------------------------------
 
     def show_scale_dialog(self, marker_item: MarkerItem) -> None:
-        """Shows a dialog to set the marker's size scale.
+        """Show the per-marker size and zoom behavior dialog.
 
         Args:
             marker_item: The marker to change the scale for.
         """
-        from PySide6.QtWidgets import (
-            QDialogButtonBox,
-            QDoubleSpinBox,
-            QFormLayout,
+        from src.gui.widgets.map.marker_size_dialog import MarkerSizeDialog
+
+        pixmap_item = self._view.pixmap_item
+        image_width = (
+            pixmap_item.boundingRect().width() if pixmap_item is not None else 0.0
         )
-
-        dialog = QDialog(self._view)
-        dialog.setWindowTitle("Set Marker Scale")
-        dialog.setMinimumWidth(250)
-        layout = QFormLayout(dialog)
-
-        spin = QDoubleSpinBox()
-        spin.setRange(MIN_SCALE, MAX_SCALE)
-        spin.setSingleStep(0.1)
-        spin.setDecimals(1)
-        current = marker_item._visual_attributes.get(V_SIZE_SCALE, 1.0)
-        spin.setValue(float(current))
-        layout.addRow("Scale:", spin)
-
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        dialog = MarkerSizeDialog(
+            MarkerSizingSettings.from_attributes(marker_item._visual_attributes),
+            float(marker_item._visual_attributes.get(V_SIZE_SCALE, 1.0)),
+            self._view.map_width_meters,
+            image_width,
+            self._view.transform().m11(),
+            self._view,
         )
-        buttons.accepted.connect(dialog.accept)
-        buttons.rejected.connect(dialog.reject)
-        layout.addRow(buttons)
-
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            updates = {V_SIZE_SCALE: spin.value()}
+            updates = {
+                MARKER_SIZING_ATTRIBUTE: dialog.get_settings().to_dict(),
+                V_SIZE_SCALE: dialog.get_scale_multiplier(),
+            }
             new_attrs = dict(marker_item._visual_attributes)
             new_attrs.update(updates)
             marker_item.set_visual_attributes(new_attrs)
+            self._view._schedule_label_layout()
             self._view.marker_visual_style_changed.emit(
                 marker_item.marker_id,
                 updates,

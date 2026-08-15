@@ -40,6 +40,25 @@ def test_on_map_scale_changed_emits_command(map_handler, mock_map_widget):
     spy.assert_called_once()
     cmd = spy.call_args[0][0]
     assert cmd.__class__.__name__ == "UpdateMapCommand"
+    assert cmd.update_data == {"attributes": {"width_meters": 500.0}}
+
+
+def test_on_map_settings_changed_emits_one_atomic_command(
+    map_handler, mock_map_widget
+):
+    """Map attribute changes persist through one map command."""
+    mock_map_widget.map_selector.currentData.return_value = "map_1"
+    spy = MagicMock()
+    map_handler.command_requested.connect(spy)
+    updates = {
+        "width_meters": 500.0,
+    }
+
+    map_handler.on_map_settings_changed(updates)
+
+    spy.assert_called_once()
+    cmd = spy.call_args[0][0]
+    assert cmd.update_data == {"attributes": updates}
 
 
 def test_on_map_selected_loads_scale(map_handler, mock_map_widget):

@@ -634,8 +634,8 @@ class ConnectionManager:
                 ),
                 (
                     map_widget,
-                    "map_scale_changed",
-                    map_handler.on_map_scale_changed,
+                    "map_settings_changed",
+                    map_handler.on_map_settings_changed,
                     "MapWidget",
                 ),
                 (
