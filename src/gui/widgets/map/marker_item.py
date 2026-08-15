@@ -44,7 +44,6 @@ logger = logging.getLogger(__name__)
 
 _CLICK_DISTANCE_THRESHOLD_PX = 3
 _KEYFRAME_INDICATOR_SIZE_PX = 8.0
-_MAX_LABEL_CLEARANCE_PX = 48.0
 _PROJECT_ICON_PARTS = ("assets", "images")
 _RASTER_ICON_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 
@@ -191,16 +190,21 @@ class MarkerItem(QGraphicsObject):
             radius = self.resolved_size * max(0.0, float(view_scale)) / 2.0
         else:
             radius = self.resolved_size / 2.0
-        return min(radius, _MAX_LABEL_CLEARANCE_PX)
+        return radius
 
     def apply_label_scene_position(
         self, scene_x: float, scene_y: float, inv_scale: float
     ) -> None:
         """Place the device-space child label at a scene-space candidate."""
         anchor = self.scenePos()
+        local_x = scene_x - anchor.x()
+        local_y = scene_y - anchor.y()
+        if self._marker_sizing.mode is MarkerSizingMode.SCREEN_FIXED:
+            local_x /= inv_scale
+            local_y /= inv_scale
         self.apply_label_position(
-            (scene_x - anchor.x()) / inv_scale,
-            (scene_y - anchor.y()) / inv_scale,
+            local_x,
+            local_y,
             True,
         )
 

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-15
-**Commit:** ad8b9212
+**Commit:** 3708c68c
 ---
 
 # Changelog
@@ -20,6 +20,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-15)* **Maps / Marker Labels**: Kept labels adjacent to each
+  marker's current rendered edge across map-relative and fixed-screen sizing.
 - *(2026-08-15)* **Maps / Feature Deletion**: Fixed path and region layer
   deletion leaving persistent marker geometry that reappeared as `Unknown`.
 - *(2026-08-13)* **CI / Prerelease Assets**: Restricted GitHub release uploads
@@ -45,6 +47,8 @@ All notable changes to this project will be documented in this file.
   path-containment, and raster-styling regression coverage.
 - *(2026-08-15)* **Testing / Feature Deletion**: Added path and region
   regression coverage for persistent deletion and undo restoration.
+- *(2026-08-15)* **Testing / Marker Labels**: Added rendered-gap regression
+  coverage across map-relative and fixed-screen zoom levels.
 
 ## [0.19.4]
 

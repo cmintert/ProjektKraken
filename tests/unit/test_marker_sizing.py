@@ -1,8 +1,14 @@
 """Regression tests for per-marker point-icon sizing."""
 
+import pytest
 from PySide6.QtCore import QPoint, QRectF
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsPixmapItem
+from PySide6.QtWidgets import (
+    QGraphicsItem,
+    QGraphicsPixmapItem,
+    QGraphicsScene,
+    QGraphicsView,
+)
 
 from src.core.marker_sizing import (
     MARKER_SIZING_ATTRIBUTE,
@@ -11,6 +17,7 @@ from src.core.marker_sizing import (
     MarkerSizingSettings,
 )
 from src.core.style_constants import V_SIZE_SCALE
+from src.gui.widgets.map.label_manager import LabelManager
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 from src.gui.widgets.map.marker_item import MarkerItem
 from src.gui.widgets.map.marker_size_dialog import MarkerSizeDialog
@@ -191,4 +198,66 @@ def test_markers_on_same_map_can_use_different_zoom_behavior(qapp) -> None:
 def test_large_marker_label_clearance_remains_attached(qapp) -> None:
     marker = MarkerItem("marker-1", "entity", "Hero", _pixmap_item())
 
-    assert marker.label_clearance_px(20.0) == 48.0
+    assert marker.label_clearance_px(20.0) == 250.0
+
+
+@pytest.mark.parametrize("view_scale", [0.2, 1.0, 4.0, 20.0])
+def test_map_relative_label_stays_attached_to_rendered_marker(
+    qapp, view_scale
+) -> None:
+    scene = QGraphicsScene()
+    view = QGraphicsView(scene)
+    view.scale(view_scale, view_scale)
+    pixmap_item = _pixmap_item()
+    marker = MarkerItem("marker-1", "entity", "Hero", pixmap_item)
+    marker.setPos(500.0, 250.0)
+    scene.addItem(marker)
+
+    LabelManager().run_layout_pass([marker], view.transform().m11())
+
+    viewport_transform = view.viewportTransform()
+    marker_rect = marker.deviceTransform(viewport_transform).mapRect(
+        marker.boundingRect()
+    )
+    label_rect = marker._label_item.deviceTransform(viewport_transform).mapRect(
+        marker._label_item.boundingRect()
+    )
+    gap = label_rect.top() - marker_rect.bottom()
+
+    assert gap == pytest.approx(2.0)
+
+
+@pytest.mark.parametrize("view_scale", [0.2, 1.0, 4.0, 20.0])
+def test_screen_fixed_label_stays_attached_to_rendered_marker(
+    qapp, view_scale
+) -> None:
+    scene = QGraphicsScene()
+    view = QGraphicsView(scene)
+    view.scale(view_scale, view_scale)
+    pixmap_item = _pixmap_item()
+    settings = MarkerSizingSettings(
+        mode=MarkerSizingMode.SCREEN_FIXED,
+        screen_px=32.0,
+    )
+    marker = MarkerItem(
+        "marker-1",
+        "entity",
+        "Hero",
+        pixmap_item,
+        marker_sizing=settings,
+    )
+    marker.setPos(500.0, 250.0)
+    scene.addItem(marker)
+
+    LabelManager().run_layout_pass([marker], view.transform().m11())
+
+    viewport_transform = view.viewportTransform()
+    marker_rect = marker.deviceTransform(viewport_transform).mapRect(
+        marker.boundingRect()
+    )
+    label_rect = marker._label_item.deviceTransform(viewport_transform).mapRect(
+        marker._label_item.boundingRect()
+    )
+    gap = label_rect.top() - marker_rect.bottom()
+
+    assert gap == pytest.approx(2.0)
