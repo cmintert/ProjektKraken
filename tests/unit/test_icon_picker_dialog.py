@@ -82,6 +82,16 @@ class TestGetProjectIcons:
         assert "assets/images/icon_abc123.svg" in result
         assert "assets/images/icon_def456.png" in result
 
+    def test_finds_webp_icons(self, tmp_path):
+        """WebP project icons are included in the picker."""
+        images_dir = tmp_path / "assets" / "images"
+        images_dir.mkdir(parents=True)
+        (images_dir / "icon_webp.webp").write_bytes(b"RIFF")
+
+        assert get_project_icons(str(tmp_path)) == [
+            "assets/images/icon_webp.webp"
+        ]
+
     def test_ignores_non_icon_files(self, tmp_path):
         """Files without icon_ prefix are ignored."""
         images_dir = tmp_path / "assets" / "images"
@@ -133,6 +143,16 @@ class TestRemoveProjectIcon:
     def test_returns_false_for_missing_icon(self, tmp_path):
         """Returns False when the icon file does not exist."""
         assert not remove_project_icon(str(tmp_path), "assets/images/icon_missing.svg")
+
+    def test_rejects_removal_outside_project_icons(self, tmp_path):
+        """Removal cannot traverse outside the portable icon directory."""
+        outside = tmp_path / "outside.svg"
+        outside.write_text("<svg/>")
+
+        assert not remove_project_icon(
+            str(tmp_path), "assets/images/../../outside.svg"
+        )
+        assert outside.exists()
 
     def test_icon_gone_from_project_list(self, tmp_path):
         """After removal the icon is no longer in get_project_icons."""

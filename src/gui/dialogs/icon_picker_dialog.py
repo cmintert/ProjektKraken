@@ -34,6 +34,7 @@ from PySide6.QtWidgets import (
 from src.core.paths import get_resource_path
 from src.gui.constants import DEFAULT_MARKER_ICONS_PATH
 from src.gui.utils.style_helper import StyleHelper
+from src.services.asset_store import AssetStore
 
 logger = logging.getLogger(__name__)
 
@@ -169,10 +170,13 @@ def get_project_icons(world_root: str) -> List[str]:
     images_dir = Path(world_root) / "assets" / "images"
     if not images_dir.is_dir():
         return []
-    allowed = {".svg", ".png", ".jpg", ".jpeg"}
     icons: List[str] = []
     for f in images_dir.iterdir():
-        if f.is_file() and f.name.startswith("icon_") and f.suffix.lower() in allowed:
+        if (
+            f.is_file()
+            and f.name.startswith("icon_")
+            and f.suffix.lower() in AssetStore.ALLOWED_ICON_EXTENSIONS
+        ):
             rel = f.relative_to(Path(world_root)).as_posix()
             icons.append(rel)
     return sorted(icons)
@@ -190,7 +194,13 @@ def remove_project_icon(world_root: str, rel_path: str) -> bool:
         True if the file was removed, False otherwise.
 
     """
-    abs_path = Path(world_root) / rel_path
+    trusted_root = (Path(world_root) / "assets" / "images").resolve()
+    abs_path = (Path(world_root) / rel_path).resolve()
+    try:
+        abs_path.relative_to(trusted_root)
+    except ValueError:
+        logger.warning("Rejected project icon removal outside asset root: %s", rel_path)
+        return False
     if abs_path.is_file():
         try:
             abs_path.unlink()
@@ -266,7 +276,7 @@ class IconPickerDialog(QDialog):
             import_btn = QPushButton("Import from Disk…")
             import_btn.setStyleSheet(StyleHelper.get_tool_button_style())
             import_btn.setToolTip(
-                "Import an SVG, PNG, or JPG file from your filesystem"
+                "Import an SVG, PNG, JPG, or WebP file from your filesystem"
             )
             import_btn.clicked.connect(self._on_import_clicked)
             btn_layout.addWidget(import_btn)
@@ -434,14 +444,12 @@ class IconPickerDialog(QDialog):
             self,
             "Import Icon",
             "",
-            "Image Files (*.svg *.png *.jpg *.jpeg);;All Files (*)",
+            "Image Files (*.svg *.png *.jpg *.jpeg *.webp);;All Files (*)",
         )
         if not file_path or self._world_root is None:
             return
 
         try:
-            from src.services.asset_store import AssetStore
-
             store = AssetStore(self._world_root)
             relative_path = store.import_icon(file_path)
             self.selected_icon = relative_path

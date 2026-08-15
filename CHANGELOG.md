@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-08-13
-**Commit:** f8a6a1ea
+**Last Updated:** 2026-08-15
+**Commit:** 5a0c10d0
 ---
 
 # Changelog
@@ -11,11 +11,27 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- *(2026-08-15)* **Maps / Marker Icons**: Added portable SVG, PNG, JPG/JPEG,
+  and WebP project icons for point markers, with secure world-relative path
+  resolution, aspect-preserving raster rendering, and raster-aware styling
+  controls.
+
 ### Fixed
 
 - *(2026-08-13)* **CI / Prerelease Assets**: Restricted GitHub release uploads
   to the public ZIP and checksum so packaged-smoke report directories cannot
   interrupt publication.
+
+### Changed
+
+- *(2026-08-13)* **Documentation / Windows Onboarding**: Replaced source
+  launcher instructions for testers with the verified download, checksum,
+  extraction, and double-click workflow; kept source launch details in the
+  developer guide.
+- *(2026-08-15)* **Testing / Map Icons**: Added format, renderer-transition,
+  path-containment, and raster-styling regression coverage.
 
 ## [0.19.4]
 

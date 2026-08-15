@@ -458,7 +458,7 @@ class MapGraphicsView(QGraphicsView):
         self._trajectory.trigger_first_use_animation = value
 
     def set_world_root(self, world_root: Optional[str]) -> None:
-        """Sets the world root directory for icon import support.
+        """Set the world root used to resolve portable project icons.
 
         Args:
             world_root: Absolute path to the world directory, or None.

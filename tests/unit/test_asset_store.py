@@ -356,6 +356,18 @@ def test_import_icon_png(asset_store, test_image):
     assert (asset_store.project_root / rel_path).exists()
 
 
+def test_import_icon_webp(asset_store, temp_project_root):
+    """Test importing a WebP icon preserves the .webp extension."""
+    source = Path(temp_project_root) / "source.webp"
+    Image.new("RGBA", (20, 20), (255, 0, 0, 128)).save(source, "WEBP")
+
+    rel_path = asset_store.import_icon(str(source))
+
+    assert rel_path.startswith("assets/images/icon_")
+    assert rel_path.endswith(".webp")
+    assert (asset_store.project_root / rel_path).exists()
+
+
 def test_import_icon_missing_file(asset_store):
     """Test import_icon raises FileNotFoundError for missing source."""
     with pytest.raises(FileNotFoundError):

@@ -117,6 +117,17 @@ class InteractionHandler:
         no_border_action.triggered.connect(lambda: self._apply_no_border(item))
         style_menu.addAction(no_border_action)
 
+        self._configure_vector_style_actions(
+            item,
+            (
+                border_action,
+                fill_action,
+                border_color_action,
+                no_fill_action,
+                no_border_action,
+            ),
+        )
+
         menu.addMenu(style_menu)
 
         temporal_action = QAction("Temporal Validity...", self._view)
@@ -234,6 +245,17 @@ class InteractionHandler:
         )
         menu.addAction(delete_action)
         menu.exec(global_pos)
+
+    @staticmethod
+    def _configure_vector_style_actions(
+        item: MarkerItem, actions: tuple[QAction, ...]
+    ) -> None:
+        """Disable SVG/fallback styling actions for raster marker artwork."""
+        enabled = not item.is_raster_icon
+        for action in actions:
+            action.setEnabled(enabled)
+            if not enabled:
+                action.setStatusTip("Available for SVG and fallback markers only")
 
     def _populate_temporal_ghost_menu(self, menu: QMenu, marker_id: str) -> None:
         """Add the restricted authoring actions available for a ghost."""

@@ -1,7 +1,7 @@
 """Icon Picker Dialog Module.
 
 Provides the IconPickerDialog for selecting marker icons and importing
-SVG/PNG/JPG assets from the operating system into the project sandbox.
+SVG/PNG/JPG/WebP assets from the operating system into the project sandbox.
 """
 
 import logging
@@ -49,7 +49,7 @@ def get_available_icons() -> List[str]:
 logger = logging.getLogger(__name__)
 
 # Allowed image file extensions for secure asset importing
-ALLOWED_IMAGE_EXTENSIONS = {".svg", ".png", ".jpg", ".jpeg"}
+ALLOWED_IMAGE_EXTENSIONS = {".svg", ".png", ".jpg", ".jpeg", ".webp"}
 
 
 def import_asset_file(source_path: str, assets_dir: Path) -> Optional[str]:
@@ -117,7 +117,7 @@ class IconPickerDialog(QDialog):
             parent: Parent widget.
             assets_dir: Path to the world's assets directory. When provided,
                 an "Import from Disk" button is shown to allow importing
-                SVG/PNG/JPG files into the project sandbox.
+                SVG/PNG/JPG/WebP files into the project sandbox.
 
         """
         super().__init__(parent)
@@ -137,7 +137,7 @@ class IconPickerDialog(QDialog):
             btn_layout = QHBoxLayout()
             import_btn = QPushButton("Import from Disk...")
             import_btn.setToolTip(
-                "Import an SVG, PNG, or JPG file from your filesystem"
+                "Import an SVG, PNG, JPG, or WebP file from your filesystem"
             )
             import_btn.clicked.connect(self._on_import_clicked)
             btn_layout.addWidget(import_btn)
@@ -208,7 +208,7 @@ class IconPickerDialog(QDialog):
             self,
             "Import Image Asset",
             "",
-            "Image Files (*.svg *.png *.jpg *.jpeg);;All Files (*)",
+            "Image Files (*.svg *.png *.jpg *.jpeg *.webp);;All Files (*)",
         )
         if not file_path or self._assets_dir is None:
             return

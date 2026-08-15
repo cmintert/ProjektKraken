@@ -4,11 +4,10 @@ Provides the MarkerItem class for rendering markers on the map.
 """
 
 import logging
-import os
 from pathlib import Path
 
 # Forward declaration to avoid circular import
-from typing import TYPE_CHECKING, Any, Dict, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, cast
 
 from PySide6.QtCore import QByteArray, QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import (
@@ -17,6 +16,7 @@ from PySide6.QtGui import (
     QCursor,
     QPainter,
     QPen,
+    QPixmap,
 )
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (
@@ -28,6 +28,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.map_constants import DEFAULT_MARKER_ICONS_PATH
+from src.core.paths import get_resource_path
 from src.core.style_constants import BASE_SIZE
 from src.gui.constants import MAP_TEMPORAL_GHOST_OPACITY, TEMPORAL_FUTURE_OPACITY
 from src.gui.utils.svg_utils import apply_svg_inline_styles, svg_file_to_string
@@ -37,21 +39,11 @@ from src.services.visual_resolver import VisualResolver
 if TYPE_CHECKING:
     from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 
-# Resolve marker icons path
-MARKER_ICONS_PATH = os.path.join(
-    os.path.dirname(__file__),
-    "..",
-    "..",
-    "..",
-    "..",
-    "default_assets",
-    "icons",
-    "markers",
-)
-
 logger = logging.getLogger(__name__)
 
 _CLICK_DISTANCE_THRESHOLD_PX = 3
+_PROJECT_ICON_PARTS = ("assets", "images")
+_RASTER_ICON_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 
 # Compatibility alias for callers that imported the former local class.
 MarkerLabelItem = MapLabelItem
@@ -85,6 +77,7 @@ class MarkerItem(QGraphicsObject):
         description: Optional[str] = None,
         lore_date: Optional[float] = None,
         visual_attributes: Optional[Dict[str, Any]] = None,
+        world_root: Optional[str] = None,
     ) -> None:
         """Initializes a MarkerItem.
 
@@ -98,6 +91,7 @@ class MarkerItem(QGraphicsObject):
             description: Optional description for tooltip. Falls back to label if empty.
             lore_date: Optional lore timestamp for temporal filtering.
             visual_attributes: Optional dict with ``_v_*`` visual override keys.
+            world_root: Active portable world root for project icon resolution.
         """
         super().__init__()
 
@@ -107,6 +101,10 @@ class MarkerItem(QGraphicsObject):
         self.pixmap_item = pixmap_item
         self._icon_name = icon
         self._svg_renderer: Optional[QSvgRenderer] = None
+        self._raster_pixmap: Optional[QPixmap] = None
+        self._raw_svg: Optional[str] = None
+        self._icon_kind: Literal["svg", "raster", "fallback"] = "fallback"
+        self._world_root = Path(world_root) if world_root is not None else None
         self._custom_color = color
         self._visual_attributes: Dict[str, Any] = visual_attributes or {}
 
@@ -195,28 +193,73 @@ class MarkerItem(QGraphicsObject):
         """Hide the label when no collision-free candidate exists."""
         self.apply_label_position(0.0, 0.0, False)
 
-    def _load_icon(self, icon_name: Optional[str]) -> None:
-        """Loads an SVG icon for the marker.
+    def _resolve_icon_path(self, icon_name: str) -> Optional[Path]:
+        """Resolve a bundled or portable-world icon within its trusted root."""
+        relative_path = Path(icon_name)
+        if relative_path.is_absolute() or relative_path.anchor:
+            logger.warning("Rejected absolute marker icon path: %s", icon_name)
+            return None
 
-        Reads the SVG file, applies inline styles (fill color from
-        ``_custom_color``), and loads the styled SVG into the renderer.
+        parts = tuple(part.lower() for part in relative_path.parts)
+        is_project_icon = parts[:2] == _PROJECT_ICON_PARTS
+        if is_project_icon:
+            if self._world_root is None:
+                logger.debug("Cannot resolve project icon without a world root")
+                return None
+            trusted_root = (self._world_root / "assets" / "images").resolve()
+            candidate = (self._world_root / relative_path).resolve()
+        else:
+            if len(relative_path.parts) != 1 or relative_path.suffix.lower() != ".svg":
+                logger.warning("Rejected invalid bundled marker icon: %s", icon_name)
+                return None
+            trusted_root = Path(
+                get_resource_path(DEFAULT_MARKER_ICONS_PATH)
+            ).resolve()
+            candidate = (trusted_root / relative_path).resolve()
+
+        try:
+            candidate.relative_to(trusted_root)
+        except ValueError:
+            logger.warning("Rejected marker icon outside trusted root: %s", icon_name)
+            return None
+        if not candidate.is_file():
+            logger.debug("Icon not found: %s, using fallback circle", candidate)
+            return None
+        return candidate
+
+    def _load_icon(self, icon_name: Optional[str]) -> None:
+        """Load an SVG or raster marker icon, falling back safely.
 
         Args:
-            icon_name: Filename of the icon (e.g., 'castle.svg').
+            icon_name: Bundled filename or portable-world relative asset path.
         """
-        if not icon_name:
-            icon_name = self.DEFAULT_ICON
+        self._svg_renderer = None
+        self._raster_pixmap = None
+        self._raw_svg = None
+        self._icon_kind = "fallback"
 
-        icon_path = os.path.join(MARKER_ICONS_PATH, icon_name)
-        if not os.path.exists(icon_path):
-            logger.debug(f"Icon not found: {icon_path}, using fallback circle")
-            self._svg_renderer = None
+        requested_icon = icon_name or self.DEFAULT_ICON
+        self._icon_name = requested_icon
+        icon_path = self._resolve_icon_path(requested_icon)
+        if icon_path is None:
+            return
+
+        suffix = icon_path.suffix.lower()
+        if suffix in _RASTER_ICON_EXTENSIONS:
+            pixmap = QPixmap(str(icon_path))
+            if pixmap.isNull():
+                logger.warning("Failed to load raster marker icon: %s", icon_path)
+                return
+            self._raster_pixmap = pixmap
+            self._icon_kind = "raster"
+            return
+        if suffix != ".svg":
+            logger.warning("Unsupported marker icon type: %s", suffix)
             return
 
         # Read raw SVG content
-        svg_content = svg_file_to_string(Path(icon_path))
+        svg_content = svg_file_to_string(icon_path)
         if not svg_content:
-            self._svg_renderer = None
             return
 
         # Cache the raw SVG for re-styling later
@@ -256,9 +299,12 @@ class MarkerItem(QGraphicsObject):
         renderer = QSvgRenderer(QByteArray(styled.encode("utf-8")))
         if renderer.isValid():
             self._svg_renderer = renderer
+            self._icon_kind = "svg"
         else:
             logger.warning("Failed to load styled SVG into renderer")
             self._svg_renderer = None
+            self._raw_svg = None
+            self._icon_kind = "fallback"
 
     def set_icon(self, icon_name: str) -> None:
         """Changes the marker's icon.
@@ -276,6 +322,11 @@ class MarkerItem(QGraphicsObject):
             Optional[str]: The icon filename or None if using fallback.
         """
         return self._icon_name
+
+    @property
+    def is_raster_icon(self) -> bool:
+        """Whether the marker currently has a valid raster icon loaded."""
+        return self._icon_kind == "raster"
 
     def set_color(self, color: str) -> None:
         """Sets the custom color for the marker.
@@ -435,7 +486,7 @@ class MarkerItem(QGraphicsObject):
         option: QStyleOptionGraphicsItem,
         widget: Optional[QWidget] = None,
     ) -> None:
-        """Paints the marker, either as an SVG icon or fallback circle.
+        """Paint the marker as SVG, raster artwork, or a fallback circle.
 
         Args:
             painter: The QPainter to use.
@@ -447,6 +498,8 @@ class MarkerItem(QGraphicsObject):
 
         if self._svg_renderer and self._svg_renderer.isValid():
             self._draw_svg_icon(painter, rect)
+        elif self._raster_pixmap is not None and not self._raster_pixmap.isNull():
+            self._draw_raster_icon(painter, rect)
         else:
             self._draw_fallback_circle(painter, rect)
 
@@ -472,6 +525,40 @@ class MarkerItem(QGraphicsObject):
             self._draw_keyframe_indicator(painter)
 
         # Draw selection highlight
+        if self.isSelected():
+            painter.setPen(QPen(QColor(255, 255, 255), 2))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRect(rect)
+
+    def _draw_raster_icon(self, painter: QPainter, rect: QRectF) -> None:
+        """Draw a raster icon centred in the marker bounds without distortion."""
+        pixmap = cast(QPixmap, self._raster_pixmap)
+        source_rect = QRectF(pixmap.rect())
+        if source_rect.isEmpty():
+            self._draw_fallback_circle(painter, rect)
+            return
+
+        scale = min(
+            rect.width() / source_rect.width(),
+            rect.height() / source_rect.height(),
+        )
+        target_width = source_rect.width() * scale
+        target_height = source_rect.height() * scale
+        target_rect = QRectF(
+            rect.center().x() - target_width / 2.0,
+            rect.center().y() - target_height / 2.0,
+            target_width,
+            target_height,
+        )
+
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+        painter.drawPixmap(target_rect, pixmap, source_rect)
+        painter.restore()
+
+        if self.has_keyframes:
+            self._draw_keyframe_indicator(painter)
+
         if self.isSelected():
             painter.setPen(QPen(QColor(255, 255, 255), 2))
             painter.setBrush(Qt.BrushStyle.NoBrush)

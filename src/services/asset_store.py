@@ -39,8 +39,8 @@ class AssetStore:
 
         self._ensure_directories()
 
-    # Allowed extensions for icon imports (no WebP conversion)
-    ALLOWED_ICON_EXTENSIONS = {".svg", ".png", ".jpg", ".jpeg"}
+    # Allowed extensions for icon imports (preserved without conversion)
+    ALLOWED_ICON_EXTENSIONS = {".svg", ".png", ".jpg", ".jpeg", ".webp"}
 
     def _ensure_directories(self) -> None:
         """Creates necessary asset directories if they don't exist."""
@@ -50,7 +50,7 @@ class AssetStore:
     def import_icon(self, source_path: str) -> str:
         """Imports an icon file into the world's assets/images directory.
 
-        Copies the file preserving its original extension (svg/png/jpg).
+        Copies the file preserving its original extension (svg/png/jpg/webp).
         Generates a UUID-based filename to avoid collisions.
 
         Args:

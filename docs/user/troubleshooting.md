@@ -2,21 +2,22 @@
 
 ## The app does not start
 
-Run `start-kraken.cmd` from a terminal. It performs an environment preflight
-and reports missing requirements. Startup failures are written to
-`logs/startup_error.log`; normal diagnostics are written to
-`logs/kraken.log`.
+1. Confirm that you extracted the complete ZIP before launching it.
+2. Confirm that `ProjektKraken.exe` and `_internal` are in the same extracted
+   `ProjektKraken` folder.
+3. Move the extracted folder to a normal user location such as Documents or
+   Desktop, then double-click `ProjektKraken.exe` again.
+4. Verify the ZIP against its supplied `.sha256` file. Download it again if the
+   hashes differ.
+
+Normal diagnostics are written to `logs/kraken.log` beside the executable.
+Include that file, the package version, and your Windows version when reporting
+a startup problem.
 
 ## A saved layout prevents startup
 
-Run:
-
-```powershell
-.\start-kraken.cmd --reset-settings
-```
-
-This clears saved interface preferences and the active-world selection. It does
-not delete world folders.
+If the application opens, choose **Layouts → Reset Layout**. This restores the
+default panel arrangement without deleting world folders.
 
 ## AI models are not listed
 
@@ -41,4 +42,3 @@ Check **View** and the tabs around the right and bottom dock areas. Use
 Confirm the active world in the title bar, the selected inspector item, the
 active map, and the timeline playhead. Dated map content may change as the
 playhead moves.
-

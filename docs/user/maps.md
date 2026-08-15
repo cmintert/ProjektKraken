@@ -21,6 +21,13 @@ temporal trajectories, nested detail maps, and optional editable raster layers.
 - Right-click a feature and choose **Edit Geometry at Playhead…** to move,
   insert, or remove vertices in a working copy.
 
+Right-click a point marker and choose **Change Icon…** to use a bundled icon,
+reuse an icon stored in the world, or import an SVG, PNG, JPG/JPEG, or WebP
+file. Imported icons are copied into the portable world's `assets/images/`
+folder. SVG markers support fill and border styling. Raster icons retain their
+original colours and transparency; their vector-only styling actions are
+disabled, but marker scale remains available.
+
 Snapping helps align new or edited vertices with existing geometry. Paths need
 at least two vertices; regions need at least three.
 

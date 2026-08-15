@@ -117,39 +117,35 @@ multiple users simultaneously.
 
 ### Windows Executable (Recommended)
 
-Download the latest release from GitHub Releases. The application is portable - simply extract and run `ProjektKraken.exe`. The `worlds/` directory will be created automatically next to the executable on first run.
+1. Download the Windows x64 ZIP and its `.sha256` file from
+   [GitHub Releases](https://github.com/cmintert/ProjektKraken/releases).
+2. Verify the download in PowerShell:
+
+   ```powershell
+   Get-FileHash .\ProjektKraken-0.19.4-beta1-windows-x64.zip -Algorithm SHA256
+   ```
+
+   The reported hash must match the value in the downloaded `.sha256` file.
+3. Extract the complete ZIP into an ordinary user folder. Keep the
+   `ProjektKraken` folder and its `_internal` folder together.
+4. Open the extracted `ProjektKraken` folder and double-click
+   `ProjektKraken.exe`.
+
+No Python installation or command line is required. The portable `worlds/`
+directory is created beside the executable on first launch.
 
 ### From Source
 
-1. Clone the repository
-2. Install Python **3.13 or newer**.
-3. Create a virtual environment:
-   ```bash
-   python -m venv .venv
-   .venv\Scripts\activate  # Windows
-   source .venv/bin/activate  # Linux/Mac
-   ```
-4. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+Source checkout setup and launch commands are documented in the
+[developer setup guide](docs/developer/development.md).
 
 ## Usage
 
 ### GUI Application
 
-On Windows, double-click `start-kraken.cmd`, or run it from a terminal:
-
-```powershell
-.\start-kraken.cmd
-```
-
-The launcher prefers `.venv`, verifies Python 3.13 and the runtime dependencies,
-then starts the application. The underlying cross-platform entry point remains:
-
-```bash
-python -m src.app.main
-```
+Open the extracted `ProjektKraken` folder and double-click
+`ProjektKraken.exe`. Keep `_internal` beside the executable; moving only the
+`.exe` will prevent the application from starting.
 
 **Developer / Advanced Options:**
 
@@ -238,19 +234,11 @@ their adapters meet the same reply and cancellation contract.
 ## Troubleshooting
 
 ### Startup Crashes
-The Windows launcher shows an actionable error and writes full startup details to
-`logs/startup_error.log`. Normal application diagnostics are in `logs/kraken.log`.
-During source development, `logs/` is in the repository root; packaged builds keep
-it beside `ProjektKraken.exe`.
-
-If the application crashes after a layout or settings change, reset the window
-layout and preferences by running:
-
-```powershell
-.\start-kraken.cmd --reset-settings
-```
-
-This will clear the saved window state and reset the active database, allowing the application to launch with default settings. Use this with caution as it resets your workspace layout customization.
+Confirm that the complete ZIP was extracted and that `_internal` remains beside
+`ProjektKraken.exe`. Normal application diagnostics are written to
+`logs/kraken.log` beside the executable. If the application opens but its layout
+is unusable, choose **Layouts → Reset Layout**. See the
+[troubleshooting guide](docs/user/troubleshooting.md) for further checks.
 
 ## Testing
 

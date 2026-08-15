@@ -10,12 +10,26 @@ separating its content.
 
 ### Windows
 
-1. Extract the application or open the source checkout.
-2. Run `start-kraken.cmd`.
-3. The launcher checks Python and required packages before opening the app.
+1. Open the ProjektKraken release on GitHub and download both files with the
+   same version:
+   - `ProjektKraken-0.19.4-beta1-windows-x64.zip`
+   - `ProjektKraken-0.19.4-beta1-windows-x64.zip.sha256`
+2. Open PowerShell in the download folder and run:
 
-For a source checkout on another platform, run `python -m src.app.main`.
-ProjektKraken requires Python 3.13 or newer.
+   ```powershell
+   Get-FileHash .\ProjektKraken-0.19.4-beta1-windows-x64.zip -Algorithm SHA256
+   ```
+
+3. Compare the reported hash with the value in the `.sha256` file. The letters
+   may use different capitalization, but every character must match.
+4. Extract the complete ZIP into an ordinary user folder such as Documents or
+   Desktop. Do not launch the application from inside the ZIP.
+5. Open the extracted `ProjektKraken` folder and double-click
+   `ProjektKraken.exe`.
+
+No Python installation, command prompt, or `start-kraken.cmd` is required.
+Keep the `_internal` folder beside `ProjektKraken.exe`; it contains the files
+the application needs.
 
 ## Create or open a world
 
@@ -53,6 +67,5 @@ worlds/
 - A missing linked external database is never replaced with an empty database.
 - Do not edit the `.kraken` file while the world is open.
 - Use **File → Backup & Restore** before imports or large restructuring work.
-- Use `start-kraken.cmd --reset-settings` when a damaged saved layout prevents
-  the application from opening normally. This resets interface preferences,
-  not the contents of your world.
+- Use **Layouts → Reset Layout** if saved panels make the workspace difficult
+  to use. This resets interface preferences, not the contents of your world.
