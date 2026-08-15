@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-15
-**Commit:** 5a40e5d0
+**Commit:** ad8b9212
 ---
 
 # Changelog
@@ -20,6 +20,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-15)* **Maps / Feature Deletion**: Fixed path and region layer
+  deletion leaving persistent marker geometry that reappeared as `Unknown`.
 - *(2026-08-13)* **CI / Prerelease Assets**: Restricted GitHub release uploads
   to the public ZIP and checksum so packaged-smoke report directories cannot
   interrupt publication.
@@ -41,6 +43,8 @@ All notable changes to this project will be documented in this file.
   developer guide.
 - *(2026-08-15)* **Testing / Map Icons**: Added format, renderer-transition,
   path-containment, and raster-styling regression coverage.
+- *(2026-08-15)* **Testing / Feature Deletion**: Added path and region
+  regression coverage for persistent deletion and undo restoration.
 
 ## [0.19.4]
 

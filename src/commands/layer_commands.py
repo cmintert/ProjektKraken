@@ -602,7 +602,7 @@ class DeleteLayerSubtreeCommand(BaseCommand):
         markers = [
             marker
             for marker in db_service.get_markers_for_map(self.map_id)
-            if marker.id in node_ids
+            if marker.object_id in node_ids or marker.id in node_ids
         ]
         trajectories: list[dict[str, Any]] = []
         geometry_states: list[dict[str, Any]] = []
