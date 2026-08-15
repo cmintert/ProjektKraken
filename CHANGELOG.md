@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-15
-**Commit:** 3708c68c
+**Commit:** 4c1097fd
 ---
 
 # Changelog
@@ -20,6 +20,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-15)* **Maps / Label Rendering**: Kept marker labels stable during
+  zoom by reusing their selected slots and deferring collision relayout.
 - *(2026-08-15)* **Maps / Marker Labels**: Kept labels adjacent to each
   marker's current rendered edge across map-relative and fixed-screen sizing.
 - *(2026-08-15)* **Maps / Feature Deletion**: Fixed path and region layer
@@ -49,6 +51,8 @@ All notable changes to this project will be documented in this file.
   regression coverage for persistent deletion and undo restoration.
 - *(2026-08-15)* **Testing / Marker Labels**: Added rendered-gap regression
   coverage across map-relative and fixed-screen zoom levels.
+- *(2026-08-15)* **Testing / Label Rendering**: Added regression coverage for
+  lightweight cached-position refresh without collision recalculation.
 
 ## [0.19.4]
 

@@ -177,8 +177,11 @@ class MarkerItem(QGraphicsObject):
             local_y: Y offset in local (marker) coordinates.
             is_visible: Whether the label should be shown.
         """
-        self._label_item.setPos(local_x, local_y)
-        self._label_item.setVisible(is_visible)
+        position = QPointF(local_x, local_y)
+        if self._label_item.pos() != position:
+            self._label_item.setPos(position)
+        if self._label_item.isVisible() != is_visible:
+            self._label_item.setVisible(is_visible)
 
     def label_anchor_scene_pos(self) -> QPointF:
         """Return the scene anchor used by the shared label layout."""
@@ -210,7 +213,8 @@ class MarkerItem(QGraphicsObject):
 
     def hide_layout_label(self) -> None:
         """Hide the label when no collision-free candidate exists."""
-        self.apply_label_position(0.0, 0.0, False)
+        if self._label_item.isVisible():
+            self._label_item.setVisible(False)
 
     def _resolve_icon_path(self, icon_name: str) -> Optional[Path]:
         """Resolve a bundled or portable-world icon within its trusted root."""

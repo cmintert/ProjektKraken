@@ -261,3 +261,44 @@ def test_screen_fixed_label_stays_attached_to_rendered_marker(
     gap = label_rect.top() - marker_rect.bottom()
 
     assert gap == pytest.approx(2.0)
+
+
+@pytest.mark.parametrize(
+    "mode", [MarkerSizingMode.MAP_RELATIVE, MarkerSizingMode.SCREEN_FIXED]
+)
+def test_cached_label_refresh_tracks_zoom_without_collision_relayout(
+    qapp, monkeypatch, mode
+) -> None:
+    scene = QGraphicsScene()
+    view = QGraphicsView(scene)
+    pixmap_item = _pixmap_item()
+    settings = MarkerSizingSettings(mode=mode, screen_px=32.0)
+    marker = MarkerItem(
+        "marker-1",
+        "entity",
+        "Hero",
+        pixmap_item,
+        marker_sizing=settings,
+    )
+    marker.setPos(500.0, 250.0)
+    scene.addItem(marker)
+    manager = LabelManager()
+    manager.run_layout_pass([marker], 1.0)
+    monkeypatch.setattr(
+        manager,
+        "_is_space_free",
+        lambda _candidate: pytest.fail("cached refresh ran collision layout"),
+    )
+
+    view.scale(4.0, 4.0)
+    manager.refresh_cached_positions([marker], view.transform().m11())
+
+    viewport_transform = view.viewportTransform()
+    marker_rect = marker.deviceTransform(viewport_transform).mapRect(
+        marker.boundingRect()
+    )
+    label_rect = marker._label_item.deviceTransform(viewport_transform).mapRect(
+        marker._label_item.boundingRect()
+    )
+
+    assert label_rect.top() - marker_rect.bottom() == pytest.approx(2.0)

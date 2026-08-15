@@ -171,12 +171,16 @@ class _FeatureItemBase(QGraphicsObject):
         self, scene_x: float, scene_y: float, _inv_scale: float
     ) -> None:
         """Place the label at a scene-space layout candidate."""
-        self._label_item.setPos(scene_x, scene_y)
-        self._label_item.setVisible(True)
+        position = QPointF(scene_x, scene_y)
+        if self._label_item.pos() != position:
+            self._label_item.setPos(position)
+        if not self._label_item.isVisible():
+            self._label_item.setVisible(True)
 
     def hide_layout_label(self) -> None:
         """Hide the label when no collision-free candidate exists."""
-        self._label_item.setVisible(False)
+        if self._label_item.isVisible():
+            self._label_item.setVisible(False)
 
     def _position_label(self) -> None:
         """Refresh the anchor and request collision-aware relayout."""

@@ -850,17 +850,20 @@ class MapGraphicsView(QGraphicsView):
         Keyframe dots and labels from the active trajectory are
         registered as extra obstacles so marker labels avoid them.
         """
-        marker_list = [
-            cast(LabelLayoutItem, item) for item in self.markers.values()
-        ]
-        marker_list.extend(
-            cast(LabelLayoutItem, item) for item in self.feature_items.values()
-        )
+        marker_list = self._label_layout_items()
         view_scale = self.transform().m11()
         extra = self._collect_keyframe_obstacles(view_scale)
         self.label_manager.run_layout_pass(
             marker_list, view_scale, extra_obstacles=extra
         )
+
+    def _label_layout_items(self) -> list[LabelLayoutItem]:
+        """Return every item participating in shared label placement."""
+        items = [cast(LabelLayoutItem, item) for item in self.markers.values()]
+        items.extend(
+            cast(LabelLayoutItem, item) for item in self.feature_items.values()
+        )
+        return items
 
     def _collect_keyframe_obstacles(self, view_scale: float) -> list[QRectF]:
         """Builds a list of scene-coordinate rects for keyframe labels.
@@ -2129,6 +2132,9 @@ class MapGraphicsView(QGraphicsView):
         self.zoom_factor_changed.emit(self.zoom_factor)
         self._trajectory.update_label_scales()
         self._apply_scale_dependent_visibility()
+        self.label_manager.refresh_cached_positions(
+            self._label_layout_items(), self.transform().m11()
+        )
         self._schedule_label_layout()
         self._layout_footprint_labels()
 

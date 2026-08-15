@@ -73,6 +73,7 @@ class LabelManager:
     def __init__(self) -> None:
         """Initializes the LabelManager with an empty spatial index."""
         self._occupied_rects: List[QRectF] = []
+        self._placements: dict[int, tuple[float, float]] = {}
 
     # ------------------------------------------------------------------
     # Public API
@@ -102,6 +103,7 @@ class LabelManager:
                 labels) before placing marker labels.
         """
         self._occupied_rects.clear()
+        self._placements.clear()
 
         # Step 0 – register extra obstacles (keyframe labels, etc.).
         if extra_obstacles:
@@ -138,6 +140,26 @@ class LabelManager:
         for marker in sorted_markers:
             self._place_label(marker, inv_scale, view_scale)
 
+    def refresh_cached_positions(
+        self, markers: List[LabelLayoutItem], view_scale: float
+    ) -> None:
+        """Move labels with zoom while preserving their selected layout slots.
+
+        This lightweight path skips collision detection during active zooming.
+        A debounced full layout can then reconsider collisions after input stops.
+        """
+        inv_scale = 1.0 / view_scale if view_scale > 0 else 1.0
+        for marker in markers:
+            offset = self._placements.get(id(marker))
+            if offset is None or not marker.isVisible():
+                continue
+            candidate = self._candidate_rect(
+                marker, inv_scale, view_scale, *offset
+            )
+            marker.apply_label_scene_position(
+                candidate.x(), candidate.y(), inv_scale
+            )
+
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
@@ -151,40 +173,53 @@ class LabelManager:
             marker: The MarkerItem whose label to place.
             inv_scale: Inverse of the current view scale.
         """
-        label_item = marker._label_item
-        label_rect = label_item.boundingRect()
-        label_w = label_rect.width() * inv_scale
-        label_h = label_rect.height() * inv_scale
-
-        scene_pos = marker.label_anchor_scene_pos()
-        half_size = marker.label_clearance_px(view_scale) * inv_scale
-        padding = self._PADDING * inv_scale
-
         for dx_factor, dy_factor in self._CANDIDATE_OFFSETS:
-            # Compute candidate centre offset from the marker centre.
-            if dx_factor == 0.0:
-                cx = scene_pos.x() - label_w / 2.0
-            elif dx_factor > 0:
-                cx = scene_pos.x() + half_size + padding
-            else:
-                cx = scene_pos.x() - half_size - padding - label_w
-
-            if dy_factor > 0:
-                cy = scene_pos.y() + half_size + padding
-            elif dy_factor < 0:
-                cy = scene_pos.y() - half_size - padding - label_h
-            else:
-                cy = scene_pos.y() - label_h / 2.0
-
-            candidate = QRectF(cx, cy, label_w, label_h)
+            candidate = self._candidate_rect(
+                marker, inv_scale, view_scale, dx_factor, dy_factor
+            )
 
             if self._is_space_free(candidate):
-                marker.apply_label_scene_position(cx, cy, inv_scale)
+                marker.apply_label_scene_position(
+                    candidate.x(), candidate.y(), inv_scale
+                )
                 self._occupied_rects.append(candidate)
+                self._placements[id(marker)] = (dx_factor, dy_factor)
                 return
 
         # All 8 candidates collided – hide the label.
         marker.hide_layout_label()
+
+    def _candidate_rect(
+        self,
+        marker: LabelLayoutItem,
+        inv_scale: float,
+        view_scale: float,
+        dx_factor: float,
+        dy_factor: float,
+    ) -> QRectF:
+        """Return one label candidate in scene coordinates."""
+        label_rect = marker._label_item.boundingRect()
+        label_w = label_rect.width() * inv_scale
+        label_h = label_rect.height() * inv_scale
+        scene_pos = marker.label_anchor_scene_pos()
+        half_size = marker.label_clearance_px(view_scale) * inv_scale
+        padding = self._PADDING * inv_scale
+
+        if dx_factor == 0.0:
+            candidate_x = scene_pos.x() - label_w / 2.0
+        elif dx_factor > 0:
+            candidate_x = scene_pos.x() + half_size + padding
+        else:
+            candidate_x = scene_pos.x() - half_size - padding - label_w
+
+        if dy_factor > 0:
+            candidate_y = scene_pos.y() + half_size + padding
+        elif dy_factor < 0:
+            candidate_y = scene_pos.y() - half_size - padding - label_h
+        else:
+            candidate_y = scene_pos.y() - label_h / 2.0
+
+        return QRectF(candidate_x, candidate_y, label_w, label_h)
 
     def _is_space_free(self, candidate: QRectF) -> bool:
         """Checks whether *candidate* overlaps any occupied rectangle.
