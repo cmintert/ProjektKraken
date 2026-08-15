@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QGraphicsView,
 )
 
+from src.core.marker_appearance import MARKER_ICON_ANCHOR_ATTRIBUTE
 from src.core.marker_sizing import (
     MARKER_SIZING_ATTRIBUTE,
     MarkerMapSizeUnit,
@@ -301,4 +302,41 @@ def test_cached_label_refresh_tracks_zoom_without_collision_relayout(
         marker._label_item.boundingRect()
     )
 
+    assert label_rect.top() - marker_rect.bottom() == pytest.approx(2.0)
+
+
+@pytest.mark.parametrize(
+    "mode", [MarkerSizingMode.MAP_RELATIVE, MarkerSizingMode.SCREEN_FIXED]
+)
+@pytest.mark.parametrize("view_scale", [0.25, 1.0, 8.0])
+def test_off_center_anchor_label_avoids_actual_icon_bounds(
+    qapp, mode, view_scale
+) -> None:
+    scene = QGraphicsScene()
+    view = QGraphicsView(scene)
+    view.scale(view_scale, view_scale)
+    pixmap_item = _pixmap_item()
+    settings = MarkerSizingSettings(mode=mode, screen_px=32.0)
+    marker = MarkerItem(
+        "marker-1",
+        "entity",
+        "Hero",
+        pixmap_item,
+        visual_attributes={
+            MARKER_SIZING_ATTRIBUTE: settings.to_dict(),
+            MARKER_ICON_ANCHOR_ATTRIBUTE: {"x": 0.0, "y": 0.0},
+        },
+    )
+    marker.setPos(500.0, 250.0)
+    scene.addItem(marker)
+
+    LabelManager().run_layout_pass([marker], view.transform().m11())
+
+    viewport_transform = view.viewportTransform()
+    marker_rect = marker.deviceTransform(viewport_transform).mapRect(
+        marker.boundingRect()
+    )
+    label_rect = marker._label_item.deviceTransform(viewport_transform).mapRect(
+        marker._label_item.boundingRect()
+    )
     assert label_rect.top() - marker_rect.bottom() == pytest.approx(2.0)

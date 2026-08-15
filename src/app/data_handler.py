@@ -438,7 +438,10 @@ class DataHandler(QObject):
                 return  # Skip normal per-command logic for undo
 
             # Reload markers for creation/deletion (but not normal updates)
-            is_update_operation = "Update" in command_name
+            is_update_operation = (
+                "Update" in command_name
+                or command_name == "ApplyMarkerAppearanceCommand"
+            )
             if "Marker" in command_name and not is_update_operation:
                 logger.debug("[DataHandler] Emitting reload_markers_for_current_map")
                 self.reload_markers_for_current_map.emit()
@@ -446,6 +449,7 @@ class DataHandler(QObject):
             # Visual attribute/colour changes also need a marker reload
             # so the map re-reads updated attributes from the DB.
             _MARKER_VISUAL_CMDS = {
+                "ApplyMarkerAppearanceCommand",
                 "UpdateMarkerAttributeCommand",
                 "UpdateMarkerColorCommand",
                 "UpdateMarkerIconCommand",

@@ -4,6 +4,7 @@ Provides the MarkerItem class for rendering markers on the map.
 """
 
 import logging
+import math
 from pathlib import Path
 
 # Forward declaration to avoid circular import
@@ -29,11 +30,17 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.map_constants import DEFAULT_MARKER_ICONS_PATH
+from src.core.marker_appearance import (
+    MARKER_ICON_ANCHOR_ATTRIBUTE,
+    MarkerAppearance,
+    MarkerIconAnchor,
+)
 from src.core.marker_sizing import MarkerSizingMode, MarkerSizingSettings
 from src.core.paths import get_resource_path
 from src.core.style_constants import BASE_SIZE
 from src.gui.constants import MAP_TEMPORAL_GHOST_OPACITY, TEMPORAL_FUTURE_OPACITY
 from src.gui.utils.svg_utils import apply_svg_inline_styles, svg_file_to_string
+from src.gui.widgets.map.edit_handles import DraggableEditHandle
 from src.gui.widgets.map.map_label_item import MapLabelItem
 from src.services.visual_resolver import VisualResolver
 
@@ -118,6 +125,17 @@ class MarkerItem(QGraphicsObject):
         )
         self._map_width_meters = max(0.0, float(map_width_meters))
 
+        # Transient direct-edit state. Persistence happens only when the view
+        # confirms the complete appearance edit.
+        self._appearance_edit_snapshot: Optional[Dict[str, Any]] = None
+        self._appearance_edit_icon: Optional[str] = None
+        self._appearance_edit_was_movable = True
+        self._resize_handle: Optional[DraggableEditHandle[str]] = None
+        self._anchor_handle: Optional[DraggableEditHandle[str]] = None
+        self._resize_reference_distance = 1.0
+        self._resize_reference_scale = 1.0
+        self._pending_anchor = MarkerIconAnchor()
+
         # Resolve fill color via VisualResolver (user override → theme → fallback)
         if color:
             self._color = QColor(color)
@@ -194,6 +212,22 @@ class MarkerItem(QGraphicsObject):
         else:
             radius = self.resolved_size / 2.0
         return radius
+
+    def label_obstacle_scene_rect(self, view_scale: float = 1.0) -> QRectF:
+        """Return the actual rendered icon bounds in scene coordinates."""
+        local_rect = self.boundingRect()
+        unit_scale = (
+            1.0 / max(1e-9, float(view_scale))
+            if self._marker_sizing.mode is MarkerSizingMode.SCREEN_FIXED
+            else 1.0
+        )
+        anchor = self.scenePos()
+        return QRectF(
+            anchor.x() + local_rect.left() * unit_scale,
+            anchor.y() + local_rect.top() * unit_scale,
+            local_rect.width() * unit_scale,
+            local_rect.height() * unit_scale,
+        )
 
     def apply_label_scene_position(
         self, scene_x: float, scene_y: float, inv_scale: float
@@ -331,6 +365,7 @@ class MarkerItem(QGraphicsObject):
         Args:
             icon_name: Filename of the new icon.
         """
+        self._visual_attributes["icon"] = icon_name
         self._load_icon(icon_name)
         self.update()
 
@@ -501,18 +536,19 @@ class MarkerItem(QGraphicsObject):
         from src.core.style_constants import V_FILL
 
         self.prepareGeometryChange()
-        self._visual_attributes = attrs
+        self._visual_attributes = dict(attrs)
         self._marker_sizing = MarkerSizingSettings.from_attributes(attrs)
         self._apply_sizing_mode_flag()
         # Re-resolve color unless a custom color is explicitly set.
         # "none" is a valid explicit value (transparent fill).
         fill_override = attrs.get(V_FILL)
+        self._custom_color = fill_override
         if fill_override is not None:
             # Explicit fill in attributes takes priority
             self._custom_color = fill_override
             if fill_override != "none":
                 self._color = QColor(fill_override)
-        elif not self._custom_color:
+        else:
             resolved = VisualResolver.resolve_fill(
                 self._visual_attributes, self.object_type
             )
@@ -527,9 +563,216 @@ class MarkerItem(QGraphicsObject):
         Returns:
             QRectF: The bounding rect centered on (0, 0).
         """
+        width, height = self._resolved_artwork_size()
+        anchor = MarkerAppearance.from_attributes(
+            self._visual_attributes
+        ).anchor
+        return QRectF(
+            -anchor.x * width,
+            -anchor.y * height,
+            width,
+            height,
+        )
+
+    def _resolved_artwork_size(self) -> tuple[float, float]:
+        """Return artwork bounds while preserving raster aspect ratio."""
         size = self.resolved_size
-        half = size / 2
-        return QRectF(-half, -half, size, size)
+        pixmap = self._raster_pixmap
+        if pixmap is None or pixmap.isNull():
+            return size, size
+        source_width = float(pixmap.width())
+        source_height = float(pixmap.height())
+        if source_width <= 0 or source_height <= 0:
+            return size, size
+        if source_width >= source_height:
+            return size, size * source_height / source_width
+        return size * source_width / source_height, size
+
+    def appearance_payload(self) -> Dict[str, Any]:
+        """Return this marker's validated copyable appearance."""
+        return MarkerAppearance.from_attributes(self._visual_attributes).to_dict()
+
+    def apply_appearance_payload(self, payload: Dict[str, Any]) -> None:
+        """Apply a complete appearance locally without persistence."""
+        appearance = MarkerAppearance.from_dict(payload)
+        attributes = appearance.apply_to_attributes(self._visual_attributes)
+        icon = appearance.icon
+        self.set_visual_attributes(attributes)
+        if icon is None:
+            self._load_icon(None)
+        else:
+            self._load_icon(icon)
+        self.update()
+
+    @property
+    def is_editing_appearance(self) -> bool:
+        """Return whether direct resize/anchor handles are active."""
+        return self._appearance_edit_snapshot is not None
+
+    @property
+    def appearance_edit_scale(self) -> float:
+        """Return the scale currently shown by the appearance editor."""
+        return VisualResolver.resolve_scale(self._visual_attributes)
+
+    @property
+    def appearance_edit_anchor(self) -> MarkerIconAnchor:
+        """Return the pending anchor currently shown by the appearance editor."""
+        return self._pending_anchor
+
+    def begin_appearance_edit(self) -> None:
+        """Show resize and anchor handles and capture a cancellation snapshot."""
+        if self.is_editing_appearance:
+            return
+        self._appearance_edit_snapshot = dict(self._visual_attributes)
+        self._appearance_edit_icon = self._icon_name
+        self._appearance_edit_was_movable = bool(
+            self.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsMovable
+        )
+        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
+
+        appearance = MarkerAppearance.from_attributes(self._visual_attributes)
+        self._pending_anchor = appearance.anchor
+        self._resize_reference_scale = appearance.size_scale or 1.0
+        corner = self._resize_corner()
+        self._resize_reference_distance = max(
+            1e-6, math.hypot(corner.x(), corner.y())
+        )
+
+        self._resize_handle = DraggableEditHandle(
+            "resize",
+            self._preview_resize,
+            lambda _handle_id: None,
+        )
+        self._resize_handle.setParentItem(self)
+        self._resize_handle.setCursor(Qt.CursorShape.SizeFDiagCursor)
+        self._resize_handle.setPos(corner)
+        self._resize_handle.set_notifications_enabled(True)
+
+        self._anchor_handle = DraggableEditHandle(
+            "anchor",
+            self._track_anchor_candidate,
+            lambda _handle_id: None,
+        )
+        self._anchor_handle.setParentItem(self)
+        self._anchor_handle.setCursor(Qt.CursorShape.CrossCursor)
+        self._sync_anchor_handle()
+        self._anchor_handle.set_notifications_enabled(True)
+
+    def _resize_corner(self) -> QPointF:
+        """Choose the artwork corner farthest from the current anchor."""
+        rect = self.boundingRect()
+        corners = (
+            rect.bottomRight(),
+            rect.topLeft(),
+            rect.topRight(),
+            rect.bottomLeft(),
+        )
+        return max(corners, key=lambda point: math.hypot(point.x(), point.y()))
+
+    def finish_appearance_edit(self) -> Dict[str, Any] | None:
+        """Apply the pending anchor and return one changed appearance payload."""
+        snapshot = self._appearance_edit_snapshot
+        if snapshot is None:
+            return None
+        before = MarkerAppearance.from_attributes(snapshot).to_dict()
+        attributes = dict(self._visual_attributes)
+        attributes[MARKER_ICON_ANCHOR_ATTRIBUTE] = self._pending_anchor.to_dict()
+        self.set_visual_attributes(attributes)
+        after = self.appearance_payload()
+        self._clear_appearance_handles()
+        return after if after != before else None
+
+    def cancel_appearance_edit(self) -> None:
+        """Restore the captured appearance and remove direct-edit handles."""
+        snapshot = self._appearance_edit_snapshot
+        icon = self._appearance_edit_icon
+        if snapshot is None:
+            return
+        self.set_visual_attributes(snapshot)
+        self._load_icon(icon)
+        self._clear_appearance_handles()
+
+    def _preview_resize(self, _handle_id: str, position: QPointF) -> None:
+        """Preview uniform marker scaling without emitting a command."""
+        from src.core.style_constants import MAX_SCALE, MIN_SCALE, V_SIZE_SCALE
+
+        distance = math.hypot(position.x(), position.y())
+        multiplier = distance / self._resize_reference_distance
+        scale = max(
+            MIN_SCALE,
+            min(MAX_SCALE, self._resize_reference_scale * multiplier),
+        )
+        attributes = dict(self._visual_attributes)
+        attributes[V_SIZE_SCALE] = scale
+        self.set_visual_attributes(attributes)
+        handle = self._resize_handle
+        if handle is not None:
+            handle.set_notifications_enabled(False)
+            handle.setPos(self._resize_corner())
+            handle.set_notifications_enabled(True)
+        self._sync_anchor_handle()
+        self._schedule_label_layout()
+        self._refresh_appearance_tip()
+
+    def _track_anchor_candidate(self, _handle_id: str, position: QPointF) -> None:
+        """Track a normalized artwork anchor while leaving artwork stable."""
+        rect = self.boundingRect()
+        if rect.width() <= 0 or rect.height() <= 0:
+            return
+        self._pending_anchor = MarkerIconAnchor(
+            x=max(0.0, min(1.0, (position.x() - rect.left()) / rect.width())),
+            y=max(0.0, min(1.0, (position.y() - rect.top()) / rect.height())),
+        )
+        self._refresh_appearance_tip()
+
+    def _sync_anchor_handle(self) -> None:
+        """Keep the candidate anchor attached to the same artwork point."""
+        handle = self._anchor_handle
+        if handle is None:
+            return
+        rect = self.boundingRect()
+        handle.set_notifications_enabled(False)
+        handle.setPos(
+            rect.left() + self._pending_anchor.x * rect.width(),
+            rect.top() + self._pending_anchor.y * rect.height(),
+        )
+        handle.set_notifications_enabled(True)
+
+    def _clear_appearance_handles(self) -> None:
+        """Remove transient handles and restore normal marker movement."""
+        scene = self.scene()
+        for handle in (self._resize_handle, self._anchor_handle):
+            if handle is not None and scene is not None:
+                scene.removeItem(handle)
+        self._resize_handle = None
+        self._anchor_handle = None
+        self._appearance_edit_snapshot = None
+        self._appearance_edit_icon = None
+        self.setFlag(
+            QGraphicsItem.GraphicsItemFlag.ItemIsMovable,
+            self._appearance_edit_was_movable,
+        )
+        self._schedule_label_layout()
+
+    def _schedule_label_layout(self) -> None:
+        """Request a debounced label layout from the owning map view."""
+        scene = self.scene()
+        if scene is None:
+            return
+        for view in scene.views():
+            schedule = getattr(view, "_schedule_label_layout", None)
+            if callable(schedule):
+                schedule()
+
+    def _refresh_appearance_tip(self) -> None:
+        """Refresh the live scale and anchor values in the owning map widget."""
+        scene = self.scene()
+        if scene is None:
+            return
+        for view in scene.views():
+            refresh = getattr(view, "_refresh_mode_indicator", None)
+            if callable(refresh):
+                refresh()
 
     def paint(
         self,
@@ -659,8 +902,8 @@ class MarkerItem(QGraphicsObject):
         theme = ThemeManager().get_theme()
         primary_color = QColor(theme.get("primary", "#FF9900"))
 
-        size = self.resolved_size
-        # Position: Centered horizontally, slightly above the icon
+        rect = self.boundingRect()
+        # Position: centered above the rendered icon, regardless of anchor.
         adornment_scale = (
             1.0 / self._current_view_scale()
             if self._marker_sizing.mode is MarkerSizingMode.MAP_RELATIVE
@@ -668,13 +911,13 @@ class MarkerItem(QGraphicsObject):
         )
         indicator_size = _KEYFRAME_INDICATOR_SIZE_PX * adornment_scale
         gap = 4.0 * adornment_scale
-        y_pos = -(size / 2) - gap - (indicator_size / 2)
+        y_pos = rect.top() - gap - (indicator_size / 2)
 
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QBrush(primary_color))
         painter.drawEllipse(
             QRectF(
-                -indicator_size / 2,
+                rect.center().x() - indicator_size / 2,
                 y_pos,
                 indicator_size,
                 indicator_size,
@@ -687,6 +930,9 @@ class MarkerItem(QGraphicsObject):
         Args:
             event: The mouse event.
         """
+        if self.is_editing_appearance:
+            event.ignore()
+            return
         if event.button() == Qt.MouseButton.LeftButton:
             self._is_dragging = True
             self._drag_start_pos = self.pos()
@@ -701,6 +947,9 @@ class MarkerItem(QGraphicsObject):
         Args:
             event: The mouse event.
         """
+        if self.is_editing_appearance:
+            event.ignore()
+            return
         if event.button() != Qt.MouseButton.LeftButton:
             super().mouseReleaseEvent(event)
             return

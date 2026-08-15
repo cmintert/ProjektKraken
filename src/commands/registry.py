@@ -84,6 +84,7 @@ def _init_registry() -> None:
         UpdateMapCommand,
     )
     from src.commands.marker_commands import (
+        ApplyMarkerAppearanceCommand,
         CreateMarkerCommand,
         DeleteMarkerCommand,
         UpdateMarkerAttributeCommand,
@@ -147,6 +148,7 @@ def _init_registry() -> None:
             "ReorderImagesCommand": ReorderImagesCommand,
             "UpdateImageCaptionCommand": UpdateImageCaptionCommand,
             # Marker commands
+            "ApplyMarkerAppearanceCommand": ApplyMarkerAppearanceCommand,
             "CreateMarkerCommand": CreateMarkerCommand,
             "UpdateMarkerCommand": UpdateMarkerCommand,
             "DeleteMarkerCommand": DeleteMarkerCommand,

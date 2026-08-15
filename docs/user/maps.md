@@ -40,6 +40,16 @@ readable at every zoom level. Different markers on the same map may use
 different modes and sizes. Labels stay screen-sized and collision-managed, but
 remain visually attached to their marker instead of drifting away from it.
 
+Use **Visual Styling > Copy Appearance** and **Paste Appearance** to transfer a
+marker's icon, colours, border, sizing, and icon anchor without copying its
+position, layer, timeline validity, or linked object. Choose **Edit
+Appearance…** for direct manipulation: drag the corner handle to resize the
+marker and move the anchor handle to select the point in the artwork that
+should remain attached to the map coordinate. The edit banner shows the live
+scale factor and anchor percentages. Press **Enter** to save the edit as one
+undoable change or **Escape** to restore the previous appearance. Use
+**Reset Anchor to Centre** to return to the legacy centred attachment.
+
 Snapping helps align new or edited vertices with existing geometry. Paths need
 at least two vertices; regions need at least three.
 

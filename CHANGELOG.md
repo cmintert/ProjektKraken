@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-15
-**Commit:** 4c1097fd
+**Commit:** 1b196d50
 ---
 
 # Changelog
@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-08-15)* **Maps / Marker Appearance**: Added appearance copy and paste,
+  direct marker resizing, editable and resettable icon anchors, and live scale
+  and anchor readouts with explicit apply and cancel guidance.
 - *(2026-08-15)* **Maps / Marker Icons**: Added portable SVG, PNG, JPG/JPEG,
   and WebP project icons for point markers, with secure world-relative path
   resolution, aspect-preserving raster rendering, and raster-aware styling
@@ -20,6 +23,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-15)* **Maps / Marker Editing**: Kept resize and anchor handles above
+  marker movement, fixed the resize handle to the active icon corner, and made
+  label spacing respect off-centre icon bounds.
 - *(2026-08-15)* **Maps / Label Rendering**: Kept marker labels stable during
   zoom by reusing their selected slots and deferring collision relayout.
 - *(2026-08-15)* **Maps / Marker Labels**: Kept labels adjacent to each
@@ -32,6 +38,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-15)* **Documentation / Testing**: Documented marker appearance
+  editing and added command, persistence, interaction, anchor, sizing, and label
+  regression coverage.
 - *(2026-08-15)* **Maps / Marker Sizing**: Point-marker icons now scale with
   their map by default, with per-marker percentage or calibrated metric sizing,
   an optional fixed-screen mode, readable labels, and reliable small-token

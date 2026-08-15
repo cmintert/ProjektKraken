@@ -12,6 +12,7 @@ pytestmark = [pytest.mark.unit, pytest.mark.smoke]
 
 # Expected command names that must always be present
 EXPECTED_COMMANDS = [
+    "ApplyMarkerAppearanceCommand",
     "CreateEventCommand",
     "UpdateEventCommand",
     "DeleteEventCommand",

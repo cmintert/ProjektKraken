@@ -31,6 +31,10 @@ class LabelLayoutItem(Protocol):
         """Return required clearance around the label in pixels."""
         ...
 
+    def label_obstacle_scene_rect(self, view_scale: float = 1.0) -> QRectF:
+        """Return actual rendered bounds in scene coordinates."""
+        ...
+
     def apply_label_scene_position(
         self, scene_x: float, scene_y: float, inv_scale: float
     ) -> None:
@@ -121,15 +125,9 @@ class LabelManager:
 
         # Step 1 – register marker icons as obstacles.
         for marker in visible_items:
-            scene_pos = marker.label_anchor_scene_pos()
-            clearance = marker.label_clearance_px(view_scale) * inv_scale
-            obstacle = QRectF(
-                scene_pos.x() - clearance,
-                scene_pos.y() - clearance,
-                clearance * 2.0,
-                clearance * 2.0,
+            self._occupied_rects.append(
+                self._marker_obstacle_rect(marker, inv_scale, view_scale)
             )
-            self._occupied_rects.append(obstacle)
 
         # Step 2 – sort markers by priority and place their labels.
         sorted_markers = sorted(
@@ -201,25 +199,43 @@ class LabelManager:
         label_rect = marker._label_item.boundingRect()
         label_w = label_rect.width() * inv_scale
         label_h = label_rect.height() * inv_scale
-        scene_pos = marker.label_anchor_scene_pos()
-        half_size = marker.label_clearance_px(view_scale) * inv_scale
+        obstacle = self._marker_obstacle_rect(marker, inv_scale, view_scale)
         padding = self._PADDING * inv_scale
 
         if dx_factor == 0.0:
-            candidate_x = scene_pos.x() - label_w / 2.0
+            candidate_x = obstacle.center().x() - label_w / 2.0
         elif dx_factor > 0:
-            candidate_x = scene_pos.x() + half_size + padding
+            candidate_x = obstacle.right() + padding
         else:
-            candidate_x = scene_pos.x() - half_size - padding - label_w
+            candidate_x = obstacle.left() - padding - label_w
 
         if dy_factor > 0:
-            candidate_y = scene_pos.y() + half_size + padding
+            candidate_y = obstacle.bottom() + padding
         elif dy_factor < 0:
-            candidate_y = scene_pos.y() - half_size - padding - label_h
+            candidate_y = obstacle.top() - padding - label_h
         else:
-            candidate_y = scene_pos.y() - label_h / 2.0
+            candidate_y = obstacle.center().y() - label_h / 2.0
 
         return QRectF(candidate_x, candidate_y, label_w, label_h)
+
+    @staticmethod
+    def _marker_obstacle_rect(
+        marker: LabelLayoutItem,
+        inv_scale: float,
+        view_scale: float,
+    ) -> QRectF:
+        """Resolve actual bounds, with compatibility for geometry labels."""
+        obstacle_getter = getattr(marker, "label_obstacle_scene_rect", None)
+        if callable(obstacle_getter):
+            return QRectF(obstacle_getter(view_scale))
+        scene_pos = marker.label_anchor_scene_pos()
+        clearance = marker.label_clearance_px(view_scale) * inv_scale
+        return QRectF(
+            scene_pos.x() - clearance,
+            scene_pos.y() - clearance,
+            clearance * 2.0,
+            clearance * 2.0,
+        )
 
     def _is_space_free(self, candidate: QRectF) -> bool:
         """Checks whether *candidate* overlaps any occupied rectangle.

@@ -242,6 +242,7 @@ class MapGraphicsView(QGraphicsView):
 
     # -- Visual styling signal (marker_id, style_overrides_dict) --
     marker_visual_style_changed = Signal(str, dict)
+    marker_appearance_changed = Signal(str, dict)
 
     # -- Raster editing signals --
     raster_stroke_completed = Signal(str, object)  # node_id, tile patches
@@ -363,6 +364,7 @@ class MapGraphicsView(QGraphicsView):
         self._trajectory_edit_overlay = TrajectoryEditOverlay(self)
         self._interaction = InteractionHandler(self)
         self._trajectory_marker_ids: set[str] = set()
+        self._editing_marker_appearance_id: Optional[str] = None
 
         from src.gui.widgets.map.raster_edit_tool import RasterEditTool
 
@@ -989,8 +991,73 @@ class MapGraphicsView(QGraphicsView):
         """
         if self._vertex_editor.editing_feature_id == marker_id:
             self._vertex_editor.finish_vertex_editing(emit_geometry_change=False)
+        if self._editing_marker_appearance_id == marker_id:
+            self.cancel_marker_appearance_edit()
         self._marker_manager.remove_marker(marker_id)
         self._schedule_label_layout()
+
+    @property
+    def is_editing_marker_appearance(self) -> bool:
+        """Return whether one marker has active resize/anchor handles."""
+        return self._editing_marker_appearance_id is not None
+
+    @property
+    def editing_marker_appearance_id(self) -> Optional[str]:
+        """Return the marker currently being edited, if any."""
+        return self._editing_marker_appearance_id
+
+    def start_marker_appearance_edit(self, marker_id: str) -> None:
+        """Enter direct appearance editing for one point marker."""
+        marker = self.markers.get(marker_id)
+        if marker is None or marker.is_temporal_ghost:
+            return
+        if self._editing_marker_appearance_id == marker_id:
+            return
+        if self.is_editing_marker_appearance:
+            self.cancel_marker_appearance_edit()
+        self.exit_all_editing(commit_feature_edits=False)
+        self._editing_marker_appearance_id = marker_id
+        self.graphics_scene.clearSelection()
+        marker.setSelected(True)
+        marker.begin_appearance_edit()
+        self.setDragMode(QGraphicsView.DragMode.NoDrag)
+        self.setFocus()
+        self._refresh_mode_indicator()
+
+    def finish_marker_appearance_edit(self) -> None:
+        """Confirm direct marker edits as one persistence command."""
+        marker_id = self._editing_marker_appearance_id
+        self._editing_marker_appearance_id = None
+        if marker_id is None:
+            return
+        marker = self.markers.get(marker_id)
+        if marker is None:
+            return
+        payload = marker.finish_appearance_edit()
+        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+        self._schedule_label_layout()
+        self._refresh_mode_indicator()
+        if payload is not None:
+            self.marker_appearance_changed.emit(marker_id, payload)
+
+    def cancel_marker_appearance_edit(self) -> None:
+        """Cancel direct marker edits and restore the local snapshot."""
+        marker_id = self._editing_marker_appearance_id
+        self._editing_marker_appearance_id = None
+        if marker_id is None:
+            return
+        marker = self.markers.get(marker_id)
+        if marker is not None:
+            marker.cancel_appearance_edit()
+        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+        self._schedule_label_layout()
+        self._refresh_mode_indicator()
+
+    def _refresh_mode_indicator(self) -> None:
+        """Refresh the owning widget's visible editing instructions."""
+        map_widget = self._find_map_widget()
+        if map_widget is not None:
+            map_widget._update_mode_indicator()
 
     def clear_markers(self) -> None:
         """Remove all markers and features from the map."""
@@ -1113,6 +1180,8 @@ class MapGraphicsView(QGraphicsView):
             self.cancel_drawing()
         if self._is_placing_marker:
             self.cancel_marker_placement()
+        if self.is_editing_marker_appearance:
+            self.cancel_marker_appearance_edit()
         if self._vertex_editor.is_editing_vertices:
             self._vertex_editor.finish_vertex_editing(
                 emit_geometry_change=commit_feature_edits
@@ -1736,8 +1805,17 @@ class MapGraphicsView(QGraphicsView):
                 continue
             marker_pos = self.mapFromScene(marker.scenePos())
             distance = math.hypot(marker_pos.x() - pos.x(), marker_pos.y() - pos.y())
-            visual_radius = marker.label_clearance_px(self.transform().m11())
-            if distance > max(radius, visual_radius):
+            obstacle = marker.label_obstacle_scene_rect(self.transform().m11())
+            visual_rect = self.mapFromScene(obstacle).boundingRect()
+            target_rect = visual_rect.united(
+                QRect(
+                    marker_pos.x() - round(radius),
+                    marker_pos.y() - round(radius),
+                    round(radius * 2.0),
+                    round(radius * 2.0),
+                )
+            )
+            if not target_rect.contains(pos):
                 continue
             if best is None or distance < best[0]:
                 best = (distance, marker)
@@ -1747,9 +1825,19 @@ class MapGraphicsView(QGraphicsView):
         """Start direct or proxy marker interaction for a normal map press."""
         pos = event.position().toPoint()
         item = self.itemAt(pos)
+        ancestor = item
+        while ancestor is not None:
+            if isinstance(ancestor, MarkerItem) and ancestor.is_editing_appearance:
+                self.setDragMode(QGraphicsView.DragMode.NoDrag)
+                return False
+            ancestor = ancestor.parentItem()
         marker = item if isinstance(item, MarkerItem) else self._marker_near_view_pos(pos)
         if marker is None:
             self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+            return False
+
+        if marker.is_editing_appearance:
+            self.setDragMode(QGraphicsView.DragMode.NoDrag)
             return False
 
         self.setDragMode(QGraphicsView.DragMode.NoDrag)
@@ -1947,6 +2035,16 @@ class MapGraphicsView(QGraphicsView):
             return
 
         # Footprint edit mode — consume keys before general handlers.
+        if self.is_editing_marker_appearance:
+            if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+                self.finish_marker_appearance_edit()
+                event.accept()
+                return
+            if event.key() == Qt.Key.Key_Escape:
+                self.cancel_marker_appearance_edit()
+                event.accept()
+                return
+
         if self.is_editing_footprint:
             if self._handle_footprint_edit_key(event, map_widget):
                 return

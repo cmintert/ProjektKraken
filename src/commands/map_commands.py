@@ -35,6 +35,7 @@ from src.commands.map_crud_commands import (  # noqa: F401
 
 # Marker / Feature
 from src.commands.marker_commands import (  # noqa: F401
+    ApplyMarkerAppearanceCommand,
     CreateMarkerCommand,
     DeleteMarkerCommand,
     UpdateMarkerAttributeCommand,
@@ -63,6 +64,7 @@ __all__ = [
     "RegisterDetailMapCommand",
     "NestingValidationError",
     # Marker / Feature
+    "ApplyMarkerAppearanceCommand",
     "CreateMarkerCommand",
     "UpdateMarkerCommand",
     "DeleteMarkerCommand",

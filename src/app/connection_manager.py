@@ -698,6 +698,12 @@ class ConnectionManager:
                 ),
                 (
                     map_widget,
+                    "marker_appearance_changed",
+                    map_handler.on_marker_appearance_changed,
+                    "MapWidget",
+                ),
+                (
+                    map_widget,
                     "marker_drop_requested",
                     map_handler.on_marker_dropped,
                     "MapWidget",

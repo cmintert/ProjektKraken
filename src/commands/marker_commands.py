@@ -625,3 +625,72 @@ class UpdateMarkerAttributeCommand(BaseCommand):
     def from_dict(cls, data: dict) -> "UpdateMarkerAttributeCommand":
         """Deserialize command from dictionary."""
         return cls(data["marker_id"], data["updates"])
+
+
+class ApplyMarkerAppearanceCommand(BaseCommand):
+    """Replace one marker's complete copyable appearance atomically."""
+
+    def __init__(self, marker_id: str, appearance: dict) -> None:
+        """Initialize an exact marker appearance replacement."""
+        super().__init__()
+        from src.core.marker_appearance import MarkerAppearance
+
+        self.marker_id = marker_id
+        self.appearance = MarkerAppearance.from_dict(appearance).to_dict()
+        self._previous_attributes: Optional[dict] = None
+        self._marker: Optional[Marker] = None
+
+    def execute(self, db_service: DatabaseService) -> CommandResult:
+        """Replace appearance keys while preserving semantic attributes."""
+        from src.core.marker_appearance import MarkerAppearance
+
+        try:
+            current = db_service.get_marker(self.marker_id)
+            if current is None:
+                return CommandResult(
+                    success=False,
+                    message=f"Marker not found: {self.marker_id}",
+                    command_name="ApplyMarkerAppearanceCommand",
+                )
+            self._marker = current
+            self._previous_attributes = dict(current.attributes)
+            appearance = MarkerAppearance.from_dict(self.appearance)
+            updated = dataclasses.replace(
+                current,
+                attributes=appearance.apply_to_attributes(current.attributes),
+            )
+            db_service.insert_marker(updated)
+            self._is_executed = True
+            logger.info("Applied marker appearance: %s", self.marker_id)
+            return CommandResult(
+                success=True,
+                message="Marker appearance applied.",
+                command_name="ApplyMarkerAppearanceCommand",
+            )
+        except Exception as exc:
+            logger.error("Failed to apply marker appearance: %s", exc)
+            return CommandResult(
+                success=False,
+                message=f"Failed to apply marker appearance: {exc}",
+                command_name="ApplyMarkerAppearanceCommand",
+            )
+
+    def undo(self, db_service: DatabaseService) -> None:
+        """Restore the exact attribute snapshot from before the change."""
+        if self._is_executed and self._marker and self._previous_attributes is not None:
+            restored = dataclasses.replace(
+                self._marker,
+                attributes=self._previous_attributes,
+            )
+            db_service.insert_marker(restored)
+            self._is_executed = False
+            logger.info("Undid marker appearance change: %s", self.marker_id)
+
+    def to_dict(self) -> dict:
+        """Serialize the command."""
+        return {"marker_id": self.marker_id, "appearance": self.appearance}
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "ApplyMarkerAppearanceCommand":
+        """Deserialize the command."""
+        return cls(data["marker_id"], data["appearance"])

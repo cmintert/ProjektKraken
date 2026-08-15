@@ -39,6 +39,7 @@ from PySide6.QtWidgets import (
 
 from src.core.calendar import CalendarConverter
 from src.core.map import Map
+from src.core.marker_appearance import MarkerIconAnchor
 from src.core.paths import get_resource_path
 from src.core.theme_manager import ThemeManager
 from src.core.trajectory_edit import TrajectoryEditSnapshot
@@ -192,6 +193,7 @@ class MapWidget(
     change_marker_icon_requested = Signal(str, str)  # marker_id, new_icon
     change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
     marker_visual_style_changed = Signal(str, dict)  # marker_id, style overrides
+    marker_appearance_changed = Signal(str, dict)  # marker_id, full appearance
     marker_drop_requested = Signal(str, str, str, float, float)  # id, type, name, x, y
     # feature_created carries (map_id, obj_id, obj_type, name, feature_type, geometry)
     feature_created = Signal(str, str, str, str, str, list)
@@ -888,6 +890,9 @@ class MapWidget(
         )
         self.view.marker_visual_style_changed.connect(
             self.marker_visual_style_changed.emit
+        )
+        self.view.marker_appearance_changed.connect(
+            self.marker_appearance_changed.emit
         )
         self.view.marker_drop_requested.connect(self.marker_drop_requested.emit)
         self.view.mouse_coordinates_changed.connect(self._on_mouse_coordinates_changed)
@@ -1797,6 +1802,31 @@ class MapWidget(
             # Show Finish Sketch button
             self.btn_finish_sketch.show()
             self._update_finish_sketch_position()
+
+        elif self.view.is_editing_marker_appearance:
+            marker = self.view.markers.get(
+                self.view.editing_marker_appearance_id or ""
+            )
+            scale = marker.appearance_edit_scale if marker is not None else 1.0
+            anchor = (
+                marker.appearance_edit_anchor
+                if marker is not None
+                else MarkerIconAnchor()
+            )
+            self.mode_indicator.setText(f"🟠 MARKER APPEARANCE · {scale:.2f}×")
+            self._apply_mode_indicator_style("vertex")
+
+            self.overlay_banner.setText(
+                "🎯 <b>MARKER APPEARANCE</b><br/>"
+                "Drag corner to resize · Drag anchor handle to set attachment<br/>"
+                f"Scale: <b>{scale:.2f}×</b> · "
+                f"Anchor: {anchor.x * 100:.0f}%, {anchor.y * 100:.0f}%<br/>"
+                "<small>[Enter to Apply] [Esc to Cancel]</small>"
+            )
+            self.overlay_banner.show()
+            self._update_overlay_position()
+            self.btn_finish_sketch.hide()
+            self.view.setCursor(Qt.CursorShape.ArrowCursor)
 
         elif self.view.is_editing_footprint:
             # Footprint Edit Mode

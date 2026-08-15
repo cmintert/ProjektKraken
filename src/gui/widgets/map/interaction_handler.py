@@ -17,6 +17,11 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 
+from src.core.marker_appearance import (
+    MARKER_ICON_ANCHOR_ATTRIBUTE,
+    MarkerAppearance,
+    MarkerIconAnchor,
+)
 from src.core.marker_sizing import MARKER_SIZING_ATTRIBUTE, MarkerSizingSettings
 from src.core.style_constants import (
     MAX_BORDER_WIDTH,
@@ -49,6 +54,7 @@ class InteractionHandler:
     def __init__(self, view: "MapGraphicsView") -> None:
         """Initialize map pointer and keyboard interaction handling."""
         self._view = view
+        self._copied_marker_appearance: Optional[dict] = None
 
     # ------------------------------------------------------------------
     # Context Menus
@@ -87,6 +93,42 @@ class InteractionHandler:
 
         # --- Visual Styling sub-menu ---
         style_menu = QMenu("Visual Styling", self._view)
+
+        edit_appearance_action = QAction("Edit Appearance...", self._view)
+        edit_appearance_action.setStatusTip(
+            "Drag the corner to resize and the centre handle to set the anchor; "
+            "press Enter to apply or Escape to cancel"
+        )
+        edit_appearance_action.triggered.connect(
+            lambda: self._view.start_marker_appearance_edit(item.marker_id)
+        )
+        style_menu.addAction(edit_appearance_action)
+
+        copy_appearance_action = QAction("Copy Appearance", self._view)
+        copy_appearance_action.triggered.connect(
+            lambda: self._copy_marker_appearance(item)
+        )
+        style_menu.addAction(copy_appearance_action)
+
+        paste_appearance_action = QAction("Paste Appearance", self._view)
+        paste_appearance_action.setEnabled(self._copied_marker_appearance is not None)
+        paste_appearance_action.triggered.connect(
+            lambda: self._paste_marker_appearance(item)
+        )
+        style_menu.addAction(paste_appearance_action)
+
+        reset_anchor_action = QAction("Reset Anchor to Centre", self._view)
+        reset_anchor_action.setEnabled(
+            not MarkerAppearance.from_attributes(
+                item._visual_attributes
+            ).anchor.is_centered
+        )
+        reset_anchor_action.triggered.connect(
+            lambda: self._reset_marker_anchor(item)
+        )
+        style_menu.addAction(reset_anchor_action)
+
+        style_menu.addSeparator()
 
         scale_action = QAction("Size & Zoom...", self._view)
         scale_action.triggered.connect(lambda: self.show_scale_dialog(item))
@@ -244,6 +286,31 @@ class InteractionHandler:
         )
         menu.addAction(delete_action)
         menu.exec(global_pos)
+
+    def _copy_marker_appearance(self, item: MarkerItem) -> None:
+        """Store a validated, semantic-data-free marker appearance snapshot."""
+        self._copied_marker_appearance = item.appearance_payload()
+
+    def _paste_marker_appearance(self, item: MarkerItem) -> None:
+        """Preview and persist one exact copied appearance."""
+        if self._copied_marker_appearance is None:
+            return
+        if self._view.is_editing_marker_appearance:
+            self._view.cancel_marker_appearance_edit()
+        payload = dict(self._copied_marker_appearance)
+        item.apply_appearance_payload(payload)
+        self._view._schedule_label_layout()
+        self._view.marker_appearance_changed.emit(item.marker_id, payload)
+
+    def _reset_marker_anchor(self, item: MarkerItem) -> None:
+        """Restore the legacy centred anchor as one undoable appearance change."""
+        if self._view.is_editing_marker_appearance:
+            self._view.cancel_marker_appearance_edit()
+        payload = item.appearance_payload()
+        payload[MARKER_ICON_ANCHOR_ATTRIBUTE] = MarkerIconAnchor().to_dict()
+        item.apply_appearance_payload(payload)
+        self._view._schedule_label_layout()
+        self._view.marker_appearance_changed.emit(item.marker_id, payload)
 
     @staticmethod
     def _configure_vector_style_actions(

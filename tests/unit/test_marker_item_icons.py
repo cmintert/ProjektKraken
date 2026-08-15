@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.marker_appearance import MARKER_ICON_ANCHOR_ATTRIBUTE
 from src.gui.widgets.map.interaction_handler import InteractionHandler
 from src.gui.widgets.map.marker_item import MarkerItem
 
@@ -95,6 +96,23 @@ def test_raster_icon_paints_centered_with_preserved_aspect_ratio(qapp, tmp_path)
     assert (right - left + 1) > (bottom - top + 1)
     assert abs((left + right) / 2.0 - 40.0) <= 1.0
     assert abs((top + bottom) / 2.0 - 40.0) <= 1.0
+
+
+def test_raster_anchor_uses_actual_aspect_preserved_artwork(qapp, tmp_path):
+    """Bottom-centre anchors are measured against visible raster artwork."""
+    icon_dir = tmp_path / "assets" / "images"
+    icon_dir.mkdir(parents=True)
+    _write_raster(icon_dir / "icon_test.png")
+    marker = _marker(tmp_path, "assets/images/icon_test.png")
+    marker.set_visual_attributes(
+        {MARKER_ICON_ANCHOR_ATTRIBUTE: {"x": 0.5, "y": 1.0}}
+    )
+
+    rect = marker.boundingRect()
+
+    assert rect.width() == pytest.approx(24.0)
+    assert rect.height() == pytest.approx(12.0)
+    assert rect.bottom() == pytest.approx(0.0)
 
 
 def test_malformed_raster_uses_fallback(qapp, tmp_path):

@@ -34,6 +34,7 @@ from src.app.constants import (
 from src.app.qt_invocation import invoke_queued
 from src.commands.layer_commands import UpdateLayerTreeCommand
 from src.commands.map_commands import (
+    ApplyMarkerAppearanceCommand,
     CreateMapCommand,
     CreateMarkerCommand,
     DeleteMapCommand,
@@ -549,6 +550,17 @@ class MapHandler(QObject):
         cmd = UpdateMarkerAttributeCommand(actual_marker_id, updates)
         self.command_requested.emit(cmd)
         logger.info(f"Visual style updated for {marker_id}: {list(updates.keys())}")
+
+    @Slot(str, dict)
+    def on_marker_appearance_changed(self, marker_id: str, appearance: dict) -> None:
+        """Persist one complete marker appearance as an atomic command."""
+        actual_marker_id = self._marker_object_to_id.get(marker_id)
+        if not actual_marker_id:
+            logger.warning("No marker mapping for appearance update: %s", marker_id)
+            return
+        command = ApplyMarkerAppearanceCommand(actual_marker_id, appearance)
+        self.command_requested.emit(command)
+        logger.info("Marker appearance updated for %s", marker_id)
 
     @Slot(str, float, float)
     def on_marker_position_changed(self, marker_id: str, x: float, y: float) -> None:

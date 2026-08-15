@@ -11,7 +11,11 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.commands.marker_commands import UpdateMarkerAttributeCommand
+from src.commands.marker_commands import (
+    ApplyMarkerAppearanceCommand,
+    UpdateMarkerAttributeCommand,
+)
+from src.core.marker_appearance import MARKER_ICON_ANCHOR_ATTRIBUTE
 from src.core.style_constants import V_BORDER_WIDTH, V_FILL, V_SIZE_SCALE
 
 # ---------------------------------------------------------------------------
@@ -72,6 +76,22 @@ class TestMapHandlerVisualStyle:
         cmd = spy.call_args[0][0]
         assert cmd.updates == {V_BORDER_WIDTH: 4}
         assert cmd.marker_id == "actual_marker_2"
+
+    def test_complete_appearance_uses_atomic_command(self, map_handler):
+        """Copy/paste and direct edits use exact appearance replacement."""
+        spy = MagicMock()
+        map_handler.command_requested.connect(spy)
+        appearance = {
+            V_FILL: "#FF0000",
+            MARKER_ICON_ANCHOR_ATTRIBUTE: {"x": 0.5, "y": 1.0},
+        }
+
+        map_handler.on_marker_appearance_changed("obj_1", appearance)
+
+        command = spy.call_args.args[0]
+        assert isinstance(command, ApplyMarkerAppearanceCommand)
+        assert command.marker_id == "actual_marker_1"
+        assert command.appearance == appearance
 
 
 # ---------------------------------------------------------------------------
