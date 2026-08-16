@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-08-15
-**Commit:** 1b196d50
+**Last Updated:** 2026-08-16
+**Commit:** 6fd090f7
 ---
 
 # Changelog
@@ -13,6 +13,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-08-16)* **Application / Startup**: Added a branded, theme-aware splash
+  screen that remains visible until the primary world data reaches the UI.
 - *(2026-08-15)* **Maps / Marker Appearance**: Added appearance copy and paste,
   direct marker resizing, editable and resettable icon anchors, and live scale
   and anchor readouts with explicit apply and cancel guidance.
@@ -38,6 +40,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-16)* **Packaging / Testing**: Bundled the splash artwork in Windows
+  packages, exposed canonical release identity metadata, and added startup and
+  splash regression coverage.
 - *(2026-08-15)* **Documentation / Testing**: Documented marker appearance
   editing and added command, persistence, interaction, anchor, sizing, and label
   regression coverage.

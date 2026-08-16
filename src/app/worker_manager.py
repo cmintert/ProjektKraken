@@ -557,6 +557,7 @@ class WorkerManager(QObject):
             )
         else:
             self.window.status_bar.showMessage(STATUS_DB_INIT_FAIL)
+            self.window.startup_completed.emit(False)
         if self.package_smoke_callback is not None:
             self.package_smoke_callback(success)
 

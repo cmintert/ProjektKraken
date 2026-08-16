@@ -16,6 +16,7 @@ class FakeMainWindow(QObject):
 
     command_requested = Signal(object)
     load_graph_data_requested = Signal(object, object)
+    startup_completed = Signal(bool)
 
     def __init__(self):
         super().__init__()
@@ -191,6 +192,20 @@ class TestSignalHandlers:
         assert coordinator.cached_entities == entities
         fake_window.unified_list.set_data.assert_called_once()
         fake_window.map_widget.set_cached_items.assert_called_once()
+
+    def test_startup_completes_after_primary_datasets(self, coordinator, fake_window):
+        """Startup completes only when events and entities both reach the UI."""
+        completions = []
+        fake_window.startup_completed.connect(completions.append)
+
+        coordinator.on_events_ready([])
+        assert completions == []
+
+        coordinator.on_entities_ready([])
+        assert completions == [True]
+
+        coordinator.on_events_ready([])
+        assert completions == [True]
 
     def test_on_event_details_ready_loads_editor(self, coordinator, fake_window):
         """on_event_details_ready should load event into editor."""

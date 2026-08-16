@@ -283,6 +283,8 @@ class MainWindow(QMainWindow, LayoutGuardMixin):
     load_graph_data_requested = Signal(
         object, object
     )  # (tags: list|None, rel_types: list|None)
+    # Emitted after deferred database startup reaches a terminal state.
+    startup_completed = Signal(bool)
 
     # WorkerManager injects these during phase-one initialization.
     worker: DatabaseWorker
