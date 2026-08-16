@@ -1,3 +1,4 @@
+import logging
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -160,6 +161,25 @@ def test_stack_size_limit(coordinator, main_window):
     assert coordinator.undo_stack[0].name == "Cmd2"
     assert coordinator.undo_stack[1].name == "Cmd3"
     assert coordinator.undo_stack[2].name == "Cmd4"
+
+
+def test_stack_state_logging_is_one_compact_debug_record(coordinator, caplog):
+    coordinator.undo_stack.extend([MockCommand("Older"), MockCommand("Undo")])
+    coordinator.redo_stack.append(MockCommand("Redo"))
+
+    with caplog.at_level(logging.DEBUG):
+        coordinator.log_stack_state()
+
+    records = [
+        record
+        for record in caplog.records
+        if record.name == "src.app.command_coordinator"
+    ]
+    assert len(records) == 1
+    assert records[0].getMessage() == (
+        "Command stacks: undo=2 (next=Mock: Undo), "
+        "redo=1 (next=Mock: Redo)"
+    )
 
 
 def test_undo_moves_to_redo_stack(coordinator):

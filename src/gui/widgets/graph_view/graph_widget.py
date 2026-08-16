@@ -7,7 +7,7 @@ public interface for the graph view functionality.
 from typing import Any, Optional
 
 from PySide6.QtCore import QEvent, QSize, QTimer, Signal
-from PySide6.QtGui import QCloseEvent, QResizeEvent
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import QSizePolicy, QVBoxLayout, QWidget
 
 from src.core.logging_config import get_logger
@@ -641,37 +641,16 @@ class GraphWidget(QWidget):
         Args:
             event: The show event.
         """
-        self._logger.info("GraphWidget.showEvent — visible")
-
         def _refresh() -> None:
             """Refresh the web view content."""
             try:
                 reload_fn = getattr(self._web_view, "reload", None)
                 if callable(reload_fn):
                     reload_fn()
-                    self._logger.debug("GraphWidget: called web_view.reload()")
                 else:
                     self._web_view.update()
-                    self._logger.debug("GraphWidget: called web_view.update()")
             except Exception as e:
                 self._logger.exception(f"GraphWidget: refresh on show failed: {e}")
 
         # Schedule refresh on next event loop iteration
         QTimer.singleShot(0, _refresh)
-
-    def hideEvent(self, event: QEvent) -> None:
-        """Handle widget hide event.
-
-        Args:
-            event: The hide event.
-        """
-        self._logger.info("GraphWidget.hideEvent — hidden")
-
-    def resizeEvent(self, event: QResizeEvent) -> None:
-        """Handle widget resize event.
-
-        Args:
-            event: The resize event.
-        """
-        s = event.size()
-        self._logger.debug(f"GraphWidget.resizeEvent -> {s.width()}x{s.height()}")

@@ -4,14 +4,10 @@ Provides the lane packing algorithm for organizing events on the timeline withou
 overlaps using a greedy "First Fit" approach.
 """
 
-import logging
-
 from PySide6.QtGui import QFont, QFontMetrics
 
 from src.core.events import Event
 from src.gui.widgets.timeline.event_item import EventItem
-
-logger = logging.getLogger(__name__)
 
 
 class TimelineLanePacker:
@@ -64,8 +60,6 @@ class TimelineLanePacker:
         lanes_end_times: list[float] = []
         lanes_heights: list[int] = []
         event_lane_assignments: dict[str, int] = {}
-
-        logger.debug(f"Packing {len(events)} events. Scale: {self.scale_factor}")
 
         for event in events:
             start_time = event.lore_date

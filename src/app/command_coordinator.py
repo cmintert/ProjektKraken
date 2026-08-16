@@ -393,17 +393,20 @@ class CommandCoordinator(QObject):
             self.window.data_coordinator.load_data()
 
     def log_stack_state(self) -> None:
-        """Logs the current state of the undo/redo stacks."""
-        logger.info(f"=== UNDO STACK ({len(self.undo_stack)} items) ===")
-        for i, cmd in enumerate(reversed(self.undo_stack)):
-            logger.info(f"  [{i}] {cmd.get_description()}")
-
-        if self.redo_stack:
-            logger.info(f"=== REDO STACK ({len(self.redo_stack)} items) ===")
-            for i, cmd in enumerate(reversed(self.redo_stack)):
-                logger.info(f"  [{i}] {cmd.get_description()}")
-        else:
-            logger.info("=== REDO STACK (Empty) ===")
+        """Log a compact summary of the undo/redo stacks."""
+        next_undo = (
+            self.undo_stack[-1].get_description() if self.undo_stack else "none"
+        )
+        next_redo = (
+            self.redo_stack[-1].get_description() if self.redo_stack else "none"
+        )
+        logger.debug(
+            "Command stacks: undo=%d (next=%s), redo=%d (next=%s)",
+            len(self.undo_stack),
+            next_undo,
+            len(self.redo_stack),
+            next_redo,
+        )
 
     def _show_error(self, message: str) -> None:
         """Display error message to user.

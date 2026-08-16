@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-16
-**Commit:** 65f6a5f6
+**Commit:** a6777305
 ---
 
 # Changelog
@@ -42,6 +42,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-16)* **Application / Logging**: Collapsed command-history diagnostics
+  into one summary and removed high-frequency resize, refresh, and timeline
+  packing messages, with regression coverage for the compact stack record.
 - *(2026-08-16)* **Maps / Logging**: Removed repetitive raster-edit shutdown
   messages from routine map interaction logs.
 - *(2026-08-16)* **Editor / Typography**: Improved rich-text readability with

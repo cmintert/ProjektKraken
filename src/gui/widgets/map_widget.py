@@ -1925,6 +1925,3 @@ class MapWidget(
         self._update_overlay_position()
         self._update_finish_sketch_position()
         self._position_legend_overlay()
-        logger.debug(
-            f"MapWidget Resized: {event.size().width()}x{event.size().height()} (Old: {event.oldSize().width()}x{event.oldSize().height()})"
-        )
