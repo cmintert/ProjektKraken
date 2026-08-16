@@ -56,6 +56,8 @@ class DataCoordinator(BaseCoordinator):
         self._cached_tags: list[str] = []
         self._cached_entity_types: list[str] = []
         self._graph_reload_timer: Optional[QTimer] = None
+        self._startup_datasets_pending = {"events", "entities"}
+        self._startup_completion_emitted = False
 
         # Semantic completion debounce
         self._pending_semantic_prefix: str = ""
@@ -210,6 +212,7 @@ class DataCoordinator(BaseCoordinator):
         self._reconcile_context_tags()
 
         self._schedule_graph_refresh()
+        self._mark_startup_dataset_ready("events")
 
     @Slot(list)
     def on_entities_ready(self, entities: list) -> None:
@@ -229,6 +232,14 @@ class DataCoordinator(BaseCoordinator):
         self._reconcile_context_tags()
 
         self._schedule_graph_refresh()
+        self._mark_startup_dataset_ready("entities")
+
+    def _mark_startup_dataset_ready(self, dataset: str) -> None:
+        """Dismiss startup only after the primary world data reaches the UI."""
+        self._startup_datasets_pending.discard(dataset)
+        if not self._startup_datasets_pending and not self._startup_completion_emitted:
+            self._startup_completion_emitted = True
+            self.main_window.startup_completed.emit(True)
 
     @Slot(list)
     def on_suggestions_update(self, items: list) -> None:

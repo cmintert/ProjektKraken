@@ -21,6 +21,8 @@ from PySide6.QtGui import (
     QAction,
     QCloseEvent,
     QColor,
+    QFont,
+    QFontMetricsF,
     QKeyEvent,
     QMouseEvent,
     QPaintEvent,
@@ -47,10 +49,8 @@ from PySide6.QtWidgets import (
 
 from src.core.theme_manager import ThemeManager
 from src.core.wiki_ast import CursorMapper, WikiASTParser, WikiASTSerializer
-from src.gui.constants import (
-    SEMANTIC_COMPLETION_MIN_PREFIX_LEN,
-    WIKI_EDITOR_MAX_LINE_LENGTH,
-)
+from src.gui.constants import SEMANTIC_COMPLETION_MIN_PREFIX_LEN
+from src.gui.editor_typography import EditorTypography
 
 logger = logging.getLogger(__name__)
 
@@ -165,6 +165,7 @@ class WikiTextEditView(QTextEdit):
 
         # Connect to theme changes and apply initial theme
         tm = ThemeManager()
+        self._typography = EditorTypography.from_theme(tm.get_theme())
         tm.theme_changed.connect(self._on_theme_changed)
 
         # Remove frame from view as it's handled by wrapper
@@ -201,7 +202,6 @@ class WikiTextEditView(QTextEdit):
         """Setup formatting actions with shortcuts."""
         from src.gui.utils.shortcut_manager import ShortcutManager
 
-        self.document().setDocumentMargin(24)
         context = Qt.ShortcutContext.WidgetWithChildrenShortcut
 
         # Bold
@@ -434,17 +434,14 @@ class WikiTextEditView(QTextEdit):
         valid target.  This avoids calling setHtml() which would destroy empty
         blocks and reset the cursor position.
         """
-        from PySide6.QtGui import QColor, QTextCharFormat, QTextCursor
+        from PySide6.QtGui import QColor, QTextCharFormat
 
-        tm = ThemeManager()
-        theme = tm.get_theme()
-        link_color = theme.get("accent_secondary", "#2980b9")
+        typography = self._typography
 
         doc = self.document()
-        edit_cursor = QTextCursor(doc)
+        updates: list[tuple[int, int, QTextCharFormat]] = []
         was_blocked = self.blockSignals(True)
         try:
-            edit_cursor.beginEditBlock()
             block = doc.begin()
             while block.isValid():
                 it = block.begin()
@@ -462,20 +459,56 @@ class WikiTextEditView(QTextEdit):
                                     check.lower() in self._valid_targets_lower
                                     or check in self._valid_ids
                                 )
-                            color = QColor(link_color if is_valid else "red")
+                            color = QColor(
+                                typography.link_color
+                                if is_valid
+                                else typography.broken_link_color
+                            )
                             new_fmt = QTextCharFormat(fmt)
                             new_fmt.setForeground(color)
-                            edit_cursor.setPosition(fragment.position())
-                            edit_cursor.setPosition(
-                                fragment.position() + fragment.length(),
-                                QTextCursor.MoveMode.KeepAnchor,
+                            updates.append(
+                                (
+                                    fragment.position(),
+                                    fragment.length(),
+                                    new_fmt,
+                                )
                             )
-                            edit_cursor.setCharFormat(new_fmt)
                     it += 1
                 block = block.next()
-            edit_cursor.endEditBlock()
+            self._apply_fragment_formats(updates)
         finally:
             self.blockSignals(was_blocked)
+
+    def _apply_fragment_formats(
+        self,
+        updates: list[tuple[int, int, QTextCharFormat]],
+    ) -> None:
+        """Apply snapshotted fragment formats without mutating a live iterator.
+
+        QTextCursor formatting can split or merge document fragments. Callers
+        therefore collect positions, lengths, and copied formats before this
+        method changes the document.
+
+        Args:
+            updates: Character ranges and their complete replacement formats.
+        """
+        if not updates:
+            return
+
+        edit_cursor = QTextCursor(self.document())
+        edit_cursor.beginEditBlock()
+        try:
+            for position, length, character_format in updates:
+                edit_cursor.setPosition(position)
+                edit_cursor.setPosition(
+                    position + length,
+                    QTextCursor.MoveMode.KeepAnchor,
+                )
+                edit_cursor.setCharFormat(character_format)
+        finally:
+            edit_cursor.endEditBlock()
+
+        self._refresh_document_layout()
 
     def _get_theme_css(self) -> str:
         """Build CSS stylesheet based on current theme settings.
@@ -487,36 +520,33 @@ class WikiTextEditView(QTextEdit):
             str: CSS stylesheet as a string.
 
         """
-        tm = ThemeManager()
-        theme = tm.get_theme()
-
-        link_color = theme.get("accent_secondary", "#2980b9")
-        text_color = theme.get("text_main", "#E0E0E0")
-
-        # Font Sizes (fallback to hardcoded if missing in old theme files)
-        fs_h1 = theme.get("font_size_h1", "14pt")
-        fs_h2 = theme.get("font_size_h2", "12pt")
-        fs_h3 = theme.get("font_size_h3", "11pt")
-        fs_body = theme.get("font_size_body", "10pt")
+        typography = self._typography
+        body_top, body_bottom = typography.block_margins(0)
+        h1_top, h1_bottom = typography.block_margins(1)
+        h2_top, h2_bottom = typography.block_margins(2)
+        h3_top, h3_bottom = typography.block_margins(3)
 
         # Build CSS stylesheet for the document
-        font_family = "Segoe UI, Roboto, Helvetica Neue, Helvetica, Arial, sans-serif"
         css = (
-            f"body {{ font-family: {font_family}; color: {text_color}; "
-            f"font-size: {fs_body}; }} "
-            f"a {{ color: {link_color}; "
+            f"body {{ font-family: {typography.font_family}; "
+            f"color: {typography.text_color}; font-size: {typography.body_size}pt; "
+            f"line-height: {typography.line_height_percent}%; }} "
+            f"a {{ color: {typography.link_color}; "
             "text-decoration: none; } "
-            f"h1 {{ font-size: {fs_h1}; font-weight: 600; "
-            f"color: {text_color}; "
-            "margin-top: 10px; margin-bottom: 5px; } "
-            f"h2 {{ font-size: {fs_h2}; font-weight: 600; "
-            f"color: {text_color}; "
-            "margin-top: 8px; margin-bottom: 4px; } "
-            f"h3 {{ font-size: {fs_h3}; font-weight: 600; "
-            f"color: {text_color}; "
-            "margin-top: 6px; margin-bottom: 3px; } "
-            f"p {{ margin-bottom: 2px; color: {text_color}; "
-            f"font-size: {fs_body}; }} "
+            f"a:hover {{ color: {typography.link_hover_color}; "
+            "text-decoration: underline; } "
+            f"h1 {{ font-size: {typography.h1_size}pt; font-weight: 600; "
+            f"color: {typography.text_color}; margin-top: {h1_top}px; "
+            f"margin-bottom: {h1_bottom}px; }} "
+            f"h2 {{ font-size: {typography.h2_size}pt; font-weight: 600; "
+            f"color: {typography.text_color}; margin-top: {h2_top}px; "
+            f"margin-bottom: {h2_bottom}px; }} "
+            f"h3 {{ font-size: {typography.h3_size}pt; font-weight: 600; "
+            f"color: {typography.text_color}; margin-top: {h3_top}px; "
+            f"margin-bottom: {h3_bottom}px; }} "
+            f"p {{ margin-top: {body_top}px; margin-bottom: {body_bottom}px; "
+            f"color: {typography.text_color}; "
+            f"font-size: {typography.body_size}pt; }} "
         )
         return css
 
@@ -528,6 +558,61 @@ class WikiTextEditView(QTextEdit):
         """
         css = self._get_theme_css()
         self.document().setDefaultStyleSheet(css)
+        default_font = QFont(self._typography.primary_font_family)
+        default_font.setPointSizeF(self._typography.body_size)
+        self.document().setDefaultFont(default_font)
+        self.document().setDocumentMargin(self._typography.document_margin)
+
+    def _apply_document_typography(self) -> None:
+        """Normalize loaded blocks with the same specification used by live edits."""
+        from PySide6.QtGui import QTextBlockFormat
+
+        document = self.document()
+        edit_cursor = QTextCursor(document)
+        was_blocked = self.blockSignals(True)
+        try:
+            edit_cursor.beginEditBlock()
+            block = document.begin()
+            while block.isValid():
+                level = block.blockFormat().headingLevel()
+                top_margin, bottom_margin = self._typography.block_margins(level)
+                block_format = QTextBlockFormat(block.blockFormat())
+                block_format.setTopMargin(top_margin)
+                block_format.setBottomMargin(bottom_margin)
+                block_format.setLineHeight(
+                    self._typography.line_height_percent,
+                    QTextBlockFormat.LineHeightTypes.ProportionalHeight.value,
+                )
+                edit_cursor.setPosition(block.position())
+                edit_cursor.setBlockFormat(block_format)
+
+                if block.length() > 1:
+                    edit_cursor.setPosition(block.position())
+                    edit_cursor.setPosition(
+                        block.position() + block.length() - 1,
+                        QTextCursor.MoveMode.KeepAnchor,
+                    )
+                    character_format = QTextCharFormat()
+                    character_format.setFontFamilies(
+                        [self._typography.primary_font_family]
+                    )
+                    character_format.setFontPointSize(
+                        self._typography.point_size(level)
+                    )
+                    if level > 0:
+                        character_format.setFontWeight(QFont.Weight.DemiBold)
+                    edit_cursor.mergeCharFormat(character_format)
+                block = block.next()
+            edit_cursor.endEditBlock()
+        finally:
+            self.blockSignals(was_blocked)
+        self._refresh_document_layout()
+
+    def _refresh_document_layout(self) -> None:
+        """Invalidate rich-text layout after direct block or character changes."""
+        document = self.document()
+        document.markContentsDirty(0, document.characterCount())
+        self.viewport().update()
 
     def _apply_widget_style(self) -> None:
         """Apply theme-based styling to the widget (borders, scrollbars)."""
@@ -680,8 +765,10 @@ class WikiTextEditView(QTextEdit):
             if is_valid:
                 return f"[{label}]({target})"
             else:
-                # Render as raw HTML anchor with style for red color
-                return f'<a href="{target}" style="color: red;">{label}</a>'
+                return (
+                    f'<a href="{target}" style="color: '
+                    f'{self._typography.broken_link_color};">{label}</a>'
+                )
 
         md_text = pattern.sub(replace_link_md, text)
 
@@ -700,6 +787,7 @@ class WikiTextEditView(QTextEdit):
         was_blocked = self.blockSignals(True)
         try:
             self.setHtml(html_content)
+            self._apply_document_typography()
         finally:
             self.blockSignals(was_blocked)
 
@@ -785,26 +873,13 @@ class WikiTextEditView(QTextEdit):
             if heading_level == 0 and block.length() > 1:
                 from PySide6.QtGui import QTextCursor
 
-                from src.core.theme_manager import ThemeManager
-
                 cursor = QTextCursor(block)
                 cursor.movePosition(QTextCursor.MoveOperation.Right)
                 font_size = cursor.charFormat().fontPointSize()
 
-                theme_data = ThemeManager().get_theme()
-
-                def _parse_size(val: str | int | float) -> float:
-                    if isinstance(val, (int, float)):
-                        return float(val)
-                    return (
-                        float(val.replace("pt", "").strip())
-                        if isinstance(val, str)
-                        else 10.0
-                    )
-
-                h1_size = _parse_size(theme_data.get("font_size_h1", 16))
-                h2_size = _parse_size(theme_data.get("font_size_h2", 14))
-                h3_size = _parse_size(theme_data.get("font_size_h3", 12))
+                h1_size = self._typography.h1_size
+                h2_size = self._typography.h2_size
+                h3_size = self._typography.h3_size
 
                 if font_size >= h1_size - 0.5:
                     heading_level = 1
@@ -842,30 +917,9 @@ class WikiTextEditView(QTextEdit):
             cursor.movePosition(QTextCursor.MoveOperation.Right)
             font_size = cursor.charFormat().fontPointSize()
 
-            # Get theme font sizes for dynamic comparison
-            theme = ThemeManager()
-            theme_data = theme.get_theme()
-
-            def _parse_size(val: str | int | float) -> float:
-                """Parse a size value to float.
-
-                Args:
-                    val: Size value as string, int, or float.
-
-                Returns:
-                    Parsed size as float.
-                """
-                if isinstance(val, (int, float)):
-                    return float(val)
-                return (
-                    float(val.replace("pt", "").strip())
-                    if isinstance(val, str)
-                    else 10.0
-                )
-
-            h1_size = _parse_size(theme_data.get("font_size_h1", 16))
-            h2_size = _parse_size(theme_data.get("font_size_h2", 14))
-            h3_size = _parse_size(theme_data.get("font_size_h3", 12))
+            h1_size = self._typography.h1_size
+            h2_size = self._typography.h2_size
+            h3_size = self._typography.h3_size
 
             if font_size >= h1_size - 0.5:
                 heading_level = 1
@@ -972,6 +1026,7 @@ class WikiTextEditView(QTextEdit):
         # Insert Anchor
         tc.insertHtml(f'<a href="{target}">{label}</a>&nbsp;')
         self.setTextCursor(tc)
+        self._refresh_document_layout()
 
         # Emit signal
 
@@ -1107,16 +1162,11 @@ class WikiTextEditView(QTextEdit):
         # 2. Reset Character Formatting (Bold/Italic/Size)
         from PySide6.QtGui import QFont, QTextCharFormat
 
-        # Get theme body size
-        theme = ThemeManager()
-        fs_body = float(
-            str(theme.get_theme().get("font_size_body", "10")).replace("pt", "")
-        )
-
         fmt = QTextCharFormat()
         fmt.setFontWeight(QFont.Weight.Normal)
         fmt.setFontItalic(False)
-        fmt.setFontPointSize(fs_body)
+        fmt.setFontFamilies([self._typography.primary_font_family])
+        fmt.setFontPointSize(self._typography.body_size)
 
         if cursor.hasSelection():
             cursor.setCharFormat(fmt)
@@ -1174,10 +1224,12 @@ class WikiTextEditView(QTextEdit):
             level: Heading level (1-3) or 0 for paragraph.
 
         """
-        from PySide6.QtGui import QFont, QTextCharFormat
-
-        # Apply formatting
-        cursor = self.textCursor()
+        original_cursor = self.textCursor()
+        cursor_position = original_cursor.position()
+        cursor_anchor = original_cursor.anchor()
+        scroll_position = self.verticalScrollBar().value()
+        previous_level = original_cursor.blockFormat().headingLevel()
+        cursor = QTextCursor(original_cursor)
 
         # Select entire current block to apply block format
         cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
@@ -1185,73 +1237,96 @@ class WikiTextEditView(QTextEdit):
             QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor
         )
 
-        # Get font size from theme
-        theme = ThemeManager()
-        theme_data = theme.get_theme()
-
-        def _parse_font_size(value: Any) -> float:
-            """Parse font size, handling 'pt' suffix."""
-            if isinstance(value, (int, float)):
-                return float(value)
-            if isinstance(value, str):
-                # Remove 'pt' suffix if present
-                return float(value.replace("pt", "").strip())
-            return 10.0  # fallback
-
-        font_size_map = {
-            0: _parse_font_size(theme_data.get("font_size_body", 10)),
-            1: _parse_font_size(theme_data.get("font_size_h1", 18)),
-            2: _parse_font_size(theme_data.get("font_size_h2", 16)),
-            3: _parse_font_size(theme_data.get("font_size_h3", 14)),
-        }
-
-        font_size = font_size_map.get(level, 10.0)
+        font_size = self._typography.point_size(level)
 
         from PySide6.QtGui import QTextBlockFormat
 
         block_fmt = QTextBlockFormat()
         block_fmt.setHeadingLevel(level)
 
-        # Set margins to match CSS
-        # h1: top=10, bottom=5
-        # h2: top=8, bottom=4
-        # h3: top=6, bottom=3
-        # body: top=0, bottom=0 (default)
-        if level == 1:
-            block_fmt.setTopMargin(10)
-            block_fmt.setBottomMargin(5)
-        elif level == _HEADING_LEVEL_TWO:
-            block_fmt.setTopMargin(8)
-            block_fmt.setBottomMargin(4)
-        elif level == _HEADING_LEVEL_THREE:
-            block_fmt.setTopMargin(6)
-            block_fmt.setBottomMargin(3)
-        else:
-            block_fmt.setTopMargin(0)
-            block_fmt.setBottomMargin(0)
+        top_margin, bottom_margin = self._typography.block_margins(level)
+        block_fmt.setTopMargin(top_margin)
+        block_fmt.setBottomMargin(bottom_margin)
+        block_fmt.setLineHeight(
+            self._typography.line_height_percent,
+            QTextBlockFormat.LineHeightTypes.ProportionalHeight.value,
+        )
 
         cursor.setBlockFormat(block_fmt)
 
-        # Apply char formatting (Font Size + Weight)
-        fmt = QTextCharFormat()
-        fmt.setFontPointSize(font_size)
+        self._apply_live_heading_character_format(cursor.block(), level, font_size)
 
-        if level > 0:
-            fmt.setFontWeight(QFont.Weight.Bold)  # 700 / 600
+        # Qt keeps the CSS box metrics from the heading tag loaded by setHtml(),
+        # even after the semantic block level and fragment formats are changed.
+        # Rebuild only heading-to-heading transitions so the new selector is
+        # applied without exposing the usual body-to-heading path to a rerender.
+        if previous_level > 0 and level > 0 and previous_level != level:
+            updated_text = self.get_wiki_text()
+            self.set_wiki_text(updated_text, force=True)
+            maximum_position = self.document().characterCount() - 1
+            restored_cursor = self.textCursor()
+            restored_cursor.setPosition(min(cursor_anchor, maximum_position))
+            restored_cursor.setPosition(
+                min(cursor_position, maximum_position),
+                QTextCursor.MoveMode.KeepAnchor,
+            )
+            self.setTextCursor(restored_cursor)
+            self.verticalScrollBar().setValue(scroll_position)
+
+        # Body-to-heading changes need no round-trip: applying the semantic block
+        # and character formats directly preserves empty lines and cursor state.
+
+    def _apply_live_heading_character_format(
+        self,
+        block: QTextBlock,
+        level: int,
+        font_size: float,
+    ) -> None:
+        """Apply heading typography to every existing fragment in a block.
+
+        Loaded HTML contains explicit fragment-level font properties. Updating
+        each copied format ensures those properties are replaced immediately
+        while anchors, emphasis, foreground colors, and other inline metadata
+        remain intact.
+
+        Args:
+            block: Block receiving the body or heading typography.
+            level: Semantic heading level, or zero for body text.
+            font_size: Resolved editor point size for the level.
+        """
+        weight = QFont.Weight.DemiBold if level > 0 else QFont.Weight.Normal
+        updates: list[tuple[int, int, QTextCharFormat]] = []
+        iterator = block.begin()
+
+        while not iterator.atEnd():
+            fragment = iterator.fragment()
+            if fragment.isValid():
+                fragment_format = QTextCharFormat(fragment.charFormat())
+                fragment_format.setFontFamilies(
+                    [self._typography.primary_font_family]
+                )
+                fragment_format.setFontPointSize(font_size)
+                fragment_format.setFontWeight(weight)
+                updates.append(
+                    (
+                        fragment.position(),
+                        fragment.length(),
+                        fragment_format,
+                    )
+                )
+            iterator += 1
+
+        if updates:
+            self._apply_fragment_formats(updates)
         else:
-            fmt.setFontWeight(QFont.Weight.Normal)
-
-        cursor.mergeCharFormat(fmt)
-        if not cursor.hasSelection():
-            # Empty blocks have no characters for mergeCharFormat() to update.
-            # Set the insertion format explicitly so the first typed character
-            # uses the selected body/heading style.
-            self.setCurrentCharFormat(fmt)
-
-        # Force visual update by re-rendering was problematic for cursor state.
-        # Since we manually applied block and char formats that match the theme,
-        # we don't need to do a full markdown round-trip.
-        # This prevents cursor jumping and loss of empty lines.
+            insertion_format = QTextCharFormat(self.currentCharFormat())
+            insertion_format.setFontFamilies(
+                [self._typography.primary_font_family]
+            )
+            insertion_format.setFontPointSize(font_size)
+            insertion_format.setFontWeight(weight)
+            self.setCurrentCharFormat(insertion_format)
+            self._refresh_document_layout()
 
     def _toggle_markdown_format(self, marker: str) -> None:
         """Toggle Markdown formatting markers around selection.
@@ -1368,6 +1443,14 @@ class WikiTextEditView(QTextEdit):
         # Validate the target
         is_valid = self._validate_link_target(target)
 
+        # Preserve the format that should continue after the link. QTextCursor
+        # adopts the anchor format inserted by insertHtml(), which would make
+        # all subsequently typed text part of the WikiLink unless we restore
+        # the pre-link insertion format explicitly.
+        continuation_format = QTextCharFormat(cursor.charFormat())
+        continuation_format.setAnchor(False)
+        continuation_format.setAnchorHref("")
+
         # Replace the [[...]] with a styled anchor
         # Calculate absolute positions
         block_start = cursor.block().position()
@@ -1382,10 +1465,15 @@ class WikiTextEditView(QTextEdit):
         if is_valid:
             html = f'<a href="{target}">{label}</a>'
         else:
-            html = f'<a href="{target}" style="color: red;">{label}</a>'
+            html = (
+                f'<a href="{target}" style="color: '
+                f'{self._typography.broken_link_color};">{label}</a>'
+            )
 
         cursor.insertHtml(html)
+        cursor.setCharFormat(continuation_format)
         self.setTextCursor(cursor)
+        self._refresh_document_layout()
 
     def _validate_link_target(self, target: str) -> bool:
         """Validate a link target against known items.
@@ -1424,7 +1512,10 @@ class WikiTextEditView(QTextEdit):
         super().paintEvent(event)
 
         # We only draw gutters in rich mode to avoid clashes with markdown hashes
-        if getattr(self, "_view_mode", "rich") == "source":
+        if (
+            getattr(self, "_view_mode", "rich") == "source"
+            or not self._typography.show_section_gutter
+        ):
             return
 
         from PySide6.QtCore import QPoint
@@ -1783,20 +1874,40 @@ class WikiTextEditView(QTextEdit):
                         as we fetch fresh from ThemeManager).
 
         """
+        if not shiboken6.isValid(self):
+            return
+
         # Update widget styling (scrollbars, borders)
+        self._typography = EditorTypography.from_theme(theme_data)
         self._apply_widget_style()
+
+        # Rebuild from the live document. The source cache intentionally is not
+        # updated on every keystroke, so using it here can miss unsaved edits.
+        cursor = self.textCursor()
+        cursor_position = cursor.position()
+        cursor_anchor = cursor.anchor()
+        scroll_position = self.verticalScrollBar().value()
 
         # Block signals to prevent textChanged from triggering dirty state
         was_blocked = self.blockSignals(True)
         try:
-            # Re-render with stored text to apply new stylesheet
-            if self._current_wiki_text:
+            if self._view_mode == "rich" and not self.document().isEmpty():
                 self.set_wiki_text(self.get_wiki_text(), force=True)
+                restored_cursor = self.textCursor()
+                maximum_position = self.document().characterCount() - 1
+                restored_cursor.setPosition(min(cursor_anchor, maximum_position))
+                restored_cursor.setPosition(
+                    min(cursor_position, maximum_position),
+                    QTextCursor.MoveMode.KeepAnchor,
+                )
+                self.setTextCursor(restored_cursor)
+                self.verticalScrollBar().setValue(scroll_position)
             else:
-                # Just update stylesheet for empty or non-wiki content
                 self._apply_theme_stylesheet()
+                self._refresh_document_layout()
         finally:
-            self.blockSignals(was_blocked)
+            if shiboken6.isValid(self):
+                self.blockSignals(was_blocked)
 
 
 class SpellCheckSettingsDialog(QDialog):
@@ -2013,8 +2124,11 @@ class WikiTextEdit(QFrame):
 
     def _apply_editor_width_limit(self) -> None:
         """Size the frame to the configured text column and visible editor chrome."""
-        character_width = self.editor.fontMetrics().averageCharWidth()
-        text_width = character_width * WIKI_EDITOR_MAX_LINE_LENGTH
+        typography = self.editor._typography
+        character_width = QFontMetricsF(
+            self.editor.document().defaultFont()
+        ).averageCharWidth()
+        text_width = round(character_width * typography.line_length)
         document_margins = round(self.editor.document().documentMargin() * 2)
         scrollbar_width = self.editor.verticalScrollBar().sizeHint().width()
         frame_padding = 6

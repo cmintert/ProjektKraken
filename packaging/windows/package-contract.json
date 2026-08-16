@@ -23,6 +23,7 @@
   "required_package_paths": [
     "ProjektKraken.exe",
     "_internal/package-contract.json",
+    "_internal/Kraken.webp",
     "_internal/themes.json",
     "_internal/default_assets/icons/app_icons/Projekt_Kraken_Icon_32x32.png",
     "_internal/default_assets/icons/markers/map-pin.svg",
@@ -35,6 +36,7 @@
     "_internal/src/webserver/templates/index.html"
   ],
   "smoke_resources": [
+    "Kraken.webp",
     "themes.json",
     "default_assets/icons/app_icons/Projekt_Kraken_Icon_32x32.png",
     "default_assets/icons/markers/map-pin.svg",

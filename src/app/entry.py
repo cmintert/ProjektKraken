@@ -121,6 +121,14 @@ def main() -> None:
         except FileNotFoundError:
             logger.warning("main.qss not found, skipping styling.")
 
+        splash = None
+        if package_smoke_options is None:
+            from src.gui.splash_screen import SplashScreen
+
+            splash = SplashScreen()
+            splash.show()
+            app.processEvents()
+
         # CLI Argument Parsing for Layout Capture
         capture_layout = "--set-default-layout" in sys.argv
         if capture_layout:
@@ -139,6 +147,13 @@ def main() -> None:
             logger.info("Settings cleared. Starting in default state.")
 
         window = MainWindow(capture_layout_on_exit=capture_layout)
+        if splash is not None:
+            splash.set_status("Loading world data…")
+            window.startup_completed.connect(
+                lambda _success: splash.dismiss(window)
+            )
+            # Retain the splash until the asynchronous startup signal arrives.
+            setattr(app, "_startup_splash", splash)
         window.show()
 
         if package_smoke_options is not None:

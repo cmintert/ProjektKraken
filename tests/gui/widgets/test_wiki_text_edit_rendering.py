@@ -2,6 +2,8 @@ import unittest
 
 from PySide6.QtWidgets import QApplication
 
+from src.core.theme_manager import ThemeManager
+from src.gui.editor_typography import EditorTypography
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
 # Ensure QApplication exists
@@ -35,9 +37,10 @@ class TestWikiTextEditRendering(unittest.TestCase):
 
         # Should contain a link to Unknown Ghost
         self.assertIn('href="Unknown Ghost"', html)
-        # Should contain inline style for red color
-        # Note: HTML serialization might vary, checking key parts
-        self.assertIn("color:#ff0000", html)
+        broken_color = EditorTypography.from_theme(
+            ThemeManager().get_theme()
+        ).broken_link_color
+        self.assertIn(f"color:{broken_color}", html)
 
     def test_rendering_mixed(self):
         """Test mixed known and unknown entities."""
@@ -49,8 +52,10 @@ class TestWikiTextEditRendering(unittest.TestCase):
         self.assertIn('href="Unknown Ghost"', html)
 
         # We need to be careful with assertIn here as toHtml dumps the whole doc
-        # But we can check that at least one instance of red is there
-        self.assertIn("color:#ff0000", html)
+        broken_color = EditorTypography.from_theme(
+            ThemeManager().get_theme()
+        ).broken_link_color
+        self.assertIn(f"color:{broken_color}", html)
 
     def test_rendering_case_insensitive(self):
         """Test that casing differences are ignored."""
