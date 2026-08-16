@@ -611,7 +611,6 @@ class MapGraphicsView(QGraphicsView):
 
     def stop_raster_editing(self) -> None:
         """Exit raster editing mode."""
-        logger.debug("stop_raster_editing called")
         self._raster_edit_tool.stop_editing()
 
     # ------------------------------------------------------------------

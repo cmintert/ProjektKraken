@@ -440,7 +440,6 @@ class RasterEditTool:
         self._remove_cursor()
         self._view.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         self._view.viewport().setCursor(Qt.CursorShape.ArrowCursor)
-        logger.info("Raster edit stopped")
 
     # ------------------------------------------------------------------
     # Mouse event handlers (return True if consumed)

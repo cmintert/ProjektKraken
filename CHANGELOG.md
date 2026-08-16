@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-16
-**Commit:** 6fd090f7
+**Commit:** 65f6a5f6
 ---
 
 # Changelog
@@ -25,6 +25,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-16)* **Editor / WikiLinks**: Ended manually typed WikiLinks at
+  their closing `]]` so subsequent text no longer inherits the link.
 - *(2026-08-15)* **Maps / Marker Editing**: Kept resize and anchor handles above
   marker movement, fixed the resize handle to the active icon corner, and made
   label spacing respect off-centre icon bounds.
@@ -40,6 +42,13 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-16)* **Maps / Logging**: Removed repetitive raster-edit shutdown
+  messages from routine map interaction logs.
+- *(2026-08-16)* **Editor / Typography**: Improved rich-text readability with
+  centralized theme-aware body, heading, spacing, line-length, and link styles
+  that remain consistent during live formatting and theme changes.
+- *(2026-08-16)* **Testing / Editor**: Added typography, rendering, live-format,
+  theme-refresh, and manually closed WikiLink regression coverage.
 - *(2026-08-16)* **Packaging / Testing**: Bundled the splash artwork in Windows
   packages, exposed canonical release identity metadata, and added startup and
   splash regression coverage.
