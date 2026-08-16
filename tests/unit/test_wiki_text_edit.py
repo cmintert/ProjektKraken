@@ -10,6 +10,7 @@ from PySide6.QtGui import QTextOption
 
 from src.app.constants import WIKI_EDITOR_MAX_LINE_LENGTH
 from src.core.theme_manager import ThemeManager
+from src.gui.editor_typography import EditorTypography
 from src.gui.widgets.wiki_text_edit import WikiTextEdit
 
 # Requires qtbot to interact with widgets
@@ -103,17 +104,14 @@ def test_font_sizes_applied_on_init(qtbot):
     widget = WikiTextEdit()
     qtbot.addWidget(widget)
 
-    # Get theme font sizes
-    tm = ThemeManager()
-    theme = tm.get_theme()
-    fs_h1 = theme.get("font_size_h1", "18pt")
+    typography = EditorTypography.from_theme(ThemeManager().get_theme())
 
     # Check that stylesheet is applied
     stylesheet = widget.document().defaultStyleSheet()
     assert stylesheet is not None
     assert len(stylesheet) > 0
     # Font size should be in the stylesheet
-    assert fs_h1 in stylesheet or "font-size:" in stylesheet
+    assert f"{typography.h1_size}pt" in stylesheet
 
 
 def test_font_sizes_applied_in_set_wiki_text(qtbot):
@@ -124,15 +122,12 @@ def test_font_sizes_applied_in_set_wiki_text(qtbot):
     # Set some wiki text with headings
     widget.set_wiki_text("# Heading 1\n\nSome content here.")
 
-    # Get theme font sizes
-    tm = ThemeManager()
-    theme = tm.get_theme()
-    fs_h1 = theme.get("font_size_h1", "18pt")
+    typography = EditorTypography.from_theme(ThemeManager().get_theme())
 
     # Check that stylesheet contains font sizes
     stylesheet = widget.document().defaultStyleSheet()
     assert stylesheet is not None
-    assert fs_h1 in stylesheet
+    assert f"{typography.h1_size}pt" in stylesheet
 
 
 def test_theme_change_updates_stylesheet(qtbot):
@@ -622,6 +617,30 @@ def test_heading_visual_update_without_mode_switch(qtbot):
     assert block_fmt.headingLevel() == 1, "Block should have heading level 1"
 
 
+def test_heading_level_change_updates_every_rich_text_fragment(qtbot):
+    """Changing heading level updates mixed inline fragments immediately."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+    typography = EditorTypography.from_theme(ThemeManager().get_theme())
+    widget.set_wiki_text("# Plain *emphasis* text")
+
+    widget._set_heading(2)
+
+    block = widget.document().begin()
+    assert block.blockFormat().headingLevel() == 2
+    iterator = block.begin()
+    fragment_sizes = []
+    while not iterator.atEnd():
+        fragment = iterator.fragment()
+        if fragment.isValid():
+            fragment_sizes.append(fragment.charFormat().fontPointSize())
+        iterator += 1
+
+    assert fragment_sizes
+    assert all(size == typography.h2_size for size in fragment_sizes)
+    assert widget.get_wiki_text().startswith("## ")
+
+
 def test_no_double_bold_in_headings(qtbot):
     """Regression: Headings should not wrap in ** markers despite being bold."""
     widget = WikiTextEdit()
@@ -665,15 +684,9 @@ def test_enter_resets_heading_format(qtbot):
     block_fmt = cursor.blockFormat()
     char_fmt = cursor.charFormat()
 
-    # Should be body text (heading level 0, body font size ~10pt)
+    # Should be body text (heading level 0, editor-specific body size)
     assert block_fmt.headingLevel() == 0, "New line should not be a heading"
-    from src.core.theme_manager import ThemeManager
-
-    body_size = float(
-        str(ThemeManager().get_theme().get("font_size_body", "10pt"))
-        .replace("pt", "")
-        .strip()
-    )
+    body_size = EditorTypography.from_theme(ThemeManager().get_theme()).body_size
     assert char_fmt.fontPointSize() == body_size, (
         f"New line should be body size ({body_size}pt), "
         f"got {char_fmt.fontPointSize()}"

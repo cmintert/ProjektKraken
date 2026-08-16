@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 import pytest
 from PySide6.QtGui import QTextCursor
 from PySide6.QtWidgets import QApplication, QCompleter
@@ -52,6 +54,8 @@ def test_insert_completion(qapp):
     # Manually trigger completion insert
     # The completer prefix would normally be set by logic, but here we simulate it
     editor._completer.setCompletionPrefix("Gan")
+    refresh = Mock(wraps=editor.editor._refresh_document_layout)
+    editor.editor._refresh_document_layout = refresh
     editor.insert_completion("Gandalf the Grey")
 
     # Expect "Seen [[Gandalf the Grey]]"
@@ -60,6 +64,7 @@ def test_insert_completion(qapp):
     result = editor.get_wiki_text().strip()
     # Normalize result (WikiTextEdit might add non-breaking space)
     assert result == "Seen [[Gandalf the Grey]]"
+    refresh.assert_called_once_with()
 
 
 def test_insert_completion_mid_sentence(qapp):
