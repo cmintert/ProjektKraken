@@ -1443,6 +1443,14 @@ class WikiTextEditView(QTextEdit):
         # Validate the target
         is_valid = self._validate_link_target(target)
 
+        # Preserve the format that should continue after the link. QTextCursor
+        # adopts the anchor format inserted by insertHtml(), which would make
+        # all subsequently typed text part of the WikiLink unless we restore
+        # the pre-link insertion format explicitly.
+        continuation_format = QTextCharFormat(cursor.charFormat())
+        continuation_format.setAnchor(False)
+        continuation_format.setAnchorHref("")
+
         # Replace the [[...]] with a styled anchor
         # Calculate absolute positions
         block_start = cursor.block().position()
@@ -1463,6 +1471,7 @@ class WikiTextEditView(QTextEdit):
             )
 
         cursor.insertHtml(html)
+        cursor.setCharFormat(continuation_format)
         self.setTextCursor(cursor)
         self._refresh_document_layout()
 

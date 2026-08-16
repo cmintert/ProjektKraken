@@ -194,6 +194,21 @@ def test_toggle_view_mode(qtbot):
     assert widget.get_wiki_text() == "[[NewLink]]"
 
 
+@pytest.mark.parametrize("target", ["Known", "Unknown"])
+def test_manual_wikilink_closure_ends_anchor_format(qtbot, target):
+    """Text typed after manual ]] closure remains outside the WikiLink."""
+    widget = WikiTextEdit()
+    qtbot.addWidget(widget)
+    widget.set_completer(names=["Known"])
+    widget.show()
+    widget.editor.setFocus()
+
+    qtbot.keyClicks(widget.editor, f"[[{target}]] trailing")
+
+    assert widget.get_wiki_text() == f"[[{target}]] trailing"
+    assert widget.textCursor().charFormat().isAnchor() is False
+
+
 def test_get_wiki_text_in_source_mode(qtbot):
     """Test get_wiki_text returns raw text when in source mode."""
     widget = WikiTextEdit()
