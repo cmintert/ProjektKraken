@@ -858,6 +858,12 @@ class ConnectionManager:
                     self.window.editor_coordinator.on_map_create_event,
                     "MapWidget",
                 ),
+                (
+                    map_widget,
+                    "marker_object_creation_requested",
+                    self.window.editor_coordinator.on_map_create_marker_object,
+                    "MapWidget",
+                ),
             ],
             "MapWidget",
         )

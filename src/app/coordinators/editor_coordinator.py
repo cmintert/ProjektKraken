@@ -31,6 +31,7 @@ from src.commands.event_commands import (
     DeleteEventCommand,
     UpdateEventCommand,
 )
+from src.commands.marker_commands import CreateMarkerCommand
 from src.commands.relation_commands import (
     AddRelationCommand,
     RemoveRelationCommand,
@@ -465,8 +466,10 @@ class EditorCoordinator(BaseCoordinator):
         cmd = UpdateEventCommand(event_id, {"lore_date": new_lore_date})
         self.command_requested.emit(cmd)
 
-    @Slot(str, str)
-    def on_map_create_entity(self, new_id: str, name: str) -> None:
+    @Slot(str, str, str)
+    def on_map_create_entity(
+        self, new_id: str, name: str, entity_type: str
+    ) -> None:
         """Handle inline entity creation from the map.
 
         Args:
@@ -475,7 +478,7 @@ class EditorCoordinator(BaseCoordinator):
 
         """
         cmd = self._create_entity_command(
-            {"id": new_id, "name": name, "type": "Location"}
+            {"id": new_id, "name": name, "type": entity_type}
         )
         self.command_requested.emit(cmd)
 
@@ -493,6 +496,48 @@ class EditorCoordinator(BaseCoordinator):
             {"id": new_id, "name": name, "lore_date": lore_date}
         )
         self.command_requested.emit(cmd)
+
+    @Slot(str, str, str, str, str, float, float)
+    def on_map_create_marker_object(
+        self,
+        map_id: str,
+        new_id: str,
+        object_type: str,
+        name: str,
+        entity_type: str,
+        x: float,
+        y: float,
+    ) -> None:
+        """Create a lore object and its point marker as one undoable action."""
+        if object_type == "event":
+            lore_date = float(self.main_window.timeline.get_playhead_time())
+            create_object: BaseCommand = self._create_event_command(
+                {"id": new_id, "name": name, "lore_date": lore_date}
+            )
+        else:
+            create_object = self._create_entity_command(
+                {
+                    "id": new_id,
+                    "name": name,
+                    "type": entity_type or "Location",
+                }
+            )
+
+        create_marker = CreateMarkerCommand(
+            {
+                "map_id": map_id,
+                "object_id": new_id,
+                "object_type": object_type,
+                "x": x,
+                "y": y,
+                "label": name,
+            }
+        )
+        command = CompositeCommand(
+            [create_object, create_marker],
+            description=f"Create {name} and Place Marker",
+        )
+        self.command_requested.emit(command)
 
     # ------------------------------------------------------------------
     # Toast Notifications

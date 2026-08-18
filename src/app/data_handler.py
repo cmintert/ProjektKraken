@@ -113,6 +113,8 @@ class DataHandler(QObject):
         self._pending_select_id: Optional[str] = None
         self._reload_markers_after_events = False
         self._reload_markers_after_entities = False
+        self._reload_marker_map_after_events: str | None = None
+        self._reload_marker_map_after_entities: str | None = None
         logger.debug("DataHandler initialized")
 
     @Slot(list)
@@ -130,7 +132,12 @@ class DataHandler(QObject):
 
         if self._reload_markers_after_events:
             self._reload_markers_after_events = False
-            self.reload_markers_for_current_map.emit()
+            map_id = self._reload_marker_map_after_events
+            self._reload_marker_map_after_events = None
+            if map_id:
+                self.reload_markers.emit(map_id)
+            else:
+                self.reload_markers_for_current_map.emit()
 
         if self._pending_select_type == "event" and self._pending_select_id:
             self.selection_requested.emit("event", self._pending_select_id)
@@ -152,7 +159,12 @@ class DataHandler(QObject):
 
         if self._reload_markers_after_entities:
             self._reload_markers_after_entities = False
-            self.reload_markers_for_current_map.emit()
+            map_id = self._reload_marker_map_after_entities
+            self._reload_marker_map_after_entities = None
+            if map_id:
+                self.reload_markers.emit(map_id)
+            else:
+                self.reload_markers_for_current_map.emit()
 
         if self._pending_select_type == "entity" and self._pending_select_id:
             self.selection_requested.emit("entity", self._pending_select_id)
@@ -318,13 +330,17 @@ class DataHandler(QObject):
         text = summary_data.get("text")
         return text.strip() if isinstance(text, str) else ""
 
-    def _reload_lore_cache_then_markers(self, object_type: str) -> None:
+    def _reload_lore_cache_then_markers(
+        self, object_type: str, map_id: str | None = None
+    ) -> None:
         """Reload lore data before rebuilding marker tooltip content."""
         if object_type == "event":
             self._reload_markers_after_events = True
+            self._reload_marker_map_after_events = map_id
             self.reload_events.emit()
         elif object_type == "entity":
             self._reload_markers_after_entities = True
+            self._reload_marker_map_after_entities = map_id
             self.reload_entities.emit()
         else:
             logger.warning("Unknown lore object type for reload: %s", object_type)
@@ -443,8 +459,15 @@ class DataHandler(QObject):
                 or command_name == "ApplyMarkerAppearanceCommand"
             )
             if "Marker" in command_name and not is_update_operation:
-                logger.debug("[DataHandler] Emitting reload_markers_for_current_map")
-                self.reload_markers_for_current_map.emit()
+                map_id = result.data.get("map_id")
+                if isinstance(map_id, str) and map_id:
+                    logger.debug("[DataHandler] Reloading affected map: %s", map_id)
+                    self.reload_markers.emit(map_id)
+                else:
+                    logger.debug(
+                        "[DataHandler] Emitting reload_markers_for_current_map"
+                    )
+                    self.reload_markers_for_current_map.emit()
 
             # Visual attribute/colour changes also need a marker reload
             # so the map re-reads updated attributes from the DB.
@@ -495,6 +518,14 @@ class DataHandler(QObject):
             # the worker-produced serializable request. The object fallback is
             # retained only for compatibility with older callers and tests.
             if command_name == "CompositeCommand":
+                marker_map_ids = [
+                    str(map_id)
+                    for map_id in cast(
+                        Iterable[object], result.data.get("marker_map_ids", [])
+                    )
+                    if map_id
+                ]
+                marker_map_id = marker_map_ids[0] if marker_map_ids else None
                 requests = list(
                     cast(
                         Iterable[dict[str, object]],
@@ -508,7 +539,9 @@ class DataHandler(QObject):
                         object_type,
                         str(request["object_id"]),
                     )
-                    self._reload_lore_cache_then_markers(object_type)
+                    self._reload_lore_cache_then_markers(
+                        object_type, marker_map_id
+                    )
                 else:
                     cmd_obj = result.data.get("command")
                     for sub in getattr(cmd_obj, "commands", []):

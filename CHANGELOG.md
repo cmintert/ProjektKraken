@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-18
-**Commit:** d606d6f9
+**Commit:** 85d691fd
 ---
 
 # Changelog
@@ -13,6 +13,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-08-18)* **Maps / Marker Creation**: Added a searchable marker picker
+  with direct Location, typed Entity, and Event creation actions.
 - *(2026-08-16)* **Application / Startup**: Added a branded, theme-aware splash
   screen that remains visible until the primary world data reaches the UI.
 - *(2026-08-15)* **Maps / Marker Appearance**: Added appearance copy and paste,
@@ -25,6 +27,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-18)* **Maps / Marker Creation**: Made newly created entities and
+  events refresh their exact map after atomic marker placement.
 - *(2026-08-18)* **Timeline / Event Creation**: Created standard, map-inline,
   and missing-link events at the current playhead instead of day zero.
 - *(2026-08-16)* **Editor / WikiLinks**: Ended manually typed WikiLinks at
@@ -44,6 +48,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-18)* **Testing / Maps**: Added picker, duplicate-name, keyboard,
+  atomic undo, and refresh regression coverage for marker creation.
 - *(2026-08-18)* **Testing / Event Creation**: Added regression coverage for
   preserving the exact playhead date across event-creation paths.
 - *(2026-08-16)* **Application / Logging**: Collapsed command-history diagnostics

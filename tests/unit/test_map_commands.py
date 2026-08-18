@@ -156,6 +156,7 @@ def test_create_marker_command(db_service):
     result = cmd.execute(db_service)
 
     assert result.success is True
+    assert result.data["map_id"] == map_obj.id
     assert "id" in result.data
 
     # Verify marker exists

@@ -6,6 +6,11 @@ import pytest
 
 from src.app.data_handler import DataHandler
 from src.commands.base_command import CommandResult
+from src.commands.composite_command import CompositeCommand
+from src.commands.entity_commands import CreateEntityCommand
+from src.commands.event_commands import CreateEventCommand
+from src.commands.marker_commands import CreateMarkerCommand
+from src.core.map import Map
 
 
 @pytest.fixture
@@ -34,6 +39,100 @@ def test_on_command_finished_rename_layer_emits_reloads(data_handler):
     data_handler.reload_entities.emit.assert_called_once()
     data_handler.reload_events.emit.assert_called_once()
     data_handler.reload_markers_for_current_map.emit.assert_called_once()
+
+
+def test_create_marker_reloads_exact_affected_map(data_handler):
+    """Point-marker creation refreshes its map without current-map inference."""
+    data_handler.reload_markers = MagicMock()
+    data_handler.reload_markers_for_current_map = MagicMock()
+    result = CommandResult(
+        success=True,
+        command_name="CreateMarkerCommand",
+        message="Created",
+        data={"id": "marker-1", "map_id": "map-1"},
+    )
+
+    data_handler.on_command_finished(result)
+
+    data_handler.reload_markers.emit.assert_called_once_with("map-1")
+    data_handler.reload_markers_for_current_map.emit.assert_not_called()
+
+
+def test_composite_creation_reloads_exact_map_after_lore_cache(
+    data_handler, db_service
+):
+    """Atomic object-marker creation waits for fresh lore, then reloads its map."""
+    db_service.insert_map(
+        Map(id="map-1", name="Test Map", image_path="test.png")
+    )
+    command = CompositeCommand(
+        [
+            CreateEntityCommand(
+                {"id": "entity-1", "name": "Grey Watch", "type": "Location"}
+            ),
+            CreateMarkerCommand(
+                {
+                    "map_id": "map-1",
+                    "object_id": "entity-1",
+                    "object_type": "entity",
+                    "x": 0.25,
+                    "y": 0.75,
+                    "label": "Grey Watch",
+                }
+            ),
+        ],
+        "Create Grey Watch and Place Marker",
+    )
+    result = command.execute(db_service)
+    assert result.success
+    assert result.data["index_requests"] == [
+        {"object_type": "entity", "object_id": "entity-1"}
+    ]
+    assert result.data["marker_map_ids"] == ["map-1"]
+
+    data_handler.reload_entities = MagicMock()
+    data_handler.reload_markers = MagicMock()
+    data_handler.reload_markers_for_current_map = MagicMock()
+
+    data_handler.on_command_finished(result)
+    data_handler.reload_entities.emit.assert_called_once()
+    data_handler.reload_markers.emit.assert_not_called()
+
+    data_handler.on_entities_loaded([db_service.get_entity("entity-1")])
+
+    data_handler.reload_markers.emit.assert_called_once_with("map-1")
+    data_handler.reload_markers_for_current_map.emit.assert_not_called()
+
+
+def test_event_marker_composite_reports_created_event(db_service):
+    """New-event composites expose the event ID needed by refresh handling."""
+    db_service.insert_map(
+        Map(id="map-1", name="Test Map", image_path="test.png")
+    )
+    command = CompositeCommand(
+        [
+            CreateEventCommand(
+                {"id": "event-1", "name": "The Crossing", "lore_date": 42.0}
+            ),
+            CreateMarkerCommand(
+                {
+                    "map_id": "map-1",
+                    "object_id": "event-1",
+                    "object_type": "event",
+                    "x": 0.5,
+                    "y": 0.5,
+                    "label": "The Crossing",
+                }
+            ),
+        ]
+    )
+
+    result = command.execute(db_service)
+
+    assert result.success
+    assert result.data["index_requests"] == [
+        {"object_type": "event", "object_id": "event-1"}
+    ]
 
 
 def test_on_command_finished_other_map_command_emits_maps_only(data_handler):

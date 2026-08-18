@@ -39,6 +39,7 @@ class CreateEventCommand(BaseCommand):
             # Default Event
             self.event = Event(name="New Event", lore_date=0.0)
 
+        self.event_id = self.event.id
         self._previous_state = None
 
     def get_description(self) -> str:

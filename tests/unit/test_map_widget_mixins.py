@@ -138,9 +138,8 @@ class TestDialogMixinMethods:
 
     EXPECTED_METHODS = [
         "set_cached_items",
+        "_choose_map_object",
         "_select_or_create_object",
-        "_create_new_entity_inline",
-        "_create_new_event_inline",
         "_on_create_map_clicked",
         "_on_delete_map_clicked",
         "_on_create_marker_requested",
@@ -152,10 +151,10 @@ class TestDialogMixinMethods:
         assert hasattr(MapWidget, method_name), f"Missing: {method_name}"
         assert callable(getattr(MapWidget, method_name))
 
-    def test_sentinel_values(self):
-        """Sentinel class attributes must be accessible."""
-        assert hasattr(MapWidget, "_NEW_ENTITY_SENTINEL")
-        assert hasattr(MapWidget, "_NEW_EVENT_SENTINEL")
+    def test_dropdown_sentinels_removed(self):
+        """The visible picker replaces hidden dropdown sentinel entries."""
+        assert not hasattr(MapWidget, "_NEW_ENTITY_SENTINEL")
+        assert not hasattr(MapWidget, "_NEW_EVENT_SENTINEL")
 
 
 class TestMapWidgetOwnMethods:

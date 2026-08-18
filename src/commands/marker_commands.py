@@ -28,6 +28,7 @@ class CreateMarkerCommand(BaseCommand):
         """
         super().__init__()
         self._marker = Marker(**marker_data)
+        self.map_id = self._marker.map_id
         self._actual_marker_id: Optional[str] = None
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
@@ -70,7 +71,10 @@ class CreateMarkerCommand(BaseCommand):
                 success=True,
                 message="Marker created/updated.",
                 command_name="CreateMarkerCommand",
-                data={"id": self._actual_marker_id},
+                data={
+                    "id": self._actual_marker_id,
+                    "map_id": self.map_id,
+                },
             )
         except Exception as e:
             logger.error(f"Failed to create marker: {e}")

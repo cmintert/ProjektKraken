@@ -414,11 +414,12 @@ class TestMapInlineCreation:
         signals = []
         fake_window.command_requested.connect(lambda cmd: signals.append(cmd))
 
-        coordinator.on_map_create_entity("new_id", "Map Entity")
+        coordinator.on_map_create_entity("new_id", "Map Entity", "Ship")
 
         from src.commands.entity_commands import CreateEntityCommand
 
         assert isinstance(signals[0], CreateEntityCommand)
+        assert signals[0].to_dict()["entity"]["type"] == "Ship"
 
     def test_on_map_create_event(self, coordinator, fake_window):
         """Map inline event creation should emit CreateEventCommand."""
@@ -432,3 +433,87 @@ class TestMapInlineCreation:
         assert isinstance(signals[0], CreateEventCommand)
         assert signals[0].event.lore_date == 42.75
         fake_window.timeline.get_playhead_time.assert_called_once_with()
+
+    @pytest.mark.parametrize(
+        ("object_type", "entity_type", "expected_command"),
+        [
+            ("entity", "Location", "CreateEntityCommand"),
+            ("entity", "Ship", "CreateEntityCommand"),
+            ("event", "", "CreateEventCommand"),
+        ],
+    )
+    def test_marker_object_creation_is_one_composite_command(
+        self,
+        coordinator,
+        fake_window,
+        object_type,
+        entity_type,
+        expected_command,
+    ):
+        signals = []
+        fake_window.command_requested.connect(lambda command: signals.append(command))
+
+        coordinator.on_map_create_marker_object(
+            "map-1",
+            "new-object",
+            object_type,
+            "Grey Watch",
+            entity_type,
+            0.25,
+            0.75,
+        )
+
+        from src.commands.composite_command import CompositeCommand
+        from src.commands.marker_commands import CreateMarkerCommand
+
+        assert len(signals) == 1
+        assert isinstance(signals[0], CompositeCommand)
+        assert signals[0].commands[0].__class__.__name__ == expected_command
+        assert isinstance(signals[0].commands[1], CreateMarkerCommand)
+        if object_type == "event":
+            assert signals[0].commands[0].event.lore_date == 42.75
+
+    def test_marker_object_creation_undo_removes_object_and_marker(
+        self, coordinator, fake_window, db_service
+    ):
+        from src.core.map import Map
+
+        db_service.insert_map(
+            Map(id="map-1", name="Test Map", image_path="test.png")
+        )
+        signals = []
+        fake_window.command_requested.connect(lambda command: signals.append(command))
+        coordinator.on_map_create_marker_object(
+            "map-1",
+            "location-1",
+            "entity",
+            "Grey Watch",
+            "Location",
+            0.25,
+            0.75,
+        )
+
+        command = signals[0]
+        result = command.execute(db_service)
+        assert result.success
+        assert result.data["index_requests"] == [
+            {"object_type": "entity", "object_id": "location-1"}
+        ]
+        assert result.data["marker_map_ids"] == ["map-1"]
+        assert db_service.get_entity("location-1") is not None
+        assert (
+            db_service.get_marker_by_composite(
+                "map-1", "location-1", "entity"
+            )
+            is not None
+        )
+
+        command.undo(db_service)
+
+        assert db_service.get_entity("location-1") is None
+        assert (
+            db_service.get_marker_by_composite(
+                "map-1", "location-1", "entity"
+            )
+            is None
+        )

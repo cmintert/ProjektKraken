@@ -256,9 +256,13 @@ class MapWidget(
     raster_value_probed = Signal(str, object, float, float)  # node_id, sample, x, y
     raster_palette_edit_requested = Signal(str)  # node_id
 
-    # Emitted when inline entity/event creation is requested from the map.
-    create_entity_requested = Signal(str, str)  # new_id, name
+    # Emitted when inline entity/event creation is requested from a map feature.
+    create_entity_requested = Signal(str, str, str)  # new_id, name, entity_type
     create_event_requested = Signal(str, str)  # new_id, name
+    # Atomic lightweight object creation plus point-marker placement.
+    marker_object_creation_requested = Signal(
+        str, str, str, str, str, float, float
+    )  # map_id, new_id, object_type, name, entity_type, x, y
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the MapWidget.

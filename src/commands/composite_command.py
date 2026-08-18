@@ -78,6 +78,7 @@ class CompositeCommand(BaseCommand):
 
         self._is_executed = True
         index_requests: list[dict[str, str]] = []
+        marker_map_ids: list[str] = []
         for command in self.commands:
             command_name = command.__class__.__name__
             if command_name in {"CreateEntityCommand", "UpdateEntityCommand"}:
@@ -92,11 +93,18 @@ class CompositeCommand(BaseCommand):
                     index_requests.append(
                         {"object_type": "event", "object_id": str(object_id)}
                     )
+            if command_name == "CreateMarkerCommand":
+                map_id = getattr(command, "map_id", None)
+                if map_id and str(map_id) not in marker_map_ids:
+                    marker_map_ids.append(str(map_id))
         return CommandResult(
             success=True,
             message=f"{self.get_description()} completed.",
             command_name="CompositeCommand",
-            data={"index_requests": index_requests[:1]},
+            data={
+                "index_requests": index_requests[:1],
+                "marker_map_ids": marker_map_ids,
+            },
         )
 
     def _rollback(self, db_service: DatabaseService) -> None:

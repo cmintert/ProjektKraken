@@ -26,6 +26,7 @@ class CreateEntityCommand(BaseCommand):
             self._entity = Entity(**entity_data)
         else:
             self._entity = Entity(name="New Entity", type="Concept")
+        self.entity_id = self._entity.id
 
     def execute(self, db_service: DatabaseService) -> CommandResult:
         """Executes the command to create the entity.

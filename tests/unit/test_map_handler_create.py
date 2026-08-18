@@ -1,148 +1,120 @@
-"""Tests for in-place entity/event creation from MapWidget dialogs.
-
-These tests verify the object-selection dialog logic that was moved
-from MapHandler to MapWidget.  MapHandler now receives pre-resolved
-data via signals.
-"""
+"""Tests for point-marker selection and lightweight map creation requests."""
 
 from unittest.mock import MagicMock, patch
 
 import pytest
-from PySide6.QtWidgets import QApplication
 
+from src.core.map import Map
+from src.gui.dialogs.map_object_picker_dialog import MapObjectChoice
 from src.gui.widgets.map_widget import MapWidget
-
-
-@pytest.fixture(scope="session", autouse=True)
-def qapp():
-    """Ensure a QApplication exists for widget tests."""
-    app = QApplication.instance()
-    if app is None:
-        app = QApplication([])
-    return app
 
 
 @pytest.fixture
 def map_widget_fixture(qapp):
-    """Creates a MapWidget with cached entities/events."""
+    """Create a MapWidget with a selected map and cached objects."""
     widget = MapWidget()
-
-    entity = MagicMock()
-    entity.id = "ent_1"
-    entity.name = "Rivendell"
-
-    event = MagicMock()
-    event.id = "evt_1"
-    event.name = "Battle of Five Armies"
-
+    entity = MagicMock(id="ent_1", name="Rivendell", type="Location")
+    event = MagicMock(id="evt_1", name="Battle of Five Armies")
     widget.set_cached_items([entity], [event])
-    # Pre-select a map so get_selected_map_id() returns a value
-    from src.core.map import Map
-
-    test_map = Map(id="map_1", name="Middle-earth", image_path="x.png")
-    widget.set_maps([test_map])
+    widget.set_maps([Map(id="map_1", name="Middle-earth", image_path="x.png")])
     widget.select_map("map_1")
-
     yield widget
     widget.close()
 
 
-class TestSelectExistingItem:
-    """Tests for selecting existing entities/events."""
+def test_existing_entity_emits_marker_created(map_widget_fixture):
+    choice = MapObjectChoice(
+        action="existing",
+        object_id="ent_1",
+        object_type="entity",
+        name="Rivendell",
+    )
+    with patch.object(map_widget_fixture, "_choose_map_object", return_value=choice):
+        spy = MagicMock()
+        map_widget_fixture.marker_created.connect(spy)
+        map_widget_fixture._on_create_marker_requested(0.5, 0.5)
 
-    def test_create_marker_existing_entity(self, map_widget_fixture):
-        """Selecting an existing entity emits marker_created."""
-        with patch("src.gui.mixins.map_dialog_mixin.QInputDialog") as MockDialog:
-            MockDialog.getItem.return_value = ("Rivendell (Entity)", True)
-
-            spy = MagicMock()
-            map_widget_fixture.marker_created.connect(spy)
-            map_widget_fixture._on_create_marker_requested(0.5, 0.5)
-
-            spy.assert_called_once()
-            args = spy.call_args[0]
-            assert args[0] == "map_1"  # map_id
-            assert args[1] == "ent_1"  # obj_id
-            assert args[2] == "entity"  # obj_type
-
-    def test_create_feature_existing_event(self, map_widget_fixture):
-        """Selecting an existing event for a feature emits feature_created."""
-        geometry = [{"x": 0.1, "y": 0.1}, {"x": 0.5, "y": 0.5}, {"x": 0.9, "y": 0.1}]
-        with patch("src.gui.mixins.map_dialog_mixin.QInputDialog") as MockDialog:
-            MockDialog.getItem.return_value = (
-                "Battle of Five Armies (Event)",
-                True,
-            )
-
-            spy = MagicMock()
-            map_widget_fixture.feature_created.connect(spy)
-            # Simulate drawing completion
-            map_widget_fixture._on_drawing_finished("region", geometry)
-
-            spy.assert_called_once()
-            args = spy.call_args[0]
-            assert args[0] == "map_1"
-            assert args[1] == "evt_1"
-            assert args[2] == "event"
-            assert args[4] == "region"
+    spy.assert_called_once_with(
+        "map_1", "ent_1", "entity", "Rivendell", 0.5, 0.5
+    )
 
 
-class TestCreateNewInline:
-    """Tests for the new in-place creation flow."""
+@pytest.mark.parametrize(
+    ("choice", "expected_type"),
+    [
+        (
+            MapObjectChoice(
+                action="create",
+                object_type="entity",
+                name="Grey Ford",
+                entity_type="Location",
+            ),
+            "entity",
+        ),
+        (
+            MapObjectChoice(
+                action="create",
+                object_type="entity",
+                name="Edda Voss",
+                entity_type="Character",
+            ),
+            "entity",
+        ),
+        (
+            MapObjectChoice(
+                action="create", object_type="event", name="The Crossing"
+            ),
+            "event",
+        ),
+    ],
+)
+def test_new_object_requests_atomic_creation(
+    map_widget_fixture, choice, expected_type
+):
+    with patch.object(map_widget_fixture, "_choose_map_object", return_value=choice):
+        atomic_spy = MagicMock()
+        marker_spy = MagicMock()
+        map_widget_fixture.marker_object_creation_requested.connect(atomic_spy)
+        map_widget_fixture.marker_created.connect(marker_spy)
+        map_widget_fixture._on_create_marker_requested(0.3, 0.7)
 
-    def test_create_marker_new_entity(self, map_widget_fixture):
-        """Selecting '<New Entity...>' emits create_entity_requested + marker_created."""
-        with patch("src.gui.mixins.map_dialog_mixin.QInputDialog") as MockDialog:
-            MockDialog.getItem.return_value = ("<New Entity...>", True)
-            MockDialog.getText.return_value = ("Mount Doom", True)
+    atomic_spy.assert_called_once()
+    args = atomic_spy.call_args.args
+    assert args[0] == "map_1"
+    assert args[2] == expected_type
+    assert args[3] == choice.name
+    assert args[4] == choice.entity_type
+    assert args[5:] == (0.3, 0.7)
+    marker_spy.assert_not_called()
 
-            entity_spy = MagicMock()
-            marker_spy = MagicMock()
-            map_widget_fixture.create_entity_requested.connect(entity_spy)
-            map_widget_fixture.marker_created.connect(marker_spy)
 
-            map_widget_fixture._on_create_marker_requested(0.3, 0.7)
+def test_cancel_emits_nothing(map_widget_fixture):
+    with patch.object(map_widget_fixture, "_choose_map_object", return_value=None):
+        marker_spy = MagicMock()
+        atomic_spy = MagicMock()
+        map_widget_fixture.marker_created.connect(marker_spy)
+        map_widget_fixture.marker_object_creation_requested.connect(atomic_spy)
+        map_widget_fixture._on_create_marker_requested(0.5, 0.5)
 
-            entity_spy.assert_called_once()
-            marker_spy.assert_called_once()
+    marker_spy.assert_not_called()
+    atomic_spy.assert_not_called()
 
-    def test_create_marker_new_event(self, map_widget_fixture):
-        """Selecting '<New Event...>' emits create_event_requested + marker_created."""
-        with patch("src.gui.mixins.map_dialog_mixin.QInputDialog") as MockDialog:
-            MockDialog.getItem.return_value = ("<New Event...>", True)
-            MockDialog.getText.return_value = ("Dragon Attack", True)
 
-            event_spy = MagicMock()
-            marker_spy = MagicMock()
-            map_widget_fixture.create_event_requested.connect(event_spy)
-            map_widget_fixture.marker_created.connect(marker_spy)
+def test_feature_creation_preserves_chosen_entity_type(map_widget_fixture):
+    choice = MapObjectChoice(
+        action="create",
+        object_type="entity",
+        name="Northern League",
+        entity_type="Faction",
+    )
+    with patch.object(map_widget_fixture, "_choose_map_object", return_value=choice):
+        entity_spy = MagicMock()
+        feature_spy = MagicMock()
+        map_widget_fixture.create_entity_requested.connect(entity_spy)
+        map_widget_fixture.feature_created.connect(feature_spy)
+        geometry = [{"x": 0.1, "y": 0.1}, {"x": 0.5, "y": 0.5}]
+        map_widget_fixture._on_drawing_finished("path", geometry)
 
-            map_widget_fixture._on_create_marker_requested(0.6, 0.4)
-
-            event_spy.assert_called_once()
-            marker_spy.assert_called_once()
-
-    def test_new_entity_cancel_name_emits_nothing(self, map_widget_fixture):
-        """Cancelling the name dialog after choosing '<New Entity...>' emits nothing."""
-        with patch("src.gui.mixins.map_dialog_mixin.QInputDialog") as MockDialog:
-            MockDialog.getItem.return_value = ("<New Entity...>", True)
-            MockDialog.getText.return_value = ("", False)
-
-            marker_spy = MagicMock()
-            map_widget_fixture.marker_created.connect(marker_spy)
-
-            map_widget_fixture._on_create_marker_requested(0.5, 0.5)
-
-            marker_spy.assert_not_called()
-
-    def test_cancel_selection_emits_nothing(self, map_widget_fixture):
-        """Cancelling the item selection dialog emits nothing."""
-        with patch("src.gui.mixins.map_dialog_mixin.QInputDialog") as MockDialog:
-            MockDialog.getItem.return_value = ("", False)
-
-            marker_spy = MagicMock()
-            map_widget_fixture.marker_created.connect(marker_spy)
-
-            map_widget_fixture._on_create_marker_requested(0.5, 0.5)
-
-            marker_spy.assert_not_called()
+    entity_spy.assert_called_once()
+    assert entity_spy.call_args.args[1:] == ("Northern League", "Faction")
+    feature_spy.assert_called_once()
