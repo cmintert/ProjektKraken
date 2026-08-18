@@ -1811,19 +1811,19 @@ class MapWidget(
             marker = self.view.markers.get(
                 self.view.editing_marker_appearance_id or ""
             )
-            scale = marker.appearance_edit_scale if marker is not None else 1.0
+            size = marker.appearance_edit_size_text if marker is not None else ""
             anchor = (
                 marker.appearance_edit_anchor
                 if marker is not None
                 else MarkerIconAnchor()
             )
-            self.mode_indicator.setText(f"🟠 MARKER APPEARANCE · {scale:.2f}×")
+            self.mode_indicator.setText(f"🟠 MARKER APPEARANCE · {size}")
             self._apply_mode_indicator_style("vertex")
 
             self.overlay_banner.setText(
                 "🎯 <b>MARKER APPEARANCE</b><br/>"
                 "Drag corner to resize · Drag anchor handle to set attachment<br/>"
-                f"Scale: <b>{scale:.2f}×</b> · "
+                f"Size: <b>{size}</b> · "
                 f"Anchor: {anchor.x * 100:.0f}%, {anchor.y * 100:.0f}%<br/>"
                 "<small>[Enter to Apply] [Esc to Cancel]</small>"
             )

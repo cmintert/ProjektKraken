@@ -20,7 +20,7 @@ V_BORDER: str = "_v_border"
 """Hex color for the border / outline."""
 
 V_SIZE_SCALE: str = "_v_size_scale"
-"""Float multiplier applied to *BASE_SIZE* (e.g. ``1.5`` → 150 %)."""
+"""General visual scale multiplier for consumers outside map-marker sizing."""
 
 V_BORDER_WIDTH: str = "_v_border_width"
 """Integer pixel width of the border / outline."""

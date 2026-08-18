@@ -29,7 +29,6 @@ from src.core.style_constants import (
     V_BORDER,
     V_BORDER_WIDTH,
     V_FILL,
-    V_SIZE_SCALE,
 )
 from src.core.theme_manager import ThemeManager
 from src.gui.dialogs.icon_picker_dialog import IconPickerDialog
@@ -380,7 +379,6 @@ class InteractionHandler:
         )
         dialog = MarkerSizeDialog(
             MarkerSizingSettings.from_attributes(marker_item._visual_attributes),
-            float(marker_item._visual_attributes.get(V_SIZE_SCALE, 1.0)),
             self._view.map_width_meters,
             image_width,
             self._view.transform().m11(),
@@ -389,7 +387,6 @@ class InteractionHandler:
         if dialog.exec() == QDialog.DialogCode.Accepted:
             updates = {
                 MARKER_SIZING_ATTRIBUTE: dialog.get_settings().to_dict(),
-                V_SIZE_SCALE: dialog.get_scale_multiplier(),
             }
             new_attrs = dict(marker_item._visual_attributes)
             new_attrs.update(updates)

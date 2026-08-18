@@ -1281,8 +1281,6 @@ class TimelineView(QGraphicsView):
         # Calculate new zoom level
         new_zoom = self._current_zoom * factor
 
-        logger.debug(f"Zoom change: {self._current_zoom:.4f} -> {new_zoom:.4f}")
-
         # Enforce zoom limits
         if new_zoom < self.MIN_ZOOM:
             factor = self.MIN_ZOOM / self._current_zoom

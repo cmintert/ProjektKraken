@@ -39,6 +39,7 @@ from src.commands.relation_commands import (
 )
 from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.core.map import Map
+from src.core.marker_sizing import MARKER_SIZING_ATTRIBUTE, MarkerSizingSettings
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
@@ -531,6 +532,7 @@ class EditorCoordinator(BaseCoordinator):
                 "x": x,
                 "y": y,
                 "label": name,
+                "attributes": self._new_marker_attributes(),
             }
         )
         command = CompositeCommand(
@@ -538,6 +540,17 @@ class EditorCoordinator(BaseCoordinator):
             description=f"Create {name} and Place Marker",
         )
         self.command_requested.emit(command)
+
+    def _new_marker_attributes(self) -> dict[str, object]:
+        """Build persistent default appearance attributes for a new map marker."""
+        map_widget = getattr(self.main_window, "map_widget", None)
+        view = getattr(map_widget, "view", None)
+        pixmap_item = getattr(view, "pixmap_item", None)
+        image_width = (
+            pixmap_item.boundingRect().width() if pixmap_item is not None else 0.0
+        )
+        sizing = MarkerSizingSettings.for_map_image_width(image_width)
+        return {MARKER_SIZING_ATTRIBUTE: sizing.to_dict()}
 
     # ------------------------------------------------------------------
     # Toast Notifications

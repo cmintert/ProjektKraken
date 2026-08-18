@@ -17,11 +17,15 @@ from PySide6.QtWidgets import (
 
 from src.core.marker_sizing import (
     DEFAULT_MAP_WIDTH_PERCENT,
+    MAX_MAP_WIDTH_PERCENT,
+    MAX_SCREEN_SIZE_PX,
+    MIN_MAP_SIZE_METERS,
+    MIN_MAP_WIDTH_PERCENT,
+    MIN_SCREEN_SIZE_PX,
     MarkerMapSizeUnit,
     MarkerSizingMode,
     MarkerSizingSettings,
 )
-from src.core.style_constants import MAX_SCALE, MIN_SCALE
 from src.gui.utils.style_helper import StyleHelper
 
 _KM = 1000.0
@@ -29,12 +33,11 @@ _PERCENT = "% map width"
 
 
 class MarkerSizeDialog(QDialog):
-    """Edit one marker's geographic footprint and style multiplier."""
+    """Edit one marker's creator-facing size and zoom behavior."""
 
     def __init__(
         self,
         settings: MarkerSizingSettings,
-        scale_multiplier: float,
         map_width_meters: float,
         image_width: float,
         view_scale: float,
@@ -81,18 +84,7 @@ class MarkerSizeDialog(QDialog):
         self.unit_selector.currentTextChanged.connect(self._unit_changed)
         size_row.addWidget(self.size_input, 1)
         size_row.addWidget(self.unit_selector)
-        form.addRow("Base diameter:", size_row)
-
-        self.scale_input = QDoubleSpinBox()
-        self.scale_input.setRange(MIN_SCALE, MAX_SCALE)
-        self.scale_input.setDecimals(2)
-        self.scale_input.setSingleStep(0.1)
-        self.scale_input.setValue(scale_multiplier)
-        self.scale_input.setToolTip(
-            "Multiplies the base diameter for creature size or emphasis."
-        )
-        self.scale_input.valueChanged.connect(self._update_summary)
-        form.addRow("Scale multiplier:", self.scale_input)
+        form.addRow("Size:", size_row)
         layout.addLayout(form)
 
         self.hint = QLabel()
@@ -171,7 +163,7 @@ class MarkerSizeDialog(QDialog):
             self.unit_selector.clear()
             if self._mode is MarkerSizingMode.SCREEN_FIXED:
                 self.unit_selector.addItem("px")
-                self.size_input.setRange(8.0, 256.0)
+                self.size_input.setRange(MIN_SCREEN_SIZE_PX, MAX_SCREEN_SIZE_PX)
                 self.size_input.setDecimals(0)
                 self.size_input.setValue(self._screen_px)
                 self.hint.setText("The icon remains the same size while zooming.")
@@ -189,12 +181,18 @@ class MarkerSizeDialog(QDialog):
                     self._relative_value = DEFAULT_MAP_WIDTH_PERCENT
                 self.unit_selector.setCurrentText(self._display_unit)
                 if self._display_unit == _PERCENT:
-                    self.size_input.setRange(0.1, 100.0)
+                    self.size_input.setRange(
+                        MIN_MAP_WIDTH_PERCENT,
+                        MAX_MAP_WIDTH_PERCENT,
+                    )
                     self.size_input.setDecimals(2)
                     value = self._relative_value
                 else:
                     divisor = _KM if self._display_unit == "km" else 1.0
-                    self.size_input.setRange(0.01 / divisor, self._map_width / divisor)
+                    self.size_input.setRange(
+                        MIN_MAP_SIZE_METERS / divisor,
+                        self._map_width / divisor,
+                    )
                     self.size_input.setDecimals(3 if divisor > 1 else 2)
                     value = self._relative_value / divisor
                 self.size_input.setValue(value)
@@ -208,11 +206,8 @@ class MarkerSizeDialog(QDialog):
 
     def _update_summary(self, _value: float = 0.0) -> None:
         settings = self.get_settings()
-        multiplier = self.scale_input.value()
         if settings.mode is MarkerSizingMode.SCREEN_FIXED:
-            self.summary.setText(
-                f"Rendered diameter: {settings.screen_px * multiplier:.0f} px"
-            )
+            self.summary.setText(f"Rendered diameter: {settings.screen_px:.0f} px")
             return
         meters: float | None
         if settings.map_unit is MarkerMapSizeUnit.METERS and self._map_width > 0:
@@ -221,10 +216,9 @@ class MarkerSizeDialog(QDialog):
         else:
             percent = settings.map_value
             meters = self._map_width * percent / 100.0 if self._map_width else None
-        percent *= multiplier
         parts = [f"{percent:.2f}% of map width"]
         if meters is not None:
-            parts.append(f"{meters * multiplier:,.2f} m")
+            parts.append(f"{meters:,.2f} m")
         screen_px = self._image_width * percent / 100.0 * self._view_scale
         if screen_px > 0:
             parts.append(f"~{screen_px:.0f} px at current zoom")
@@ -240,10 +234,6 @@ class MarkerSizeDialog(QDialog):
             map_value=self._relative_value,
             screen_px=self._screen_px,
         )
-
-    def get_scale_multiplier(self) -> float:
-        """Return the marker's additional style multiplier."""
-        return self.scale_input.value()
 
     def _relative_display_unit(self) -> str:
         if self._relative_unit is MarkerMapSizeUnit.MAP_WIDTH_PERCENT:

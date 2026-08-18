@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-18
-**Commit:** 85d691fd
+**Commit:** c2f5f82d
 ---
 
 # Changelog
@@ -27,6 +27,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-18)* **Maps / Marker Sizing**: Kept direct resizing of calibrated
+  metric markers from collapsing at 100 m by applying unit-aware size bounds.
 - *(2026-08-18)* **Maps / Marker Creation**: Made newly created entities and
   events refresh their exact map after atomic marker placement.
 - *(2026-08-18)* **Timeline / Event Creation**: Created standard, map-inline,
@@ -48,6 +50,12 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-18)* **Maps / Marker Sizing**: Simplified point-marker sizing to
+  one behavior-and-size control, made direct resize update that same value, and
+  set new markers to a 50 px native-map footprint that remains relative to map
+  zoom. Updated the map guide and regression coverage.
+- *(2026-08-18)* **Timeline / Logging**: Removed the routine timeline zoom
+  debug message.
 - *(2026-08-18)* **Testing / Maps**: Added picker, duplicate-name, keyboard,
   atomic undo, and refresh regression coverage for marker creation.
 - *(2026-08-18)* **Testing / Event Creation**: Added regression coverage for

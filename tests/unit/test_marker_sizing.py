@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
 
 from src.core.marker_appearance import MARKER_ICON_ANCHOR_ATTRIBUTE
 from src.core.marker_sizing import (
+    DEFAULT_MAP_MARKER_DIAMETER_PX,
     MARKER_SIZING_ATTRIBUTE,
     MarkerMapSizeUnit,
     MarkerSizingMode,
@@ -35,8 +36,19 @@ def test_legacy_attributes_default_to_map_relative() -> None:
 
     assert settings.mode is MarkerSizingMode.MAP_RELATIVE
     assert settings.map_unit is MarkerMapSizeUnit.MAP_WIDTH_PERCENT
-    assert settings.map_value == 2.5
+    assert settings.map_value == 1.5
     assert settings.screen_px == 24.0
+
+
+def test_new_marker_default_uses_fifty_native_pixels_as_relative_size() -> None:
+    settings = MarkerSizingSettings.for_map_image_width(1000.0)
+
+    assert settings.mode is MarkerSizingMode.MAP_RELATIVE
+    assert settings.map_unit is MarkerMapSizeUnit.MAP_WIDTH_PERCENT
+    assert settings.map_value == pytest.approx(5.0)
+    assert settings.map_diameter_scene_units(1000.0, 0.0) == pytest.approx(
+        DEFAULT_MAP_MARKER_DIAMETER_PX
+    )
 
 
 def test_invalid_marker_sizing_payload_uses_safe_defaults() -> None:
@@ -54,7 +66,7 @@ def test_invalid_marker_sizing_payload_uses_safe_defaults() -> None:
     assert settings == MarkerSizingSettings()
 
 
-def test_percent_marker_size_and_individual_multiplier_apply_once(qapp) -> None:
+def test_map_marker_ignores_general_visual_scale(qapp) -> None:
     marker = MarkerItem(
         "marker-1",
         "entity",
@@ -63,7 +75,7 @@ def test_percent_marker_size_and_individual_multiplier_apply_once(qapp) -> None:
         visual_attributes={V_SIZE_SCALE: 2.0},
     )
 
-    assert marker.resolved_size == 50.0
+    assert marker.resolved_size == 15.0
     assert not marker.flags() & QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations
 
 
@@ -107,12 +119,12 @@ def test_screen_fixed_marker_keeps_device_sized_geometry(qapp) -> None:
 def test_map_relative_label_clearance_tracks_view_scale(qapp) -> None:
     marker = MarkerItem("marker-1", "entity", "Hero", _pixmap_item())
 
-    assert marker.resolved_size == 25.0
-    assert marker.label_clearance_px(2.0) == 25.0
+    assert marker.resolved_size == 15.0
+    assert marker.label_clearance_px(2.0) == 15.0
 
 
 def test_size_dialog_disables_metric_units_without_calibration(qapp, qtbot) -> None:
-    dialog = MarkerSizeDialog(MarkerSizingSettings(), 1.0, 0.0, 1000.0, 1.0)
+    dialog = MarkerSizeDialog(MarkerSizingSettings(), 0.0, 1000.0, 1.0)
     qtbot.addWidget(dialog)
     model = dialog.unit_selector.model()
 
@@ -124,20 +136,20 @@ def test_size_dialog_disables_metric_units_without_calibration(qapp, qtbot) -> N
 def test_size_dialog_converts_percent_to_meters_without_size_jump(
     qapp, qtbot
 ) -> None:
-    dialog = MarkerSizeDialog(MarkerSizingSettings(), 1.0, 1000.0, 1000.0, 1.0)
+    dialog = MarkerSizeDialog(MarkerSizingSettings(), 1000.0, 1000.0, 1.0)
     qtbot.addWidget(dialog)
 
     dialog.unit_selector.setCurrentText("m")
     settings = dialog.get_settings()
 
     assert settings.map_unit is MarkerMapSizeUnit.METERS
-    assert settings.map_value == 25.0
-    assert "25.00 m" in dialog.summary.text()
-    assert "~25 px" in dialog.summary.text()
+    assert settings.map_value == 15.0
+    assert "15.00 m" in dialog.summary.text()
+    assert "~15 px" in dialog.summary.text()
 
 
 def test_size_dialog_preserves_relative_and_screen_values(qapp, qtbot) -> None:
-    dialog = MarkerSizeDialog(MarkerSizingSettings(), 1.0, 1000.0, 1000.0, 1.0)
+    dialog = MarkerSizeDialog(MarkerSizingSettings(), 1000.0, 1000.0, 1.0)
     qtbot.addWidget(dialog)
     dialog.size_input.setValue(4.0)
 
@@ -199,7 +211,7 @@ def test_markers_on_same_map_can_use_different_zoom_behavior(qapp) -> None:
 def test_large_marker_label_clearance_remains_attached(qapp) -> None:
     marker = MarkerItem("marker-1", "entity", "Hero", _pixmap_item())
 
-    assert marker.label_clearance_px(20.0) == 250.0
+    assert marker.label_clearance_px(20.0) == 150.0
 
 
 @pytest.mark.parametrize("view_scale", [0.2, 1.0, 4.0, 20.0])

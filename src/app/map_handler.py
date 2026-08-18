@@ -51,6 +51,7 @@ from src.commands.map_commands import (
 )
 from src.core.logging_config import get_logger
 from src.core.map import MapLayerNode
+from src.core.marker_sizing import MARKER_SIZING_ATTRIBUTE, MarkerSizingSettings
 from src.services.map_nesting_service import MapNestingService, NestingValidationError
 from src.services.repositories.map_repository import MapRepository
 
@@ -334,6 +335,7 @@ class MapHandler(QObject):
                 "x": x,
                 "y": y,
                 "label": name,
+                "attributes": self._new_marker_attributes(),
             }
         )
         self.command_requested.emit(cmd)
@@ -364,10 +366,20 @@ class MapHandler(QObject):
                 "x": x,
                 "y": y,
                 "label": item_name,
+                "attributes": self._new_marker_attributes(),
             }
         )
         self.command_requested.emit(cmd)
         logger.info(f"Creating marker for {item_type} '{item_name}' via drag-drop")
+
+    def _new_marker_attributes(self) -> dict[str, Any]:
+        """Build persistent default appearance attributes for a new point marker."""
+        pixmap_item = self._map_widget.view.pixmap_item
+        image_width = (
+            pixmap_item.boundingRect().width() if pixmap_item is not None else 0.0
+        )
+        sizing = MarkerSizingSettings.for_map_image_width(image_width)
+        return {MARKER_SIZING_ATTRIBUTE: sizing.to_dict()}
 
     @Slot(str, list)
     def on_feature_drawn(

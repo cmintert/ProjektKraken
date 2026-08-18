@@ -35,7 +35,12 @@ from src.core.marker_appearance import (
     MarkerAppearance,
     MarkerIconAnchor,
 )
-from src.core.marker_sizing import MarkerSizingMode, MarkerSizingSettings
+from src.core.marker_sizing import (
+    MARKER_SIZING_ATTRIBUTE,
+    MarkerMapSizeUnit,
+    MarkerSizingMode,
+    MarkerSizingSettings,
+)
 from src.core.paths import get_resource_path
 from src.core.style_constants import BASE_SIZE
 from src.gui.constants import MAP_TEMPORAL_GHOST_OPACITY, TEMPORAL_FUTURE_OPACITY
@@ -51,6 +56,7 @@ logger = logging.getLogger(__name__)
 
 _CLICK_DISTANCE_THRESHOLD_PX = 3
 _KEYFRAME_INDICATOR_SIZE_PX = 8.0
+_METERS_PER_KILOMETER = 1000.0
 _PROJECT_ICON_PARTS = ("assets", "images")
 _RASTER_ICON_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 
@@ -133,7 +139,7 @@ class MarkerItem(QGraphicsObject):
         self._resize_handle: Optional[DraggableEditHandle[str]] = None
         self._anchor_handle: Optional[DraggableEditHandle[str]] = None
         self._resize_reference_distance = 1.0
-        self._resize_reference_scale = 1.0
+        self._resize_reference_size = MarkerSizingSettings()
         self._pending_anchor = MarkerIconAnchor()
 
         # Resolve fill color via VisualResolver (user override → theme → fallback)
@@ -492,19 +498,22 @@ class MarkerItem(QGraphicsObject):
     def resolved_size(self) -> float:
         """Return the marker diameter in its active coordinate space.
 
+        Map markers resolve their size solely from :class:`MarkerSizingSettings`.
+        ``_v_size_scale`` remains available for non-map consumers such as graph
+        styling, but intentionally does not affect this calculation.
+
         Returns:
             Diameter in scene units for map-relative markers, or device pixels
             for screen-fixed markers.
         """
-        marker_scale = VisualResolver.resolve_scale(self._visual_attributes)
         if self._marker_sizing.mode is MarkerSizingMode.SCREEN_FIXED:
-            return self._marker_sizing.screen_px * marker_scale
+            return self._marker_sizing.screen_px
         image_width = self.pixmap_item.boundingRect().width()
         base_size = self._marker_sizing.map_diameter_scene_units(
             image_width,
             self._map_width_meters,
         )
-        return max(0.1, base_size * marker_scale)
+        return max(0.1, base_size)
 
     def set_map_width_meters(self, map_width_meters: float) -> None:
         """Refresh this marker after its map calibration changes."""
@@ -610,9 +619,16 @@ class MarkerItem(QGraphicsObject):
         return self._appearance_edit_snapshot is not None
 
     @property
-    def appearance_edit_scale(self) -> float:
-        """Return the scale currently shown by the appearance editor."""
-        return VisualResolver.resolve_scale(self._visual_attributes)
+    def appearance_edit_size_text(self) -> str:
+        """Return the active creator-facing size for the appearance editor."""
+        sizing = self._marker_sizing
+        if sizing.mode is MarkerSizingMode.SCREEN_FIXED:
+            return f"{sizing.screen_px:.0f} px"
+        if sizing.map_unit is MarkerMapSizeUnit.METERS:
+            if sizing.map_value >= _METERS_PER_KILOMETER:
+                return f"{sizing.map_value / _METERS_PER_KILOMETER:g} km"
+            return f"{sizing.map_value:g} m"
+        return f"{sizing.map_value:g}% map width"
 
     @property
     def appearance_edit_anchor(self) -> MarkerIconAnchor:
@@ -632,7 +648,7 @@ class MarkerItem(QGraphicsObject):
 
         appearance = MarkerAppearance.from_attributes(self._visual_attributes)
         self._pending_anchor = appearance.anchor
-        self._resize_reference_scale = appearance.size_scale or 1.0
+        self._resize_reference_size = self._marker_sizing
         corner = self._resize_corner()
         self._resize_reference_distance = max(
             1e-6, math.hypot(corner.x(), corner.y())
@@ -694,16 +710,14 @@ class MarkerItem(QGraphicsObject):
 
     def _preview_resize(self, _handle_id: str, position: QPointF) -> None:
         """Preview uniform marker scaling without emitting a command."""
-        from src.core.style_constants import MAX_SCALE, MIN_SCALE, V_SIZE_SCALE
-
         distance = math.hypot(position.x(), position.y())
         multiplier = distance / self._resize_reference_distance
-        scale = max(
-            MIN_SCALE,
-            min(MAX_SCALE, self._resize_reference_scale * multiplier),
+        sizing = self._resize_reference_size.with_scaled_active_size(
+            multiplier,
+            self._map_width_meters,
         )
         attributes = dict(self._visual_attributes)
-        attributes[V_SIZE_SCALE] = scale
+        attributes[MARKER_SIZING_ATTRIBUTE] = sizing.to_dict()
         self.set_visual_attributes(attributes)
         handle = self._resize_handle
         if handle is not None:

@@ -4,6 +4,7 @@ import pytest
 
 from src.app.map_handler import MapHandler
 from src.core.map import Map
+from src.core.marker_sizing import MARKER_SIZING_ATTRIBUTE
 
 # UpdateMapCommand is imported in map_handler, but we mock it.
 
@@ -100,3 +101,20 @@ def test_delete_map_exits_editing_before_emitting_command(map_handler, mock_map_
 
     mock_map_widget.exit_editing_modes.assert_called_once_with()
     assert order == ["exit", "emit"]
+
+
+def test_create_marker_persists_native_fifty_pixel_relative_size(
+    map_handler, mock_map_widget
+):
+    """New marker placement stores the map-relative size derived from its image."""
+    pixmap_item = MagicMock()
+    pixmap_item.boundingRect.return_value.width.return_value = 1000.0
+    mock_map_widget.view.pixmap_item = pixmap_item
+    spy = MagicMock()
+    map_handler.command_requested.connect(spy)
+
+    map_handler.create_marker("map-1", "entity-1", "entity", "Harbour", 0.5, 0.5)
+
+    command = spy.call_args.args[0]
+    settings = command._marker.attributes[MARKER_SIZING_ATTRIBUTE]
+    assert settings["map_value"] == pytest.approx(5.0)

@@ -15,7 +15,12 @@ from src.core.marker_appearance import (
     MarkerAppearance,
     MarkerIconAnchor,
 )
-from src.core.marker_sizing import MARKER_SIZING_ATTRIBUTE
+from src.core.marker_sizing import (
+    MARKER_SIZING_ATTRIBUTE,
+    MarkerMapSizeUnit,
+    MarkerSizingMode,
+    MarkerSizingSettings,
+)
 from src.core.style_constants import V_BORDER, V_FILL, V_SIZE_SCALE
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 from src.gui.widgets.map.marker_item import MarkerItem
@@ -165,9 +170,9 @@ def test_bottom_anchor_offsets_bounds_around_fixed_map_coordinate(qapp) -> None:
 
     rect = marker.boundingRect()
 
-    assert rect.width() == pytest.approx(25.0)
-    assert rect.left() == pytest.approx(-12.5)
-    assert rect.top() == pytest.approx(-25.0)
+    assert rect.width() == pytest.approx(15.0)
+    assert rect.left() == pytest.approx(-7.5)
+    assert rect.top() == pytest.approx(-15.0)
     assert rect.bottom() == pytest.approx(0.0)
 
 
@@ -181,8 +186,8 @@ def test_label_obstacle_uses_asymmetric_rendered_bounds(qapp) -> None:
 
     assert obstacle.left() == pytest.approx(100.0)
     assert obstacle.top() == pytest.approx(200.0)
-    assert obstacle.right() == pytest.approx(125.0)
-    assert obstacle.bottom() == pytest.approx(225.0)
+    assert obstacle.right() == pytest.approx(115.0)
+    assert obstacle.bottom() == pytest.approx(215.0)
 
 
 def test_direct_resize_previews_then_returns_one_payload(qapp) -> None:
@@ -197,8 +202,54 @@ def test_direct_resize_previews_then_returns_one_payload(qapp) -> None:
     payload = marker.finish_appearance_edit()
 
     assert payload is not None
-    assert payload[V_SIZE_SCALE] == pytest.approx(2.0)
+    assert payload[MARKER_SIZING_ATTRIBUTE]["map_value"] == pytest.approx(3.0)
     assert not marker.is_editing_appearance
+
+
+def test_direct_resize_updates_fixed_screen_size(qapp) -> None:
+    scene = QGraphicsScene()
+    marker = _marker(
+        {
+            MARKER_SIZING_ATTRIBUTE: MarkerSizingSettings(
+                mode=MarkerSizingMode.SCREEN_FIXED,
+                screen_px=24.0,
+            ).to_dict()
+        }
+    )
+    scene.addItem(marker)
+    marker.begin_appearance_edit()
+    corner = marker.boundingRect().bottomRight()
+
+    marker._resize_handle.setPos(QPointF(corner.x() * 2.0, corner.y() * 2.0))
+    payload = marker.finish_appearance_edit()
+
+    assert payload is not None
+    assert payload[MARKER_SIZING_ATTRIBUTE]["screen_px"] == pytest.approx(48.0)
+
+
+def test_direct_resize_updates_metric_footprint_beyond_one_hundred_meters(qapp) -> None:
+    scene = QGraphicsScene()
+    settings = MarkerSizingSettings(
+        map_unit=MarkerMapSizeUnit.METERS,
+        map_value=1000.0,
+    )
+    marker = MarkerItem(
+        "marker-1",
+        "entity",
+        "Harbour",
+        _pixmap_item(),
+        visual_attributes={MARKER_SIZING_ATTRIBUTE: settings.to_dict()},
+        map_width_meters=10_000.0,
+    )
+    scene.addItem(marker)
+    marker.begin_appearance_edit()
+    corner = marker.boundingRect().bottomRight()
+
+    marker._resize_handle.setPos(QPointF(corner.x() * 2.0, corner.y() * 2.0))
+    payload = marker.finish_appearance_edit()
+
+    assert payload is not None
+    assert payload[MARKER_SIZING_ATTRIBUTE]["map_value"] == pytest.approx(2000.0)
 
 
 def test_direct_anchor_edit_and_cancel_are_local(qapp) -> None:
@@ -253,14 +304,16 @@ def test_view_emits_one_appearance_change_only_on_confirm(
 
     assert len(emitted) == 1
     assert emitted[0][0] == "marker-1"
-    assert emitted[0][1][V_SIZE_SCALE] == pytest.approx(1.5)
+    assert emitted[0][1][MARKER_SIZING_ATTRIBUTE]["map_value"] == pytest.approx(2.25)
 
     view.start_marker_appearance_edit("marker-1")
     marker._resize_handle.setPos(QPointF(corner.x() * 2.0, corner.y() * 2.0))
     view.cancel_marker_appearance_edit()
 
     assert len(emitted) == 1
-    assert marker._visual_attributes[V_SIZE_SCALE] == pytest.approx(1.5)
+    assert marker._visual_attributes[MARKER_SIZING_ATTRIBUTE]["map_value"] == pytest.approx(
+        2.25
+    )
 
 
 def test_interaction_copy_paste_replaces_only_marker_appearance(
@@ -284,6 +337,7 @@ def test_interaction_copy_paste_replaces_only_marker_appearance(
             "icon": "castle.svg",
             V_FILL: "#FF0000",
             V_SIZE_SCALE: 1.5,
+            MARKER_SIZING_ATTRIBUTE: MarkerSizingSettings(map_value=3.0).to_dict(),
             MARKER_ICON_ANCHOR_ATTRIBUTE: {"x": 0.5, "y": 1.0},
         },
     )
@@ -308,6 +362,7 @@ def test_interaction_copy_paste_replaces_only_marker_appearance(
     assert target._visual_attributes["icon"] == "castle.svg"
     assert target._visual_attributes[V_FILL] == "#FF0000"
     assert V_BORDER not in target._visual_attributes
+    assert target._visual_attributes[MARKER_SIZING_ATTRIBUTE]["map_value"] == 3.0
     assert emitted == [("target", view.markers["source"].appearance_payload())]
 
 

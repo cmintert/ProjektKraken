@@ -574,8 +574,8 @@ def test_marker_appearance_mode_shows_apply_cancel_tip(map_widget, qtbot):
     assert map_widget.overlay_banner.isVisible()
     assert "Enter to Apply" in map_widget.overlay_banner.text()
     assert "Esc to Cancel" in map_widget.overlay_banner.text()
-    assert "Scale:" in map_widget.overlay_banner.text()
-    assert "1.00×" in map_widget.overlay_banner.text()
+    assert "Size:" in map_widget.overlay_banner.text()
+    assert "1.5% map width" in map_widget.overlay_banner.text()
     assert "MARKER APPEARANCE" in map_widget.mode_indicator.text()
 
     marker = map_widget.view.markers["marker1"]
@@ -583,8 +583,8 @@ def test_marker_appearance_mode_shows_apply_cancel_tip(map_widget, qtbot):
     assert marker._resize_handle is not None
     marker._resize_handle.setPos(corner * 1.5)
 
-    assert "1.50×" in map_widget.overlay_banner.text()
-    assert "1.50×" in map_widget.mode_indicator.text()
+    assert "2.25% map width" in map_widget.overlay_banner.text()
+    assert "2.25% map width" in map_widget.mode_indicator.text()
 
     map_widget.view.cancel_marker_appearance_edit()
 
