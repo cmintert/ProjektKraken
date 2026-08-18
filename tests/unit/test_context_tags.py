@@ -31,6 +31,8 @@ class FakeWindow(QObject):
         self.entity_editor._current_entity_id = None
         self.event_editor.has_unsaved_changes.return_value = False
         self.entity_editor.has_unsaved_changes.return_value = False
+        self.timeline = MagicMock()
+        self.timeline.get_playhead_time.return_value = 0.0
         self.navigation_coordinator = MagicMock()
 
 

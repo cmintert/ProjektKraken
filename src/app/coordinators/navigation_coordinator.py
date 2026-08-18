@@ -321,7 +321,9 @@ class NavigationCoordinator(BaseCoordinator):
             context = getattr(app_coordinator, "context_tags", None)
             event_data: dict[str, Any] = {
                 "name": target_name,
-                "lore_date": 0.0,
+                "lore_date": float(
+                    self.main_window.timeline.get_playhead_time()
+                ),
             }
             event_command = (
                 context.create_event_command(event_data)

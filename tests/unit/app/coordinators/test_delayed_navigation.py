@@ -1,9 +1,10 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 from PySide6.QtWidgets import QMainWindow
 
 from src.app.coordinators.navigation_coordinator import NavigationCoordinator
+from src.commands.event_commands import CreateEventCommand
 
 
 class MockMainWindow(QMainWindow):
@@ -92,3 +93,30 @@ def test_drag_restore_captures_validated_selection(qtbot, mock_main_window):
     mock_main_window.unified_list.select_item.assert_called_once_with(
         "entity", "id_1"
     )
+
+
+def test_missing_link_event_uses_playhead_time(mock_main_window):
+    """Creating an event for a missing link uses the current playhead."""
+    coordinator = NavigationCoordinator(mock_main_window)
+    mock_main_window.command_requested = Mock()
+    mock_main_window.timeline.get_playhead_time.return_value = 87.125
+
+    with patch(
+        "src.app.coordinators.navigation_coordinator.QMessageBox"
+    ) as message_box:
+        entity_button = Mock()
+        event_button = Mock()
+        message_box.return_value.addButton.side_effect = [
+            entity_button,
+            event_button,
+            Mock(),
+        ]
+        message_box.return_value.clickedButton.return_value = event_button
+
+        coordinator._prompt_create_missing_target("Arrival")
+
+    command = mock_main_window.command_requested.emit.call_args.args[0]
+    assert isinstance(command, CreateEventCommand)
+    assert command.event.name == "Arrival"
+    assert command.event.lore_date == 87.125
+    mock_main_window.timeline.get_playhead_time.assert_called_once_with()

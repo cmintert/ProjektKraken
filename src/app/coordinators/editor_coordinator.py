@@ -100,7 +100,10 @@ class EditorCoordinator(BaseCoordinator):
         if not ok or not name.strip():
             return
 
-        cmd = self._create_event_command({"name": name.strip(), "lore_date": 0.0})
+        lore_date = float(self.main_window.timeline.get_playhead_time())
+        cmd = self._create_event_command(
+            {"name": name.strip(), "lore_date": lore_date}
+        )
         self.command_requested.emit(cmd)
 
     def create_entity(self) -> None:
@@ -485,8 +488,9 @@ class EditorCoordinator(BaseCoordinator):
             name: Name of the new event.
 
         """
+        lore_date = float(self.main_window.timeline.get_playhead_time())
         cmd = self._create_event_command(
-            {"id": new_id, "name": name, "lore_date": 0.0}
+            {"id": new_id, "name": name, "lore_date": lore_date}
         )
         self.command_requested.emit(cmd)
 

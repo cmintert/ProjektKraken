@@ -27,6 +27,8 @@ class FakeMainWindow(QObject):
         self.entity_editor = MagicMock()
         self.event_editor.has_unsaved_changes.return_value = False
         self.entity_editor.has_unsaved_changes.return_value = False
+        self.timeline = MagicMock()
+        self.timeline.get_playhead_time.return_value = 42.75
         self.event_editor._current_event_id = None
         self.entity_editor._current_entity_id = None
         self.navigation_coordinator = MagicMock()
@@ -72,6 +74,8 @@ class TestCreateOperations:
         from src.commands.event_commands import CreateEventCommand
 
         assert isinstance(signals[0], CreateEventCommand)
+        assert signals[0].event.lore_date == 42.75
+        fake_window.timeline.get_playhead_time.assert_called_once_with()
 
     @patch("src.app.coordinators.editor_coordinator.QInputDialog")
     def test_create_event_cancelled(self, mock_dialog, coordinator, fake_window):
@@ -426,3 +430,5 @@ class TestMapInlineCreation:
         from src.commands.event_commands import CreateEventCommand
 
         assert isinstance(signals[0], CreateEventCommand)
+        assert signals[0].event.lore_date == 42.75
+        fake_window.timeline.get_playhead_time.assert_called_once_with()

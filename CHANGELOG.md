@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-08-16
-**Commit:** a6777305
+**Last Updated:** 2026-08-18
+**Commit:** d606d6f9
 ---
 
 # Changelog
@@ -25,6 +25,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-18)* **Timeline / Event Creation**: Created standard, map-inline,
+  and missing-link events at the current playhead instead of day zero.
 - *(2026-08-16)* **Editor / WikiLinks**: Ended manually typed WikiLinks at
   their closing `]]` so subsequent text no longer inherits the link.
 - *(2026-08-15)* **Maps / Marker Editing**: Kept resize and anchor handles above
@@ -42,6 +44,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-18)* **Testing / Event Creation**: Added regression coverage for
+  preserving the exact playhead date across event-creation paths.
 - *(2026-08-16)* **Application / Logging**: Collapsed command-history diagnostics
   into one summary and removed high-frequency resize, refresh, and timeline
   packing messages, with regression coverage for the compact stack record.
