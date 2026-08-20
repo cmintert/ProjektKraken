@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "icons": [
+    {"id": "map.pin", "name": "Map Pin", "asset_path": "map-pin.svg", "default_native_diameter_px": 50, "anchor": {"x": 0.5, "y": 0.5}, "category": "Map Symbols"},
+    {"id": "map.pin-filled", "name": "Filled Map Pin", "asset_path": "map-pin-filled.svg", "default_native_diameter_px": 50, "anchor": {"x": 0.5, "y": 0.5}, "category": "Map Symbols"},
+    {"id": "map.flag", "name": "Flag", "asset_path": "flag.svg", "default_native_diameter_px": 50, "anchor": {"x": 0.5, "y": 0.5}, "category": "Map Symbols"},
+    {"id": "place.home", "name": "Home", "asset_path": "home.svg", "default_native_diameter_px": 50, "anchor": {"x": 0.5, "y": 0.5}, "category": "Places"},
+    {"id": "place.campfire", "name": "Campfire", "asset_path": "campfire.svg", "default_native_diameter_px": 50, "anchor": {"x": 0.5, "y": 0.5}, "category": "Places"},
+    {"id": "place.castle", "name": "Castle", "asset_path": "building-castle.svg", "default_native_diameter_px": 50, "anchor": {"x": 0.5, "y": 0.5}, "category": "Places"},
+    {"id": "place.fortress", "name": "Fortress", "asset_path": "building-fortress.svg", "default_native_diameter_px": 50, "anchor": {"x": 0.5, "y": 0.5}, "category": "Places"},
+    {"id": "nature.mountain", "name": "Mountain", "asset_path": "mountain.svg", "default_native_diameter_px": 50, "anchor": {"x": 0.5, "y": 0.5}, "category": "Nature"},
+    {"id": "nature.trees", "name": "Trees", "asset_path": "trees.svg", "default_native_diameter_px": 50, "anchor": {"x": 0.5, "y": 0.5}, "category": "Nature"},
+    {"id": "conflict.sword", "name": "Sword", "asset_path": "sword.svg", "default_native_diameter_px": 50, "anchor": {"x": 0.5, "y": 0.5}, "category": "Conflict"},
+    {"id": "drawing.polyline", "name": "Polyline", "asset_path": "polyline.svg", "default_native_diameter_px": 50, "anchor": {"x": 0.5, "y": 0.5}, "category": "Drawing"},
+    {"id": "drawing.polygon", "name": "Polygon", "asset_path": "polygon.svg", "default_native_diameter_px": 50, "anchor": {"x": 0.5, "y": 0.5}, "category": "Drawing"},
+    {"id": "drawing.grid-raster", "name": "Grid Raster", "asset_path": "grid-raster.svg", "default_native_diameter_px": 50, "anchor": {"x": 0.5, "y": 0.5}, "category": "Drawing"}
+  ]
+}

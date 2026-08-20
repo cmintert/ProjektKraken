@@ -35,11 +35,14 @@ from src.core.marker_appearance import (
     MarkerAppearance,
     MarkerIconAnchor,
 )
+from src.core.marker_icon import MarkerIconDefinition
 from src.core.marker_sizing import (
     MARKER_SIZING_ATTRIBUTE,
+    MARKER_SIZING_SOURCE_ATTRIBUTE,
     MarkerMapSizeUnit,
     MarkerSizingMode,
     MarkerSizingSettings,
+    MarkerSizingSource,
 )
 from src.core.paths import get_resource_path
 from src.core.style_constants import BASE_SIZE
@@ -95,6 +98,7 @@ class MarkerItem(QGraphicsObject):
         world_root: Optional[str] = None,
         marker_sizing: MarkerSizingSettings | None = None,
         map_width_meters: float = 0.0,
+        icon_definition: MarkerIconDefinition | None = None,
     ) -> None:
         """Initializes a MarkerItem.
 
@@ -111,6 +115,7 @@ class MarkerItem(QGraphicsObject):
             world_root: Active portable world root for project icon resolution.
             marker_sizing: Optional per-marker sizing override.
             map_width_meters: Calibrated total map width, or zero.
+            icon_definition: Resolved stable icon metadata, when available.
         """
         super().__init__()
 
@@ -119,6 +124,7 @@ class MarkerItem(QGraphicsObject):
         self.label = label
         self.pixmap_item = pixmap_item
         self._icon_name = icon
+        self._icon_definition = icon_definition
         self._svg_renderer: Optional[QSvgRenderer] = None
         self._raster_pixmap: Optional[QPixmap] = None
         self._raw_svg: Optional[str] = None
@@ -221,7 +227,7 @@ class MarkerItem(QGraphicsObject):
 
     def label_obstacle_scene_rect(self, view_scale: float = 1.0) -> QRectF:
         """Return the actual rendered icon bounds in scene coordinates."""
-        local_rect = self.boundingRect()
+        local_rect = self.rendered_symbol_rect()
         unit_scale = (
             1.0 / max(1e-9, float(view_scale))
             if self._marker_sizing.mode is MarkerSizingMode.SCREEN_FIXED
@@ -371,8 +377,21 @@ class MarkerItem(QGraphicsObject):
         Args:
             icon_name: Filename of the new icon.
         """
+        self.prepareGeometryChange()
         self._visual_attributes["icon"] = icon_name
+        if (
+            self._icon_definition is not None
+            and self._icon_definition.asset_path != icon_name
+        ):
+            self._icon_definition = None
         self._load_icon(icon_name)
+        self.update()
+
+    def set_icon_definition(self, definition: MarkerIconDefinition) -> None:
+        """Apply resolved icon metadata and load its artwork."""
+        self.prepareGeometryChange()
+        self._icon_definition = definition
+        self._load_icon(definition.asset_path)
         self.update()
 
     def get_icon(self) -> Optional[str]:
@@ -546,6 +565,7 @@ class MarkerItem(QGraphicsObject):
 
         self.prepareGeometryChange()
         self._visual_attributes = dict(attrs)
+        self._refresh_icon_definition()
         self._marker_sizing = MarkerSizingSettings.from_attributes(attrs)
         self._apply_sizing_mode_flag()
         # Re-resolve color unless a custom color is explicitly set.
@@ -572,10 +592,12 @@ class MarkerItem(QGraphicsObject):
         Returns:
             QRectF: The bounding rect centered on (0, 0).
         """
+        return self.rendered_symbol_rect()
+
+    def rendered_symbol_rect(self) -> QRectF:
+        """Return the local rectangle occupied by rendered marker artwork."""
         width, height = self._resolved_artwork_size()
-        anchor = MarkerAppearance.from_attributes(
-            self._visual_attributes
-        ).anchor
+        anchor = self._resolved_icon_anchor()
         return QRectF(
             -anchor.x * width,
             -anchor.y * height,
@@ -584,18 +606,44 @@ class MarkerItem(QGraphicsObject):
         )
 
     def _resolved_artwork_size(self) -> tuple[float, float]:
-        """Return artwork bounds while preserving raster aspect ratio."""
+        """Return artwork bounds while preserving SVG/raster aspect ratio."""
         size = self.resolved_size
         pixmap = self._raster_pixmap
-        if pixmap is None or pixmap.isNull():
+        if pixmap is not None and not pixmap.isNull():
+            source_width = float(pixmap.width())
+            source_height = float(pixmap.height())
+        elif self._svg_renderer is not None and self._svg_renderer.isValid():
+            view_box = self._svg_renderer.viewBoxF()
+            source_width = view_box.width()
+            source_height = view_box.height()
+        else:
             return size, size
-        source_width = float(pixmap.width())
-        source_height = float(pixmap.height())
         if source_width <= 0 or source_height <= 0:
             return size, size
         if source_width >= source_height:
             return size, size * source_height / source_width
         return size * source_width / source_height, size
+
+    def _resolved_icon_anchor(self) -> MarkerIconAnchor:
+        """Resolve an explicit marker anchor before the icon default."""
+        payload = self._visual_attributes.get(MARKER_ICON_ANCHOR_ATTRIBUTE)
+        if isinstance(payload, dict):
+            return MarkerIconAnchor.from_dict(payload)
+        if self._icon_definition is not None:
+            return self._icon_definition.anchor
+        return MarkerIconAnchor()
+
+    def _refresh_icon_definition(self) -> None:
+        """Resolve updated icon attributes from the owning view catalog."""
+        scene = self.scene()
+        if scene is None:
+            return
+        for view in scene.views():
+            catalog = getattr(view, "marker_icon_catalog", None)
+            resolver = getattr(catalog, "resolve_attributes", None)
+            if callable(resolver):
+                self._icon_definition = resolver(self._visual_attributes)
+                return
 
     def appearance_payload(self) -> Dict[str, Any]:
         """Return this marker's validated copyable appearance."""
@@ -646,8 +694,7 @@ class MarkerItem(QGraphicsObject):
         )
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
 
-        appearance = MarkerAppearance.from_attributes(self._visual_attributes)
-        self._pending_anchor = appearance.anchor
+        self._pending_anchor = self._resolved_icon_anchor()
         self._resize_reference_size = self._marker_sizing
         corner = self._resize_corner()
         self._resize_reference_distance = max(
@@ -718,6 +765,7 @@ class MarkerItem(QGraphicsObject):
         )
         attributes = dict(self._visual_attributes)
         attributes[MARKER_SIZING_ATTRIBUTE] = sizing.to_dict()
+        attributes[MARKER_SIZING_SOURCE_ATTRIBUTE] = MarkerSizingSource.CUSTOM.value
         self.set_visual_attributes(attributes)
         handle = self._resize_handle
         if handle is not None:

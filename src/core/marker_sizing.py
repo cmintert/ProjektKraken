@@ -8,6 +8,7 @@ from enum import Enum
 from typing import Any, Mapping
 
 MARKER_SIZING_ATTRIBUTE = "_v_marker_sizing"
+MARKER_SIZING_SOURCE_ATTRIBUTE = "_v_marker_sizing_source"
 
 DEFAULT_MAP_WIDTH_PERCENT = 1.5
 DEFAULT_SCREEN_SIZE_PX = 24.0
@@ -33,6 +34,13 @@ class MarkerMapSizeUnit(str, Enum):
     METERS = "meters"
 
 
+class MarkerSizingSource(str, Enum):
+    """Whether the active size follows icon defaults or a marker override."""
+
+    ICON_DEFAULT = "icon_default"
+    CUSTOM = "custom"
+
+
 @dataclass(frozen=True)
 class MarkerSizingSettings:
     """Validated, serializable per-marker sizing configuration."""
@@ -43,16 +51,24 @@ class MarkerSizingSettings:
     screen_px: float = DEFAULT_SCREEN_SIZE_PX
 
     @classmethod
-    def for_map_image_width(cls, image_width: float) -> "MarkerSizingSettings":
+    def for_map_image_width(
+        cls,
+        image_width: float,
+        native_diameter_px: float = DEFAULT_MAP_MARKER_DIAMETER_PX,
+    ) -> "MarkerSizingSettings":
         """Return the default relative size for a map's native image width.
 
-        The stored percentage resolves to a 50-pixel diameter at native scale,
-        then continues to grow and shrink with the map during zooming.
+        The stored percentage resolves to the requested canonical diameter at
+        native scale, then grows and shrinks with the map during zooming.
         """
         safe_width = max(0.0, float(image_width))
         if safe_width <= 0:
             return cls()
-        percent = DEFAULT_MAP_MARKER_DIAMETER_PX / safe_width * 100.0
+        diameter = _positive_float(
+            native_diameter_px,
+            DEFAULT_MAP_MARKER_DIAMETER_PX,
+        )
+        percent = diameter / safe_width * 100.0
         return cls(
             map_value=max(
                 MIN_MAP_WIDTH_PERCENT,

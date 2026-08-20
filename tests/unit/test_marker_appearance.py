@@ -17,9 +17,11 @@ from src.core.marker_appearance import (
 )
 from src.core.marker_sizing import (
     MARKER_SIZING_ATTRIBUTE,
+    MARKER_SIZING_SOURCE_ATTRIBUTE,
     MarkerMapSizeUnit,
     MarkerSizingMode,
     MarkerSizingSettings,
+    MarkerSizingSource,
 )
 from src.core.style_constants import V_BORDER, V_FILL, V_SIZE_SCALE
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
@@ -203,6 +205,7 @@ def test_direct_resize_previews_then_returns_one_payload(qapp) -> None:
 
     assert payload is not None
     assert payload[MARKER_SIZING_ATTRIBUTE]["map_value"] == pytest.approx(3.0)
+    assert payload[MARKER_SIZING_SOURCE_ATTRIBUTE] == MarkerSizingSource.CUSTOM.value
     assert not marker.is_editing_appearance
 
 

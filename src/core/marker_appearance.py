@@ -6,7 +6,12 @@ import math
 from dataclasses import dataclass, field
 from typing import Any, Mapping
 
-from src.core.marker_sizing import MARKER_SIZING_ATTRIBUTE, MarkerSizingSettings
+from src.core.marker_sizing import (
+    MARKER_SIZING_ATTRIBUTE,
+    MARKER_SIZING_SOURCE_ATTRIBUTE,
+    MarkerSizingSettings,
+    MarkerSizingSource,
+)
 from src.core.style_constants import (
     MAX_BORDER_WIDTH,
     MAX_SCALE,
@@ -19,16 +24,19 @@ from src.core.style_constants import (
 )
 
 MARKER_ICON_ATTRIBUTE = "icon"
+MARKER_ICON_ID_ATTRIBUTE = "_v_marker_icon_id"
 MARKER_ICON_ANCHOR_ATTRIBUTE = "_v_icon_anchor"
 
 MARKER_APPEARANCE_ATTRIBUTE_KEYS = frozenset(
     {
         MARKER_ICON_ATTRIBUTE,
+        MARKER_ICON_ID_ATTRIBUTE,
         V_FILL,
         V_BORDER,
         V_BORDER_WIDTH,
         V_SIZE_SCALE,
         MARKER_SIZING_ATTRIBUTE,
+        MARKER_SIZING_SOURCE_ATTRIBUTE,
         MARKER_ICON_ANCHOR_ATTRIBUTE,
     }
 )
@@ -69,11 +77,13 @@ class MarkerAppearance:
     """
 
     icon: str | None = None
+    icon_id: str | None = None
     fill: str | None = None
     border: str | None = None
     border_width: int | None = None
     size_scale: float | None = None
     sizing: MarkerSizingSettings | None = None
+    sizing_source: MarkerSizingSource | None = None
     anchor: MarkerIconAnchor = field(default_factory=MarkerIconAnchor)
 
     @classmethod
@@ -91,8 +101,15 @@ class MarkerAppearance:
             if isinstance(sizing_payload, Mapping)
             else None
         )
+        try:
+            sizing_source = MarkerSizingSource(
+                attributes.get(MARKER_SIZING_SOURCE_ATTRIBUTE)
+            )
+        except (TypeError, ValueError):
+            sizing_source = None
         return cls(
             icon=_optional_string(attributes.get(MARKER_ICON_ATTRIBUTE)),
+            icon_id=_optional_string(attributes.get(MARKER_ICON_ID_ATTRIBUTE)),
             fill=_optional_string(attributes.get(V_FILL)),
             border=_optional_string(attributes.get(V_BORDER)),
             border_width=_optional_int(
@@ -104,6 +121,7 @@ class MarkerAppearance:
                 attributes.get(V_SIZE_SCALE), MIN_SCALE, MAX_SCALE
             ),
             sizing=sizing,
+            sizing_source=sizing_source,
             anchor=anchor,
         )
 
@@ -119,6 +137,7 @@ class MarkerAppearance:
         }
         optional_values = {
             MARKER_ICON_ATTRIBUTE: self.icon,
+            MARKER_ICON_ID_ATTRIBUTE: self.icon_id,
             V_FILL: self.fill,
             V_BORDER: self.border,
             V_BORDER_WIDTH: self.border_width,
@@ -129,6 +148,8 @@ class MarkerAppearance:
         )
         if self.sizing is not None:
             payload[MARKER_SIZING_ATTRIBUTE] = self.sizing.to_dict()
+        if self.sizing_source is not None:
+            payload[MARKER_SIZING_SOURCE_ATTRIBUTE] = self.sizing_source.value
         return payload
 
     def apply_to_attributes(self, attributes: Mapping[str, Any]) -> dict[str, Any]:

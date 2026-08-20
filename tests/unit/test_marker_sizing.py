@@ -51,6 +51,16 @@ def test_new_marker_default_uses_fifty_native_pixels_as_relative_size() -> None:
     )
 
 
+def test_icon_native_diameter_is_converted_at_map_native_scale() -> None:
+    settings = MarkerSizingSettings.for_map_image_width(
+        1000.0,
+        native_diameter_px=30.0,
+    )
+
+    assert settings.map_value == pytest.approx(3.0)
+    assert settings.map_diameter_scene_units(1000.0, 0.0) == pytest.approx(30.0)
+
+
 def test_invalid_marker_sizing_payload_uses_safe_defaults() -> None:
     settings = MarkerSizingSettings.from_attributes(
         {

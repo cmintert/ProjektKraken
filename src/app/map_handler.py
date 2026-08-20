@@ -51,8 +51,8 @@ from src.commands.map_commands import (
 )
 from src.core.logging_config import get_logger
 from src.core.map import MapLayerNode
-from src.core.marker_sizing import MARKER_SIZING_ATTRIBUTE, MarkerSizingSettings
 from src.services.map_nesting_service import MapNestingService, NestingValidationError
+from src.services.marker_icon_catalog import MarkerIconCatalog
 from src.services.repositories.map_repository import MapRepository
 
 if TYPE_CHECKING:
@@ -378,8 +378,7 @@ class MapHandler(QObject):
         image_width = (
             pixmap_item.boundingRect().width() if pixmap_item is not None else 0.0
         )
-        sizing = MarkerSizingSettings.for_map_image_width(image_width)
-        return {MARKER_SIZING_ATTRIBUTE: sizing.to_dict()}
+        return MarkerIconCatalog.load().new_marker_attributes(image_width)
 
     @Slot(str, list)
     def on_feature_drawn(
@@ -703,6 +702,7 @@ class MapHandler(QObject):
             "feature_type": marker_data.get("feature_type", "point"),
             "geometry": marker_data.get("geometry"),
             "connection_count": marker_data.get("connection_count", 0),
+            "attributes": marker_data.get("attributes", {}),
         }
 
     def _incremental_marker_update(
@@ -710,6 +710,9 @@ class MapHandler(QObject):
     ) -> None:
         """Update markers incrementally — only add/remove/update changed."""
         view = self._map_widget.view
+        saved_transform = view.transform()
+        h_scroll = view.horizontalScrollBar().value()
+        v_scroll = view.verticalScrollBar().value()
         incoming = {m["object_id"]: m for m in processed_markers}
         incoming_ids = set(incoming.keys())
         existing_ids = set(self._loaded_marker_data.keys())
@@ -739,6 +742,13 @@ class MapHandler(QObject):
 
         # Update snapshot
         self._loaded_marker_data = {m["object_id"]: m for m in processed_markers}
+
+        # Replacing a selected marker with different artwork geometry can make
+        # QGraphicsView adjust its scroll bars. Keep the map viewport anchored
+        # across the incremental refresh just as the full rebuild path does.
+        view.setTransform(saved_transform)
+        view.horizontalScrollBar().setValue(h_scroll)
+        view.verticalScrollBar().setValue(v_scroll)
 
     def _full_marker_rebuild(
         self, map_id: str, processed_markers: list

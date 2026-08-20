@@ -39,7 +39,7 @@ from src.commands.relation_commands import (
 )
 from src.commands.wiki_commands import ProcessWikiLinksCommand
 from src.core.map import Map
-from src.core.marker_sizing import MARKER_SIZING_ATTRIBUTE, MarkerSizingSettings
+from src.services.marker_icon_catalog import MarkerIconCatalog
 
 if TYPE_CHECKING:
     from src.app.main_window import MainWindow
@@ -549,8 +549,7 @@ class EditorCoordinator(BaseCoordinator):
         image_width = (
             pixmap_item.boundingRect().width() if pixmap_item is not None else 0.0
         )
-        sizing = MarkerSizingSettings.for_map_image_width(image_width)
-        return {MARKER_SIZING_ATTRIBUTE: sizing.to_dict()}
+        return MarkerIconCatalog.load().new_marker_attributes(image_width)
 
     # ------------------------------------------------------------------
     # Toast Notifications

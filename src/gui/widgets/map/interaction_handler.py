@@ -19,10 +19,18 @@ from PySide6.QtWidgets import (
 
 from src.core.marker_appearance import (
     MARKER_ICON_ANCHOR_ATTRIBUTE,
+    MARKER_ICON_ATTRIBUTE,
+    MARKER_ICON_ID_ATTRIBUTE,
     MarkerAppearance,
     MarkerIconAnchor,
 )
-from src.core.marker_sizing import MARKER_SIZING_ATTRIBUTE, MarkerSizingSettings
+from src.core.marker_icon import MarkerIconDefinition
+from src.core.marker_sizing import (
+    MARKER_SIZING_ATTRIBUTE,
+    MARKER_SIZING_SOURCE_ATTRIBUTE,
+    MarkerSizingSettings,
+    MarkerSizingSource,
+)
 from src.core.style_constants import (
     MAX_BORDER_WIDTH,
     MIN_BORDER_WIDTH,
@@ -34,6 +42,7 @@ from src.core.theme_manager import ThemeManager
 from src.gui.dialogs.icon_picker_dialog import IconPickerDialog
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.marker_item import MarkerItem
+from src.services.marker_icon_catalog import MarkerIconCatalog
 
 if TYPE_CHECKING:
     from PySide6.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent
@@ -132,6 +141,18 @@ class InteractionHandler:
         scale_action = QAction("Size & Zoom...", self._view)
         scale_action.triggered.connect(lambda: self.show_scale_dialog(item))
         style_menu.addAction(scale_action)
+
+        reset_size_action = QAction("Reset Size to Icon Default", self._view)
+        reset_size_action.setEnabled(
+            self._view.marker_icon_catalog.resolve_attributes(
+                item._visual_attributes
+            )
+            is not None
+        )
+        reset_size_action.triggered.connect(
+            lambda: self._reset_size_to_icon_default(item)
+        )
+        style_menu.addAction(reset_size_action)
 
         border_action = QAction("Set Border Strength...", self._view)
         border_action.triggered.connect(lambda: self.show_border_strength_dialog(item))
@@ -352,14 +373,58 @@ class InteractionHandler:
         Args:
             marker_item: The marker to change the icon for.
         """
-        dialog = IconPickerDialog(self._view, world_root=self._view._world_root)
+        dialog = IconPickerDialog(
+            self._view,
+            world_root=self._view._world_root,
+            catalog=self._view.marker_icon_catalog,
+        )
         if dialog.exec() == QDialog.DialogCode.Accepted and (
             selected_icon := dialog.selected_icon
         ):
-            marker_item.set_icon(selected_icon)
-            self._view.change_marker_icon_requested.emit(
-                marker_item.marker_id, selected_icon
+            self._view.marker_icon_catalog = MarkerIconCatalog.load(
+                self._view._world_root
             )
+            definition = dialog.selected_definition
+            if definition is None:
+                definition = self._view.marker_icon_catalog.resolve_path(selected_icon)
+            updates: dict[str, object] = {MARKER_ICON_ATTRIBUTE: selected_icon}
+            if definition is not None:
+                updates.update(self._icon_definition_updates(marker_item, definition))
+            else:
+                updates[MARKER_ICON_ID_ATTRIBUTE] = ""
+
+            attributes = dict(marker_item._visual_attributes)
+            attributes.update(updates)
+            marker_item.set_visual_attributes(attributes)
+            if definition is not None:
+                marker_item.set_icon_definition(definition)
+            else:
+                marker_item.set_icon(selected_icon)
+            self._view.marker_visual_style_changed.emit(
+                marker_item.marker_id,
+                updates,
+            )
+
+    @staticmethod
+    def _icon_definition_updates(
+        marker_item: MarkerItem,
+        definition: MarkerIconDefinition,
+    ) -> dict[str, object]:
+        """Build stable-ID and conditional icon-default size updates."""
+        updates: dict[str, object] = {MARKER_ICON_ID_ATTRIBUTE: definition.id}
+        if (
+            marker_item._visual_attributes.get(MARKER_SIZING_SOURCE_ATTRIBUTE)
+            != MarkerSizingSource.ICON_DEFAULT.value
+        ):
+            return updates
+        image_width = marker_item.pixmap_item.boundingRect().width()
+        sizing = MarkerSizingSettings.for_map_image_width(
+            image_width,
+            native_diameter_px=definition.default_native_diameter_px,
+        )
+        updates[MARKER_SIZING_ATTRIBUTE] = sizing.to_dict()
+        updates[MARKER_SIZING_SOURCE_ATTRIBUTE] = MarkerSizingSource.ICON_DEFAULT.value
+        return updates
 
     # ------------------------------------------------------------------
     # Visual Styling Dialogs
@@ -387,6 +452,7 @@ class InteractionHandler:
         if dialog.exec() == QDialog.DialogCode.Accepted:
             updates = {
                 MARKER_SIZING_ATTRIBUTE: dialog.get_settings().to_dict(),
+                MARKER_SIZING_SOURCE_ATTRIBUTE: MarkerSizingSource.CUSTOM.value,
             }
             new_attrs = dict(marker_item._visual_attributes)
             new_attrs.update(updates)
@@ -396,6 +462,28 @@ class InteractionHandler:
                 marker_item.marker_id,
                 updates,
             )
+
+    def _reset_size_to_icon_default(self, marker_item: MarkerItem) -> None:
+        """Restore the current icon's canonical native-scale diameter."""
+        definition = self._view.marker_icon_catalog.resolve_attributes(
+            marker_item._visual_attributes
+        )
+        if definition is None:
+            return
+        image_width = marker_item.pixmap_item.boundingRect().width()
+        sizing = MarkerSizingSettings.for_map_image_width(
+            image_width,
+            native_diameter_px=definition.default_native_diameter_px,
+        )
+        updates = {
+            MARKER_SIZING_ATTRIBUTE: sizing.to_dict(),
+            MARKER_SIZING_SOURCE_ATTRIBUTE: MarkerSizingSource.ICON_DEFAULT.value,
+        }
+        attributes = dict(marker_item._visual_attributes)
+        attributes.update(updates)
+        marker_item.set_visual_attributes(attributes)
+        self._view._schedule_label_layout()
+        self._view.marker_visual_style_changed.emit(marker_item.marker_id, updates)
 
     def show_border_strength_dialog(self, marker_item: MarkerItem) -> None:
         """Shows a dialog to set the marker's border width.

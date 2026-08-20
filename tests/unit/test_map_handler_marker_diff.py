@@ -40,6 +40,7 @@ def _make_marker(
         "icon": None,
         "color": None,
         "description": "",
+        "attributes": {},
         "connection_count": 0,
     }
     d.update(overrides)
@@ -150,6 +151,42 @@ class TestIncrementalMarkerDiff:
         widget.clear_markers.assert_not_called()
         # The changed marker is re-added (remove + add) but NOT via full rebuild
         assert widget.view.remove_marker.call_count == 1
+        assert widget.add_marker.call_count == 1
+
+    def test_marker_geometry_reload_preserves_map_viewport(self, qapp) -> None:
+        """Changing icon geometry must not nudge the map viewport."""
+        initial = [_make_marker("a", icon="map-pin.svg")]
+        handler, widget = _make_handler_with_markers(initial)
+        transform = MagicMock(name="saved_transform")
+        widget.view.transform.return_value = transform
+        widget.view.horizontalScrollBar().value.return_value = 123
+        widget.view.verticalScrollBar().value.return_value = 456
+
+        handler.on_markers_ready(
+            "map-1",
+            [_make_marker("a", icon="building-castle.svg")],
+        )
+
+        widget.view.setTransform.assert_called_with(transform)
+        widget.view.horizontalScrollBar().setValue.assert_called_with(123)
+        widget.view.verticalScrollBar().setValue.assert_called_with(456)
+
+    def test_marker_attribute_change_rebuilds_only_that_marker(self, qapp) -> None:
+        """Sizing provenance changes must be visible after redo and undo reloads."""
+        initial = [_make_marker("a", attributes={"_v_marker_sizing_source": "custom"})]
+        handler, widget = _make_handler_with_markers(initial)
+
+        handler.on_markers_ready(
+            "map-1",
+            [
+                _make_marker(
+                    "a",
+                    attributes={"_v_marker_sizing_source": "icon_default"},
+                )
+            ],
+        )
+
+        widget.view.remove_marker.assert_called_once_with("a")
         assert widget.add_marker.call_count == 1
 
     def test_full_rebuild_on_map_switch(self, qapp) -> None:

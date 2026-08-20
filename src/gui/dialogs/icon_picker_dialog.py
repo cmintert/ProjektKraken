@@ -31,10 +31,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.core.marker_icon import MarkerIconDefinition
 from src.core.paths import get_resource_path
 from src.gui.constants import DEFAULT_MARKER_ICONS_PATH
 from src.gui.utils.style_helper import StyleHelper
 from src.services.asset_store import AssetStore
+from src.services.marker_icon_catalog import MarkerIconCatalog
 
 logger = logging.getLogger(__name__)
 
@@ -228,6 +230,7 @@ class IconPickerDialog(QDialog):
         self,
         parent: Optional[QWidget] = None,
         world_root: Optional[str] = None,
+        catalog: MarkerIconCatalog | None = None,
     ) -> None:
         """Initializes the IconPickerDialog.
 
@@ -242,7 +245,10 @@ class IconPickerDialog(QDialog):
         self.setMinimumSize(420, 380)
         self.setStyleSheet(StyleHelper.get_dialog_base_style())
         self.selected_icon: Optional[str] = None
+        self.selected_icon_id: Optional[str] = None
+        self.selected_definition: MarkerIconDefinition | None = None
         self._world_root = world_root
+        self._catalog = catalog or MarkerIconCatalog.load(world_root)
 
         self._setup_ui()
 
@@ -308,23 +314,33 @@ class IconPickerDialog(QDialog):
         grid.setSpacing(8)
         grid.setContentsMargins(8, 8, 8, 8)
 
-        icons = get_available_default_icons()
-        if not icons:
+        definitions = self._catalog.defaults()
+        if not definitions:
             label = QLabel("No default icons found.")
             label.setStyleSheet(StyleHelper.get_empty_state_style())
             grid.addWidget(label, 0, 0)
         else:
             cols = 5
             icons_dir = _get_default_icons_dir()
-            for i, icon_name in enumerate(icons):
-                row, col = divmod(i, cols)
-                btn = self._make_icon_button(
-                    os.path.join(icons_dir, icon_name), icon_name
+            grouped: dict[str, list[MarkerIconDefinition]] = {}
+            for definition in definitions:
+                grouped.setdefault(definition.category or "Other", []).append(
+                    definition
                 )
-                btn.clicked.connect(
-                    lambda checked, name=icon_name: self._on_icon_selected(name)
-                )
-                grid.addWidget(btn, row, col)
+            row = 0
+            for category, category_definitions in grouped.items():
+                heading = QLabel(category)
+                heading.setStyleSheet(StyleHelper.get_section_header_style())
+                grid.addWidget(heading, row, 0, 1, cols)
+                row += 1
+                for index, definition in enumerate(category_definitions):
+                    card_row, col = divmod(index, cols)
+                    card = self._make_definition_card(
+                        os.path.join(icons_dir, definition.asset_path),
+                        definition,
+                    )
+                    grid.addWidget(card, row + card_row, col)
+                row += (len(category_definitions) + cols - 1) // cols
 
         scroll.setWidget(inner)
         outer.addWidget(scroll)
@@ -423,6 +439,35 @@ class IconPickerDialog(QDialog):
             btn.setIconSize(QSize(32, 32))
         return btn
 
+    def _make_definition_card(
+        self,
+        icon_path: str,
+        definition: MarkerIconDefinition,
+    ) -> QWidget:
+        """Create a preview with a human-readable name beneath it."""
+        card = QWidget()
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(2, 2, 2, 2)
+        layout.setSpacing(2)
+        button = self._make_icon_button(icon_path, definition.name)
+        button.clicked.connect(
+            lambda checked=False, item=definition: self._on_definition_selected(item)
+        )
+        name_label = QLabel(definition.name)
+        name_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        name_label.setWordWrap(True)
+        name_label.setToolTip(definition.name)
+        layout.addWidget(button, 0, Qt.AlignmentFlag.AlignHCenter)
+        layout.addWidget(name_label)
+        return card
+
+    def _on_definition_selected(self, definition: MarkerIconDefinition) -> None:
+        """Store both stable identity and compatibility path."""
+        self.selected_definition = definition
+        self.selected_icon_id = definition.id
+        self.selected_icon = definition.asset_path
+        self.accept()
+
     def _on_icon_selected(self, icon_identifier: str) -> None:
         """Sets the selected icon and accepts the dialog.
 
@@ -432,6 +477,10 @@ class IconPickerDialog(QDialog):
 
         """
         self.selected_icon = icon_identifier
+        self.selected_definition = self._catalog.resolve_path(icon_identifier)
+        self.selected_icon_id = (
+            self.selected_definition.id if self.selected_definition is not None else None
+        )
         self.accept()
 
     def _on_import_clicked(self) -> None:
@@ -453,6 +502,13 @@ class IconPickerDialog(QDialog):
             store = AssetStore(self._world_root)
             relative_path = store.import_icon(file_path)
             self.selected_icon = relative_path
+            self._catalog = MarkerIconCatalog.load(self._world_root)
+            self.selected_definition = self._catalog.resolve_path(relative_path)
+            self.selected_icon_id = (
+                self.selected_definition.id
+                if self.selected_definition is not None
+                else None
+            )
             self.accept()
         except Exception as exc:
             logger.error(f"Failed to import icon: {exc}")

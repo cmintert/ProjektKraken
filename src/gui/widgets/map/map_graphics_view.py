@@ -86,6 +86,7 @@ from src.gui.widgets.map.snapping_manager import SnappingManager, SnapType
 from src.gui.widgets.map.trajectory_edit_overlay import TrajectoryEditOverlay
 from src.gui.widgets.map.trajectory_renderer import TrajectoryRenderer
 from src.gui.widgets.map.vertex_editor import VertexEditor
+from src.services.marker_icon_catalog import MarkerIconCatalog
 
 if TYPE_CHECKING:
     from src.gui.widgets.map.map_layer_model import MapLayerModel
@@ -403,6 +404,7 @@ class MapGraphicsView(QGraphicsView):
 
         # World root (set when a world is opened)
         self._world_root: Optional[str] = None
+        self.marker_icon_catalog = MarkerIconCatalog.load()
 
         # Space held-to-pan state (industry-standard painting-app shortcut)
         self._space_pressed: bool = False
@@ -474,6 +476,7 @@ class MapGraphicsView(QGraphicsView):
             world_root: Absolute path to the world directory, or None.
         """
         self._world_root = world_root
+        self.marker_icon_catalog = MarkerIconCatalog.load(world_root)
 
     @property
     def _drawing_mode(self) -> Optional[str]:

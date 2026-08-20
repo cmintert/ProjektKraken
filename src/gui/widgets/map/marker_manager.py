@@ -11,6 +11,7 @@ import shiboken6
 from PySide6.QtWidgets import QGraphicsItem
 
 from src.core.marker import FEATURE_TYPE_PATH, FEATURE_TYPE_REGION
+from src.core.marker_appearance import MARKER_ICON_ATTRIBUTE
 from src.gui.constants import MAP_LAYER_Z_MARKERS
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.marker_item import MarkerItem
@@ -125,6 +126,10 @@ class MarkerManager:
             return
 
         # Default: point marker
+        attributes = dict(visual_attributes or {})
+        if icon is not None:
+            attributes[MARKER_ICON_ATTRIBUTE] = icon
+        definition = self._view.marker_icon_catalog.resolve_attributes(attributes)
         marker = MarkerItem(
             marker_id,
             object_type,
@@ -137,6 +142,7 @@ class MarkerManager:
             visual_attributes=visual_attributes,
             world_root=self._view._world_root,
             map_width_meters=self._view.map_width_meters,
+            icon_definition=definition,
         )
 
         scene_pos = self._view.coord_system.to_scene(x, y)

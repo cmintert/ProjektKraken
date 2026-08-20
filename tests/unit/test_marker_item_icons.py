@@ -6,14 +6,24 @@ from pathlib import Path
 import pytest
 from PIL import Image
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QAction, QImage, QPainter
+from PySide6.QtGui import QAction, QImage, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QGraphicsPixmapItem,
     QStyleOptionGraphicsItem,
     QWidget,
 )
 
-from src.core.marker_appearance import MARKER_ICON_ANCHOR_ATTRIBUTE
+from src.core.marker_appearance import (
+    MARKER_ICON_ANCHOR_ATTRIBUTE,
+    MarkerIconAnchor,
+)
+from src.core.marker_icon import MarkerIconDefinition, MarkerIconSource
+from src.core.marker_sizing import (
+    MARKER_SIZING_ATTRIBUTE,
+    MARKER_SIZING_SOURCE_ATTRIBUTE,
+    MarkerSizingSettings,
+    MarkerSizingSource,
+)
 from src.gui.widgets.map.interaction_handler import InteractionHandler
 from src.gui.widgets.map.marker_item import MarkerItem
 
@@ -113,6 +123,85 @@ def test_raster_anchor_uses_actual_aspect_preserved_artwork(qapp, tmp_path):
     assert rect.width() == pytest.approx(24.0)
     assert rect.height() == pytest.approx(12.0)
     assert rect.bottom() == pytest.approx(0.0)
+
+
+def test_svg_rendered_symbol_rect_preserves_viewbox_aspect(qapp, tmp_path):
+    """SVG artwork uses its own aspect ratio instead of a square slot."""
+    icon_dir = tmp_path / "assets" / "images"
+    icon_dir.mkdir(parents=True)
+    (icon_dir / "icon_wide.svg").write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 20">'
+        '<rect width="40" height="20"/></svg>',
+        encoding="utf-8",
+    )
+    marker = _marker(tmp_path, "assets/images/icon_wide.svg")
+
+    rect = marker.rendered_symbol_rect()
+
+    assert rect.width() == pytest.approx(24.0)
+    assert rect.height() == pytest.approx(12.0)
+
+
+def test_definition_anchor_is_used_without_marker_override(qapp, tmp_path):
+    definition = MarkerIconDefinition(
+        id="test.pin",
+        name="Test Pin",
+        asset_path="map-pin.svg",
+        source=MarkerIconSource.DEFAULT,
+        anchor=MarkerIconAnchor(0.5, 1.0),
+    )
+    marker = MarkerItem(
+        "marker-1",
+        "entity",
+        "Marker",
+        QGraphicsPixmapItem(),
+        icon="map-pin.svg",
+        icon_definition=definition,
+    )
+
+    assert marker.rendered_symbol_rect().bottom() == pytest.approx(0.0)
+
+
+def test_icon_default_size_changes_only_for_following_marker(qapp):
+    definition = MarkerIconDefinition(
+        id="test.small",
+        name="Small",
+        asset_path="map-pin.svg",
+        source=MarkerIconSource.DEFAULT,
+        default_native_diameter_px=30.0,
+    )
+    pixmap = QPixmap(1000, 500)
+    pixmap.fill()
+    pixmap_item = QGraphicsPixmapItem(pixmap)
+    following = MarkerItem(
+        "following",
+        "entity",
+        "Following",
+        pixmap_item,
+        visual_attributes={
+            MARKER_SIZING_SOURCE_ATTRIBUTE: MarkerSizingSource.ICON_DEFAULT.value
+        },
+    )
+    custom = MarkerItem(
+        "custom",
+        "entity",
+        "Custom",
+        pixmap_item,
+        visual_attributes={
+            MARKER_SIZING_ATTRIBUTE: MarkerSizingSettings(map_value=7.0).to_dict(),
+            MARKER_SIZING_SOURCE_ATTRIBUTE: MarkerSizingSource.CUSTOM.value,
+        },
+    )
+
+    following_updates = InteractionHandler._icon_definition_updates(
+        following, definition
+    )
+    custom_updates = InteractionHandler._icon_definition_updates(custom, definition)
+
+    assert following_updates[MARKER_SIZING_ATTRIBUTE]["map_value"] == pytest.approx(
+        3.0
+    )
+    assert MARKER_SIZING_ATTRIBUTE not in custom_updates
 
 
 def test_malformed_raster_uses_fallback(qapp, tmp_path):

@@ -7,7 +7,7 @@ and import behaviour.
 from unittest.mock import patch
 
 import pytest
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QLabel
 
 from src.gui.dialogs.icon_picker_dialog import (
     IconPickerDialog,
@@ -192,6 +192,25 @@ class TestIconPickerDialogCreation:
         dialog = IconPickerDialog()
         dialog._on_icon_selected("castle.svg")
         assert dialog.selected_icon == "castle.svg"
+
+    def test_default_definition_selection_exposes_id_and_path(self, qapp):
+        dialog = IconPickerDialog()
+        definition = dialog._catalog.resolve_id("place.castle")
+        assert definition is not None
+
+        dialog._on_definition_selected(definition)
+
+        assert dialog.selected_icon_id == "place.castle"
+        assert dialog.selected_icon == "building-castle.svg"
+        assert dialog.selected_definition == definition
+
+    def test_picker_shows_human_readable_bundled_names(self, qapp):
+        dialog = IconPickerDialog()
+
+        labels = {label.text() for label in dialog.findChildren(QLabel)}
+
+        assert "Castle" in labels
+        assert "building-castle.svg" not in labels
 
     def test_dialog_has_theme_stylesheet(self, qapp):
         """Dialog applies dialog base style from StyleHelper."""

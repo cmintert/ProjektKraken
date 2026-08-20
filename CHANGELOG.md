@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-08-18
-**Commit:** c2f5f82d
+**Last Updated:** 2026-08-20
+**Commit:** e0f996c6
 ---
 
 # Changelog
@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-08-20)* **Maps / Marker Icons**: Added stable icon definitions, a
+  bundled manifest, legacy path resolution, icon-default sizing provenance,
+  and human-readable picker entries.
 - *(2026-08-18)* **Maps / Marker Creation**: Added a searchable marker picker
   with direct Location, typed Entity, and Event creation actions.
 - *(2026-08-16)* **Application / Startup**: Added a branded, theme-aware splash
@@ -27,6 +30,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-20)* **Maps / Marker Icons**: Preserved map coordinates and the
+  viewport when switching icons, kept raster and SVG aspect ratios intact, and
+  positioned labels from the rendered symbol bounds.
 - *(2026-08-18)* **Maps / Marker Sizing**: Kept direct resizing of calibrated
   metric markers from collapsing at 100 m by applying unit-aware size bounds.
 - *(2026-08-18)* **Maps / Marker Creation**: Made newly created entities and
@@ -50,6 +56,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-20)* **Testing / Marker Icons**: Added catalog, persistence,
+  sizing, anchor, rendering, picker, and viewport regression coverage.
 - *(2026-08-18)* **Maps / Marker Sizing**: Simplified point-marker sizing to
   one behavior-and-size control, made direct resize update that same value, and
   set new markers to a 50 px native-map footprint that remains relative to map
