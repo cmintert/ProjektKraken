@@ -25,6 +25,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.core.entities import Entity
 from src.services.db_service import DatabaseService
 
+_MIN_PATH_NODE_COUNT = 2
+
 
 def create_example_world(db_service: DatabaseService) -> None:
     """
@@ -208,7 +210,7 @@ def analyze_graph(G: Any) -> None:
     # Find shortest weighted path between two nodes
     print("\nExample: Shortest Weighted Path")
     nodes = list(G.nodes())
-    if len(nodes) >= 2:
+    if len(nodes) >= _MIN_PATH_NODE_COUNT:
         source = nodes[0]
         target = nodes[-1]
         source_name = G.nodes[source]["name"]

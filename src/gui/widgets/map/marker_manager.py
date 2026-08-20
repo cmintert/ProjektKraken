@@ -11,7 +11,7 @@ import shiboken6
 from PySide6.QtWidgets import QGraphicsItem
 
 from src.core.marker import FEATURE_TYPE_PATH, FEATURE_TYPE_REGION
-from src.core.marker_appearance import MARKER_ICON_ATTRIBUTE
+from src.core.marker_appearance import MARKER_ICON_ID_ATTRIBUTE
 from src.gui.constants import MAP_LAYER_Z_MARKERS
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.marker_item import MarkerItem
@@ -45,7 +45,6 @@ class MarkerManager:
         label: str,
         x: float,
         y: float,
-        icon: Optional[str] = None,
         color: Optional[str] = None,
         description: Optional[str] = None,
         lore_date: Optional[float] = None,
@@ -65,7 +64,6 @@ class MarkerManager:
             label: Marker label text.
             x: Normalized X coordinate [0.0, 1.0] (anchor).
             y: Normalized Y coordinate [0.0, 1.0] (anchor).
-            icon: Optional icon filename.
             color: Optional color hex string.
             description: Optional description for tooltip.
             lore_date: Optional lore timestamp for temporal filtering.
@@ -127,15 +125,14 @@ class MarkerManager:
 
         # Default: point marker
         attributes = dict(visual_attributes or {})
-        if icon is not None:
-            attributes[MARKER_ICON_ATTRIBUTE] = icon
-        definition = self._view.marker_icon_catalog.resolve_attributes(attributes)
+        definition = self._view.marker_icon_catalog.definition_or_default(
+            attributes.get(MARKER_ICON_ID_ATTRIBUTE)
+        )
         marker = MarkerItem(
             marker_id,
             object_type,
             label,
             self._view.pixmap_item,
-            icon,
             color,
             description,
             lore_date,

@@ -19,7 +19,6 @@ from PySide6.QtWidgets import (
 
 from src.core.marker_appearance import (
     MARKER_ICON_ANCHOR_ATTRIBUTE,
-    MARKER_ICON_ATTRIBUTE,
     MARKER_ICON_ID_ATTRIBUTE,
     MarkerAppearance,
     MarkerIconAnchor,
@@ -378,28 +377,19 @@ class InteractionHandler:
             world_root=self._view._world_root,
             catalog=self._view.marker_icon_catalog,
         )
-        if dialog.exec() == QDialog.DialogCode.Accepted and (
-            selected_icon := dialog.selected_icon
-        ):
+        if dialog.exec() == QDialog.DialogCode.Accepted:
             self._view.marker_icon_catalog = MarkerIconCatalog.load(
                 self._view._world_root
             )
             definition = dialog.selected_definition
             if definition is None:
-                definition = self._view.marker_icon_catalog.resolve_path(selected_icon)
-            updates: dict[str, object] = {MARKER_ICON_ATTRIBUTE: selected_icon}
-            if definition is not None:
-                updates.update(self._icon_definition_updates(marker_item, definition))
-            else:
-                updates[MARKER_ICON_ID_ATTRIBUTE] = ""
+                return
+            updates = self._icon_definition_updates(marker_item, definition)
 
             attributes = dict(marker_item._visual_attributes)
             attributes.update(updates)
             marker_item.set_visual_attributes(attributes)
-            if definition is not None:
-                marker_item.set_icon_definition(definition)
-            else:
-                marker_item.set_icon(selected_icon)
+            marker_item.set_icon_definition(definition)
             self._view.marker_visual_style_changed.emit(
                 marker_item.marker_id,
                 updates,

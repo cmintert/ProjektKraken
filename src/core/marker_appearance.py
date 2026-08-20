@@ -23,13 +23,11 @@ from src.core.style_constants import (
     V_SIZE_SCALE,
 )
 
-MARKER_ICON_ATTRIBUTE = "icon"
 MARKER_ICON_ID_ATTRIBUTE = "_v_marker_icon_id"
 MARKER_ICON_ANCHOR_ATTRIBUTE = "_v_icon_anchor"
 
 MARKER_APPEARANCE_ATTRIBUTE_KEYS = frozenset(
     {
-        MARKER_ICON_ATTRIBUTE,
         MARKER_ICON_ID_ATTRIBUTE,
         V_FILL,
         V_BORDER,
@@ -76,7 +74,6 @@ class MarkerAppearance:
     legacy centred appearance resets an off-centre target reliably.
     """
 
-    icon: str | None = None
     icon_id: str | None = None
     fill: str | None = None
     border: str | None = None
@@ -108,7 +105,6 @@ class MarkerAppearance:
         except (TypeError, ValueError):
             sizing_source = None
         return cls(
-            icon=_optional_string(attributes.get(MARKER_ICON_ATTRIBUTE)),
             icon_id=_optional_string(attributes.get(MARKER_ICON_ID_ATTRIBUTE)),
             fill=_optional_string(attributes.get(V_FILL)),
             border=_optional_string(attributes.get(V_BORDER)),
@@ -136,7 +132,6 @@ class MarkerAppearance:
             MARKER_ICON_ANCHOR_ATTRIBUTE: self.anchor.to_dict()
         }
         optional_values = {
-            MARKER_ICON_ATTRIBUTE: self.icon,
             MARKER_ICON_ID_ATTRIBUTE: self.icon_id,
             V_FILL: self.fill,
             V_BORDER: self.border,

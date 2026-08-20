@@ -6,8 +6,7 @@ import mimetypes
 from pathlib import Path
 from typing import Any, Callable
 
-from src.core.map_constants import DEFAULT_MARKER_ICONS_PATH
-from src.core.paths import get_resource_path
+from src.services.marker_icon_catalog import MarkerIconCatalog
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +38,7 @@ def resolve_lexicon_images(
     world_root: Path,
     image_encoder: Callable[[Path], str] = image_to_base64,
 ) -> dict[str, Any]:
-    """Resolve node icon paths to Base64 data URIs.
+    """Resolve node icon IDs to Base64 data URIs.
 
     Args:
         lexicon: Raw graph visual lexicon.
@@ -50,16 +49,18 @@ def resolve_lexicon_images(
 
     """
     resolved_nodes: dict[str, Any] = {}
-    default_dir = Path(get_resource_path(DEFAULT_MARKER_ICONS_PATH))
+    catalog = MarkerIconCatalog.load(world_root)
     for type_name, style in lexicon.get("nodes", {}).items():
         resolved_style = dict(style)
-        icon_path = style.get("icon", "")
-        if icon_path:
-            full_path = world_root / icon_path
-            if not full_path.exists():
-                full_path = default_dir / icon_path
-            if data_uri := image_encoder(full_path):
-                resolved_style["image"] = data_uri
+        resolved_style.pop("icon", None)
+        icon_id = style.get("icon_id")
+        if icon_id:
+            definition = catalog.resolve_id(icon_id)
+            if definition is None:
+                logger.warning("Unknown Visual Lexicon icon ID: %s", icon_id)
+            elif (full_path := catalog.asset_file(definition)) is not None:
+                if data_uri := image_encoder(full_path):
+                    resolved_style["image"] = data_uri
         resolved_nodes[type_name] = resolved_style
     return {
         "nodes": resolved_nodes,

@@ -32,7 +32,6 @@ EXPECTED_COMMANDS = [
     "CreateMarkerCommand",
     "UpdateMarkerCommand",
     "DeleteMarkerCommand",
-    "UpdateMarkerIconCommand",
     "UpdateMarkerColorCommand",
     "UpdateMarkerAttributeCommand",
     "UpdateTrajectoryCommand",
@@ -63,6 +62,10 @@ def test_registry_returns_dict_copy():
     types2 = get_command_types()
     assert types1 is not types2
     assert types1 == types2
+
+
+def test_registry_does_not_deserialize_path_based_marker_icon_command():
+    assert "UpdateMarkerIconCommand" not in get_command_types()
 
 
 def test_registry_values_are_classes():

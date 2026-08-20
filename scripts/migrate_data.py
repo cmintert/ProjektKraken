@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 def migrate() -> None:
+    """Move legacy root-level world data into the user data directory."""
     # 1. Define Paths
     project_root = Path(__file__).parent.parent.resolve()
 

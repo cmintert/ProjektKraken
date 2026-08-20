@@ -37,7 +37,6 @@ def _make_marker(
         "label": label,
         "x": x,
         "y": y,
-        "icon": None,
         "color": None,
         "description": "",
         "attributes": {},
@@ -155,7 +154,9 @@ class TestIncrementalMarkerDiff:
 
     def test_marker_geometry_reload_preserves_map_viewport(self, qapp) -> None:
         """Changing icon geometry must not nudge the map viewport."""
-        initial = [_make_marker("a", icon="map-pin.svg")]
+        initial = [
+            _make_marker("a", attributes={"_v_marker_icon_id": "map.pin"})
+        ]
         handler, widget = _make_handler_with_markers(initial)
         transform = MagicMock(name="saved_transform")
         widget.view.transform.return_value = transform
@@ -164,7 +165,11 @@ class TestIncrementalMarkerDiff:
 
         handler.on_markers_ready(
             "map-1",
-            [_make_marker("a", icon="building-castle.svg")],
+            [
+                _make_marker(
+                    "a", attributes={"_v_marker_icon_id": "place.castle"}
+                )
+            ],
         )
 
         widget.view.setTransform.assert_called_with(transform)

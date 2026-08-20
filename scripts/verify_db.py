@@ -1,3 +1,5 @@
+"""Print a concise inspection of the active world's database contents."""
+
 import sys
 from pathlib import Path
 
@@ -17,6 +19,7 @@ from src.services.db_service import DatabaseService  # noqa: E402
 
 
 def verify_db() -> None:
+    """Load the active world database and print its entities and events."""
     settings = QSettings(WINDOW_SETTINGS_KEY, WINDOW_SETTINGS_APP)
     active_world = settings.value(SETTINGS_ACTIVE_DB_KEY, "Default World")
 

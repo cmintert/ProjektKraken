@@ -1,208 +1,91 @@
-"""Tests for the shared IconPickerDialog.
-
-Validates default icon listing, project icon listing, removal, theming,
-and import behaviour.
-"""
+"""Tests for the shared ID-only IconPickerDialog."""
 
 from unittest.mock import patch
 
 import pytest
 from PySide6.QtWidgets import QApplication, QLabel
 
-from src.gui.dialogs.icon_picker_dialog import (
-    IconPickerDialog,
-    get_available_default_icons,
-    get_project_icons,
-    remove_project_icon,
-)
+from src.core.marker_icon import MarkerIconDefinition, MarkerIconSource
+from src.gui.dialogs.icon_picker_dialog import IconPickerDialog, remove_project_icon
+from src.services.marker_icon_catalog import MarkerIconCatalog
 
 
 @pytest.fixture
 def qapp():
-    """Provides a QApplication instance for widget testing."""
+    """Provide a QApplication instance for widget testing."""
     app = QApplication.instance()
     if app is None:
         app = QApplication([])
     return app
 
 
-# ---------------------------------------------------------------------------
-# get_available_default_icons
-# ---------------------------------------------------------------------------
-
-
-class TestGetAvailableDefaultIcons:
-    """Tests for the get_available_default_icons helper."""
-
-    def test_returns_list(self):
-        """Should return a list (possibly empty if path missing)."""
-        result = get_available_default_icons()
-        assert isinstance(result, list)
-
-    def test_all_entries_are_svg(self):
-        """All returned filenames must end with .svg."""
-        for name in get_available_default_icons():
-            assert name.endswith(".svg")
-
-    def test_result_is_sorted(self):
-        """Returned list must be sorted alphabetically."""
-        icons = get_available_default_icons()
-        assert icons == sorted(icons)
-
-    @patch(
-        "src.gui.dialogs.icon_picker_dialog._get_default_icons_dir",
-        return_value="/nonexistent/path",
+def _custom_definition(uuid_hex: str, extension: str = ".svg") -> MarkerIconDefinition:
+    return MarkerIconDefinition(
+        id=f"custom.{uuid_hex}",
+        name=f"Project Icon {uuid_hex[:8]}",
+        asset_path=f"assets/images/icon_{uuid_hex}{extension}",
+        source=MarkerIconSource.CUSTOM,
+        category="Project Icons",
     )
-    def test_missing_directory_returns_empty(self, _mock):
-        """Returns empty list when default icons directory does not exist."""
-        assert get_available_default_icons() == []
 
 
-# ---------------------------------------------------------------------------
-# get_project_icons
-# ---------------------------------------------------------------------------
+def test_catalog_discovers_only_canonical_project_icons(tmp_path):
+    images_dir = tmp_path / "assets" / "images"
+    images_dir.mkdir(parents=True)
+    uuid_hex = "0123456789abcdef0123456789abcdef"
+    (images_dir / f"icon_{uuid_hex}.svg").write_text("<svg/>")
+    (images_dir / "icon_short.svg").write_text("<svg/>")
+    (images_dir / "photo.png").write_bytes(b"PNG")
+
+    definitions = MarkerIconCatalog.load(tmp_path).custom()
+
+    assert [definition.id for definition in definitions] == [f"custom.{uuid_hex}"]
 
 
-class TestGetProjectIcons:
-    """Tests for get_project_icons."""
+def test_remove_project_icon_uses_definition(tmp_path):
+    uuid_hex = "0123456789abcdef0123456789abcdef"
+    definition = _custom_definition(uuid_hex)
+    icon_file = tmp_path / definition.asset_path
+    icon_file.parent.mkdir(parents=True)
+    icon_file.write_text("<svg/>")
 
-    def test_empty_world(self, tmp_path):
-        """No icons returned for a world without assets/images."""
-        assert get_project_icons(str(tmp_path)) == []
-
-    def test_finds_imported_icons(self, tmp_path):
-        """Discovers icon_ prefixed files in assets/images."""
-        images_dir = tmp_path / "assets" / "images"
-        images_dir.mkdir(parents=True)
-        (images_dir / "icon_abc123.svg").write_text("<svg/>")
-        (images_dir / "icon_def456.png").write_bytes(b"\x89PNG")
-
-        result = get_project_icons(str(tmp_path))
-        assert len(result) == 2
-        assert "assets/images/icon_abc123.svg" in result
-        assert "assets/images/icon_def456.png" in result
-
-    def test_finds_webp_icons(self, tmp_path):
-        """WebP project icons are included in the picker."""
-        images_dir = tmp_path / "assets" / "images"
-        images_dir.mkdir(parents=True)
-        (images_dir / "icon_webp.webp").write_bytes(b"RIFF")
-
-        assert get_project_icons(str(tmp_path)) == [
-            "assets/images/icon_webp.webp"
-        ]
-
-    def test_ignores_non_icon_files(self, tmp_path):
-        """Files without icon_ prefix are ignored."""
-        images_dir = tmp_path / "assets" / "images"
-        images_dir.mkdir(parents=True)
-        (images_dir / "photo_abc.png").write_bytes(b"\x89PNG")
-        (images_dir / "icon_ok.svg").write_text("<svg/>")
-
-        result = get_project_icons(str(tmp_path))
-        assert len(result) == 1
-        assert "icon_ok.svg" in result[0]
-
-    def test_ignores_disallowed_extensions(self, tmp_path):
-        """Files with disallowed extensions are ignored."""
-        images_dir = tmp_path / "assets" / "images"
-        images_dir.mkdir(parents=True)
-        (images_dir / "icon_bad.exe").write_bytes(b"MZ")
-
-        assert get_project_icons(str(tmp_path)) == []
-
-    def test_result_is_sorted(self, tmp_path):
-        """Returned list is sorted alphabetically."""
-        images_dir = tmp_path / "assets" / "images"
-        images_dir.mkdir(parents=True)
-        (images_dir / "icon_zzz.svg").write_text("<svg/>")
-        (images_dir / "icon_aaa.svg").write_text("<svg/>")
-
-        result = get_project_icons(str(tmp_path))
-        assert result == sorted(result)
+    assert remove_project_icon(str(tmp_path), definition)
+    assert not icon_file.exists()
 
 
-# ---------------------------------------------------------------------------
-# remove_project_icon
-# ---------------------------------------------------------------------------
+def test_remove_project_icon_rejects_bundled_definition(tmp_path):
+    definition = MarkerIconDefinition(
+        id="map.pin",
+        name="Map Pin",
+        asset_path="map-pin.svg",
+        source=MarkerIconSource.DEFAULT,
+    )
 
-
-class TestRemoveProjectIcon:
-    """Tests for remove_project_icon."""
-
-    def test_removes_existing_icon(self, tmp_path):
-        """Deletes an existing project icon file."""
-        images_dir = tmp_path / "assets" / "images"
-        images_dir.mkdir(parents=True)
-        icon_file = images_dir / "icon_abc.svg"
-        icon_file.write_text("<svg/>")
-
-        assert remove_project_icon(str(tmp_path), "assets/images/icon_abc.svg")
-        assert not icon_file.exists()
-
-    def test_returns_false_for_missing_icon(self, tmp_path):
-        """Returns False when the icon file does not exist."""
-        assert not remove_project_icon(str(tmp_path), "assets/images/icon_missing.svg")
-
-    def test_rejects_removal_outside_project_icons(self, tmp_path):
-        """Removal cannot traverse outside the portable icon directory."""
-        outside = tmp_path / "outside.svg"
-        outside.write_text("<svg/>")
-
-        assert not remove_project_icon(
-            str(tmp_path), "assets/images/../../outside.svg"
-        )
-        assert outside.exists()
-
-    def test_icon_gone_from_project_list(self, tmp_path):
-        """After removal the icon is no longer in get_project_icons."""
-        images_dir = tmp_path / "assets" / "images"
-        images_dir.mkdir(parents=True)
-        (images_dir / "icon_keep.svg").write_text("<svg/>")
-        (images_dir / "icon_gone.svg").write_text("<svg/>")
-
-        remove_project_icon(str(tmp_path), "assets/images/icon_gone.svg")
-
-        result = get_project_icons(str(tmp_path))
-        assert len(result) == 1
-        assert "icon_keep.svg" in result[0]
-
-
-# ---------------------------------------------------------------------------
-# IconPickerDialog construction
-# ---------------------------------------------------------------------------
+    assert not remove_project_icon(str(tmp_path), definition)
 
 
 class TestIconPickerDialogCreation:
-    """Tests for IconPickerDialog instantiation."""
+    """Tests for IconPickerDialog instantiation and stable selection."""
 
     def test_creates_without_world_root(self, qapp):
-        """Dialog can be created with no world_root."""
         dialog = IconPickerDialog()
         assert dialog.windowTitle() == "Select Icon"
-        assert dialog.selected_icon is None
+        assert dialog.selected_definition is None
 
     def test_creates_with_world_root(self, qapp, tmp_path):
-        """Dialog can be created with a world_root."""
         dialog = IconPickerDialog(world_root=str(tmp_path))
-        assert dialog.selected_icon is None
+        assert dialog.selected_definition is None
 
-    def test_selected_icon_set_on_accept(self, qapp):
-        """_on_icon_selected stores name and accepts."""
-        dialog = IconPickerDialog()
-        dialog._on_icon_selected("castle.svg")
-        assert dialog.selected_icon == "castle.svg"
-
-    def test_default_definition_selection_exposes_id_and_path(self, qapp):
+    def test_definition_selection_exposes_only_definition(self, qapp):
         dialog = IconPickerDialog()
         definition = dialog._catalog.resolve_id("place.castle")
         assert definition is not None
 
         dialog._on_definition_selected(definition)
 
-        assert dialog.selected_icon_id == "place.castle"
-        assert dialog.selected_icon == "building-castle.svg"
         assert dialog.selected_definition == definition
+        assert not hasattr(dialog, "selected_icon")
+        assert not hasattr(dialog, "selected_icon_id")
 
     def test_picker_shows_human_readable_bundled_names(self, qapp):
         dialog = IconPickerDialog()
@@ -213,15 +96,30 @@ class TestIconPickerDialogCreation:
         assert "building-castle.svg" not in labels
 
     def test_dialog_has_theme_stylesheet(self, qapp):
-        """Dialog applies dialog base style from StyleHelper."""
         dialog = IconPickerDialog()
         assert dialog.styleSheet() != ""
 
     def test_icon_buttons_have_neutral_background(self, qapp):
-        """Icon buttons use a neutral background for visibility."""
         from src.gui.dialogs.icon_picker_dialog import _ICON_PREVIEW_BG
 
         dialog = IconPickerDialog()
-        # Check that _make_icon_button sets a background
         btn = dialog._make_icon_button("/fake/icon.svg", "test")
         assert _ICON_PREVIEW_BG in btn.styleSheet()
+
+    def test_import_returns_canonical_definition(self, qapp, tmp_path):
+        source = tmp_path / "source.svg"
+        source.write_text("<svg/>")
+        world_root = tmp_path / "world"
+        dialog = IconPickerDialog(world_root=str(world_root))
+
+        with patch.object(dialog, "accept") as accept, patch(
+            "src.gui.dialogs.icon_picker_dialog.QFileDialog.getOpenFileName",
+            return_value=(str(source), ""),
+        ):
+            dialog._on_import_clicked()
+
+        definition = dialog.selected_definition
+        assert definition is not None
+        assert definition.id.startswith("custom.")
+        assert definition.source is MarkerIconSource.CUSTOM
+        assert accept.called

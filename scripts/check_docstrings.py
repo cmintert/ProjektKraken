@@ -1,3 +1,5 @@
+"""Report missing Python docstrings within a file or directory."""
+
 import ast
 import os
 import sys
@@ -58,6 +60,7 @@ def check_file(filepath: Path, root_dir: str) -> Tuple[List[str], int, int]:
 
 
 def check_docstrings(path: str) -> Tuple[List[str], int, int]:
+    """Return missing-docstring messages and documentation counts for a path."""
     all_missing = []
     total_items = 0
     documented_items = 0

@@ -34,14 +34,24 @@ def _write_raster(path: Path) -> None:
     Image.new(mode, (40, 20), color).save(path)
 
 
-def _marker(world_root: Path, icon: str) -> MarkerItem:
+def _marker(
+    world_root: Path,
+    asset_path: str,
+    source: MarkerIconSource = MarkerIconSource.CUSTOM,
+) -> MarkerItem:
+    definition = MarkerIconDefinition(
+        id=f"test.{Path(asset_path).stem}",
+        name="Test Icon",
+        asset_path=asset_path,
+        source=source,
+    )
     return MarkerItem(
         marker_id="marker-1",
         object_type="event",
         label="Marker",
         pixmap_item=QGraphicsPixmapItem(),
-        icon=icon,
         world_root=str(world_root),
+        icon_definition=definition,
     )
 
 
@@ -155,7 +165,6 @@ def test_definition_anchor_is_used_without_marker_override(qapp, tmp_path):
         "entity",
         "Marker",
         QGraphicsPixmapItem(),
-        icon="map-pin.svg",
         icon_definition=definition,
     )
 
@@ -219,7 +228,11 @@ def test_malformed_raster_uses_fallback(qapp, tmp_path):
 
 def test_bundled_svg_still_loads(qapp, tmp_path):
     """Bare SVG filenames continue to resolve from bundled resources."""
-    marker = _marker(tmp_path, "map-pin.svg")
+    marker = _marker(
+        tmp_path,
+        "map-pin.svg",
+        MarkerIconSource.DEFAULT,
+    )
 
     assert marker._svg_renderer is not None
     assert marker._svg_renderer.isValid()
@@ -270,12 +283,25 @@ def test_icon_switching_clears_stale_renderer_state(qapp, tmp_path):
     marker = _marker(tmp_path, "assets/images/icon_test.png")
     assert marker.is_raster_icon
 
-    marker.set_icon("map-pin.svg")
+    marker.set_icon_definition(
+        MarkerIconDefinition(
+            id="map.pin",
+            name="Map Pin",
+            asset_path="map-pin.svg",
+            source=MarkerIconSource.DEFAULT,
+        )
+    )
     assert marker._raster_pixmap is None
     assert marker._svg_renderer is not None
 
-    marker.set_icon("assets/images/icon_missing.png")
-    assert marker.get_icon() == "assets/images/icon_missing.png"
+    marker.set_icon_definition(
+        MarkerIconDefinition(
+            id="custom.missing",
+            name="Missing",
+            asset_path="assets/images/icon_missing.png",
+            source=MarkerIconSource.CUSTOM,
+        )
+    )
     assert marker._raster_pixmap is None
     assert marker._svg_renderer is None
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import re
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import PurePosixPath
@@ -12,6 +13,11 @@ from src.core.marker_appearance import MarkerIconAnchor
 
 DEFAULT_MARKER_ICON_ID = "map.pin"
 DEFAULT_NATIVE_DIAMETER_PX = 50.0
+_CUSTOM_ICON_ID_PREFIX = "custom."
+_CUSTOM_ICON_FILENAME = re.compile(
+    r"^icon_([0-9a-f]{32})\.(svg|png|jpe?g|webp)$",
+    re.IGNORECASE,
+)
 
 
 class MarkerIconSource(str, Enum):
@@ -109,3 +115,14 @@ def _positive_float(value: Any, default: float) -> float:
     if not math.isfinite(parsed) or parsed <= 0:
         return default
     return parsed
+
+
+def custom_icon_id_from_asset_path(asset_path: str) -> str | None:
+    """Return the canonical ID for an imported project icon path."""
+    path = PurePosixPath(asset_path.replace("\\", "/"))
+    if path.parent != PurePosixPath("assets/images"):
+        return None
+    match = _CUSTOM_ICON_FILENAME.fullmatch(path.name)
+    if match is None:
+        return None
+    return f"{_CUSTOM_ICON_ID_PREFIX}{match.group(1).lower()}"

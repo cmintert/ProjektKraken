@@ -213,7 +213,7 @@ def test_editor_creation_and_map_creation_use_context_factory(qapp):
     ):
         coordinator.create_entity()
         coordinator.create_event()
-    coordinator.on_map_create_entity("map-entity", "Map Entity")
+    coordinator.on_map_create_entity("map-entity", "Map Entity", "Location")
     coordinator.on_map_create_event("map-event", "Map Event")
 
     assert context.create_entity_command.call_count == 2

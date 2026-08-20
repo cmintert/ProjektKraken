@@ -1,6 +1,6 @@
 """Tests for the Lexicon Editor clear-icon behaviour.
 
-Validates that the Clear Icon button correctly resets icon_path,
+Validates that the Clear Icon button correctly resets icon_id,
 updates the button labels, and reverts the shape combo.
 """
 
@@ -45,7 +45,7 @@ class TestClearIconButtonExists:
                 "deity": {
                     "color": "#FFD700",
                     "shape": "image",
-                    "icon": "assets/images/icon_abc.svg",
+                    "icon_id": "place.castle",
                 }
             },
             "edges": {},
@@ -62,21 +62,21 @@ class TestClearIconButtonExists:
 class TestClearIconBehaviour:
     """Tests for _clear_icon method behaviour."""
 
-    def test_clears_icon_path(self, qapp):
-        """_clear_icon sets icon_path to empty string."""
+    def test_clears_icon_id(self, qapp):
+        """_clear_icon sets icon_id to an empty string."""
         config = {
             "nodes": {
                 "deity": {
                     "color": "#FFD700",
                     "shape": "image",
-                    "icon": "assets/images/icon_abc.svg",
+                    "icon_id": "place.castle",
                 }
             },
             "edges": {},
         }
         dialog = LexiconEditorDialog(entity_types=["deity"], current_config=config)
         dialog._clear_icon("deity")
-        assert dialog._node_rows["deity"]["icon_path"] == ""
+        assert dialog._node_rows["deity"]["icon_id"] == ""
 
     def test_resets_button_text(self, qapp):
         """After clear, the icon button shows 'Import' text."""
@@ -85,7 +85,7 @@ class TestClearIconBehaviour:
                 "deity": {
                     "color": "#FFD700",
                     "shape": "image",
-                    "icon": "assets/images/icon_abc.svg",
+                    "icon_id": "place.castle",
                 }
             },
             "edges": {},
@@ -101,7 +101,7 @@ class TestClearIconBehaviour:
                 "deity": {
                     "color": "#FFD700",
                     "shape": "image",
-                    "icon": "assets/images/icon_abc.svg",
+                    "icon_id": "place.castle",
                 }
             },
             "edges": {},
@@ -117,7 +117,7 @@ class TestClearIconBehaviour:
                 "deity": {
                     "color": "#FFD700",
                     "shape": "image",
-                    "icon": "assets/images/icon_abc.svg",
+                    "icon_id": "place.castle",
                 }
             },
             "edges": {},
@@ -133,7 +133,7 @@ class TestClearIconBehaviour:
                 "deity": {
                     "color": "#FFD700",
                     "shape": "star",
-                    "icon": "assets/images/icon_abc.svg",
+                    "icon_id": "place.castle",
                 }
             },
             "edges": {},
@@ -143,13 +143,13 @@ class TestClearIconBehaviour:
         assert dialog._node_rows["deity"]["shape"].currentText() == "star"
 
     def test_config_readback_has_no_icon(self, qapp):
-        """After clearing, get_lexicon_config should not have icon key."""
+        """After clearing, readback should not have an icon_id key."""
         config = {
             "nodes": {
                 "deity": {
                     "color": "#FFD700",
                     "shape": "image",
-                    "icon": "assets/images/icon_abc.svg",
+                    "icon_id": "place.castle",
                 }
             },
             "edges": {},
@@ -157,7 +157,7 @@ class TestClearIconBehaviour:
         dialog = LexiconEditorDialog(entity_types=["deity"], current_config=config)
         dialog._clear_icon("deity")
         result = dialog.get_lexicon_config()
-        assert "icon" not in result["nodes"]["deity"]
+        assert "icon_id" not in result["nodes"]["deity"]
 
     def test_noop_for_unknown_type(self, qapp):
         """_clear_icon is a no-op for a type that doesn't exist."""

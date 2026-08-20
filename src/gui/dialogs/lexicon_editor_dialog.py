@@ -356,10 +356,10 @@ class LexiconEditorDialog(QDialog):
         col += 1
 
         # Icon import button
-        icon_path = style.get("icon", "")
-        icon_btn = QPushButton("📁 Import" if not icon_path else "✅ Change")
+        icon_id = style.get("icon_id", "")
+        icon_btn = QPushButton("📁 Import" if not icon_id else "✅ Change")
         icon_btn.setStyleSheet(StyleHelper.get_tool_button_style())
-        icon_btn.setToolTip(icon_path or "Import an SVG/PNG icon")
+        icon_btn.setToolTip(icon_id or "Import an SVG/PNG icon")
         icon_btn.clicked.connect(
             lambda checked,
             tn=type_name,
@@ -374,7 +374,7 @@ class LexiconEditorDialog(QDialog):
         clear_btn.setFixedSize(28, 28)
         clear_btn.setToolTip("Clear icon")
         clear_btn.setStyleSheet(StyleHelper.get_tool_button_style())
-        clear_btn.setEnabled(bool(icon_path))
+        clear_btn.setEnabled(bool(icon_id))
         clear_btn.clicked.connect(lambda checked, tn=type_name: self._clear_icon(tn))
         grid.addWidget(clear_btn, row, col)
 
@@ -386,7 +386,7 @@ class LexiconEditorDialog(QDialog):
             "shape": shape_combo,
             "icon_btn": icon_btn,
             "clear_btn": clear_btn,
-            "icon_path": icon_path,
+            "icon_id": icon_id,
         }
 
     def _select_icon(
@@ -404,17 +404,20 @@ class LexiconEditorDialog(QDialog):
         # _assets_dir points to the assets directory; world_root is its parent
         world_root = str(Path(self._assets_dir).parent) if self._assets_dir else None
         dialog = IconPickerDialog(self, world_root=world_root)
-        if dialog.exec() == QDialog.DialogCode.Accepted and dialog.selected_icon:
-            selected = dialog.selected_icon
+        if (
+            dialog.exec() == QDialog.DialogCode.Accepted
+            and dialog.selected_definition is not None
+        ):
+            selected = dialog.selected_definition
             row_data = self._node_rows.get(type_name)
             if row_data:
-                self._node_rows[type_name]["icon_path"] = selected
+                self._node_rows[type_name]["icon_id"] = selected.id
                 button.setText("✅ Change")
-                button.setToolTip(selected)
+                button.setToolTip(selected.name)
                 shape_combo.setCurrentText("image")
                 row_data["clear_btn"].setEnabled(True)
                 self._emit_config_changed()
-            logger.info(f"Selected icon for '{type_name}': {selected}")
+            logger.info("Selected icon for '%s': %s", type_name, selected.id)
 
     def _clear_icon(self, type_name: str) -> None:
         """Clears the icon for a given entity type.
@@ -426,7 +429,7 @@ class LexiconEditorDialog(QDialog):
         if not row_data:
             return
 
-        row_data["icon_path"] = ""
+        row_data["icon_id"] = ""
         row_data["icon_btn"].setText("📁 Import")
         row_data["icon_btn"].setToolTip("Import an SVG/PNG icon")
         row_data["clear_btn"].setEnabled(False)
@@ -549,8 +552,8 @@ class LexiconEditorDialog(QDialog):
                 "size_scale": widgets["size_scale"].value(),
                 "shape": widgets["shape"].currentText(),
             }
-            if widgets.get("icon_path"):
-                entry["icon"] = widgets["icon_path"]
+            if widgets.get("icon_id"):
+                entry["icon_id"] = widgets["icon_id"]
             nodes[type_name] = entry
 
         edges: Dict[str, Any] = {}

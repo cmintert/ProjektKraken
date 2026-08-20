@@ -166,20 +166,6 @@ class TestDataHandlerMarkerVisualReload:
 
         spy.assert_called()
 
-    def test_update_marker_icon_triggers_reload(self, data_handler, success_result):
-        """UpdateMarkerIconCommand should trigger reload_markers."""
-        spy = MagicMock()
-        data_handler.reload_markers_for_current_map.connect(spy)
-
-        result = success_result(
-            success=True,
-            message="OK",
-            command_name="UpdateMarkerIconCommand",
-        )
-        data_handler.on_command_finished(result)
-
-        spy.assert_called()
-
     def test_update_marker_position_does_not_trigger_reload(
         self, data_handler, success_result
     ):

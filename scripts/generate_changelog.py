@@ -1,3 +1,5 @@
+"""Generate categorized changelog content from Git history."""
+
 import datetime
 import subprocess
 from pathlib import Path

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-20
-**Commit:** e0f996c6
+**Commit:** 340453e4
 ---
 
 # Changelog
@@ -14,8 +14,8 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - *(2026-08-20)* **Maps / Marker Icons**: Added stable icon definitions, a
-  bundled manifest, legacy path resolution, icon-default sizing provenance,
-  and human-readable picker entries.
+  bundled manifest, icon-default sizing provenance, and human-readable picker
+  entries.
 - *(2026-08-18)* **Maps / Marker Creation**: Added a searchable marker picker
   with direct Location, typed Entity, and Event creation actions.
 - *(2026-08-16)* **Application / Startup**: Added a branded, theme-aware splash
@@ -30,6 +30,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-20)* **CI / Linting**: Fixed repository-wide Ruff failures in
+  documentation and maintenance scripts so the GitHub lint workflow matches
+  local verification.
 - *(2026-08-20)* **Maps / Marker Icons**: Preserved map coordinates and the
   viewport when switching icons, kept raster and SVG aspect ratios intact, and
   positioned labels from the rendered symbol bounds.
@@ -56,6 +59,13 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-20)* **Maps / Marker Icons**: Made stable IDs the sole persisted
+  icon reference for markers and Visual Lexicon entries, with deterministic
+  IDs for imported project icons and catalog-only path resolution at rendering
+  boundaries.
+- *(2026-08-20)* **Testing / Marker Icons**: Replaced legacy path and command
+  coverage with ID-only catalog, picker, rendering, and Visual Lexicon
+  regressions.
 - *(2026-08-20)* **Testing / Marker Icons**: Added catalog, persistence,
   sizing, anchor, rendering, picker, and viewport regression coverage.
 - *(2026-08-18)* **Maps / Marker Sizing**: Simplified point-marker sizing to

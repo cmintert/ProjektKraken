@@ -9,10 +9,9 @@ Used by both the Lexicon Editor and Map Editor.
 """
 
 import logging
-import os
 from functools import partial
 from pathlib import Path
-from typing import Callable, List, Optional
+from typing import Callable, Optional
 
 from PySide6.QtCore import QPoint, QSize, Qt
 from PySide6.QtGui import QPixmap
@@ -31,9 +30,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from src.core.marker_icon import MarkerIconDefinition
-from src.core.paths import get_resource_path
-from src.gui.constants import DEFAULT_MARKER_ICONS_PATH
+from src.core.marker_icon import (
+    MarkerIconDefinition,
+    MarkerIconSource,
+    custom_icon_id_from_asset_path,
+)
 from src.gui.utils.style_helper import StyleHelper
 from src.services.asset_store import AssetStore
 from src.services.marker_icon_catalog import MarkerIconCatalog
@@ -54,7 +55,7 @@ class ProjectIconCard(QWidget):
     def __init__(
         self,
         icon_path: str,
-        relative_path: str,
+        display_name: str,
         on_select_callback: Callable[[], None],
         on_delete_callback: Callable[[], None],
         parent: Optional[QWidget] = None,
@@ -63,14 +64,13 @@ class ProjectIconCard(QWidget):
 
         Args:
             icon_path: Absolute path to the icon file.
-            relative_path: Relative path for identification.
+            display_name: Human-readable project icon label.
             on_select_callback: Callback when icon is clicked.
             on_delete_callback: Callback when delete is selected from menu.
             parent: Optional parent widget.
         """
         super().__init__(parent)
         self._icon_path = icon_path
-        self._relative_path = relative_path
         self._on_select = on_select_callback
         self._on_delete = on_delete_callback
         self.setFixedSize(64, 64)
@@ -82,7 +82,7 @@ class ProjectIconCard(QWidget):
         self._icon_btn = QPushButton(self)
         self._icon_btn.setFixedSize(64, 64)
         self._icon_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._icon_btn.setToolTip(relative_path)
+        self._icon_btn.setToolTip(display_name)
         self._icon_btn.clicked.connect(self._on_select)
 
         # Load and set icon
@@ -137,65 +137,22 @@ class ProjectIconCard(QWidget):
         menu.exec(self.mapToGlobal(position))
 
 
-def _get_default_icons_dir() -> str:
-    """Returns the absolute path to the bundled marker icons directory."""
-    return get_resource_path(DEFAULT_MARKER_ICONS_PATH)
-
-
-def get_available_default_icons() -> List[str]:
-    """Returns a sorted list of bundled default marker icon filenames.
-
-    Returns:
-        List[str]: Sorted list of .svg filenames.
-
-    """
-    icons_dir = _get_default_icons_dir()
-    if not os.path.exists(icons_dir):
-        return []
-    return sorted(f for f in os.listdir(icons_dir) if f.endswith(".svg"))
-
-
-def get_project_icons(world_root: str) -> List[str]:
-    """Returns relative paths of previously imported icon files in the world.
-
-    Scans ``<world_root>/assets/images/`` for files whose names start with
-    ``icon_`` and have an allowed image extension.
-
-    Args:
-        world_root: Absolute path to the world directory.
-
-    Returns:
-        List[str]: Sorted list of relative posix paths
-                   (e.g. ``assets/images/icon_<uuid>.svg``).
-
-    """
-    images_dir = Path(world_root) / "assets" / "images"
-    if not images_dir.is_dir():
-        return []
-    icons: List[str] = []
-    for f in images_dir.iterdir():
-        if (
-            f.is_file()
-            and f.name.startswith("icon_")
-            and f.suffix.lower() in AssetStore.ALLOWED_ICON_EXTENSIONS
-        ):
-            rel = f.relative_to(Path(world_root)).as_posix()
-            icons.append(rel)
-    return sorted(icons)
-
-
-def remove_project_icon(world_root: str, rel_path: str) -> bool:
+def remove_project_icon(
+    world_root: str, definition: MarkerIconDefinition
+) -> bool:
     """Deletes a previously imported project icon from disk.
 
     Args:
         world_root: Absolute path to the world directory.
-        rel_path: Relative posix path of the icon (e.g.
-                  ``assets/images/icon_<uuid>.svg``).
+        definition: Canonical custom icon definition.
 
     Returns:
         True if the file was removed, False otherwise.
 
     """
+    if definition.source is not MarkerIconSource.CUSTOM:
+        return False
+    rel_path = definition.asset_path
     trusted_root = (Path(world_root) / "assets" / "images").resolve()
     abs_path = (Path(world_root) / rel_path).resolve()
     try:
@@ -220,10 +177,7 @@ class IconPickerDialog(QDialog):
     into the world, and an import-from-disk action.  Adheres to the
     application's theme via :class:`StyleHelper`.
 
-    The ``selected_icon`` attribute holds the result after acceptance:
-      - For default icons: the filename (e.g. ``castle.svg``)
-      - For project icons: the relative path (e.g. ``assets/images/icon_<uuid>.svg``)
-      - For imported icons: the newly created relative path
+    ``selected_definition`` holds the stable catalog selection after acceptance.
     """
 
     def __init__(
@@ -244,8 +198,6 @@ class IconPickerDialog(QDialog):
         self.setWindowTitle("Select Icon")
         self.setMinimumSize(420, 380)
         self.setStyleSheet(StyleHelper.get_dialog_base_style())
-        self.selected_icon: Optional[str] = None
-        self.selected_icon_id: Optional[str] = None
         self.selected_definition: MarkerIconDefinition | None = None
         self._world_root = world_root
         self._catalog = catalog or MarkerIconCatalog.load(world_root)
@@ -321,7 +273,6 @@ class IconPickerDialog(QDialog):
             grid.addWidget(label, 0, 0)
         else:
             cols = 5
-            icons_dir = _get_default_icons_dir()
             grouped: dict[str, list[MarkerIconDefinition]] = {}
             for definition in definitions:
                 grouped.setdefault(definition.category or "Other", []).append(
@@ -335,8 +286,9 @@ class IconPickerDialog(QDialog):
                 row += 1
                 for index, definition in enumerate(category_definitions):
                     card_row, col = divmod(index, cols)
+                    asset_file = self._catalog.asset_file(definition)
                     card = self._make_definition_card(
-                        os.path.join(icons_dir, definition.asset_path),
+                        str(asset_file) if asset_file is not None else "",
                         definition,
                     )
                     grid.addWidget(card, row + card_row, col)
@@ -371,26 +323,26 @@ class IconPickerDialog(QDialog):
         grid.setSpacing(8)
         grid.setContentsMargins(8, 8, 8, 8)
 
-        world_root = self._world_root
-        icons = get_project_icons(world_root) if world_root else []
-        if not icons:
+        definitions = self._catalog.custom()
+        if not definitions:
             label = QLabel("No project icons found.")
             label.setStyleSheet(StyleHelper.get_empty_state_style())
             grid.addWidget(label, 0, 0)
         else:
             cols = 5
-            for i, rel_path in enumerate(icons):
+            for i, definition in enumerate(definitions):
                 grid_row, col = divmod(i, cols)
-                assert world_root is not None
-                abs_path = os.path.join(world_root, rel_path)
+                asset_file = self._catalog.asset_file(definition)
 
                 # Create ProjectIconCard with callbacks
                 card = ProjectIconCard(
-                    icon_path=abs_path,
-                    relative_path=rel_path,
-                    on_select_callback=partial(self._on_icon_selected, rel_path),
+                    icon_path=str(asset_file) if asset_file is not None else "",
+                    display_name=definition.name,
+                    on_select_callback=partial(
+                        self._on_definition_selected, definition
+                    ),
                     on_delete_callback=partial(
-                        self._on_remove_project_icon, rel_path
+                        self._on_remove_project_icon, definition
                     ),
                 )
                 grid.addWidget(card, grid_row, col)
@@ -462,25 +414,8 @@ class IconPickerDialog(QDialog):
         return card
 
     def _on_definition_selected(self, definition: MarkerIconDefinition) -> None:
-        """Store both stable identity and compatibility path."""
+        """Store the selected stable definition."""
         self.selected_definition = definition
-        self.selected_icon_id = definition.id
-        self.selected_icon = definition.asset_path
-        self.accept()
-
-    def _on_icon_selected(self, icon_identifier: str) -> None:
-        """Sets the selected icon and accepts the dialog.
-
-        Args:
-            icon_identifier: Filename for default icons, relative path for
-                project icons.
-
-        """
-        self.selected_icon = icon_identifier
-        self.selected_definition = self._catalog.resolve_path(icon_identifier)
-        self.selected_icon_id = (
-            self.selected_definition.id if self.selected_definition is not None else None
-        )
         self.accept()
 
     def _on_import_clicked(self) -> None:
@@ -501,30 +436,29 @@ class IconPickerDialog(QDialog):
         try:
             store = AssetStore(self._world_root)
             relative_path = store.import_icon(file_path)
-            self.selected_icon = relative_path
+            icon_id = custom_icon_id_from_asset_path(relative_path)
+            if icon_id is None:
+                raise ValueError("Imported icon did not receive a canonical ID")
             self._catalog = MarkerIconCatalog.load(self._world_root)
-            self.selected_definition = self._catalog.resolve_path(relative_path)
-            self.selected_icon_id = (
-                self.selected_definition.id
-                if self.selected_definition is not None
-                else None
-            )
+            self.selected_definition = self._catalog.resolve_id(icon_id)
+            if self.selected_definition is None:
+                raise ValueError("Imported icon is missing from the catalog")
             self.accept()
         except Exception as exc:
             logger.error(f"Failed to import icon: {exc}")
 
-    def _on_remove_project_icon(self, rel_path: str) -> None:
+    def _on_remove_project_icon(self, definition: MarkerIconDefinition) -> None:
         """Asks for confirmation and removes a project icon.
 
         After removal the Project Icons tab is rebuilt.
 
         Args:
-            rel_path: Relative posix path of the project icon.
+            definition: Canonical custom icon definition.
         """
         reply = QMessageBox.question(
             self,
             "Remove Icon",
-            f"Remove icon '{Path(rel_path).name}' from the project?\n\n"
+            f"Remove icon '{definition.name}' from the project?\n\n"
             "This will delete the file from disk.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
@@ -534,5 +468,6 @@ class IconPickerDialog(QDialog):
 
         if self._world_root is None:
             return
-        if remove_project_icon(self._world_root, rel_path):
+        if remove_project_icon(self._world_root, definition):
+            self._catalog = MarkerIconCatalog.load(self._world_root)
             self._rebuild_project_icons_tab()

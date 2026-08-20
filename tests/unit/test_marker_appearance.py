@@ -12,6 +12,7 @@ from src.core.map import Map
 from src.core.marker import Marker
 from src.core.marker_appearance import (
     MARKER_ICON_ANCHOR_ATTRIBUTE,
+    MARKER_ICON_ID_ATTRIBUTE,
     MarkerAppearance,
     MarkerIconAnchor,
 )
@@ -48,7 +49,7 @@ def _marker(attributes: dict | None = None) -> MarkerItem:
 def test_appearance_replaces_only_allowlisted_keys() -> None:
     source = MarkerAppearance.from_attributes(
         {
-            "icon": "castle.svg",
+            MARKER_ICON_ID_ATTRIBUTE: "place.castle",
             V_FILL: "#FF0000",
             MARKER_ICON_ANCHOR_ATTRIBUTE: {"x": 0.5, "y": 1.0},
         }
@@ -63,7 +64,7 @@ def test_appearance_replaces_only_allowlisted_keys() -> None:
     )
 
     assert result["semantic_note"] == "keep me"
-    assert result["icon"] == "castle.svg"
+    assert result[MARKER_ICON_ID_ATTRIBUTE] == "place.castle"
     assert result[V_FILL] == "#FF0000"
     assert V_BORDER not in result
     assert MARKER_SIZING_ATTRIBUTE not in result
@@ -97,7 +98,7 @@ def test_apply_appearance_command_removes_stale_overrides_and_undoes() -> None:
     command = ApplyMarkerAppearanceCommand(
         "marker-1",
         {
-            "icon": "castle.svg",
+            MARKER_ICON_ID_ATTRIBUTE: "place.castle",
             V_FILL: "#FF0000",
             MARKER_ICON_ANCHOR_ATTRIBUTE: {"x": 0.5, "y": 1.0},
         },
@@ -108,7 +109,7 @@ def test_apply_appearance_command_removes_stale_overrides_and_undoes() -> None:
     assert result.success
     applied = database.insert_marker.call_args.args[0]
     assert applied.attributes["note"] == "preserve"
-    assert applied.attributes["icon"] == "castle.svg"
+    assert applied.attributes[MARKER_ICON_ID_ATTRIBUTE] == "place.castle"
     assert V_BORDER not in applied.attributes
 
     command.undo(database)
@@ -146,7 +147,7 @@ def test_appearance_survives_database_reload(db_service) -> None:
     command = ApplyMarkerAppearanceCommand(
         marker.id,
         {
-            "icon": "castle.svg",
+            MARKER_ICON_ID_ATTRIBUTE: "place.castle",
             V_SIZE_SCALE: 1.75,
             MARKER_ICON_ANCHOR_ATTRIBUTE: {"x": 0.5, "y": 1.0},
         },
@@ -157,7 +158,7 @@ def test_appearance_survives_database_reload(db_service) -> None:
 
     assert reloaded is not None
     assert reloaded.attributes["note"] == "preserve"
-    assert reloaded.attributes["icon"] == "castle.svg"
+    assert reloaded.attributes[MARKER_ICON_ID_ATTRIBUTE] == "place.castle"
     assert reloaded.attributes[V_SIZE_SCALE] == 1.75
     assert reloaded.attributes[MARKER_ICON_ANCHOR_ATTRIBUTE] == {
         "x": 0.5,
@@ -335,9 +336,8 @@ def test_interaction_copy_paste_replaces_only_marker_appearance(
         "Source",
         0.25,
         0.5,
-        icon="castle.svg",
         visual_attributes={
-            "icon": "castle.svg",
+            MARKER_ICON_ID_ATTRIBUTE: "place.castle",
             V_FILL: "#FF0000",
             V_SIZE_SCALE: 1.5,
             MARKER_SIZING_ATTRIBUTE: MarkerSizingSettings(map_value=3.0).to_dict(),
@@ -362,7 +362,7 @@ def test_interaction_copy_paste_replaces_only_marker_appearance(
 
     target = view.markers["target"]
     assert target._visual_attributes["note"] == "keep"
-    assert target._visual_attributes["icon"] == "castle.svg"
+    assert target._visual_attributes[MARKER_ICON_ID_ATTRIBUTE] == "place.castle"
     assert target._visual_attributes[V_FILL] == "#FF0000"
     assert V_BORDER not in target._visual_attributes
     assert target._visual_attributes[MARKER_SIZING_ATTRIBUTE]["map_value"] == 3.0

@@ -1,9 +1,12 @@
+"""List top-level Python packages imported by the source tree."""
+
 import os
 import re
 import sys
 
 
 def get_imports(directory: str) -> list[str]:
+    """Return sorted top-level import names found below a directory."""
     import_regex = re.compile(r"^(?:from|import)\s+([a-zA-Z0-9_]+)")
     all_imports = set()
 

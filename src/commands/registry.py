@@ -90,7 +90,6 @@ def _init_registry() -> None:
         UpdateMarkerAttributeCommand,
         UpdateMarkerColorCommand,
         UpdateMarkerCommand,
-        UpdateMarkerIconCommand,
     )
     from src.commands.raster_commands import (
         CreateRasterLayerCommand,
@@ -152,7 +151,6 @@ def _init_registry() -> None:
             "CreateMarkerCommand": CreateMarkerCommand,
             "UpdateMarkerCommand": UpdateMarkerCommand,
             "DeleteMarkerCommand": DeleteMarkerCommand,
-            "UpdateMarkerIconCommand": UpdateMarkerIconCommand,
             "UpdateMarkerColorCommand": UpdateMarkerColorCommand,
             "UpdateMarkerAttributeCommand": UpdateMarkerAttributeCommand,
             "UpdateTrajectoryCommand": UpdateTrajectoryCommand,

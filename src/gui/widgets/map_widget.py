@@ -7,7 +7,7 @@ The map components have been refactored into separate modules for better
 maintainability:
 - map/marker_item.py - MarkerItem rendering
 - map/map_graphics_view.py - Main view with zoom/pan and interaction
-- map/icon_picker_dialog.py - Icon selection dialog
+- dialogs/icon_picker_dialog.py - Icon selection dialog
 
 Behaviour is composed from focused mixins:
 - MapLayerMixin       – Layer tree CRUD & selection sync
@@ -18,8 +18,7 @@ Behaviour is composed from focused mixins:
 """
 
 import logging
-import os
-from typing import List, Optional
+from typing import Optional
 
 from PySide6.QtCore import QSize, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QKeyEvent, QPaintEvent, QResizeEvent
@@ -40,7 +39,6 @@ from PySide6.QtWidgets import (
 from src.core.calendar import CalendarConverter
 from src.core.map import Map
 from src.core.marker_appearance import MarkerIconAnchor
-from src.core.paths import get_resource_path
 from src.core.theme_manager import ThemeManager
 from src.core.trajectory_edit import TrajectoryEditSnapshot
 from src.gui.mixins.map_calibration_mixin import MapCalibrationMixin
@@ -61,24 +59,6 @@ from src.gui.widgets.map.raster_legend_widget import RasterLegendWidget
 logger = logging.getLogger(__name__)
 
 _MINIMUM_BREADCRUMB_CHAIN_LENGTH = 2
-
-# Path to marker icons
-MARKER_ICONS_PATH = get_resource_path(
-    os.path.join("default_assets", "icons", "markers")
-)
-
-
-def get_available_icons() -> List[str]:
-    """Returns a list of available marker icon filenames.
-
-    Returns:
-        List[str]: List of .svg filenames in the markers folder.
-
-    """
-    if not os.path.exists(MARKER_ICONS_PATH):
-        return []
-    return [f for f in os.listdir(MARKER_ICONS_PATH) if f.endswith(".svg")]
-
 
 class NoLayoutLabel(QWidget):
     """A minimal label that draws text without participating in layout.
@@ -190,7 +170,6 @@ class MapWidget(
     marker_created = Signal(str, str, str, str, float, float)
     # marker_delete_confirmed carries marker_id after user confirms
     marker_delete_confirmed = Signal(str)
-    change_marker_icon_requested = Signal(str, str)  # marker_id, new_icon
     change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
     marker_visual_style_changed = Signal(str, dict)  # marker_id, style overrides
     marker_appearance_changed = Signal(str, dict)  # marker_id, full appearance
@@ -886,9 +865,6 @@ class MapWidget(
         self.view.add_marker_requested.connect(self._on_create_marker_requested)
         self.view.marker_placement_ended.connect(self._on_marker_placement_ended)
         self.view.delete_marker_requested.connect(self._on_delete_marker_requested)
-        self.view.change_marker_icon_requested.connect(
-            self.change_marker_icon_requested.emit
-        )
         self.view.change_marker_color_requested.connect(
             self.change_marker_color_requested.emit
         )
@@ -1565,7 +1541,6 @@ class MapWidget(
         label: str,
         x: float,
         y: float,
-        icon: Optional[str] = None,
         color: Optional[str] = None,
         description: Optional[str] = None,
         lore_date: Optional[float] = None,
@@ -1584,7 +1559,6 @@ class MapWidget(
             label: Marker label text.
             x: Normalized X coordinate [0.0, 1.0].
             y: Normalized Y coordinate [0.0, 1.0].
-            icon: Optional icon filename.
             color: Optional color hex string.
             description: Optional description for tooltip.
             lore_date: Optional lore timestamp for temporal filtering.
@@ -1600,7 +1574,6 @@ class MapWidget(
             label,
             x,
             y,
-            icon,
             color,
             description,
             lore_date,

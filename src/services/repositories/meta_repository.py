@@ -155,7 +155,7 @@ class MetaRepository(BaseRepository):
                 {
                     "nodes": {
                         "<entity_type>": {"color": str, "shape": str,
-                                          "icon": str}
+                                          "icon_id": str}
                     },
                     "edges": {
                         "<rel_type>": {"color": str, "width": int,

@@ -150,14 +150,14 @@ class TestLexiconEditorDialogConfig:
         assert config["edges"]["enemy_of"]["width"] == 3
         assert config["edges"]["enemy_of"]["dashes"] is True
 
-    def test_icon_path_preserved_in_config(self, qapp):
-        """Icon path from existing config is preserved in readback."""
+    def test_icon_id_preserved_in_config(self, qapp):
+        """Stable icon ID from existing config is preserved in readback."""
         existing = {
             "nodes": {
                 "deity": {
                     "color": "#FFD700",
                     "shape": "image",
-                    "icon": "assets/images/icon_abc.svg",
+                    "icon_id": "place.castle",
                 }
             },
             "edges": {},
@@ -168,7 +168,7 @@ class TestLexiconEditorDialogConfig:
         )
         config = dialog.get_lexicon_config()
 
-        assert config["nodes"]["deity"]["icon"] == "assets/images/icon_abc.svg"
+        assert config["nodes"]["deity"]["icon_id"] == "place.castle"
 
 
 # ---------------------------------------------------------------------------
@@ -290,7 +290,7 @@ def test_resolve_lexicon_images_respects_existing_shape():
             "hero": {
                 "color": "#FF0000",
                 "shape": "dot",  # User wants a dot
-                "icon": "assets/icon.png",  # But an icon path exists
+                "icon_id": "place.castle",
             }
         }
     }

@@ -18,6 +18,8 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+_MIN_COLUMN_DEFINITION_PARTS = 2
+
 
 def extract_schema_sql() -> str:
     """
@@ -102,10 +104,12 @@ def parse_create_table(sql: str) -> Tuple[str, List[Tuple[str, str, str]]]:
 
         # Parse column definition
         parts = line.split(None, 2)  # Split into name, type, rest
-        if len(parts) >= 2:
+        if len(parts) >= _MIN_COLUMN_DEFINITION_PARTS:
             col_name = parts[0]
             col_type = parts[1]
-            constraints = parts[2] if len(parts) > 2 else ""
+            constraints = (
+                parts[2] if len(parts) > _MIN_COLUMN_DEFINITION_PARTS else ""
+            )
             columns.append((col_name, col_type, constraints))
 
     return table_name, columns

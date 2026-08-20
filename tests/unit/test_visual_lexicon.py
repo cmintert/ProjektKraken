@@ -14,10 +14,7 @@ import pytest
 from src.core.entities import Entity
 from src.core.events import Event
 from src.gui.widgets.graph_view.graph_builder import GraphBuilder
-from src.gui.widgets.map.icon_picker_dialog import (
-    ALLOWED_IMAGE_EXTENSIONS,
-    import_asset_file,
-)
+from src.services.asset_store import AssetStore
 from src.services.db_service import DatabaseService
 from src.services.graph_data_service import GraphDataService
 
@@ -80,6 +77,10 @@ def sample_svg(tmp_path):
     return svg_file
 
 
+def _import_icon(source_path, assets_dir):
+    return AssetStore(str(assets_dir.parent)).import_icon(str(source_path))
+
+
 # ---------------------------------------------------------------------------
 # Phase A: Schema Discovery
 # ---------------------------------------------------------------------------
@@ -137,7 +138,7 @@ class TestImportAssetFile:
 
     def test_import_svg_success(self, sample_svg, temp_assets_dir):
         """Successfully imports an SVG file and returns relative path."""
-        result = import_asset_file(str(sample_svg), temp_assets_dir)
+        result = _import_icon(sample_svg, temp_assets_dir)
 
         assert result is not None
         assert result.startswith("assets/images/icon_")
@@ -145,17 +146,17 @@ class TestImportAssetFile:
 
     def test_import_creates_images_directory(self, sample_svg, tmp_path):
         """Creates the images subdirectory if it doesn't exist."""
-        assets = tmp_path / "new_assets"
-        assets.mkdir()
+        world_root = tmp_path / "world"
+        assets = world_root / "assets"
 
-        result = import_asset_file(str(sample_svg), assets)
+        result = _import_icon(sample_svg, assets)
 
         assert result is not None
         assert (assets / "images").is_dir()
 
     def test_imported_file_exists(self, sample_svg, temp_assets_dir):
         """The imported file actually exists on disk."""
-        result = import_asset_file(str(sample_svg), temp_assets_dir)
+        result = _import_icon(sample_svg, temp_assets_dir)
 
         # Resolve relative to parent of assets_dir (world root)
         world_root = temp_assets_dir.parent
@@ -167,7 +168,7 @@ class TestImportAssetFile:
         png_file = tmp_path / "test.png"
         png_file.write_bytes(b"\x89PNG\r\n\x1a\n")
 
-        result = import_asset_file(str(png_file), temp_assets_dir)
+        result = _import_icon(png_file, temp_assets_dir)
 
         assert result is not None
         assert result.endswith(".png")
@@ -177,7 +178,7 @@ class TestImportAssetFile:
         jpg_file = tmp_path / "test.jpg"
         jpg_file.write_bytes(b"\xff\xd8\xff")
 
-        result = import_asset_file(str(jpg_file), temp_assets_dir)
+        result = _import_icon(jpg_file, temp_assets_dir)
 
         assert result is not None
         assert result.endswith(".jpg")
@@ -187,29 +188,26 @@ class TestImportAssetFile:
         exe_file = tmp_path / "malware.exe"
         exe_file.write_bytes(b"MZ")
 
-        result = import_asset_file(str(exe_file), temp_assets_dir)
-
-        assert result is None
+        with pytest.raises(ValueError):
+            _import_icon(exe_file, temp_assets_dir)
 
     def test_import_html_blocked(self, tmp_path, temp_assets_dir):
         """HTML files are blocked from import."""
         html_file = tmp_path / "xss.html"
         html_file.write_text("<script>alert('xss')</script>")
 
-        result = import_asset_file(str(html_file), temp_assets_dir)
-
-        assert result is None
+        with pytest.raises(ValueError):
+            _import_icon(html_file, temp_assets_dir)
 
     def test_import_nonexistent_file(self, temp_assets_dir):
         """Returns None for non-existent source file."""
-        result = import_asset_file("/nonexistent/path/file.svg", temp_assets_dir)
-
-        assert result is None
+        with pytest.raises(FileNotFoundError):
+            _import_icon("/nonexistent/path/file.svg", temp_assets_dir)
 
     def test_collision_free_filenames(self, sample_svg, temp_assets_dir):
         """Multiple imports generate unique filenames."""
-        result1 = import_asset_file(str(sample_svg), temp_assets_dir)
-        result2 = import_asset_file(str(sample_svg), temp_assets_dir)
+        result1 = _import_icon(sample_svg, temp_assets_dir)
+        result2 = _import_icon(sample_svg, temp_assets_dir)
 
         assert result1 is not None
         assert result2 is not None
@@ -217,11 +215,11 @@ class TestImportAssetFile:
 
     def test_allowed_extensions_constant(self):
         """The ALLOWED_IMAGE_EXTENSIONS constant includes expected types."""
-        assert ".svg" in ALLOWED_IMAGE_EXTENSIONS
-        assert ".png" in ALLOWED_IMAGE_EXTENSIONS
-        assert ".jpg" in ALLOWED_IMAGE_EXTENSIONS
-        assert ".jpeg" in ALLOWED_IMAGE_EXTENSIONS
-        assert ".exe" not in ALLOWED_IMAGE_EXTENSIONS
+        assert ".svg" in AssetStore.ALLOWED_ICON_EXTENSIONS
+        assert ".png" in AssetStore.ALLOWED_ICON_EXTENSIONS
+        assert ".jpg" in AssetStore.ALLOWED_ICON_EXTENSIONS
+        assert ".jpeg" in AssetStore.ALLOWED_ICON_EXTENSIONS
+        assert ".exe" not in AssetStore.ALLOWED_ICON_EXTENSIONS
 
 
 # ---------------------------------------------------------------------------
@@ -242,7 +240,11 @@ class TestGraphLexiconPersistence:
         """Data survives a set/get roundtrip."""
         lexicon = {
             "nodes": {
-                "Faction": {"color": "#FFD700", "shape": "image", "icon": "a.svg"}
+                "Faction": {
+                    "color": "#FFD700",
+                    "shape": "image",
+                    "icon_id": "place.castle",
+                }
             },
             "edges": {"enemy_of": {"color": "#FF0000", "width": 3, "dashes": True}},
         }
@@ -278,7 +280,7 @@ class TestGraphLexiconPersistence:
                 "Deity": {
                     "color": "#FFD700",
                     "shape": "image",
-                    "icon": "assets/images/icon_abc.svg",
+                    "icon_id": "place.castle",
                 },
             },
             "edges": {
@@ -451,11 +453,11 @@ class TestResolveLexiconImages:
     """Tests for GraphBuilder.resolve_lexicon_images static method."""
 
     def test_resolves_icon_to_base64(self, tmp_path):
-        """Resolves a relative icon path to a Base64 data URI."""
-        # Setup: create icon file at expected location
+        """Resolves a stable custom icon ID to a Base64 data URI."""
         images_dir = tmp_path / "assets" / "images"
         images_dir.mkdir(parents=True)
-        icon_file = images_dir / "crown.svg"
+        uuid_hex = "0123456789abcdef0123456789abcdef"
+        icon_file = images_dir / f"icon_{uuid_hex}.svg"
         icon_file.write_bytes(b"<svg></svg>")
 
         lexicon = {
@@ -463,7 +465,7 @@ class TestResolveLexiconImages:
                 "Faction": {
                     "color": "#FFD700",
                     "shape": "dot",
-                    "icon": "assets/images/crown.svg",
+                    "icon_id": f"custom.{uuid_hex}",
                 }
             },
             "edges": {},
@@ -476,14 +478,14 @@ class TestResolveLexiconImages:
         assert result["nodes"]["Faction"]["shape"] == "dot"
         assert result["nodes"]["Faction"]["image"].startswith("data:")
 
-    def test_missing_icon_does_not_override_shape(self, tmp_path):
-        """If icon file doesn't exist, shape is not changed to 'image'."""
+    def test_unknown_icon_id_does_not_override_shape(self, tmp_path):
+        """An unknown stable ID does not alter the configured shape."""
         lexicon = {
             "nodes": {
                 "Deity": {
                     "color": "#FFD700",
                     "shape": "dot",
-                    "icon": "assets/images/nonexistent.svg",
+                    "icon_id": "custom.missing",
                 }
             },
             "edges": {},
@@ -492,6 +494,23 @@ class TestResolveLexiconImages:
         result = GraphBuilder.resolve_lexicon_images(lexicon, tmp_path)
 
         assert result["nodes"]["Deity"]["shape"] == "dot"
+        assert "image" not in result["nodes"]["Deity"]
+
+    def test_path_only_icon_is_ignored(self, tmp_path):
+        lexicon = {
+            "nodes": {
+                "Deity": {
+                    "shape": "dot",
+                    "icon": "assets/images/old.svg",
+                }
+            },
+            "edges": {},
+        }
+
+        result = GraphBuilder.resolve_lexicon_images(lexicon, tmp_path)
+
+        assert "icon" not in result["nodes"]["Deity"]
+        assert "image" not in result["nodes"]["Deity"]
 
     def test_edges_pass_through_unchanged(self, tmp_path):
         """Edge configuration passes through without modification."""

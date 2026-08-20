@@ -288,35 +288,6 @@ class TestDataHandlerSignals:
         assert len(reload_entities_signal) == 1
         assert len(reload_maps_signal) == 1
 
-    def test_undo_update_marker_icon_reloads(self, data_handler, qtbot):
-        """Test that undoing UpdateMarkerIconCommand triggers FULL reload."""
-        reload_markers_signal = []
-        reload_events_signal = []
-        reload_entities_signal = []
-
-        data_handler.reload_markers_for_current_map.connect(
-            lambda: reload_markers_signal.append(True)
-        )
-        data_handler.reload_events.connect(lambda: reload_events_signal.append(True))
-        data_handler.reload_entities.connect(
-            lambda: reload_entities_signal.append(True)
-        )
-
-        # Create a successful Undo_UpdateMarkerIconCommand result
-        result = CommandResult(
-            success=True,
-            command_name="Undo_UpdateMarkerIconCommand",
-            message="Undone: Update Marker Icon",
-            data={},
-        )
-
-        data_handler.on_command_finished(result)
-
-        # Verify FULL reload signals were emitted
-        assert len(reload_markers_signal) == 1
-        assert len(reload_events_signal) == 1
-        assert len(reload_entities_signal) == 1
-
     def test_undo_any_command_triggers_full_reload(self, data_handler, qtbot):
         """Test that ANY undo operation triggers full reload."""
         reload_markers_signal = []

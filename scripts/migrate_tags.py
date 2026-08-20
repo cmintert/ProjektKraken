@@ -31,6 +31,8 @@ from src.services.db_service import DatabaseService  # noqa: E402
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
+_NORMALIZED_TAG_TABLE_COUNT = 3
+
 
 class TagMigration:
     """Handles migration of tags from JSON to normalized tables."""
@@ -66,7 +68,7 @@ class TagMigration:
             """
         )
         result = cursor.fetchone()
-        return result["count"] == 3
+        return result["count"] == _NORMALIZED_TAG_TABLE_COUNT
 
     def create_normalized_tables(self) -> None:
         """Create the normalized tag tables by executing the SQL migration."""

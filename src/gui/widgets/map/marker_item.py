@@ -32,10 +32,11 @@ from PySide6.QtWidgets import (
 from src.core.map_constants import DEFAULT_MARKER_ICONS_PATH
 from src.core.marker_appearance import (
     MARKER_ICON_ANCHOR_ATTRIBUTE,
+    MARKER_ICON_ID_ATTRIBUTE,
     MarkerAppearance,
     MarkerIconAnchor,
 )
-from src.core.marker_icon import MarkerIconDefinition
+from src.core.marker_icon import MarkerIconDefinition, MarkerIconSource
 from src.core.marker_sizing import (
     MARKER_SIZING_ATTRIBUTE,
     MARKER_SIZING_SOURCE_ATTRIBUTE,
@@ -60,7 +61,6 @@ logger = logging.getLogger(__name__)
 _CLICK_DISTANCE_THRESHOLD_PX = 3
 _KEYFRAME_INDICATOR_SIZE_PX = 8.0
 _METERS_PER_KILOMETER = 1000.0
-_PROJECT_ICON_PARTS = ("assets", "images")
 _RASTER_ICON_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 
 # Compatibility alias for callers that imported the former local class.
@@ -82,15 +82,12 @@ class MarkerItem(QGraphicsObject):
     clicked = Signal(str, str)
 
     MARKER_SIZE = BASE_SIZE  # Size of the marker icon
-    DEFAULT_ICON = "map-pin.svg"
-
     def __init__(
         self,
         marker_id: str,
         object_type: str,
         label: str,
         pixmap_item: QGraphicsPixmapItem,
-        icon: Optional[str] = None,
         color: Optional[str] = None,
         description: Optional[str] = None,
         lore_date: Optional[float] = None,
@@ -107,7 +104,6 @@ class MarkerItem(QGraphicsObject):
             object_type: Type of object ('entity' or 'event').
             label: Label text for the marker (displayed below marker).
             pixmap_item: Reference to the map pixmap item for coordinate conversion.
-            icon: Optional icon filename (e.g., 'castle.svg'). Falls back to circle.
             color: Optional color hex string.
             description: Optional description for tooltip. Falls back to label if empty.
             lore_date: Optional lore timestamp for temporal filtering.
@@ -123,7 +119,6 @@ class MarkerItem(QGraphicsObject):
         self.object_type = object_type
         self.label = label
         self.pixmap_item = pixmap_item
-        self._icon_name = icon
         self._icon_definition = icon_definition
         self._svg_renderer: Optional[QSvgRenderer] = None
         self._raster_pixmap: Optional[QPixmap] = None
@@ -140,7 +135,7 @@ class MarkerItem(QGraphicsObject):
         # Transient direct-edit state. Persistence happens only when the view
         # confirms the complete appearance edit.
         self._appearance_edit_snapshot: Optional[Dict[str, Any]] = None
-        self._appearance_edit_icon: Optional[str] = None
+        self._appearance_edit_icon: MarkerIconDefinition | None = None
         self._appearance_edit_was_movable = True
         self._resize_handle: Optional[DraggableEditHandle[str]] = None
         self._anchor_handle: Optional[DraggableEditHandle[str]] = None
@@ -164,8 +159,7 @@ class MarkerItem(QGraphicsObject):
         self._temporal_ghost = False
         self._movable_before_temporal_ghost = True
 
-        # Load icon if specified
-        self._load_icon(icon)
+        self._load_icon(icon_definition)
 
         # Tooltip - use description if available, otherwise fall back to label
         tooltip_text = description or label
@@ -262,25 +256,22 @@ class MarkerItem(QGraphicsObject):
         if self._label_item.isVisible():
             self._label_item.setVisible(False)
 
-    def _resolve_icon_path(self, icon_name: str) -> Optional[Path]:
-        """Resolve a bundled or portable-world icon within its trusted root."""
-        relative_path = Path(icon_name)
+    def _resolve_icon_path(
+        self, definition: MarkerIconDefinition
+    ) -> Optional[Path]:
+        """Resolve a catalog definition within its trusted asset root."""
+        relative_path = Path(definition.asset_path)
         if relative_path.is_absolute() or relative_path.anchor:
-            logger.warning("Rejected absolute marker icon path: %s", icon_name)
+            logger.warning("Rejected absolute marker icon path: %s", relative_path)
             return None
 
-        parts = tuple(part.lower() for part in relative_path.parts)
-        is_project_icon = parts[:2] == _PROJECT_ICON_PARTS
-        if is_project_icon:
+        if definition.source is MarkerIconSource.CUSTOM:
             if self._world_root is None:
                 logger.debug("Cannot resolve project icon without a world root")
                 return None
             trusted_root = (self._world_root / "assets" / "images").resolve()
             candidate = (self._world_root / relative_path).resolve()
         else:
-            if len(relative_path.parts) != 1 or relative_path.suffix.lower() != ".svg":
-                logger.warning("Rejected invalid bundled marker icon: %s", icon_name)
-                return None
             trusted_root = Path(
                 get_resource_path(DEFAULT_MARKER_ICONS_PATH)
             ).resolve()
@@ -289,27 +280,26 @@ class MarkerItem(QGraphicsObject):
         try:
             candidate.relative_to(trusted_root)
         except ValueError:
-            logger.warning("Rejected marker icon outside trusted root: %s", icon_name)
+            logger.warning(
+                "Rejected marker icon outside trusted root: %s", relative_path
+            )
             return None
         if not candidate.is_file():
             logger.debug("Icon not found: %s, using fallback circle", candidate)
             return None
         return candidate
 
-    def _load_icon(self, icon_name: Optional[str]) -> None:
-        """Load an SVG or raster marker icon, falling back safely.
-
-        Args:
-            icon_name: Bundled filename or portable-world relative asset path.
-        """
+    def _load_icon(self, definition: MarkerIconDefinition | None) -> None:
+        """Load catalog artwork, falling back to the painted marker safely."""
         self._svg_renderer = None
         self._raster_pixmap = None
         self._raw_svg = None
         self._icon_kind = "fallback"
 
-        requested_icon = icon_name or self.DEFAULT_ICON
-        self._icon_name = requested_icon
-        icon_path = self._resolve_icon_path(requested_icon)
+        self._icon_definition = definition
+        if definition is None:
+            return
+        icon_path = self._resolve_icon_path(definition)
         if icon_path is None:
             return
 
@@ -333,8 +323,6 @@ class MarkerItem(QGraphicsObject):
 
         # Cache the raw SVG for re-styling later
         self._raw_svg = svg_content
-        self._icon_name = icon_name
-
         # Apply inline styles and load
         self._apply_and_load_svg()
 
@@ -371,36 +359,11 @@ class MarkerItem(QGraphicsObject):
             self._raw_svg = None
             self._icon_kind = "fallback"
 
-    def set_icon(self, icon_name: str) -> None:
-        """Changes the marker's icon.
-
-        Args:
-            icon_name: Filename of the new icon.
-        """
-        self.prepareGeometryChange()
-        self._visual_attributes["icon"] = icon_name
-        if (
-            self._icon_definition is not None
-            and self._icon_definition.asset_path != icon_name
-        ):
-            self._icon_definition = None
-        self._load_icon(icon_name)
-        self.update()
-
     def set_icon_definition(self, definition: MarkerIconDefinition) -> None:
         """Apply resolved icon metadata and load its artwork."""
         self.prepareGeometryChange()
-        self._icon_definition = definition
-        self._load_icon(definition.asset_path)
+        self._load_icon(definition)
         self.update()
-
-    def get_icon(self) -> Optional[str]:
-        """Returns the current icon filename.
-
-        Returns:
-            Optional[str]: The icon filename or None if using fallback.
-        """
-        return self._icon_name
 
     @property
     def is_raster_icon(self) -> bool:
@@ -640,9 +603,18 @@ class MarkerItem(QGraphicsObject):
             return
         for view in scene.views():
             catalog = getattr(view, "marker_icon_catalog", None)
-            resolver = getattr(catalog, "resolve_attributes", None)
+            resolver = getattr(catalog, "definition_or_default", None)
             if callable(resolver):
-                self._icon_definition = resolver(self._visual_attributes)
+                definition = resolver(
+                    self._visual_attributes.get(MARKER_ICON_ID_ATTRIBUTE)
+                )
+                current_id = (
+                    self._icon_definition.id
+                    if self._icon_definition is not None
+                    else None
+                )
+                if definition.id != current_id:
+                    self._load_icon(definition)
                 return
 
     def appearance_payload(self) -> Dict[str, Any]:
@@ -653,12 +625,7 @@ class MarkerItem(QGraphicsObject):
         """Apply a complete appearance locally without persistence."""
         appearance = MarkerAppearance.from_dict(payload)
         attributes = appearance.apply_to_attributes(self._visual_attributes)
-        icon = appearance.icon
         self.set_visual_attributes(attributes)
-        if icon is None:
-            self._load_icon(None)
-        else:
-            self._load_icon(icon)
         self.update()
 
     @property
@@ -688,7 +655,7 @@ class MarkerItem(QGraphicsObject):
         if self.is_editing_appearance:
             return
         self._appearance_edit_snapshot = dict(self._visual_attributes)
-        self._appearance_edit_icon = self._icon_name
+        self._appearance_edit_icon = self._icon_definition
         self._appearance_edit_was_movable = bool(
             self.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsMovable
         )

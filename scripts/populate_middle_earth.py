@@ -1,3 +1,5 @@
+"""Populate a development database with Middle-earth sample data."""
+
 import logging
 import os
 import sys
@@ -828,6 +830,7 @@ EVENTS_DATA = [
 
 
 def populate() -> None:
+    """Replace the development database contents with sample world data."""
     logger.info(f"Connecting to database at {DB_PATH}")
     db_service = DatabaseService(DB_PATH)
     db_service.connect()

@@ -303,7 +303,6 @@ class DataHandler(QObject):
                     "summary": summary,
                     "x": marker.x,
                     "y": marker.y,
-                    "icon": marker.attributes.get("icon"),
                     "color": fill_color,
                     "lore_date": lore_date,
                     "feature_type": getattr(marker, "feature_type", "point"),
@@ -475,7 +474,6 @@ class DataHandler(QObject):
                 "ApplyMarkerAppearanceCommand",
                 "UpdateMarkerAttributeCommand",
                 "UpdateMarkerColorCommand",
-                "UpdateMarkerIconCommand",
             }
             if command_name in _MARKER_VISUAL_CMDS:
                 logger.debug(

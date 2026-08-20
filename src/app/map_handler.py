@@ -47,7 +47,6 @@ from src.commands.map_commands import (
     UpdateMarkerAttributeCommand,
     UpdateMarkerColorCommand,
     UpdateMarkerCommand,
-    UpdateMarkerIconCommand,
 )
 from src.core.logging_config import get_logger
 from src.core.map import MapLayerNode
@@ -511,23 +510,6 @@ class MapHandler(QObject):
         self._navigation_set_selection(object_type, marker_id)
 
     @Slot(str, str)
-    def on_marker_icon_changed(self, marker_id: str, icon: str) -> None:
-        """Handle marker icon change from MapWidget.
-
-        Args:
-            marker_id: ID of the marker (actually object_id from view).
-            icon: New icon filename.
-
-        """
-        # Translate object_id to actual marker ID
-        actual_marker_id = self._marker_object_to_id.get(marker_id)
-        if not actual_marker_id:
-            logger.warning(f"No marker mapping found for object_id: {marker_id}")
-            return
-        cmd = UpdateMarkerIconCommand(marker_id=actual_marker_id, icon=icon)
-        self.command_requested.emit(cmd)
-
-    @Slot(str, str)
     def on_marker_color_changed(self, marker_id: str, color: str) -> None:
         """Handle marker color change from MapWidget.
 
@@ -696,7 +678,6 @@ class MapHandler(QObject):
             "x": marker_data["x"],
             "y": marker_data["y"],
             "label": marker_data["label"],
-            "icon": marker_data["icon"],
             "color": marker_data["color"],
             "summary": marker_data.get("summary", ""),
             "feature_type": marker_data.get("feature_type", "point"),
@@ -810,7 +791,6 @@ class MapHandler(QObject):
             label=marker_data["label"],
             x=marker_data["x"],
             y=marker_data["y"],
-            icon=marker_data["icon"],
             color=marker_data["color"],
             description=marker_data.get("summary", ""),
             lore_date=marker_data.get("lore_date"),

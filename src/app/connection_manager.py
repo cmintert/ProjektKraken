@@ -680,12 +680,6 @@ class ConnectionManager:
                 ),
                 (
                     map_widget,
-                    "change_marker_icon_requested",
-                    map_handler.on_marker_icon_changed,
-                    "MapWidget",
-                ),
-                (
-                    map_widget,
                     "change_marker_color_requested",
                     map_handler.on_marker_color_changed,
                     "MapWidget",

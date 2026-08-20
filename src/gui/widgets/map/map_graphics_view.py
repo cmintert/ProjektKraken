@@ -200,7 +200,6 @@ class MapGraphicsView(QGraphicsView):
     add_marker_requested = Signal(float, float)  # x, y (normalized)
     marker_placement_ended = Signal()
     delete_marker_requested = Signal(str)  # marker_id
-    change_marker_icon_requested = Signal(str, str)  # marker_id, new_icon
     change_marker_color_requested = Signal(str, str)  # marker_id, new_color_hex
     marker_drop_requested = Signal(str, str, str, float, float)
 
@@ -916,7 +915,6 @@ class MapGraphicsView(QGraphicsView):
         label: str,
         x: float,
         y: float,
-        icon: Optional[str] = None,
         color: Optional[str] = None,
         description: Optional[str] = None,
         lore_date: Optional[float] = None,
@@ -933,7 +931,6 @@ class MapGraphicsView(QGraphicsView):
             label: Marker label text.
             x: Normalized X coordinate [0.0, 1.0].
             y: Normalized Y coordinate [0.0, 1.0].
-            icon: Optional icon filename.
             color: Optional color hex string.
             description: Optional description for tooltip.
             lore_date: Optional lore timestamp.
@@ -948,7 +945,6 @@ class MapGraphicsView(QGraphicsView):
             label,
             x,
             y,
-            icon,
             color,
             description,
             lore_date,
