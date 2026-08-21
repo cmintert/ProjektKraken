@@ -27,6 +27,8 @@ logger = logging.getLogger(__name__)
 
 # Drawing mode constants
 NORMALIZED_COORD_PRECISION = 6  # decimal places for normalized coordinates
+MINIMUM_PATH_VERTICES = 2
+MINIMUM_REGION_VERTICES = 3
 MINIMUM_REGION_PREVIEW_VERTICES = 2
 
 
@@ -78,6 +80,20 @@ class DrawingTool:
         """
         return self._drawing_mode
 
+    @property
+    def vertex_count(self) -> int:
+        """Return the number of vertices in the active drawing draft."""
+        return len(self._drawing_vertices)
+
+    @property
+    def can_finish(self) -> bool:
+        """Return whether the current drawing draft has valid geometry."""
+        if self._drawing_mode == "path":
+            return len(self._drawing_vertices) >= MINIMUM_PATH_VERTICES
+        if self._drawing_mode == "region":
+            return len(self._drawing_vertices) >= MINIMUM_REGION_VERTICES
+        return False
+
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
@@ -85,7 +101,7 @@ class DrawingTool:
     def start_drawing(self, feature_type: str) -> None:
         """Enters drawing mode for paths or regions.
 
-        Click to add vertices; double-click to finish; Escape to cancel.
+        Click to add vertices; Confirm or Enter to finish; Escape to cancel.
 
         Args:
             feature_type: 'path' or 'region'.
@@ -117,12 +133,15 @@ class DrawingTool:
             self.cancel_drawing()
             return
 
-        min_points = 2 if self._drawing_mode == "path" else 3
+        min_points = (
+            MINIMUM_PATH_VERTICES
+            if self._drawing_mode == "path"
+            else MINIMUM_REGION_VERTICES
+        )
         if len(self._drawing_vertices) < min_points:
             logger.warning(
                 f"Need at least {min_points} points for {self._drawing_mode}"
             )
-            self.cancel_drawing()
             return
 
         # Convert scene coords to normalized
@@ -201,15 +220,12 @@ class DrawingTool:
         return True
 
     def handle_double_click(self) -> bool:
-        """Handle double-click to finish drawing.
+        """Consume double-clicks without implicitly confirming a drawing.
 
         Returns:
             True if the event was consumed.
         """
-        if self._drawing_mode:
-            self.finish_drawing()
-            return True
-        return False
+        return self._drawing_mode is not None
 
     def handle_key_escape(self) -> bool:
         """Handle Escape key to cancel drawing.

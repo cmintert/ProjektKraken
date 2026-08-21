@@ -410,6 +410,8 @@ class MapGraphicsView(QGraphicsView):
 
         # One-shot marker placement mode, activated by the map toolbar.
         self._is_placing_marker: bool = False
+        self._marker_placement_position: tuple[float, float] | None = None
+        self._marker_placement_preview: QGraphicsEllipseItem | None = None
         self._proxy_drag_marker: MarkerItem | None = None
         self._proxy_drag_scene_start = QPointF()
         self._proxy_drag_marker_start = QPointF()
@@ -1011,8 +1013,9 @@ class MapGraphicsView(QGraphicsView):
             return
         if self._editing_marker_appearance_id == marker_id:
             return
-        if self.is_editing_marker_appearance:
-            self.cancel_marker_appearance_edit()
+        map_widget = self._find_map_widget()
+        if map_widget is not None:
+            map_widget.cancel_active_session()
         self.exit_all_editing(commit_feature_edits=False)
         self._editing_marker_appearance_id = marker_id
         self.graphics_scene.clearSelection()
@@ -1086,8 +1089,10 @@ class MapGraphicsView(QGraphicsView):
         self._drawing_tool.start_drawing(feature_type)
 
     def start_marker_placement(self) -> None:
-        """Enter one-shot marker placement mode."""
+        """Enter marker placement mode with an uncommitted preview."""
         self._is_placing_marker = True
+        self._marker_placement_position = None
+        self._clear_marker_placement_preview()
         self.setDragMode(QGraphicsView.DragMode.NoDrag)
         self.setCursor(Qt.CursorShape.CrossCursor)
 
@@ -1096,9 +1101,29 @@ class MapGraphicsView(QGraphicsView):
         if not self._is_placing_marker:
             return
         self._is_placing_marker = False
+        self._marker_placement_position = None
+        self._clear_marker_placement_preview()
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         self.setCursor(Qt.CursorShape.ArrowCursor)
         self.marker_placement_ended.emit()
+
+    @property
+    def has_marker_placement_preview(self) -> bool:
+        """Return whether marker placement currently has a draft position."""
+        return self._marker_placement_position is not None
+
+    def confirm_marker_placement(self) -> None:
+        """Commit the draft position to the existing marker creation flow."""
+        if not self._is_placing_marker or self._marker_placement_position is None:
+            return
+        norm_x, norm_y = self._marker_placement_position
+        self._is_placing_marker = False
+        self._marker_placement_position = None
+        self._clear_marker_placement_preview()
+        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+        self.setCursor(Qt.CursorShape.ArrowCursor)
+        self.marker_placement_ended.emit()
+        self.add_marker_requested.emit(norm_x, norm_y)
 
     @property
     def is_placing_marker(self) -> bool:
@@ -1106,7 +1131,7 @@ class MapGraphicsView(QGraphicsView):
         return self._is_placing_marker
 
     def _handle_marker_placement_mouse_press(self, event: QMouseEvent) -> bool:
-        """Place a marker when the active one-shot mode receives a map click."""
+        """Set or move the marker preview when placement receives a map click."""
         if not self._is_placing_marker or not self.pixmap_item:
             return False
         if event.button() != Qt.MouseButton.LeftButton:
@@ -1117,9 +1142,34 @@ class MapGraphicsView(QGraphicsView):
         if self.pixmap_item.contains(item_pos):
             norm_x, norm_y = self.coord_system.to_normalized(scene_pos)
             norm_x, norm_y = self.coord_system.clamp_normalized(norm_x, norm_y)
-            self.cancel_marker_placement()
-            self.add_marker_requested.emit(norm_x, norm_y)
+            self._marker_placement_position = (norm_x, norm_y)
+            self._show_marker_placement_preview(scene_pos)
+            self._refresh_mode_indicator()
         return True
+
+    def _show_marker_placement_preview(self, scene_pos: QPointF) -> None:
+        """Render the uncommitted marker position as a theme-aware target."""
+        self._clear_marker_placement_preview()
+        preview = QGraphicsEllipseItem(-8.0, -8.0, 16.0, 16.0)
+        preview.setPos(scene_pos)
+        preview.setFlag(
+            QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, True
+        )
+        theme = self.tm.get_theme()
+        color = QColor(theme.get("accent_secondary", "#3498db"))
+        fill = QColor(color)
+        fill.setAlpha(72)
+        preview.setBrush(QBrush(fill))
+        preview.setPen(QPen(color, 2.0))
+        preview.setZValue(MAP_LAYER_Z_UI_OVERLAY)
+        self.graphics_scene.addItem(preview)
+        self._marker_placement_preview = preview
+
+    def _clear_marker_placement_preview(self) -> None:
+        """Remove the temporary marker placement target from the scene."""
+        if self._marker_placement_preview is not None:
+            self.graphics_scene.removeItem(self._marker_placement_preview)
+            self._marker_placement_preview = None
 
     def cancel_drawing(self) -> None:
         """Exits drawing mode without saving."""
@@ -1543,6 +1593,9 @@ class MapGraphicsView(QGraphicsView):
         """
         if not self._footprints_visible:
             return
+        map_widget = self._find_map_widget()
+        if map_widget is not None:
+            map_widget.cancel_active_session()
         item = self._footprint_items.get(detail_map_id)
         if item is None:
             return
@@ -1883,6 +1936,7 @@ class MapGraphicsView(QGraphicsView):
                 scene_pos = self.mapToScene(event.position().toPoint())
                 if self._drawing_tool.handle_mouse_press(scene_pos):
                     self._hide_snap_indicator()
+                    self._refresh_mode_indicator()
                     return
 
         # One-shot marker placement mode
@@ -2002,7 +2056,7 @@ class MapGraphicsView(QGraphicsView):
                 self.mouse_coordinates_changed.emit(0.0, 0.0, False)
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
-        """Handle double-click to finish drawing.
+        """Consume drawing double-clicks without confirming the session.
 
         Args:
             event: The mouse double-click event.
@@ -2032,19 +2086,21 @@ class MapGraphicsView(QGraphicsView):
             map_widget.keyPressEvent(event)
             return
 
-        # Footprint edit mode — consume keys before general handlers.
-        if self.is_editing_marker_appearance:
+        if map_widget is not None and map_widget.active_map_session_mode() is not None:
             if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-                self.finish_marker_appearance_edit()
+                map_widget.confirm_active_session()
                 event.accept()
                 return
             if event.key() == Qt.Key.Key_Escape:
-                self.cancel_marker_appearance_edit()
+                map_widget.cancel_active_session()
                 event.accept()
                 return
 
+        if map_widget is None and self._handle_standalone_edit_key(event):
+            return
+
         if self.is_editing_footprint:
-            if self._handle_footprint_edit_key(event, map_widget):
+            if self._handle_footprint_edit_key(event):
                 return
 
         if event.key() == Qt.Key.Key_Escape and self._handle_escape_key(event):
@@ -2084,6 +2140,35 @@ class MapGraphicsView(QGraphicsView):
 
         super().keyPressEvent(event)
 
+    def _handle_standalone_edit_key(self, event: "QKeyEvent") -> bool:
+        """Provide Confirm/Cancel semantics when the view has no MapWidget."""
+        key = event.key()
+        if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            if self._is_placing_marker:
+                self.confirm_marker_placement()
+            elif self.is_drawing and self._drawing_tool.can_finish:
+                self.finish_drawing()
+            elif self.is_editing_vertices:
+                self.finish_editing()
+            elif self.is_editing_marker_appearance:
+                self.finish_marker_appearance_edit()
+            elif self.is_editing_footprint:
+                self.finish_footprint_edit()
+            else:
+                return False
+            event.accept()
+            return True
+        if key == Qt.Key.Key_Escape:
+            if self.is_editing_marker_appearance:
+                self.cancel_marker_appearance_edit()
+            elif self.is_editing_footprint:
+                self.cancel_footprint_edit()
+            else:
+                return False
+            event.accept()
+            return True
+        return False
+
     def _handle_escape_key(self, event: "QKeyEvent") -> bool:
         """Cancel the active editing mode or clear the current selection."""
         if self._is_placing_marker:
@@ -2121,9 +2206,7 @@ class MapGraphicsView(QGraphicsView):
             return
         super().keyReleaseEvent(event)
 
-    def _handle_footprint_edit_key(
-        self, event: "QKeyEvent", map_widget: "Optional[MapWidget]"
-    ) -> bool:
+    def _handle_footprint_edit_key(self, event: "QKeyEvent") -> bool:
         """Process a key event while footprint edit mode is active.
 
         Returns ``True`` if the event was handled (and ``event.accept()``
@@ -2132,25 +2215,11 @@ class MapGraphicsView(QGraphicsView):
 
         Args:
             event: The key event to process.
-            map_widget: The owning MapWidget for mode-indicator updates.
-
         Returns:
             bool: ``True`` if consumed, ``False`` otherwise.
 
         """
         key = event.key()
-        if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-            self.finish_footprint_edit()
-            if map_widget is not None:
-                map_widget._update_mode_indicator()
-            event.accept()
-            return True
-        if key == Qt.Key.Key_Escape:
-            self.cancel_footprint_edit()
-            if map_widget is not None:
-                map_widget._update_mode_indicator()
-            event.accept()
-            return True
         item = self._footprint_items.get(self._editing_footprint_id or "")
         if item is None:
             return False

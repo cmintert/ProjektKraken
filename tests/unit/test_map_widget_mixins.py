@@ -166,7 +166,10 @@ class TestMapWidgetOwnMethods:
         "sizeHint",
         "_on_selection_changed",
         "_on_snap_toggled",
-        "_on_finish_sketch",
+        "active_map_session_mode",
+        "is_active_map_session_valid",
+        "confirm_active_session",
+        "cancel_active_session",
         "_on_geometry_changed",
         "set_maps",
         "select_map",
@@ -184,7 +187,7 @@ class TestMapWidgetOwnMethods:
         "set_calendar_converter",
         "keyPressEvent",
         "_update_overlay_position",
-        "_update_finish_sketch_position",
+        "_update_map_edit_action_position",
         "resizeEvent",
     ]
 

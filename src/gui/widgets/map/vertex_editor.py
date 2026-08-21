@@ -6,6 +6,7 @@ style overlay during editing.
 """
 
 import logging
+from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from PySide6.QtCore import QPointF, Qt
@@ -64,6 +65,7 @@ class VertexEditor:
         self._vertex_handles: list[DraggableEditHandle[int]] = []
         self._midpoint_handles: list[MidpointEditHandle[int]] = []
         self._editing_original_style: Optional[Dict[str, Any]] = None
+        self._editing_original_geometry: list[dict[str, float]] | None = None
         self._managed_session = False
 
     # ------------------------------------------------------------------
@@ -88,6 +90,11 @@ class VertexEditor:
         """
         return self._editing_feature_id
 
+    @property
+    def is_managed_session(self) -> bool:
+        """Return whether an app coordinator owns the current edit session."""
+        return self._managed_session
+
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
@@ -103,7 +110,7 @@ class VertexEditor:
         Args:
             item: The PathItem or RegionItem to edit.
         """
-        self.finish_vertex_editing()  # Clean up any previous session
+        self.cancel_vertex_editing()
         self._editing_feature_id = item.marker_id
         self._managed_session = managed_session
 
@@ -113,6 +120,7 @@ class VertexEditor:
 
         # Save original style and apply editing visual feedback
         self._editing_original_style = dict(item._style)
+        self._editing_original_geometry = deepcopy(item._geometry)
         item._style["dash_pattern"] = self._EDIT_DASH_PATTERN
         item._style["stroke_color"] = self._EDIT_STROKE_COLOR
         item._style["stroke_width"] = self._EDIT_STROKE_WIDTH
@@ -136,6 +144,7 @@ class VertexEditor:
         logger.info(
             f"Vertex editing started for {item.marker_id} ({len(geometry)} vertices)"
         )
+        self._view._refresh_mode_indicator()
 
     def finish_vertex_editing(self, emit_geometry_change: bool = True) -> None:
         """Commits vertex edits and removes handles.
@@ -170,6 +179,7 @@ class VertexEditor:
         # is called from the connected slot.
         self._editing_feature_id = None
         self._managed_session = False
+        self._editing_original_geometry = None
         for handle in self._vertex_handles:
             self._view.graphics_scene.removeItem(handle)
         self._vertex_handles.clear()
@@ -184,6 +194,14 @@ class VertexEditor:
         if finished_id and finished_geometry:
             self._view.feature_geometry_changed.emit(finished_id, finished_geometry)
             logger.info(f"Vertex editing finished for {finished_id}")
+
+    def cancel_vertex_editing(self) -> None:
+        """Discard vertex changes and restore the session-start geometry."""
+        item = self._view.feature_items.get(self._editing_feature_id or "")
+        original = self._editing_original_geometry
+        if item is not None and original is not None:
+            item.set_geometry(original, item._anchor_x, item._anchor_y)
+        self.finish_vertex_editing(emit_geometry_change=False)
 
     def handle_mouse_move(self, pos: Any) -> bool:
         """Handle cursor updates during vertex editing mode.
@@ -211,7 +229,7 @@ class VertexEditor:
         return True
 
     def handle_key_escape(self) -> bool:
-        """Handle Escape key to finish vertex editing.
+        """Handle Escape by cancelling the active vertex-editing session.
 
         Returns:
             True if the event was consumed.
@@ -220,7 +238,7 @@ class VertexEditor:
             if self._managed_session:
                 self._view.feature_geometry_cancel_requested.emit()
             else:
-                self.finish_vertex_editing()
+                self.cancel_vertex_editing()
             return True
         return False
 

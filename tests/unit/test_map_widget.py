@@ -56,10 +56,10 @@ def test_temporal_status_visibility_does_not_resize_viewport(
     assert map_widget.view.viewport().height() == before_height
 
 
-def test_geometry_apply_uses_primary_action_style(map_widget) -> None:
-    """Geometry Apply matches the established positive action treatment."""
+def test_shared_confirm_uses_primary_action_style(map_widget) -> None:
+    """The unified Confirm action uses the positive action treatment."""
     assert (
-        map_widget.btn_apply_feature_geometry.styleSheet()
+        map_widget.btn_confirm_map_edit.styleSheet()
         == StyleHelper.get_primary_button_style()
     )
 
@@ -565,18 +565,20 @@ def _click_marker(map_widget, marker, qtbot):
     qtbot.waitUntil(marker.isSelected)
 
 
-def test_marker_appearance_mode_shows_apply_cancel_tip(map_widget, qtbot):
+def test_marker_appearance_mode_shows_confirm_cancel_actions(map_widget, qtbot):
     """Direct marker editing shows controls and the live scale factor."""
     _show_map_with_marker(map_widget, qtbot)
 
     map_widget.view.start_marker_appearance_edit("marker1")
 
     assert map_widget.overlay_banner.isVisible()
-    assert "Enter to Apply" in map_widget.overlay_banner.text()
+    assert "Enter to Confirm" in map_widget.overlay_banner.text()
     assert "Esc to Cancel" in map_widget.overlay_banner.text()
     assert "Size:" in map_widget.overlay_banner.text()
     assert "1.5% map width" in map_widget.overlay_banner.text()
     assert "MARKER APPEARANCE" in map_widget.mode_indicator.text()
+    assert map_widget.map_edit_action_bar.isVisible()
+    assert map_widget.btn_confirm_map_edit.isEnabled()
 
     marker = map_widget.view.markers["marker1"]
     corner = marker.boundingRect().bottomRight()
@@ -623,7 +625,7 @@ def test_map_widget_refreshes_local_styles_after_theme_change(map_widget, monkey
     assert "#222222" in map_widget.btn_draw_region.styleSheet()
     assert "#333333" in map_widget.btn_snap.styleSheet()
     assert "#333333" in map_widget.btn_legend_toggle.styleSheet()
-    assert "#444444" in map_widget.btn_finish_sketch.styleSheet()
+    assert "#444444" in map_widget.btn_confirm_map_edit.styleSheet()
 
 
 def test_add_marker_button_toggles_placement_mode(map_widget, qtbot):
@@ -649,8 +651,94 @@ def test_escape_cancels_marker_placement(map_widget, qtbot):
     assert not map_widget.btn_add_marker.isChecked()
 
 
-def test_marker_placement_click_emits_normalized_position(map_view, qtbot):
-    """Clicking the map in placement mode requests a marker at that position."""
+def test_marker_preview_enables_confirm_and_enter_opens_picker(
+    map_widget, qtbot
+):
+    """Marker placement remains a draft until the shared Confirm action."""
+    setup_map_with_pixmap(map_widget.view)
+    map_widget.get_selected_map_id = MagicMock(return_value="map-1")
+    map_widget._choose_map_object = MagicMock(return_value=None)
+    created = []
+    map_widget.marker_created.connect(lambda *args: created.append(args))
+
+    map_widget._on_add_marker_clicked()
+
+    assert not map_widget.btn_confirm_map_edit.isEnabled()
+    viewport_position = map_widget.view.mapFromScene(QPointF(50.0, 50.0))
+    qtbot.mouseClick(
+        map_widget.view.viewport(),
+        Qt.MouseButton.LeftButton,
+        pos=viewport_position,
+    )
+    assert map_widget.btn_confirm_map_edit.isEnabled()
+    assert created == []
+
+    qtbot.keyClick(map_widget.view, Qt.Key.Key_Return)
+
+    map_widget._choose_map_object.assert_called_once_with("Add Marker Here")
+    assert created == []
+    assert map_widget.active_map_session_mode() is None
+
+
+def test_path_and_region_confirm_enablement_uses_shared_minimums(map_widget):
+    """Confirm enables at two path vertices and three region vertices."""
+    setup_map_with_pixmap(map_widget.view)
+
+    map_widget._on_draw_path_clicked()
+    assert not map_widget.btn_confirm_map_edit.isEnabled()
+    map_widget.view._add_drawing_vertex(QPointF(10.0, 10.0))
+    map_widget._update_mode_indicator()
+    assert not map_widget.btn_confirm_map_edit.isEnabled()
+    map_widget.view._add_drawing_vertex(QPointF(20.0, 20.0))
+    map_widget._update_mode_indicator()
+    assert map_widget.btn_confirm_map_edit.isEnabled()
+
+    map_widget.cancel_active_session()
+    map_widget._on_draw_region_clicked()
+    map_widget.view._add_drawing_vertex(QPointF(10.0, 10.0))
+    map_widget.view._add_drawing_vertex(QPointF(20.0, 20.0))
+    map_widget._update_mode_indicator()
+    assert not map_widget.btn_confirm_map_edit.isEnabled()
+    map_widget.view._add_drawing_vertex(QPointF(30.0, 10.0))
+    map_widget._update_mode_indicator()
+    assert map_widget.btn_confirm_map_edit.isEnabled()
+
+
+def test_path_confirm_with_cancelled_picker_creates_nothing(map_widget):
+    """Cancelling the object picker after Confirm emits no feature creation."""
+    setup_map_with_pixmap(map_widget.view)
+    map_widget.get_selected_map_id = MagicMock(return_value="map-1")
+    map_widget._select_or_create_object = MagicMock(return_value=None)
+    created = []
+    map_widget.feature_created.connect(lambda *args: created.append(args))
+    map_widget._on_draw_path_clicked()
+    map_widget.view._add_drawing_vertex(QPointF(10.0, 10.0))
+    map_widget.view._add_drawing_vertex(QPointF(20.0, 20.0))
+    map_widget._update_mode_indicator()
+
+    map_widget.confirm_active_session()
+
+    assert created == []
+    assert map_widget.active_map_session_mode() is None
+
+
+def test_mode_indicator_cancels_drawing_without_finishing(map_widget):
+    """The active-mode pill consistently discards rather than commits."""
+    setup_map_with_pixmap(map_widget.view)
+    finished = []
+    map_widget.view.drawing_finished.connect(lambda *args: finished.append(args))
+    map_widget._on_draw_path_clicked()
+    map_widget.view._add_drawing_vertex(QPointF(10.0, 10.0))
+    map_widget.view._add_drawing_vertex(QPointF(20.0, 20.0))
+
+    map_widget._on_mode_indicator_clicked()
+
+    assert finished == []
+    assert map_widget.active_map_session_mode() is None
+
+
+def test_marker_placement_requires_explicit_confirmation(map_view, qtbot):
+    """A map click creates only a marker preview until explicit confirmation."""
     setup_map_with_pixmap(map_view)
     requested_positions = []
     map_view.add_marker_requested.connect(
@@ -665,8 +753,38 @@ def test_marker_placement_click_emits_normalized_position(map_view, qtbot):
         pos=viewport_position,
     )
 
+    assert requested_positions == []
+    assert map_view.is_placing_marker
+    assert map_view.has_marker_placement_preview
+    assert map_view._marker_placement_preview is not None
+
+    map_view.confirm_marker_placement()
+
     assert requested_positions == [(0.5, 0.5)]
     assert not map_view.is_placing_marker
+    assert map_view._marker_placement_preview is None
+
+
+def test_marker_placement_cancel_discards_preview(map_view, qtbot):
+    """Cancelling placement removes the preview without requesting creation."""
+    setup_map_with_pixmap(map_view)
+    requested_positions = []
+    map_view.add_marker_requested.connect(
+        lambda x, y: requested_positions.append((x, y))
+    )
+    map_view.start_marker_placement()
+    viewport_position = map_view.mapFromScene(QPointF(50.0, 50.0))
+    qtbot.mouseClick(
+        map_view.viewport(),
+        Qt.MouseButton.LeftButton,
+        pos=viewport_position,
+    )
+
+    map_view.cancel_marker_placement()
+
+    assert requested_positions == []
+    assert not map_view.is_placing_marker
+    assert map_view._marker_placement_preview is None
 
 
 def test_map_view_initialization(map_view):

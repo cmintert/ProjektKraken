@@ -14,9 +14,11 @@ temporal trajectories, nested detail maps, and optional editable raster layers.
 
 ## Add markers and features
 
-- Select **Add Marker**, then click once on the map.
+- Select **Add Marker**, click to preview its position, then choose **Confirm**
+  or press **Enter**. Click elsewhere before confirming to move the preview.
 - Use **Draw Path** or **Draw Region** to create a feature.
-- Double-click or use **Finish Sketch** to complete a drawing.
+- Use **Confirm** or press **Enter** to complete a drawing. **Cancel** or
+  **Esc** discards the draft.
 - Press **Escape** to cancel the current tool.
 - Right-click a feature and choose **Edit Geometry at Playhead…** to move,
   insert, or remove vertices in a working copy.
@@ -46,8 +48,9 @@ position, layer, timeline validity, or linked object. Choose **Edit
 Appearance…** for direct manipulation: drag the corner handle to resize the
 marker and move the anchor handle to select the point in the artwork that
 should remain attached to the map coordinate. The edit banner shows the active
-size and anchor percentages. Press **Enter** to save the edit as one
-undoable change or **Escape** to restore the previous appearance. Use
+size and anchor percentages. Choose **Confirm** or press **Enter** to save the
+edit as one undoable change; **Cancel** or **Escape** restores the previous
+appearance. Use
 **Reset Anchor to Centre** to return to the legacy centred attachment.
 
 Snapping helps align new or edited vertices with existing geometry. Paths need
@@ -64,8 +67,9 @@ Choose **Edit Geometry at Playhead…** from a feature's context menu. On the
 exact date of an existing state, this edits that state. At any other date,
 ProjektKraken clones the currently resolved geometry into a new state at the
 playhead, so editing a later border never silently changes earlier history.
-Choose **Apply** to save the working copy as one undoable operation, or
-**Cancel** to restore the geometry appropriate for the playhead.
+Choose **Confirm** or press **Enter** to save the working copy as one undoable
+operation; **Cancel** or **Escape** restores the geometry appropriate for the
+playhead.
 
 Choose **Manage Geometry States…** to edit Base Geometry explicitly, edit a
 dated state, change its calendar-aware date, or delete it. Base Geometry cannot

@@ -493,20 +493,28 @@ class TestDrawingMode:
         """finish_drawing for path needs at least 2 vertices."""
         view.start_drawing("path")
         view._add_drawing_vertex(QPointF(10, 20))
-        # Only 1 point — should cancel
-        with qtbot.waitSignal(view.drawing_cancelled, timeout=1000):
-            view.finish_drawing()
-        assert view.is_drawing is False
+        cancelled = []
+        view.drawing_cancelled.connect(lambda: cancelled.append(True))
+
+        view.finish_drawing()
+
+        assert cancelled == []
+        assert view.is_drawing is True
+        assert not view._drawing_tool.can_finish
 
     def test_finish_region_needs_min_3_points(self, view, qtbot) -> None:
         """finish_drawing for region needs at least 3 vertices."""
         view.start_drawing("region")
         view._add_drawing_vertex(QPointF(10, 20))
         view._add_drawing_vertex(QPointF(30, 40))
-        # Only 2 points — should cancel
-        with qtbot.waitSignal(view.drawing_cancelled, timeout=1000):
-            view.finish_drawing()
-        assert view.is_drawing is False
+        cancelled = []
+        view.drawing_cancelled.connect(lambda: cancelled.append(True))
+
+        view.finish_drawing()
+
+        assert cancelled == []
+        assert view.is_drawing is True
+        assert not view._drawing_tool.can_finish
 
     def test_finish_path_emits_signal(self, view, qtbot) -> None:
         """finish_drawing emits drawing_finished with normalized coords."""
@@ -534,6 +542,18 @@ class TestDrawingMode:
         feature_type, geometry = sig.args
         assert feature_type == "region"
         assert len(geometry) == 3
+
+    def test_double_click_does_not_finish_drawing(self, view) -> None:
+        """Double-click is consumed but never substitutes for Confirm."""
+        view.start_drawing("path")
+        view._add_drawing_vertex(QPointF(20, 40))
+        view._add_drawing_vertex(QPointF(180, 160))
+        finished = []
+        view.drawing_finished.connect(lambda *args: finished.append(args))
+
+        assert view._drawing_tool.handle_double_click()
+        assert finished == []
+        assert view.is_drawing
 
     def test_drawing_dots_are_cleaned_up(self, view) -> None:
         """Dots placed during drawing are cleaned up on cancel."""
@@ -730,6 +750,21 @@ class TestVertexEditing:
         view._on_vertex_moved(0, QPointF(-50, 500))
         assert item._geometry[0]["x"] == 0.0
         assert item._geometry[0]["y"] == 1.0
+
+    def test_escape_restores_unmanaged_vertex_geometry(self, view, qtbot) -> None:
+        """Escape discards a direct vertex-edit working copy."""
+        item = view.feature_items["p1"]
+        original = [dict(point) for point in item._geometry]
+        persisted = []
+        view.feature_geometry_changed.connect(lambda *args: persisted.append(args))
+        view._start_vertex_editing(item)
+        view._on_vertex_moved(0, QPointF(60, 80))
+
+        qtbot.keyClick(view, Qt.Key.Key_Escape)
+
+        assert item._geometry == original
+        assert persisted == []
+        assert not view.is_editing_vertices
 
     def test_double_start_cleans_previous(self, view) -> None:
         """Starting a new vertex edit cleans up the previous one."""

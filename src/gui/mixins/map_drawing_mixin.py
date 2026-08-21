@@ -43,6 +43,14 @@ class MapDrawingMixin:
             """Refresh the host widget's mode indicator."""
             ...
 
+        def active_map_session_mode(self) -> str | None:
+            """Return the active map editing session mode."""
+            ...
+
+        def cancel_active_session(self) -> None:
+            """Discard the active map editing session."""
+            ...
+
         def get_selected_map_id(self) -> str | None:
             """Return the active map identifier."""
             ...
@@ -56,11 +64,10 @@ class MapDrawingMixin:
     @Slot()
     def _on_draw_path_clicked(self) -> None:
         """Toggles path drawing mode."""
-        if self.view.is_drawing:
-            self.view.cancel_drawing()
+        if self.active_map_session_mode() == "path":
+            self.cancel_active_session()
             return
-        if self.view.is_placing_marker:
-            self.view.cancel_marker_placement()
+        self.cancel_active_session()
         self.btn_add_marker.setChecked(False)
         self.btn_draw_region.setChecked(False)
         self.view.start_drawing("path")
@@ -69,11 +76,10 @@ class MapDrawingMixin:
     @Slot()
     def _on_draw_region_clicked(self) -> None:
         """Toggles region drawing mode."""
-        if self.view.is_drawing:
-            self.view.cancel_drawing()
+        if self.active_map_session_mode() == "region":
+            self.cancel_active_session()
             return
-        if self.view.is_placing_marker:
-            self.view.cancel_marker_placement()
+        self.cancel_active_session()
         self.btn_add_marker.setChecked(False)
         self.btn_draw_path.setChecked(False)
         self.view.start_drawing("region")

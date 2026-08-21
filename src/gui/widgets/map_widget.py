@@ -257,6 +257,7 @@ class MapWidget(
 
         # Create view
         self.view = MapGraphicsView(self)
+        self._feature_geometry_edit_pending = False
 
         # Layout
         layout = QVBoxLayout(self)
@@ -330,10 +331,19 @@ class MapWidget(
         self.legend_overlay.setMaximumWidth(360)
         self.legend_overlay.setStyleSheet(StyleHelper.get_legend_overlay_style())
         self.legend_overlay.hide()
-        self.btn_finish_sketch = QPushButton("✔ Finish Sketch", self.view)
-        self.btn_finish_sketch.setStyleSheet(StyleHelper.get_primary_button_style())
-        self.btn_finish_sketch.clicked.connect(self._on_finish_sketch)
-        self.btn_finish_sketch.hide()
+        self.map_edit_action_bar = QFrame(self.view)
+        action_layout = QHBoxLayout(self.map_edit_action_bar)
+        action_layout.setContentsMargins(6, 4, 6, 4)
+        action_layout.setSpacing(6)
+        self.btn_confirm_map_edit = QPushButton("Confirm")
+        self.btn_confirm_map_edit.setToolTip("Confirm this map edit (Enter)")
+        self.btn_confirm_map_edit.clicked.connect(self.confirm_active_session)
+        action_layout.addWidget(self.btn_confirm_map_edit)
+        self.btn_cancel_map_edit = QPushButton("Cancel")
+        self.btn_cancel_map_edit.setToolTip("Discard this map edit (Esc)")
+        self.btn_cancel_map_edit.clicked.connect(self.cancel_active_session)
+        action_layout.addWidget(self.btn_cancel_map_edit)
+        self.map_edit_action_bar.hide()
         coord_label = NoLayoutLabel("Ready")
         self.coord_label = coord_label
         coord_label.setSizePolicy(
@@ -485,16 +495,6 @@ class MapWidget(
         self.feature_geometry_edit_source = QLabel("")
         geometry_layout.addWidget(self.feature_geometry_edit_label)
         geometry_layout.addWidget(self.feature_geometry_edit_source, 1)
-        self.btn_apply_feature_geometry = QPushButton("Apply")
-        self.btn_cancel_feature_geometry = QPushButton("Cancel")
-        self.btn_apply_feature_geometry.clicked.connect(
-            self.feature_geometry_apply_requested.emit
-        )
-        self.btn_cancel_feature_geometry.clicked.connect(
-            self.feature_geometry_cancel_requested.emit
-        )
-        geometry_layout.addWidget(self.btn_apply_feature_geometry)
-        geometry_layout.addWidget(self.btn_cancel_feature_geometry)
         self.feature_geometry_edit_strip.hide()
         layout.addWidget(self.feature_geometry_edit_strip)
 
@@ -787,14 +787,14 @@ class MapWidget(
         self.toolbar.addWidget(self.btn_add_marker)
         self.btn_draw_path = QPushButton("Draw Path")
         self.btn_draw_path.setToolTip(
-            "Draw a polyline path on the map (click vertices, double-click to finish)"
+            "Draw a polyline path (click vertices, then Confirm or press Enter)"
         )
         self.btn_draw_path.setCheckable(True)
         self.btn_draw_path.clicked.connect(self._on_draw_path_clicked)
         self.toolbar.addWidget(self.btn_draw_path)
         self.btn_draw_region = QPushButton("Draw Region")
         self.btn_draw_region.setToolTip(
-            "Draw a polygon region on the map (click vertices, double-click to finish)"
+            "Draw a polygon region (click vertices, then Confirm or press Enter)"
         )
         self.btn_draw_region.setCheckable(True)
         self.btn_draw_region.clicked.connect(self._on_draw_region_clicked)
@@ -1239,25 +1239,16 @@ class MapWidget(
 
     @Slot()
     def _on_mode_indicator_clicked(self) -> None:
-        """Exits the current editing mode when the mode pill is clicked."""
-        if self.view.is_editing_footprint:
-            self.view.cancel_footprint_edit()
-        elif self.view.is_drawing:
-            self.view.cancel_drawing()
-        elif self.view.is_placing_marker:
-            self.view.cancel_marker_placement()
-        elif self.view.is_editing_vertices:
-            self.view.finish_editing()
-        self._update_mode_indicator()
+        """Cancel the current map edit when the active-mode pill is clicked."""
+        self.cancel_active_session()
 
     @Slot()
     def _on_add_marker_clicked(self) -> None:
-        """Toggle one-shot marker placement mode."""
-        if self.view.is_placing_marker:
-            self.view.cancel_marker_placement()
+        """Toggle marker preview placement mode."""
+        if self.active_map_session_mode() == "marker":
+            self.cancel_active_session()
             return
-        if self.view.is_drawing:
-            self.view.cancel_drawing()
+        self.cancel_active_session()
         self.btn_draw_path.setChecked(False)
         self.btn_draw_region.setChecked(False)
         self.view.start_marker_placement()
@@ -1275,15 +1266,71 @@ class MapWidget(
         self.view.snapping_enabled = self.btn_snap.isChecked()
 
     @Slot()
-    def _on_finish_sketch(self) -> None:
-        """Handles the Finish Sketch button click.
-
-        Completes the current drawing or vertex editing session.
-        """
+    def active_map_session_mode(self) -> str | None:
+        """Return the active map authoring/editing session identifier."""
+        if self.view.is_placing_marker:
+            return "marker"
         if self.view.is_drawing:
+            return self.view.drawing_mode
+        if self.view.is_editing_vertices:
+            return "vertices"
+        if self.view.is_editing_marker_appearance:
+            return "marker_appearance"
+        if self.view.is_editing_footprint:
+            return "footprint"
+        return None
+
+    def is_active_map_session_valid(self) -> bool:
+        """Return whether the active map session can currently be confirmed."""
+        mode = self.active_map_session_mode()
+        if mode == "marker":
+            return self.view.has_marker_placement_preview
+        if mode in {"path", "region"}:
+            return self.view._drawing_tool.can_finish
+        if mode == "vertices":
+            return not self._feature_geometry_edit_pending
+        return mode in {"marker_appearance", "footprint"}
+
+    @Slot()
+    def confirm_active_session(self) -> None:
+        """Confirm the active map session through its existing persistence path."""
+        if not self.is_active_map_session_valid():
+            return
+        mode = self.active_map_session_mode()
+        if mode == "marker":
+            self.view.confirm_marker_placement()
+        elif mode in {"path", "region"}:
             self.view.finish_drawing()
-        elif self.view.is_editing_vertices:
-            self.view.finish_editing()
+        elif mode == "vertices":
+            if self.view._vertex_editor.is_managed_session:
+                self.feature_geometry_apply_requested.emit()
+            else:
+                self.view.finish_editing()
+        elif mode == "marker_appearance":
+            self.view.finish_marker_appearance_edit()
+        elif mode == "footprint":
+            self.view.finish_footprint_edit()
+        self._update_mode_indicator()
+
+    @Slot()
+    def cancel_active_session(self) -> None:
+        """Discard the active map session without persisting its working copy."""
+        if self._feature_geometry_edit_pending:
+            return
+        mode = self.active_map_session_mode()
+        if mode == "marker":
+            self.view.cancel_marker_placement()
+        elif mode in {"path", "region"}:
+            self.view.cancel_drawing()
+        elif mode == "vertices":
+            if self.view._vertex_editor.is_managed_session:
+                self.feature_geometry_cancel_requested.emit()
+            else:
+                self.view._vertex_editor.cancel_vertex_editing()
+        elif mode == "marker_appearance":
+            self.view.cancel_marker_appearance_edit()
+        elif mode == "footprint":
+            self.view.cancel_footprint_edit()
         self._update_mode_indicator()
 
     @Slot(str, list)
@@ -1388,16 +1435,11 @@ class MapWidget(
     def _on_map_selected(self, index: int) -> None:
         """Handle map selection change.
 
-        Automatically exits any active drawing or vertex editing mode
-        when the user switches to a different map layer.
+        Cancels any active map authoring/editing session before switching.
         """
         # Exit active editors before switching maps.
         self.layer_panel.close_properties_editor()
-        if self.view.is_drawing:
-            self.view.cancel_drawing()
-        if self.view.is_editing_vertices:
-            self.view.finish_editing()
-        self._update_mode_indicator()
+        self.cancel_active_session()
 
         if index >= 0:
             map_id = self.map_selector.itemData(index)
@@ -1614,18 +1656,19 @@ class MapWidget(
         self.feature_geometry_edit_label.setText(label)
         self.feature_geometry_edit_source.setText(source)
         self.feature_geometry_edit_strip.show()
-        self.btn_apply_feature_geometry.setEnabled(True)
+        self._feature_geometry_edit_pending = False
+        self._update_mode_indicator()
 
     def set_feature_geometry_edit_pending(self, pending: bool) -> None:
-        """Disable Apply while a geometry command is running."""
-        self.btn_apply_feature_geometry.setEnabled(not pending)
-        self.btn_cancel_feature_geometry.setEnabled(not pending)
+        """Disable shared edit actions while a geometry command is running."""
+        self._feature_geometry_edit_pending = pending
+        self._update_mode_indicator()
 
     def hide_feature_geometry_edit(self) -> None:
         """Hide working-copy controls after apply or cancellation."""
         self.feature_geometry_edit_strip.hide()
-        self.btn_apply_feature_geometry.setEnabled(True)
-        self.btn_cancel_feature_geometry.setEnabled(True)
+        self._feature_geometry_edit_pending = False
+        self._update_mode_indicator()
 
     def remove_marker(self, marker_id: str) -> None:
         """Removes a marker from the map and its layer node (MEDIUM-7).
@@ -1640,11 +1683,13 @@ class MapWidget(
 
     def exit_editing_modes(self) -> None:
         """Exit active map and layer editing modes without committing edits."""
-        self.view.exit_all_editing(commit_feature_edits=False)
-        self._update_mode_indicator()
+        self.cancel_active_session()
+        if self.view._raster_edit_tool.is_active:
+            self.view.stop_raster_editing()
 
     def clear_markers(self) -> None:
         """Removes all markers from the map and resets the layer model."""
+        self.cancel_active_session()
         self.view.clear_markers()
         self._base_marker_positions.clear()
         # Reset layer model — will be recreated when new markers load
@@ -1689,11 +1734,10 @@ class MapWidget(
             StyleHelper.get_secondary_button_style()
         )
 
-        self.btn_finish_sketch.setStyleSheet(StyleHelper.get_primary_button_style())
-        self.btn_apply_feature_geometry.setStyleSheet(
+        self.btn_confirm_map_edit.setStyleSheet(
             StyleHelper.get_primary_button_style()
         )
-        self.btn_cancel_feature_geometry.setStyleSheet(
+        self.btn_cancel_map_edit.setStyleSheet(
             StyleHelper.get_secondary_button_style()
         )
         self.overlay_banner.setStyleSheet(StyleHelper.get_overlay_banner_style())
@@ -1726,19 +1770,18 @@ class MapWidget(
         )
 
     def _update_mode_indicator(self) -> None:
-        """Updates the toolbar status, map overlay, and Finish Sketch button."""
+        """Update the active mode, instructions, and shared edit actions."""
         if self.view.is_placing_marker:
             self.mode_indicator.setText("🔵 PLACING MARKER")
             self._apply_mode_indicator_style("drawing")
 
             self.overlay_banner.setText(
                 "📍 <b>PLACE MARKER</b><br/>"
-                "Click the map to choose its position<br/>"
-                "<small>[Esc to Cancel]</small>"
+                "Click the map to set or move its position<br/>"
+                "<small>[Enter to Confirm] [Esc to Cancel]</small>"
             )
             self.overlay_banner.show()
             self._update_overlay_position()
-            self.btn_finish_sketch.hide()
             self.view.setCursor(Qt.CursorShape.CrossCursor)
 
         elif self.view.is_drawing:
@@ -1751,15 +1794,11 @@ class MapWidget(
             banner_text = (
                 f"✏️ <b>DRAWING {mode_name.upper()}</b><br/>"
                 "Click to add vertices<br/>"
-                "<small>[Double-click to Finish] [Esc to Cancel]</small>"
+                "<small>[Enter to Confirm] [Esc to Cancel]</small>"
             )
             self.overlay_banner.setText(banner_text)
             self.overlay_banner.show()
             self._update_overlay_position()
-
-            # Show Finish Sketch button
-            self.btn_finish_sketch.show()
-            self._update_finish_sketch_position()
 
         elif self.view.is_editing_vertices:
             # Vertex Editing Mode
@@ -1770,15 +1809,12 @@ class MapWidget(
             banner_text = (
                 "🔧 <b>VERTEX EDITING</b><br/>"
                 "Drag vertices to reshape · Drag midpoints to add<br/>"
-                "<small>[Right-click vertex to Delete] [Esc to Finish]</small>"
+                "<small>[Right-click vertex to Delete] "
+                "[Enter to Confirm] [Esc to Cancel]</small>"
             )
             self.overlay_banner.setText(banner_text)
             self.overlay_banner.show()
             self._update_overlay_position()
-
-            # Show Finish Sketch button
-            self.btn_finish_sketch.show()
-            self._update_finish_sketch_position()
 
         elif self.view.is_editing_marker_appearance:
             marker = self.view.markers.get(
@@ -1798,11 +1834,10 @@ class MapWidget(
                 "Drag corner to resize · Drag anchor handle to set attachment<br/>"
                 f"Size: <b>{size}</b> · "
                 f"Anchor: {anchor.x * 100:.0f}%, {anchor.y * 100:.0f}%<br/>"
-                "<small>[Enter to Apply] [Esc to Cancel]</small>"
+                "<small>[Enter to Confirm] [Esc to Cancel]</small>"
             )
             self.overlay_banner.show()
             self._update_overlay_position()
-            self.btn_finish_sketch.hide()
             self.view.setCursor(Qt.CursorShape.ArrowCursor)
 
         elif self.view.is_editing_footprint:
@@ -1821,8 +1856,6 @@ class MapWidget(
             self.overlay_banner.setText(banner_text)
             self.overlay_banner.show()
             self._update_overlay_position()
-            self.btn_finish_sketch.hide()
-
             self.view.setCursor(Qt.CursorShape.SizeAllCursor)
 
         else:
@@ -1832,10 +1865,18 @@ class MapWidget(
 
             # Overlay Banner
             self.overlay_banner.hide()
-            self.btn_finish_sketch.hide()
 
             # Normal cursor
             self.view.setCursor(Qt.CursorShape.ArrowCursor)
+
+        active = self.active_map_session_mode() is not None
+        self.map_edit_action_bar.setVisible(active)
+        self.btn_confirm_map_edit.setEnabled(self.is_active_map_session_valid())
+        self.btn_cancel_map_edit.setEnabled(
+            active and not self._feature_geometry_edit_pending
+        )
+        if active:
+            self._update_map_edit_action_position()
 
         self._update_trajectory_edit_action()
 
@@ -1867,6 +1908,15 @@ class MapWidget(
                 self.trajectory_delete_selected_requested.emit()
                 event.accept()
                 return
+        if self.active_map_session_mode() is not None:
+            if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+                self.confirm_active_session()
+                event.accept()
+                return
+            if event.key() == Qt.Key.Key_Escape:
+                self.cancel_active_session()
+                event.accept()
+                return
         if event.key() == Qt.Key.Key_Escape:
             if self.view.graphics_scene.selectedItems():
                 logger.debug("Esc pressed: Clearing selection")
@@ -1885,20 +1935,21 @@ class MapWidget(
             self.overlay_banner.move(x, 0)
             self.overlay_banner.setFixedWidth(banner_width)
 
-    def _update_finish_sketch_position(self) -> None:
-        """Positions the Finish Sketch button at the bottom-center of the view."""
-        if hasattr(self, "btn_finish_sketch") and self.btn_finish_sketch.isVisible():
+    def _update_map_edit_action_position(self) -> None:
+        """Position shared Confirm/Cancel controls at the viewport bottom."""
+        if self.map_edit_action_bar.isVisible():
             view_width = self.view.width()
             view_height = self.view.height()
-            btn_width = self.btn_finish_sketch.sizeHint().width()
-            btn_height = self.btn_finish_sketch.sizeHint().height()
-            x = (view_width - btn_width) // 2
-            y = view_height - btn_height - 20
-            self.btn_finish_sketch.move(x, y)
+            bar_size = self.map_edit_action_bar.sizeHint()
+            self.map_edit_action_bar.resize(bar_size)
+            x = (view_width - bar_size.width()) // 2
+            y = view_height - bar_size.height() - 20
+            self.map_edit_action_bar.move(x, y)
+            self.map_edit_action_bar.raise_()
 
     def resizeEvent(self, event: QResizeEvent) -> None:
-        """Handle resize to keep overlays and Finish Sketch button positioned."""
+        """Keep map overlays and shared edit actions positioned on resize."""
         super().resizeEvent(event)
         self._update_overlay_position()
-        self._update_finish_sketch_position()
+        self._update_map_edit_action_position()
         self._position_legend_overlay()

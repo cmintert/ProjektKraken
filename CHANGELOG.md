@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-21
-**Commit:** 53af5417
+**Commit:** a2a6bdfc
 ---
 
 # Changelog
@@ -73,6 +73,13 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-21)* **Maps / Editing UX**: Unified marker placement, path and
+  region drawing, vertex editing, marker appearance, and footprint editing
+  around Confirm, Cancel, Enter, and Escape without changing their atomic
+  persistence paths.
+- *(2026-08-21)* **Documentation / Testing**: Updated the map guide and added
+  regression coverage for draft validity, picker dismissal, keyboard actions,
+  mode exits, and geometry restoration.
 - *(2026-08-21)* **Editor / Usability**: Made Event and Entity description
   editors resizable within their parent inspector while preserving a readable
   minimum text width.
