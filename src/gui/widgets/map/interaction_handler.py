@@ -11,10 +11,15 @@ from typing import TYPE_CHECKING, Optional
 from PySide6.QtCore import QPoint, QPointF
 from PySide6.QtGui import QAction, QColor
 from PySide6.QtWidgets import (
+    QAbstractSpinBox,
     QColorDialog,
     QDialog,
+    QDoubleSpinBox,
+    QHBoxLayout,
     QMenu,
     QPushButton,
+    QToolButton,
+    QWidget,
 )
 
 from src.core.marker_appearance import (
@@ -39,6 +44,7 @@ from src.core.style_constants import (
 )
 from src.core.theme_manager import ThemeManager
 from src.gui.dialogs.icon_picker_dialog import IconPickerDialog
+from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.marker_item import MarkerItem
 from src.services.marker_icon_catalog import MarkerIconCatalog
@@ -49,6 +55,54 @@ if TYPE_CHECKING:
     from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 
 logger = logging.getLogger(__name__)
+
+
+PATH_LINE_STYLES: tuple[tuple[str, list[float]], ...] = (
+    ("Solid", []),
+    ("Dotted", [1.0, 3.0]),
+    ("Short Dash", [4.0, 3.0]),
+    ("Long Dash", [10.0, 4.0]),
+    ("Dash Dot", [8.0, 3.0, 1.0, 3.0]),
+)
+"""Named dash patterns available for persisted path strokes."""
+
+
+def _build_compact_stroke_width_control(
+    initial_value: float,
+) -> tuple[QWidget, QDoubleSpinBox]:
+    """Build a normal-height width field with full-size decrement buttons."""
+    width_spin = QDoubleSpinBox()
+    width_spin.setRange(0.5, 20.0)
+    width_spin.setSingleStep(0.5)
+    width_spin.setValue(initial_value)
+    width_spin.setObjectName("pathStrokeWidthSpin")
+    width_spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+    width_spin.setMinimumHeight(28)
+
+    width_control = QWidget()
+    width_layout = QHBoxLayout(width_control)
+    width_layout.setContentsMargins(0, 0, 0, 0)
+    width_layout.setSpacing(2)
+    width_layout.addWidget(width_spin, 1)
+
+    decrease_width = QToolButton()
+    decrease_width.setObjectName("pathStrokeWidthDecreaseButton")
+    decrease_width.setText("−")
+    decrease_width.setToolTip("Decrease stroke width")
+    increase_width = QToolButton()
+    increase_width.setObjectName("pathStrokeWidthIncreaseButton")
+    increase_width.setText("+")
+    increase_width.setToolTip("Increase stroke width")
+    for button in (decrease_width, increase_width):
+        button.setFixedSize(28, 28)
+        button.setAutoRepeat(True)
+        button.setAutoRepeatDelay(300)
+        button.setStyleSheet(StyleHelper.get_icon_button_style())
+    decrease_width.clicked.connect(width_spin.stepDown)
+    increase_width.clicked.connect(width_spin.stepUp)
+    width_layout.addWidget(decrease_width)
+    width_layout.addWidget(increase_width)
+    return width_control, width_spin
 
 
 class InteractionHandler:
@@ -572,8 +626,8 @@ class InteractionHandler:
             item: The PathItem or RegionItem to edit.
         """
         from PySide6.QtWidgets import (
+            QComboBox,
             QDialogButtonBox,
-            QDoubleSpinBox,
             QFormLayout,
         )
 
@@ -612,11 +666,29 @@ class InteractionHandler:
         layout.addRow("Stroke Color:", stroke_btn)
 
         # Stroke width
-        width_spin = QDoubleSpinBox()
-        width_spin.setRange(0.5, 20.0)
-        width_spin.setSingleStep(0.5)
-        width_spin.setValue(item._style.get("stroke_width", DEFAULT_STROKE_WIDTH))
-        layout.addRow("Stroke Width:", width_spin)
+        width_control, width_spin = _build_compact_stroke_width_control(
+            item._style.get("stroke_width", DEFAULT_STROKE_WIDTH)
+        )
+        layout.addRow("Stroke Width:", width_control)
+
+        line_style_combo: QComboBox | None = None
+        if isinstance(item, PathItem):
+            line_style_combo = QComboBox()
+            current_pattern = item._dash_pattern()
+            if current_pattern not in [pattern for _, pattern in PATH_LINE_STYLES]:
+                pattern_text = ", ".join(str(value) for value in current_pattern)
+                line_style_combo.addItem(
+                    f"Custom ({pattern_text})" if pattern_text else "Custom (solid)",
+                    list(current_pattern),
+                )
+            for name, pattern in PATH_LINE_STYLES:
+                line_style_combo.addItem(name, pattern)
+
+            for index in range(line_style_combo.count()):
+                if line_style_combo.itemData(index) == current_pattern:
+                    line_style_combo.setCurrentIndex(index)
+                    break
+            layout.addRow("Line Style:", line_style_combo)
 
         # Fill color (regions only)
         fill_btn: Optional[QPushButton] = None
@@ -661,6 +733,10 @@ class InteractionHandler:
             new_style = dict(item._style)
             new_style["stroke_color"] = _stroke_color[0]
             new_style["stroke_width"] = width_spin.value()
+            if line_style_combo is not None:
+                selected_pattern = line_style_combo.currentData()
+                if isinstance(selected_pattern, list):
+                    new_style["dash_pattern"] = list(selected_pattern)
             if isinstance(item, RegionItem) and _fill_color[0]:
                 new_style["fill_color"] = _fill_color[0]
 

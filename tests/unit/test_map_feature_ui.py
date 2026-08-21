@@ -837,6 +837,60 @@ class TestFeatureItemStyle:
         assert sig.args[0] == "r1"
         assert sig.args[1]["stroke_color"] == "#00FF00"
 
+    def test_path_style_dialog_persists_selected_dotted_pattern(
+        self, view, monkeypatch, qtbot
+    ) -> None:
+        """Path Style offers dotted patterns and persists the selected preset."""
+        from PySide6.QtWidgets import (
+            QAbstractSpinBox,
+            QComboBox,
+            QDialog,
+            QDoubleSpinBox,
+            QToolButton,
+        )
+
+        view.add_marker(
+            "p1",
+            "entity",
+            "River",
+            0.5,
+            0.5,
+            feature_type="path",
+            geometry=[{"x": 0.1, "y": 0.2}, {"x": 0.9, "y": 0.8}],
+        )
+
+        def accept_with_dotted_style(dialog: QDialog) -> QDialog.DialogCode:
+            line_style = dialog.findChild(QComboBox)
+            assert line_style is not None
+            line_style.setCurrentIndex(line_style.findText("Dotted"))
+            width_spin = dialog.findChild(QDoubleSpinBox, "pathStrokeWidthSpin")
+            assert width_spin is not None
+            assert width_spin.minimumHeight() == 28
+            assert width_spin.buttonSymbols() == QAbstractSpinBox.ButtonSymbols.NoButtons
+            decrease_button = dialog.findChild(
+                QToolButton, "pathStrokeWidthDecreaseButton"
+            )
+            increase_button = dialog.findChild(
+                QToolButton, "pathStrokeWidthIncreaseButton"
+            )
+            assert decrease_button is not None
+            assert increase_button is not None
+            assert decrease_button.size().width() == 28
+            assert increase_button.size().height() == 28
+            decrease_button.click()
+            assert width_spin.value() == 1.5
+            return QDialog.DialogCode.Accepted
+
+        monkeypatch.setattr(QDialog, "exec", accept_with_dotted_style)
+
+        with qtbot.waitSignal(view.feature_style_changed, timeout=1000) as signal:
+            view._interaction.show_feature_style_dialog(view.feature_items["p1"])
+
+        assert signal.args[0] == "p1"
+        assert signal.args[1]["dash_pattern"] == [1.0, 3.0]
+        assert signal.args[1]["stroke_width"] == 1.5
+        assert view.feature_items["p1"]._dash_pattern() == [1.0, 3.0]
+
 
 # --------------------------------------------------------------------------
 # Midpoint handles and vertex deletion tests

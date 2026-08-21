@@ -56,6 +56,11 @@ appearance. Use
 Snapping helps align new or edited vertices with existing geometry. Paths need
 at least two vertices; regions need at least three.
 
+Right-click a path and choose **Edit Path Style…** to select its stroke width,
+colour, and line pattern. Available patterns are **Solid**, **Dotted**,
+**Short Dash**, **Long Dash**, and **Dash Dot**. The chosen pattern applies to
+the whole path and is saved as part of its global feature style.
+
 ## Dated path and region geometry
 
 Every path and region has Base Geometry and may have dated geometry states.

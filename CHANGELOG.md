@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-21
-**Commit:** 45ec7fc2
+**Commit:** b6edd0ac
 ---
 
 # Changelog
@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-08-21)* **Maps / Path Styling**: Added solid, dotted, short-dash,
+  long-dash, and dash-dot presets to path styles while preserving custom
+  patterns.
 - *(2026-08-21)* **Maps / Marker Icons**: Added a nine-level settlement icon
   catalog from hamlets through metropolises.
 - *(2026-08-21)* **Editor / World Context**: Added deterministic, bounded Event
@@ -39,6 +42,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-21)* **Maps / Path Styling**: Replaced the cramped stacked stroke
+  width arrows with normal-height text input and full-size decrement/increment
+  controls; documented and regression-tested the path styling workflow.
 - *(2026-08-21)* **Maps / Historical Context**: Unified dated raster selection
   and resolved moving markers at their historical trajectory positions before
   producing authoritative spatial facts.
