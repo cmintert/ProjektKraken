@@ -228,6 +228,14 @@ class WorkerManager(QObject):
         self.window.worker.event_details_loaded.connect(
             self.window.data_handler.on_event_details_loaded, connection_type
         )
+        self.window.worker.authoring_context_loaded.connect(
+            self.window.app_coordinator.authoring_context.on_context_loaded,
+            connection_type,
+        )
+        self.window.worker.entity_authoring_context_loaded.connect(
+            self.window.app_coordinator.authoring_context.on_entity_context_loaded,
+            connection_type,
+        )
         self.window.worker.entity_details_loaded.connect(
             self.window.data_handler.on_entity_details_loaded, connection_type
         )

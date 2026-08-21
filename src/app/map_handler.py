@@ -2487,19 +2487,9 @@ class MapHandler(QObject):
             ``meta['file_path']`` if no snapshot at or before *lore_date*
             exists.
         """
-        snapshots: Dict[str, str] = meta.get("snapshots", {})
-        base_path: str = meta.get("file_path", "")
-        if not snapshots:
-            return base_path
-        valid = [
-            (date, v)
-            for k, v in snapshots.items()
-            if (date := _safe_float(k)) is not None and date <= lore_date
-        ]
-        if not valid:
-            return base_path
-        _, path = max(valid, key=lambda x: x[0])
-        return path
+        from src.core.map_state import RasterLayerState
+
+        return RasterLayerState.from_dict(meta).resolve_file(lore_date)
 
     @Slot(str)
     def on_raster_snapshot_requested(self, node_id: str) -> None:

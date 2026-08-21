@@ -38,6 +38,7 @@ from src.core.ai_generation import (
     TaskIntent,
     TaskTemplate,
 )
+from src.core.description_date_policy import find_description_dates
 from src.core.logging_config import get_world_audit_log_path
 from src.core.theme_manager import ThemeManager
 from src.gui.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
@@ -52,6 +53,12 @@ from src.services.ai_audit_service import (
     log_generation_event,
     log_review_event,
     new_interaction_id,
+)
+from src.services.authoring_context_builder import (
+    format_entity_authoring_context,
+    format_event_authoring_context,
+    lookup_entity_authoring_context,
+    lookup_event_authoring_context,
 )
 from src.services.llm_provider import Provider, create_provider
 from src.services.prompt_builder import DEFAULT_SYSTEM_PROMPT, PromptBuilder
@@ -168,6 +175,9 @@ class GenerationWorker(QThread):
             self.active_map_id = request.active_map_id
             self.playhead_date = request.playhead_date
             self.spatial_enabled = request.spatial_enabled
+            self.rag_enabled = request.rag_enabled
+            self.authoring_context_enabled = request.authoring_context_enabled
+            self.authoring_date = request.authoring_date
         else:
             self.max_tokens = max_tokens
             self.temperature = temperature
@@ -179,16 +189,21 @@ class GenerationWorker(QThread):
             self.active_map_id = active_map_id
             self.playhead_date = None
             self.spatial_enabled = spatial_enabled
+            self.rag_enabled = db_path is not None
+            self.authoring_context_enabled = False
+            self.authoring_date = None
         # Populated during run() when spatial context is actually injected;
         # read by the widget to drive the post-generation transparency label.
         self.rag_context_used: Optional[str] = None
         self.spatial_context_used: Optional[str] = None
+        self.authoring_context_used: Optional[str] = None
+        self.description_date_values: tuple[float, ...] = ()
         self._cancelled = False
 
     def _apply_rag_to_prompt(self) -> None:
         """Inject RAG context into the prompt."""
         # Check if RAG is useful/enabled
-        if not self.db_path:
+        if not self.rag_enabled or not self.db_path:
             return
 
         rag_context = ""
@@ -235,7 +250,9 @@ class GenerationWorker(QThread):
         # Inject logic
         if isinstance(prompt, dict):
             if "{{RAG_CONTEXT}}" in prompt["user"]:
-                replacement = f"[Context]\n{rag_context}" if rag_context else ""
+                replacement = (
+                    f"[Retrieved Context]\n{rag_context}" if rag_context else ""
+                )
                 prompt["user"] = prompt["user"].replace(
                     "{{RAG_CONTEXT}}", replacement
                 )
@@ -247,7 +264,9 @@ class GenerationWorker(QThread):
         else:
             # String prompt
             if "{{RAG_CONTEXT}}" in prompt:
-                replacement = f"[Context]\n{rag_context}" if rag_context else ""
+                replacement = (
+                    f"[Retrieved Context]\n{rag_context}" if rag_context else ""
+                )
                 prompt = prompt.replace("{{RAG_CONTEXT}}", replacement)
             elif rag_context:
                 prompt = f"[Context]\n{rag_context}\n\n" + prompt
@@ -257,6 +276,87 @@ class GenerationWorker(QThread):
 
         if rag_context:
             logger.debug(f"Applied RAG context: {len(rag_context)} chars")
+
+    def _apply_authoring_context_to_prompt(self) -> None:
+        """Inject deterministic authoring context using a read-only connection."""
+        placeholder = "{{AUTHORING_CONTEXT}}"
+        prompt = self.prompt
+        user_msg = prompt.get("user", "") if isinstance(prompt, dict) else prompt
+        if placeholder not in user_msg:
+            return
+
+        context_text: Optional[str] = None
+        if (
+            self.authoring_context_enabled
+            and self.db_path
+            and self.object_id
+            and self.object_type in {"entity", "event"}
+        ):
+            if self.object_type == "event":
+                event_context = lookup_event_authoring_context(
+                    self.db_path,
+                    self.object_id,
+                    context_date=self.authoring_date,
+                    active_map_id=self.active_map_id,
+                )
+                if event_context is not None:
+                    context_text = format_event_authoring_context(event_context)
+                    values = [event_context.context_date]
+                    values.extend(
+                        item.lore_date
+                        for item in (
+                            *event_context.previous_events,
+                            *event_context.concurrent_events,
+                            *event_context.next_events,
+                        )
+                    )
+                    values.extend(
+                        value
+                        for relation in (
+                            *event_context.direct_relations,
+                            *event_context.neighborhood_relations,
+                        )
+                        for value in (relation.valid_from, relation.valid_to)
+                        if value is not None
+                    )
+                    self.description_date_values = tuple(values)
+            else:
+                entity_context = lookup_entity_authoring_context(
+                    self.db_path, self.object_id
+                )
+                if entity_context is not None:
+                    context_text = format_entity_authoring_context(entity_context)
+                    values = [
+                        item.event.lore_date
+                        for item in entity_context.event_appearances
+                    ]
+                    values.extend(
+                        item.lore_date for item in entity_context.mentions
+                    )
+                    values.extend(
+                        event.lore_date
+                        for item in entity_context.co_appearances
+                        for event in item.events
+                    )
+                    values.extend(
+                        value
+                        for relation in (
+                            *entity_context.temporal_history,
+                            *entity_context.neighborhood_relations,
+                        )
+                        for value in (relation.valid_from, relation.valid_to)
+                        if value is not None
+                    )
+                    self.description_date_values = tuple(values)
+
+        self.authoring_context_used = context_text
+        if isinstance(prompt, dict):
+            prompt["user"] = prompt["user"].replace(
+                placeholder, context_text or ""
+            )
+        else:
+            prompt = prompt.replace(placeholder, context_text or "")
+        self.prompt = prompt
 
     def _apply_spatial_to_prompt(self) -> None:
         """Inject spatial context into the prompt (mirrors ``_apply_rag_to_prompt``).
@@ -306,11 +406,15 @@ class GenerationWorker(QThread):
     def run(self) -> None:
         """Run generation in background thread."""
         try:
-            # 1. Perform RAG if enabled (synchronous in this thread)
+            # 1. Resolve authoritative Event or Entity context.
+            self._apply_authoring_context_to_prompt()
+            if self._cancelled:
+                return
+            # 2. Perform RAG if enabled (synchronous in this thread)
             self._apply_rag_to_prompt()
             if self._cancelled:
                 return
-            # 2. Inject spatial context (also synchronous in this thread)
+            # 3. Inject Entity spatial context (also synchronous in this thread)
             self._apply_spatial_to_prompt()
             if self._cancelled:
                 return
@@ -576,6 +680,14 @@ class LLMGenerationWidget(QWidget):
         self.spatial_cb.toggled.connect(self._save_settings)
         grid_layout.addWidget(self.spatial_cb, 3, 2, 1, 2)
 
+        self.world_context_cb = QCheckBox("Use World Context")
+        self.world_context_cb.setChecked(True)
+        self.world_context_cb.setToolTip(
+            "Include deterministic persisted facts known about this item."
+        )
+        self.world_context_cb.toggled.connect(self._save_settings)
+        grid_layout.addWidget(self.world_context_cb, 3, 0, 1, 2)
+
         main_layout.addLayout(grid_layout)
 
         # Header for prompt section
@@ -650,15 +762,36 @@ class LLMGenerationWidget(QWidget):
         self._last_spatial_context: Optional[str] = None
         self._set_spatial_used_visible(False)
 
+        self._build_world_context_status_row(main_layout)
+
         # Preview area removed as per user request
         # self.preview_text = QPlainTextEdit()
         # ...
 
         # Load settings
         self._load_settings()
+        self._sync_context_controls()
         theme_manager = ThemeManager()
         theme_manager.theme_changed.connect(self._on_theme_changed)
         self._on_theme_changed(theme_manager.get_theme())
+
+    def _build_world_context_status_row(self, layout: QVBoxLayout) -> None:
+        """Create the Event World Context transparency controls."""
+        world_row = QHBoxLayout()
+        world_row.setContentsMargins(0, 0, 0, 0)
+        self.world_context_used_label = QLabel("")
+        world_row.addWidget(self.world_context_used_label)
+        self.world_context_show_btn = QPushButton("Show")
+        self.world_context_show_btn.setFlat(True)
+        self.world_context_show_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.world_context_show_btn.clicked.connect(
+            self._on_show_world_context_clicked
+        )
+        world_row.addWidget(self.world_context_show_btn)
+        world_row.addStretch()
+        layout.addLayout(world_row)
+        self._last_world_context: Optional[str] = None
+        self._set_world_context_used_visible(False)
 
     @Slot(dict)
     def _on_theme_changed(self, theme: dict) -> None:
@@ -676,7 +809,15 @@ class LLMGenerationWidget(QWidget):
         self.spatial_used_label.setStyleSheet(
             f"color: {text_dim}; font-size: 11px;"
         )
+        self.world_context_used_label.setStyleSheet(
+            f"color: {text_dim}; font-size: 11px;"
+        )
         self.spatial_show_btn.setStyleSheet(
+            f"QPushButton {{ color: {accent}; border: none; font-size: 11px; "
+            "padding: 0px 4px; } "
+            "QPushButton:hover { text-decoration: underline; }"
+        )
+        self.world_context_show_btn.setStyleSheet(
             f"QPushButton {{ color: {accent}; border: none; font-size: 11px; "
             "padding: 0px 4px; } "
             "QPushButton:hover { text-decoration: underline; }"
@@ -856,15 +997,25 @@ class LLMGenerationWidget(QWidget):
             )
             self.spatial_cb.blockSignals(False)
 
+            context = self._get_generation_context() or {}
+            object_type = str(context.get("object_type") or "")
+            world_context_key = (
+                f"ai_gen_{object_type}_world_context_enabled"
+                if object_type in {"entity", "event"}
+                else "ai_gen_event_world_context_enabled"
+            )
+            self.world_context_cb.blockSignals(True)
+            self.world_context_cb.setChecked(
+                read_bool_setting(settings, world_context_key, True)
+            )
+            self.world_context_cb.blockSignals(False)
+
             # rag_limit_input only saves on editingFinished, but for consistency:
             self.rag_limit_input.blockSignals(True)
             limit = str(read_int_setting(settings, "ai_gen_rag_limit", 3))
             self.rag_limit_input.setText(limit)
             self.rag_limit_input.setVisible(self.rag_cb.isChecked())
             self.rag_limit_input.blockSignals(False)
-
-            context = self._get_generation_context() or {}
-            object_type = str(context.get("object_type") or "")
 
             # Load object-specific template selection.
             self.template_combo.blockSignals(True)
@@ -908,6 +1059,13 @@ class LLMGenerationWidget(QWidget):
             settings.setValue("ai_gen_temperature", self.temperature_spin.value())
             settings.setValue("ai_gen_rag_enabled", self.rag_cb.isChecked())
             settings.setValue("ai_gen_spatial_enabled", self.spatial_cb.isChecked())
+            context = self._get_generation_context() or {}
+            object_type = str(context.get("object_type") or "")
+            if object_type in {"entity", "event"}:
+                settings.setValue(
+                    f"ai_gen_{object_type}_world_context_enabled",
+                    self.world_context_cb.isChecked(),
+                )
 
             # Make sure to save a valid integer
             try:
@@ -916,8 +1074,6 @@ class LLMGenerationWidget(QWidget):
                 limit_val = 3
             settings.setValue("ai_gen_rag_limit", limit_val)
 
-            context = self._get_generation_context() or {}
-            object_type = context.get("object_type")
             if object_type in {"entity", "event"}:
                 selected = self._find_task_template(self.template_combo.currentData())
                 active_template_id = (
@@ -940,6 +1096,15 @@ class LLMGenerationWidget(QWidget):
         except Exception as e:
             logger.error(f"Failed to save generation settings: {e}", exc_info=True)
 
+    def _sync_context_controls(self) -> None:
+        """Show the context control appropriate for the current object type."""
+        context = self._get_generation_context() or {}
+        is_event = context.get("object_type") == "event"
+        self.world_context_cb.setVisible(
+            context.get("object_type") in {"entity", "event"}
+        )
+        self.spatial_cb.setVisible(not is_event)
+
     def _get_provider_id(self) -> str:
         """Get provider ID from combo box selection."""
         provider_map = {
@@ -960,6 +1125,7 @@ class LLMGenerationWidget(QWidget):
             logger.warning("Generation aborted: No context found.")
             self.status_label.setText("Error: Could not get context for generation")
             return
+        self._sync_context_controls()
 
         logger.debug(f"Generation context retrieved: {context.keys()}")
         self._generation_target_id = str(context.get("object_id") or "") or None
@@ -975,12 +1141,18 @@ class LLMGenerationWidget(QWidget):
         builder = PromptBuilder(system_prompt=self._get_system_prompt())
         context_str = builder.build_context_string(context)
         user_prompt = builder.substitute_variables(user_prompt, context)
+        object_type = str(context.get("object_type") or "")
+        authoring_enabled = object_type in {"entity", "event"} and (
+            self.world_context_cb.isChecked()
+        )
+        spatial_enabled = object_type != "event" and self.spatial_cb.isChecked()
         prompt = builder.construct_prompt(
             context_str,
             user_prompt,
             include_rag_placeholder=self.rag_cb.isChecked(),
-            include_spatial_placeholder=self.spatial_cb.isChecked(),
-            object_type=str(context.get("object_type") or ""),
+            include_spatial_placeholder=spatial_enabled,
+            include_authoring_placeholder=authoring_enabled,
+            object_type=object_type,
         )
         self.status_label.setText("Generating with context...")
 
@@ -991,14 +1163,8 @@ class LLMGenerationWidget(QWidget):
         db_path = getattr(window, "db_path", None)
         self._current_db_path = db_path
 
-        if self.rag_cb.isChecked():
-            if db_path:
-                logger.debug(f"RAG enabled. Using DB: {db_path}")
-            else:
-                logger.warning("RAG enabled but could not find db_path on window.")
-            db_path_for_worker = db_path
-        else:
-            db_path_for_worker = None
+        if (self.rag_cb.isChecked() or authoring_enabled) and not db_path:
+            logger.warning("Context enabled but could not find db_path on window.")
 
         # Save settings
         self._save_settings()
@@ -1021,7 +1187,7 @@ class LLMGenerationWidget(QWidget):
             self._start_generation(
                 prompt,
                 temperature,
-                db_path_for_worker,
+                db_path,
                 object_id=context.get("object_id") or None,
                 object_type=context.get("object_type") or None,
             )
@@ -1116,9 +1282,11 @@ class LLMGenerationWidget(QWidget):
 
     @staticmethod
     def _hash_source_description(context: dict[str, Any]) -> str:
-        """Hash the source description used to build a request."""
-        description = str(context.get("existing_description") or "")
-        return hashlib.sha256(description.encode("utf-8")).hexdigest()
+        """Hash draft fields that determine the generation request."""
+        source = str(context.get("existing_description") or "")
+        if context.get("object_type") == "event":
+            source += f"\n{context.get('authoring_date')!r}"
+        return hashlib.sha256(source.encode("utf-8")).hexdigest()
 
     def _get_audit_template_snapshot(self) -> dict[str, Any]:
         """Return the selected task identity and a stable content hash."""
@@ -1189,6 +1357,8 @@ class LLMGenerationWidget(QWidget):
         self.status_label.setText("Generating...")
         self._last_spatial_context = None
         self._set_spatial_used_visible(False)
+        self._last_world_context = None
+        self._set_world_context_used_visible(False)
 
         # Prepare exclusion list (current entity name)
         exclude_names = []
@@ -1196,8 +1366,19 @@ class LLMGenerationWidget(QWidget):
         if current_context and "name" in current_context:
             exclude_names.append(current_context["name"])
 
-        spatial_enabled = self.spatial_cb.isChecked()
-        active_map_id = self._resolve_active_map_id() if spatial_enabled else None
+        current_context = self._get_generation_context() or {}
+        current_object_type = str(current_context.get("object_type") or "")
+        authoring_enabled = current_object_type in {"entity", "event"} and (
+            self.world_context_cb.isChecked()
+        )
+        spatial_enabled = (
+            current_object_type != "event" and self.spatial_cb.isChecked()
+        )
+        active_map_id = (
+            self._resolve_active_map_id()
+            if spatial_enabled or (authoring_enabled and current_object_type == "event")
+            else None
+        )
         playhead_date = self._resolve_playhead_date() if spatial_enabled else None
 
         # Create worker
@@ -1214,6 +1395,13 @@ class LLMGenerationWidget(QWidget):
             active_map_id=active_map_id,
             playhead_date=playhead_date,
             spatial_enabled=spatial_enabled,
+            rag_enabled=self.rag_cb.isChecked(),
+            authoring_context_enabled=authoring_enabled,
+            authoring_date=(
+                float(current_context["authoring_date"])
+                if current_context.get("authoring_date") is not None
+                else None
+            ),
         )
         self._worker = GenerationWorker(
             self._current_provider,
@@ -1281,6 +1469,93 @@ class LLMGenerationWidget(QWidget):
             logger.debug("Failed to resolve active map id: %s", e)
             return None
 
+    def _resolve_db_path(self) -> Optional[str]:
+        """Find the active world's immutable database path."""
+        current: QObject | None = self
+        while current:
+            db_path = getattr(current, "db_path", None)
+            if db_path:
+                return str(db_path)
+            parent = current.parent()
+            if parent is not None:
+                current = parent
+                continue
+            if isinstance(current, QWidget):
+                window = current.window()
+                if window != current:
+                    current = window
+                    continue
+            break
+        return None
+
+    def _preview_authoring_context(
+        self,
+        db_path: str,
+        context: dict[str, Any],
+    ) -> str:
+        """Resolve the exact authoritative block used by generation."""
+        object_id = str(context.get("object_id") or "")
+        if context.get("object_type") == "entity":
+            entity_snapshot = lookup_entity_authoring_context(db_path, object_id)
+            return (
+                format_entity_authoring_context(entity_snapshot)
+                if entity_snapshot is not None
+                else ""
+            )
+        event_snapshot = lookup_event_authoring_context(
+            db_path,
+            object_id,
+            context_date=(
+                float(context["authoring_date"])
+                if context.get("authoring_date") is not None
+                else None
+            ),
+            active_map_id=self._resolve_active_map_id(),
+        )
+        return (
+            format_event_authoring_context(event_snapshot)
+            if event_snapshot is not None
+            else ""
+        )
+
+    def _calendar_month_names(self) -> tuple[str, ...]:
+        """Return active-calendar month names and abbreviations for validation."""
+        window = self.window()
+        converter = getattr(window, "calendar_converter", None)
+        config = getattr(converter, "_config", None)
+        months = list(getattr(config, "months", ()))
+        for variant in getattr(config, "year_variants", ()):
+            months.extend(getattr(variant, "months", ()))
+        names: list[str] = []
+        for month in months:
+            for value in (
+                getattr(month, "name", ""),
+                getattr(month, "abbreviation", ""),
+            ):
+                text = str(value).strip()
+                if text and text not in names:
+                    names.append(text)
+        return tuple(names)
+
+    def _calendar_era_names(self) -> tuple[str, ...]:
+        """Return the active calendar's configured era label."""
+        converter = getattr(self.window(), "calendar_converter", None)
+        config = getattr(converter, "_config", None)
+        epoch = str(getattr(config, "epoch_name", "")).strip()
+        return (epoch,) if epoch else ()
+
+    def _known_generation_dates(self) -> tuple[float, ...]:
+        """Return dates explicitly supplied to the active generation task."""
+        worker = self._worker
+        if worker is None:
+            return ()
+        values = (
+            worker.authoring_date,
+            worker.playhead_date,
+            *worker.description_date_values,
+        )
+        return tuple(float(value) for value in values if value is not None)
+
     def _set_spatial_used_visible(self, visible: bool, *, has_context: bool = False) -> None:
         """Toggle visibility of the spatial-context transparency row.
 
@@ -1292,6 +1567,13 @@ class LLMGenerationWidget(QWidget):
         """
         self.spatial_used_label.setVisible(visible)
         self.spatial_show_btn.setVisible(visible and has_context)
+
+    def _set_world_context_used_visible(
+        self, visible: bool, *, has_context: bool = False
+    ) -> None:
+        """Toggle the Event World Context transparency row."""
+        self.world_context_used_label.setVisible(visible)
+        self.world_context_show_btn.setVisible(visible and has_context)
 
     def _get_rag_limit(self) -> int:
         """Safely retrieve RAG limit from input."""
@@ -1318,6 +1600,8 @@ class LLMGenerationWidget(QWidget):
         worker_rag_context: Optional[str] = None
         worker_spatial_context: Optional[str] = None
         worker_spatial_requested = False
+        worker_authoring_context: Optional[str] = None
+        worker_authoring_requested = False
         parameters: dict[str, Any] = {}
         target: dict[str, Any] = {
             "target_id": self._generation_target_id,
@@ -1328,12 +1612,17 @@ class LLMGenerationWidget(QWidget):
             worker_rag_context = self._worker.rag_context_used
             worker_spatial_context = self._worker.spatial_context_used
             worker_spatial_requested = self._worker.spatial_enabled
+            worker_authoring_context = self._worker.authoring_context_used
+            worker_authoring_requested = self._worker.authoring_context_enabled
             parameters = {
                 "max_tokens": self._worker.max_tokens,
                 "temperature": self._worker.temperature,
                 "rag_limit": self._worker.rag_limit,
-                "rag_enabled": self._worker.db_path is not None,
+                "rag_enabled": self._worker.rag_enabled,
                 "spatial_enabled": self._worker.spatial_enabled,
+                "authoring_context_enabled": (
+                    self._worker.authoring_context_enabled
+                ),
             }
             target.update(
                 {
@@ -1368,6 +1657,7 @@ class LLMGenerationWidget(QWidget):
                 context={
                     "rag": worker_rag_context,
                     "spatial": worker_spatial_context,
+                    "authoring": worker_authoring_context,
                 },
                 duration_ms=duration_ms,
                 audit_path=audit_path,
@@ -1399,10 +1689,14 @@ class LLMGenerationWidget(QWidget):
                 "current editor state.",
             )
             return
+        self._sync_context_controls()
 
         # Update the post-generation spatial-context transparency row.
         self._update_spatial_used_label(
             worker_spatial_requested, worker_spatial_context
+        )
+        self._update_world_context_used_label(
+            worker_authoring_requested, worker_authoring_context
         )
 
         # Show review dialog
@@ -1424,10 +1718,16 @@ class LLMGenerationWidget(QWidget):
         else:
             filtered_text = text
 
+        month_names = self._calendar_month_names()
+        era_names = self._calendar_era_names()
+        known_date_values = self._known_generation_dates()
         dialog = GenerationReviewDialog(
             generated_text=filtered_text,
             parent=self,
             reply=reply,
+            month_names=month_names,
+            era_names=era_names,
+            known_date_values=known_date_values,
         )
         dialog.exec()  # Result code not needed, using dialog.get_result()
 
@@ -1438,7 +1738,25 @@ class LLMGenerationWidget(QWidget):
             source_hash=self._generation_source_hash,
         )
         final_text = result.text
-        audit_action = dialog.action.value if dialog.action else "closed"
+        date_policy_blocked = result.action != GenerationApplyMode.DISCARD and bool(
+            find_description_dates(
+            final_text,
+            month_names=month_names,
+            era_names=era_names,
+            known_date_values=known_date_values,
+            )
+        )
+        if date_policy_blocked:
+            logger.error("Blocked generated description containing an explicit date")
+            result = replace(result, action=GenerationApplyMode.DISCARD)
+            self.status_label.setText("Result blocked: remove explicit dates")
+        audit_action = (
+            "blocked_date_policy"
+            if date_policy_blocked
+            else dialog.action.value
+            if dialog.action
+            else "closed"
+        )
         log_review_event(
             interaction_id=interaction_id,
             action=audit_action,
@@ -1487,8 +1805,9 @@ class LLMGenerationWidget(QWidget):
                 "max_tokens": worker.max_tokens,
                 "temperature": worker.temperature,
                 "rag_limit": worker.rag_limit,
-                "rag_enabled": worker.db_path is not None,
+                "rag_enabled": worker.rag_enabled,
                 "spatial_enabled": worker.spatial_enabled,
+                "authoring_context_enabled": worker.authoring_context_enabled,
             },
             template=self._audit_template,
             target={
@@ -1500,6 +1819,7 @@ class LLMGenerationWidget(QWidget):
             context={
                 "rag": worker.rag_context_used,
                 "spatial": worker.spatial_context_used,
+                "authoring": worker.authoring_context_used,
             },
             duration_ms=duration_ms,
             audit_path=get_world_audit_log_path(self._current_db_path),
@@ -1558,6 +1878,25 @@ class LLMGenerationWidget(QWidget):
             )
             self._set_spatial_used_visible(True, has_context=False)
 
+    def _update_world_context_used_label(
+        self, requested: bool, context_text: Optional[str]
+    ) -> None:
+        """Show whether deterministic World Context was injected."""
+        if not requested:
+            self._last_world_context = None
+            self._set_world_context_used_visible(False)
+            return
+        if context_text:
+            self._last_world_context = context_text
+            self.world_context_used_label.setText("World Context used")
+            self._set_world_context_used_visible(True, has_context=True)
+        else:
+            self._last_world_context = None
+            self.world_context_used_label.setText(
+                "No authoritative World Context was available."
+            )
+            self._set_world_context_used_visible(True, has_context=False)
+
     @staticmethod
     def _summarise_spatial_context(context_text: str) -> str:
         """Produce a one-line summary of an injected spatial-context block."""
@@ -1597,6 +1936,35 @@ class LLMGenerationWidget(QWidget):
         btn_row.addStretch()
         btn_row.addWidget(close_btn)
         layout.addLayout(btn_row)
+        dlg.exec()
+
+    @Slot()
+    def _on_show_world_context_clicked(self) -> None:
+        """Open a modal showing the exact injected World Context text."""
+        if not self._last_world_context:
+            return
+        dlg = QDialog(self)
+        dlg.setWindowTitle("World Context Used")
+        dlg.resize(560, 400)
+        dlg.setStyleSheet(StyleHelper.get_dialog_base_style())
+        layout = QVBoxLayout(dlg)
+        info = QLabel("Exact authoritative context inserted into the prompt.")
+        info.setStyleSheet(StyleHelper.get_preview_label_style())
+        layout.addWidget(info)
+        text_edit = QPlainTextEdit()
+        text_edit.setPlainText(self._last_world_context)
+        text_edit.setReadOnly(True)
+        text_edit.setStyleSheet(
+            f"{StyleHelper.get_input_field_style()}font-family: Consolas, monospace;"
+        )
+        layout.addWidget(text_edit)
+        close_btn = QPushButton("Close")
+        close_btn.clicked.connect(dlg.accept)
+        close_btn.setStyleSheet(StyleHelper.get_primary_button_style())
+        button_row = QHBoxLayout()
+        button_row.addStretch()
+        button_row.addWidget(close_btn)
+        layout.addLayout(button_row)
         dlg.exec()
 
     @Slot()
@@ -1641,6 +2009,7 @@ class LLMGenerationWidget(QWidget):
                 "3. If the issue persists, save your work and restart",
             )
             return
+        self._sync_context_controls()
 
         # Reuse same logic as generate to ensure accuracy
         # Validate custom prompt
@@ -1662,12 +2031,18 @@ class LLMGenerationWidget(QWidget):
         builder = PromptBuilder(system_prompt=self._get_system_prompt())
         context_str = builder.build_context_string(context)
         user_prompt = builder.substitute_variables(user_prompt, context)
+        object_type = str(context.get("object_type") or "")
+        authoring_enabled = object_type in {"entity", "event"} and (
+            self.world_context_cb.isChecked()
+        )
+        spatial_enabled = object_type != "event" and self.spatial_cb.isChecked()
         prompt = builder.construct_prompt(
             context_str,
             user_prompt,
             include_rag_placeholder=self.rag_cb.isChecked(),
-            include_spatial_placeholder=self.spatial_cb.isChecked(),
-            object_type=str(context.get("object_type") or ""),
+            include_spatial_placeholder=spatial_enabled,
+            include_authoring_placeholder=authoring_enabled,
+            object_type=object_type,
         )
 
         # Show dialog
@@ -1680,24 +2055,22 @@ class LLMGenerationWidget(QWidget):
 
         layout = QVBoxLayout(dlg)
 
-        # Determine DB path for RAG if enabled
-        db_path = None
-        if self.rag_cb.isChecked():
-            # Traverse parents to find the active world's immutable path.
-            curr: QObject | None = self
-            while curr:
-                if hasattr(curr, "db_path") and curr.db_path:
-                    db_path = curr.db_path
-                    break
-                parent = curr.parent()
-                if not parent:
-                    if isinstance(curr, QWidget):
-                        window = curr.window()
-                        if window != curr:
-                            curr = window
-                            continue
-                    break
-                curr = parent
+        # Resolve the active world's immutable path for enabled context sources.
+        db_path = (
+            self._resolve_db_path()
+            if self.rag_cb.isChecked() or authoring_enabled or spatial_enabled
+            else None
+        )
+
+        if authoring_enabled and db_path:
+            prompt["user"] = prompt["user"].replace(
+                "{{AUTHORING_CONTEXT}}",
+                self._preview_authoring_context(db_path, context),
+            )
+        elif authoring_enabled:
+            prompt["user"] = prompt["user"].replace(
+                "{{AUTHORING_CONTEXT}}", ""
+            )
 
         # Perform RAG search for preview
         rag_context = ""
@@ -1724,14 +2097,14 @@ class LLMGenerationWidget(QWidget):
 
             # Update the user message in the prompt dict
             replacement = (
-                f"[Context]\n{rag_context}"
+                f"[Retrieved Context]\n{rag_context}"
                 if rag_context
-                else "[Context]\n(No results found for query)"
+                else "[Retrieved Context]\n(No results found for query)"
             )
             prompt["user"] = user_msg.replace("{{RAG_CONTEXT}}", replacement)
 
         # Resolve spatial context for preview, mirroring the worker's path
-        if self.spatial_cb.isChecked() and db_path:
+        if spatial_enabled and db_path:
             spatial_text = self._preview_spatial_context(db_path, context)
             replacement = (
                 spatial_text
@@ -1748,9 +2121,14 @@ class LLMGenerationWidget(QWidget):
             f"--- USER ---\n{prompt.get('user', '')}"
         )
 
+        context_note = (
+            "Enabled context sources have been resolved and included below."
+            if self.rag_cb.isChecked() or authoring_enabled or spatial_enabled
+            else "No optional context sources are enabled."
+        )
         info = QLabel(
             "This is the prompt structure that will be sent to the LLM.\n"
-            "Real RAG context has been fetched and included below."
+            + context_note
         )
         # Re-apply text dim color manually or use a helper if available,
         # but StyleHelper.get_preview_label_style() looks appropriate or similar.

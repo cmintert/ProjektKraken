@@ -8,6 +8,7 @@ from PySide6.QtCore import QSettings
 from src.app.constants import WINDOW_SETTINGS_APP, WINDOW_SETTINGS_KEY
 from src.core.ai_generation import (
     GenerationApplyMode,
+    GenerationRequest,
     GenerationReviewResult,
     ModelReply,
     TaskIntent,
@@ -22,6 +23,105 @@ if "src.gui.widgets.llm_generation_widget" in sys.modules:
     importlib.reload(src.gui.widgets.llm_generation_widget)
 
 from src.gui.widgets.llm_generation_widget import GenerationWorker, LLMGenerationWidget
+
+
+@patch(
+    "src.gui.widgets.llm_generation_widget.format_event_authoring_context",
+    return_value="[Authoritative Context]\nKnown fact",
+)
+@patch("src.gui.widgets.llm_generation_widget.lookup_event_authoring_context")
+def test_generation_worker_injects_event_context_without_rag(
+    lookup_context,
+    _format_context,
+) -> None:
+    """World Context is independent of similarity retrieval."""
+    lookup_context.return_value = MagicMock()
+    request = GenerationRequest(
+        prompt={
+            "system": "System",
+            "user": (
+                "[Event]\nName: Eclipse\n\n{{AUTHORING_CONTEXT}}\n\n"
+                "[Task]\nRevise"
+            ),
+        },
+        max_tokens=100,
+        temperature=0.7,
+        db_path="world.kraken",
+        target_id="event-id",
+        object_type="event",
+        authoring_context_enabled=True,
+        authoring_date=42.0,
+        rag_enabled=False,
+    )
+    worker = GenerationWorker(MagicMock(), request.prompt, 100, 0.7, request=request)
+
+    worker._apply_authoring_context_to_prompt()
+    worker._apply_rag_to_prompt()
+
+    assert isinstance(worker.prompt, dict)
+    assert "[Authoritative Context]\nKnown fact" in worker.prompt["user"]
+    assert "{{AUTHORING_CONTEXT}}" not in worker.prompt["user"]
+    lookup_context.assert_called_once_with(
+        "world.kraken",
+        "event-id",
+        context_date=42.0,
+        active_map_id=None,
+    )
+
+
+@patch("src.gui.widgets.llm_generation_widget.lookup_event_authoring_context")
+def test_generation_worker_skips_disabled_event_context(lookup_context) -> None:
+    """Opting out performs no authoring-context lookup."""
+    request = GenerationRequest(
+        prompt={"system": "System", "user": "[Event]\nName: Eclipse\n\n[Task]\nX"},
+        max_tokens=100,
+        temperature=0.7,
+        db_path="world.kraken",
+        target_id="event-id",
+        object_type="event",
+        authoring_context_enabled=False,
+        rag_enabled=False,
+    )
+    worker = GenerationWorker(MagicMock(), request.prompt, 100, 0.7, request=request)
+
+    worker._apply_authoring_context_to_prompt()
+
+    lookup_context.assert_not_called()
+    assert "AUTHORING_CONTEXT" not in worker.prompt["user"]
+
+
+@patch(
+    "src.gui.widgets.llm_generation_widget.format_entity_authoring_context",
+    return_value="[Authoritative Context]\nDurable fact",
+)
+@patch("src.gui.widgets.llm_generation_widget.lookup_entity_authoring_context")
+def test_generation_worker_injects_entity_context_independently_of_spatial(
+    lookup_context,
+    _format_context,
+) -> None:
+    lookup_context.return_value = MagicMock()
+    request = GenerationRequest(
+        prompt={
+            "system": "System",
+            "user": (
+                "[Entity]\nName: Ada\n\n{{AUTHORING_CONTEXT}}\n\n"
+                "{{SPATIAL_CONTEXT}}\n\n[Task]\nRevise"
+            ),
+        },
+        db_path="world.kraken",
+        target_id="entity-id",
+        object_type="entity",
+        authoring_context_enabled=True,
+        spatial_enabled=False,
+        rag_enabled=False,
+    )
+    worker = GenerationWorker(MagicMock(), request.prompt, 100, 0.7, request=request)
+
+    worker._apply_authoring_context_to_prompt()
+
+    assert isinstance(worker.prompt, dict)
+    assert "[Authoritative Context]\nDurable fact" in worker.prompt["user"]
+    lookup_context.assert_called_once_with("world.kraken", "entity-id")
 
 
 @pytest.fixture

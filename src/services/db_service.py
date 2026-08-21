@@ -1697,6 +1697,10 @@ class DatabaseService:
         """Retrieves all tags for a specific entity."""
         return self._tag_repo.get_tags_for_entity(entity_id)
 
+    def get_entity_tag_memberships(self) -> Dict[str, List[Dict[str, Any]]]:
+        """Return all Entity-to-tag memberships for read-side projections."""
+        return self._tag_repo.get_entity_tag_memberships()
+
     def get_events_by_tag(self, tag_name: str) -> List[Event]:
         """Retrieves all events that have a specific tag."""
         return self._tag_repo.get_events_by_tag(tag_name)

@@ -80,6 +80,8 @@ class DatabaseWorker(QObject):
     )  # tags, rel_types, attr_keys, entity_types
 
     event_details_loaded = Signal(Event, list, list)  # Event, relations, incoming
+    authoring_context_loaded = Signal(str, str, float, str, dict)
+    entity_authoring_context_loaded = Signal(str, str, dict)
     entity_details_loaded = Signal(Entity, list, list)  # Entity, relations, incoming
     attachments_loaded = Signal(
         str, str, list
@@ -479,6 +481,48 @@ class DatabaseWorker(QObject):
             logger.error(f"Failed to load event details: {traceback.format_exc()}")
             self.error_occurred.emit(f"Failed to load event {event_id}")
 
+    @Slot(str, str, float, str)
+    def load_event_authoring_context(
+        self,
+        request_id: str,
+        event_id: str,
+        context_date: float,
+        active_map_id: str,
+    ) -> None:
+        """Build and emit one serialized Event authoring-context snapshot."""
+        if self.db_service is None:
+            self.authoring_context_loaded.emit(
+                request_id, event_id, context_date, active_map_id, {}
+            )
+            return
+        try:
+            from src.services.authoring_context_builder import AuthoringContextBuilder
+
+            self.db_service.ensure_fresh_view()
+            with self.db_service.transaction():
+                context = AuthoringContextBuilder(
+                    self.db_service,
+                    world_root=Path(self.db_path).resolve().parent,
+                ).build_event_context(
+                    event_id,
+                    context_date=context_date,
+                    active_map_id=active_map_id or None,
+                )
+            self.authoring_context_loaded.emit(
+                request_id,
+                event_id,
+                context_date,
+                active_map_id,
+                context.to_dict() if context is not None else {},
+            )
+        except Exception:
+            logger.error(
+                "Failed to load Event authoring context: %s", traceback.format_exc()
+            )
+            self.authoring_context_loaded.emit(
+                request_id, event_id, context_date, active_map_id, {}
+            )
+
     @Slot(str)
     def load_entity_details(self, entity_id: str) -> None:
         """Loads entity details and sends them back."""
@@ -505,6 +549,35 @@ class DatabaseWorker(QObject):
         except Exception:
             logger.error(f"Failed to load entity details: {traceback.format_exc()}")
             self.error_occurred.emit(f"Failed to load entity {entity_id}")
+
+    @Slot(str, str)
+    def load_entity_authoring_context(
+        self, request_id: str, entity_id: str
+    ) -> None:
+        """Build and emit one serialized Entity authoring-context snapshot."""
+        if self.db_service is None:
+            self.entity_authoring_context_loaded.emit(request_id, entity_id, {})
+            return
+        try:
+            from src.services.authoring_context_builder import AuthoringContextBuilder
+
+            self.db_service.ensure_fresh_view()
+            with self.db_service.transaction():
+                context = AuthoringContextBuilder(
+                    self.db_service,
+                    world_root=Path(self.db_path).resolve().parent,
+                ).build_entity_context(entity_id)
+            self.entity_authoring_context_loaded.emit(
+                request_id,
+                entity_id,
+                context.to_dict() if context is not None else {},
+            )
+        except Exception:
+            logger.error(
+                "Failed to load Entity authoring context: %s",
+                traceback.format_exc(),
+            )
+            self.entity_authoring_context_loaded.emit(request_id, entity_id, {})
 
     @Slot(str, str)
     def load_attachments(self, owner_type: str, owner_id: str) -> None:

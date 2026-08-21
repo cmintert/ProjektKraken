@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-08-20
-**Commit:** 340453e4
+**Last Updated:** 2026-08-21
+**Commit:** 5f804da5
 ---
 
 # Changelog
@@ -13,6 +13,13 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-08-21)* **Editor / World Context**: Added deterministic, bounded Event
+  and Entity context inspectors with navigable chronology, relationships,
+  explicit references, public tags, map facts, co-appearances, and omission
+  notices.
+- *(2026-08-21)* **AI / World Context**: Added independently configurable
+  authoritative World Context, exact prompt previews, and review-time guards
+  that keep generated Event and Entity descriptions free of explicit dates.
 - *(2026-08-20)* **Maps / Marker Icons**: Added stable icon definitions, a
   bundled manifest, icon-default sizing provenance, and human-readable picker
   entries.
@@ -30,6 +37,11 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-21)* **Maps / Historical Context**: Unified dated raster selection
+  and resolved moving markers at their historical trajectory positions before
+  producing authoritative spatial facts.
+- *(2026-08-21)* **Editor / Context Styling**: Kept Context links, expansion,
+  backgrounds, and scrolling compact and synchronized with the active theme.
 - *(2026-08-20)* **CI / Linting**: Fixed repository-wide Ruff failures in
   documentation and maintenance scripts so the GitHub lint workflow matches
   local verification.
@@ -59,6 +71,13 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-21)* **AI / Description Policy**: Updated bundled prompts,
+  generation review, documentation, and regression coverage so generated
+  descriptions omit explicit dates while timeline metadata remains available
+  as factual input.
+- *(2026-08-21)* **Testing / World Context**: Added builder, worker, stale-result,
+  inspector, navigation, prompt, spatial-history, and date-policy regression
+  coverage.
 - *(2026-08-20)* **Maps / Marker Icons**: Made stable IDs the sole persisted
   icon reference for markers and Visual Lexicon entries, with deterministic
   IDs for imported project icons and catalog-only path resolution at rendering

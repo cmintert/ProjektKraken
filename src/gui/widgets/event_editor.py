@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.core.ai_generation import GenerationReviewResult, apply_reviewed_generation
+from src.core.authoring_context import EventAuthoringContext
 from src.core.events import Event
 from src.core.summary_data import (
     SummaryData,
@@ -52,6 +53,7 @@ from src.gui.mixins.editor_mixin import BaseEditorMixin
 from src.gui.utils.icon_loader import load_icon
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
+from src.gui.widgets.authoring_context_widget import AuthoringContextWidget
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.gallery_widget import GalleryWidget
 from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
@@ -113,6 +115,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
     current_data_changed = Signal(dict)
     completion_prefix_changed = Signal(str)
     create_new_requested = Signal()
+    authoring_context_refresh_requested = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         """Initializes the editor widget with form fields.
@@ -271,6 +274,9 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         """Connect editor fields to dirty tracking and live preview."""
         self.name_edit.textChanged.connect(self._on_field_changed)
         self.temporal_widget.start_changed.connect(lambda _value: self._on_field_changed())
+        self.temporal_widget.start_changed.connect(
+            lambda _value: self.authoring_context_refresh_requested.emit()
+        )
         self.temporal_widget.duration_changed.connect(
             lambda _value: self._on_field_changed()
         )
@@ -322,6 +328,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
 
     def _build_secondary_tabs(self, parent: QWidget | None) -> None:
         """Build tags, relations, gallery, attributes, and sheet tabs."""
+        self._build_context_tab()
         self._build_tags_tab()
         self.tab_relations = QWidget()
         self._setup_relations_tab()
@@ -333,6 +340,22 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self._build_gallery_tab(parent)
         self._build_attributes_tab()
         self._build_sheet_tab()
+
+    def _build_context_tab(self) -> None:
+        """Build the read-only Event authoring-context tab."""
+        self.tab_context = QWidget()
+        layout = QVBoxLayout(self.tab_context)
+        StyleHelper.apply_no_margins(layout)
+        self.authoring_context = AuthoringContextWidget()
+        self.authoring_context.navigate_requested.connect(
+            self.navigate_to_relation.emit
+        )
+        layout.addWidget(self.authoring_context)
+        self.inspector.add_tab(
+            self.tab_context,
+            "Context",
+            "What Kraken knows while writing this Event",
+        )
 
     def _build_tags_tab(self) -> None:
         """Build the event tags tab."""
@@ -932,6 +955,8 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             self._content_widget.hide()
             self.set_dirty(False)
             self.gallery.set_owner("", "")
+            self.authoring_context.clear_context()
+            self.authoring_context_refresh_requested.emit()
             return
 
         self._reset_pending_summary()
@@ -972,6 +997,31 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             self._is_loading = False
 
         self._update_raster_appearances(maps_data or [])
+        self.authoring_context_refresh_requested.emit()
+
+    @property
+    def current_event_id(self) -> str | None:
+        """Return the Event currently shown by the editor."""
+        return self._current_event_id
+
+    def set_authoring_context_loading(self) -> None:
+        """Show the Context tab's loading state."""
+        self.authoring_context.set_loading()
+
+    def clear_authoring_context(self) -> None:
+        """Clear the Context tab when no Event is selected."""
+        self.authoring_context.clear_context()
+
+    def set_authoring_context_unavailable(self) -> None:
+        """Show a non-fatal context lookup failure."""
+        self.authoring_context.set_unavailable()
+
+    def set_authoring_context(self, context: EventAuthoringContext) -> None:
+        """Render a validated Event context snapshot."""
+        self.authoring_context.set_context(
+            context,
+            date_label=self.temporal_widget.get_formatted_start_text(),
+        )
 
     def _update_raster_appearances(self, maps_data: list) -> None:
         """Refresh the Raster Maps panel for the current event.
@@ -1261,12 +1311,14 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.inject_menu.clear()
 
         action_dialog = self.inject_menu.addAction("Open Inject Dialog...")
-        action_dialog.triggered.connect(self._open_inject_dialog)
+        if action_dialog is not None:
+            action_dialog.triggered.connect(self._open_inject_dialog)
 
         self.inject_menu.addSeparator()
 
         action_save_tmpl = self.inject_menu.addAction("Save Selection as Template...")
-        action_save_tmpl.triggered.connect(self._open_create_template_dialog)
+        if action_save_tmpl is not None:
+            action_save_tmpl.triggered.connect(self._open_create_template_dialog)
 
     def _open_inject_dialog(self) -> None:
         """Open the Fast Inject dialog for the current event.
@@ -1372,8 +1424,10 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         remove_action = menu.addAction("Remove")
         rel_data = item.data(Qt.ItemDataRole.UserRole) or {}
         is_automatic = rel_data.get("rel_type") == "mentions"
-        edit_action.setEnabled(not is_automatic)
-        remove_action.setEnabled(not is_automatic)
+        if edit_action is not None:
+            edit_action.setEnabled(not is_automatic)
+        if remove_action is not None:
+            remove_action.setEnabled(not is_automatic)
         action = menu.exec(target_list.mapToGlobal(pos))
 
         if action == remove_action:
@@ -1544,6 +1598,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
             "existing_description": self.desc_edit.toPlainText(),
             "object_id": self._current_event_id or "",
             "object_type": "event",
+            "authoring_date": self.temporal_widget.get_start(),
         }
 
         formatted_date = self.temporal_widget.get_formatted_start_text()

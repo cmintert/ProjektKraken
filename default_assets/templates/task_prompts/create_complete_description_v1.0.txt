@@ -9,7 +9,7 @@ created: 2026-07-22
 tags: [create, description, worldbuilding]
 ---
 
-Write a self-contained description of {name} using only facts present in the supplied item data and retrieved or spatial context. Establish what it is and summarize its known distinctive qualities and significance. Preserve all supplied names, dates, uncertainty, Markdown, and [[Wiki Links]].
+Write a self-contained description of {name} using only facts present in the supplied item data and retrieved or spatial context. Establish what it is and summarize its known distinctive qualities and significance. Preserve all supplied names, uncertainty, Markdown, and [[Wiki Links]], but omit explicit dates while retaining the stable underlying facts.
 
 Do not invent proper nouns, origins, causes, durations, consequences, beliefs, relationships, locations, organizations, or reactions. Never add a named person, place, event, deity, or [[Wiki Link]] that is absent from the supplied context. When the context is sparse, write a short neutral description rather than filling gaps with new canon.
 

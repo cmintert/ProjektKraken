@@ -9,7 +9,7 @@ created: 2026-07-22
 tags: [condense, concise, description]
 ---
 
-Condense the existing description of {name} to its essential version. Return the complete condensed description. Preserve all important facts, proper names, dates, deliberate uncertainty, Markdown elements, and [[Wiki Links]]. Remove repetition, secondary detail, and padding without changing meaning or introducing new canon.
+Condense the existing description of {name} to its essential version. Return the complete condensed description. Preserve all important facts, proper names, deliberate uncertainty, Markdown elements, and [[Wiki Links]], but remove explicit dates while retaining their stable underlying facts. Remove repetition, secondary detail, and padding without changing meaning or introducing new canon.
 
 SOURCE DESCRIPTION — copy its Markdown markers and [[Wiki Links]] verbatim into the condensed version:
 {description}

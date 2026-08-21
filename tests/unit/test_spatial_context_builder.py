@@ -7,6 +7,7 @@ in isolation. MapRepository is mocked throughout; no database is required.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -524,6 +525,119 @@ def test_raster_sampling_uses_dated_vector_anchor(tmp_path: Path) -> None:
 
     assert base_result is not None and "Biome: Tundra" in base_result
     assert dated_result is not None and "Biome: Desert" in dated_result
+
+
+def test_raster_sampling_uses_latest_snapshot_at_or_before_date(
+    tmp_path: Path,
+) -> None:
+    base_path = tmp_path / "base.png"
+    snapshot_path = tmp_path / "snapshot.png"
+    PilImage.fromarray(np.full((4, 4), 1, dtype=np.uint8), mode="L").save(
+        base_path
+    )
+    PilImage.fromarray(np.full((4, 4), 3, dtype=np.uint8), mode="L").save(
+        snapshot_path
+    )
+    marker = _make_marker(marker_id="center")
+    raster_meta = {
+        "node_id": "raster-1",
+        "file_path": base_path.name,
+        "mode": "discrete",
+        "snapshots": {"10": snapshot_path.name},
+        "value_entity_map": {
+            "mode": "exact",
+            "mappings": [
+                {"id": "a", "label": "Tundra", "value": 1},
+                {"id": "c", "label": "Desert", "value": 3},
+            ],
+        },
+    }
+    tree = _layer_tree_with_marker(marker.id)
+    tree.children.append(
+        MapLayerNode(name="Biome", layer_type="raster", id="raster-1")
+    )
+    map_obj = _make_map(
+        layers=tree, attributes={"raster_layers": [raster_meta]}
+    )
+    repo = MagicMock()
+    repo.get_marker_by_composite.return_value = marker
+    repo.get_map.return_value = map_obj
+    repo.get_markers_by_map.return_value = [marker]
+    builder = SpatialContextBuilder(repo, world_root=tmp_path)
+
+    before = builder.build(marker.object_id, marker.object_type, "map-1", 9.0)
+    after = builder.build(marker.object_id, marker.object_type, "map-1", 10.0)
+
+    assert before is not None and "Biome: Tundra" in before
+    assert after is not None and "Biome: Desert" in after
+
+
+def test_moving_marker_uses_interpolated_historical_position(
+    tmp_path: Path,
+) -> None:
+    raster_path = _write_discrete_raster(tmp_path)
+    marker = _make_marker(x=0.1, y=0.5, marker_id="moving")
+    raster_meta = {
+        "node_id": "raster-1",
+        "file_path": raster_path.name,
+        "mode": "discrete",
+        "value_entity_map": {
+            "mode": "exact",
+            "mappings": [
+                {"id": "a", "label": "Tundra", "value": 1},
+                {"id": "c", "label": "Desert", "value": 3},
+            ],
+        },
+    }
+    tree = _layer_tree_with_marker(marker.id)
+    tree.children.append(
+        MapLayerNode(name="Biome", layer_type="raster", id="raster-1")
+    )
+    map_obj = _make_map(
+        layers=tree, attributes={"raster_layers": [raster_meta]}
+    )
+    repo = MagicMock()
+    repo.get_marker_by_composite.return_value = marker
+    repo.get_map.return_value = map_obj
+    repo.get_markers_by_map.return_value = [marker]
+    trajectory_repo = MagicMock()
+    trajectory_repo.get_marker_trajectory_snapshot.return_value = {
+        "trajectory": json.dumps(
+            {
+                "type": "MovingPoint",
+                "coordinates": [[0.1, 0.5], [0.8, 0.5]],
+                "datetimes": [0.0, 10.0],
+            }
+        ),
+        "properties": "{}",
+    }
+    builder = SpatialContextBuilder(
+        repo,
+        world_root=tmp_path,
+        trajectory_repo=trajectory_repo,
+    )
+
+    result = builder.build(marker.object_id, marker.object_type, "map-1", 10.0)
+
+    assert result is not None and "Biome: Desert" in result
+
+
+def test_malformed_trajectory_omits_spatial_anchor() -> None:
+    marker = _make_marker(marker_id="moving")
+    map_obj = _make_map(
+        layers=_layer_tree_with_marker(marker.id, group_notes="Useful")
+    )
+    repo = MagicMock()
+    repo.get_marker_by_composite.return_value = marker
+    repo.get_map.return_value = map_obj
+    trajectory_repo = MagicMock()
+    trajectory_repo.get_marker_trajectory_snapshot.return_value = {
+        "trajectory": "not-json",
+        "properties": "{}",
+    }
+    builder = SpatialContextBuilder(repo, trajectory_repo=trajectory_repo)
+
+    assert builder.build(marker.object_id, marker.object_type, "map-1", 10.0) is None
 
 
 def test_raster_layer_with_empty_vem_is_skipped(tmp_path: Path) -> None:

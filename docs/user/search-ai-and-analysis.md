@@ -37,6 +37,50 @@ index.
 Selecting a template does not overwrite the draft. Generated text is not
 inserted until you explicitly apply it.
 
+### World Context
+
+An Event's **Context** tab immediately shows the persisted people, places,
+mentions, nearby Events, relations, and active-map facts that Kraken can
+determine at the date currently shown in the Event editor. This view is
+read-only and deterministic: it does not call a model or infer story meaning.
+Use **More** to reveal the rest of the bounded snapshot and any notices about
+facts omitted by display limits. Select a linked name to navigate to it.
+
+**World Context** is enabled by default when generating Event text. It sends
+the same bounded factual snapshot to the model, evaluated at the Event's draft
+date. **Retrieved Context** is separate: it uses similarity search against the
+AI index and can be enabled or disabled independently. Event World Context
+already includes map facts at the Event date, so Event prompts do not also use
+the timeline-playhead spatial block. Entity spatial generation remains based
+on the playhead.
+
+After generation, choose **Show** beside World Context to inspect the exact
+authoritative block sent to the provider. Disable **World Context** when you
+want the model to receive only the Event itself and any independently enabled
+retrieved context.
+
+An Entity's **Context** tab answers what Kraken durably knows about that Entity:
+public structured attributes and tags, incoming and outgoing relations, Event
+appearances with their authored roles, explicit wiki-link references, temporal
+history, map placement and ancestry, shared Event appearances, authored image
+captions, and weaker shared-tag or shared-map associations. Weaker associations
+are labelled as evidence rather than relationships. Private attributes whose
+names begin with an underscore, sheet layout, generated summaries, raw image
+data, and inferred prose associations are never included. Entity Context is not
+tied to the timeline playhead. Date-bounded relations are shown as history
+rather than asserted as the Entity's current state. Entity World Context uses
+this same bounded snapshot during generation. Optional Entity spatial context
+remains a separate playhead-based source.
+
+Generated Event and Entity descriptions cannot contain explicit dates. Kraken
+still uses timeline dates to select and organize factual context, but the model
+must express the stable fact without calendar dates, years, era-qualified years,
+or raw lore-date numbers. If a generated response contains one, the review
+window identifies it and keeps **Replace** and **Append** disabled until it is
+removed. Relative wording such as “later” or “after the siege” remains allowed.
+This guard applies only to AI-reviewed output; manually written descriptions are
+not blocked.
+
 ## Manage item summaries
 
 Expand **Summary** in an event or entity editor to generate a compact overview.

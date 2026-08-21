@@ -46,6 +46,9 @@ class AppCoordinator(QObject):
         """
         super().__init__(parent=main_window)
 
+        from src.app.coordinators.authoring_context_coordinator import (
+            AuthoringContextCoordinator,
+        )
         from src.app.coordinators.backup_coordinator import BackupCoordinator
         from src.app.coordinators.context_tag_coordinator import ContextTagCoordinator
         from src.app.coordinators.data_coordinator import DataCoordinator
@@ -66,6 +69,7 @@ class AppCoordinator(QObject):
         )
 
         self.context_tags = ContextTagCoordinator(main_window)
+        self.authoring_context = AuthoringContextCoordinator(main_window)
         self.data = DataCoordinator(main_window)
         self.time = TimeCoordinator(main_window)
         self.editor = EditorCoordinator(main_window)
@@ -77,7 +81,7 @@ class AppCoordinator(QObject):
         self.feature_geometry = FeatureGeometryCoordinator(main_window)
 
         self.main_window = main_window
-        logger.debug("AppCoordinator initialized with 10 coordinators")
+        logger.debug("AppCoordinator initialized with 11 coordinators")
 
     def validate_world(self, editorial_checks: bool = False) -> str:
         """Request world validation on the DatabaseWorker thread.

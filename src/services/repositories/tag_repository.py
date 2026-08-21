@@ -361,6 +361,25 @@ class TagRepository(BaseRepository):
         rows = cursor.fetchall()
         return [dict(row) for row in rows]
 
+    def get_entity_tag_memberships(self) -> Dict[str, List[Dict[str, Any]]]:
+        """Return every Entity's public tags in one deterministic query."""
+        if not self._connection:
+            raise RuntimeError("Database connection not initialized")
+        cursor = self._connection.execute(
+            """
+            SELECT et.entity_id, t.id, t.name, t.created_at
+            FROM entity_tags et
+            INNER JOIN tags t ON t.id = et.tag_id
+            ORDER BY et.entity_id, lower(t.name), t.id
+            """
+        )
+        result: Dict[str, List[Dict[str, Any]]] = {}
+        for row in cursor.fetchall():
+            data = dict(row)
+            entity_id = str(data.pop("entity_id"))
+            result.setdefault(entity_id, []).append(data)
+        return result
+
     def get_events_by_tag(self, tag_name: str) -> List[Event]:
         """Retrieves all events that have a specific tag.
 

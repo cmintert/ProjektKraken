@@ -103,8 +103,8 @@ class RasterLayerState:
             resolution=(int(raw_resolution[0]), int(raw_resolution[1])),
             mode=str(data.get("mode", "discrete")),
             snapshots=snapshots,
-            color_map=dict(data.get("color_map", {})),
-            value_entity_map=dict(data.get("value_entity_map", {})),
+            color_map=dict(data.get("color_map") or {}),
+            value_entity_map=dict(data.get("value_entity_map") or {}),
             schema_version=schema_version,
             extra={key: value for key, value in data.items() if key not in known},
             _legacy_raw=(

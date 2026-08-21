@@ -282,6 +282,24 @@ class TestRasterProbeResolution:
         assert len(emitted) == 0, "No command when no map selected"
 
 
+def test_historical_raster_selection_uses_canonical_state_resolver(qapp) -> None:
+    """Map rendering follows the same latest-at-or-before snapshot rule."""
+    handler, _, _ = _make_handler()
+    metadata = {
+        "node_id": "node-456",
+        "file_path": "rasters/base.png",
+        "mode": "discrete",
+        "snapshots": {
+            "5": "rasters/five.png",
+            "10": "rasters/ten.png",
+        },
+    }
+
+    assert handler._find_best_snapshot_path(metadata, 4.0) == "rasters/base.png"
+    assert handler._find_best_snapshot_path(metadata, 9.0) == "rasters/five.png"
+    assert handler._find_best_snapshot_path(metadata, 10.0) == "rasters/ten.png"
+
+
 # ── Tests: no main-thread DB access in raster loading ─────────────
 
 

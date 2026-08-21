@@ -24,9 +24,12 @@ from src.core.ai_generation import (
     GenerationReviewResult,
     ModelReply,
 )
+from src.core.description_date_policy import find_description_dates
 from src.gui.utils.style_helper import StyleHelper
 
 logger = logging.getLogger(__name__)
+
+_DATE_WARNING_EXCERPT_LIMIT = 3
 
 
 # Backwards-compatible import for callers and existing extensions.
@@ -45,6 +48,9 @@ class GenerationReviewDialog(QDialog):
         generated_text: str,
         parent: Optional[QWidget] = None,
         reply: ModelReply | None = None,
+        month_names: tuple[str, ...] = (),
+        era_names: tuple[str, ...] = (),
+        known_date_values: tuple[float, ...] = (),
     ) -> None:
         """Initialize the generation review dialog.
 
@@ -61,6 +67,9 @@ class GenerationReviewDialog(QDialog):
 
         # State
         self.reply = reply
+        self._month_names = month_names
+        self._era_names = era_names
+        self._known_date_values = known_date_values
         self.action: Optional[GenerationApplyMode] = None
         self.rating: Optional[int] = None  # 1 = thumbs up, -1 = thumbs down
         self.comment: Optional[str] = None
@@ -112,6 +121,12 @@ class GenerationReviewDialog(QDialog):
         self.text_edit.setPlainText(generated_text)
         self.text_edit.setStyleSheet(StyleHelper.get_input_field_style())
         main_layout.addWidget(self.text_edit, stretch=1)
+
+        self.date_warning = QLabel()
+        self.date_warning.setWordWrap(True)
+        self.date_warning.setStyleSheet(StyleHelper.get_error_label_style())
+        self.date_warning.hide()
+        main_layout.addWidget(self.date_warning)
 
         # Rating section
         rating_layout = QHBoxLayout()
@@ -173,6 +188,38 @@ class GenerationReviewDialog(QDialog):
         buttons_layout.addWidget(self.replace_btn)
 
         main_layout.addLayout(buttons_layout)
+        self.text_edit.textChanged.connect(self._validate_date_policy)
+        self._validate_date_policy()
+
+    @Slot()
+    def _validate_date_policy(self) -> bool:
+        """Update apply controls from the generated-description date rule."""
+        violations = find_description_dates(
+            self.text_edit.toPlainText(),
+            month_names=self._month_names,
+            era_names=self._era_names,
+            known_date_values=self._known_date_values,
+        )
+        valid = not violations
+        self.append_btn.setEnabled(valid)
+        self.replace_btn.setEnabled(valid)
+        if valid:
+            self.date_warning.clear()
+            self.date_warning.hide()
+        else:
+            excerpts = ", ".join(
+                f'“{item.text}”'
+                for item in violations[:_DATE_WARNING_EXCERPT_LIMIT]
+            )
+            suffix = (
+                "…" if len(violations) > _DATE_WARNING_EXCERPT_LIMIT else ""
+            )
+            self.date_warning.setText(
+                "Descriptions cannot contain explicit dates. Remove "
+                f"{excerpts}{suffix} before applying."
+            )
+            self.date_warning.show()
+        return valid
 
     def get_text(self) -> str:
         """Get the current text from the editor.
@@ -231,6 +278,8 @@ class GenerationReviewDialog(QDialog):
     @Slot()
     def _on_replace_clicked(self) -> None:
         """Handle Replace button click."""
+        if not self._validate_date_policy():
+            return
         self.action = GenerationApplyMode.REPLACE
         logger.info("User chose to replace description with generated content")
         self.accept()
@@ -238,6 +287,8 @@ class GenerationReviewDialog(QDialog):
     @Slot()
     def _on_append_clicked(self) -> None:
         """Handle Append button click."""
+        if not self._validate_date_policy():
+            return
         self.action = GenerationApplyMode.APPEND
         logger.info("User chose to append generated content to description")
         self.accept()

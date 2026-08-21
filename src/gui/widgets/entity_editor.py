@@ -25,12 +25,14 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QScrollArea,
     QSizePolicy,
+    QTabWidget,
     QToolButton,
     QVBoxLayout,
     QWidget,
 )
 
 from src.core.ai_generation import GenerationReviewResult, apply_reviewed_generation
+from src.core.authoring_context import EntityAuthoringContext
 from src.core.entities import Entity
 from src.core.summary_data import (
     SummaryData,
@@ -47,6 +49,7 @@ from src.gui.mixins.autosave_mixin import AutoSaveManager
 from src.gui.mixins.editor_mixin import BaseEditorMixin
 from src.gui.utils.style_helper import StyleHelper
 from src.gui.widgets.attribute_editor import AttributeEditorWidget
+from src.gui.widgets.authoring_context_widget import AuthoringContextWidget
 from src.gui.widgets.empty_state_widget import EmptyStateWidget
 from src.gui.widgets.gallery_widget import GalleryWidget
 from src.gui.widgets.llm_generation_widget import LLMGenerationWidget
@@ -97,12 +100,14 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
     update_relation_requested = Signal(str, str, str, dict)
     link_clicked = Signal(str)
     navigate_to_relation = Signal(str)
+    navigate_to_map = Signal(str)
     dirty_changed = Signal(bool)
     return_to_present_requested = Signal()
     inject_ui_requested = Signal(str)
     summary_generation_requested = Signal(object)
     completion_prefix_changed = Signal(str)
     create_new_requested = Signal()
+    authoring_context_refresh_requested = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initializes the EntityEditorWidget.
@@ -302,11 +307,47 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
 
     def _build_secondary_tabs(self, parent: Optional[QWidget]) -> None:
         """Build tags, relations, gallery, attributes, and sheet tabs."""
+        self._build_context_tab()
         self._build_tags_tab()
         self._build_relations_tab()
         self._build_gallery_tab(parent)
         self._build_attributes_tab()
         self._build_sheet_tab()
+
+    def _build_context_tab(self) -> None:
+        """Build the read-only durable World Context tab."""
+        self.tab_context = QWidget()
+        layout = QVBoxLayout(self.tab_context)
+        StyleHelper.apply_no_margins(layout)
+        self.authoring_context = AuthoringContextWidget(object_label="Entity")
+        self.authoring_context.navigate_requested.connect(
+            self.navigate_to_relation.emit
+        )
+        self.authoring_context.map_requested.connect(self.navigate_to_map.emit)
+        self.authoring_context.attachment_requested.connect(
+            self._show_context_attachment
+        )
+        layout.addWidget(self.authoring_context)
+        self.inspector.add_tab(
+            self.tab_context,
+            "Context",
+            "View deterministic persisted facts known about this Entity",
+        )
+
+    @Slot(str)
+    def _show_context_attachment(self, attachment_id: str) -> None:
+        """Open the Gallery tab and select a captioned attachment."""
+        for tabs in self.inspector.findChildren(QTabWidget):
+            index = tabs.indexOf(self.tab_gallery)
+            if index >= 0:
+                tabs.setCurrentIndex(index)
+                break
+        for index in range(self.gallery.list_widget.count()):
+            item = self.gallery.list_widget.item(index)
+            if item.data(Qt.ItemDataRole.UserRole) == attachment_id:
+                self.gallery.list_widget.setCurrentItem(item)
+                self.gallery.list_widget.scrollToItem(item)
+                break
 
     def _build_tags_tab(self) -> None:
         """Build the entity tags tab."""
@@ -782,6 +823,7 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self._content_widget.hide()
             self.set_dirty(False)
             self.gallery.set_owner("", "")
+            self.clear_authoring_context()
             return
 
         self._is_loading = True
@@ -829,6 +871,28 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
             self._is_loading = False
 
         self._update_raster_appearances(maps_data or [])
+        self.authoring_context_refresh_requested.emit()
+
+    @property
+    def current_entity_id(self) -> str | None:
+        """Return the Entity currently shown by the editor."""
+        return self._current_entity_id
+
+    def set_authoring_context_loading(self) -> None:
+        """Show the Context tab's loading state."""
+        self.authoring_context.set_loading()
+
+    def clear_authoring_context(self) -> None:
+        """Clear the Context tab when no Entity is selected."""
+        self.authoring_context.clear_context()
+
+    def set_authoring_context_unavailable(self) -> None:
+        """Show a non-fatal context lookup failure."""
+        self.authoring_context.set_unavailable()
+
+    def set_authoring_context(self, context: EntityAuthoringContext) -> None:
+        """Render a validated Entity context snapshot."""
+        self.authoring_context.set_entity_context(context)
 
     def _update_raster_appearances(self, maps_data: list) -> None:
         """Refresh the Raster Maps panel for the current entity.

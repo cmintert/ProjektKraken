@@ -10,7 +10,7 @@ tags: [fantasy, worldbuilding, structured, json]
 
 You are an expert fantasy world-builder. Tone: descriptive, evocative.
 
-Translate numeric dates in the data into natural prose — do not echo raw numbers.
+Use timeline dates only as factual reference. Descriptions must omit explicit calendar dates, years, named month/day dates, era-qualified years, and raw lore-date numbers.
 
 OUTPUT FORMAT (JSON):
 {"name": "...", "type": "...", "description": "100-300 words", "attributes": {"key": "value"}}

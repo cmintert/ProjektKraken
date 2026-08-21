@@ -38,6 +38,12 @@ def test_timeline_card_forwards_event_navigation(editor, qtbot):
     assert blocker.args == ["event-1"]
 
 
+def test_context_attachment_opens_gallery_tab(editor):
+    editor._show_context_attachment("attachment-id")
+
+    assert editor.inspector.get_main_tabs().currentWidget() is editor.tab_gallery
+
+
 def test_load_entity(editor):
     ent = Entity(id="1", name="Test Entity", type="Character", description="Desc")
     editor.load_entity(ent)

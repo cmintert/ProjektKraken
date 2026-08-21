@@ -26,21 +26,30 @@ Design invariants
 
 from __future__ import annotations
 
+import json
 import logging
 import math
 import sqlite3
+from dataclasses import replace
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple
 
 from src.core.map import Map, MapLayerNode, resolve_layer_temporal_validity
 from src.core.map_constants import MAP_DEFAULT_WIDTH_METERS, MAP_ROLE_MASTER
+from src.core.map_state import RasterLayerState
 from src.core.marker import Marker
+from src.core.trajectory import (
+    apply_trajectory_metadata,
+    interpolate_position,
+    mfjson_to_keyframes,
+)
 from src.services.map_nesting_service import MapNestingService
 from src.services.raster_image_analysis import sample_raster_semantic
 from src.services.repositories.feature_geometry_repository import (
     FeatureGeometryRepository,
 )
 from src.services.repositories.map_repository import MapRepository
+from src.services.repositories.trajectory_repository import TrajectoryRepository
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +92,7 @@ class SpatialContextBuilder:
         name_lookup: Optional[NameLookup] = None,
         nesting_service: Optional[MapNestingService] = None,
         feature_geometry_repo: Optional[FeatureGeometryRepository] = None,
+        trajectory_repo: Optional[TrajectoryRepository] = None,
     ) -> None:
         """Initialise the builder.
 
@@ -105,6 +115,7 @@ class SpatialContextBuilder:
         self._name_lookup = name_lookup
         self._nesting_service = nesting_service
         self._feature_geometry_repo = feature_geometry_repo
+        self._trajectory_repo = trajectory_repo
 
     def build(
         self,
@@ -141,13 +152,15 @@ class SpatialContextBuilder:
             return None
         if not self._is_temporally_valid(map_obj, marker, lore_date):
             return None
-        marker = self._resolve_marker_geometry(marker, lore_date)
+        marker = self._resolve_marker_geometry(map_obj, marker, lore_date)
+        if marker is None:
+            return None
 
         width_m = self._extract_width_meters(map_obj)
         suppress_distance = width_m is None
 
         layer_name, layer_notes = self._resolve_layer(map_obj, marker)
-        raster_facts = self._resolve_raster_facts(map_obj, marker)
+        raster_facts = self._resolve_raster_facts(map_obj, marker, lore_date)
         nearby = self._resolve_nearby(
             map_obj, marker, width_m, suppress_distance, lore_date
         )
@@ -233,7 +246,7 @@ class SpatialContextBuilder:
         return layer_name, layer_notes
 
     def _resolve_raster_facts(
-        self, map_obj: Map, marker: Marker
+        self, map_obj: Map, marker: Marker, lore_date: Optional[float]
     ) -> List[Tuple[str, str, Optional[str]]]:
         """Sample every raster layer on this map at the marker position.
 
@@ -256,7 +269,16 @@ class SpatialContextBuilder:
             vem = meta.get("value_entity_map")
             if not isinstance(vem, dict) or not vem.get("mappings"):
                 continue
-            rel_path = meta.get("file_path")
+            try:
+                state = RasterLayerState.from_dict(meta)
+                rel_path = (
+                    state.resolve_file(lore_date)
+                    if lore_date is not None
+                    else state.file_path
+                )
+            except (KeyError, TypeError, ValueError):
+                logger.warning("Skipping malformed raster metadata", exc_info=True)
+                continue
             if not rel_path:
                 continue
             abs_path = str(self._world_root / rel_path)
@@ -307,11 +329,15 @@ class SpatialContextBuilder:
                 continue
             if not self._is_temporally_valid(map_obj, other, lore_date):
                 continue
-            other = self._resolve_marker_geometry(other, lore_date)
-            dx = other.x - marker.x
-            dy = other.y - marker.y
+            resolved_other = self._resolve_marker_geometry(
+                map_obj, other, lore_date
+            )
+            if resolved_other is None:
+                continue
+            dx = resolved_other.x - marker.x
+            dy = resolved_other.y - marker.y
             dist_norm = math.sqrt(dx * dx + dy * dy)
-            candidates.append((dist_norm, other))
+            candidates.append((dist_norm, resolved_other))
 
         candidates.sort(key=lambda pair: pair[0])
 
@@ -344,16 +370,16 @@ class SpatialContextBuilder:
         ).valid
 
     def _resolve_marker_geometry(
-        self, marker: Marker, lore_date: Optional[float]
-    ) -> Marker:
+        self, map_obj: Map, marker: Marker, lore_date: Optional[float]
+    ) -> Marker | None:
         """Return a copy using its dated geometry anchor when requested."""
-        if lore_date is None or self._feature_geometry_repo is None:
+        if lore_date is None:
             return marker
         if not marker.is_path and not marker.is_region:
+            return self._resolve_trajectory_position(map_obj, marker, lore_date)
+        if self._feature_geometry_repo is None:
             return marker
         try:
-            from dataclasses import replace
-
             from src.core.feature_geometry_state import resolve_feature_geometry
 
             resolved = resolve_feature_geometry(
@@ -374,6 +400,54 @@ class SpatialContextBuilder:
                 exc_info=True,
             )
             return marker
+
+    def _resolve_trajectory_position(
+        self, map_obj: Map, marker: Marker, lore_date: float
+    ) -> Marker | None:
+        """Project a moving point to its authoritative position at a date."""
+        if self._trajectory_repo is None:
+            return marker
+        try:
+            snapshot = self._trajectory_repo.get_marker_trajectory_snapshot(
+                map_obj.id, marker.object_id
+            )
+            if snapshot is None:
+                return marker
+            raw_trajectory = json.loads(snapshot["trajectory"])
+            keyframes = mfjson_to_keyframes(raw_trajectory)
+            raw_properties: object = {}
+            if snapshot.get("properties"):
+                raw_properties = json.loads(str(snapshot["properties"]))
+            if (
+                isinstance(raw_properties, dict)
+                and "kraken_trajectory" in raw_properties
+            ):
+                enriched, segment_modes, _ = apply_trajectory_metadata(
+                    keyframes, raw_properties
+                )
+            else:
+                enriched = keyframes
+                segment_modes = {}
+            position = interpolate_position(
+                enriched,
+                lore_date,
+                segment_modes=segment_modes,
+                base_position=(marker.x, marker.y),
+            )
+            if position is None:
+                logger.warning(
+                    "Omitting spatial context for ambiguous trajectory marker %s",
+                    marker.id,
+                )
+                return None
+            return replace(marker, x=position[0], y=position[1])
+        except Exception:
+            logger.warning(
+                "Omitting spatial context for invalid trajectory marker %s",
+                marker.id,
+                exc_info=True,
+            )
+            return None
 
     def _lookup_name(self, marker: Marker) -> Optional[str]:
         """Resolve a marker's display name via injected lookup or ``label``."""
@@ -575,11 +649,13 @@ def lookup_spatial_context(
         try:
             repo = MapRepository(conn)
             feature_geometry_repo = FeatureGeometryRepository(conn)
+            trajectory_repo = TrajectoryRepository(conn)
             builder = SpatialContextBuilder(
                 repo,
                 world_root=Path(db_path).parent,
                 nesting_service=MapNestingService(),
                 feature_geometry_repo=feature_geometry_repo,
+                trajectory_repo=trajectory_repo,
             )
             return builder.build(
                 object_id, object_type, active_map_id, lore_date

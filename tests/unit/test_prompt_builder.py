@@ -14,13 +14,15 @@ class TestPromptBuilder:
         """Test that PromptBuilder falls back to DEFAULT_SYSTEM_PROMPT."""
         builder = PromptBuilder()
         result = builder.construct_prompt("ctx", "task")
-        assert result["system"] == DEFAULT_SYSTEM_PROMPT
+        assert result["system"].startswith(DEFAULT_SYSTEM_PROMPT)
+        assert "no explicit dates" in result["system"].lower()
 
     def test_custom_system_prompt(self) -> None:
         """Test that PromptBuilder uses a custom system prompt."""
         builder = PromptBuilder(system_prompt="Custom persona.")
         result = builder.construct_prompt("ctx", "task")
-        assert result["system"] == "Custom persona."
+        assert result["system"].startswith("Custom persona.")
+        assert "no explicit dates" in result["system"].lower()
 
     def test_build_context_string_basic(self) -> None:
         """Test context string with standard fields."""
@@ -127,18 +129,47 @@ class TestPromptBuilder:
         assert "[Event]" in result["user"]
         assert "[Entity]" not in result["user"]
 
-    def test_default_system_prompt_narrative_temporal(self) -> None:
-        """Test that default system prompt uses narrative-friendly temporal guidance.
+    def test_event_authoring_context_precedes_retrieved_context_and_task(
+        self,
+    ) -> None:
+        """Event prompt sections follow the authoritative ordering contract."""
+        user = PromptBuilder().construct_prompt(
+            "Name: Eclipse",
+            "Revise this",
+            include_authoring_placeholder=True,
+            include_rag_placeholder=True,
+            object_type="event",
+        )["user"]
 
-        The prompt should instruct the LLM to translate numeric dates into
-        natural language, rather than repeating raw float values.
-        """
-        assert "narrative" in DEFAULT_SYSTEM_PROMPT.lower()
-        assert (
-            "translate" in DEFAULT_SYSTEM_PROMPT.lower()
-            or "natural" in DEFAULT_SYSTEM_PROMPT.lower()
+        assert user.index("[Event]") < user.index("{{AUTHORING_CONTEXT}}")
+        assert user.index("{{AUTHORING_CONTEXT}}") < user.index("{{RAG_CONTEXT}}")
+        assert user.index("{{RAG_CONTEXT}}") < user.index("[Task]")
+        assert "{{SPATIAL_CONTEXT}}" not in user
+
+    def test_entity_context_precedes_retrieval_and_playhead_spatial(self) -> None:
+        user = PromptBuilder().construct_prompt(
+            "Name: Ada",
+            "Revise this",
+            include_authoring_placeholder=True,
+            include_rag_placeholder=True,
+            include_spatial_placeholder=True,
+            object_type="entity",
+        )["user"]
+
+        assert user.index("[Entity]") < user.index("{{AUTHORING_CONTEXT}}")
+        assert user.index("{{AUTHORING_CONTEXT}}") < user.index("{{RAG_CONTEXT}}")
+        assert user.index("{{RAG_CONTEXT}}") < user.index("{{SPATIAL_CONTEXT}}")
+        assert user.index("{{SPATIAL_CONTEXT}}") < user.index("[Task]")
+
+    def test_system_prompt_enforces_date_free_descriptions(self) -> None:
+        """Application policy is appended even to a custom persona."""
+        result = PromptBuilder(system_prompt="Custom persona").construct_prompt(
+            "ctx", "task"
         )
-        # Should NOT contain the old robotic instruction
+
+        assert "Custom persona" in result["system"]
+        assert "no explicit dates" in result["system"].lower()
+        assert "timeline dates" in DEFAULT_SYSTEM_PROMPT.lower()
         assert (
             "IMPORTANT: Time in this world is represented" not in DEFAULT_SYSTEM_PROMPT
         )

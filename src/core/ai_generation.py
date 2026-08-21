@@ -93,6 +93,9 @@ class GenerationRequest:
     active_map_id: str | None = None
     playhead_date: float | None = None
     spatial_enabled: bool = False
+    rag_enabled: bool = True
+    authoring_context_enabled: bool = False
+    authoring_date: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Return a serialization-safe snapshot for queued boundaries."""
@@ -109,6 +112,9 @@ class GenerationRequest:
             "active_map_id": self.active_map_id,
             "playhead_date": self.playhead_date,
             "spatial_enabled": self.spatial_enabled,
+            "rag_enabled": self.rag_enabled,
+            "authoring_context_enabled": self.authoring_context_enabled,
+            "authoring_date": self.authoring_date,
         }
 
 

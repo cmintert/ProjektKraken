@@ -18,11 +18,14 @@ DEFAULT_SYSTEM_PROMPT = (
     "You are an expert fantasy world-builder assisting a user in creating a "
     "rich and immersive setting. Your tone is descriptive, evocative, and "
     "consistent with high-fantasy literature.\n\n"
-    "CONTEXT: This world tracks time using a numeric calendar where whole "
-    "numbers represent days and decimals represent portions of the day "
-    "(for example, 0.5 is midday). When you encounter these numeric dates "
-    "in the data below, translate them into natural, narrative-appropriate "
-    "language — do not repeat the raw numbers in your prose."
+    "CONTEXT: This world may provide timeline dates as factual reference data."
+)
+
+DESCRIPTION_DATE_POLICY = (
+    "APPLICATION RULE: Return a timeless description with no explicit dates. "
+    "Do not write calendar dates, years, named month/day dates, era-qualified "
+    "years, or raw lore-date numbers. Preserve the stable fact by omitting the "
+    "date or using relative chronology when needed."
 )
 
 
@@ -42,7 +45,8 @@ class PromptBuilder:
                 DEFAULT_SYSTEM_PROMPT if not provided.
 
         """
-        self.system_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
+        persona = system_prompt or DEFAULT_SYSTEM_PROMPT
+        self.system_prompt = f"{persona.rstrip()}\n\n{DESCRIPTION_DATE_POLICY}"
 
     def build_context_string(self, context: Dict[str, Any]) -> str:
         """Build a formatted context string from editor context data.
@@ -77,6 +81,7 @@ class PromptBuilder:
             # Metadata keys consumed by spatial-context lookup — not LLM-facing.
             "object_id",
             "object_type",
+            "authoring_date",
         }
         context_lines.extend(
             f"{k.replace('_', ' ').title()}: {v}"
@@ -116,6 +121,7 @@ class PromptBuilder:
         user_prompt: str,
         include_rag_placeholder: bool = False,
         include_spatial_placeholder: bool = False,
+        include_authoring_placeholder: bool = False,
         object_type: str | None = None,
     ) -> Dict[str, str]:
         """Construct the final structured prompt with persona and context.
@@ -132,6 +138,8 @@ class PromptBuilder:
             include_spatial_placeholder: Whether to include the
                 {{SPATIAL_CONTEXT}} placeholder for later injection by the
                 worker.
+            include_authoring_placeholder: Whether to include the deterministic
+                {{AUTHORING_CONTEXT}} placeholder for Event generation.
             object_type: Context object type. ``entity`` and ``event`` receive
                 matching prompt headings; other values use ``Item``.
 
@@ -148,6 +156,10 @@ class PromptBuilder:
                 "event": "Event",
             }.get((object_type or "").lower(), "Item")
             user_message_parts.append(f"[{context_label}]\n{context_str}")
+
+        # -- DATA: AUTHORITATIVE CONTEXT -- (optional placeholder)
+        if include_authoring_placeholder:
+            user_message_parts.append("{{AUTHORING_CONTEXT}}")
 
         # -- DATA: RAG CONTEXT -- (optional placeholder)
         if include_rag_placeholder:

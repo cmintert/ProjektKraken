@@ -188,10 +188,40 @@ class ConnectionManager:
         """Connect signals from the data handler."""
         dh = self.window.data_handler
         dc = self.window.data_coordinator
+        refresh_context = (
+            self.window.app_coordinator.authoring_context.schedule_refresh
+        )
+        refresh_entity_context = (
+            self.window.app_coordinator.authoring_context.schedule_entity_refresh
+        )
         return self._connect_batch(
             [
                 (dh, "events_ready", dc.on_events_ready, "DataHandler"),
+                (
+                    dh,
+                    "events_ready",
+                    lambda _events: refresh_context(),
+                    "DataHandler",
+                ),
+                (
+                    dh,
+                    "events_ready",
+                    lambda _events: refresh_entity_context(),
+                    "DataHandler",
+                ),
                 (dh, "entities_ready", dc.on_entities_ready, "DataHandler"),
+                (
+                    dh,
+                    "entities_ready",
+                    lambda _entities: refresh_context(),
+                    "DataHandler",
+                ),
+                (
+                    dh,
+                    "entities_ready",
+                    lambda _entities: refresh_entity_context(),
+                    "DataHandler",
+                ),
                 (
                     dh,
                     "suggestions_update_requested",
@@ -214,9 +244,38 @@ class ConnectionManager:
                 ),
                 (
                     dh,
+                    "maps_ready",
+                    lambda _maps: refresh_context(),
+                    "DataHandler",
+                ),
+                (
+                    dh,
+                    "maps_ready",
+                    lambda _maps: refresh_entity_context(),
+                    "DataHandler",
+                ),
+                (
+                    dh,
                     "markers_ready",
                     self.window.map_handler.on_markers_ready,
                     "DataHandler",
+                ),
+                (
+                    dh,
+                    "markers_ready",
+                    lambda _markers: refresh_entity_context(),
+                    "DataHandler",
+                ),
+                (
+                    self.window.worker,
+                    "attachments_loaded",
+                    lambda owner_type, _owner_id, _items: (
+                        refresh_entity_context()
+                        if owner_type == "entity"
+                        else None
+                    ),
+                    "DatabaseWorker",
+                    Qt.ConnectionType.QueuedConnection,
                 ),
                 (
                     dh,
@@ -255,6 +314,18 @@ class ConnectionManager:
                     dh,
                     "reload_active_editor_relations",
                     dc.on_reload_active_editor_relations,
+                    "DataHandler",
+                ),
+                (
+                    dh,
+                    "reload_active_editor_relations",
+                    refresh_context,
+                    "DataHandler",
+                ),
+                (
+                    dh,
+                    "reload_active_editor_relations",
+                    refresh_entity_context,
                     "DataHandler",
                 ),
                 (
@@ -388,12 +459,12 @@ class ConnectionManager:
                         self.window.navigation_coordinator.navigate_to_entity,
                         editor_name,
                     ),
-                    (
-                        editor,
-                        "navigate_to_relation",
-                        self.window.navigation_coordinator.navigate_to_entity,
-                        editor_name,
-                    ),
+                (
+                    editor,
+                    "navigate_to_relation",
+                    self.window.navigation_coordinator.navigate_to_entity,
+                    editor_name,
+                ),
                     (
                         editor,
                         "completion_prefix_changed",
@@ -404,6 +475,12 @@ class ConnectionManager:
             )
         specs.extend(
             [
+                (
+                    self.window.entity_editor,
+                    "navigate_to_map",
+                    self.window.map_widget.select_map,
+                    "EntityEditor",
+                ),
                 (
                     self.window.event_editor,
                     "save_requested",
@@ -447,9 +524,21 @@ class ConnectionManager:
                     "EventEditor",
                 ),
                 (
+                    self.window.event_editor,
+                    "authoring_context_refresh_requested",
+                    self.window.app_coordinator.authoring_context.schedule_refresh,
+                    "EventEditor",
+                ),
+                (
                     self.window.entity_editor,
                     "create_new_requested",
                     ec.create_entity,
+                    "EntityEditor",
+                ),
+                (
+                    self.window.entity_editor,
+                    "authoring_context_refresh_requested",
+                    self.window.app_coordinator.authoring_context.schedule_entity_refresh,
                     "EntityEditor",
                 ),
             ]
@@ -647,6 +736,12 @@ class ConnectionManager:
                 (map_widget, "map_created", map_handler.create_map, "MapWidget"),
                 (map_widget, "map_deleted", map_handler.delete_map, "MapWidget"),
                 (map_widget, "map_selected", map_handler.on_map_selected, "MapWidget"),
+                (
+                    map_widget,
+                    "map_selected",
+                    self.window.app_coordinator.authoring_context.schedule_refresh,
+                    "MapWidget",
+                ),
                 (
                     map_widget,
                     "set_master_map_requested",
