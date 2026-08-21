@@ -83,6 +83,7 @@ def test_resizable_editor_field_keeps_editor_minimum_within_parent(qtbot):
 
     assert field.sizes()[0] >= minimum_width + 150
     assert sum(field.sizes()) <= field.width()
+    assert field.sizePolicy().verticalPolicy() == field.sizePolicy().Policy.Expanding
 
 
 def test_ctrl_click_emits_signal(qtbot):

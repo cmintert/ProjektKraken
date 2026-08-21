@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-21
-**Commit:** a2a6bdfc
+**Commit:** 45ec7fc2
 ---
 
 # Changelog
@@ -73,6 +73,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-21)* **Editor / Usability**: Made resizable wiki editor fields
+  expand vertically with their parent inspector while retaining their minimum
+  usable width.
 - *(2026-08-21)* **Maps / Editing UX**: Unified marker placement, path and
   region drawing, vertex editing, marker appearance, and footprint editing
   around Confirm, Cancel, Enter, and Escape without changing their atomic

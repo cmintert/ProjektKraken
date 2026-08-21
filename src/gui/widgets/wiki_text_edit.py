@@ -2456,6 +2456,10 @@ class ResizableWikiTextEditField(QSplitter):
             QSizePolicy.Policy.Expanding,
             QSizePolicy.Policy.Preferred,
         )
+        self.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
         self.setChildrenCollapsible(False)
         self.setHandleWidth(8)
         self.addWidget(editor)
