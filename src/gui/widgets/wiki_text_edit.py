@@ -41,6 +41,8 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QMenu,
+    QSizePolicy,
+    QSplitter,
     QTextEdit,
     QToolBar,
     QVBoxLayout,
@@ -2051,7 +2053,7 @@ class WikiTextEdit(QFrame):
 
     link_clicked = Signal(str)
     completion_prefix_changed = Signal(str)
-    maximum_width_changed = Signal(int)
+    minimum_width_changed = Signal(int)
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the wiki text edit wrapper widget.
@@ -2061,6 +2063,10 @@ class WikiTextEdit(QFrame):
         """
         super().__init__(parent)
         self.setObjectName("WikiTextEditWrapper")  # For debugging/styling
+        self.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
 
         # Layout Hierarchy
         main_layout = QVBoxLayout(self)
@@ -2123,7 +2129,7 @@ class WikiTextEdit(QFrame):
         self._apply_editor_width_limit()
 
     def _apply_editor_width_limit(self) -> None:
-        """Size the frame to the configured text column and visible editor chrome."""
+        """Set the minimum width for the text column and visible editor chrome."""
         typography = self.editor._typography
         character_width = QFontMetricsF(
             self.editor.document().defaultFont()
@@ -2133,16 +2139,16 @@ class WikiTextEdit(QFrame):
         scrollbar_width = self.editor.verticalScrollBar().sizeHint().width()
         frame_padding = 6
         toc_width = self.toc_widget.width() if not self.toc_widget.isHidden() else 0
-        maximum_width = (
+        minimum_width = (
             text_width
             + document_margins
             + scrollbar_width
             + frame_padding
             + toc_width
         )
-        if maximum_width != self.maximumWidth():
-            self.setMaximumWidth(maximum_width)
-            self.maximum_width_changed.emit(maximum_width)
+        if minimum_width != self.minimumWidth():
+            self.setMinimumWidth(minimum_width)
+            self.minimum_width_changed.emit(minimum_width)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Stop the child editor's worker before closing the wrapper."""
@@ -2427,3 +2433,40 @@ class WikiTextEdit(QFrame):
     def __getattr__(self, name: str) -> Any:
         """Delegate unknown attributes to the inner editor view."""
         return getattr(self.editor, name)
+
+
+class ResizableWikiTextEditField(QSplitter):
+    """A horizontally resizable field that keeps a wiki editor's reading minimum.
+
+    The editor occupies the left pane. A blank, expanding pane absorbs unused
+    form-row width, leaving the splitter handle available for the user to widen
+    the editor without resizing its parent inspector.
+    """
+
+    def __init__(
+        self,
+        editor: WikiTextEdit,
+        parent: Optional[QWidget] = None,
+    ) -> None:
+        """Initialize the field around an existing wiki editor."""
+        super().__init__(Qt.Orientation.Horizontal, parent)
+        self._editor = editor
+        self._spacer = QWidget(self)
+        self._spacer.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Preferred,
+        )
+        self.setChildrenCollapsible(False)
+        self.setHandleWidth(8)
+        self.addWidget(editor)
+        self.addWidget(self._spacer)
+        self.setStretchFactor(0, 0)
+        self.setStretchFactor(1, 1)
+        self._reset_to_minimum_width(editor.minimumWidth())
+        editor.minimum_width_changed.connect(self._reset_to_minimum_width)
+
+    @Slot(int)
+    def _reset_to_minimum_width(self, minimum_width: int) -> None:
+        """Keep the editor at least as wide as its current reading minimum."""
+        current_width, spacer_width = self.sizes()
+        self.setSizes([max(current_width, minimum_width), spacer_width])

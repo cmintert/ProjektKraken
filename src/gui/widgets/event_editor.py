@@ -69,7 +69,7 @@ from src.gui.widgets.standard_buttons import (
 from src.gui.widgets.summary_widget import SummaryWidget
 from src.gui.widgets.tag_editor import TagEditorWidget
 from src.gui.widgets.temporal_range_widget import TemporalRangeWidget
-from src.gui.widgets.wiki_text_edit import WikiTextEdit
+from src.gui.widgets.wiki_text_edit import ResizableWikiTextEditField, WikiTextEdit
 
 logger = logging.getLogger(__name__)
 
@@ -208,6 +208,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.desc_edit.completion_prefix_changed.connect(
             self.completion_prefix_changed.emit
         )
+        self.description_field = ResizableWikiTextEditField(self.desc_edit)
         self.temporal_widget = TemporalRangeWidget()
         if self._calendar_converter:
             self.temporal_widget.set_calendar_converter(self._calendar_converter)
@@ -215,7 +216,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
         self.date_edit = self.temporal_widget.date_start
         self.end_date_edit = self.temporal_widget.date_end
         self.duration_widget = self.temporal_widget.duration_widget
-        self.form_layout.addRow("Description:", self.desc_edit)
+        self.form_layout.addRow("Description:", self.description_field)
 
     def _build_summary_section(self) -> None:
         """Build the collapsible event summary section."""

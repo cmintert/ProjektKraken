@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="9.8548021mm"
+   height="11.34175mm"
+   viewBox="0 0 9.8548021 11.34175"
+   version="1.1"
+   id="svg1"
+   xml:space="preserve"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><defs
+     id="defs1" /><g
+     id="layer1"
+     transform="translate(-102.8701,-90.175139)"><g
+       style="clip-rule:evenodd;fill-rule:evenodd;stroke-width:0.866667;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;stroke-dasharray:none"
+       id="settlement-city"
+       transform="matrix(0.26458333,0,0,0.26458333,80.280837,64.096014)"><g
+         id="City"
+         style="stroke-width:0.866667;stroke-dasharray:none"><path
+           d="m 104,99 4.2,13.73 13.99,-3.23 -9.79,10.5 9.79,10.5 L 108.2,127.27 104,141 99.8,127.27 85.81,130.5 95.6,120 85.81,109.5 99.8,112.73 Z"
+           fill="#541e1e"
+           stroke="#9e4b43"
+           stroke-width="3"
+           id="path1-29"
+           style="stroke-width:0.866667;stroke-dasharray:none" /><circle
+           fill="#b94d3e"
+           stroke="#9e4b43"
+           stroke-width="3"
+           id="circle1-1"
+           style="stroke-width:0.866667;stroke-dasharray:none"
+           r="7.6977229"
+           cy="120"
+           cx="104" /></g></g></g></svg>

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-21
-**Commit:** 5f804da5
+**Commit:** 53af5417
 ---
 
 # Changelog
@@ -13,6 +13,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-08-21)* **Maps / Marker Icons**: Added a nine-level settlement icon
+  catalog from hamlets through metropolises.
 - *(2026-08-21)* **Editor / World Context**: Added deterministic, bounded Event
   and Entity context inspectors with navigable chronology, relationships,
   explicit references, public tags, map facts, co-appearances, and omission
@@ -71,6 +73,11 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-21)* **Editor / Usability**: Made Event and Entity description
+  editors resizable within their parent inspector while preserving a readable
+  minimum text width.
+- *(2026-08-21)* **Maps / Marker Icons**: Reduced bundled marker default
+  diameters from 50 px to 25 px.
 - *(2026-08-21)* **AI / Description Policy**: Updated bundled prompts,
   generation review, documentation, and regression coverage so generated
   descriptions omit explicit dates while timeline metadata remains available

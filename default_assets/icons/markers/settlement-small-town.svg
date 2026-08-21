@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="6.6145453mm"
+   height="6.6145453mm"
+   viewBox="0 0 6.6145453 6.6145453"
+   version="1.1"
+   id="svg1"
+   xml:space="preserve"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><defs
+     id="defs1" /><g
+     id="layer1"
+     transform="translate(-115.44064,-68.61586)"><g
+       style="clip-rule:evenodd;fill-rule:evenodd;stroke-width:1;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;stroke-dasharray:none"
+       id="settlement-small-town"
+       transform="matrix(0.26458333,0,0,0.26458333,91.231245,40.173133)"><g
+         id="Small_Town"
+         style="stroke-width:1;stroke-dasharray:none"><path
+           d="m 104,108 3.73,8.27 8.27,3.73 -8.27,3.73 L 104,132 100.27,123.73 92,120 l 8.27,-3.73 z"
+           fill="#541e1e"
+           stroke="#9e4b43"
+           stroke-width="3"
+           id="path1"
+           style="stroke-width:1;stroke-dasharray:none" /><circle
+           cx="104"
+           cy="120"
+           r="2.6400001"
+           fill="#7b2e2b"
+           stroke="#9e4b43"
+           stroke-width="3"
+           id="circle1-5"
+           style="stroke-width:1;stroke-dasharray:none" /></g></g></g></svg>

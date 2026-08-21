@@ -65,7 +65,7 @@ from src.gui.widgets.standard_buttons import (
 from src.gui.widgets.summary_widget import SummaryWidget
 from src.gui.widgets.tag_editor import TagEditorWidget
 from src.gui.widgets.timeline_display_widget import TimelineDisplayWidget
-from src.gui.widgets.wiki_text_edit import WikiTextEdit
+from src.gui.widgets.wiki_text_edit import ResizableWikiTextEditField, WikiTextEdit
 
 logger = logging.getLogger(__name__)
 
@@ -181,7 +181,8 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self.desc_edit.completion_prefix_changed.connect(
             self.completion_prefix_changed.emit
         )
-        self.form_layout.addRow("Description:", self.desc_edit)
+        self.description_field = ResizableWikiTextEditField(self.desc_edit)
+        self.form_layout.addRow("Description:", self.description_field)
         self._build_timeline_section()
         self._build_summary_section()
         self._build_llm_section()
@@ -202,9 +203,9 @@ class EntityEditorWidget(BaseEditorMixin, QWidget):
         self.timeline_checkbox = StandardCheckbox("")
         section_layout.addWidget(self.timeline_checkbox)
         self.timeline_display = TimelineDisplayWidget()
-        self.timeline_display.setMaximumWidth(self.desc_edit.maximumWidth())
-        self.desc_edit.maximum_width_changed.connect(
-            self.timeline_display.setMaximumWidth
+        self.timeline_display.setMinimumWidth(self.desc_edit.minimumWidth())
+        self.desc_edit.minimum_width_changed.connect(
+            self.timeline_display.setMinimumWidth
         )
         self.timeline_display.event_clicked.connect(self.navigate_to_relation.emit)
         self.timeline_display.setVisible(False)

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="14.516735mm"
+   height="14.516735mm"
+   viewBox="0 0 14.516735 14.516735"
+   version="1.1"
+   id="svg1"
+   xml:space="preserve"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><defs
+     id="defs1" /><g
+     id="layer1"
+     transform="translate(-135.53621,-64.919265)"><g
+       style="clip-rule:evenodd;fill-rule:evenodd;stroke-width:0.866667;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;stroke-dasharray:none"
+       id="settlement-metropolis"
+       transform="matrix(0.26458333,0,0,0.26458333,115.27791,40.427633)"><g
+         id="Metropolis"
+         style="stroke-width:0.866667;stroke-dasharray:none"><path
+           d="m 104,93 4.24,16.77 14.85,-8.86 -8.86,14.85 16.77,4.24 -16.77,4.24 8.86,14.85 -14.85,-8.86 L 104,147 99.76,130.23 84.91,139.09 93.77,124.24 77,120 l 16.77,-4.24 -8.86,-14.85 14.85,8.86 z"
+           fill="#541e1e"
+           stroke="#9e4b43"
+           stroke-width="3"
+           id="path1-11"
+           style="stroke-width:0.866667;stroke-dasharray:none" /><circle
+           cx="104"
+           cy="120"
+           r="15.12"
+           fill="none"
+           stroke="#c45442"
+           stroke-width="2.5"
+           id="circle1-38"
+           style="stroke-width:0.866667;stroke-dasharray:none" /><circle
+           cx="104"
+           cy="120"
+           r="10.390893"
+           fill="#c45442"
+           stroke="#9e4b43"
+           stroke-width="3"
+           id="circle2-7"
+           style="stroke-width:0.866667;stroke-dasharray:none" /></g></g></g></svg>

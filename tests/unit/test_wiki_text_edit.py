@@ -11,7 +11,7 @@ from PySide6.QtGui import QTextOption
 from src.app.constants import WIKI_EDITOR_MAX_LINE_LENGTH
 from src.core.theme_manager import ThemeManager
 from src.gui.editor_typography import EditorTypography
-from src.gui.widgets.wiki_text_edit import WikiTextEdit
+from src.gui.widgets.wiki_text_edit import ResizableWikiTextEditField, WikiTextEdit
 
 # Requires qtbot to interact with widgets
 
@@ -38,7 +38,7 @@ def test_visual_wrap_does_not_split_normal_words(qtbot):
     qtbot.addWidget(widget)
     prose = ("readable words remain intact across visual lines " * 30).strip()
     widget.editor.setPlainText(prose)
-    widget.resize(widget.maximumWidth(), 300)
+    widget.resize(widget.minimumWidth(), 300)
     widget.show()
     qtbot.wait(10)
 
@@ -52,18 +52,37 @@ def test_visual_wrap_does_not_split_normal_words(qtbot):
         assert not (prose[boundary - 1].isalpha() and prose[boundary].isalpha())
 
 
-def test_editor_frame_width_tracks_wrap_column_and_toc(qtbot):
-    """The frame fits the text column and expands when its TOC is visible."""
+def test_editor_frame_minimum_width_tracks_wrap_column_and_toc(qtbot):
+    """The frame preserves its text column while allowing additional width."""
     widget = WikiTextEdit()
     qtbot.addWidget(widget)
     character_width = widget.editor.fontMetrics().averageCharWidth()
-    width_without_toc = widget.maximumWidth()
+    width_without_toc = widget.minimumWidth()
 
     assert width_without_toc >= character_width * WIKI_EDITOR_MAX_LINE_LENGTH
 
+    widget.resize(width_without_toc + 200, 300)
+    assert widget.width() == width_without_toc + 200
+
     widget._toggle_toc()
 
-    assert widget.maximumWidth() == width_without_toc + widget.toc_widget.width()
+    assert widget.minimumWidth() == width_without_toc + widget.toc_widget.width()
+
+
+def test_resizable_editor_field_keeps_editor_minimum_within_parent(qtbot):
+    """The splitter lets the editor grow without exceeding its form-row width."""
+    editor = WikiTextEdit()
+    field = ResizableWikiTextEditField(editor)
+    qtbot.addWidget(field)
+    minimum_width = editor.minimumWidth()
+    field.resize(minimum_width + 300, 300)
+    field.show()
+    qtbot.wait(10)
+
+    field.setSizes([minimum_width + 150, 150])
+
+    assert field.sizes()[0] >= minimum_width + 150
+    assert sum(field.sizes()) <= field.width()
 
 
 def test_ctrl_click_emits_signal(qtbot):
