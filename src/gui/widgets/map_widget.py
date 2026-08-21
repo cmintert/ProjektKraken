@@ -1921,6 +1921,7 @@ class MapWidget(
             if self.view.graphics_scene.selectedItems():
                 logger.debug("Esc pressed: Clearing selection")
                 self.view.graphics_scene.clearSelection()
+                self.view.viewport().update()
                 event.accept()
                 return
 

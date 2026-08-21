@@ -2183,6 +2183,11 @@ class MapGraphicsView(QGraphicsView):
             return True
         if self.graphics_scene.selectedItems():
             self.graphics_scene.clearSelection()
+            # Selection changes invalidate the marker's paint area, but the
+            # trajectory is a separate scene item.  Request a viewport repaint
+            # so its path is restored immediately after Escape deselects the
+            # marker.
+            self.viewport().update()
             event.accept()
             return True
         return False

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-21
-**Commit:** b6edd0ac
+**Commit:** 52638a1c
 ---
 
 # Changelog
@@ -42,6 +42,12 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-21)* **Maps / Trajectories**: Repainted routes immediately when
+  Escape deselects their marker.
+- *(2026-08-21)* **Maps / Feature Tooltips**: Removed redundant feature type
+  and vertex-count details while preserving useful measured geometry facts.
+- *(2026-08-21)* **UI / Styling**: Restored the closing selector in the shared
+  tool-button pressed-state stylesheet.
 - *(2026-08-21)* **Maps / Path Styling**: Replaced the cramped stacked stroke
   width arrows with normal-height text input and full-size decrement/increment
   controls; documented and regression-tested the path styling workflow.

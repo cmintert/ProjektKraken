@@ -367,6 +367,7 @@ class StyleHelper:
             }}
             QToolButton:pressed {{
                 background-color: {primary};
+            }}
         """
 
     @staticmethod

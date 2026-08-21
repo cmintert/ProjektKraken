@@ -1097,6 +1097,32 @@ def test_esc_in_view_clears_selection(map_widget, qtbot):
     assert len(map_widget.view.graphics_scene.selectedItems()) == 0
 
 
+def test_esc_deselect_keeps_selected_trajectory_rendered(map_widget, qtbot):
+    """Escape deselection repaints the route that was behind its marker."""
+    marker = _show_map_with_marker(map_widget, qtbot)
+    map_widget.set_trajectories(
+        [
+            {
+                "marker_id": "marker1",
+                "trajectory_id": "trajectory-1",
+                "keyframes": [
+                    {"t": 0.0, "x": 0.2, "y": 0.3, "point_kind": "timed"},
+                    {"t": 10.0, "x": 0.8, "y": 0.7, "point_kind": "timed"},
+                ],
+                "row_snapshot": {},
+            }
+        ]
+    )
+    marker.setSelected(True)
+    map_widget._on_marker_clicked_internal("marker1", "entity")
+
+    qtbot.keyClick(map_widget.view, Qt.Key.Key_Escape)
+
+    assert not marker.isSelected()
+    assert map_widget.view.trajectory_path_item is not None
+    assert map_widget.view.trajectory_path_item.isVisible()
+
+
 def test_configure_map_settings_emits_attribute_updates(map_widget, monkeypatch):
     """Applying map settings emits one attribute-update mapping."""
     from PySide6.QtWidgets import QDialog

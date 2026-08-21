@@ -387,8 +387,8 @@ class _FeatureItemBase(QGraphicsObject):
     def _apply_hover_tooltip(self) -> None:
         """Builds a rich tooltip from spatial properties and description.
 
-        Extracts feature type, vertex count, and computed measurements
-        from the geometry to display in the tooltip with metric units.
+        Extracts the description and useful computed measurements from the
+        geometry to display in the tooltip with metric units.
         """
         lines: List[str] = [f"<b>{self.label}</b>"]
         if self._description:
@@ -396,10 +396,6 @@ class _FeatureItemBase(QGraphicsObject):
 
         # Spatial properties
         props = self._compute_spatial_properties()
-        if props.get("feature_type"):
-            lines.append(f"Type: {props['feature_type'].title()}")
-        if props.get("vertex_count"):
-            lines.append(f"Vertices: {props['vertex_count']}")
         if "length" in props:
             lines.append(f"Length: {self._format_metric_length(props['length'])}")
         if "area" in props:

@@ -1142,7 +1142,8 @@ class TestFeatureHoverTooltip:
         tooltip = item.toolTip()
         assert "River" in tooltip
         assert "A major waterway" in tooltip
-        assert "Vertices: 3" in tooltip
+        assert "Type:" not in tooltip
+        assert "Vertices:" not in tooltip
 
 
 # --------------------------------------------------------------------------
