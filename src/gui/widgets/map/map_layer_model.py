@@ -73,6 +73,7 @@ class MapLayerModel(QAbstractItemModel):
     layer_visibility_changed = Signal(str, bool)
     layer_opacity_changed = Signal(str, float)
     layer_order_changed = Signal()
+    layer_lock_changed = Signal(str, bool)
     layer_tree_changed = Signal()
     temporal_state_changed = Signal()
 
@@ -86,6 +87,7 @@ class MapLayerModel(QAbstractItemModel):
     NodeIdRole = Qt.ItemDataRole.UserRole + 3
     TemporalValidityRole = Qt.ItemDataRole.UserRole + 4
     ManualHiddenRole = Qt.ItemDataRole.UserRole + 5
+    LockedRole = Qt.ItemDataRole.UserRole + 6
 
     def __init__(
         self,
@@ -280,8 +282,12 @@ class MapLayerModel(QAbstractItemModel):
             return node.id
         if role == self.TemporalValidityRole:
             return self.temporal_validity(node)
-        if role == self.ManualHiddenRole:
-            return not self._effective_visible(node)
+        if role in (self.ManualHiddenRole, self.LockedRole):
+            return (
+                not self._effective_visible(node)
+                if role == self.ManualHiddenRole
+                else node.locked
+            )
         if role == Qt.ItemDataRole.ToolTipRole:
             return self._temporal_tooltip(node)
         return None
@@ -485,6 +491,19 @@ class MapLayerModel(QAbstractItemModel):
         idx = self.index_from_node(node)
         self.dataChanged.emit(idx, idx, [Qt.ItemDataRole.CheckStateRole])
         self._emit_subtree_visibility(node)
+        self.layer_tree_changed.emit()
+
+    def set_node_locked(self, node: MapLayerNode, locked: bool) -> None:
+        """Set whether a vector feature can be interacted with on the map."""
+        if node.layer_type not in VECTOR_LAYER_TYPES:
+            return
+        locked = bool(locked)
+        if node.locked == locked:
+            return
+        node.locked = locked
+        index = self.index_from_node(node)
+        self.dataChanged.emit(index, index, [self.LockedRole])
+        self.layer_lock_changed.emit(node.id, locked)
         self.layer_tree_changed.emit()
 
     def set_node_opacity(

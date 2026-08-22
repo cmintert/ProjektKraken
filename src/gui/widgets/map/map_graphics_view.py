@@ -957,6 +957,7 @@ class MapGraphicsView(QGraphicsView):
         )
         self._apply_effective_layer_opacity()
         self._apply_effective_layer_visibility()
+        self._apply_layer_locks()
         self._schedule_label_layout()
 
     def update_marker_position(self, marker_id: str, x: float, y: float) -> None:
@@ -1658,6 +1659,9 @@ class MapGraphicsView(QGraphicsView):
                 self._layer_model.layer_order_changed.disconnect(
                     self._on_layer_order_changed
                 )
+                self._layer_model.layer_lock_changed.disconnect(
+                    self._on_layer_lock_changed
+                )
             except RuntimeError:
                 pass
 
@@ -1666,9 +1670,45 @@ class MapGraphicsView(QGraphicsView):
         model.layer_visibility_changed.connect(self._on_layer_visibility_changed)
         model.layer_opacity_changed.connect(self._on_layer_opacity_changed)
         model.layer_order_changed.connect(self._on_layer_order_changed)
+        model.layer_lock_changed.connect(self._on_layer_lock_changed)
         model.set_current_time(self._playhead_time)
         self._apply_effective_layer_opacity()
         self._apply_effective_layer_visibility()
+        self._apply_layer_locks()
+
+    def _on_layer_lock_changed(self, node_id: str, locked: bool) -> None:
+        """Apply a feature lock immediately and clear stale selection."""
+        item = self._find_graphics_item(node_id)
+        if item is None:
+            return
+        set_locked = getattr(item, "set_locked", None)
+        if callable(set_locked):
+            set_locked(locked)
+
+    def _apply_layer_locks(self) -> None:
+        """Synchronise all loaded vector items with persistent layer locks."""
+        if self._layer_model is None:
+            return
+        for node_id, item in (
+            *self._marker_manager.markers.items(),
+            *self._marker_manager.feature_items.items(),
+        ):
+            node = self._layer_model.find_node_by_id(node_id)
+            set_locked = getattr(item, "set_locked", None)
+            if node is not None and callable(set_locked):
+                set_locked(node.locked)
+
+    def set_feature_locked(self, node_id: str, locked: bool) -> None:
+        """Persist one vector feature's canvas-interaction lock state."""
+        if self._layer_model is None:
+            return
+        node = self._layer_model.find_node_by_id(node_id)
+        if node is not None:
+            self._layer_model.set_node_locked(node, locked)
+
+    def unlock_feature(self, node_id: str) -> None:
+        """Restore canvas interaction for one locked vector feature."""
+        self.set_feature_locked(node_id, False)
 
     def _on_layer_visibility_changed(self, node_id: str, visible: bool) -> None:
         """Respond to a layer visibility change.
@@ -1683,6 +1723,7 @@ class MapGraphicsView(QGraphicsView):
                 item.setVisible(visible)
             return
         self._apply_effective_layer_visibility()
+        self._apply_layer_locks()
 
     def _on_layer_opacity_changed(self, node_id: str, opacity: float) -> None:
         """Respond to a layer opacity change.

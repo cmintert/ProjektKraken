@@ -111,6 +111,14 @@ group, and zoom hiding. Ghosts can be selected, but cannot be dragged or edited
 directly; use their menu to jump to a valid date, change validity, or reveal the
 feature in Layers.
 
+Use the lock icon at the right of a point marker, path, or region in the layer
+tree to protect it from map interaction. You can also right-click its layer row
+and choose **Lock Feature**, or right-click the unlocked feature on the map and
+choose **Lock**. A locked feature remains visible and shows its hover tooltip,
+but cannot be selected, opened, or moved on the map.
+Right-clicking a locked feature, or its layer-tree row, offers only **Unlock**.
+Its layer-tree row remains available so you can unlock it.
+
 Trajectory dates continue to answer where an entity would be. Temporal
 validity separately decides whether it exists on the map. A normal selected
 route disappears with an invalid owner, while an already-open trajectory or

@@ -7,12 +7,14 @@ and reordering via drag-and-drop.  Integrates with the application's
 """
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, cast
 
 from PySide6.QtCore import (
+    QEvent,
     QModelIndex,
     QPersistentModelIndex,
     QPoint,
+    QRectF,
     QSize,
     QSortFilterProxyModel,
     Qt,
@@ -118,7 +120,35 @@ class TemporalLayerFilterProxy(QSortFilterProxyModel):
 
 
 class TemporalLayerDelegate(QStyledItemDelegate):
-    """Paint temporal and manual-hidden badges beside layer names."""
+    """Paint temporal, visibility, and feature-lock controls in layer rows."""
+
+    def __init__(
+        self,
+        on_lock_toggled: Callable[[ModelIndex], None],
+        parent: Optional[QWidget] = None,
+    ) -> None:
+        """Initialise the delegate with its layer-lock callback."""
+        super().__init__(parent)
+        self._on_lock_toggled = on_lock_toggled
+
+    @staticmethod
+    def _lock_rect(option: QStyleOptionViewItem, index: ModelIndex) -> QRectF:
+        from src.gui.widgets.map.map_layer_model import MapLayerModel
+
+        state = index.data(MapLayerModel.TemporalValidityRole)
+        manual_hidden = bool(index.data(MapLayerModel.ManualHiddenRole))
+        vector_feature = index.data(MapLayerModel.LayerTypeRole) in VECTOR_LAYER_TYPES
+        badge_count = int(state is not None and state.applicable and not state.valid)
+        badge_count += int(manual_hidden)
+        if not vector_feature:
+            return QRectF()
+        option_view = cast(Any, option)
+        return QRectF(
+            option_view.rect.right() - (badge_count + 1) * 18,
+            option_view.rect.center().y() - 9,
+            18,
+            18,
+        )
 
     def paint(
         self,
@@ -132,7 +162,8 @@ class TemporalLayerDelegate(QStyledItemDelegate):
         state = index.data(MapLayerModel.TemporalValidityRole)
         manual_hidden = bool(index.data(MapLayerModel.ManualHiddenRole))
         outside = bool(state is not None and state.applicable and not state.valid)
-        badge_count = int(outside) + int(manual_hidden)
+        vector_feature = index.data(MapLayerModel.LayerTypeRole) in VECTOR_LAYER_TYPES
+        badge_count = int(outside) + int(manual_hidden) + int(vector_feature)
 
         adjusted = QStyleOptionViewItem(option)
         adjusted_view = cast(Any, adjusted)
@@ -151,12 +182,34 @@ class TemporalLayerDelegate(QStyledItemDelegate):
         for icon_name, show in (
             ("clock.svg", outside),
             ("eye-slash.svg", manual_hidden),
+            (
+                "lock.svg"
+                if bool(index.data(MapLayerModel.LockedRole))
+                else "lock-open.svg",
+                vector_feature,
+            ),
         ):
             if not show:
                 continue
             icon = load_icon(f"default_assets/icons/ui_icons/{icon_name}", color)
             icon.paint(painter, x, option_view.rect.center().y() - 7, 14, 14)
             x += 18
+
+    def editorEvent(
+        self,
+        event: QEvent,
+        _model: object,
+        option: QStyleOptionViewItem,
+        index: ModelIndex,
+    ) -> bool:
+        """Toggle a vector-feature lock when its inline icon is clicked."""
+        if event.type() != QEvent.Type.MouseButtonRelease:
+            return False
+        position = getattr(event, "pos", lambda: QPoint())()
+        if self._lock_rect(option, index).contains(position):
+            self._on_lock_toggled(index)
+            return True
+        return False
 
 
 class MapLayerPanel(QWidget):
@@ -368,7 +421,7 @@ class MapLayerPanel(QWidget):
         self._tree.setAnimated(True)
         self._tree.setExpandsOnDoubleClick(False)  # double-click = rename
         self._tree.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        self._tree.setItemDelegate(TemporalLayerDelegate(self._tree))
+        self._tree.setItemDelegate(TemporalLayerDelegate(self._toggle_lock_at_index, self._tree))
         self._tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self._tree.customContextMenuRequested.connect(self._show_context_menu)
         self._tree.clicked.connect(self._on_item_clicked)
@@ -1587,6 +1640,13 @@ class MapLayerPanel(QWidget):
         if ok and name.strip():
             self.layer_renamed.emit(node.id, name.strip())
 
+    def _toggle_lock_at_index(self, index: ModelIndex) -> None:
+        """Toggle a vector feature's persistent canvas-interaction lock."""
+        if self._model is None or not index.isValid():
+            return
+        node = self._model.node_from_index(self.source_index(index))
+        self._model.set_node_locked(node, not node.locked)
+
     # ------------------------------------------------------------------
     # Private — context menu
     # ------------------------------------------------------------------
@@ -1638,6 +1698,16 @@ class MapLayerPanel(QWidget):
             self._sync_opacity_slider(node)
             self._update_button_state()
 
+            if node.layer_type in VECTOR_LAYER_TYPES and node.locked:
+                action_unlock = menu.addAction("Unlock")
+                action_unlock.triggered.connect(
+                    lambda _=False, source=source_index: self._toggle_lock_at_index(
+                        source
+                    )
+                )
+                menu.exec(self._tree.viewport().mapToGlobal(pos))
+                return
+
             from src.gui.constants import MAP_LAYER_BASEMAP_NODE_ID
 
             is_basemap = node.id == MAP_LAYER_BASEMAP_NODE_ID
@@ -1649,6 +1719,14 @@ class MapLayerPanel(QWidget):
 
             # Rename (not allowed for the pinned basemap node)
             if not is_basemap:
+                if node.layer_type in VECTOR_LAYER_TYPES:
+                    lock_text = "Unlock Feature" if node.locked else "Lock Feature"
+                    action_lock = menu.addAction(lock_text)
+                    action_lock.triggered.connect(
+                        lambda _=False, source=source_index: self._toggle_lock_at_index(
+                            source
+                        )
+                    )
                 action_rename = menu.addAction("Rename…")
                 action_rename.triggered.connect(
                     lambda: self._on_item_double_clicked(index)

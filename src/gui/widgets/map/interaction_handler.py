@@ -130,6 +130,14 @@ class InteractionHandler:
         """
         menu = QMenu(self._view)
 
+        if item.is_locked:
+            self._populate_unlock_menu(menu, item.marker_id)
+            menu.exec(global_pos)
+            return
+
+        self._populate_lock_menu(menu, item.marker_id)
+        menu.addSeparator()
+
         if item.is_temporal_ghost:
             self._populate_temporal_ghost_menu(menu, item.marker_id)
             menu.exec(global_pos)
@@ -316,6 +324,14 @@ class InteractionHandler:
         """
         menu = QMenu(self._view)
 
+        if item.is_locked:
+            self._populate_unlock_menu(menu, item.marker_id)
+            menu.exec(global_pos)
+            return
+
+        self._populate_lock_menu(menu, item.marker_id)
+        menu.addSeparator()
+
         if item.is_temporal_ghost:
             self._populate_temporal_ghost_menu(menu, item.marker_id)
             menu.exec(global_pos)
@@ -359,6 +375,20 @@ class InteractionHandler:
         )
         menu.addAction(delete_action)
         menu.exec(global_pos)
+
+    def _populate_unlock_menu(self, menu: QMenu, marker_id: str) -> None:
+        """Add the sole permitted action for a locked canvas feature."""
+        action = QAction("Unlock", self._view)
+        action.triggered.connect(lambda: self._view.unlock_feature(marker_id))
+        menu.addAction(action)
+
+    def _populate_lock_menu(self, menu: QMenu, marker_id: str) -> None:
+        """Add the canvas action that locks an otherwise interactive feature."""
+        action = QAction("Lock", self._view)
+        action.triggered.connect(
+            lambda: self._view.set_feature_locked(marker_id, True)
+        )
+        menu.addAction(action)
 
     def _copy_marker_appearance(self, item: MarkerItem) -> None:
         """Store a validated, semantic-data-free marker appearance snapshot."""

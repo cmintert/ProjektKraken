@@ -160,6 +160,7 @@ class MarkerItem(QGraphicsObject):
         self._layer_opacity = 1.0
         self._temporal_ghost = False
         self._movable_before_temporal_ghost = True
+        self._locked = False
 
         self._load_icon(icon_definition)
 
@@ -400,7 +401,10 @@ class MarkerItem(QGraphicsObject):
         Args:
             state: True if trajectory exists, False otherwise.
         """
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, not state)
+        self.setFlag(
+            QGraphicsItem.GraphicsItemFlag.ItemIsMovable,
+            not state and not self._locked and not self._temporal_ghost,
+        )
         if self.has_keyframes != state:
             self.has_keyframes = state
             self.update()
@@ -441,10 +445,38 @@ class MarkerItem(QGraphicsObject):
         else:
             self.setFlag(
                 QGraphicsItem.GraphicsItemFlag.ItemIsMovable,
-                self._movable_before_temporal_ghost,
+                self._movable_before_temporal_ghost and not self._locked,
             )
         self._apply_effective_opacity()
+
+    def set_locked(self, locked: bool) -> None:
+        """Prevent canvas selection and dragging while retaining the tooltip."""
+        self._locked = bool(locked)
+        self.setFlag(
+            QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, not self._locked
+        )
+        self.setFlag(
+            QGraphicsItem.GraphicsItemFlag.ItemIsMovable,
+            not self._locked and not self.has_keyframes and not self._temporal_ghost,
+        )
+        self.setAcceptedMouseButtons(
+            Qt.MouseButton.NoButton if self._locked else Qt.MouseButton.AllButtons
+        )
+        self.setCursor(
+            QCursor(
+                Qt.CursorShape.ArrowCursor
+                if self._locked
+                else Qt.CursorShape.PointingHandCursor
+            )
+        )
+        if self._locked:
+            self.setSelected(False)
         self.update()
+
+    @property
+    def is_locked(self) -> bool:
+        """Whether this marker is protected from canvas interaction."""
+        return self._locked
 
     @property
     def is_temporal_ghost(self) -> bool:
@@ -656,7 +688,7 @@ class MarkerItem(QGraphicsObject):
 
     def begin_appearance_edit(self) -> None:
         """Show resize and anchor handles and capture a cancellation snapshot."""
-        if self.is_editing_appearance:
+        if self.is_editing_appearance or self._locked:
             return
         self._appearance_edit_snapshot = dict(self._visual_attributes)
         self._appearance_edit_icon = self._icon_definition
@@ -966,6 +998,9 @@ class MarkerItem(QGraphicsObject):
         if self.is_editing_appearance:
             event.ignore()
             return
+        if self._locked:
+            event.ignore()
+            return
         if event.button() == Qt.MouseButton.LeftButton:
             self._is_dragging = True
             self._drag_started = False
@@ -1001,6 +1036,9 @@ class MarkerItem(QGraphicsObject):
             event: The mouse event.
         """
         if self.is_editing_appearance:
+            event.ignore()
+            return
+        if self._locked:
             event.ignore()
             return
         if event.button() != Qt.MouseButton.LeftButton:

@@ -14,8 +14,9 @@ Covers:
 import pytest
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QImage, QPixmap
-from PySide6.QtWidgets import QGraphicsPixmapItem, QMessageBox
+from PySide6.QtWidgets import QGraphicsPixmapItem, QMenu, QMessageBox
 
+import src.gui.widgets.map.map_layer_panel as map_layer_panel_module
 from src.app.constants import (
     MAP_LAYER_TYPE_GROUP,
     MAP_LAYER_TYPE_MARKER,
@@ -407,6 +408,20 @@ class TestMapLayerPanel:
         assert len(received) == 1
         assert received[0] == "default"
 
+    def test_panel_lock_toggle_changes_vector_feature_state(
+        self, qtbot, simple_model: MapLayerModel
+    ) -> None:
+        """The inline lock control delegates to the vector lock model API."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel.set_model(simple_model)
+        marker = simple_model.find_node_by_id("m1")
+        assert marker is not None
+
+        panel._toggle_lock_at_index(simple_model.index_from_node(marker))
+
+        assert marker.locked is True
+
 
 # =========================================================================
 # MapWidget Layer Integration (CRITICAL-3 + HIGH-6 + MEDIUM-7)
@@ -590,6 +605,19 @@ class TestBidirectionalSelection:
         marker_item = widget.view.markers.get("test-1")
         if marker_item is not None:
             assert marker_item.isSelected()
+
+    def test_locked_layer_panel_row_does_not_select_marker(self, qtbot) -> None:
+        """Locked features remain selectable in Layers but not on the canvas."""
+        widget = _make_map_widget(qtbot)
+        widget.add_marker("test-1", "entity", "Test", 0.5, 0.5)
+        model = widget.get_layer_model()
+        node = model.find_node_by_id("test-1")
+        assert node is not None
+        model.set_node_locked(node, True)
+
+        widget._on_layer_panel_selected("test-1")
+
+        assert not widget.view.markers["test-1"].isSelected()
 
 
 # =========================================================================
@@ -837,6 +865,32 @@ class TestMapLayerPanelContextMenu:
 
         panel._toggle_visibility(m1)
         assert m1.visible is True
+
+    def test_locked_feature_context_menu_only_offers_unlock(
+        self, qtbot, simple_model: MapLayerModel, monkeypatch
+    ) -> None:
+        """Locked feature rows expose no actions other than unlocking."""
+        panel = MapLayerPanel()
+        qtbot.addWidget(panel)
+        panel.set_model(simple_model)
+        panel.show()
+        marker = simple_model.find_node_by_id("m1")
+        assert marker is not None
+        simple_model.set_node_locked(marker, True)
+        proxy_index = panel._proxy_model.mapFromSource(
+            simple_model.index_from_node(marker)
+        )
+        position = panel.tree_view.visualRect(proxy_index).center()
+        captured: list[str] = []
+
+        class CapturingMenu(QMenu):
+            def exec(self, _position) -> None:
+                captured.extend(action.text() for action in self.actions())
+
+        monkeypatch.setattr(map_layer_panel_module, "QMenu", CapturingMenu)
+        panel._show_context_menu(position)
+
+        assert captured == ["Unlock"]
 
 
 class TestMapLayerPanelRefreshStyles:

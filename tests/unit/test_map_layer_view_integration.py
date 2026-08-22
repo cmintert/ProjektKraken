@@ -4,16 +4,20 @@ Tests that the view correctly responds to layer model signals for
 visibility, opacity, and Z-order changes.
 """
 
+from unittest.mock import MagicMock
+
 import pytest
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QImage, QPixmap
-from PySide6.QtWidgets import QGraphicsPixmapItem
+from PySide6.QtWidgets import QGraphicsPixmapItem, QMenu
 
+import src.gui.widgets.map.interaction_handler as interaction_handler_module
 from src.app.constants import (
     MAP_LAYER_TYPE_GROUP,
     MAP_LAYER_TYPE_MARKER,
 )
 from src.core.map import MapLayerNode
+from src.gui.widgets.map.interaction_handler import InteractionHandler
 from src.gui.widgets.map.map_graphics_view import MapGraphicsView
 from src.gui.widgets.map.map_layer_model import MapLayerModel
 
@@ -169,3 +173,81 @@ class TestViewLayerModelAttachment:
         """Attaching a model stores the reference."""
         view, model, _ = _setup_view_with_marker(qtbot)
         assert view.layer_model is model
+
+
+class TestViewLayerLocks:
+    """The view applies persistent feature locks to loaded graphics items."""
+
+    def test_locking_layer_clears_and_blocks_marker_selection(self, qtbot) -> None:
+        view, model, marker_id = _setup_view_with_marker(qtbot)
+        marker = view.markers[marker_id]
+        marker.setSelected(True)
+        node = model.find_node_by_id(marker_id)
+        assert node is not None
+
+        model.set_node_locked(node, True)
+
+        assert marker.isSelected() is False
+        assert not marker.flags() & marker.GraphicsItemFlag.ItemIsSelectable
+        assert marker.acceptedMouseButtons() == Qt.MouseButton.NoButton
+
+    def test_initial_layer_lock_is_applied_when_model_attaches(self, qtbot) -> None:
+        view, model, marker_id = _setup_view_with_marker(qtbot)
+        node = model.find_node_by_id(marker_id)
+        assert node is not None
+
+        model.set_node_locked(node, True)
+        view.set_layer_model(model)
+
+        assert view.markers[marker_id].acceptedMouseButtons() == Qt.MouseButton.NoButton
+
+    def test_existing_layer_lock_is_applied_to_reloaded_marker(self, qtbot) -> None:
+        """Reloaded map items honour a lock already present in the layer tree."""
+        view, model, marker_id = _setup_view_with_marker(qtbot)
+        node = model.find_node_by_id(marker_id)
+        assert node is not None
+        model.set_node_locked(node, True)
+
+        view.add_marker(marker_id, "entity", "Reloaded", 0.5, 0.5)
+
+        assert view.markers[marker_id].acceptedMouseButtons() == Qt.MouseButton.NoButton
+
+    @pytest.mark.parametrize("menu_method", ["show_marker_context_menu", "show_feature_context_menu"])
+    def test_locked_canvas_context_menu_only_offers_unlock(
+        self, qtbot, monkeypatch, menu_method: str
+    ) -> None:
+        """Both marker and feature canvas menus reduce to one unlock action."""
+        view, _model, marker_id = _setup_view_with_marker(qtbot)
+        item = MagicMock(is_locked=True, marker_id=marker_id)
+        captured: list[str] = []
+
+        class CapturingMenu(QMenu):
+            def exec(self, _position) -> None:
+                captured.extend(action.text() for action in self.actions())
+
+        monkeypatch.setattr(interaction_handler_module, "QMenu", CapturingMenu)
+        getattr(InteractionHandler(view), menu_method)(item, view.pos())
+
+        assert captured == ["Unlock"]
+
+    @pytest.mark.parametrize("menu_method", ["show_marker_context_menu", "show_feature_context_menu"])
+    def test_unlocked_canvas_context_menu_offers_lock(
+        self, qtbot, monkeypatch, menu_method: str
+    ) -> None:
+        """Both unlocked canvas menus lead with the feature lock action."""
+        view, _model, marker_id = _setup_view_with_marker(qtbot)
+        item = MagicMock(
+            is_locked=False,
+            is_temporal_ghost=True,
+            marker_id=marker_id,
+        )
+        captured: list[str] = []
+
+        class CapturingMenu(QMenu):
+            def exec(self, _position) -> None:
+                captured.extend(action.text() for action in self.actions())
+
+        monkeypatch.setattr(interaction_handler_module, "QMenu", CapturingMenu)
+        getattr(InteractionHandler(view), menu_method)(item, view.pos())
+
+        assert captured[0] == "Lock"

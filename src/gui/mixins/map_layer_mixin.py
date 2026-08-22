@@ -255,6 +255,11 @@ class MapLayerMixin:
             node_id: The clicked layer node's ID.
 
         """
+        if self._layer_model is None:
+            return
+        node = self._layer_model.find_node_by_id(node_id)
+        if node is not None and node.locked:
+            return
         # Select the graphics item on the map
         item = self.view.find_item_by_id(node_id)
         if item is not None:

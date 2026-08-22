@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-22
-**Commit:** 1f42a29c
+**Commit:** f3f7a224
 ---
 
 # Changelog
@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-08-22)* **Maps / Feature Locks**: Added persistent per-feature locks
+  for markers, paths, and regions, with layer-tree controls, canvas menus, and
+  regression coverage that keep locked features visible but non-interactive.
 - *(2026-08-22)* **Maps / Trajectories**: Added a guided second-location
   workflow for new and one-point trajectories, with cursor-led destination
   placement, later-date validation, and atomic apply.

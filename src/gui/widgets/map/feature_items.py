@@ -134,6 +134,7 @@ class _FeatureItemBase(QGraphicsObject):
         self.is_past = False
         self._layer_opacity = 1.0
         self._temporal_ghost = False
+        self._locked = False
 
         # Click detection
         self._drag_start_pos: Optional[QPointF] = None
@@ -274,6 +275,30 @@ class _FeatureItemBase(QGraphicsObject):
         self._apply_effective_opacity()
         self.update()
 
+    def set_locked(self, locked: bool) -> None:
+        """Prevent canvas selection and clicks while retaining hover tooltips."""
+        self._locked = bool(locked)
+        self.setFlag(
+            QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, not self._locked
+        )
+        self.setAcceptedMouseButtons(
+            Qt.MouseButton.NoButton if self._locked else Qt.MouseButton.AllButtons
+        )
+        self.setCursor(
+            QCursor(
+                Qt.CursorShape.ArrowCursor
+                if self._locked
+                else Qt.CursorShape.PointingHandCursor
+            )
+        )
+        if self._locked:
+            self.setSelected(False)
+
+    @property
+    def is_locked(self) -> bool:
+        """Whether this feature is protected from canvas interaction."""
+        return self._locked
+
     @property
     def is_temporal_ghost(self) -> bool:
         """Whether this feature is rendered as an authoring ghost."""
@@ -296,6 +321,9 @@ class _FeatureItemBase(QGraphicsObject):
             event: The graphics scene mouse press event.
 
         """
+        if self._locked:
+            event.ignore()
+            return
         if event.button() == Qt.MouseButton.LeftButton:
             self._drag_start_pos = event.scenePos()
         super().mousePressEvent(event)
@@ -307,6 +335,9 @@ class _FeatureItemBase(QGraphicsObject):
             event: The graphics scene mouse release event.
 
         """
+        if self._locked:
+            event.ignore()
+            return
         if event.button() == Qt.MouseButton.LeftButton and self._drag_start_pos:
             end = event.scenePos()
             dist = (end - self._drag_start_pos).manhattanLength()

@@ -137,6 +137,37 @@ class TestVisibilityInheritance:
         assert "markers-1" in ids_shown
 
 
+class TestFeatureLocks:
+    """Feature locks are persistent per-vector-node interaction state."""
+
+    def test_locking_vector_feature_emits_state_and_tree_change(
+        self, model: MapLayerModel
+    ) -> None:
+        marker = model.find_node_by_id("markers-1")
+        assert marker is not None
+        changes: list[tuple[str, bool]] = []
+        tree_changes: list[bool] = []
+        model.layer_lock_changed.connect(
+            lambda node_id, locked: changes.append((node_id, locked))
+        )
+        model.layer_tree_changed.connect(lambda: tree_changes.append(True))
+
+        model.set_node_locked(marker, True)
+
+        assert marker.locked is True
+        assert model.data(model.index_from_node(marker), model.LockedRole) is True
+        assert changes == [("markers-1", True)]
+        assert tree_changes == [True]
+
+    def test_groups_cannot_be_locked(self, model: MapLayerModel) -> None:
+        group = model.find_node_by_id("group-a")
+        assert group is not None
+
+        model.set_node_locked(group, True)
+
+        assert group.locked is False
+
+
 # =========================================================================
 # Test 2 — Mutually exclusive group logic
 # =========================================================================
@@ -408,6 +439,17 @@ class TestSerialisation:
         assert restored.opacity == pytest.approx(0.75)
         assert restored.min_zoom == pytest.approx(1.5)
         assert restored.max_zoom == pytest.approx(10.0)
+
+    def test_locked_layer_round_trip_and_legacy_default(self) -> None:
+        """Lock state persists while older trees remain unlocked."""
+        node = MapLayerNode(
+            name="Locked", layer_type=MAP_LAYER_TYPE_MARKER, locked=True
+        )
+        assert MapLayerNode.from_dict(node.to_dict()).locked is True
+
+        legacy = node.to_dict()
+        del legacy["locked"]
+        assert MapLayerNode.from_dict(legacy).locked is False
 
     def test_nested_round_trip(self, simple_tree: MapLayerNode) -> None:
         """A nested tree survives serialisation."""

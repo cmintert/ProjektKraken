@@ -67,6 +67,7 @@ class MapLayerNode:
             may be visible at a time (radio-button behaviour).
         start_date: Optional inclusive lore date when this layer becomes visible.
         end_date: Optional exclusive lore date when this layer stops being visible.
+        locked: Whether this feature is protected from canvas interaction.
         attributes: Flexible key-value store for layer-type-specific metadata
             (e.g. ``blend_mode``, ``notes``, ``raster_snapshots``).
 
@@ -84,6 +85,7 @@ class MapLayerNode:
     mutually_exclusive: bool = False
     start_date: Optional[float] = None
     end_date: Optional[float] = None
+    locked: bool = False
     attributes: Dict[str, Any] = field(default_factory=dict)
     # In-memory flag: virtual nodes (e.g. snapshot rows) are never persisted.
     virtual: bool = False
@@ -137,6 +139,7 @@ class MapLayerNode:
             "mutually_exclusive": self.mutually_exclusive,
             "start_date": self.start_date,
             "end_date": self.end_date,
+            "locked": self.locked,
             "attributes": self.attributes,
         }
 
@@ -166,6 +169,7 @@ class MapLayerNode:
             mutually_exclusive=data.get("mutually_exclusive", False),
             start_date=data.get("start_date"),
             end_date=data.get("end_date"),
+            locked=bool(data.get("locked", False)),
             attributes=dict(data.get("attributes", {})),
         )
 
