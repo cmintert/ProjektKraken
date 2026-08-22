@@ -77,7 +77,7 @@ from src.gui.widgets.map.drawing_tool import DrawingTool
 from src.gui.widgets.map.feature_items import PathItem, RegionItem
 from src.gui.widgets.map.interaction_handler import InteractionHandler
 from src.gui.widgets.map.label_manager import LabelLayoutItem, LabelManager
-from src.gui.widgets.map.marker_item import MarkerItem
+from src.gui.widgets.map.marker_item import MARKER_DRAG_START_DISTANCE_PX, MarkerItem
 from src.gui.widgets.map.marker_manager import MarkerManager
 from src.gui.widgets.map.raster_edit_tool import RasterEditMode
 from src.gui.widgets.map.scale_bar_overlay import ScaleBarOverlay
@@ -104,9 +104,6 @@ LAYER_UI_OVERLAY = MAP_LAYER_Z_UI_OVERLAY
 KEYFRAME_COLOR_DEFAULT = "#f1c40f"  # Yellow (fallback)
 CALIBRATION_POINT_COUNT = 2
 MINIMUM_MARKER_POINTER_DIAMETER_PX = 20.0
-MARKER_CLICK_DISTANCE_THRESHOLD_PX = 3.0
-
-
 class KeyframeItem(QGraphicsObject):
     """Passive playback dot for a trajectory keyframe."""
 
@@ -212,6 +209,8 @@ class MapGraphicsView(QGraphicsView):
     trajectory_keyframe_selected = Signal(str)
     trajectory_keyframe_moved = Signal(str, float, float)
     trajectory_midpoint_insert_requested = Signal(str, str, float, float)
+    trajectory_second_destination_moved = Signal(float, float)
+    trajectory_second_destination_placed = Signal()
     trajectory_delete_selected_requested = Signal()
 
     # -- Calibration --
@@ -416,6 +415,7 @@ class MapGraphicsView(QGraphicsView):
         self._proxy_drag_scene_start = QPointF()
         self._proxy_drag_marker_start = QPointF()
         self._proxy_drag_view_start = QPointF()
+        self._proxy_drag_started = False
 
     # ------------------------------------------------------------------
     # Backward-compatible property aliases for sub-component state
@@ -1901,6 +1901,7 @@ class MapGraphicsView(QGraphicsView):
         self._proxy_drag_scene_start = self.mapToScene(pos)
         self._proxy_drag_marker_start = marker.pos()
         self._proxy_drag_view_start = event.position()
+        self._proxy_drag_started = False
         event.accept()
         return True
 
@@ -1974,6 +1975,15 @@ class MapGraphicsView(QGraphicsView):
         # Normal handling
         if self._handle_normal_marker_press(event):
             return
+
+        if (
+            event.button() == Qt.MouseButton.LeftButton
+            and self._trajectory_edit_overlay.place_second_location(
+                self.mapToScene(event.position().toPoint())
+            )
+        ):
+            event.accept()
+            return
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
@@ -1997,12 +2007,12 @@ class MapGraphicsView(QGraphicsView):
 
         if self._proxy_drag_marker is not None and event.button() == Qt.MouseButton.LeftButton:
             marker = self._proxy_drag_marker
-            moved_px = (event.position() - self._proxy_drag_view_start).manhattanLength()
-            if moved_px < MARKER_CLICK_DISTANCE_THRESHOLD_PX:
+            if not self._proxy_drag_started:
                 marker.clicked.emit(marker.marker_id, marker.object_type)
             else:
                 marker._handle_drag_end()
             self._proxy_drag_marker = None
+            self._proxy_drag_started = False
             event.accept()
             self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
             return
@@ -2015,12 +2025,21 @@ class MapGraphicsView(QGraphicsView):
         """Handle mouse move: raster edit, drawing preview, vertex editing, coordinates."""
         scene_pos = self.mapToScene(event.position().toPoint())
 
+        if self._trajectory_edit_overlay.follow_second_location_cursor(scene_pos):
+            event.accept()
+            return
+
         proxy_marker = self._proxy_drag_marker
         proxy_dragging = proxy_marker is not None
         if proxy_marker is not None:
-            delta = scene_pos - self._proxy_drag_scene_start
-            proxy_marker.setPos(self._proxy_drag_marker_start + delta)
-            self._schedule_label_layout()
+            moved_px = (
+                event.position() - self._proxy_drag_view_start
+            ).manhattanLength()
+            if moved_px >= MARKER_DRAG_START_DISTANCE_PX:
+                self._proxy_drag_started = True
+                delta = scene_pos - self._proxy_drag_scene_start
+                proxy_marker.setPos(self._proxy_drag_marker_start + delta)
+                self._schedule_label_layout()
 
         # Raster editing (before super to avoid ScrollHandDrag panning).
         # When Space is held, yield to super() so Qt's pan gesture gets the move.

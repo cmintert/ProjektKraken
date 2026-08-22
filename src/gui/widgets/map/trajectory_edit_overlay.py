@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Callable
 
 from PySide6.QtCore import QPointF, Qt
 from PySide6.QtGui import QBrush, QColor, QPainterPath, QPen
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsPathItem
+from PySide6.QtWidgets import QGraphicsItem, QGraphicsPathItem, QGraphicsView
 
 from src.core.theme_manager import ThemeManager
 from src.core.trajectory import SEGMENT_MODE_STEP, SegmentKey, SegmentMode
@@ -43,6 +43,8 @@ class TrajectoryEditOverlay:
         self._temporal_path_item: QGraphicsPathItem | None = None
         self._keyframe_handles: list[DraggableEditHandle[str]] = []
         self._midpoint_handles: list[MidpointEditHandle[tuple[str, str]]] = []
+        self._second_location_handle: DraggableEditHandle[str] | None = None
+        self._is_second_location_following_cursor = False
 
     @property
     def is_active(self) -> bool:
@@ -132,13 +134,42 @@ class TrajectoryEditOverlay:
             if edit_id in self._equalized_keyframe_ids:
                 tooltip_parts.append("Equalized date preview")
             handle.setToolTip(" | ".join(tooltip_parts))
-            handle.setEnabled(not previewing)
+            handle.setEnabled(not previewing and not snapshot["is_awaiting_second_location"])
             handle.set_notifications_enabled(True)
             self._view.graphics_scene.addItem(handle)
             self._keyframe_handles.append(handle)
             if keyframe["point_kind"] == "route":
                 handle.setScale(0.72)
             self._style_handle(handle, theme)
+
+        if snapshot["is_awaiting_second_location"]:
+            destination_x = snapshot["second_location_x"]
+            destination_y = snapshot["second_location_y"]
+            if destination_x is not None and destination_y is not None:
+                destination = DraggableEditHandle(
+                    "guided-second-location",
+                    self._on_second_location_moved,
+                    lambda _handle_id: None,
+                    fill_color=theme.get("accent_primary", "#3498db"),
+                    border_color=theme.get("text_main", "#ffffff"),
+                )
+                destination.setPos(
+                    self._view.coord_system.to_scene(destination_x, destination_y)
+                )
+                self._is_second_location_following_cursor = snapshot[
+                    "is_second_location_following_cursor"
+                ]
+                destination.setToolTip(
+                    "Destination marker — move the cursor and click to place it."
+                    if self._is_second_location_following_cursor
+                    else "Destination marker — drag to adjust before accepting."
+                )
+                destination.setEnabled(not self._is_second_location_following_cursor)
+                if self._is_second_location_following_cursor:
+                    self._start_cursor_following()
+                destination.set_notifications_enabled(True)
+                self._view.graphics_scene.addItem(destination)
+                self._second_location_handle = destination
 
         keyframes = snapshot["keyframes"]
         for start, end in zip(keyframes, keyframes[1:]):
@@ -195,6 +226,11 @@ class TrajectoryEditOverlay:
         for midpoint_handle in self._midpoint_handles:
             self._view.graphics_scene.removeItem(midpoint_handle)
         self._midpoint_handles.clear()
+        if self._second_location_handle is not None:
+            self._view.graphics_scene.removeItem(self._second_location_handle)
+        self._second_location_handle = None
+        self._is_second_location_following_cursor = False
+        self._stop_cursor_following()
         self._view._hide_snap_indicator()
         self._marker_id = None
         self._selected_keyframe_id = None
@@ -255,6 +291,71 @@ class TrajectoryEditOverlay:
         self._rebuild_path()
         self.select(edit_id)
         self._view.trajectory_keyframe_moved.emit(edit_id, x, y)
+
+    def _on_second_location_moved(
+        self, _handle_id: str, scene_pos: QPointF
+    ) -> None:
+        """Snap and forward a guided temporary destination movement."""
+        self._update_second_location(scene_pos)
+
+    @property
+    def is_second_location_following_cursor(self) -> bool:
+        """Whether the temporary destination follows the map cursor."""
+        return self._is_second_location_following_cursor
+
+    def follow_second_location_cursor(self, scene_pos: QPointF) -> bool:
+        """Move the guided destination with the cursor when placement is active."""
+        if not self._is_second_location_following_cursor:
+            return False
+        self._update_second_location(scene_pos)
+        return True
+
+    def place_second_location(self, scene_pos: QPointF) -> bool:
+        """Lock the cursor-led destination on a map click, if active."""
+        if not self._is_second_location_following_cursor:
+            return False
+        self._update_second_location(scene_pos)
+        self._is_second_location_following_cursor = False
+        self._stop_cursor_following()
+        self._view.trajectory_second_destination_placed.emit()
+        return True
+
+    def _start_cursor_following(self) -> None:
+        """Use a precise viewport crosshair while placing the destination."""
+        self._view.setDragMode(QGraphicsView.DragMode.NoDrag)
+        self._view.viewport().setCursor(Qt.CursorShape.CrossCursor)
+
+    def _stop_cursor_following(self) -> None:
+        """Restore normal map panning after guided placement ends."""
+        self._view.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+        self._view.viewport().unsetCursor()
+
+    def _update_second_location(self, scene_pos: QPointF) -> None:
+        """Snap, render, and forward the temporary destination position."""
+        handle = self._second_location_handle
+        if handle is None:
+            return
+        excluded: set[QGraphicsItem] = {
+            *self._keyframe_handles,
+            *self._midpoint_handles,
+            handle,
+        }
+        snap_result = self._view._snapping_manager.snap_point(
+            scene_pos, self._view.transform(), excluded
+        )
+        final_position = snap_result.pos if snap_result.snapped else scene_pos
+        if snap_result.snapped:
+            self._view._show_snap_indicator(final_position, snap_result.snap_type)
+        else:
+            self._view._hide_snap_indicator()
+        x, y = self._view.coord_system.to_normalized(final_position)
+        x, y = self._view.coord_system.clamp_normalized(x, y)
+        final_position = self._view.coord_system.to_scene(x, y)
+        if handle.pos() != final_position:
+            handle.set_notifications_enabled(False)
+            handle.setPos(final_position)
+            handle.set_notifications_enabled(True)
+        self._view.trajectory_second_destination_moved.emit(x, y)
 
     def _on_midpoint_inserted(
         self, segment_id: tuple[str, str], scene_pos: QPointF

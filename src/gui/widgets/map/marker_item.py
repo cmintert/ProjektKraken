@@ -10,7 +10,7 @@ from pathlib import Path
 # Forward declaration to avoid circular import
 from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, cast
 
-from PySide6.QtCore import QByteArray, QPointF, QRectF, Qt, Signal
+from PySide6.QtCore import QByteArray, QPoint, QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import (
     QBrush,
     QColor,
@@ -58,7 +58,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_CLICK_DISTANCE_THRESHOLD_PX = 3
+# Keep this Kraken-owned rather than inheriting a platform-specific drag setting.
+# The margin filters minor involuntary pointer movement before a marker relocates.
+MARKER_DRAG_START_DISTANCE_PX = 12
 _KEYFRAME_INDICATOR_SIZE_PX = 8.0
 _METERS_PER_KILOMETER = 1000.0
 _RASTER_ICON_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
@@ -180,7 +182,9 @@ class MarkerItem(QGraphicsObject):
 
         # Drag tracking
         self._is_dragging = False
+        self._drag_started = False
         self._drag_start_pos: Optional[QPointF] = None
+        self._drag_start_screen_pos: Optional[QPoint] = None
 
         # Lore priority – set externally before a layout pass.
         self.connection_count: int = 0
@@ -964,11 +968,31 @@ class MarkerItem(QGraphicsObject):
             return
         if event.button() == Qt.MouseButton.LeftButton:
             self._is_dragging = True
+            self._drag_started = False
             self._drag_start_pos = self.pos()
+            self._drag_start_screen_pos = event.screenPos()
             logger.debug(
                 f"Marker {self.marker_id} drag started at {self._drag_start_pos}"
             )
         super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent) -> None:
+        """Begin moving only after the Kraken marker drag safety margin."""
+        if not self._is_dragging or self._drag_started:
+            super().mouseMoveEvent(event)
+            return
+
+        if self._drag_start_screen_pos is None:
+            event.accept()
+            return
+
+        distance = (event.screenPos() - self._drag_start_screen_pos).manhattanLength()
+        if distance < MARKER_DRAG_START_DISTANCE_PX:
+            event.accept()
+            return
+
+        self._drag_started = True
+        super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         """Emit position change on drag end, or clicked signal if distance small.
@@ -983,17 +1007,18 @@ class MarkerItem(QGraphicsObject):
             super().mouseReleaseEvent(event)
             return
 
-        # Check for click vs drag
-        if self._drag_start_pos is not None:
-            dist = (self.pos() - self._drag_start_pos).manhattanLength()
-            if dist < _CLICK_DISTANCE_THRESHOLD_PX:
-                # It's a click!
-                self.clicked.emit(self.marker_id, self.object_type)
-                logger.debug(f"Marker {self.marker_id} clicked.")
+        if not self._drag_started:
+            self.clicked.emit(self.marker_id, self.object_type)
+            logger.debug(f"Marker {self.marker_id} clicked.")
 
-        if self._is_dragging:
+        if self._is_dragging and self._drag_started:
             self._is_dragging = False
             self._handle_drag_end()
+
+        self._is_dragging = False
+        self._drag_started = False
+        self._drag_start_pos = None
+        self._drag_start_screen_pos = None
 
         super().mouseReleaseEvent(event)
 

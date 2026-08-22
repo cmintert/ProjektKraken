@@ -103,6 +103,11 @@ class TrajectoryEditSnapshot(TypedDict):
     can_make_route_point: bool
     can_make_timed_location: bool
     can_make_intermediate_automatic: bool
+    is_awaiting_second_location: bool
+    second_location_x: float | None
+    second_location_y: float | None
+    is_second_location_following_cursor: bool
+    can_accept_second_location: bool
 
 
 @dataclass(frozen=True)
@@ -143,6 +148,9 @@ class TrajectoryEditSession:
     is_dirty: bool
     is_conflicted: bool
     validation_errors: list[str]
+    second_location_x: float | None
+    second_location_y: float | None
+    is_second_location_following_cursor: bool
 
     @classmethod
     def create(
@@ -208,6 +216,9 @@ class TrajectoryEditSession:
             is_dirty=is_new,
             is_conflicted=False,
             validation_errors=validate_keyframes(working),
+            second_location_x=(working[0].x if len(working) == 1 else None),
+            second_location_y=(working[0].y if len(working) == 1 else None),
+            is_second_location_following_cursor=(len(working) == 1),
         )
 
     @property
@@ -218,7 +229,56 @@ class TrajectoryEditSession:
             and not self.is_conflicted
             and not self.validation_errors
             and self.equalization_before is None
+            and not self.is_awaiting_second_location
         )
+
+    @property
+    def is_awaiting_second_location(self) -> bool:
+        """Whether the editor must collect a second timed location."""
+        return len(self.working_keyframes) == 1
+
+    def move_second_location(self, x: float, y: float) -> None:
+        """Move the temporary guided-workflow destination marker."""
+        if not self.is_awaiting_second_location:
+            raise ValueError("The trajectory already has a second location.")
+        self._validate_position(x, y)
+        self.second_location_x = x
+        self.second_location_y = y
+
+    def accept_second_location(self, t: float) -> str:
+        """Promote the temporary destination to the second timed location."""
+        if not self.is_awaiting_second_location:
+            raise ValueError("The trajectory already has a second location.")
+        if self.is_second_location_following_cursor:
+            raise ValueError("Click the map to place the destination first.")
+        if not math.isfinite(t):
+            raise ValueError("Location date must be finite.")
+        first = self.working_keyframes[0]
+        if t <= first.t + KEYFRAME_TIME_EPSILON:
+            raise ValueError(
+                "Move the playhead to a date later than the first location."
+            )
+        if self.second_location_x is None or self.second_location_y is None:
+            raise ValueError("Place the destination marker first.")
+        inserted = EditableKeyframe(
+            edit_id=str(uuid.uuid4()),
+            t=t,
+            x=self.second_location_x,
+            y=self.second_location_y,
+            point_kind=POINT_KIND_TIMED,
+        )
+        self.working_keyframes.append(inserted)
+        self.second_location_x = None
+        self.second_location_y = None
+        self.selected_keyframe_id = inserted.edit_id
+        self._refresh_state()
+        return inserted.edit_id
+
+    def place_second_location(self) -> None:
+        """Lock the cursor-led destination at its current temporary position."""
+        if not self.is_awaiting_second_location:
+            raise ValueError("The trajectory already has a second location.")
+        self.is_second_location_following_cursor = False
 
     @property
     def is_equalization_previewing(self) -> bool:
@@ -569,6 +629,15 @@ class TrajectoryEditSession:
             self.selected_keyframe_id = self.working_keyframes[next_index].edit_id
         else:
             self.selected_keyframe_id = None
+        if self.is_awaiting_second_location:
+            remaining = self.working_keyframes[0]
+            self.second_location_x = remaining.x
+            self.second_location_y = remaining.y
+            self.is_second_location_following_cursor = True
+        else:
+            self.second_location_x = None
+            self.second_location_y = None
+            self.is_second_location_following_cursor = False
         self._refresh_state()
         return True
 
@@ -700,6 +769,14 @@ class TrajectoryEditSession:
         self.speed_anchor_id = None
         self._clear_equalization_state(clear_anchor=True)
         self.is_conflicted = False
+        if len(self.working_keyframes) == 1:
+            self.second_location_x = self.working_keyframes[0].x
+            self.second_location_y = self.working_keyframes[0].y
+            self.is_second_location_following_cursor = True
+        else:
+            self.second_location_x = None
+            self.second_location_y = None
+            self.is_second_location_following_cursor = False
         self._refresh_state()
 
     def to_keyframes(self) -> list[Keyframe]:
@@ -723,7 +800,9 @@ class TrajectoryEditSession:
             self.working_segment_modes,
         )
 
-    def to_snapshot(self) -> TrajectoryEditSnapshot:
+    def to_snapshot(
+        self, *, playhead_time: float | None = None
+    ) -> TrajectoryEditSnapshot:
         """Return immutable-by-convention serialized state for the GUI."""
         selected_index: int | None = None
         if self.selected_keyframe_id is not None:
@@ -848,6 +927,21 @@ class TrajectoryEditSession:
                 == POINT_KIND_ROUTE
             ),
             "can_make_intermediate_automatic": can_equalize_to_selected,
+            "is_awaiting_second_location": self.is_awaiting_second_location,
+            "second_location_x": self.second_location_x,
+            "second_location_y": self.second_location_y,
+            "is_second_location_following_cursor": (
+                self.is_second_location_following_cursor
+            ),
+            "can_accept_second_location": (
+                self.is_awaiting_second_location
+                and self.second_location_x is not None
+                and self.second_location_y is not None
+                and not self.is_second_location_following_cursor
+                and playhead_time is not None
+                and playhead_time
+                > self.working_keyframes[0].t + KEYFRAME_TIME_EPSILON
+            ),
         }
 
     def _preview_equalization(

@@ -87,6 +87,7 @@ class MapTrajectoryMixin:
         btn_apply_trajectory: Any
         btn_cancel_trajectory: Any
         btn_add_trajectory_location: Any
+        btn_accept_second_trajectory_location: Any
         trajectory_date_panel: Any
         trajectory_date_feedback: Any
         trajectory_date_constraints: Any
@@ -256,12 +257,51 @@ class MapTrajectoryMixin:
             self.view.trajectory_edit_overlay.select(snapshot["selected_keyframe_id"])
 
         count = snapshot["keyframe_count"]
+        is_awaiting_second_location = snapshot["is_awaiting_second_location"]
+        guidance_text = ""
         self.trajectory_edit_label.setText(
-            f"Edit Trajectory | {count} point{'s' if count != 1 else ''}"
+            "Place Second Location"
+            if is_awaiting_second_location
+            else f"Edit Trajectory | {count} point{'s' if count != 1 else ''}"
         )
+        if is_awaiting_second_location:
+            first_date = self._format_trajectory_date(snapshot["keyframes"][0]["t"])
+            if snapshot["is_second_location_following_cursor"]:
+                live_status = "Click the map to place the destination first."
+                accept_tooltip = (
+                    "Click the map to place the destination before accepting it."
+                )
+            elif snapshot["can_accept_second_location"]:
+                live_status = (
+                    "Ready to add destination at "
+                    f"{self._format_trajectory_date(self._playhead_time)}."
+                )
+                accept_tooltip = (
+                    "Add this placed destination at the current playhead date."
+                )
+            else:
+                live_status = (
+                    "Cannot accept yet: move the playhead to a date after "
+                    f"{first_date}."
+                )
+                accept_tooltip = (
+                    "Move the playhead to a date after " + first_date + "."
+                )
+            guidance_text = (
+                "1. Move the cursor to the next location and click to place it. "
+                "2. Drag the destination marker to adjust it if needed. "
+                "3. Move the timeline playhead to its arrival date, then choose "
+                "Accept Second Location. "
+                + live_status
+            )
         selected_index = snapshot["selected_keyframe_index"]
         is_equalization_previewing = snapshot["is_equalization_previewing"]
-        if selected_index is None:
+        if is_awaiting_second_location:
+            self.trajectory_keyframe_label.setText("First location recorded")
+            self.trajectory_date_panel.hide()
+            self.trajectory_segment_panel.hide()
+            self._show_trajectory_speed_controls(snapshot, pending=pending)
+        elif selected_index is None:
             self.trajectory_keyframe_label.setText("Select a keyframe")
             self.trajectory_date_feedback.setText("Select a keyframe to edit its date.")
             self.trajectory_date_constraints.setText("")
@@ -375,26 +415,45 @@ class MapTrajectoryMixin:
                     )
                 self.trajectory_segment_panel.show()
 
-        self._show_trajectory_speed_controls(snapshot, pending=pending)
+        if not is_awaiting_second_location:
+            self._show_trajectory_speed_controls(snapshot, pending=pending)
 
-        messages = list(snapshot["validation_errors"])
+        messages = ([guidance_text] if guidance_text else []) + list(
+            snapshot["validation_errors"]
+        )
         if snapshot["is_conflicted"]:
             messages.insert(0, "Trajectory changed externally; Apply is blocked.")
         if is_equalization_previewing:
             messages.insert(0, "Apply or cancel the equalization preview.")
         self.trajectory_validation_label.setText(" ".join(messages))
+        self.trajectory_validation_label.setStyleSheet("")
+        self.btn_delete_trajectory_keyframe.setText(
+            "Delete Trajectory" if is_awaiting_second_location else "Delete"
+        )
         self.btn_delete_trajectory_keyframe.setEnabled(
-            snapshot["selected_keyframe_id"] is not None
+            (is_awaiting_second_location or snapshot["selected_keyframe_id"] is not None)
             and not snapshot["is_date_editing"]
             and not is_equalization_previewing
             and not pending
         )
         self.btn_add_trajectory_location.setEnabled(
-            not snapshot["is_date_editing"]
+            not is_awaiting_second_location
+            and not snapshot["is_date_editing"]
             and not is_equalization_previewing
             and not pending
         )
+        self.btn_add_trajectory_location.setVisible(not is_awaiting_second_location)
+        self.btn_accept_second_trajectory_location.setVisible(
+            is_awaiting_second_location
+        )
+        self.btn_accept_second_trajectory_location.setEnabled(
+            is_awaiting_second_location and not pending
+        )
+        self.btn_accept_second_trajectory_location.setToolTip(
+            accept_tooltip if is_awaiting_second_location else ""
+        )
         self.btn_reload_trajectory.setVisible(snapshot["is_conflicted"])
+        self.btn_apply_trajectory.setVisible(not is_awaiting_second_location)
         self.btn_apply_trajectory.setEnabled(snapshot["can_apply"] and not pending)
         self.btn_cancel_trajectory.setEnabled(not pending)
         self.trajectory_edit_strip.show()
@@ -481,6 +540,13 @@ class MapTrajectoryMixin:
             StyleHelper.get_error_label_style()
         )
         self.trajectory_date_constraints.setText(message)
+
+    def show_trajectory_guidance_error(self, message: str) -> None:
+        """Show a rejected guided-placement action beside its controls."""
+        self.trajectory_validation_label.setStyleSheet(
+            StyleHelper.get_error_label_style()
+        )
+        self.trajectory_validation_label.setText(message)
 
     def clear_trajectory_edit(self) -> None:
         """Remove the working overlay and restore authoritative playback."""

@@ -72,6 +72,11 @@ class TrajectoryEditCoordinator(QObject):
         widget.trajectory_keyframe_selected.connect(self.select_keyframe)
         widget.trajectory_keyframe_moved.connect(self.move_keyframe)
         widget.trajectory_midpoint_insert_requested.connect(self.insert_midpoint)
+        widget.trajectory_second_destination_moved.connect(self.move_second_location)
+        widget.trajectory_second_destination_placed.connect(self.place_second_location)
+        widget.trajectory_accept_second_location_requested.connect(
+            self.accept_second_location
+        )
         widget.trajectory_add_location_requested.connect(self.add_location_at_playhead)
         widget.trajectory_delete_selected_requested.connect(
             self.delete_selected_keyframe
@@ -117,6 +122,7 @@ class TrajectoryEditCoordinator(QObject):
             self.on_command_finished,
             Qt.ConnectionType.QueuedConnection,
         )
+        self._window.timeline.playhead_time_changed.connect(self.on_playhead_changed)
         self._bound = True
 
     @Slot(str)
@@ -212,7 +218,7 @@ class TrajectoryEditCoordinator(QObject):
             self._before_snapshot = None
             self._active_record_at_start = None
             self._latest_deferred = None
-            self._window.map_widget.show_trajectory_edit(self._session.to_snapshot())
+            self._render()
             return
 
         record = records[0]
@@ -250,7 +256,7 @@ class TrajectoryEditCoordinator(QObject):
         self._before_snapshot = copy.deepcopy(record.get("row_snapshot"))
         self._active_record_at_start = copy.deepcopy(record)
         self._latest_deferred = None
-        self._window.map_widget.show_trajectory_edit(self._session.to_snapshot())
+        self._render()
 
     @Slot(str)
     def select_keyframe(self, edit_id: str) -> None:
@@ -506,6 +512,51 @@ class TrajectoryEditCoordinator(QObject):
             return
         self._render(rebuild_overlay=False)
 
+    @Slot(float, float)
+    def move_second_location(self, x: float, y: float) -> None:
+        """Update the temporary guided-workflow destination marker."""
+        if self._session is None or self._pending_command_id is not None:
+            return
+        try:
+            self._session.move_second_location(x, y)
+        except ValueError as exc:
+            self._show_status(str(exc))
+            return
+        self._render(rebuild_overlay=False)
+
+    @Slot()
+    def accept_second_location(self) -> None:
+        """Promote the guided destination at the active playhead date."""
+        if self._session is None or self._pending_command_id is not None:
+            return
+        try:
+            self._session.accept_second_location(
+                self._window.timeline.get_playhead_time()
+            )
+        except ValueError as exc:
+            self._window.map_widget.show_trajectory_guidance_error(str(exc))
+            self._show_status(str(exc))
+            return
+        self._render()
+
+    @Slot()
+    def place_second_location(self) -> None:
+        """Lock the cursor-led temporary destination for later acceptance."""
+        if self._session is None or self._pending_command_id is not None:
+            return
+        try:
+            self._session.place_second_location()
+        except ValueError as exc:
+            self._show_status(str(exc))
+            return
+        self._render()
+
+    @Slot(float)
+    def on_playhead_changed(self, _playhead_time: float) -> None:
+        """Refresh guided acceptance feedback for a changed playhead."""
+        if self._session is not None and self._session.is_awaiting_second_location:
+            self._render(rebuild_overlay=False)
+
     @Slot(str, str, float, float)
     def insert_midpoint(self, start_id: str, end_id: str, x: float, y: float) -> None:
         """Promote one midpoint handle into a fixed-date working keyframe."""
@@ -552,12 +603,20 @@ class TrajectoryEditCoordinator(QObject):
         """Delete exactly the selected working keyframe."""
         if self._session is None or self._pending_command_id is not None:
             return
+        if (
+            self._session.is_awaiting_second_location
+            and self._session.selected_keyframe_id is None
+        ):
+            self._session.select_keyframe(self._session.working_keyframes[0].edit_id)
         try:
             deleted = self._session.delete_selected_keyframe()
         except ValueError as exc:
             self._show_status(str(exc))
             return
         if deleted:
+            if not self._session.working_keyframes and self._before_snapshot is None:
+                self._finish_session(self._current_authoritative())
+                return
             self._render()
 
     @Slot()
@@ -639,7 +698,9 @@ class TrajectoryEditCoordinator(QObject):
     def _render(self, *, pending: bool = False, rebuild_overlay: bool = True) -> None:
         if self._session is not None:
             self._window.map_widget.show_trajectory_edit(
-                self._session.to_snapshot(),
+                self._session.to_snapshot(
+                    playhead_time=self._window.timeline.get_playhead_time()
+                ),
                 pending=pending,
                 rebuild_overlay=rebuild_overlay,
             )

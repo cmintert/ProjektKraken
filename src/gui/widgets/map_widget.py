@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QMenu,
+    QMessageBox,
     QPushButton,
     QSizePolicy,
     QSplitter,
@@ -186,6 +187,9 @@ class MapWidget(
     trajectory_keyframe_selected = Signal(str)
     trajectory_keyframe_moved = Signal(str, float, float)
     trajectory_midpoint_insert_requested = Signal(str, str, float, float)
+    trajectory_second_destination_moved = Signal(float, float)
+    trajectory_second_destination_placed = Signal()
+    trajectory_accept_second_location_requested = Signal()
     trajectory_add_location_requested = Signal()
     trajectory_delete_selected_requested = Signal()
     trajectory_apply_requested = Signal()
@@ -446,7 +450,7 @@ class MapWidget(
             StyleHelper.get_ghost_destructive_button_style()
         )
         self.btn_delete_trajectory_keyframe.clicked.connect(
-            self.trajectory_delete_selected_requested.emit
+            self._request_trajectory_keyframe_deletion
         )
         edit_layout.addWidget(self.btn_delete_trajectory_keyframe)
         self.btn_add_trajectory_location = QPushButton("Add Location")
@@ -457,6 +461,20 @@ class MapWidget(
             self.trajectory_add_location_requested.emit
         )
         edit_layout.addWidget(self.btn_add_trajectory_location)
+        self.btn_accept_second_trajectory_location = QPushButton(
+            "Accept Second Location"
+        )
+        self.btn_accept_second_trajectory_location.setToolTip(
+            "Add the destination marker at the current later playhead date."
+        )
+        self.btn_accept_second_trajectory_location.setStyleSheet(
+            StyleHelper.get_primary_button_style()
+        )
+        self.btn_accept_second_trajectory_location.clicked.connect(
+            self.trajectory_accept_second_location_requested.emit
+        )
+        self.btn_accept_second_trajectory_location.hide()
+        edit_layout.addWidget(self.btn_accept_second_trajectory_location)
         self._build_trajectory_commit_buttons(edit_layout)
         self.trajectory_edit_strip.hide()
         layout.addWidget(self.trajectory_edit_strip)
@@ -484,6 +502,22 @@ class MapWidget(
             self.trajectory_cancel_requested.emit
         )
         edit_layout.addWidget(self.btn_cancel_trajectory)
+
+    def _request_trajectory_keyframe_deletion(self) -> None:
+        """Confirm destructive final-keyframe deletion before emitting intent."""
+        snapshot = self._trajectory_edit_snapshot
+        if snapshot is not None and snapshot["keyframe_count"] == 1:
+            reply = QMessageBox.question(
+                self,
+                "Delete Trajectory?",
+                "This is the final trajectory location. Applying this edit will "
+                "remove the trajectory. Continue?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if reply != QMessageBox.StandardButton.Yes:
+                return
+        self.trajectory_delete_selected_requested.emit()
 
     def _build_feature_geometry_edit_strip(self, layout: QVBoxLayout) -> None:
         """Build controls for applying or cancelling geometry edits."""
@@ -859,8 +893,14 @@ class MapWidget(
         self.view.trajectory_midpoint_insert_requested.connect(
             self.trajectory_midpoint_insert_requested.emit
         )
+        self.view.trajectory_second_destination_moved.connect(
+            self.trajectory_second_destination_moved.emit
+        )
+        self.view.trajectory_second_destination_placed.connect(
+            self.trajectory_second_destination_placed.emit
+        )
         self.view.trajectory_delete_selected_requested.connect(
-            self.trajectory_delete_selected_requested.emit
+            self._request_trajectory_keyframe_deletion
         )
         self.view.add_marker_requested.connect(self._on_create_marker_requested)
         self.view.marker_placement_ended.connect(self._on_marker_placement_ended)
@@ -1905,7 +1945,7 @@ class MapWidget(
                     event.accept()
                     return
             if event.key() == Qt.Key.Key_Delete:
-                self.trajectory_delete_selected_requested.emit()
+                self._request_trajectory_keyframe_deletion()
                 event.accept()
                 return
         if self.active_map_session_mode() is not None:

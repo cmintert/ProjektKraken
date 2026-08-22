@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-08-21
-**Commit:** 52638a1c
+**Last Updated:** 2026-08-22
+**Commit:** 1f42a29c
 ---
 
 # Changelog
@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-08-22)* **Maps / Trajectories**: Added a guided second-location
+  workflow for new and one-point trajectories, with cursor-led destination
+  placement, later-date validation, and atomic apply.
 - *(2026-08-21)* **Maps / Path Styling**: Added solid, dotted, short-dash,
   long-dash, and dash-dot presets to path styles while preserving custom
   patterns.
@@ -42,6 +45,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-22)* **Maps / Trajectory Editing**: Confirmed final-location
+  deletion before preparing trajectory removal, and kept small marker motions
+  as clicks until a deliberate drag threshold is crossed.
 - *(2026-08-21)* **Maps / Trajectories**: Repainted routes immediately when
   Escape deselects their marker.
 - *(2026-08-21)* **Maps / Feature Tooltips**: Removed redundant feature type
@@ -85,6 +91,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- *(2026-08-22)* **Documentation / Testing**: Documented the guided trajectory
+  workflow and expanded regression coverage for trajectory creation, deletion,
+  and marker drag intent.
 - *(2026-08-21)* **Editor / Usability**: Made resizable wiki editor fields
   expand vertically with their parent inspector while retaining their minimum
   usable width.

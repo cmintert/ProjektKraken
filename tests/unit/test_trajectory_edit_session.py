@@ -130,10 +130,38 @@ def test_delete_allows_one_and_zero_keyframe_states() -> None:
 
     assert session.delete_selected_keyframe() is True
     assert len(session.working_keyframes) == 1
-    assert session.can_apply is True
+    assert session.is_awaiting_second_location is True
+    assert session.can_apply is False
     assert session.delete_selected_keyframe() is True
     assert session.working_keyframes == []
     assert session.can_apply is True
+
+
+def test_guided_second_location_requires_later_date_and_promotes_destination() -> None:
+    """A one-point track retains a movable, unsaved second destination."""
+    session = TrajectoryEditSession.create(
+        "map-1",
+        "marker-1",
+        None,
+        [Keyframe(t=5.0, x=0.4, y=0.6)],
+        is_new=True,
+    )
+
+    assert session.is_awaiting_second_location is True
+    session.move_second_location(0.8, 0.2)
+    session.place_second_location()
+    with pytest.raises(ValueError, match="later than the first location"):
+        session.accept_second_location(5.0)
+
+    accepted_id = session.accept_second_location(9.0)
+
+    assert session.is_awaiting_second_location is False
+    assert session.can_apply is True
+    assert [(point.t, point.x, point.y) for point in session.working_keyframes] == [
+        (5.0, 0.4, 0.6),
+        (9.0, 0.8, 0.2),
+    ]
+    assert session.selected_keyframe_id == accepted_id
 
 
 def test_conflict_blocks_apply_without_losing_working_state() -> None:

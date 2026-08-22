@@ -122,9 +122,19 @@ date.
 
 Select an entity marker and choose **Create Trajectory**. ProjektKraken starts
 an unsaved track with one dated location: the marker's current map position at
-the current playhead date. Choose **Cancel** to leave the entity unchanged, or
-**Apply** to create the track as one undoable change. Event markers cannot have
-trajectories.
+the current playhead date. It then guides you to create a second location:
+
+1. Move the cursor to the next location and click to place the temporary
+   destination marker.
+2. Drag that marker to refine its position if needed, then move the timeline
+   playhead to its later arrival date.
+3. Choose **Accept Second Location**.
+
+The instruction strip reports when the selected date is valid. Accepting the
+second location does not save yet: add as many further locations as needed,
+then choose **Apply** to create the complete track as one undoable change.
+Choose **Cancel** to leave the entity unchanged. Existing one-location tracks
+open in the same guided completion flow. Event markers cannot have trajectories.
 
 For an entity that already has a track, choose **Edit Trajectory**. The map
 shows a working copy while the saved track remains unchanged.
@@ -221,6 +231,10 @@ and move the dated locations instead.
 If a date would overlap another point, ProjektKraken keeps the working copy
 open and explains the conflict. Correct the date or cancel the date edit before
 applying the trajectory.
+
+Deleting a final trajectory location shows a warning. For a saved trajectory,
+confirming the warning prepares its removal; choose **Apply** to save that
+removal, or **Cancel** to keep the saved trajectory unchanged.
 
 **Cancel Date** restores the date from before that date edit and leaves the
 timeline where it is. Cancelling the complete trajectory likewise discards the

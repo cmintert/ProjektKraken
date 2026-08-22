@@ -5,9 +5,15 @@ Unit tests for map widget functionality.
 from unittest.mock import MagicMock
 
 import pytest
-from PySide6.QtCore import QPoint, QPointF, QRectF, Qt
-from PySide6.QtGui import QImage, QKeyEvent, QPixmap, QWheelEvent
-from PySide6.QtWidgets import QGraphicsItem, QGraphicsPixmapItem, QSizePolicy
+from PySide6.QtCore import QEvent, QPoint, QPointF, QRectF, Qt
+from PySide6.QtGui import QImage, QKeyEvent, QMouseEvent, QPixmap, QWheelEvent
+from PySide6.QtWidgets import (
+    QGraphicsItem,
+    QGraphicsPixmapItem,
+    QGraphicsView,
+    QMessageBox,
+    QSizePolicy,
+)
 
 from src.core.theme_manager import ThemeManager
 from src.core.trajectory import SEGMENT_MODE_STEP, Keyframe
@@ -216,6 +222,149 @@ def test_first_segment_selection_keeps_map_viewport_stable(map_widget, qtbot):
 
     assert map_widget.view.viewport().size() == initial_viewport_size
     assert map_widget.trajectory_segment_panel.isVisible()
+
+
+def test_guided_second_location_shows_persistent_instruction_and_target(
+    map_widget, qtbot
+):
+    """A one-point edit exposes the destination marker and clear next steps."""
+    _show_map_with_marker(map_widget, qtbot)
+    session = TrajectoryEditSession.create(
+        "map-1",
+        "marker1",
+        None,
+        [Keyframe(t=0.0, x=0.2, y=0.3)],
+        is_new=True,
+    )
+
+    map_widget.show_trajectory_edit(session.to_snapshot(playhead_time=5.0))
+
+    assert map_widget.btn_accept_second_trajectory_location.isVisible()
+    assert map_widget.btn_accept_second_trajectory_location.isEnabled()
+    assert "1. Move the cursor" in map_widget.trajectory_validation_label.text()
+    assert "Cannot accept yet" not in map_widget.trajectory_validation_label.text()
+    handle = map_widget.view.trajectory_edit_overlay._second_location_handle
+    assert handle is not None
+    assert "Destination marker" in handle.toolTip()
+
+    session.move_second_location(0.8, 0.7)
+    session.place_second_location()
+    map_widget.show_trajectory_edit(session.to_snapshot(playhead_time=0.0))
+    assert "Cannot accept yet" in map_widget.trajectory_validation_label.text()
+    assert "Move the playhead" in map_widget.btn_accept_second_trajectory_location.toolTip()
+    map_widget.show_trajectory_guidance_error(
+        "Move the playhead to a date later than the first location."
+    )
+    assert map_widget.trajectory_validation_label.isVisible()
+    assert "later than the first location" in (
+        map_widget.trajectory_validation_label.text()
+    )
+
+
+def test_guided_destination_follows_cursor_until_map_click(map_widget, qtbot):
+    """Cursor motion places only the temporary destination, never the entity."""
+    _show_map_with_marker(map_widget, qtbot)
+    session = TrajectoryEditSession.create(
+        "map-1",
+        "marker1",
+        None,
+        [Keyframe(t=0.0, x=0.2, y=0.3)],
+        is_new=True,
+    )
+    map_widget.show_trajectory_edit(session.to_snapshot(playhead_time=5.0))
+    overlay = map_widget.view.trajectory_edit_overlay
+    original_marker_position = QPointF(map_widget.view.markers["marker1"].pos())
+    target_moves: list[tuple[float, float]] = []
+    placements: list[bool] = []
+    map_widget.trajectory_second_destination_moved.connect(
+        lambda x, y: target_moves.append((x, y))
+    )
+    map_widget.trajectory_second_destination_placed.connect(
+        lambda: placements.append(True)
+    )
+
+    move = QMouseEvent(
+        QEvent.Type.MouseMove,
+        QPointF(80, 70),
+        QPointF(80, 70),
+        QPointF(80, 70),
+        Qt.MouseButton.NoButton,
+        Qt.MouseButton.NoButton,
+        Qt.KeyboardModifier.NoModifier,
+    )
+    map_widget.view.mouseMoveEvent(move)
+    assert overlay.is_second_location_following_cursor is True
+    assert (
+        map_widget.view.viewport().cursor().shape() == Qt.CursorShape.CrossCursor
+    )
+    assert map_widget.view.dragMode() == QGraphicsView.DragMode.NoDrag
+    assert target_moves
+    assert map_widget.view.markers["marker1"].pos() == original_marker_position
+
+    click = QMouseEvent(
+        QEvent.Type.MouseButtonPress,
+        QPointF(80, 70),
+        QPointF(80, 70),
+        QPointF(80, 70),
+        Qt.MouseButton.LeftButton,
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+    )
+    map_widget.view.mousePressEvent(click)
+    locked_position = QPointF(overlay._second_location_handle.pos())  # type: ignore[union-attr]
+    assert overlay.is_second_location_following_cursor is False
+    assert (
+        map_widget.view.dragMode() == QGraphicsView.DragMode.ScrollHandDrag
+    )
+    assert (
+        map_widget.view.viewport().cursor().shape() != Qt.CursorShape.CrossCursor
+    )
+    assert placements == [True]
+
+    map_widget.view.mouseMoveEvent(
+        QMouseEvent(
+            QEvent.Type.MouseMove,
+            QPointF(90, 80),
+            QPointF(90, 80),
+            QPointF(90, 80),
+            Qt.MouseButton.NoButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+    )
+    assert overlay._second_location_handle.pos() == locked_position  # type: ignore[union-attr]
+    assert map_widget.view.markers["marker1"].pos() == original_marker_position
+
+
+def test_final_trajectory_location_deletion_requires_confirmation(
+    map_widget, monkeypatch
+):
+    """The final-point warning gates both destructive user choices."""
+    session = TrajectoryEditSession.create(
+        "map-1",
+        "marker1",
+        "trajectory-1",
+        [Keyframe(t=0.0, x=0.2, y=0.3)],
+    )
+    map_widget._trajectory_edit_snapshot = session.to_snapshot()
+    requested: list[bool] = []
+    map_widget.trajectory_delete_selected_requested.connect(
+        lambda: requested.append(True)
+    )
+
+    monkeypatch.setattr(
+        "src.gui.widgets.map_widget.QMessageBox.question",
+        lambda *_args: QMessageBox.StandardButton.No,
+    )
+    map_widget._request_trajectory_keyframe_deletion()
+    assert requested == []
+
+    monkeypatch.setattr(
+        "src.gui.widgets.map_widget.QMessageBox.question",
+        lambda *_args: QMessageBox.StandardButton.Yes,
+    )
+    map_widget._request_trajectory_keyframe_deletion()
+    assert requested == [True]
 
 
 def test_use_playhead_disables_itself_and_explains_invalid_date(map_widget, qtbot):
@@ -897,6 +1046,115 @@ def test_marker_item_draggable(map_view):
     # Verify draggable flags
     assert marker.flags() & QGraphicsItem.ItemIsMovable
     assert marker.flags() & QGraphicsItem.ItemSendsGeometryChanges
+
+
+def test_direct_marker_drag_uses_safety_margin(map_view, qapp, qtbot):
+    """Small direct-marker motion remains a click; 12 px begins a drag."""
+    map_view.resize(400, 300)
+    setup_map_with_pixmap(map_view)
+    map_view.add_marker("marker1", "entity", "Test Label", 0.5, 0.5)
+    marker = map_view.markers["marker1"]
+    moved = []
+    clicked = []
+    map_view.marker_moved.connect(lambda *args: moved.append(args))
+    marker.clicked.connect(lambda *args: clicked.append(args))
+    map_view.show()
+    map_view.centerOn(marker)
+    qapp.processEvents()
+
+    start = map_view.mapFromScene(marker.scenePos())
+    original_position = QPointF(marker.pos())
+    qtbot.mousePress(map_view.viewport(), Qt.MouseButton.LeftButton, pos=start)
+    qtbot.mouseMove(map_view.viewport(), pos=start + QPoint(4, 3))
+    qtbot.mouseRelease(
+        map_view.viewport(), Qt.MouseButton.LeftButton, pos=start + QPoint(4, 3)
+    )
+
+    assert marker.pos() == original_position
+    assert moved == []
+    assert clicked == [("marker1", "entity")]
+
+    qtbot.mousePress(map_view.viewport(), Qt.MouseButton.LeftButton, pos=start)
+    qtbot.mouseMove(map_view.viewport(), pos=start + QPoint(12, 0))
+    qtbot.mouseRelease(
+        map_view.viewport(), Qt.MouseButton.LeftButton, pos=start + QPoint(12, 0)
+    )
+
+    assert marker.pos() != original_position
+    assert len(moved) == 1
+
+
+def test_proxy_marker_drag_uses_safety_margin(map_view, qapp):
+    """The enlarged marker hit target waits for the same 12 px margin."""
+    from PySide6.QtCore import QEvent
+    from PySide6.QtGui import QMouseEvent
+
+    setup_map_with_pixmap(map_view)
+    map_view.add_marker("marker1", "entity", "Test Label", 0.5, 0.5)
+    marker = map_view.markers["marker1"]
+    moved = []
+    clicked = []
+    map_view.marker_moved.connect(lambda *args: moved.append(args))
+    marker.clicked.connect(lambda *args: clicked.append(args))
+    map_view._proxy_drag_marker = marker
+    map_view._proxy_drag_scene_start = map_view.mapToScene(QPoint(100, 100))
+    map_view._proxy_drag_marker_start = QPointF(marker.pos())
+    map_view._proxy_drag_view_start = QPointF(100, 100)
+    original_position = QPointF(marker.pos())
+
+    small_move = QMouseEvent(
+        QEvent.Type.MouseMove,
+        QPointF(104, 103),
+        QPointF(104, 103),
+        QPointF(104, 103),
+        Qt.MouseButton.NoButton,
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+    )
+    map_view.mouseMoveEvent(small_move)
+    assert marker.pos() == original_position
+
+    release = QMouseEvent(
+        QEvent.Type.MouseButtonRelease,
+        QPointF(104, 103),
+        QPointF(104, 103),
+        QPointF(104, 103),
+        Qt.MouseButton.LeftButton,
+        Qt.MouseButton.NoButton,
+        Qt.KeyboardModifier.NoModifier,
+    )
+    map_view.mouseReleaseEvent(release)
+    assert moved == []
+    assert clicked == [("marker1", "entity")]
+
+    map_view._proxy_drag_marker = marker
+    map_view._proxy_drag_scene_start = map_view.mapToScene(QPoint(100, 100))
+    map_view._proxy_drag_marker_start = QPointF(marker.pos())
+    map_view._proxy_drag_view_start = QPointF(100, 100)
+    large_move = QMouseEvent(
+        QEvent.Type.MouseMove,
+        QPointF(112, 100),
+        QPointF(112, 100),
+        QPointF(112, 100),
+        Qt.MouseButton.NoButton,
+        Qt.MouseButton.LeftButton,
+        Qt.KeyboardModifier.NoModifier,
+    )
+    map_view.mouseMoveEvent(large_move)
+    assert marker.pos() != original_position
+
+    large_release = QMouseEvent(
+        QEvent.Type.MouseButtonRelease,
+        QPointF(112, 100),
+        QPointF(112, 100),
+        QPointF(112, 100),
+        Qt.MouseButton.LeftButton,
+        Qt.MouseButton.NoButton,
+        Qt.KeyboardModifier.NoModifier,
+    )
+    map_view.mouseReleaseEvent(large_release)
+    qapp.processEvents()
+    assert len(moved) == 1
 
 
 def test_marker_item_colors(qtbot):

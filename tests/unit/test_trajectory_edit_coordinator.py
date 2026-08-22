@@ -21,6 +21,7 @@ class _MapWidget:
         self._playhead_time = 5.0
         self.show_trajectory_edit = MagicMock()
         self.show_trajectory_date_error = MagicMock()
+        self.show_trajectory_guidance_error = MagicMock()
         self.clear_trajectory_edit = MagicMock()
         self.get_trajectory_distance_context = MagicMock(
             return_value=TrajectoryDistanceContext(1.0, 1.0)
@@ -137,6 +138,10 @@ def test_create_trajectory_apply_emits_atomic_creation_command():
     commands = []
     coordinator.command_requested.connect(commands.append)
     coordinator.start_edit("marker-1")
+    coordinator.move_second_location(0.8, 0.2)
+    coordinator.place_second_location()
+    window.timeline.set_playhead_time(9.0)
+    coordinator.accept_second_location()
 
     coordinator.apply()
 
@@ -144,8 +149,66 @@ def test_create_trajectory_apply_emits_atomic_creation_command():
     command = commands[0]
     assert isinstance(command, UpdateTrajectoryCommand)
     assert command.before_snapshot is None
-    assert command.after_keyframes[0].t == 5.0
+    assert [(keyframe.t, keyframe.x, keyframe.y) for keyframe in command.after_keyframes] == [
+        (5.0, 0.4, 0.6),
+        (9.0, 0.8, 0.2),
+    ]
     assert command.after_properties["kraken_trajectory"]["schema_version"] == 2
+
+
+def test_one_point_track_opens_guided_and_accepts_later_playhead_destination():
+    window = _Window()
+    record = _record()
+    record["keyframes"] = [record["keyframes"][0]]
+    record["keyframes"][0]["t"] = 5.0
+    coordinator = TrajectoryEditCoordinator(window)  # type: ignore[arg-type]
+    coordinator.on_trajectories_ready("map-1", [record])
+
+    coordinator.start_edit("marker-1")
+
+    assert coordinator._session is not None
+    assert coordinator._session.is_awaiting_second_location is True
+    snapshot = window.map_widget.show_trajectory_edit.call_args.args[0]
+    assert snapshot["can_accept_second_location"] is False
+
+    coordinator.move_second_location(0.7, 0.3)
+    window.timeline.set_playhead_time(8.0)
+    coordinator.on_playhead_changed(8.0)
+    coordinator.place_second_location()
+
+    snapshot = window.map_widget.show_trajectory_edit.call_args.args[0]
+    assert snapshot["can_accept_second_location"] is True
+    coordinator.accept_second_location()
+    assert len(coordinator._session.working_keyframes) == 2
+
+
+def test_guided_accept_rejection_is_shown_inline_when_playhead_did_not_advance():
+    window = _Window()
+    coordinator = TrajectoryEditCoordinator(window)  # type: ignore[arg-type]
+    coordinator.on_trajectories_ready("map-1", [])
+    coordinator.start_edit("marker-1")
+    coordinator.move_second_location(0.7, 0.3)
+    coordinator.place_second_location()
+
+    coordinator.accept_second_location()
+
+    window.map_widget.show_trajectory_guidance_error.assert_called_once_with(
+        "Move the playhead to a date later than the first location."
+    )
+    assert coordinator._session is not None
+    assert len(coordinator._session.working_keyframes) == 1
+
+
+def test_deleting_down_to_one_point_restarts_guided_second_location_flow():
+    coordinator, _window = _coordinator()
+    coordinator.start_edit("marker-1")
+    assert coordinator._session is not None
+    coordinator.select_keyframe(coordinator._session.working_keyframes[1].edit_id)
+
+    coordinator.delete_selected_keyframe()
+
+    assert len(coordinator._session.working_keyframes) == 1
+    assert coordinator._session.is_awaiting_second_location is True
 
 
 def test_switching_maps_discards_active_edit():
