@@ -15,6 +15,7 @@ import logging
 import os
 import struct
 import xml.etree.ElementTree as ET
+from collections import Counter
 from dataclasses import dataclass
 from typing import Any, Optional
 
@@ -26,6 +27,10 @@ logger = logging.getLogger(__name__)
 
 _FLOAT_TAG_BYTE_COUNT = 4
 _GREYSCALE_CHANNEL_TOLERANCE = 2
+_MAX_PATH_CLASSES = 5
+_MAX_REGION_CLASSES = 3
+_MIN_PATH_POINTS = 2
+_MIN_REGION_POINTS = 3
 
 # Maximum thumbnail dimension (pixels)
 _THUMB_MAX = 128
@@ -233,6 +238,8 @@ def _sample_pixel_value(file_path: str, norm_x: float, norm_y: float) -> Optiona
         if not raw:
             return None
         raw = raw[0]
+    if raw is None:
+        return None
     try:
         return int(raw)
     except (TypeError, ValueError):
@@ -282,6 +289,190 @@ def sample_raster_semantic(
         return None
 
     return lookup_label_for_value({"value_entity_map": value_entity_map}, value)
+
+
+def sample_raster_path_semantics(
+    file_path: str,
+    points: tuple[tuple[float, float], ...],
+    value_entity_map: dict,
+) -> Optional[str]:
+    """Return bounded semantic transitions along an open normalized path."""
+    if len(points) < _MIN_PATH_POINTS or not _valid_vem(value_entity_map):
+        return None
+    opened = _open_discrete_raster(file_path)
+    if opened is None:
+        return None
+    image, width, height = opened
+    try:
+        if any(not _in_normalized_bounds(point) for point in points):
+            return None
+        pixels: list[tuple[int, int]] = []
+        for start, end in zip(points, points[1:]):
+            start_pixel = _normalized_pixel(start, width, height)
+            end_pixel = _normalized_pixel(end, width, height)
+            segment = _supercover_line(start_pixel, end_pixel)
+            if pixels and segment and pixels[-1] == segment[0]:
+                segment = segment[1:]
+            pixels.extend(segment)
+        labels = [
+            _label_for_pixel(image, pixel, value_entity_map) for pixel in pixels
+        ]
+    finally:
+        image.close()
+    transitions = _smooth_transitions(labels)
+    if not transitions:
+        return None
+    rendered = transitions[:_MAX_PATH_CLASSES]
+    if len(transitions) > _MAX_PATH_CLASSES:
+        rendered.append("…")
+    return " → ".join(rendered)
+
+
+def sample_raster_region_semantics(
+    file_path: str,
+    points: tuple[tuple[float, float], ...],
+    value_entity_map: dict,
+) -> Optional[str]:
+    """Return leading semantic classes by covered raster-cell area."""
+    if len(points) < _MIN_REGION_POINTS or not _valid_vem(value_entity_map):
+        return None
+    opened = _open_discrete_raster(file_path)
+    if opened is None:
+        return None
+    image, width, height = opened
+    try:
+        if any(not _in_normalized_bounds(point) for point in points):
+            return None
+        from PIL import Image as PilImage
+        from PIL import ImageDraw
+
+        mask = PilImage.new("1", (width, height), 0)
+        polygon = [_normalized_pixel(point, width, height) for point in points]
+        ImageDraw.Draw(mask).polygon(polygon, fill=1)
+        image_values = np.asarray(image)
+        mask_values = np.asarray(mask, dtype=bool)
+        covered = image_values[mask_values]
+        if covered.size == 0:
+            return None
+        raw_counts = Counter(int(value) for value in covered.tolist())
+        label_counts: Counter[str] = Counter()
+        for value, count in raw_counts.items():
+            label = lookup_label_for_value(
+                {"value_entity_map": value_entity_map}, value
+            )
+            if label:
+                label_counts[label] += count
+    finally:
+        image.close()
+    total = sum(label_counts.values())
+    if total == 0:
+        return None
+    leading = sorted(label_counts.items(), key=lambda item: (-item[1], item[0]))[
+        :_MAX_REGION_CLASSES
+    ]
+    return ", ".join(
+        f"{label} {round(count * 100 / total)}%" for label, count in leading
+    )
+
+
+def _open_discrete_raster(file_path: str) -> tuple[Any, int, int] | None:
+    from PIL import Image as PilImage
+
+    try:
+        image = PilImage.open(file_path)
+        if image.mode not in ("L", "I", "I;16"):
+            image.close()
+            return None
+        width, height = image.size
+        if width <= 0 or height <= 0:
+            image.close()
+            return None
+        return image, width, height
+    except (OSError, ValueError):
+        return None
+
+
+def _valid_vem(value_entity_map: dict) -> bool:
+    return isinstance(value_entity_map, dict) and bool(
+        value_entity_map.get("mappings")
+    )
+
+
+def _in_normalized_bounds(point: tuple[float, float]) -> bool:
+    return 0.0 <= point[0] <= 1.0 and 0.0 <= point[1] <= 1.0
+
+
+def _normalized_pixel(
+    point: tuple[float, float], width: int, height: int
+) -> tuple[int, int]:
+    return (
+        int(point[0] * (width - 1)),
+        int(point[1] * (height - 1)),
+    )
+
+
+def _label_for_pixel(
+    image: Any, pixel: tuple[int, int], value_entity_map: dict
+) -> str | None:
+    raw = image.getpixel(pixel)
+    if isinstance(raw, (tuple, list)):
+        raw = raw[0] if raw else None
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return None
+    return lookup_label_for_value({"value_entity_map": value_entity_map}, value)
+
+
+def _supercover_line(
+    start: tuple[int, int], end: tuple[int, int]
+) -> list[tuple[int, int]]:
+    """Return every raster cell crossed by a line between pixel centres."""
+    x, y = start
+    end_x, end_y = end
+    dx = end_x - x
+    dy = end_y - y
+    x_step = 1 if dx >= 0 else -1
+    y_step = 1 if dy >= 0 else -1
+    nx = abs(dx)
+    ny = abs(dy)
+    cells = [(x, y)]
+    ix = 0
+    iy = 0
+    while ix < nx or iy < ny:
+        decision = (1 + 2 * ix) * ny - (1 + 2 * iy) * nx
+        if decision == 0:
+            x += x_step
+            y += y_step
+            ix += 1
+            iy += 1
+        elif decision < 0:
+            x += x_step
+            ix += 1
+        else:
+            y += y_step
+            iy += 1
+        cells.append((x, y))
+    return cells
+
+
+def _smooth_transitions(labels: list[str | None]) -> list[str]:
+    runs: list[tuple[str | None, int]] = []
+    for label in labels:
+        if runs and runs[-1][0] == label:
+            previous, count = runs[-1]
+            runs[-1] = (previous, count + 1)
+        else:
+            runs.append((label, 1))
+    for index in range(1, len(runs) - 1):
+        label, count = runs[index]
+        if count == 1 and runs[index - 1][0] == runs[index + 1][0]:
+            runs[index] = (runs[index - 1][0], count)
+    transitions: list[str] = []
+    for label, _count in runs:
+        if label is not None and (not transitions or transitions[-1] != label):
+            transitions.append(label)
+    return transitions
 
 
 @dataclass(frozen=True)
@@ -345,21 +536,22 @@ def analyse_image(path: str) -> ImageAnalysisResult:
         original_mode = im.mode
         mode = original_mode
         mode_converted = False
+        working: Any = im
 
         # I;16 is PIL's raw 16-bit representation — unusable for copy/thumbnail.
         # Promote to I (32-bit int, still greyscale) to preserve values.
         if mode == "I;16":
-            im = im.convert("I")
-            mode = im.mode
+            working = im.convert("I")
+            mode = working.mode
         # Palette modes carry no scalar data — convert to colour.
         elif mode in ("P", "PA"):
-            im = im.convert("RGBA" if mode == "PA" else "RGB")
-            mode = im.mode
+            working = im.convert("RGBA" if mode == "PA" else "RGB")
+            mode = working.mode
             mode_converted = True
         # Any other exotic mode: fall back to RGB but flag the conversion.
         elif mode not in ("L", "LA", "I", "F", "RGB", "RGBA"):
-            im = im.convert("RGB")
-            mode = im.mode
+            working = im.convert("RGB")
+            mode = working.mode
             mode_converted = True
 
         # ------------------------------------------------------------------ #
@@ -370,7 +562,7 @@ def analyse_image(path: str) -> ImageAnalysisResult:
         _is_content_grey = _native_grey
 
         if not _native_grey and mode in ("RGB", "RGBA"):
-            arr = np.array(im.convert("RGB"))
+            arr = np.array(working.convert("RGB"))
             _drg = int(
                 np.max(
                     np.abs(
@@ -411,7 +603,7 @@ def analyse_image(path: str) -> ImageAnalysisResult:
         # ------------------------------------------------------------------ #
         # Thumbnail (convert to RGB for safe QImage display across all modes)
         # ------------------------------------------------------------------ #
-        thumb = im.copy()
+        thumb = working.copy()
         thumb.thumbnail((_THUMB_MAX, _THUMB_MAX), PilImage.Resampling.LANCZOS)
         thumb_rgb = thumb.convert("RGB")
         thumbnail_arr = np.array(thumb_rgb, dtype=np.uint8)

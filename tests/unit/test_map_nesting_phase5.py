@@ -174,6 +174,35 @@ class TestDetailAdvisory:
         if result is not None:
             assert "Detail map available" not in result
 
+    def test_advisory_added_when_path_crosses_rotated_footprint(self):
+        marker = Marker(
+            id="marker-1",
+            map_id="map-master",
+            object_id="entity-1",
+            object_type="entity",
+            x=0.5,
+            y=0.5,
+            label="Road",
+            feature_type="path",
+            geometry=[{"x": 0.1, "y": 0.5}, {"x": 0.9, "y": 0.5}],
+        )
+        master = _make_map(
+            "m1", "World", MAP_ROLE_MASTER, layers=_layer_tree("marker-1")
+        )
+        child = _make_map(
+            "d1",
+            "Rotated District",
+            MAP_ROLE_DETAIL,
+            "m1",
+            _affine(cx=0.5, cy=0.5, scale=0.2, rotation=45.0),
+        )
+        builder = self._builder_with_children(marker, master, [child])
+
+        result = builder.build("entity-1", "entity", "m1")
+
+        assert result is not None
+        assert "Detail map available: Rotated District" in result
+
     def test_no_advisory_when_active_map_is_detail(self):
         """Decision 5: detail map active → active map's context wins."""
         marker = _make_marker(0.5, 0.5)

@@ -295,6 +295,14 @@ returns through the map hierarchy.
 Calibrate a map by measuring a known distance. Calibration affects displayed
 measurements and the scale bar; it does not resample the map image or raster.
 
+ProjektKraken assumes every map is north-up. Spatial context evaluates point
+markers at their position, paths along their full line, and regions across
+their full boundary and area. For dated paths and regions, it uses the geometry
+resolved at the requested date. Feature anchors remain responsible for labels
+and selection but do not stand in for an extended feature during spatial
+comparisons. If extended geometry is invalid, Kraken omits the affected spatial
+claim instead of approximating it from the anchor.
+
 Cross-layer spatial queries compare compatible raster layers at a selected
 location. Review the layer purpose and value range before interpreting a
 result.

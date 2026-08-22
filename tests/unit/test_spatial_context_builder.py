@@ -19,7 +19,10 @@ from src.app.constants import MAP_DEFAULT_WIDTH_METERS
 from src.core.feature_geometry_state import FeatureGeometryState
 from src.core.map import Map, MapLayerNode
 from src.core.marker import Marker
-from src.services.spatial_context_builder import SpatialContextBuilder
+from src.services.spatial_context_builder import (
+    SpatialContextBuilder,
+    _compass_direction,
+)
 
 # ---------------------------------------------------------------------------
 # Fixtures / helpers
@@ -399,6 +402,125 @@ def test_calibrated_map_emits_distance_units() -> None:
     assert "km" in result or " m " in result
 
 
+@pytest.mark.parametrize(
+    ("dx", "dy", "expected"),
+    [
+        (1.0, 0.0, "E"),
+        (1.0, -1.0, "NE"),
+        (0.0, -1.0, "N"),
+        (-1.0, -1.0, "NW"),
+        (-1.0, 0.0, "W"),
+        (-1.0, 1.0, "SW"),
+        (0.0, 1.0, "S"),
+        (1.0, 1.0, "SE"),
+    ],
+)
+def test_compass_assumes_north_up(
+    dx: float, dy: float, expected: str
+) -> None:
+    assert _compass_direction(dx, dy) == expected
+
+
+def test_path_nearby_uses_closest_segment_instead_of_anchor() -> None:
+    road = Marker(
+        id="road",
+        map_id="map-1",
+        object_id="road-entity",
+        object_type="entity",
+        x=0.5,
+        y=0.5,
+        label="Long Road",
+        feature_type="path",
+        geometry=[{"x": 0.1, "y": 0.5}, {"x": 0.9, "y": 0.5}],
+    )
+    village = _make_marker(
+        marker_id="village",
+        object_id="village-entity",
+        x=0.9,
+        y=0.51,
+        label="East Village",
+    )
+    map_obj = _make_map(layers=_layer_tree_with_marker(road.id))
+    repo = MagicMock()
+    repo.get_marker_by_composite.return_value = road
+    repo.get_map.return_value = map_obj
+    repo.get_markers_by_map.return_value = [road, village]
+
+    result = SpatialContextBuilder(repo).build(
+        road.object_id, road.object_type, map_obj.id
+    )
+
+    assert result is not None
+    assert "East Village (adjacent to (S))" in result
+
+
+def test_nearby_relation_is_directed_from_subject_geometry() -> None:
+    province = Marker(
+        id="province",
+        map_id="map-1",
+        object_id="province-entity",
+        object_type="entity",
+        x=0.5,
+        y=0.5,
+        label="Province",
+        feature_type="region",
+        geometry=[
+            {"x": 0.2, "y": 0.2},
+            {"x": 0.8, "y": 0.2},
+            {"x": 0.8, "y": 0.8},
+            {"x": 0.2, "y": 0.8},
+        ],
+    )
+    town = _make_marker(
+        marker_id="town",
+        object_id="town-entity",
+        x=0.5,
+        y=0.5,
+        label="Inner Town",
+    )
+    map_obj = _make_map(layers=_layer_tree_with_marker(province.id))
+    repo = MagicMock()
+    repo.get_marker_by_composite.return_value = province
+    repo.get_map.return_value = map_obj
+    repo.get_markers_by_map.return_value = [province, town]
+
+    result = SpatialContextBuilder(repo).build(
+        province.object_id, province.object_type, map_obj.id
+    )
+
+    assert result is not None
+    assert "Inner Town (contains)" in result
+
+
+def test_distance_uses_map_image_aspect_ratio(tmp_path: Path) -> None:
+    image_path = tmp_path / "wide.png"
+    PilImage.new("L", (200, 100), 0).save(image_path)
+    marker = _make_marker(x=0.5, y=0.5, marker_id="center")
+    neighbour = _make_marker(
+        marker_id="south",
+        object_id="south-entity",
+        x=0.5,
+        y=0.6,
+        label="South Place",
+    )
+    map_obj = _make_map(
+        layers=_layer_tree_with_marker(marker.id),
+        attributes={"width_meters": 10_000.0},
+    )
+    map_obj.image_path = image_path.name
+    repo = MagicMock()
+    repo.get_marker_by_composite.return_value = marker
+    repo.get_map.return_value = map_obj
+    repo.get_markers_by_map.return_value = [marker, neighbour]
+
+    result = SpatialContextBuilder(repo, world_root=tmp_path).build(
+        marker.object_id, marker.object_type, map_obj.id
+    )
+
+    assert result is not None
+    assert "South Place (500 m S)" in result
+
+
 # ---------------------------------------------------------------------------
 # Raster VEM sampling
 # ---------------------------------------------------------------------------
@@ -525,6 +647,34 @@ def test_raster_sampling_uses_dated_vector_anchor(tmp_path: Path) -> None:
 
     assert base_result is not None and "Biome: Tundra" in base_result
     assert dated_result is not None and "Biome: Desert" in dated_result
+
+
+def test_invalid_dated_geometry_omits_spatial_context() -> None:
+    marker = Marker(
+        id="road",
+        map_id="map-1",
+        object_id="entity-1",
+        object_type="entity",
+        x=0.5,
+        y=0.5,
+        label="Road",
+        feature_type="path",
+        geometry=[{"x": 0.2, "y": 0.5}, {"x": 0.8, "y": 0.5}],
+    )
+    map_obj = _make_map(
+        layers=_layer_tree_with_marker(marker.id, group_notes="Useful notes")
+    )
+    repo = MagicMock()
+    repo.get_marker_by_composite.return_value = marker
+    repo.get_map.return_value = map_obj
+    geometry_repo = MagicMock()
+    geometry_repo.get_states.side_effect = ValueError("invalid geometry state")
+
+    result = SpatialContextBuilder(
+        repo, feature_geometry_repo=geometry_repo
+    ).build(marker.object_id, marker.object_type, map_obj.id, lore_date=10.0)
+
+    assert result is None
 
 
 def test_raster_sampling_uses_latest_snapshot_at_or_before_date(

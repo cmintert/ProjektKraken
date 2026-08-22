@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-22
-**Commit:** f3f7a224
+**Commit:** 2cc669aa
 ---
 
 # Changelog
@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-08-22)* **Maps / Spatial Context**: Added geometry-aware point,
+  path, and region relations plus raster summaries for resolved historical
+  features, with bounded evidence and regression coverage.
 - *(2026-08-22)* **Maps / Feature Locks**: Added persistent per-feature locks
   for markers, paths, and regions, with layer-tree controls, canvas menus, and
   regression coverage that keep locked features visible but non-interactive.

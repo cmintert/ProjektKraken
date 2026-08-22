@@ -2,9 +2,9 @@
 
 Produces a qualitative, LLM-friendly description of an entity's or event's
 placement on the active map. The output supplements the generation prompt
-with grounded spatial information — which layer group a marker belongs to,
-the raster-backed semantic class at the marker position (e.g. biome from a
-terrain layer), nearby named features, and any layer-level annotations
+with grounded spatial information — which layer group a feature belongs to,
+the raster-backed semantic classes across its resolved geometry, nearby named
+features, and any layer-level annotations
 authored by the user.
 
 Design invariants
@@ -16,7 +16,7 @@ Design invariants
   the builder returns ``None``.
 * **Quality gate.** Sparse context backfires (LLMs fill gaps with
   training-data priors). The builder emits context only when at least
-  one of (layer notes, raster semantic value, co-located named entity)
+  one of (layer notes, raster semantic value, nearby named feature)
   is present; otherwise it returns ``None``.
 * **Uncalibrated maps suppress distances.** A map without an explicit
   ``width_meters`` attribute reports relative proximity ("near",
@@ -38,13 +38,23 @@ from src.core.map import Map, MapLayerNode, resolve_layer_temporal_validity
 from src.core.map_constants import MAP_DEFAULT_WIDTH_METERS, MAP_ROLE_MASTER
 from src.core.map_state import RasterLayerState
 from src.core.marker import Marker
+from src.core.spatial_geometry import (
+    GeometryMetric,
+    GeometryRelation,
+    SpatialGeometry,
+    relate_geometries,
+)
 from src.core.trajectory import (
     apply_trajectory_metadata,
     interpolate_position,
     mfjson_to_keyframes,
 )
 from src.services.map_nesting_service import MapNestingService
-from src.services.raster_image_analysis import sample_raster_semantic
+from src.services.raster_image_analysis import (
+    sample_raster_path_semantics,
+    sample_raster_region_semantics,
+    sample_raster_semantic,
+)
 from src.services.repositories.feature_geometry_repository import (
     FeatureGeometryRepository,
 )
@@ -57,13 +67,21 @@ _MIN_LAYER_PATH_LENGTH = 2
 _METRES_PER_KILOMETRE = 1000.0
 
 _MAX_NEARBY = 5
+_TOPOLOGY_RANK = {
+    "crosses": 0,
+    "inside": 0,
+    "contains": 0,
+    "overlaps": 0,
+    "touches": 1,
+    "separate": 2,
+}
 
 # 8-point compass buckets for qualitative direction, ordered as the
 # ``atan2`` result walks through them counter-clockwise from east.
 _COMPASS_8 = ("E", "NE", "N", "NW", "W", "SW", "S", "SE")
 
 # Relative-proximity labels used when the map scale is uncalibrated.
-# Bands are in normalised-coordinate Euclidean distance.
+# Bands are in aspect-corrected normalized map-width units.
 _PROXIMITY_BANDS: Tuple[Tuple[float, str], ...] = (
     (0.05, "adjacent to"),
     (0.15, "near"),
@@ -101,13 +119,13 @@ class SpatialContextBuilder:
             world_root: Filesystem root of the active world, used to resolve
                 relative raster ``file_path`` entries to absolute paths.
                 When ``None``, raster sampling is skipped.
-            name_lookup: Optional callable that resolves a co-located
+            name_lookup: Optional callable that resolves a nearby
                 marker's linked object to a display name. When ``None`` or
                 the callable returns ``None``, the builder falls back to
                 ``Marker.label``.
             nesting_service: When provided, ``build()`` will append a
-                ``Detail map available:`` advisory line when the marker
-                position falls inside a registered child-map footprint.
+                ``Detail map available:`` advisory line when the feature
+                intersects a registered child-map footprint.
                 ``None`` (default) preserves existing behaviour exactly.
         """
         self._map_repo = map_repo
@@ -157,13 +175,11 @@ class SpatialContextBuilder:
             return None
 
         width_m = self._extract_width_meters(map_obj)
-        suppress_distance = width_m is None
+        metric = self._geometry_metric(map_obj, width_m)
 
         layer_name, layer_notes = self._resolve_layer(map_obj, marker)
         raster_facts = self._resolve_raster_facts(map_obj, marker, lore_date)
-        nearby = self._resolve_nearby(
-            map_obj, marker, width_m, suppress_distance, lore_date
-        )
+        nearby = self._resolve_nearby(map_obj, marker, metric, width_m, lore_date)
 
         has_notes = bool(layer_notes)
         has_raster = bool(raster_facts)
@@ -248,7 +264,7 @@ class SpatialContextBuilder:
     def _resolve_raster_facts(
         self, map_obj: Map, marker: Marker, lore_date: Optional[float]
     ) -> List[Tuple[str, str, Optional[str]]]:
-        """Sample every raster layer on this map at the marker position.
+        """Summarize every raster layer across the resolved feature geometry.
 
         Returns:
             List of ``(layer_name, label, notes)`` triples. Layers with
@@ -283,7 +299,21 @@ class SpatialContextBuilder:
                 continue
             abs_path = str(self._world_root / rel_path)
 
-            label = sample_raster_semantic(abs_path, marker.x, marker.y, vem)
+            geometry = self._spatial_geometry(marker)
+            if geometry is None:
+                continue
+            if geometry.kind == "point":
+                label = sample_raster_semantic(
+                    abs_path, geometry.points[0][0], geometry.points[0][1], vem
+                )
+            elif geometry.kind == "path":
+                label = sample_raster_path_semantics(
+                    abs_path, geometry.points, vem
+                )
+            else:
+                label = sample_raster_region_semantics(
+                    abs_path, geometry.points, vem
+                )
             if not label:
                 continue
 
@@ -305,8 +335,8 @@ class SpatialContextBuilder:
         self,
         map_obj: Map,
         marker: Marker,
+        metric: GeometryMetric,
         width_m: Optional[float],
-        suppress_distance: bool,
         lore_date: Optional[float] = None,
     ) -> List[Tuple[str, str]]:
         """Find up to :data:`_MAX_NEARBY` named markers on the same map.
@@ -321,7 +351,10 @@ class SpatialContextBuilder:
         if not all_markers:
             return []
 
-        candidates: List[Tuple[float, Marker]] = []
+        source_geometry = self._spatial_geometry(marker)
+        if source_geometry is None:
+            return []
+        candidates: List[Tuple[int, float, str, Marker, GeometryRelation]] = []
         for other in all_markers:
             if other.id == marker.id:
                 continue
@@ -334,29 +367,75 @@ class SpatialContextBuilder:
             )
             if resolved_other is None:
                 continue
-            dx = resolved_other.x - marker.x
-            dy = resolved_other.y - marker.y
-            dist_norm = math.sqrt(dx * dx + dy * dy)
-            candidates.append((dist_norm, resolved_other))
+            target_geometry = self._spatial_geometry(resolved_other)
+            if target_geometry is None:
+                continue
+            relation = relate_geometries(source_geometry, target_geometry, metric)
+            candidates.append(
+                (
+                    _TOPOLOGY_RANK[relation.kind],
+                    relation.distance,
+                    resolved_other.id,
+                    resolved_other,
+                    relation,
+                )
+            )
 
-        candidates.sort(key=lambda pair: pair[0])
+        candidates.sort(key=lambda item: item[:3])
 
         results: List[Tuple[str, str]] = []
-        for dist_norm, other in candidates:
+        for _rank, _distance, _marker_id, other, relation in candidates:
             if len(results) >= _MAX_NEARBY:
                 break
             name = self._lookup_name(other)
             if not name:
                 continue
-            phrase = self._format_relative_position(
-                other.x - marker.x,
-                other.y - marker.y,
-                dist_norm,
-                width_m,
-                suppress_distance,
-            )
+            phrase = self._format_relation(relation, width_m)
             results.append((name, phrase))
         return results
+
+    @staticmethod
+    def _spatial_geometry(marker: Marker) -> SpatialGeometry | None:
+        """Return validated geometry without falling back to an extended anchor."""
+        return SpatialGeometry.from_feature(
+            marker.feature_type, marker.x, marker.y, marker.geometry
+        )
+
+    def _geometry_metric(
+        self, map_obj: Map, width_m: float | None
+    ) -> GeometryMetric:
+        """Build aspect-correct distance scales and a half-pixel tolerance."""
+        size = self._map_image_size(map_obj)
+        if size is None:
+            x_scale = width_m if width_m is not None else 1.0
+            return GeometryMetric(
+                x_scale=x_scale,
+                y_scale=x_scale,
+                tolerance=max(x_scale * 1e-9, 1e-9),
+            )
+        pixel_width, pixel_height = size
+        aspect = pixel_width / pixel_height
+        x_scale = width_m if width_m is not None else 1.0
+        y_scale = x_scale / aspect
+        return GeometryMetric(
+            x_scale=x_scale,
+            y_scale=y_scale,
+            tolerance=x_scale / (2.0 * pixel_width),
+        )
+
+    def _map_image_size(self, map_obj: Map) -> tuple[int, int] | None:
+        path = Path(map_obj.image_path)
+        if not path.is_absolute() and self._world_root is not None:
+            path = self._world_root / path
+        try:
+            from PIL import Image as PilImage
+
+            with PilImage.open(path) as image:
+                if image.width > 0 and image.height > 0:
+                    return image.width, image.height
+        except (OSError, ValueError):
+            return None
+        return None
 
     @staticmethod
     def _is_temporally_valid(
@@ -372,7 +451,7 @@ class SpatialContextBuilder:
     def _resolve_marker_geometry(
         self, map_obj: Map, marker: Marker, lore_date: Optional[float]
     ) -> Marker | None:
-        """Return a copy using its dated geometry anchor when requested."""
+        """Return a copy using dated geometry or trajectory when requested."""
         if lore_date is None:
             return marker
         if not marker.is_path and not marker.is_region:
@@ -395,11 +474,11 @@ class SpatialContextBuilder:
             )
         except Exception:
             logger.warning(
-                "Could not resolve dated geometry for marker %s",
+                "Omitting spatial context for invalid dated geometry marker %s",
                 marker.id,
                 exc_info=True,
             )
-            return marker
+            return None
 
     def _resolve_trajectory_position(
         self, map_obj: Map, marker: Marker, lore_date: float
@@ -467,20 +546,19 @@ class SpatialContextBuilder:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _format_relative_position(
-        dx: float,
-        dy: float,
-        dist_norm: float,
-        width_m: Optional[float],
-        suppress_distance: bool,
+    def _format_relation(
+        relation: GeometryRelation, width_m: Optional[float]
     ) -> str:
-        """Render a single nearby marker's relative-position phrase."""
+        """Render one directed topological or separation relation."""
+        if relation.kind != "separate":
+            return relation.kind
+        dx = relation.target_point[0] - relation.source_point[0]
+        dy = relation.target_point[1] - relation.source_point[1]
         direction = _compass_direction(dx, dy)
-        if suppress_distance or width_m is None:
-            proximity = _proximity_band(dist_norm)
+        if width_m is None:
+            proximity = _proximity_band(relation.distance)
             return f"{proximity} ({direction})"
-        metres = dist_norm * width_m
-        return f"{_format_distance(metres)} {direction}"
+        return f"{_format_distance(relation.distance)} {direction}"
 
     @staticmethod
     def _format_context(
@@ -513,14 +591,14 @@ class SpatialContextBuilder:
     def _resolve_detail_advisory(
         self, map_obj: Map, marker: Marker
     ) -> Optional[str]:
-        """Return an advisory line if the marker falls inside a child footprint.
+        """Return an advisory when resolved geometry intersects a child footprint.
 
         Only fires when:
         * ``self._nesting_service`` is not ``None``.
         * The active map's role is ``MAP_ROLE_MASTER`` (Decision 5 — when
           a detail map is active, its own context wins; no advisory).
-        * At least one registered child map's footprint contains the
-          marker's normalised position.
+        * At least one registered child map's footprint intersects the
+          resolved feature geometry.
 
         Args:
             map_obj: The active map.
@@ -532,6 +610,10 @@ class SpatialContextBuilder:
         """
         if self._nesting_service is None:
             return None
+        marker_geometry = self._spatial_geometry(marker)
+        if marker_geometry is None:
+            return None
+        metric = self._geometry_metric(map_obj, self._extract_width_meters(map_obj))
         role = (map_obj.attributes or {}).get("map_role")
         if role != MAP_ROLE_MASTER:
             return None
@@ -545,9 +627,12 @@ class SpatialContextBuilder:
             if registration is None:
                 continue
             try:
-                if self._nesting_service.point_in_footprint(
-                    (marker.x, marker.y), registration
-                ):
+                footprint = SpatialGeometry(
+                    "region",
+                    tuple(self._nesting_service.footprint_corners(registration)),
+                )
+                relation = relate_geometries(marker_geometry, footprint, metric)
+                if relation.kind != "separate":
                     return f"Detail map available: {child.name}"
             except Exception:
                 continue

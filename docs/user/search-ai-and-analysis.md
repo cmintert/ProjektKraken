@@ -43,6 +43,9 @@ An Event's **Context** tab immediately shows the persisted people, places,
 mentions, nearby Events, relations, and active-map facts that Kraken can
 determine at the date currently shown in the Event editor. This view is
 read-only and deterministic: it does not call a model or infer story meaning.
+Map facts use resolved point, path, and region geometry on north-up maps. They
+describe geometric evidence such as proximity, containment, crossing, and
+overlap, but do not infer access, political function, or narrative importance.
 Use **More** to reveal the rest of the bounded snapshot and any notices about
 facts omitted by display limits. Select a linked name to navigate to it.
 
