@@ -8,7 +8,7 @@ import json
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Q_ARG, QObject, Signal, Slot
-from PySide6.QtWidgets import QDialog, QFileDialog
+from PySide6.QtWidgets import QDialog, QFileDialog, QMessageBox
 
 from src.app.qt_invocation import invoke_queued
 from src.commands.entity_commands import DeleteEntityCommand
@@ -19,6 +19,7 @@ from src.commands.longform_commands import (
     PromoteLongformEntryCommand,
 )
 from src.core.logging_config import get_logger
+from src.gui.widgets.auto_closing_message_box import AutoClosingMessageBox
 from src.services.longform_builder import DEFAULT_POSITION_GAP
 
 if TYPE_CHECKING:
@@ -387,13 +388,27 @@ class LongformManager(QObject):
             else []
         )
         if bool(result.get("success", False)):
-            self.window.status_bar.showMessage(
-                f"Exported {files_created} files to {output_dir}", 5000
+            message = f"Exported {files_created} files to {output_dir}"
+            self.window.status_bar.showMessage(message, 5000)
+            popup = AutoClosingMessageBox(
+                "Obsidian Export Complete",
+                message,
+                1500,
+                QMessageBox.Icon.Information,
+                parent=self.window,
             )
+            popup.exec()
             logger.info("Vault export complete: %d files", files_created)
             return
         error_summary = "; ".join(errors[:3]) or "Unknown export error"
-        self.window.status_bar.showMessage(
-            f"Export completed with errors: {error_summary}", 5000
+        message = f"Export completed with errors: {error_summary}"
+        self.window.status_bar.showMessage(message, 5000)
+        popup = AutoClosingMessageBox(
+            "Obsidian Export Failed",
+            f"Vault export failed: {error_summary}",
+            1500,
+            QMessageBox.Icon.Critical,
+            parent=self.window,
         )
+        popup.exec()
         logger.warning("Vault export errors: %s", errors)

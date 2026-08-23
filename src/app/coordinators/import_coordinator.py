@@ -20,6 +20,7 @@ from src.gui.dialogs.database_manager_dialog import DatabaseManagerDialog
 from src.gui.dialogs.import_preview_dialog import ImportPreviewDialog
 from src.gui.dialogs.paste_json_import_dialog import PasteJsonImportDialog
 from src.gui.dialogs.progress_dialog import ProgressDialog
+from src.gui.widgets.auto_closing_message_box import AutoClosingMessageBox
 from src.services.import_service import ImportResult, ImportService
 from src.services.obsidian_exporter import (
     ObsidianExportCompletion,
@@ -353,10 +354,18 @@ class ImportCoordinator(BaseCoordinator):
 
         """
         if snapshot["success"]:
-            self.main_window.status_bar.showMessage(
-                f"Exported '{snapshot['item_name']}' to {snapshot['file_path']}",
-                5000,
+            message = (
+                f"Exported '{snapshot['item_name']}' to {snapshot['file_path']}"
             )
+            self.main_window.status_bar.showMessage(message, 5000)
+            popup = AutoClosingMessageBox(
+                "Obsidian Export Complete",
+                message,
+                1500,
+                QMessageBox.Icon.Information,
+                parent=self.main_window,
+            )
+            popup.exec()
             logger.info(
                 "Exported %s '%s' to %s",
                 snapshot["item_type"],
@@ -366,8 +375,11 @@ class ImportCoordinator(BaseCoordinator):
             return
 
         self.main_window.status_bar.showMessage("Export failed", 3000)
-        QMessageBox.critical(
-            self.main_window,
-            "Export Error",
+        popup = AutoClosingMessageBox(
+            "Obsidian Export Failed",
             f"Failed to export '{snapshot['item_name']}': {snapshot['error']}",
+            1500,
+            QMessageBox.Icon.Critical,
+            parent=self.main_window,
         )
+        popup.exec()

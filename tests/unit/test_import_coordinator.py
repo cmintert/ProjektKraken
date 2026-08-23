@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QMessageBox
 
 
 class FakeMainWindow(QObject):
@@ -384,7 +384,34 @@ class TestSingleObsidianExport:
             ("entity", "entity-1", "C:/tmp/Chosen Name.md")
         ]
 
-    @patch("src.app.coordinators.import_coordinator.QMessageBox")
+    @patch("src.app.coordinators.import_coordinator.AutoClosingMessageBox")
+    def test_successful_export_shows_transient_result(
+        self, mock_message_box, coordinator, fake_window
+    ):
+        """Successful exports should use the shared transient result modal."""
+        coordinator.on_obsidian_export_finished(
+            {
+                "success": True,
+                "item_type": "entity",
+                "item_id": "entity-1",
+                "item_name": "The Kraken",
+                "file_path": "C:/tmp/The Kraken.md",
+                "error": "",
+            }
+        )
+
+        message = "Exported 'The Kraken' to C:/tmp/The Kraken.md"
+        fake_window.status_bar.showMessage.assert_called_once_with(message, 5000)
+        mock_message_box.assert_called_once_with(
+            "Obsidian Export Complete",
+            message,
+            1500,
+            QMessageBox.Icon.Information,
+            parent=fake_window,
+        )
+        mock_message_box.return_value.exec.assert_called_once_with()
+
+    @patch("src.app.coordinators.import_coordinator.AutoClosingMessageBox")
     def test_failed_export_reports_worker_error(
         self, mock_message_box, coordinator, fake_window
     ):
@@ -403,4 +430,11 @@ class TestSingleObsidianExport:
         fake_window.status_bar.showMessage.assert_called_with(
             "Export failed", 3000
         )
-        mock_message_box.critical.assert_called_once()
+        mock_message_box.assert_called_once_with(
+            "Obsidian Export Failed",
+            "Failed to export 'The Kraken': disk full",
+            1500,
+            QMessageBox.Icon.Critical,
+            parent=fake_window,
+        )
+        mock_message_box.return_value.exec.assert_called_once_with()

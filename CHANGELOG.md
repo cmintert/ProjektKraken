@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-08-22
-**Commit:** 2cc669aa
+**Last Updated:** 2026-08-23
+**Commit:** c10e9d3c
 ---
 
 # Changelog
@@ -51,6 +51,8 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- *(2026-08-23)* **UI / Obsidian Export**: Added transient success and failure
+  result modals for single-file and vault exports.
 - *(2026-08-22)* **Maps / Trajectory Editing**: Confirmed final-location
   deletion before preparing trajectory removal, and kept small marker motions
   as clicks until a deliberate drag threshold is crossed.
