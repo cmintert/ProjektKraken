@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
 
 from src.core.calendar import CalendarConverter
 from src.core.events import Event
+from src.core.theme_manager import ThemeManager
 from src.gui.constants import (
     TEMPORAL_FUTURE_LIGHTNESS_BOOST,
     TEMPORAL_FUTURE_OPACITY,
@@ -86,8 +87,11 @@ class EventItem(QGraphicsItem):
         self.event = event
         self.scale_factor = scale_factor
 
-        # Determine Color from StyleHelper
-        self.base_color = QColor(StyleHelper.get_event_color())
+        self.base_color = QColor()
+        self._text_color = QColor()
+        self._secondary_text_color = QColor()
+        self._border_color = QColor()
+        self.refresh_theme(ThemeManager().get_theme())
 
         # Position is handled by parent/layout, but X is strictly date-based
         self.setPos(event.lore_date * scale_factor, 0)
@@ -122,6 +126,22 @@ class EventItem(QGraphicsItem):
         # Temporal State
         self.is_future = False
         self.is_past = False
+
+    def refresh_theme(self, theme: dict[str, str]) -> None:
+        """Refresh cached rendering colors after a theme change.
+
+        ``EventItem`` uses a device-coordinate cache, so a scene repaint alone
+        cannot update colors that were resolved when the item was created.
+
+        Args:
+            theme: The active theme data emitted by :class:`ThemeManager`.
+
+        """
+        self.base_color = QColor(StyleHelper.get_event_color())
+        self._text_color = QColor(theme["text_main"])
+        self._secondary_text_color = QColor(theme["text_dim"])
+        self._border_color = QColor(theme["border"])
+        self.update()
 
     def set_temporal_state(self, is_future: bool, is_past: bool = False) -> None:
         """Updates the event's visual state based on its temporal relation.
@@ -193,9 +213,8 @@ class EventItem(QGraphicsItem):
         """
         self.prepareGeometryChange()
         self.event = event
-        self.base_color = QColor(StyleHelper.get_event_color())
+        self.refresh_theme(ThemeManager().get_theme())
         self.setPos(event.lore_date * self.scale_factor, self.y())
-        self.update()
 
     def boundingRect(self) -> QRectF:
         """Defines the redrawable area of the item.
@@ -338,7 +357,7 @@ class EventItem(QGraphicsItem):
 
         painter.setBrush(brush)
 
-        pen = QPen(Qt.GlobalColor.white if self.isSelected() else Qt.GlobalColor.black)
+        pen = QPen(self._text_color if self.isSelected() else self._border_color)
         pen.setCosmetic(True)
         pen.setWidth(2 if self.isSelected() else 1)
         painter.setPen(pen)
@@ -347,7 +366,7 @@ class EventItem(QGraphicsItem):
         painter.drawRoundedRect(rect, 4, 4)
 
         # Draw Text Label BELOW the bar
-        painter.setPen(QPen(Qt.GlobalColor.white))
+        painter.setPen(QPen(self._text_color))
 
         font = painter.font()
         font.setBold(True)
@@ -375,7 +394,7 @@ class EventItem(QGraphicsItem):
         else:
             date_str = f"{self.event.lore_date:,.1f}"
 
-        painter.setPen(QPen(QColor(180, 180, 180)))
+        painter.setPen(QPen(self._secondary_text_color))
         painter.drawText(QPointF(0, label_y + 12), date_str)
 
     def _paint_point_event(self, painter: QPainter) -> None:
@@ -398,7 +417,7 @@ class EventItem(QGraphicsItem):
         painter.setBrush(brush)
 
         # Border
-        pen = QPen(Qt.GlobalColor.white if self.isSelected() else Qt.GlobalColor.black)
+        pen = QPen(self._text_color if self.isSelected() else self._border_color)
         pen.setCosmetic(True)  # Keep border crisp
         pen.setWidth(2 if self.isSelected() else 1)
         painter.setPen(pen)
@@ -409,7 +428,7 @@ class EventItem(QGraphicsItem):
         text_x = self.ICON_SIZE / 2 + self.PADDING
 
         # Title
-        painter.setPen(QPen(Qt.GlobalColor.white))
+        painter.setPen(QPen(self._text_color))
         font = painter.font()
         font.setBold(True)
         painter.setFont(font)
@@ -431,5 +450,5 @@ class EventItem(QGraphicsItem):
                 date_str = f"{self.event.lore_date:,.1f}"
         else:
             date_str = f"{self.event.lore_date:,.1f}"
-        painter.setPen(QPen(QColor(180, 180, 180)))
+        painter.setPen(QPen(self._secondary_text_color))
         painter.drawText(QPointF(text_x, 10), date_str)

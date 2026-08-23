@@ -8,6 +8,7 @@ from PySide6.QtGui import QImage, QPainter
 from PySide6.QtWidgets import QStyleOptionGraphicsItem
 
 from src.core.events import Event
+from src.core.theme_manager import ThemeManager
 from src.gui.widgets.timeline import (
     EventItem,
     TimelineScene,
@@ -102,6 +103,23 @@ def test_timeline_scene_init():
     """Test TimelineScene initialization."""
     scene = TimelineScene()
     assert scene.backgroundBrush() is not None
+
+
+def test_timeline_scene_refreshes_existing_event_item_theme(qapp):
+    """Theme changes refresh cached colors for markers already in the scene."""
+    theme_manager = ThemeManager()
+    theme_manager.set_theme("dark_mode")
+    scene = TimelineScene()
+    item = EventItem(Event(name="Test", lore_date=100.0))
+    scene.addItem(item)
+
+    theme_manager.set_theme("cyberpunk_mode")
+
+    theme = theme_manager.get_theme()
+    assert item.base_color.name() == theme["event_main"].lower()
+    assert item._text_color.name() == theme["text_main"].lower()
+    assert item._secondary_text_color.name() == theme["text_dim"].lower()
+    assert item._border_color.name() == theme["border"].lower()
 
 
 def test_timeline_view_set_events_empty(timeline_view):

@@ -12,6 +12,7 @@ from PySide6.QtGui import QBrush, QColor, QCursor, QPainterPath, QPen
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsLineItem, QGraphicsScene
 
 from src.core.theme_manager import ThemeManager
+from src.gui.widgets.timeline.event_item import EventItem
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +35,12 @@ class TimelineScene(QGraphicsScene):
         self.tm.theme_changed.connect(self._update_theme)
         self._update_theme(self.tm.get_theme())
 
-    def _update_theme(self, theme: dict) -> None:
-        """Updates the scene background."""
+    def _update_theme(self, theme: dict[str, str]) -> None:
+        """Updates scene-owned, theme-dependent graphics items."""
         self.setBackgroundBrush(QBrush(QColor(theme["app_bg"])))
+        for item in self.items():
+            if isinstance(item, EventItem):
+                item.refresh_theme(theme)
 
 
 class PlayheadItem(QGraphicsLineItem):
