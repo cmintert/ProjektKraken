@@ -8,7 +8,7 @@ last_updated: 2026-07-27
 
 ## Version
 
-**v0.19.4 (Beta)**
+**v0.19.5 (Beta)**
 **Projekt Kraken** is a desktop worldbuilding environment designed for the "Architect" persona. It treats history as the primary axis of the world, offering a timeline-first approach to lore creation.
 
 ## Screenshot
@@ -122,7 +122,7 @@ multiple users simultaneously.
 2. Verify the download in PowerShell:
 
    ```powershell
-   Get-FileHash .\ProjektKraken-0.19.4-beta1-windows-x64.zip -Algorithm SHA256
+   Get-FileHash .\ProjektKraken-0.19.5-beta1-windows-x64.zip -Algorithm SHA256
    ```
 
    The reported hash must match the value in the downloaded `.sha256` file.
@@ -318,7 +318,7 @@ master/detail-map workflows are documented in the
 
 ## Version
 
-**v0.19.4 (Beta)**
+**v0.19.5 (Beta)**
 
 ## License
 

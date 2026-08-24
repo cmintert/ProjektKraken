@@ -12,12 +12,12 @@ separating its content.
 
 1. Open the ProjektKraken release on GitHub and download both files with the
    same version:
-   - `ProjektKraken-0.19.4-beta1-windows-x64.zip`
-   - `ProjektKraken-0.19.4-beta1-windows-x64.zip.sha256`
+   - `ProjektKraken-0.19.5-beta1-windows-x64.zip`
+   - `ProjektKraken-0.19.5-beta1-windows-x64.zip.sha256`
 2. Open PowerShell in the download folder and run:
 
    ```powershell
-   Get-FileHash .\ProjektKraken-0.19.4-beta1-windows-x64.zip -Algorithm SHA256
+   Get-FileHash .\ProjektKraken-0.19.5-beta1-windows-x64.zip -Algorithm SHA256
    ```
 
 3. Compare the reported hash with the value in the `.sha256` file. The letters
