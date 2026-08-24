@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-24
-**Commit:** 7d5279df
+**Commit:** 8ad62829
 ---
 
 # Changelog
@@ -18,6 +18,10 @@ All notable changes to this project will be documented in this file.
   manual workflow runs.
 
 ### Fixed
+
+- *(2026-08-24)* **UI / Windows**: Replaced dynamically exposed `ctypes`
+  helpers with typed DWM library access for title-bar styling and aligned its
+  regression mocks.
 
 - *(2026-08-24)* **Semantic Search / Stability**: Rejected embedding models
   that do not report a usable vector dimension, with regression coverage.

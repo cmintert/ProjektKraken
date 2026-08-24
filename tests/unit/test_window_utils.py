@@ -23,7 +23,7 @@ def test_apply_style_calls_dwm(mock_window):
     with patch("src.gui.utils.window_utils.ctypes") as mock_ctypes:
         # Setup mock dwmapi
         mock_dwmapi = MagicMock()
-        mock_ctypes.windll.dwmapi = mock_dwmapi
+        mock_ctypes.WinDLL.return_value = mock_dwmapi
         # Set return value to 0 (S_OK)
         mock_dwmapi.DwmSetWindowAttribute.return_value = 0
 
@@ -42,7 +42,7 @@ def test_apply_style_fallback(mock_window):
     """Test fallback to legacy attribute if primary fails."""
     with patch("src.gui.utils.window_utils.ctypes") as mock_ctypes:
         mock_dwmapi = MagicMock()
-        mock_ctypes.windll.dwmapi = mock_dwmapi
+        mock_ctypes.WinDLL.return_value = mock_dwmapi
 
         # Fail first call (return 1), succeed second (return 0)
         mock_dwmapi.DwmSetWindowAttribute.side_effect = [1, 0, 0, 0]
@@ -61,7 +61,7 @@ def test_apply_style_color(mock_window):
     """Test setting caption color."""
     with patch("src.gui.utils.window_utils.ctypes") as mock_ctypes:
         mock_dwmapi = MagicMock()
-        mock_ctypes.windll.dwmapi = mock_dwmapi
+        mock_ctypes.WinDLL.return_value = mock_dwmapi
         mock_dwmapi.DwmSetWindowAttribute.return_value = 0
 
         color = QColor(255, 0, 0)
@@ -76,9 +76,7 @@ def test_apply_style_color(mock_window):
 def test_apply_style_graceful_failure(mock_window):
     """Test that it doesn't crash if ctypes fails (e.g. non-Windows)."""
     with patch("src.gui.utils.window_utils.ctypes") as mock_ctypes:
-        mock_ctypes.windll.dwmapi.DwmSetWindowAttribute.side_effect = Exception(
-            "Not Windows"
-        )
+        mock_ctypes.WinDLL.side_effect = Exception("Not Windows")
 
         # Should not raise exception
         apply_windows_title_bar_style(mock_window)

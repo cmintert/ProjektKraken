@@ -5,6 +5,7 @@ Provides platform-specific window styling utilities, particularly for Windows ti
 
 import ctypes
 import logging
+import sys
 from ctypes import byref, c_int, sizeof
 from typing import Any, Optional
 
@@ -33,19 +34,14 @@ def apply_windows_title_bar_style(
         title_color: Custom background color for the title bar (Windows 11+).
         text_color: Custom text color for the title bar (Windows 11+).
     """
-    hresult_type: Any
-    try:
-        from ctypes import HRESULT
-
-        hresult_type = HRESULT
-    except ImportError:
-        hresult_type = c_int
+    if sys.platform != "win32":
+        return
 
     try:
         hwnd = int(window.winId())
-        dwm = ctypes.windll.dwmapi
+        dwm: Any = ctypes.WinDLL("dwmapi")
         # Define argtypes/restype for proper 64-bit handling and HRESULT checking
-        dwm.DwmSetWindowAttribute.restype = hresult_type
+        dwm.DwmSetWindowAttribute.restype = c_int
         dwm.DwmSetWindowAttribute.argtypes = [
             c_int,
             c_int,
