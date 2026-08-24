@@ -12,7 +12,7 @@ from src.core.events import Event
 from src.services.db_service import DatabaseService
 from src.services.import_service import ImportService
 from src.services.longform_builder import insert_or_update_longform_meta
-from src.webserver.config import ServerConfig
+from src.webserver.config import LOCAL_ALLOWED_HOSTS, ServerConfig
 from src.webserver.server import (
     _CONTENT_SECURITY_POLICY,
     _AccessCodeRateLimiter,
@@ -55,12 +55,18 @@ def published_db_path(tmp_path) -> str:
     return path
 
 
+def _client(config: ServerConfig) -> TestClient:
+    """Create a client using the default local Host accepted by the server."""
+    return TestClient(create_app(config), base_url="http://127.0.0.1")
+
+
 def test_server_config_defaults_to_localhost() -> None:
     config = ServerConfig()
 
     assert config.host == "127.0.0.1"
     assert config.lan_access is False
     assert config.access_code is None
+    assert config.allowed_hosts == LOCAL_ALLOWED_HOSTS
 
 
 @pytest.mark.parametrize("code", [None, "1234567", "123456789", "abcdefgh"])
@@ -69,8 +75,69 @@ def test_lan_config_requires_eight_digit_code(code: str | None) -> None:
         ServerConfig(lan_access=True, access_code=code)
 
 
+@pytest.mark.ci_fast
+@pytest.mark.parametrize("host", ["127.0.0.1", "localhost:8000", "[::1]:8000"])
+def test_loopback_host_headers_are_accepted(host: str, published_db_path: str) -> None:
+    """The embedded viewer remains reachable through every supported loopback URL."""
+    response = _client(ServerConfig(db_path=published_db_path)).get(
+        "/health", headers={"Host": host}
+    )
+
+    assert response.status_code == 200
+
+
+@pytest.mark.ci_fast
+@pytest.mark.parametrize("path", ["/api/longform", "/longform", "/static/app.js"])
+def test_untrusted_host_is_rejected_before_server_routes(
+    published_db_path: str, path: str
+) -> None:
+    """DNS-rebinding Host headers cannot reach viewer, static, or API routes."""
+    app = create_app(ServerConfig(db_path=published_db_path))
+    client = TestClient(app, base_url="http://127.0.0.1")
+
+    with patch("src.webserver.server.get_db_service") as get_db_service:
+        response = client.get(path, headers={"Host": "attacker.test"})
+
+    assert response.status_code == 400
+    assert get_db_service.call_count == 0
+
+
+@pytest.mark.ci_fast
+def test_lan_mode_accepts_displayed_ip_and_rejects_hostnames(
+    published_db_path: str,
+) -> None:
+    """LAN sharing admits only its displayed address and loopback aliases."""
+    lan_ip = "192.168.1.20"
+    config = ServerConfig(
+        host="0.0.0.0",
+        db_path=published_db_path,
+        lan_access=True,
+        access_code="01234567",
+        allowed_hosts=(*LOCAL_ALLOWED_HOSTS, lan_ip),
+    )
+    client = _client(config)
+
+    accepted = client.get(
+        "/api/longform",
+        headers={
+            "Host": f"{lan_ip}:8000",
+            "Authorization": "Bearer 01234567",
+        },
+    )
+    rejected = client.get(
+        "/api/longform",
+        headers={
+            "Host": "kraken.local",
+            "Authorization": "Bearer 01234567",
+        },
+    )
+
+    assert accepted.status_code == 200
+    assert rejected.status_code == 400
+
+
 def test_local_mode_does_not_require_authentication(published_db_path: str) -> None:
-    client = TestClient(create_app(ServerConfig(db_path=published_db_path)))
+    client = _client(ServerConfig(db_path=published_db_path))
 
     response = client.get("/api/longform")
 
@@ -93,7 +160,7 @@ def test_lan_mode_protects_every_api_endpoint(
         lan_access=True,
         access_code="01234567",
     )
-    client = TestClient(create_app(config))
+    client = _client(config)
 
     missing = client.get(path)
     wrong = client.get(path, headers={"Authorization": "Bearer 76543210"})
@@ -115,7 +182,7 @@ def test_lan_viewer_shell_and_health_remain_public(published_db_path: str) -> No
         lan_access=True,
         access_code="01234567",
     )
-    client = TestClient(create_app(config))
+    client = _client(config)
 
     viewer = client.get("/longform")
     assert viewer.status_code == 200
@@ -134,7 +201,7 @@ def test_failed_access_codes_are_rate_limited(published_db_path: str) -> None:
         lan_access=True,
         access_code="01234567",
     )
-    client = TestClient(create_app(config))
+    client = _client(config)
 
     for _ in range(4):
         response = client.get(
@@ -166,7 +233,7 @@ def test_rate_limiter_has_a_global_failure_bound() -> None:
 
 def test_http_get_does_not_index_missing_items(published_db_path: str) -> None:
     before = _event_attributes(published_db_path, "unindexed")
-    client = TestClient(create_app(ServerConfig(db_path=published_db_path)))
+    client = _client(ServerConfig(db_path=published_db_path))
 
     response = client.get("/api/longform")
 
@@ -199,7 +266,7 @@ def test_read_only_database_skips_initialization_and_rejects_writes(
 def test_invalid_doc_id_returns_422(
     published_db_path: str, doc_id: str
 ) -> None:
-    client = TestClient(create_app(ServerConfig(db_path=published_db_path)))
+    client = _client(ServerConfig(db_path=published_db_path))
 
     response = client.get("/api/longform", params={"doc_id": doc_id})
 
@@ -207,7 +274,7 @@ def test_invalid_doc_id_returns_422(
 
 
 def test_maximum_length_doc_id_is_accepted(published_db_path: str) -> None:
-    client = TestClient(create_app(ServerConfig(db_path=published_db_path)))
+    client = _client(ServerConfig(db_path=published_db_path))
 
     response = client.get("/api/longform", params={"doc_id": "a" * 64})
 
@@ -264,7 +331,7 @@ type: note
     )
     service.close()
 
-    response = TestClient(create_app(ServerConfig(db_path=path))).get("/api/longform")
+    response = _client(ServerConfig(db_path=path)).get("/api/longform")
 
     assert response.status_code == 200
     sections = {section["id"]: section for section in response.json()["sections"]}
@@ -306,7 +373,7 @@ type: note
 def test_security_headers_cover_success_and_error_responses(
     published_db_path: str, path: str, follow_redirects: bool
 ) -> None:
-    client = TestClient(create_app(ServerConfig(db_path=published_db_path)))
+    client = _client(ServerConfig(db_path=published_db_path))
 
     response = client.get(path, follow_redirects=follow_redirects)
 
@@ -319,7 +386,11 @@ def test_security_headers_cover_unhandled_server_errors(
     published_db_path: str,
 ) -> None:
     app = create_app(ServerConfig(db_path=published_db_path))
-    client = TestClient(app, raise_server_exceptions=False)
+    client = TestClient(
+        app,
+        base_url="http://127.0.0.1",
+        raise_server_exceptions=False,
+    )
 
     with patch("src.webserver.server.get_db_service", side_effect=RuntimeError("boom")):
         response = client.get("/api/longform")

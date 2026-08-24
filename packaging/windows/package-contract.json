@@ -21,6 +21,7 @@
   ],
   "maximum_archive_entry_length": 200,
   "required_package_paths": [
+    "LICENSE",
     "ProjektKraken.exe",
     "_internal/package-contract.json",
     "_internal/Kraken.webp",

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-24
-**Commit:** 8ad62829
+**Commit:** 6777f5be
 ---
 
 # Changelog
@@ -18,6 +18,14 @@ All notable changes to this project will be documented in this file.
   manual workflow runs.
 
 ### Fixed
+
+- *(2026-08-24)* **Packaging / Compliance**: Bundled the complete GPL-3.0
+  license in the Windows package and enforced it through package-contract
+  tests.
+
+- *(2026-08-24)* **Security / Portable Worlds**: Contained attachment
+  delete/restore paths within their managed asset directories and rejected
+  untrusted Host headers for the embedded longform viewer.
 
 - *(2026-08-24)* **UI / Windows**: Replaced dynamically exposed `ctypes`
   helpers with typed DWM library access for title-bar styling and aligned its

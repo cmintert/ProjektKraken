@@ -9,6 +9,7 @@ from PyInstaller.utils.hooks import collect_data_files, collect_submodules, copy
 ROOT = Path(SPECPATH)
 
 datas = [
+    (str(ROOT / "LICENSE"), "."),
     (str(ROOT / "Kraken.webp"), "."),
     (str(ROOT / "default_assets"), "default_assets"),
     (str(ROOT / "themes.json"), "."),

@@ -19,6 +19,10 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.datastructures import Headers
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+from starlette.responses import PlainTextResponse
+from starlette.types import Receive, Scope, Send
 
 from src.services.db_service import DatabaseService
 from src.services.longform_builder import (
@@ -55,6 +59,40 @@ DocId = Annotated[
         pattern=_DOC_ID_QUERY_PATTERN,
     ),
 ]
+
+
+def _host_from_header(host_header: str) -> str:
+    """Return the normalized hostname from an HTTP Host header."""
+    normalized = host_header.strip().lower()
+    if not normalized.startswith("["):
+        return normalized.split(":", maxsplit=1)[0]
+
+    address, separator, port = normalized[1:].partition("]")
+    if not separator or (port and (not port.startswith(":") or not port[1:].isdigit())):
+        return ""
+    return address
+
+
+class _KrakenTrustedHostMiddleware(TrustedHostMiddleware):
+    """Trusted Host middleware with correct bracketed IPv6 Host parsing."""
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if self.allow_any or scope["type"] not in ("http", "websocket"):
+            await self.app(scope, receive, send)
+            return
+
+        host = _host_from_header(Headers(scope=scope).get("host", ""))
+        is_valid_host = any(
+            host == pattern
+            or (pattern.startswith("*") and host.endswith(pattern[1:]))
+            for pattern in self.allowed_hosts
+        )
+        if is_valid_host:
+            await self.app(scope, receive, send)
+            return
+
+        response = PlainTextResponse("Invalid host header", status_code=400)
+        await response(scope, receive, send)
 
 
 class _AccessCodeRateLimiter:
@@ -225,6 +263,11 @@ def _install_security_headers(app: FastAPI) -> None:
 def create_app(config: ServerConfig) -> FastAPI:
     """Factory function to create the FastAPI app with the given configuration."""
     app = FastAPI(title="ProjektKraken Longform Server")
+    app.add_middleware(
+        _KrakenTrustedHostMiddleware,
+        allowed_hosts=config.allowed_hosts,
+        www_redirect=False,
+    )
     _install_lan_authentication(app, config)
     _install_security_headers(app)
 

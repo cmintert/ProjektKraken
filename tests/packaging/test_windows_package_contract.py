@@ -34,6 +34,20 @@ class WindowsPackageContractTests(unittest.TestCase):
             with self.subTest(path=relative_path):
                 self.assertTrue((ROOT / relative_path).is_file())
 
+    def test_gpl_license_is_included_in_the_windows_package(self) -> None:
+        """Ship the declared GPL-3.0-only licence with every Windows ZIP."""
+        license_text = (ROOT / "LICENSE").read_text(encoding="utf-8")
+        spec = (ROOT / "ProjektKraken.spec").read_text(encoding="utf-8")
+        contract = json.loads(
+            (ROOT / "packaging/windows/package-contract.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertIn("GNU GENERAL PUBLIC LICENSE", license_text)
+        self.assertIn("Version 3, 29 June 2007", license_text)
+        self.assertIn('(str(ROOT / "LICENSE"), ".")', spec)
+        self.assertIn("LICENSE", contract["required_package_paths"])
+
     def test_lock_is_hash_pinned(self) -> None:
         """Require the generated lock and hashes for every requirement block."""
         lock = (ROOT / "packaging/windows/requirements.lock").read_text(

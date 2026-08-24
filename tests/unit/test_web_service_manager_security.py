@@ -18,6 +18,7 @@ def test_start_server_uses_localhost_by_default(qtbot) -> None:
     assert config.host == "127.0.0.1"
     assert config.lan_access is False
     assert config.access_code is None
+    assert config.allowed_hosts == ("127.0.0.1", "localhost", "::1")
     assert statuses[-1] == (True, "http://127.0.0.1:8123/longform")
 
 
@@ -52,6 +53,12 @@ def test_lan_server_generates_rotating_eight_digit_codes(qtbot, caplog) -> None:
         second_config = thread_class.call_args.args[0]
 
     assert second_config.access_code == "00000008"
+    assert second_config.allowed_hosts == (
+        "127.0.0.1",
+        "localhost",
+        "::1",
+        "192.168.1.20",
+    )
     assert statuses[0] == (True, "http://192.168.1.20:8123/longform")
     assert "00000007" not in caplog.text
     assert "00000008" not in caplog.text

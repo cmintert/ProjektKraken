@@ -31,13 +31,15 @@ class AssetStore:
                          In portable mode, this is the world directory itself.
 
         """
-        self.project_root = Path(project_root)
+        self.project_root = Path(project_root).resolve()
         self.assets_dir = self.project_root / "assets"
         self.images_dir = self.assets_dir / "images"
         self.thumbs_dir = self.assets_dir / "thumbnails"
         self.trash_dir = self.assets_dir / ".trash"
 
+        self._validate_managed_roots()
         self._ensure_directories()
+        self._validate_managed_roots()
 
     # Allowed extensions for icon imports (preserved without conversion)
     ALLOWED_ICON_EXTENSIONS = {".svg", ".png", ".jpg", ".jpeg", ".webp"}
@@ -46,6 +48,40 @@ class AssetStore:
         """Creates necessary asset directories if they don't exist."""
         for path in [self.images_dir, self.thumbs_dir, self.trash_dir]:
             path.mkdir(parents=True, exist_ok=True)
+
+    def _validate_managed_roots(self) -> None:
+        """Ensure managed asset directories cannot escape the world directory."""
+        for path in (self.assets_dir, self.images_dir, self.thumbs_dir, self.trash_dir):
+            self._resolve_managed_root(path)
+
+    def _resolve_managed_root(self, path: Path) -> Path:
+        """Resolve a managed root and reject a symlink escaping the world."""
+        resolved_path = path.resolve()
+        try:
+            resolved_path.relative_to(self.project_root)
+        except ValueError as error:
+            raise ValueError(
+                "Managed asset directories must remain inside the world directory"
+            ) from error
+        return resolved_path
+
+    def _resolve_stored_path(
+        self, relative_path: str, allowed_root: Path, path_kind: str
+    ) -> Path:
+        """Resolve a persisted asset path beneath its expected managed root."""
+        stored_path = Path(relative_path)
+        if stored_path.is_absolute() or ".." in stored_path.parts:
+            raise ValueError(f"{path_kind} must be a contained relative asset path")
+
+        resolved_root = self._resolve_managed_root(allowed_root)
+        resolved_path = (self.project_root / stored_path).resolve()
+        try:
+            resolved_path.relative_to(resolved_root)
+        except ValueError as error:
+            raise ValueError(
+                f"{path_kind} must remain inside its managed asset directory"
+            ) from error
+        return resolved_path
 
     def import_icon(self, source_path: str) -> str:
         """Imports an icon file into the world's assets/images directory.
@@ -186,23 +222,33 @@ class AssetStore:
         """
         import time
 
-        timestamp = int(time.time())
-        trash_subdir = self.trash_dir / str(timestamp)
-        trash_subdir.mkdir(exist_ok=True)
-
-        img_trash_rel = None
-        thumb_trash_rel = None
-
         try:
-            full_img_path = self.project_root / image_rel_path
+            full_img_path = self._resolve_stored_path(
+                image_rel_path, self.images_dir, "Image path"
+            )
+            full_thumb_path = (
+                self._resolve_stored_path(
+                    thumb_rel_path, self.thumbs_dir, "Thumbnail path"
+                )
+                if thumb_rel_path
+                else None
+            )
+            trash_root = self._resolve_managed_root(self.trash_dir)
+
+            timestamp = int(time.time())
+            trash_subdir = trash_root / str(timestamp)
+            trash_subdir.mkdir(exist_ok=True)
+
+            img_trash_rel = None
+            thumb_trash_rel = None
+
             if full_img_path.exists():
                 # Prefix with 'img_' to avoid collision with thumbnail (same UUID name)
                 trash_img = trash_subdir / f"img_{full_img_path.name}"
                 shutil.move(str(full_img_path), str(trash_img))
                 img_trash_rel = trash_img.relative_to(self.project_root).as_posix()
 
-            if thumb_rel_path:
-                full_thumb_path = self.project_root / thumb_rel_path
+            if full_thumb_path:
                 if full_thumb_path.exists():
                     # Prefix with 'thumb_' to avoid collision with image
                     trash_thumb = trash_subdir / f"thumb_{full_thumb_path.name}"
@@ -227,24 +273,43 @@ class AssetStore:
     ) -> None:
         """Restores files from trash to their original location."""
         try:
-            if img_trash_rel:
-                trash_path = self.project_root / img_trash_rel
-                target_path = self.project_root / img_target_rel
+            img_trash_path = (
+                self._resolve_stored_path(
+                    img_trash_rel, self.trash_dir, "Image trash path"
+                )
+                if img_trash_rel
+                else None
+            )
+            img_target_path = self._resolve_stored_path(
+                img_target_rel, self.images_dir, "Image target path"
+            )
+            thumb_trash_path = (
+                self._resolve_stored_path(
+                    thumb_trash_rel, self.trash_dir, "Thumbnail trash path"
+                )
+                if thumb_trash_rel
+                else None
+            )
+            thumb_target_path = (
+                self._resolve_stored_path(
+                    thumb_target_rel, self.thumbs_dir, "Thumbnail target path"
+                )
+                if thumb_target_rel
+                else None
+            )
 
+            if img_trash_path:
                 # Ensure target dir exists
-                target_path.parent.mkdir(parents=True, exist_ok=True)
+                img_target_path.parent.mkdir(parents=True, exist_ok=True)
 
-                if trash_path.exists() and not target_path.exists():
-                    shutil.move(str(trash_path), str(target_path))
+                if img_trash_path.exists() and not img_target_path.exists():
+                    shutil.move(str(img_trash_path), str(img_target_path))
 
-            if thumb_trash_rel and thumb_target_rel:
-                trash_path = self.project_root / thumb_trash_rel
-                target_path = self.project_root / thumb_target_rel
+            if thumb_trash_path and thumb_target_path:
+                thumb_target_path.parent.mkdir(parents=True, exist_ok=True)
 
-                target_path.parent.mkdir(parents=True, exist_ok=True)
-
-                if trash_path.exists() and not target_path.exists():
-                    shutil.move(str(trash_path), str(target_path))
+                if thumb_trash_path.exists() and not thumb_target_path.exists():
+                    shutil.move(str(thumb_trash_path), str(thumb_target_path))
 
             logger.info(f"Restored images from trash to {img_target_rel}")
 

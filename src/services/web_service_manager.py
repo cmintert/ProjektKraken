@@ -12,7 +12,7 @@ from typing import Optional
 import uvicorn
 from PySide6.QtCore import QObject, QThread, Signal
 
-from src.webserver.config import ServerConfig
+from src.webserver.config import LOCAL_ALLOWED_HOSTS, ServerConfig
 from src.webserver.server import create_app
 
 logger = logging.getLogger(__name__)
@@ -155,6 +155,7 @@ class WebServiceManager(QObject):
         except Exception:
             theme_name = "dark_mode"
 
+        published_host = self.get_local_ip() if share_on_lan else "127.0.0.1"
         access_code = (
             f"{secrets.randbelow(100_000_000):08d}" if share_on_lan else None
         )
@@ -165,6 +166,11 @@ class WebServiceManager(QObject):
             theme_name=theme_name,
             lan_access=share_on_lan,
             access_code=access_code,
+            allowed_hosts=(
+                (*LOCAL_ALLOWED_HOSTS, published_host)
+                if share_on_lan
+                else LOCAL_ALLOWED_HOSTS
+            ),
         )
 
         self._thread = WebServerThread(self._config)
@@ -176,8 +182,7 @@ class WebServiceManager(QObject):
         # Wait a moment to check if it crashes immediately?
         # No, async signals will handle it.
 
-        ip = self.get_local_ip() if share_on_lan else "127.0.0.1"
-        url = f"http://{ip}:{port}/longform"
+        url = f"http://{published_host}:{port}/longform"
         self.status_changed.emit(True, url)
         logger.info(
             "Web server started on %s:%s (%s mode)",

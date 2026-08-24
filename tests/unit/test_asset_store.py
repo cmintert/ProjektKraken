@@ -242,6 +242,53 @@ def test_delete_files_nonexistent_file(asset_store):
     assert trash_img_rel is None
 
 
+@pytest.mark.parametrize("unsafe_path", ["../sentinel.txt", "../../sentinel.txt"])
+def test_delete_files_rejects_traversal_without_touching_outside_file(
+    tmp_path, unsafe_path
+):
+    """Persisted attachment paths cannot move files outside their world."""
+    world_root = tmp_path / "world"
+    world_root.mkdir()
+    sentinel = tmp_path / "sentinel.txt"
+    sentinel.write_text("keep", encoding="utf-8")
+    store = AssetStore(str(world_root))
+
+    with pytest.raises(ValueError, match="contained relative"):
+        store.delete_files(unsafe_path)
+
+    assert sentinel.read_text(encoding="utf-8") == "keep"
+
+
+def test_delete_files_rejects_absolute_path_without_touching_outside_file(tmp_path):
+    """Absolute persisted attachment paths cannot move files outside their world."""
+    world_root = tmp_path / "world"
+    world_root.mkdir()
+    sentinel = tmp_path / "sentinel.txt"
+    sentinel.write_text("keep", encoding="utf-8")
+    store = AssetStore(str(world_root))
+
+    with pytest.raises(ValueError, match="contained relative"):
+        store.delete_files(str(sentinel))
+
+    assert sentinel.read_text(encoding="utf-8") == "keep"
+
+
+def test_delete_files_rejects_escaped_thumbnail_before_moving_image(
+    asset_store, test_image, tmp_path
+):
+    """A malicious thumbnail path cannot create a partial attachment delete."""
+    image_rel, _, _ = asset_store.import_image("event", "event-123", test_image)
+    image_path = asset_store.project_root / image_rel
+    sentinel = tmp_path / "sentinel.webp"
+    sentinel.write_bytes(b"keep")
+
+    with pytest.raises(ValueError, match="contained relative"):
+        asset_store.delete_files(image_rel, "../sentinel.webp")
+
+    assert image_path.exists()
+    assert sentinel.read_bytes() == b"keep"
+
+
 def test_restore_files_success(asset_store, test_image):
     """Test restore_files moves files back from trash."""
     # Import and delete image
@@ -308,6 +355,79 @@ def test_restore_files_skips_if_target_exists(asset_store, test_image):
 
     # Original file should be unchanged
     assert original_path.read_bytes() == original_content
+
+
+def test_restore_files_rejects_traversal_source_without_touching_outside_file(
+    asset_store, tmp_path
+):
+    """A crafted trash path cannot restore a file from outside the world."""
+    sentinel = tmp_path / "sentinel.webp"
+    sentinel.write_bytes(b"keep")
+
+    with pytest.raises(ValueError, match="contained relative"):
+        asset_store.restore_files(
+            "../sentinel.webp",
+            "assets/images/events/event-123/restored.webp",
+            None,
+            None,
+        )
+
+    assert sentinel.read_bytes() == b"keep"
+
+
+def test_restore_files_rejects_traversal_target_without_touching_outside_file(
+    asset_store, tmp_path
+):
+    """A crafted target path cannot restore an attachment outside the world."""
+    trash_dir = asset_store.trash_dir / "test"
+    trash_dir.mkdir()
+    trash_file = trash_dir / "image.webp"
+    trash_file.write_bytes(b"stored")
+    trash_rel = trash_file.relative_to(asset_store.project_root).as_posix()
+    sentinel = tmp_path / "sentinel.webp"
+    sentinel.write_bytes(b"keep")
+
+    with pytest.raises(ValueError, match="contained relative"):
+        asset_store.restore_files(trash_rel, "../sentinel.webp", None, None)
+
+    assert trash_file.read_bytes() == b"stored"
+    assert sentinel.read_bytes() == b"keep"
+
+
+def test_delete_files_rejects_symlink_escape(asset_store, tmp_path):
+    """A symlink inside assets cannot redirect an attachment move outside a world."""
+    outside_dir = tmp_path / "outside"
+    outside_dir.mkdir()
+    sentinel = outside_dir / "sentinel.webp"
+    sentinel.write_bytes(b"keep")
+    symlink = asset_store.images_dir / "escape"
+    try:
+        symlink.symlink_to(outside_dir, target_is_directory=True)
+    except OSError:
+        pytest.skip("Symlink creation is unavailable on this Windows runner")
+
+    with pytest.raises(ValueError, match="managed asset directory"):
+        asset_store.delete_files("assets/images/escape/sentinel.webp")
+
+    assert sentinel.read_bytes() == b"keep"
+
+
+def test_asset_store_rejects_managed_root_symlink_escape(tmp_path):
+    """World loading cannot create managed asset directories through a symlink."""
+    world_root = tmp_path / "world"
+    world_root.mkdir()
+    outside_dir = tmp_path / "outside"
+    outside_dir.mkdir()
+    assets_link = world_root / "assets"
+    try:
+        assets_link.symlink_to(outside_dir, target_is_directory=True)
+    except OSError:
+        pytest.skip("Symlink creation is unavailable on this Windows runner")
+
+    with pytest.raises(ValueError, match="Managed asset directories"):
+        AssetStore(str(world_root))
+
+    assert not (outside_dir / "images").exists()
 
 
 def test_asset_store_webp_format(asset_store, test_image):
