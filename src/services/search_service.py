@@ -530,7 +530,12 @@ class SentenceTransformersProvider(EmbeddingProvider):
         # Force CPU inference to avoid torch device conversion crashes on
         # Windows when semantic queries execute from the worker QThread.
         self.model = SentenceTransformer(self.model_name, device="cpu")
-        self._dimension = self.model.get_sentence_embedding_dimension()
+        dimension = self.model.get_sentence_embedding_dimension()
+        if dimension is None:
+            raise RuntimeError(
+                "Sentence-transformers model did not report an embedding dimension"
+            )
+        self._dimension = int(dimension)
 
         logger.info(
             f"SentenceTransformersProvider initialized with model: {self.model_name}"

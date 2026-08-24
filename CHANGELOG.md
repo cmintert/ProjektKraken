@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-24
-**Commit:** 1d3c57c7
+**Commit:** 7d5279df
 ---
 
 # Changelog
@@ -10,6 +10,22 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+### Added
+
+- *(2026-08-24)* **Testing / CI**: Added a curated `ci_fast` regression suite
+  for pull requests and full coverage regression on nightly, beta-tag, and
+  manual workflow runs.
+
+### Fixed
+
+- *(2026-08-24)* **Semantic Search / Stability**: Rejected embedding models
+  that do not report a usable vector dimension, with regression coverage.
+
+### Changed
+
+- *(2026-08-24)* **CI / Quality**: Made repository-wide Ruff and mypy checks
+  required CI gates and aligned developer, commit, and release guidance.
 
 ## [0.19.5]
 

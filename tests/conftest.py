@@ -5,6 +5,63 @@ import tempfile
 
 import pytest
 
+_CI_FAST_DIRECTORIES = (
+    "tests/cli/",
+    "tests/packaging/",
+    "tests/security/",
+    "tests/unit/core/",
+    "tests/unit/repositories/",
+    "tests/unit/services/",
+)
+_CI_FAST_FILES = {
+    "tests/unit/test_asset_store.py",
+    "tests/unit/test_attachment_repository.py",
+    "tests/unit/test_attachment_service.py",
+    "tests/unit/test_backup_config.py",
+    "tests/unit/test_calendar.py",
+    "tests/unit/test_calendar_commands.py",
+    "tests/unit/test_calendar_db.py",
+    "tests/unit/test_calendar_leap.py",
+    "tests/unit/test_command_atomicity.py",
+    "tests/unit/test_command_coordinator.py",
+    "tests/unit/test_command_registry.py",
+    "tests/unit/test_composite_command.py",
+    "tests/unit/test_composite_persistent_undo.py",
+    "tests/unit/test_db_bulk_operations.py",
+    "tests/unit/test_db_hydration.py",
+    "tests/unit/test_db_service.py",
+    "tests/unit/test_deletion_integrity.py",
+    "tests/unit/test_entities.py",
+    "tests/unit/test_entity_commands.py",
+    "tests/unit/test_event_commands.py",
+    "tests/unit/test_feature_geometry_commands.py",
+    "tests/unit/test_image_commands.py",
+    "tests/unit/test_import_service.py",
+    "tests/unit/test_map_commands.py",
+    "tests/unit/test_map_db.py",
+    "tests/unit/test_raster_persistence.py",
+    "tests/unit/test_relation_commands.py",
+    "tests/unit/test_relation_repo_temporal.py",
+    "tests/unit/test_relations_attributes.py",
+    "tests/unit/test_search_service.py",
+    "tests/unit/test_temporal_db_schema.py",
+    "tests/unit/test_temporal_resolver.py",
+    "tests/unit/test_timeline_grouping_commands.py",
+    "tests/unit/test_trajectory_commands.py",
+    "tests/unit/test_wiki_commands.py",
+    "tests/unit/test_worker_world_storage.py",
+    "tests/unit/test_world.py",
+    "tests/unit/test_world_validator.py",
+}
+
+
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    """Mark the curated deterministic regression suite for pull-request CI."""
+    for item in items:
+        relative_path = item.path.relative_to(repo_root).as_posix()
+        if relative_path.startswith(_CI_FAST_DIRECTORIES) or relative_path in _CI_FAST_FILES:
+            item.add_marker(pytest.mark.ci_fast)
+
 # Set Qt to use offscreen platform for headless testing
 # This must be set BEFORE any Qt imports
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")

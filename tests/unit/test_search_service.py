@@ -7,6 +7,8 @@ Tests text building, vector operations, indexing, and querying.
 import json
 import sqlite3
 import subprocess
+import sys
+import types
 from typing import List
 from unittest.mock import MagicMock, patch
 
@@ -747,10 +749,20 @@ def test_get_llm_settings_normalises_underscore_variant():
 
 def test_sentence_transformers_provider_import_error():
     """Clear, actionable ImportError when sentence-transformers is not installed."""
-    import sys
-
     with patch.dict(sys.modules, {"sentence_transformers": None}):
         with pytest.raises(ImportError, match="pip install sentence-transformers"):
+            SentenceTransformersProvider()
+
+
+def test_sentence_transformers_provider_requires_embedding_dimension():
+    """Reject models that cannot report a usable embedding dimension."""
+    fake_module = types.ModuleType("sentence_transformers")
+    fake_model = MagicMock()
+    fake_model.get_sentence_embedding_dimension.return_value = None
+    fake_module.SentenceTransformer = MagicMock(return_value=fake_model)
+
+    with patch.dict(sys.modules, {"sentence_transformers": fake_module}):
+        with pytest.raises(RuntimeError, match="did not report an embedding dimension"):
             SentenceTransformersProvider()
 
 

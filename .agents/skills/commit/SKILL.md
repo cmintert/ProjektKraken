@@ -33,6 +33,26 @@ Every commit must include an update to the root `CHANGELOG.md`. Follow
 
 Do not skip this step for small or non-user-facing commits.
 
+## Verification
+
+Choose focused tests for the changed behavior. When a broad local regression
+check is warranted, run the curated PR suite:
+
+```powershell
+$env:QT_QPA_PLATFORM = "offscreen"
+python -m pytest -m ci_fast -q
+```
+
+`ci_fast` is the bounded PR suite for deterministic core, command,
+persistence, CLI, security, packaging, and selected repository tests. Do not
+use `pytest -m "not slow"` as a fast-suite substitute: it selects every test
+that lacks the `slow` marker.
+
+Run `python -m ruff check src/ tests/` and `python -m mypy src/` when the
+commit changes Python production code, tests, or CI quality configuration.
+The full coverage-enabled suite is a nightly, manual-dispatch, and beta-tag
+release check; it is not required for an ordinary commit.
+
 ## Step 3 — Draft the Commit Message
 
 Using the diff content, draft a message that follows this structure:

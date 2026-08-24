@@ -28,8 +28,16 @@ python -m ruff check src/ tests/
 python -m mypy src/
 pytest
 pytest -m smoke -q
-pytest -m "not slow"
+pytest -m ci_fast -q
 ```
+
+CI requires both `python -m ruff check` and a clean, repository-wide
+`python -m mypy src` result. `pyrightconfig.json` remains available for IDE
+diagnostics, but Pyright is not a separate CI gate.
+
+Pull requests run the smoke and `ci_fast` suites. The full, coverage-enabled
+regression suite runs nightly, on beta tags, and on manual dispatch; run that
+workflow before approving a release.
 
 On Windows, set `QT_QPA_PLATFORM=offscreen` for GUI tests.
 
@@ -41,4 +49,3 @@ On Windows, set `QT_QPA_PLATFORM=offscreen` for GUI tests.
 - `src/services`: persistence, workers, import/export, analysis, and AI
 - `src/core`: domain models and shared business concepts
 - `tests`: unit, integration, GUI, and regression coverage
-

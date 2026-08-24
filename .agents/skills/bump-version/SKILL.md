@@ -15,8 +15,9 @@ tagging as one ordered workflow.
    unstaged diffs, recent release commits, and existing tags.
 2. Validate the requested version as MAJOR.MINOR.PATCH. Stop for confirmation
    if it is equal to or lower than the current version.
-3. Confirm that neither the plain version tag nor a conflicting v-prefixed tag
-   exists. ProjektKraken currently uses lightweight plain tags such as 0.18.7.
+3. Confirm that neither the plain release tag, a conflicting v-prefixed tag,
+   nor the requested beta tag exists. ProjektKraken uses lightweight plain
+   release tags such as `0.18.8` and beta package tags such as `0.19.5-beta1`.
 4. Preserve unrelated user changes. Start from a clean tree unless the user has
    explicitly included existing changes in the release.
 5. Run python scripts/check_release_status.py. On Windows, set PYTHONUTF8=1 if
@@ -58,10 +59,13 @@ For CHANGELOG.md:
 1. Run git diff --check and inspect the complete release diff.
 2. Rerun scripts/check_release_status.py. Before the commit, version and
    changelog checks must pass; Dirty (Uncommitted changes) is expected.
-3. Run the focused version test:
+3. Run the project quality gates and the focused version test:
 
    ~~~powershell
    $env:QT_QPA_PLATFORM = "offscreen"
+   python -m ruff check src/ tests/
+   python -m mypy src/
+   python -m pytest -m ci_fast -q
    python -m pytest tests/gui/dialogs/test_about_dialog.py -q
    ~~~
 
@@ -92,10 +96,15 @@ For CHANGELOG.md:
 4. Follow the project commit skill: write the approved message to a temporary
    file outside the repository and commit with git commit -F.
 5. Verify the new commit and clean working tree before tagging.
-6. If tagging was requested, create the lightweight tag with git tag X.Y.Z.
-7. Verify that the tag resolves to HEAD. Never move an existing tag, amend,
+6. Before creating a release or beta tag, manually dispatch the **Full
+   Regression and Coverage** workflow for the candidate commit and confirm it
+   passes. That workflow also runs nightly and again for beta tags. Do not
+   substitute `pytest -m "not slow"`; it is not a bounded release suite.
+7. If tagging was requested, create the appropriate lightweight tag: `X.Y.Z`
+   for a final release or `X.Y.Z-betaN` for a beta package release.
+8. Verify that the tag resolves to HEAD. Never move an existing tag, amend,
    bypass hooks, or push unless the user explicitly asks.
-8. Rerun the release checker after commit and tag. It must report matching
+9. Rerun the release checker after commit and tag. It must report matching
    versions, the release changelog section, a clean tree, and the current tag.
 
 Report the commit hash, tag, build result, checks run, and whether anything was
