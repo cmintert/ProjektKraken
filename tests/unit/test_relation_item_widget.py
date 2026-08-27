@@ -44,3 +44,53 @@ def test_attributes_display(qtbot):
 
     assert "weight=0.8" in text
     assert "confidence=0.5" in text
+
+
+def test_non_empty_payload_shows_state_changes_badge(qtbot):
+    """A relation carrying state changes is visibly marked."""
+    widget = RelationItemWidget(
+        label="\u2192 Frodo [involved]",
+        target_id="id-2",
+        target_name="Frodo",
+        attributes={"payload": {"attributes": {"status": "Missing"}}},
+    )
+    qtbot.addWidget(widget)
+
+    assert widget.state_changes_badge.text() == "State changes"
+    assert "target entity" in widget.state_changes_badge.toolTip()
+    assert not hasattr(widget, "attr_label")
+
+
+@pytest.mark.parametrize(
+    "attributes",
+    [
+        {},
+        {"weight": 0.8},
+        {"payload": {}},
+        {"payload": {"attributes": {}, "unset_attributes": []}},
+    ],
+)
+def test_relation_without_effective_payload_has_no_badge(qtbot, attributes):
+    """Ordinary attributes and empty payloads do not create a marker."""
+    widget = RelationItemWidget(
+        label="\u2192 Frodo [involved]",
+        target_id="id-2",
+        target_name="Frodo",
+        attributes=attributes,
+    )
+    qtbot.addWidget(widget)
+
+    assert not hasattr(widget, "state_changes_badge")
+
+
+def test_explicit_description_clear_shows_state_changes_badge(qtbot):
+    """An empty description is still an intentional state change."""
+    widget = RelationItemWidget(
+        label="\u2192 Frodo [involved]",
+        target_id="id-2",
+        target_name="Frodo",
+        attributes={"payload": {"description": ""}},
+    )
+    qtbot.addWidget(widget)
+
+    assert widget.state_changes_badge.text() == "State changes"

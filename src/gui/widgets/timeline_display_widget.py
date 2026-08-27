@@ -197,7 +197,7 @@ class TimelineDisplayWidget(QWidget):
                 )
 
             # Payload attributes (if any)
-            if payload and isinstance(payload, dict):
+            if self._payload_has_state_changes(payload):
                 self._append_payload_v2(html_parts, payload)
 
             self._close_card_anchor(
@@ -230,10 +230,26 @@ class TimelineDisplayWidget(QWidget):
         self._text_display.setHtml("\n".join(html_parts))
 
     @staticmethod
+    def _payload_has_state_changes(payload: object) -> bool:
+        """Return whether a stored payload contains an effective state change."""
+        if not isinstance(payload, dict):
+            return False
+        changed_attributes = payload.get("attributes")
+        if isinstance(changed_attributes, dict) and changed_attributes:
+            return True
+        unset_attributes = payload.get("unset_attributes")
+        if isinstance(unset_attributes, list) and unset_attributes:
+            return True
+        return "description" in payload and isinstance(payload["description"], str)
+
+    @staticmethod
     def _append_payload_v2(
         html_parts: list[str], payload: dict[str, Any]
     ) -> None:
         """Append readable Payload v2 mutations to a timeline card."""
+        html_parts.append(
+            "<br><span class='state-changes-heading'>State changes</span>"
+        )
         changed_attributes = payload.get("attributes", {})
         if isinstance(changed_attributes, dict):
             for key, value in changed_attributes.items():

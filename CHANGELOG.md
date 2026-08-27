@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-27
-**Commit:** bff4199b
+**Commit:** c271ee55
 ---
 
 # Changelog
@@ -46,6 +46,9 @@ All notable changes to this project will be documented in this file.
   that do not report a usable vector dimension, with regression coverage.
 
 ### Changed
+
+- *(2026-08-27)* **Temporal State / Editor**: Clarified Event-to-Entity
+  state-change relations and marked relations that carry effective changes.
 
 - *(2026-08-24)* **CI / Quality**: Made repository-wide Ruff and mypy checks
   required CI gates and aligned developer, commit, and release guidance.

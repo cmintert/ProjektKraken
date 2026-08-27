@@ -157,7 +157,13 @@ def test_event_to_entity_round_trips_payload_v2(qtbot):
     )
     qtbot.addWidget(dialog)
 
+    assert dialog.state_changes_guidance.text() == (
+        "State changes are carried by Event \u2192 Entity relations and apply "
+        "while the relation is active."
+    )
+    assert dialog.state_changes_group.title() == "State Changes to Target Entity"
     assert not dialog.state_changes_group.isHidden()
+    assert dialog.state_changes_unavailable_label.isHidden()
     _, _, _, attributes = dialog.get_data()
     assert attributes["payload"] == {
         "attributes": {"status": "Ruined", "ruler": None},
@@ -198,10 +204,15 @@ def test_event_to_event_hides_and_omits_mutation_controls(qtbot):
     qtbot.addWidget(dialog)
 
     assert dialog.state_changes_group.isHidden()
+    assert not dialog.state_changes_unavailable_label.isHidden()
+    assert "unavailable for an Event target" in (
+        dialog.state_changes_unavailable_label.text()
+    )
     assert "payload" not in dialog.get_data()[3]
 
     dialog.target_edit.setText("Grey Ford")
     assert not dialog.state_changes_group.isHidden()
+    assert dialog.state_changes_unavailable_label.isHidden()
     assert dialog.get_data()[3]["payload"]["attributes"]["status"] == "Ruined"
 
 

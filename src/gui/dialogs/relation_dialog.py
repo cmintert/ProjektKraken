@@ -345,7 +345,21 @@ class RelationEditDialog(QDialog):
 
     def _setup_state_changes(self) -> None:
         """Build Payload v2 controls for an Event-sourced relation."""
-        self.state_changes_group = QGroupBox("Entity State Changes")
+        self.state_changes_guidance = QLabel(
+            "State changes are carried by Event \u2192 Entity relations and apply "
+            "while the relation is active."
+        )
+        self.state_changes_guidance.setWordWrap(True)
+        self.state_changes_guidance.setStyleSheet(
+            StyleHelper.get_preview_label_style()
+        )
+        self.form_layout.addRow(self.state_changes_guidance)
+
+        self.state_changes_unavailable_label = QLabel()
+        self.state_changes_unavailable_label.setWordWrap(True)
+        self.form_layout.addRow(self.state_changes_unavailable_label)
+
+        self.state_changes_group = QGroupBox("State Changes to Target Entity")
         state_layout = QVBoxLayout()
 
         state_layout.addWidget(QLabel("Set / Change Attributes"))
@@ -463,6 +477,22 @@ class RelationEditDialog(QDialog):
             enabled = self._is_event_to_entity()
             self.state_changes_group.setVisible(enabled)
             self.state_changes_group.setEnabled(enabled)
+            self.state_changes_unavailable_label.setVisible(not enabled)
+            if enabled:
+                return
+
+            target_id = self._resolve_target_id(self.target_edit.text())
+            if target_id and self._id_to_kind.get(target_id) == "event":
+                message = (
+                    "State changes are unavailable for an Event target. "
+                    "Select an entity to create an Event \u2192 Entity relation."
+                )
+            else:
+                message = (
+                    "Select an entity target to configure state changes carried "
+                    "by this relation."
+                )
+            self.state_changes_unavailable_label.setText(message)
 
     def _add_unset_attribute(self) -> None:
         """Add one unique attribute key to the removal list."""

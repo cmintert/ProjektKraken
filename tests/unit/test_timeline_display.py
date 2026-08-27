@@ -67,6 +67,7 @@ def test_single_event_display(widget):
     ]
     widget.set_relations(relations)
     html = widget.get_display_text()
+    assert "State changes" in html
 
     assert "3018" in html
     assert "Frodo Departs the Shire" in html
@@ -167,9 +168,29 @@ def test_event_without_payload(widget):
     ]
     widget.set_relations(relations)
     html = widget.get_display_text()
+    assert "State changes" not in html
 
     assert "Simple Event" in html
     # Should show rel_type or graceful empty
+
+
+def test_no_op_payload_has_no_state_changes_label(widget):
+    """Structurally present but empty mutations do not get a heading."""
+    widget.set_relations(
+        [
+            {
+                "id": "r1",
+                "source_id": "evt1",
+                "source_event_name": "No-op Event",
+                "source_event_date": 1000.0,
+                "attributes": {
+                    "payload": {"attributes": {}, "unset_attributes": []}
+                },
+            }
+        ]
+    )
+
+    assert "State changes" not in widget.get_display_text()
 
 
 def test_card_click_emits_source_event_id(widget, qtbot, monkeypatch):
