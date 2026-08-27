@@ -222,7 +222,9 @@ class RelationEditDialog(QDialog):
             elif is_end_event:
                 self.rb_ends.setChecked(True)
             else:
-                self.rb_absolute.setChecked(True)
+                # State changes caused by an Event take effect at that Event.
+                # Users can still opt into fixed/manual timing explicitly.
+                self.rb_starts.setChecked(True)
 
             # Connect Logic
             self.logic_btn_group.buttonToggled.connect(self._on_logic_changed)

@@ -166,6 +166,24 @@ def test_event_to_entity_round_trips_payload_v2(qtbot):
     }
 
 
+def test_event_relation_defaults_to_starting_at_the_event(qtbot):
+    """New Event relations apply their payload at the Event's exact date."""
+    dialog = RelationEditDialog(
+        target_id="entity-1",
+        source_event_date=100.0,
+        source_event_name="Battle",
+        suggestion_items=[("entity-1", "Grey Ford", "entity")],
+    )
+    qtbot.addWidget(dialog)
+    dialog.state_attribute_editor.load_attributes({"status": "Ruined"})
+
+    _, _, _, attributes = dialog.get_data()
+
+    assert dialog.rb_starts.isChecked()
+    assert attributes["valid_from_event"] is True
+    assert attributes["valid_from"] == 100.0
+
+
 def test_event_to_event_hides_and_omits_mutation_controls(qtbot):
     dialog = RelationEditDialog(
         target_id="event-2",

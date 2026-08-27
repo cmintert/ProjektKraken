@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-27
-**Commit:** e99fecf4
+**Commit:** bff4199b
 ---
 
 # Changelog
@@ -22,6 +22,9 @@ All notable changes to this project will be documented in this file.
   manual workflow runs.
 
 ### Fixed
+
+- *(2026-08-27)* **Temporal State / Editor**: Made new Event relations start
+  payloads exactly at the Event date, with regression coverage.
 
 - *(2026-08-27)* **UI / Theming**: Kept long relation editors compact and
   scrollable with reachable approval actions, and applied active Windows theme
