@@ -467,6 +467,11 @@ class DatabaseWorker(QObject):
                 # Enrich with names
                 for rel in rels:
                     rel["target_name"] = self.db_service.get_name(rel["target_id"])
+                    target_id = rel["target_id"]
+                    if self.db_service.get_entity(target_id) is not None:
+                        rel["target_kind"] = "entity"
+                    elif self.db_service.get_event(target_id) is not None:
+                        rel["target_kind"] = "event"
 
                 incoming = self.db_service.get_incoming_relations(event_id)
                 for rel in incoming:

@@ -2,7 +2,7 @@
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
 **Last Updated:** 2026-08-27
-**Commit:** c271ee55
+**Commit:** 101210ef
 ---
 
 # Changelog
@@ -22,6 +22,10 @@ All notable changes to this project will be documented in this file.
   manual workflow runs.
 
 ### Fixed
+
+- *(2026-08-27)* **Temporal State / Security**: Preserved state changes when
+  editing relations with unavailable suggestions and escaped stored timeline
+  relation content before rich-text rendering.
 
 - *(2026-08-27)* **Temporal State / Editor**: Made new Event relations start
   payloads exactly at the Event date, with regression coverage.

@@ -1477,6 +1477,7 @@ class EventEditorWidget(BaseEditorMixin, QWidget):
                 self.name_edit.text() if self._current_event_id else None
             ),
             known_types=getattr(self, "_suggestion_types", []),
+            target_kind=rel_data.get("target_kind"),
         )
 
         # Hide bidirectional check for editing

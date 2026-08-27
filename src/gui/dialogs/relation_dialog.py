@@ -61,6 +61,7 @@ class RelationEditDialog(QDialog):
         source_event_name: Optional[str] = None,
         known_types: Optional[list[str]] = None,
         source_name: Optional[str] = None,
+        target_kind: Optional[str] = None,
     ) -> None:
         """Initializes the dialog.
 
@@ -75,6 +76,7 @@ class RelationEditDialog(QDialog):
             source_event_name: Optional name of the source event.
             known_types: Optional list of known relation types for suggestions.
             source_name: Display name of the source entity for the live preview.
+            target_kind: Authoritative kind of an existing target when known.
 
         """
         super().__init__(parent)
@@ -88,6 +90,8 @@ class RelationEditDialog(QDialog):
         self.source_event_date = source_event_date
         self.source_event_name = source_event_name
         self._source_name = source_name or "Source"
+        self._initial_target_id = target_id
+        self._initial_target_kind = target_kind.casefold() if target_kind else None
 
         main_layout = QVBoxLayout(self)
 
@@ -469,7 +473,22 @@ class RelationEditDialog(QDialog):
         if self.source_event_date is None:
             return False
         target_id = self._resolve_target_id(self.target_edit.text())
-        return bool(target_id and self._id_to_kind.get(target_id) == "entity")
+        if not target_id:
+            return False
+        target_kind = self._target_kind(target_id)
+        if target_kind == "entity":
+            return True
+        return (
+            target_kind is None
+            and target_id == self._initial_target_id
+            and isinstance(self.attributes.get("payload"), dict)
+        )
+
+    def _target_kind(self, target_id: str) -> Optional[str]:
+        """Resolve a target kind, retaining authoritative edit context."""
+        if target_id == self._initial_target_id and self._initial_target_kind:
+            return self._initial_target_kind
+        return self._id_to_kind.get(target_id)
 
     def _update_state_changes_visibility(self) -> None:
         """Expose mutation controls only for Event-to-Entity relations."""
@@ -482,7 +501,7 @@ class RelationEditDialog(QDialog):
                 return
 
             target_id = self._resolve_target_id(self.target_edit.text())
-            if target_id and self._id_to_kind.get(target_id) == "event":
+            if target_id and self._target_kind(target_id) == "event":
                 message = (
                     "State changes are unavailable for an Event target. "
                     "Select an entity to create an Event \u2192 Entity relation."
@@ -694,6 +713,8 @@ class RelationEditDialog(QDialog):
         if candidate in self._display_to_id:
             return self._display_to_id[candidate]
         if candidate in self._id_to_display:
+            return candidate
+        if candidate == self._initial_target_id:
             return candidate
 
         matching_ids = self._name_to_ids.get(candidate.casefold(), [])

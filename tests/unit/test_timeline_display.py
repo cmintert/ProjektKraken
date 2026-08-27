@@ -193,6 +193,39 @@ def test_no_op_payload_has_no_state_changes_label(widget):
     assert "State changes" not in widget.get_display_text()
 
 
+def test_timeline_escapes_stored_relation_and_payload_text(widget):
+    """Stored relation text renders literally rather than as timeline HTML."""
+    malicious = '<img src="https://example.invalid/tracker.png">'
+    widget.set_relations(
+        [
+            {
+                "id": "relation-1' onclick='alert(1)",
+                "source_id": "event-1",
+                "source_event_name": "<b>Forged Event</b>",
+                "source_event_date": 100.0,
+                "rel_type": "<i>forged type</i>",
+                "attributes": {
+                    "payload": {
+                        "attributes": {"<b>forged key</b>": malicious},
+                        "unset_attributes": [malicious],
+                        "description": malicious,
+                    }
+                },
+            }
+        ]
+    )
+
+    html = widget.get_display_text()
+    plain_text = widget._text_display.toPlainText()
+
+    assert "<img" not in html
+    assert "&lt;img" in html
+    assert "<b>Forged Event</b>" in plain_text
+    assert "<i>forged type</i>" in plain_text
+    assert "<b>forged key</b>" in plain_text
+    assert malicious in plain_text
+
+
 def test_card_click_emits_source_event_id(widget, qtbot, monkeypatch):
     """Activating a timeline card should request navigation to its event."""
     widget.set_relations(

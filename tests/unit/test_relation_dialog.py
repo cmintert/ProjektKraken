@@ -172,6 +172,40 @@ def test_event_to_entity_round_trips_payload_v2(qtbot):
     }
 
 
+def test_event_to_entity_preserves_payload_without_suggestion_item(qtbot):
+    """Existing state changes survive when a stale completer lacks the target."""
+    payload = {"attributes": {"status": "Ruined"}}
+    dialog = RelationEditDialog(
+        target_id="entity-1",
+        source_event_date=100.0,
+        attributes={"payload": payload},
+    )
+    qtbot.addWidget(dialog)
+
+    target_id, _, _, attributes = dialog.get_data()
+
+    assert target_id == "entity-1"
+    assert not dialog.state_changes_group.isHidden()
+    assert attributes["payload"] == payload
+
+
+def test_authoritative_event_target_omits_payload_without_suggestion_item(qtbot):
+    """Known Event targets cannot retain Event-to-Entity state changes."""
+    dialog = RelationEditDialog(
+        target_id="event-2",
+        target_kind="event",
+        source_event_date=100.0,
+        attributes={"payload": {"attributes": {"status": "Ruined"}}},
+    )
+    qtbot.addWidget(dialog)
+
+    target_id, _, _, attributes = dialog.get_data()
+
+    assert target_id == "event-2"
+    assert dialog.state_changes_group.isHidden()
+    assert "payload" not in attributes
+
+
 def test_event_relation_defaults_to_starting_at_the_event(qtbot):
     """New Event relations apply their payload at the Event's exact date."""
     dialog = RelationEditDialog(

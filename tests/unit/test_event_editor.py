@@ -121,7 +121,15 @@ def test_automatic_mentions_are_read_only(editor):
 def test_context_menu_actions(editor, qtbot, monkeypatch):
     ev = Event(id="1", name="Source", lore_date=0.0)
     editor.load_event(
-        ev, relations=[{"id": "r1", "target_id": "t1", "rel_type": "caused"}]
+        ev,
+        relations=[
+            {
+                "id": "r1",
+                "target_id": "t1",
+                "target_kind": "entity",
+                "rel_type": "caused",
+            }
+        ],
     )
 
     # Select item
@@ -139,10 +147,14 @@ def test_context_menu_actions(editor, qtbot, monkeypatch):
     mock_dialog.bi_check = MagicMock()  # For setVisible(False)
 
     # Patch the class where it is defined
+    dialog_kwargs = {}
+
+    def create_dialog(*args, **kwargs):
+        dialog_kwargs.update(kwargs)
+        return mock_dialog
+
     monkeypatch.setattr(
-        src.gui.dialogs.relation_dialog,
-        "RelationEditDialog",
-        lambda *args, **kwargs: mock_dialog,
+        src.gui.dialogs.relation_dialog, "RelationEditDialog", create_dialog
     )
 
     with qtbot.waitSignal(editor.update_relation_requested) as blocker:
@@ -150,6 +162,7 @@ def test_context_menu_actions(editor, qtbot, monkeypatch):
 
     # args: rel_id, target_id, new_type, attributes
     assert blocker.args == ["r1", "new_target", "related_to", {}]
+    assert dialog_kwargs["target_kind"] == "entity"
 
 
 def test_wikilink_insertion_has_no_immediate_relation_writer(editor):
