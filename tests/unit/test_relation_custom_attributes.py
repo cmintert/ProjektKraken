@@ -12,11 +12,8 @@ def app():
     yield app
 
 
-def test_custom_attributes_preservation(app):
-    """
-    Test that custom (non-standard) attributes are preserved
-    when passed to the dialog and retrieved via get_data().
-    """
+def test_ordinary_relation_attributes_are_not_promoted_to_payload(app):
+    """Legacy custom relation keys are not interpreted as state mutations."""
     initial_attributes = {
         "weight": 2.5,  # Standard
         "magic_power": "high",  # Custom
@@ -25,17 +22,9 @@ def test_custom_attributes_preservation(app):
 
     dialog = RelationEditDialog(attributes=initial_attributes)
 
-    # Simulate user NOT changing anything in the UI
-    # (The UI only shows standard fields currently)
-
     _, _, _, result_attributes = dialog.get_data()
 
-    # Check standard attribute
     assert result_attributes.get("weight") == 2.5
-
-    # Check custom attributes (Now nested in 'payload')
-    assert "payload" in result_attributes
-    payload = result_attributes["payload"]
-
-    assert payload.get("magic_power") == "high"
-    assert payload.get("hidden_value") == 42
+    assert "payload" not in result_attributes
+    assert "magic_power" not in result_attributes
+    assert "hidden_value" not in result_attributes

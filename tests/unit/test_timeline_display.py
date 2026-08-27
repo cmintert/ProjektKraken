@@ -54,17 +54,29 @@ def test_single_event_display(widget):
             "rel_type": "involved",
             "attributes": {
                 "valid_from": 3018.0,
-                "payload": {"status": "Ring Bearer", "carrying": "One Ring"},
+                "payload": {
+                    "attributes": {
+                        "status": "Ring Bearer",
+                        "carrying": "One Ring",
+                    },
+                    "unset_attributes": ["home"],
+                    "description": "Bearer of the One Ring.",
+                },
             },
         }
     ]
     widget.set_relations(relations)
     html = widget.get_display_text()
+    assert "State changes" in html
 
     assert "3018" in html
     assert "Frodo Departs the Shire" in html
     assert "Ring Bearer" in html
     assert "One Ring" in html
+    assert "Remove:" in html
+    assert "home" in html
+    assert "Description:" in html
+    assert "Bearer of the One Ring." in html
 
 
 def test_multiple_events_sorted_chronologically(widget):
@@ -156,9 +168,62 @@ def test_event_without_payload(widget):
     ]
     widget.set_relations(relations)
     html = widget.get_display_text()
+    assert "State changes" not in html
 
     assert "Simple Event" in html
     # Should show rel_type or graceful empty
+
+
+def test_no_op_payload_has_no_state_changes_label(widget):
+    """Structurally present but empty mutations do not get a heading."""
+    widget.set_relations(
+        [
+            {
+                "id": "r1",
+                "source_id": "evt1",
+                "source_event_name": "No-op Event",
+                "source_event_date": 1000.0,
+                "attributes": {
+                    "payload": {"attributes": {}, "unset_attributes": []}
+                },
+            }
+        ]
+    )
+
+    assert "State changes" not in widget.get_display_text()
+
+
+def test_timeline_escapes_stored_relation_and_payload_text(widget):
+    """Stored relation text renders literally rather than as timeline HTML."""
+    malicious = '<img src="https://example.invalid/tracker.png">'
+    widget.set_relations(
+        [
+            {
+                "id": "relation-1' onclick='alert(1)",
+                "source_id": "event-1",
+                "source_event_name": "<b>Forged Event</b>",
+                "source_event_date": 100.0,
+                "rel_type": "<i>forged type</i>",
+                "attributes": {
+                    "payload": {
+                        "attributes": {"<b>forged key</b>": malicious},
+                        "unset_attributes": [malicious],
+                        "description": malicious,
+                    }
+                },
+            }
+        ]
+    )
+
+    html = widget.get_display_text()
+    plain_text = widget._text_display.toPlainText()
+
+    assert "<img" not in html
+    assert "&lt;img" in html
+    assert "<b>Forged Event</b>" in plain_text
+    assert "<i>forged type</i>" in plain_text
+    assert "<b>forged key</b>" in plain_text
+    assert malicious in plain_text
 
 
 def test_card_click_emits_source_event_id(widget, qtbot, monkeypatch):

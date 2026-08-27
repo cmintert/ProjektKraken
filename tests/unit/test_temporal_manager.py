@@ -11,6 +11,7 @@ from PySide6.QtCore import QObject, Signal
 
 from src.core.entities import Entity
 from src.core.temporal_manager import TemporalManager
+from src.core.temporal_state import ResolvedEntityState
 
 
 # Mock Signal Source
@@ -26,7 +27,11 @@ def mock_db_service():
 
     # Setup Entity
     entity = Entity(
-        id="e1", name="Test Entity", type="generic", attributes={"status": "Base"}
+        id="e1",
+        name="Test Entity",
+        type="generic",
+        description="Base description",
+        attributes={"status": "Base"},
     )
     service.get_entity.return_value = entity
 
@@ -35,7 +40,14 @@ def mock_db_service():
     rel = {
         "id": "r1",
         "target_id": "e1",
-        "attributes": {"valid_from": 100, "payload": {"status": "Overridden"}},
+        "source_event_date": 100.0,
+        "attributes": {
+            "valid_from": 100,
+            "payload": {
+                "attributes": {"status": "Overridden"},
+                "description": "Changed description",
+            },
+        },
     }
     service.get_incoming_relations.return_value = [rel]
     service.get_relations.return_value = []  # Default: no outgoing relations
@@ -63,7 +75,9 @@ def test_get_state_delegates_to_resolver(manager, mock_db_service):
     state = manager.get_entity_state_at("e1", time=150.0)
 
     # Should resolve to "Overridden" because 150 > 100
-    assert state["status"] == "Overridden"
+    assert isinstance(state, ResolvedEntityState)
+    assert state.attributes["status"] == "Overridden"
+    assert state.description == "Changed description"
 
     # Verify DB calls
     mock_db_service.get_entity.assert_called_with("e1")
@@ -235,11 +249,9 @@ def test_invalidation_does_not_affect_other_entities(
     )
 
 
-def test_nonexistent_entity_does_not_crash(manager, mock_db_service):
-    """Edge case: Requesting state for entity that doesn't exist."""
+def test_nonexistent_entity_raises_lookup_error(manager, mock_db_service):
+    """Missing entities do not produce a bogus resolved state."""
     mock_db_service.get_entity.return_value = None
 
-    state = manager.get_entity_state_at("nonexistent", time=100.0)
-
-    # Should return empty dict
-    assert state == {}
+    with pytest.raises(LookupError, match="nonexistent"):
+        manager.get_entity_state_at("nonexistent", time=100.0)

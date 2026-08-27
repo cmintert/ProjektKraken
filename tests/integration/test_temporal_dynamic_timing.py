@@ -37,7 +37,7 @@ def test_dynamic_event_timing(db_service, temporal_manager):
     relation_attrs = {
         "valid_from": 0.0,  # Dummy value, should be ignored
         "valid_from_event": True,
-        "payload": {"status": "Injured"},
+        "payload": {"attributes": {"status": "Injured"}},
     }
 
     db_service.insert_relation(
@@ -51,11 +51,11 @@ def test_dynamic_event_timing(db_service, temporal_manager):
 
     # T=50 (Before)
     state_50 = temporal_manager.get_entity_state_at(entity.id, 50.0)
-    assert state_50["status"] == "Healthy"
+    assert state_50.attributes["status"] == "Healthy"
 
     # T=150 (After)
     state_150 = temporal_manager.get_entity_state_at(entity.id, 150.0)
-    assert state_150["status"] == "Injured"
+    assert state_150.attributes["status"] == "Injured"
 
     # 4. Move the Event!
     # Update Event Date to 200
@@ -73,10 +73,10 @@ def test_dynamic_event_timing(db_service, temporal_manager):
 
     # T=150 (Now Before the event)
     state_150_new = temporal_manager.get_entity_state_at(entity.id, 150.0)
-    assert state_150_new["status"] == "Healthy", (
+    assert state_150_new.attributes["status"] == "Healthy", (
         "Relation should have moved with event to T=200"
     )
 
     # T=250 (Now After the event)
     state_250 = temporal_manager.get_entity_state_at(entity.id, 250.0)
-    assert state_250["status"] == "Injured"
+    assert state_250.attributes["status"] == "Injured"

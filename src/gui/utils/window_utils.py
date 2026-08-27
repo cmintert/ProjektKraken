@@ -3,14 +3,20 @@
 Provides platform-specific window styling utilities, particularly for Windows title bars.
 """
 
+from __future__ import annotations
+
 import ctypes
 import logging
 import sys
 from ctypes import byref, c_int, sizeof
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
+from PySide6.QtCore import QEvent, QObject, Slot
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QApplication, QDialog, QWidget
+
+if TYPE_CHECKING:
+    from src.core.theme_manager import ThemeManager
 
 # DWM Constants
 DWMWA_USE_IMMERSIVE_DARK_MODE = 20
@@ -18,6 +24,8 @@ DWMWA_CAPTION_COLOR = 35
 DWMWA_TEXT_COLOR = 36
 
 logger = logging.getLogger(__name__)
+
+_COLOR_LIGHTNESS_MIDPOINT = 128
 
 
 def apply_windows_title_bar_style(
@@ -92,3 +100,60 @@ def apply_windows_title_bar_style(
 
     except Exception as e:
         logger.warning(f"DWM styling failed: {e}")
+
+
+class ModalWindowThemeFilter(QObject):
+    """Apply the active theme to native modal-window chrome."""
+
+    def __init__(
+        self,
+        app: QApplication,
+        theme_manager: ThemeManager,
+    ) -> None:
+        """Watch dialogs and refresh their title bars when the theme changes."""
+        super().__init__(app)
+        self._app = app
+        self._theme_manager = theme_manager
+        self._theme_manager.theme_changed.connect(self.refresh_open_dialogs)
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        """Theme a dialog after Qt creates its native window handle."""
+        if (
+            event.type() == QEvent.Type.Show
+            and isinstance(watched, QDialog)
+            and watched.isWindow()
+        ):
+            self._apply_dialog_theme(watched, self._theme_manager.get_theme())
+        return super().eventFilter(watched, event)
+
+    @Slot(dict)
+    def refresh_open_dialogs(self, theme_data: dict[str, Any]) -> None:
+        """Reapply native chrome colors to every open top-level dialog."""
+        for widget in self._app.topLevelWidgets():
+            if isinstance(widget, QDialog):
+                self._apply_dialog_theme(widget, theme_data)
+
+    @staticmethod
+    def _apply_dialog_theme(
+        dialog: QDialog,
+        theme_data: dict[str, Any],
+    ) -> None:
+        """Apply one theme snapshot to a dialog's native title bar."""
+        background = QColor(str(theme_data.get("app_bg", "#2B2B2B")))
+        foreground = QColor(str(theme_data.get("text_main", "#E0E0E0")))
+        apply_windows_title_bar_style(
+            dialog,
+            dark_mode=background.lightness() < _COLOR_LIGHTNESS_MIDPOINT,
+            title_color=background,
+            text_color=foreground,
+        )
+
+
+def install_modal_window_theme_filter(
+    app: QApplication,
+    theme_manager: ThemeManager,
+) -> ModalWindowThemeFilter:
+    """Install and return the application-wide modal title-bar handler."""
+    theme_filter = ModalWindowThemeFilter(app, theme_manager)
+    app.installEventFilter(theme_filter)
+    return theme_filter

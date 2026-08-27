@@ -1452,6 +1452,13 @@ class StyleHelper:
             }}
             .payload-key {{ color: {theme["text_dim"]}; }}
             .payload-value {{ color: {theme["text_dim"]}; }}
+            .state-changes-heading {{
+                color: {theme["accent_secondary"]};
+                font-size: 10px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }}
             .now-separator {{
                 display: flex;
                 align-items: center;

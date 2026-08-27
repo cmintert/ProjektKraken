@@ -1,8 +1,8 @@
 ---
 **Project:** ProjektKraken  
 **Document:** Project Changelog  
-**Last Updated:** 2026-08-24
-**Commit:** 6777f5be
+**Last Updated:** 2026-08-27
+**Commit:** 101210ef
 ---
 
 # Changelog
@@ -13,11 +13,26 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- *(2026-08-27)* **Temporal State / Editor**: Added validated Payload v2
+  event-to-entity state changes, deterministic resolution, cache invalidation,
+  editable relation controls, and end-to-end regression coverage.
+
 - *(2026-08-24)* **Testing / CI**: Added a curated `ci_fast` regression suite
   for pull requests and full coverage regression on nightly, beta-tag, and
   manual workflow runs.
 
 ### Fixed
+
+- *(2026-08-27)* **Temporal State / Security**: Preserved state changes when
+  editing relations with unavailable suggestions and escaped stored timeline
+  relation content before rich-text rendering.
+
+- *(2026-08-27)* **Temporal State / Editor**: Made new Event relations start
+  payloads exactly at the Event date, with regression coverage.
+
+- *(2026-08-27)* **UI / Theming**: Kept long relation editors compact and
+  scrollable with reachable approval actions, and applied active Windows theme
+  chrome to modal dialogs.
 
 - *(2026-08-24)* **Packaging / Compliance**: Bundled the complete GPL-3.0
   license in the Windows package and enforced it through package-contract
@@ -35,6 +50,9 @@ All notable changes to this project will be documented in this file.
   that do not report a usable vector dimension, with regression coverage.
 
 ### Changed
+
+- *(2026-08-27)* **Temporal State / Editor**: Clarified Event-to-Entity
+  state-change relations and marked relations that carry effective changes.
 
 - *(2026-08-24)* **CI / Quality**: Made repository-wide Ruff and mypy checks
   required CI gates and aligned developer, commit, and release guidance.

@@ -49,9 +49,12 @@ def test_insert_and_retrieve_temporal_relation(repo):
         "valid_to": None,
         "priority": "event",
         "payload": {
-            "status": "Wounded",
-            "location": "Battlefield",
-            "stats": {"hp": 50},
+            "attributes": {
+                "status": "Wounded",
+                "location": "Battlefield",
+                "stats": {"hp": 50},
+            },
+            "unset_attributes": ["garrison"],
         },
     }
 
@@ -73,18 +76,22 @@ def test_insert_and_retrieve_temporal_relation(repo):
     # Verify structure matches exactly
     assert fetched_attrs["valid_from"] == 100.5
     assert fetched_attrs["valid_to"] is None
-    assert fetched_attrs["payload"]["status"] == "Wounded"
-    assert fetched_attrs["payload"]["stats"]["hp"] == 50
+    assert fetched_attrs["payload"]["attributes"]["status"] == "Wounded"
+    assert fetched_attrs["payload"]["attributes"]["stats"]["hp"] == 50
+    assert fetched_attrs["payload"]["unset_attributes"] == ["garrison"]
 
 
 def test_update_payload(repo):
     """Test updating the JSON payload."""
-    initial = {"valid_from": 100, "payload": {"a": 1}}
+    initial = {"valid_from": 100, "payload": {"attributes": {"a": 1}}}
     repo.insert("rel_1", "src", "tgt", "type", initial, 0)
 
-    updated = {"valid_from": 100, "payload": {"a": 2, "b": 3}}
+    updated = {
+        "valid_from": 100,
+        "payload": {"attributes": {"a": 2, "b": 3}},
+    }
     repo.update("rel_1", "type", updated)
 
     rel = repo.get_by_source("src")[0]
-    assert rel["attributes"]["payload"]["a"] == 2
-    assert rel["attributes"]["payload"]["b"] == 3
+    assert rel["attributes"]["payload"]["attributes"]["a"] == 2
+    assert rel["attributes"]["payload"]["attributes"]["b"] == 3

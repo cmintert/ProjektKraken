@@ -121,6 +121,11 @@ def main() -> None:
         except FileNotFoundError:
             logger.warning("main.qss not found, skipping styling.")
 
+        from src.gui.utils.window_utils import install_modal_window_theme_filter
+
+        modal_theme_filter = install_modal_window_theme_filter(app, tm)
+        setattr(app, "_modal_window_theme_filter", modal_theme_filter)
+
         splash = None
         if package_smoke_options is None:
             from src.gui.splash_screen import SplashScreen

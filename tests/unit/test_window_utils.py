@@ -2,11 +2,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QDialog, QWidget
 
 from src.gui.utils.window_utils import (
     DWMWA_CAPTION_COLOR,
     DWMWA_USE_IMMERSIVE_DARK_MODE,
+    ModalWindowThemeFilter,
     apply_windows_title_bar_style,
 )
 
@@ -80,3 +81,60 @@ def test_apply_style_graceful_failure(mock_window):
 
         # Should not raise exception
         apply_windows_title_bar_style(mock_window)
+
+
+def test_modal_theme_filter_styles_dialog_when_shown(qapp, qtbot):
+    """A newly shown modal receives the current native title-bar colors."""
+    theme_manager = MagicMock()
+    theme_manager.get_theme.return_value = {
+        "app_bg": "#202020",
+        "text_main": "#f0f0f0",
+    }
+    theme_filter = ModalWindowThemeFilter(qapp, theme_manager)
+    qapp.installEventFilter(theme_filter)
+    dialog = QDialog()
+    qtbot.addWidget(dialog)
+
+    try:
+        with patch(
+            "src.gui.utils.window_utils.apply_windows_title_bar_style"
+        ) as apply_style:
+            dialog.show()
+            qapp.processEvents()
+
+        matching_calls = [
+            call for call in apply_style.call_args_list if call.args[0] is dialog
+        ]
+        assert matching_calls
+        assert matching_calls[-1].kwargs["dark_mode"] is True
+        assert matching_calls[-1].kwargs["title_color"].name() == "#202020"
+        assert matching_calls[-1].kwargs["text_color"].name() == "#f0f0f0"
+    finally:
+        qapp.removeEventFilter(theme_filter)
+
+
+def test_modal_theme_filter_refreshes_open_dialogs(qapp, qtbot):
+    """An active theme change restyles dialogs that are already open."""
+    theme_manager = MagicMock()
+    theme_filter = ModalWindowThemeFilter(qapp, theme_manager)
+    dialog = QDialog()
+    qtbot.addWidget(dialog)
+    dialog.show()
+
+    try:
+        with patch(
+            "src.gui.utils.window_utils.apply_windows_title_bar_style"
+        ) as apply_style:
+            theme_filter.refresh_open_dialogs(
+                {"app_bg": "#fafafa", "text_main": "#101010"}
+            )
+
+        matching_calls = [
+            call for call in apply_style.call_args_list if call.args[0] is dialog
+        ]
+        assert matching_calls
+        assert matching_calls[-1].kwargs["dark_mode"] is False
+        assert matching_calls[-1].kwargs["title_color"].name() == "#fafafa"
+        assert matching_calls[-1].kwargs["text_color"].name() == "#101010"
+    finally:
+        qapp.removeEventFilter(theme_filter)

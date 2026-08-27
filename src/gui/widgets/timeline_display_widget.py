@@ -6,6 +6,7 @@ entity, with payload attributes shown inline.
 
 import re
 import textwrap
+from html import escape
 from typing import Any, Optional
 
 from PySide6.QtCore import QEvent, QObject, Qt, Signal
@@ -160,8 +161,9 @@ class TimelineDisplayWidget(QWidget):
 
             # When the date is 0.0, it may be a genuine epoch event or a failed
             # date parse that defaulted to 0.0.  Show a subtle indicator.
+            date_html = escape(date_str)
             if event_date == 0.0:
-                date_str = f"{date_str} <span class='date-unknown'>(date unknown)</span>"
+                date_html += " <span class='date-unknown'>(date unknown)</span>"
 
             # Determine state: active (past/current) or future
             is_active = (
@@ -186,25 +188,19 @@ class TimelineDisplayWidget(QWidget):
 
             # Header: date + event name
             html_parts.append(
-                f"<span class='event-date'>{date_str}</span><br>"
+                f"<span class='event-date'>{date_html}</span><br>"
             )
             html_parts.append(
-                f"<span class='event-name'>{event_name}</span>"
+                f"<span class='event-name'>{escape(str(event_name))}</span>"
             )
             if rel_type:
                 html_parts.append(
-                    f" <span class='event-type'>({rel_type})</span>"
+                    f" <span class='event-type'>({escape(str(rel_type))})</span>"
                 )
 
             # Payload attributes (if any)
-            if payload and isinstance(payload, dict):
-                for key, value in payload.items():
-                    display_val = "—" if value is None else str(value)
-                    html_parts.append(
-                        f"<br><span class='payload-key' style='margin-left: 16px;'>"
-                        f"{key}:</span> "
-                        f"<span class='payload-value'>{display_val}</span>"
-                    )
+            if self._payload_has_state_changes(payload):
+                self._append_payload_v2(html_parts, payload)
 
             self._close_card_anchor(
                 html_parts, anchor_id, has_desc or has_event
@@ -235,6 +231,54 @@ class TimelineDisplayWidget(QWidget):
 
         self._text_display.setHtml("\n".join(html_parts))
 
+    @staticmethod
+    def _payload_has_state_changes(payload: object) -> bool:
+        """Return whether a stored payload contains an effective state change."""
+        if not isinstance(payload, dict):
+            return False
+        changed_attributes = payload.get("attributes")
+        if isinstance(changed_attributes, dict) and changed_attributes:
+            return True
+        unset_attributes = payload.get("unset_attributes")
+        if isinstance(unset_attributes, list) and unset_attributes:
+            return True
+        return "description" in payload and isinstance(payload["description"], str)
+
+    @staticmethod
+    def _append_payload_v2(
+        html_parts: list[str], payload: dict[str, Any]
+    ) -> None:
+        """Append readable Payload v2 mutations to a timeline card."""
+        html_parts.append(
+            "<br><span class='state-changes-heading'>State changes</span>"
+        )
+        changed_attributes = payload.get("attributes", {})
+        if isinstance(changed_attributes, dict):
+            for key, value in changed_attributes.items():
+                display_val = "—" if value is None else str(value)
+                html_parts.append(
+                    "<br><span class='payload-key' style='margin-left: 16px;'>"
+                    f"{escape(str(key))}:</span> "
+                    f"<span class='payload-value'>{escape(display_val)}</span>"
+                )
+
+        unset_attributes = payload.get("unset_attributes", [])
+        if isinstance(unset_attributes, list):
+            for key in unset_attributes:
+                html_parts.append(
+                    "<br><span class='payload-key' style='margin-left: 16px;'>"
+                    "Remove:</span> "
+                    f"<span class='payload-value'>{escape(str(key))}</span>"
+                )
+
+        if "description" in payload:
+            display_val = str(payload["description"])
+            html_parts.append(
+                "<br><span class='payload-key' style='margin-left: 16px;'>"
+                "Description:</span> "
+                f"<span class='payload-value'>{escape(display_val)}</span>"
+            )
+
     def _extract_and_map_description(self, anchor_id: str, raw_desc: str) -> None:
         """Extract description text and add to description map.
 
@@ -264,7 +308,10 @@ class TimelineDisplayWidget(QWidget):
 
         """
         if has_anchor:
-            html_parts.append(f"<a href='{anchor_id}' style='text-decoration: none;'>")
+            safe_anchor_id = escape(str(anchor_id), quote=True)
+            html_parts.append(
+                f"<a href='{safe_anchor_id}' style='text-decoration: none;'>"
+            )
 
     def _close_card_anchor(
         self, html_parts: list[str], anchor_id: str, has_anchor: bool
